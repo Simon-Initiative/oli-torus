@@ -624,6 +624,149 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
     end
   end
 
+  describe "apply_manual_scoring/3 for adaptive manually graded CAPI parts" do
+    setup do
+      adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+
+      adaptive_content = %{
+        "partsLayout" => [
+          %{
+            "id" => "janus_capi_iframe-1",
+            "type" => "janus-capi-iframe",
+            "custom" => %{"title" => "Simulation", "maxScore" => 1}
+          },
+          %{
+            "id" => "janus_navigation_button-1",
+            "type" => "janus-navigation-button",
+            "custom" => %{"title" => "Continue"}
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "janus_capi_iframe-1",
+              "type" => "janus-capi-iframe",
+              "gradingApproach" => "manual",
+              "outOf" => 1
+            },
+            %{
+              "id" => "janus_navigation_button-1",
+              "type" => "janus-navigation-button",
+              "gradingApproach" => "automatic"
+            }
+          ]
+        }
+      }
+
+      map = Seeder.base_project_with_resource2()
+      Oli.Resources.update_revision(map.revision2, %{graded: true})
+
+      map
+      |> Seeder.create_section()
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_activity(
+        %{
+          title: "adaptive CAPI manual",
+          activity_type_id: adaptive_registration.id,
+          content: adaptive_content
+        },
+        :activity_a
+      )
+      |> Seeder.create_section_resources()
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1, lifecycle_state: :submitted},
+        :user1,
+        :page2,
+        :revision2,
+        :attempt1
+      )
+      |> Seeder.create_activity_attempt(
+        %{attempt_number: 1, transformed_model: %{some: :thing}, lifecycle_state: :submitted},
+        :activity_a,
+        :attempt1,
+        :attempt_1a
+      )
+      |> Seeder.create_part_attempt(
+        %{
+          attempt_number: 1,
+          grading_approach: :manual,
+          date_submitted: DateTime.utc_now(),
+          lifecycle_state: :submitted,
+          response: %{
+            "input" => [
+              %{"path" => "janus_capi_iframe-1.simScore", "value" => "85"}
+            ]
+          },
+          out_of: 1.0
+        },
+        %Part{id: "janus_capi_iframe-1", responses: [], hints: [], grading_approach: :manual},
+        :attempt_1a,
+        :capi_part_attempt
+      )
+      |> Seeder.create_part_attempt(
+        %{
+          attempt_number: 1,
+          grading_approach: :automatic,
+          lifecycle_state: :active,
+          response: %{}
+        },
+        %Part{
+          id: "janus_navigation_button-1",
+          responses: [],
+          hints: [],
+          grading_approach: :automatic
+        },
+        :attempt_1a,
+        :navigation_part_attempt
+      )
+    end
+
+    test "applies manual scoring to manually graded CAPI without requiring native inputs", %{
+      section: section,
+      attempt_1a: attempt_1a,
+      capi_part_attempt: capi_part_attempt
+    } do
+      results =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_1a.id end)
+
+      assert {:ok, [returned_guid]} =
+               ManualGrading.apply_manual_scoring(
+                 section,
+                 attempt,
+                 %{
+                   capi_part_attempt.attempt_guid => %{
+                     score: 1.0,
+                     out_of: 1.0,
+                     feedback: "CAPI work reviewed"
+                   }
+                 }
+               )
+
+      assert returned_guid == capi_part_attempt.attempt_guid
+
+      aa = Core.get_activity_attempt_by(id: attempt_1a.id)
+      assert aa.lifecycle_state == :evaluated
+
+      capi_part = Core.get_part_attempt_by(attempt_guid: capi_part_attempt.attempt_guid)
+      assert capi_part.lifecycle_state == :evaluated
+      assert capi_part.score == 1.0
+      assert capi_part.out_of == 1.0
+    end
+  end
+
   describe "apply_manual_scoring/3 for submitted ungraded attempts" do
     setup do
       Seeder.base_project_with_resource2()

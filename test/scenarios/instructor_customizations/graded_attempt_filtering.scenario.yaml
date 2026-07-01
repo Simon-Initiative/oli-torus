@@ -1,0 +1,159 @@
+# Scenario: Instructor customizations apply when starting a new graded basic-page attempt.
+
+- project:
+    name: "instructor_customization_graded_project"
+    title: "Instructor Customization Graded"
+    tags:
+      - "graded_bank"
+    root:
+      children:
+        - page: "Graded Quiz"
+
+- create_activity:
+    project: "instructor_customization_graded_project"
+    title: "Graded Bank Question 1"
+    virtual_id: "graded_bank_q1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["graded_bank"]
+    content: |
+      stem_md: "What is 7 + 7?"
+      choices:
+        - id: "a"
+          body_md: "14"
+          score: 1
+        - id: "b"
+          body_md: "15"
+
+- create_activity:
+    project: "instructor_customization_graded_project"
+    title: "Graded Bank Question 2"
+    virtual_id: "graded_bank_q2"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["graded_bank"]
+    content: |
+      stem_md: "What is 8 + 8?"
+      choices:
+        - id: "a"
+          body_md: "16"
+          score: 1
+        - id: "b"
+          body_md: "17"
+
+- edit_page:
+    project: "instructor_customization_graded_project"
+    page: "Graded Quiz"
+    content: |
+      title: "Graded Quiz"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "graded_keep"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Keep this question?"
+            choices:
+              - id: "a"
+                body_md: "Yes"
+                score: 1
+              - id: "b"
+                body_md: "No"
+        - type: activity
+          virtual_id: "graded_drop"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Drop this question?"
+            choices:
+              - id: "a"
+                body_md: "Yes"
+                score: 1
+              - id: "b"
+                body_md: "No"
+        - type: bank-selection
+          id: "graded_selection"
+          count: 1
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["graded_bank"]
+
+- publish:
+    to: "instructor_customization_graded_project"
+    description: "Initial graded publication"
+
+- section:
+    name: "instructor_customization_graded_section"
+    title: "Instructor Customization Graded Section"
+    from: "instructor_customization_graded_project"
+
+- user:
+    name: "graded_instructor"
+    type: "instructor"
+    email: "graded_instructor@example.edu"
+
+- enroll:
+    user: "graded_instructor"
+    section: "instructor_customization_graded_section"
+    role: "instructor"
+
+- user:
+    name: "graded_student"
+    type: "student"
+    email: "graded_student@example.edu"
+
+- enroll:
+    user: "graded_student"
+    section: "instructor_customization_graded_section"
+    role: "student"
+
+- instructor_customization:
+    section: "instructor_customization_graded_section"
+    page: "Graded Quiz"
+    actor: "graded_instructor"
+    ops:
+      - exclude_activity:
+          activity_virtual_id: "graded_drop"
+      - exclude_bank_selection:
+          selection_id: "graded_selection"
+
+- assert:
+    activity_customization:
+      section: "instructor_customization_graded_section"
+      page: "Graded Quiz"
+      embedded_activities:
+        - activity_virtual_id: "graded_drop"
+          enabled: false
+      bank_selections:
+        - selection_id: "graded_selection"
+          enabled: false
+
+- start_attempt:
+    student: "graded_student"
+    section: "instructor_customization_graded_section"
+    page: "Graded Quiz"
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_graded_section"
+      student: "graded_student"
+      page: "Graded Quiz"
+      activity_virtual_id: "graded_keep"
+      exists: true
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_graded_section"
+      student: "graded_student"
+      page: "Graded Quiz"
+      activity_virtual_id: "graded_drop"
+      exists: false
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_graded_section"
+      student: "graded_student"
+      page: "Graded Quiz"
+      activity_virtual_id: "graded_bank_q1"
+      exists: false

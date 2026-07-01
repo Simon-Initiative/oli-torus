@@ -163,4 +163,54 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionTest do
     assert html =~ "enter"
     refute html =~ "text-2xl"
   end
+
+  test "renders uploaded files as downloadable links" do
+    html =
+      render_component(&SelectedSubmission.render/1, %{
+        submission: %{
+          title: "Question Response",
+          subtitle: "File Upload • Part ID: 1",
+          score: "Pending / 5.0",
+          response_view: %{
+            kind: :files,
+            prompt: "Upload your essay",
+            description: "2 files submitted",
+            files: [
+              %{name: "essay.pdf", url: "http://localhost:9000/torus-media-dev/essay.pdf"},
+              %{name: "diagram.png", url: "http://localhost:9000/torus-media-dev/diagram.png"}
+            ]
+          }
+        }
+      })
+
+    assert html =~ "Upload your essay"
+    assert html =~ "2 files submitted"
+    # filenames rendered, not the literal "Attachment"
+    assert html =~ "essay.pdf"
+    assert html =~ "diagram.png"
+    refute html =~ "Attachment"
+    # each file is a real download link to its url
+    assert html =~ ~s(href="http://localhost:9000/torus-media-dev/essay.pdf")
+    assert html =~ ~s(href="http://localhost:9000/torus-media-dev/diagram.png")
+  end
+
+  test "renders fallback when no files were uploaded" do
+    html =
+      render_component(&SelectedSubmission.render/1, %{
+        submission: %{
+          title: "Question Response",
+          subtitle: "File Upload • Part ID: 1",
+          score: "Pending / 5.0",
+          response_view: %{
+            kind: :files,
+            prompt: "Upload your essay",
+            description: nil,
+            files: []
+          }
+        }
+      })
+
+    assert html =~ "No files uploaded"
+    refute html =~ "<a"
+  end
 end

@@ -64,6 +64,7 @@ defmodule OliWeb.Components.Delivery.ExplorationCardTest do
       html = render_component(&ExplorationCard.render/1, assigns)
 
       assert html =~ "/sections/test-section/preview/page/test-exploration"
+      assert html =~ "request_path=%2Fsections%2Ftest-section%2Fpreview%2Fexplorations"
     end
 
     test "generates correct delivery mode URL" do

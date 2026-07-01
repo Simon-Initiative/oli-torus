@@ -5,6 +5,7 @@ import { MenuDropdownCO } from '@pom/home/MenuDropdownCO';
 import { Utils } from '@core/Utils';
 import { setRuntimeConfig } from '@core/runtimeConfig';
 import { TYPE_USER } from '@pom/types/type-user';
+import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import path from 'node:path';
 
 const runId = `-${Date.now()}`;
@@ -74,20 +75,25 @@ test.describe('Instructor Dashboard', () => {
     const dashboard = new InstructorDashboardPO(page);
     const details = new CourseManagePO(page);
     const menu = new MenuDropdownCO(page);
+    const studentCourse = new StudentCoursePO(page);
 
     await homeTask.login('instructor');
 
     await dashboard.expectCourseToBeVisible(cardTitle);
     await dashboard.clickViewCourse(cardTitle);
+    await details.enterManage();
 
     await details.verifyTitle(cardTitle);
     await details.clickOnLink('Invite Students');
-    await details.clickOnButton('Section end');
-    await details.verifyExpirationDate();
-    await details.clickOnButton('Copy');
+    const inviteLink = await details.createInviteLinkExpiringAfter('Section end');
 
     await menu.signOut();
     await new Utils(page).sleep(2);
     await homeTask.login('student');
+    await page.goto(inviteLink);
+
+    await studentCourse.enrollIfPrompted();
+    await studentCourse.goToCourseIfPrompted();
+    await studentCourse.presentAssignmentBlock();
   });
 });

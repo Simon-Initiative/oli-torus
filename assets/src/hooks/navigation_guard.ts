@@ -68,7 +68,10 @@ export const NavigationGuard = {
       e.stopPropagation();
 
       // Push event to LiveView to show the unsaved changes modal
-      this.pushEvent('show_unsaved_changes_modal', { target: href });
+      this.pushEvent('show_unsaved_changes_modal', {
+        target: href,
+        reason: link.dataset.unsavedChangesReason || 'navigation',
+      });
     };
 
     // Capture phase (true) ensures we fire before LiveView's click handler

@@ -26,11 +26,11 @@
     padding-right: 25px;
   }
   .continue-button {
-    background-color: whitesmoke;
-    color: #2c6abf;
+    background-color: #ffffff;
+    color: #222439;
     &:hover {
-      background-color: lightgray;
-      color: #2c6abf;
+      background-color: #f3f5f8;
+      color: #222439;
     }
   }
   .screen-not-selected {
@@ -39,7 +39,27 @@
   }
   hr {
     margin-top: 0.1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+  }
+  .add-screen-modal-footer-note {
+    align-self: flex-start;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 14px;
+    max-width: calc(100% - 140px);
+  }
+  .add-screen-modal-footer-note-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .screen-not-selected {
+    .add-screen-modal-footer-note-icon {
+      color: inherit;
+    }
+  }
+  .add-screen-modal-spinner {
+    margin-right: 0.5rem;
   }
   h2 {
     margin-top: 3rem;

@@ -60,6 +60,7 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     prevProps.toolbarInsertDescs === nextProps.toolbarInsertDescs &&
     prevProps.value === nextProps.value &&
     prevProps.placeholder === nextProps.placeholder &&
+    prevProps.commandContext === nextProps.commandContext &&
     prevProps.children === nextProps.children
   );
 }

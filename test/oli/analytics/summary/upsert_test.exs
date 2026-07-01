@@ -530,6 +530,128 @@ defmodule Oli.Analytics.Summary.UpsertTest do
       assert [{"janus_mcq-1", "1", "Option 1"}] = response_rows
     end
 
+    test "upsert_response_summaries includes manually graded persisted adaptive CAPI parts", %{
+      a1: a1,
+      project: project,
+      section: section,
+      page1: page1,
+      user1: user1
+    } do
+      adaptive_registration = Activities.get_registration_by_slug("oli_adaptive")
+
+      adaptive_content = %{
+        "partsLayout" => [
+          %{
+            "id" => "janus_capi_iframe-1",
+            "type" => "janus-capi-iframe",
+            "custom" => %{"title" => "Simulation"}
+          },
+          %{
+            "id" => "janus_navigation_button-1",
+            "type" => "janus-navigation-button",
+            "custom" => %{"title" => "Continue"}
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "janus_capi_iframe-1",
+              "type" => "janus-capi-iframe",
+              "gradingApproach" => "manual"
+            },
+            %{"id" => "janus_navigation_button-1", "type" => "janus-navigation-button"}
+          ]
+        }
+      }
+
+      adaptive_resource_id = a1.resource.id
+
+      group = %AttemptGroup{
+        context: %Context{
+          user_id: user1.id,
+          host_name: "localhost",
+          section_id: section.id,
+          project_id: project.id,
+          publication_id: -1
+        },
+        part_attempts: [
+          %{
+            part_id: "janus_capi_iframe-1",
+            response: %{
+              "simScore" => %{
+                "path" => "screen|stage.janus_capi_iframe-1.simScore",
+                "value" => 85
+              },
+              "status" => %{
+                "path" => "screen|stage.janus_capi_iframe-1.status",
+                "value" => "reviewed"
+              }
+            },
+            score: 1,
+            lifecycle_state: :evaluated,
+            out_of: 1,
+            activity_revision: %{
+              objectives: %{},
+              content: adaptive_content,
+              resource_id: adaptive_resource_id,
+              activity_type_id: adaptive_registration.id
+            },
+            hints: [],
+            attempt_number: 1,
+            activity_attempt: %{
+              attempt_number: 1,
+              resource_id: adaptive_resource_id,
+              revision_id: 1
+            }
+          },
+          %{
+            part_id: "janus_navigation_button-1",
+            response: %{"input" => %{}},
+            score: nil,
+            lifecycle_state: :evaluated,
+            out_of: nil,
+            activity_revision: %{
+              objectives: %{},
+              content: adaptive_content,
+              resource_id: adaptive_resource_id,
+              activity_type_id: adaptive_registration.id
+            },
+            hints: [],
+            attempt_number: 1,
+            activity_attempt: %{
+              attempt_number: 1,
+              resource_id: adaptive_resource_id,
+              revision_id: 1
+            }
+          }
+        ],
+        activity_attempts: [],
+        resource_attempt: %{resource_id: page1.id}
+      }
+
+      Pipeline.init("adaptive-manual-capi-response-summary")
+      |> Map.put(:data, group)
+      |> Summary.upsert_response_summaries()
+
+      response_rows =
+        from(rpr in ResourcePartResponse,
+          where: rpr.resource_id == ^adaptive_resource_id,
+          select: {rpr.part_id, rpr.response, rpr.label}
+        )
+        |> Repo.all()
+
+      assert [
+               {"janus_capi_iframe-1", "simScore: 85; status: reviewed",
+                "simScore: 85; status: reviewed"}
+             ] = response_rows
+
+      assert %StudentResponse{user_id: user_id, page_id: page_id} =
+               Repo.one(from(sr in StudentResponse, limit: 1))
+
+      assert user_id == user1.id
+      assert page_id == page1.id
+    end
+
     test "upsert_response_summaries safely handles quoted part ids", %{
       a1: a1,
       project: project,

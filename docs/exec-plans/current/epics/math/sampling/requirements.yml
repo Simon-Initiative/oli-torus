@@ -1,0 +1,151 @@
+version: 1
+feature: deterministic_expression_evaluation_and_sampling
+generated_from: prd.md
+work_item: sampling
+requirements:
+- title: Evaluate real-valued math expressions with structured runtime errors
+  status: proposed
+  description: Evaluate normalized or parsed math expressions over finite real Float
+    values, including numeric literals, constants, variables, arithmetic, unary operators,
+    supported functions, absolute value, factorial, and non-finite result rejection.
+  id: FR-001
+- title: Define first-class assignment, domain, and runtime configuration models
+  status: proposed
+  description: Provide Torus-owned Gleam types for variable assignments, variable
+    domains, evaluation configuration, sampling configuration, runtime errors, and
+    diagnostic summaries instead of passing loose unvalidated data through the evaluator
+    and sampler.
+  id: FR-002
+- title: Generate deterministic sample assignments from domains and seeds
+  status: proposed
+  description: Implement a pure Gleam, portable seeded PRNG and assignment sampler
+    that combines filtered special points with pseudo-random values while avoiding
+    correlated multi-variable assignments.
+  id: FR-003
+- title: Execute expression-aware valid sampling with retries and diagnostics
+  status: proposed
+  description: Combine sampling and evaluation so assignments that make the sampled
+    expression undefined are rejected and retried until enough valid samples are found
+    or structured insufficient-sample diagnostics are returned.
+  id: FR-004
+- title: Provide numeric tolerance comparison helpers with details
+  status: proposed
+  description: Compare finite numeric results using no tolerance, absolute tolerance,
+    relative tolerance, and absolute-or-relative tolerance while returning structured
+    comparison details.
+  id: FR-005
+- title: Preserve shared Gleam public API, debug output, and cross-target parity
+  status: proposed
+  description: Keep evaluator, sampler, and comparator behavior in shared Gleam code
+    with a small public API, stable debug formatting, and tests that pass under both
+    Erlang and JavaScript targets.
+  id: FR-006
+- title: Maintain privacy, product boundaries, and non-equivalence scope
+  status: proposed
+  description: Keep this work limited to deterministic primitives for later equivalence,
+    avoid symbolic simplification and broad domain inference, and prevent raw learner
+    expressions or raw sample details from being logged in production telemetry by
+    default.
+  id: FR-007
+- title: Establish representative performance checks
+  status: proposed
+  description: Add representative evaluation and sampling corpora or checks that establish
+    a baseline for author preview and future grading paths without requiring premature
+    optimization.
+  id: FR-008
+acceptance_criteria:
+- requirement_id: FR-001
+  title: Evaluator tests cover integers, decimals, scientific notation, `pi`, `e`,
+    variables from assignments, missing variables, `+`, `-`, `*`, `/`, `^`, unary
+    plus, unary minus, `sin`, `cos`, `tan`, `ln`, `log`, `log10`, `log2`, `sqrt`,
+    `abs`, and `exp`.
+  status: proposed
+  verification_method: automated
+  id: AC-001
+- requirement_id: FR-001
+  title: Runtime error tests prove division by zero, invalid square roots, invalid
+    logarithms, undefined tangent, invalid factorial, factorial overflow or configured
+    maximum, invalid powers including `0^0` and negative non-integer powers, overflow,
+    and non-finite results return structured errors rather than successful values.
+  status: proposed
+  verification_method: automated
+  id: AC-002
+- requirement_id: FR-002
+  title: Assignment and domain tests prove variable lookup is deterministic and domains
+    enforce inclusive bounds, exclusive bounds, exclusions, integer-only sampling,
+    preferred values, default finite ranges, and invalid domain configurations.
+  status: proposed
+  verification_method: automated
+  id: AC-003
+- requirement_id: FR-003
+  title: Given the same variables, domains, sample count, and seed, raw sampling returns
+    identical assignments on repeated runs and on both Erlang and JavaScript targets
+    without using JavaScript, Erlang, or Elixir runtime random sources.
+  status: proposed
+  verification_method: automated
+  id: AC-004
+- requirement_id: FR-003
+  title: Sampler tests prove special points are included or filtered according to
+    the domain and multi-variable assignments are offset or independently drawn so
+    variables are not all assigned the same value by default.
+  status: proposed
+  verification_method: automated
+  id: AC-005
+- requirement_id: FR-004
+  title: Valid-sample executor tests prove expressions such as `1 / x` retry assignments
+    where `x = 0`, accept enough finite valid samples when possible, and track rejected
+    sample reasons.
+  status: proposed
+  verification_method: automated
+  id: AC-006
+- requirement_id: FR-004
+  title: Insufficient-sample tests prove impossible or over-constrained domains return
+    structured diagnostics containing requested count, found count, attempts, and
+    rejection summaries rather than crashing or silently returning invalid samples.
+  status: proposed
+  verification_method: automated
+  id: AC-007
+- requirement_id: FR-005
+  title: Tolerance tests cover exact/no-tolerance comparison, absolute tolerance,
+    relative tolerance with epsilon floor, absolute-or-relative tolerance, near-zero
+    values, failed comparisons, and negative tolerance rejection.
+  status: proposed
+  verification_method: automated
+  id: AC-008
+- requirement_id: FR-005
+  title: Comparison results include pass/fail, expected value, actual value, difference,
+    absolute-pass status, and relative-pass status so author preview and future equivalence
+    layers can inspect why a comparison passed or failed.
+  status: proposed
+  verification_method: automated
+  id: AC-009
+- requirement_id: FR-006
+  title: The public API is exposed through the shared Gleam math boundary, internal
+    modules remain replaceable, exported functions include Gleam comments, and stable
+    debug strings are available for assignments, runtime errors, sample batches, rejection
+    summaries, and comparison results.
+  status: proposed
+  verification_method: automated
+  id: AC-010
+- requirement_id: FR-006
+  title: '`cd gleam && gleam format --check src test`, `cd gleam && gleam test --target
+    erlang`, and `cd gleam && gleam test --target javascript` pass for the evaluator,
+    domain, sampler, tolerance, and cross-target fixture suites.'
+  status: proposed
+  verification_method: automated
+  id: AC-011
+- requirement_id: FR-007
+  title: The implementation exposes deterministic primitives only and includes no
+    final expected-versus-candidate equivalence API, symbolic simplification, unit
+    evaluation, complex-number support, or production telemetry containing raw learner
+    expressions by default.
+  status: proposed
+  verification_method: inspection
+  id: AC-012
+- requirement_id: FR-008
+  title: Representative checks or fixtures cover simple arithmetic, polynomial expressions,
+    supported functions, multiple variables, retry-heavy expressions, and domain-error
+    expressions to establish a baseline before grading integration.
+  status: proposed
+  verification_method: automated
+  id: AC-013

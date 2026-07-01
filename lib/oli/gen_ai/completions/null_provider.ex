@@ -12,7 +12,7 @@ defmodule Oli.GenAI.Completions.NullProvider do
   @behaviour Oli.GenAI.Completions.Provider
 
   @impl true
-  def generate(_messages, _functions, _registered_model) do
+  def generate(_messages, _functions, _registered_model, _opts \\ []) do
     {:ok,
      %{
        "choices" => [

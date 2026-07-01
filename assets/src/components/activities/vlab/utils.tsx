@@ -1,5 +1,6 @@
 import React from 'react';
 import { setDifference, setUnion } from 'components/activities/common/utils';
+import { MultiInput } from 'components/activities/multi_input/schema';
 import {
   Part,
   Transform,
@@ -57,7 +58,7 @@ export const defaultModel = (): VlabSchema => {
   };
 };
 
-export const friendlyType = (type: VlabInputType) => {
+export const friendlyType = (type: VlabInputType | MultiInput['inputType']) => {
   return `${
     type === 'dropdown'
       ? 'Dropdown'
@@ -65,7 +66,7 @@ export const friendlyType = (type: VlabInputType) => {
       ? 'Vlab Value'
       : type === 'numeric'
       ? 'Numeric'
-      : type === 'math'
+      : type === 'math' || type === 'math_expression'
       ? 'Math'
       : 'Text'
   }`;
@@ -233,7 +234,7 @@ function matchInputsToParts(model: VlabSchema) {
   });
 
   unmatchedParts.forEach((part: Part) => {
-    const rule = part.responses[0].rule;
+    const rule = part.responses[0].rule ?? '';
     const type = rule.match(/{\d+}/) ? 'dropdown' : isTextRule(rule) ? 'text' : 'numeric';
     const ref = Model.inputRef();
     // If it's a dropdown, change the part to a text input.

@@ -609,9 +609,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
   end
 
   defp load_service_config(section_id) do
-    {:ok, FeatureConfig.load_for(section_id, @feature)}
-  rescue
-    error in RuntimeError -> {:error, {:missing_feature_config, error.message}}
+    FeatureConfig.load_for(section_id, @feature)
   end
 
   defp active_or_expired_generation(section_id, scope, now) do

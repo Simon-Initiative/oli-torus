@@ -1825,7 +1825,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       parts_layout
       |> Enum.with_index(1)
       |> Enum.filter(fn {part, _index} ->
-        AdaptiveParts.tracked_part?(activity_attempt.revision.content, Map.get(part, "id"))
+        AdaptiveParts.response_summary_part?(
+          activity_attempt.revision.content,
+          Map.get(part, "id")
+        )
       end)
       |> Enum.map(fn {part, index} ->
         part_id = Map.get(part, "id")
@@ -3722,7 +3725,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     part_attempt = Map.put(row.part_attempt, :activity_revision, row.revision)
     part = AdaptiveParts.part_definition(row.revision.content, part_attempt.part_id)
 
-    if is_nil(part) or not AdaptiveParts.tracked_part?(row.revision.content, part_attempt.part_id) do
+    if is_nil(part) or
+         not AdaptiveParts.response_summary_part?(row.revision.content, part_attempt.part_id) do
       acc
     else
       response_label = ResponseLabel.build(part_attempt, "oli_adaptive")

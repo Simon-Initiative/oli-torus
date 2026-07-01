@@ -1,0 +1,129 @@
+- project:
+    name: 'sayg_saved_work_notice_project'
+    title: 'SAYG Saved Work Notice Course ${RUN_ID}'
+    root:
+      children:
+        - container: 'Module 1'
+          children:
+            - page: 'Intro Page'
+            - page: 'San Lorenzo'
+            - page: 'Rosario Central'
+
+- edit_page:
+    project: 'sayg_saved_work_notice_project'
+    page: 'Intro Page'
+    content: |
+      title: "Intro Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Intro content"
+
+- edit_page:
+    project: 'sayg_saved_work_notice_project'
+    page: 'San Lorenzo'
+    content: |
+      title: "San Lorenzo"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "sayg_question"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Question 1"
+            choices:
+              - id: "a"
+                body_md: "Choice A"
+                score: 1
+              - id: "b"
+                body_md: "Choice B"
+                score: 0
+
+- edit_page:
+    project: 'sayg_saved_work_notice_project'
+    page: 'Rosario Central'
+    content: |
+      title: "Rosario Central"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "standard_question"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Question 1"
+            choices:
+              - id: "a"
+                body_md: "Choice A"
+                score: 1
+              - id: "b"
+                body_md: "Choice B"
+                score: 0
+
+- publish:
+    to: 'sayg_saved_work_notice_project'
+    description: 'Initial SAYG saved work notice course'
+
+- section:
+    name: 'sayg_saved_work_notice_section'
+    title: 'SAYG Saved Work Notice Section ${RUN_ID}'
+    from: 'sayg_saved_work_notice_project'
+    type: 'enrollable'
+    registration_open: true
+    start_date: '2026-04-16T00:00:00Z'
+
+- user:
+    name: 'sayg_notice_student'
+    type: 'student'
+    email: 'sayg-notice-student${RUN_ID}@example.com'
+    given_name: 'SAYG'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- user:
+    name: 'sayg_notice_instructor'
+    type: 'instructor'
+    email: 'sayg-notice-instructor${RUN_ID}@example.com'
+    given_name: 'SAYG'
+    family_name: 'Instructor'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'sayg_notice_student'
+    section: 'sayg_saved_work_notice_section'
+    role: 'student'
+
+- enroll:
+    user: 'sayg_notice_instructor'
+    section: 'sayg_saved_work_notice_section'
+    role: 'instructor'
+
+- manipulate:
+    to: 'sayg_saved_work_notice_section'
+    ops:
+      - revise:
+          target: 'Intro Page'
+          set:
+            scheduling_type: '@atom(read_by)'
+            end_date: '2026-05-27T23:59:59Z'
+      - revise:
+          target: 'San Lorenzo'
+          set:
+            batch_scoring: false
+            max_attempts: 0
+            scheduling_type: '@atom(due_by)'
+            end_date: '2026-11-11T23:59:59Z'
+      - revise:
+          target: 'Rosario Central'
+          set:
+            batch_scoring: true
+            max_attempts: 0
+            scheduling_type: '@atom(due_by)'
+            end_date: '2026-06-13T23:59:59Z'
+
+- visit_page:
+    student: 'sayg_notice_student'
+    section: 'sayg_saved_work_notice_section'
+    page: 'San Lorenzo'
+
+- hook:
+    function: 'Oli.Scenarios.Hooks.mark_sections_visited/1'

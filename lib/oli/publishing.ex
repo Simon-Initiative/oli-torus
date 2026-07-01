@@ -1118,9 +1118,20 @@ defmodule Oli.Publishing do
     end
   end
 
-  def push_publication_update_to_sections(project, previous_publication, new_publication) do
+  def push_publication_update_to_sections(
+        project,
+        previous_publication,
+        new_publication,
+        opts \\ []
+      ) do
+    constrain_to_latest = Keyword.get(opts, :constrain_to_latest, true)
+
     with products_and_sections <-
-           fetch_products_and_sections_eligible_for_update(project.id, previous_publication.id) do
+           fetch_products_and_sections_eligible_for_update(
+             project.id,
+             previous_publication.id,
+             constrain_to_latest: constrain_to_latest
+           ) do
       # Diff publications up front as an optimization.
       # This will be used later by each update job to determine which update strategy to use
       DiffAgent.put(
@@ -1140,8 +1151,13 @@ defmodule Oli.Publishing do
     end
   end
 
-  def fetch_products_and_sections_eligible_for_update(project_id, previous_publication_id) do
+  def fetch_products_and_sections_eligible_for_update(
+        project_id,
+        previous_publication_id,
+        opts \\ []
+      ) do
     today = DateTime.utc_now()
+    constrain_to_latest = Keyword.get(opts, :constrain_to_latest, true)
 
     from(
       s in Section,
@@ -1149,13 +1165,18 @@ defmodule Oli.Publishing do
       on: s.id == spp.section_id,
       where:
         s.status == :active and spp.project_id == ^project_id and
-          spp.publication_id == ^previous_publication_id and
           (is_nil(s.end_date) or s.end_date >= ^today),
       order_by: s.id,
       select: %{section: s, current_publication_id: spp.publication_id}
     )
+    |> maybe_constrain_to_latest_publication(constrain_to_latest, previous_publication_id)
     |> Repo.all()
   end
+
+  defp maybe_constrain_to_latest_publication(query, true, previous_publication_id),
+    do: where(query, [_s, spp], spp.publication_id == ^previous_publication_id)
+
+  defp maybe_constrain_to_latest_publication(query, _, _previous_publication_id), do: query
 
   def get_all_mappings_for_resource(resource_id, project_slug) do
     Repo.all(

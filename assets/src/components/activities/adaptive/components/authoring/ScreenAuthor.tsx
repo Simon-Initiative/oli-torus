@@ -3,7 +3,11 @@ import { Col, Container, Row } from 'react-bootstrap';
 import EventEmitter from 'events';
 import { JSONSchema7 } from 'json-schema';
 import { isEqual } from 'lodash';
-import { AnyPartComponent } from 'components/parts/types/parts';
+import {
+  AnyPartComponent,
+  SUPPORTED_BORDER_STYLES,
+  normalizeBorderStyle,
+} from 'components/parts/types/parts';
 import ConfigurationModal from 'apps/authoring/components/EditingCanvas/ConfigurationModal';
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
@@ -62,7 +66,11 @@ const screenSchema: JSONSchema7 = {
         backgroundColor: { type: 'string', title: 'Background Color' },
         borderColor: { type: 'string', title: 'Border Color' },
         borderRadius: { type: 'string', title: 'Border Radius' },
-        borderStyle: { type: 'string', title: 'Border Style' },
+        borderStyle: {
+          type: 'string',
+          title: 'Border Style',
+          enum: [...SUPPORTED_BORDER_STYLES],
+        },
         borderWidth: { type: 'string', title: 'Border Width' },
       },
     },
@@ -177,9 +185,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
 
   const [screenWidth, setScreenWidth] = useState(screen.custom.width);
   const [screenHeight, setScreenHeight] = useState(screen.custom.height);
-  const [screenBackgroundColor, setScreenBackgroundColor] = useState(
-    screen.custom.palette.backgroundColor || 'lightblue',
-  );
+  const [screenPalette, setScreenPalette] = useState(convertPalette(screen.custom.palette));
 
   const [selectedPartId, setSelectedPartId] = useState('');
 
@@ -193,8 +199,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
     setPartsList([...screen.partsLayout]);
     setScreenHeight(screen.custom.height);
     setScreenWidth(screen.custom.width);
-    const palette = convertPalette(screen.custom.palette);
-    setScreenBackgroundColor(palette.backgroundColor);
+    setScreenPalette(convertPalette(screen.custom.palette));
   }, [screen]);
 
   const [currentPropertySchema, setCurrentPropertySchema] = useState<JSONSchema7>(screenSchema);
@@ -254,7 +259,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
           }
 
           if (partInstance.getUiSchema) {
-            const customPartUiSchema = partInstance.getUiSchema();
+            const customPartUiSchema = partInstance.getUiSchema('nested');
             const mergedUiSchema = {
               'ui:title': 'Selected Part',
               ...baseUiSchema,
@@ -314,7 +319,11 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
         newScreenData.custom.mainBtnLabel = properties.ButtonLabels.mainBtnLabel;
         newScreenData.custom.applyBtnLabel = properties.ButtonLabels.applyBtnLabel;
         newScreenData.custom.applyBtnFlag = properties.ButtonLabels.applyBtnFlag;
-        setScreenBackgroundColor(properties.palette.backgroundColor);
+        setScreenPalette({
+          ...screenPalette,
+          ...properties.palette,
+          borderStyle: normalizeBorderStyle(properties.palette.borderStyle),
+        });
       } else {
         // modifying part properties
         const partChanges = transformPartSchemaToModel(properties);
@@ -346,7 +355,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
 
       setCurrentScreenData(newScreenData);
     },
-    [currentScreenData, partsList, selectedPartId],
+    [currentScreenData, partsList, screenPalette, selectedPartId],
   );
 
   // TODO: this is for feedback and popup, configure for other things somewhere
@@ -419,7 +428,11 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
               hostRef={canvasRef.current}
               width={screenWidth}
               height={screenHeight}
-              backgroundColor={screenBackgroundColor}
+              backgroundColor={screenPalette.backgroundColor || '#fff'}
+              borderColor={screenPalette.borderColor}
+              borderStyle={screenPalette.borderStyle}
+              borderWidth={screenPalette.borderWidth}
+              borderRadius={screenPalette.borderRadius}
               parts={partsList}
               selected={selectedPartId}
               onChange={handleEditorChange}

@@ -29,6 +29,10 @@ defmodule OliWeb.StaticPageController do
     render(conn, "not_found.html")
   end
 
+  def math_syntax(conn, _params) do
+    render(conn, "math_syntax.html")
+  end
+
   def timezone(conn, %{"browser_timezone" => browser_timezone}) do
     conn
     |> put_session("browser_timezone", browser_timezone)
@@ -100,6 +104,25 @@ defmodule OliWeb.StaticPageController do
       else
         {:error, _} ->
           put_flash(conn, :error, "There was an error updating the timezone.")
+      end
+
+    redirect(conn, to: redirect_to)
+  end
+
+  def update_user_preference(conn, %{
+        "user_preference" => %{
+          "key" => "show_math_previews?",
+          "value" => value,
+          "redirect_to" => redirect_to
+        }
+      }) do
+    redirect_to = validate_path(conn, redirect_to)
+    value = value == "true"
+
+    conn =
+      case maybe_update_user_preference(conn, :show_math_previews?, value) do
+        {:ok, conn} -> put_flash(conn, :info, "Preference updated successfully.")
+        {:error, _} -> put_flash(conn, :error, "There was an error updating the preference.")
       end
 
     redirect(conn, to: redirect_to)

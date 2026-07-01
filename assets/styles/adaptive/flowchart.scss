@@ -26,6 +26,7 @@ $headerColor: $darkForeground;
 @import 'layout/content-container';
 @import 'layout/check-container';
 @import 'layout/background';
+@import '../common/responsive-layout.scss';
 
 /*-- Activity Types --*/
 @import 'flowchart/text-flow';

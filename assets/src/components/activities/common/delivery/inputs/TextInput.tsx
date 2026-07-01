@@ -7,6 +7,7 @@ interface Props {
   disabled?: boolean;
   placeholder?: string;
   size?: MultiInputSize;
+  className?: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
   onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -17,6 +18,7 @@ export const TextInput: React.FC<Props> = ({
   disabled,
   placeholder,
   size,
+  className,
   onBlur,
   onKeyUp,
 }) => {
@@ -28,6 +30,7 @@ export const TextInput: React.FC<Props> = ({
       className={classNames(
         'border-gray-300 rounded-md disabled:bg-gray-100 disabled:text-gray-600',
         size && `input-size-${size}`,
+        className,
       )}
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}

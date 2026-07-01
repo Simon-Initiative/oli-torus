@@ -44,8 +44,10 @@ Links: `docs/epics/intelligent_dashboard/email_sending/informal.md`, `docs/epics
 - Key Screens/States:
   - Draft Email modal titled `Draft Email` with recipient chips, subject, body, tone controls, `Generate new draft`, and `Send`.
   - Loading state for initial draft generation and regenerate action.
-  - Validation/error states for empty recipients, invalid required fields, generation failure, and send failure.
+  - Validation/error states for empty recipients, invalid required fields, generation failure, send failure, and unresolvable/unsupported placeholder tokens detected at send time.
   - Success banner state: `Email sent` after successful enqueue/dispatch path.
+  - Body input supports vertical scrolling once content exceeds the visible height; the modal does not expand.
+  - Body input supports inserting and editing hyperlinks via the Slate `RichTextEditor`, restricted to inline content + link only (no block elements, no math/embeds/images). Implementation follows existing Slate usage patterns in this codebase. See gap G-D09 + FR-014.
 - Navigation & Entry Points:
   - Supported entry points include Student Support tile, Assessments tile, Student Overview, Content -> Student list, Learning Objectives -> Student list, and other dashboard-supported student-email actions.
   - Opening/closing modal does not navigate away from originating dashboard context.
@@ -109,6 +111,7 @@ Requirements are found in requirements.yml
 - LTI 1.3:
   - Reuses existing instructor authorization context for dashboard routes and actions.
 - GenAI (if applicable):
+  - A dedicated GenAI Feature Config (`Instructor Email`) is provisioned with its own ServiceConfig so prompt/model parameters can be customized independently of other GenAI features.
   - Uses existing synchronous completion generator through a thin instructor-dashboard facade.
   - Prompt assembly includes situation/tone/personalization constraints and deterministic output schema.
   - Fallback behavior returns recoverable error to UI when generation fails.
@@ -149,10 +152,10 @@ No feature flags present in this feature
   - Existing Torus email delivery jobs are production-ready for one-job-per-recipient dispatch at expected instructor dashboard scales.
   - Existing GenAI completion stack can support prompt size and latency needs for this workflow.
   - Supported placeholder token set is finalized to the whitelist listed in this PRD unless expanded in follow-up.
-- Open Questions:
-  - Should manual recipient additions be constrained to enrolled section learners only, or permit arbitrary external email addresses?
-  - What maximum recipient count should be enforced per send action for operational safety?
-  - What exact fallback copy should appear when generation fails before any draft is produced?
+- Open Questions (all resolved — see gaps.md):
+  - ~~Should manual recipient additions be constrained to enrolled section learners only, or permit arbitrary external email addresses?~~ RESOLVED (G-J07): section-enrolled students only.
+  - ~~What maximum recipient count should be enforced per send action for operational safety?~~ RESOLVED (G-J06): **no cap enforced.** A configurable `INSTRUCTOR_EMAIL_MAX_RECIPIENTS` cap was specced then **dropped** (Session 11) — no existing Torus email send caps recipients; follow convention, revisit only if abuse surfaces. (Trade-off: a deliberate select-all on a very large cohort yields a large recipient-chip payload — accepted; chip overflow is handled client-side by `OverflowChipList`.)
+  - ~~What exact fallback copy should appear when generation fails before any draft is produced?~~ RESOLVED (G-J08): "We couldn't generate a draft right now. Try again or write your own."
 
 ## 15. Timeline & Milestones (Draft)
 - Milestone 1: Implement non-UI domain services (context builder, situation contract, prompt composer, generation facade, placeholder realization).

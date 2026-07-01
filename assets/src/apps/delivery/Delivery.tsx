@@ -48,6 +48,7 @@ export interface DeliveryProps {
   blobStorageProvider: 'new' | 'deprecated';
   screenIdleTimeOutInSeconds?: number;
   reviewMode?: boolean;
+  preserveCapiIframeSize?: boolean;
   signoutUrl?: string;
   currentServerTime?: number;
   effectiveEndTime?: number;
@@ -64,23 +65,33 @@ export const shouldHideLessonFinishedCloseButton = (
 
 const adaptiveIframeHeightMessageType = 'oli:adaptive-content-height';
 const adaptiveIframeHeightRequestType = 'oli:request-adaptive-content-height';
-const minimumAdaptiveIframeHeight = 600;
-const adaptiveIframeContentSelectors = [
-  '.stageContainer',
-  '#stage-stage',
-  '.stage-content-wrapper',
-  '.content',
-  'oli-adaptive-delivery',
-  '[data-part-id]',
-].join(',');
+const minimumAdaptiveIframeHeight = 650;
+const adaptiveIframeContentSelectors = ['#stage-stage', '.stage-content-wrapper > .content'].join(
+  ',',
+);
 const adaptiveIframeFallbackContentSelectors = ['[data-adaptive-delivery-root]', '.mainView'].join(
   ',',
 );
+const adaptivePartTagPrefix = 'janus-';
+const capiIframePartTagName = 'janus-capi-iframe';
+const adaptiveRootSelector = '[data-adaptive-delivery-root]';
 
 const isHTMLElement = (element?: Element | null): element is HTMLElement => {
   const elementWindow = element?.ownerDocument.defaultView;
 
   return !!elementWindow && element instanceof elementWindow.HTMLElement;
+};
+
+const finiteNumber = (value: unknown) => {
+  const numberValue = typeof value === 'number' ? value : Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+};
+
+const usesResponsiveAdaptiveLayout = () => {
+  const root = document.querySelector(adaptiveRootSelector);
+
+  return root?.getAttribute('data-adaptive-responsive-layout') === 'true';
 };
 
 const getElementHeight = (element?: Element | null) => {
@@ -96,30 +107,119 @@ const getElementHeight = (element?: Element | null) => {
   );
 };
 
+const getElementLayoutHeight = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  return Math.max(element.offsetHeight || 0, element.getBoundingClientRect().height || 0);
+};
+
+const getElementVisualBottom = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  return element.getBoundingClientRect().bottom + window.scrollY;
+};
+
+const getAuthoredPartVisualBottom = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  const modelAttribute = element.getAttribute('model');
+  const top = element.getBoundingClientRect().top + window.scrollY;
+
+  if (!modelAttribute) {
+    return getElementVisualBottom(element);
+  }
+
+  try {
+    const model = JSON.parse(modelAttribute);
+    const height = finiteNumber(model?.height);
+
+    return height === undefined ? getElementVisualBottom(element) : top + height;
+  } catch (_e) {
+    return getElementVisualBottom(element);
+  }
+};
+
+const getIntrinsicAdaptiveElementHeight = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  const partElements = Array.from(element.querySelectorAll('*')).filter((child) =>
+    child.tagName.toLowerCase().startsWith(adaptivePartTagPrefix),
+  );
+
+  if (partElements.length === 0) {
+    return 0;
+  }
+
+  const partHeight = usesResponsiveAdaptiveLayout()
+    ? getElementVisualBottom
+    : getAuthoredPartVisualBottom;
+  const partContentHeight = Math.max(...partElements.map(partHeight), 0);
+
+  return partContentHeight;
+};
+
 const getMaxElementHeight = (elements: Element[]) =>
   Math.max(...elements.map(getElementHeight), minimumAdaptiveIframeHeight);
+
+const getMaxElementLayoutHeight = (elements: Element[]) =>
+  Math.max(...elements.map(getElementLayoutHeight), minimumAdaptiveIframeHeight);
+
+const getMaxIntrinsicAdaptiveElementHeight = (elements: Element[]) =>
+  Math.max(...elements.map(getIntrinsicAdaptiveElementHeight), minimumAdaptiveIframeHeight);
 
 const getDocumentHeight = () =>
   Math.max(getElementHeight(document.body), getElementHeight(document.documentElement));
 
-const getAdaptiveContentHeight = (contentElement?: HTMLElement | null) => {
+export const getAdaptiveContentHeight = (contentElement?: HTMLElement | null) => {
   const contentElements = Array.from(document.querySelectorAll(adaptiveIframeContentSelectors));
-  const measuredContentHeight =
-    contentElements.length > 0
-      ? getMaxElementHeight(contentElements)
-      : getMaxElementHeight([
-          ...(contentElement ? [contentElement] : []),
-          ...Array.from(document.querySelectorAll(adaptiveIframeFallbackContentSelectors)),
-          document.body,
-          document.documentElement,
-        ]);
-  const measuredDocumentHeight = getDocumentHeight();
 
-  if (measuredDocumentHeight > window.innerHeight + 1) {
-    return Math.max(measuredContentHeight, measuredDocumentHeight, minimumAdaptiveIframeHeight);
+  if (contentElements.length > 0) {
+    const intrinsicHeight = getMaxIntrinsicAdaptiveElementHeight(contentElements);
+
+    if (intrinsicHeight === minimumAdaptiveIframeHeight) {
+      return minimumAdaptiveIframeHeight;
+    }
+
+    const adaptiveContainerHeight = getMaxElementLayoutHeight(contentElements);
+    const hasCapiIframe = contentElements.some((element) =>
+      element.querySelector(capiIframePartTagName),
+    );
+    const adaptiveOverflowHeight = hasCapiIframe
+      ? 0
+      : Math.max(
+          ...contentElements.map(
+            (element) => getElementHeight(element) - getElementLayoutHeight(element),
+          ),
+          0,
+        );
+    const surroundingDocumentHeight = Math.max(
+      getDocumentHeight() - Math.max(adaptiveContainerHeight, intrinsicHeight),
+      0,
+    );
+
+    return intrinsicHeight + Math.max(adaptiveOverflowHeight, surroundingDocumentHeight);
   }
 
-  return measuredContentHeight;
+  const fallbackContentElements = Array.from(
+    document.querySelectorAll(adaptiveIframeFallbackContentSelectors),
+  );
+
+  if (contentElement || fallbackContentElements.length > 0) {
+    return minimumAdaptiveIframeHeight;
+  }
+
+  const measuredContentHeight = getMaxElementHeight([...fallbackContentElements]);
+  const measuredDocumentHeight = getDocumentHeight();
+
+  return Math.max(measuredContentHeight, measuredDocumentHeight, minimumAdaptiveIframeHeight);
 };
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -146,6 +246,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   blobStorageProvider = 'deprecated',
   screenIdleTimeOutInSeconds = 1800,
   reviewMode = false,
+  preserveCapiIframeSize = false,
   currentServerTime = 0,
   effectiveEndTime = 0,
   lateSubmit = 'allow',
@@ -270,6 +371,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         blobStorageProvider,
         screenIdleTimeOutInSeconds,
         reviewMode,
+        preserveCapiIframeSize,
         debuggerURL,
       }),
     );
@@ -356,6 +458,7 @@ const Delivery: React.FC<DeliveryProps> = ({
     <div
       ref={deliveryRootRef}
       data-adaptive-delivery-root
+      data-adaptive-responsive-layout={String(!!content?.custom?.responsiveLayout)}
       className={`${parentDivClasses.join(' ')} ${currentTheme} ${
         reviewMode && isInstructor ? 'instructor-preview' : ''
       }`}

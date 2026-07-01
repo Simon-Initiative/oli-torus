@@ -18,7 +18,9 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
           registration_open: reg_open,
           slug: slug,
           open_and_free: open_and_free,
-          requires_enrollment: requires_enrollment
+          requires_enrollment: requires_enrollment,
+          start_date: start_date,
+          end_date: end_date
         },
         state
       ) do
@@ -34,6 +36,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
             slug,
             open_and_free,
             requires_enrollment,
+            start_date,
+            end_date,
             state
           )
         else
@@ -45,6 +49,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
             slug,
             open_and_free,
             requires_enrollment,
+            start_date,
+            end_date,
             state
           )
         end
@@ -67,6 +73,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
          slug,
          open_and_free,
          requires_enrollment,
+         start_date,
+         end_date,
          state
        ) do
     # First check if it's a product
@@ -86,6 +94,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
               slug,
               open_and_free,
               requires_enrollment,
+              start_date,
+              end_date,
               state
             )
         end
@@ -100,6 +110,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
           slug,
           open_and_free,
           requires_enrollment,
+          start_date,
+          end_date,
           state
         )
     end
@@ -113,6 +125,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
          slug,
          open_and_free,
          requires_enrollment,
+         start_date,
+         end_date,
          state
        ) do
     # Get the latest published publication or create one
@@ -140,6 +154,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         registration_open: reg_open,
         open_and_free: open_and_free,
         requires_enrollment: requires_enrollment,
+        start_date: start_date,
+        end_date: end_date,
         context_id: "context_#{System.unique_integer([:positive])}",
         institution_id: state.current_institution.id,
         base_project_id: built_project.project.id,
@@ -163,6 +179,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
          slug,
          open_and_free,
          requires_enrollment,
+         start_date,
+         end_date,
          state
        ) do
     # Create section from blueprint/product using the proper Delivery function
@@ -172,6 +190,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         registration_open: reg_open,
         open_and_free: open_and_free,
         requires_enrollment: requires_enrollment,
+        start_date: start_date,
+        end_date: end_date,
         context_id: "context_#{System.unique_integer([:positive])}",
         institution_id: state.current_institution.id,
         blueprint_id: product.id,
@@ -191,6 +211,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
          slug,
          open_and_free,
          requires_enrollment,
+         start_date,
+         end_date,
          state
        ) do
     # Create a minimal project first
@@ -216,6 +238,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         registration_open: reg_open,
         open_and_free: open_and_free,
         requires_enrollment: requires_enrollment,
+        start_date: start_date,
+        end_date: end_date,
         context_id: "context_#{System.unique_integer([:positive])}",
         institution_id: state.current_institution.id,
         base_project_id: project.id,

@@ -38,6 +38,24 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
     Transforms.select(editor, ReactEditor.findPath(editor, props.model));
   };
 
+  const inputRefElement = (
+    <span
+      onClick={(e) => action(e)}
+      className={classNames(
+        'input-ref inline-block align-middle select-none rounded p-1 px-2 whitespace-nowrap overflow-hidden border',
+        inputRefContext.selectedInputRef?.id === props.model.id
+          ? 'border-primary bg-blue-100 dark:bg-blue-700 text-primary dark:text-body-color-dark'
+          : inputRefContext.refsTargeted?.includes(props.model.id)
+          ? 'border-primary bg-purple-500/10 text-gray-400 dark:text-gray-600'
+          : 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600',
+        input.size && `input-size-${input.size}`,
+      )}
+    >
+      {friendlyType(input.inputType)}
+      {props.children}
+    </span>
+  );
+
   return (
     <span
       {...props.attributes}
@@ -48,36 +66,28 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
         }
       }}
     >
-      <HoverContainer
-        content={
-          <Toolbar context={props.commandContext}>
-            <Toolbar.Group>
-              {initCommands(input, inputRefContext.setInputType, inputRefContext.isMultiInput).map(
-                (desc, i) => (
+      {inputRefContext.hideInputTypeToolbar ? (
+        inputRefElement
+      ) : (
+        <HoverContainer
+          content={
+            <Toolbar context={props.commandContext}>
+              <Toolbar.Group>
+                {initCommands(
+                  input,
+                  inputRefContext.setInputType,
+                  inputRefContext.isMultiInput,
+                ).map((desc, i) => (
                   <CommandButton description={desc} key={i} />
-                ),
-              )}
-            </Toolbar.Group>
-          </Toolbar>
-        }
-        isOpen={focused && selected}
-      >
-        <span
-          onClick={(e) => action(e)}
-          className={classNames(
-            'input-ref inline-block align-middle select-none rounded p-1 px-2 whitespace-nowrap overflow-hidden border',
-            inputRefContext.selectedInputRef?.id === props.model.id
-              ? 'border-primary bg-blue-100 dark:bg-blue-700 text-primary dark:text-body-color-dark'
-              : inputRefContext.refsTargeted?.includes(props.model.id)
-              ? 'border-primary bg-purple-500/10 text-gray-400 dark:text-gray-600'
-              : 'border-gray-400 dark:border-gray-600 text-gray-400 dark:text-gray-600',
-            input.size && `input-size-${input.size}`,
-          )}
+                ))}
+              </Toolbar.Group>
+            </Toolbar>
+          }
+          isOpen={focused && selected}
         >
-          {friendlyType(input.inputType)}
-          {props.children}
-        </span>
-      </HoverContainer>
+          {inputRefElement}
+        </HoverContainer>
+      )}
     </span>
   );
 };

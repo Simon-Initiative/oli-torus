@@ -140,6 +140,57 @@ defmodule Oli.ActivitiesTest do
     end
   end
 
+  describe "preview activity registration infrastructure" do
+    test "register_activity/2 persists normalized preview metadata" do
+      manifest = %Oli.Activities.Manifest{
+        id: "test_preview_activity",
+        friendlyName: "Test Preview Activity",
+        petiteLabel: "TPA",
+        description: "Test preview activity",
+        icon: "icon",
+        delivery: %Oli.Activities.ModeSpecification{
+          element: "test-preview-delivery",
+          entry: "./delivery-entry.ts"
+        },
+        authoring: %Oli.Activities.ModeSpecification{
+          element: "test-preview-authoring",
+          entry: "./authoring-entry.ts"
+        },
+        preview: %Oli.Activities.ModeSpecification{
+          element: "test-preview-preview",
+          entry: "./preview-entry.ts"
+        },
+        allowClientEvaluation: false,
+        global: false,
+        variables: [],
+        generatesReport: false,
+        activityRegistration: true
+      }
+
+      assert {:ok, registration} = Activities.register_activity(manifest)
+      assert registration.preview_element == "test-preview-preview"
+      assert registration.preview_script == "test_preview_activity_preview.js"
+    end
+
+    test "activities_for_section/0 includes preview metadata" do
+      activity =
+        insert(:activity_registration, %{
+          slug: "preview_section_activity",
+          title: "Preview Section Activity",
+          preview_element: "preview-section-activity-preview",
+          preview_script: "preview_section_activity_preview.js"
+        })
+
+      result = Activities.activities_for_section()
+
+      assert Enum.any?(result, fn entry ->
+               entry.id == activity.id and
+                 entry.preview_element == "preview-section-activity-preview" and
+                 entry.preview_script == "preview_section_activity_preview.js"
+             end)
+    end
+  end
+
   describe "selectable_activities_for_project/2" do
     test "returns all advanced activities for admin users (regardless of visibility)", %{
       project: project

@@ -7,6 +7,9 @@ defmodule OliWeb.Components.Delivery.Students do
   alias Oli.Delivery.Sections.InvitePartitioner
   alias OliWeb.Common.{SearchInput, Params, StripedPagedTable, Utils}
   alias OliWeb.Components.Delivery.CardHighlights
+
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
+
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Content.{PercentageSelector, MultiSelect, SelectDropdown}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
@@ -146,9 +149,12 @@ defmodule OliWeb.Components.Delivery.Students do
        total_count: total_count,
        table_model: table_model,
        params: params,
+       section_id: section.id,
        section_slug: section.slug,
        section_open_and_free: section.open_and_free,
        section_title: section.title,
+       email_scope_label: email_scope_label(active_tab, title),
+       email_content_item: email_content_item(active_tab, title),
        section_certificate_enabled: section.certificate_enabled,
        all_students: all_students,
        dropdown_options: dropdown_options,
@@ -652,15 +658,26 @@ defmodule OliWeb.Components.Delivery.Students do
 
         <.live_component
           :if={@show_email_modal}
-          id="email_modal"
-          module={OliWeb.Components.Delivery.Students.EmailModal}
-          selected_students={@selected_students}
-          students={@all_students}
+          id={"draft_email_modal_#{@id}"}
+          module={DraftEmailModal}
+          modal_dom_id={"draft_email_modal_#{@id}"}
+          students={
+            DraftEmailModal.recipients(
+              @all_students,
+              @selected_students,
+              &Utils.name(&1.name, &1.given_name, &1.family_name)
+            )
+          }
+          section_id={@section_id}
           section_title={@section_title}
+          section_slug={@section_slug}
           instructor_email={issued_by_email(@current_author, @current_user)}
           instructor_name={issued_by_name(@current_author, @current_user)}
-          section_slug={@section_slug}
+          situation_key={:beginning_course}
+          scope_label={@email_scope_label}
+          content_item={@email_content_item}
           show_modal={@show_email_modal}
+          email_handler_id={@id}
         />
       </div>
     </div>
@@ -681,6 +698,20 @@ defmodule OliWeb.Components.Delivery.Students do
     |> Enum.map(& &1.email)
     |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
   end
+
+  # The Students component is mounted for both the Student Overview
+  # (active_tab :students) and the Content -> Student list (active_tab :content).
+  # No actionable signal exists for either, so the situation is :beginning_course
+  # (see gaps.md G-J02); the content scope is carried via scope_label + content_item.
+  defp email_scope_label(:content, container_title) when is_binary(container_title),
+    do: container_title
+
+  defp email_scope_label(_active_tab, _title), do: "All students"
+
+  defp email_content_item(:content, container_title) when is_binary(container_title),
+    do: %{title: container_title}
+
+  defp email_content_item(_active_tab, _title), do: nil
 
   #### Add enrollments modal related stuff ####
   def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do

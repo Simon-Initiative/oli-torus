@@ -46,6 +46,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       refute has_element?(view, "label", "Calculate embeddings on publish")
     end
 
+    test "renders collaborator invite reCAPTCHA with the LiveView hook", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(
+               view,
+               "#recaptcha[phx-hook='Recaptcha'][data-sitekey][phx-update='ignore']"
+             )
+
+      refute has_element?(view, "#recaptcha .g-recaptcha")
+    end
+
     test "project gets deleted correctly", %{conn: conn, author: author} do
       project = create_project_with_author(author)
 

@@ -6,12 +6,17 @@ import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
   customCssClass: string;
+  ariaLabel: string;
   triggerCheck: boolean;
   autoPlay: boolean;
   startTime: number;
   endTime: number;
   enableReplay: boolean;
   subtitles: any;
+  transcript: {
+    transcriptText: string;
+    transcriptFile: string;
+  };
 }
 
 export const schema: JSONSchema7Object = {
@@ -22,6 +27,12 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
+  },
+  ariaLabel: {
+    title: 'Aria Label',
+    type: 'string',
+    description: 'This is used by screen readers to describe the audio before playback.',
+    default: '',
   },
   triggerCheck: {
     title: 'Trigger Check',
@@ -66,12 +77,33 @@ export const schema: JSONSchema7Object = {
       required: ['src', 'language'],
     },
   },
+  transcript: {
+    title: 'Transcript',
+    type: 'object',
+    properties: {
+      transcriptText: {
+        title: 'Transcript Text',
+        type: 'string',
+        description: 'manual transcript text for the audio',
+      },
+      transcriptFile: {
+        title: 'Transcript File',
+        type: 'string',
+      },
+    },
+  },
 };
 
 export const simpleSchema: JSONSchema7Object = {
   src: {
     title: 'Source',
     type: 'string',
+  },
+  ariaLabel: {
+    title: 'Aria Label',
+    type: 'string',
+    description: 'This is used by screen readers to describe the audio before playback.',
+    default: '',
   },
   autoPlay: {
     title: 'Auto Play',
@@ -110,14 +142,37 @@ export const simpleSchema: JSONSchema7Object = {
       required: ['src', 'language'],
     },
   },
+  transcript: {
+    title: 'Transcript',
+    type: 'object',
+    properties: {
+      transcriptText: {
+        title: 'Transcript Text',
+        type: 'string',
+        description: 'manual transcript text for the audio',
+      },
+      transcriptFile: {
+        title: 'Transcript File',
+        type: 'string',
+      },
+    },
+  },
 };
 
 export const uiSchema = {
   src: {
     'ui:widget': 'TorusAudioBrowser',
   },
+  ariaLabel: {
+    classNames: 'col-span-12',
+  },
   subtitles: {
     classNames: 'col-span-12 audio-subtitles',
+  },
+  transcript: {
+    classNames: 'col-span-12 audio-transcript',
+    transcriptText: { 'ui:widget': 'textarea' },
+    transcriptFile: { 'ui:widget': 'TorusTranscriptBrowser' },
   },
 };
 
@@ -128,8 +183,16 @@ export const simpleUISchema = {
   },
   startTime: { classNames: 'col-span-6' },
   endTime: { classNames: 'col-span-6' },
+  ariaLabel: {
+    classNames: 'col-span-12',
+  },
   subtitles: {
     classNames: 'col-span-12 simple-audio-subtitles',
+  },
+  transcript: {
+    classNames: 'col-span-12 audio-transcript',
+    transcriptText: { 'ui:widget': 'textarea' },
+    transcriptFile: { 'ui:widget': 'TorusTranscriptBrowser' },
   },
 };
 
@@ -150,10 +213,15 @@ export const adaptivitySchema = {
 export const createSchema = (): Partial<AudioModel> => ({
   src: '',
   customCssClass: '',
+  ariaLabel: '',
   triggerCheck: false,
   autoPlay: false,
   startTime: 0,
   endTime: 0,
   enableReplay: true,
   subtitles: [],
+  transcript: {
+    transcriptText: '',
+    transcriptFile: '',
+  },
 });

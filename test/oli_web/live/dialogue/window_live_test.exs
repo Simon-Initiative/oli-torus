@@ -278,6 +278,23 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
       refute function_names(standard_view) |> Enum.member?("adaptive_page_context")
     end
 
+    test "renders disabled state when no service_config in session and FeatureConfig load fails",
+         %{conn: conn, user: user, section: section} do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Repo.delete_all(from(fc in Oli.GenAI.FeatureConfig, where: fc.feature == :student_dialogue))
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{"section_slug" => section.slug, "current_user_id" => user.id}
+        )
+
+      refute has_element?(view, "div[id=ai_bot]")
+      refute has_element?(view, "div[id=ai_bot_collapsed]")
+    end
+
     test "assistant disabled keeps the dialogue hidden", %{conn: conn, user: user} do
       section = insert(:section, assistant_enabled: false)
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])

@@ -15,7 +15,6 @@ import {
   IActivityTemplate,
   createActivityTemplate,
 } from '../../../store/activities/templates/activity';
-import { createSimpleText } from '../../../store/activities/templates/simpleText';
 import {
   ActivityRegistration,
   selectActivityTypes,
@@ -30,6 +29,7 @@ import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/de
 import { savePage } from '../../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
+import { applyDefaultLayoutToModel } from '../default-screen-layouts';
 import {
   createAlwaysGoToPath,
   createEndOfActivityPath,
@@ -90,17 +90,16 @@ export const addFlowchartScreen = createAsyncThunk(
         width: currentLesson.custom.defaultScreenWidth,
         height: currentLesson.custom.defaultScreenHeight,
       };
-      activity.model.partsLayout = [await createSimpleText('Hello World')];
-
       activity.model.custom.maxAttempt = 3;
 
       const sourceScreenId = payload.fromScreenId;
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
         screenType,
-        templateApplied: false,
+        templateApplied: true,
       };
       activity.model.authoring.flowchart = flowchartData;
+      applyDefaultLayoutToModel(activity.model, screenType);
 
       if (payload.toScreenId) {
         flowchartData.paths.push(createAlwaysGoToPath(payload.toScreenId));

@@ -31,6 +31,7 @@ export interface PageState {
   screenIdleExpireTime?: number;
   reviewMode?: boolean;
   responsiveLayout?: boolean;
+  preserveCapiIframeSize?: boolean;
   debuggerURL?: string;
 }
 
@@ -61,6 +62,7 @@ const initialState: PageState = {
   screenIdleTimeOutInSeconds: 1800,
   reviewMode: false,
   responsiveLayout: false,
+  preserveCapiIframeSize: false,
   debuggerURL: undefined,
 };
 
@@ -95,6 +97,7 @@ const pageSlice = createSlice({
       state.blobStorageProvider = action.payload.blobStorageProvider || 'deprecated';
       state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
       state.reviewMode = action.payload.reviewMode;
+      state.preserveCapiIframeSize = !!action.payload.preserveCapiIframeSize;
       state.debuggerURL = action.payload.debuggerURL;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
@@ -145,6 +148,11 @@ export const selectEnableHistory = createSelector(selectState, (state) => state.
 export const selectResponsiveLayout = createSelector(
   selectState,
   (state) => state.responsiveLayout,
+);
+
+export const selectPreserveCapiIframeSize = createSelector(
+  selectState,
+  (state) => state.preserveCapiIframeSize,
 );
 
 export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);

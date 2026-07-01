@@ -1,0 +1,88 @@
+version: 1
+feature: native_gleam_math_parser
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Provide a shared pure Gleam parser contract for server and browser runtimes
+  status: verified
+  acceptance_criteria:
+  - id: AC-001
+    title: The same parser source builds and passes the shared parser corpus on both
+      Erlang and JavaScript targets without target-specific parser externals
+    status: verified
+    verification_method: automated
+    proofs:
+    - docs/exec-plans/current/epics/math/parser/execution/phase_7.md
+    - gleam/test/math_lexer_test.gleam
+    - gleam/test/math_parser_test.gleam
+    - gleam/test/math_precedence_test.gleam
+    - gleam/test/math_validate_test.gleam
+    - gleam/test/math_format_test.gleam
+- id: FR-002
+  title: Produce a stable Torus-owned semantic AST for the supported ASCII math subset
+  status: verified
+  acceptance_criteria:
+  - id: AC-002
+    title: Accepted corpus examples produce deterministic AST shapes that represent
+      numeric literals, symbols, grouping, precedence, calls, postfix syntax, and
+      implicit multiplication categories
+    status: verified
+    verification_method: automated
+    proofs:
+    - gleam/test/math_parser_test.gleam
+    - gleam/test/math_precedence_test.gleam
+    - gleam/test/math_format_test.gleam
+- id: FR-003
+  title: Reject unsupported or malformed input with structured parse errors
+  status: verified
+  acceptance_criteria:
+  - id: AC-003
+    title: Rejected corpus examples fail with structured error variants and source
+      spans rather than plain strings or partial parse success
+    status: verified
+    verification_method: automated
+    proofs:
+    - gleam/test/math_lexer_test.gleam
+    - gleam/test/math_parser_test.gleam
+    - gleam/test/math_format_test.gleam
+    - test/oli/math_test.exs
+- id: FR-004
+  title: Preserve source metadata needed by later validation, feedback, rendering,
+    and telemetry layers
+  status: verified
+  acceptance_criteria:
+  - id: AC-004
+    title: Parsed results and tokens retain spans, raw numeric form, notation metadata,
+      whitespace boundary information, and multiplication-style metadata where applicable
+    status: verified
+    verification_method: automated
+    proofs:
+    - gleam/test/math_lexer_test.gleam
+    - gleam/test/math_parser_test.gleam
+    - gleam/test/math_precedence_test.gleam
+- id: FR-005
+  title: Keep syntactic parsing separate from author-configuration validation
+  status: verified
+  acceptance_criteria:
+  - id: AC-005
+    title: Parser output can be passed to a validation layer that accepts or rejects
+      configured symbols without changing syntactic parse behavior
+    status: verified
+    verification_method: automated
+    proofs:
+    - gleam/src/math/validate.gleam
+    - gleam/test/math_validate_test.gleam
+- id: FR-006
+  title: Provide stable developer-facing formatting for demos and golden tests
+  status: verified
+  acceptance_criteria:
+  - id: AC-006
+    title: Debug formatting produces deterministic output suitable for parser demos,
+      snapshot comparison, and cross-target golden tests
+    status: verified
+    verification_method: automated
+    proofs:
+    - gleam/src/math/format.gleam
+    - gleam/test/math_format_test.gleam
+    - lib/oli_web/live/dev/math_prototype_live.ex
+    - assets/src/gleam/torusExpression.ts

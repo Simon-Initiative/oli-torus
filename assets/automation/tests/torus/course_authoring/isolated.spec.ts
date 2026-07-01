@@ -1,5 +1,4 @@
 import { test } from '@fixture/my-fixture';
-import { TYPE_ACTIVITY, TypeActivity } from '@pom/types/type-activity';
 import { setRuntimeConfig } from '@core/runtimeConfig';
 import { TYPE_USER } from '@pom/types/type-user';
 import path from 'node:path';
@@ -9,7 +8,7 @@ const baseUrl = 'http://localhost';
 const defaultPassword = 'changeme123456';
 const adminPassword = 'changeme123456';
 const scenarioPath = path.resolve(__dirname, './playwright_course_authoring.yaml');
-const questionText = 'Question test?';
+const mediaDir = path.resolve(__dirname, '../../resources/media_files');
 
 setRuntimeConfig({
   baseUrl,
@@ -60,22 +59,22 @@ setRuntimeConfig({
 });
 
 test.beforeAll(async ({ seedScenario }) => {
-  await seedScenario(scenarioPath, { RUN_ID: runId });
+  await seedScenario(scenarioPath, {
+    RUN_ID: runId,
+    MEDIA_DIR: mediaDir,
+  });
 });
 
 test.describe('Course authoring', () => {
-  test('Log in as an author and create a new course project with valid details, set the Publishing Visibility as Open', async ({
+  test('Log in as an author and create a new course project with valid details', async ({
     homeTask,
     projectTask,
     curriculumTask,
     utils,
   }) => {
-    const startDate = new Date();
     const endDate = new Date();
     endDate.setFullYear(endDate.getFullYear() + 1);
 
     await homeTask.login('author');
-
   });
-
 });

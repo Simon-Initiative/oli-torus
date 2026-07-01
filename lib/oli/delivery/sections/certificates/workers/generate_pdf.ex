@@ -8,7 +8,6 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdf do
   """
 
   use Oban.Worker, queue: :certificate_pdf, max_attempts: 3
-  use OliWeb, :verified_routes
 
   alias Oli.Delivery.GrantedCertificates
   alias Oli.Repo
@@ -38,16 +37,14 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdf do
             granted_certificate.guid,
             granted_certificate.user.email,
             "student_approval",
-            %{
-              student_name: OliWeb.Common.Utils.name(granted_certificate.user),
-              course_name: section.title,
-              certificate_link:
-                Phoenix.VerifiedRoutes.url(
-                  OliWeb.Endpoint,
-                  ~p"/sections/#{section.slug}/certificate/#{granted_certificate.guid}"
-                ),
-              platform_name: Oli.Branding.brand_name(section)
-            }
+            GrantedCertificates.certificate_email_template_assigns(
+              :earned,
+              granted_certificate,
+              granted_certificate.user,
+              section,
+              granted_certificate.guid,
+              nil
+            )
           )
         end
 

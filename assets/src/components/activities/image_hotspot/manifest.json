@@ -13,6 +13,10 @@
     "element": "oli-image-hotspot-authoring",
     "entry": "./authoring-entry.ts"
   },
+  "preview": {
+    "element": "oli-image-hotspot-preview",
+    "entry": "./preview-entry.ts"
+  },
   "schemaPruning": {
     "type": "keys",
     "keys": ["feedback"]

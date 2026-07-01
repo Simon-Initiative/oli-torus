@@ -77,6 +77,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
   describe "instructor" do
     setup [:instructor_conn, :section_with_assessment]
 
+    setup do
+      on_exit(fn ->
+        Oli.TaskSupervisor
+        |> Task.Supervisor.children()
+        |> Enum.each(fn pid ->
+          ref = Process.monitor(pid)
+          receive do: ({:DOWN, ^ref, :process, ^pid, _} -> :ok)
+        end)
+      end)
+
+      :ok
+    end
+
     test "cannot access page if not enrolled to section", %{conn: conn, section: section} do
       redirect_path = "/unauthorized"
 
@@ -604,7 +617,93 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       )
       |> render_click()
 
-      assert has_element?(view, "#student_support_email_modal_assessments_tile")
+      assert has_element?(view, "#draft_email_modal_assessments_tile_wrapper")
+    end
+
+    test "student support tile opens the draft email modal from the dashboard", %{
+      instructor: instructor,
+      section: section,
+      page_revision: page_revision,
+      page_2_revision: page_2_revision,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      student =
+        insert(:user, %{
+          given_name: "Test",
+          family_name: "Student",
+          email: "test.student@example.edu"
+        })
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+      for page <- [page_revision, page_2_revision] do
+        insert(:resource_access, %{
+          user: student,
+          section: section,
+          resource: page.resource,
+          progress: 0.5,
+          access_count: 1
+        })
+
+        Repo.insert_all("resource_summary", [
+          %{
+            section_id: section.id,
+            project_id: -1,
+            resource_id: page.resource.id,
+            user_id: student.id,
+            resource_type_id: page_type_id,
+            part_id: nil,
+            num_correct: 3,
+            num_attempts: 5,
+            num_hints: 0,
+            num_first_attempts: 5,
+            num_first_attempts_correct: 3
+          }
+        ])
+      end
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      Enum.reduce_while(1..50, nil, fn _, _ ->
+        html = render(view)
+
+        if html =~ "Test Student" do
+          {:halt, :ok}
+        else
+          Process.sleep(100)
+          {:cont, nil}
+        end
+      end)
+
+      assert render(view) =~ "Test Student"
+
+      view
+      |> element(
+        "button[phx-click='student_support_row_toggled'][phx-value-student_id='#{student.id}']"
+      )
+      |> render_click()
+
+      view
+      |> element("#learning-dashboard-student-support-tile button[phx-click='show_email_modal']")
+      |> render_click()
+
+      assert has_element?(view, "#draft_email_modal_student_support_tile_wrapper")
     end
 
     test "student support bucket selection patches the url with namespaced tile params", %{
@@ -1073,32 +1172,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
     end
   end
 
-  defp inject_summary_recommendation(view, recommendation, tile_state \\ nil) do
-    state = :sys.get_state(view.pid)
-
-    summary_tile_state =
-      tile_state ||
-        %{
-          regenerate_in_flight?: false,
-          submitted_sentiment: nil,
-          last_recommendation_id: recommendation.recommendation_id
-        }
-
-    new_state =
-      replace_liveview_sockets(state, fn socket ->
-        dashboard =
-          socket.assigns.dashboard
-          |> put_in([:summary_projection, :recommendation], recommendation)
-          |> Map.put(:summary_projection_status, %{status: :ready})
-
-        socket
-        |> Phoenix.Component.assign(:dashboard, dashboard)
-        |> Phoenix.Component.assign(:summary_tile_state, summary_tile_state)
-      end)
-
-    :sys.replace_state(view.pid, fn _current_state -> new_state end)
-  end
-
   defp clear_instructor_enrollment(view) do
     state = :sys.get_state(view.pid)
 
@@ -1139,16 +1212,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
   defp replace_liveview_sockets(other, _updater), do: other
 
-  defp assert_eventually(fun, attempts \\ 20)
+  describe "task reply handling" do
+    setup [:instructor_conn, :section_with_assessment]
 
-  defp assert_eventually(fun, attempts) when attempts > 0 do
-    if fun.() do
+    setup %{instructor: instructor, section: section} do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       :ok
-    else
-      Process.sleep(20)
-      assert_eventually(fun, attempts - 1)
+    end
+
+    # Draft generation runs under `start_async`/`handle_async` (LiveView-managed lifecycle:
+    # auto-cancelled on navigate-away, crashes delivered as `{:exit, reason}`). The parent
+    # async contract (handle_info → start_async → handle_async → send_update → component UI)
+    # is covered in draft_email_async_test.exs via an isolated component harness.
+    test "unknown task reply is ignored", %{conn: conn, section: section} do
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+        )
+
+      ref = make_ref()
+      send(view.pid, {ref, {:ok, %{}}})
+      html = render(view)
+
+      assert html =~ "Dashboard"
     end
   end
-
-  defp assert_eventually(_fun, 0), do: flunk("condition was not met in time")
 end

@@ -1,0 +1,205 @@
+work_item: units
+requirements:
+- id: FR-001
+  title: Parse quantity answers with unit suffixes
+  status: proposed
+  description: Support answers that parse as either a pure numeric expression or as
+    a quantity made from a value expression plus a whitespace-delimited unit expression
+    suffix.
+- id: FR-002
+  title: Provide a versioned unit atom catalog
+  status: proposed
+  description: Maintain the hardcoded, versioned Gleam catalog in supported-units.md
+    as hard MVP scope, including supported unit atoms, aliases, canonical symbols,
+    dimension vectors, scale factors to canonical base units, and required common
+    compound presets.
+- id: FR-003
+  title: Parse unit expressions from catalog atoms
+  status: proposed
+  description: Parse unit expressions composed from known atoms using multiplication,
+    division, and signed integer powers without hardcoding all supported compound
+    units.
+- id: FR-004
+  title: Normalize units to dimensions and canonical scale
+  status: proposed
+  description: Normalize parsed unit expressions into deterministic dimension powers,
+    scale-to-canonical factors, canonical diagnostics, and original unit expression
+    references.
+- id: FR-005
+  title: Evaluate and compare unit-aware quantities
+  status: proposed
+  description: Convert expected and submitted quantities to canonical numeric values
+    when dimensions are compatible, enforce accepted-unit policy, and compare numeric
+    values with existing tolerance semantics.
+- id: FR-006
+  title: Support MVP author unit policies
+  status: proposed
+  description: Represent ignored-units mode, required-units mode, accepted unit expressions,
+    conversion allowance, and strict final-unit behavior as explicit configuration.
+- id: FR-007
+  title: Return structured unit outcomes and diagnostics
+  status: proposed
+  description: Return structured outcomes for correct answers, missing units, unsupported
+    units, incompatible units, known-but-unaccepted convertible units, numeric mismatch
+    after conversion, unit syntax errors, and invalid configuration.
+- id: FR-008
+  title: Expose shared public unit APIs
+  status: proposed
+  description: Expose unit parsing, normalization, config validation, quantity comparison,
+    and stable diagnostics through the shared `torus_math` boundary for BEAM and JavaScript
+    consumers.
+- id: FR-009
+  title: Preserve existing math behavior and production boundaries
+  status: proposed
+  description: Keep existing parser, normalization, sampling, tolerance, algebraic
+    equivalence, exact-form, activity grading, persistence, and learner UI behavior
+    unchanged unless a later integration work item explicitly scopes changes.
+acceptance_criteria:
+- id: AC-001
+  requirement_id: FR-001
+  title: '`9.8 m/s^2` parses as a quantity with value expression `9.8` and unit expression
+    `m/s^2`.'
+  status: proposed
+  verification_method: automated
+- id: AC-002
+  requirement_id: FR-001
+  title: Pure numeric answers such as `9.8` continue to parse as numeric expressions,
+    not quantities.
+  status: proposed
+  verification_method: automated
+- id: AC-003
+  requirement_id: FR-001
+  title: Inputs without whitespace before the unit suffix, such as `9.8m/s^2` and
+    `10m`, are not accepted as MVP quantities.
+  status: proposed
+  verification_method: automated
+- id: AC-004
+  requirement_id: FR-002
+  title: The initial catalog includes length atoms and aliases for meters, centimeters,
+    kilometers, feet, and miles with correct canonical length scales.
+  status: proposed
+  verification_method: automated
+- id: AC-005
+  requirement_id: FR-002
+  title: The initial catalog includes time atoms and aliases for seconds, minutes,
+    and hours with correct canonical time scales.
+  status: proposed
+  verification_method: automated
+- id: AC-006
+  requirement_id: FR-002
+  title: The initial catalog includes mass atoms and aliases for kilograms and grams
+    plus newtons as a derived force atom with dimensions equivalent to `kg*m/s^2`.
+  status: proposed
+  verification_method: automated
+- id: AC-007
+  requirement_id: FR-003
+  title: Unit expressions such as `m`, `cm`, `s`, `m/s`, `m/s^2`, `cm/s^2`, `kg*m/s^2`,
+    `km/hr`, and `N` parse successfully.
+  status: proposed
+  verification_method: automated
+- id: AC-008
+  requirement_id: FR-003
+  title: Unit expressions with unsupported atoms, malformed operators, malformed powers,
+    or empty unit strings return structured syntax or unsupported-unit errors.
+  status: proposed
+  verification_method: automated
+- id: AC-009
+  requirement_id: FR-004
+  title: '`m/s^2` and `cm/s^2` normalize to the same dimensions with scale factors
+    `1` and `0.01` respectively.'
+  status: proposed
+  verification_method: automated
+- id: AC-010
+  requirement_id: FR-004
+  title: '`N` and `kg*m/s^2` normalize to equivalent force dimensions and compatible
+    canonical scales.'
+  status: proposed
+  verification_method: automated
+- id: AC-011
+  requirement_id: FR-005
+  title: Expected `9.8 m/s^2` and submitted `980 cm/s^2` compare as correct when `cm/s^2`
+    is accepted and conversion is allowed.
+  status: proposed
+  verification_method: automated
+- id: AC-012
+  requirement_id: FR-005
+  title: Expected `10 m/s` and submitted `36 km/hr` compare as correct when `km/hr`
+    is accepted and conversion is allowed.
+  status: proposed
+  verification_method: automated
+- id: AC-013
+  requirement_id: FR-005
+  title: Expected acceleration with submitted speed unit `m/s` returns an incompatible-unit
+    outcome rather than a numeric mismatch.
+  status: proposed
+  verification_method: automated
+- id: AC-014
+  requirement_id: FR-005
+  title: Compatible dimensions with a wrong converted value return numeric mismatch
+    after conversion with tolerance details.
+  status: proposed
+  verification_method: automated
+- id: AC-015
+  requirement_id: FR-006
+  title: Required-units mode returns missing-unit when the submitted answer has no
+    unit suffix.
+  status: proposed
+  verification_method: automated
+- id: AC-016
+  requirement_id: FR-006
+  title: Ignored-units mode can evaluate a numeric answer and a quantity answer against
+    the same numeric expected value according to the configured strictness.
+  status: proposed
+  verification_method: automated
+- id: AC-017
+  requirement_id: FR-006
+  title: Strict final-unit mode rejects `980 cm/s^2` for an expected `9.8 m/s^2` answer
+    when only `m/s^2` is accepted as the required final unit.
+  status: proposed
+  verification_method: automated
+- id: AC-018
+  requirement_id: FR-007
+  title: Unit-aware comparison exposes distinct result categories for correct, missing
+    unit, unsupported unit, incompatible unit, unit not accepted, wrong but convertible
+    unit, numeric mismatch after conversion, unit syntax error, and invalid config.
+  status: proposed
+  verification_method: automated
+- id: AC-019
+  requirement_id: FR-007
+  title: Developer diagnostics can show normalized dimensions and canonical scale
+    without requiring production surfaces to display raw internal debug strings.
+  status: proposed
+  verification_method: automated
+- id: AC-020
+  requirement_id: FR-008
+  title: Public `torus_math` APIs allow callers to parse unit expressions, normalize
+    unit expressions, validate unit config, compare quantities, and format diagnostics
+    without depending on internal modules.
+  status: proposed
+  verification_method: automated
+- id: AC-021
+  requirement_id: FR-008
+  title: Unit behavior and debug fixtures are deterministic and pass on both `gleam
+    test --target erlang` and `gleam test --target javascript`.
+  status: proposed
+  verification_method: automated
+- id: AC-022
+  requirement_id: FR-009
+  title: Existing parser, normalization, sampling, tolerance, algebraic equivalence,
+    and exact-form test suites continue to pass after unit-layer changes.
+  status: proposed
+  verification_method: automated
+- id: AC-023
+  requirement_id: FR-009
+  title: The shared math-layer MVP introduces no database migrations, activity JSON
+    changes, production grading changes, learner UI changes, or production telemetry
+    that logs raw learner unit answers.
+  status: proposed
+  verification_method: inspection
+- id: AC-024
+  requirement_id: FR-002
+  title: Every supported atom, alias, explicit prefixed unit, convenience unit, non-SI
+    educational unit, and common compound preset listed in supported-units.md is
+    implemented or explicitly tested as an MVP catalog requirement.
+  status: proposed
+  verification_method: automated

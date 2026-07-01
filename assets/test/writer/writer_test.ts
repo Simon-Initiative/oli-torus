@@ -5,6 +5,15 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { HtmlParser } from 'data/content/writers/html';
 import { ContentWriter } from 'data/content/writers/writer';
 
+jest.mock('gleam/torusExpression', () => ({
+  validateMathExpressionSyntax: () => ({ status: 'valid', debug: 'valid expression' }),
+  previewMathExpressionSyntax: (expression: string) => ({
+    status: 'valid',
+    debug: 'valid expression',
+    latex: expression,
+  }),
+}));
+
 const exampleUnsupportedContent = require('./example_unsupported_content.json');
 const exampleMalformedContent = require('./example_malformed_content.json');
 const exampleContent = require('./example_content.json');

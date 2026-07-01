@@ -14,12 +14,12 @@ export interface McqItem {
   [key: string]: any;
 }
 export interface McqModel extends JanusAbsolutePositioned, JanusCustomCss {
-  fontSize?: number;
   overrideHeight?: boolean;
   layoutType: 'horizontalLayout' | 'verticalLayout';
   verticalGap: number;
   enabled: boolean;
   showLabel: boolean;
+  label?: string;
   showNumbering: boolean;
   multipleSelection: boolean;
   randomize: boolean;
@@ -37,11 +37,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
   },
   layoutType: {
     title: 'Layout',
@@ -72,6 +67,17 @@ export const schema: JSONSchema7Object = {
     description: 'specifies whether MCQ is enabled',
     default: true,
   },
+  showLabel: {
+    title: 'Show Label',
+    type: 'boolean',
+    description: 'When enabled, shows the label above the choices.',
+    default: false,
+  },
+  label: {
+    title: 'Label',
+    type: 'string',
+    description: 'label above the choices (supports rich text: bold, italic, sub, sup).',
+  },
   ariaLabelledBy: {
     title: 'ARIA Label (for screen readers)',
     type: 'string',
@@ -88,6 +94,17 @@ export const simpleSchema: JSONSchema7Object = {
     description: 'specifies the layout type for options',
     enum: ['horizontalLayout', 'verticalLayout'],
     default: 'verticalLayout',
+  },
+  showLabel: {
+    title: 'Show Label',
+    type: 'boolean',
+    description: 'When enabled, shows the label above the choices.',
+    default: false,
+  },
+  label: {
+    title: 'Label',
+    type: 'string',
+    description: 'label above the choices (supports rich text: bold, italic, sub, sup).',
   },
   multipleSelection: {
     title: 'Multiple Selection',
@@ -167,6 +184,8 @@ export const simpleSchema: JSONSchema7Object = {
 export const simpleUiSchema = {
   'ui:order': [
     'layoutType',
+    'showLabel',
+    'label',
     'mcqItems',
     'multipleSelection',
     'ariaLabelledBy',
@@ -177,6 +196,9 @@ export const simpleUiSchema = {
     'incorrectFeedback',
     'commonErrorFeedback',
   ],
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   correctAnswer: { 'ui:widget': 'MCQCorrectAnswerEditor' },
   mcqItems: { 'ui:widget': 'MCQOptionsEditor' },
   correctFeedback: {
@@ -223,7 +245,11 @@ export const validateUserConfig = (part: any, owner: any): Expression[] => {
   return brokenExpressions;
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+};
 
 export const getCapabilities = () => ({
   configure: true,
@@ -262,6 +288,7 @@ export const createSchema = (): Partial<McqModel> => {
     showOnAnswersReport: false,
     requireManualGrading: false,
     showLabel: true,
+    label: 'Select one',
     multipleSelection: false,
     randomize: false,
     showNumbering: false,

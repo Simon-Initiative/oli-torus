@@ -157,7 +157,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         <div
           class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
           id={"activity_detail_#{@id}"}
-          phx-hook="LoadSurveyScripts"
+          phx-hook="ActivityDetailHooks"
           data-preview-activity-bridge="true"
           data-script-sources={Jason.encode!(@scripts || [])}
         >

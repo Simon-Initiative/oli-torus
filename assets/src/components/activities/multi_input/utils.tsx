@@ -1,11 +1,13 @@
 import React from 'react';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { setDifference, setUnion } from 'components/activities/common/utils';
+import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import {
-  MultiInput,
-  MultiInputSchema,
-  MultiInputType,
-} from 'components/activities/multi_input/schema';
+  ShortAnswerQuestionType,
+  defaultMathExpressionConfig,
+  mathExpressionConfigFromMatchConfig,
+  mathExpressionQuestionTypeFromMatchConfig,
+} from 'components/activities/short_answer/utils';
 import {
   Part,
   Transform,
@@ -14,6 +16,7 @@ import {
   makePart,
   makeTransformation,
 } from 'components/activities/types';
+import { MatchConfig, MathExpressionQuestionConfig } from 'data/activities/model/match';
 import { Responses } from 'data/activities/model/responses';
 import { isTextRule } from 'data/activities/model/rules';
 import { Model } from 'data/content/model/elements/factories';
@@ -27,6 +30,140 @@ export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
   { value: 'numeric', displayValue: 'Number' },
   { value: 'text', displayValue: 'Text' },
 ];
+
+export type MultiInputQuestionType = 'dropdown' | Exclude<ShortAnswerQuestionType, 'textarea'>;
+
+const visibleQuestionType = (
+  type: Exclude<ShortAnswerQuestionType, 'textarea'>,
+): Exclude<ShortAnswerQuestionType, 'textarea'> =>
+  type === 'integer' || type === 'decimal'
+    ? 'numeric'
+    : type === 'simplified_fraction'
+    ? 'fraction'
+    : type;
+
+export type MultiInputQuestionOption = SelectOption<MultiInputQuestionType> & {
+  description: string;
+  example: string;
+};
+
+export type MultiInputQuestionOptionGroup = {
+  label: 'Text' | 'Math/Numeric';
+  options: MultiInputQuestionOption[];
+};
+
+export const multiInputQuestionOptionGroups: MultiInputQuestionOptionGroup[] = [
+  {
+    label: 'Text',
+    options: [
+      {
+        value: 'dropdown',
+        displayValue: 'Dropdown',
+        description: 'A selectable list of authored choices.',
+        example: 'Choice A',
+      },
+      {
+        value: 'text',
+        displayValue: 'Text',
+        description: 'Brief text response matched against authored text rules.',
+        example: 'photosynthesis',
+      },
+    ],
+  },
+  {
+    label: 'Math/Numeric',
+    options: [
+      {
+        value: 'algebraic',
+        displayValue: 'Algebraic expression',
+        description: 'Equivalent algebraic forms are accepted.',
+        example: '2(x + 3)',
+      },
+      {
+        value: 'expression_with_units',
+        displayValue: 'Algebraic expression with units',
+        description: 'A variable expression with required or convertible units.',
+        example: 'm*a N',
+      },
+      {
+        value: 'fraction',
+        displayValue: 'Fraction',
+        description: 'A fraction answer with configurable exact or equivalent matching.',
+        example: '1/2',
+      },
+      {
+        value: 'latex_direct',
+        displayValue: 'LaTeX Math expression',
+        description: 'A LaTeX-style math answer matched directly.',
+        example: '\\frac{1}{2}',
+      },
+      {
+        value: 'numeric',
+        displayValue: 'Number',
+        description: 'A numeric answer compared by value, optionally integer-only.',
+        example: '3.14',
+      },
+      {
+        value: 'number_with_units',
+        displayValue: 'Number with units',
+        description: 'A numeric answer with required or convertible units.',
+        example: '10 m/s',
+      },
+    ],
+  },
+];
+
+export const multiInputQuestionOptions: SelectOption<MultiInputQuestionType>[] =
+  multiInputQuestionOptionGroups.flatMap(({ options }) =>
+    options.map(({ value, displayValue }) => ({ value, displayValue })),
+  );
+
+export const isMultiInputMathExpressionQuestionType = (
+  value: MultiInputQuestionType,
+): value is Exclude<MultiInputQuestionType, 'dropdown' | 'text'> =>
+  value !== 'dropdown' && value !== 'text';
+
+export const multiInputQuestionType = (
+  input: MultiInput,
+  matchConfig?: MatchConfig,
+): MultiInputQuestionType => {
+  if (input.inputType === 'dropdown' || input.inputType === 'text') return input.inputType;
+  if (input.inputType === 'numeric') return 'numeric';
+  if (input.inputType === 'math') return 'latex_direct';
+
+  return visibleQuestionType(
+    input.itemConfig?.subtype ?? mathExpressionQuestionTypeFromMatchConfig(matchConfig),
+  );
+};
+
+export const multiInputMathExpressionConfig = (
+  input: MultiInput,
+  matchConfig?: MatchConfig,
+): MathExpressionQuestionConfig | undefined => {
+  if (input.inputType !== 'math_expression') return undefined;
+
+  if (
+    input.itemConfig?.config &&
+    (input.itemConfig.subtype === 'integer' || input.itemConfig.subtype === 'decimal')
+  ) {
+    return {
+      ...input.itemConfig.config,
+      numeric: {
+        ...(input.itemConfig.config.numeric ?? {}),
+        integerOnly: input.itemConfig.subtype === 'integer',
+      },
+    };
+  }
+
+  return input.itemConfig?.config ?? mathExpressionConfigFromMatchConfig(matchConfig);
+};
+
+export const defaultMultiInputMathExpressionConfig = (
+  questionType: MultiInputQuestionType,
+): MathExpressionQuestionConfig | undefined =>
+  isMultiInputMathExpressionQuestionType(questionType)
+    ? defaultMathExpressionConfig(questionType)
+    : undefined;
 
 export const multiInputStem = (input: InputRef) => ({
   id: guid(),
@@ -56,7 +193,7 @@ export const defaultModel = (): MultiInputSchema => {
   };
 };
 
-export const friendlyType = (type: MultiInputType) => {
+export const friendlyType = (type: MultiInput['inputType']) => {
   if (type === 'dropdown') {
     return 'Dropdown';
   }
@@ -66,6 +203,7 @@ export const friendlyType = (type: MultiInputType) => {
       return 'Number';
 
     case 'math':
+    case 'math_expression':
       return 'Math';
 
     case 'text':
@@ -217,19 +355,23 @@ function matchInputsToParts(model: MultiInputSchema) {
         ? Responses.forMultipleChoice(choices[0].id)
         : input.inputType === 'numeric'
         ? Responses.forNumericInput()
+        : input.inputType === 'math_expression'
+        ? Responses.forMathExpression()
         : Responses.forTextInput(),
     );
     model.authoring.parts.push(part);
   });
 
   unmatchedParts.forEach((part: Part) => {
-    const rule = part.responses[0].rule;
+    const response = part.responses[0];
+    const rule = response.rule ?? '';
+    const isMathExpression = response.matchConfig?.type === 'math_expression';
     const type = rule.match(/{\d+}/) ? 'dropdown' : isTextRule(rule) ? 'text' : 'numeric';
     const ref = Model.inputRef();
     // If it's a dropdown, change the part to a text input.
     model.inputs.push({
       id: ref.id,
-      inputType: type === 'dropdown' ? 'text' : type,
+      inputType: isMathExpression ? 'math_expression' : type === 'dropdown' ? 'text' : type,
       partId: part.id,
     });
     part.responses = type === 'dropdown' ? Responses.forTextInput() : part.responses;

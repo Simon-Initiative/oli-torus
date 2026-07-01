@@ -99,9 +99,19 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, imageSrc, defaultSrc, alt, lockAspectRatio, scaleContent } = model;
+  const {
+    width,
+    height,
+    src,
+    imageSrc,
+    defaultSrc,
+    alt,
+    lockAspectRatio,
+    scaleContent,
+    decorative,
+  } = model;
   const aiTriggerAvailable =
-    model.enableAiTrigger === true && hasAiTriggerPrompt(model.aiTriggerPrompt);
+    !decorative && model.enableAiTrigger === true && hasAiTriggerPrompt(model.aiTriggerPrompt);
 
   // Detect responsive layout mode (when width is '100%')
   const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
@@ -175,8 +185,11 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   return ready ? (
     <img
       data-janus-type={tagName}
+      data-testid="janus-image"
       draggable="false"
-      alt={alt}
+      alt={decorative ? '' : alt}
+      aria-hidden={decorative ? true : undefined}
+      role={decorative ? 'presentation' : aiTriggerAvailable ? 'button' : undefined}
       src={imgSrc}
       className={imageClasses || undefined}
       onClick={aiTriggerAvailable ? () => void fireAiTrigger() : undefined}
@@ -190,7 +203,6 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
             }
           : undefined
       }
-      role={aiTriggerAvailable ? 'button' : undefined}
       tabIndex={aiTriggerAvailable ? 0 : undefined}
       style={{
         ...imageStyles,

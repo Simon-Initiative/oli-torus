@@ -1,0 +1,241 @@
+name: Build and Deploy Preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to build for preview
+        required: true
+        type: number
+      expected_head_sha:
+        description: Reviewed PR head SHA, 7 to 40 hex characters
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  deployments: write
+  packages: write
+
+jobs:
+  build-preview-image:
+    runs-on: ubuntu-latest
+
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+
+    outputs:
+      app_version: ${{ steps.info.outputs.app_version }}
+      preview_url: ${{ steps.info.outputs.preview_url }}
+      sha_short: ${{ steps.info.outputs.sha_short }}
+      preview_tag: ${{ steps.info.outputs.preview_tag }}
+
+    steps:
+      - name: Resolve preview target
+        id: target
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            core.setOutput('pr_number', pr.number);
+            core.setOutput('head_repo', pr.head.repo.full_name);
+            core.setOutput('head_sha', pr.head.sha);
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ steps.target.outputs.head_repo }}
+          ref: ${{ steps.target.outputs.head_sha }}
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+          echo "preview_tag=preview-${{ steps.target.outputs.pr_number }}-$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          echo "preview_url=https://preview-${{ steps.target.outputs.pr_number }}.plasma.oli.cmu.edu/" >> $GITHUB_OUTPUT
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/simon-initiative/oli-torus
+          tags: |
+            type=raw,value=${{ steps.info.outputs.preview_tag }}
+            type=raw,value=sha-${{ steps.info.outputs.sha_short }}
+
+      - name: Log in to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          build-args: |
+            APP_VERSION=${{ steps.info.outputs.app_version }}
+            SHA=${{ steps.info.outputs.sha_short }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Record GitHub deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const environment = `preview-${{ steps.target.outputs.pr_number }}`;
+            const environmentUrl = `${{ steps.info.outputs.preview_url }}`;
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: '${{ steps.target.outputs.head_sha }}',
+              auto_merge: false,
+              required_contexts: [],
+              environment,
+              transient_environment: true,
+              production_environment: false,
+              description: `Preview image ${{ steps.info.outputs.preview_tag }} published`,
+            });
+
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'success',
+              environment,
+              environment_url: environmentUrl,
+              log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: 'Preview image published; Argo CD will reconcile the deployment.',
+            });
+
+  build-preview-image-manual:
+    runs-on: ubuntu-latest
+    environment: plasma.oli.cmu.edu
+
+    if: github.event_name == 'workflow_dispatch'
+
+    outputs:
+      app_version: ${{ steps.info.outputs.app_version }}
+      preview_url: ${{ steps.info.outputs.preview_url }}
+      sha_short: ${{ steps.info.outputs.sha_short }}
+      preview_tag: ${{ steps.info.outputs.preview_tag }}
+
+    steps:
+      - name: Resolve preview target
+        id: target
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = Number(core.getInput('pr_number'));
+            const response = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            const pr = response.data;
+
+            if (pr.state !== 'open') {
+              core.setFailed(`Pull request ${prNumber} is ${pr.state}; only open PRs can be previewed.`);
+              return;
+            }
+
+            const expectedHeadSha = core.getInput('expected_head_sha', { required: true }).trim().toLowerCase();
+            const currentHeadSha = pr.head.sha.toLowerCase();
+            if (!/^[0-9a-f]{7,40}$/.test(expectedHeadSha)) {
+              core.setFailed('expected_head_sha must be at least 7 and up to 40 hexadecimal characters.');
+              return;
+            }
+            if (!currentHeadSha.startsWith(expectedHeadSha)) {
+              core.setFailed(`Expected ${expectedHeadSha}, but PR ${prNumber} is currently at ${pr.head.sha}.`);
+              return;
+            }
+
+            core.setOutput('pr_number', pr.number);
+            core.setOutput('head_repo', pr.head.repo.full_name);
+            core.setOutput('head_sha', pr.head.sha);
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ steps.target.outputs.head_repo }}
+          ref: ${{ steps.target.outputs.head_sha }}
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+          echo "preview_tag=preview-${{ steps.target.outputs.pr_number }}-$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          echo "preview_url=https://preview-${{ steps.target.outputs.pr_number }}.plasma.oli.cmu.edu/" >> $GITHUB_OUTPUT
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/simon-initiative/oli-torus
+          tags: |
+            type=raw,value=${{ steps.info.outputs.preview_tag }}
+            type=raw,value=sha-${{ steps.info.outputs.sha_short }}
+
+      - name: Log in to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          build-args: |
+            APP_VERSION=${{ steps.info.outputs.app_version }}
+            SHA=${{ steps.info.outputs.sha_short }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Record GitHub deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const environment = `preview-${{ steps.target.outputs.pr_number }}`;
+            const environmentUrl = `${{ steps.info.outputs.preview_url }}`;
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: '${{ steps.target.outputs.head_sha }}',
+              auto_merge: false,
+              required_contexts: [],
+              environment,
+              transient_environment: true,
+              production_environment: false,
+              description: `Preview image ${{ steps.info.outputs.preview_tag }} published`,
+            });
+
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'success',
+              environment,
+              environment_url: environmentUrl,
+              log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: 'Preview image published; Argo CD will reconcile the deployment.',
+            });

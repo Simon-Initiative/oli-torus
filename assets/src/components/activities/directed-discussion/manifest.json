@@ -12,6 +12,10 @@
     "element": "oli-directed-discussion-authoring",
     "entry": "./authoring-entry.ts"
   },
+  "preview": {
+    "element": "oli-directed-discussion-preview",
+    "entry": "./preview-entry.ts"
+  },
   "schemaPruning": {
     "type": "keys",
     "keys": ["feedback"]

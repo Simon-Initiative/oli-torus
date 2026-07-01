@@ -12,6 +12,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.Utils
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   defp set_student_exception(section, resource, student, params \\ %{}) do
     insert(
@@ -629,10 +630,42 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
-        |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
+        |> Enum.map(fn row -> Floki.text(row) |> String.trim() end)
 
       assert view
              |> has_element?("p", "These are your current assessment settings.")
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+
+      assert has_element?(
+               view,
+               ~s{#assessment-settings-scoring-mode-warning[aria-labelledby="assessment-settings-scoring-mode-warning-region-label"] #assessment-settings-scoring-mode-warning-region-label.sr-only},
+               "Scoring mode warning"
+             )
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning.bg-Fill-Accent-fill-accent-orange.rounded-lg.px-5.py-4"
+             )
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning .stroke-Icon-icon-accent-orange.h-4.w-4"
+             )
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning p.text-base.font-semibold.leading-6.text-Text-text-high"
+             )
+
+      assert has_element?(
+               view,
+               ~s{button#assessment-settings-batch-scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"][data-tooltip-stop-propagation="true"].text-Icon-icon-accent-orange .h-5.w-5}
+             )
 
       assert assessment_1 == page_1.title
       assert assessment_2 == page_2.title
@@ -662,7 +695,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
-        |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
+        |> Enum.map(fn row -> Floki.text(row) |> String.trim() end)
 
       assert view
              |> has_element?("p", "These are your current assessment settings.")
@@ -674,6 +707,87 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert html =~
                ~s(<a href="/sections/#{section.slug}/manage">Manage</a>)
+    end
+
+    test "assessment titles link to instructor view", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      href =
+        PreviewRoutes.lesson_path(section.slug, page_1.slug,
+          return_to: "/sections/#{section.slug}/assessment_settings/settings/all"
+        )
+
+      assert has_element?(
+               view,
+               ~s{.instructor_dashboard_table tbody tr td:nth-of-type(2) a[href="#{href}"][aria-label="Open #{page_1.title} in Instructor View"]},
+               page_1.title
+             )
+    end
+
+    test "scoring mode warning close only dismisses for the current session", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+
+      assert has_element?(
+               view,
+               ~s{#assessment-settings-scoring-mode-warning button[aria-label="Dismiss scoring mode warning"].h-10.w-10}
+             )
+
+      view
+      |> element(
+        ~s{#assessment-settings-scoring-mode-warning button[aria-label="Dismiss scoring mode warning"]}
+      )
+      |> render_click()
+
+      refute has_element?(view, "#assessment-settings-scoring-mode-warning")
+
+      {:ok, reloaded_view, _html} =
+        live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               reloaded_view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+    end
+
+    test "scoring mode warning permanent dismissal persists for the instructor", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Don't show me this again"
+             )
+
+      view
+      |> element(
+        ~s{#assessment-settings-scoring-mode-warning button},
+        "Don't show me this again"
+      )
+      |> render_click()
+
+      refute has_element?(view, "#assessment-settings-scoring-mode-warning")
+
+      {:ok, reloaded_view, _html} =
+        live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      refute has_element?(reloaded_view, "#assessment-settings-scoring-mode-warning")
     end
 
     test "student_exceptions view loads correctly", %{
@@ -795,7 +909,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     test "adaptive page basic-page-only settings are disabled with explanatory tooltip", %{
       conn: conn,
       section: section,
-      page_1: page_1
+      page_1: page_1,
+      student_1: student_1
     } do
       page_1
       |> Ecto.Changeset.change(%{
@@ -814,13 +929,41 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         review_submission: :disallow
       })
 
+      learner_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: learner_resource_access,
+        revision: page_1
+      )
+
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+      html = render(view)
 
       tooltip = "This setting does not apply to adaptive pages"
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][data-tooltip-style="body"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Disabled setting: Score at the end. #{tooltip}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][title]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"]}
              )
 
       assert has_element?(
@@ -831,28 +974,163 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#replacement_strategy-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="replacement_strategy-wrapper-#{page_1.resource_id}-description"] select[name="replacement_strategy-#{page_1.resource_id}"][disabled]}
+               ~s{#replacement_strategy-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="replacement_strategy-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#retake_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="retake_mode-wrapper-#{page_1.resource_id}-description"] select[name="retake_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#retake_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="retake_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#assessment_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="assessment_mode-wrapper-#{page_1.resource_id}-description"] select[name="assessment_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#assessment_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="assessment_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#feedback_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="feedback_mode-wrapper-#{page_1.resource_id}-description"] select[name="feedback_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#feedback_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="feedback_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#review_submission-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="review_submission-wrapper-#{page_1.resource_id}-description"] select[name="review_submission-#{page_1.resource_id}"][disabled]}
+               ~s{#review_submission-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="review_submission-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
+
+      assert html =~ "border-Text-text-low-alpha text-Text-text-low-alpha"
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} select[name="batch_scoring-#{page_1.resource_id}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#replacement_strategy-wrapper-#{page_1.resource_id} select[name="replacement_strategy-#{page_1.resource_id}"]}
+             )
+    end
+
+    test "scoring mode is locked after learner attempts but not instructor-only attempts", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      student_1: student_1,
+      instructor: instructor
+    } do
+      learner_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: learner_resource_access,
+        revision: page_1
+      )
+
+      instructor_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_2.resource,
+          user: instructor
+        )
+
+      insert(:resource_attempt,
+        resource_access: instructor_resource_access,
+        revision: page_2
+      )
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      tooltip =
+        "Students have already started this assignment. Scoring mode can no longer be changed."
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][data-tooltip-style="body"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"].text-Text-text-low-alpha}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Locked setting: Score at the end. Locked because students have started this assignment."][role="group"].text-Text-text-low-alpha.border-Text-text-low-alpha},
+               "Score at the end"
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][title]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"].bg-Surface-surface-primary}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_2.resource_id} select[name="batch_scoring-#{page_2.resource_id}"][disabled]}
+             )
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_1.resource.id}"],
+        "batch_scoring-#{page_1.resource.id}" => "false"
+      })
+
+      assert render(view) =~
+               "Scoring mode cannot be changed because students have already started this assessment."
+
+      assert Sections.get_section_resource(section.id, page_1.resource.id).batch_scoring == true
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_2.resource.id}"],
+        "batch_scoring-#{page_2.resource.id}" => "false"
+      })
+
+      assert Sections.get_section_resource(section.id, page_2.resource.id).batch_scoring == false
+    end
+
+    test "scoring mode update rechecks learner attempts after table render", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      student_1: student_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: resource_access,
+        revision: page_1
+      )
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_1.resource.id}"],
+        "batch_scoring-#{page_1.resource.id}" => "false"
+      })
+
+      assert render(view) =~
+               "Scoring mode cannot be changed because students have already started this assessment."
+
+      assert Sections.get_section_resource(section.id, page_1.resource.id).batch_scoring == true
     end
 
     test "exception count links to corresponding student exceptions for that assessment",
@@ -1007,6 +1285,259 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                Map.drop(assessment_4, [:name, :index])
              ])
              |> length() == 1
+    end
+
+    test "confirming the bulk apply modal applies scoring mode replacement and allow hints",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           page_2: page_2,
+           page_3: page_3,
+           page_4: page_4
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_3.resource.id}"],
+        "batch_scoring-#{page_3.resource.id}" => "false"
+      })
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["replacement_strategy-#{page_3.resource.id}"],
+        "replacement_strategy-#{page_3.resource.id}" => "dynamic"
+      })
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["allow_hints-#{page_3.resource.id}"],
+        "allow_hints-#{page_3.resource.id}" => "true"
+      })
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      assessments_by_resource_id =
+        section.slug
+        |> get_assessments([])
+        |> Map.new(&{&1.resource_id, &1})
+
+      for page <- [page_1, page_2, page_3, page_4] do
+        assessment = assessments_by_resource_id[page.resource.id]
+
+        assert assessment.batch_scoring == false
+        assert assessment.replacement_strategy == :dynamic
+        assert assessment.allow_hints == true
+      end
+    end
+
+    test "bulk apply scoring mode skips learner-started assessments but not instructor-started assessments",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           page_2: page_2,
+           page_3: page_3,
+           page_4: page_4,
+           student_1: student_1,
+           student_2: student_2,
+           instructor: instructor
+         } do
+      for page <- [page_1, page_2, page_4] do
+        section.id
+        |> Sections.get_section_resource(page.resource.id)
+        |> Sections.update_section_resource(%{
+          batch_scoring: false,
+          replacement_strategy: :none,
+          allow_hints: false
+        })
+      end
+
+      section.id
+      |> Sections.get_section_resource(page_3.resource.id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: true,
+        replacement_strategy: :dynamic,
+        allow_hints: true
+      })
+
+      for {page, student} <- [{page_1, student_1}, {page_2, student_2}] do
+        resource_access =
+          insert(:resource_access,
+            section: section,
+            resource: page.resource,
+            user: student
+          )
+
+        insert(:resource_attempt,
+          resource_access: resource_access,
+          revision: page
+        )
+      end
+
+      instructor_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_4.resource,
+          user: instructor
+        )
+
+      insert(:resource_attempt,
+        resource_access: instructor_resource_access,
+        revision: page_4
+      )
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      modal = render(element(view, "#confirm_bulk_apply_modal"))
+
+      assert modal =~
+               "Scoring mode will not be applied to assignments where students have already started work. Those assignments will keep their current scoring mode. All other selected settings will be applied."
+
+      refute modal =~ "Started student attempts keep their current scoring mode."
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      assessments_by_resource_id =
+        section.slug
+        |> get_assessments([])
+        |> Map.new(&{&1.resource_id, &1})
+
+      assert assessments_by_resource_id[page_1.resource.id].batch_scoring == false
+      assert assessments_by_resource_id[page_2.resource.id].batch_scoring == false
+      assert assessments_by_resource_id[page_4.resource.id].batch_scoring == true
+
+      for page <- [page_1, page_2, page_4] do
+        assessment = assessments_by_resource_id[page.resource.id]
+
+        assert assessment.replacement_strategy == :dynamic
+        assert assessment.allow_hints == true
+      end
+    end
+
+    test "bulk apply rechecks learner attempts before changing scoring mode", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_3: page_3,
+      student_1: student_1
+    } do
+      section.id
+      |> Sections.get_section_resource(page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        replacement_strategy: :none,
+        allow_hints: false
+      })
+
+      section.id
+      |> Sections.get_section_resource(page_3.resource.id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: true,
+        replacement_strategy: :dynamic,
+        allow_hints: true
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: resource_access,
+        revision: page_1
+      )
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      assessment =
+        section.slug
+        |> get_assessments([])
+        |> Enum.find(&(&1.resource_id == page_1.resource.id))
+
+      assert assessment.batch_scoring == false
+      assert assessment.replacement_strategy == :dynamic
+      assert assessment.allow_hints == true
+    end
+
+    test "bulk apply does not apply basic-page-only scoring settings to adaptive assessments",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           page_3: page_3
+         } do
+      page_1
+      |> Ecto.Changeset.change(%{
+        content: Map.put(page_1.content || %{}, "advancedDelivery", true)
+      })
+      |> Repo.update!()
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_3.resource.id}"],
+        "batch_scoring-#{page_3.resource.id}" => "false"
+      })
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["replacement_strategy-#{page_3.resource.id}"],
+        "replacement_strategy-#{page_3.resource.id}" => "dynamic"
+      })
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["allow_hints-#{page_3.resource.id}"],
+        "allow_hints-#{page_3.resource.id}" => "true"
+      })
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      adaptive_assessment =
+        section.slug
+        |> get_assessments([])
+        |> Enum.find(&(&1.resource_id == page_1.resource.id))
+
+      assert adaptive_assessment.batch_scoring == true
+      assert adaptive_assessment.replacement_strategy == :none
+      assert adaptive_assessment.allow_hints == true
     end
 
     test "cancelling the bulk apply modal hides the modal without changing any setting",
@@ -1949,9 +2480,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       changes = Settings.fetch_all_settings_changes()
 
-      ## Since we did a bulk apply and previously changed a setting for page 3, we should have 34 changes in our settings changes table.
-      ## That is, 11 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
-      assert length(changes) == 34
+      ## Since we did a bulk apply and previously changed a setting for page 3, we should have 43 changes in our settings changes table.
+      ## That is, 14 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
+      assert length(changes) == 43
     end
 
     test "bulk apply dropdown displays assessments sorted by numbering_index", %{

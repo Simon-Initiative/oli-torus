@@ -1,0 +1,83 @@
+version: 1
+feature: math_ast_normalization
+generated_from: prd.md
+work_item: normalization
+requirements:
+- title: Provide Level 1 structural normalization for parsed math ASTs
+  status: proposed
+  description: Normalize parsed expressions into a stable structural shape without
+    performing algebraic simplification.
+  id: FR-001
+- title: Preserve original parsed AST and source metadata
+  status: proposed
+  description: Keep raw/source details available for exact-form checks, diagnostics,
+    and future validation layers.
+  id: FR-002
+- title: Produce deterministic normalized debug strings and hashes
+  status: proposed
+  description: Generate target-stable representations suitable for golden tests, comparison,
+    and diagnostics.
+  id: FR-003
+- title: Keep normalization domain-preserving and non-simplifying
+  status: proposed
+  description: Avoid rewrites that can change expression domains, require assumptions,
+    or erase undefined subexpressions.
+  id: FR-004
+- title: Support shared Erlang and JavaScript target behavior
+  status: proposed
+  description: Implement normalization in shared Gleam code and keep wrappers thin
+    so BEAM and browser behavior cannot drift.
+  id: FR-005
+- title: Provide focused normalization test coverage
+  status: proposed
+  description: Cover structural equivalence, non-equivalence, metadata preservation,
+    numeric folding limits, deterministic strings, and deterministic hashes.
+  id: FR-006
+acceptance_criteria:
+- requirement_id: FR-001
+  title: Expressions that differ only by safe structural form, including commutative
+    ordering, associative grouping, unary plus, and explicit versus implicit multiplication,
+    normalize to the same normalized debug string.
+  status: proposed
+  verification_method: automated
+  id: AC-001
+- requirement_id: FR-001
+  title: Level 1 normalization performs literal-only folding for safe numeric operations
+    while leaving algebraic forms such as `2(x + 3)` and `2x + 6` structurally distinct.
+  status: proposed
+  verification_method: automated
+  id: AC-002
+- requirement_id: FR-002
+  title: Normalized results retain the original expression plus raw numeric literal
+    form, source spans, decimal precision, scientific notation, fraction syntax, and
+    implicit multiplication metadata where present.
+  status: proposed
+  verification_method: automated
+  id: AC-003
+- requirement_id: FR-003
+  title: Repeated normalization of the same corpus produces identical normalized debug
+    strings and hashes on Erlang and JavaScript targets.
+  status: proposed
+  verification_method: automated
+  id: AC-004
+- requirement_id: FR-004
+  title: Domain-changing or assumption-dependent examples such as `x/x`, `(x^2 - 1)/(x
+    - 1)`, `0 * (1 / (x - x))`, `sqrt(x^2)`, and trig identities are not rewritten
+    to simpler unguarded forms.
+  status: proposed
+  verification_method: automated
+  id: AC-005
+- requirement_id: FR-005
+  title: The public normalization API is exposed through `torus_math` and can be consumed
+    from Elixir and browser wrappers without duplicating normalization rules outside
+    Gleam.
+  status: proposed
+  verification_method: automated
+  id: AC-006
+- requirement_id: FR-006
+  title: The normalization suite includes positive structural-equivalence examples,
+    Level 1 non-equivalence examples, metadata preservation examples, and cross-target
+    determinism checks.
+  status: proposed
+  verification_method: automated
+  id: AC-007

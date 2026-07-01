@@ -1,0 +1,222 @@
+# Math Evaluation: Functional Requirements
+
+This document extracts functional requirements from `output/math-informal.md` and organizes them by delivery phase. Requirements are labeled FR-001, FR-002, etc.
+
+## Accepted Syntax (MVP)
+
+- Primary input: ASCII/"calculator-style" math parsed into a single AST and rendered via MathJax/KaTeX.
+- Optional input: a small LaTeX subset auto-translated to the same AST; same correctness rules apply.
+
+- ASCII tokens
+  - Numbers: integers, decimals, scientific notation like `1.2e-3`.
+  - Variables: `x`, `y`, `t`, `a` (author-configurable; validated by FR-014).
+  - Operators: `+`, `-`, `*`, `/`, `^`; parentheses `(` `)`; implicit multiplication allowed: `2x`, `2(x+1)`, `xy`.
+  - Functions: `sin(x)`, `cos(x)`, `tan(x)`, `ln(x)`, `log(x)`, `log10(x)`, `log2(x)`, `sqrt(x)`, `abs(x)`, `exp(x)`.
+  - Constants: `pi`, `e`.
+  - Other forms: fractions `a/b`, absolute value `|x|`, factorial `n!`.
+  - Units (when enabled): `9.8 m/s^2`, `980 cm/s^2`.
+
+- LaTeX subset (optional)
+  - `\frac{a}{b}`, `\sqrt{x}`, `\pi`, `e^{x}`, `x^{2}`, `\ln(x)`, `\log_{b}(x)`.
+  - Notes: translated to the same AST as ASCII; whitespace ignored.
+
+- Disambiguation rules
+  - `log(x)` defaults to natural log unless author specifies a base; allow `log10(x)`, `log2(x)`, or LaTeX `\log_{b}(x)`.
+  - Decimal separator is `.`; thousands separators are not allowed.
+  - Whitespace is ignored; Unicode superscripts are not required for input.
+
+- Examples
+  - Accept: `2(x+3)`, `2x+6`, `sqrt(2)/2`, `1.23e-4`, `|x-2|`, `9.8 m/s^2`, `\frac{1}{2}`, `\sqrt{x}`.
+  - Reject: `2^^3` (invalid operator), `1,000` (thousands separator), `tan x` (missing parentheses if not supported), `9.8 mph` when units are restricted to SI.
+
+## MVP (Phase 1)
+
+- FR-001: Evaluate numeric answers using absolute tolerance with author-configurable value.
+  - Example
+    - Author config: `expected: 5.0`, `tolerance: {abs: 0.1}`
+    - Student ✓: `5.08`, `4.92`  • Student ✗: `4.89`, `5.21`
+- FR-002: Evaluate numeric answers using relative tolerance with author-configurable value; relative error computed against max(|reference|, epsilon) for stability.
+  - Example
+    - Author config: `expected: 100`, `tolerance: {rel: 1%}`
+    - Student ✓: `99.2` (0.8%), `101.0` (1.0%)  • Student ✗: `101.2` (1.2%)
+- FR-003: Treat numerically equivalent representations (e.g., scientific notation variants) as equal when form constraints do not forbid them.
+  - Example
+    - Author config: `expected: 6e7`, `form: none`
+    - Student ✓: `60e6`, `60000000`
+    - Student ✗: `6e7` with `form: integer-only` (fails form rule even though value matches)
+- FR-004: Parse student and reference expressions into an AST for algebraic evaluation.
+  - Example
+    - Author config: `expected: 2(x+3)`, `equivalence: algebraic`
+    - Student ✓: `2x + 6`
+    - Student ✗: `2**` (syntax error → parsing fails)
+- FR-005: Normalize expressions (e.g., whitespace removal, constant folding, commutative reordering, safe factor/expand) prior to comparison.
+  - Example
+    - Author config: `expected: 2x + 6`
+    - Student ✓: `  x*2+   6  `, `2(x+3)` (after safe expand)
+    - Student ✗: `2(x+3) + 1`
+- FR-006: Determine algebraic equivalence by evaluating both expressions at N random points (default N≈8) within allowed variable domains; all samples must match within tolerance to pass.
+  - Example
+    - Author config: `expected: 2(x+3)`, `N: 8`, `tolerance: {abs: 1e-6}`
+    - Student ✓: `2x + 6`
+    - Student ✗: `x(x+2)` (matches for some x, fails others → not equivalent)
+- FR-007: Enforce domain guards before equivalence checks; reject invalid evaluations (e.g., division by zero, invalid roots/logs) and emit targeted feedback.
+  - Example
+    - Author config: `expected: (x^2-1)/(x-1)`, `domain: x ≠ 1`
+    - Student ✓: `(x+1)` with `domain: x ≠ 1` respected
+    - Student ✗: `(x+1)` with domain unset and sample at `x=1` → feedback `domain_violation`
+- FR-008: Support optional unit handling: parse unit tokens, normalize to canonical (e.g., SI) units, and compare values after conversion when allowed.
+  - Example
+    - Author config: `expected: 9.8 m/s^2`, `units: required`, `accepted: [m/s^2, cm/s^2]`
+    - Student ✓: `980 cm/s^2` (auto-converts)  • Student ✗: `9.8 ft/s^2`
+- FR-009: When units are enabled, provide targeted feedback for missing unit, wrong-but-convertible unit (with expected unit), and incompatible unit.
+  - Example
+    - Author config: `expected: 9.8 m/s^2`, `units: required`, `accepted: [m/s^2]`
+    - Student ✗ (missing): `9.8` → feedback `missing_unit`
+    - Student ✗ (convertible wrong): `980 cm/s^2` → feedback `wrong_unit_convertible`, suggest `m/s^2`
+    - Student ✗ (incompatible): `9.8 mph` → feedback `unit_not_accepted`
+- FR-010: Allow authors to require or ignore units; allow configuration of accepted units when units are required.
+  - Example
+    - Author config A: `units: required`, `accepted: [N]`  → Student ✓: `10 N`; Student ✗: `10`
+    - Author config B: `units: ignore`  → Student ✓: `10`, `10 N` (units ignored)
+- FR-011: Enforce exact-form requirements when configured: integer-only, fraction (rational) only, simplified fraction, or decimal with precision rules (exactly/at least/at most N places).
+  - Example (integer-only)
+    - Author config: `expected: 7`, `form: integer`
+    - Student ✓: `7`  • Student ✗: `7/1`, `7.0`
+  - Example (simplified fraction)
+    - Author config: `expected: 4/5`, `form: simplified_fraction`
+    - Student ✓: `4/5`  • Student ✗: `8/10`, `0.8`
+- FR-012: Support decimal-precision validation independent of tolerance; numeric value is re-parsed to verify precision rules.
+  - Example
+    - Author config: `expected: 0.8`, `form: decimal`, `precision: exactly 2`
+    - Student ✓: `0.80`  • Student ✗: `0.8`, `0.800`
+- FR-013: Provide an author option for display-only rounding that does not affect correctness evaluation.
+  - Example
+    - Author config: `expected: π`, `display: round(2)`, `tolerance: {abs: 1e-3}`
+    - Student ✓: `3.141` (evaluated as correct; UI displays `3.14`)  • Student ✗: `3.12`
+- FR-014: Allow authors to specify the set of allowed variables per input.
+  - Example
+    - Author config: `allowed_variables: [x, y]`
+    - Student ✓: `2x + 3`  • Student ✗: `2z + 3` (z not permitted)
+- FR-015: Allow authors to define variable domains for sampling (ranges, exclusions, integer-only, etc.).
+  - Example
+    - Author config: `x ∈ [-5,5], integers only; exclude 0`
+    - Student ✓: `2/(x-1)` (sampling avoids `x=1` if excluded)  • Student ✗: `2/x` if 0 not excluded and sample hits `x=0` → `domain_violation`
+- FR-016: Support multi-input items: authors can declare multiple named inputs, each with an independent math-eval configuration.
+  - Example
+    - Author config: `A.expected: 2`, `B.expected: 3`
+    - Student: `A=2` ✓, `B=4` ✗ (evaluated independently)
+- FR-017: Support item-level scoring aggregation options across multi-inputs: sum-of-parts and all-or-nothing.
+  - Example
+    - Author config: two inputs worth 0.5 each
+    - Sum-of-parts → `A=2` ✓, `B=4` ✗ → score `0.5`
+    - All-or-nothing → same answers → score `0.0`
+- FR-018: Evaluate rules in either first-match or accumulate mode, as configured by the author (`rule_mode: first | accumulate`).
+  - Example
+    - Author rules: `R1: incorrect → feedback A`, `R2: unsimplified_fraction → feedback B`
+    - First-match: student `8/10` triggers `R1` only
+    - Accumulate: student `8/10` triggers `R2` (specific) then `R1` if configured to continue
+- FR-019: Ship a predefined feedback rule library (e.g., unsimplified_fraction, missing_unit, wrong_unit_convertible, sign_error_linear, extraneous_root, domain_violation, rounding_only_off).
+  - Example
+    - Author config: enable `unsimplified_fraction`
+    - Student ✗: `8/10` → feedback `unsimplified_fraction`; Student ✓: `4/5`
+- FR-020: Allow authors to define custom feedback rules (regex- or predicate-based) with parameters and associated scores/feedback.
+  - Example
+    - Author custom rule: `when: sign_error_linear(ax+b)`, `score: 0.8`, `message: "Check the sign"`
+    - Student ✗ triggers partial credit: expected `2x+3`, answer `-2x+3` → score `0.8`
+- FR-021: Provide configuration linting that detects and reports unreachable rules, conflicting form settings, tolerance contradictions (especially near zero), unit misconfiguration, problematic variable domains (e.g., sampling through singularities), risky rule ordering, invalid score ranges, algebraic sampling with no variables, and precision–tolerance clashes; include suggested fixes.
+  - Example
+    - Author config: `rule_mode: first`, `R1: incorrect (catch-all)`, `R2: missing_unit`
+    - Lint: `R2 unreachable; move before R1 or use accumulate`
+    - Student answers: N/A (lint blocks or warns before publish)
+- FR-022: Surface lints in author preview and save flows; block publish on error-severity lints and allow publish with visible warnings.
+  - Example
+    - Author action: click Publish with `units: required` but `accepted: []`
+    - System: blocks publish with error-severity lint; Preview shows message with suggested fix
+- FR-023: Expose an evaluator contract that accepts a candidate string, evaluator config, and optional context (e.g., seed, locale) and returns `{isCorrect, score, feedbackId, feedbackText, details}`.
+  - Example
+    - Input: `{student:"2x+6", expected:"2(x+3)", tests:["algebraic_equivalence"], ctx:{seed:42}}`
+    - Output: `{isCorrect:true, score:1.0, feedbackId:"equiv", feedbackText:"Equivalent", details:{samples:8}}`
+- FR-024: Ensure deterministic results by supporting seeded RNG for sampling and implementing the evaluator as a pure function.
+  - Example
+    - Author config: `ctx.seed: 12345`, `N: 8`
+    - Student ✓: repeated submissions of `2x+6` vs `2(x+3)` → identical pass/fail and details
+- FR-025: Record evaluation telemetry: raw input, parsed form, normalized-form hash, matched rule id, score, evaluation time, and unit status.
+  - Example
+    - Telemetry record: `{raw:"8/10", parsed:{num:8,den:10}, normHash:"abc123", rule:"unsimplified_fraction", score:0.8, ms:12, unitStatus:"n/a"}`
+
+- FR-026: Meet performance target: average evaluation latency under 20 ms for typical inputs on server profile X.
+  - Example
+    - Benchmark: run evaluator on a representative set of numeric and algebraic answers; compute mean latency over N≥200 runs.
+    - Pass ✓: average `14 ms`  • Fail ✗: average `35 ms` (regression alert and optimization required)
+
+## Subsequent Phases
+
+### Phase 2
+
+- FR-027: Support cross-input constraints and multi-part algebra with shared variables (e.g., enforce `x + y = 10` across two fields).
+  - Example
+    - Author config: inputs `A`, `B`; constraint: `A + B == 10`
+    - Student ✓: `A=4`, `B=6`  • Student ✗: `A=4`, `B=5`
+- FR-028: Enforce significant-figures policies (exact count or ranges) distinct from decimal-place rules.
+  - Example
+    - Author config: `expected: 0.0123`, `sigFigs: exactly 3`
+    - Student ✓: `0.0123` (3 s.f.)  • Student ✗: `0.01230` (5 s.f.), `0.012` (2 s.f.)
+- FR-029: Enforce advanced exact-form constraints beyond simple rationals (e.g., require factored, expanded, or simplified radical form).
+  - Example (factored form)
+    - Author config: `expected: (x+1)(x+2)`, `form: factored`
+    - Student ✓: `(x+1)(x+2)`  • Student ✗: `x^2+3x+2`
+- FR-030: Accept and evaluate composite numeric types: vectors and simple matrices (shape validation and element-wise evaluation with tolerance where applicable).
+  - Example
+    - Author config: `expected: [1, 2]`, `tolerance: {abs: 1e-3}`
+    - Student ✓: `[1.000, 2.000]`  • Student ✗: `[2, 1]`, `[1, 2, 3]` (shape mismatch)
+- FR-031: Provide richer unit systems, including author-defined/custom units and unit lists with auto-conversion; allow requiring a specific unit from an accepted set.
+  - Example
+    - Author config: `units: required`, `accepted: [m/s^2, cm/s^2]`, `requireSpecific: m/s^2`
+    - Student ✓: `9.8 m/s^2`  • Student ✗: `980 cm/s^2` (convertible but not the required final unit)
+- FR-032: Support enhanced partial credit via weighted rule groups and more granular scoring controls.
+  - Example
+    - Author config: `rules: [missing_sign:0.8, unsimplified_fraction:0.9]`, combine by min
+    - Student ✗: `-8/10` vs expected `4/5` → triggers both → score `min(0.8,0.9)=0.8`
+- FR-033: Generate per-learner hints based on detected error patterns and prior attempts.
+  - Example
+    - Author enables hints; pattern: repeated `sign_error_linear`
+    - Student 1st attempt ✗: `-2x+3` → feedback and hint; 2nd attempt shows tailored hint: "Check the sign on the x-term."
+- FR-034: Allow authors to configure allowed functions and symbols (whitelisting) per item.
+  - Example
+    - Author config: `allowed_functions: [sin, cos]`
+    - Student ✓: `sin^2 x + cos^2 x`  • Student ✗: `tan x` (function not allowed)
+- FR-035: Evaluate function equality (f(x) ≡ g(x)) via symbolic checks when possible and via sampling over valid domains when symbolic comparison is inconclusive.
+  - Example
+    - Author config: `expected: sin^2(x) + cos^2(x)`, `equivalence: function`
+    - Student ✓: `1`  • Student ✗: `sin(x)`
+- FR-036: Provide a pluggable test architecture to register new evaluator “test” types with versioned schemas (e.g., numeric_equality, algebraic_equivalence, function_equivalence, domain_check, units_equivalence).
+  - Example
+    - Author/Dev registers `limit_equivalence` test (v1). Config: `expected: lim_{x→0} sin x / x`
+    - Student ✓: `1`  • Student ✗: `0` (new test type handles evaluation)
+
+### Phase 3
+
+- FR-037: Support step checking with line-by-line evaluation of student work products.
+  - Example
+    - Author config: steps with checkpoints for solving `2x+6=0`
+    - Student ✓: `2x+6=0 → 2x=-6 → x=-3` (each step validated)  • Student ✗: `2x+6=0 → 2x=6` (flags incorrect step)
+- FR-038: Recognize and evaluate differential and integral expressions for calculus problems.
+  - Example
+    - Author config: `expected: derivative(x^2, x) = 2x`
+    - Student ✓: `2x`  • Student ✗: `x^2`
+- FR-039: Enforce expression-style constraints with a configurable complexity budget (e.g., limit operations/nesting).
+  - Example
+    - Author config: `complexity: ops ≤ 3, depth ≤ 2`
+    - Student ✓: `2(x+3)`  • Student ✗: `((x+1)(x+2)(x+3))` (ops limit exceeded)
+- FR-040: Evaluate graph- and geometry-based inputs.
+  - Example
+    - Author config: `expected line: y = 2x + 1`
+    - Student ✓: submits two points on the line `(0,1),(1,3)` that define `y=2x+1`  • Student ✗: line `y=2x` (wrong intercept)
+- FR-041: Support programmatic variant generation driven by symbolic parameters and domain constraints.
+  - Example
+    - Author config: `expected: (x+a)(x+b)`, with `a,b ∈ {1..5}`
+    - Variant: `a=1,b=2` → expected `x^2+3x+2`; Student ✓: `x^2+3x+2`  • Student ✗: `x^2+2x+1`
+- FR-042: Provide comprehensive domain analysis and advanced domain checks beyond MVP guards (e.g., inferred constraints from expression structure across composed functions).
+  - Example
+    - Author config: `expected: ln(x-2)`; system infers domain `x>2`
+    - Student ✓: `ln(x-2)`  • Student ✗: `ln(x)` with samples ≤ 0 → `domain_violation`

@@ -1,0 +1,117 @@
+# Scenario: Activity Bank query operations
+# Verifies query filters for tags, objectives, activity type, and activity text.
+
+- project:
+    name: "activity_bank_query_project"
+    title: "Activity Bank Query Project"
+    tags:
+      - "easy"
+      - "geometry"
+      - "biology"
+    objectives:
+      - "Understand arithmetic"
+      - "Analyze shapes"
+      - "Explain cells"
+    root:
+      children:
+        - page: "Practice"
+
+- activity_bank:
+    project: "activity_bank_query_project"
+    ops:
+      - create:
+          title: "Easy Addition"
+          virtual_id: "easy_addition"
+          type: "oli_multiple_choice"
+          tags: ["easy"]
+          objectives: ["Understand arithmetic"]
+          content: |
+            stem_md: "What is 2 + 2?"
+            choices:
+              - id: "a"
+                body_md: "4"
+                score: 1
+              - id: "b"
+                body_md: "5"
+                score: 0
+      - create:
+          title: "Easy Geometry"
+          virtual_id: "easy_geometry"
+          type: "oli_multiple_choice"
+          tags: ["easy", "geometry"]
+          objectives: ["Analyze shapes"]
+          content: |
+            stem_md: "How many sides does a triangle have?"
+            choices:
+              - id: "a"
+                body_md: "3"
+                score: 1
+              - id: "b"
+                body_md: "4"
+                score: 0
+      - create:
+          title: "Cell Function"
+          virtual_id: "cell_function"
+          type: "oli_multiple_choice"
+          tags: ["biology"]
+          objectives: ["Explain cells"]
+          content: |
+            stem_md: "Which organelle is known as the mitochondria?"
+            choices:
+              - id: "a"
+                body_md: "Powerhouse of the cell"
+                score: 1
+              - id: "b"
+                body_md: "Cell wall"
+                score: 0
+      - query:
+          name: "easy_questions"
+          filters:
+            tags:
+              contains: ["easy"]
+          expect:
+            total_count: 2
+            row_count: 2
+            contains_titles: ["Easy Addition", "Easy Geometry"]
+            not_titles: ["Cell Function"]
+      - query:
+          name: "easy_geometry_questions"
+          filters:
+            tags:
+              contains: ["easy", "geometry"]
+          expect:
+            total_count: 1
+            contains_titles: ["Easy Geometry"]
+            not_titles: ["Easy Addition", "Cell Function"]
+      - query:
+          name: "arithmetic_objective_questions"
+          filters:
+            objectives:
+              equals: ["Understand arithmetic"]
+          expect:
+            total_count: 1
+            contains_titles: ["Easy Addition"]
+            not_titles: ["Easy Geometry", "Cell Function"]
+      - query:
+          name: "multiple_choice_questions"
+          filters:
+            type:
+              contains: ["oli_multiple_choice"]
+          expect:
+            total_count: 3
+            row_count: 3
+            contains_titles: ["Easy Addition", "Easy Geometry", "Cell Function"]
+      - query:
+          name: "biology_text_questions"
+          filters:
+            text:
+              contains: "mitochondria"
+          expect:
+            total_count: 1
+            contains_titles: ["Cell Function"]
+            not_titles: ["Easy Addition", "Easy Geometry"]
+      - assert:
+          result: "easy_questions"
+          expect:
+            total_count: 2
+            contains_titles: ["Easy Addition", "Easy Geometry"]

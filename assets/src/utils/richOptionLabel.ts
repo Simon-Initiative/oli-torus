@@ -1,7 +1,7 @@
 import sanitizeHtml, { IOptions } from 'sanitize-html';
 
-const ALLOWED_TAGS = ['sup', 'sub', 'strong', 'em', 'b', 'i', 'br', 'p'];
-const SEMANTIC_RICH_TAG_PATTERN = /<\s*(sup|sub|strong|em|b|i)\b/i;
+const ALLOWED_TAGS = ['sup', 'sub', 'strong', 'em', 'b', 'i', 'u', 'br', 'p'];
+const SEMANTIC_RICH_TAG_PATTERN = /<\s*(sup|sub|strong|em|b|i|u)\b/i;
 
 const sanitizeOptions: IOptions = {
   allowedTags: ALLOWED_TAGS,

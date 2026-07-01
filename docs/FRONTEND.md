@@ -18,7 +18,7 @@ The main entrypoint pattern is defined in `assets/src/apps/app.tsx`, where top-l
 ## Frontend Boundaries
 
 - Keep browser-side code focused on interaction, editing ergonomics, and local view state.
-- Treat Phoenix and Elixir contexts as the source of truth for domain rules, persistence, authorization, and workflow transitions.
+- Treat Phoenix, Elixir contexts, and shared Gleam public APIs as the source of truth for domain rules, persistence, authorization, reusable parser/evaluator behavior, and workflow transitions.
 - Prefer extending an existing focused app over creating a broad new client shell unless the user flow genuinely needs one.
 - Preserve the existing mixed model of React + LiveView + server-rendered templates rather than forcing all UI work into one rendering strategy.
 
@@ -26,6 +26,7 @@ The main entrypoint pattern is defined in `assets/src/apps/app.tsx`, where top-l
 
 - Smaller apps can manage state locally; more complex apps use Redux, especially in delivery and some authoring flows.
 - Client code integrates with Phoenix through mounted components, APIs, hooks, and server-provided context rather than independent frontend routing.
+- Browser code may consume compiled Gleam JavaScript through thin TypeScript wrappers when shared behavior must match BEAM-side logic.
 - Activity authoring and delivery live inside the broader frontend structure but are part of the shared platform model, not isolated microsites.
 
 ## Canonical References
@@ -34,7 +35,7 @@ The main entrypoint pattern is defined in `assets/src/apps/app.tsx`, where top-l
 - Activity concepts and structures: `guides/activities/overview.md`, `guides/activities/structures.md`
 - Frontend build and toolchain commands: `docs/TOOLING.md`
 - Frontend testing expectations: `docs/TESTING.md`
-- UI review expectations: `.review/ui.md`
+- UI and client review expectations: `.review/ui.md`, `.review/typescript.md`; use `.review/gleam.md` when frontend changes touch shared Gleam-generated behavior or wrappers
 
 ## Change Guidance
 

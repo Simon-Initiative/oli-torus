@@ -9,7 +9,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   alias OliWeb.Components.DesignTokens.Primitives.Button
 
-  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportEmailModal
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
   alias OliWeb.Delivery.ScoreDisplay
   alias OliWeb.Delivery.ScheduleDisplay
 
@@ -306,18 +306,19 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
             <.live_component
               :if={@show_email_modal}
-              id={"assessments_email_modal_#{@id}"}
-              module={StudentSupportEmailModal}
+              id={"draft_email_modal_#{@id}"}
+              module={DraftEmailModal}
+              modal_dom_id={"draft_email_modal_#{@id}"}
               students={@email_recipients}
+              section_id={@section_id}
               section_title={@section_title}
               instructor_email={@instructor_email}
               instructor_name={@instructor_name}
-              section_slug={@section_slug}
+              situation_key={:incomplete_assessment}
+              scope_label={assessment_scope_label(@email_assessment)}
+              assessment={assessment_context(@email_assessment)}
               show_modal={@show_email_modal}
               email_handler_id={@id}
-              modal_dom_id={"student_support_email_modal_#{@id}"}
-              default_subject={email_default_subject(@email_assessment)}
-              default_body=""
             />
           </div>
       <% end %>
@@ -457,12 +458,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp display_due_date(value, ctx),
     do: ScheduleDisplay.due_date(value, ctx)
 
-  defp email_default_subject(nil), do: "Checking in about your assessment"
+  defp assessment_scope_label(nil), do: "Incomplete assessment"
+  defp assessment_scope_label(%{title: title}) when is_binary(title), do: title
+  defp assessment_scope_label(_), do: "Incomplete assessment"
 
-  defp email_default_subject(%{title: title}) when is_binary(title),
-    do: "Checking in about #{title}"
+  defp assessment_context(nil), do: nil
 
-  defp email_default_subject(_), do: "Checking in about your assessment"
+  defp assessment_context(assessment) do
+    %{title: assessment.title}
+    |> maybe_put(:available_at, Map.get(assessment, :available_at))
+    |> maybe_put(:due_at, Map.get(assessment, :due_at))
+    |> maybe_put(:completion_ratio, Map.get(assessment, :completion_ratio))
+    |> maybe_put(:mean_score, Map.get(assessment, :mean_score))
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   defp formatted_context_label(context_label) when is_binary(context_label) do
     context_label

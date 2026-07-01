@@ -60,12 +60,12 @@ const editableNumberFromVNum = (vnum: numberOrVar): EditableNumber =>
     ? editableNumberFromString(vnum as string)
     : editableNumberFromNum(vnum as number);
 
-interface SimpleNumericInputProps extends InputProps {
+export interface SimpleNumericInputProps extends InputProps {
   input: InputNumeric;
   onEditInput: (input: InputNumeric) => void;
 }
 
-const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditInput }) => {
+export const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
   const numericInputRef = createRef<HTMLInputElement>();
   const [editableNumber, setEditableNumber] = useState(editableNumberFromVNum(input.value));
@@ -74,6 +74,7 @@ const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditIn
     <div>
       <input
         ref={numericInputRef}
+        aria-label="Correct answer"
         disabled={!editMode}
         type="text"
         className={classNames('form-control', editableNumberInvalid && 'is-invalid')}
@@ -105,12 +106,12 @@ const inclusiveOrExclusiveValue = (inclusive: boolean): string =>
   inclusive ? 'inclusive' : 'exclusive';
 const isInclusive = (value: string): boolean => value === 'inclusive';
 
-interface RangeNumericInputProps extends InputProps {
+export interface RangeNumericInputProps extends InputProps {
   input: InputRange;
   onEditInput: (input: InputRange) => void;
 }
 
-const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInput }) => {
+export const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
   const lowerBoundInputRef = createRef<HTMLInputElement>();
   const upperBoundInputRef = createRef<HTMLInputElement>();
@@ -128,6 +129,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
       <div className="d-md-flex flex-md-row align-items-center">
         <input
           ref={lowerBoundInputRef}
+          aria-label="Lower bound"
           placeholder="Lower bound"
           disabled={!editMode}
           type="text"
@@ -147,6 +149,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
         <div className="mx-1">and</div>
         <input
           ref={upperBoundInputRef}
+          aria-label="Upper bound"
           placeholder="Upper bound"
           disabled={!editMode}
           type="text"
@@ -267,12 +270,12 @@ const inferPrecision = (input: InputNumeric | InputRange) => {
   }
 };
 
-interface PrecisionInputProps {
+export interface PrecisionInputProps {
   input: InputNumeric | InputRange;
   onEditInput: (input: InputNumeric | InputRange) => void;
 }
 
-const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInput }) => {
+export const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
   const numericInputRef = createRef<HTMLInputElement>();
   const [precision, setPrecision] = useState(precisionFromNumberOrUndefined(input.precision));

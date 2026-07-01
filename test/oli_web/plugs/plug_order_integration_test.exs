@@ -108,4 +108,91 @@ defmodule OliWeb.Plugs.PlugOrderIntegrationTest do
       assert conn.halted == true
     end
   end
+
+  describe "MER-5696: template preview paywall bypass" do
+    test "allows paid blueprint access in active template preview mode", %{conn: conn} do
+      section =
+        insert(:section, %{
+          type: :blueprint,
+          requires_enrollment: true,
+          requires_payment: true,
+          amount: Money.new(:USD, 100)
+        })
+
+      user = preview_user()
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{
+          template_preview_mode: true,
+          template_preview_section_slug: section.slug
+        })
+        |> assign(:current_user, user)
+        |> assign(:section, section)
+
+      conn = EnforcePaywall.call(conn, [])
+
+      refute conn.halted
+      assert conn.assigns.paywall_summary.available
+      assert conn.assigns.paywall_summary.reason == :instructor
+    end
+
+    test "does not bypass paywall when template preview section does not match", %{conn: conn} do
+      section =
+        insert(:section, %{
+          type: :blueprint,
+          requires_enrollment: true,
+          requires_payment: true,
+          amount: Money.new(:USD, 100)
+        })
+
+      user = preview_user()
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{
+          template_preview_mode: true,
+          template_preview_section_slug: "other-section"
+        })
+        |> assign(:current_user, user)
+        |> assign(:section, section)
+
+      conn = EnforcePaywall.call(conn, [])
+
+      assert conn.halted
+      assert conn.resp_body =~ "Not authorized"
+    end
+
+    test "does not bypass paywall for non-blueprint sections", %{conn: conn} do
+      section =
+        insert(:section, %{
+          type: :enrollable,
+          requires_enrollment: true,
+          requires_payment: true,
+          amount: Money.new(:USD, 100)
+        })
+
+      user = preview_user()
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{
+          template_preview_mode: true,
+          template_preview_section_slug: section.slug
+        })
+        |> assign(:current_user, user)
+        |> assign(:section, section)
+
+      conn = EnforcePaywall.call(conn, [])
+
+      assert conn.halted
+      assert get_resp_header(conn, "location") |> List.first() =~ "payment"
+    end
+  end
+
+  defp preview_user do
+    insert(:user)
+    |> Map.put(:platform_roles, [])
+  end
 end

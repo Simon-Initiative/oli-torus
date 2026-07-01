@@ -16,6 +16,7 @@ Always run these two reviews:
 Run these additional reviews only when the current changes warrant them:
 
 - `.review/elixir.md`: backend Elixir, Phoenix, LiveView, Ecto, jobs, or server-side architecture changes
+- `.review/gleam.md`: Gleam source, tests, public API, target interop, or `gleam/` dependency/configuration changes
 - `.review/ui.md`: UX, accessibility, interaction, layout, navigation, or visual behavior changes
 - `.review/typescript.md`: TypeScript, React, frontend state, client data flow, or type-safety changes
 - `.review/requirements.md`: PRD traceability and acceptance-criteria coverage when a `docs/exec-plans/**/*prd*.md` file is added or changed
@@ -24,7 +25,7 @@ Run these additional reviews only when the current changes warrant them:
 
 1. Inspect the current changes on the branch and determine which review guides apply.
 2. Always include `.review/security.md` and `.review/performance.md`.
-3. Add `.review/elixir.md`, `.review/ui.md`, `.review/typescript.md`, and `.review/requirements.md` only if the changed files or behavior make those reviews relevant.
+3. Add `.review/elixir.md`, `.review/gleam.md`, `.review/ui.md`, `.review/typescript.md`, and `.review/requirements.md` only if the changed files or behavior make those reviews relevant.
 4. Do not read the checklist files into this current context.
 5. For each selected checklist, spawn a `reviewer` subagent and pass it:
    - the checklist file path

@@ -27,6 +27,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr(:grouped_agenda_resources, :any, required: true)
   attr(:section_start_date, :string, required: true)
   attr(:section_slug, :string, required: true)
+  attr(:preview_mode, :boolean, default: false)
   attr(:expanded_items, :list, default: [])
   attr(:has_scheduled_resources?, :boolean, required: true)
   attr(:display_curriculum_item_numbering, :boolean, required: true)
@@ -58,6 +59,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                 item={item}
                 ctx={@ctx}
                 section_slug={@section_slug}
+                preview_mode={@preview_mode}
                 expanded={item.id in @expanded_items}
                 target={@myself}
                 has_scheduled_resources?={@has_scheduled_resources?}
@@ -75,6 +77,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr :item, :any, required: true
   attr :ctx, :map, required: true
   attr :section_slug, :string, required: true
+  attr :preview_mode, :boolean, default: false
   attr :target, :any, required: true
   attr :expanded, :boolean, default: false
   attr :has_scheduled_resources?, :boolean, required: true
@@ -137,6 +140,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         expanded={@expanded}
         target={@target}
         section_slug={@section_slug}
+        preview_mode={@preview_mode}
         has_scheduled_resources?={@has_scheduled_resources?}
       />
     </div>
@@ -156,7 +160,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
       id={@id}
       href={
         Utils.lesson_live_path(@section_slug, @resource.resource.revision_slug,
-          request_path: ~p"/sections/#{@section_slug}"
+          request_path: Utils.section_home_path(@section_slug, @preview_mode),
+          preview_mode: @preview_mode
         )
       }
       class="text-black hover:text-black hover:no-underline"
@@ -209,6 +214,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           ctx={@ctx}
           target={@target}
           section_slug={@section_slug}
+          preview_mode={@preview_mode}
           has_scheduled_resources?={@has_scheduled_resources?}
         />
       </div>
@@ -243,6 +249,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr :target, :any, required: true
   attr :expanded, :boolean, default: false
   attr :section_slug, :string, required: true
+  attr :preview_mode, :boolean, default: false
   attr :has_scheduled_resources?, :boolean, required: true
   # Graded pages with existing attempts for simple schedule items
   defp schedule_item_details(
@@ -322,6 +329,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         completed={@completed}
         resources={@resources}
         section_slug={@section_slug}
+        preview_mode={@preview_mode}
       />
 
       <div class="pr-2 pl-1 self-end">
@@ -371,6 +379,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr :completed, :boolean, required: true
   attr :resources, :list, required: true
   attr :section_slug, :string, required: true
+  attr :preview_mode, :boolean, default: false
 
   defp schedule_group_content(assigns) do
     ~H"""
@@ -407,7 +416,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             :for={resource <- Enum.sort_by(@resources, & &1.resource.numbering_index)}
             href={
               Utils.lesson_live_path(@section_slug, resource.resource.revision_slug,
-                request_path: ~p"/sections/#{@section_slug}"
+                request_path: Utils.section_home_path(@section_slug, @preview_mode),
+                preview_mode: @preview_mode
               )
             }
             class="w-full text-black hover:text-black dark:text-white dark:hover:text-white hover:no-underline"

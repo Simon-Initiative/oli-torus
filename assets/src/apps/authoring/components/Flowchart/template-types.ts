@@ -3,6 +3,7 @@ import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 export interface Template {
   name: string;
   templateType: string;
+  layoutMode?: 'fixed' | 'responsive';
   parts: {
     id: string;
     inherited: boolean;

@@ -120,6 +120,46 @@ export const simplifiedPartSchema: JSONSchema7 = {
   required: [],
 };
 
+export const simplifiedResponsivePartSchema: JSONSchema7 = {
+  type: 'object',
+  properties: {
+    Size: {
+      type: 'object',
+      title: 'Layout',
+      properties: {
+        responsiveLayoutWidth: {
+          type: 'number',
+          title: 'Width',
+          default: 960,
+          anyOf: [
+            { const: 960, title: '100%' },
+            { const: 470, title: '50% align left' },
+            { const: 471, title: '50% align right' },
+          ],
+        },
+        height: { type: 'number', title: 'Height' },
+      },
+    },
+    Scoring: {
+      type: 'object',
+      title: 'Scoring',
+      properties: {
+        requiresManualGrading: {
+          title: 'Requires Manual Grading',
+          type: 'boolean',
+          format: 'checkbox',
+          default: false,
+        },
+        maxScore: {
+          title: 'Max Score',
+          type: 'number',
+        },
+      },
+    },
+  },
+  required: [],
+};
+
 export const partUiSchema = {
   type: {
     'ui:title': 'Part Type',
@@ -213,6 +253,29 @@ export const simplifiedPartUiSchema = {
   Scoring: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Scoring',
+    maxScore: {
+      classNames: 'col-span-6',
+    },
+  },
+};
+
+export const simplifiedResponsivePartUiSchema = {
+  Size: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Layout',
+    responsiveLayoutWidth: {
+      classNames: 'col-span-6',
+    },
+    height: {
+      classNames: 'col-span-6',
+    },
+  },
+  Scoring: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Scoring',
+    requiresManualGrading: {
+      classNames: 'col-span-6',
+    },
     maxScore: {
       classNames: 'col-span-6',
     },

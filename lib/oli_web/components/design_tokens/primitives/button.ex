@@ -303,6 +303,13 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
   attr :muted, :boolean, default: false
   attr :active, :boolean, default: false
   attr :disabled, :boolean, default: false
+
+  attr :aria_disabled, :boolean,
+    default: false,
+    doc:
+      "Dims the button and exposes aria-disabled while keeping it focusable/clickable " <>
+        "(use for not-ready actions that should validate on click, not hard-disable)."
+
   attr :href, :string, default: nil
   attr :navigate, :string, default: nil
   attr :patch, :string, default: nil
@@ -326,7 +333,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
     ~H"""
     <% truncate_fallback_label_text =
       if @text_behavior == :truncate and
-           (is_nil(@rest["title"]) or is_nil(@rest["aria-label"])) do
+           (is_nil(@rest[:title]) or is_nil(@rest[:"aria-label"])) do
         slot_plain_text(render_slot(@inner_block))
       else
         nil
@@ -336,10 +343,10 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
         <button
           type={@type}
           class={[close_classes(@disabled), @class]}
-          aria-label={close_aria_label(@rest["aria-label"])}
-          title={close_title(@rest["title"], @rest["aria-label"])}
+          aria-label={@close_aria_label}
+          title={@close_title}
           disabled={@disabled}
-          {@rest}
+          {Map.drop(@rest, [:"aria-label", :title])}
         >
           <Icons.close_sm class={close_icon_classes()} />
         </button>
@@ -348,19 +355,20 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
           type={@type}
           class={[
             base_classes(@variant),
-            interaction_classes(@disabled),
+            interaction_classes(@disabled or @aria_disabled),
             size_classes(@variant, @size, @text_behavior),
             width_classes(@width, @text_behavior),
-            variant_classes(@variant, @muted, @disabled),
+            variant_classes(@variant, @muted, @disabled or @aria_disabled),
             @class
           ]}
           aria-label={
-            aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
+            aria_label_text(@text_behavior, @rest[:"aria-label"], truncate_fallback_label_text)
           }
           aria-expanded={@aria_expanded}
-          title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
+          aria-disabled={@aria_disabled && "true"}
+          title={title_text(@text_behavior, @rest[:title], truncate_fallback_label_text)}
           disabled={@disabled}
-          {@rest}
+          {Map.drop(@rest, [:"aria-label", :title, :"aria-expanded"])}
         >
           <span :if={@icon_left != []} class="inline-flex shrink-0 items-center justify-center">
             {render_slot(@icon_left)}
@@ -384,12 +392,12 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             @class
           ]}
           aria-label={
-            aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
+            aria_label_text(@text_behavior, @rest[:"aria-label"], truncate_fallback_label_text)
           }
           aria-disabled={to_string(@disabled)}
-          title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
-          tabindex={if @disabled, do: "-1", else: @rest["tabindex"]}
-          {@rest}
+          title={title_text(@text_behavior, @rest[:title], truncate_fallback_label_text)}
+          tabindex={if @disabled, do: "-1", else: @rest[:tabindex]}
+          {Map.drop(@rest, [:"aria-label", :title, :tabindex])}
         >
           <span :if={@icon_left != []} class="inline-flex shrink-0 items-center justify-center">
             {render_slot(@icon_left)}
@@ -413,12 +421,12 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             @class
           ]}
           aria-label={
-            aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
+            aria_label_text(@text_behavior, @rest[:"aria-label"], truncate_fallback_label_text)
           }
           aria-disabled={to_string(@disabled)}
-          title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
-          tabindex={if @disabled, do: "-1", else: @rest["tabindex"]}
-          {@rest}
+          title={title_text(@text_behavior, @rest[:title], truncate_fallback_label_text)}
+          tabindex={if @disabled, do: "-1", else: @rest[:tabindex]}
+          {Map.drop(@rest, [:"aria-label", :title, :tabindex])}
         >
           <span :if={@icon_left != []} class="inline-flex shrink-0 items-center justify-center">
             {render_slot(@icon_left)}
@@ -442,12 +450,12 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             @class
           ]}
           aria-label={
-            aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
+            aria_label_text(@text_behavior, @rest[:"aria-label"], truncate_fallback_label_text)
           }
           aria-disabled={to_string(@disabled)}
-          title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
-          tabindex={if @disabled, do: "-1", else: @rest["tabindex"]}
-          {@rest}
+          title={title_text(@text_behavior, @rest[:title], truncate_fallback_label_text)}
+          tabindex={if @disabled, do: "-1", else: @rest[:tabindex]}
+          {Map.drop(@rest, [:"aria-label", :title, :tabindex])}
         >
           <span :if={@icon_left != []} class="inline-flex shrink-0 items-center justify-center">
             {render_slot(@icon_left)}
@@ -499,8 +507,21 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
     |> assign_new(:width, fn -> nil end)
     |> assign_new(:text_behavior, fn -> :default end)
     |> assign_new(:disabled, fn -> false end)
+    |> assign_new(:aria_disabled, fn -> false end)
     |> assign(:aria_expanded, aria_expanded_value(assigns))
     |> assign(:link_kind, link_kind(assigns))
+    |> then(fn assigns ->
+      if assigns.variant == :close do
+        aria_label = assigns.rest[:"aria-label"] || "Close"
+        title = assigns.rest[:title] || aria_label
+
+        assigns
+        |> assign(:close_aria_label, aria_label)
+        |> assign(:close_title, title)
+      else
+        assigns
+      end
+    end)
   end
 
   defp link_kind(%{href: href}) when not is_nil(href), do: :href
@@ -619,9 +640,9 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
   defp preview_label, do: "Button label"
 
   defp aria_expanded_value(%{variant: :pill, active: active, rest: rest}),
-    do: Map.get(rest, "aria-expanded", to_string(active))
+    do: Map.get(rest, :"aria-expanded", to_string(active))
 
-  defp aria_expanded_value(%{rest: rest}), do: Map.get(rest, "aria-expanded")
+  defp aria_expanded_value(%{rest: rest}), do: Map.get(rest, :"aria-expanded")
 
   defp title_text(:truncate, nil, label_text), do: label_text
   defp title_text(:truncate, existing, _label_text), do: existing
@@ -630,13 +651,6 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
   defp aria_label_text(:truncate, nil, label_text), do: label_text
   defp aria_label_text(:truncate, existing, _label_text), do: existing
   defp aria_label_text(_behavior, existing, _label_text), do: existing
-
-  defp close_title(nil, nil), do: "Close"
-  defp close_title(nil, aria_label), do: aria_label
-  defp close_title(existing, _aria_label), do: existing
-
-  defp close_aria_label(nil), do: "Close"
-  defp close_aria_label(existing), do: existing
 
   defp slot_plain_text(rendered_slot) do
     text =

@@ -188,7 +188,7 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  def handle_params(_params, _url, %{assigns: %{section: %{type: :blueprint}}} = socket) do
+  def handle_params(_params, url, %{assigns: %{section: %{type: :blueprint}}} = socket) do
     section = socket.assigns.section
     route_name = socket.assigns[:route_name]
     project = socket.assigns[:project]
@@ -196,11 +196,13 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply,
      assign(socket,
        breadcrumbs: set_product_breadcrumbs(section, socket),
+       return_to: current_path(url),
        redirect_after_save: product_overview_url(section, route_name, project)
      )}
   end
 
-  def handle_params(_params, _url, socket), do: {:noreply, socket}
+  def handle_params(_params, url, socket),
+    do: {:noreply, assign(socket, return_to: current_path(url))}
 
   defp product_overview_url(section, :workspaces, %Project{slug: project_slug}),
     do: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
@@ -262,8 +264,10 @@ defmodule OliWeb.Delivery.RemixSection do
        source_page_resource_ids: source_page_resource_ids,
        show_add_materials_modal: false,
        show_unsaved_changes_modal: false,
+       unsaved_changes_reason: :navigation,
        options_modal_assigns: nil,
-       pending_navigation_target: nil
+       pending_navigation_target: nil,
+       return_to: ~p"/sections/#{state.section.slug}/remix"
      )}
   end
 
@@ -538,27 +542,39 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  def handle_event("show_unsaved_changes_modal", %{"target" => target}, socket) do
+  def handle_event("show_unsaved_changes_modal", %{"target" => target} = params, socket) do
     cond do
       not valid_internal_path?(target) ->
         {:noreply, socket}
 
       socket.assigns.has_unsaved_changes ->
         {:noreply,
-         assign(socket, show_unsaved_changes_modal: true, pending_navigation_target: target)}
+         assign(socket,
+           show_unsaved_changes_modal: true,
+           unsaved_changes_reason: unsaved_changes_reason(params["reason"]),
+           pending_navigation_target: target
+         )}
 
       true ->
-        {:noreply, push_navigate(socket, to: target)}
+        {:noreply,
+         navigate_to_pending_target(socket, target, unsaved_changes_reason(params["reason"]))}
     end
   end
 
   def handle_event("dismiss_unsaved_changes_modal", _, socket) do
-    {:noreply, assign(socket, show_unsaved_changes_modal: false, pending_navigation_target: nil)}
+    {:noreply,
+     assign(socket,
+       show_unsaved_changes_modal: false,
+       unsaved_changes_reason: :navigation,
+       pending_navigation_target: nil
+     )}
   end
 
   def handle_event("unsaved_changes_save", _, socket) do
     %{remix_state: state} = socket.assigns
     author = socket.assigns[:current_author]
+    target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
+    reason = socket.assigns.unsaved_changes_reason
 
     case Oli.Delivery.Remix.save(state, author) do
       {:ok, section} ->
@@ -574,20 +590,22 @@ defmodule OliWeb.Delivery.RemixSection do
            previous_hierarchy: new_state.hierarchy,
            has_unsaved_changes: false,
            show_unsaved_changes_modal: false,
+           unsaved_changes_reason: :navigation,
            pending_navigation_target: nil
-         )}
+         )
+         |> navigate_to_pending_target(target, reason)}
 
       {:error, _reason} ->
         {:noreply,
          socket
          |> put_flash(:error, "Failed to save changes. Please try again.")
-         |> assign(show_unsaved_changes_modal: false)}
+         |> assign(show_unsaved_changes_modal: false, unsaved_changes_reason: :navigation)}
     end
   end
 
   def handle_event("unsaved_changes_leave", _, socket) do
     target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
-    {:noreply, push_navigate(socket, to: target)}
+    {:noreply, navigate_to_pending_target(socket, target, socket.assigns.unsaved_changes_reason)}
   end
 
   def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do
@@ -646,7 +664,8 @@ defmodule OliWeb.Delivery.RemixSection do
       pages_table_model: socket.assigns.pages_table_model,
       publications_table_model: socket.assigns.publications_table_model,
       publications_table_model_total_count: socket.assigns.publications_table_model_total_count,
-      publications_table_model_params: socket.assigns.publications_table_model_params
+      publications_table_model_params: socket.assigns.publications_table_model_params,
+      error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns, show_add_materials_modal: true)}
@@ -655,18 +674,45 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("AddMaterialsModal.add", _, socket) do
     %{remix_state: state, modal_assigns: %{selection: selection}} = socket.assigns
 
-    {:ok, state} = Remix.add_materials(state, selection)
+    case Remix.add_materials(state, selection) do
+      {:ok, state} ->
+        {:noreply,
+         assign(socket,
+           hierarchy: state.hierarchy,
+           active: state.active,
+           pinned_project_publications: state.pinned_project_publications,
+           has_unsaved_changes: true,
+           remix_state: state,
+           show_add_materials_modal: false,
+           modal_assigns: nil
+         )}
 
+      {:error, :shared_project_resources} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "Materials from this course cannot be added because this source course shares resources with the base course or another course already added. Choose a different source course, then try again."
+         )}
+
+      {:error, :selected_projects_share_resources} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "Materials from these courses cannot be added together because the selected source courses share resources. Select materials from one source course at a time, then try again."
+         )}
+
+      {:error, :unavailable_publication} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "Selected materials are no longer available. Close this dialog, reopen Add Materials, and try again."
+         )}
+    end
+  end
+
+  def handle_event("AddMaterialsModal.dismiss_error", _, socket) do
     {:noreply,
-     assign(socket,
-       hierarchy: state.hierarchy,
-       active: state.active,
-       pinned_project_publications: state.pinned_project_publications,
-       has_unsaved_changes: true,
-       remix_state: state,
-       show_add_materials_modal: false,
-       modal_assigns: nil
-     )}
+     assign(socket, modal_assigns: clear_add_materials_error(socket.assigns.modal_assigns))}
   end
 
   def handle_event("close_add_materials_modal", _, socket) do
@@ -698,7 +744,8 @@ defmodule OliWeb.Delivery.RemixSection do
         active: hierarchy,
         selected_publication: publication,
         pages_table_model: Map.put(modal_assigns.pages_table_model, :rows, section_pages),
-        pages_table_model_total_count: total_count
+        pages_table_model_total_count: total_count,
+        error_message: nil
     }
 
     modal_assigns = Map.put(modal_assigns, :exclude_resource_ids, exclude_ids)
@@ -712,7 +759,8 @@ defmodule OliWeb.Delivery.RemixSection do
     modal_assigns = %{
       modal_assigns
       | hierarchy: nil,
-        active: nil
+        active: nil,
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -723,10 +771,10 @@ defmodule OliWeb.Delivery.RemixSection do
 
     active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
-    modal_assigns = %{
+    modal_assigns =
       modal_assigns
-      | active: active
-    }
+      |> Map.put(:active, active)
+      |> Map.put(:error_message, nil)
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
@@ -753,7 +801,8 @@ defmodule OliWeb.Delivery.RemixSection do
           xor(
             selection,
             {publication.id, item.revision.resource_id}
-          )
+          ),
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -781,7 +830,8 @@ defmodule OliWeb.Delivery.RemixSection do
           xor(
             selection,
             {publication.id, item.revision.resource_id}
-          )
+          ),
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -790,9 +840,18 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("HierarchyPicker.update_hierarchy_tab", %{"tab_name" => tab_name}, socket) do
     %{modal_assigns: modal_assigns} = socket.assigns
 
-    modal_assigns = Map.put(modal_assigns, :active_tab, String.to_existing_atom(tab_name))
+    case hierarchy_tab(tab_name) do
+      {:ok, active_tab} ->
+        modal_assigns =
+          modal_assigns
+          |> Map.put(:active_tab, active_tab)
+          |> clear_add_materials_error()
 
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+        {:noreply, assign(socket, modal_assigns: modal_assigns)}
+
+      :error ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("HierarchyPicker.pages_text_search", %{"text_search" => text_search}, socket) do
@@ -1215,12 +1274,51 @@ defmodule OliWeb.Delivery.RemixSection do
     |> Enum.map(fn {_pub_id, rid} -> rid end)
   end
 
+  defp put_add_materials_error(socket, message) do
+    assign(socket,
+      modal_assigns:
+        socket.assigns.modal_assigns
+        |> Map.put(:error_message, message)
+    )
+  end
+
+  defp clear_add_materials_error(nil), do: nil
+
+  defp clear_add_materials_error(modal_assigns) do
+    Map.put(modal_assigns, :error_message, nil)
+  end
+
+  defp hierarchy_tab("curriculum"), do: {:ok, :curriculum}
+  defp hierarchy_tab("all_pages"), do: {:ok, :all_pages}
+  defp hierarchy_tab(_), do: :error
+
   defp valid_internal_path?(target) when is_binary(target) do
     uri = URI.parse(target)
     is_nil(uri.scheme) and is_nil(uri.host) and String.starts_with?(target, "/")
   end
 
   defp valid_internal_path?(_), do: false
+
+  defp navigate_to_pending_target(socket, target, :instructor_view) do
+    push_navigate(socket, to: target)
+  end
+
+  defp navigate_to_pending_target(socket, target, _reason) do
+    redirect(socket, to: target)
+  end
+
+  defp unsaved_changes_reason("instructor_view"), do: :instructor_view
+  defp unsaved_changes_reason(_reason), do: :navigation
+
+  defp current_path(url) do
+    %{path: path, query: query} = URI.parse(url)
+
+    case query do
+      nil -> path
+      "" -> path
+      query -> "#{path}?#{query}"
+    end
+  end
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false

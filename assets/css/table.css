@@ -18,8 +18,9 @@
   @apply h-[50px] text-left font-normal text-xs sm:text-sm relative;
 }
 
-.instructor_dashboard_table th[data-sort-column='true'] {
-  @apply font-bold text-gray-800 dark:text-[#EEEBF5];
+#settings_table .instructor_dashboard_table th[data-sort-column='true'],
+#student_exceptions_table .instructor_dashboard_table th[data-sort-column='true'] {
+  @apply font-bold text-Text-text-high;
 }
 
 .instructor_dashboard_table_link {
@@ -89,12 +90,25 @@
   @apply bg-Table-table-hover;
 }
 
-div:has(.instructor_dashboard_table) #header_paging {
-  @apply sticky left-0 dark:bg-neutral-800;
+#settings_table #header_paging,
+#student_exceptions_table #header_paging {
+  @apply sticky left-0 bg-Background-bg-secondary;
 }
 
-div:has(.instructor_dashboard_table) #footer_paging {
-  @apply sticky left-0 dark:bg-[#262626];
+#settings_table #footer_paging,
+#student_exceptions_table #footer_paging {
+  @apply sticky left-0 bg-Background-bg-secondary;
+}
+
+#settings_table select.torus-select,
+#student_exceptions_table select.torus-select {
+  @apply border-Text-text-button bg-Background-bg-secondary text-Text-text-button;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23006CD9' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+.dark #settings_table select.torus-select,
+.dark #student_exceptions_table select.torus-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234CA6FF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }
 
 div:has(.remix_materials_table) {

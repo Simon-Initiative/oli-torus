@@ -57,7 +57,14 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
         style={{ width: '100%', maxWidth: '100%', pointerEvents: 'none', boxSizing: 'border-box' }}
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
       />
-      {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}
+      {unitsLabel && (
+        <span
+          className="unitsLabel"
+          dangerouslySetInnerHTML={{
+            __html: sanitizeRichLabelHtml(unitsLabel?.length > 0 ? unitsLabel : ''),
+          }}
+        />
+      )}
     </div>
   );
 };

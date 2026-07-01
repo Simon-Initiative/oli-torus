@@ -13,29 +13,31 @@ defmodule Oli.Activities.Query.ExecutorTest do
     setup do
       map = Seeder.base_project_with_resource2()
 
-      Seeder.create_activity(
-        %{
-          scope: :banked,
-          objectives: %{"1" => [1]},
-          title: "1",
-          content: %{model: %{stem: "this is the question"}}
-        },
-        map.publication,
-        map.project,
-        map.author
-      )
+      first_banked_activity =
+        Seeder.create_activity(
+          %{
+            scope: :banked,
+            objectives: %{"1" => [1]},
+            title: "1",
+            content: %{model: %{stem: "this is the question"}}
+          },
+          map.publication,
+          map.project,
+          map.author
+        )
 
-      Seeder.create_activity(
-        %{
-          scope: :banked,
-          objectives: %{"1" => [1, 2]},
-          title: "2",
-          content: %{model: %{stem: "and another"}}
-        },
-        map.publication,
-        map.project,
-        map.author
-      )
+      second_banked_activity =
+        Seeder.create_activity(
+          %{
+            scope: :banked,
+            objectives: %{"1" => [1, 2]},
+            title: "2",
+            content: %{model: %{stem: "and another"}}
+          },
+          map.publication,
+          map.project,
+          map.author
+        )
 
       Seeder.create_activity(
         %{
@@ -49,7 +51,10 @@ defmodule Oli.Activities.Query.ExecutorTest do
         map.author
       )
 
-      map
+      Map.merge(map, %{
+        first_banked_activity: first_banked_activity,
+        second_banked_activity: second_banked_activity
+      })
     end
 
     test "queries for selection via objectives", %{publication: publication} do
@@ -82,6 +87,53 @@ defmodule Oli.Activities.Query.ExecutorTest do
       {:ok, %Result{rowCount: 1, totalCount: 2}} =
         Builder.build(logic, source, paging, :paged)
         |> Executor.execute()
+    end
+
+    test "optionally restricts results to specific activity resources", %{
+      publication: publication,
+      first_banked_activity: first_banked_activity,
+      second_banked_activity: second_banked_activity
+    } do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: "",
+        activity_resource_ids: [second_banked_activity.resource.id]
+      }
+
+      paging = %Paging{limit: 1, offset: 0}
+      logic = %Logic{conditions: %Expression{fact: :objectives, operator: :contains, value: [2]}}
+
+      assert {:ok, %Result{rows: [revision], rowCount: 1, totalCount: 1}} =
+               Builder.build(logic, source, paging, :paged)
+               |> Executor.execute()
+
+      assert revision.resource_id == second_banked_activity.resource.id
+      refute revision.resource_id == first_banked_activity.resource.id
+
+      source = %Source{source | activity_resource_ids: [first_banked_activity.resource.id]}
+
+      assert {:ok, %Result{rows: [], rowCount: 0, totalCount: 0}} =
+               Builder.build(logic, source, paging, :paged)
+               |> Executor.execute()
+    end
+
+    test "returns no results when restricted to no activity resources", %{
+      publication: publication
+    } do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: "",
+        activity_resource_ids: []
+      }
+
+      paging = %Paging{limit: 1, offset: 0}
+      logic = %Logic{conditions: nil}
+
+      assert {:ok, %Result{rows: [], rowCount: 0, totalCount: 0}} =
+               Builder.build(logic, source, paging, :paged)
+               |> Executor.execute()
     end
 
     test "queries for exact objectives via lateral join", %{publication: publication} do

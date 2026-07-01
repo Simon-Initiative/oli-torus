@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Remix.ActionsTest do
   import Phoenix.LiveViewTest
 
   alias OliWeb.Delivery.Remix.Actions
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Oli.Resources.ResourceType
   alias Oli.Seeder
 
@@ -63,6 +64,44 @@ defmodule OliWeb.Delivery.Remix.ActionsTest do
       # Should have warning icon with tooltip
       assert html =~
                "In order to remove this page, you first need to remove the gating condition associated with it."
+    end
+
+    test "renders edit link for pages", %{
+      section: section,
+      revision1: revision1
+    } do
+      edit_url =
+        PreviewRoutes.lesson_path(section.slug, revision1.slug,
+          return_to: "/sections/#{section.slug}/remix"
+        )
+
+      html =
+        render_component(Actions, %{
+          uuid: "test-uuid",
+          resource_type: ResourceType.id_for_page(),
+          hidden: false,
+          is_used_as_source_page: false,
+          edit_url: edit_url,
+          edit_label: "Open #{revision1.title} in Instructor View"
+        })
+
+      assert html =~ "Edit"
+      assert html =~ ~s(href="#{edit_url}")
+      assert html =~ ~s(aria-label="Open #{revision1.title} in Instructor View")
+      assert html =~ ~s(data-unsaved-changes-reason="instructor_view")
+    end
+
+    test "does not render edit link for containers" do
+      html =
+        render_component(Actions, %{
+          uuid: "test-uuid",
+          resource_type: ResourceType.id_for_container(),
+          hidden: false,
+          is_used_as_source_page: false,
+          edit_url: "/sections/test/preview/lesson/page-slug"
+        })
+
+      refute html =~ "Edit"
     end
   end
 end

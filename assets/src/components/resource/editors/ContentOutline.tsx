@@ -103,60 +103,61 @@ export const ContentOutline = ({
     editMode,
   );
 
-  const items = [
-    ...content.model
-      .filter((contentItem: ResourceContent) => contentItem.id !== activeDragId)
-      .map((contentItem: ResourceContent, index: number) => {
-        const onFocus = focusHandler(setAssistive, content, editorMap, activityContexts);
-        const onMove = moveHandler(
-          content,
-          onEditContent,
-          editorMap,
-          activityContexts,
-          setAssistive,
-        );
+  const items = content.model
+    .filter((contentItem: ResourceContent) => contentItem.id !== activeDragId)
+    .map((contentItem: ResourceContent, index: number) => {
+      const onFocus = focusHandler(setAssistive, content, editorMap, activityContexts);
+      const onMove = moveHandler(content, onEditContent, editorMap, activityContexts, setAssistive);
 
-        const onKeyDown = (id: string) => (e: React.KeyboardEvent<HTMLDivElement>) => {
-          if (isShiftArrowDown(e.nativeEvent)) {
-            onMove(id, false);
-            setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
-          } else if (isShiftArrowUp(e.nativeEvent)) {
-            onMove(id, true);
-            setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
-          }
-        };
+      const onKeyDown = (id: string) => (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (isShiftArrowDown(e.nativeEvent)) {
+          onMove(id, false);
+          setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
+        } else if (isShiftArrowUp(e.nativeEvent)) {
+          onMove(id, true);
+          setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
+        }
+      };
 
-        return (
-          <OutlineItem
-            key={contentItem.id}
-            id={contentItem.id}
-            index={index}
-            parents={[]}
-            className={className}
-            level={0}
-            editMode={editMode}
-            projectSlug={projectSlug}
-            activeDragId={activeDragId}
-            setActiveDragId={setActiveDragId}
-            assistive={assistive}
-            contentItem={contentItem}
-            activityContexts={activityContexts}
-            isReorderMode={isReorderMode}
-            activeDragIndex={activeDragIndex}
-            parentDropIndex={[]}
-            content={content}
-            collapsedGroupMap={collapsedGroupMap}
-            setCollapsedGroupMap={setCollapsedGroupMap}
-            onEditContent={onEditContent}
-            onFocus={onFocus}
-            onKeyDown={onKeyDown}
-          />
-        );
-      }),
-    isReorderMode && (
-      <DropTarget key="last" id="last" index={[content.model.size + 1]} onDrop={onDropLast} />
-    ),
-  ];
+      return (
+        <OutlineItem
+          key={contentItem.id}
+          id={contentItem.id}
+          index={index}
+          parents={[]}
+          className={className}
+          level={0}
+          editMode={editMode}
+          projectSlug={projectSlug}
+          activeDragId={activeDragId}
+          setActiveDragId={setActiveDragId}
+          assistive={assistive}
+          contentItem={contentItem}
+          activityContexts={activityContexts}
+          isReorderMode={isReorderMode}
+          activeDragIndex={activeDragIndex}
+          parentDropIndex={[]}
+          content={content}
+          collapsedGroupMap={collapsedGroupMap}
+          setCollapsedGroupMap={setCollapsedGroupMap}
+          onEditContent={onEditContent}
+          onFocus={onFocus}
+          onKeyDown={onKeyDown}
+        />
+      );
+    })
+    .toArray();
+
+  if (isReorderMode) {
+    items.push(
+      <DropTarget
+        key="last-drop-target"
+        id="last"
+        index={[content.model.size + 1]}
+        onDrop={onDropLast}
+      />,
+    );
+  }
 
   return (
     <div

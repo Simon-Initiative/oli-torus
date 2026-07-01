@@ -13,7 +13,7 @@ export class ProductOverviewPO {
   }
 
   async verifyHeader() {
-    await Verifier.expectContainText(this.header, 'Product Overview');
+    await Verifier.expectContainText(this.header, /Product Overview|Template Overview/);
   }
 
   async verifyProductTitle(expectedTitle: string) {

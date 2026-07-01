@@ -20,10 +20,10 @@ export const onboardWizardComplete = async (
   content.custom = {
     contentMode: appMode,
     defaultScreenHeight: 540,
-    defaultScreenWidth: 1000,
+    defaultScreenWidth: appMode === 'flowchart' ? 1200 : 1000,
     enableHistory: true,
     maxScore: 0,
-    responsiveLayout: false,
+    responsiveLayout: appMode === 'flowchart',
     themeId: 'torus-default-light',
     totalScore: 0,
   };

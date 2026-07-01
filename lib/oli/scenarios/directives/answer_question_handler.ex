@@ -28,7 +28,8 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
            submit_answer(
              section,
              activity_attempt_info,
-             formatted_response
+             formatted_response,
+             activity_revision
            ) do
       # Store the evaluation result
       key = {directive.student, directive.section, directive.page, directive.activity_virtual_id}
@@ -184,35 +185,23 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
   end
 
   # Submit the answer using evaluate_activity
-  defp submit_answer(section, activity_attempt_info, formatted_response) do
+  defp submit_answer(section, activity_attempt_info, formatted_response, activity_revision) do
     # Generate a unique datashop session ID
     datashop_session_id = "session_#{System.unique_integer([:positive])}"
 
-    # Get the first part attempt from the activity attempt info
-    # For single-part activities (like MCQ), there's only one part
-    part_attempt =
+    part_attempts =
       case activity_attempt_info.activity_attempt do
-        %{part_attempts: [part_attempt | _]} when is_map(part_attempt) ->
-          # Get the first (and usually only) part attempt
-          part_attempt
+        %{part_attempts: part_attempts} when is_list(part_attempts) ->
+          part_attempts
 
         _ ->
-          # If part_attempts aren't loaded or empty
-          nil
+          []
       end
 
-    if part_attempt == nil do
+    if part_attempts == [] do
       {:error, "Could not find part attempt"}
     else
-      # Build part_inputs structure with attempt_guid from part_attempt
-      part_inputs = [
-        %{
-          attempt_guid: part_attempt.attempt_guid,
-          input: %StudentInput{
-            input: formatted_response
-          }
-        }
-      ]
+      part_inputs = build_part_inputs(part_attempts, formatted_response, activity_revision)
 
       # Call evaluate_activity
       case Evaluate.evaluate_activity(
@@ -226,4 +215,67 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
       end
     end
   end
+
+  defp build_part_inputs(part_attempts, response, activity_revision) when is_map(response) do
+    inputs_by_part_id = inputs_by_part_id(activity_revision.content)
+
+    part_attempts
+    |> Enum.flat_map(fn part_attempt ->
+      input_ids = Map.get(inputs_by_part_id, part_attempt.part_id, [])
+
+      value =
+        Map.get(response, part_attempt.part_id) ||
+          Enum.find_value(input_ids, fn input_id -> Map.get(response, input_id) end)
+
+      case value do
+        nil ->
+          []
+
+        value ->
+          [
+            %{
+              attempt_guid: part_attempt.attempt_guid,
+              input: %StudentInput{input: value}
+            }
+          ]
+      end
+    end)
+    |> case do
+      [] when length(part_attempts) == 1 ->
+        [
+          %{
+            attempt_guid: hd(part_attempts).attempt_guid,
+            input: %StudentInput{input: Jason.encode!(response)}
+          }
+        ]
+
+      part_inputs ->
+        part_inputs
+    end
+  end
+
+  defp build_part_inputs([part_attempt | _], response, _activity_revision) do
+    [
+      %{
+        attempt_guid: part_attempt.attempt_guid,
+        input: %StudentInput{
+          input: response
+        }
+      }
+    ]
+  end
+
+  defp inputs_by_part_id(%{"inputs" => inputs}) when is_list(inputs) do
+    Enum.reduce(inputs, %{}, fn input, acc ->
+      case {Map.get(input, "id"), Map.get(input, "partId")} do
+        {input_id, part_id} when is_binary(input_id) and is_binary(part_id) ->
+          Map.update(acc, part_id, [input_id], &[input_id | &1])
+
+        _ ->
+          acc
+      end
+    end)
+  end
+
+  defp inputs_by_part_id(_), do: %{}
 end

@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   import Ecto.Query
 
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.StudentDashboard.CourseContentLive
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
@@ -31,6 +32,18 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
     Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
     %{section: section, mod1_pages: mod1_pages}
+  end
+
+  defp resource_id_for_slug(view, resource_slug) do
+    view
+    |> render()
+    |> Floki.parse_fragment!()
+    |> Floki.find(
+      ~s{button[phx-click="open_resource"][phx-value-resource_slug="#{resource_slug}"]}
+    )
+    |> List.first()
+    |> Floki.attribute("phx-value-resource_id")
+    |> List.first()
   end
 
   describe "course renders the browser correctly" do
@@ -384,6 +397,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       # open module 1
       resource_slug = "module_1"
+      resource_id = resource_id_for_slug(view, resource_slug)
 
       view
       |> element(
@@ -393,12 +407,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       assert_redirected(
         view,
-        Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :container,
-          section.slug,
-          resource_slug
-        )
+        Utils.learn_live_path(section.slug, target_resource_id: resource_id)
       )
     end
 
@@ -413,6 +422,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       # open module 1
       resource_slug = "module_1"
+      resource_id = resource_id_for_slug(view, resource_slug)
 
       view
       |> element(
@@ -422,11 +432,17 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       assert_redirected(
         view,
-        Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :container_preview,
-          section.slug,
-          resource_slug
+        Utils.learn_live_path(section.slug,
+          preview_mode: true,
+          target_resource_id: resource_id,
+          return_to:
+            Routes.instructor_dashboard_path(
+              OliWeb.Endpoint,
+              :preview,
+              section.slug,
+              :overview,
+              :course_content
+            )
         )
       )
     end
@@ -449,12 +465,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       assert_redirected(
         view,
-        Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :page,
-          section.slug,
-          resource_slug
-        )
+        Utils.lesson_live_path(section.slug, resource_slug)
       )
     end
 
@@ -476,11 +487,16 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       assert_redirected(
         view,
-        Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :page_preview,
-          section.slug,
-          resource_slug
+        Utils.lesson_live_path(section.slug, resource_slug,
+          preview_mode: true,
+          return_to:
+            Routes.instructor_dashboard_path(
+              OliWeb.Endpoint,
+              :preview,
+              section.slug,
+              :overview,
+              :course_content
+            )
         )
       )
     end

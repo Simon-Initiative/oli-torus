@@ -107,8 +107,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{"info" => "Section successfully created."} ==
-               assert_redirect(view, ~p"/sections/new_admin_course")
+      assert %{} ==
+               assert_redirect(view, ~p"/sections/new_admin_course/manage?section_created=true")
     end
 
     @tag :skip
@@ -133,8 +133,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{"info" => "Section successfully created."} ==
-               assert_redirect(view, ~p"/sections/new_admin_course")
+      assert %{} ==
+               assert_redirect(view, ~p"/sections/new_admin_course/manage?section_created=true")
     end
   end
 
@@ -198,8 +198,11 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{"info" => "Section successfully created."} ==
-               assert_redirect(view, ~p"/sections/new_instructor_course")
+      assert %{} ==
+               assert_redirect(
+                 view,
+                 ~p"/sections/new_instructor_course/manage?section_created=true"
+               )
     end
 
     @tag :skip
@@ -224,8 +227,11 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{"info" => "Section successfully created."} ==
-               assert_redirect(view, ~p"/sections/new_instructor_course")
+      assert %{} ==
+               assert_redirect(
+                 view,
+                 ~p"/sections/new_instructor_course/manage?section_created=true"
+               )
     end
 
     test "timezone is set to the default timezone", %{conn: conn} = context do
@@ -300,7 +306,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/sections")
+      assert %{} ==
+               assert_redirect(view, ~p"/sections/new_lms_course/manage?section_created=true")
     end
 
     @tag :skip
@@ -334,7 +341,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       assert blueprint_section.contains_explorations == true
 
-      assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/sections")
+      assert %{} ==
+               assert_redirect(view, ~p"/sections/new_lms_course/manage?section_created=true")
     end
 
     @tag :skip

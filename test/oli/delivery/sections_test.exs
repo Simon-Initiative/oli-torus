@@ -4201,4 +4201,20 @@ defmodule Oli.Delivery.SectionsTest do
       }
     }
   end
+
+  describe "get_section_with_base_project/1" do
+    test "returns the section with base_project preloaded" do
+      project = insert(:project)
+      section = insert(:section, base_project: project)
+
+      result = Sections.get_section_with_base_project(section.id)
+
+      assert result.id == section.id
+      assert result.base_project.id == project.id
+    end
+
+    test "returns nil for a non-existent section id" do
+      refute Sections.get_section_with_base_project(-1)
+    end
+  end
 end

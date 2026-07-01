@@ -9,6 +9,7 @@ interface Props {
   disabled?: boolean;
   placeholder?: string;
   size?: MultiInputSize;
+  className?: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
   onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -37,6 +38,7 @@ export const NumericInput: React.FC<Props> = (props) => {
         hasError ? 'input-error' : 'border-gray-300', // Use custom error class
         'focus:outline-none', // Remove default focus outline
         props.size && `input-size-${props.size}`,
+        props.className,
       )}
       onChange={(e) => {
         const value = e.target.value;

@@ -1,5 +1,6 @@
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 import { Utils } from '@core/Utils';
+import { Waiter } from '@core/wait/Waiter';
 import { SelectMultimediaCO } from '@pom/page/SelectMultimediaCO';
 import { TYPE_ACTIVITY, TypeActivity } from '@pom/types/type-activity';
 import { TypeToolbar } from '@pom/types/type-toolbar';
@@ -11,6 +12,7 @@ export class BasicPracticePagePO {
   private readonly pageTitle: Locator;
   private readonly insertButtonIcon: Locator;
   private readonly changesSaved: Locator;
+  private readonly changesSaving: Locator;
   private readonly paragraph: Locator;
   private readonly paragraphText: Locator;
   private readonly chooseImageButton: Locator;
@@ -18,15 +20,23 @@ export class BasicPracticePagePO {
   private readonly resourceChoicesActivities: Locator;
   private readonly resourceChoicesNonActivities: Locator;
   private readonly previewButton: Locator;
+  private readonly editTitleButton: Locator;
+  private readonly pageTitleInput: Locator;
+  private readonly pageTitleSaveButton: Locator;
+  private readonly adaptiveReadOnlyInput: Locator;
+  private readonly adaptiveReadOnlyToggle: Locator;
   private readonly captionAudio: Locator;
   private readonly figure: Locator;
   private readonly textbox: Locator;
   private readonly utils: Utils;
 
   constructor(private readonly page: Page) {
-    this.pageTitle = this.page.locator('#page_editor-container div.TitleBar span');
+    this.pageTitle = this.page
+      .locator('div.TitleBar h1, #page_editor-container div.TitleBar span')
+      .first();
     this.insertButtonIcon = page.locator('span[data-bs-original-title="Insert Content"]').first();
     this.changesSaved = page.getByText('All changes saved');
+    this.changesSaving = page.getByText('Saving...');
     this.paragraph = page.locator('[id^="resource-editor-"]').getByRole('paragraph');
     this.paragraphText = this.page.getByText('Type here or use + to begin...');
     this.chooseImageButton = page.getByRole('button', {
@@ -38,6 +48,19 @@ export class BasicPracticePagePO {
     this.resourceChoicesActivities = page.locator('.resource-choices.activities');
     this.resourceChoicesNonActivities = page.locator('.resource-choices.non-activities');
     this.previewButton = page.locator('div.TitleBar button:has-text("Preview")');
+    this.editTitleButton = page
+      .locator('div.TitleBar')
+      .getByRole('button', { name: 'Edit Title' })
+      .first();
+    this.pageTitleInput = page.locator('div.TitleBar #page_title_input').first();
+    this.pageTitleSaveButton = page
+      .locator('div.TitleBar')
+      .getByRole('button', { name: 'Save' })
+      .first();
+    this.adaptiveReadOnlyInput = page.locator(
+      '#adaptive_read_only_toggle input[name="adaptive_read_only"]',
+    );
+    this.adaptiveReadOnlyToggle = page.locator('#adaptive_read_only_toggle label');
     this.captionAudio = page.getByRole('paragraph').filter({ hasText: 'Caption (optional)' });
     this.figure = this.page.getByRole('figure', { name: 'Figure Title' });
     this.textbox = this.figure.getByRole('textbox');
@@ -48,16 +71,56 @@ export class BasicPracticePagePO {
     await Verifier.expectHasText(this.pageTitle, titlePage);
   }
 
+  async renameTitle(titlePage: string) {
+    await Verifier.expectIsVisible(this.editTitleButton);
+    await this.ensureTitleEditingEnabled();
+    await this.editTitleButton.click();
+    await Waiter.waitFor(this.pageTitleInput, 'visible');
+    await this.pageTitleInput.fill(titlePage);
+    await this.pageTitleSaveButton.click();
+    await Waiter.waitFor(this.pageTitleInput, 'hidden', 10000);
+    await this.verifyTitlePage(titlePage);
+  }
+
+  private async ensureTitleEditingEnabled() {
+    if (await this.editTitleButton.isEnabled().catch(() => false)) return;
+
+    if ((await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0) {
+      await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 10000 });
+
+      if (await this.adaptiveReadOnlyInput.isChecked().catch(() => false)) {
+        await this.adaptiveReadOnlyToggle.click();
+        await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
+      }
+    }
+
+    await expect(this.editTitleButton, 'Page title edit button should be enabled.').toBeEnabled({
+      timeout: 15000,
+    });
+  }
+
   async fillCaptionAudio(text: string) {
     await this.captionAudio.fill(text);
   }
 
   async waitForChangesSaved() {
+    if (await this.changesSaving.isVisible().catch(() => false)) {
+      await Waiter.waitFor(this.changesSaving, 'hidden', 15000);
+    }
+
     await Verifier.expectIsVisible(
       this.changesSaved,
       'The "All changes saved" notification message does not appear.',
     );
     await this.utils.paintElement(this.changesSaved);
+  }
+
+  async flushPendingPageChanges() {
+    await this.page.waitForTimeout(100);
+    await this.page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('phx:authoring_flush_page_editor_requested'));
+    });
+    await this.waitForChangesSaved();
   }
 
   @step('Click paragraph at index: {index}')
@@ -114,7 +177,7 @@ export class BasicPracticePagePO {
           initialCount,
           { timeout: 1200 },
         );
-      } catch (_) {
+      } catch {
         // fall through; if no new paragraph, reuse last
       }
 
@@ -146,7 +209,7 @@ export class BasicPracticePagePO {
       if (i === 1) {
         try {
           await this.clickParagraph();
-        } catch (_) {
+        } catch {
           // ignore and retry
         }
       }
@@ -162,11 +225,13 @@ export class BasicPracticePagePO {
 
   @step('Select activity: {activityName}')
   async selectActivity(activityName: TypeActivity) {
-    const label = TYPE_ACTIVITY[activityName].type;
+    const activity = TYPE_ACTIVITY[activityName];
 
     let menu: Locator;
     let requiresVerification = true;
-    if (['ab_test', 'alt', 'group', 'survey', 'bank', 'report', 'paragraph'].includes(activityName)) {
+    if (
+      ['ab_test', 'alt', 'group', 'survey', 'bank', 'report', 'paragraph'].includes(activityName)
+    ) {
       menu = this.resourceChoicesNonActivities;
       requiresVerification = false;
     } else {
@@ -175,9 +240,9 @@ export class BasicPracticePagePO {
 
     await Verifier.expectIsVisible(menu, 'Insert content menu should be open');
 
-    const button = menu.getByRole('button', { name: label }).first();
+    const button = menu.getByRole('button', { name: activity.type }).first();
 
-    const confirmation = this.page.getByText(label, { exact: true });
+    const confirmation = this.page.getByText(activity.label, { exact: true });
 
     if (requiresVerification) {
       await this.utils.forceClick(button, confirmation);
@@ -198,6 +263,8 @@ export class BasicPracticePagePO {
   }
 
   async clickPreview() {
+    await this.flushPendingPageChanges();
+
     const pagePromise = this.page.context().waitForEvent('page');
     await this.previewButton.click();
     const newPage = await pagePromise;

@@ -722,6 +722,7 @@ $hover: #dce7f9;
 
 .dark .flowchart-editor .fixed-right-panel input[type='text'],
 .dark .flowchart-editor .fixed-right-panel input[type='number'],
+.dark .flowchart-editor .fixed-right-panel select.form-control,
 .dark .flowchart-editor .fixed-right-panel .form-label {
   --tw-border-opacity: 1;
   border-color: rgb(82 82 82 / var(--tw-border-opacity)) !important;

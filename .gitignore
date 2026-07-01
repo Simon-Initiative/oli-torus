@@ -10,6 +10,9 @@ temp_init_file
 lib/oli/analytics/test.xml
 Mnesia.*
 
+/build/
+/gleam/build/
+
 /output/
 
 # IDEA

@@ -6,6 +6,7 @@ defmodule Oli.Rendering.Context do
   defstruct enrollment: nil,
             user: nil,
             activity_map: %{},
+            instructor_preview_context: %{},
             render_opts: %{
               render_errors: true,
               render_point_markers: true
@@ -15,6 +16,7 @@ defmodule Oli.Rendering.Context do
             revision_slug: nil,
             activity_revision_id: nil,
             page_id: nil,
+            section_id: nil,
             section_slug: nil,
             project_slug: nil,
             activity_types_map: %{},

@@ -13,22 +13,35 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityAttemptAssertion do
          {:ok, _student} <- Helpers.get_user(state, activity_spec.student),
          {:ok, resource_attempt} <- get_active_resource_attempt(state, activity_spec),
          {:ok, activity_revision} <-
-           get_activity_revision(state, activity_spec.activity_virtual_id),
-         {:ok, activity_state} <-
-           ActivityAttemptState.for_activity(
+           get_activity_revision(state, activity_spec.activity_virtual_id) do
+      case ActivityAttemptState.for_activity(
              resource_attempt,
              activity_revision.resource_id,
              activity_spec.part_id
            ) do
-      verification =
-        verify_activity_attempt(
-          activity_spec.section,
-          activity_spec.activity_virtual_id,
-          activity_spec,
-          activity_state
-        )
+        {:ok, activity_state} ->
+          verification =
+            verify_activity_attempt(
+              activity_spec.section,
+              activity_spec.activity_virtual_id,
+              activity_spec,
+              activity_state
+            )
 
-      {:ok, state, verification}
+          {:ok, state, verification}
+
+        {:error, _reason} when activity_spec.exists == false ->
+          {:ok, state,
+           %VerificationResult{
+             to: activity_spec.section,
+             passed: true,
+             message:
+               "Activity attempt for '#{activity_spec.activity_virtual_id}' is absent as expected"
+           }}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
     else
       {:error, reason} ->
         {:error, reason}
@@ -70,6 +83,8 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityAttemptAssertion do
 
   defp verify_activity_attempt(section_name, activity_virtual_id, expected, actual) do
     try do
+      assert_attempt_exists(expected.exists, section_name, activity_virtual_id)
+
       assert_equal(
         :activity_lifecycle_state,
         expected.activity_lifecycle_state,
@@ -106,6 +121,12 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityAttemptAssertion do
         }
     end
   end
+
+  defp assert_attempt_exists(false, section_name, activity_virtual_id) do
+    raise "Activity attempt for '#{activity_virtual_id}' exists in section '#{section_name}' but was expected to be absent"
+  end
+
+  defp assert_attempt_exists(_expected_exists, _section_name, _activity_virtual_id), do: :ok
 
   defp assert_equal(_field, nil, _actual), do: :ok
 

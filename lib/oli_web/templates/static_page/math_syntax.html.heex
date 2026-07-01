@@ -1,0 +1,306 @@
+<main class="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <div class="mx-auto max-w-5xl px-6 py-10 lg:px-8 lg:py-14">
+    <header class="mb-10 border-b border-slate-200 pb-8 dark:border-slate-800">
+      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+        Math Expression Help
+      </p>
+      <h1 class="text-4xl font-bold leading-tight text-slate-950 dark:text-white">
+        Math Expression Syntax
+      </h1>
+      <p class="mt-4 max-w-3xl text-lg leading-8 text-slate-700 dark:text-slate-300">
+        Math Expression answers use calculator-style typing. You can enter numbers,
+        variables, arithmetic, powers, parentheses, common functions, constants, and
+        supported units.
+      </p>
+    </header>
+
+    <section aria-labelledby="quick-examples" class="mb-12">
+      <h2 id="quick-examples" class="text-2xl font-semibold text-slate-950 dark:text-white">
+        Quick Examples
+      </h2>
+      <div class="mt-4 overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+        <table class="w-full min-w-[38rem] text-left text-sm">
+          <thead class="bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
+            <tr>
+              <th scope="col" class="px-4 py-3 font-semibold">What you want</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Type this</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+            <tr>
+              <td class="px-4 py-3">Two times x plus six</td>
+              <td class="px-4 py-3"><code>2x + 6</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">Two times the quantity x plus three</td>
+              <td class="px-4 py-3"><code>2(x + 3)</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">Square root of two divided by two</td>
+              <td class="px-4 py-3"><code>sqrt(2)/2</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">x squared</td>
+              <td class="px-4 py-3"><code>x^2</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">Scientific notation</td>
+              <td class="px-4 py-3"><code>1.2e-3</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">Absolute value of x minus two</td>
+              <td class="px-4 py-3"><code>abs(x - 2)</code> or <code>|x - 2|</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">Sine of x</td>
+              <td class="px-4 py-3"><code>sin(x)</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">Pi</td>
+              <td class="px-4 py-3"><code>pi</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">Acceleration with units</td>
+              <td class="px-4 py-3"><code>9.8 m/s^2</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="grid gap-8 lg:grid-cols-2">
+      <section
+        aria-labelledby="arithmetic"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="arithmetic" class="text-xl font-semibold">Arithmetic</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Use <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, and <code>^</code>
+          for addition, subtraction, multiplication, division, and powers.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>3 + 4</code></li>
+          <li><code>12 / 4</code></li>
+          <li><code>2^3</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="multiplication"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="multiplication" class="text-xl font-semibold">Multiplication</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          You may use <code>*</code> or place terms next to each other when multiplication
+          is intended.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>2*x</code></li>
+          <li><code>2x</code></li>
+          <li><code>(x + 1)(x - 1)</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="parentheses"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="parentheses" class="text-xl font-semibold">Parentheses</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Use parentheses to group expressions and to make fractions or powers clear.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>2(x + 3)</code></li>
+          <li><code>(x + 1)/(x - 1)</code></li>
+          <li><code>(x + y)^2</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="fractions"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="fractions" class="text-xl font-semibold">Fractions And Division</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Use <code>/</code> for division and fractions. Add parentheses when the numerator
+          or denominator has more than one term.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>1/2</code></li>
+          <li><code>sqrt(2)/2</code></li>
+          <li><code>(x + 1)/(x - 1)</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="functions"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="functions" class="text-xl font-semibold">Functions</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Functions require parentheses around their input.
+        </p>
+        <ul class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1">
+          <li><code>sqrt(x)</code></li>
+          <li><code>sin(x)</code></li>
+          <li><code>cos(x)</code></li>
+          <li><code>tan(x)</code></li>
+          <li><code>ln(x)</code></li>
+          <li><code>log(x)</code></li>
+          <li><code>log10(x)</code></li>
+          <li><code>log2(x)</code></li>
+          <li><code>abs(x)</code></li>
+          <li><code>exp(x)</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="constants"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="constants" class="text-xl font-semibold">Constants</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Use lowercase names for common constants.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>pi</code></li>
+          <li><code>e</code></li>
+          <li><code>2pi</code></li>
+          <li><code>e^x</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="absolute-value"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="absolute-value" class="text-xl font-semibold">Absolute Value</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Use <code>abs(...)</code> or vertical bars. If vertical bars are hard to read
+          in a longer answer, use <code>abs(...)</code>.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>abs(x - 2)</code></li>
+          <li><code>|x - 2|</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="factorial"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="factorial" class="text-xl font-semibold">Factorial</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Use <code>!</code> for factorial when the question accepts it. Factorials are
+          normally used with whole-number values.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>5!</code></li>
+          <li><code>n!</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="scientific-notation"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="scientific-notation" class="text-xl font-semibold">Scientific Notation</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Use <code>e</code> notation and do not use thousands separators.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>1.2e-3</code></li>
+          <li><code>6e7</code></li>
+          <li><code>1000</code>, not <code>1,000</code></li>
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="variables"
+        class="rounded-md border border-slate-200 p-5 dark:border-slate-800"
+      >
+        <h2 id="variables" class="text-xl font-semibold">Variables</h2>
+        <p class="mt-2 text-slate-700 dark:text-slate-300">
+          Allowed variables depend on the question. Common variables include <code>x</code>, <code>y</code>, <code>t</code>, <code>a</code>, and <code>n</code>.
+        </p>
+        <ul class="mt-3 space-y-1">
+          <li><code>2x + 6</code></li>
+          <li><code>x^2 + y^2</code></li>
+          <li><code>v*t</code></li>
+        </ul>
+      </section>
+    </div>
+
+    <section
+      aria-labelledby="units"
+      class="mt-8 rounded-md border border-slate-200 p-5 dark:border-slate-800"
+    >
+      <h2 id="units" class="text-xl font-semibold">Units</h2>
+      <p class="mt-2 text-slate-700 dark:text-slate-300">
+        Some questions may require units. Type a space between the value and the unit.
+        Use <code>/</code> for division in units and <code>^</code> for unit powers.
+      </p>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <h3 class="font-semibold text-green-700 dark:text-green-300">Accepted examples</h3>
+          <ul class="mt-2 space-y-1">
+            <li><code>9.8 m/s^2</code></li>
+            <li><code>980 cm/s^2</code></li>
+            <li><code>10 N</code></li>
+            <li><code>36 km/hr</code></li>
+            <li><code>1.0 mol/L</code></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-red-700 dark:text-red-300">Avoid</h3>
+          <ul class="mt-2 space-y-1">
+            <li><code>9.8m/s^2</code> without a space before the unit</li>
+            <li>An answer without units when the question asks for units</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="common-mistakes" class="mt-8">
+      <h2 id="common-mistakes" class="text-2xl font-semibold text-slate-950 dark:text-white">
+        Common Mistakes
+      </h2>
+      <div class="mt-4 overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+        <table class="w-full min-w-[34rem] text-left text-sm">
+          <thead class="bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
+            <tr>
+              <th scope="col" class="px-4 py-3 font-semibold">Instead of</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Use</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+            <tr>
+              <td class="px-4 py-3"><code>sin x</code></td>
+              <td class="px-4 py-3"><code>sin(x)</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">A square-root symbol</td>
+              <td class="px-4 py-3"><code>sqrt(x)</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3">A superscript 2 character</td>
+              <td class="px-4 py-3"><code>x^2</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3"><code>1,000</code></td>
+              <td class="px-4 py-3"><code>1000</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3"><code>9.8m/s^2</code></td>
+              <td class="px-4 py-3"><code>9.8 m/s^2</code></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3"><code>2^^3</code></td>
+              <td class="px-4 py-3"><code>2^3</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>

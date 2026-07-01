@@ -34,6 +34,7 @@ defmodule Oli.GenAI.Execution do
       ) do
     with {:ok, plan} <- Router.route(request_ctx, service_config) do
       completer = Keyword.get(opts, :completions_mod, Completions)
+      provider_opts = Keyword.get(opts, :provider_opts, [])
       request_type = Map.get(request_ctx, :request_type, :generate)
       notify_plan(Keyword.get(opts, :on_plan), plan)
 
@@ -47,7 +48,8 @@ defmodule Oli.GenAI.Execution do
           service_config,
           request_ctx,
           request_type,
-          true
+          true,
+          provider_opts
         )
       after
         release_admission!(plan)
@@ -99,7 +101,8 @@ defmodule Oli.GenAI.Execution do
          service_config,
          _request_ctx,
          request_type,
-         include_metadata?
+         include_metadata?,
+         provider_opts
        ) do
     execute_generate(
       completer,
@@ -108,7 +111,8 @@ defmodule Oli.GenAI.Execution do
       plan,
       service_config,
       request_type,
-      include_metadata?
+      include_metadata?,
+      provider_opts
     )
   end
 
@@ -142,10 +146,11 @@ defmodule Oli.GenAI.Execution do
          plan,
          service_config,
          request_type,
-         include_metadata?
+         include_metadata?,
+         provider_opts
        ) do
     start_ms = System.monotonic_time(:millisecond)
-    result = completer.generate(messages, functions, plan.selected_model)
+    result = completer.generate(messages, functions, plan.selected_model, provider_opts)
     latency_ms = System.monotonic_time(:millisecond) - start_ms
 
     report_breaker(result, plan.selected_model, latency_ms)

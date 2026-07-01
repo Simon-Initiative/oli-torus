@@ -373,7 +373,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
          %{activity_type_id: activity_type_id, revision: revision}
        ) do
     if AdaptiveParts.adaptive_activity?(%{activity_type_id: activity_type_id}) do
-      allowed_part_ids = AdaptiveParts.scorable_part_ids(revision.content)
+      allowed_part_ids = AdaptiveParts.manual_gradeable_part_ids(revision.content)
       Enum.filter(part_attempts, &MapSet.member?(allowed_part_ids, &1.part_id))
     else
       part_attempts

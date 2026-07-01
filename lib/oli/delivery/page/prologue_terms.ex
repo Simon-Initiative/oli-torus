@@ -8,9 +8,9 @@ defmodule Oli.Delivery.Page.PrologueTerms do
 
   alias OliWeb.Common.FormatDateTime
 
-  def build(effective_settings, ctx, has_scheduled_resources?) do
+  def build(effective_settings, ctx, _has_scheduled_resources?) do
     [
-      due_term(effective_settings, ctx, has_scheduled_resources?),
+      due_term(effective_settings, ctx),
       score_as_you_go_term(effective_settings),
       scoring_term(effective_settings),
       question_attempts_term(effective_settings),
@@ -31,16 +31,11 @@ defmodule Oli.Delivery.Page.PrologueTerms do
       else: "#{to_hours(hours)}"
   end
 
-  defp due_term(%{end_date: nil}, _ctx, false), do: nil
-
-  defp due_term(%{end_date: nil}, _ctx, true) do
-    term("page_due_terms", [{:text, "This assignment is "}, {:strong, "not yet scheduled."}])
-  end
+  defp due_term(%{end_date: nil}, _ctx), do: nil
 
   defp due_term(
          %{end_date: end_date, start_date: start_date, scheduling_type: scheduling_type},
-         ctx,
-         _?
+         ctx
        ) do
     verb_form =
       case DateTime.compare(DateTime.utc_now(), end_date) do

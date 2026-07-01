@@ -14,6 +14,10 @@
     "element": "oli-likert-authoring",
     "entry": "./authoring-entry.ts"
   },
+  "preview": {
+    "element": "oli-likert-preview",
+    "entry": "./preview-entry.ts"
+  },
   "schemaPruning": {
     "type": "keys",
     "keys": ["feedback"]

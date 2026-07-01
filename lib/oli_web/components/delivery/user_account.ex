@@ -317,6 +317,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       label="Cookies"
       onclick={"OLI.handleCookiePreferences(#{Jason.encode!(privacy_policies_url())})"}
     />
+    <.menu_item_profile_math_previews :if={@ctx.user} ctx={@ctx} />
     <.menu_item_profile_timezone id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_item_guest_actions section={@section} />
     """
@@ -628,6 +629,37 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           select_class="bg-delivery-hints-bg dark:bg-delivery-hints-bg-dark text-delivery-body-color dark:text-delivery-body-color-dark border-gray-300 dark:border-gray-700 h-9"
         />
       </div>
+    </li>
+    """
+  end
+
+  attr(:ctx, SessionContext, required: true)
+
+  def menu_item_profile_math_previews(assigns) do
+    ~H"""
+    <li class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 sm:px-2">
+      <form action={~p"/update_user_preference"} method="post">
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+        <input type="hidden" name="user_preference[key]" value="show_math_previews?" />
+        <input type="hidden" name="user_preference[value]" value="false" />
+        <input
+          type="hidden"
+          name="user_preference[redirect_to]"
+          value="/"
+        />
+        <label class="flex items-center gap-4 text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark">
+          <i class="fa-solid fa-square-root-variable text-gray-500 dark:text-gray-400 text-lg"></i>
+          <span class="flex-1">Show Math Previews</span>
+          <input
+            type="checkbox"
+            name="user_preference[value]"
+            value="true"
+            checked={Accounts.get_user_preference(@ctx.user, :show_math_previews?, true)}
+            class="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
+            onchange="this.form.elements['user_preference[redirect_to]'].value = window.location.pathname + window.location.search; this.form.submit()"
+          />
+        </label>
+      </form>
     </li>
     """
   end

@@ -21,7 +21,11 @@ export class PagePreviewPO {
 
   async verifyCite(str: string) {
     const l = this.page.locator('body');
-    await Verifier.expectContainText(l, /Newton/i, 'Citation text should appear in preview');
+    await Verifier.expectContainText(
+      l,
+      new RegExp(str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
+      'Citation text should appear in preview',
+    );
   }
 
   async verifyContent(...str: string[]) {

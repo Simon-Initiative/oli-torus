@@ -375,7 +375,83 @@
           "oneOf": [{ "type": "number" }, { "type": "string" }]
         },
         "response": {},
-        "answerable": { "$ref": "#/definitions/booleanLike" }
+        "answerable": { "$ref": "#/definitions/booleanLike" },
+        "exists": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "activityCustomizationEmbeddedExpectation": {
+      "type": "object",
+      "required": ["activity_virtual_id", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "activity_virtual_id": { "type": "string" },
+        "enabled": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "activityCustomizationSelectionExpectation": {
+      "type": "object",
+      "required": ["selection_id", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": { "type": "string" },
+        "enabled": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "activityCustomizationCandidateExpectation": {
+      "type": "object",
+      "required": ["selection_id", "activity_virtual_id", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": { "type": "string" },
+        "activity_virtual_id": { "type": "string" },
+        "enabled": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "activityCustomizationAssertion": {
+      "type": "object",
+      "required": ["section", "page"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "page": { "type": "string" },
+        "embedded_activities": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/activityCustomizationEmbeddedExpectation" }
+        },
+        "bank_selections": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/activityCustomizationSelectionExpectation" }
+        },
+        "bank_candidates": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/activityCustomizationCandidateExpectation" }
+        }
+      }
+    },
+    "pageObjectivesAssertion": {
+      "type": "object",
+      "required": ["section", "page", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "page": { "type": "string" },
+        "expected": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "activityObjectivesAssertion": {
+      "type": "object",
+      "required": ["project", "activity_virtual_id", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "project": { "type": "string" },
+        "activity_virtual_id": { "type": "string" },
+        "expected": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
       }
     },
     "assertDirective": {
@@ -392,6 +468,9 @@
         "gradebook": { "$ref": "#/definitions/gradebookAssertion" },
         "review_attempt": { "$ref": "#/definitions/reviewAttemptAssertion" },
         "activity_attempt": { "$ref": "#/definitions/activityAttemptAssertion" },
+        "activity_customization": { "$ref": "#/definitions/activityCustomizationAssertion" },
+        "page_objectives": { "$ref": "#/definitions/pageObjectivesAssertion" },
+        "activity_objectives": { "$ref": "#/definitions/activityObjectivesAssertion" },
         "assertions": {}
       }
     },
@@ -410,8 +489,62 @@
         "gradebook": { "$ref": "#/definitions/gradebookAssertion" },
         "review_attempt": { "$ref": "#/definitions/reviewAttemptAssertion" },
         "activity_attempt": { "$ref": "#/definitions/activityAttemptAssertion" },
+        "activity_customization": { "$ref": "#/definitions/activityCustomizationAssertion" },
+        "page_objectives": { "$ref": "#/definitions/pageObjectivesAssertion" },
+        "activity_objectives": { "$ref": "#/definitions/activityObjectivesAssertion" },
         "assertions": {}
       }
+    },
+    "objectiveOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["create"],
+          "additionalProperties": false,
+          "properties": {
+            "create": {
+              "type": "object",
+              "required": ["title"],
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["create_sub"],
+          "additionalProperties": false,
+          "properties": {
+            "create_sub": {
+              "type": "object",
+              "required": ["parent", "title"],
+              "additionalProperties": false,
+              "properties": {
+                "parent": { "type": "string" },
+                "title": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["remove_sub"],
+          "additionalProperties": false,
+          "properties": {
+            "remove_sub": {
+              "type": "object",
+              "required": ["parent", "title"],
+              "additionalProperties": false,
+              "properties": {
+                "parent": { "type": "string" },
+                "title": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
     },
     "manipulateOperation": {
       "oneOf": [
@@ -565,6 +698,309 @@
         }
       ]
     },
+    "resourceReference": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "integer" }
+      ]
+    },
+    "activityBankCreate": {
+      "type": "object",
+      "required": ["title", "content"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "virtual_id": { "type": "string" },
+        "type": { "type": "string" },
+        "activity_type_slug": { "type": "string" },
+        "content_format": {
+          "type": "string",
+          "enum": ["torusdoc", "json"]
+        },
+        "content": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "object" }
+          ]
+        },
+        "objectives": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/resourceReference" }
+        },
+        "objective_map": { "type": "object" },
+        "objectiveMap": { "type": "object" },
+        "tags": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/resourceReference" }
+        }
+      },
+      "anyOf": [
+        { "required": ["type"] },
+        { "required": ["activity_type_slug"] }
+      ]
+    },
+    "activityBankPaging": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limit": { "type": "integer" },
+        "offset": { "type": "integer" }
+      }
+    },
+    "activityBankFilterExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contains": {},
+        "does_not_contain": {},
+        "equals": {},
+        "does_not_equal": {}
+      },
+      "minProperties": 1,
+      "maxProperties": 1
+    },
+    "activityBankFilters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "objectives": { "$ref": "#/definitions/activityBankFilterExpression" },
+        "tags": { "$ref": "#/definitions/activityBankFilterExpression" },
+        "type": { "$ref": "#/definitions/activityBankFilterExpression" },
+        "text": { "$ref": "#/definitions/activityBankFilterExpression" }
+      }
+    },
+    "activityBankExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total_count": { "type": "integer" },
+        "row_count": { "type": "integer" },
+        "titles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "contains_titles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "not_titles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "resource_ids": {
+          "type": "array",
+          "items": { "type": "integer" }
+        }
+      }
+    },
+    "instructorCustomizationActivityOperation": {
+      "type": "object",
+      "required": ["activity_virtual_id"],
+      "additionalProperties": false,
+      "properties": {
+        "activity_virtual_id": { "type": "string" }
+      }
+    },
+    "instructorCustomizationSelectionOperation": {
+      "type": "object",
+      "required": ["selection_id"],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": { "type": "string" }
+      }
+    },
+    "instructorCustomizationCandidateOperation": {
+      "type": "object",
+      "required": ["selection_id", "activity_virtual_id"],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": { "type": "string" },
+        "activity_virtual_id": { "type": "string" }
+      }
+    },
+    "instructorCustomizationOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["exclude_activity"],
+          "additionalProperties": false,
+          "properties": {
+            "exclude_activity": { "$ref": "#/definitions/instructorCustomizationActivityOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["restore_activity"],
+          "additionalProperties": false,
+          "properties": {
+            "restore_activity": { "$ref": "#/definitions/instructorCustomizationActivityOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["exclude_bank_selection"],
+          "additionalProperties": false,
+          "properties": {
+            "exclude_bank_selection": { "$ref": "#/definitions/instructorCustomizationSelectionOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["restore_bank_selection"],
+          "additionalProperties": false,
+          "properties": {
+            "restore_bank_selection": { "$ref": "#/definitions/instructorCustomizationSelectionOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["exclude_bank_candidate"],
+          "additionalProperties": false,
+          "properties": {
+            "exclude_bank_candidate": { "$ref": "#/definitions/instructorCustomizationCandidateOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["restore_bank_candidate"],
+          "additionalProperties": false,
+          "properties": {
+            "restore_bank_candidate": { "$ref": "#/definitions/instructorCustomizationCandidateOperation" }
+          }
+        }
+      ]
+    },
+    "activityBankOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["create"],
+          "additionalProperties": false,
+          "properties": {
+            "create": { "$ref": "#/definitions/activityBankCreate" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["create_bulk"],
+          "additionalProperties": false,
+          "properties": {
+            "create_bulk": {
+              "type": "object",
+              "required": ["activities"],
+              "additionalProperties": false,
+              "properties": {
+                "activities": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/activityBankCreate" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["query"],
+          "additionalProperties": false,
+          "properties": {
+            "query": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "logic": { "type": "object" },
+                "filters": { "$ref": "#/definitions/activityBankFilters" },
+                "paging": { "$ref": "#/definitions/activityBankPaging" },
+                "expect": { "$ref": "#/definitions/activityBankExpectation" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["edit"],
+          "additionalProperties": false,
+          "properties": {
+            "edit": {
+              "type": "object",
+              "required": ["set"],
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" },
+                "virtual_id": { "type": "string" },
+                "resource_id": { "$ref": "#/definitions/resourceReference" },
+                "set": { "type": "object" }
+              },
+              "anyOf": [
+                { "required": ["title"] },
+                { "required": ["virtual_id"] },
+                { "required": ["resource_id"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["delete"],
+          "additionalProperties": false,
+          "properties": {
+            "delete": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" },
+                "virtual_id": { "type": "string" },
+                "resource_id": { "$ref": "#/definitions/resourceReference" }
+              },
+              "anyOf": [
+                { "required": ["title"] },
+                { "required": ["virtual_id"] },
+                { "required": ["resource_id"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["duplicate"],
+          "additionalProperties": false,
+          "properties": {
+            "duplicate": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" },
+                "virtual_id": { "type": "string" },
+                "resource_id": { "$ref": "#/definitions/resourceReference" },
+                "new_title": { "type": "string" },
+                "new_virtual_id": { "type": "string" }
+              },
+              "anyOf": [
+                { "required": ["title"] },
+                { "required": ["virtual_id"] },
+                { "required": ["resource_id"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["assert"],
+          "additionalProperties": false,
+          "properties": {
+            "assert": {
+              "type": "object",
+              "required": ["expect"],
+              "additionalProperties": false,
+              "properties": {
+                "result": { "type": "string" },
+                "expect": { "$ref": "#/definitions/activityBankExpectation" }
+              }
+            }
+          }
+        }
+      ]
+    },
     "directive": {
       "oneOf": [
         {
@@ -639,7 +1075,9 @@
                 "registration_open": { "$ref": "#/definitions/booleanLike" },
                 "slug": { "type": "string" },
                 "open_and_free": { "$ref": "#/definitions/booleanLike" },
-                "requires_enrollment": { "$ref": "#/definitions/booleanLike" }
+                "requires_enrollment": { "$ref": "#/definitions/booleanLike" },
+                "start_date": { "type": "string", "format": "date-time" },
+                "end_date": { "type": "string", "format": "date-time" }
               }
             }
           }
@@ -693,6 +1131,26 @@
                 "ops": {
                   "type": "array",
                   "items": { "$ref": "#/definitions/manipulateOperation" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["objectives"],
+          "additionalProperties": false,
+          "properties": {
+            "objectives": {
+              "type": "object",
+              "required": ["project", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "ops": {
+                  "type": "array",
+                  "maxItems": 25,
+                  "items": { "$ref": "#/definitions/objectiveOperation" }
                 }
               }
             }
@@ -875,6 +1333,46 @@
         },
         {
           "type": "object",
+          "required": ["activity_bank"],
+          "additionalProperties": false,
+          "properties": {
+            "activity_bank": {
+              "type": "object",
+              "required": ["project", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "ops": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/activityBankOperation" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["instructor_customization"],
+          "additionalProperties": false,
+          "properties": {
+            "instructor_customization": {
+              "type": "object",
+              "required": ["section", "page", "actor", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "section": { "type": "string" },
+                "page": { "type": "string" },
+                "actor": { "type": "string" },
+                "ops": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/instructorCustomizationOperation" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["edit_page"],
           "additionalProperties": false,
           "properties": {
@@ -885,6 +1383,10 @@
               "properties": {
                 "project": { "type": "string" },
                 "page": { "type": "string" },
+                "objectives": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
                 "content": { "type": "string" }
               }
             }

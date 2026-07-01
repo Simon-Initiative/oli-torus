@@ -11,6 +11,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Accounts
   alias Oli.Authoring.Course
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Oli.Publishing
 
   describe "remix section as admin" do
@@ -38,6 +39,37 @@ defmodule OliWeb.RemixSectionLiveTest do
       html = view |> element("#save") |> render_click()
 
       assert html =~ "Your work has been saved."
+    end
+
+    test "move modal moves an item into the selected container", %{
+      conn: conn,
+      section: section,
+      page_5: page_5
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      view
+      |> element(~s{#entry-#{page_5.resource_id} button[phx-click="show_move_modal"]})
+      |> render_click()
+
+      view
+      |> element(
+        ~s{.hierarchy-picker button[phx-click="HierarchyPicker.update_active"]},
+        "Unit 1"
+      )
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-click="MoveModal.move_item"]})
+      |> render_click()
+
+      refute view |> element("#entry-#{page_5.resource_id}") |> has_element?()
+
+      view
+      |> element(~s{button[phx-click="set_active"]}, "Unit 1")
+      |> render_click()
+
+      assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
     test "breadcrumbs render correctly", %{
@@ -1274,6 +1306,58 @@ defmodule OliWeb.RemixSectionLiveTest do
       # Internal path with unsaved changes should show modal
       render_hook(view, "show_unsaved_changes_modal", %{"target" => "/some/internal/path"})
       assert has_element?(view, "#unsaved_changes_modal")
+      assert has_element?(view, "#unsaved_changes_modal", "Save your changes before continuing")
+      assert has_element?(view, "#unsaved_changes_modal", "before leaving this page")
+      refute has_element?(view, "#unsaved_changes_modal", "instructor view")
+    end
+
+    test "page entries render edit links to instructor view", %{
+      conn: conn,
+      section: section,
+      page_5: page_5
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      edit_url =
+        PreviewRoutes.lesson_path(section.slug, page_5.slug,
+          return_to: "/sections/#{section.slug}/remix"
+        )
+
+      assert has_element?(
+               view,
+               ~s{#entry-#{page_5.resource_id} a[href="#{edit_url}"][aria-label="Open #{page_5.title} in Instructor View"]},
+               "Edit"
+             )
+    end
+
+    test "unsaved changes modal - save and continue saves then redirects to edit target", %{
+      conn: conn,
+      section: section,
+      page_5: page_5
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      edit_url =
+        PreviewRoutes.lesson_path(section.slug, page_5.slug,
+          return_to: "/sections/#{section.slug}/remix"
+        )
+
+      render_hook(view, "show_unsaved_changes_modal", %{
+        "target" => edit_url,
+        "reason" => "instructor_view"
+      })
+
+      assert has_element?(view, "#unsaved_changes_modal", "Save your changes before editing")
+      assert has_element?(view, "#unsaved_changes_modal", "before navigating to instructor view")
+      assert has_element?(view, "#unsaved_changes_modal", "Save and continue")
+
+      view
+      |> element(~s{#unsaved_changes_modal button}, "Save and continue")
+      |> render_click()
+
+      assert_redirect(view, edit_url)
     end
 
     test "unsaved changes modal - navigates directly when no unsaved changes", %{

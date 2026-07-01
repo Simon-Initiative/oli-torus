@@ -23,6 +23,7 @@ export const LinkEditor = (props: Props) => {
       {...props.attributes}
       id={props.model.id}
       href="#"
+      onClick={(e) => e.preventDefault()}
       className="inline-link"
       style={selected ? { boxShadow: '0 0 0 3px #ddd' } : {}}
     >

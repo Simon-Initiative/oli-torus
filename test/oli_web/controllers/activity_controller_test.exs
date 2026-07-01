@@ -323,6 +323,26 @@ defmodule OliWeb.ActivityControllerTest do
            } = json_response(conn, 200)
   end
 
+  test "create persists tags from the request body", %{conn: conn, project: project} do
+    content = %{
+      "stem" => %{"content" => []},
+      "authoring" => %{"parts" => [%{"id" => "1"}]}
+    }
+
+    conn =
+      post(conn, Routes.activity_path(conn, :create, project.slug, "oli_short_answer"), %{
+        "model" => content,
+        "objectives" => [],
+        "tags" => [42],
+        "includeMetadata" => true
+      })
+
+    assert %{
+             "type" => "success",
+             "tags" => [42]
+           } = json_response(conn, 200)
+  end
+
   describe "get resource" do
     test "retrieves the unpublished activity", %{
       conn: conn,

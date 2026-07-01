@@ -64,6 +64,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       assert render(view) =~ "Collaborative Space"
     end
 
+    test "shows course setup recommendation for a section_created parameter",
+         %{
+           instructor: instructor,
+           section: section,
+           conn: conn
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, "#{live_view_manage_route(section.slug)}?section_created=true")
+
+      assert has_element?(view, "#section-created-setup-card")
+
+      assert has_element?(
+               view,
+               ~s{#section-created-url-cleanup[phx-hook="SectionCreatedUrlCleanup"]}
+             )
+    end
+
     test "does not show certificate settings link when certificates are disabled", %{
       instructor: instructor,
       section: section,
@@ -78,6 +97,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
                "a[href='/sections/#{section.slug}/certificate_settings']",
                "Manage Certificate Settings"
              )
+    end
+
+    test "shows template label for sections created from a template", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      template = insert(:section, type: :blueprint)
+
+      section =
+        insert(:section,
+          type: :enrollable,
+          blueprint_id: template.id
+        )
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+      assert has_element?(view, "label", "Template")
+      refute has_element?(view, "label", "Product")
     end
   end
 

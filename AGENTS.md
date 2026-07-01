@@ -4,7 +4,7 @@ This file provides guidance to AI Agents when working with code in this reposito
 
 ## Project Overview
 
-OLI Torus is a sophisticated learning engineering platform built with Elixir/Phoenix (backend) and TypeScript/React (frontend). It provides course authoring and delivery capabilities with tight LMS integration via LTI 1.3.
+OLI Torus is a sophisticated learning engineering platform built with Elixir/Phoenix (backend), Gleam for shared typed functional subsystems, and TypeScript/React (frontend). It provides course authoring and delivery capabilities with tight LMS integration via LTI 1.3.
 
 ## Essential Commands
 
@@ -49,6 +49,25 @@ yarn test path/to/test
 yarn format
 ```
 
+### Shared Gleam
+
+```bash
+# Navigate to the Gleam project first
+cd gleam
+
+# Download dependencies
+gleam deps download
+
+# Run tests on the BEAM target
+gleam test --target erlang
+
+# Run tests on the JavaScript target
+gleam test --target javascript
+
+# Check formatting
+gleam format --check src test
+```
+
 ## High-Level Architecture
 
 ### Backend Structure (Elixir/Phoenix)
@@ -71,6 +90,15 @@ The backend follows Phoenix context pattern with clear separation of concerns:
 - **LiveViews**: Real-time interactive UI components
 - **API**: REST endpoints for frontend integration
 - **Plugs**: Middleware for auth, authorization, request processing
+
+### Shared Gleam Structure
+
+Located in `gleam/`:
+
+- **src/**: Shared Gleam source compiled for BEAM and, where needed, JavaScript
+- **src/torus_math.gleam**: Public math API boundary for parser and evaluator work
+- **src/math/**: Internal math AST, lexer, parser, validation, formatting, and equality modules
+- **test/**: Gleam tests that should cover shared behavior directly
 
 ### Frontend Structure (TypeScript/React)
 
@@ -118,6 +146,7 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 ## Testing Approach
 
 - **Backend**: ExUnit tests in `test/` directory
+- **Gleam**: `gleam test` tests in `gleam/test`, with shared BEAM/browser behavior verified on both Erlang and JavaScript targets
 - **Frontend**: Jest tests alongside source files
 - Use factories for test data generation
 - Integration tests for critical workflows
@@ -145,6 +174,7 @@ When a code review is requested (e.g., with @codex review), the review must alwa
 Use the appropriate guideline file(s) based on the nature of the changes in the PR:
 
 - .review/elixir.md → Backend / Elixir code changes
+- .review/gleam.md → Shared Gleam code changes
 - .review/performance.md → Performance considerations
 - .review/requirements.md → Verification of PRD requirements
 - .review/security.md → General security review
@@ -155,7 +185,7 @@ Use the appropriate guideline file(s) based on the nature of the changes in the 
 - Always perform a security review.
 - Always perform a performance review.
 
-For other reviews (Elixir, UI, Requirements), only apply the relevant guideline files if the PR contains those types of changes. The requirements
+For other reviews (Elixir, Gleam, UI, Requirements), only apply the relevant guideline files if the PR contains those types of changes. The requirements
 review should be run when a `docs/exec-plans/**/prd.md` file is added or
 changed in the PR.
 
@@ -204,6 +234,7 @@ The review process should first assess the scope of the PR, then load the approp
 ## Code Style Guidelines
 
 - Follow Elixir formatting standards (use `mix format`)
+- Follow Gleam formatting standards (use `gleam format`)
 - Always put alias and import statements at the top of a file
 - TypeScript code uses ESLint configuration
 - React components should be functional with hooks

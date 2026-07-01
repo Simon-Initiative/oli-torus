@@ -9,6 +9,7 @@ import { Modal, ModalSize } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
 import {
   LinkablePages,
+  internalLinkPrefix,
   isInternalLink,
   normalizeHref,
   toInternalLink,
@@ -46,11 +47,32 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
 
   const [pages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
   const [selectedPage, setSelectedPage] = useState<null | Persistence.Page>(null);
+
+  // Email mode: internal course-page links only, sourced from the passed-in page list
+  // (no author-only fetch, no external/media options). See CommandContext.linkContext.
+  const emailMode = commandContext.linkContext?.mode === 'email';
+  const emailPages = commandContext.linkContext?.pages ?? [];
+  const [emailSelectedSlug, setEmailSelectedSlug] = useState<string | null>(() => {
+    if (!emailMode) return null;
+    const currentSlug = isInternalLink(model.href)
+      ? model.href.slice(model.href.lastIndexOf('/') + 1)
+      : undefined;
+    const found = emailPages.find((p) => p.slug === currentSlug);
+    return (found ?? emailPages[0])?.slug ?? null;
+  });
+
   const commitValue = useCallback(() => {
+    if (emailMode) {
+      if (!emailSelectedSlug) return;
+      onDone({ linkType: 'page', href: `${internalLinkPrefix}/${emailSelectedSlug}` });
+      return;
+    }
     const hrefWithProtocol = source === 'page' ? href : normalizeHref(href);
     onDone({ linkType: source, href: hrefWithProtocol });
-  }, [href, onDone, source]);
+  }, [emailMode, emailSelectedSlug, href, onDone, source]);
   React.useEffect(() => {
+    // Email mode sources pages from linkContext; skip the author-only pages fetch entirely.
+    if (emailMode) return;
     setPages({ type: 'Waiting' });
 
     Persistence.pages(commandContext.projectSlug, getCurrentSlugFromLink(model.href)).then(
@@ -69,12 +91,60 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
 
         setPages(result);
       },
+      () => {
+        setPages({
+          type: 'ServerError',
+          result: 'failure',
+          status: 'error',
+          statusText: 'Network Error',
+          message: 'Failed to load pages',
+        });
+      },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commandContext.projectSlug]);
+  }, [commandContext.projectSlug, emailMode]);
 
   const renderLoading = () => <div>Loading...</div>;
   const renderFailed = () => <div>Failed to initialize. Close this window and try again.</div>;
+
+  const renderEmailPicker = () => {
+    if (emailPages.length === 0) {
+      return <div>No course pages are available to link to.</div>;
+    }
+
+    // Pages can share a title; append the (unique) slug only for the duplicated ones so the
+    // distinct pages stay distinguishable without adding noise to unique titles.
+    // Map (not a plain object) so titles like "__proto__"/"toString"/"constructor" can't
+    // collide with inherited object properties and corrupt the counts.
+    const titleCounts = emailPages.reduce(
+      (acc, p) => acc.set(p.title, (acc.get(p.title) ?? 0) + 1),
+      new Map<string, number>(),
+    );
+    const pageLabel = (p: { title: string; slug: string }) =>
+      (titleCounts.get(p.title) ?? 0) > 1 ? `${p.title} (${p.slug})` : p.title;
+
+    return (
+      <div className="settings-editor">
+        <label className="form-label" htmlFor="email-link-page-select">
+          Link to a page in the course
+        </label>
+        <select
+          id="email-link-page-select"
+          data-modal-autofocus
+          className="form-control"
+          value={emailSelectedSlug ?? ''}
+          onChange={(e) => setEmailSelectedSlug(e.target.value)}
+          style={{ width: '100%' }}
+        >
+          {emailPages.map((p) => (
+            <option key={p.id} value={p.slug}>
+              {pageLabel(p)}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
 
   const renderSuccess = (pages: Persistence.PagesReceived) => {
     const onChangeSource = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,7 +243,9 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
   };
 
   let renderedState = renderLoading();
-  if (pages.type === 'success') {
+  if (emailMode) {
+    renderedState = renderEmailPicker();
+  } else if (pages.type === 'success') {
     renderedState = renderSuccess(pages);
   } else if (pages.type === 'ServerError') {
     renderedState = renderFailed();
@@ -181,12 +253,13 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
 
   return (
     <Modal
-      title=""
+      title={emailMode ? 'Insert link to course page' : ''}
       size={ModalSize.LARGE}
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={onCancel}
       onOk={commitValue}
+      disableOk={emailMode && !emailPages.some((p) => p.slug === emailSelectedSlug)}
     >
       {renderedState}
     </Modal>

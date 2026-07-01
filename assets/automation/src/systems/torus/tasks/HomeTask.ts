@@ -42,6 +42,7 @@ export class HomeTask {
     await this.utils.modalDisappears();
     await this.loginpo.selectRoleAccount(dataUser.type);
     await Waiter.waitForLoadState(this.page);
+    await this.page.waitForSelector('.phx-connected', { state: 'attached' });
     await this.loginpo.verifyTitle(dataUser.pageTitle);
     await this.loginpo.verifyRole(dataUser.role);
     await this.loginpo.verifyWelcomeText(dataUser.welcomeText);
@@ -58,7 +59,7 @@ export class HomeTask {
   @step('Logout')
   async logout(isAdminScreen = false) {
     await this.menu.open(isAdminScreen);
-    await this.menu.signOut();
+    await this.menu.signOut(isAdminScreen);
   }
 
   @step('Enter to Curriculum')
@@ -86,9 +87,9 @@ export class HomeTask {
     await this.sidebar.clickInMenu('Learn');
   }
 
-  @step('Enter to Products')
+  @step('Enter to Templates')
   async enterToProducts() {
-    await this.menuCreate('Products');
+    await this.menuCreate('Templates');
   }
 
   @step('Enter to Bibliography')

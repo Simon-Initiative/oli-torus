@@ -1,0 +1,4 @@
+interface:
+  display_name: "Change Cleanup"
+  short_description: "Targeted branch cleanup workflow"
+  default_prompt: "Use change-cleanup to improve only the code touched by this branch."

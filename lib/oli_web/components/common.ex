@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Common do
   use Gettext, backend: OliWeb.Gettext
 
   alias OliWeb.Common.{FormatDateTime, React}
+  alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
   def not_found(assigns) do
@@ -870,6 +871,83 @@ defmodule OliWeb.Components.Common do
     """
   end
 
+  attr(:flash, :map, required: true, doc: "the map of flash messages")
+
+  def preview_flash_group(assigns) do
+    ~H"""
+    <.preview_flash id="preview-flash-info" kind={:info} flash={@flash} />
+    <.preview_flash id="preview-flash-error" kind={:error} flash={@flash} />
+    <.preview_flash
+      id="client-error"
+      kind={:error}
+      phx-disconnected={show(".phx-client-error #client-error")}
+      phx-connected={hide("#client-error")}
+      hidden
+    >
+      Attempting to reconnect
+    </.preview_flash>
+
+    <.preview_flash
+      id="server-error"
+      kind={:error}
+      phx-disconnected={show(".phx-server-error #server-error")}
+      phx-connected={hide("#server-error")}
+      hidden
+    >
+      Hang in there while we get back on track
+    </.preview_flash>
+    """
+  end
+
+  attr(:id, :string, default: "preview-flash", doc: "the optional id of flash container")
+  attr(:flash, :map, default: %{}, doc: "the map of flash messages to display")
+  attr(:kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup")
+  attr(:rest, :global, doc: "the arbitrary HTML attributes to add to the flash container")
+
+  slot(:inner_block, doc: "the optional inner block that renders the flash message")
+
+  def preview_flash(assigns) do
+    ~H"""
+    <div
+      :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
+      id={@id}
+      class={[
+        "mb-4 rounded-2xl px-8 py-6 shadow-none",
+        @kind == :info && "bg-[#DDF5EE] text-Text-text-high dark:bg-[#13342B] dark:text-[#E7F7F1]",
+        @kind == :error && "bg-[#FCEBEC] text-Text-text-high dark:bg-[#3B1F21] dark:text-[#FCEBEC]"
+      ]}
+      role="alert"
+      {@rest}
+    >
+      <div class="flex items-center gap-4">
+        <div
+          :if={@kind == :info}
+          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-Text-text-high text-white dark:bg-[#E7F7F1] dark:text-[#13342B]"
+        >
+          <Icons.checkmark class="h-4 w-4" />
+        </div>
+        <div
+          :if={@kind == :error}
+          class="flex h-7 w-7 shrink-0 items-center justify-center text-Border-border-danger dark:text-[#FFB5B7]"
+        >
+          <Icons.alert />
+        </div>
+        <p class="m-0 flex-1 font-open-sans text-[16px] font-semibold leading-6 tracking-normal">
+          {msg}
+        </p>
+        <button
+          type="button"
+          class="group -m-1 shrink-0 rounded p-1 text-Text-text-high/80 transition hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus dark:text-[#E7F7F1]/80 dark:hover:text-[#E7F7F1]"
+          aria-label={gettext("close")}
+          phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+        >
+          <Icons.close_sm class="h-4 w-4 stroke-current" />
+        </button>
+      </div>
+    </div>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do
@@ -1152,25 +1230,37 @@ defmodule OliWeb.Components.Common do
   end
 
   attr :id, :string, required: true
-  attr :on_toggle, :string, required: true
+  attr :on_toggle, :string, default: nil
   attr :label, :string, default: nil
   attr :name, :string, default: nil
   attr :checked, :boolean, default: false
+  attr :disabled, :boolean, default: false
+  attr :form, :boolean, default: true
   attr :phx_target, :any, default: nil
   attr :with_confirmation, :boolean, default: false
-  attr :rest, :global, include: ~w(class disabled role)
+  attr :rest, :global, include: ~w(class role)
 
   def toggle_switch(assigns) do
+    assigns = assign(assigns, :input_id, "#{assigns.id}_checkbox")
+
     ~H"""
     <div {@rest}>
-      <form id={@id} phx-change={@on_toggle} phx-target={@phx_target} phx-auto-recover="ignore">
+      <form
+        :if={@form}
+        id={@id}
+        phx-change={@on_toggle}
+        phx-target={@phx_target}
+        phx-auto-recover="ignore"
+      >
         <label class="inline-flex items-center cursor-pointer">
           <input
-            id={"#{@id}_checkbox"}
+            id={@input_id}
             type="checkbox"
             name={@name}
+            value="true"
             class="sr-only peer"
             checked={@checked}
+            disabled={@disabled}
             phx-hook={if @with_confirmation, do: "ConditionalToggle"}
             data-checked={"#{@checked}"}
           />
@@ -1185,10 +1275,38 @@ defmodule OliWeb.Components.Common do
           <%= case @label do %>
             <% nil -> %>
             <% label -> %>
-              <span class="ms-3 text-sm">{label}</span>
+              <span class="ml-3 text-sm">{label}</span>
           <% end %>
         </label>
       </form>
+      <label :if={!@form} class="inline-flex items-center cursor-pointer">
+        <input :if={@name} type="hidden" name={@name} value="false" disabled={@disabled} />
+        <input
+          id={@input_id}
+          type="checkbox"
+          name={@name}
+          value="true"
+          class="sr-only peer"
+          checked={@checked}
+          disabled={@disabled}
+          phx-hook={if @with_confirmation, do: "ConditionalToggle"}
+          data-checked={"#{@checked}"}
+        />
+        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4
+                    peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full
+                    peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                    peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]
+                    after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5
+                    after:w-5 after:transition-transform dark:border-gray-600 peer-checked:bg-primary
+                    peer-disabled:cursor-not-allowed peer-disabled:opacity-50
+                    after:duration-300 after:ease-in-out transition-colors duration-300 ease-in-out">
+        </div>
+        <%= case @label do %>
+          <% nil -> %>
+          <% label -> %>
+            <span class="ml-3 text-sm">{label}</span>
+        <% end %>
+      </label>
     </div>
     """
   end

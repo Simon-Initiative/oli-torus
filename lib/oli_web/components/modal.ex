@@ -43,6 +43,7 @@ defmodule OliWeb.Components.Modal do
 
   attr :show, :boolean, default: false
   attr :show_close, :boolean, default: true
+  attr :disable_click_away, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
   attr :on_confirm, JS, default: %JS{}
 
@@ -82,7 +83,7 @@ defmodule OliWeb.Components.Modal do
               phx-mounted={@show && show_modal(@id)}
               phx-window-keydown={hide_modal(@on_cancel, @id)}
               phx-key="escape"
-              phx-click-away={hide_modal(@on_cancel, @id)}
+              phx-click-away={!@disable_click_away && hide_modal(@on_cancel, @id)}
               class={[
                 "relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition",
                 @container_class,

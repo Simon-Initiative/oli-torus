@@ -42,16 +42,22 @@ export class ProjectTask {
     await this.overviewP.details.waitForEditorReady();
   }
 
-  @step("Create a new project '{projectName}' as open")
-  async createNewProjectAsOpen(projectName: string) {
+  @step("Create a new project '{projectName}'")
+  async createNewProject(projectName: string) {
     await this.authorDB.clickNewProjectButton();
     await this.authorDB.fillProjectName(projectName);
     await this.authorDB.clickCreateButton();
     await this.overviewP.details.waitForEditorReady();
     const projectID = await this.overviewP.details.getProjectID();
-    await this.overviewP.publishingVisibility.setVisibilityOpen();
 
     return { projectName, projectID };
+  }
+
+  @step("Make project '{projectID}' public")
+  async makeProjectPublic(projectID: string) {
+    await this.page.goto(`/workspaces/course_author/${encodeURIComponent(projectID)}/overview`);
+    await this.overviewP.details.waitForEditorReady();
+    await this.overviewP.publishingVisibility.setVisibilityOpen();
   }
 
   @step("Filter project by name '{projectName}' and return the last result")

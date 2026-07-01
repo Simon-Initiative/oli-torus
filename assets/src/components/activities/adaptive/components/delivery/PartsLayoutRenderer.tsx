@@ -5,6 +5,7 @@ import PartComponent from '../common/PartComponent';
 interface PartsLayoutRendererProps {
   parts: PartComponentDefinition[];
   state?: ActivityState;
+  mode?: string;
   sectionSlug?: string;
   resourceId?: number;
   onPartInit?: any;
@@ -15,6 +16,7 @@ interface PartsLayoutRendererProps {
   onPartSetData?: (payload: any) => Promise<any>;
   onPartGetData?: (payload: any) => Promise<any>;
   responsiveLayout?: boolean;
+  preserveCapiIframeSize?: boolean;
 }
 
 const defaultHandler = async () => {
@@ -27,6 +29,7 @@ const defaultHandler = async () => {
 const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   parts,
   state = {},
+  mode,
   sectionSlug,
   resourceId,
   onPartInit = defaultHandler,
@@ -37,6 +40,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   onPartSetData,
   onPartGetData,
   responsiveLayout = true,
+  preserveCapiIframeSize = false,
 }) => {
   // Helper function to create part props
   const createPartProps = (partDefinition: PartComponentDefinition) => {
@@ -62,6 +66,8 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
           }
         : partDefinition.custom, // Use original model in non-responsive mode
       state,
+      mode,
+      preserveCapiIframeSize,
       sectionSlug,
       resourceId,
       onInit: onPartInit,

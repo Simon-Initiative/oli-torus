@@ -9,7 +9,10 @@ import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
 import IframeSourceEditor from './custom/IframeSourceEditor';
+import ImageAltTextWidget from './custom/ImageAltTextWidget';
+import { ItemBankManageEditor } from './custom/ItemBankManageEditor';
 import { JanusSubtitlesManager } from './custom/JanusSubtitlesManager';
+import { ListSortItemsEditor } from './custom/ListSortItemsEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
 import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
@@ -26,6 +29,7 @@ import { TextSliderCorrectAnswerPicker } from './custom/TextSliderCorrectAnswerP
 import ThemeSelectorWidget from './custom/ThemeSelectorWidget';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
+import { TorusTranscriptBrowser } from './custom/TorusTranscriptBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
 
 interface PropertyEditorProps {
@@ -43,10 +47,12 @@ interface PropertyEditorProps {
 
 const widgets: any = {
   ColorPicker: ColorPickerWidget,
+  ImageAltTextWidget: ImageAltTextWidget,
   CheckboxWidget: CustomCheckbox,
   ScreenDropdownTemplate: ScreenDropdownTemplate,
   TorusImageBrowser: TorusImageBrowser,
   TorusAudioBrowser: TorusAudioBrowser,
+  TorusTranscriptBrowser: TorusTranscriptBrowser,
   TorusVideoBrowser: TorusVideoBrowser,
   JanusSubtitlesManager: JanusSubtitlesManager,
   OptionsCorrectPicker: OptionsCorrectPicker,
@@ -54,6 +60,7 @@ const widgets: any = {
   SpokeCustomErrorFeedbackAuthoring: SpokeCustomErrorFeedbackAuthoring,
   MCQCorrectAnswerEditor: MCQCorrectAnswerEditor,
   MCQOptionsEditor: MCQOptionsEditor,
+  ListSortItemsEditor: ListSortItemsEditor,
   SpokeOptionsEditor: SpokeOptionsEditor,
   SpokeCompletedOption: SpokeCompletedOption,
   DropdownOptionsEditor: DropdownOptionsEditor,
@@ -64,6 +71,7 @@ const widgets: any = {
   PopupIconSelector: PopupIconSelector,
   IframeSourceEditor: IframeSourceEditor,
   RichLabelWidget: RichLabelWidget,
+  ItemBankManageEditor: ItemBankManageEditor,
 };
 
 /**

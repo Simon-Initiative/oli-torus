@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
   attr :practice, :map
   attr :section_slug, :string
   attr :preview_mode, :boolean, default: false
+  attr :instructor_preview_return, :map, default: nil
 
   def practice_card(assigns) do
     ~H"""
@@ -26,7 +27,7 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
         <div class="flex flex-row justify-end items-center space-x-6">
           <.button
             class="rounded bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Text-text-white hover:no-underline"
-            href={practice_link(@section_slug, @practice, @preview_mode)}
+            href={practice_link(@section_slug, @practice, @preview_mode, @instructor_preview_return)}
           >
             Open
           </.button>
@@ -36,14 +37,21 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
     """
   end
 
-  defp practice_link(section_slug, practice, preview_mode) do
-    if preview_mode do
-      ~p"/sections/#{section_slug}/preview/page/#{practice.slug}"
-    else
-      Utils.lesson_live_path(section_slug, practice.slug,
-        request_path: ~p"/sections/#{section_slug}/practice"
-      )
-    end
+  defp practice_link(section_slug, practice, true, %{path: return_to})
+       when is_binary(return_to) and return_to != "" do
+    Utils.lesson_live_path(section_slug, practice.slug,
+      request_path:
+        Utils.practice_live_path(section_slug, preview_mode: true, return_to: return_to),
+      preview_mode: true,
+      return_to: return_to
+    )
+  end
+
+  defp practice_link(section_slug, practice, preview_mode, _instructor_preview_return) do
+    Utils.lesson_live_path(section_slug, practice.slug,
+      request_path: Utils.practice_live_path(section_slug, preview_mode: preview_mode),
+      preview_mode: preview_mode
+    )
   end
 
   defp intro_content(practice) do

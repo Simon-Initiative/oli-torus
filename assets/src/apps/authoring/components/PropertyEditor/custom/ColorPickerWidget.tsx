@@ -47,15 +47,15 @@ const ColorPickerWidget: React.FC<ColorPickerProps> = (props) => {
 
   const popup: CSSProperties = {
     position: 'absolute',
-    zIndex: 2,
-    left: 0,
+    zIndex: 1050,
+    right: 0,
     top: '25px',
   };
 
   return (
     <div className="d-flex justify-content-between">
       <span className="form-label">{props.label}</span>
-      <div>
+      <div style={{ position: 'relative' }}>
         <div style={colorDiv} onClick={handleColorBoxClick}></div>
         {displayPicker ? (
           <div style={popup} className="color-picker-widget" ref={pickerRef}>

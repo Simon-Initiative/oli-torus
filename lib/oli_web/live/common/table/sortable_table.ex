@@ -2,6 +2,7 @@ defmodule OliWeb.Common.Table.SortableTable do
   use Phoenix.LiveComponent
 
   alias OliWeb.Common.Table.ColumnSpec
+  alias OliWeb.Icons
 
   def th(assigns, column_spec, sort_by_spec, sort_order, event_suffix) do
     assigns =
@@ -17,12 +18,30 @@ defmodule OliWeb.Common.Table.SortableTable do
       phx-click={"sort#{@event_suffix}"}
       phx-value-sort_by={@column_spec.name}
     >
-      <%= if @column_spec.tooltip do %>
-        <span data-bs-toggle="tooltip" title={@column_spec.tooltip}>
-          {@column_spec.label}
+      <%= if @column_spec.tooltip && Map.get(@column_spec, :tooltip_icon, false) do %>
+        <span class="inline-flex items-center gap-1.5">
+          <button
+            type="button"
+            id={tooltip_id(@column_spec)}
+            class="inline-flex h-8 w-8 items-center justify-center align-middle bg-transparent p-0 text-Icon-icon-accent-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+            phx-hook="GlobalTooltip"
+            data-tooltip={@column_spec.tooltip}
+            data-tooltip-style="body"
+            data-tooltip-stop-propagation="true"
+            aria-label={"#{@column_spec.label} help"}
+          >
+            <Icons.support class="h-5 w-5 stroke-current" />
+          </button>
+          <span>{@column_spec.label}</span>
         </span>
       <% else %>
-        {@column_spec.label}
+        <%= if @column_spec.tooltip do %>
+          <span data-bs-toggle="tooltip" title={@column_spec.tooltip}>
+            {@column_spec.label}
+          </span>
+        <% else %>
+          {@column_spec.label}
+        <% end %>
       <% end %>
       <%= if @sort_by_spec == @column_spec do %>
         <i class={"fas fa-sort-#{if @sort_order == :asc do "up" else "down" end}"}></i>
@@ -107,4 +126,9 @@ defmodule OliWeb.Common.Table.SortableTable do
   defp with_data(assigns, data) do
     Map.merge(assigns, data)
   end
+
+  defp tooltip_id(%{tooltip_id: tooltip_id}) when is_binary(tooltip_id) and tooltip_id != "",
+    do: tooltip_id
+
+  defp tooltip_id(%{name: name}), do: "#{name}-column-tooltip"
 end

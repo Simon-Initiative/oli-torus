@@ -247,11 +247,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
     section_slug = assigns.section.slug
+    course_section_id = assigns.section.id
     section_title = assigns.section.title
 
     assigns =
       assigns
       |> assign(:section_slug, section_slug)
+      |> assign(:course_section_id, course_section_id)
       |> assign(:section_title, section_title)
       |> assign(:instructor_email, instructor_email(assigns))
       |> assign(:instructor_name, instructor_name(assigns))
@@ -274,6 +276,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
       params={@params}
       section_slug={@section_slug}
+      section_id={@course_section_id}
       section_title={@section_title}
       instructor_email={@instructor_email}
       instructor_name={@instructor_name}

@@ -31,6 +31,32 @@ defmodule Oli.Scenarios.DSLTest do
       assert section.title == "Test Section"
     end
 
+    test "can create a section with scheduling dates" do
+      yaml = """
+      - project:
+          name: "scheduled_project"
+          title: "Scheduled Project"
+          root:
+            children:
+              - page: "Page 1"
+
+      - section:
+          name: "scheduled_section"
+          from: "scheduled_project"
+          title: "Scheduled Section"
+          start_date: "2026-01-01T00:00:00Z"
+          end_date: "2026-12-31T23:59:59Z"
+      """
+
+      result = TestHelpers.execute_yaml(yaml)
+
+      assert %ExecutionResult{errors: []} = result
+      section = TestHelpers.get_section(result, "scheduled_section")
+
+      assert section.start_date == ~U[2026-01-01 00:00:00Z]
+      assert section.end_date == ~U[2026-12-31 23:59:59Z]
+    end
+
     test "can remix content between projects and sections" do
       yaml = """
       - project:

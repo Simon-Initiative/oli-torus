@@ -41,6 +41,12 @@ requirements:
     status: proposed
     verification_method: automated
     proofs: []
+  - id: AC-016
+    title: Body input scrolls vertically when content exceeds visible height instead
+      of expanding the modal
+    status: proposed
+    verification_method: automated
+    proofs: []
 - id: FR-005
   title: Tone selection changes state only until regenerate action
   status: proposed
@@ -115,6 +121,43 @@ requirements:
   - id: AC-011
     title: Keyboard and screen-reader modal semantics satisfy focus and announcement
       requirements
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-013
+  title: Provision a dedicated GenAI Feature Config "Instructor Email"
+  status: proposed
+  acceptance_criteria:
+  - id: AC-013
+    title: A new GenAI Feature config with its own ServiceConfig is registered for
+      instructor email generation, allowing prompt/model customization independent
+      of other GenAI features
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-014
+  title: Allow instructors to insert and edit hyperlinks in the email body
+  status: proposed
+  notes: Implementation reuses Slate `RichTextEditor` restricted to inline + link only.
+    Follow existing Slate usage patterns in this codebase (assets/src/components/content/RichTextEditor.tsx
+    + assets/src/components/editing/elements/link/) — do not reinvent. See gap G-D09
+    for full implementation contract.
+  acceptance_criteria:
+  - id: AC-014
+    title: Body input supports inserting a hyperlink with target URL and visible label,
+      and editing or removing existing hyperlinks before send
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-015
+  title: Validate placeholder template variables on Send and block dispatch on invalid
+    placeholder
+  status: proposed
+  acceptance_criteria:
+  - id: AC-015
+    title: Send action triggers placeholder validation; if any placeholder cannot be
+      resolved or is unsupported, dispatch is blocked and a helpful message identifying
+      the placeholder issue is shown
     status: proposed
     verification_method: automated
     proofs: []

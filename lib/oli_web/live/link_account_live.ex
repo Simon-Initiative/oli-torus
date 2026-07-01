@@ -12,10 +12,10 @@ defmodule OliWeb.LinkAccountLive do
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
   on_mount {OliWeb.AuthorAuth, :mount_current_author}
 
-  def mount(params, _session, socket) do
+  def mount(params, session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "author")
-    request_path = validate_request_path(params["request_path"])
+    request_path = validate_request_path(params["request_path"] || session["author_return_to"])
 
     authentication_providers =
       Oli.AssentAuth.AuthorAssentAuth.authentication_providers() |> Keyword.keys()
@@ -112,7 +112,7 @@ defmodule OliWeb.LinkAccountLive do
               }
               class="w-full inline-block text-center mt-2"
             >
-              Back to Account Settings
+              Cancel
             </.button>
           </div>
         </div>

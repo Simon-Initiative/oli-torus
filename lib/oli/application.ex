@@ -119,6 +119,7 @@ defmodule Oli.Application do
         Oli.GenAI.AdmissionControl,
         Oli.GenAI.Telemetry,
         Oli.GenAI.AdaptiveContextTelemetry,
+        Oli.InstructorDashboard.Email.Telemetry,
         Oli.Adaptive.DynamicLinks.Telemetry,
         Oli.Dashboard.OracleTelemetry,
         {Oli.Dashboard.RevisitCache, name: Oli.Dashboard.RevisitCache},

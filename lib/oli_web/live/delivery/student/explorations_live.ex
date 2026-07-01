@@ -52,6 +52,8 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
           status={status}
           section_slug={@section.slug}
           preview_mode={@preview_mode}
+          sidebar_expanded={@sidebar_expanded}
+          instructor_preview_return={assigns[:instructor_preview_return]}
         />
       <% end %>
     </div>
@@ -63,6 +65,8 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   attr :status, :atom, required: true, values: [:not_started, :started]
   attr :section_slug, :string, required: true
   attr :preview_mode, :boolean, default: false
+  attr :sidebar_expanded, :boolean, default: true
+  attr :instructor_preview_return, :map, default: nil
 
   defp exploration_card(assigns) do
     ~H"""
@@ -84,7 +88,15 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
         <div class="flex flex-row justify-end items-center space-x-6">
           <.button
             class="rounded bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Text-text-white hover:no-underline"
-            href={exploration_link(@section_slug, @exploration, @preview_mode)}
+            href={
+              exploration_link(
+                @section_slug,
+                @exploration,
+                @preview_mode,
+                @sidebar_expanded,
+                assigns[:instructor_preview_return]
+              )
+            }
           >
             {exploration_link_text(@status)}
           </.button>
@@ -94,14 +106,35 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     """
   end
 
-  defp exploration_link(section_slug, exploration, preview_mode) do
-    if preview_mode do
-      ~p"/sections/#{section_slug}/preview/page/#{exploration.slug}"
-    else
-      Utils.lesson_live_path(section_slug, exploration.slug,
-        request_path: ~p"/sections/#{section_slug}/explorations"
-      )
-    end
+  defp exploration_link(section_slug, exploration, true, sidebar_expanded, %{path: return_to})
+       when is_binary(return_to) and return_to != "" do
+    Utils.lesson_live_path(section_slug, exploration.slug,
+      request_path:
+        Utils.explorations_live_path(section_slug,
+          preview_mode: true,
+          sidebar_expanded: sidebar_expanded,
+          return_to: return_to
+        ),
+      preview_mode: true,
+      return_to: return_to
+    )
+  end
+
+  defp exploration_link(
+         section_slug,
+         exploration,
+         preview_mode,
+         sidebar_expanded,
+         _instructor_preview_return
+       ) do
+    Utils.lesson_live_path(section_slug, exploration.slug,
+      request_path:
+        Utils.explorations_live_path(section_slug,
+          preview_mode: preview_mode,
+          sidebar_expanded: sidebar_expanded
+        ),
+      preview_mode: preview_mode
+    )
   end
 
   defp poster_image(exploration) do

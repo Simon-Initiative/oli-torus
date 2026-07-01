@@ -5,11 +5,12 @@
 Torus uses layered testing. Choose the cheapest test type that gives high confidence for the behavior under change.
 
 - Elixir unit tests: use ExUnit for isolated domain logic, pure functions, changesets, parsers, and service modules where setup can stay small and local.
+- Gleam unit tests: use `gleam test` and `gleeunit` for pure Gleam modules under `gleam/src`, especially shared math code that must stay deterministic across targets.
 - TypeScript unit tests: use Jest for browser-side utilities, reducers, hooks, activity logic, adaptivity helpers, and other client code that does not require a Phoenix-rendered UI.
 - Phoenix LiveView tests: use `Phoenix.LiveViewTest` for server-driven interactive views, form validation, event handling, conditional rendering, and UI state transitions that live primarily in LiveView.
 - `Oli.Scenarios` integration tests: use YAML-driven non-UI workflow tests for real authoring, publishing, section, enrollment, and learner flows that must exercise actual application code and persistence end to end without browser automation.
 
-Guiding principle: if the behavior is pure or local, keep it in unit tests. If the behavior is UI orchestration in LiveView, keep it in LiveView tests. If the behavior is a realistic multi-step Torus workflow that spans domain boundaries but does not require a browser, prefer `Oli.Scenarios`.
+Guiding principle: if the behavior is pure or local, keep it in unit tests. If the behavior is shared Gleam code consumed from both Elixir and browser code, test it directly in Gleam and add boundary tests only where integration behavior can regress. If the behavior is UI orchestration in LiveView, keep it in LiveView tests. If the behavior is a realistic multi-step Torus workflow that spans domain boundaries but does not require a browser, prefer `Oli.Scenarios`.
 
 ## When Scenario Tests Are Necessary
 
@@ -54,6 +55,7 @@ If you are referring to `expand_scenario`, use `extend_scenario` in this reposit
 At minimum, run the most targeted tests that exercise the changed behavior.
 
 - For Elixir unit or integration changes: run the affected `mix test` target first, then broader suites as risk warrants.
+- For Gleam changes: run targeted `gleam test` commands from `gleam/`; for shared BEAM/browser code, run both `gleam test --target erlang` and `gleam test --target javascript`.
 - For TypeScript changes: run the affected Jest tests under `assets/`.
 - For LiveView changes: run the targeted LiveView test module and verify the rendered state transitions under `Phoenix.LiveViewTest`.
 - For scenario changes: validate the YAML file, then run the targeted ExUnit module or scenario runner that executes the scenario file.

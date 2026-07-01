@@ -54,6 +54,10 @@ export interface ActivityContext {
   oneAtATime: boolean;
   maxAttempts: number;
   scoringStrategyId: number;
+  replacementStrategy?: 'none' | 'dynamic';
+  aggregateScore?: number | null;
+  aggregateOutOf?: number | null;
+  aggregateIncludesCurrentAttempt?: boolean;
   ordinal: number;
   sectionSlug: string;
   projectSlug: string;
@@ -71,7 +75,9 @@ export interface ActivityContext {
   variables: any;
   pageLinkParams: any;
   allowHints: boolean;
+  showMathPreviews?: boolean;
   responsiveLayout?: boolean;
+  preserveCapiIframeSize?: boolean;
 }
 
 /**

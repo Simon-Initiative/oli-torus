@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import chroma from 'chroma-js';
-import { ColorPalette } from 'components/parts/types/parts';
+import { ColorPalette, normalizeBorderStyle } from 'components/parts/types/parts';
 import { parseNumString } from 'utils/common';
 
 export const convertPalette = (palette: any) => {
@@ -17,7 +17,7 @@ export const convertPalette = (palette: any) => {
       paletteStyles.backgroundColor = palette.backgroundColor;
       paletteStyles.borderColor = palette.borderColor;
       paletteStyles.borderWidth = parseNumString(palette.borderWidth.toString());
-      paletteStyles.borderStyle = palette.borderStyle;
+      paletteStyles.borderStyle = normalizeBorderStyle(palette.borderStyle);
       paletteStyles.borderRadius = parseNumString(palette.borderRadius.toString());
     } else {
       paletteStyles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;

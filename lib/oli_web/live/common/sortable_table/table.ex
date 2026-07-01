@@ -2,6 +2,7 @@ defmodule OliWeb.Common.SortableTable.Table do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.ColumnSpec
+  alias OliWeb.Icons
 
   @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
   def id_field(row, %{id_field: id_field}) when is_list(id_field) do
@@ -48,16 +49,34 @@ defmodule OliWeb.Common.SortableTable.Table do
           else: "desc"
       }
     >
-      <%= if @column_spec.tooltip do %>
-        <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
-          {@column_spec.label}
+      <%= if @column_spec.tooltip && Map.get(@column_spec, :tooltip_icon, false) do %>
+        <span class="inline-flex items-center gap-1.5">
+          <button
+            type="button"
+            id={tooltip_id(@column_spec)}
+            class="inline-flex h-8 w-8 items-center justify-center align-middle bg-transparent p-0 text-Icon-icon-accent-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+            phx-hook="GlobalTooltip"
+            data-tooltip={@column_spec.tooltip}
+            data-tooltip-style="body"
+            data-tooltip-stop-propagation="true"
+            aria-label={"#{@column_spec.label} help"}
+          >
+            <Icons.support class="h-5 w-5 stroke-current" />
+          </button>
+          <span>{@column_spec.label}</span>
         </span>
       <% else %>
-        {@column_spec.label}
+        <%= if @column_spec.tooltip do %>
+          <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
+            {@column_spec.label}
+          </span>
+        <% else %>
+          {@column_spec.label}
+        <% end %>
       <% end %>
 
       <%= if @column_spec.sortable do %>
-        <OliWeb.Icons.chevron_down
+        <Icons.chevron_down
           width="20"
           height="20"
           class={"inline fill-black dark:fill-white " <> if @sort_direction_cls == "up", do: "", else: "rotate-180 "}
@@ -169,4 +188,9 @@ defmodule OliWeb.Common.SortableTable.Table do
   defp with_data(assigns, data) do
     Map.merge(assigns, data)
   end
+
+  defp tooltip_id(%{tooltip_id: tooltip_id}) when is_binary(tooltip_id) and tooltip_id != "",
+    do: tooltip_id
+
+  defp tooltip_id(%{name: name}), do: "#{name}-column-tooltip"
 end

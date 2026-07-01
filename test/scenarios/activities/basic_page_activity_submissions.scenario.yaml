@@ -1,0 +1,424 @@
+# Scenario: Exercise scenario answer_question support for basic page activity types.
+# Adaptive and embed activities are intentionally excluded from this basic page workflow.
+
+- project:
+    name: "basic_page_activity_submissions"
+    title: "Basic Page Activity Submissions"
+    root:
+      children:
+        - page: "Mixed Practice"
+
+- create_activity:
+    project: "basic_page_activity_submissions"
+    title: "Multiple Choice Question"
+    virtual_id: "mcq"
+    type: "oli_multiple_choice"
+    content_format: "json"
+    content:
+      activityType: "oli_multiple_choice"
+      stem:
+        id: "mcq_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Choose the correct option."
+      choices:
+        - id: "a"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+        - id: "b"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "mcq_correct"
+                rule: "input like {b}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "mcq_feedback_correct"
+                  content: []
+              - id: "mcq_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "mcq_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "basic_page_activity_submissions"
+    title: "Short Answer Question"
+    virtual_id: "short_answer"
+    type: "oli_short_answer"
+    content_format: "json"
+    content:
+      activityType: "oli_short_answer"
+      stem:
+        id: "short_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Type the expected answer."
+      inputType: "text"
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "short_correct"
+                rule: "input contains {scenario}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "short_feedback_correct"
+                  content: []
+              - id: "short_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "short_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "basic_page_activity_submissions"
+    title: "Check All That Apply Question"
+    virtual_id: "cata"
+    type: "oli_check_all_that_apply"
+    content_format: "json"
+    content:
+      activityType: "oli_check_all_that_apply"
+      stem:
+        id: "cata_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Select both correct options."
+      choices:
+        - id: "c1"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct 1"
+        - id: "c2"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct 2"
+        - id: "c3"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        correct:
+          - ["c1", "c2"]
+          - "cata_correct"
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "cata_correct"
+                rule: "input like {c1 c2}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "cata_feedback_correct"
+                  content: []
+              - id: "cata_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "cata_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "basic_page_activity_submissions"
+    title: "Ordering Question"
+    virtual_id: "ordering"
+    type: "oli_ordering"
+    content_format: "json"
+    content:
+      activityType: "oli_ordering"
+      stem:
+        id: "ordering_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Put the steps in order."
+      choices:
+        - id: "first"
+          content:
+            - type: "p"
+              children:
+                - text: "First"
+        - id: "second"
+          content:
+            - type: "p"
+              children:
+                - text: "Second"
+        - id: "third"
+          content:
+            - type: "p"
+              children:
+                - text: "Third"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        correct:
+          - ["first", "second", "third"]
+          - "ordering_correct"
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "ordering_correct"
+                rule: "input like {first second third}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "ordering_feedback_correct"
+                  content: []
+              - id: "ordering_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "ordering_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "basic_page_activity_submissions"
+    title: "Multi Input Question"
+    virtual_id: "multi_input"
+    type: "oli_multi_input"
+    content_format: "json"
+    content:
+      activityType: "oli_multi_input"
+      submitPerPart: false
+      multInputsPerPart: true
+      choices: []
+      inputs:
+        - id: "1637853221"
+          inputType: "text"
+          partId: "651271558"
+        - id: "2369651067"
+          inputType: "numeric"
+          partId: "651271558"
+      stem:
+        id: "multi_input_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Fill in both blanks: "
+              - type: "input_ref"
+                id: "1637853221"
+                children:
+                  - text: ""
+              - text: " and "
+              - type: "input_ref"
+                id: "2369651067"
+                children:
+                  - text: ""
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "651271558"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            targets: ["1637853221", "2369651067"]
+            responses:
+              - id: "multi_input_correct"
+                rule: "input_ref_1637853221 contains {answer} && input_ref_2369651067 = {1}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "multi_input_feedback_correct"
+                  content: []
+              - id: "multi_input_incorrect"
+                rule: "input_ref_1637853221 like {.*} && input_ref_2369651067 like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "multi_input_feedback_incorrect"
+                  content: []
+            hints: []
+
+- edit_page:
+    project: "basic_page_activity_submissions"
+    page: "Mixed Practice"
+    content: |
+      title: "Mixed Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "mcq"
+        - type: activity_reference
+          virtual_id: "short_answer"
+        - type: activity_reference
+          virtual_id: "cata"
+        - type: activity_reference
+          virtual_id: "ordering"
+        - type: activity_reference
+          virtual_id: "multi_input"
+
+- publish:
+    to: "basic_page_activity_submissions"
+    description: "Publish mixed basic activity page"
+
+- section:
+    name: "basic_page_activity_section"
+    title: "Basic Page Activity Section"
+    from: "basic_page_activity_submissions"
+
+- user:
+    name: "student"
+    type: "student"
+
+- enroll:
+    user: "student"
+    section: "basic_page_activity_section"
+    role: "student"
+
+- view_practice_page:
+    student: "student"
+    section: "basic_page_activity_section"
+    page: "Mixed Practice"
+
+- answer_question:
+    student: "student"
+    section: "basic_page_activity_section"
+    page: "Mixed Practice"
+    activity_virtual_id: "mcq"
+    response: "b"
+
+- assert:
+    activity_attempt:
+      section: "basic_page_activity_section"
+      student: "student"
+      page: "Mixed Practice"
+      activity_virtual_id: "mcq"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "b"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "basic_page_activity_section"
+    page: "Mixed Practice"
+    activity_virtual_id: "short_answer"
+    response: "scenario answer"
+
+- assert:
+    activity_attempt:
+      section: "basic_page_activity_section"
+      student: "student"
+      page: "Mixed Practice"
+      activity_virtual_id: "short_answer"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "scenario answer"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "basic_page_activity_section"
+    page: "Mixed Practice"
+    activity_virtual_id: "cata"
+    response: "c1 c2"
+
+- assert:
+    activity_attempt:
+      section: "basic_page_activity_section"
+      student: "student"
+      page: "Mixed Practice"
+      activity_virtual_id: "cata"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "c1 c2"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "basic_page_activity_section"
+    page: "Mixed Practice"
+    activity_virtual_id: "ordering"
+    response: "first second third"
+
+- assert:
+    activity_attempt:
+      section: "basic_page_activity_section"
+      student: "student"
+      page: "Mixed Practice"
+      activity_virtual_id: "ordering"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "first second third"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "basic_page_activity_section"
+    page: "Mixed Practice"
+    activity_virtual_id: "multi_input"
+    response: '{"1637853221":"answer","2369651067":"1"}'
+
+- assert:
+    activity_attempt:
+      section: "basic_page_activity_section"
+      student: "student"
+      page: "Mixed Practice"
+      activity_virtual_id: "multi_input"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: '{"1637853221":"answer","2369651067":"1"}'
+      answerable: false

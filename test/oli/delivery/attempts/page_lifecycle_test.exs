@@ -2,9 +2,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
+  alias Oli.Delivery.Attempts.PageLifecycle.Hierarchy
+  alias Oli.Delivery.Attempts.PageLifecycle.VisitContext
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
+  alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Activities.Model.{Part}
+  alias Oli.Repo
 
   @content_automatic_by_default %{
     "stem" => "1",
@@ -93,6 +98,115 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       %Part{id: "1", responses: [], hints: [], grading_approach: :automatic},
       activity_attempt_tag
     )
+  end
+
+  describe "starting attempts with instructor activity exclusions" do
+    setup do
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{}, :user1)
+        |> Seeder.add_activity(
+          %{title: "title 1", content: @content_automatic, scope: "embedded"},
+          :activity_a
+        )
+        |> Seeder.add_activity(
+          %{title: "title 2", content: @content_automatic, scope: "embedded"},
+          :activity_b
+        )
+
+      page_content = %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "activity_id" => map.activity_a.revision.resource_id,
+            "id" => "activity-a"
+          },
+          %{
+            "type" => "activity-reference",
+            "activity_id" => map.activity_b.revision.resource_id,
+            "id" => "activity-b"
+          }
+        ]
+      }
+
+      map
+      |> Seeder.add_page(%{title: "graded page", graded: true, content: page_content}, :page)
+      |> Seeder.create_section_resources()
+    end
+
+    test "new attempts exclude customized embedded activities without changing historical attempts",
+         %{
+           activity_a: activity_a,
+           activity_b: activity_b,
+           page: %{revision: revision},
+           publication: publication,
+           section: section,
+           user1: user
+         } do
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      datashop_session_id = UUID.uuid4()
+
+      Core.track_access(revision.resource_id, section.id, user.id)
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+
+      {:ok, first_resource_attempt} =
+        Hierarchy.create(%VisitContext{
+          latest_resource_attempt: nil,
+          page_revision: revision,
+          section_slug: section.slug,
+          datashop_session_id: datashop_session_id,
+          user: user,
+          audience_role: :student,
+          activity_provider: activity_provider,
+          blacklisted_activity_ids: [],
+          publication_id: publication.id,
+          effective_settings: effective_settings
+        })
+
+      {:ok, %AttemptState{attempt_hierarchy: first_hierarchy}} =
+        AttemptState.fetch_attempt_state(first_resource_attempt, revision)
+
+      assert Map.has_key?(first_hierarchy, activity_a.revision.resource_id)
+      assert Map.has_key?(first_hierarchy, activity_b.revision.resource_id)
+      assert length(first_resource_attempt.content["model"]) == 2
+
+      %ActivityExclusion{}
+      |> ActivityExclusion.changeset(section.id, revision.resource_id, %{
+        kind: :embedded_activity,
+        excluded_resource_id: activity_a.revision.resource_id
+      })
+      |> Repo.insert!()
+
+      {:ok, second_resource_attempt} =
+        Hierarchy.create(%VisitContext{
+          latest_resource_attempt: first_resource_attempt,
+          page_revision: revision,
+          section_slug: section.slug,
+          datashop_session_id: datashop_session_id,
+          user: user,
+          audience_role: :student,
+          activity_provider: activity_provider,
+          blacklisted_activity_ids: [],
+          publication_id: publication.id,
+          effective_settings: effective_settings
+        })
+
+      {:ok, %AttemptState{attempt_hierarchy: second_hierarchy}} =
+        AttemptState.fetch_attempt_state(second_resource_attempt, revision)
+
+      refute Map.has_key?(second_hierarchy, activity_a.revision.resource_id)
+      assert Map.has_key?(second_hierarchy, activity_b.revision.resource_id)
+      assert length(second_resource_attempt.content["model"]) == 1
+
+      assert hd(second_resource_attempt.content["model"])["activity_id"] ==
+               activity_b.revision.resource_id
+
+      historical_attempt = Core.get_resource_attempt(id: first_resource_attempt.id)
+      assert length(historical_attempt.content["model"]) == 2
+    end
   end
 
   describe "browsing manual graded attempts" do

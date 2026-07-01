@@ -7,7 +7,11 @@
   {@modal_assigns}
 />
 
-<UnsavedChangesModal.render :if={@show_unsaved_changes_modal} show={@show_unsaved_changes_modal} />
+<UnsavedChangesModal.render
+  :if={@show_unsaved_changes_modal}
+  show={@show_unsaved_changes_modal}
+  reason={@unsaved_changes_reason}
+/>
 
 <Modal.modal
   :if={@options_modal_assigns}
@@ -99,6 +103,8 @@
             node={node}
             is_product={assigns[:is_product]}
             source_page_resource_ids={@source_page_resource_ids}
+            section_slug={@section.slug}
+            return_to={@return_to}
           />
         <% end %>
         <DropTarget.droptarget id="last" index={length(@active.children)} />

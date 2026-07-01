@@ -17,6 +17,7 @@
             is_admin={@is_admin}
             section={@section}
             preview_mode={@preview_mode}
+            instructor_preview_return={assigns[:instructor_preview_return]}
             include_logo
           />
         </div>
@@ -58,7 +59,27 @@
             </div>
           <% end %>
         </div>
-        <div class="sticky top-[55px] z-50">
+        <Components.Delivery.Layouts.sayg_saved_work_notice container_class="relative z-[45] mx-4 mt-4 md:mx-6" />
+        <div
+          :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+          id="pay_early_message"
+          class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
+          role="alert"
+        >
+          {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
+          <div class="flex whitespace-nowrap items-center">
+            <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
+              Pay Now
+            </.link>
+            <button
+              class="ml-6 stroke-gray-500 hover:stroke-gray-400"
+              phx-click={JS.hide(to: "#pay_early_message")}
+            >
+              <OliWeb.Icons.close class="stroke-zinc-700" />
+            </button>
+          </div>
+        </div>
+        <div class="sticky top-[40px] z-[60] md:h-20 2xl:h-28">
           <% back_url =
             if assigns[:request_path] in [nil, ""] and @current_page != nil,
               do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
@@ -142,7 +163,7 @@
             <div
               :if={@view == :adaptive_with_chrome}
               id="adaptive-viewport-actions"
-              class="fixed bottom-6 left-16 z-[9999] flex flex-col items-start gap-1"
+              class="flex flex-col items-start gap-1 mt-6 mb-2 ml-4 md:ml-7 xl:ml-0"
             >
               <OliWeb.Components.Common.tech_support_button
                 id="tech-support"
@@ -154,10 +175,11 @@
               :if={@view != :adaptive_with_chrome}
               id="tech-support-wrapper"
               phx-hook="StickyTechSupportButton"
+              class="w-full md:container lg:px-10"
             >
               <OliWeb.Components.Common.tech_support_button
                 id="tech-support"
-                class="-ml-4 md:ml-7 xl:ml-0 xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
+                class="-ml-4 md:-ml-3 xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
               />
             </div>
             <OliWeb.Components.Footer.delivery_footer
@@ -170,26 +192,6 @@
 
       <div class="flex flex-col">
         <div class="flex-1 flex flex-col min-h-0">
-          <div
-            :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
-            id="pay_early_message"
-            class="absolute z-50 system-banner flex flex-row alert alert-warning ml-32 m-6"
-            role="alert"
-          >
-            {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
-            <div class="flex whitespace-nowrap items-center">
-              <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
-                Pay Now
-              </.link>
-              <button
-                class="ml-10 stroke-gray-500 hover:stroke-gray-400"
-                phx-click={JS.hide(to: "#pay_early_message")}
-              >
-                <OliWeb.Icons.close class="stroke-zinc-700" />
-              </button>
-            </div>
-          </div>
-
           <div
             :if={assigns[:page_context]}
             class={

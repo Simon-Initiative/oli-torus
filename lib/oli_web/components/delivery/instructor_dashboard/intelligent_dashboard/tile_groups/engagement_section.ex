@@ -33,6 +33,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :student_support_parameters_changeset, :map, default: nil
   attr :params, :map, default: %{}
   attr :section_slug, :string, required: true
+  attr :section_id, :integer, required: true
   attr :section_title, :string, default: nil
   attr :instructor_email, :string, default: nil
   attr :instructor_name, :string, default: nil
@@ -106,6 +107,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             student_support_parameters_changeset={@student_support_parameters_changeset}
             params={@params}
             section_slug={@section_slug}
+            section_id={@section_id}
             section_title={@section_title}
             instructor_email={@instructor_email}
             instructor_name={@instructor_name}

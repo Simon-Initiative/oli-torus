@@ -98,7 +98,11 @@ defmodule Oli.TorusDoc.ActivityParser do
      %{
        activity_type: :short_answer,
        short_answer_attributes: %{
-         input_type: data["input_type"] || "text"
+         input_type: data["input_type"] || "text",
+         math_expression: data["math_expression"],
+         responses: data["responses"],
+         answer: data["answer"],
+         scoring_strategy: data["scoring_strategy"]
        }
      }}
   end
@@ -122,7 +126,8 @@ defmodule Oli.TorusDoc.ActivityParser do
      %{
        activity_type: :multi_input,
        multi_input_attributes: %{
-         parts: data["parts"] || []
+         inputs: data["inputs"] || [],
+         submit_per_part: data["submit_per_part"] || false
        }
      }}
   end
@@ -146,7 +151,12 @@ defmodule Oli.TorusDoc.ActivityParser do
       "choices",
       "shuffle",
       "input_type",
-      "parts"
+      "math_expression",
+      "responses",
+      "answer",
+      "scoring_strategy",
+      "inputs",
+      "submit_per_part"
     ])
     |> case do
       empty when empty == %{} -> nil

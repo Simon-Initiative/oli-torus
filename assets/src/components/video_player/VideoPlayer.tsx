@@ -73,6 +73,7 @@ export const VideoPlayer: React.FC<{
     : { fluid: true };
 
   const hasCaptions = video.captions && video.captions.length > 0;
+  const crossOriginProps = hasCaptions ? { crossOrigin: 'anonymous' } : {};
 
   // Update segmentsRef whenever segments change
   useEffect(() => {
@@ -257,7 +258,7 @@ export const VideoPlayer: React.FC<{
       onClick={preventDefault}
       {...maybePointMarkerAttr(video, pointMarkerContext)}
     >
-      <Player poster={video.poster} {...sizeAttributes} ref={onPlayer} crossOrigin="anonymous">
+      <Player poster={video.poster} {...sizeAttributes} {...crossOriginProps} ref={onPlayer}>
         {/* To suppress keyboard shortcuts: use custom Shortcut component to override builtin default */}
         {/* Still need to suppress player ever activating to prevent keystrokes from being consumed */}
         <Shortcut clickable={false} dblclickable={false} shortcuts={[]} />

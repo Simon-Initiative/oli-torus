@@ -1,0 +1,170 @@
+work_item: exact-form
+requirements:
+- id: FR-001
+  title: Define exact-form configuration and results
+  status: proposed
+  description: Provide typed Gleam configuration, observed-form summaries, form failure
+    categories, standalone form check results, and form-aware algebraic result types
+    for exact-form constraints.
+- id: FR-002
+  title: Classify whole-answer submitted forms from source metadata
+  status: proposed
+  description: Classify candidate answers as integer, decimal, fraction, or other
+    by parsing the raw candidate and inspecting the original AST, spans, numeric literal
+    notation, raw values, and decimal-place metadata.
+- id: FR-003
+  title: Enforce MVP exact-form constraints
+  status: proposed
+  description: Enforce integer-only, fraction-only, simplified-fraction, and decimal-form
+    constraints, including exactly, at least, and at most decimal-place precision
+    rules.
+- id: FR-004
+  title: Layer form checks after semantic equivalence
+  status: proposed
+  description: Provide a form-aware algebraic comparison that preserves parse, validation,
+    domain, runtime, and non-equivalence outcomes as primary, and only applies form
+    checks after semantic equivalence passes.
+- id: FR-005
+  title: Expose exact-form APIs through torus_math
+  status: proposed
+  description: Expose standalone raw candidate form checking, form-aware algebraic
+    checking, default exact-form configuration, and stable debug formatting through
+    the shared public Gleam math boundary.
+- id: FR-006
+  title: Preserve existing numeric and production behavior
+  status: proposed
+  description: Keep Number-input scalar representation and precision behavior unchanged
+    and avoid production grading, authoring UI, learner UI, persistence, scoring,
+    feedback-rule, telemetry, or activity-evaluation integration changes.
+- id: FR-007
+  title: Provide stable diagnostics and cross-target test coverage
+  status: proposed
+  description: Add deterministic debug formatting and Gleam tests that prove exact-form
+    behavior is stable on Erlang and JavaScript targets.
+acceptance_criteria:
+- id: AC-001
+  requirement_id: FR-001
+  title: Exact-form config can represent no constraint, integer, fraction, simplified
+    fraction, and decimal with optional decimal-place precision.
+  status: proposed
+  verification_method: automated
+- id: AC-002
+  requirement_id: FR-001
+  title: Form results distinguish satisfied form, unsatisfied form, parse failure,
+    invalid form configuration, wrong form, unsimplified fraction, decimal precision
+    mismatch, non-canonical fraction sign, and unsafe integer details.
+  status: proposed
+  verification_method: automated
+- id: AC-003
+  requirement_id: FR-002
+  title: Integer classification accepts whole-answer integer literals with optional
+    unary signs and rejects decimal, fraction, scientific, additive, and equivalent
+    non-literal expressions.
+  status: proposed
+  verification_method: automated
+- id: AC-004
+  requirement_id: FR-002
+  title: Fraction classification accepts whole-answer division of integer literals
+    with supported sign placement and rejects decimals, integers, chained divisions,
+    variable rational expressions, and non-integer numerator or denominator forms.
+  status: proposed
+  verification_method: automated
+- id: AC-005
+  requirement_id: FR-002
+  title: Decimal classification accepts whole-answer decimal literals with optional
+    unary signs and rejects integers, fractions, scientific notation, leading-dot
+    expressions rejected by the parser, and additive expressions.
+  status: proposed
+  verification_method: automated
+- id: AC-006
+  requirement_id: FR-003
+  title: Integer-only form passes for examples such as `7`, `-7`, and `+7`, and fails
+    for examples such as `7.0`, `7/1`, `14/2`, `3+4`, and `7e0`.
+  status: proposed
+  verification_method: automated
+- id: AC-007
+  requirement_id: FR-003
+  title: Fraction-only form passes for scalar integer-literal fractions and fails
+    for decimal, integer, variable rational, chained division, and non-integer component
+    forms.
+  status: proposed
+  verification_method: automated
+- id: AC-008
+  requirement_id: FR-003
+  title: Simplified-fraction form reports unsimplified fractions when numerator and
+    denominator share a common factor, when zero has a denominator other than `1`,
+    or when denominator sign is non-canonical.
+  status: proposed
+  verification_method: automated
+- id: AC-009
+  requirement_id: FR-003
+  title: Decimal-form precision supports exactly, at least, and at most N decimal
+    places using `NumberLiteral.decimal_places`, so `0.80` can pass exactly 2 while
+    `0.8` and `0.800` fail exactly 2.
+  status: proposed
+  verification_method: automated
+- id: AC-010
+  requirement_id: FR-004
+  title: Expected `4/5` with candidate `8/10` and required simplified fraction returns
+    semantic pass plus form failure, not semantic failure.
+  status: proposed
+  verification_method: automated
+- id: AC-011
+  requirement_id: FR-004
+  title: Expected `4/5` with candidate `8/11` and required simplified fraction returns
+    semantic failure and does not report wrong form as the primary outcome.
+  status: proposed
+  verification_method: automated
+- id: AC-012
+  requirement_id: FR-004
+  title: Malformed candidates, unexpected variables, disallowed functions, invalid
+    domains, runtime failures, and insufficient samples preserve their existing semantic
+    outcome categories rather than becoming form failures.
+  status: proposed
+  verification_method: automated
+- id: AC-013
+  requirement_id: FR-005
+  title: Public `torus_math` APIs expose standalone form checking, form-aware algebraic
+    checking, default config, and debug formatting without requiring callers to depend
+    on internal form modules.
+  status: proposed
+  verification_method: automated
+- id: AC-014
+  requirement_id: FR-005
+  title: Debug formatting for exact-form results is target-stable and documented as
+    developer/test diagnostics rather than learner-facing feedback text.
+  status: proposed
+  verification_method: automated
+- id: AC-015
+  requirement_id: FR-006
+  title: Existing Number-input scalar representation and precision tests continue
+    to pass, including leading decimal compatibility, legacy significant figures,
+    scientific representation, and no raw submitted answer diagnostics.
+  status: proposed
+  verification_method: automated
+- id: AC-016
+  requirement_id: FR-006
+  title: The work does not change production Short Answer, Multi-Input, Number, legacy
+    Math, adaptive activity, authoring UI, learner UI, response-rule grading, scoring,
+    persistence, or feedback-rule behavior.
+  status: proposed
+  verification_method: inspection
+- id: AC-017
+  requirement_id: FR-006
+  title: No production telemetry or logs include raw learner expressions, raw expected
+    answers, raw numeric fragments, or sampled assignments by default.
+  status: proposed
+  verification_method: inspection
+- id: AC-018
+  requirement_id: FR-007
+  title: '`cd gleam && gleam format --check src test`, `cd gleam && gleam test --target
+    erlang`, and `cd gleam && gleam test --target javascript` pass for exact-form
+    changes.'
+  status: proposed
+  verification_method: automated
+- id: AC-019
+  requirement_id: FR-007
+  title: Representative form checks, form-aware algebraic outcomes, and debug strings
+    are deterministic and match on Erlang and JavaScript targets.
+  status: proposed
+  verification_method: automated

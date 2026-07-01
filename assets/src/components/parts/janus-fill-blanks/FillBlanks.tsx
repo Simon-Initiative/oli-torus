@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -12,9 +13,12 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
+import type { FIBElement } from './FIBUtils';
 import './FillBlanks.scss';
+import { fibNumericAnswerCorrect, parseFibNumber } from './fibNumeric';
 import { FIBModel } from './schema';
 
 export const parseBool = (val: any) => {
@@ -128,7 +132,13 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       : undefined;
 
   const selectedOption = options.find((o) => o.id === value);
-  const displayText = selectedOption ? selectedOption.text.replace(/<[^>]*>/g, '') : '';
+  const sanitizedOptions = useMemo(
+    () => options.map((opt) => ({ ...opt, labelHtml: sanitizeRichLabelHtml(opt.text || '') })),
+    [options],
+  );
+  const displayHtml = selectedOption ? sanitizeRichLabelHtml(selectedOption.text || '') : '';
+
+  const optionPlainText = (text: string) => htmlToPlainText(sanitizeRichLabelHtml(text || ''));
 
   const open = () => {
     if (!disabled) {
@@ -349,7 +359,7 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       e.preventDefault();
       if (isOpen && options[highlightedIndex]) {
         const selected = options[highlightedIndex];
-        handleOptionSelect(selected.id, selected.text.replace(/<[^>]*>/g, ''));
+        handleOptionSelect(selected.id, optionPlainText(selected.text));
       } else {
         open();
       }
@@ -381,7 +391,10 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
         aria-label={ariaLabel}
         onKeyDown={handleKeyDown}
       >
-        <span className="fib-select-text">{displayText}</span>
+        <span
+          className="fib-select-text"
+          dangerouslySetInnerHTML={{ __html: displayHtml || '\u00a0' }}
+        />
         <span className={`fib-select-arrow${isOpen ? ' open' : ''}`} />
       </button>
       {isOpen && (
@@ -394,27 +407,23 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
           role="listbox"
           aria-label={ariaLabel}
         >
-          {options.map((opt, optIndex) => {
-            const label = opt.text.replace(/<[^>]*>/g, '');
-            return (
-              <span
-                key={opt.id}
-                id={getOptionId(opt.id)}
-                role="option"
-                aria-selected={opt.id === value}
-                className={`fib-dropdown-option${opt.id === value ? ' selected' : ''}${
-                  optIndex === highlightedIndex ? ' highlighted' : ''
-                }`}
-                onMouseEnter={() => setHighlightedIndex(optIndex)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleOptionSelect(opt.id, label);
-                }}
-              >
-                {label}
-              </span>
-            );
-          })}
+          {sanitizedOptions.map((opt, optIndex) => (
+            <span
+              key={opt.id}
+              id={getOptionId(opt.id)}
+              role="option"
+              aria-selected={opt.id === value}
+              className={`fib-dropdown-option${opt.id === value ? ' selected' : ''}${
+                optIndex === highlightedIndex ? ' highlighted' : ''
+              }`}
+              onMouseEnter={() => setHighlightedIndex(optIndex)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleOptionSelect(opt.id, optionPlainText(opt.text));
+              }}
+              dangerouslySetInnerHTML={{ __html: opt.labelHtml || '\u00a0' }}
+            />
+          ))}
         </span>
       )}
     </span>
@@ -742,39 +751,68 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   };
 
   // returns boolean
-  const isCorrect = (submission: string, correct: string, alternateCorrect: string) => {
-    if (!submission || !correct) return false;
+  const isCorrect = useCallback(
+    (submission: string, correct: string, alternateCorrect: string) => {
+      if (!submission || !correct) return false;
 
-    const correctArray: any[] =
-      typeof alternateCorrect !== 'undefined'
-        ? Array.isArray(alternateCorrect)
-          ? [correct, ...alternateCorrect]
-          : [correct, ...alternateCorrect.split(alternateCorrectDelimiter)]
-        : [correct];
+      const correctArray: any[] =
+        typeof alternateCorrect !== 'undefined'
+          ? Array.isArray(alternateCorrect)
+            ? [correct, ...alternateCorrect]
+            : [correct, ...alternateCorrect.split(alternateCorrectDelimiter)]
+          : [correct];
 
-    if (caseSensitiveAnswers) {
-      return correctArray.includes(submission);
+      if (caseSensitiveAnswers) {
+        return correctArray.includes(submission);
+      }
+      const submissionNorm = submission.toLowerCase();
+      return correctArray.some((c) => String(c).toLowerCase() === submissionNorm);
+    },
+    [caseSensitiveAnswers, alternateCorrectDelimiter],
+  );
+
+  const elementAnswerCorrect = useCallback(
+    (
+      element: {
+        type?: string;
+        correct: string;
+        alternateCorrect?: any;
+        tolerancePercent?: number;
+      },
+      elVal: string,
+    ) => {
+      if (element.type === 'number') {
+        return fibNumericAnswerCorrect(
+          elVal,
+          element.correct,
+          element.alternateCorrect,
+          element.tolerancePercent,
+        );
+      }
+      return isCorrect(elVal, element.correct, element.alternateCorrect);
+    },
+    [isCorrect],
+  );
+
+  const elementHasValue = useCallback((element: { type?: string }, elVal: string) => {
+    if (element.type === 'number') {
+      return parseFibNumber(elVal) !== null;
     }
-    const submissionNorm = submission.toLowerCase();
-    return correctArray.some((c) => String(c).toLowerCase() === submissionNorm);
-  };
+    return !!elVal?.trim()?.length;
+  }, []);
 
   const saveElements = useCallback(() => {
     if (!elements?.length) return;
 
-    const allCorrect = elements.every(
-      (element: { key: string; correct: string; alternateCorrect: string }) => {
-        const elVal = getElementValueByKey(element.key);
-        return isCorrect(elVal, element.correct, element.alternateCorrect);
-      },
-    );
+    const allCorrect = elements.every((element: FIBElement) => {
+      const elVal = getElementValueByKey(element.key);
+      return elementAnswerCorrect(element, elVal);
+    });
 
-    const allInputCompleted = elements.every(
-      (element: { key: string; correct: string; alternateCorrect: string }) => {
-        const elVal = getElementValueByKey(element.key);
-        return elVal?.trim()?.length;
-      },
-    );
+    const allInputCompleted = elements.every((element: FIBElement) => {
+      const elVal = getElementValueByKey(element.key);
+      return elementHasValue(element, elVal);
+    });
 
     setCorrect(allCorrect);
 
@@ -792,7 +830,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         {
           key: `Input ${index + 1}.Correct`,
           type: CapiVariableTypes.BOOLEAN,
-          value: isCorrect(val, el.correct, el.alternateCorrect),
+          value: elementAnswerCorrect(el, val),
         },
       ];
     });
@@ -849,7 +887,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     } catch (err) {
       console.log(err);
     }
-  }, [getElementValueByKey, attempted]);
+  }, [getElementValueByKey, attempted, elements, elementAnswerCorrect, elementHasValue]);
 
   useEffect(() => {
     // write to state when elementValues changes
@@ -923,12 +961,21 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                 }),
               );
               const answerStatus: string =
-                (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
-                (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
+                (showCorrect && elementAnswerCorrect(insertEl, elVal)) ||
+                (showHints && elementAnswerCorrect(insertEl, elVal))
                   ? 'correct'
                   : 'incorrect';
               const showReadonlyStatus = showCorrect || showHints;
               const answerStatusLabel = answerStatus === 'correct' ? 'Correct' : 'Incorrect';
+              const selectedOptionValue = elVal
+                ? insertEl.options.find((o: { key: string }) => o.key === elVal)?.value ?? elVal
+                : '';
+              const selectedOptionPlain = selectedOptionValue
+                ? htmlToPlainText(String(selectedOptionValue))
+                : '';
+              const selectedOptionHtml = selectedOptionValue
+                ? sanitizeRichLabelHtml(String(selectedOptionValue))
+                : '';
 
               insertList.push(
                 <span className="dropdown-blot" tabIndex={-1} key={`dropdown-${insertEl.key}`}>
@@ -937,8 +984,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                       <span
                         className={`dropdown-readonly ${showReadonlyStatus ? answerStatus : ''}`}
                         aria-label={
-                          elVal
-                            ? `${elVal}, Dropdown ${index + 1}${
+                          selectedOptionPlain
+                            ? `${selectedOptionPlain}, Dropdown ${index + 1}${
                                 showReadonlyStatus ? `, ${answerStatusLabel}` : ''
                               }`
                             : `Dropdown ${index + 1}, No selection recorded${
@@ -946,9 +993,12 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                               }`
                         }
                       >
-                        <span className="dropdown-readonly-value">
-                          {elVal || 'No selection recorded'}
-                        </span>
+                        <span
+                          className="dropdown-readonly-value"
+                          dangerouslySetInnerHTML={{
+                            __html: selectedOptionHtml || 'No selection recorded',
+                          }}
+                        />
                         {showReadonlyStatus ? (
                           <span className={`dropdown-readonly-status ${answerStatus}`}>
                             {answerStatusLabel}
@@ -962,8 +1012,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                         options={optionsList}
                         disabled={!enabled}
                         ariaLabel={
-                          elVal
-                            ? `${elVal}, Dropdown ${index + 1}`
+                          selectedOptionPlain
+                            ? `${selectedOptionPlain}, Dropdown ${index + 1}`
                             : `Dropdown ${index + 1}, Make a selection`
                         }
                         displayClass={showCorrect || showHints ? answerStatus : ''}
@@ -984,8 +1034,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             if (insertEl) {
               const elVal: string = getElementValueByKey(insertEl.key);
               const answerStatus: string =
-                (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
-                (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
+                (showCorrect && elementAnswerCorrect(insertEl, elVal)) ||
+                (showHints && elementAnswerCorrect(insertEl, elVal))
                   ? 'correct'
                   : 'incorrect';
 
@@ -1007,9 +1057,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                       }}
                       name={insertEl.key}
                       className={`text-input ${!enabled ? 'disabled' : ''} ${
-                        showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
-                          ? 'correct'
-                          : ''
+                        showCorrect && elementAnswerCorrect(insertEl, elVal) ? 'correct' : ''
                       }`}
                       type="text"
                       value={elVal}
@@ -1021,11 +1069,63 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                 </span>,
               );
             }
+          } else if (contentItem['number-input']) {
+            insertEl = elements.find((elItem: { key: string }) => {
+              return elItem.key === contentItem['number-input'];
+            });
+            if (insertEl) {
+              const elVal: string = getElementValueByKey(insertEl.key);
+              const answerStatus: string =
+                (showCorrect && elementAnswerCorrect(insertEl, elVal)) ||
+                (showHints && elementAnswerCorrect(insertEl, elVal))
+                  ? 'correct'
+                  : 'incorrect';
+
+              insertList.push(
+                <span className="text-input-blot" key={`number-input-${insertEl.key}`}>
+                  <span
+                    className={`text-input-container ${
+                      showCorrect || showHints ? answerStatus : ''
+                    }`}
+                    tabIndex={-1}
+                  >
+                    <input
+                      ref={(ref: HTMLInputElement | null) => {
+                        if (ref) {
+                          inputRefs.current.set(insertEl.key, ref);
+                        } else {
+                          inputRefs.current.delete(insertEl.key);
+                        }
+                      }}
+                      name={insertEl.key}
+                      className={`text-input ${!enabled ? 'disabled' : ''} ${
+                        showCorrect && elementAnswerCorrect(insertEl, elVal) ? 'correct' : ''
+                      }`}
+                      type="number"
+                      step={1}
+                      value={elVal}
+                      onChange={(e) => handleInput(e.currentTarget)}
+                      disabled={!enabled}
+                      aria-label={`Number input ${index + 1}`}
+                    />
+                  </span>
+                </span>,
+              );
+            }
           }
           return insertList;
         },
       ),
-    [content, elements, enabled, getElementValueByKey, isReviewMode, showCorrect, showHints],
+    [
+      content,
+      elements,
+      enabled,
+      getElementValueByKey,
+      isReviewMode,
+      showCorrect,
+      showHints,
+      elementAnswerCorrect,
+    ],
   );
 
   useEffect(() => {

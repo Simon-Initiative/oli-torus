@@ -166,8 +166,51 @@ defmodule Oli.Delivery.Remix do
   `selection` is a list of {publication_id, resource_id} tuples.
   `published_resources_by_resource_id_by_pub` is a map of pub_id => %{rid => %PublishedResource{}}.
   """
-  @spec add_materials(State.t(), list({pos_integer(), pos_integer()}), map()) :: {:ok, State.t()}
+  @spec add_materials(State.t(), list({pos_integer(), pos_integer()}), map()) ::
+          {:ok, State.t()} | {:error, term()}
   def add_materials(%State{} = state, selection, published_resources_by_resource_id_by_pub) do
+    with :ok <- validate_no_shared_project_resources(state, selection) do
+      add_validated_materials(state, selection, published_resources_by_resource_id_by_pub)
+    end
+  end
+
+  @doc """
+  Convenience: add materials with publication lookups and canonical ordering preserved
+  per original publication hierarchy.
+  """
+  @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) ::
+          {:ok, State.t()} | {:error, term()}
+  def add_materials(%State{} = state, selection) do
+    unique_pub_ids = add_material_publication_ids(selection)
+    pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
+
+    with :ok <- validate_publication_ids_available(unique_pub_ids, pub_by_id),
+         :ok <- validate_no_shared_project_resources(state, selection) do
+      published_resources_by_resource_id_by_pub =
+        Publishing.get_published_resources_for_publications(unique_pub_ids)
+
+      # Build index per pub for canonical order
+      index_by_pub =
+        Map.new(unique_pub_ids, fn pub_id ->
+          pub = Map.fetch!(pub_by_id, pub_id)
+          pr_by_rid = Map.fetch!(published_resources_by_resource_id_by_pub, pub_id)
+          {pub_id, build_resource_index_for_pub_map(pr_by_rid, pub)}
+        end)
+
+      selection =
+        Enum.sort_by(selection, fn {pub_id, rid} ->
+          Map.get(index_by_pub[pub_id], rid, :infinity)
+        end)
+
+      add_validated_materials(state, selection, published_resources_by_resource_id_by_pub)
+    end
+  end
+
+  defp add_validated_materials(
+         %State{} = state,
+         selection,
+         published_resources_by_resource_id_by_pub
+       ) do
     hierarchy =
       state.hierarchy
       |> Hierarchy.add_materials_to_hierarchy(
@@ -200,32 +243,120 @@ defmodule Oli.Delivery.Remix do
      }}
   end
 
-  @doc """
-  Convenience: add materials with publication lookups and canonical ordering preserved
-  per original publication hierarchy.
-  """
-  @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) :: {:ok, State.t()}
-  def add_materials(%State{} = state, selection) do
-    unique_pub_ids = selection |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
-    pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
+  defp validate_no_shared_project_resources(%State{} = _state, []), do: :ok
 
-    published_resources_by_resource_id_by_pub =
-      Publishing.get_published_resources_for_publications(unique_pub_ids)
+  defp validate_no_shared_project_resources(%State{} = state, selection) do
+    with {:ok, candidate_project_ids} <-
+           selection
+           |> Enum.map(&elem(&1, 0))
+           |> Enum.uniq()
+           |> project_ids_for_publication_ids(state.available_publications) do
+      existing_project_ids =
+        [state.section.base_project_id | Map.keys(state.pinned_project_publications)]
+        |> Enum.uniq()
 
-    # Build index per pub for canonical order
-    index_by_pub =
-      Map.new(unique_pub_ids, fn pub_id ->
-        pub = Map.fetch!(pub_by_id, pub_id)
-        pr_by_rid = Map.fetch!(published_resources_by_resource_id_by_pub, pub_id)
-        {pub_id, build_resource_index_for_pub_map(pr_by_rid, pub)}
-      end)
+      case shared_project_resource_conflict(candidate_project_ids, existing_project_ids) do
+        :selected_projects_share_resources -> {:error, :selected_projects_share_resources}
+        :shared_project_resources -> {:error, :shared_project_resources}
+        nil -> :ok
+      end
+    end
+  end
 
-    selection =
-      Enum.sort_by(selection, fn {pub_id, rid} ->
-        Map.get(index_by_pub[pub_id], rid, :infinity)
-      end)
+  defp project_ids_for_publication_ids(publication_ids, available_publications) do
+    pub_by_id = Map.new(available_publications, &{&1.id, &1.project_id})
 
-    add_materials(state, selection, published_resources_by_resource_id_by_pub)
+    with :ok <- validate_publication_ids_available(publication_ids, pub_by_id) do
+      project_ids =
+        publication_ids
+        |> Enum.map(&Map.fetch!(pub_by_id, &1))
+        |> Enum.uniq()
+
+      {:ok, project_ids}
+    end
+  end
+
+  defp shared_project_resource_conflict([], _existing_project_ids), do: nil
+
+  defp shared_project_resource_conflict(
+         [_project_id] = candidate_project_ids,
+         existing_project_ids
+       ) do
+    if existing_projects_share_resources?(candidate_project_ids, existing_project_ids) do
+      :shared_project_resources
+    end
+  end
+
+  defp shared_project_resource_conflict(candidate_project_ids, existing_project_ids) do
+    shared_project_resource_conflict_sql = """
+    SELECT
+      EXISTS (
+        SELECT 1
+        FROM projects_resources candidate
+        JOIN projects_resources other
+          ON other.resource_id = candidate.resource_id
+        WHERE candidate.project_id = ANY($1)
+          AND other.project_id = ANY($1)
+          AND candidate.project_id <> other.project_id
+      ),
+      EXISTS (
+        SELECT 1
+        FROM projects_resources candidate
+        JOIN projects_resources other
+          ON other.resource_id = candidate.resource_id
+        WHERE candidate.project_id = ANY($1)
+          AND other.project_id = ANY($2)
+          AND candidate.project_id <> other.project_id
+      )
+    """
+
+    %{rows: [[selected_projects_conflict?, existing_projects_conflict?]]} =
+      Repo.query!(shared_project_resource_conflict_sql, [
+        candidate_project_ids,
+        existing_project_ids
+      ])
+
+    cond do
+      selected_projects_conflict? -> :selected_projects_share_resources
+      existing_projects_conflict? -> :shared_project_resources
+      true -> nil
+    end
+  end
+
+  defp existing_projects_share_resources?(candidate_project_ids, existing_project_ids) do
+    existing_project_conflict_sql = """
+    SELECT EXISTS (
+      SELECT 1
+      FROM projects_resources candidate
+      JOIN projects_resources other
+        ON other.resource_id = candidate.resource_id
+      WHERE candidate.project_id = ANY($1)
+        AND other.project_id = ANY($2)
+        AND candidate.project_id <> other.project_id
+    )
+    """
+
+    %{rows: [[existing_projects_conflict?]]} =
+      Repo.query!(existing_project_conflict_sql, [
+        candidate_project_ids,
+        existing_project_ids
+      ])
+
+    existing_projects_conflict?
+  end
+
+  defp add_material_publication_ids(selection) do
+    selection
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.uniq()
+  end
+
+  defp validate_publication_ids_available(publication_ids, pub_by_id) do
+    if Enum.any?(publication_ids, &(not Map.has_key?(pub_by_id, &1))) do
+      {:error, :unavailable_publication}
+    else
+      :ok
+    end
   end
 
   defp build_resource_index_for_pub_map(pr_by_rid, pub) do

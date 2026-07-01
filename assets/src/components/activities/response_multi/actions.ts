@@ -280,6 +280,8 @@ export const ResponseMultiInputActions = {
       }
 
       const existingResponses: Response[] = part.responses.filter((r) => {
+        if (typeof r.rule !== 'string') return false;
+
         const f = ruleInputRefs(r.rule).find((i) => i === id);
         return f ? true : false;
       });
@@ -289,6 +291,7 @@ export const ResponseMultiInputActions = {
         text: ResponseMultiInputResponses.forTextInput(input.id),
         numeric: ResponseMultiInputResponses.forNumericInput(input.id),
         math: ResponseMultiInputResponses.forMathInput(input.id),
+        math_expression: ResponseMultiInputResponses.forMathInput(input.id),
       }[type];
 
       if (existingResponses.length > 0) {

@@ -16,25 +16,29 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
 
   def update(assigns, socket) do
     item_with_progress =
-      case Hierarchy.find_top_level_ancestor(assigns.hierarchy, assigns.page_resource_id) do
-        nil ->
-          # It is a top level page
-          page_progress =
-            Metrics.progress_for_page(
-              assigns.section_id,
-              assigns.user_id,
-              assigns.page_resource_id
-            )
-            |> parse_progress()
+      if Map.get(assigns, :show_progress, true) do
+        case Hierarchy.find_top_level_ancestor(assigns.hierarchy, assigns.page_resource_id) do
+          nil ->
+            # It is a top level page
+            page_progress =
+              Metrics.progress_for_page(
+                assigns.section_id,
+                assigns.user_id,
+                assigns.page_resource_id
+              )
+              |> parse_progress()
 
-          %{progress: page_progress, resource_id: assigns.page_resource_id}
+            %{progress: page_progress, resource_id: assigns.page_resource_id}
 
-        container ->
-          container_progress =
-            Metrics.progress_for(assigns.section_id, assigns.user_id, container["resource_id"])
-            |> parse_progress()
+          container ->
+            container_progress =
+              Metrics.progress_for(assigns.section_id, assigns.user_id, container["resource_id"])
+              |> parse_progress()
 
-          %{progress: container_progress, resource_id: container["resource_id"]}
+            %{progress: container_progress, resource_id: container["resource_id"]}
+        end
+      else
+        %{progress: nil, resource_id: nil}
       end
 
     {:ok,
@@ -42,6 +46,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
      |> assign(:hierarchy, assigns.hierarchy)
      |> assign(:section_slug, assigns.section_slug)
      |> assign(:selected_view, assigns.selected_view)
+     |> assign(:route_builder, Map.get(assigns, :route_builder))
+     |> assign(:show_progress, Map.get(assigns, :show_progress, true))
      |> assign(
        :display_curriculum_item_numbering,
        Map.get(assigns, :display_curriculum_item_numbering, true)
@@ -66,6 +72,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   attr :item_with_progress, :map, required: true
   attr :expanded_items, :list, default: []
   attr :display_curriculum_item_numbering, :boolean, required: true
+  attr :route_builder, :any, default: nil
+  attr :show_progress, :boolean, default: true
 
   def render(assigns) do
     ~H"""
@@ -109,6 +117,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
               target={@myself}
               section_slug={@section_slug}
               selected_view={@selected_view}
+              route_builder={@route_builder}
               display_curriculum_item_numbering={@display_curriculum_item_numbering}
               progress={
                 if @item_with_progress.resource_id == node["resource_id"],
@@ -139,23 +148,15 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   attr :selected_view, :atom, required: true
   attr :progress, :float, default: nil
   attr :display_curriculum_item_numbering, :boolean, required: true
+  attr :route_builder, :any, default: nil
 
   def outline_item(%{item: %{"numbering" => %{"level" => level}}}) when level > 3, do: nil
 
   def outline_item(%{is_container?: false} = assigns) do
     ~H"""
-    <% resource_path =
-      Utils.lesson_live_path(@section_slug, @item["slug"],
-        request_path:
-          Utils.learn_live_path(@section_slug,
-            target_resource_id: @item["resource_id"],
-            selected_view: @selected_view
-          ),
-        selected_view: @selected_view
-      ) %>
     <.link
       id={"outline_item_#{@item["id"]}"}
-      href={resource_path}
+      href={page_path(assigns)}
       class="w-full text-[#353740] dark:text-[#eeebf5] hover:text-[#353740] dark:hover:text-[#eeebf5] hover:cursor-pointer hover:no-underline"
     >
       <div class={[
@@ -261,11 +262,26 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           target={@target}
           section_slug={@section_slug}
           selected_view={@selected_view}
+          route_builder={@route_builder}
           display_curriculum_item_numbering={@display_curriculum_item_numbering}
         />
       </div>
     </div>
     """
+  end
+
+  defp page_path(%{route_builder: route_builder, item: item}) when is_function(route_builder, 1),
+    do: route_builder.(item["slug"])
+
+  defp page_path(%{section_slug: section_slug, item: item, selected_view: selected_view}) do
+    Utils.lesson_live_path(section_slug, item["slug"],
+      request_path:
+        Utils.learn_live_path(section_slug,
+          target_resource_id: item["resource_id"],
+          selected_view: selected_view
+        ),
+      selected_view: selected_view
+    )
   end
 
   attr :is_active, :boolean, required: true

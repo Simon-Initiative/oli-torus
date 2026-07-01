@@ -73,6 +73,21 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "delivery_controller research_consent" do
+    test "renders SAYG saved work notice static mount point", %{conn: conn} do
+      student = user_fixture(%{independent_learner: true, research_opt_out: nil})
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(Routes.delivery_path(conn, :show_research_consent))
+
+      html = html_response(conn, 200)
+
+      assert html =~ ~s(id="sayg_saved_work_notice")
+    end
+  end
+
   describe "delivery_controller deleted_project" do
     setup [:setup_lti_session]
 
@@ -585,6 +600,95 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         conn
         |> get(Routes.delivery_path(conn, :download_learning_objectives, "invalid_section_slug"))
+
+      assert response(conn, 404)
+    end
+  end
+
+  describe "download_student_progress" do
+    test "downloads student-specific progress csv", %{conn: conn} do
+      %{instructor: instructor, section: section, student1: student} =
+        prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/#{student.id}"
+        )
+
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"#{section.slug}_student_#{student.id}_progress.csv\""
+             ]
+
+      assert get_resp_header(conn, "content-type") == ["text/csv"]
+      assert response(conn, 200)
+
+      [headers | rows] = NimbleCSV.RFC4180.parse_string(conn.resp_body, skip_headers: false)
+
+      assert headers == [
+               "#",
+               "Resource Title",
+               "Type",
+               "Score",
+               "# Attempts",
+               "# Accesses",
+               "First Visited",
+               "Last Visited"
+             ]
+
+      assert length(rows) > 0
+    end
+
+    test "returns 403 for learners", %{conn: conn} do
+      %{section: section, student1: student} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/#{student.id}"
+        )
+
+      assert conn.status == 403
+    end
+
+    test "returns 403 when student id is invalid", %{conn: conn} do
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/not-a-number"
+        )
+
+      assert conn.status == 403
+    end
+
+    test "returns 403 when target user is not enrolled in the section", %{conn: conn} do
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
+      outsider = user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/#{outsider.id}"
+        )
+
+      assert conn.status == 403
+    end
+
+    test "redirects to not found for invalid section", %{conn: conn} do
+      %{instructor: instructor, student1: student} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/invalid_section_slug/instructor_dashboard/downloads/student_progress/#{student.id}"
+        )
 
       assert response(conn, 404)
     end

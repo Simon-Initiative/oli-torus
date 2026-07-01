@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
   use Phoenix.Component
 
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.Student.Utils
 
   defp due_date_label(assignment) do
     case assignment.scheduled_type do
@@ -121,11 +122,9 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
 
   defp get_path(section_slug, page_or_assignment_slug, true),
     do:
-      Routes.page_delivery_path(
-        OliWeb.Endpoint,
-        :page_preview,
-        section_slug,
-        page_or_assignment_slug
+      Utils.lesson_live_path(section_slug, page_or_assignment_slug,
+        request_path: Utils.assignments_live_path(section_slug, preview_mode: true),
+        preview_mode: true
       )
 
   defp get_path(section_slug, page_or_assignment_slug, _),

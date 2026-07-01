@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
+  alias OliWeb.Delivery.Student.Utils
 
   attr(:breadcrumbs_tree, :map, required: true)
   attr(:current_position, :integer, required: true)
@@ -148,6 +149,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
                 class="torus-button primary h-10"
                 phx-target={@myself}
                 phx-click="open_resource"
+                phx-value-resource_id={resource["id"]}
                 phx-value-resource_slug={resource["slug"]}
                 phx-value-resource_type={resource["type"]}
                 phx-value-preview={"#{@preview_mode}"}
@@ -157,25 +159,12 @@ defmodule OliWeb.Components.Delivery.CourseContent do
             <% else %>
               <Buttons.button_with_options
                 id={"open-resource-button-#{index}"}
-                href={
-                  Routes.page_delivery_path(
-                    OliWeb.Endpoint,
-                    preview_resource_type(resource["type"]),
-                    @section.slug,
-                    resource["slug"]
-                  )
-                }
+                href={instructor_resource_path(@section.slug, resource, @preview_mode)}
                 target="_blank"
                 options={[
                   %{
                     text: "Open as student",
-                    href:
-                      Routes.page_delivery_path(
-                        OliWeb.Endpoint,
-                        String.to_existing_atom(resource["type"]),
-                        @section.slug,
-                        resource["slug"]
-                      ),
+                    href: student_resource_path(@section.slug, resource),
                     target: "_blank"
                   }
                 ]}
@@ -329,6 +318,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
   def handle_event(
         "open_resource",
         %{
+          "resource_id" => resource_id,
           "resource_slug" => resource_slug,
           "resource_type" => resource_type,
           "preview" => "true"
@@ -338,46 +328,106 @@ defmodule OliWeb.Components.Delivery.CourseContent do
     {:noreply,
      redirect(socket,
        to:
-         get_page_preview_delivery_path(
-           socket,
+         preview_resource_path(
            socket.assigns.section.slug,
+           resource_id,
            resource_slug,
-           resource_type
+           resource_type,
+           socket.assigns.preview_mode
          )
      )}
   end
 
   def handle_event(
         "open_resource",
-        %{"resource_slug" => resource_slug, "resource_type" => resource_type},
+        %{
+          "resource_id" => resource_id,
+          "resource_slug" => resource_slug,
+          "resource_type" => resource_type
+        },
         socket
       ) do
     {:noreply,
      redirect(socket,
        to:
-         Routes.page_delivery_path(
-           socket,
-           String.to_existing_atom(resource_type),
+         student_resource_path(
            socket.assigns.section.slug,
-           resource_slug
+           resource_id,
+           resource_slug,
+           resource_type
          )
      )}
   end
 
-  defp get_page_preview_delivery_path(socket, section_slug, resource_slug, resource_type) do
-    Routes.page_delivery_path(
-      socket,
-      preview_resource_type(resource_type),
+  defp instructor_resource_path(section_slug, resource, preview_mode) when is_map(resource) do
+    preview_resource_path(
       section_slug,
-      resource_slug
+      resource["id"],
+      resource["slug"],
+      resource["type"],
+      preview_mode
     )
   end
 
-  defp preview_resource_type(resource_type) do
+  defp preview_resource_path(
+         section_slug,
+         resource_id,
+         resource_slug,
+         resource_type,
+         preview_mode
+       ) do
+    return_params = %{
+      "return_to" => instructor_dashboard_overview_path(section_slug, preview_mode)
+    }
+
     case resource_type do
-      "page" -> :page_preview
-      "container" -> :container_preview
+      "page" ->
+        Utils.lesson_live_path(section_slug, resource_slug,
+          preview_mode: true,
+          return_to: return_params["return_to"]
+        )
+
+      "container" ->
+        Utils.learn_live_path(section_slug,
+          preview_mode: true,
+          target_resource_id: resource_id,
+          return_to: return_params["return_to"]
+        )
     end
+  end
+
+  defp student_resource_path(section_slug, resource) when is_map(resource) do
+    student_resource_path(section_slug, resource["id"], resource["slug"], resource["type"])
+  end
+
+  defp student_resource_path(section_slug, resource_id, resource_slug, resource_type) do
+    case resource_type do
+      "page" ->
+        Utils.lesson_live_path(section_slug, resource_slug)
+
+      "container" ->
+        Utils.learn_live_path(section_slug, target_resource_id: resource_id)
+    end
+  end
+
+  defp instructor_dashboard_overview_path(section_slug, true) do
+    Routes.instructor_dashboard_path(
+      OliWeb.Endpoint,
+      :preview,
+      section_slug,
+      :overview,
+      :course_content
+    )
+  end
+
+  defp instructor_dashboard_overview_path(section_slug, false) do
+    Routes.live_path(
+      OliWeb.Endpoint,
+      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+      section_slug,
+      :overview,
+      :course_content
+    )
   end
 
   defp update_breadcrumbs_tree(breadcrumbs_tree, 0, _target_position),

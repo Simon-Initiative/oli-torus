@@ -23,7 +23,7 @@ export const InputTypeDropdown = <K extends string>({
 
   return (
     <select
-      style={{ width: 150 }}
+      style={{ minWidth: 220 }}
       disabled={!editMode}
       className="form-control ml-1"
       value={selected}

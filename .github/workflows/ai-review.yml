@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       elixir: ${{ steps.filter.outputs.elixir }}
+      gleam: ${{ steps.filter.outputs.gleam }}
       typescript: ${{ steps.filter.outputs.typescript }}
       ui: ${{ steps.filter.outputs.ui }}
       requirements: ${{ steps.filter.outputs.requirements }}
@@ -35,6 +36,11 @@ jobs:
               - 'lib/**/*.ex'
               - 'lib/**/*.exs'
               - 'test/**/*.exs'
+            gleam:
+              - 'gleam/src/**/*.gleam'
+              - 'gleam/test/**/*.gleam'
+              - 'gleam/gleam.toml'
+              - 'gleam/manifest.toml'
             typescript:
               - 'assets/src/**/*.ts'
               - 'assets/src/**/*.tsx'
@@ -47,10 +53,13 @@ jobs:
               - 'docs/features/**/prd.md'
             security:
               - 'lib/**'
+              - 'gleam/src/**/*.gleam'
+              - 'gleam/gleam.toml'
               - 'assets/src/**'
               - 'config/**'
             performance:
               - 'lib/**'
+              - 'gleam/src/**/*.gleam'
 
       - id: build_matrix
         name: Build matrix roles
@@ -58,6 +67,7 @@ jobs:
         run: |
           roles=()
           [[ "${{ steps.filter.outputs.elixir }}" == 'true' ]] && roles+=("elixir")
+          [[ "${{ steps.filter.outputs.gleam }}" == 'true' ]] && roles+=("gleam")
           [[ "${{ steps.filter.outputs.typescript }}" == 'true' ]] && roles+=("typescript")
           [[ "${{ steps.filter.outputs.ui }}" == 'true' ]] && roles+=("ui")
           [[ "${{ steps.filter.outputs.security }}" == 'true' ]] && roles+=("security")
@@ -80,7 +90,7 @@ jobs:
       - name: Echo role being run
         run: |
           echo "Running reviewer role: ${{ matrix.role }}"
-          echo "Filter outputs: elixir=${{ needs.changes.outputs.elixir }}, ts=${{ needs.changes.outputs.typescript }}, ui=${{ needs.changes.outputs.ui }}, perf=${{ needs.changes.outputs.performance }}, sec=${{ needs.changes.outputs.security }}, req=${{ needs.changes.outputs.requirements }}"
+          echo "Filter outputs: elixir=${{ needs.changes.outputs.elixir }}, gleam=${{ needs.changes.outputs.gleam }}, ts=${{ needs.changes.outputs.typescript }}, ui=${{ needs.changes.outputs.ui }}, perf=${{ needs.changes.outputs.performance }}, sec=${{ needs.changes.outputs.security }}, req=${{ needs.changes.outputs.requirements }}"
 
       - name: Generate PR diff (exactly what GitHub shows)
         if: ${{ github.event_name == 'pull_request' }}
@@ -109,10 +119,11 @@ jobs:
           fi
           case "$ROLE" in
             elixir)      GLOBS=(":(glob)lib/**/*.ex" ":(glob)lib/**/*.exs" ":(glob)test/**/*.exs");;
+            gleam)       GLOBS=(":(glob)gleam/src/**/*.gleam" ":(glob)gleam/test/**/*.gleam" ":(glob)gleam/gleam.toml" ":(glob)gleam/manifest.toml");;
             typescript)  GLOBS=(":(glob)assets/src/**/*.ts" ":(glob)assets/src/**/*.tsx");;
             ui)          GLOBS=(":(glob)assets/src/**/*" ":(glob)lib/**/*.heex" ":(glob)lib/**/*.leex" ":(glob)lib/**/live/**/*.ex");;
-            security)    GLOBS=(":(glob)lib/**" ":(glob)assets/src/**" ":(glob)config/**");;
-            performance) GLOBS=(":(glob)lib/**");;
+            security)    GLOBS=(":(glob)lib/**" ":(glob)gleam/src/**/*.gleam" ":(glob)gleam/gleam.toml" ":(glob)assets/src/**" ":(glob)config/**");;
+            performance) GLOBS=(":(glob)lib/**" ":(glob)gleam/src/**/*.gleam");;
             *)           GLOBS=(":(glob)**/*");;
           esac
 

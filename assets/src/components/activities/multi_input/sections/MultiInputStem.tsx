@@ -4,7 +4,7 @@ import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
-import { MultiInputSchema } from 'components/activities/multi_input/schema';
+import { MultiInputSchema, MultiInputType } from 'components/activities/multi_input/schema';
 import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
@@ -23,11 +23,13 @@ export const MultiInputStem: React.FC<Props> = (props) => {
   const commandContext: CommandContext = {
     projectSlug,
     inputRefContext: {
-      setInputType: (id, type) => dispatch(MultiInputActions.setInputType(id, type)),
+      setInputType: (id, type) =>
+        dispatch(MultiInputActions.setInputType(id, type as MultiInputType)),
       inputs: new Map(model.inputs.map((v) => [v.id, v])),
       selectedInputRef: props.selectedInputRef,
       setSelectedInputRef: props.setSelectedInputRef,
       isMultiInput: props.isMultiInput,
+      hideInputTypeToolbar: true,
     },
   };
 

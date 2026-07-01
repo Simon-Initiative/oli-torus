@@ -31,8 +31,13 @@ export const DragSource = {
       dt.setData('text/plain', this.el.getAttribute('data-drag-index'));
       dt.effectAllowed = 'move';
 
-      const dragSlug = this.el.getAttribute('data-drag-slug');
-      this.pushEvent('dragstart', dragSlug);
+      // Remix entries identify dragged nodes by UUID, while curriculum authoring entries still use slugs.
+      const dragId =
+        this.el.getAttribute('data-drag-uuid') || this.el.getAttribute('data-drag-slug');
+
+      if (dragId) {
+        this.pushEvent('dragstart', dragId);
+      }
     });
 
     this.el.addEventListener('dragend', (e: any) => {

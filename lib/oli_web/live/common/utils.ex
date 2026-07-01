@@ -5,8 +5,6 @@ defmodule OliWeb.Common.Utils do
   alias Oli.Rendering.{Context, Content}
   alias OliWeb.Common.SessionContext
 
-  require Logger
-
   def name_and_email(%User{email: email} = user) when email in ["", nil] do
     name(user)
   end
@@ -249,128 +247,39 @@ defmodule OliWeb.Common.Utils do
     Extracts the text for a feedback item from an attempt.
   """
   def extract_feedback_text(activity_attempts) do
-    activity_attempts
-    |> Enum.map(&extract_from_activity_attempt/1)
-    |> List.flatten()
-    |> Enum.uniq()
+    Oli.Delivery.Attempts.FeedbackText.extract_feedback_text(activity_attempts)
   end
 
   @doc """
     Extracts only manually-graded feedback text from an attempt.
   """
   def extract_manual_feedback_text(activity_attempts) do
-    activity_attempts
-    |> Enum.map(&extract_manual_from_activity_attempt/1)
-    |> List.flatten()
-    |> Enum.uniq()
+    Oli.Delivery.Attempts.FeedbackText.extract_manual_feedback_text(activity_attempts)
   end
 
   @doc """
   Extracts the feedback text from an activity attempt, which contains multiple part attempts.
   """
   def extract_from_activity_attempt(%{part_attempts: part_attempts}) do
-    part_attempts
-    |> Enum.map(&extract_from_part_attempt/1)
+    Oli.Delivery.Attempts.FeedbackText.extract_from_activity_attempt(%{
+      part_attempts: part_attempts
+    })
   end
 
-  defp extract_manual_from_activity_attempt(%{part_attempts: part_attempts}) do
-    part_attempts
-    |> Enum.filter(&manual_grading_part_attempt?/1)
-    |> Enum.map(&extract_from_part_attempt/1)
-  end
+  def extract_from_activity_attempt(activity_attempt),
+    do: Oli.Delivery.Attempts.FeedbackText.extract_from_activity_attempt(activity_attempt)
 
   @doc """
   Extracts the feedback text from a part attempt.
   """
   def extract_from_part_attempt(%{feedback: feedback}) when is_map(feedback),
-    do: extract_feedback_entries(feedback)
+    do: Oli.Delivery.Attempts.FeedbackText.extract_from_part_attempt(%{feedback: feedback})
 
-  def extract_from_part_attempt(%{feedback: nil}), do: []
+  def extract_from_part_attempt(%{feedback: nil}),
+    do: Oli.Delivery.Attempts.FeedbackText.extract_from_part_attempt(%{feedback: nil})
 
-  def extract_from_part_attempt(_), do: []
-
-  defp manual_grading_part_attempt?(%{grading_approach: :manual}), do: true
-  defp manual_grading_part_attempt?(%{grading_approach: "manual"}), do: true
-  defp manual_grading_part_attempt?(_), do: false
-
-  defp extract_feedback_entries(%{"content" => content}) when is_list(content) do
-    content
-    |> Enum.map(&extract_text/1)
-    |> List.flatten()
-    |> Enum.reject(&blank_text?/1)
-  end
-
-  defp extract_feedback_entries(%{"content" => %{"model" => model}}) when is_list(model) do
-    model
-    |> Enum.map(&extract_text/1)
-    |> List.flatten()
-    |> Enum.reject(&blank_text?/1)
-  end
-
-  defp extract_feedback_entries(%{"content" => content}) when is_map(content) do
-    content
-    |> Enum.map(&extract_text/1)
-    |> List.flatten()
-    |> Enum.reject(&blank_text?/1)
-  end
-
-  defp extract_feedback_entries(%{"partsLayout" => parts_layout}) when is_list(parts_layout) do
-    parts_layout
-    |> Enum.flat_map(fn part ->
-      part
-      |> get_in(["custom", "nodes"])
-      |> case do
-        nodes when is_list(nodes) ->
-          [extract_adaptive_nodes_text(nodes)]
-
-        _ ->
-          []
-      end
-    end)
-    |> Enum.reject(&blank_text?/1)
-    |> Enum.reject(&(&1 == "No text available"))
-  end
-
-  defp extract_feedback_entries(_), do: []
-
-  defp extract_text(%{"children" => children}) do
-    children
-    |> Enum.map(& &1["text"])
-    |> Enum.join(" ")
-  end
-
-  defp extract_text({"model", model}) do
-    Enum.map(model, &extract_text/1)
-  end
-
-  defp extract_text(_other_case = other) do
-    Logger.error("Could not parse feedback text from #{inspect(other)}")
-    []
-  end
-
-  defp extract_adaptive_nodes_text(nodes) when is_list(nodes) do
-    nodes
-    |> Enum.map(&extract_adaptive_node_text/1)
-    |> Enum.join(" ")
-    |> String.replace(~r/\s+/, " ")
-    |> String.trim()
-  end
-
-  defp extract_adaptive_nodes_text(_), do: ""
-
-  defp extract_adaptive_node_text(%{"text" => text}) when is_binary(text), do: text
-
-  defp extract_adaptive_node_text(%{"children" => children}) when is_list(children) do
-    children
-    |> Enum.map(&extract_adaptive_node_text/1)
-    |> Enum.join(" ")
-    |> String.trim()
-  end
-
-  defp extract_adaptive_node_text(_), do: ""
-
-  defp blank_text?(text) when is_binary(text), do: String.trim(text) == ""
-  defp blank_text?(_), do: true
+  def extract_from_part_attempt(part_attempt),
+    do: Oli.Delivery.Attempts.FeedbackText.extract_from_part_attempt(part_attempt)
 
   @doc """
   Extracts plain text from content structure using the existing content rendering system.

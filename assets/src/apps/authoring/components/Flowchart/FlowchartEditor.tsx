@@ -58,10 +58,10 @@ export const FlowchartEditor: React.FC<FlowchartEditorProps> = ({ sidebarExpande
   }, [currentActivityId, dispatch]);
 
   const onAddScreen = useCallback(
-    (params: FlowchartAddScreenParams) => {
+    async (params: FlowchartAddScreenParams) => {
       const { prevNodeId, nextNodeId, screenType } = params;
 
-      dispatch(
+      await dispatch(
         addFlowchartScreen({
           fromScreenId: prevNodeId,
           toScreenId: nextNodeId,
@@ -69,6 +69,7 @@ export const FlowchartEditor: React.FC<FlowchartEditorProps> = ({ sidebarExpande
           title: screenType ? screenTypeToTitle[screenType] : 'New Screen',
         }),
       );
+      dispatch(changeEditMode({ mode: 'page' }));
     },
     [dispatch],
   );

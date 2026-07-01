@@ -145,6 +145,42 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert String.trim(student_2_email) == student_2.email
     end
 
+    test "selecting students opens the context-aware Draft Email modal", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      student =
+        insert(:user, %{
+          given_name: "Kevin",
+          family_name: "Durant",
+          email: "kevin.durant@nba.com"
+        })
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      # Select the student via the table checkbox.
+      view
+      |> element(~s{input[type="checkbox"][phx-click*="paged_table_selection_change"]})
+      |> render_click()
+
+      # Open the email modal via the EmailButton "Send email" action.
+      view
+      |> element(~s{#email-dropdown-email_button_component button}, "Send email")
+      |> render_click()
+
+      html = render(view)
+
+      # The context-aware DraftEmailModal is rendered (not the legacy EmailModal).
+      assert has_element?(view, "#draft_email_modal_students_table_wrapper")
+      refute has_element?(view, "#email_modal")
+      assert html =~ "Draft Email"
+      assert html =~ student.email
+    end
+
     test "student proficiency column sorts using the defined ranking", %{
       instructor: instructor,
       conn: conn

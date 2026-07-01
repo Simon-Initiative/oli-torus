@@ -18,6 +18,8 @@ export const hotkeyHandler = (editor: Editor, e: KeyboardEvent, commandContext: 
   } else if (isCodeHotkey(e)) {
     toggleMark(editor, 'code');
   } else if (isLinkHotkey(e)) {
+    // Prevent the browser's default mod+l (focus address bar) before running the command.
+    e.preventDefault();
     linkCmd.command.execute(commandContext, editor);
   } else if (isDeleteKey(e)) {
     // Fix a slate bug with deleting selected inline void nodes

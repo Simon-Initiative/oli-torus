@@ -1,0 +1,92 @@
+work_item: preview_components
+requirements:
+- title: Introduce preview mode for the MER-5618 supported activity set in Instructor
+    View
+  status: proposed
+  id: FR-001
+- title: Render the simplified instructor-facing question UI for supported activities
+  status: proposed
+  id: FR-002
+- title: Keep preview content read-only and free of authoring-specific controls
+  status: proposed
+  id: FR-003
+- title: Support mixed pages with legacy Instructor View fallback for unsupported
+    or advanced activities
+  status: proposed
+  id: FR-004
+- title: Preserve side-effect-free Instructor View behavior during preview rendering
+  status: proposed
+  id: FR-005
+- title: Establish preview infrastructure that later customization tickets can extend
+    without replacing rendering mode again
+  status: proposed
+  id: FR-006
+acceptance_criteria:
+- title: Supported activities render in Instructor View using preview mode instead
+    of the current authoring-derived instructor preview path
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-001
+- title: The supported activity set for this story is limited to Multiple Choice,
+    Check All That Apply, Multi Input, Image Hotspot, Likert, Ordering, and Directed
+    Discussion
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-002
+- title: Each supported preview displays activity type, points earned if correct,
+    authored activity title, question content, and attached learning objectives or
+    sub-objectives
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-003
+- title: The details accordion is collapsed by default, shows View Details when collapsed,
+    and shows Hide Details when expanded
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-004
+- title: When authored answer key, hints, or explanation content exists, expanding
+    the details accordion reveals those sections
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-005
+- title: Activities with multiple parts or selections show answer key content and
+    points that correspond to the selected part
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-006
+- title: Preview UI does not expose authoring-specific scoring configuration or add-hint
+    or add-feedback controls
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-007
+- title: Instructors cannot edit activity content, feedback, answer keys, hints, or
+    explanations from preview mode
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-008
+- title: Unsupported or advanced activity types continue using the existing Instructor
+    View experience on mixed pages
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-009
+- title: Instructor View preview rendering does not create learner attempts, learner
+    progress, submissions, or learner analytics side effects
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-010
+- title: Delivery and authoring routes continue using their existing rendering behavior
+    after preview metadata is added for supported activities
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-011

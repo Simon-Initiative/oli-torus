@@ -1,5 +1,6 @@
 import { Editor } from 'slate';
 import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
+import { VlabInputType } from 'components/activities/vlab/schema';
 import { InputRef } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 
@@ -27,16 +28,30 @@ export type CommandDescription = {
   tooltip?: string;
 };
 
+export interface LinkablePage {
+  id: number;
+  slug: string;
+  title: string;
+  numbering_index?: number | null;
+}
+
 export interface CommandContext {
   projectSlug: string;
+  // When present (email-mode link picker), the link command/modal source internal
+  // course-page links from this list instead of the author-only pages endpoint.
+  linkContext?: {
+    mode: 'email';
+    pages: LinkablePage[];
+  };
   resourceSlug?: string;
   editorType?: string;
   inputRefContext?: {
-    setInputType: (id: ID, attrs: MultiInputType) => void;
+    setInputType: (id: ID, attrs: MultiInputType | VlabInputType) => void;
     inputs: Map<ID, MultiInput>;
     selectedInputRef: InputRef | undefined;
     setSelectedInputRef: (ref: InputRef | undefined) => void;
     isMultiInput: boolean;
+    hideInputTypeToolbar?: boolean;
     refsTargeted?: string[] | undefined;
   };
 }

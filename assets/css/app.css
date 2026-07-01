@@ -60,6 +60,24 @@ a.download::after {
   @apply mb-0;
 }
 
+#one_at_a_time_questions .caption-wrapper,
+#one_at_a_time_questions .figure,
+#one_at_a_time_questions .figure-caption,
+#one_at_a_time_questions .figure-img,
+#one_at_a_time_questions .img-fluid {
+  max-width: 100%;
+}
+
+#one_at_a_time_questions .caption-wrapper,
+#one_at_a_time_questions .figure {
+  width: 100% !important;
+}
+
+#one_at_a_time_questions .figure-img,
+#one_at_a_time_questions .img-fluid {
+  height: auto;
+}
+
 .text-muted {
   @apply text-gray-500;
 }
@@ -314,4 +332,45 @@ Not supports in Firefox and IE */
 .dark #current_password_for_password:autofill:focus {
   -webkit-text-fill-color: #eeebf5 !important;
   box-shadow: 0 0 0 1000px #0d0c0f inset !important;
+}
+
+/* react-tiny-popover renders portals to document.body — needs higher
+   z-index than modals (z-[2000]) so inline editor popovers stay visible. */
+.react-tiny-popover-container {
+  z-index: 3000;
+}
+
+/* Draft Email modal: restrict the body RichTextEditor toolbar to the Link
+   tool only. The RichTextEditor React component is shared, so this is done
+   purely in CSS via the .email-link-only-rte wrapper. The fixed toolbar is
+   the first child div of .rich-text-editor.fixed-toolbar; the Link button is
+   identified by its .fa-link icon. Inline link editing uses a portaled
+   react-tiny-popover, which lives outside this scope and is unaffected. */
+.email-link-only-rte .rich-text-editor.fixed-toolbar > div:first-child > *:not(:has(.fa-link)) {
+  display: none !important;
+}
+.email-link-only-rte .rich-text-editor.fixed-toolbar > div:first-child button:not(:has(.fa-link)) {
+  display: none !important;
+}
+
+/* Make the body editable fill the fixed-height wrapper so the whole box is the click/focus
+   target (not just a single line). The fixed toolbar keeps its own height; the editable
+   flexes to fill the remaining area. */
+.email-link-only-rte .rich-text-editor.fixed-toolbar {
+  display: flex;
+  flex-direction: column;
+}
+.email-link-only-rte .slate-editor.fixed-toolbar {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Align the empty-body placeholder with the caret: slate-react's absolute placeholder has no
+   `left` and resolves against the editable root, not the text block. Make the block the
+   containing block + pin `left: 0`. Email-scoped; global rollout tracked separately. */
+.email-link-only-rte .slate-editor > [data-slate-node='element'] {
+  position: relative;
+}
+.email-link-only-rte [data-slate-placeholder] {
+  left: 0;
 }

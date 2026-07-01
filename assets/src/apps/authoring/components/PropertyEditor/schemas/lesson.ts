@@ -171,6 +171,22 @@ export const simpleLessonSchema: JSONSchema7 = {
           type: 'string',
           title: 'Title',
         },
+        Size: {
+          type: 'object',
+          title: 'Screen Size',
+          properties: {
+            width: {
+              type: 'number',
+              title: 'Screen Width',
+            },
+          },
+        },
+        responsiveLayout: {
+          type: 'boolean',
+          title: 'Enable Responsive Layout',
+          description: 'Use responsive layout for parts instead of fixed positioning',
+          default: false,
+        },
       },
     },
     LessonAppearance: {
@@ -251,6 +267,19 @@ export const simpleLessonSchema: JSONSchema7 = {
 export const simpleLessonUiSchema: UiSchema = {
   Properties: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
+    Size: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Screen Size',
+      width: {
+        classNames: 'col-span-12',
+      },
+    },
+    responsiveLayout: {
+      classNames: 'col-span-12',
+      'ui:tooltip':
+        'Automatically arranges components in full or half-width rows and adjusts layout to fit different screen sizes. When off, components must be positioned manually and do not resize.',
+      'ui:FieldTemplate': TooltipFieldTemplate,
+    },
   },
   LessonAppearance: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
@@ -513,6 +542,63 @@ export const getLessonUiSchema = (responsiveLayout: boolean): UiSchema => {
     Advanced: lessonUiSchema.Advanced,
   };
   return uiSchema;
+};
+
+export const getSimpleLessonSchema = (responsiveLayout: boolean): JSONSchema7 => {
+  if (!responsiveLayout) {
+    return simpleLessonSchema;
+  }
+
+  const schema: JSONSchema7 = {
+    ...simpleLessonSchema,
+    properties: {
+      ...simpleLessonSchema.properties,
+      Properties: {
+        ...(simpleLessonSchema.properties as any).Properties,
+        properties: {
+          ...((simpleLessonSchema.properties as any).Properties.properties || {}),
+          Size: {
+            ...((simpleLessonSchema.properties as any).Properties.properties?.Size || {}),
+            properties: {
+              ...(((simpleLessonSchema.properties as any).Properties.properties?.Size
+                ?.properties as any) || {}),
+              width: {
+                ...(((
+                  (simpleLessonSchema.properties as any).Properties.properties?.Size
+                    ?.properties as any
+                )?.width as any) || {}),
+                title: 'Max Width',
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  return schema;
+};
+
+export const getSimpleLessonUiSchema = (responsiveLayout: boolean): UiSchema => {
+  if (!responsiveLayout) {
+    return simpleLessonUiSchema;
+  }
+
+  const PropertiesSchema = simpleLessonUiSchema.Properties as any;
+  return {
+    Properties: {
+      ...PropertiesSchema,
+      Size: {
+        ...PropertiesSchema.Size,
+        width: {
+          ...PropertiesSchema.Size.width,
+          title: 'Max Width',
+        },
+      },
+    },
+    LessonAppearance: simpleLessonUiSchema.LessonAppearance,
+    NavigationBehavior: simpleLessonUiSchema.NavigationBehavior,
+    AuthorInterfaceTools: simpleLessonUiSchema.AuthorInterfaceTools,
+  };
 };
 
 export default lessonSchema;

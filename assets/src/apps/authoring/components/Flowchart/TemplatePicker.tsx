@@ -1,6 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import PartsLayoutRenderer from '../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
+import { selectCustom } from '../../store/page/slice';
 import { RightArrow } from './onboard-wizard/RightArrow';
 import { screenTypeToTitle } from './screens/screen-factories';
 import { Template } from './template-types';
@@ -26,6 +28,9 @@ export const screenFilter = [
 ];
 
 export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }) => {
+  const lessonCustom = useSelector(selectCustom);
+  const isResponsiveLayout = lessonCustom?.responsiveLayout === true;
+
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [activeScreenType, setActiveScreenType] = useState<string>(
     screenFilter.includes(screenType || '') ? (screenType as string) : 'blank_screen',
@@ -58,6 +63,8 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }
     [activeScreenType],
   );
 
+  const filteredTemplates = useMemo(() => templates.filter(filterType), [filterType]);
+
   const disabled = selectedTemplate === null;
 
   return (
@@ -79,7 +86,7 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }
           ))}
         </div>
         <div className="picker-list">
-          {templates.filter(filterType).map((template, i) => (
+          {filteredTemplates.map((template, i) => (
             <div
               key={i}
               className={`picker-item ${template === selectedTemplate ? 'active' : ''}`}
@@ -96,11 +103,11 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }
                     onPartResize={() => true}
                     onPartSetData={async () => true}
                     onPartGetData={async () => true}
-                    responsiveLayout={false}
+                    responsiveLayout={isResponsiveLayout}
                   />
                 </div>
               </div>
-              {/* <div className="picker-title">{template.name}</div> */}
+              <div className="picker-title">{template.name}</div>
             </div>
           ))}
         </div>

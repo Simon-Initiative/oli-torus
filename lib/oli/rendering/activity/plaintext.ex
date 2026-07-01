@@ -7,6 +7,8 @@ defmodule Oli.Rendering.Activity.Plaintext do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
 
+  require Logger
+
   @behaviour Oli.Rendering.Activity
 
   def activity(
@@ -33,8 +35,22 @@ defmodule Oli.Rendering.Activity.Plaintext do
       _ ->
         tag =
           case mode do
-            :instructor_preview -> activity_summary.authoring_element
-            _ -> activity_summary.delivery_element
+            :instructor_preview ->
+              preview_tag = activity_summary.preview_element || activity_summary.authoring_element
+
+              if is_nil(activity_summary.preview_element) and
+                   Oli.Activities.preview_supported_activity_slug?(
+                     activity_summary.activity_type_slug
+                   ) do
+                Logger.warning(
+                  "Instructor preview plaintext fallback to authoring element for supported activity type #{activity_summary.activity_type_slug} on activity #{activity_id}"
+                )
+              end
+
+              preview_tag
+
+            _ ->
+              activity_summary.delivery_element
           end
 
         [

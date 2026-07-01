@@ -5,6 +5,7 @@ defmodule Oli.Plugs.EnforcePaywall do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Paywall.AccessSummary
+  alias OliWeb.TemplatePreviewMode
 
   def init(opts), do: opts
 
@@ -13,7 +14,12 @@ defmodule Oli.Plugs.EnforcePaywall do
     section = conn.assigns.section
     user = conn.assigns.current_user
 
-    summary = Paywall.summarize_access(user, section)
+    summary =
+      if TemplatePreviewMode.active?(conn, section) do
+        AccessSummary.instructor()
+      else
+        Paywall.summarize_access(user, section)
+      end
 
     case summary do
       %AccessSummary{available: true} ->

@@ -637,6 +637,45 @@ defmodule Oli.SectionsTest do
       assert product_count == 1
     end
 
+    test "get_push_force_affected_sections/3 can include sections and products on older publications" do
+      %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
+        base_project_with_curriculum(%{})
+
+      older_publication = insert(:publication, project: project, published: yesterday())
+
+      current_section =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      out_of_date_section =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      {:ok, _sr} = Sections.create_section_resources(current_section, publication)
+
+      insert(:section_project_publication, %{
+        project: project,
+        section: out_of_date_section,
+        publication: older_publication
+      })
+
+      assert %{section_count: 1, product_count: 0} =
+               Sections.get_push_force_affected_sections(project.id, publication.id)
+
+      assert %{section_count: 2, product_count: 0} =
+               Sections.get_push_force_affected_sections(project.id, publication.id,
+                 constrain_to_latest: false
+               )
+    end
+
     test "get_push_force_affected_sections/2 does not return sections or products that will be affected by forcing the publication update" do
       %{publication: publication, project: project, unit_one_revision: _unit_one_revision} =
         base_project_with_curriculum(%{})

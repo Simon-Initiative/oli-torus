@@ -1,0 +1,265 @@
+work_item: help
+requirements:
+- title: Cover all algebraic Math Expression inputs
+  status: proposed
+  description: Provide the syntax-help, validation, and preview pattern for all algebraic
+    Math Expression text inputs in authoring and delivery, including Single Response
+    and Multi-Input surfaces, while excluding number-only, text, paragraph, dropdown,
+    and legacy exact-LaTeX inputs unless separately scoped.
+  id: FR-001
+- title: Provide immediate parser-backed validation feedback
+  status: proposed
+  description: Validate algebraic Math Expression input with the client-side Torus
+    parser while users edit, expose valid, invalid, and neutral states, and make invalid
+    states accessible without relying on color alone.
+  id: FR-002
+- title: Add an accessible floating help affordance
+  status: proposed
+  description: Attach a compact help icon and keyboard-accessible popover to every
+    algebraic Math Expression input, with concise syntax examples and a Learn more
+    link.
+  id: FR-003
+- title: Create a static supported syntax documentation page
+  status: proposed
+  description: Add a stable, student-readable static page explaining supported Math
+    Expression syntax, examples, common mistakes, variables, and units.
+  id: FR-004
+- title: Render previews from Torus parser output where appropriate
+  status: proposed
+  description: Show MathJax previews for author-facing algebraic expression fields
+    and student single-response Math Expression inputs by converting Torus parser
+    output to LaTeX, while omitting previews for student Multi-Input inline blanks.
+  id: FR-005
+- title: Integrate authoring behavior across answer and feedback editors
+  status: proposed
+  description: Ensure author expected-answer fields, targeted feedback response editors,
+    candidate/test expression fields, and Multi-Input blank configuration fields expose
+    validation, help, and previews where layout permits.
+  id: FR-006
+- title: Integrate student delivery behavior without disrupting layout
+  status: proposed
+  description: Ensure student single-response Math Expression inputs expose validation,
+    help, and previews, while student Multi-Input inline blanks expose validation
+    and help without layout-breaking previews.
+  id: FR-007
+- title: Keep math semantics and privacy unchanged
+  status: proposed
+  description: Do not change parser grammar, evaluation, grading, scoring, feedback
+    selection, unit semantics, or production logging of raw learner and author expressions.
+  id: FR-008
+- title: Validate behavior with focused automated and manual QA
+  status: proposed
+  description: Add tests for validation states, help interactions, documentation routing,
+    preview behavior, authoring surfaces, delivery surfaces, accessibility, and parser-derived
+    rendering.
+  id: FR-009
+acceptance_criteria:
+- requirement_id: FR-001
+  title: Single Response authoring and delivery algebraic Math Expression inputs use
+    the new validation and help pattern.
+  status: proposed
+  verification_method: automated
+  id: AC-001
+- requirement_id: FR-001
+  title: Multi-Input authoring configuration fields for algebraic Math Expression
+    blanks use the new validation and help pattern.
+  status: proposed
+  verification_method: automated
+  id: AC-002
+- requirement_id: FR-001
+  title: Student Multi-Input inline algebraic Math Expression blanks receive validation
+    and help access but do not receive always-visible rendered previews.
+  status: proposed
+  verification_method: automated
+  id: AC-003
+- requirement_id: FR-001
+  title: Number-only, text, paragraph, dropdown, and legacy exact-LaTeX math inputs
+    are not changed by this feature.
+  status: proposed
+  verification_method: inspection
+  id: AC-004
+- requirement_id: FR-002
+  title: Non-empty valid expressions such as `2x + 6`, `2(x + 3)`, `sqrt(2)/2`, `x^2`,
+    `sin(x)`, `pi`, and `9.8 m/s^2` show a valid state.
+  status: proposed
+  verification_method: automated
+  id: AC-005
+- requirement_id: FR-002
+  title: Non-empty invalid expressions such as `2^^3`, `1,000`, `sin x`, `sqrt()`,
+    `9.8m/s^2`, and `(x + 1` show an invalid state.
+  status: proposed
+  verification_method: automated
+  id: AC-006
+- requirement_id: FR-002
+  title: Empty untouched fields show a neutral state unless existing required-field
+    validation has been triggered.
+  status: proposed
+  verification_method: automated
+  id: AC-007
+- requirement_id: FR-002
+  title: Invalid fields expose accessible state such as `aria-invalid` and an associated
+    error or status description.
+  status: proposed
+  verification_method: automated
+  id: AC-008
+- requirement_id: FR-002
+  title: Validation runs while editing with an appropriate debounce and runs immediately
+    on blur and save or submit boundaries where those boundaries exist.
+  status: proposed
+  verification_method: automated
+  id: AC-009
+- requirement_id: FR-003
+  title: Every covered algebraic Math Expression input has a visually attached help
+    icon or an approved compact equivalent in constrained inline layouts.
+  status: proposed
+  verification_method: automated
+  id: AC-010
+- requirement_id: FR-003
+  title: The help icon is keyboard focusable and has an accessible label describing
+    supported math syntax help.
+  status: proposed
+  verification_method: automated
+  id: AC-011
+- requirement_id: FR-003
+  title: Hovering, focusing, clicking, or activating the help icon with Enter or Space
+    opens the help popover.
+  status: proposed
+  verification_method: automated
+  id: AC-012
+- requirement_id: FR-003
+  title: Escape, outside click, or focus leaving the icon and popover region closes
+    the help popover.
+  status: proposed
+  verification_method: automated
+  id: AC-013
+- requirement_id: FR-003
+  title: The help popover includes concise examples and a `Learn more` link that opens
+    the static syntax page in a new tab.
+  status: proposed
+  verification_method: automated
+  id: AC-014
+- requirement_id: FR-004
+  title: A stable static syntax page exists at the selected route, preferably `/help/math-syntax`.
+  status: proposed
+  verification_method: automated
+  id: AC-015
+- requirement_id: FR-004
+  title: The static page covers basic arithmetic, implicit multiplication, parentheses,
+    powers, fractions, functions, constants, absolute value, factorial, scientific
+    notation, variables, units, and common mistakes.
+  status: proposed
+  verification_method: inspection
+  id: AC-016
+- requirement_id: FR-004
+  title: The static page uses headings, short prose, tables or lists of examples,
+    code formatting for typed syntax, and accepted and rejected examples.
+  status: proposed
+  verification_method: inspection
+  id: AC-017
+- requirement_id: FR-004
+  title: The static page avoids implementation terms such as AST, parser internals,
+    normalization, sampling, and equivalence in student-facing copy.
+  status: proposed
+  verification_method: inspection
+  id: AC-018
+- requirement_id: FR-005
+  title: Author-facing algebraic expression fields show a MathJax-rendered preview
+    when the current expression parses successfully.
+  status: proposed
+  verification_method: automated
+  id: AC-019
+- requirement_id: FR-005
+  title: Student single-response Math Expression inputs show a MathJax-rendered preview
+    when the current expression parses successfully.
+  status: proposed
+  verification_method: automated
+  id: AC-020
+- requirement_id: FR-005
+  title: Student Multi-Input inline Math Expression blanks do not show rendered previews.
+  status: proposed
+  verification_method: automated
+  id: AC-021
+- requirement_id: FR-005
+  title: Invalid and empty expressions do not render stale or misleading preview content.
+  status: proposed
+  verification_method: automated
+  id: AC-022
+- requirement_id: FR-005
+  title: Preview rendering uses Torus parser output converted to LaTeX and does not
+    feed raw ASCII directly to MathJax as an independent syntax interpretation path.
+  status: proposed
+  verification_method: inspection
+  id: AC-023
+- requirement_id: FR-006
+  title: Answer-key expected-answer editors for algebraic Math Expression responses
+    expose validation, help, and rendered previews.
+  status: proposed
+  verification_method: automated
+  id: AC-024
+- requirement_id: FR-006
+  title: Targeted feedback response editors for algebraic Math Expression responses
+    expose validation, help, and rendered previews.
+  status: proposed
+  verification_method: automated
+  id: AC-025
+- requirement_id: FR-006
+  title: Author candidate-answer or test-evaluation fields for algebraic Math Expression
+    inputs expose validation, help, and rendered previews when present.
+  status: proposed
+  verification_method: automated
+  id: AC-026
+- requirement_id: FR-006
+  title: Required author fields can block save or publish on invalid expressions without
+    changing learner grading semantics.
+  status: proposed
+  verification_method: automated
+  id: AC-027
+- requirement_id: FR-007
+  title: Student single-response delivery keeps validation, help, and preview behavior
+    visible without preventing continued typing of incomplete expressions.
+  status: proposed
+  verification_method: automated
+  id: AC-028
+- requirement_id: FR-007
+  title: Student Multi-Input inline delivery avoids layout shifts while showing validation
+    and help for each algebraic Math Expression blank.
+  status: proposed
+  verification_method: automated
+  id: AC-029
+- requirement_id: FR-007
+  title: Student-facing validation messages avoid raw parser offsets and other internal
+    diagnostic language.
+  status: proposed
+  verification_method: inspection
+  id: AC-030
+- requirement_id: FR-008
+  title: Existing parser grammar, normalization, sampling, equivalence, unit comparison,
+    response scoring, and feedback selection tests continue to pass.
+  status: proposed
+  verification_method: automated
+  id: AC-031
+- requirement_id: FR-008
+  title: Production logging or telemetry does not record raw learner expressions,
+    raw expected answers, raw sampled assignments, or parser internals by default.
+  status: proposed
+  verification_method: inspection
+  id: AC-032
+- requirement_id: FR-009
+  title: Component tests cover valid, invalid, empty, authoring, student single-response,
+    and student Multi-Input layout modes.
+  status: proposed
+  verification_method: automated
+  id: AC-033
+- requirement_id: FR-009
+  title: Accessibility checks cover keyboard navigation, focus behavior, Escape dismissal,
+    accessible labels, invalid state, described error messages, and static page heading
+    structure.
+  status: proposed
+  verification_method: automated
+  id: AC-034
+- requirement_id: FR-009
+  title: Static route tests confirm the syntax documentation page loads and that help
+    links target it.
+  status: proposed
+  verification_method: automated
+  id: AC-035

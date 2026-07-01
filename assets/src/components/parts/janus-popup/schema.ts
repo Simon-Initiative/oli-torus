@@ -85,7 +85,7 @@ export const schema: JSONSchema7Object = {
   visible: {
     title: 'Visible',
     type: 'boolean',
-    description: 'specifies whether popup will be visible on the screen',
+    description: 'specifies whether the popup icon is visible',
     default: true,
   },
   labelText: {

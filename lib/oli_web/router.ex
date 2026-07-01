@@ -209,6 +209,10 @@ defmodule OliWeb.Router do
     plug OliWeb.Plugs.StoreSettingsReturnTo
   end
 
+  pipeline :store_author_return_to do
+    plug OliWeb.Plugs.StoreAuthorReturnTo
+  end
+
   pipeline :community_admin do
     plug(Oli.Plugs.CommunityAdmin)
   end
@@ -337,6 +341,7 @@ defmodule OliWeb.Router do
     pipe_through [
       :browser,
       :delivery,
+      :store_author_return_to,
       :require_authenticated_user,
       :fetch_current_author
     ]
@@ -448,10 +453,12 @@ defmodule OliWeb.Router do
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
     get("/not_found", StaticPageController, :not_found)
+    get("/help/math-syntax", StaticPageController, :math_syntax)
 
     # update session timezone information
     get("/timezones", StaticPageController, :list_timezones)
     post("/update_timezone", StaticPageController, :update_timezone)
+    post("/update_user_preference", StaticPageController, :update_user_preference)
   end
 
   scope "/", OliWeb do
@@ -1068,6 +1075,11 @@ defmodule OliWeb.Router do
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
+
+        scope "/", alias: false do
+          live("/:project_id/full_versioning_details", OliWeb.Admin.CourseSectionVersions.View)
+        end
+
         live("/:project_id/insights", InsightsLive)
 
         live("/:project_id/datasets", DatasetsLive)
@@ -1304,6 +1316,7 @@ defmodule OliWeb.Router do
     get("/downloads/intelligent_dashboard", DeliveryController, :download_intelligent_dashboard)
     get("/downloads/course_content", DeliveryController, :download_course_content_info)
     get("/downloads/students_progress", DeliveryController, :download_students_progress)
+    get("/downloads/student_progress/:student_id", DeliveryController, :download_student_progress)
     get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
     get("/downloads/quiz_scores", DeliveryController, :download_quiz_scores)
     get("/downloads/scored_pages", DeliveryController, :download_scored_pages)
@@ -1396,6 +1409,7 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
@@ -1532,6 +1546,26 @@ defmodule OliWeb.Router do
     ])
 
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
+
+    live_session :instructor_preview_lesson,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetToken,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn
+      ] do
+      live("/lesson/:revision_slug", Delivery.Instructor.PreviewLessonLive, :preview)
+
+      live(
+        "/lesson/:revision_slug/selection/:selection_id",
+        Delivery.Instructor.BankSelectionManagerLive,
+        :preview
+      )
+    end
 
     scope "/" do
       pipe_through([:put_license])
@@ -2035,6 +2069,7 @@ defmodule OliWeb.Router do
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
       live("/metrics_smoke", Dev.MetricsSmokeLive)
+      live("/math_prototype", Dev.MathPrototypeLive)
     end
   end
 end

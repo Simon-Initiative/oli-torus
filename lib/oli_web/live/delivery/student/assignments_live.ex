@@ -100,6 +100,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         section_slug={@section.slug}
         certificate={@certificate}
         filter={@filter}
+        preview_mode={@preview_mode}
+        sidebar_expanded={@sidebar_expanded}
+        instructor_preview_return={assigns[:instructor_preview_return]}
       />
     </div>
     """
@@ -182,6 +185,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   attr :certificate, :map, required: true
   attr :filter, :atom, required: true
   attr :has_scheduled_resources?, :boolean, required: true
+  attr :preview_mode, :boolean, default: false
+  attr :sidebar_expanded, :boolean, default: true
+  attr :instructor_preview_return, :map, default: nil
 
   def assignments_agenda(assigns) do
     ~H"""
@@ -222,8 +228,15 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           assignment={assignment}
           ctx={@ctx}
           target={
-            Utils.lesson_live_path(@section_slug, assignment.slug,
-              request_path: ~p"/sections/#{@section_slug}/assignments"
+            Utils.lesson_live_path(
+              @section_slug,
+              assignment.slug,
+              build_assignment_link_params(
+                @section_slug,
+                @preview_mode,
+                @sidebar_expanded,
+                assigns[:instructor_preview_return]
+              )
             )
           }
           required={assignment_required_for_certificate(assignment, @certificate)}
@@ -305,24 +318,30 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       </div>
       <div :if={@assignment.raw_avg_score} class="ml-auto h-12 flex flex-col justify-between">
         <%= if @assignment.score_as_you_go do %>
-          <span class="h-6 ml-auto text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+          <span class="h-6 ml-auto text-Text-text-low-alpha text-xs font-semibold leading-3 whitespace-nowrap">
             Score as you go
           </span>
         <% else %>
-          <span class="h-6 ml-auto text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+          <span class="h-6 ml-auto text-Text-text-low-alpha text-xs font-semibold leading-3 whitespace-nowrap">
             Attempt {@assignment.attempts} of {max_attempts(@assignment.max_attempts)}
           </span>
         <% end %>
-        <div class="flex ml-auto gap-1.5 text-[#218358] dark:text-[#39e581]">
-          <div class="w-4 h-4">
+        <div class="flex ml-auto items-center gap-1.5">
+          <div class={[
+            "inline-flex w-4 h-4 shrink-0 items-center justify-center text-Icon-icon-accent-green-bold",
+            if(@assignment.score_as_you_go and @assignment.can_start, do: "-translate-y-px")
+          ]}>
             <%= if @assignment.score_as_you_go and @assignment.can_start do %>
-              <Icons.score_as_you_go />
+              <Icons.score_as_you_go color="text-Icon-icon-accent-green-bold" />
             <% else %>
               <Icons.star />
             <% end %>
           </div>
 
-          <span class="flex gap-1 text-base font-bold leading-none whitespace-nowrap">
+          <span class={[
+            "flex gap-1 text-base font-bold leading-none whitespace-nowrap text-Text-text-accent-green",
+            if(@assignment.score_as_you_go and @assignment.can_start, do: "-translate-y-px")
+          ]}>
             {Utils.parse_score(@assignment.raw_avg_score.score)} / {Utils.parse_score(
               @assignment.raw_avg_score.out_of
             )}
@@ -396,6 +415,50 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts
+
+  defp build_assignment_link_params(
+         section_slug,
+         preview_mode,
+         sidebar_expanded,
+         instructor_preview_return
+       ) do
+    %{
+      request_path:
+        Utils.assignments_live_path(
+          section_slug,
+          request_path_params(
+            preview_mode,
+            sidebar_expanded,
+            instructor_preview_return
+          )
+        ),
+      preview_mode: preview_mode
+    }
+    |> maybe_put_return_to(preview_mode, instructor_preview_return)
+  end
+
+  defp request_path_params(preview_mode, sidebar_expanded, %{path: return_to})
+       when preview_mode and is_binary(return_to) and return_to != "" do
+    [
+      preview_mode: true,
+      sidebar_expanded: sidebar_expanded,
+      return_to: return_to
+    ]
+  end
+
+  defp request_path_params(preview_mode, sidebar_expanded, _instructor_preview_return) do
+    [
+      preview_mode: preview_mode,
+      sidebar_expanded: sidebar_expanded
+    ]
+  end
+
+  defp maybe_put_return_to(params, true, %{path: return_to})
+       when is_binary(return_to) and return_to != "" do
+    Map.put(params, :return_to, return_to)
+  end
+
+  defp maybe_put_return_to(params, _preview_mode, _instructor_preview_return), do: params
 
   attr :completed, :boolean, required: true
   attr :purpose, :atom, required: true

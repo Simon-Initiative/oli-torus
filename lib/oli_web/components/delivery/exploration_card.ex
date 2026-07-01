@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.ExplorationCard do
   use Phoenix.Component
 
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.Student.Utils
 
   attr :dark, :boolean, default: false
   attr :exploration, :map
@@ -17,11 +18,19 @@ defmodule OliWeb.Components.Delivery.ExplorationCard do
           <div class="flex w-full gap-3 justify-end">
             <a
               href={
-                Routes.page_delivery_path(
-                  OliWeb.Endpoint,
-                  if(@preview_mode, do: :page_preview, else: :page),
-                  @section_slug,
-                  @exploration.slug
+                if(@preview_mode,
+                  do:
+                    Utils.lesson_live_path(@section_slug, @exploration.slug,
+                      request_path: Utils.explorations_live_path(@section_slug, preview_mode: true),
+                      preview_mode: true
+                    ),
+                  else:
+                    Routes.page_delivery_path(
+                      OliWeb.Endpoint,
+                      :page,
+                      @section_slug,
+                      @exploration.slug
+                    )
                 )
               }
               class="btn text-white hover:text-white inline-flex bg-delivery-primary hover:bg-delivery-primary-600 active:bg-delivery-primary-700"

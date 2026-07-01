@@ -13,7 +13,8 @@ import {
   syncOptionsFromText,
   transformOptionsToNormalized,
 } from '../janus-fill-blanks/FIBUtils';
-import { OptionItem, QuillFIBOptionEditor } from './QuillFIBOptionEditor';
+import type { OptionItem } from '../janus-fill-blanks/FIBUtils';
+import { QuillFIBOptionEditor } from './QuillFIBOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
 import {
   convertJanusToQuill,
@@ -878,12 +879,13 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
 
   const handleFIBOptionsEditorSave = (Options: Array<OptionItem>) => {
     setShowFIBOptionEditorDailog(false);
+    setFibElements(Options);
+    localOptions = Options;
     if (quill?.current) {
       const janusText = convertQuillToJanus(
         new Delta(quill.current?.getEditor()?.getContents().ops),
       );
       const collectedText = extractFormattedHTMLFromQuillNodes(janusText);
-      localOptions = Options;
       const updatedString = embedCorrectAnswersInString(collectedText, Options);
       const span = document.createElement('span');
       span.innerHTML = updatedString;
@@ -892,6 +894,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       // Clear all content first
       editor.setText('');
       quill.current.editor.clipboard.dangerouslyPasteHTML(0, span.outerHTML);
+      setContents(janusText);
+      onChange({ value: janusText, options: Options });
     }
   };
 

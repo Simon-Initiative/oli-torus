@@ -74,7 +74,15 @@ defmodule OliWeb.Components.Delivery.Progress do
           </h4>
 
           <a
-            href="#"
+            href={
+              Routes.delivery_path(
+                OliWeb.Endpoint,
+                :download_student_progress,
+                @section_slug,
+                @student_id
+              )
+            }
+            download="student_progress.csv"
             class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold"
           >
             Download CSV <Icons.download />

@@ -22,6 +22,8 @@ Creates a course section from a project, product, or as a standalone section.
 - `from`: Source project or product name (optional for standalone)
 - `type`: Section type - `enrollable` (default) or `open_and_free`
 - `registration_open`: Whether registration is open (default: true)
+- `start_date`: Optional ISO8601 section start datetime
+- `end_date`: Optional ISO8601 section end datetime
 
 ### Examples
 
@@ -41,6 +43,8 @@ Creates a course section from a project, product, or as a standalone section.
     name: "spring_2024"
     title: "Spring 2024 - Section 001"
     from: "source_project"
+    start_date: "2026-01-01T00:00:00Z"
+    end_date: "2026-12-31T23:59:59Z"
 ```
 
 #### Open and Free Section

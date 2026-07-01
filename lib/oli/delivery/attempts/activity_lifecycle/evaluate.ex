@@ -161,7 +161,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                   false ->
                     custom
                     |> Map.get("maxScore", 0)
-                    |> normalize_adaptive_max_score(activity_model, 1)
+                    |> normalize_adaptive_max_score(activity_model, 0)
                 end
 
               scoringContext = %{
@@ -169,7 +169,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                 maxAttempt: Map.get(custom, "maxAttempt", 1),
                 trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
                 negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
-                currentAttemptNumber: attempt_number,
+                currentAttemptNumber:
+                  adaptive_scoring_attempt_number(attempt_number, resource_attempt.attempt_number),
                 isManuallyGraded: is_manually_graded
               }
 
@@ -422,6 +423,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end)
   end
 
+  defp adaptive_scoring_attempt_number(activity_attempt_number, resource_attempt_number)
+       when is_integer(activity_attempt_number) and is_integer(resource_attempt_number) do
+    max(activity_attempt_number - resource_attempt_number + 1, 1)
+  end
+
+  defp adaptive_scoring_attempt_number(activity_attempt_number, _resource_attempt_number),
+    do: activity_attempt_number || 1
+
   defp evaluate_from_rules(
          section_slug,
          resource_attempt,
@@ -672,7 +681,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   defp adaptive_rule_screen_score(%{"score" => score, "out_of" => out_of}) do
     with screen_score when is_number(screen_score) <- normalize_adaptive_score(score),
-         screen_out_of when is_number(screen_out_of) and screen_out_of > 0 <-
+         screen_out_of when is_number(screen_out_of) and screen_out_of >= 0 <-
            normalize_adaptive_score(out_of) do
       {:ok, {screen_score |> max(0.0) |> min(screen_out_of), screen_out_of}}
     else

@@ -66,7 +66,8 @@ defmodule OliWeb.ManualGrading.Rendering do
         screen_revision,
         attempt_guid: context.resource_attempt.attempt_guid,
         page_revision_id: context.resource_attempt.revision_id,
-        screen_revision_id: context.activity_revision_id
+        screen_revision_id: context.activity_revision_id,
+        preserve_capi_iframe_size: true
       )
     else
       _ ->

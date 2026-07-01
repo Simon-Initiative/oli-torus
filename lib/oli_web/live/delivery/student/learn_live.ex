@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Accounts.User
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Hierarchy, Metrics, Sections}
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Delivery.Sections.SectionResourceDepot
@@ -29,6 +30,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   @outline_scroll_offset 125
   @mobile_gallery_scroll_offset 150
   @mobile_outline_scroll_offset 185
+  # Matches the rendered height of OliWeb.Components.Delivery.Layouts.instructor_preview_header/1.
+  @preview_scroll_offset 80
+  @unit_scroll_offset 25
 
   @default_image "/images/course_default.png"
   # this is an optimization to reduce the memory footprint of the liveview process
@@ -258,6 +262,35 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         |> push_event("expand-containers", %{ids: [unit_resource_id]})
         |> push_scroll_event_for_outline("module_#{resource_id}_outline")
 
+      # Case: Nested Section / Container
+      {@container_resource_type_id, level} when level > 2 ->
+        module_resource_id =
+          Hierarchy.find_module_ancestor(
+            full_hierarchy,
+            String.to_integer(resource_id),
+            @container_resource_type_id
+          )["resource_id"]
+
+        unit_resource_id =
+          Hierarchy.find_parent_in_hierarchy(
+            full_hierarchy,
+            fn node -> node["resource_id"] == module_resource_id end
+          )["resource_id"]
+
+        if socket.assigns.is_mobile do
+          scroll_to_resource_in_unit_layer(
+            socket,
+            resource_id,
+            full_hierarchy,
+            unit_resource_id,
+            "section_#{resource_id}_target"
+          )
+        else
+          socket
+          |> push_event("expand-containers", %{ids: [unit_resource_id, module_resource_id]})
+          |> push_scroll_event_for_outline("section_#{resource_id}_target")
+        end
+
       # Case: Catch-all
       _ ->
         socket
@@ -275,11 +308,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "unit_#{resource_id}",
-          offset:
-            if(socket.assigns.is_mobile,
-              do: @mobile_gallery_scroll_offset,
-              else: @gallery_scroll_offset
-            ),
+          offset: gallery_scroll_offset(socket),
           pulse: true,
           pulse_delay: 500
         })
@@ -313,11 +342,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
         |> push_event("scroll-y-to-target", %{
           id: "unit_#{unit_resource_id}",
-          offset:
-            if(socket.assigns.is_mobile,
-              do: @mobile_gallery_scroll_offset,
-              else: @gallery_scroll_offset
-            )
+          offset: gallery_scroll_offset(socket)
         })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "module_#{resource_id}",
@@ -333,11 +358,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "top_level_page_#{resource_id}",
-          offset:
-            if(socket.assigns.is_mobile,
-              do: @mobile_gallery_scroll_offset,
-              else: @gallery_scroll_offset
-            ),
+          offset: gallery_scroll_offset(socket),
           pulse: true,
           pulse_delay: 500
         })
@@ -356,11 +377,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         socket
         |> push_event("scroll-y-to-target", %{
           id: "unit_#{unit_resource_id}",
-          offset:
-            if(socket.assigns.is_mobile,
-              do: @mobile_gallery_scroll_offset,
-              else: @gallery_scroll_offset
-            )
+          offset: gallery_scroll_offset(socket)
         })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "page_#{resource_id}",
@@ -404,20 +421,65 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               socket.assigns.student_progress_per_resource_id
             )
         )
-        |> push_event("scroll-y-to-target", %{
-          id: "unit_#{unit_resource_id}",
-          offset:
-            if(socket.assigns.is_mobile,
-              do: @mobile_gallery_scroll_offset,
-              else: @gallery_scroll_offset
-            )
-        })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "module_#{module_resource_id}",
           scroll_delay: 300,
-          unit_resource_id: unit_resource_id,
-          pulse_target_id: "index_item_#{resource_id}",
-          pulse_delay: 500
+          unit_resource_id: unit_resource_id
+        })
+        |> push_event("scroll-y-to-target", %{
+          id: "index_item_#{resource_id}",
+          offset: gallery_scroll_offset(socket),
+          scroll_mode: "contain",
+          scroll_delay: 700,
+          pulse: true,
+          pulse_delay: 900
+        })
+
+      %{resource_type_id: resource_type_id, numbering_level: level}
+      when resource_type_id == @container_resource_type_id and level > 2 ->
+        # the target is a container nested inside a module/section, so we scroll X to the
+        # parent module card and then scroll Y to the nested section row in the expanded index
+        module_resource_id =
+          Hierarchy.find_module_ancestor(
+            full_hierarchy,
+            String.to_integer(resource_id),
+            @container_resource_type_id
+          )["resource_id"]
+
+        unit_resource_id =
+          Hierarchy.find_parent_in_hierarchy(
+            full_hierarchy,
+            fn node ->
+              node["resource_id"] == module_resource_id
+            end
+          )["resource_id"]
+
+        socket
+        |> assign(
+          selected_module_per_unit_resource_id:
+            merge_target_module_as_selected(
+              socket.assigns.selected_module_per_unit_resource_id,
+              socket.assigns.section,
+              socket.assigns.student_visited_pages,
+              module_resource_id,
+              unit_resource_id,
+              full_hierarchy,
+              socket.assigns.student_raw_avg_score_per_page_id,
+              socket.assigns.student_progress_per_resource_id
+            )
+        )
+        |> push_event("scroll-x-to-card-in-slider", %{
+          card_id: "module_#{module_resource_id}",
+          scroll_delay: 300,
+          unit_resource_id: unit_resource_id
+        })
+        |> push_event("scroll-y-to-target", %{
+          data_scroll_target: "section_#{resource_id}_target",
+          offset: gallery_scroll_offset(socket),
+          scroll_mode: "contain",
+          scroll_delay: 700,
+          pulse: true,
+          pulse_delay: 900
         })
 
       _ ->
@@ -427,12 +489,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp push_scroll_event_for_outline(socket, identifier) do
     push_event(socket, "scroll-y-to-target", %{
-      role: identifier,
-      offset:
-        if(socket.assigns.is_mobile,
-          do: @mobile_outline_scroll_offset,
-          else: @outline_scroll_offset
-        ),
+      data_scroll_target: identifier,
+      offset: outline_scroll_offset(socket),
       pulse: true,
       pulse_delay: 500
     })
@@ -459,6 +517,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   """
 
   defp scroll_to_page_in_unit_layer(socket, resource_id, full_hierarchy, unit_resource_id) do
+    scroll_to_resource_in_unit_layer(
+      socket,
+      resource_id,
+      full_hierarchy,
+      unit_resource_id,
+      "page_#{resource_id}"
+    )
+  end
+
+  defp scroll_to_resource_in_unit_layer(
+         socket,
+         resource_id,
+         full_hierarchy,
+         unit_resource_id,
+         target_role
+       ) do
     selected_unit =
       Enum.find(full_hierarchy["children"], fn unit ->
         unit["resource_id"] == unit_resource_id
@@ -496,10 +570,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
       socket
       |> push_event("expand-containers", %{ids: [module_resource_id]})
-      |> push_scroll_event_for_outline("page_#{resource_id}")
+      |> push_scroll_event_for_outline(target_role)
     else
       # Page is direct child of unit (numbering_level == 2), just scroll
-      push_scroll_event_for_outline(socket, "page_#{resource_id}")
+      push_scroll_event_for_outline(socket, target_role)
     end
   end
 
@@ -556,7 +630,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       |> assign(selected_module_per_unit_resource_id: %{})
       |> push_event("scroll-y-to-target", %{
         id: "unit_#{unit_resource_id}",
-        offset: @mobile_gallery_scroll_offset
+        offset: mobile_gallery_scroll_offset(socket)
       })
       |> push_event("scroll-x-to-card-in-slider", %{
         card_id: "module_#{module_resource_id}",
@@ -706,7 +780,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_event("change_selected_view", %{"selected_view" => selected_view}, socket) do
     path =
       if socket.assigns[:preview_mode] do
-        ~p"/sections/#{socket.assigns.section.slug}/preview/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
+        PreviewRoutes.learn_path(
+          socket.assigns.section.slug,
+          maybe_put_return_to(socket.assigns.params, %{
+            "selected_view" => selected_view,
+            "sidebar_expanded" => socket.assigns.sidebar_expanded
+          })
+        )
       else
         ~p"/sections/#{socket.assigns.section.slug}/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
       end
@@ -1011,7 +1091,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            values["slug"],
            section_slug,
            resource_id,
-           selected_view
+           selected_view,
+           socket.assigns[:preview_mode] || false,
+           socket.assigns.params
          )
      )}
   end
@@ -1430,7 +1512,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
-      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class={[
+        "flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky z-40 bg-delivery-body dark:bg-delivery-body-dark",
+        if(@preview_mode, do: "top-[136px]", else: "top-14")
+      ]}>
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
           class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
@@ -1508,7 +1593,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
-      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class={[
+        "flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky z-40 bg-delivery-body dark:bg-delivery-body-dark",
+        if(@preview_mode, do: "top-[136px]", else: "top-14")
+      ]}>
         <DeliveryUtils.toggle_visibility_button
           class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
           target_selector={completed_resources_css_selector()}
@@ -2802,7 +2890,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           @ctx
         ) and !@is_mobile
       }
-      role={"resource #{@type} #{@numbering_index} details"}
+      data-scroll-target={"section_#{@resource_id}_target"}
       class="w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-5 flex rounded-lg"
       id={"index_item_#{@resource_id}_#{@parent_scheduling_type}_#{@parent_due_date}"}
       phx-value-resource_id={@resource_id}
@@ -3631,7 +3719,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  defp resource_url(resource_slug, section_slug, resource_id, selected_view) do
+  defp resource_url(resource_slug, section_slug, resource_id, selected_view, true, params) do
+    request_path =
+      PreviewRoutes.learn_path(
+        section_slug,
+        maybe_put_return_to(params, %{
+          "target_resource_id" => resource_id,
+          "selected_view" => selected_view,
+          "sidebar_expanded" => Map.get(params, "sidebar_expanded", true)
+        })
+      )
+
+    preview_navigation_params =
+      params
+      |> Map.take(["return_to"])
+      |> Map.put("request_path", request_path)
+
+    PreviewRoutes.lesson_path(section_slug, resource_slug, preview_navigation_params)
+  end
+
+  defp resource_url(resource_slug, section_slug, resource_id, selected_view, false, _params) do
     Utils.lesson_live_path(
       section_slug,
       resource_slug,
@@ -3642,6 +3749,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         ),
       selected_view: selected_view
     )
+  end
+
+  # Preview navigation needs to preserve the global instructor return context separately from
+  # request_path, so switching views or opening pages does not fall back to Customize Content.
+  defp maybe_put_return_to(params, request_params) do
+    case Map.get(params, "return_to") do
+      return_to when is_binary(return_to) and return_to != "" ->
+        Map.put(request_params, "return_to", return_to)
+
+      _ ->
+        request_params
+    end
   end
 
   defp get_student_metrics(section, current_user_id) do
@@ -4004,10 +4123,34 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp maybe_scroll_y_to_unit(socket, unit_resource_id, true, scroll_behavior) do
     push_event(socket, "scroll-y-to-target", %{
       id: "unit_#{unit_resource_id}",
-      offset: 25,
+      offset: unit_scroll_offset(socket),
       scroll_behavior: scroll_behavior
     })
   end
+
+  defp gallery_scroll_offset(%{assigns: %{is_mobile: true}} = socket),
+    do: mobile_gallery_scroll_offset(socket)
+
+  defp gallery_scroll_offset(socket),
+    do: @gallery_scroll_offset + preview_scroll_offset(socket)
+
+  defp outline_scroll_offset(%{assigns: %{is_mobile: true}} = socket),
+    do: mobile_outline_scroll_offset(socket)
+
+  defp outline_scroll_offset(socket),
+    do: @outline_scroll_offset + preview_scroll_offset(socket)
+
+  defp mobile_gallery_scroll_offset(socket),
+    do: @mobile_gallery_scroll_offset + preview_scroll_offset(socket)
+
+  defp mobile_outline_scroll_offset(socket),
+    do: @mobile_outline_scroll_offset + preview_scroll_offset(socket)
+
+  defp unit_scroll_offset(socket),
+    do: @unit_scroll_offset + preview_scroll_offset(socket)
+
+  defp preview_scroll_offset(%{assigns: %{preview_mode: true}}), do: @preview_scroll_offset
+  defp preview_scroll_offset(_socket), do: 0
 
   _docp = """
     When a user expands a module card we want to autoscroll in the X direction to get

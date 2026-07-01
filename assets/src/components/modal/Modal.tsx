@@ -60,7 +60,20 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
 
   // Focus trap handler
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key !== 'Tab' || !modal.current) return;
+    if (!modal.current) return;
+
+    // Contain Escape: an open modal must not let Escape bubble to ancestor handlers
+    // (e.g. a parent LiveView modal's phx-window-keydown), which would otherwise close
+    // them too. Bootstrap closes this modal on Escape via its own element-level handler;
+    // we stop propagation here (document fires before window) so only this modal closes.
+    // Scope to events ORIGINATING inside this modal so a still-mounted (e.g. dismiss-less)
+    // modal does not swallow unrelated Escape presses elsewhere in the app.
+    if (e.key === 'Escape' && modal.current.contains(e.target as Node)) {
+      e.stopPropagation();
+      return;
+    }
+
+    if (e.key !== 'Tab') return;
 
     const focusableElements = modal.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
     if (focusableElements.length === 0) return;
@@ -92,11 +105,28 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
 
       (window as any).$(currentModal).modal('show');
 
-      // Focus the first focusable element when modal opens
+      // Focus when the modal opens: prefer an element explicitly marked for initial focus
+      // (`data-modal-autofocus`), otherwise fall back to the first focusable element.
       $(currentModal).on('shown.bs.modal', () => {
+        const preferred = currentModal.querySelector<HTMLElement>('[data-modal-autofocus]');
+        if (preferred) {
+          preferred.focus();
+          return;
+        }
         const focusableElements = currentModal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
         if (focusableElements.length > 0) {
           focusableElements[0].focus();
+        }
+      });
+
+      // Before Bootstrap applies aria-hidden in _hideModal (which fires after this event),
+      // blur any focused descendant so focus is not trapped inside an aria-hidden subtree
+      // (avoids the "Blocked aria-hidden ... descendant retained focus" warning). Focus is
+      // restored to the trigger below on hidden.bs.modal.
+      $(currentModal).on('hide.bs.modal', () => {
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && currentModal.contains(active)) {
+          active.blur();
         }
       });
 

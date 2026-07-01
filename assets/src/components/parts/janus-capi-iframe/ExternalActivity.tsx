@@ -12,12 +12,16 @@ import { contexts } from '../../../types/applicationContext';
 import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { JanusCAPIRequestTypes, getJanusCAPIRequestTypeString } from './JanusCAPIRequestTypes';
-import { getExternalIframeStyles, shouldAllowIframeScrolling } from './iframeBehavior';
+import {
+  getExternalActivityContainerStyles,
+  getExternalIframeStyles,
+  shouldAllowIframeScrolling,
+} from './iframeBehavior';
 import { CapiIframeModel } from './schema';
 import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from './sourceResolver';
 
 const externalActivityMap: Map<string, any> = new Map();
-let context = 'VIEWER';
+
 const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
@@ -27,6 +31,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateBindToFacts, setInitStateBindToFacts] = useState<any>({});
   const [screenContext, setScreenContext] = useState('');
   const id: string = props.id;
+  const contextRef = useRef('VIEWER');
 
   const [scriptEnv, setScriptEnv] = useState<any>();
   // model items, note that we use default values now because
@@ -166,7 +171,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       simLife.ownerActivityId = initResult.context.currentActivity;
     }
     if (initResult.context.mode) {
-      context = initResult.context.mode;
+      contextRef.current =
+        contextRef.current === contexts.REVIEW ? contexts.REVIEW : initResult.context.mode;
     }
     if (initResult.env) {
       const env = new Environment(initResult.env);
@@ -268,7 +274,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           cVar.value = val;
         }
       }
-      formatted[baseKey] = cVar;
+      formatted[baseKey] = coerceReadonlyForReview(baseKey, cVar);
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
     });
   };
@@ -385,6 +391,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const messageListener = useRef<any>(null);
   const [simIsInitStatePassedOnce, setSimIsInitStatePassedOnce] = useState(false);
+  const isReviewContext = () => contextRef.current === contexts.REVIEW || props.mode === 'review';
 
   const externalActivityStyles: CSSProperties = {
     /* position: 'absolute',
@@ -397,14 +404,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // any (legacy) override css attempt at hiding it
     visibility: frameVisible ? undefined : 'hidden',
   };
-  const externalActivityContainerStyles: CSSProperties = {
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-    maxWidth: '100%',
-    maxHeight: '100%',
-    overflow: 'hidden',
-  };
+  const externalActivityContainerStyles = getExternalActivityContainerStyles(
+    frameWidth,
+    frameHeight,
+    props.preserveCapiIframeSize === true,
+  );
   const fallbackOverlayStyles: CSSProperties = {
     position: 'absolute',
     inset: 0,
@@ -479,6 +483,31 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       // eslint-disable-next-line
       console.log(`%c Capi(${id}) - ${msg}`, colorStyle, ...args);
     }
+  };
+
+  const reviewReadonlyVariable = () =>
+    new CapiVariable({
+      key: 'readonly',
+      type: CapiVariableTypes.BOOLEAN,
+      value: true,
+    });
+
+  const coerceReadonlyForReview = (key: string, variable: CapiVariable) => {
+    if (isReviewContext() && key === 'readonly') {
+      return reviewReadonlyVariable();
+    }
+
+    return variable;
+  };
+
+  const sendReadonlyValueChangeInReview = () => {
+    if (!isReviewContext()) {
+      return;
+    }
+
+    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, {
+      readonly: reviewReadonlyVariable(),
+    });
   };
 
   /*
@@ -563,7 +592,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              context = payload.mode;
+              const nextContext =
+                contextRef.current === contexts.REVIEW ? contexts.REVIEW : payload.mode;
+              contextRef.current = nextContext;
               writeCapiLog('CONTEXT CHANGED!!!!', 3, {
                 simLife,
                 payload,
@@ -573,7 +604,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 simLife.domain = payload.domain;
               }
               simLife.handshake.config = {
-                context: payload.mode,
+                context: nextContext,
                 questionId: payload.currentActivityId,
                 sectionSlug: payload.sectionSlug,
                 lessonId: payload.currentLessonId,
@@ -660,12 +691,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     return vars
       .filter((v) => v.id.indexOf(`${domain}.${id}.`) === 0)
       .reduce((capiFormatted, item) => {
-        capiFormatted[item.key] = new CapiVariable({
-          key: item.key,
-          type: item.type,
-          value: item.value,
-          allowedValues: item.allowedValues,
-        });
+        capiFormatted[item.key] = coerceReadonlyForReview(
+          item.key,
+          new CapiVariable({
+            key: item.key,
+            type: item.type,
+            value: item.value,
+            allowedValues: item.allowedValues,
+          }),
+        );
         return capiFormatted;
       }, {});
   };
@@ -695,7 +729,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
     // taken from simcapi.js TODO move somewhere, use from settings
     simLife.handshake.config = {
-      context: context,
+      context: contextRef.current,
       lessonId: uniqueLessonId ? `${lessonId}_${guid()}` : lessonId,
       questionId,
       sectionSlug,
@@ -724,7 +758,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         const simKey = `${simLife.domain}.${simLife.simId}.${variable}`;
         const formatted: Record<string, any> = {};
         formatted[variable] = filterVars[variable];
-        if (context !== contexts.REVIEW) {
+        if (!isReviewContext()) {
           const value = formatted[variable].value;
           const isMathExpr = formatted[variable].type === CapiVariableTypes.MATH_EXPR;
           if (typeof value === 'string' && !isMathExpr) {
@@ -757,6 +791,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
     }
+    sendReadonlyValueChangeInReview();
     //if there are no more facts/init state data then send INITIAL_SETUP_COMPLETE response to SIM
     if (!initState && !Object.keys(initState)?.length) {
       simLife.init = true;
@@ -794,8 +829,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         value = JSON.stringify(val);
       }
       response.values.responseType = 'success';
-      response.values.value = value?.length ? value : '[]';
       response.values.exists = exists;
+      response.values.value = exists ? value : '[]';
     } catch (err) {
       response.values.responseType = 'error';
       response.values.error = err;
@@ -995,7 +1030,13 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // so here we want to apply configData FIRST, then overwrite it with anything already set in the state
     const configDataState: any = [
       ...configData.map((cdVar: { key: any }) => {
-        return { ...cdVar, id: `${newLife.domain}.${id}.${cdVar.key}` };
+        return {
+          ...cdVar,
+          id: `${newLife.domain}.${id}.${cdVar.key}`,
+          ...(isReviewContext() && cdVar.key === 'readonly'
+            ? { type: CapiVariableTypes.BOOLEAN, value: true }
+            : {}),
+        };
       }),
     ];
     // override configData values from init trap state data.
@@ -1051,15 +1092,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           break;
 
         case JanusCAPIRequestTypes.VALUE_CHANGE:
-          if (context !== contexts.REVIEW) handleValueChange(data, simLife.domain);
+          if (!isReviewContext()) handleValueChange(data, simLife.domain);
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:
-          if (context !== contexts.REVIEW) handleSetData(data);
+          if (!isReviewContext()) handleSetData(data);
           break;
 
         case JanusCAPIRequestTypes.CHECK_REQUEST:
-          if (context !== contexts.REVIEW) handleCheckRequest(data);
+          if (!isReviewContext()) handleCheckRequest(data);
           break;
 
         case JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_REQUEST:
@@ -1104,7 +1145,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           cVar.value = JSON.stringify(cVar.value);
         }
       }
-      formatted[baseKey] = cVar;
+      formatted[baseKey] = coerceReadonlyForReview(baseKey, cVar);
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
     });
   };
@@ -1146,7 +1187,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           cVar.value = val;
         }
       }
-      formatted[baseKey] = cVar;
+      formatted[baseKey] = coerceReadonlyForReview(baseKey, cVar);
       //hack for Small world type SIMs
       if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
         const mFormatted: Record<string, unknown> = {};

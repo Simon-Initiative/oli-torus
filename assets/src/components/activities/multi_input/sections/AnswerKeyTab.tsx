@@ -19,14 +19,29 @@ import {
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { ShortAnswerActions } from 'components/activities/short_answer/actions';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
-import { getTargetedResponses } from 'components/activities/short_answer/utils';
+import {
+  getTargetedResponses,
+  mathExpressionMatchConfigForQuestionType,
+} from 'components/activities/short_answer/utils';
 import { GradingApproach, Response, RichText, makeResponse } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { getCorrectResponse, multiHasCustomScoring } from 'data/activities/model/responses';
+import { MathExpressionQuestionConfig } from 'data/activities/model/match';
+import {
+  getCorrectResponse,
+  makeMatchConfigResponse,
+  multiHasCustomScoring,
+} from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { getPartById } from 'data/activities/model/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { MultiInputScoringMethod } from '../MultiInputScoringMethod';
+import {
+  MultiInputQuestionType,
+  defaultMultiInputMathExpressionConfig,
+  isMultiInputMathExpressionQuestionType,
+  multiInputMathExpressionConfig,
+  multiInputQuestionType,
+} from '../utils';
 
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
@@ -40,9 +55,25 @@ const defaultRuleForInputType = (inputType: string | undefined) => {
   }
 };
 
-export const addTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) =>
+export const addTargetedFeedbackFillInTheBlank = (
+  input: FillInTheBlank,
+  questionType: MultiInputQuestionType = input.inputType === 'math_expression'
+    ? input.itemConfig?.subtype ?? 'algebraic'
+    : input.inputType === 'math'
+    ? 'latex_direct'
+    : input.inputType === 'numeric'
+    ? 'numeric'
+    : 'text',
+  config?: MathExpressionQuestionConfig,
+) =>
   ResponseActions.addResponse(
-    makeResponse(defaultRuleForInputType(input.inputType), 0, ''),
+    isMultiInputMathExpressionQuestionType(questionType)
+      ? makeMatchConfigResponse(
+          mathExpressionMatchConfigForQuestionType(questionType, '', config),
+          0,
+          '',
+        )
+      : makeResponse(defaultRuleForInputType(input.inputType), 0, ''),
     input.partId,
   );
 
@@ -52,6 +83,19 @@ interface Props {
 export const AnswerKeyTab: React.FC<Props> = (props) => {
   const { model, dispatch, authoringContext, editMode, projectSlug } =
     useAuthoringElementContext<MultiInputSchema>();
+  const correctResponse =
+    props.input.inputType === 'dropdown'
+      ? undefined
+      : getCorrectResponse(model, props.input.partId);
+  const selectedQuestionType =
+    props.input.inputType === 'dropdown'
+      ? 'dropdown'
+      : multiInputQuestionType(props.input, correctResponse?.matchConfig);
+  const mathExpressionConfig =
+    props.input.inputType === 'dropdown'
+      ? undefined
+      : multiInputMathExpressionConfig(props.input, correctResponse?.matchConfig) ??
+        defaultMultiInputMathExpressionConfig(selectedQuestionType);
 
   if (props.input.inputType === 'dropdown') {
     const choices = model.choices.filter((choice) =>
@@ -113,10 +157,15 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         }
       />
       <InputEntry
-        key={getCorrectResponse(model, props.input.partId).id}
+        key={correctResponse!.id}
         inputType={props.input.inputType}
-        response={getCorrectResponse(model, props.input.partId)}
+        questionType={selectedQuestionType === 'dropdown' ? undefined : selectedQuestionType}
+        mathExpressionConfig={mathExpressionConfig}
+        response={correctResponse!}
         onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+        onEditResponseMatchConfig={(id, matchConfig) =>
+          dispatch(ResponseActions.editMatchConfig(id, matchConfig))
+        }
       />
       <SimpleFeedback partId={props.input.partId} />
       <MultiInputScoringMethod />
@@ -149,8 +198,14 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           <InputEntry
             key={response.id}
             inputType={(props.input as FillInTheBlank).inputType}
+            questionType={selectedQuestionType === 'dropdown' ? undefined : selectedQuestionType}
+            mathExpressionConfig={mathExpressionConfig}
             response={response}
             onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+            onEditResponseMatchConfig={(id, matchConfig) =>
+              dispatch(ResponseActions.editMatchConfig(id, matchConfig))
+            }
+            allowUnitMismatchTarget
           />
           {authoringContext.contentBreaksExist ? (
             <ShowPage
@@ -166,7 +221,15 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
       <AuthoringButtonConnected
         ariaLabel="Add targeted feedback"
         className="self-start btn btn-link"
-        action={() => dispatch(addTargetedFeedbackFillInTheBlank(props.input as FillInTheBlank))}
+        action={() =>
+          dispatch(
+            addTargetedFeedbackFillInTheBlank(
+              props.input as FillInTheBlank,
+              selectedQuestionType,
+              mathExpressionConfig,
+            ),
+          )
+        }
       >
         Add targeted feedback
       </AuthoringButtonConnected>

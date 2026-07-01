@@ -18,10 +18,41 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.XAPI.Events.Context
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
 
   alias Oli.Analytics.Summary.{
     AttemptGroup
   }
+
+  defp pay_early_message_classes(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("#pay_early_message")
+    |> Floki.attribute("class")
+    |> List.first()
+    |> String.split()
+  end
+
+  defp assert_same_url(left, right) do
+    left = URI.parse(left)
+    right = URI.parse(right)
+
+    assert left.path == right.path
+    assert normalized_query_map(left.query) == normalized_query_map(right.query)
+  end
+
+  defp normalized_query_map(query) do
+    query
+    |> case do
+      nil -> %{}
+      query -> URI.decode_query(query)
+    end
+    |> Map.update("request_path", nil, fn request_path ->
+      request_path
+      |> URI.parse()
+      |> then(fn uri -> %{path: uri.path, query: URI.decode_query(uri.query || "")} end)
+    end)
+  end
 
   defp enroll_as_student(%{user: user, section: section} = context) do
     Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -860,6 +891,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "You have 18 days left of your grace period for accessing this course"
              )
 
+      refute "absolute" in pay_early_message_classes(render(view))
+
       # Grace period is over
       stub_current_time(~U[2024-11-13 20:00:00Z])
 
@@ -1212,8 +1245,75 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                  %{
                    kind: :push,
                    to:
-                     "/sections/#{section.slug}/assignments?request_path=%2Fsections%2F#{section.slug}"
+                     StudentUtils.assignments_live_path(section.slug,
+                       request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true",
+                       sidebar_expanded: true
+                     )
                  }}}
+    end
+
+    test "preview home keeps links in preview mode", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2
+    } do
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/preview")
+
+      assert has_element?(view, "a", "Start course")
+      assert has_element?(view, "a", "Discover content")
+      assert has_element?(view, "div#home-assignments a", "View All Assignments")
+      assert has_element?(view, "div#home-agenda a", "View full schedule")
+
+      assert element(
+               view,
+               "a",
+               "href=\"#{StudentUtils.lesson_live_path(section.slug, page_1.slug,
+               request_path: ~p"/sections/#{section.slug}/preview?sidebar_expanded=true",
+               preview_mode: true,
+               sidebar_expanded: true)}\""
+             )
+
+      assert element(
+               view,
+               "a",
+               "href=\"#{StudentUtils.learn_live_path(section.slug,
+               target_resource_id: page_2.resource_id,
+               request_path: ~p"/sections/#{section.slug}/preview?sidebar_expanded=true",
+               preview_mode: true,
+               sidebar_expanded: true)}\""
+             )
+
+      {:error, {:live_redirect, %{kind: :push, to: assignments_path}}} =
+        view
+        |> element("div#home-assignments a", "View All Assignments")
+        |> render_click()
+
+      assert_same_url(
+        assignments_path,
+        StudentUtils.assignments_live_path(section.slug,
+          request_path: ~p"/sections/#{section.slug}/preview?#{[sidebar_expanded: true]}",
+          preview_mode: true,
+          sidebar_expanded: true
+        )
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/preview")
+
+      {:error, {:redirect, %{to: schedule_path}}} =
+        view
+        |> element("div#home-agenda a", "View full schedule")
+        |> render_click()
+
+      assert_same_url(
+        schedule_path,
+        StudentUtils.schedule_live_path(section.slug,
+          request_path: ~p"/sections/#{section.slug}/preview?#{[sidebar_expanded: true]}",
+          preview_mode: true,
+          sidebar_expanded: true
+        )
+      )
     end
 
     test "can see the course progress details and navigate to the learn page", %{
@@ -1396,7 +1496,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                first_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_3.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
       assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
@@ -1413,7 +1513,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                second_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_4.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_4.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
       assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
@@ -1430,7 +1530,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                third_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_5.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_5.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
       assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
@@ -1537,7 +1637,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                first_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_3.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
       assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
@@ -1556,7 +1656,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                second_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_4.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_4.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
       assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
@@ -1575,7 +1675,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                third_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_5.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_5.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
       assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
@@ -1634,7 +1734,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                first_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_3.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
       assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
@@ -1660,7 +1760,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                second_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_4.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_4.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
       assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
@@ -1683,7 +1783,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                third_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_5.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_5.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
       assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
@@ -1823,7 +1923,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                first_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="#{StudentUtils.lesson_live_path(section.slug, page_3.slug, request_path: ~p"/sections/#{section.slug}?sidebar_expanded=true", sidebar_expanded: true) |> String.replace("&", "&amp;")}"}
 
       # Set page 3 as hidden
       section_resource = Sections.get_section_resource(section.id, page_3.resource_id)

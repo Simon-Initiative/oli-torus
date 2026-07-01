@@ -15,4 +15,15 @@ defmodule Oli.Activities.Realizer.Query do
     Builder.build(logic, source, paging, :paged)
     |> Executor.execute()
   end
+
+  @doc """
+  Executes a random activity bank query.
+
+  Returns {:ok, %Result{}} when the query is successfully executed and returns
+  {:error, error} otherwise.
+  """
+  def execute_random(%Logic{} = logic, %Source{} = source, %Paging{} = paging) do
+    Builder.build(logic, source, paging, :random)
+    |> Executor.execute()
+  end
 end

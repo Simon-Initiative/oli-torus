@@ -180,6 +180,10 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
     build_regular_prose_view("oli_short_answer", attempt, part_attempt)
   end
 
+  defp build_submission_view("oli_file_upload", attempt, part_attempt, _metadata) do
+    build_file_upload_view(attempt, part_attempt)
+  end
+
   defp build_submission_view(activity_slug, attempt, part_attempt, _metadata) do
     case extract_input_value(part_attempt) do
       nil ->
@@ -193,7 +197,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
   defp part_metadata(attempt, part_attempt, "oli_adaptive") do
     part = AdaptiveParts.part_definition(attempt.revision.content, part_attempt.part_id)
 
-    if AdaptiveParts.tracked_part?(attempt.revision.content, part_attempt.part_id) do
+    if AdaptiveParts.persisted_part?(attempt.revision.content, part_attempt.part_id) do
       %{family: :adaptive, part: part, type: part["type"]}
     end
   end
@@ -462,6 +466,87 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
       description: "Submission data for this input",
       details: details
     }
+  end
+
+  defp build_file_upload_view(attempt, part_attempt) do
+    files = uploaded_files(part_attempt.response)
+
+    %{
+      kind: :files,
+      prompt: regular_prompt(attempt.revision.content) || "File Upload",
+      description: file_upload_description(files),
+      files: files
+    }
+  end
+
+  defp file_upload_description([]), do: nil
+  defp file_upload_description([_]), do: "1 file submitted"
+  defp file_upload_description(files), do: "#{length(files)} files submitted"
+
+  defp uploaded_files(%{"files" => files}) when is_list(files) do
+    files
+    |> Enum.map(&normalize_uploaded_file/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp uploaded_files(_), do: []
+
+  defp normalize_uploaded_file(file) when is_map(file) do
+    case safe_file_url(Map.get(file, "url") || Map.get(file, :url)) do
+      nil -> nil
+      url -> %{name: uploaded_file_name(file, url), url: url}
+    end
+  end
+
+  defp normalize_uploaded_file(_), do: nil
+
+  # Student-submitted responses are stored verbatim, so only render links for binary
+  # http(s) urls whose host matches the configured media host. This avoids crashing on
+  # malformed (non-binary) urls and prevents `javascript:`/`data:` or arbitrary external
+  # links (phishing) from being surfaced to graders.
+  defp safe_file_url(url) when is_binary(url) do
+    case blank_to_nil(url) do
+      nil ->
+        nil
+
+      trimmed ->
+        case URI.parse(trimmed) do
+          %URI{scheme: scheme, host: host}
+          when scheme in ["http", "https"] and is_binary(host) ->
+            if allowed_media_host?(host), do: trimmed, else: nil
+
+          _ ->
+            nil
+        end
+    end
+  end
+
+  defp safe_file_url(_), do: nil
+
+  defp allowed_media_host?(host) do
+    case media_host() do
+      nil -> true
+      media_host -> host == media_host
+    end
+  end
+
+  defp media_host do
+    case Application.get_env(:oli, :media_url) do
+      url when is_binary(url) -> URI.parse(url).host
+      _ -> nil
+    end
+  end
+
+  defp uploaded_file_name(file, url) do
+    explicit_name =
+      case Map.get(file, "name") || Map.get(file, :name) do
+        name when is_binary(name) -> blank_to_nil(name)
+        _ -> nil
+      end
+
+    explicit_name ||
+      blank_to_nil(url |> String.split("/") |> List.last()) ||
+      "Attachment"
   end
 
   defp regular_choice_description("oli_check_all_that_apply", _tokens),
@@ -829,7 +914,12 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
 
   defp format_submission_files(files) when is_list(files) do
     files
-    |> Enum.map(&Map.get(&1, "name", "Attachment"))
+    |> Enum.map(fn file ->
+      case normalize_uploaded_file(file) do
+        %{name: name} -> name
+        _ -> "Attachment"
+      end
+    end)
     |> empty_fallback("No files uploaded")
   end
 

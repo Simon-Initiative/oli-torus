@@ -25,6 +25,8 @@ export interface WriterContext {
       }
     >;
     disabled: boolean;
+    selectedInputId?: string;
+    onSelectInput?: (id: string) => void;
   };
   renderPointMarkers?: boolean;
   isAnnotationLevel?: boolean;
