@@ -26,6 +26,12 @@ defmodule Oli.Delivery.InstructorCustomizations do
   @default_candidate_limit 25
   @preview_summary_candidate_limit 500
 
+  @typep candidate_filter_option :: %{id: integer(), title: String.t()}
+  @typep candidate_filter_options :: %{
+           learning_objectives: [candidate_filter_option()],
+           activity_types: [candidate_filter_option()]
+         }
+
   @doc """
   Duplicates all activity exclusions from one section to another.
 
@@ -306,7 +312,7 @@ defmodule Oli.Delivery.InstructorCustomizations do
           %Revision{},
           map(),
           non_neg_integer()
-        ) :: {:ok, map()} | {:error, term()}
+        ) :: {:ok, candidate_filter_options()} | {:error, term()}
   def list_bank_selection_candidate_filter_options(
         %Section{} = section,
         %Revision{} = page_revision,

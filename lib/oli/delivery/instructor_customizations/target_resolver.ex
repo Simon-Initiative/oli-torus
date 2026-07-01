@@ -136,23 +136,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   @spec list_candidates(%Section{}, %Revision{}, map(), Paging.t()) ::
           {:ok, map()} | {:error, term()}
   def list_candidates(%Section{} = section, page_revision, selection, %Paging{} = paging) do
-    list_candidates(section, page_revision, selection, paging, %{})
-  end
-
-  @doc """
-  Lists current bank candidates matching the selection logic and additional filter criteria.
-  """
-  @spec list_candidates(%Section{}, %Revision{}, map(), Paging.t(), map()) ::
-          {:ok, map()} | {:error, term()}
-  def list_candidates(
-        %Section{} = section,
-        page_revision,
-        selection,
-        %Paging{} = paging,
-        filters
-      )
-      when is_map(filters) do
-    list_candidates(section, page_revision, selection, paging, filters, [])
+    list_candidates(section, page_revision, selection, paging, %{}, [])
   end
 
   @doc """
