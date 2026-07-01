@@ -24,6 +24,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     ActivityBankDirective,
     InstructorCustomizationDirective,
     EditPageDirective,
+    EditAdaptivePageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
     StartAttemptDirective,
@@ -580,6 +581,23 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"edit_adaptive_page" => edit_data}) do
+    allowed_attrs = ["project", "page", "activity_virtual_id", "graded"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, edit_data, "edit_adaptive_page") do
+      :ok ->
+        %EditAdaptivePageDirective{
+          project: edit_data["project"],
+          page: edit_data["page"],
+          activity_virtual_id: edit_data["activity_virtual_id"],
+          graded: edit_data["graded"] == true
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"view_practice_page" => view_data}) do
     # Validate attributes
     allowed_attrs = ["student", "section", "page"]
@@ -940,6 +958,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "activity_bank",
          "instructor_customization",
          "edit_page",
+         "edit_adaptive_page",
          "view_practice_page",
          "visit_page",
          "start_attempt",
@@ -984,6 +1003,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "activity_bank",
              "instructor_customization",
              "edit_page",
+             "edit_adaptive_page",
              "view_practice_page",
              "visit_page",
              "start_attempt",

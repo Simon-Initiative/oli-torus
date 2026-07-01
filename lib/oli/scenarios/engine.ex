@@ -25,6 +25,7 @@ defmodule Oli.Scenarios.Engine do
     ActivityBankDirective,
     InstructorCustomizationDirective,
     EditPageDirective,
+    EditAdaptivePageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
     StartAttemptDirective,
@@ -65,6 +66,7 @@ defmodule Oli.Scenarios.Engine do
     ActivityBankHandler,
     InstructorCustomizationHandler,
     EditPageHandler,
+    EditAdaptivePageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
     StartAttemptHandler,
@@ -295,6 +297,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%EditPageDirective{} = directive, state) do
     EditPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%EditAdaptivePageDirective{} = directive, state) do
+    EditAdaptivePageHandler.handle(directive, state)
   end
 
   def execute_directive(%ViewPracticePageDirective{} = directive, state) do
