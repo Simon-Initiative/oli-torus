@@ -20,6 +20,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   alias OliWeb.ManualGrading.RenderedActivity
 
   @candidate_row_limit 25
+  @candidate_text_search_max_length 120
   @type selection_mode :: :none | :available | :removed | :mixed
 
   def mount(
@@ -885,7 +886,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                         id="candidate-list-empty-state"
                         class="flex min-h-32 items-center justify-center border-b border-Table-table-border px-6 py-8 text-center text-sm text-Text-text-low"
                       >
-                        No questions match the selected filters.
+                        {candidate_empty_state_message(@candidate_filters)}
                       </div>
 
                       <div
@@ -997,7 +998,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                     <% end %>
                   <% else %>
                     <div class="rounded-lg border border-dashed border-Border-border-default bg-Surface-surface-secondary-hover px-6 py-12 text-center text-sm text-Text-text-low">
-                      No questions match the selected filters.
+                      {candidate_empty_state_message(@candidate_filters)}
                     </div>
                   <% end %>
                 </div>
@@ -1688,6 +1689,23 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     max(total_candidate_count - length(candidates), 0)
   end
 
+  defp candidate_empty_state_message(candidate_filters) do
+    if candidate_filters_active?(candidate_filters) do
+      "No questions match the selected filters."
+    else
+      "No matching questions are currently available for this activity bank selection."
+    end
+  end
+
+  defp candidate_filters_active?(%{
+         visibility: visibility,
+         text_search: text_search,
+         activity_type_ids: activity_type_ids,
+         objective_ids: objective_ids
+       }) do
+    visibility != :all or text_search != "" or activity_type_ids != [] or objective_ids != []
+  end
+
   defp default_candidate_filters do
     %{visibility: :all, text_search: "", activity_type_ids: [], objective_ids: []}
   end
@@ -1723,10 +1741,16 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
   defp candidate_text_search_from_params(params, current_text_search) do
     case Map.fetch(params, "text_search") do
-      {:ok, value} when is_binary(value) -> value
+      {:ok, value} when is_binary(value) -> normalize_candidate_text_search(value)
       {:ok, _value} -> ""
       :error -> current_text_search
     end
+  end
+
+  defp normalize_candidate_text_search(value) do
+    value
+    |> String.trim()
+    |> String.slice(0, @candidate_text_search_max_length)
   end
 
   defp candidate_filter_ids_from_params(params, key, current_ids) do
