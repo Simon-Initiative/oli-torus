@@ -52,8 +52,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       assert html =~ ">4<"
       assert has_element?(view, "#questions-required-count", "2")
       assert has_element?(view, "#active-available-count", "30")
-      assert html =~ "All questions"
-      assert html =~ "No additional filters"
+      assert html =~ "No criteria configured."
       assert html =~ "/js/oli_multiple_choice_preview.js"
       assert html =~ "/js/oli_check_all_that_apply_preview.js"
 

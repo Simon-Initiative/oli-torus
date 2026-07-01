@@ -27,6 +27,7 @@ import {
   HeadingOne,
   HeadingTwo,
   Hyperlink,
+  HyperlinkType,
   ImageBlock,
   ImageInline,
   InputRef,
@@ -51,7 +52,7 @@ import {
   YouTube,
 } from 'data/content/model/elements/types';
 import guid from 'utils/guid';
-import { normalizeHref } from './utils';
+import { internalLinkPrefix, normalizeHref } from './utils';
 
 // removeUndefined({a: 1, b: undefined}) = {a: 1}
 export const removeUndefined = (obj: Record<string, any>): unknown => {
@@ -165,7 +166,25 @@ export const Model = {
 
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
-  link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
+  link: (href = '', linkType?: HyperlinkType) => {
+    // Internal page links ('/course/link/:slug') must NOT be normalized — normalizeHref would
+    // prepend http:// and break them. A 'page' linkType paired with a non-internal href is
+    // contradictory, so normalize it like an external link and drop the misleading page tag;
+    // this shared factory never persists a malformed internal link. Other link types are
+    // normalized and keep their tag.
+    // Mirror the server validator's single-slug rule (link_validator.ex) so malformed internal
+    // hrefs (empty/nested/query) are downgraded here too, not just plain external ones.
+    const validPageHref =
+      linkType === 'page' && new RegExp(`^${internalLinkPrefix}/[A-Za-z0-9_-]+$`).test(href);
+    const resolvedLinkType = linkType === 'page' && !validPageHref ? undefined : linkType;
+
+    return create<Hyperlink>({
+      type: 'a',
+      href: validPageHref ? href : normalizeHref(href),
+      target: 'self',
+      ...(resolvedLinkType ? { linkType: resolvedLinkType } : {}),
+    });
+  },
 
   commandButton: () => create<CommandButton>({ type: 'command_button', style: 'button' }),
 

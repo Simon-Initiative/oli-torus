@@ -66,6 +66,30 @@ defmodule Oli.Delivery.Attempts.Core do
     Repo.one(query) > 0
   end
 
+  @doc """
+  For a given section and page resource id, determine whether any learner resource attempts are
+  present without exposing learner-specific details.
+  """
+  def has_any_resource_attempts?(%Section{id: section_id}, resource_id) do
+    from(access in ResourceAccess,
+      join: attempt in ResourceAttempt,
+      on: access.id == attempt.resource_access_id,
+      where: access.section_id == ^section_id and access.resource_id == ^resource_id
+    )
+    |> Repo.exists?()
+  end
+
+  @doc """
+  For a given section and page resource id, determine whether any learner page access exists
+  without exposing learner-specific details.
+  """
+  def has_any_resource_accesses?(%Section{id: section_id}, resource_id) do
+    from(access in ResourceAccess,
+      where: access.section_id == ^section_id and access.resource_id == ^resource_id
+    )
+    |> Repo.exists?()
+  end
+
   def browse_lms_grade_updates(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},

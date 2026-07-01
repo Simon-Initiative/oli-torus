@@ -24,6 +24,63 @@ defmodule OliWeb.Components.DesignTokens.Primitives.ButtonTest do
       refute html =~ "disabled"
     end
 
+    test "aria_disabled dims the button but keeps it operable (no HTML disabled attr)" do
+      html =
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button variant={:primary} aria_disabled={true}>Send</Button.button>
+          """
+        end)
+
+      assert html =~ ~s(aria-disabled="true")
+      assert html =~ "cursor-not-allowed"
+      # Must NOT carry the HTML `disabled` boolean attribute (would block focus/click).
+      refute html =~ ~r/\sdisabled[\s>=]/
+    end
+
+    test "truncate button uses the caller's aria-label without duplicating it" do
+      html =
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button text_behavior={:truncate} aria-label="Custom label">
+            A very long button label that would be truncated with an ellipsis
+          </Button.button>
+          """
+        end)
+
+      aria_label_count = (html |> String.split(~s(aria-label=)) |> length()) - 1
+      assert aria_label_count == 1
+      assert html =~ ~s(aria-label="Custom label")
+    end
+
+    test "link (navigate) variant also dedupes the caller's aria-label" do
+      html =
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button navigate="/somewhere" text_behavior={:truncate} aria-label="Nav label">
+            A long navigation label that truncates with an ellipsis
+          </Button.button>
+          """
+        end)
+
+      aria_label_count = (html |> String.split(~s(aria-label=)) |> length()) - 1
+      assert aria_label_count == 1
+      assert html =~ ~s(aria-label="Nav label")
+    end
+
+    test "pill button reflects active state via a single aria-expanded" do
+      html =
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button variant={:pill} active={true}>Filter</Button.button>
+          """
+        end)
+
+      aria_expanded_count = (html |> String.split(~s(aria-expanded=)) |> length()) - 1
+      assert aria_expanded_count == 1
+      assert html =~ ~s(aria-expanded="true")
+    end
+
     test "renders icon slots" do
       html =
         render_component(fn assigns ->

@@ -408,6 +408,9 @@ defmodule OliWeb.Delivery.Student.Utils do
   @doc """
   Generates a URL for a specific lesson.
 
+  Preview mode opens lessons through the instructor customization preview shell. Student delivery
+  previews should omit preview mode and use the normal delivery routes.
+
   ## Parameters
     - `section_slug`: The unique identifier for the section.
     - `revision_slug`: The unique identifier for the lesson revision.
@@ -423,15 +426,8 @@ defmodule OliWeb.Delivery.Student.Utils do
     {preview_mode, params} = route_preview_mode_and_params(params)
 
     case {preview_mode, params} do
-      {true, %{} = params} when map_size(params) == 0 ->
-        ~p"/sections/#{section_slug}/preview/page/#{revision_slug}"
-
-      {true, %{} = params}
-      when is_map_key(params, :return_to) or is_map_key(params, "return_to") ->
-        PreviewRoutes.lesson_path(section_slug, revision_slug, params)
-
       {true, params} ->
-        ~p"/sections/#{section_slug}/preview/page/#{revision_slug}?#{params}"
+        PreviewRoutes.lesson_path(section_slug, revision_slug, params)
 
       {false, %{} = params} when map_size(params) == 0 ->
         ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
@@ -458,8 +454,17 @@ defmodule OliWeb.Delivery.Student.Utils do
   def prologue_live_path(section_slug, revision_slug, []),
     do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
 
-  def prologue_live_path(section_slug, revision_slug, params),
-    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
+  def prologue_live_path(section_slug, revision_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
+
+    case {preview_mode, params} do
+      {true, params} ->
+        PreviewRoutes.lesson_path(section_slug, revision_slug, params)
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
+    end
+  end
 
   @doc """
   Generates a URL for reviewing an attempt of a lesson.
@@ -642,7 +647,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   defp normalize_page_id(_), do: nil
 
-  defp route_preview_mode_and_params(params) do
+  def route_preview_mode_and_params(params) do
     params = Enum.into(params, %{})
 
     preview_mode =
@@ -661,6 +666,14 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns
+
+    page_link_params =
+      build_page_link_params(
+        assigns.section.slug,
+        assigns.page_context.page,
+        assigns.request_path,
+        assigns.selected_view
+      )
 
     render_context = %Context{
       enrollment:
@@ -689,13 +702,8 @@ defmodule OliWeb.Delivery.Student.Utils do
       #   project_slug: base_project_slug,
       #   submitted_surveys: submitted_surveys,
       resource_attempt: hd(page_context.resource_attempts),
-      page_link_params:
-        build_page_link_params(
-          assigns.section.slug,
-          assigns.page_context.page,
-          assigns.request_path,
-          assigns.selected_view
-        ),
+      page_link_params: page_link_params,
+      internal_link_url: &lesson_live_path(section.slug, &1, page_link_params),
       is_liveview: opts[:is_liveview] || false
     }
 

@@ -12,7 +12,7 @@
 
   <main role="main" class="flex-1 flex flex-col relative md:flex-row">
     <Components.Delivery.Layouts.sidebar_nav
-      :if={@section}
+      :if={@section && assigns[:show_sidebar] != false}
       ctx={@ctx}
       is_admin={@is_admin}
       section={@section}

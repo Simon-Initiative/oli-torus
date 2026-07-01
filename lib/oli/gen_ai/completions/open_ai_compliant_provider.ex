@@ -17,9 +17,9 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
 
   alias Oli.GenAI.Completions.RegisteredModel
 
-  def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
+  def generate(messages, functions, %RegisteredModel{model: model} = registered_model, opts \\ []) do
     config = config(:sync, registered_model)
-    params = completion_params(model, messages, functions)
+    params = completion_params(model, messages, functions, opts)
 
     case api_post(config.api_url <> "/v1/chat/completions", params, config) do
       {:ok, response} ->
@@ -116,6 +116,14 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
           # Force one tool call at a time; dialogue flow assumes serial function execution.
           base ++ [tools: encode_tools(functions), parallel_tool_calls: false]
       end
+
+    base =
+      Enum.reduce([:response_format, :temperature, :max_tokens], base, fn key, acc ->
+        case Keyword.fetch(opts, key) do
+          {:ok, value} -> acc ++ [{key, value}]
+          :error -> acc
+        end
+      end)
 
     case Keyword.get(opts, :stream, false) do
       true -> base ++ [stream: true]

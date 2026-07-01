@@ -277,8 +277,58 @@ defmodule Oli.GenAI.ExecutionTest do
     struct(base, overrides)
   end
 
+  test "forwards :provider_opts to completer.generate/4" do
+    Process.put(:execution_test_pid, self())
+
+    service_config = build_service_config(50, secondary_model: nil, backup_model: nil)
+    request_ctx = %{request_type: :generate}
+
+    provider_opts = [response_format: %{type: "json_object"}, temperature: 0.3]
+
+    assert {:ok, _} =
+             Execution.generate(
+               request_ctx,
+               [],
+               [],
+               service_config,
+               completions_mod: __MODULE__.OptsCapturingCompletions,
+               provider_opts: provider_opts
+             )
+
+    assert_received {:generate_called_with_opts, ^provider_opts}
+  end
+
+  test "defaults :provider_opts to [] when not supplied" do
+    Process.put(:execution_test_pid, self())
+
+    service_config = build_service_config(51, secondary_model: nil, backup_model: nil)
+    request_ctx = %{request_type: :generate}
+
+    assert {:ok, _} =
+             Execution.generate(
+               request_ctx,
+               [],
+               [],
+               service_config,
+               completions_mod: __MODULE__.OptsCapturingCompletions
+             )
+
+    assert_received {:generate_called_with_opts, []}
+  end
+
+  defmodule OptsCapturingCompletions do
+    def generate(_messages, _functions, %RegisteredModel{}, opts) do
+      send(Process.get(:execution_test_pid), {:generate_called_with_opts, opts})
+      {:ok, %{response: "ok"}}
+    end
+
+    def stream(_messages, _functions, _registered_model, _response_handler_fn) do
+      :ok
+    end
+  end
+
   defmodule FakeCompletions do
-    def generate(_messages, _functions, %RegisteredModel{id: id}) do
+    def generate(_messages, _functions, %RegisteredModel{id: id}, _opts \\ []) do
       send(Process.get(:execution_test_pid), {:generate_called, id})
 
       if id |> rem(2) == 1 do
@@ -294,7 +344,7 @@ defmodule Oli.GenAI.ExecutionTest do
   end
 
   defmodule AlwaysOkCompletions do
-    def generate(_messages, _functions, %RegisteredModel{id: id}) do
+    def generate(_messages, _functions, %RegisteredModel{id: id}, _opts \\ []) do
       send(Process.get(:execution_test_pid), {:generate_called, id})
       {:ok, %{response: "ok"}}
     end
@@ -305,7 +355,7 @@ defmodule Oli.GenAI.ExecutionTest do
   end
 
   defmodule OpenAI429Completions do
-    def generate(_messages, _functions, %RegisteredModel{id: id}) do
+    def generate(_messages, _functions, %RegisteredModel{id: id}, _opts \\ []) do
       send(Process.get(:execution_test_pid), {:generate_called, id})
       {:error, %{status_code: 429}}
     end

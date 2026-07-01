@@ -1,0 +1,118 @@
+# Scenario: Seed a minimal published course for CATA delivery automation.
+
+- project:
+    name: 'cata_delivery_project'
+    title: 'CATA Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'CATA Practice'
+
+- create_activity:
+    project: 'cata_delivery_project'
+    title: 'CATA Question'
+    virtual_id: 'cata'
+    type: 'oli_check_all_that_apply'
+    content_format: 'json'
+    content:
+      activityType: 'oli_check_all_that_apply'
+      stem:
+        id: 'cata_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Select both correct options.'
+      choices:
+        - id: 'correct_1'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Correct 1'
+        - id: 'correct_2'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Correct 2'
+        - id: 'incorrect'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Incorrect'
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ''
+        correct:
+          - ['correct_1', 'correct_2']
+          - 'cata_correct'
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            responses:
+              - id: 'cata_correct'
+                rule: 'input like {correct_1 correct_2}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'cata_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct. You selected the right answers.'
+              - id: 'cata_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'cata_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect. Try again.'
+            hints: []
+
+- edit_page:
+    project: 'cata_delivery_project'
+    page: 'CATA Practice'
+    content: |
+      title: "CATA Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "cata"
+
+- publish:
+    to: 'cata_delivery_project'
+    description: 'Initial CATA delivery publication'
+
+- section:
+    name: 'cata_delivery_section'
+    title: 'CATA Delivery Course ${RUN_ID}'
+    from: 'cata_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'cata_delivery_section_negative'
+    title: 'CATA Delivery Course ${RUN_ID} - Negative'
+    from: 'cata_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'cata_delivery_student'
+    type: 'student'
+    email: 'cata-delivery-student${RUN_ID}@example.com'
+    given_name: 'CATA'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'cata_delivery_student'
+    section: 'cata_delivery_section'
+    role: 'student'
+
+- enroll:
+    user: 'cata_delivery_student'
+    section: 'cata_delivery_section_negative'
+    role: 'student'
