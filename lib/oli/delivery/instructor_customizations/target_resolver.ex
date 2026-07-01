@@ -9,6 +9,8 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   """
 
   alias Oli.Activities.Realizer.Logic
+  alias Oli.Activities.Realizer.Logic.Clause
+  alias Oli.Activities.Realizer.Logic.Expression
   alias Oli.Activities.Realizer.Query
   alias Oli.Activities.Realizer.Query.Paging
   alias Oli.Activities.Realizer.Query.Source
@@ -131,7 +133,33 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   @spec list_candidates(%Section{}, %Revision{}, map(), Paging.t()) ::
           {:ok, map()} | {:error, term()}
   def list_candidates(%Section{} = section, page_revision, selection, %Paging{} = paging) do
-    execute_candidate_query(section, page_revision, selection, [], paging)
+    list_candidates(section, page_revision, selection, paging, %{}, [])
+  end
+
+  @doc """
+  Lists current bank candidates with additional filter criteria and query scope options.
+  """
+  @spec list_candidates(%Section{}, %Revision{}, map(), Paging.t(), map(), keyword()) ::
+          {:ok, map()} | {:error, term()}
+  def list_candidates(
+        %Section{} = section,
+        page_revision,
+        selection,
+        %Paging{} = paging,
+        filters,
+        opts
+      )
+      when is_map(filters) and is_list(opts) do
+    execute_candidate_query(
+      section,
+      page_revision,
+      selection,
+      Keyword.get(opts, :blacklisted_ids, []),
+      paging,
+      Keyword.get(opts, :activity_resource_ids),
+      :paged,
+      filters
+    )
   end
 
   @doc """
@@ -151,7 +179,10 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
       page_revision,
       selection,
       MapSet.to_list(excluded_ids),
-      paging
+      paging,
+      nil,
+      :paged,
+      %{}
     )
   end
 
@@ -167,7 +198,10 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              page_revision,
              selection,
              MapSet.to_list(excluded_ids),
-             @count_query_paging
+             @count_query_paging,
+             nil,
+             :paged,
+             %{}
            ) do
       {:ok, result.totalCount}
     end
@@ -191,12 +225,42 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              page_revision,
              selection,
              [],
-             %Paging{offset: 0, limit: max(total_count, 1)}
+             %Paging{offset: 0, limit: max(total_count, 1)},
+             nil,
+             :paged,
+             %{}
            ) do
       {:ok,
        result.rows
        |> Enum.map(& &1.activity_type_id)
        |> Enum.uniq()}
+    end
+  end
+
+  @doc """
+  Lists all candidate rows needed to build filter option sets for a resolved selection target.
+  """
+  @spec list_candidate_filter_option_rows(%Section{}, %Revision{}, map(), non_neg_integer()) ::
+          {:ok, [%Revision{}]} | {:error, term()}
+  def list_candidate_filter_option_rows(
+        %Section{} = section,
+        page_revision,
+        selection,
+        total_count
+      )
+      when is_integer(total_count) and total_count >= 0 do
+    with {:ok, result} <-
+           execute_candidate_query(
+             section,
+             page_revision,
+             selection,
+             [],
+             %Paging{offset: 0, limit: max(total_count, 1)},
+             nil,
+             :paged,
+             %{}
+           ) do
+      {:ok, result.rows}
     end
   end
 
@@ -212,7 +276,8 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              MapSet.to_list(excluded_ids),
              @sample_query_paging,
              nil,
-             :random
+             :random,
+             %{}
            ) do
       {:ok, List.first(result.rows)}
     end
@@ -234,7 +299,9 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              selection,
              [],
              @count_query_paging,
-             [candidate_resource_id]
+             [candidate_resource_id],
+             :paged,
+             %{}
            ) do
       {:ok, result.rows != []}
     end
@@ -273,7 +340,9 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
                  selection,
                  [],
                  %Paging{offset: 0, limit: length(candidate_resource_ids)},
-                 candidate_resource_ids
+                 candidate_resource_ids,
+                 :paged,
+                 %{}
                ) do
           {:ok, MapSet.new(Enum.map(result.rows, & &1.resource_id))}
         end
@@ -286,16 +355,18 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
          selection,
          blacklisted_ids,
          paging,
-         activity_resource_ids \\ nil,
-         query_type \\ :paged
+         activity_resource_ids,
+         query_type,
+         filters
        ) do
     with {:ok, %Logic{} = logic} <- parse_logic(selection),
+         %Logic{} = filtered_logic <- apply_candidate_filters(logic, filters),
          publication_id <-
            Publishing.get_publication_id_for_resource(section.slug, page_revision.resource_id),
          {:ok, result} <-
            execute_query(
              query_type,
-             logic,
+             filtered_logic,
              %Source{
                publication_id: publication_id,
                section_slug: section.slug,
@@ -320,4 +391,69 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
       error -> error
     end
   end
+
+  defp apply_candidate_filters(%Logic{} = logic, filters) do
+    expressions =
+      []
+      |> maybe_add_text_search_filter(Map.get(filters, :text_search, ""))
+      |> maybe_add_objective_filter(Map.get(filters, :objective_ids, []))
+      |> maybe_add_activity_type_filter(Map.get(filters, :activity_type_ids, []))
+
+    case {logic.conditions, expressions} do
+      {_conditions, []} ->
+        logic
+
+      {nil, expressions} ->
+        %{logic | conditions: %Clause{operator: :all, children: expressions}}
+
+      {conditions, expressions} ->
+        %{logic | conditions: %Clause{operator: :all, children: [conditions | expressions]}}
+    end
+  end
+
+  defp maybe_add_text_search_filter(expressions, text_search) do
+    case text_search_query(text_search) do
+      "" ->
+        expressions
+
+      query ->
+        expressions ++
+          [%Expression{fact: :text, operator: :contains, value: query}]
+    end
+  end
+
+  defp maybe_add_objective_filter(expressions, []), do: expressions
+
+  defp maybe_add_objective_filter(expressions, [objective_id]) do
+    expressions ++
+      [%Expression{fact: :objectives, operator: :contains, value: [objective_id]}]
+  end
+
+  defp maybe_add_objective_filter(expressions, objective_ids) do
+    expressions ++
+      [
+        %Clause{
+          operator: :any,
+          children:
+            Enum.map(objective_ids, fn objective_id ->
+              %Expression{fact: :objectives, operator: :contains, value: [objective_id]}
+            end)
+        }
+      ]
+  end
+
+  defp maybe_add_activity_type_filter(expressions, []), do: expressions
+
+  defp maybe_add_activity_type_filter(expressions, activity_type_ids) do
+    expressions ++
+      [%Expression{fact: :type, operator: :contains, value: activity_type_ids}]
+  end
+
+  defp text_search_query(text_search) when is_binary(text_search) do
+    text_search
+    |> String.split(~r/[^\p{L}\p{N}_]+/u, trim: true)
+    |> Enum.join(" & ")
+  end
+
+  defp text_search_query(_text_search), do: ""
 end
