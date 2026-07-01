@@ -471,12 +471,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     : {};
 
   const iframeTag = (
-    <div
-      tabIndex={0}
-      role="group"
-      aria-label={videoAriaLabel}
-      {...descriptionAriaProps}
-    >
+    <div tabIndex={0} role="group" aria-label={videoAriaLabel} {...descriptionAriaProps}>
       <YouTube
         videoId={videoId}
         containerClassName="react-youtube-container"
