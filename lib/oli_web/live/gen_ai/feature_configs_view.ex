@@ -179,14 +179,12 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
         <div>
           <label for="feature" class="block text-sm font-medium text-gray-700">Feature</label>
           <select id="feature" name="feature" value={@selected_feature} class={@form_control_classes}>
-            <option value="student_dialogue" selected={@selected_feature == :student_dialogue}>
-              Student Dialogue
-            </option>
             <option
-              value="instructor_dashboard_recommendation"
-              selected={@selected_feature == :instructor_dashboard_recommendation}
+              :for={{label, value} <- feature_options()}
+              value={value}
+              selected={@selected_feature == value}
             >
-              Instructor Dashboard Recommendation
+              {label}
             </option>
           </select>
         </div>
@@ -261,10 +259,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
           type="select"
           disabled={true}
           class={@form_control_classes}
-          options={[
-            {"Student Dialogue", :student_dialogue},
-            {"Instructor Dashboard Recommendation", :instructor_dashboard_recommendation}
-          ]}
+          options={feature_options()}
           label="Feature"
         />
         <.input
@@ -502,5 +497,23 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
     |> Enum.map(fn sc ->
       {sc.name, sc.id}
     end)
+  end
+
+  @doc """
+  Feature dropdown options derived from the `FeatureConfig` whitelist so the form
+  never drifts from the supported features (the cause of MER-5257: `instructor_email`
+  was added to the whitelist but not to the hardcoded dropdowns).
+  """
+  def feature_options do
+    Enum.map(FeatureConfig.features(), fn feature ->
+      {humanize_feature(feature), feature}
+    end)
+  end
+
+  defp humanize_feature(feature) do
+    feature
+    |> Atom.to_string()
+    |> String.split("_")
+    |> Enum.map_join(" ", &String.capitalize/1)
   end
 end
