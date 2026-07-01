@@ -110,7 +110,7 @@ test('Author creates an adaptive page with MCQ and student resolves it', async (
     // Validate that the MCQ is rendered and can be answered.
     await expect(studentPage.locator('janus-mcq').first()).toBeVisible();
     await expect(studentPage.getByRole('radio').first()).toBeVisible();
-    await studentPage.getByRole('radio').first().click();
+    await studentPage.getByRole('radio', { name: 'Option 1' }).click();
     await expect(studentPage.getByRole('radio', { name: 'Option 1' })).toBeChecked();
     await expect(studentPage.getByRole('radio', { name: 'Option 2' })).not.toBeChecked();
     await expect(studentPage.getByRole('radio', { name: 'Option 3' })).not.toBeChecked();
