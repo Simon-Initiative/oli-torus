@@ -14,6 +14,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   alias Oli.Resources.ResourceType
 
   @count_query_paging %Paging{offset: 0, limit: 1}
+  @sample_query_paging %Paging{offset: 0, limit: 1}
 
   # Section/page targets
 
@@ -127,6 +128,27 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   end
 
   @doc """
+  Lists bank candidates after excluding resource ids.
+  """
+  @spec list_active_candidates(%Section{}, %Revision{}, map(), MapSet.t(integer()), Paging.t()) ::
+          {:ok, map()} | {:error, term()}
+  def list_active_candidates(
+        %Section{} = section,
+        page_revision,
+        selection,
+        excluded_ids,
+        %Paging{} = paging
+      ) do
+    execute_candidate_query(
+      section,
+      page_revision,
+      selection,
+      MapSet.to_list(excluded_ids),
+      paging
+    )
+  end
+
+  @doc """
   Counts candidates matching the selection logic after excluding resource ids.
   """
   @spec count_active_candidates(%Section{}, %Revision{}, map(), MapSet.t(integer())) ::
@@ -172,6 +194,24 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   end
 
   @doc """
+  Returns one random active candidate matching the selection logic.
+  """
+  def sample_candidate(%Section{} = section, page_revision, selection, excluded_ids) do
+    with {:ok, result} <-
+           execute_candidate_query(
+             section,
+             page_revision,
+             selection,
+             MapSet.to_list(excluded_ids),
+             @sample_query_paging,
+             nil,
+             :random
+           ) do
+      {:ok, List.first(result.rows)}
+    end
+  end
+
+  @doc """
   Returns whether a resource id is a current candidate for the selection.
   """
   @spec candidate_matches?(%Section{}, %Revision{}, map(), integer()) ::
@@ -199,13 +239,15 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
          selection,
          blacklisted_ids,
          paging,
-         activity_resource_ids \\ nil
+         activity_resource_ids \\ nil,
+         query_type \\ :paged
        ) do
     with {:ok, %Logic{} = logic} <- parse_logic(selection),
          publication_id <-
            Publishing.get_publication_id_for_resource(section.slug, page_revision.resource_id),
          {:ok, result} <-
-           Query.execute(
+           execute_query(
+             query_type,
              logic,
              %Source{
                publication_id: publication_id,
@@ -218,6 +260,11 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
       {:ok, result}
     end
   end
+
+  defp execute_query(:paged, logic, source, paging), do: Query.execute(logic, source, paging)
+
+  defp execute_query(:random, logic, source, paging),
+    do: Query.execute_random(logic, source, paging)
 
   defp parse_logic(%{"logic" => logic}) do
     case Logic.parse(logic) do

@@ -16,6 +16,11 @@ defmodule Oli.InstructorDashboard.Email.Substitution do
   # Broad pattern — catches AI typos so they don't slip through as plain text.
   @any_token_regex ~r/\{[^{}]+\}/
 
+  # AI sometimes emits square-bracket placeholders like `[Your Name]` or
+  # `[instructor's name]`. Negative lookahead excludes markdown link labels
+  # `[label](url)` so those pass through to `sanitize_links/1` normally.
+  @bracket_placeholder_regex ~r/\[[^\[\]\n]+\](?!\()/
+
   @typedoc """
   Map from whitelist key (without braces) to its resolved value. Values may
   be `nil` for recipients with missing data; the validator is responsible
@@ -104,14 +109,27 @@ defmodule Oli.InstructorDashboard.Email.Substitution do
   Detects broad brace-delimited patterns (`{first-name}`, `{firstName}`,
   `{first_name1}`, `{First Name}`, `{nickname}`, …) so AI typos and
   unknown placeholders cannot slip through to recipients as plain text.
+
+  Also detects square-bracket placeholders (`[Your Name]`,
+  `[instructor's name]`, …) since the AI occasionally falls back to that
+  convention from its training prior. Markdown link labels (`[label](url)`)
+  are excluded via a negative lookahead so valid internal links still pass
+  through `LinkValidator`.
   """
   @spec unsupported_tokens(String.t()) :: [String.t()]
   def unsupported_tokens(template) when is_binary(template) do
-    @any_token_regex
-    |> Regex.scan(template)
-    |> List.flatten()
-    |> Enum.uniq()
-    |> Enum.reject(&(&1 in @tokens))
+    brace_tokens =
+      @any_token_regex
+      |> Regex.scan(template)
+      |> List.flatten()
+      |> Enum.reject(&(&1 in @tokens))
+
+    bracket_tokens =
+      @bracket_placeholder_regex
+      |> Regex.scan(template)
+      |> List.flatten()
+
+    (brace_tokens ++ bracket_tokens) |> Enum.uniq()
   end
 
   @doc "Returns whitelisted tokens that appear in `template`."

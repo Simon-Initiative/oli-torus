@@ -40,6 +40,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       assert struggling_bucket.inactive_count == 1
       assert [ada] = struggling_bucket.students
       assert ada.display_name == "Ada Lovelace"
+      assert ada.given_name == "Ada"
+      assert ada.family_name == "Lovelace"
       assert ada.picture == "https://example.edu/ada.png"
       assert ada.activity_status == :inactive
       assert ada.progress_pct == 25.0

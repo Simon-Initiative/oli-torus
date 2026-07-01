@@ -26,6 +26,7 @@ const populateEntries = () => {
     bibliography: ['./src/apps/BibliographyApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
+    instructor_preview_components: ['./src/apps/InstructorPreviewComponents.tsx'],
     scheduler: ['./src/apps/SchedulerApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
     cashnetclient: ['./src/payment/cashnet/client.ts'],

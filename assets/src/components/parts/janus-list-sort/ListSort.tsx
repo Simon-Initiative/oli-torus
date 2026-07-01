@@ -315,20 +315,26 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     };
   }, [props.notify, applyStateChanges]);
 
-  const { width, showHeaderFooter = true, headerLabel = 'First', footerLabel = 'Last' } = model;
+  const {
+    width,
+    height,
+    showHeaderFooter = true,
+    headerLabel = 'First',
+    footerLabel = 'Last',
+  } = model;
 
   useEffect(() => {
     const styleChanges: Record<string, { value: number }> = {};
     if (width !== undefined) {
       styleChanges.width = { value: width as number };
     }
-    if (model.height !== undefined) {
-      styleChanges.height = { value: model.height as number };
+    if (height !== undefined) {
+      styleChanges.height = { value: height as number };
     }
     if (Object.keys(styleChanges).length > 0) {
       props.onResize({ id: `${id}`, settings: styleChanges });
     }
-  }, [width, model.height, id, props]);
+  }, [width, height, id, props]);
 
   const interactive = enabled && !showAnswer;
 
@@ -398,7 +404,8 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   );
 
   const containerStyle: CSSProperties = {
-    width: '100%',
+    width: width ?? '100%',
+    ...(height != null ? { height, minHeight: height } : {}),
     ['--list-sort-bar-color' as any]: barColor,
   };
 

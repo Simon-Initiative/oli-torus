@@ -22,6 +22,7 @@ defmodule Oli.Delivery.InstructorCustomizations do
   alias Oli.Repo
 
   @default_candidate_limit 25
+  @preview_summary_candidate_limit 500
 
   @doc """
   Duplicates all activity exclusions from one section to another.
@@ -211,6 +212,97 @@ defmodule Oli.Delivery.InstructorCustomizations do
       selection,
       total_count
     )
+  end
+
+  @doc """
+  Lists all current candidate revisions for a resolved bank selection.
+
+  The optional excluded id set is passed through the same realizer blacklist used by delivery,
+  so callers can summarize the currently available candidate pool without reimplementing
+  selection logic in the UI layer. The result is bounded for preview-summary use; callers
+  receive an error when the candidate pool is too large to summarize without truncation.
+  """
+  @spec list_bank_selection_candidate_revisions(
+          %Section{},
+          %Revision{},
+          map(),
+          MapSet.t(integer())
+        ) :: {:ok, [%Revision{}]} | {:error, term()}
+  def list_bank_selection_candidate_revisions(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selection,
+        excluded_ids \\ MapSet.new()
+      ) do
+    with {:ok, result} <-
+           TargetResolver.list_active_candidates(
+             section,
+             page_revision,
+             selection,
+             excluded_ids,
+             %Paging{offset: 0, limit: @preview_summary_candidate_limit}
+           ) do
+      if result.totalCount > result.rowCount do
+        {:error, {:too_many_candidates, result.totalCount}}
+      else
+        {:ok, result.rows}
+      end
+    end
+  end
+
+  @doc """
+  Returns selection-level candidate summary state for callers that do not need a
+  paged candidate list.
+  """
+  def get_bank_selection_summary(section_or_id, page_resource_id, selection_id) do
+    with {:ok, section, page_revision, selection} <-
+           resolve_selection_target(section_or_id, page_resource_id, selection_id) do
+      exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id)
+
+      with {:ok, active_count} <-
+             TargetResolver.count_active_candidates(
+               section,
+               page_revision,
+               selection,
+               exclusion_view.excluded_candidate_ids
+             ),
+           {:ok, sample_candidate} <-
+             TargetResolver.sample_candidate(
+               section,
+               page_revision,
+               selection,
+               exclusion_view.excluded_candidate_ids
+             ) do
+        {:ok,
+         %{
+           selection_id: selection_id,
+           count: selection["count"],
+           active_count: active_count,
+           selection_enabled?: exclusion_view.selection_enabled?,
+           sample_candidate: summarize_bank_candidate(sample_candidate, true, true)
+         }}
+      end
+    end
+  end
+
+  @doc """
+  Returns one random active candidate matching a page bank selection.
+  """
+  def sample_bank_selection_candidate(section_or_id, page_resource_id, selection_id) do
+    with {:ok, section, page_revision, selection} <-
+           resolve_selection_target(section_or_id, page_resource_id, selection_id) do
+      exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id)
+
+      with {:ok, candidate} <-
+             TargetResolver.sample_candidate(
+               section,
+               page_revision,
+               selection,
+               exclusion_view.excluded_candidate_ids
+             ) do
+        {:ok, summarize_bank_candidate(candidate, true, true)}
+      end
+    end
   end
 
   # Target validation
@@ -586,6 +678,18 @@ defmodule Oli.Delivery.InstructorCustomizations do
       _ ->
         {:error, {:invalid_paging, :limit}}
     end
+  end
+
+  defp summarize_bank_candidate(nil, _enabled?, _disable_allowed?), do: nil
+
+  defp summarize_bank_candidate(candidate, enabled?, disable_allowed?) do
+    %{
+      activity_resource_id: candidate.resource_id,
+      revision_slug: candidate.slug,
+      title: candidate.title,
+      enabled?: enabled?,
+      disable_allowed?: disable_allowed?
+    }
   end
 
   defp exclusion_exists?(section_id, page_resource_id, attrs) do

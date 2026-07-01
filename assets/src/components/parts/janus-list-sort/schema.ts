@@ -3,6 +3,7 @@ import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export const DEFAULT_LIST_SORT_BAR_COLOR = 'rgb(46, 159, 255)';
+export const DEFAULT_LIST_SORT_HEIGHT = 260;
 
 export interface ListSortItem {
   id: string;
@@ -191,6 +192,8 @@ export const createSchema = (): Partial<ListSortModel> => {
   const items = [makeItem('Clouds'), makeItem('Mountains'), makeItem('Grass/Rocks')];
 
   return {
+    width: '100%',
+    height: DEFAULT_LIST_SORT_HEIGHT,
     enabled: true,
     customCssClass: '',
     listItems: items,
