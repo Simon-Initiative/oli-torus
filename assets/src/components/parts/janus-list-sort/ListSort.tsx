@@ -10,11 +10,11 @@ import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import './ListSort.scss';
 import {
+  LIST_SORT_INSTRUCTIONS,
   buildFocusAnnouncement,
   buildItemAccessibleName,
   buildPositionAnnouncement,
-  LIST_SORT_INSTRUCTIONS,
-} from './list-sort-a11y';
+} from './list-sort-helper';
 import { correctOrderItems, isItemInCorrectPosition, itemBarStyle } from './list-sort-util';
 import { DEFAULT_LIST_SORT_BAR_COLOR, ListSortItem, ListSortModel } from './schema';
 
@@ -518,11 +518,14 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     [interactive],
   );
 
-  const onItemMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (draggingIndex === null) {
-      e.currentTarget.draggable = false;
-    }
-  }, [draggingIndex]);
+  const onItemMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (draggingIndex === null) {
+        e.currentTarget.draggable = false;
+      }
+    },
+    [draggingIndex],
+  );
 
   const onItemFocus = useCallback(
     (index: number, text: string, isSelected: boolean) => () => {
@@ -534,9 +537,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
         skipFocusAnnounceRef.current = false;
         return;
       }
-      announce(
-        buildFocusAnnouncement(index, itemsRef.current.length, text, isSelected),
-      );
+      announce(buildFocusAnnouncement(index, itemsRef.current.length, text, isSelected));
     },
     [interactive, announce],
   );
