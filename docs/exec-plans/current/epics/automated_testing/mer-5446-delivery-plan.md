@@ -28,7 +28,9 @@ The target layer is learner-facing delivery only. The tests should prove that an
 Primary existing helpers and examples:
 
 - Shared delivery helpers:
-  - `assets/automation/tests/torus/student_delivery/support.ts`
+  - `assets/automation/tests/torus/student_delivery/support/`
+  - generic helpers in `assets/automation/tests/torus/student_delivery/support/common.ts`
+  - activity-specific helpers alongside it, for example `support/imageHotspot.ts`
 - Merged reference specs:
   - `assets/automation/tests/torus/student_delivery/cata-delivery.spec.ts`
   - `assets/automation/tests/torus/student_delivery/ordering-delivery.spec.ts`
@@ -53,6 +55,13 @@ This means each activity test should validate authored intent through delivery b
 - providing the expected coding output yields correct evaluation
 - submitting the correct vlab or logic-lab state yields the expected result
 
+Validated approach from the first `image_hotspot` slice:
+- prefer one seeded practice page per activity type that contains multiple authored variants of that activity when those variants share the same learner navigation flow
+- use separate sections for tests that must isolate learner attempt state, reset state, or restore-on-revisit behavior
+- keep specs focused and granular even when they reuse the same seeded page; share setup through scenario outputs rather than collapsing many assertions into a single giant Playwright test
+- group closely related assertions into a small number of tests per activity type when they share the same login and navigation prefix, so the suite pays the browser-login-course-navigation cost fewer times
+- when seeding multi-select activities, align response rules with the exact rule shape authoring generates instead of hand-writing simplified `input like {a b}` rules
+
 ## Activity Order And Scope
 Recommended implementation order:
 
@@ -76,6 +85,11 @@ Baseline assertions:
 - the student can perform the intended interaction
 - submit/evaluation completes through delivery
 - visible feedback or evaluated state matches the seeded authored rules
+
+When the activity type has materially different delivery modes, cover those modes explicitly instead of stopping at one positive and one negative example.
+Examples:
+- `image_hotspot`: single-select vs multi-select, plus reset/restore where deterministic
+- `image_coding`: text-output evaluation first, then add reset/restore or richer resource modes if the setup remains maintainable
 
 Representative expectations:
 - `image_hotspot`
@@ -106,6 +120,7 @@ How this affects `MER-5446`:
 - the first implementation pass should prioritize render, interaction, submit/evaluation, and authored feedback/score behavior for each activity type
 - revisit/state-restore, reset, and hints should be considered secondary coverage adds when the activity type supports them and the interaction remains deterministic
 - no regression-sheet evidence currently suggests this ticket should include authoring UI creation or broader section-level assessment-setting flows
+- when the setup cost can be amortized by placing multiple deterministic variants on the same page, secondary coverage such as reset and restore is worth including in the same activity slice
 
 ## Scenario Authoring Guidance
 Use scenario seed as the source of truth for authored configuration. Do not build the activity through authoring UI in these tests.
@@ -121,6 +136,16 @@ Each scenario should:
 
 Where possible, keep each scenario narrow and deterministic rather than creating one giant multi-activity world.
 
+Additional scenario guidance validated during `image_hotspot`:
+- for one activity type, it is acceptable and often preferable to place several authored variants on the same practice page if they exercise distinct delivery behavior
+- use multiple sections pointing to the same publication when tests need fresh learner attempts without reseeding a different authored world
+- for multi-select rules, prefer the exact authoring-generated conjunction form, for example explicit positive matches plus negated extra-choice matches, instead of simplified shorthand that may not preserve intended evaluation semantics
+
+Playwright structuring guidance for this ticket:
+- avoid paying the full login and course-navigation setup cost for every single assertion when several checks can be performed from the same seeded practice page
+- prefer a small number of grouped tests per activity type, organized by functional theme such as evaluation variants, reset behavior, or restore behavior
+- do not collapse an entire activity matrix into one giant test; keep grouping coarse enough to preserve debuggability and failure signal while still reducing repeated learner-navigation setup
+
 ## Risks And Constraints
 - `oli_embedded` currently has no obvious scenario seed precedent comparable to the other activity types in this ticket.
 - `oli_logic_lab` may depend on the effective `ACTIVITY_LOGICLAB_URL` configuration in the runtime environment.
@@ -131,7 +156,8 @@ Where possible, keep each scenario narrow and deterministic rather than creating
 ### Phase 1: Establish the shared pattern
 - add the first scenario + spec pair for `oli_image_hotspot`
 - reuse existing student-delivery helpers
-- extract any immediately obvious helper gaps into shared support
+- extract any immediately obvious helper gaps into `assets/automation/tests/torus/student_delivery/support/`
+- use this slice to validate the “one page with multiple variants + isolated sections” approach
 
 ### Phase 2: Expand to local interactive activities
 - add `oli_image_coding`

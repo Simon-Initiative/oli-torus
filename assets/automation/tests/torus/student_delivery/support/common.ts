@@ -85,9 +85,17 @@ export async function openStudentDeliveryPractice(
   sectionSlug: string,
   activityTitle: string,
 ) {
+  await homeTask.login('student');
+  await openStudentDeliveryPracticeForLoggedInStudent(page, sectionSlug, activityTitle);
+}
+
+export async function openStudentDeliveryPracticeForLoggedInStudent(
+  page: Page,
+  sectionSlug: string,
+  activityTitle: string,
+) {
   const studentCourse = new StudentCoursePO(page);
 
-  await homeTask.login('student');
   await page.goto(learnPath(sectionSlug), { waitUntil: 'load' });
   await studentCourse.goToCourseIfPrompted();
 
