@@ -10,7 +10,8 @@ import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import './ListSort.scss';
 import {
-  buildItemAriaLabel,
+  buildFocusAnnouncement,
+  buildItemAccessibleName,
   buildPositionAnnouncement,
   LIST_SORT_INSTRUCTIONS,
 } from './list-sort-a11y';
@@ -60,6 +61,19 @@ const shuffle = <T,>(input: T[]): T[] => {
   return arr;
 };
 
+const isSelectKey = (e: React.KeyboardEvent) => {
+  const key = e.key;
+  const keyCode = e.keyCode ?? (e as React.KeyboardEvent & { which?: number }).which;
+  return (
+    key === 'Enter' ||
+    key === ' ' ||
+    key === 'Space' ||
+    key === 'Spacebar' ||
+    keyCode === 13 ||
+    keyCode === 32
+  );
+};
+
 const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const [_state, setState] = useState<unknown>([]);
   const [model, setModel] = useState<Partial<ListSortModel>>({});
@@ -84,6 +98,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const liveRegionRef = React.useRef<HTMLSpanElement>(null);
   const pendingFocusIndexRef = React.useRef<number | null>(null);
   const skipBlurDeselectRef = React.useRef(false);
+  const skipFocusAnnounceRef = React.useRef(false);
 
   const instructionsId = `${id}-list-sort-instructions`;
 
@@ -99,6 +114,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     const el = itemRefs.current[focusIndex];
     if (el) {
       skipBlurDeselectRef.current = true;
+      skipFocusAnnounceRef.current = true;
       setFocusedIndex(focusIndex);
       el.focus();
     }
@@ -435,20 +451,52 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     [interactive, draggingIndex],
   );
 
-  const onDragEnd = useCallback(() => {
-    const finalIndex = draggingIndex;
-    if (finalIndex !== null) {
-      saveState(itemsRef.current);
-      const total = itemsRef.current.length;
-      announce(buildPositionAnnouncement(finalIndex, total));
-    }
-    setDraggingIndex(null);
-    setHoveredIndex(null);
-  }, [draggingIndex, saveState, announce]);
+  const onDragEnd = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      const finalIndex = draggingIndex;
+      if (finalIndex !== null) {
+        saveState(itemsRef.current);
+        const total = itemsRef.current.length;
+        announce(buildPositionAnnouncement(finalIndex, total));
+      }
+      setDraggingIndex(null);
+      setHoveredIndex(null);
+      e.currentTarget.draggable = false;
+    },
+    [draggingIndex, saveState, announce],
+  );
 
-  const onItemFocus = useCallback((index: number) => () => {
-    setFocusedIndex(index);
-  }, []);
+  const onItemMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (interactive) {
+        e.currentTarget.draggable = true;
+      }
+    },
+    [interactive],
+  );
+
+  const onItemMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (draggingIndex === null) {
+      e.currentTarget.draggable = false;
+    }
+  }, [draggingIndex]);
+
+  const onItemFocus = useCallback(
+    (index: number, text: string, isSelected: boolean) => () => {
+      setFocusedIndex(index);
+      if (!interactive) {
+        return;
+      }
+      if (skipFocusAnnounceRef.current) {
+        skipFocusAnnounceRef.current = false;
+        return;
+      }
+      announce(
+        buildFocusAnnouncement(index, itemsRef.current.length, text, isSelected),
+      );
+    },
+    [interactive, announce],
+  );
 
   const onItemBlur = useCallback(
     (index: number) => () => {
@@ -470,14 +518,10 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
         return;
       }
 
-      if (e.key === ' ' || e.key === 'Enter') {
+      if (isSelectKey(e)) {
         e.preventDefault();
         e.stopPropagation();
-        if (selectedIndex === null) {
-          setSelectedIndex(index);
-        } else if (selectedIndex === index) {
-          setSelectedIndex(null);
-        }
+        setSelectedIndex(selectedIndex === index ? null : index);
         return;
       }
 
@@ -506,6 +550,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       e.stopPropagation();
       setSelectedIndex(newIndex);
       setFocusedIndex(newIndex);
+      skipFocusAnnounceRef.current = true;
       pendingFocusIndexRef.current = newIndex;
       announce(buildPositionAnnouncement(newIndex, itemsRef.current.length));
     },
@@ -540,11 +585,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
         aria-live="polite"
         aria-atomic="true"
       />
-      <div
-        className="list-sort__items"
-        role="list"
-        aria-describedby={interactive ? instructionsId : undefined}
-      >
+      <div className="list-sort__items" role="list">
         {items.map((item, index) => {
           const isDragging = draggingIndex === index;
           const isSelected = selectedIndex === index;
@@ -568,17 +609,19 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
                 isFocused ? 'list-sort__item--focused' : ''
               }`}
               style={itemBarStyle(barColor, index, items.length)}
-              draggable={interactive}
+              draggable={false}
+              onMouseDown={onItemMouseDown}
+              onMouseUp={onItemMouseUp}
               onDragStart={onDragStart(index)}
               onDragOver={onDragOver(index)}
               onDragEnd={onDragEnd}
               onDrop={(e) => e.preventDefault()}
               onKeyDown={onItemKeyDown(index)}
-              onFocus={onItemFocus(index)}
+              onFocus={onItemFocus(index, item.text, isSelected)}
               onBlur={onItemBlur(index)}
               tabIndex={interactive ? 0 : undefined}
               role="listitem"
-              aria-label={buildItemAriaLabel(index, items.length, item.text, isSelected)}
+              aria-label={buildItemAccessibleName(item.text)}
               aria-grabbed={interactive ? isDragging || isSelected : undefined}
             >
               <span className="list-sort__bar" aria-hidden="true" />

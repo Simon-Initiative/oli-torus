@@ -82,6 +82,7 @@
     }
 
     &--selected .list-sort__text:not(.list-sort__text--correct):not(.list-sort__text--incorrect) {
+      background: #f1f5f9;
       outline: 2px solid var(--list-sort-bar-color);
       outline-offset: 1px;
       border-color: #cbd5e1;
@@ -113,7 +114,7 @@
     color: rgba(0, 0, 0, 0.7);
     font-weight: 500;
     line-height: 1.4;
-    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 
     &--correct {
       border-color: #22c55e;
