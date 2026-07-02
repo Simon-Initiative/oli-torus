@@ -99,6 +99,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const pendingFocusIndexRef = React.useRef<number | null>(null);
   const skipBlurDeselectRef = React.useRef(false);
   const skipFocusAnnounceRef = React.useRef(false);
+  const keyboardHandledRef = React.useRef(false);
 
   const instructionsId = `${id}-list-sort-instructions`;
 
@@ -132,6 +133,23 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       }
     }, 500);
   }, []);
+
+  const toggleSelection = useCallback((index: number) => {
+    setSelectedIndex((prev) => (prev === index ? null : index));
+  }, []);
+
+  const handleSelectActivation = useCallback(
+    (index: number, e: { preventDefault: () => void; stopPropagation: () => void }) => {
+      e.preventDefault();
+      e.stopPropagation();
+      keyboardHandledRef.current = true;
+      toggleSelection(index);
+      setTimeout(() => {
+        keyboardHandledRef.current = false;
+      }, 0);
+    },
+    [toggleSelection],
+  );
 
   const isCorrect = useCallback(
     (current: ListSortItem[]) =>
@@ -394,6 +412,31 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
 
   const interactive = enabled && !showAnswer;
 
+  const onListKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!interactive || focusedIndex === null) {
+        return;
+      }
+      if (isSelectKey(e)) {
+        handleSelectActivation(focusedIndex, e);
+      }
+    },
+    [interactive, focusedIndex, handleSelectActivation],
+  );
+
+  const onItemClick = useCallback(
+    (index: number) => (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!interactive || e.detail !== 0) {
+        return;
+      }
+      if (keyboardHandledRef.current) {
+        return;
+      }
+      toggleSelection(index);
+    },
+    [interactive, toggleSelection],
+  );
+
   useEffect(() => {
     if (!interactive) {
       setSelectedIndex(null);
@@ -519,9 +562,10 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       }
 
       if (isSelectKey(e)) {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedIndex(selectedIndex === index ? null : index);
+        if (keyboardHandledRef.current) {
+          return;
+        }
+        handleSelectActivation(index, e);
         return;
       }
 
@@ -554,7 +598,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       pendingFocusIndexRef.current = newIndex;
       announce(buildPositionAnnouncement(newIndex, itemsRef.current.length));
     },
-    [interactive, selectedIndex, moveItem, announce],
+    [interactive, selectedIndex, moveItem, announce, handleSelectActivation],
   );
 
   const containerStyle: CSSProperties = {
@@ -585,7 +629,12 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
         aria-live="polite"
         aria-atomic="true"
       />
-      <div className="list-sort__items" role="list">
+      <div
+        className="list-sort__items"
+        role="listbox"
+        aria-label="Sortable list"
+        onKeyDownCapture={onListKeyDownCapture}
+      >
         {items.map((item, index) => {
           const isDragging = draggingIndex === index;
           const isSelected = selectedIndex === index;
@@ -616,13 +665,14 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
               onDragOver={onDragOver(index)}
               onDragEnd={onDragEnd}
               onDrop={(e) => e.preventDefault()}
+              onClick={onItemClick(index)}
               onKeyDown={onItemKeyDown(index)}
               onFocus={onItemFocus(index, item.text, isSelected)}
               onBlur={onItemBlur(index)}
               tabIndex={interactive ? 0 : undefined}
-              role="listitem"
+              role="option"
               aria-label={buildItemAccessibleName(item.text)}
-              aria-grabbed={interactive ? isDragging || isSelected : undefined}
+              aria-selected={interactive ? isSelected : undefined}
             >
               <span className="list-sort__bar" aria-hidden="true" />
               <div className={`list-sort__text ${hintClass}`}>
