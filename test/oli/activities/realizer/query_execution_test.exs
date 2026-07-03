@@ -3,6 +3,7 @@ defmodule Oli.Activities.Query.ExecutorTest do
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Logic.Expression
+  alias Oli.Activities.Realizer.Query.Batch
   alias Oli.Activities.Realizer.Query.Builder
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Activities.Realizer.Query.Paging
@@ -182,6 +183,119 @@ defmodule Oli.Activities.Query.ExecutorTest do
       {:ok, %Result{rowCount: 1, totalCount: 1}} =
         Builder.build(logic, source, paging, :paged)
         |> Executor.execute()
+    end
+
+    test "batch executes paged queries keyed by query id", %{
+      publication: publication,
+      first_banked_activity: first_banked_activity,
+      second_banked_activity: second_banked_activity
+    } do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
+      paging = %Paging{limit: 2, offset: 0}
+
+      first_logic = %Logic{
+        conditions: %Expression{fact: :text, operator: :contains, value: "question"}
+      }
+
+      second_logic = %Logic{
+        conditions: %Expression{fact: :text, operator: :contains, value: "another"}
+      }
+
+      assert {:ok,
+              %{
+                "first" => %Result{rows: [first_revision], rowCount: 1, totalCount: 1},
+                "second" => %Result{rows: [second_revision], rowCount: 1, totalCount: 1}
+              }} =
+               Batch.execute(
+                 [
+                   {"first", first_logic, source},
+                   {"second", second_logic, source}
+                 ],
+                 paging,
+                 :paged
+               )
+
+      assert first_revision.resource_id == first_banked_activity.resource.id
+      assert second_revision.resource_id == second_banked_activity.resource.id
+    end
+
+    test "batch preserves empty results for query ids", %{publication: publication} do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
+      paging = %Paging{limit: 1, offset: 0}
+
+      matching_logic = %Logic{
+        conditions: %Expression{fact: :objectives, operator: :contains, value: [1]}
+      }
+
+      empty_logic = %Logic{
+        conditions: %Expression{fact: :objectives, operator: :contains, value: [999_999]}
+      }
+
+      assert {:ok,
+              %{
+                "matching" => %Result{rowCount: 1, totalCount: 2},
+                "empty" => %Result{rows: [], rowCount: 0, totalCount: 0}
+              }} =
+               Batch.execute(
+                 [
+                   {"matching", matching_logic, source},
+                   {"empty", empty_logic, source}
+                 ],
+                 paging,
+                 :paged
+               )
+    end
+
+    test "batch honors source exclusions per query", %{
+      publication: publication,
+      first_banked_activity: first_banked_activity,
+      second_banked_activity: second_banked_activity
+    } do
+      paging = %Paging{limit: 2, offset: 0}
+      logic = %Logic{conditions: %Expression{fact: :objectives, operator: :contains, value: [1]}}
+
+      first_source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [second_banked_activity.resource.id],
+        section_slug: ""
+      }
+
+      second_source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [first_banked_activity.resource.id],
+        section_slug: ""
+      }
+
+      assert {:ok,
+              %{
+                "first-only" => %Result{rows: [first_revision], rowCount: 1, totalCount: 1},
+                "second-only" => %Result{rows: [second_revision], rowCount: 1, totalCount: 1}
+              }} =
+               Batch.execute(
+                 [
+                   {"first-only", logic, first_source},
+                   {"second-only", logic, second_source}
+                 ],
+                 paging,
+                 :paged
+               )
+
+      assert first_revision.resource_id == first_banked_activity.resource.id
+      assert second_revision.resource_id == second_banked_activity.resource.id
+    end
+
+    test "batch returns an empty map for no query specs" do
+      assert {:ok, %{}} = Batch.execute([], %Paging{limit: 1, offset: 0}, :paged)
     end
 
     test "queries for activity type", %{publication: publication} do
