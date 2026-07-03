@@ -222,15 +222,14 @@
     content:
       activityType: "oli_multi_input"
       submitPerPart: false
-      multInputsPerPart: true
       choices: []
       inputs:
         - id: "1637853221"
           inputType: "text"
-          partId: "651271558"
+          partId: "text_part"
         - id: "2369651067"
           inputType: "numeric"
-          partId: "651271558"
+          partId: "numeric_part"
       stem:
         id: "multi_input_stem"
         content:
@@ -251,24 +250,44 @@
         transformations: []
         previewText: ""
         parts:
-          - id: "651271558"
+          - id: "text_part"
             scoringStrategy: "best"
             gradingApproach: "automatic"
-            targets: ["1637853221", "2369651067"]
+            targets: ["1637853221"]
             responses:
-              - id: "multi_input_correct"
-                rule: "input_ref_1637853221 contains {answer} && input_ref_2369651067 = {1}"
+              - id: "multi_input_text_correct"
+                rule: "input contains {answer}"
                 score: 1
                 correct: true
                 feedback:
-                  id: "multi_input_feedback_correct"
+                  id: "multi_input_text_feedback_correct"
                   content: []
-              - id: "multi_input_incorrect"
-                rule: "input_ref_1637853221 like {.*} && input_ref_2369651067 like {.*}"
+              - id: "multi_input_text_incorrect"
+                rule: "input like {.*}"
                 score: 0
                 correct: false
                 feedback:
-                  id: "multi_input_feedback_incorrect"
+                  id: "multi_input_text_feedback_incorrect"
+                  content: []
+            hints: []
+          - id: "numeric_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            targets: ["2369651067"]
+            responses:
+              - id: "multi_input_numeric_correct"
+                rule: "input = {1}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "multi_input_numeric_feedback_correct"
+                  content: []
+              - id: "multi_input_numeric_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "multi_input_numeric_feedback_incorrect"
                   content: []
             hints: []
 
@@ -406,7 +425,9 @@
     section: "basic_page_activity_section"
     page: "Mixed Practice"
     activity_virtual_id: "multi_input"
-    response: '{"1637853221":"answer","2369651067":"1"}'
+    response:
+      "1637853221": "answer"
+      "2369651067": "1"
 
 - assert:
     activity_attempt:
@@ -416,9 +437,8 @@
       activity_virtual_id: "multi_input"
       activity_lifecycle_state: "evaluated"
       part_lifecycle_state: "evaluated"
-      score: 1.0
-      out_of: 1.0
+      score: 2.0
+      out_of: 2.0
       part_score: 1.0
       part_out_of: 1.0
-      response: '{"1637853221":"answer","2369651067":"1"}'
       answerable: false

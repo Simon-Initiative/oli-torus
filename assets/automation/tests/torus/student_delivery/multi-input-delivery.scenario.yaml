@@ -1,0 +1,144 @@
+# Scenario: Seed a minimal published course for multi-input delivery automation.
+
+- project:
+    name: 'multi_input_delivery_project'
+    title: 'Multi Input Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Multi Input Practice'
+
+- create_activity:
+    project: 'multi_input_delivery_project'
+    title: 'Multi Input Question'
+    virtual_id: 'multi_input'
+    type: 'oli_multi_input'
+    content_format: 'json'
+    content:
+      activityType: 'oli_multi_input'
+      submitPerPart: false
+      choices: []
+      inputs:
+        - id: 'text_blank'
+          inputType: 'text'
+          partId: 'text_blank_part'
+        - id: 'numeric_blank'
+          inputType: 'numeric'
+          partId: 'numeric_blank_part'
+      stem:
+        id: 'multi_input_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Fill in both blanks: '
+              - type: 'input_ref'
+                id: 'text_blank'
+                children:
+                  - text: ''
+              - text: ' and '
+              - type: 'input_ref'
+                id: 'numeric_blank'
+                children:
+                  - text: ''
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ''
+        parts:
+          - id: 'text_blank_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            targets: ['text_blank']
+            responses:
+              - id: 'text_blank_correct'
+                rule: 'input contains {answer}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'text_blank_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct text.'
+              - id: 'text_blank_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'text_blank_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect text.'
+            hints: []
+          - id: 'numeric_blank_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            targets: ['numeric_blank']
+            responses:
+              - id: 'numeric_blank_correct'
+                rule: 'input = {42}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'numeric_blank_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct number.'
+              - id: 'numeric_blank_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'numeric_blank_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect number.'
+            hints: []
+
+- edit_page:
+    project: 'multi_input_delivery_project'
+    page: 'Multi Input Practice'
+    content: |
+      title: "Multi Input Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "multi_input"
+
+- publish:
+    to: 'multi_input_delivery_project'
+    description: 'Initial multi-input delivery publication'
+
+- section:
+    name: 'multi_input_delivery_section'
+    title: 'Multi Input Delivery Course ${RUN_ID}'
+    from: 'multi_input_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'multi_input_delivery_section_negative'
+    title: 'Multi Input Delivery Course ${RUN_ID} - Negative'
+    from: 'multi_input_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'multi_input_delivery_student'
+    type: 'student'
+    email: 'multi-input-delivery-student${RUN_ID}@example.com'
+    given_name: 'Multi Input'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'multi_input_delivery_student'
+    section: 'multi_input_delivery_section'
+    role: 'student'
+
+- enroll:
+    user: 'multi_input_delivery_student'
+    section: 'multi_input_delivery_section_negative'
+    role: 'student'
