@@ -1,6 +1,6 @@
 import { setRuntimeConfig } from '@core/runtimeConfig';
 import { test } from '@fixture/my-fixture';
-import { Browser, BrowserContext, Page, expect } from '@playwright/test';
+import { BrowserContext, Page, expect } from '@playwright/test';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import { TYPE_USER } from '@pom/types/type-user';
 import { CurriculumTask } from '@tasks/CurriculumTask';
@@ -76,15 +76,17 @@ test.beforeAll(async ({ seedScenario }) => {
   });
 });
 
-test('Author creates an adaptive page with MCQ and student resolves it', async ({ browser }) => {
+test('Author creates an adaptive page with MCQ and student resolves it', async ({
+  browser,
+  page,
+}) => {
   test.setTimeout(180_000);
   setRuntimeConfig({ loginData: loginData() });
 
-  const authorContext = await browser.newContext();
   const studentContext = await browser.newContext();
 
   try {
-    const authorPage = await authorContext.newPage();
+    const authorPage = page;
     const studentPage = await studentContext.newPage();
 
     const authorHomeTask = new HomeTask(authorPage);
@@ -123,77 +125,54 @@ test('Author creates an adaptive page with MCQ and student resolves it', async (
     await expect(studentPage.getByRole('radio', { name: 'Option 2' })).not.toBeChecked();
     await expect(studentPage.getByRole('radio', { name: 'Option 3' })).not.toBeChecked();
   } finally {
-    await closeContexts(studentContext, authorContext);
+    await closeContexts(studentContext);
   }
 });
 
 test.describe.serial('simple MCQ branching adaptive lesson', () => {
-  test('author creates and publishes the lesson', async ({ browser }) => {
+  test('author creates and publishes the lesson', async ({ page }) => {
     test.setTimeout(180_000);
 
-    await buildAndPublishBranchingLesson(browser);
+    await buildAndPublishBranchingLesson(page);
   });
 
-  test('student follows the correct route', async ({ browser }) => {
+  test('student follows the correct route', async ({ page }) => {
     test.setTimeout(120_000);
 
-    const context = await browser.newContext();
-
-    try {
-      const page = await context.newPage();
-
-      await openPublishedBranchingLesson(page, correctStudentEmail, 'Jane');
-      await answerMcqAndExpectTerminal(page, 'Option 1', 'Correct Terminal');
-    } finally {
-      await closeContexts(context);
-    }
+    await openPublishedBranchingLesson(page, correctStudentEmail, 'Jane');
+    await answerMcqAndExpectTerminal(page, 'Option 1', 'Correct Terminal');
   });
 
-  test('student follows the incorrect route', async ({ browser }) => {
+  test('student follows the incorrect route', async ({ page }) => {
     test.setTimeout(120_000);
 
-    const context = await browser.newContext();
-
-    try {
-      const page = await context.newPage();
-
-      await openPublishedBranchingLesson(page, incorrectStudentEmail, 'Jamie');
-      await answerMcqAndExpectTerminal(page, 'Option 2', 'Incorrect Terminal');
-    } finally {
-      await closeContexts(context);
-    }
+    await openPublishedBranchingLesson(page, incorrectStudentEmail, 'Jamie');
+    await answerMcqAndExpectTerminal(page, 'Option 2', 'Incorrect Terminal');
   });
 });
 
-async function buildAndPublishBranchingLesson(browser: Browser) {
-  const authorContext = await browser.newContext();
+async function buildAndPublishBranchingLesson(page: Page) {
+  const authorHomeTask = new HomeTask(page);
+  const authorProjectTask = new ProjectTask(page);
+  const authorCurriculumTask = new CurriculumTask(page);
 
-  try {
-    const authorPage = await authorContext.newPage();
-    const authorHomeTask = new HomeTask(authorPage);
-    const authorProjectTask = new ProjectTask(authorPage);
-    const authorCurriculumTask = new CurriculumTask(authorPage);
+  // Author flow: create the adaptive page and build the three-screen MCQ branching lesson.
+  await authorHomeTask.goToSite(baseUrl);
+  await authorHomeTask.login('author');
+  await authorProjectTask.searchAndEnterProject(branchingProjectName);
+  await authorHomeTask.enterToCurriculum();
+  await authorCurriculumTask.createAdaptivePageInSimpleAuthor(true);
+  const lesson = await authorCurriculumTask.buildSimpleAdvancedAuthorMcqBranchingLesson();
+  expect(lesson).toMatchObject({
+    question: 'Routing Question',
+    correct: 'Correct Terminal',
+    incorrect: 'Incorrect Terminal',
+    screenCount: 3,
+  });
 
-    // Author flow: create the adaptive page and build the three-screen MCQ branching lesson.
-    await authorHomeTask.goToSite(baseUrl);
-    await authorHomeTask.login('author');
-    await authorProjectTask.searchAndEnterProject(branchingProjectName);
-    await authorHomeTask.enterToCurriculum();
-    await authorCurriculumTask.createAdaptivePageInSimpleAuthor(true);
-    const lesson = await authorCurriculumTask.buildSimpleAdvancedAuthorMcqBranchingLesson();
-    expect(lesson).toMatchObject({
-      question: 'Routing Question',
-      correct: 'Correct Terminal',
-      incorrect: 'Incorrect Terminal',
-      screenCount: 3,
-    });
-
-    // Publish the authored page so it becomes available to learners.
-    await authorHomeTask.enterToPublish();
-    await authorProjectTask.publishProject();
-  } finally {
-    await closeContexts(authorContext);
-  }
+  // Publish the authored page so it becomes available to learners.
+  await authorHomeTask.enterToPublish();
+  await authorProjectTask.publishProject();
 }
 
 async function closeContexts(...contexts: BrowserContext[]) {
