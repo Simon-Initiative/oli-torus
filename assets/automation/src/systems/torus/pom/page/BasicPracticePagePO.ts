@@ -83,7 +83,7 @@ export class BasicPracticePagePO {
     this.simpleAuthorMultipleChoiceButton = this.simpleAuthorToolbar
       .locator('.toolbar-column')
       .filter({ hasText: 'Question Components' })
-      .locator('button.component-button')
+      .locator('button.component-button[data-component="janus_mcq"]')
       .first();
     this.simpleAuthorMultipleChoicePart = page.locator(
       'janus-mcq, [data-part-id^="janus_mcq-"], [data-part-id^="janus-mcq-"]',
@@ -163,6 +163,36 @@ export class BasicPracticePagePO {
 
     await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
     await this.assertAdvancedAuthorEditable();
+  }
+
+  async ensureSimpleAuthorReady() {
+    await this.completeSimpleAuthorOnboardingIfPresent();
+
+    const hasToggle = (await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0;
+    if (hasToggle && (await this.adaptiveReadOnlyInput.isChecked().catch(() => false))) {
+      await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 30000 });
+
+      await this.page.evaluate(() => {
+        const input = document.querySelector<HTMLInputElement>('input[name="adaptive_read_only"]');
+
+        if (input?.checked) {
+          input.click();
+        }
+      });
+
+      await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
+    }
+
+    await this.adaptiveAuthorToolbar.first().waitFor({ state: 'visible', timeout: 30000 });
+    await expect(
+      this.advancedAuthorFlowchartMode,
+      'Simple Author flowchart mode should load.',
+    ).toBeVisible({
+      timeout: 30000,
+    });
+    await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
+      timeout: 30000,
+    });
   }
 
   private async assertAdvancedAuthorEditable() {

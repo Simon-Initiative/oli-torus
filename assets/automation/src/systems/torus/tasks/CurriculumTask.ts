@@ -205,7 +205,7 @@ export class CurriculumTask {
         'last',
       );
     }
-    await this.basicPP.ensureAdvancedAuthorEditable();
+    await this.basicPP.ensureSimpleAuthorReady();
     await this.basicPP.waitForAdvancedAuthorFlowchartReady();
     await this.basicPP.waitForChangesSaved().catch(() => void 0);
     if (!stayInEditor) {
