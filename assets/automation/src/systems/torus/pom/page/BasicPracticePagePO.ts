@@ -194,6 +194,8 @@ export class BasicPracticePagePO {
     await this.replaceFirstFlowchartRule('Correct', 'Correct Terminal');
     await this.selectFlowchartScreenByTitle('Routing Question');
     await this.addFlowchartRuleToNewScreen('Any Incorrect', 'Incorrect Terminal');
+    await this.selectFlowchartScreenByTitle('Routing Question');
+    await this.replaceLastFlowchartRule('Any Incorrect', 'Incorrect Terminal');
 
     await expect(this.flowchartNodes).toHaveCount(3, { timeout: 30000 });
     await expect(this.flowchartScreenTitle('Routing Question')).toBeVisible();
@@ -322,6 +324,19 @@ export class BasicPracticePagePO {
     const pathEditor = this.flowchartSidebar
       .locator('.path-editor-incomplete, .path-editor-completed')
       .first();
+    await this.completeFlowchartRule(pathEditor, rule, destinationTitle);
+  }
+
+  private async replaceLastFlowchartRule(rule: string, destinationTitle: string) {
+    const path = this.flowchartSidebar
+      .locator('.path-editor-incomplete, .path-editor-completed')
+      .last();
+    await path.waitFor({ state: 'visible', timeout: 10000 });
+    await path.click();
+
+    const pathEditor = this.flowchartSidebar
+      .locator('.path-editor-incomplete, .path-editor-completed')
+      .last();
     await this.completeFlowchartRule(pathEditor, rule, destinationTitle);
   }
 

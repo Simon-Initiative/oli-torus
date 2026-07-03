@@ -233,8 +233,19 @@ async function answerMcqAndExpectTerminal(page: Page, optionName: string, termin
 
   await expect(mcq).toBeVisible({ timeout: 30000 });
   await expect(option).toBeVisible();
+  const selectionSave = page
+    .waitForResponse(
+      (response) =>
+        response.request().method() === 'PATCH' &&
+        response.url().includes('/activity_attempt/') &&
+        response.url().endsWith('/active'),
+      { timeout: 10000 },
+    )
+    .catch(() => undefined);
+
   await optionLabel.click();
   await expect(option).toBeChecked();
+  await selectionSave;
 
   for (let attempt = 0; attempt < 4; attempt += 1) {
     if (await terminal.isVisible().catch(() => false)) return;

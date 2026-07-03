@@ -162,6 +162,8 @@ export class CurriculumTask {
     if (openedEditor && !stayInEditor) {
       await this.returnToCurriculum();
     }
+
+    return openedEditor;
   }
 
   @step('Add a page to the project. Type: {type}, Title: {titlePage}')
@@ -175,13 +177,15 @@ export class CurriculumTask {
 
   @step('Create an adaptive page in Advanced Author')
   async createAdaptivePageInAdvancedAuthor(stayInEditor = false) {
-    await this.addPage('adaptive-practice', true);
-    await this.enterPage(
-      'adaptive-practice',
-      this.defaultPageName('adaptive-practice'),
-      'Edit Page',
-      'last',
-    );
+    const openedEditor = await this.addPage('adaptive-practice', true);
+    if (!openedEditor) {
+      await this.enterPage(
+        'adaptive-practice',
+        this.defaultPageName('adaptive-practice'),
+        'Edit Page',
+        'last',
+      );
+    }
     await this.basicPP.ensureAdvancedAuthorEditable();
     await this.basicPP.waitForChangesSaved().catch(() => void 0);
     if (!stayInEditor) {
@@ -192,13 +196,15 @@ export class CurriculumTask {
 
   @step('Create an adaptive page in Simple Author')
   async createAdaptivePageInSimpleAuthor(stayInEditor = false) {
-    await this.addPage('adaptive-simple-practice', true);
-    await this.enterPage(
-      'adaptive-simple-practice',
-      this.defaultPageName('adaptive-simple-practice'),
-      'Edit Page',
-      'last',
-    );
+    const openedEditor = await this.addPage('adaptive-simple-practice', true);
+    if (!openedEditor) {
+      await this.enterPage(
+        'adaptive-simple-practice',
+        this.defaultPageName('adaptive-simple-practice'),
+        'Edit Page',
+        'last',
+      );
+    }
     await this.basicPP.ensureAdvancedAuthorEditable();
     await this.basicPP.waitForAdvancedAuthorFlowchartReady();
     await this.basicPP.waitForChangesSaved().catch(() => void 0);
