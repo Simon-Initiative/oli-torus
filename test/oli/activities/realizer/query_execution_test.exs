@@ -201,6 +201,21 @@ defmodule Oli.Activities.Query.ExecutorTest do
         |> Executor.execute()
     end
 
+    test "full text does not query json structural keys", %{publication: publication} do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
+      paging = %Paging{limit: 1, offset: 0}
+      logic = %Logic{conditions: %Expression{fact: :text, operator: :contains, value: "stem"}}
+
+      assert {:ok, %Result{rowCount: 0, totalCount: 0}} =
+               Builder.build(logic, source, paging, :paged)
+               |> Executor.execute()
+    end
+
     test "queries for multiple full text expressions", %{publication: publication} do
       source = %Source{
         publication_id: publication.id,

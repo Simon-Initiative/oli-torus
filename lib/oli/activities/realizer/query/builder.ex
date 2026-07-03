@@ -196,7 +196,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     peripherals = Map.put(peripherals, :params, peripherals.params ++ [value])
 
     {[
-       "(to_tsvector(coalesce(title, '') || ' ' || coalesce(content::text, '')) @@ to_tsquery($#{param_index}))"
+       "((to_tsvector(coalesce(title, '')) || to_tsvector(content)) @@ to_tsquery($#{param_index}))"
      ], peripherals}
   end
 

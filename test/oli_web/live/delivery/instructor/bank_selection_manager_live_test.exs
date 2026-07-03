@@ -524,6 +524,30 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       refute has_element?(view, "#load-more-candidates")
     end
 
+    test "candidate filter event ignores malformed filter values without crashing",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           first_candidate: first_candidate
+         } do
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      assert has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+
+      view
+      |> element("#bank-selection-customization-bridge")
+      |> render_hook("filter_candidates", %{
+        "activity_type_ids" => %{"bad" => "shape"},
+        "objective_ids" => [%{"also" => "bad"}]
+      })
+
+      assert has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 25 of 30 questions")
+      assert has_element?(view, "#selected-candidate-preview-#{first_candidate.resource_id}")
+    end
+
     test "candidate checkboxes keep same-state selection and header checkbox respects the current selection mode",
          %{
            conn: conn,

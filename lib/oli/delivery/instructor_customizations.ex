@@ -1025,9 +1025,8 @@ defmodule Oli.Delivery.InstructorCustomizations do
   end
 
   defp normalize_candidate_filters(opts) do
-    filters = opts |> Keyword.get(:filters, %{}) |> Map.new()
-
-    with {:ok, visibility} <- normalize_candidate_visibility(filters),
+    with {:ok, filters} <- candidate_filters_map(opts),
+         {:ok, visibility} <- normalize_candidate_visibility(filters),
          {:ok, text_search} <- normalize_candidate_text_search(filters),
          {:ok, objective_ids} <- normalize_candidate_filter_ids(filters, :objective_ids),
          {:ok, activity_type_ids} <- normalize_candidate_filter_ids(filters, :activity_type_ids) do
@@ -1039,8 +1038,12 @@ defmodule Oli.Delivery.InstructorCustomizations do
          activity_type_ids: activity_type_ids
        }}
     end
+  end
+
+  defp candidate_filters_map(opts) do
+    {:ok, opts |> Keyword.get(:filters, %{}) |> Map.new()}
   rescue
-    _ -> {:error, {:invalid_candidate_filters, :filters}}
+    Protocol.UndefinedError -> {:error, {:invalid_candidate_filters, :filters}}
   end
 
   defp normalize_candidate_visibility(filters) do

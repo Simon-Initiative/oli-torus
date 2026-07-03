@@ -1763,10 +1763,10 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   defp parse_candidate_filter_ids(value) do
     value
     |> List.wrap()
-    |> Enum.flat_map(fn value ->
-      value
-      |> to_string()
-      |> String.split(",", trim: true)
+    |> Enum.flat_map(fn
+      value when is_binary(value) -> String.split(value, ",", trim: true)
+      value when is_integer(value) -> [Integer.to_string(value)]
+      _value -> []
     end)
     |> Enum.reduce([], fn value, acc ->
       case Integer.parse(value) do

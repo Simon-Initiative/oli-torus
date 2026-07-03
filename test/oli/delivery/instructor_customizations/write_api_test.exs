@@ -867,6 +867,14 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                  "selection-1",
                  filters: %{text_search: 42}
                )
+
+      assert {:error, {:invalid_candidate_filters, :filters}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: 42
+               )
     end
 
     test "uses a standard default page size for candidate review", context do
