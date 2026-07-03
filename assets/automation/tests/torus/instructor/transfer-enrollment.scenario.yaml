@@ -1,0 +1,78 @@
+# Scenario: Seed a course setup that exercises instructor-managed enrollment transfer.
+
+- project:
+    name: 'transfer_enrollment_project'
+    title: 'Enrollment Transfer Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Enrollment Transfer Lesson'
+
+- edit_page:
+    project: 'transfer_enrollment_project'
+    page: 'Enrollment Transfer Lesson'
+    content: |
+      title: "Enrollment Transfer Lesson"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Enrollment transfer scenario content."
+
+- publish:
+    to: 'transfer_enrollment_project'
+    description: 'Initial enrollment transfer course publication'
+
+- section:
+    name: 'transfer_enrollment_source_section'
+    title: 'Enrollment Transfer Course ${RUN_ID} - Source'
+    from: 'transfer_enrollment_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'transfer_enrollment_target_section'
+    title: 'Enrollment Transfer Course ${RUN_ID} - Target'
+    from: 'transfer_enrollment_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'transfer_enrollment_source_student'
+    type: 'student'
+    email: 'transfer-enrollment-source-student${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Source'
+    password: 'changeme123456'
+
+- user:
+    name: 'transfer_enrollment_target_student'
+    type: 'student'
+    email: 'transfer-enrollment-target-student${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Target'
+    password: 'changeme123456'
+
+- user:
+    name: 'transfer_enrollment_admin'
+    type: 'author'
+    system_role: 'system_admin'
+    email: 'transfer-enrollment-admin${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Admin'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'transfer_enrollment_source_student'
+    section: 'transfer_enrollment_source_section'
+    role: 'student'
+
+- enroll:
+    user: 'transfer_enrollment_target_student'
+    section: 'transfer_enrollment_target_section'
+    role: 'student'
+
+- complete_scored_page:
+    student: 'transfer_enrollment_source_student'
+    section: 'transfer_enrollment_source_section'
+    page: 'Enrollment Transfer Lesson'
+    score: 1
+    out_of: 1
