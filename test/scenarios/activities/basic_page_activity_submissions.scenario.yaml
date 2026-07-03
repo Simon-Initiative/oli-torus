@@ -253,7 +253,6 @@
           - id: "text_part"
             scoringStrategy: "best"
             gradingApproach: "automatic"
-            targets: ["1637853221"]
             responses:
               - id: "multi_input_text_correct"
                 rule: "input contains {answer}"
@@ -273,7 +272,6 @@
           - id: "numeric_part"
             scoringStrategy: "best"
             gradingApproach: "automatic"
-            targets: ["2369651067"]
             responses:
               - id: "multi_input_numeric_correct"
                 rule: "input = {1}"

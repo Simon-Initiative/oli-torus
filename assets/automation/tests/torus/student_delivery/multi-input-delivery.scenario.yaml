@@ -47,7 +47,6 @@
           - id: 'text_blank_part'
             scoringStrategy: 'best'
             gradingApproach: 'automatic'
-            targets: ['text_blank']
             responses:
               - id: 'text_blank_correct'
                 rule: 'input contains {answer}'
@@ -73,7 +72,6 @@
           - id: 'numeric_blank_part'
             scoringStrategy: 'best'
             gradingApproach: 'automatic'
-            targets: ['numeric_blank']
             responses:
               - id: 'numeric_blank_correct'
                 rule: 'input = {42}'
