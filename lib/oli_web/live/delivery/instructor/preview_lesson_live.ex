@@ -14,7 +14,6 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.{PreviewPageContext, PreviewRoutes}
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Delivery.Student.Lesson.Annotations

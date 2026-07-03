@@ -668,6 +668,31 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                |> Enum.sort()
     end
 
+    test "lists batched selection candidates with parameterized text logic", context do
+      matching_selections =
+        Enum.map(1..12, fn index ->
+          text_selection("matching-text-selection-#{index}", "Candidate")
+        end)
+
+      empty_selection = text_selection("empty-text-selection", "Embedded")
+
+      assert {:ok, results_by_selection_id} =
+               InstructorCustomizations.list_bank_selection_candidate_revisions_by_selection_id(
+                 context.section,
+                 context.page_revision,
+                 matching_selections ++ [empty_selection]
+               )
+
+      assert Map.fetch!(results_by_selection_id, "empty-text-selection") == {:ok, []}
+
+      for selection <- matching_selections do
+        assert {:ok, matching_candidates} = Map.fetch!(results_by_selection_id, selection["id"])
+
+        assert matching_candidates |> Enum.map(& &1.resource_id) |> Enum.sort() ==
+                 context.candidates |> Enum.map(& &1.resource_id) |> Enum.sort()
+      end
+    end
+
     test "summarizes selection candidates without returning a paged candidate list", context do
       [first, second, third] = context.candidates
 
@@ -794,6 +819,21 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
 
   defp selection(id, count) do
     %{"type" => "selection", "id" => id, "logic" => %{"conditions" => nil}, "count" => count}
+  end
+
+  defp text_selection(id, text) do
+    %{
+      "type" => "selection",
+      "id" => id,
+      "logic" => %{
+        "conditions" => %{
+          "fact" => "text",
+          "operator" => "contains",
+          "value" => text
+        }
+      },
+      "count" => 1
+    }
   end
 
   defp exclusion_count(context, kind) do

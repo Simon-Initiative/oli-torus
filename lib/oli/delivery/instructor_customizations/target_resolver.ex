@@ -10,7 +10,9 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Query
+  alias Oli.Activities.Realizer.Query.Batch
   alias Oli.Activities.Realizer.Query.Paging
+  alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -22,6 +24,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
   @count_query_paging %Paging{offset: 0, limit: 1}
   @sample_query_paging %Paging{offset: 0, limit: 1}
+  @candidate_query_chunk_size 10
 
   # Section/page targets
 
@@ -153,6 +156,45 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
       MapSet.to_list(excluded_ids),
       paging
     )
+  end
+
+  @doc """
+  Lists bank candidates for all page selections in bounded database round trips.
+  """
+  @spec list_active_candidates_by_selection_id(
+          %Section{},
+          %Revision{},
+          [map()],
+          %{optional(String.t()) => MapSet.t(integer())},
+          %Paging{}
+        ) :: {:ok, %{String.t() => %Result{}}} | {:error, term()}
+  def list_active_candidates_by_selection_id(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selections,
+        excluded_ids_by_selection_id,
+        %Paging{} = paging
+      )
+      when is_list(selections) and is_map(excluded_ids_by_selection_id) do
+    publication_id =
+      Publishing.get_publication_id_for_resource(section.slug, page_revision.resource_id)
+
+    selections
+    |> Enum.chunk_every(@candidate_query_chunk_size)
+    |> Enum.reduce_while({:ok, %{}}, fn chunk, {:ok, acc} ->
+      with {:ok, query_specs} <-
+             build_candidate_query_specs(
+               section,
+               chunk,
+               excluded_ids_by_selection_id,
+               publication_id
+             ),
+           {:ok, results_by_selection_id} <- Batch.execute(query_specs, paging, :paged) do
+        {:cont, {:ok, Map.merge(acc, results_by_selection_id)}}
+      else
+        error -> {:halt, error}
+      end
+    end)
   end
 
   @doc """
@@ -312,6 +354,38 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
   defp execute_query(:random, logic, source, paging),
     do: Query.execute_random(logic, source, paging)
+
+  defp build_candidate_query_specs(
+         section,
+         selections,
+         excluded_ids_by_selection_id,
+         publication_id
+       ) do
+    Enum.reduce_while(selections, {:ok, []}, fn selection, {:ok, acc} ->
+      with {:ok, %Logic{} = logic} <- parse_logic(selection) do
+        selection_id = selection["id"]
+
+        excluded_ids =
+          excluded_ids_by_selection_id
+          |> Map.get(selection_id, MapSet.new())
+          |> MapSet.to_list()
+
+        source = %Source{
+          publication_id: publication_id,
+          section_slug: section.slug,
+          blacklisted_activity_ids: excluded_ids
+        }
+
+        {:cont, {:ok, [{selection_id, logic, source} | acc]}}
+      else
+        error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, query_specs} -> {:ok, Enum.reverse(query_specs)}
+      error -> error
+    end
+  end
 
   defp parse_logic(%{"logic" => logic}) do
     case Logic.parse(logic) do
