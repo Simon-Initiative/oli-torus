@@ -70,126 +70,138 @@ test.beforeAll(async ({ seedScenario }) => {
 test.describe('vlab delivery', () => {
   test('numeric vlab variants evaluate and persist as expected', async ({ homeTask, page }) => {
     await homeTask.login('student');
+    await test.step('vlab numeric: correct value evaluates correctly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.numericCorrect,
+        activityTitle,
+      );
+      const activity = vlabActivity(page, stems.numeric);
+      const textbox = vlabTextbox(activity);
+      const submitButton = vlabSubmitButton(activity);
 
-    // Numeric input: correct answer path.
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.numericCorrect,
-      activityTitle,
-    );
-    let activity = vlabActivity(page, stems.numeric);
-    let textbox = vlabTextbox(activity);
-    let submitButton = vlabSubmitButton(activity);
+      await expect(activity).toBeVisible();
+      await expect(textbox).toBeVisible();
+      await expect(textbox).toBeEditable();
+      await textbox.fill('42');
+      await submitButton.click();
 
-    await expect(activity).toBeVisible();
-    await expect(textbox).toBeVisible();
-    await expect(textbox).toBeEditable();
-    await textbox.fill('42');
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
+        'Correct. You entered the expected numeric value.',
+      );
+    });
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
-      'Correct. You entered the expected numeric value.',
-    );
+    await test.step('vlab numeric: incorrect value evaluates incorrectly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.numericIncorrect,
+        activityTitle,
+      );
+      const activity = vlabActivity(page, stems.numeric);
+      const textbox = vlabTextbox(activity);
+      const submitButton = vlabSubmitButton(activity);
 
-    // Numeric input: incorrect answer path.
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.numericIncorrect,
-      activityTitle,
-    );
-    activity = vlabActivity(page, stems.numeric);
-    textbox = vlabTextbox(activity);
-    submitButton = vlabSubmitButton(activity);
+      await expect(textbox).toBeVisible();
+      await expect(textbox).toBeEditable();
+      await textbox.fill('7');
+      await submitButton.click();
 
-    await expect(textbox).toBeVisible();
-    await expect(textbox).toBeEditable();
-    await textbox.fill('7');
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+        'Incorrect. Try again.',
+      );
+    });
 
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-      'Incorrect. Try again.',
-    );
+    await test.step('vlab numeric: reset clears evaluated state', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.numericReset,
+        activityTitle,
+      );
+      const activity = vlabActivity(page, stems.numeric);
+      const textbox = vlabTextbox(activity);
+      const submitButton = vlabSubmitButton(activity);
+      const resetButton = vlabResetButton(activity);
 
-    // Numeric input: reset clears evaluation.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.numericReset, activityTitle);
-    activity = vlabActivity(page, stems.numeric);
-    textbox = vlabTextbox(activity);
-    submitButton = vlabSubmitButton(activity);
-    const resetButton = vlabResetButton(activity);
+      await expect(textbox).toBeVisible();
+      await expect(textbox).toBeEditable();
+      await textbox.fill('42');
+      await submitButton.click();
 
-    await expect(textbox).toBeVisible();
-    await expect(textbox).toBeEditable();
-    await textbox.fill('42');
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await resetButton.click();
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await resetButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toHaveCount(0);
+      await expect(textbox).toHaveValue('');
+    });
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toHaveCount(0);
-    await expect(textbox).toHaveValue('');
+    await test.step('vlab numeric: saved value restores before submission', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.numericSaved,
+        activityTitle,
+      );
+      let activity = vlabActivity(page, stems.numeric);
+      let textbox = vlabTextbox(activity);
 
-    // Numeric input: saved value restores before submit.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.numericSaved, activityTitle);
-    activity = vlabActivity(page, stems.numeric);
-    textbox = vlabTextbox(activity);
+      await expect(textbox).toBeVisible();
+      await expect(textbox).toBeEditable();
+      await textbox.fill('42');
+      await page.reload({ waitUntil: 'load' });
 
-    await expect(textbox).toBeVisible();
-    await expect(textbox).toBeEditable();
-    await textbox.fill('42');
-    await page.reload({ waitUntil: 'load' });
+      activity = vlabActivity(page, stems.numeric);
+      textbox = vlabTextbox(activity);
 
-    activity = vlabActivity(page, stems.numeric);
-    textbox = vlabTextbox(activity);
-
-    await expect(textbox).toHaveValue('42');
+      await expect(textbox).toHaveValue('42');
+    });
   });
 
   test('dropdown vlab variants evaluate the expected choices', async ({ homeTask, page }) => {
     await homeTask.login('student');
+    await test.step('vlab dropdown: expected choice evaluates correctly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.dropdownCorrect,
+        activityTitle,
+      );
+      const activity = vlabActivity(page, stems.dropdown);
+      const dropdown = vlabDropdown(activity);
+      const submitButton = vlabSubmitButton(activity);
 
-    // Dropdown input: correct choice path.
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.dropdownCorrect,
-      activityTitle,
-    );
-    let activity = vlabActivity(page, stems.dropdown);
-    let dropdown = vlabDropdown(activity);
-    let submitButton = vlabSubmitButton(activity);
+      await expect(activity).toBeVisible();
+      await expect(dropdown).toBeVisible();
+      await expect(dropdown).toBeEnabled();
+      await dropdown.selectOption('vlab_dropdown_a');
+      await submitButton.click();
 
-    await expect(activity).toBeVisible();
-    await expect(dropdown).toBeVisible();
-    await expect(dropdown).toBeEnabled();
-    await dropdown.selectOption('vlab_dropdown_a');
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
+        'Correct. You selected the expected dropdown value.',
+      );
+    });
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
-      'Correct. You selected the expected dropdown value.',
-    );
+    await test.step('vlab dropdown: alternate choice evaluates incorrectly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.dropdownIncorrect,
+        activityTitle,
+      );
+      const activity = vlabActivity(page, stems.dropdown);
+      const dropdown = vlabDropdown(activity);
+      const submitButton = vlabSubmitButton(activity);
 
-    // Dropdown input: incorrect choice path.
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.dropdownIncorrect,
-      activityTitle,
-    );
-    activity = vlabActivity(page, stems.dropdown);
-    dropdown = vlabDropdown(activity);
-    submitButton = vlabSubmitButton(activity);
+      await expect(dropdown).toBeVisible();
+      await expect(dropdown).toBeEnabled();
+      await dropdown.selectOption('vlab_dropdown_b');
+      await submitButton.click();
 
-    await expect(dropdown).toBeVisible();
-    await expect(dropdown).toBeEnabled();
-    await dropdown.selectOption('vlab_dropdown_b');
-    await submitButton.click();
-
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-      'Incorrect. Try again.',
-    );
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+        'Incorrect. Try again.',
+      );
+    });
   });
 
   test('vlab message variants capture iframe-driven values and restore them', async ({
@@ -197,62 +209,66 @@ test.describe('vlab delivery', () => {
     page,
   }) => {
     await homeTask.login('student');
+    await test.step('vlab message: iframe-derived correct value evaluates correctly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.messageCorrect,
+        activityTitle,
+      );
+      const activity = vlabActivity(page, stems.message);
+      const submitButton = vlabSubmitButton(activity);
 
-    // Vlab message input: correct iframe-derived value.
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.messageCorrect,
-      activityTitle,
-    );
-    let activity = vlabActivity(page, stems.message);
-    let submitButton = vlabSubmitButton(activity);
+      await sendVlabSelection(activity, flaskXml(42));
+      await expect(getVlabHiddenValue(activity)).resolves.toBe('42');
+      await submitButton.click();
 
-    await sendVlabSelection(activity, flaskXml(42));
-    await expect(getVlabHiddenValue(activity)).resolves.toBe('42');
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
+        'Correct. The virtual lab value was captured.',
+      );
+    });
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
-      'Correct. The virtual lab value was captured.',
-    );
+    await test.step('vlab message: iframe-derived incorrect value evaluates incorrectly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.messageIncorrect,
+        activityTitle,
+      );
+      const activity = vlabActivity(page, stems.message);
+      const submitButton = vlabSubmitButton(activity);
 
-    // Vlab message input: incorrect iframe-derived value.
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.messageIncorrect,
-      activityTitle,
-    );
-    activity = vlabActivity(page, stems.message);
-    submitButton = vlabSubmitButton(activity);
+      await sendVlabSelection(activity, flaskXml(7));
+      await expect(getVlabHiddenValue(activity)).resolves.toBe('7');
+      await submitButton.click();
 
-    await sendVlabSelection(activity, flaskXml(7));
-    await expect(getVlabHiddenValue(activity)).resolves.toBe('7');
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+        'Incorrect. Try again.',
+      );
+    });
 
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-      'Incorrect. Try again.',
-    );
+    await test.step('vlab message: evaluated value restores after reload', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.messageRestore,
+        activityTitle,
+      );
+      let activity = vlabActivity(page, stems.message);
+      let submitButton = vlabSubmitButton(activity);
 
-    // Vlab message input: evaluated value restores after reload.
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.messageRestore,
-      activityTitle,
-    );
-    activity = vlabActivity(page, stems.message);
-    submitButton = vlabSubmitButton(activity);
+      await sendVlabSelection(activity, flaskXml(42));
+      await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
 
-    await sendVlabSelection(activity, flaskXml(42));
-    await submitButton.click();
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await page.reload({ waitUntil: 'load' });
 
-    await page.reload({ waitUntil: 'load' });
+      activity = vlabActivity(page, stems.message);
+      submitButton = vlabSubmitButton(activity);
 
-    activity = vlabActivity(page, stems.message);
-
-    await expect(getVlabHiddenValue(activity)).resolves.toBe('42');
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(getVlabHiddenValue(activity)).resolves.toBe('42');
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(submitButton).toBeDisabled();
+    });
   });
 });
 

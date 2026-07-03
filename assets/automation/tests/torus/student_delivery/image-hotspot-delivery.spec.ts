@@ -70,42 +70,44 @@ test.describe('image hotspot delivery', () => {
     page,
   }) => {
     await homeTask.login('student');
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.singleCorrect,
-      activityTitle,
-    );
-    let activity = imageHotspotActivity(page, singleStem);
+    await test.step('single-select: correct hotspot auto-submits and evaluates correctly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.singleCorrect,
+        activityTitle,
+      );
+      const activity = imageHotspotActivity(page, singleStem);
 
-    // Correct single-select path.
-    await expect(activity).toBeVisible();
-    await expect(activity.getByRole('button', { name: 'submit', exact: true })).toHaveCount(0);
+      await expect(activity).toBeVisible();
+      await expect(activity.getByRole('button', { name: 'submit', exact: true })).toHaveCount(0);
 
-    await clickImageHotspot(activity, 'Single target hotspot');
+      await clickImageHotspot(activity, 'Single target hotspot');
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
-      'Correct. You selected the target hotspot.',
-    );
-    await expect(activity.getByLabel('result')).toHaveCount(1);
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
+        'Correct. You selected the target hotspot.',
+      );
+      await expect(activity.getByLabel('result')).toHaveCount(1);
+    });
 
-    // Incorrect single-select path.
-    await openStudentDeliveryPracticeForLoggedInStudent(
-      page,
-      sections.singleIncorrect,
-      activityTitle,
-    );
-    activity = imageHotspotActivity(page, singleStem);
+    await test.step('single-select: distractor hotspot auto-submits and evaluates incorrectly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.singleIncorrect,
+        activityTitle,
+      );
+      const activity = imageHotspotActivity(page, singleStem);
 
-    await expect(activity).toBeVisible();
+      await expect(activity).toBeVisible();
 
-    await clickImageHotspot(activity, 'Single distractor hotspot');
+      await clickImageHotspot(activity, 'Single distractor hotspot');
 
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-      'Incorrect. Try again.',
-    );
-    await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+        'Incorrect. Try again.',
+      );
+      await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+    });
   });
 
   test('multi-select hotspot evaluation variants show the expected outcomes', async ({
@@ -113,54 +115,69 @@ test.describe('image hotspot delivery', () => {
     page,
   }) => {
     await homeTask.login('student');
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.multiCorrect, activityTitle);
-    let activity = imageHotspotActivity(page, multiStem);
-    let submitButton = activity.getByRole('button', { name: 'submit', exact: true });
+    await test.step('multi-select: selecting both targets evaluates correctly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.multiCorrect,
+        activityTitle,
+      );
+      const activity = imageHotspotActivity(page, multiStem);
+      const submitButton = activity.getByRole('button', { name: 'submit', exact: true });
 
-    // Multi-select: all correct choices.
-    await expect(activity).toBeVisible();
-    await expect(submitButton).toBeDisabled();
+      await expect(activity).toBeVisible();
+      await expect(submitButton).toBeDisabled();
 
-    await clickImageHotspot(activity, 'First multi target hotspot');
-    await clickImageHotspot(activity, 'Second multi target hotspot');
+      await clickImageHotspot(activity, 'First multi target hotspot');
+      await clickImageHotspot(activity, 'Second multi target hotspot');
 
-    await expect(submitButton).toBeEnabled();
-    await submitButton.click();
+      await expect(submitButton).toBeEnabled();
+      await submitButton.click();
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
-      'Correct. You selected both target hotspots.',
-    );
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
+        'Correct. You selected both target hotspots.',
+      );
+    });
 
-    // Multi-select: partial selection stays incorrect.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.multiPartial, activityTitle);
-    activity = imageHotspotActivity(page, multiStem);
-    submitButton = activity.getByRole('button', { name: 'submit', exact: true });
+    await test.step('multi-select: partial selection evaluates incorrectly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.multiPartial,
+        activityTitle,
+      );
+      const activity = imageHotspotActivity(page, multiStem);
+      const submitButton = activity.getByRole('button', { name: 'submit', exact: true });
 
-    await clickImageHotspot(activity, 'First multi target hotspot');
-    await expect(submitButton).toBeEnabled();
-    await submitButton.click();
+      await clickImageHotspot(activity, 'First multi target hotspot');
+      await expect(submitButton).toBeEnabled();
+      await submitButton.click();
 
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-      'Incorrect. Try again.',
-    );
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+        'Incorrect. Try again.',
+      );
+    });
 
-    // Multi-select: extra incorrect choice also evaluates as incorrect.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.multiExtra, activityTitle);
-    activity = imageHotspotActivity(page, multiStem);
-    submitButton = activity.getByRole('button', { name: 'submit', exact: true });
+    await test.step('multi-select: adding a distractor evaluates incorrectly', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.multiExtra,
+        activityTitle,
+      );
+      const activity = imageHotspotActivity(page, multiStem);
+      const submitButton = activity.getByRole('button', { name: 'submit', exact: true });
 
-    await clickImageHotspot(activity, 'First multi target hotspot');
-    await clickImageHotspot(activity, 'Second multi target hotspot');
-    await clickImageHotspot(activity, 'Multi distractor hotspot');
-    await expect(submitButton).toBeEnabled();
-    await submitButton.click();
+      await clickImageHotspot(activity, 'First multi target hotspot');
+      await clickImageHotspot(activity, 'Second multi target hotspot');
+      await clickImageHotspot(activity, 'Multi distractor hotspot');
+      await expect(submitButton).toBeEnabled();
+      await submitButton.click();
 
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-      'Incorrect. Try again.',
-    );
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+        'Incorrect. Try again.',
+      );
+    });
   });
 
   test('multi-select hotspot persistence variants support reset and restore', async ({
@@ -168,46 +185,57 @@ test.describe('image hotspot delivery', () => {
     page,
   }) => {
     await homeTask.login('student');
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.multiReset, activityTitle);
-    let activity = imageHotspotActivity(page, multiStem);
-    let submitButton = activity.getByRole('button', { name: 'submit', exact: true });
-    const resetButton = activity.getByRole('button', { name: 'reset', exact: true });
+    await test.step('multi-select: reset clears an evaluated correct submission', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.multiReset,
+        activityTitle,
+      );
+      const activity = imageHotspotActivity(page, multiStem);
+      const submitButton = activity.getByRole('button', { name: 'submit', exact: true });
+      const resetButton = activity.getByRole('button', { name: 'reset', exact: true });
 
-    // Multi-select: reset clears evaluated state.
-    await clickImageHotspot(activity, 'First multi target hotspot');
-    await clickImageHotspot(activity, 'Second multi target hotspot');
-    await submitButton.click();
+      await clickImageHotspot(activity, 'First multi target hotspot');
+      await clickImageHotspot(activity, 'Second multi target hotspot');
+      await submitButton.click();
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(resetButton).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(resetButton).toBeVisible();
 
-    await resetButton.click();
+      await resetButton.click();
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toHaveCount(0);
-    await expect(submitButton).toBeDisabled();
+      await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toHaveCount(0);
+      await expect(submitButton).toBeDisabled();
+    });
 
-    // Multi-select: evaluated state restores after reload.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.multiRestore, activityTitle);
-    activity = imageHotspotActivity(page, multiStem);
-    submitButton = activity.getByRole('button', { name: 'submit', exact: true });
+    await test.step('multi-select: evaluated correct state restores after reload', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(
+        page,
+        sections.multiRestore,
+        activityTitle,
+      );
+      let activity = imageHotspotActivity(page, multiStem);
+      let submitButton = activity.getByRole('button', { name: 'submit', exact: true });
 
-    await clickImageHotspot(activity, 'First multi target hotspot');
-    await clickImageHotspot(activity, 'Second multi target hotspot');
-    await submitButton.click();
+      await clickImageHotspot(activity, 'First multi target hotspot');
+      await clickImageHotspot(activity, 'Second multi target hotspot');
+      await submitButton.click();
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
 
-    await page.reload({ waitUntil: 'load' });
+      await page.reload({ waitUntil: 'load' });
 
-    activity = imageHotspotActivity(page, multiStem);
+      activity = imageHotspotActivity(page, multiStem);
+      submitButton = activity.getByRole('button', { name: 'submit', exact: true });
 
-    await expect(activity).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
-      'Correct. You selected both target hotspots.',
-    );
-    await expect(activity.getByRole('button', { name: 'submit', exact: true })).toBeDisabled();
+      await expect(activity).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
+        'Correct. You selected both target hotspots.',
+      );
+      await expect(submitButton).toBeDisabled();
+    });
   });
 });
 

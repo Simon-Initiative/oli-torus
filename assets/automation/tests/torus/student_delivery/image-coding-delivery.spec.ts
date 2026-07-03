@@ -65,71 +65,73 @@ test.describe('image coding delivery', () => {
     page,
   }) => {
     await homeTask.login('student');
+    await test.step('image coding: edited code evaluates as correct', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(page, sections.correct, activityTitle);
+      const activity = imageCodingActivity(page);
+      const output = imageCodingOutput(activity);
+      const runButton = imageCodingRunButton(activity);
+      const submitButton = imageCodingSubmitButton(activity);
 
-    // Correct edited-code path.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.correct, activityTitle);
-    let activity = imageCodingActivity(page);
-    let output = imageCodingOutput(activity);
-    let runButton = imageCodingRunButton(activity);
-    let submitButton = imageCodingSubmitButton(activity);
+      await expect(activity).toBeVisible();
+      await expect(submitButton).toBeDisabled();
+      await expect(activity.getByText('Output:')).toBeVisible();
 
-    await expect(activity).toBeVisible();
-    await expect(submitButton).toBeDisabled();
-    await expect(activity.getByText('Output:')).toBeVisible();
+      await setImageCodingSource(activity, 'print("correct")');
+      await runButton.click();
 
-    await setImageCodingSource(activity, 'print("correct")');
-    await runButton.click();
+      await expect(output).toContainText('correct');
+      await expect(submitButton).toBeEnabled();
+      await submitButton.click();
 
-    await expect(output).toContainText('correct');
-    await expect(submitButton).toBeEnabled();
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
+        'Correct. You produced the expected output.',
+      );
+      await expect(runButton).toBeDisabled();
+      await expect(submitButton).toBeDisabled();
+    });
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
-      'Correct. You produced the expected output.',
-    );
-    await expect(runButton).toBeDisabled();
-    await expect(submitButton).toBeDisabled();
+    await test.step('image coding: default code evaluates as incorrect', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(page, sections.incorrect, activityTitle);
+      const activity = imageCodingActivity(page);
+      const output = imageCodingOutput(activity);
+      const runButton = imageCodingRunButton(activity);
+      const submitButton = imageCodingSubmitButton(activity);
 
-    // Default incorrect-code path.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.incorrect, activityTitle);
-    activity = imageCodingActivity(page);
-    output = imageCodingOutput(activity);
-    runButton = imageCodingRunButton(activity);
-    submitButton = imageCodingSubmitButton(activity);
+      await expect(activity).toBeVisible();
+      await expect(submitButton).toBeDisabled();
+      await runButton.click();
 
-    await expect(activity).toBeVisible();
-    await expect(submitButton).toBeDisabled();
-    await runButton.click();
+      await expect(output).toContainText('wrong');
+      await expect(submitButton).toBeEnabled();
+      await submitButton.click();
 
-    await expect(output).toContainText('wrong');
-    await expect(submitButton).toBeEnabled();
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+        'Incorrect. Try again.',
+      );
+      await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+    });
 
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-      'Incorrect. Try again.',
-    );
-    await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+    await test.step('image coding: execution errors still allow incorrect submission feedback', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(page, sections.error, activityTitle);
+      const activity = imageCodingActivity(page);
+      const runButton = imageCodingRunButton(activity);
+      const submitButton = imageCodingSubmitButton(activity);
+      const errorMessage = activity.locator('span', { hasText: 'Error:' }).first();
 
-    // Execution error path.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.error, activityTitle);
-    activity = imageCodingActivity(page);
-    runButton = imageCodingRunButton(activity);
-    submitButton = imageCodingSubmitButton(activity);
-    const errorMessage = activity.locator('span', { hasText: 'Error:' }).first();
+      await setImageCodingSource(activity, 'print(');
+      await runButton.click();
 
-    await setImageCodingSource(activity, 'print(');
-    await runButton.click();
+      await expect(errorMessage).toBeVisible();
+      await expect(submitButton).toBeEnabled();
+      await submitButton.click();
 
-    await expect(errorMessage).toBeVisible();
-    await expect(submitButton).toBeEnabled();
-    await submitButton.click();
-
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-      'Incorrect. Try again.',
-    );
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+        'Incorrect. Try again.',
+      );
+    });
   });
 
   test('image coding persistence variants support reset and restore', async ({
@@ -137,66 +139,68 @@ test.describe('image coding delivery', () => {
     page,
   }) => {
     await homeTask.login('student');
+    await test.step('image coding: reset clears evaluated state and output', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(page, sections.reset, activityTitle);
+      const activity = imageCodingActivity(page);
+      const output = imageCodingOutput(activity);
+      const runButton = imageCodingRunButton(activity);
+      const submitButton = imageCodingSubmitButton(activity);
+      const resetButton = imageCodingResetButton(activity);
 
-    // Reset clears evaluated state and output.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.reset, activityTitle);
-    let activity = imageCodingActivity(page);
-    let output = imageCodingOutput(activity);
-    let runButton = imageCodingRunButton(activity);
-    let submitButton = imageCodingSubmitButton(activity);
-    const resetButton = imageCodingResetButton(activity);
+      await setImageCodingSource(activity, 'print("correct")');
+      await runButton.click();
+      await submitButton.click();
 
-    await setImageCodingSource(activity, 'print("correct")');
-    await runButton.click();
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(resetButton).toBeVisible();
+      await resetButton.click();
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(resetButton).toBeVisible();
-    await resetButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+      await expect(activity.locator('.evaluation.feedback.incorrect')).toHaveCount(0);
+      await expect(output).toHaveCount(0);
+      await expect(runButton).toBeEnabled();
+      await expect(submitButton).toBeDisabled();
+    });
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
-    await expect(activity.locator('.evaluation.feedback.incorrect')).toHaveCount(0);
-    await expect(output).toHaveCount(0);
-    await expect(runButton).toBeEnabled();
-    await expect(submitButton).toBeDisabled();
+    await test.step('image coding: evaluated correct state restores after reload', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(page, sections.restore, activityTitle);
+      let activity = imageCodingActivity(page);
+      let output = imageCodingOutput(activity);
+      let runButton = imageCodingRunButton(activity);
+      let submitButton = imageCodingSubmitButton(activity);
 
-    // Evaluated state restores after reload.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.restore, activityTitle);
-    activity = imageCodingActivity(page);
-    output = imageCodingOutput(activity);
-    runButton = imageCodingRunButton(activity);
-    submitButton = imageCodingSubmitButton(activity);
+      await setImageCodingSource(activity, 'print("correct")');
+      await runButton.click();
+      await submitButton.click();
 
-    await setImageCodingSource(activity, 'print("correct")');
-    await runButton.click();
-    await submitButton.click();
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await page.reload({ waitUntil: 'load' });
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await page.reload({ waitUntil: 'load' });
+      activity = imageCodingActivity(page);
+      output = imageCodingOutput(activity);
+      runButton = imageCodingRunButton(activity);
+      submitButton = imageCodingSubmitButton(activity);
 
-    activity = imageCodingActivity(page);
-    output = imageCodingOutput(activity);
-    runButton = imageCodingRunButton(activity);
-    submitButton = imageCodingSubmitButton(activity);
+      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+      await expect(output).toContainText('correct');
+      await expect(runButton).toBeDisabled();
+      await expect(submitButton).toBeDisabled();
+    });
 
-    await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-    await expect(output).toContainText('correct');
-    await expect(runButton).toBeDisabled();
-    await expect(submitButton).toBeDisabled();
+    await test.step('image coding: saved code restores before submission', async () => {
+      await openStudentDeliveryPracticeForLoggedInStudent(page, sections.savedCode, activityTitle);
+      let activity = imageCodingActivity(page);
 
-    // Saved code restores before submission.
-    await openStudentDeliveryPracticeForLoggedInStudent(page, sections.savedCode, activityTitle);
-    activity = imageCodingActivity(page);
+      await setImageCodingSource(activity, 'print("correct")');
+      await expect(getImageCodingSource(activity)).resolves.toBe('print("correct")');
 
-    await setImageCodingSource(activity, 'print("correct")');
-    await expect(getImageCodingSource(activity)).resolves.toBe('print("correct")');
+      await page.reload({ waitUntil: 'load' });
 
-    await page.reload({ waitUntil: 'load' });
+      activity = imageCodingActivity(page);
 
-    activity = imageCodingActivity(page);
-
-    await expect(getImageCodingSource(activity)).resolves.toBe('print("correct")');
-    await expect(imageCodingSubmitButton(activity)).toBeDisabled();
+      await expect(getImageCodingSource(activity)).resolves.toBe('print("correct")');
+      await expect(imageCodingSubmitButton(activity)).toBeDisabled();
+    });
   });
 });
 
