@@ -71,8 +71,7 @@ export class StudentCoursePO {
 
     const courseUrl = this.courseUrlFromWelcome();
     if (courseUrl) {
-      await this.page.goto(courseUrl);
-      await this.page.waitForLoadState('domcontentloaded');
+      await this.page.goto(courseUrl, { waitUntil: 'domcontentloaded' });
       await this.waitForCourseHome(15000);
     }
   }
