@@ -115,10 +115,7 @@ export class BasicPracticePagePO {
       .catch(() => false);
 
     if (simpleAuthorToolbarVisible) {
-      await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
-        timeout: 30000,
-      });
-      await expect(this.simpleAuthorMultipleChoiceButton).toBeEnabled({ timeout: 30000 });
+      await this.waitForSimpleAuthorMultipleChoiceToolbarReady();
       await this.addSimpleAuthorMultipleChoicePart();
       return;
     }
@@ -210,10 +207,7 @@ export class BasicPracticePagePO {
 
     await this.selectFlowchartScreenByTitle('Welcome Screen');
     await this.switchToAdvancedAuthorScreenPanelMode();
-    await this.clickAdvancedAuthorMultipleChoiceButton();
-    await this.simpleAuthorMultipleChoicePart
-      .first()
-      .waitFor({ state: 'attached', timeout: 30000 });
+    await this.ensureSimpleAuthorMultipleChoicePart();
     await this.setSimpleAuthorScreenMaxAttempts('1');
     await this.waitForChangesSaved().catch(() => void 0);
 
@@ -284,6 +278,8 @@ export class BasicPracticePagePO {
   }
 
   private async addSimpleAuthorMultipleChoicePart() {
+    await this.waitForSimpleAuthorMultipleChoiceToolbarReady();
+
     for (let attempt = 0; attempt < 10; attempt += 1) {
       await this.simpleAuthorMultipleChoiceButton.click();
 
@@ -299,6 +295,24 @@ export class BasicPracticePagePO {
     }
 
     await this.simpleAuthorMultipleChoicePart.first().waitFor({ state: 'attached', timeout: 1000 });
+  }
+
+  private async ensureSimpleAuthorMultipleChoicePart() {
+    const hasPart = (await this.simpleAuthorMultipleChoicePart.count().catch(() => 0)) > 0;
+    if (hasPart) return;
+
+    await this.clickAdvancedAuthorMultipleChoiceButton();
+    await this.simpleAuthorMultipleChoicePart
+      .first()
+      .waitFor({ state: 'attached', timeout: 30000 });
+  }
+
+  private async waitForSimpleAuthorMultipleChoiceToolbarReady() {
+    await this.simpleAuthorToolbar.waitFor({ state: 'visible', timeout: 30000 });
+    await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
+      timeout: 30000,
+    });
+    await expect(this.simpleAuthorMultipleChoiceButton).toBeEnabled({ timeout: 30000 });
   }
 
   private async setSimpleAuthorScreenMaxAttempts(maxAttempts: string) {
