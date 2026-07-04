@@ -1,7 +1,11 @@
 import { expect, type Page } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
 import path from 'node:path';
-import { configureStudentDeliveryRuntimeConfig, seedStudentDeliveryScenario } from '../student_delivery/support';
+import {
+  configureStudentDeliveryRuntimeConfig,
+  seedStudentDeliveryScenario,
+  waitForMainLiveView,
+} from '../student_delivery/support';
 
 const runId = `-${Date.now()}`;
 const scenarioPath = path.resolve(__dirname, './transfer-enrollment.scenario.yaml');
@@ -100,17 +104,7 @@ async function openStudentActionsFromInstructorStudents(
   sectionSlug: string,
   studentName: string,
 ) {
-  await page.goto(`/sections/${sectionSlug}/instructor_dashboard/overview/students`, {
-    waitUntil: 'load',
-  });
-  await expect(page.locator('#students_table')).toBeVisible();
-
-  const studentLink = page
-    .locator('#students_table')
-    .getByRole('link', { name: studentName, exact: true })
-    .first();
-  await expect(studentLink).toBeVisible();
-
+  const studentLink = await findStudentLinkInInstructorStudents(page, sectionSlug, studentName);
   const href = await studentLink.getAttribute('href');
 
   if (!href) {
@@ -125,19 +119,20 @@ async function openStudentActionsFromInstructorStudents(
   await expect(page.locator('#student_actions')).toBeVisible();
 }
 
-async function selectTransferModalRow(page: Page, text: string) {
-  const row = page.locator('#transfer_enrollment_modal tbody tr').filter({ hasText: text }).first();
-
-  await expect(row).toBeVisible();
-  await row.click();
-}
-
 async function expectStudentListedInInstructorStudents(
   page: Page,
   sectionSlug: string,
   studentName: string,
 ) {
   // This list is the simplest way to confirm the enrollment still exists in the section.
+  await findStudentLinkInInstructorStudents(page, sectionSlug, studentName);
+}
+
+async function findStudentLinkInInstructorStudents(
+  page: Page,
+  sectionSlug: string,
+  studentName: string,
+) {
   await page.goto(`/sections/${sectionSlug}/instructor_dashboard/overview/students`, {
     waitUntil: 'load',
   });
@@ -147,8 +142,16 @@ async function expectStudentListedInInstructorStudents(
     .locator('#students_table')
     .getByRole('link', { name: studentName, exact: true })
     .first();
+  await expect(studentLink).toBeVisible();
 
-  await expect(studentLink).toHaveCount(1);
+  return studentLink;
+}
+
+async function selectTransferModalRow(page: Page, text: string) {
+  const row = page.locator('#transfer_enrollment_modal tbody tr').filter({ hasText: text }).first();
+
+  await expect(row).toBeVisible();
+  await row.click();
 }
 
 async function expectStudentMetric(
@@ -162,12 +165,4 @@ async function expectStudentMetric(
     .locator('xpath=following-sibling::span');
 
   await expect(metric).toContainText(value);
-}
-
-async function waitForMainLiveView(page: Page) {
-  await page.waitForFunction(
-    () => document.querySelector('[data-phx-main]')?.classList.contains('phx-connected'),
-    undefined,
-    { timeout: 15_000 },
-  );
 }
