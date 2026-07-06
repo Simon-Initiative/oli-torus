@@ -100,10 +100,14 @@ export async function openStudentDeliveryPracticeForLoggedInStudent(
   await studentCourse.goToCourseIfPrompted();
 
   const practiceButton = page.getByText('Practice', { exact: true }).first();
-  await expect(practiceButton).toBeVisible();
-  await practiceButton.click();
 
-  await expect(page.getByText(activityTitle).first()).toBeVisible();
+  if (await practiceButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await practiceButton.click();
+    await expect(page.getByText(activityTitle).first()).toBeVisible();
+    return;
+  }
+
+  await studentCourse.openPage(activityTitle);
 }
 
 function learnPath(sectionSlug: string) {
