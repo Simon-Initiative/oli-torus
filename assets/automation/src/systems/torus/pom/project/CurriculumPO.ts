@@ -7,6 +7,7 @@ export type Index = 'first' | 'last' | number;
 export class CurriculumPO {
   private readonly contentCenter: Locator;
   private readonly practiceButton: Locator;
+  private readonly adaptiveSimplePracticeButton: Locator;
   private readonly adaptivePracticeButton: Locator;
   private readonly scoredButton: Locator;
   private readonly editPageLink: Locator;
@@ -19,6 +20,9 @@ export class CurriculumPO {
   constructor(private readonly page: Page) {
     this.contentCenter = page.locator('#content > div.container.mx-auto.p-8');
     this.practiceButton = page.getByRole('button', { name: 'Practice' });
+    this.adaptiveSimplePracticeButton = page.getByRole('button', {
+      name: 'Practice (Simple Author)',
+    });
     this.adaptivePracticeButton = page.getByRole('button', { name: 'Practice (Advanced Author)' });
     this.scoredButton = page.getByRole('button', { name: 'Scored' }).first();
     this.createUnitButton = page.getByRole('button', { name: 'Create a Unit' });
@@ -49,8 +53,28 @@ export class CurriculumPO {
 
   async clickAdaptivePracticeButton() {
     await this.adaptivePracticeButton.click();
-    if (await this.pageEditorIsOpen()) return true;
-    await this.verifyPage('New Advanced Author Page', 'Edit Page', 'last');
+    return this.waitForAdaptivePageOrVerify('New Advanced Author Page');
+  }
+
+  async clickAdaptiveSimplePracticeButton() {
+    await this.adaptiveSimplePracticeButton.click();
+    return this.waitForAdaptivePageOrVerify('New Simple Author Page');
+  }
+
+  private async waitForAdaptivePageOrVerify(title: string) {
+    const editorTitleBar = this.page.locator('div.TitleBar');
+
+    try {
+      await Promise.race([
+        this.page.waitForURL(/\/curriculum\/[^/]+\/edit$/, { timeout: 10000 }),
+        editorTitleBar.waitFor({ state: 'visible', timeout: 10000 }),
+      ]);
+      return true;
+    } catch {
+      // fall through to the curriculum entry verification below
+    }
+
+    await this.verifyPage(title, 'Edit Page', 'last');
     return false;
   }
 

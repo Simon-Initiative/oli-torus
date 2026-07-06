@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { expect, Page } from '@playwright/test';
 import { FileManager } from '@core/FileManager';
 import { Table } from '@core/Table';
 import { Utils } from '@core/Utils';
@@ -32,7 +32,13 @@ import { QuestionLikertCO } from '@pom/activities/QuestionLikertCO';
 import { step } from '@core/decoration/step';
 import { QuestionImageHotspot } from '@pom/activities/QuestionImageHotspot';
 
-type PageType = 'basic-practice' | 'basic-scored' | 'adaptive-practice' | 'unit' | 'module';
+type PageType =
+  | 'basic-practice'
+  | 'basic-scored'
+  | 'adaptive-practice'
+  | 'adaptive-simple-practice'
+  | 'unit'
+  | 'module';
 
 export class CurriculumTask {
   private readonly basicPP: BasicPracticePagePO;
@@ -142,6 +148,9 @@ export class CurriculumTask {
       case 'adaptive-practice':
         openedEditor = await this.curriculum.clickAdaptivePracticeButton();
         break;
+      case 'adaptive-simple-practice':
+        openedEditor = await this.curriculum.clickAdaptiveSimplePracticeButton();
+        break;
       case 'unit':
         await this.curriculum.clickCreateUnitButton();
         break;
@@ -153,6 +162,8 @@ export class CurriculumTask {
     if (openedEditor && !stayInEditor) {
       await this.returnToCurriculum();
     }
+
+    return openedEditor;
   }
 
   @step('Add a page to the project. Type: {type}, Title: {titlePage}')
@@ -164,9 +175,53 @@ export class CurriculumTask {
     await this.curriculum.expectPageVisible(titlePage);
   }
 
+  @step('Create an adaptive page in Advanced Author')
+  async createAdaptivePageInAdvancedAuthor(stayInEditor = false) {
+    const openedEditor = await this.addPage('adaptive-practice', true);
+    if (!openedEditor) {
+      await this.enterPage(
+        'adaptive-practice',
+        this.defaultPageName('adaptive-practice'),
+        'Edit Page',
+        'last',
+      );
+    }
+    await this.basicPP.ensureAdvancedAuthorEditable();
+    await this.basicPP.waitForChangesSaved().catch(() => void 0);
+    if (!stayInEditor) {
+      await this.returnToCurriculum();
+      await this.curriculum.expectPageVisible('New Advanced Author Page');
+    }
+  }
+
+  @step('Create an adaptive page in Simple Author')
+  async createAdaptivePageInSimpleAuthor(stayInEditor = false) {
+    const openedEditor = await this.addPage('adaptive-simple-practice', true);
+    if (!openedEditor) {
+      await this.enterPage(
+        'adaptive-simple-practice',
+        this.defaultPageName('adaptive-simple-practice'),
+        'Edit Page',
+        'last',
+      );
+    }
+    await this.basicPP.ensureSimpleAuthorReady();
+    await this.basicPP.waitForAdvancedAuthorFlowchartReady();
+    await this.basicPP.waitForChangesSaved().catch(() => void 0);
+    if (!stayInEditor) {
+      await this.returnToCurriculum();
+      await this.curriculum.expectPageVisible('New Simple Author Page');
+    }
+  }
+
   @step('Enter a page from the project. Type: {type}')
   async enterPage(type: PageType, namePage: string, link: string, index: Index) {
-    if (type === 'basic-practice' || type === 'basic-scored' || type === 'adaptive-practice') {
+    if (
+      type === 'basic-practice' ||
+      type === 'basic-scored' ||
+      type === 'adaptive-practice' ||
+      type === 'adaptive-simple-practice'
+    ) {
       if (await this.curriculum.pageEditorIsOpen(500)) return;
       await this.curriculum.clickEditPageLink(namePage, link, index);
     }
@@ -192,6 +247,8 @@ export class CurriculumTask {
         return 'New Assessment';
       case 'adaptive-practice':
         return 'New Advanced Author Page';
+      case 'adaptive-simple-practice':
+        return 'New Simple Author Page';
       case 'unit':
         return 'Unit 1: Unit';
       case 'module':
@@ -582,6 +639,23 @@ export class CurriculumTask {
     await this.basicPP.clickInsertButtonIcon();
     await this.basicPP.selectActivity(activity);
     await this.basicPP.waitForChangesSaved();
+  }
+
+  @step('Add a multiple choice question in Advanced Author')
+  async addAdvancedAuthorMultipleChoiceQuestion() {
+    await this.basicPP.clickAdvancedAuthorMultipleChoiceButton();
+    await this.page.waitForFunction(
+      () => document.querySelectorAll('janus-mcq').length > 0,
+      undefined,
+      { timeout: 30000 },
+    );
+    await expect(this.page.locator('janus-mcq').first()).toBeVisible({ timeout: 30000 });
+    await this.basicPP.waitForChangesSaved().catch(() => void 0);
+  }
+
+  @step('Build a simple Advanced Author MCQ branching lesson')
+  async buildSimpleAdvancedAuthorMcqBranchingLesson() {
+    return this.basicPP.buildSimpleAdvancedAuthorMcqBranchingLesson();
   }
 
   @step("Add activities with questions '{editorTitle}', '{activityType}' and '{questionText}'")

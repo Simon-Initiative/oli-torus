@@ -187,13 +187,18 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         %Resources.Revision{} = activity_revision,
         opts
       ) do
-    all_activities = Activities.list_activity_registrations()
-    activity_types_map = Map.new(all_activities, fn activity -> {activity.id, activity} end)
+    activity_types_map =
+      Keyword.get_lazy(opts, :activity_types_map, fn ->
+        Activities.list_activity_registrations()
+        |> Map.new(fn activity -> {activity.id, activity} end)
+      end)
 
     with {:ok, activity_type} <- Map.fetch(activity_types_map, activity_revision.activity_type_id) do
       learning_objectives =
-        preview_objective_titles_by_activity_id(section.id, [activity_revision])
-        |> Map.get(activity_revision.resource_id, [])
+        Keyword.get_lazy(opts, :learning_objectives, fn ->
+          objective_titles_by_activity_id(section.id, [activity_revision])
+          |> Map.get(activity_revision.resource_id, [])
+        end)
 
       summary =
         %ActivitySummary{
@@ -203,9 +208,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
           state: nil,
           lifecycle_state: :active,
           model:
-            activity_revision.content
-            |> Jason.encode!()
-            |> Oli.Delivery.Page.ActivityContext.encode(),
+            Keyword.get_lazy(opts, :encoded_model, fn ->
+              activity_revision.content
+              |> Jason.encode!()
+              |> Oli.Delivery.Page.ActivityContext.encode()
+            end),
           delivery_element: activity_type.delivery_element,
           authoring_element: activity_type.authoring_element,
           preview_element: activity_type.preview_element,
@@ -347,7 +354,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       |> then(&Resolver.from_resource_id(section_slug, &1))
 
     objective_titles_by_activity_id =
-      preview_objective_titles_by_activity_id(section.id, activity_revisions)
+      objective_titles_by_activity_id(section.id, activity_revisions)
 
     activity_attached_objective_ids_by_id =
       Map.new(activity_revisions, fn activity_revision ->
@@ -454,6 +461,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         activity_map,
         bib_entries,
         all_activities,
+        navigation_params,
         activity_bank_selection_previews
       )
 
@@ -506,6 +514,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
          activity_map,
          bib_entries,
          all_activities,
+         navigation_params,
          activity_bank_selection_previews
        ) do
     section_slug = section.slug
@@ -519,6 +528,16 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
+      page_link_params: navigation_params,
+      internal_link_url:
+        &OliWeb.Delivery.Instructor.PreviewRoutes.lesson_path(section_slug, &1, navigation_params),
+      selection_preview_url:
+        &OliWeb.Delivery.Instructor.PreviewRoutes.selection_path(
+          section_slug,
+          &1,
+          &2,
+          navigation_params
+        ),
       instructor_preview_context: %{
         activity_bank_selections: activity_bank_selection_previews
       },
@@ -807,10 +826,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     do: %{}
 
   defp bank_selection_coverage_by_objective_id(summary, exclusion_view) do
+    active_candidates = active_bank_candidate_summaries(summary, exclusion_view)
+    active_total = length(active_candidates)
+    selected_count = min(summary.count, active_total)
+
     active_counts_by_objective_id =
-      summary
-      |> active_bank_candidate_summaries(exclusion_view)
-      |> Enum.reduce(%{}, fn candidate, acc ->
+      Enum.reduce(active_candidates, %{}, fn candidate, acc ->
         Enum.reduce(candidate.objective_ids, acc, fn objective_id, objective_acc ->
           Map.update(objective_acc, objective_id, 1, &(&1 + 1))
         end)
@@ -821,9 +842,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
       {objective_id,
        %{
-         # A randomized bank can select zero questions for any individual LO even when the
-         # selection itself remains fulfillable.
-         min: 0,
+         min: max(selected_count - (active_total - active_count), 0),
          max: min(summary.count, active_count)
        }}
     end)
@@ -895,32 +914,65 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   end
 
   defp bank_selection_candidate_results_by_selection_id(section, page_revision, selections) do
+    case InstructorCustomizations.list_bank_selection_candidate_revisions_by_selection_id(
+           section,
+           page_revision,
+           selections,
+           %{}
+         ) do
+      {:ok, results_by_selection_id} ->
+        Map.new(results_by_selection_id, fn {selection_id, result} ->
+          {selection_id, normalize_bank_selection_candidate_result(selection_id, result)}
+        end)
+
+      {:error, reason} ->
+        Logger.warning(
+          "Unable to bulk summarize instructor preview bank selections for page #{page_revision.resource_id}; falling back to per-selection summaries: #{inspect(reason)}"
+        )
+
+        fallback_bank_selection_candidate_results_by_selection_id(
+          section,
+          page_revision,
+          selections
+        )
+    end
+  end
+
+  defp fallback_bank_selection_candidate_results_by_selection_id(
+         section,
+         page_revision,
+         selections
+       ) do
     Map.new(selections, fn selection ->
-      {selection["id"],
-       list_bank_selection_candidate_revisions(section, page_revision, selection)}
+      selection_id = selection["id"]
+
+      result =
+        InstructorCustomizations.list_bank_selection_candidate_revisions(
+          section,
+          page_revision,
+          selection,
+          MapSet.new()
+        )
+
+      {selection_id, normalize_bank_selection_candidate_result(selection_id, result)}
     end)
   end
 
-  defp list_bank_selection_candidate_revisions(section, page_revision, selection) do
-    case InstructorCustomizations.list_bank_selection_candidate_revisions(
-           section,
-           page_revision,
-           selection,
-           MapSet.new()
-         ) do
+  defp normalize_bank_selection_candidate_result(selection_id, result) do
+    case result do
       {:ok, revisions} ->
         {:ok, revisions}
 
       {:error, {:too_many_candidates, candidate_count}} ->
         Logger.warning(
-          "Unable to fully summarize instructor preview bank selection #{inspect(selection["id"])} because it has #{candidate_count} candidates"
+          "Unable to fully summarize instructor preview bank selection #{inspect(selection_id)} because it has #{candidate_count} candidates"
         )
 
         {:too_large, candidate_count}
 
       {:error, reason} ->
         Logger.warning(
-          "Unable to summarize instructor preview bank selection #{inspect(selection["id"])}: #{inspect(reason)}"
+          "Unable to summarize instructor preview bank selection #{inspect(selection_id)}: #{inspect(reason)}"
         )
 
         {:error, reason}
@@ -997,7 +1049,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       activityTypeSlug: activity_type.slug,
       activityTypeLabel: activity_type.title,
       title: activity_revision.title,
-      points: Grading.determine_activity_out_of(activity_revision),
+      points:
+        Keyword.get_lazy(opts, :points, fn ->
+          Grading.determine_activity_out_of(activity_revision)
+        end),
       learningObjectives: learning_objectives,
       canCustomize: Keyword.get(opts, :can_customize?, false),
       actions: Keyword.get(opts, :actions, []),
@@ -1010,7 +1065,15 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     }
   end
 
-  defp preview_objective_titles_by_activity_id(section_id, activity_revisions) do
+  @doc """
+  Returns learning-objective titles keyed by activity resource id.
+
+  Each value contains the sorted unique objective titles attached to that
+  activity revision for the given section.
+  """
+  @spec objective_titles_by_activity_id(integer(), [%Resources.Revision{}]) ::
+          %{integer() => [String.t()]}
+  def objective_titles_by_activity_id(section_id, activity_revisions) do
     objective_titles_by_id =
       activity_revisions
       |> Enum.flat_map(&activity_objective_ids/1)

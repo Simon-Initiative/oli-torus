@@ -10,6 +10,7 @@ defmodule Oli.Rendering.Content.Markdown do
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
+  alias Oli.Rendering.Content.UrlHelpers
   alias HtmlSanitizeEx.Scrubber
 
   @behaviour Oli.Rendering.Content
@@ -461,7 +462,13 @@ defmodule Oli.Rendering.Content.Markdown do
   end
 
   defp internal_link(
-         %Context{section_slug: section_slug, mode: mode, project_slug: project_slug},
+         %Context{
+           section_slug: section_slug,
+           mode: mode,
+           project_slug: project_slug,
+           page_link_params: page_link_params,
+           internal_link_url: internal_link_url
+         },
          next,
          href,
          _opts \\ []
@@ -481,7 +488,12 @@ defmodule Oli.Rendering.Content.Markdown do
           # rewrite internal link using section slug and revision slug
           case mode do
             :instructor_preview ->
-              "/sections/#{section_slug}/preview/page/#{revision_slug_from_course_link(href)}"
+              instructor_preview_link(
+                section_slug,
+                internal_link_url,
+                page_link_params,
+                revision_slug_from_course_link(href)
+              )
 
             _ ->
               "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
@@ -494,6 +506,13 @@ defmodule Oli.Rendering.Content.Markdown do
   defp external_link(%Context{} = _context, next, href) do
     ["[", next.(), "](#{href})"]
   end
+
+  defp instructor_preview_link(_section_slug, internal_link_url, _page_link_params, revision_slug)
+       when is_function(internal_link_url, 1),
+       do: internal_link_url.(revision_slug)
+
+  defp instructor_preview_link(section_slug, _internal_link_url, page_link_params, revision_slug),
+    do: UrlHelpers.preview_lesson_path(section_slug, revision_slug, page_link_params)
 
   def page_link(%Context{} = _context, _next, %{
         "idref" => _idref

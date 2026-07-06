@@ -33,6 +33,24 @@ export class StudentCoursePO {
     await Verifier.expectIsVisible(l);
   }
 
+  async openPage(pageName: string) {
+    const pageTitle = this.page.getByRole('heading', { name: pageName, exact: true, level: 5 });
+    const pageCard = this.page
+      .locator('div[phx-click="navigate_to_resource"]')
+      .filter({ has: pageTitle })
+      .first();
+
+    await Verifier.expectIsVisible(pageTitle);
+    await Promise.all([
+      this.page.waitForURL((url) => url.pathname.includes('/adaptive_lesson/'), {
+        timeout: 15000,
+      }),
+      pageCard.click({ force: true }),
+    ]);
+
+    await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
+  }
+
   async goToCourseIfPrompted() {
     const wizard = this.onboardingWizard;
 
@@ -53,8 +71,7 @@ export class StudentCoursePO {
 
     const courseUrl = this.courseUrlFromWelcome();
     if (courseUrl) {
-      await this.page.goto(courseUrl);
-      await this.page.waitForLoadState('domcontentloaded');
+      await this.page.goto(courseUrl, { waitUntil: 'domcontentloaded' });
       await this.waitForCourseHome(15000);
     }
   }

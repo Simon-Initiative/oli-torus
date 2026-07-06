@@ -89,6 +89,72 @@ defmodule Oli.Content.Content.HtmlTest do
                "<button type=\"button\" class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"3603298117\" data-message=\"startcuepoint=5.0;endcuepoint=10.0\">Play Intro</button>"
     end
 
+    test "renders internal course links through instructor preview lesson routes", %{
+      author: author
+    } do
+      {:ok, content} = read_json_file("./test/oli/rendering/content/example_content.json")
+
+      context = %Context{
+        user: author,
+        section_slug: "some_section",
+        mode: :instructor_preview,
+        page_link_params: %{
+          "return_to" => "/sections/some_section/instructor_dashboard/overview/course_content",
+          "request_path" => "/sections/some_section/preview/learn"
+        }
+      }
+
+      rendered_html = Content.render(context, content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~
+               ~s|<a class="internal-link" href="/sections/some_section/preview/lesson/page_two?|
+
+      assert rendered_html_string =~
+               "return_to=%2Fsections%2Fsome_section%2Finstructor_dashboard%2Foverview%2Fcourse_content"
+
+      assert rendered_html_string =~
+               "request_path=%2Fsections%2Fsome_section%2Fpreview%2Flearn"
+    end
+
+    test "renders activity bank selection links through instructor preview selection routes",
+         %{author: author} do
+      context = %Context{
+        user: author,
+        section_slug: "some_section",
+        revision_slug: "quiz_page",
+        mode: :instructor_preview,
+        page_link_params: %{
+          "return_to" => "/sections/some_section/instructor_dashboard/overview/course_content",
+          "request_path" => "/sections/some_section/preview/assignments"
+        },
+        activity_types_map: %{}
+      }
+
+      rendered_html =
+        Content.render(
+          context,
+          %{
+            "type" => "selection",
+            "id" => "selection-1",
+            "count" => 2,
+            "logic" => %{"conditions" => nil}
+          },
+          Content.Html
+        )
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html =~
+               ~s|href="/sections/some_section/preview/lesson/quiz_page/selection/selection-1?|
+
+      assert rendered_html =~
+               "return_to=%2Fsections%2Fsome_section%2Finstructor_dashboard%2Foverview%2Fcourse_content"
+
+      assert rendered_html =~
+               "request_path=%2Fsections%2Fsome_section%2Fpreview%2Fassignments"
+    end
+
     test "renders malformed content gracefully", %{author: author} do
       {:ok, content} =
         read_json_file("./test/oli/rendering/content/example_malformed_content.json")

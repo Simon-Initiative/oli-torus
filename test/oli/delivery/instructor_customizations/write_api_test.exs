@@ -333,6 +333,123 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
   end
 
   describe "candidate count protection and review" do
+    test "bulk disable and restore persist candidate rows atomically", context do
+      [first, second | _rest] = context.candidates
+      opts = [actor: context.instructor]
+
+      assert {:ok, view} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-2",
+                 [first.resource_id, second.resource_id],
+                 false,
+                 opts
+               )
+
+      refute InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-2",
+               first.resource_id
+             )
+
+      refute InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-2",
+               second.resource_id
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 2
+
+      assert {:ok, view} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-2",
+                 [first.resource_id, second.resource_id],
+                 true,
+                 opts
+               )
+
+      assert InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-2",
+               first.resource_id
+             )
+
+      assert InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-2",
+               second.resource_id
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 0
+    end
+
+    test "blocked bulk disable persists nothing from the requested set", context do
+      [first, second, third] = context.candidates
+      opts = [actor: context.instructor]
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 first.resource_id,
+                 opts
+               )
+
+      assert {:error,
+              {:insufficient_selection_candidates,
+               %{selection_id: "selection-1", count: 2, active_candidates: 0}}} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 [second.resource_id, third.resource_id],
+                 false,
+                 opts
+               )
+
+      refute Repo.exists?(
+               from exclusion in ActivityExclusion,
+                 where:
+                   exclusion.section_id == ^context.section.id and
+                     exclusion.page_resource_id == ^context.page_revision.resource_id and
+                     exclusion.kind == :bank_candidate and
+                     exclusion.selection_id == "selection-1" and
+                     exclusion.excluded_resource_id in ^[second.resource_id, third.resource_id]
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 1
+    end
+
+    test "rejects malformed candidate ids without persisting anything", context do
+      [first | _rest] = context.candidates
+      opts = [actor: context.instructor]
+
+      assert {:error, {:invalid_candidate_ids, ["bad-id", nil]}} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 [first.resource_id, "bad-id", nil],
+                 false,
+                 opts
+               )
+
+      refute Repo.exists?(
+               from exclusion in ActivityExclusion,
+                 where:
+                   exclusion.section_id == ^context.section.id and
+                     exclusion.page_resource_id == ^context.page_revision.resource_id and
+                     exclusion.kind == :bank_candidate and
+                     exclusion.selection_id == "selection-1"
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 0
+    end
+
     test "allows disables above count, blocks at count, and allows whole-selection disable",
          context do
       [first, second | _] = context.candidates
@@ -551,6 +668,31 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                |> Enum.sort()
     end
 
+    test "lists batched selection candidates with parameterized text logic", context do
+      matching_selections =
+        Enum.map(1..12, fn index ->
+          text_selection("matching-text-selection-#{index}", "Candidate")
+        end)
+
+      empty_selection = text_selection("empty-text-selection", "Embedded")
+
+      assert {:ok, results_by_selection_id} =
+               InstructorCustomizations.list_bank_selection_candidate_revisions_by_selection_id(
+                 context.section,
+                 context.page_revision,
+                 matching_selections ++ [empty_selection]
+               )
+
+      assert Map.fetch!(results_by_selection_id, "empty-text-selection") == {:ok, []}
+
+      for selection <- matching_selections do
+        assert {:ok, matching_candidates} = Map.fetch!(results_by_selection_id, selection["id"])
+
+        assert matching_candidates |> Enum.map(& &1.resource_id) |> Enum.sort() ==
+                 context.candidates |> Enum.map(& &1.resource_id) |> Enum.sort()
+      end
+    end
+
     test "summarizes selection candidates without returning a paged candidate list", context do
       [first, second, third] = context.candidates
 
@@ -637,6 +779,32 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                stale_activity.resource_id
              )
     end
+
+    test "bulk restore accepts stale candidate exclusions that are already persisted",
+         context do
+      stale_activity = activity_revision("Bulk stale activity", :banked)
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: stale_activity.resource_id
+      )
+
+      assert {:ok, view} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 [stale_activity.resource_id],
+                 true,
+                 actor: context.instructor
+               )
+
+      assert InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-1",
+               stale_activity.resource_id
+             )
+    end
   end
 
   defp activity_revision(title, scope) do
@@ -651,6 +819,21 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
 
   defp selection(id, count) do
     %{"type" => "selection", "id" => id, "logic" => %{"conditions" => nil}, "count" => count}
+  end
+
+  defp text_selection(id, text) do
+    %{
+      "type" => "selection",
+      "id" => id,
+      "logic" => %{
+        "conditions" => %{
+          "fact" => "text",
+          "operator" => "contains",
+          "value" => text
+        }
+      },
+      "count" => 1
+    }
   end
 
   defp exclusion_count(context, kind) do

@@ -14,7 +14,6 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.{PreviewPageContext, PreviewRoutes}
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Delivery.Student.Lesson.Annotations
@@ -28,7 +27,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         {:ok,
          redirect(socket,
            to:
-             PreviewRoutes.page_path(
+             PreviewRoutes.adaptive_page_path(
                section.slug,
                revision_slug,
                adaptive_redirect_params(params)
@@ -39,7 +38,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         {:ok,
          redirect(socket,
            to:
-             PreviewRoutes.page_path(
+             PreviewRoutes.adaptive_page_path(
                section.slug,
                revision.slug,
                adaptive_redirect_params(params)

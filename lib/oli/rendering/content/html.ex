@@ -18,6 +18,7 @@ defmodule Oli.Rendering.Content.Html do
   alias HtmlSanitizeEx.Scrubber
   alias Oli.Utils.Purposes
   alias Oli.Rendering.Content.ResourceSummary
+  alias Oli.Rendering.Content.UrlHelpers
 
   @behaviour Oli.Rendering.Content
 
@@ -854,10 +855,12 @@ defmodule Oli.Rendering.Content.Html do
 
         # rewrite internal link using section slug and revision slug
         :instructor_preview ->
-          ~p"/sections/#{section_slug}/preview/page/#{revision_slug_from_course_link(href)}"
+          instructor_preview_link(context, revision_slug_from_course_link(href))
 
         _ ->
-          ~p"/sections/#{section_slug}/lesson/#{revision_slug_from_course_link(href)}?#{context.page_link_params}"
+          revision_slug = revision_slug_from_course_link(href)
+
+          ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{context.page_link_params}"
       end
 
     target_rel =
@@ -876,6 +879,16 @@ defmodule Oli.Rendering.Content.Html do
       "</a>\n"
     ]
   end
+
+  defp instructor_preview_link(%Context{internal_link_url: internal_link_url}, revision_slug)
+       when is_function(internal_link_url, 1),
+       do: internal_link_url.(revision_slug)
+
+  defp instructor_preview_link(
+         %Context{section_slug: section_slug, page_link_params: page_link_params},
+         revision_slug
+       ),
+       do: UrlHelpers.preview_lesson_path(section_slug, revision_slug, page_link_params)
 
   def page_link(
         %Context{resource_summary_fn: resource_summary_fn} = context,
