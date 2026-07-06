@@ -7,10 +7,6 @@ import { type FrameLocator, type Locator, type Page, expect } from '@playwright/
  * specs can focus on activity behavior instead of embedded-runtime plumbing.
  */
 
-type EmbeddedActivityContext = {
-  sectionSlug: string;
-};
-
 type EmbeddedPartState = {
   attemptGuid: string;
   partId: string;
@@ -47,11 +43,7 @@ export function embeddedRuntimeFrame(page: Page): FrameLocator {
   return page.frameLocator('iframe[data-resourcetypeid="oli_embedded"]').first();
 }
 
-export function embeddedRuntimeField(frame: FrameLocator, id: string): Locator {
-  return frame.locator(`#${id}`);
-}
-
-export function embeddedRuntimeCommand(frame: FrameLocator, id: string): Locator {
+export function embeddedRuntimeElement(frame: FrameLocator, id: string): Locator {
   return frame.locator(`#${id}`);
 }
 
@@ -61,16 +53,6 @@ export async function embeddedAttemptGuid(activity: Locator): Promise<string> {
 
 export async function embeddedAttemptNumber(activity: Locator): Promise<number> {
   return readEmbeddedActivityState(activity, 'attemptNumber');
-}
-
-export async function embeddedSectionSlug(activity: Locator): Promise<string> {
-  const context = await activity.getAttribute('context');
-
-  if (!context) {
-    throw new Error('Embedded activity is missing context payload');
-  }
-
-  return (JSON.parse(context) as EmbeddedActivityContext).sectionSlug;
 }
 
 export async function getEmbeddedAttemptState(

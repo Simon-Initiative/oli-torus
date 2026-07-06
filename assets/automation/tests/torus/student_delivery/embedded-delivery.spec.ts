@@ -7,8 +7,7 @@ import {
   embeddedAttemptGuid,
   embeddedAttemptNumber,
   embeddedIframe,
-  embeddedRuntimeCommand,
-  embeddedRuntimeField,
+  embeddedRuntimeElement,
   embeddedRuntimeFrame,
   expectEmbeddedAttemptEventually,
   getEmbeddedAttemptState,
@@ -112,15 +111,17 @@ test.describe('embedded delivery', () => {
           runtime.getByRole('heading', { name: 'Embedded runtime stub loaded' }),
         ).toBeVisible();
         await expect(runtime.locator('html')).toHaveAttribute('data-embedded-stub', 'ready');
-        await expect(embeddedRuntimeField(runtime, 'activity-mode')).toHaveText('delivery');
-        await expect(embeddedRuntimeField(runtime, 'resource-type')).toHaveText('oli_embedded');
-        await expect(embeddedRuntimeField(runtime, 'attempt-guid')).not.toHaveText('unknown');
+        await expect(embeddedRuntimeElement(runtime, 'activity-mode')).toHaveText('delivery');
+        await expect(embeddedRuntimeElement(runtime, 'resource-type')).toHaveText('oli_embedded');
+        await expect(embeddedRuntimeElement(runtime, 'attempt-guid')).not.toHaveText('unknown');
 
         initialAttemptGuid = await embeddedAttemptGuid(activity);
         initialAttemptNumber = await embeddedAttemptNumber(activity);
 
-        await expect(embeddedRuntimeField(runtime, 'attempt-guid')).toHaveText(initialAttemptGuid);
-        await expect(embeddedRuntimeField(runtime, 'attempt-number')).toHaveText(
+        await expect(embeddedRuntimeElement(runtime, 'attempt-guid')).toHaveText(
+          initialAttemptGuid,
+        );
+        await expect(embeddedRuntimeElement(runtime, 'attempt-number')).toHaveText(
           String(initialAttemptNumber),
         );
       },
@@ -132,11 +133,11 @@ test.describe('embedded delivery', () => {
         const runtime = embeddedRuntimeFrame(page);
 
         // Active attempts should not rotate yet; the legacy command simply returns the current one.
-        await embeddedRuntimeCommand(runtime, 'start-attempt').click();
-        await expect(embeddedRuntimeField(runtime, 'command-status')).toHaveText(
+        await embeddedRuntimeElement(runtime, 'start-attempt').click();
+        await expect(embeddedRuntimeElement(runtime, 'command-status')).toHaveText(
           'startAttempt succeeded',
         );
-        await expect(embeddedRuntimeField(runtime, 'attempt-number')).toHaveText(
+        await expect(embeddedRuntimeElement(runtime, 'attempt-number')).toHaveText(
           String(initialAttemptNumber),
         );
 
@@ -155,22 +156,24 @@ test.describe('embedded delivery', () => {
       const runtime = embeddedRuntimeFrame(page);
 
       // Persist deterministic save data from the stub, then load it back through the same API.
-      await embeddedRuntimeCommand(runtime, 'write-file-record').click();
-      await expect(embeddedRuntimeField(runtime, 'command-status')).toHaveText(
+      await embeddedRuntimeElement(runtime, 'write-file-record').click();
+      await expect(embeddedRuntimeElement(runtime, 'command-status')).toHaveText(
         'writeFileRecord succeeded',
       );
-      await expect(embeddedRuntimeField(runtime, 'loaded-record-status')).toHaveText(
+      await expect(embeddedRuntimeElement(runtime, 'loaded-record-status')).toHaveText(
         'Saved file record to Torus.',
       );
 
-      await embeddedRuntimeCommand(runtime, 'load-file-record').click();
-      await expect(embeddedRuntimeField(runtime, 'command-status')).toHaveText(
+      await embeddedRuntimeElement(runtime, 'load-file-record').click();
+      await expect(embeddedRuntimeElement(runtime, 'command-status')).toHaveText(
         'loadFileRecord succeeded',
       );
-      await expect(embeddedRuntimeField(runtime, 'loaded-record-status')).toHaveText(
+      await expect(embeddedRuntimeElement(runtime, 'loaded-record-status')).toHaveText(
         'Loaded file record from Torus.',
       );
-      await expect(embeddedRuntimeField(runtime, 'loaded-record')).toContainText('saved-from-stub');
+      await expect(embeddedRuntimeElement(runtime, 'loaded-record')).toContainText(
+        'saved-from-stub',
+      );
     });
 
     await test.step('embedded runtime scoreAttempt changes the Torus attempt state', async () => {
@@ -178,8 +181,8 @@ test.describe('embedded delivery', () => {
       const beforeScoreState = await getEmbeddedAttemptState(page, sectionSlug, initialAttemptGuid);
 
       // Client-side scoring should mutate Torus attempt state, even before the attempt is finalized.
-      await embeddedRuntimeCommand(runtime, 'score-attempt').click();
-      await expect(embeddedRuntimeField(runtime, 'command-status')).toHaveText(
+      await embeddedRuntimeElement(runtime, 'score-attempt').click();
+      await expect(embeddedRuntimeElement(runtime, 'command-status')).toHaveText(
         'scoreAttempt succeeded',
       );
 
@@ -199,8 +202,8 @@ test.describe('embedded delivery', () => {
       const runtime = embeddedRuntimeFrame(page);
 
       // Finalization should roll the scored part state up to the activity attempt in Torus.
-      await embeddedRuntimeCommand(runtime, 'end-attempt').click();
-      await expect(embeddedRuntimeField(runtime, 'command-status')).toHaveText(
+      await embeddedRuntimeElement(runtime, 'end-attempt').click();
+      await expect(embeddedRuntimeElement(runtime, 'command-status')).toHaveText(
         'endAttempt succeeded',
       );
 
@@ -223,11 +226,11 @@ test.describe('embedded delivery', () => {
         const runtime = embeddedRuntimeFrame(page);
 
         // Once evaluated, startAttempt should advance the embedded flow to the next attempt number.
-        await embeddedRuntimeCommand(runtime, 'start-attempt').click();
-        await expect(embeddedRuntimeField(runtime, 'command-status')).toHaveText(
+        await embeddedRuntimeElement(runtime, 'start-attempt').click();
+        await expect(embeddedRuntimeElement(runtime, 'command-status')).toHaveText(
           'startAttempt succeeded',
         );
-        await expect(embeddedRuntimeField(runtime, 'attempt-number')).toHaveText('2');
+        await expect(embeddedRuntimeElement(runtime, 'attempt-number')).toHaveText('2');
       },
     );
 
@@ -258,7 +261,7 @@ test.describe('embedded delivery', () => {
       await expect(runtime.locator('html')).toHaveAttribute('data-embedded-stub', 'ready');
       await expect(reloadedAttemptGuid).not.toBe(initialAttemptGuid);
       await expect(reloadedAttemptNumber).toBe(2);
-      await expect(embeddedRuntimeField(runtime, 'attempt-guid')).toHaveText(reloadedAttemptGuid);
+      await expect(embeddedRuntimeElement(runtime, 'attempt-guid')).toHaveText(reloadedAttemptGuid);
 
       // The launch payload includes the new attempt guid, but not the attempt number.
       // The stub only learns the attempt number after a legacy command returns attempt history,
