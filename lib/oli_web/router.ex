@@ -355,6 +355,12 @@ defmodule OliWeb.Router do
 
       post "/scenario-yaml", PlaywrightScenarioController, :run
     end
+
+    scope "/superactivity", OliWeb do
+      pipe_through [:browser]
+
+      get "/embedded/index.html", PlaywrightEmbeddedRuntimeController, :show
+    end
   end
 
   scope "/", OliWeb do
