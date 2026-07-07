@@ -32,6 +32,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     GateDirective,
     TimeDirective,
     WaitDirective,
+    DashboardAnalyticsReadyDirective,
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
@@ -838,6 +839,22 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"dashboard_analytics_ready" => analytics_data}) do
+    allowed_attrs = ["section"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           analytics_data,
+           "dashboard_analytics_ready"
+         ) do
+      :ok ->
+        %DashboardAnalyticsReadyDirective{section: analytics_data["section"]}
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"answer_question" => answer_data}) do
     # Validate attributes
     allowed_attrs = ["student", "section", "page", "activity_virtual_id", "response"]
@@ -1173,6 +1190,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "gate",
          "time",
          "wait",
+         "dashboard_analytics_ready",
          "answer_question",
          "finalize_attempt",
          "student_exception",
@@ -1190,7 +1208,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, dashboard_analytics_ready, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -1227,6 +1245,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "gate",
              "time",
              "wait",
+             "dashboard_analytics_ready",
              "answer_question",
              "finalize_attempt",
              "student_exception",
@@ -1249,7 +1268,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, dashboard_analytics_ready, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
   end
 

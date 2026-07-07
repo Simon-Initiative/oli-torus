@@ -113,6 +113,18 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert section.has_grace_period == false
   end
 
+  test "schema and parser accept dashboard analytics readiness directive" do
+    yaml = """
+    - dashboard_analytics_ready:
+        section: "demo_section"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [directive] = DirectiveParser.parse_yaml!(yaml)
+    assert directive.section == "demo_section"
+  end
+
   test "schema accepts phase 2 gating directives" do
     yaml = """
     - project:

@@ -90,7 +90,8 @@
         "currency": {
           "type": "string"
         }
-      },
+      }
+    },
       "numberLike": {
         "oneOf": [
           {
@@ -3156,6 +3157,27 @@
                     ]
                   }
                 ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "dashboard_analytics_ready"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "dashboard_analytics_ready": {
+                "type": "object",
+                "required": [
+                  "section"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "section": {
+                    "type": "string"
+                  }
+                }
               }
             }
           },

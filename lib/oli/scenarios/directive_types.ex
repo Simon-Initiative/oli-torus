@@ -299,6 +299,14 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:seconds, :milliseconds]
   end
 
+  defmodule DashboardAnalyticsReadyDirective do
+    @moduledoc """
+    Drains pending dashboard analytics snapshot work for a section.
+    section: scenario name of the section whose analytics should be ready
+    """
+    defstruct [:section]
+  end
+
   defmodule AnswerQuestionDirective do
     @moduledoc """
     Simulates a student answering a question on a page.

@@ -8,6 +8,7 @@ This document covers directives for simulating student interactions and tracking
 - [visit_page](#visit_page) - Simulate visiting any page
 - [answer_question](#answer_question) - Simulate answering activities
 - [finalize_attempt](#finalize_attempt) - Finalize a learner's active page attempt
+- [dashboard_analytics_ready](#dashboard_analytics_ready) - Deterministically prepare dashboard analytics
 - [student_exception](#student_exception) - Set or remove assessment setting overrides
 - [wait](#wait) - Pause for real elapsed time
 - [discussion_post](#discussion_post) - Create learner discussion contributions
@@ -182,6 +183,39 @@ boundary used by student lesson delivery.
 - Requires a started attempt, typically created via `visit_page`
 - Uses the real page finalization lifecycle
 - Persists the resulting grade and late state through normal grading rollup
+
+---
+
+## dashboard_analytics_ready
+
+Deterministically prepares analytics-backed dashboard data after learner activity.
+
+Use this directive after student actions that change analytics, such as
+`answer_question` or `finalize_attempt`, and before assertions that read instructor
+dashboard data.
+
+### Parameters
+- `section`: Name of the section whose dashboard analytics should be ready (required)
+
+### Example
+```yaml
+- answer_question:
+    student: "alice"
+    section: "my_section"
+    page: "Practice 1"
+    activity_virtual_id: "mcq_1"
+    response: "a"
+
+- dashboard_analytics_ready:
+    section: "my_section"
+```
+
+### Notes
+- Validates that the named section exists in scenario state
+- Drains pending snapshot analytics work when scenarios run with Oban manual testing
+- Does not sleep or wait on wall-clock time
+- This is intended as an explicit readiness checkpoint between learner simulation
+  and instructor dashboard assertions, not as a general wait directive
 
 ---
 
