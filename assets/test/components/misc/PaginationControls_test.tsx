@@ -1,6 +1,8 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { PaginationControls } from 'components/misc/PaginationControls';
+import { PaginationMode } from 'data/content/resource';
+import * as Events from 'data/events';
 
 const setupMatchMedia = (matches: boolean) => {
   window.matchMedia = jest.fn().mockImplementation((query: string) => {
@@ -25,11 +27,19 @@ const setupMatchMedia = (matches: boolean) => {
   });
 };
 
-const renderPaginationControls = (pageCount: number, initiallyVisible: number[] = [0]) => {
+const renderPaginationControls = (
+  pageCount: number,
+  initiallyVisible: number[] = [0],
+  paginationMode: PaginationMode = 'normal',
+) => {
   const elements: React.ReactNode[] = [];
   for (let i = 0; i < pageCount; i += 1) {
     elements.push(<div key={`break-${i}`} className="content-break" />);
-    elements.push(<div key={`content-${i}`}>Page {i + 1} content</div>);
+    elements.push(
+      <div key={`content-${i}`} data-testid={`page-${i}`}>
+        Page {i + 1} content
+      </div>,
+    );
   }
 
   return render(
@@ -38,7 +48,7 @@ const renderPaginationControls = (pageCount: number, initiallyVisible: number[] 
       <div>
         <PaginationControls
           forId="pagination-test"
-          paginationMode="normal"
+          paginationMode={paginationMode}
           sectionSlug="section-slug"
           pageAttemptGuid="attempt-guid"
           initiallyVisible={initiallyVisible}
@@ -117,5 +127,19 @@ describe('PaginationControls', () => {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }
     expect(screen.queryByText('...')).not.toBeInTheDocument();
+  });
+
+  it('reveals an automated page after pagination pages have initialized', async () => {
+    setupMatchMedia(true);
+    const { getByTestId } = renderPaginationControls(2, [0], 'automatedReveal');
+
+    await waitFor(() => expect(getByTestId('page-0')).toHaveClass('show'));
+    expect(getByTestId('page-1')).not.toHaveClass('show');
+
+    act(() => {
+      document.dispatchEvent(Events.makeShowContentPage({ forId: 'pagination-test', index: 1 }));
+    });
+
+    await waitFor(() => expect(getByTestId('page-1')).toHaveClass('show'));
   });
 });
