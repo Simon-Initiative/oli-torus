@@ -34,19 +34,36 @@ export class StudentCoursePO {
   }
 
   async openPage(pageName: string) {
-    const pageTitle = this.page.getByRole('heading', { name: pageName, exact: true, level: 5 });
-    const pageCard = this.page
+    const galleryTitle = this.page.getByRole('heading', {
+      name: pageName,
+      exact: true,
+      level: 5,
+    });
+    const galleryCard = this.page
       .locator('div[phx-click="navigate_to_resource"]')
-      .filter({ has: pageTitle })
+      .filter({ has: galleryTitle })
       .first();
 
-    await Verifier.expectIsVisible(pageTitle);
-    await Promise.all([
-      this.page.waitForURL((url) => url.pathname.includes('/adaptive_lesson/'), {
-        timeout: 15000,
-      }),
-      pageCard.click({ force: true }),
-    ]);
+    const outlineTitle = this.page.getByRole('button', {
+      name: new RegExp(`\\b${escapeRegExp(pageName)}\\b`),
+    });
+
+    if (await galleryTitle.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await Promise.all([
+        this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+          timeout: 15000,
+        }),
+        galleryCard.click({ force: true }),
+      ]);
+    } else {
+      await Verifier.expectIsVisible(outlineTitle);
+      await Promise.all([
+        this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+          timeout: 15000,
+        }),
+        outlineTitle.click({ force: true }),
+      ]);
+    }
 
     await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
   }
@@ -176,4 +193,12 @@ export class StudentCoursePO {
       form.appendChild(response);
     });
   }
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function isStudentLessonPath(pathname: string) {
+  return pathname.includes('/lesson/') || pathname.includes('/adaptive_lesson/');
 }
