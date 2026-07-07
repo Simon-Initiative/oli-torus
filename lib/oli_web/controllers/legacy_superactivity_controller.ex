@@ -911,11 +911,10 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp base_url(host) do
     endpoint_url = Utils.get_base_url()
+    actual_host = if is_binary(host) and host != "", do: host, else: "localhost"
 
     case URI.parse(endpoint_url) do
       %URI{scheme: scheme, port: port} when is_binary(scheme) ->
-        actual_host = if is_binary(host) and host != "", do: host, else: "localhost"
-
         port_part =
           cond do
             is_nil(port) -> ""
@@ -926,7 +925,7 @@ defmodule OliWeb.LegacySuperactivityController do
         "#{scheme}://#{actual_host}#{port_part}"
 
       _ ->
-        "http://#{host}"
+        "https://#{actual_host}"
     end
   end
 
