@@ -16016,6 +16016,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 3.73px;
 }
 
+.top-\[38px\] {
+  top: 38px;
+}
+
 .top-\[40px\] {
   top: 40px;
 }
@@ -17880,6 +17884,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 210px;
 }
 
+.w-\[220px\] {
+  width: 220px;
+}
+
 .w-\[22px\] {
   width: 22px;
 }
@@ -18308,12 +18316,20 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 1512px;
 }
 
+.max-w-\[180px\] {
+  max-width: 180px;
+}
+
 .max-w-\[200px\] {
   max-width: 200px;
 }
 
 .max-w-\[220px\] {
   max-width: 220px;
+}
+
+.max-w-\[224px\] {
+  max-width: 224px;
 }
 
 .max-w-\[240px\] {
@@ -23983,6 +23999,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_2px_4px_rgba\(0\2c 52\2c 99\2c 0\.10\)\] {
   --tw-shadow: 0px 2px 4px rgba(0,52,99,0.10);
   --tw-shadow-colored: 0px 2px 4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_2px_5px_0px_rgba\(0\2c 50\2c 99\2c 0\.10\)\] {
+  --tw-shadow: 0px 2px 5px 0px rgba(0,50,99,0.10);
+  --tw-shadow-colored: 0px 2px 5px 0px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -29964,6 +29986,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .dark html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-button-primary-hover {
   color: #0D0C0F !important;
+}
+
+.marker\:hidden *::marker {
+  display: none;
+}
+
+.marker\:hidden::marker {
+  display: none;
 }
 
 .placeholder\:pl-6::-moz-placeholder {
