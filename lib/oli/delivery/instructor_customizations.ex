@@ -1041,9 +1041,18 @@ defmodule Oli.Delivery.InstructorCustomizations do
   end
 
   defp candidate_filters_map(opts) do
-    {:ok, opts |> Keyword.get(:filters, %{}) |> Map.new()}
-  rescue
-    Protocol.UndefinedError -> {:error, {:invalid_candidate_filters, :filters}}
+    case Keyword.get(opts, :filters, %{}) do
+      filters when is_map(filters) -> {:ok, filters}
+      filters when is_list(filters) -> filters_from_pair_list(filters)
+      _filters -> {:error, {:invalid_candidate_filters, :filters}}
+    end
+  end
+
+  defp filters_from_pair_list(filters) do
+    case Enum.all?(filters, &match?({_key, _value}, &1)) do
+      true -> {:ok, Map.new(filters)}
+      false -> {:error, {:invalid_candidate_filters, :filters}}
+    end
   end
 
   defp normalize_candidate_visibility(filters) do
