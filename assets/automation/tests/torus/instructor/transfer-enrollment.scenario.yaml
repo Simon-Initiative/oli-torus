@@ -35,6 +35,69 @@
     type: 'enrollable'
     registration_open: true
 
+- section:
+    name: 'transfer_enrollment_empty_target_section'
+    title: 'Enrollment Transfer Course ${RUN_ID} - Empty Target'
+    from: 'transfer_enrollment_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'transfer_enrollment_cancel_source_section'
+    title: 'Enrollment Transfer Course ${RUN_ID} - Cancel Source'
+    from: 'transfer_enrollment_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'transfer_enrollment_cancel_target_section'
+    title: 'Enrollment Transfer Course ${RUN_ID} - Cancel Target'
+    from: 'transfer_enrollment_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'transfer_enrollment_overwrite_source_section'
+    title: 'Enrollment Transfer Course ${RUN_ID} - Overwrite Source'
+    from: 'transfer_enrollment_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'transfer_enrollment_overwrite_target_section'
+    title: 'Enrollment Transfer Course ${RUN_ID} - Overwrite Target'
+    from: 'transfer_enrollment_project'
+    type: 'enrollable'
+    registration_open: true
+
+- project:
+    name: 'isolated_transfer_enrollment_project'
+    title: 'Isolated Enrollment Transfer Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Isolated Enrollment Transfer Lesson'
+
+- edit_page:
+    project: 'isolated_transfer_enrollment_project'
+    page: 'Isolated Enrollment Transfer Lesson'
+    content: |
+      title: "Isolated Enrollment Transfer Lesson"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Isolated enrollment transfer scenario content."
+
+- publish:
+    to: 'isolated_transfer_enrollment_project'
+    description: 'Initial isolated enrollment transfer course publication'
+
+- section:
+    name: 'isolated_transfer_enrollment_source_section'
+    title: 'Isolated Enrollment Transfer Course ${RUN_ID} - Source'
+    from: 'isolated_transfer_enrollment_project'
+    type: 'enrollable'
+    registration_open: true
+
 - user:
     name: 'transfer_enrollment_source_student'
     type: 'student'
@@ -52,12 +115,60 @@
     password: 'changeme123456'
 
 - user:
+    name: 'transfer_enrollment_overwrite_source_student'
+    type: 'student'
+    email: 'transfer-enrollment-overwrite-source-student${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Overwrite Source'
+    password: 'changeme123456'
+
+- user:
+    name: 'transfer_enrollment_cancel_source_student'
+    type: 'student'
+    email: 'transfer-enrollment-cancel-source-student${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Cancel Source'
+    password: 'changeme123456'
+
+- user:
+    name: 'transfer_enrollment_cancel_target_student'
+    type: 'student'
+    email: 'transfer-enrollment-cancel-target-student${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Cancel Target'
+    password: 'changeme123456'
+
+- user:
+    name: 'transfer_enrollment_overwrite_target_student'
+    type: 'student'
+    email: 'transfer-enrollment-overwrite-target-student${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Overwrite Target'
+    password: 'changeme123456'
+
+- user:
+    name: 'transfer_enrollment_instructor'
+    type: 'instructor'
+    email: 'transfer-enrollment-instructor${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Instructor'
+    password: 'changeme123456'
+
+- user:
     name: 'transfer_enrollment_admin'
     type: 'author'
     system_role: 'system_admin'
     email: 'transfer-enrollment-admin${RUN_ID}@example.com'
     given_name: 'Transfer'
     family_name: 'Admin'
+    password: 'changeme123456'
+
+- user:
+    name: 'isolated_transfer_enrollment_student'
+    type: 'student'
+    email: 'isolated-transfer-enrollment-student${RUN_ID}@example.com'
+    given_name: 'Transfer'
+    family_name: 'Solo'
     password: 'changeme123456'
 
 - enroll:
@@ -70,9 +181,60 @@
     section: 'transfer_enrollment_target_section'
     role: 'student'
 
+- enroll:
+    user: 'transfer_enrollment_overwrite_source_student'
+    section: 'transfer_enrollment_overwrite_source_section'
+    role: 'student'
+
+- enroll:
+    user: 'transfer_enrollment_cancel_source_student'
+    section: 'transfer_enrollment_cancel_source_section'
+    role: 'student'
+
+- enroll:
+    user: 'transfer_enrollment_cancel_target_student'
+    section: 'transfer_enrollment_cancel_target_section'
+    role: 'student'
+
+- enroll:
+    user: 'transfer_enrollment_overwrite_target_student'
+    section: 'transfer_enrollment_overwrite_target_section'
+    role: 'student'
+
+- enroll:
+    user: 'transfer_enrollment_instructor'
+    section: 'transfer_enrollment_source_section'
+    role: 'instructor'
+
+- enroll:
+    user: 'isolated_transfer_enrollment_student'
+    section: 'isolated_transfer_enrollment_source_section'
+    role: 'student'
+
 - complete_scored_page:
     student: 'transfer_enrollment_source_student'
     section: 'transfer_enrollment_source_section'
     page: 'Enrollment Transfer Lesson'
     score: 1
+    out_of: 1
+
+- complete_scored_page:
+    student: 'transfer_enrollment_overwrite_source_student'
+    section: 'transfer_enrollment_overwrite_source_section'
+    page: 'Enrollment Transfer Lesson'
+    score: 1
+    out_of: 1
+
+- complete_scored_page:
+    student: 'transfer_enrollment_cancel_source_student'
+    section: 'transfer_enrollment_cancel_source_section'
+    page: 'Enrollment Transfer Lesson'
+    score: 1
+    out_of: 1
+
+- complete_scored_page:
+    student: 'transfer_enrollment_overwrite_target_student'
+    section: 'transfer_enrollment_overwrite_target_section'
+    page: 'Enrollment Transfer Lesson'
+    score: 0
     out_of: 1
