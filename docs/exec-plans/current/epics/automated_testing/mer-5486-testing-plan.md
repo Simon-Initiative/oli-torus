@@ -47,6 +47,13 @@ Assertions:
 - Validate cards/metrics: `average_student_progress`, `average_class_proficiency`, `average_assessment_score`.
 - Validate `scope_label` or `course_title` if the assertion supports it.
 
+Coverage note:
+
+- The three summary cards do not need to be asserted in a single scenario, but the completed MER-5486 scenario set must cover each card at least once.
+- `average_student_progress` belongs naturally with the progress/student support scenario.
+- `average_class_proficiency` belongs naturally with the proficiency/challenging objectives scenario.
+- `average_assessment_score` belongs naturally with the assessment outcomes scenario.
+
 Implementation notes:
 
 - The projection source is `projections.summary.metrics` and `summary_tile.cards`.
@@ -243,4 +250,3 @@ To satisfy MER-5486 with a strong initial slice:
 - TC-04 student support buckets.
 - TC-05/TC-06 proficiency signal through summary/support/challenging objectives.
 - TC-07 assessments if the graded-attempt flow is stable in the same iteration.
-

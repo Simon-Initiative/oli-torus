@@ -10,9 +10,12 @@ defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler do
 
   alias Oli.Scenarios.DirectiveTypes.{DashboardAnalyticsReadyDirective, ExecutionState}
   alias Oli.Scenarios.Engine
+  alias Oli.Delivery.Sections
 
   def handle(%DashboardAnalyticsReadyDirective{} = directive, %ExecutionState{} = state) do
-    with {:ok, _section} <- fetch_section(state, directive.section),
+    with {:ok, section} <- fetch_section(state, directive.section),
+         :ok <- rebuild_contained_pages(section),
+         :ok <- rebuild_contained_objectives(section),
          :ok <- drain_snapshot_queue() do
       {:ok, state}
     else
@@ -29,6 +32,26 @@ defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler do
       section -> {:ok, section}
     end
   end
+
+  defp rebuild_contained_pages(%{id: id, slug: slug} = section)
+       when is_integer(id) and is_binary(slug) do
+    Sections.rebuild_contained_pages(section)
+    :ok
+  rescue
+    error -> {:error, "could not rebuild contained pages: #{Exception.message(error)}"}
+  end
+
+  defp rebuild_contained_pages(_section), do: :ok
+
+  defp rebuild_contained_objectives(%{id: id, slug: slug} = section)
+       when is_integer(id) and is_binary(slug) do
+    case Sections.rebuild_contained_objectives(section) do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, "could not rebuild contained objectives: #{inspect(reason)}"}
+    end
+  end
+
+  defp rebuild_contained_objectives(_section), do: :ok
 
   defp drain_snapshot_queue do
     oban_config = Application.get_env(:oli, Oban)

@@ -31,6 +31,8 @@
 - edit_page:
     project: "instructor_dashboard_base_project"
     page: "Foundations Lesson 1"
+    objectives:
+      - "Understand foundations"
     content: |
       title: "Foundations Lesson 1"
       graded: false
@@ -56,6 +58,8 @@
 - edit_page:
     project: "instructor_dashboard_base_project"
     page: "Foundations Lesson 2"
+    objectives:
+      - "Understand foundations"
     content: |
       title: "Foundations Lesson 2"
       graded: false
@@ -81,6 +85,8 @@
 - edit_page:
     project: "instructor_dashboard_base_project"
     page: "Foundations Lesson 3"
+    objectives:
+      - "Understand foundations"
     content: |
       title: "Foundations Lesson 3"
       graded: false
@@ -106,6 +112,8 @@
 - edit_page:
     project: "instructor_dashboard_base_project"
     page: "Applications Lesson 1"
+    objectives:
+      - "Apply problem solving"
     content: |
       title: "Applications Lesson 1"
       graded: false
@@ -131,6 +139,8 @@
 - edit_page:
     project: "instructor_dashboard_base_project"
     page: "Applications Lesson 2"
+    objectives:
+      - "Apply problem solving"
     content: |
       title: "Applications Lesson 2"
       graded: false
@@ -156,6 +166,8 @@
 - edit_page:
     project: "instructor_dashboard_base_project"
     page: "Applications Lesson 3"
+    objectives:
+      - "Apply problem solving"
     content: |
       title: "Applications Lesson 3"
       graded: false
@@ -181,6 +193,9 @@
 - edit_page:
     project: "instructor_dashboard_base_project"
     page: "Checkpoint Quiz"
+    objectives:
+      - "Understand foundations"
+      - "Apply problem solving"
     content: |
       title: "Checkpoint Quiz"
       graded: true

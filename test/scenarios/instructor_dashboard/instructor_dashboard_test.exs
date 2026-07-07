@@ -13,6 +13,7 @@ defmodule Oli.Scenarios.InstructorDashboardTest do
       |> String.replace("_", " ")
 
     @scenario_path path
+    @tag capture_log: true
     test "scenario: #{name}" do
       assert :ok = Scenarios.validate_file(@scenario_path)
 

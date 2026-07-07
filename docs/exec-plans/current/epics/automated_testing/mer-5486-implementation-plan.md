@@ -119,10 +119,16 @@ Work:
 
 - Scenario `course_summary_and_support.scenario.yaml`:
   - Executes excelling/on-track/struggling/no-data student patterns.
-  - Assertions: summary, progress, student support.
+  - Assertions: summary `average_student_progress`, progress, student support.
 - Scenario `proficiency_and_challenging_objectives.scenario.yaml`:
   - Forces High/Medium/Low distributions by objective.
   - Assertions: summary `average_class_proficiency` and challenging objectives. Do not create a standalone `instructor_dashboard_proficiency` panel assertion unless an equivalent visible surface exists.
+
+Summary coverage checkpoint:
+
+- Phase 4 should cover two of the three top summary cards: `average_student_progress` and `average_class_proficiency`.
+- Leave `average_assessment_score` for Phase 5, where the scenario will create graded assessment attempts and can assert both the assessment panel and the matching summary card.
+- Before closing MER-5486, verify that the scenario suite covers all three summary cards at least once.
 
 Questions/challenges:
 
@@ -148,6 +154,7 @@ Work:
 
 - Scenario `assessment_outcomes.scenario.yaml`.
 - Create graded quiz/quizzes.
+- Assert summary `average_assessment_score` in addition to the assessment dashboard panel so the top summary card coverage is complete.
 - Simulate known scores.
 - Assertions: assessment rows, completion, score metrics, and histogram.
 - If `complete_scored_page` is used, leave a note in YAML/docs explaining why it is acceptable, or migrate it to real finalization.
@@ -224,4 +231,3 @@ Commit target:
 - Prefer YAML assertions over Elixir-side assertions.
 - Do not use fixed sleeps for async readiness.
 - Keep YAML names free of "oracle".
-

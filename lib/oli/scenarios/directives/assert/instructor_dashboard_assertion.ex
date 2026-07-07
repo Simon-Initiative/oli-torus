@@ -6,6 +6,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   alias Oli.Dashboard.Oracle.Result
   alias Oli.InstructorDashboard.DataSnapshot
   alias Oli.InstructorDashboard.DataSnapshot.Projections
+  alias Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector, as: ProgressProjector
   alias Oli.InstructorDashboard.OracleRegistry
   alias Oli.InstructorDashboard.StudentSupportParameters
   alias Oli.Publishing.DeliveryResolver
@@ -81,7 +82,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
 
   defp dependency_profile(capability) do
     Projections.dependencies()
-    |> Map.fetch!(capability)
+    |> merged_dependency_profile()
     |> maybe_remove_summary_recommendation(capability)
   end
 
@@ -93,6 +94,23 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   end
 
   defp maybe_remove_summary_recommendation(profile, _capability), do: profile
+
+  defp merged_dependency_profile(dependencies) do
+    dependencies
+    |> Map.values()
+    |> Enum.reduce(%{required: [], optional: []}, fn profile, acc ->
+      %{
+        required: dedupe_ordered(acc.required ++ profile.required),
+        optional: dedupe_ordered(acc.optional ++ profile.optional)
+      }
+    end)
+  end
+
+  defp dedupe_ordered(values) do
+    Enum.reduce(values, [], fn value, acc ->
+      if value in acc, do: acc, else: acc ++ [value]
+    end)
+  end
 
   defp runtime_results_provider(dependency_profile) do
     requested_oracles = Enum.uniq(dependency_profile.required ++ dependency_profile.optional)
@@ -258,7 +276,10 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   end
 
   defp projection_view(:progress, %{projections: %{progress: projection}}) do
-    tile = Map.get(projection, :progress_tile, %{})
+    tile =
+      projection
+      |> Map.get(:progress_tile, %{})
+      |> ProgressProjector.reproject()
 
     tile
     |> Map.put(:items, progress_items_by_label(Map.get(tile, :series_all, [])))
