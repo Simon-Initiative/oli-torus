@@ -358,6 +358,11 @@ defmodule Oli.Scenarios.DirectiveParser do
       "page_objectives",
       "activity_objectives",
       "discussion",
+      "instructor_dashboard_summary",
+      "instructor_dashboard_progress",
+      "instructor_dashboard_student_support",
+      "instructor_dashboard_challenging_objectives",
+      "instructor_dashboard_assessments",
       "assertions"
     ]
 
@@ -380,6 +385,31 @@ defmodule Oli.Scenarios.DirectiveParser do
           activity_objectives:
             parse_activity_objectives_assertion(assert_data["activity_objectives"]),
           discussion: parse_discussion_assertion(assert_data["discussion"]),
+          instructor_dashboard_summary:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_summary,
+              assert_data["instructor_dashboard_summary"]
+            ),
+          instructor_dashboard_progress:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_progress,
+              assert_data["instructor_dashboard_progress"]
+            ),
+          instructor_dashboard_student_support:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_student_support,
+              assert_data["instructor_dashboard_student_support"]
+            ),
+          instructor_dashboard_challenging_objectives:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_challenging_objectives,
+              assert_data["instructor_dashboard_challenging_objectives"]
+            ),
+          instructor_dashboard_assessments:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_assessments,
+              assert_data["instructor_dashboard_assessments"]
+            ),
           assertions: assert_data["assertions"]
         }
 
@@ -411,6 +441,11 @@ defmodule Oli.Scenarios.DirectiveParser do
            "page_objectives",
            "activity_objectives",
            "discussion",
+           "instructor_dashboard_summary",
+           "instructor_dashboard_progress",
+           "instructor_dashboard_student_support",
+           "instructor_dashboard_challenging_objectives",
+           "instructor_dashboard_assessments",
            "assertions"
          ]}
       else
@@ -431,6 +466,11 @@ defmodule Oli.Scenarios.DirectiveParser do
            "page_objectives",
            "activity_objectives",
            "discussion",
+           "instructor_dashboard_summary",
+           "instructor_dashboard_progress",
+           "instructor_dashboard_student_support",
+           "instructor_dashboard_challenging_objectives",
+           "instructor_dashboard_assessments",
            "assertions"
          ]}
       end
@@ -455,6 +495,31 @@ defmodule Oli.Scenarios.DirectiveParser do
           activity_objectives:
             parse_activity_objectives_assertion(assert_data["activity_objectives"]),
           discussion: parse_discussion_assertion(assert_data["discussion"]),
+          instructor_dashboard_summary:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_summary,
+              assert_data["instructor_dashboard_summary"]
+            ),
+          instructor_dashboard_progress:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_progress,
+              assert_data["instructor_dashboard_progress"]
+            ),
+          instructor_dashboard_student_support:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_student_support,
+              assert_data["instructor_dashboard_student_support"]
+            ),
+          instructor_dashboard_challenging_objectives:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_challenging_objectives,
+              assert_data["instructor_dashboard_challenging_objectives"]
+            ),
+          instructor_dashboard_assessments:
+            parse_instructor_dashboard_assertion(
+              :instructor_dashboard_assessments,
+              assert_data["instructor_dashboard_assessments"]
+            ),
           assertions: assert_data["assertions"]
         }
 
@@ -1650,6 +1715,27 @@ defmodule Oli.Scenarios.DirectiveParser do
       {:error, msg} ->
         raise msg
     end
+  end
+
+  defp parse_instructor_dashboard_assertion(_type, nil), do: nil
+
+  defp parse_instructor_dashboard_assertion(type, data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(type, data) do
+      :ok ->
+        data
+        |> Map.put("tolerance", parse_optional_float(data["tolerance"]))
+        |> atomize_keys()
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp atomize_keys(map) when is_map(map) do
+    Map.new(map, fn
+      {key, value} when is_binary(key) -> {String.to_atom(key), value}
+      {key, value} -> {key, value}
+    end)
   end
 
   # Parse node structures (for project and verification structures)

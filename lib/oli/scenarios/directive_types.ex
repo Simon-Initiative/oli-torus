@@ -111,6 +111,11 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :page_objectives,
       :activity_objectives,
       :discussion,
+      :instructor_dashboard_summary,
+      :instructor_dashboard_progress,
+      :instructor_dashboard_student_support,
+      :instructor_dashboard_challenging_objectives,
+      :instructor_dashboard_assessments,
       :assertions
     ]
   end
@@ -423,7 +428,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
     """
     # name -> BuiltProject
     defstruct projects: %{},
-              # name -> Section  
+              # name -> Section
               sections: %{},
               # name -> Product (Blueprint)
               products: %{},

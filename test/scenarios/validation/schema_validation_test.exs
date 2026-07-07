@@ -478,4 +478,76 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert metadata.tags == ["nightly", "slow", "real_time"]
     assert metadata.timeout_ms == 300_000
   end
+
+  test "schema and parser accept instructor dashboard assertions" do
+    yaml = """
+    - assert:
+        instructor_dashboard_summary:
+          section: "dashboard_section"
+          scope: "course"
+          tolerance: 0.1
+          total_students: 5
+          metrics:
+            average_student_progress: 62.5
+            average_class_proficiency: 70.0
+
+    - assert:
+        instructor_dashboard_progress:
+          section: "dashboard_section"
+          scope:
+            container: "Foundations Unit"
+          class_size: 5
+          axis_label: "Course Pages"
+          items:
+            Lesson 1:
+              completed_count: 3
+
+    - assert:
+        instructor_dashboard_student_support:
+          section: "dashboard_section"
+          buckets:
+            struggling:
+              count: 2
+              student_names: ["Cleo Student", "Diego Student"]
+
+    - assert:
+        instructor_dashboard_challenging_objectives:
+          section: "dashboard_section"
+          state: "populated"
+          row_count: 1
+          rows_by_title:
+            Master foundations:
+              proficiency_label: "Low"
+
+    - assert:
+        instructor_dashboard_assessments:
+          section: "dashboard_section"
+          total_rows: 1
+          rows_by_title:
+            Checkpoint Quiz:
+              completion:
+                completed_count: 3
+                total_students: 5
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [
+      summary,
+      progress,
+      student_support,
+      challenging_objectives,
+      assessments
+    ] = DirectiveParser.parse_yaml!(yaml)
+
+    assert summary.instructor_dashboard_summary.section == "dashboard_section"
+    assert summary.instructor_dashboard_summary.tolerance == 0.1
+    assert progress.instructor_dashboard_progress.scope == %{"container" => "Foundations Unit"}
+    assert student_support.instructor_dashboard_student_support.section == "dashboard_section"
+
+    assert challenging_objectives.instructor_dashboard_challenging_objectives.state ==
+             "populated"
+
+    assert assessments.instructor_dashboard_assessments.total_rows == 1
+  end
 end
