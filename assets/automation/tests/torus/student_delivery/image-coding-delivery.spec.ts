@@ -2,7 +2,13 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
 import path from 'node:path';
 import { openStudentDeliveryPracticeForLoggedInStudent } from './support/common';
-import { getImageCodingSource, setImageCodingSource } from './support/imageCoding';
+import {
+  getImageCodingSource,
+  imageCodingResultCanvas,
+  runImageCodingUntilCanvasReady,
+  runImageCodingUntilTextReady,
+  setImageCodingSource,
+} from './support/imageCoding';
 import { configureStudentDeliveryRuntimeConfig, seedStudentDeliveryScenario } from './support';
 
 const runId = `-${Date.now()}`;
@@ -331,51 +337,4 @@ function imageCodingSubmitButton(activity: Locator) {
 
 function imageCodingResetButton(activity: Locator) {
   return activity.getByRole('button', { name: 'Reset', exact: true });
-}
-
-function imageCodingResultCanvas(activity: Locator) {
-  return activity.locator('div[style*="white-space: pre-wrap;"] canvas').first();
-}
-
-async function runImageCodingUntilCanvasReady(activity: Locator, resultCanvas: Locator) {
-  const runButton = imageCodingRunButton(activity);
-
-  // Image resources load asynchronously, so the first run can fail with the
-  // activity's transient "wait a bit and retry" error even though the setup is correct.
-  // A rendered result canvas is the reliable success signal for image-processing runs.
-  await expect
-    .poll(
-      async () => {
-        await runButton.click();
-        return resultCanvas.evaluate((node) => (node as HTMLCanvasElement).width);
-      },
-      {
-        timeout: 10000,
-        intervals: [250, 500, 1000],
-      },
-    )
-    .toBeGreaterThan(0);
-}
-
-async function runImageCodingUntilTextReady(
-  activity: Locator,
-  output: Locator,
-  expectedText: string,
-) {
-  const runButton = imageCodingRunButton(activity);
-
-  // Table-processing resources also load asynchronously, so the first run can
-  // hit runtime errors before the CSV text is available to SimpleTable.
-  await expect
-    .poll(
-      async () => {
-        await runButton.click();
-        return output.textContent();
-      },
-      {
-        timeout: 10000,
-        intervals: [250, 500, 1000],
-      },
-    )
-    .toContain(expectedText);
 }
