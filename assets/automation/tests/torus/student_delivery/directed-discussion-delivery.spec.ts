@@ -88,7 +88,9 @@ test.describe('directed discussion delivery', () => {
 
       await newPostTextarea(activity).fill('one two three four');
 
-      await expect(activity.getByText(/Over max word limit/)).toBeVisible();
+      const warning = activity.getByText(/Over max word limit/);
+      await expect(warning).toBeVisible();
+      await expect(warning).toHaveClass(/text-red-600/);
       await expect(postButton(activity)).toBeDisabled();
     });
   });
@@ -112,6 +114,7 @@ test.describe('directed discussion delivery', () => {
       await postButton(activity).click();
 
       await expect(activity.getByText(message)).toBeVisible();
+      await expect(activity.getByText('Discussion Student')).toBeVisible();
       await expect(activity.getByText('✅')).toBeVisible();
     });
   });
