@@ -14,7 +14,7 @@ const transferMessages = {
     "This will transfer this student's enrollment, and all their current progress, to the selected course section. If this student is already enrolled in the selected course section, that progress will be lost.",
   emptySections: 'There are no other sections to transfer this student to.',
   emptyStudents: 'There are no other students to transfer this student to.',
-  success: 'Enrollment successfully transfered',
+  success: 'Enrollment successfully transferred',
 } as const;
 
 type SectionSlugs = {
