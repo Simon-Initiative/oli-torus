@@ -1664,17 +1664,54 @@ defmodule Oli.Scenarios.DirectiveParser do
       :ok ->
         data
         |> Map.put("tolerance", parse_optional_float(data["tolerance"]))
-        |> atomize_keys()
+        |> atomize_dashboard_assertion_keys()
 
       {:error, msg} ->
         raise msg
     end
   end
 
-  defp atomize_keys(map) when is_map(map) do
+  @dashboard_assertion_keys %{
+    "axis_label" => :axis_label,
+    "available_slots" => :available_slots,
+    "bucket_priority" => :bucket_priority,
+    "buckets" => :buckets,
+    "cards" => :cards,
+    "class_size" => :class_size,
+    "completion_threshold" => :completion_threshold,
+    "course_title" => :course_title,
+    "default_bucket_id" => :default_bucket_id,
+    "empty_state" => :empty_state,
+    "has_activity_data" => :has_activity_data,
+    "has_activity_data?" => :has_activity_data?,
+    "has_assessments" => :has_assessments,
+    "has_assessments?" => :has_assessments?,
+    "has_objectives" => :has_objectives,
+    "items" => :items,
+    "metrics" => :metrics,
+    "missing_slots" => :missing_slots,
+    "row_count" => :row_count,
+    "rows" => :rows,
+    "rows_by_title" => :rows_by_title,
+    "scope" => :scope,
+    "scope_label" => :scope_label,
+    "section" => :section,
+    "series" => :series,
+    "series_all" => :series_all,
+    "state" => :state,
+    "tolerance" => :tolerance,
+    "total_rows" => :total_rows,
+    "total_students" => :total_students,
+    "y_axis_mode" => :y_axis_mode
+  }
+
+  defp atomize_dashboard_assertion_keys(map) when is_map(map) do
     Map.new(map, fn
-      {key, value} when is_binary(key) -> {String.to_atom(key), value}
-      {key, value} -> {key, value}
+      {key, value} when is_binary(key) ->
+        {Map.get(@dashboard_assertion_keys, key, key), value}
+
+      {key, value} ->
+        {key, value}
     end)
   end
 

@@ -75,15 +75,21 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
       },
       dependency_profile: dependency_profile,
       runtime_results_provider: runtime_results_provider(dependency_profile),
+      projection_modules: projection_modules(capability),
       projection_opts: projection_opts(state),
       request_token: "scenario-instructor-dashboard-#{capability}-#{section.id}"
     )
   end
 
-  defp dependency_profile(_capability) do
+  defp dependency_profile(capability) do
     Projections.dependencies()
-    |> merged_dependency_profile()
+    |> Map.fetch!(capability)
     |> remove_summary_recommendation()
+  end
+
+  defp projection_modules(capability) do
+    Projections.modules()
+    |> Map.take([capability])
   end
 
   defp remove_summary_recommendation(profile) do
@@ -91,23 +97,6 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
       profile
       | optional: Enum.reject(profile.optional, &(&1 == @summary_recommendation_oracle))
     }
-  end
-
-  defp merged_dependency_profile(dependencies) do
-    dependencies
-    |> Map.values()
-    |> Enum.reduce(%{required: [], optional: []}, fn profile, acc ->
-      %{
-        required: dedupe_ordered(acc.required ++ profile.required),
-        optional: dedupe_ordered(acc.optional ++ profile.optional)
-      }
-    end)
-  end
-
-  defp dedupe_ordered(values) do
-    Enum.reduce(values, [], fn value, acc ->
-      if value in acc, do: acc, else: acc ++ [value]
-    end)
   end
 
   defp runtime_results_provider(dependency_profile) do
@@ -336,7 +325,6 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
       normalized =
         bucket
         |> Map.put(:student_names, Enum.map(students, &Map.get(&1, :display_name)))
-        |> Map.put(:student_emails, Enum.map(students, &Map.get(&1, :email)))
 
       {bucket.id, normalized}
     end)
@@ -367,17 +355,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
 
   defp compare_subset(expected, actual, path, tolerance)
        when is_list(expected) and is_list(actual) do
-    expected
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {expected_value, index} ->
-      case Enum.fetch(actual, index) do
-        {:ok, actual_value} ->
-          compare_subset(expected_value, actual_value, path ++ [index], tolerance)
-
-        :error ->
-          [mismatch(path ++ [index], expected_value, :missing)]
-      end
-    end)
+    compare_list_subset(expected, actual, path, tolerance, 0)
   end
 
   defp compare_subset(expected, actual, path, tolerance) do
@@ -386,6 +364,24 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
     else
       [mismatch(path, expected, actual)]
     end
+  end
+
+  defp compare_list_subset([], _actual, _path, _tolerance, _index), do: []
+
+  defp compare_list_subset([expected_value | expected_rest], [], path, tolerance, index) do
+    [mismatch(path ++ [index], expected_value, :missing)] ++
+      compare_list_subset(expected_rest, [], path, tolerance, index + 1)
+  end
+
+  defp compare_list_subset(
+         [expected_value | expected_rest],
+         [actual_value | actual_rest],
+         path,
+         tolerance,
+         index
+       ) do
+    compare_subset(expected_value, actual_value, path ++ [index], tolerance) ++
+      compare_list_subset(expected_rest, actual_rest, path, tolerance, index + 1)
   end
 
   defp fetch_field(map, key) when is_map(map) do

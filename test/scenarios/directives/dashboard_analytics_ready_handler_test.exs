@@ -1,12 +1,16 @@
 defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandlerTest do
-  use ExUnit.Case, async: true
+  use Oli.DataCase, async: true
+
+  import Oli.Factory
 
   alias Oli.Scenarios.DirectiveTypes.{DashboardAnalyticsReadyDirective, ExecutionState}
   alias Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler
 
   test "succeeds for a known section without waiting on wall-clock time" do
+    section = insert(:section)
+
     state = %ExecutionState{
-      sections: %{"demo_section" => %{slug: "demo-section"}}
+      sections: %{"demo_section" => section}
     }
 
     directive = %DashboardAnalyticsReadyDirective{section: "demo_section"}
