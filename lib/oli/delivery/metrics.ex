@@ -1212,17 +1212,17 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   For an activity attempt specified by an attempt guid, calculate and set in the corresponding resource access
   record, the percentage complete for the related page. This calculation only needs to be performed after the
-  evaluation of the first attempt for given activity.  This method should update exactly one record, the resource
+  evaluation of a scoreable attempt for given activity.  This method should update exactly one record, the resource
   access for the page that this activity attempt ultimately pertains to (through its parent resource attempt).
 
   Can return one of:
   {:ok, :updated} -> Progress calculated and set
-  {:ok, :noop} -> Nothing needed to be done, since the attempt number was greater than 1
+  {:ok, :noop} -> Nothing needed to be done, since the attempt was not scoreable
   {:error, :unexpected_update_count} -> 0 or more than 1 record would have been updated, rolled back
   {:error, e} -> An other error occurred, rolled back
   """
   def update_page_progress(activity_attempt_guid) when is_binary(activity_attempt_guid) do
-    if Core.is_scoreable_first_attempt?(activity_attempt_guid) do
+    if scoreable_activity_attempt?(activity_attempt_guid) do
       do_update(activity_attempt_guid)
     else
       {:ok, :noop}
@@ -1231,7 +1231,6 @@ defmodule Oli.Delivery.Metrics do
 
   def update_page_progress(%ActivityAttempt{
         scoreable: true,
-        attempt_number: 1,
         attempt_guid: attempt_guid
       }) do
     do_update(attempt_guid)
@@ -1241,9 +1240,42 @@ defmodule Oli.Delivery.Metrics do
     {:ok, :noop}
   end
 
+  defp scoreable_activity_attempt?(activity_attempt_guid) do
+    Repo.exists?(
+      from(aa in ActivityAttempt,
+        where: aa.attempt_guid == ^activity_attempt_guid and aa.scoreable == true
+      )
+    )
+  end
+
   defp do_update(activity_attempt_guid) do
     Oli.Repo.transaction(fn ->
       sql = """
+        WITH target AS (
+          SELECT
+            ra.resource_access_id,
+            ra.revision_id,
+            aa.resource_attempt_id
+          FROM activity_attempts AS aa
+          JOIN resource_attempts AS ra ON ra.id = aa.resource_attempt_id
+          WHERE aa.attempt_guid = $1
+          LIMIT 1
+        ),
+        latest_attempts AS (
+          SELECT DISTINCT ON (aa2.resource_id)
+            aa2.id,
+            aa2.lifecycle_state
+          FROM activity_attempts AS aa2
+          JOIN target ON target.resource_attempt_id = aa2.resource_attempt_id
+          WHERE aa2.scoreable = true
+          ORDER BY aa2.resource_id, aa2.id DESC
+        ),
+        counts AS (
+          SELECT
+            COUNT(id) FILTER (WHERE lifecycle_state = 'evaluated' OR lifecycle_state = 'submitted')::float AS completed_count,
+            COUNT(id)::float AS total_count
+          FROM latest_attempts
+        )
         UPDATE
           resource_accesses
         SET
@@ -1253,18 +1285,8 @@ defmodule Oli.Delivery.Metrics do
               (
                 SELECT
                   completed_count / (total_count * ((COALESCE(rev.full_progress_pct, 100) / 100.0)))
-                FROM (
-                  SELECT
-                    COUNT(aa2.id) FILTER (WHERE aa2.lifecycle_state = 'evaluated' OR aa2.lifecycle_state = 'submitted')::float AS completed_count,
-                    COUNT(aa2.id)::float AS total_count
-                  FROM activity_attempts AS aa
-                  JOIN resource_attempts AS ra ON ra.id = aa.resource_attempt_id
-                  JOIN revisions AS rev ON ra.revision_id = rev.id
-                  JOIN activity_attempts AS aa2 ON ra.id = aa2.resource_attempt_id
-                  WHERE aa.attempt_guid = $1 AND aa2.scoreable = true AND aa2.attempt_number = 1
-                ) AS counts,
-                revisions AS rev
-                WHERE rev.id = (SELECT ra.revision_id FROM resource_attempts ra JOIN activity_attempts aa ON ra.id = aa.resource_attempt_id WHERE aa.attempt_guid = $1 LIMIT 1)
+                FROM counts, target
+                JOIN revisions AS rev ON rev.id = target.revision_id
               ),
               resource_accesses.progress
             )
@@ -1272,15 +1294,10 @@ defmodule Oli.Delivery.Metrics do
           updated_at = NOW()
         WHERE
           id =
-            (SELECT
-              resource_attempts.resource_access_id
-            FROM resource_attempts
-            JOIN activity_attempts ON resource_attempts.id = activity_attempts.resource_attempt_id
-            WHERE activity_attempts.attempt_guid = $2
-            LIMIT 1);
+            (SELECT resource_access_id FROM target);
       """
 
-      case Ecto.Adapters.SQL.query(Oli.Repo, sql, [activity_attempt_guid, activity_attempt_guid]) do
+      case Ecto.Adapters.SQL.query(Oli.Repo, sql, [activity_attempt_guid]) do
         {:ok, %{num_rows: 1}} ->
           :updated
 
