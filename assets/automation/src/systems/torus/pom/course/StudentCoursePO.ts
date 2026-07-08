@@ -47,6 +47,14 @@ export class StudentCoursePO {
     const outlineTitle = this.page.getByRole('button', {
       name: new RegExp(`\\b${escapeRegExp(pageName)}\\b`),
     });
+    const groupedOutlineLink = this.page
+      .locator('a')
+      .filter({
+        has: this.page.locator('div[role="group_item"]').filter({
+          hasText: pageName,
+        }),
+      })
+      .first();
 
     if (await galleryTitle.isVisible({ timeout: 2000 }).catch(() => false)) {
       await Promise.all([
@@ -56,16 +64,43 @@ export class StudentCoursePO {
         galleryCard.click({ force: true }),
       ]);
     } else {
-      await Verifier.expectIsVisible(outlineTitle);
-      await Promise.all([
-        this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
-          timeout: 15000,
-        }),
-        outlineTitle.click({ force: true }),
-      ]);
+      await this.expandCollapsedPageGroups();
+
+      // The course outline can render pages either as direct buttons or as links
+      // nested inside an expanded grouped schedule item.
+      if (await outlineTitle.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await Promise.all([
+          this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+            timeout: 15000,
+          }),
+          outlineTitle.click({ force: true }),
+        ]);
+      } else {
+        await Verifier.expectIsVisible(groupedOutlineLink);
+        await Promise.all([
+          this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+            timeout: 15000,
+          }),
+          groupedOutlineLink.click({ force: true }),
+        ]);
+      }
     }
 
     await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
+  }
+
+  private async expandCollapsedPageGroups() {
+    const groupToggles = this.page.locator('button[phx-click="expand_item"]');
+    const count = await groupToggles.count();
+
+    for (let index = 0; index < count; index += 1) {
+      const toggle = groupToggles.nth(index);
+
+      if (!(await toggle.isVisible({ timeout: 250 }).catch(() => false))) continue;
+
+      await toggle.scrollIntoViewIfNeeded().catch(() => undefined);
+      await toggle.click({ force: true }).catch(() => undefined);
+    }
   }
 
   async goToCourseIfPrompted() {
