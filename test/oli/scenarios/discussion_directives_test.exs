@@ -51,6 +51,68 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
       assert [{_, error}] = result.errors
       assert error =~ "Anonymous posting is not enabled"
     end
+
+    test "rejects replies to posts from another section" do
+      yaml = """
+      - project:
+          name: "cross_section_reply_course"
+          title: "Cross Section Reply Course"
+          root:
+            children:
+              - page: "Welcome"
+
+      - product:
+          name: "cross_section_reply_product"
+          title: "Cross Section Reply Product"
+          from: "cross_section_reply_course"
+
+      - discussion_config:
+          section: "cross_section_reply_product"
+          enabled: true
+          auto_accept: true
+
+      - section:
+          name: "first_discussion_section"
+          title: "First Discussion Section"
+          from: "cross_section_reply_product"
+
+      - section:
+          name: "second_discussion_section"
+          title: "Second Discussion Section"
+          from: "cross_section_reply_product"
+
+      - user:
+          name: "cross_section_student"
+          type: "student"
+          email: "cross_section_student@test.edu"
+
+      - enroll:
+          user: "cross_section_student"
+          section: "first_discussion_section"
+
+      - enroll:
+          user: "cross_section_student"
+          section: "second_discussion_section"
+
+      - discussion_post:
+          name: "first_section_post"
+          student: "cross_section_student"
+          section: "first_discussion_section"
+          body: "This post belongs to the first section."
+
+      - discussion_post:
+          name: "cross_section_reply"
+          student: "cross_section_student"
+          section: "second_discussion_section"
+          reply_to: "first_section_post"
+          body: "This reply should be rejected."
+      """
+
+      result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+      assert [{_, error}] = result.errors
+      assert error =~ "Parent discussion post does not belong to section"
+    end
   end
 
   describe "discussion_moderation" do

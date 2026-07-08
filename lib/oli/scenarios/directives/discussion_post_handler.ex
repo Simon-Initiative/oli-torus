@@ -26,6 +26,7 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
          {:ok, section} <- fetch_section(state, section_name),
          {:ok, root_section_resource} <- fetch_root_section_resource(section),
          {:ok, parent_post} <- fetch_parent_post(state, reply_to),
+         :ok <- validate_parent_post(parent_post, section, root_section_resource),
          {:ok, attrs} <-
            post_attrs(student, section, root_section_resource, parent_post, body, anonymous),
          {:ok, post} <-
@@ -67,6 +68,17 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
 
   defp anonymous_posting_enabled?(nil), do: false
   defp anonymous_posting_enabled?(config), do: Map.get(config, :anonymous_posting, false)
+
+  defp validate_parent_post(nil, _section, _root_section_resource), do: :ok
+
+  defp validate_parent_post(parent_post, section, root_section_resource) do
+    if parent_post.section_id == section.id and
+         parent_post.resource_id == root_section_resource.resource_id do
+      :ok
+    else
+      {:error, "Parent discussion post does not belong to section '#{section.slug}'"}
+    end
+  end
 
   defp maybe_put_parent(attrs, nil), do: attrs
 
