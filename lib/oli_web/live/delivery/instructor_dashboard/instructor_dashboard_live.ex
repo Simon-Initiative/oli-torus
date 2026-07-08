@@ -120,7 +120,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
             Sections.get_objectives_and_subobjectives(socket.assigns.section,
               exclude_sub_objectives: false,
               include_related_activities_count: true
-            ),
+            )
+            |> filter_root_contained_objectives(),
           navigator_items:
             Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
               numbering_level: {:in, [1, 2]}
@@ -1748,4 +1749,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp parse_dashboard_section_split(_split), do: :error
+
+  defp filter_root_contained_objectives(objectives) do
+    root_contained_ids =
+      objectives
+      |> Enum.filter(&root_contained_objective?/1)
+      |> Enum.map(& &1.resource_id)
+      |> MapSet.new()
+
+    parent_ids_for_root_contained_subobjectives =
+      objectives
+      |> Enum.filter(fn objective ->
+        not is_nil(objective.subobjective) and
+          MapSet.member?(root_contained_ids, objective.resource_id)
+      end)
+      |> Enum.map(& &1.objective_resource_id)
+      |> MapSet.new()
+
+    Enum.filter(objectives, fn objective ->
+      MapSet.member?(root_contained_ids, objective.resource_id) or
+        (is_nil(objective.subobjective) and
+           MapSet.member?(parent_ids_for_root_contained_subobjectives, objective.resource_id))
+    end)
+  end
+
+  defp root_contained_objective?(objective) do
+    nil in List.wrap(Map.get(objective, :container_ids))
+  end
 end

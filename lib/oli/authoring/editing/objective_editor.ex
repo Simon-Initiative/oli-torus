@@ -249,17 +249,19 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         # detach from all non-locked embedded activities. Locked activities are those activities
         # whose parent page is locked
         Enum.filter(activities, fn %{scope: scope} -> scope == "embedded" end)
-        |> Enum.filter(fn %{resource_id: resource_id} ->
-          !Map.has_key?(locked_by, Map.get(parent_pages, resource_id).id)
-        end)
-        |> Enum.each(fn activity ->
-          page =
-            AuthoringResolver.from_resource_id(
-              project.slug,
-              Map.get(parent_pages, activity.resource_id).id
-            )
+        |> Enum.each(fn %{resource_id: resource_id} = activity ->
+          case Map.get(parent_pages, resource_id) do
+            nil ->
+              if !Map.has_key?(locked_banked_activities, resource_id) do
+                detach_from_banked_activity(objective_id, activity, project.slug, author)
+              end
 
-          detach_from_activity(objective_id, page, activity, project.slug, author)
+            %{id: page_id} ->
+              if !Map.has_key?(locked_by, page_id) do
+                page = AuthoringResolver.from_resource_id(project.slug, page_id)
+                detach_from_activity(objective_id, page, activity, project.slug, author)
+              end
+          end
         end)
 
         # detach from all non-locked banked activities. Locked banked activities are those activities
@@ -427,7 +429,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           end)
 
         locked_banked_activities =
-          case Enum.filter(distinct_activities, fn a -> a.scope == "banked" end) do
+          case directly_locked_activities(distinct_activities, parent_pages) do
             [] ->
               %{}
 
@@ -473,6 +475,19 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       end)
 
     deduped
+  end
+
+  defp directly_locked_activities(activities, parent_pages) do
+    Enum.filter(activities, fn
+      %{scope: "banked"} ->
+        true
+
+      %{scope: "embedded", resource_id: resource_id} ->
+        !Map.has_key?(parent_pages, resource_id)
+
+      _ ->
+        false
+    end)
   end
 
   # For the pages that directly attach an objective, and the pages that

@@ -25,6 +25,14 @@ export class BasicPracticePagePO {
   private readonly pageTitleSaveButton: Locator;
   private readonly adaptiveReadOnlyInput: Locator;
   private readonly advancedAuthorToolbar: Locator;
+  private readonly adaptiveAuthorToolbar: Locator;
+  private readonly simpleAuthorToolbar: Locator;
+  private readonly simpleAuthorMultipleChoiceButton: Locator;
+  private readonly simpleAuthorMultipleChoicePart: Locator;
+  private readonly advancedAuthorScreenPanelMode: Locator;
+  private readonly advancedAuthorFlowchartMode: Locator;
+  private readonly flowchartNodes: Locator;
+  private readonly flowchartSidebar: Locator;
   private readonly captionAudio: Locator;
   private readonly figure: Locator;
   private readonly textbox: Locator;
@@ -61,6 +69,35 @@ export class BasicPracticePagePO {
       '#adaptive_read_only_toggle input[name="adaptive_read_only"]',
     );
     this.advancedAuthorToolbar = page.locator('#advanced-authoring nav.aa-header-nav');
+    this.adaptiveAuthorToolbar = page.locator(
+      [
+        '#advanced-authoring nav.aa-header-nav',
+        '#advanced-authoring .component-toolbar',
+        '#advanced-authoring .top-toolbar',
+        '#advanced-authoring .sidebar-header',
+        '.flowchart-editor .top-toolbar',
+        '.flowchart-editor .sidebar-header',
+      ].join(', '),
+    );
+    this.simpleAuthorToolbar = page.locator('#advanced-authoring .component-toolbar');
+    this.simpleAuthorMultipleChoiceButton = this.simpleAuthorToolbar
+      .locator('.toolbar-column')
+      .filter({ hasText: 'Question Components' })
+      .locator('button.component-button[data-component="janus_mcq"]')
+      .first();
+    this.simpleAuthorMultipleChoicePart = page.locator(
+      'janus-mcq, [data-part-id^="janus_mcq-"], [data-part-id^="janus-mcq-"]',
+    );
+    this.advancedAuthorScreenPanelMode = page
+      .locator('#advanced-authoring .sidebar-header, .flowchart-editor .sidebar-header')
+      .filter({ hasText: 'Screen Panel' })
+      .first();
+    this.advancedAuthorFlowchartMode = page
+      .locator('#advanced-authoring .sidebar-header, .flowchart-editor .sidebar-header')
+      .filter({ hasText: 'Flowchart' })
+      .first();
+    this.flowchartNodes = page.locator('.flowchart-node');
+    this.flowchartSidebar = page.locator('.flowchart-sidebar');
     this.captionAudio = page.getByRole('paragraph').filter({ hasText: 'Caption (optional)' });
     this.figure = this.page.getByRole('figure', { name: 'Figure Title' });
     this.textbox = this.figure.getByRole('textbox');
@@ -72,6 +109,17 @@ export class BasicPracticePagePO {
   }
 
   async clickAdvancedAuthorMultipleChoiceButton() {
+    const simpleAuthorToolbarVisible = await this.simpleAuthorToolbar
+      .waitFor({ state: 'visible', timeout: 1000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (simpleAuthorToolbarVisible) {
+      await this.waitForSimpleAuthorMultipleChoiceToolbarReady();
+      await this.addSimpleAuthorMultipleChoicePart();
+      return;
+    }
+
     await this.advancedAuthorToolbar.waitFor({ state: 'visible', timeout: 30000 });
     await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
       timeout: 30000,
@@ -114,11 +162,300 @@ export class BasicPracticePagePO {
     await this.assertAdvancedAuthorEditable();
   }
 
+  async ensureSimpleAuthorReady() {
+    await this.completeSimpleAuthorOnboardingIfPresent();
+
+    const hasToggle = (await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0;
+    if (hasToggle && (await this.adaptiveReadOnlyInput.isChecked().catch(() => false))) {
+      await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 30000 });
+
+      await this.page.evaluate(() => {
+        const input = document.querySelector<HTMLInputElement>('input[name="adaptive_read_only"]');
+
+        if (input?.checked) {
+          input.click();
+        }
+      });
+
+      await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
+    }
+
+    await this.adaptiveAuthorToolbar.first().waitFor({ state: 'visible', timeout: 30000 });
+    await expect(
+      this.advancedAuthorFlowchartMode,
+      'Simple Author flowchart mode should load.',
+    ).toBeVisible({
+      timeout: 30000,
+    });
+    await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
+      timeout: 30000,
+    });
+  }
+
   private async assertAdvancedAuthorEditable() {
     await expect(this.editTitleButton, 'Advanced authoring should be editable.').toBeEnabled({
       timeout: 15000,
     });
-    await this.advancedAuthorToolbar.waitFor({ state: 'visible', timeout: 30000 });
+    await this.adaptiveAuthorToolbar.first().waitFor({ state: 'visible', timeout: 30000 });
+  }
+
+  async buildSimpleAdvancedAuthorMcqBranchingLesson() {
+    await this.waitForAdvancedAuthorFlowchartReady();
+
+    await this.selectFlowchartScreenByTitle('End of Lesson');
+    await this.renameSelectedFlowchartScreen('Correct Terminal');
+
+    await this.selectFlowchartScreenByTitle('Welcome Screen');
+    await this.switchToAdvancedAuthorScreenPanelMode();
+    await this.ensureSimpleAuthorMultipleChoicePart();
+    await this.setSimpleAuthorScreenMaxAttempts('1');
+    await this.waitForChangesSaved().catch(() => void 0);
+
+    await this.switchToAdvancedAuthorFlowchartMode();
+    await this.selectFlowchartScreenByTitle('Welcome Screen');
+    await this.renameSelectedFlowchartScreen('Routing Question');
+
+    await this.replaceFirstFlowchartRule('Correct', 'Correct Terminal');
+    await this.selectFlowchartScreenByTitle('Routing Question');
+    await this.addFlowchartRuleToNewScreen('Any Incorrect', 'Incorrect Terminal');
+    await this.selectFlowchartScreenByTitle('Routing Question');
+    await this.replaceLastFlowchartRule('Any Incorrect', 'Incorrect Terminal');
+
+    await expect(this.flowchartNodes).toHaveCount(3, { timeout: 30000 });
+    await expect(this.flowchartScreenTitle('Routing Question')).toBeVisible();
+    await expect(this.flowchartScreenTitle('Correct Terminal')).toBeVisible();
+    await expect(this.flowchartScreenTitle('Incorrect Terminal')).toBeVisible();
+    await this.waitForChangesSaved().catch(() => void 0);
+
+    return {
+      question: 'Routing Question',
+      correct: 'Correct Terminal',
+      incorrect: 'Incorrect Terminal',
+      screenCount: await this.flowchartNodes.count(),
+    };
+  }
+
+  async waitForAdvancedAuthorFlowchartReady() {
+    await this.completeSimpleAuthorOnboardingIfPresent();
+
+    await expect(
+      this.advancedAuthorFlowchartMode,
+      'Simple Author flowchart mode should load.',
+    ).toBeVisible({
+      timeout: 30000,
+    });
+    await this.advancedAuthorFlowchartMode.click();
+    await this.flowchartNodes.first().waitFor({ state: 'visible', timeout: 30000 });
+    await expect(this.flowchartScreenTitle('Welcome Screen')).toBeVisible({ timeout: 30000 });
+    await expect(this.flowchartScreenTitle('End of Lesson')).toBeVisible({ timeout: 30000 });
+  }
+
+  private async completeSimpleAuthorOnboardingIfPresent() {
+    const wizard = this.page.locator('.onboard-wizard');
+
+    const wizardVisible = await wizard
+      .waitFor({ state: 'visible', timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (!wizardVisible) return;
+
+    for (let stepIndex = 0; stepIndex < 3; stepIndex += 1) {
+      const nextButton = wizard.getByRole('button', { name: /^Next$/ }).last();
+      await expect(nextButton).toBeEnabled({ timeout: 10000 });
+      await nextButton.click();
+    }
+  }
+
+  private async switchToAdvancedAuthorScreenPanelMode() {
+    await this.advancedAuthorScreenPanelMode.click();
+    await this.simpleAuthorToolbar.waitFor({ state: 'visible', timeout: 30000 });
+  }
+
+  private async switchToAdvancedAuthorFlowchartMode() {
+    await this.advancedAuthorFlowchartMode.click();
+    await this.flowchartNodes.first().waitFor({ state: 'visible', timeout: 30000 });
+  }
+
+  private async addSimpleAuthorMultipleChoicePart() {
+    await this.waitForSimpleAuthorMultipleChoiceToolbarReady();
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await this.simpleAuthorMultipleChoiceButton.click();
+
+      const partAdded = await this.simpleAuthorMultipleChoicePart
+        .first()
+        .waitFor({ state: 'attached', timeout: 3000 })
+        .then(() => true)
+        .catch(() => false);
+
+      if (partAdded) return;
+
+      await this.page.waitForTimeout(250);
+    }
+
+    await this.simpleAuthorMultipleChoicePart.first().waitFor({ state: 'attached', timeout: 1000 });
+  }
+
+  private async ensureSimpleAuthorMultipleChoicePart() {
+    const hasPart = (await this.simpleAuthorMultipleChoicePart.count().catch(() => 0)) > 0;
+    if (hasPart) return;
+
+    await this.clickAdvancedAuthorMultipleChoiceButton();
+    await this.simpleAuthorMultipleChoicePart
+      .first()
+      .waitFor({ state: 'attached', timeout: 30000 });
+  }
+
+  private async waitForSimpleAuthorMultipleChoiceToolbarReady() {
+    await this.simpleAuthorToolbar.waitFor({ state: 'visible', timeout: 30000 });
+    await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
+      timeout: 30000,
+    });
+    await expect(this.simpleAuthorMultipleChoiceButton).toBeEnabled({ timeout: 30000 });
+  }
+
+  private async setSimpleAuthorScreenMaxAttempts(maxAttempts: string) {
+    const maxAttemptsField = this.page
+      .locator('xpath=//*[normalize-space(.)="Max Attempts"]/following::select[1]')
+      .first();
+    await expect(maxAttemptsField).toBeVisible({ timeout: 10000 });
+    await maxAttemptsField.selectOption(maxAttempts);
+    await expect(maxAttemptsField).toHaveValue(maxAttempts, { timeout: 10000 });
+  }
+
+  private flowchartScreenTitle(title: string) {
+    return this.page
+      .locator('.flowchart-node .title-text')
+      .filter({ hasText: new RegExp(`^${this.escapeRegExp(title)}$`) })
+      .first();
+  }
+
+  private async selectFlowchartScreenByTitle(title: string) {
+    const screen = this.flowchartNodes.filter({ hasText: title }).first();
+    await screen.locator('.node-box').click({ position: { x: 8, y: 8 } });
+    await expect(this.flowchartSidebar).toContainText(title, { timeout: 10000 });
+  }
+
+  private async renameSelectedFlowchartScreen(title: string) {
+    const screenTitle = this.flowchartSidebar.locator('.screen-title').first();
+    await screenTitle.click();
+    const input = screenTitle.locator('input');
+    await input.fill(title);
+    await input.press('Enter');
+
+    const inputStillVisible = await input
+      .waitFor({ state: 'visible', timeout: 500 })
+      .then(() => true)
+      .catch(() => false);
+    if (inputStillVisible) {
+      await input.evaluate((element) => (element as HTMLElement).blur());
+    }
+
+    await expect(this.flowchartSidebar.locator('.screen-title')).toContainText(title, {
+      timeout: 10000,
+    });
+    await expect(this.flowchartScreenTitle(title)).toBeVisible({ timeout: 30000 });
+  }
+
+  private async replaceFirstFlowchartRule(rule: string, destinationTitle: string) {
+    const path = this.flowchartSidebar
+      .locator('.path-editor-incomplete, .path-editor-completed')
+      .first();
+    await path.waitFor({ state: 'visible', timeout: 10000 });
+    await path.click();
+
+    const pathEditor = this.flowchartSidebar
+      .locator('.path-editor-incomplete, .path-editor-completed')
+      .first();
+    await this.completeFlowchartRule(pathEditor, rule, destinationTitle);
+  }
+
+  private async replaceLastFlowchartRule(rule: string, destinationTitle: string) {
+    const path = this.flowchartSidebar
+      .locator('.path-editor-incomplete, .path-editor-completed')
+      .last();
+    await path.waitFor({ state: 'visible', timeout: 10000 });
+    await path.click();
+
+    const pathEditor = this.flowchartSidebar
+      .locator('.path-editor-incomplete, .path-editor-completed')
+      .last();
+    await this.completeFlowchartRule(pathEditor, rule, destinationTitle);
+  }
+
+  private async addFlowchartRuleToNewScreen(rule: string, destinationTitle: string) {
+    const existingTitles = await this.flowchartNodeTitles();
+    const existingNodeCount = await this.flowchartNodes.count();
+
+    await this.flowchartSidebar.getByRole('button', { name: 'Add Rule' }).click();
+
+    const pathEditor = this.flowchartSidebar
+      .locator('.path-editor-incomplete, .path-editor-completed')
+      .last();
+    await pathEditor.waitFor({ state: 'visible', timeout: 10000 });
+
+    await this.completeFlowchartRule(pathEditor, rule, '-- Create new screen --');
+    await expect(this.flowchartNodes).toHaveCount(existingNodeCount + 1, { timeout: 30000 });
+
+    const newScreenTitle = await this.waitForNewFlowchartNodeTitle(existingTitles);
+    await this.renameNewestFlowchartScreen(newScreenTitle, destinationTitle);
+  }
+
+  private async completeFlowchartRule(pathEditor: Locator, rule: string, destinationTitle: string) {
+    const pathType = pathEditor.locator('select').first();
+    await expect(pathType).toBeVisible({ timeout: 10000 });
+    await pathType.selectOption({ label: rule });
+
+    const destination = pathEditor.locator('.destination-section select').first();
+    await expect(destination).toBeVisible({ timeout: 10000 });
+    await destination.selectOption({ label: destinationTitle });
+
+    await pathEditor.getByRole('button', { name: 'Done' }).click();
+  }
+
+  private async renameNewestFlowchartScreen(currentTitle: string, newTitle: string) {
+    await expect(this.flowchartScreenTitle(currentTitle)).toBeVisible({ timeout: 30000 });
+    const screenTitle = this.flowchartScreenTitle(currentTitle);
+    await screenTitle
+      .locator(
+        'xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " flowchart-node ")]',
+      )
+      .locator('.node-box')
+      .click({ position: { x: 8, y: 8 } });
+    await this.renameSelectedFlowchartScreen(newTitle);
+  }
+
+  private async flowchartNodeTitles() {
+    return (await this.page.locator('.flowchart-node .title-text').allTextContents()).map((title) =>
+      title.trim(),
+    );
+  }
+
+  private async waitForNewFlowchartNodeTitle(existingTitles: string[]) {
+    const existingCounts = existingTitles.reduce<Record<string, number>>((counts, title) => {
+      counts[title] = (counts[title] ?? 0) + 1;
+      return counts;
+    }, {});
+
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const seen = { ...existingCounts };
+      const newTitle = (await this.flowchartNodeTitles()).find((title) => {
+        if (!seen[title]) return true;
+        seen[title] -= 1;
+        return false;
+      });
+
+      if (newTitle) return newTitle;
+
+      await this.page.waitForTimeout(500);
+    }
+
+    throw new Error('New flowchart screen title was not found.');
+  }
+
+  private escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   async renameTitle(titlePage: string) {

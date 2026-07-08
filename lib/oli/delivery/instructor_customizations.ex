@@ -11,6 +11,7 @@ defmodule Oli.Delivery.InstructorCustomizations do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Accounts.User
+  alias Oli.Activities
   alias Oli.Activities.Realizer.Query.Paging
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.InstructorCustomizations.PageExclusions
@@ -18,11 +19,18 @@ defmodule Oli.Delivery.InstructorCustomizations do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
   alias Oli.Repo
 
   @default_candidate_limit 25
   @preview_summary_candidate_limit 500
+
+  @typep candidate_filter_option :: %{id: integer(), title: String.t()}
+  @typep candidate_filter_options :: %{
+           learning_objectives: [candidate_filter_option()],
+           activity_types: [candidate_filter_option()]
+         }
 
   @doc """
   Duplicates all activity exclusions from one section to another.
@@ -139,10 +147,18 @@ defmodule Oli.Delivery.InstructorCustomizations do
     page_resource_id = page_revision.resource_id
 
     with {:ok, paging} <- normalize_candidate_paging(opts),
+         {:ok, filters} <- normalize_candidate_filters(opts),
+         exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id),
+         query_scope = candidate_query_scope(filters, exclusion_view.excluded_candidate_ids),
          {:ok, result} <-
-           TargetResolver.list_candidates(section, page_revision, selection, paging) do
-      exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id)
-
+           TargetResolver.list_candidates(
+             section,
+             page_revision,
+             selection,
+             paging,
+             filters,
+             query_scope
+           ) do
       with {:ok, active_count} <-
              TargetResolver.count_active_candidates(
                section,
@@ -242,11 +258,85 @@ defmodule Oli.Delivery.InstructorCustomizations do
              excluded_ids,
              %Paging{offset: 0, limit: @preview_summary_candidate_limit}
            ) do
-      if result.totalCount > result.rowCount do
-        {:error, {:too_many_candidates, result.totalCount}}
-      else
-        {:ok, result.rows}
-      end
+      bounded_candidate_revisions_result(result)
+    end
+  end
+
+  @doc """
+  Lists current candidate revisions for all resolved bank selections on a page.
+
+  Results are keyed by selection id so callers can build page-level summaries
+  without issuing a separate candidate query for each selection.
+  """
+  @spec list_bank_selection_candidate_revisions_by_selection_id(
+          %Section{},
+          %Revision{},
+          [map()],
+          %{optional(String.t()) => MapSet.t(integer())}
+        ) :: {:ok, %{String.t() => {:ok, [%Revision{}]} | {:error, term()}}} | {:error, term()}
+  def list_bank_selection_candidate_revisions_by_selection_id(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selections,
+        excluded_ids_by_selection_id \\ %{}
+      )
+      when is_list(selections) and is_map(excluded_ids_by_selection_id) do
+    with {:ok, results_by_selection_id} <-
+           TargetResolver.list_active_candidates_by_selection_id(
+             section,
+             page_revision,
+             selections,
+             excluded_ids_by_selection_id,
+             %Paging{offset: 0, limit: @preview_summary_candidate_limit}
+           ) do
+      {:ok,
+       Map.new(results_by_selection_id, fn {selection_id, result} ->
+         {selection_id, bounded_candidate_revisions_result(result)}
+       end)}
+    end
+  end
+
+  defp bounded_candidate_revisions_result(result) do
+    if result.totalCount > result.rowCount do
+      {:error, {:too_many_candidates, result.totalCount}}
+    else
+      {:ok, result.rows}
+    end
+  end
+
+  @doc """
+   Returns filter option sets generated from every candidate in a resolved bank selection.
+  """
+  @spec list_bank_selection_candidate_filter_options(
+          %Section{},
+          %Revision{},
+          map(),
+          non_neg_integer()
+        ) :: {:ok, candidate_filter_options()} | {:error, term()}
+  def list_bank_selection_candidate_filter_options(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selection,
+        total_count
+      )
+      when is_integer(total_count) and total_count >= 0 do
+    with {:ok, rows} <-
+           TargetResolver.list_candidate_filter_option_rows(
+             section,
+             page_revision,
+             selection,
+             total_count
+           ) do
+      objective_ids = rows |> Enum.flat_map(&candidate_objective_ids/1) |> Enum.uniq()
+
+      activity_type_ids =
+        rows |> Enum.map(& &1.activity_type_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+      {:ok,
+       %{
+         learning_objectives: learning_objective_options(section, objective_ids),
+         activity_types: activity_type_options(activity_type_ids)
+       }}
     end
   end
 
@@ -932,6 +1022,135 @@ defmodule Oli.Delivery.InstructorCustomizations do
       _ ->
         {:error, {:invalid_paging, :limit}}
     end
+  end
+
+  defp normalize_candidate_filters(opts) do
+    with {:ok, filters} <- candidate_filters_map(opts),
+         {:ok, visibility} <- normalize_candidate_visibility(filters),
+         {:ok, text_search} <- normalize_candidate_text_search(filters),
+         {:ok, objective_ids} <- normalize_candidate_filter_ids(filters, :objective_ids),
+         {:ok, activity_type_ids} <- normalize_candidate_filter_ids(filters, :activity_type_ids) do
+      {:ok,
+       %{
+         visibility: visibility,
+         text_search: text_search,
+         objective_ids: objective_ids,
+         activity_type_ids: activity_type_ids
+       }}
+    end
+  end
+
+  defp candidate_filters_map(opts) do
+    case Keyword.get(opts, :filters, %{}) do
+      filters when is_map(filters) -> {:ok, filters}
+      filters when is_list(filters) -> filters_from_pair_list(filters)
+      _filters -> {:error, {:invalid_candidate_filters, :filters}}
+    end
+  end
+
+  defp filters_from_pair_list(filters) do
+    case Enum.all?(filters, &match?({_key, _value}, &1)) do
+      true -> {:ok, Map.new(filters)}
+      false -> {:error, {:invalid_candidate_filters, :filters}}
+    end
+  end
+
+  defp normalize_candidate_visibility(filters) do
+    case Map.get(filters, :visibility, Map.get(filters, "visibility", :all)) do
+      visibility when visibility in [:all, :available, :removed] -> {:ok, visibility}
+      "all" -> {:ok, :all}
+      "available" -> {:ok, :available}
+      "removed" -> {:ok, :removed}
+      _ -> {:error, {:invalid_candidate_filters, :visibility}}
+    end
+  end
+
+  defp normalize_candidate_text_search(filters) do
+    case Map.get(filters, :text_search, Map.get(filters, "text_search", "")) do
+      nil -> {:ok, ""}
+      value when is_binary(value) -> {:ok, String.trim(value)}
+      _ -> {:error, {:invalid_candidate_filters, :text_search}}
+    end
+  end
+
+  defp normalize_candidate_filter_ids(filters, key) do
+    filters
+    |> Map.get(key, Map.get(filters, Atom.to_string(key), []))
+    |> List.wrap()
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.reduce_while({:ok, []}, fn value, {:ok, acc} ->
+      case normalize_candidate_filter_id(value) do
+        {:ok, id} -> {:cont, {:ok, [id | acc]}}
+        :error -> {:halt, {:error, {:invalid_candidate_filters, key}}}
+      end
+    end)
+    |> case do
+      {:ok, ids} -> {:ok, ids |> Enum.reverse() |> Enum.uniq()}
+      error -> error
+    end
+  end
+
+  defp normalize_candidate_filter_id(value) when is_integer(value) and value > 0,
+    do: {:ok, value}
+
+  defp normalize_candidate_filter_id(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {id, ""} when id > 0 -> {:ok, id}
+      _ -> :error
+    end
+  end
+
+  defp normalize_candidate_filter_id(_value), do: :error
+
+  defp candidate_query_scope(%{visibility: :all}, _excluded_candidate_ids), do: []
+
+  defp candidate_query_scope(%{visibility: :available}, excluded_candidate_ids) do
+    [blacklisted_ids: MapSet.to_list(excluded_candidate_ids)]
+  end
+
+  defp candidate_query_scope(%{visibility: :removed}, excluded_candidate_ids) do
+    [activity_resource_ids: MapSet.to_list(excluded_candidate_ids)]
+  end
+
+  defp candidate_objective_ids(%{objectives: objectives}),
+    do: objective_ids_from_objectives(objectives)
+
+  defp candidate_objective_ids(_candidate), do: []
+
+  defp objective_ids_from_objectives(objectives) when is_map(objectives) do
+    objectives
+    |> Map.values()
+    |> List.flatten()
+    |> Enum.filter(&is_integer/1)
+  end
+
+  defp objective_ids_from_objectives(_objectives), do: []
+
+  defp learning_objective_options(_section, []), do: []
+
+  defp learning_objective_options(%Section{} = section, objective_ids) do
+    titles_by_id =
+      objective_ids
+      |> DeliveryResolver.objectives_by_resource_ids(section.slug)
+      |> Enum.reject(&is_nil/1)
+      |> Map.new(&{&1.resource_id, &1.title})
+
+    objective_ids
+    |> Enum.map(fn id -> %{id: id, title: Map.get(titles_by_id, id, "LO #{id}")} end)
+    |> Enum.sort_by(&String.downcase(&1.title))
+  end
+
+  defp activity_type_options([]), do: []
+
+  defp activity_type_options(activity_type_ids) do
+    titles_by_id =
+      Activities.list_activity_registrations()
+      |> Enum.filter(&(&1.id in activity_type_ids))
+      |> Map.new(&{&1.id, &1.title})
+
+    activity_type_ids
+    |> Enum.map(fn id -> %{id: id, title: Map.get(titles_by_id, id, "Question Type #{id}")} end)
+    |> Enum.sort_by(&String.downcase(&1.title))
   end
 
   defp summarize_bank_candidate(nil, _enabled?, _disable_allowed?), do: nil

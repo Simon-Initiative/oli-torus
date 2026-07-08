@@ -1,12 +1,13 @@
 import { Verifier } from '@core/verify/Verifier';
 import { Waiter } from '@core/wait/Waiter';
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 
 export type Index = 'first' | 'last' | number;
 
 export class CurriculumPO {
   private readonly contentCenter: Locator;
   private readonly practiceButton: Locator;
+  private readonly adaptiveSimplePracticeButton: Locator;
   private readonly adaptivePracticeButton: Locator;
   private readonly scoredButton: Locator;
   private readonly editPageLink: Locator;
@@ -19,6 +20,9 @@ export class CurriculumPO {
   constructor(private readonly page: Page) {
     this.contentCenter = page.locator('#content > div.container.mx-auto.p-8');
     this.practiceButton = page.getByRole('button', { name: 'Practice' });
+    this.adaptiveSimplePracticeButton = page.getByRole('button', {
+      name: 'Practice (Simple Author)',
+    });
     this.adaptivePracticeButton = page.getByRole('button', { name: 'Practice (Advanced Author)' });
     this.scoredButton = page.getByRole('button', { name: 'Scored' }).first();
     this.createUnitButton = page.getByRole('button', { name: 'Create a Unit' });
@@ -49,6 +53,15 @@ export class CurriculumPO {
 
   async clickAdaptivePracticeButton() {
     await this.adaptivePracticeButton.click();
+    return this.waitForAdaptivePageOrVerify('New Advanced Author Page');
+  }
+
+  async clickAdaptiveSimplePracticeButton() {
+    await this.adaptiveSimplePracticeButton.click();
+    return this.waitForAdaptivePageOrVerify('New Simple Author Page');
+  }
+
+  private async waitForAdaptivePageOrVerify(title: string) {
     const editorTitleBar = this.page.locator('div.TitleBar');
 
     try {
@@ -61,7 +74,7 @@ export class CurriculumPO {
       // fall through to the curriculum entry verification below
     }
 
-    await this.verifyPage('New Advanced Author Page', 'Edit Page', 'last');
+    await this.verifyPage(title, 'Edit Page', 'last');
     return false;
   }
 
@@ -107,6 +120,19 @@ export class CurriculumPO {
 
   async expectPageVisible(name: string, link = 'Edit Page', index: Index = 'last') {
     await this.verifyPage(name, link, index);
+  }
+
+  async importGoogleDoc(fileId: string) {
+    const dialog = this.page.getByRole('dialog', { name: 'Import from Google Docs' });
+    const fileIdInput = dialog.getByLabel('Google Docs FILE_ID');
+
+    await this.page.getByRole('button', { name: 'Import from Google Docs' }).click();
+    await Verifier.expectIsVisible(fileIdInput);
+    await fileIdInput.fill(fileId);
+    await dialog.getByRole('button', { name: 'Start import' }).click();
+    await expect(dialog.getByRole('button', { name: 'Open imported page' })).toBeVisible({
+      timeout: 30_000,
+    });
   }
 
   async deletePage(name: string, link: string, index: Index) {

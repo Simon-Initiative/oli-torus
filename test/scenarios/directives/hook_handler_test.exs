@@ -226,6 +226,14 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
         # Add a transformation marker
         Map.put(state, :transformed, true)
       end
+
+      def assert_params(%ExecutionState{} = state) do
+        if state.params["project_slug"] != "playwright-project" do
+          raise "Expected project_slug param"
+        end
+
+        state
+      end
     end
 
     test "can call functions from custom modules" do
@@ -243,6 +251,19 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
       assert result.errors == []
       assert Map.get(result.state, :custom_flag) == :executed
       assert Map.get(result.state, :transformed) == true
+    end
+
+    test "scenario params are available to hooks" do
+      yaml = """
+      - hook:
+          function: "Oli.Scenarios.Directives.HookHandlerTest.TestHooks.assert_params/1"
+      """
+
+      directives = DirectiveParser.parse_yaml!(yaml)
+      result = Engine.execute(directives, params: %{"project_slug" => "playwright-project"})
+
+      assert result.errors == []
+      assert result.state.params["project_slug"] == "playwright-project"
     end
   end
 end
