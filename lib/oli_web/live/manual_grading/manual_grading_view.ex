@@ -569,7 +569,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   defp apply_adaptive_manual_out_of(parts_map, _model, _activity_attempt, _part_attempts),
     do: parts_map
 
-  defp adaptive_screen_max_score(%Oli.Activities.Model{delivery: delivery}) when is_map(delivery) do
+  defp adaptive_screen_max_score(%Oli.Activities.Model{delivery: delivery})
+       when is_map(delivery) do
     delivery
     |> Map.get("custom", %{})
     |> Map.get("maxScore")
