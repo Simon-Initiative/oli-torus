@@ -125,6 +125,13 @@ All directives are documented in detail in the linked documentation files.
 | | `assert.activity_customization` | Assert persisted instructor activity customization state | [instructor_customizations.md](docs/instructor_customizations.md#activity-customization-assertions) |
 | | `assert.page_objectives` | Assert delivery page learning objective titles | [content_authoring.md](docs/content_authoring.md#page-objective-assertions) |
 | | `assert.activity_objectives` | Assert objective titles attached to a scenario activity | [content_authoring.md](docs/content_authoring.md#activity-objective-assertions) |
+| **Instructor Dashboard** | | | |
+| | `dashboard_analytics_ready` | Prepare analytics-backed instructor dashboard data after learner activity | [instructor_dashboard.md](docs/instructor_dashboard.md#dashboard_analytics_ready) |
+| | `assert.instructor_dashboard_summary` | Assert Instructor Intelligent Dashboard summary cards | [instructor_dashboard.md](docs/instructor_dashboard.md#instructor_dashboard_summary) |
+| | `assert.instructor_dashboard_progress` | Assert dashboard progress data for course or container scope | [instructor_dashboard.md](docs/instructor_dashboard.md#instructor_dashboard_progress) |
+| | `assert.instructor_dashboard_student_support` | Assert dashboard student support buckets and totals | [instructor_dashboard.md](docs/instructor_dashboard.md#instructor_dashboard_student_support) |
+| | `assert.instructor_dashboard_challenging_objectives` | Assert dashboard challenging objective rows | [instructor_dashboard.md](docs/instructor_dashboard.md#instructor_dashboard_challenging_objectives) |
+| | `assert.instructor_dashboard_assessments` | Assert dashboard assessment rows and metrics | [instructor_dashboard.md](docs/instructor_dashboard.md#instructor_dashboard_assessments) |
 | **Certificates** | | | |
 | | `certificate` | Configure certificate settings on a section or product | [student_simulation.md](docs/student_simulation.md#certificate) |
 | | `assert.certificate` | Assert certificate configuration and learner certificate state | [student_simulation.md](docs/student_simulation.md#certificate_assertions) |
@@ -148,6 +155,7 @@ Detailed documentation is organized by topic:
 - **[Products (Blueprints)](docs/products.md)** - Reusable course templates
 - **[Content Authoring](docs/content_authoring.md)** - Creating pages and activities with TorusDoc
 - **[Student Simulation](docs/student_simulation.md)** - Simulating student interactions and progress
+- **[Instructor Dashboard](docs/instructor_dashboard.md)** - Preparing dashboard analytics and asserting Instructor Intelligent Dashboard data
 - **[Gating and Scheduling](docs/gating.md)** - Gate creation, learner access assertions, and deterministic time control
 - **[Users and Organization](docs/users_and_org.md)** - Managing users, institutions, and enrollment
 - **[Hooks and Extensions](docs/hooks.md)** - Custom functions for advanced testing scenarios

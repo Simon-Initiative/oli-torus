@@ -212,10 +212,14 @@ dashboard data.
 
 ### Notes
 - Validates that the named section exists in scenario state
+- Rebuilds derived section relationships used by dashboard analytics, including
+  contained pages and contained objectives
 - Drains pending snapshot analytics work when scenarios run with Oban manual testing
 - Does not sleep or wait on wall-clock time
 - This is intended as an explicit readiness checkpoint between learner simulation
   and instructor dashboard assertions, not as a general wait directive
+- See [Instructor Dashboard](instructor_dashboard.md) for dashboard-specific
+  assertion patterns
 
 ---
 

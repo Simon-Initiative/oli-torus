@@ -1,6 +1,10 @@
 defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler do
   @moduledoc """
-  Handles dashboard_analytics_ready directives by deterministically draining
+  Handles dashboard_analytics_ready directives by deterministically preparing
+  analytics-backed dashboard data.
+
+  The directive rebuilds derived section relationships used by dashboard
+  projections, such as contained pages and contained objectives, then drains
   pending snapshot analytics work.
 
   Use this directive after learner actions that change analytics, such as
@@ -12,6 +16,8 @@ defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler do
   alias Oli.Scenarios.Engine
   alias Oli.Delivery.Sections
 
+  @spec handle(%DashboardAnalyticsReadyDirective{}, %ExecutionState{}) ::
+          {:ok, %ExecutionState{}} | {:error, String.t()}
   def handle(%DashboardAnalyticsReadyDirective{} = directive, %ExecutionState{} = state) do
     with {:ok, section} <- fetch_section(state, directive.section),
          :ok <- rebuild_contained_pages(section),

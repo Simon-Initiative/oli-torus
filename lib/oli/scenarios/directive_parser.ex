@@ -344,75 +344,11 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"assert" => assert_data}) do
     # Validate attributes
-    allowed_attrs = [
-      "structure",
-      "resource",
-      "progress",
-      "proficiency",
-      "certificate",
-      "gating",
-      "prologue",
-      "gradebook",
-      "review_attempt",
-      "activity_attempt",
-      "activity_customization",
-      "page_objectives",
-      "activity_objectives",
-      "discussion",
-      "instructor_dashboard_summary",
-      "instructor_dashboard_progress",
-      "instructor_dashboard_student_support",
-      "instructor_dashboard_challenging_objectives",
-      "instructor_dashboard_assessments",
-      "assertions"
-    ]
+    allowed_attrs = assertion_attrs()
 
     case DirectiveValidator.validate_attributes(allowed_attrs, assert_data, "assert") do
       :ok ->
-        %AssertDirective{
-          structure: parse_structure_assertion(assert_data["structure"]),
-          resource: parse_resource_assertion(assert_data["resource"]),
-          progress: parse_progress_assertion(assert_data["progress"]),
-          proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
-          certificate: parse_certificate_assertion(assert_data["certificate"]),
-          gating: parse_gating_assertion(assert_data["gating"]),
-          prologue: parse_prologue_assertion(assert_data["prologue"]),
-          gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
-          review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
-          activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
-          activity_customization:
-            parse_activity_customization_assertion(assert_data["activity_customization"]),
-          page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
-          activity_objectives:
-            parse_activity_objectives_assertion(assert_data["activity_objectives"]),
-          discussion: parse_discussion_assertion(assert_data["discussion"]),
-          instructor_dashboard_summary:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_summary,
-              assert_data["instructor_dashboard_summary"]
-            ),
-          instructor_dashboard_progress:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_progress,
-              assert_data["instructor_dashboard_progress"]
-            ),
-          instructor_dashboard_student_support:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_student_support,
-              assert_data["instructor_dashboard_student_support"]
-            ),
-          instructor_dashboard_challenging_objectives:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_challenging_objectives,
-              assert_data["instructor_dashboard_challenging_objectives"]
-            ),
-          instructor_dashboard_assessments:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_assessments,
-              assert_data["instructor_dashboard_assessments"]
-            ),
-          assertions: assert_data["assertions"]
-        }
+        build_assert_directive(assert_data)
 
       {:error, msg} ->
         raise msg
@@ -426,103 +362,16 @@ defmodule Oli.Scenarios.DirectiveParser do
       if Map.has_key?(verify_data, "to") && Map.has_key?(verify_data, "structure") do
         # Legacy format with "to" at top level
         {%{"structure" => Map.merge(verify_data["structure"], %{"to" => verify_data["to"]})},
-         [
-           "to",
-           "structure",
-           "resource",
-           "progress",
-           "proficiency",
-           "certificate",
-           "gating",
-           "prologue",
-           "gradebook",
-           "review_attempt",
-           "activity_attempt",
-           "activity_customization",
-           "page_objectives",
-           "activity_objectives",
-           "discussion",
-           "instructor_dashboard_summary",
-           "instructor_dashboard_progress",
-           "instructor_dashboard_student_support",
-           "instructor_dashboard_challenging_objectives",
-           "instructor_dashboard_assessments",
-           "assertions"
-         ]}
+         ["to" | assertion_attrs()]}
       else
         # Standard format
-        {verify_data,
-         [
-           "structure",
-           "resource",
-           "progress",
-           "proficiency",
-           "certificate",
-           "gating",
-           "prologue",
-           "gradebook",
-           "review_attempt",
-           "activity_attempt",
-           "activity_customization",
-           "page_objectives",
-           "activity_objectives",
-           "discussion",
-           "instructor_dashboard_summary",
-           "instructor_dashboard_progress",
-           "instructor_dashboard_student_support",
-           "instructor_dashboard_challenging_objectives",
-           "instructor_dashboard_assessments",
-           "assertions"
-         ]}
+        {verify_data, assertion_attrs()}
       end
 
     # Validate attributes
     case DirectiveValidator.validate_attributes(allowed_attrs, verify_data, "verify") do
       :ok ->
-        %AssertDirective{
-          structure: parse_structure_assertion(assert_data["structure"]),
-          resource: parse_resource_assertion(assert_data["resource"]),
-          progress: parse_progress_assertion(assert_data["progress"]),
-          proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
-          certificate: parse_certificate_assertion(assert_data["certificate"]),
-          gating: parse_gating_assertion(assert_data["gating"]),
-          prologue: parse_prologue_assertion(assert_data["prologue"]),
-          gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
-          review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
-          activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
-          activity_customization:
-            parse_activity_customization_assertion(assert_data["activity_customization"]),
-          page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
-          activity_objectives:
-            parse_activity_objectives_assertion(assert_data["activity_objectives"]),
-          discussion: parse_discussion_assertion(assert_data["discussion"]),
-          instructor_dashboard_summary:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_summary,
-              assert_data["instructor_dashboard_summary"]
-            ),
-          instructor_dashboard_progress:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_progress,
-              assert_data["instructor_dashboard_progress"]
-            ),
-          instructor_dashboard_student_support:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_student_support,
-              assert_data["instructor_dashboard_student_support"]
-            ),
-          instructor_dashboard_challenging_objectives:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_challenging_objectives,
-              assert_data["instructor_dashboard_challenging_objectives"]
-            ),
-          instructor_dashboard_assessments:
-            parse_instructor_dashboard_assertion(
-              :instructor_dashboard_assessments,
-              assert_data["instructor_dashboard_assessments"]
-            ),
-          assertions: assert_data["assertions"]
-        }
+        build_assert_directive(assert_data)
 
       {:error, msg} ->
         raise msg
@@ -1270,6 +1119,78 @@ defmodule Oli.Scenarios.DirectiveParser do
       {key, _value} ->
         raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, dashboard_analytics_ready, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
+  end
+
+  defp assertion_attrs do
+    [
+      "structure",
+      "resource",
+      "progress",
+      "proficiency",
+      "certificate",
+      "gating",
+      "prologue",
+      "gradebook",
+      "review_attempt",
+      "activity_attempt",
+      "activity_customization",
+      "page_objectives",
+      "activity_objectives",
+      "discussion",
+      "instructor_dashboard_summary",
+      "instructor_dashboard_progress",
+      "instructor_dashboard_student_support",
+      "instructor_dashboard_challenging_objectives",
+      "instructor_dashboard_assessments",
+      "assertions"
+    ]
+  end
+
+  defp build_assert_directive(assert_data) do
+    %AssertDirective{
+      structure: parse_structure_assertion(assert_data["structure"]),
+      resource: parse_resource_assertion(assert_data["resource"]),
+      progress: parse_progress_assertion(assert_data["progress"]),
+      proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
+      certificate: parse_certificate_assertion(assert_data["certificate"]),
+      gating: parse_gating_assertion(assert_data["gating"]),
+      prologue: parse_prologue_assertion(assert_data["prologue"]),
+      gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
+      review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
+      activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
+      activity_customization:
+        parse_activity_customization_assertion(assert_data["activity_customization"]),
+      page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
+      activity_objectives:
+        parse_activity_objectives_assertion(assert_data["activity_objectives"]),
+      discussion: parse_discussion_assertion(assert_data["discussion"]),
+      instructor_dashboard_summary:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_summary,
+          assert_data["instructor_dashboard_summary"]
+        ),
+      instructor_dashboard_progress:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_progress,
+          assert_data["instructor_dashboard_progress"]
+        ),
+      instructor_dashboard_student_support:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_student_support,
+          assert_data["instructor_dashboard_student_support"]
+        ),
+      instructor_dashboard_challenging_objectives:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_challenging_objectives,
+          assert_data["instructor_dashboard_challenging_objectives"]
+        ),
+      instructor_dashboard_assessments:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_assessments,
+          assert_data["instructor_dashboard_assessments"]
+        ),
+      assertions: assert_data["assertions"]
+    }
   end
 
   defp parse_activity_bank_ops(ops) when is_list(ops) do

@@ -80,20 +80,18 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
     )
   end
 
-  defp dependency_profile(capability) do
+  defp dependency_profile(_capability) do
     Projections.dependencies()
     |> merged_dependency_profile()
-    |> maybe_remove_summary_recommendation(capability)
+    |> remove_summary_recommendation()
   end
 
-  defp maybe_remove_summary_recommendation(profile, :summary) do
+  defp remove_summary_recommendation(profile) do
     %{
       profile
       | optional: Enum.reject(profile.optional, &(&1 == @summary_recommendation_oracle))
     }
   end
-
-  defp maybe_remove_summary_recommendation(profile, _capability), do: profile
 
   defp merged_dependency_profile(dependencies) do
     dependencies
