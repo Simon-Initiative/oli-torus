@@ -72,6 +72,21 @@
       status: "approved"
       visible: true
 
+- discussion_post:
+    name: "auto_accepted_reply"
+    student: "student_b"
+    section: "discussion_section"
+    reply_to: "auto_accepted_post"
+    body: "This reply is visible immediately."
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "auto_accepted_reply"
+      student: "student_a"
+      status: "approved"
+      visible: true
+
 - discussion_delete:
     post: "auto_accepted_post"
     actor: "student_a"

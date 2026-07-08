@@ -26,7 +26,7 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
          {:ok, section} <- fetch_section(state, section_name),
          {:ok, root_section_resource} <- fetch_root_section_resource(section),
          {:ok, parent_post} <- fetch_parent_post(state, reply_to),
-         attrs <-
+         {:ok, attrs} <-
            post_attrs(student, section, root_section_resource, parent_post, body, anonymous),
          {:ok, post} <-
            CertificationEligibility.create_post_and_verify_qualification(
@@ -43,19 +43,30 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
 
   defp post_attrs(student, section, root_section_resource, parent_post, body, anonymous) do
     config = root_section_resource.collab_space_config
-    auto_accept = is_nil(config) or Map.get(config, :auto_accept, true)
 
-    %{
-      user_id: student.id,
-      section_id: section.id,
-      resource_id: root_section_resource.resource_id,
-      status: if(auto_accept, do: :approved, else: :submitted),
-      visibility: :public,
-      anonymous: anonymous,
-      content: %PostContent{message: body}
-    }
-    |> maybe_put_parent(parent_post)
+    if anonymous && !anonymous_posting_enabled?(config) do
+      {:error, "Anonymous posting is not enabled for section '#{section.slug}'"}
+    else
+      auto_accept = is_nil(config) or Map.get(config, :auto_accept, true)
+
+      attrs =
+        %{
+          user_id: student.id,
+          section_id: section.id,
+          resource_id: root_section_resource.resource_id,
+          status: if(auto_accept, do: :approved, else: :submitted),
+          visibility: :public,
+          anonymous: anonymous,
+          content: %PostContent{message: body}
+        }
+        |> maybe_put_parent(parent_post)
+
+      {:ok, attrs}
+    end
   end
+
+  defp anonymous_posting_enabled?(nil), do: false
+  defp anonymous_posting_enabled?(config), do: Map.get(config, :anonymous_posting, false)
 
   defp maybe_put_parent(attrs, nil), do: attrs
 

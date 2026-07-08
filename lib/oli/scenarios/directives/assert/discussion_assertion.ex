@@ -3,8 +3,11 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
   Handles assertions for course discussion configuration and named posts.
   """
 
+  import Ecto.Query, warn: false
+
   alias Oli.Repo
   alias Oli.Resources.Collaboration
+  alias Oli.Resources.Collaboration.Post
   alias Oli.Scenarios.DirectiveTypes.{AssertDirective, VerificationResult}
   alias Oli.Scenarios.Directives.Assert.Helpers
   alias Oli.Scenarios.Engine
@@ -96,26 +99,23 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
   defp check_visibility(section, student, post, expected) do
     visible? =
       section.root_section_resource.resource_id
-      |> list_visible_posts(section, student)
-      |> Enum.any?(&(&1.id == post.id))
+      |> visible_post?(section, student, post)
 
     if visible? == expected,
       do: :ok,
       else: "expected visible=#{inspect(expected)}, got #{inspect(visible?)}"
   end
 
-  defp list_visible_posts(root_resource_id, section, student) do
-    {posts, _more?} =
-      Collaboration.list_root_posts_for_section(
-        student.id,
-        section.id,
-        root_resource_id,
-        100,
-        0,
-        "date",
-        :asc
-      )
-
-    posts
+  defp visible_post?(root_resource_id, section, student, post) do
+    Repo.exists?(
+      from p in Post,
+        where:
+          p.id == ^post.id and
+            p.section_id == ^section.id and
+            p.resource_id == ^root_resource_id and
+            p.visibility == :public and
+            (p.status in [:approved, :archived, :deleted] or
+               (p.status == :submitted and p.user_id == ^student.id))
+    )
   end
 end

@@ -4,6 +4,7 @@ defmodule Oli.Scenarios.Directives.DiscussionModerationHandler do
   """
 
   alias Oli.Repo
+  alias Oli.Delivery.Sections
   alias Oli.Resources.Collaboration
   alias Oli.Scenarios.DirectiveTypes.{DiscussionModerationDirective, ExecutionState}
   alias Oli.Scenarios.Engine
@@ -16,8 +17,9 @@ defmodule Oli.Scenarios.Directives.DiscussionModerationHandler do
         },
         %ExecutionState{} = state
       ) do
-    with {:ok, _instructor} <- fetch_user(state, instructor_name),
+    with {:ok, instructor} <- fetch_user(state, instructor_name),
          {:ok, post} <- fetch_post(state, post_name),
+         :ok <- authorize_moderation(instructor, post),
          {:ok, updated_post} <- moderate(post, action) do
       {:ok, Engine.put_discussion_post(state, post_name, updated_post)}
     else
@@ -30,6 +32,16 @@ defmodule Oli.Scenarios.Directives.DiscussionModerationHandler do
     case Engine.get_user(state, name) do
       nil -> {:error, "User '#{name}' not found"}
       user -> {:ok, user}
+    end
+  end
+
+  defp authorize_moderation(instructor, post) do
+    post = Repo.preload(post, :section)
+
+    if post.section && Sections.is_instructor?(instructor, post.section.slug) do
+      :ok
+    else
+      {:error, "User '#{instructor.email}' is not authorized to moderate this discussion post"}
     end
   end
 
