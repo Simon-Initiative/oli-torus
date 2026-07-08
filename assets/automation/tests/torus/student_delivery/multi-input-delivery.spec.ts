@@ -65,37 +65,43 @@ test.describe('multi-input delivery', () => {
     await openStudentDeliveryPractice(homeTask, page, sections.positive, activityTitle);
     const activity = page.locator('.activity.multi-input-activity');
     const inputs = activity.getByLabel('answer submission textbox');
+    const dropdown = activity.getByRole('combobox');
     const submitButton = page.getByRole('button', { name: 'submit', exact: true });
 
     await expect(activity).toBeVisible();
     await expect(inputs).toHaveCount(2);
+    await expect(dropdown).toBeVisible();
 
     await inputs.nth(0).fill('answer');
     await inputs.nth(1).fill('42');
+    await dropdown.selectOption('choice_correct');
 
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await expect(page.locator('.evaluation.feedback.correct')).toHaveCount(2);
-    await expect(page.getByLabel('result')).toHaveCount(2);
+    await expect(page.locator('.evaluation.feedback.correct')).toHaveCount(3);
+    await expect(page.getByLabel('result')).toHaveCount(3);
   });
 
   test('student filling an incorrect blank sees incorrect feedback', async ({ homeTask, page }) => {
     await openStudentDeliveryPractice(homeTask, page, sections.negative, activityTitle);
     const activity = page.locator('.activity.multi-input-activity');
     const inputs = activity.getByLabel('answer submission textbox');
+    const dropdown = activity.getByRole('combobox');
     const submitButton = page.getByRole('button', { name: 'submit', exact: true });
 
     await expect(activity).toBeVisible();
     await expect(inputs).toHaveCount(2);
+    await expect(dropdown).toBeVisible();
 
     await inputs.nth(0).fill('wrong');
     await inputs.nth(1).fill('7');
+    await dropdown.selectOption('choice_incorrect');
 
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await expect(page.locator('.evaluation.feedback.incorrect')).toHaveCount(2);
+    await expect(page.locator('.evaluation.feedback.incorrect')).toHaveCount(3);
     await expect(page.locator('.evaluation.feedback.correct')).toHaveCount(0);
   });
 });

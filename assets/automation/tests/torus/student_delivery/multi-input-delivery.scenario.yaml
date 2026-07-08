@@ -16,7 +16,17 @@
     content:
       activityType: 'oli_multi_input'
       submitPerPart: false
-      choices: []
+      choices:
+        - id: 'choice_correct'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Correct choice'
+        - id: 'choice_incorrect'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Incorrect choice'
       inputs:
         - id: 'text_blank'
           inputType: 'text'
@@ -24,19 +34,28 @@
         - id: 'numeric_blank'
           inputType: 'numeric'
           partId: 'numeric_blank_part'
+        - id: 'dropdown_blank'
+          inputType: 'dropdown'
+          partId: 'dropdown_blank_part'
+          choiceIds: ['choice_correct', 'choice_incorrect']
       stem:
         id: 'multi_input_stem'
         content:
           - type: 'p'
             children:
-              - text: 'Fill in both blanks: '
+              - text: 'Fill in the blanks and select the matching choice: '
               - type: 'input_ref'
                 id: 'text_blank'
                 children:
                   - text: ''
-              - text: ' and '
+              - text: ', '
               - type: 'input_ref'
                 id: 'numeric_blank'
+                children:
+                  - text: ''
+              - text: ', and '
+              - type: 'input_ref'
+                id: 'dropdown_blank'
                 children:
                   - text: ''
       authoring:
@@ -93,6 +112,31 @@
                     - type: 'p'
                       children:
                         - text: 'Incorrect number.'
+            hints: []
+          - id: 'dropdown_blank_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'dropdown_blank_correct'
+                rule: 'input like {choice_correct}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'dropdown_blank_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct choice.'
+              - id: 'dropdown_blank_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'dropdown_blank_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect choice.'
             hints: []
 
 - edit_page:
