@@ -66,7 +66,7 @@ test.describe('multi-input delivery', () => {
     const activity = page.locator('.activity.multi-input-activity');
     const inputs = activity.getByLabel('answer submission textbox');
     const dropdown = activity.getByRole('combobox');
-    const submitButton = page.getByRole('button', { name: 'submit', exact: true });
+    const submitButton = page.getByRole('button', { name: /^submit$/i });
 
     await expect(activity).toBeVisible();
     await expect(inputs).toHaveCount(2);
@@ -88,7 +88,7 @@ test.describe('multi-input delivery', () => {
     const activity = page.locator('.activity.multi-input-activity');
     const inputs = activity.getByLabel('answer submission textbox');
     const dropdown = activity.getByRole('combobox');
-    const submitButton = page.getByRole('button', { name: 'submit', exact: true });
+    const submitButton = page.getByRole('button', { name: /^submit$/i });
 
     await expect(activity).toBeVisible();
     await expect(inputs).toHaveCount(2);
