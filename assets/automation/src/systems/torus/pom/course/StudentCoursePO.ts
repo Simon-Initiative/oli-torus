@@ -44,9 +44,10 @@ export class StudentCoursePO {
       .filter({ has: galleryTitle })
       .first();
 
-    const outlineTitle = this.page.getByRole('button', {
-      name: new RegExp(`\\b${escapeRegExp(pageName)}\\b`),
-    });
+    const outlineTitle = this.page
+      .locator('button')
+      .filter({ has: this.page.getByText(pageName, { exact: true }) })
+      .first();
     const groupedOutlineLink = this.page
       .locator('a')
       .filter({
@@ -229,10 +230,6 @@ export class StudentCoursePO {
       form.appendChild(response);
     });
   }
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function isStudentLessonPath(pathname: string) {
