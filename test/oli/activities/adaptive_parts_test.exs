@@ -189,6 +189,80 @@ defmodule Oli.Activities.AdaptivePartsTest do
            ) == :manual
   end
 
+  test "treats an iframe flagged for manual grading in partsLayout as manually gradeable" do
+    content = %{
+      "partsLayout" => [
+        %{
+          "id" => "janus_capi_iframe-1",
+          "type" => "janus-capi-iframe",
+          "custom" => %{"requiresManualGrading" => true}
+        }
+      ],
+      "authoring" => %{
+        "parts" => [
+          %{"id" => "janus_capi_iframe-1", "type" => "janus-capi-iframe"}
+        ]
+      }
+    }
+
+    part = AdaptiveParts.part_definition(content, "janus_capi_iframe-1")
+
+    assert AdaptiveParts.stateful_non_scorable_part_type?("janus-capi-iframe")
+    assert AdaptiveParts.persisted_part?(content, "janus_capi_iframe-1")
+    assert AdaptiveParts.persisted_part_grading_approach(content, part) == :manual
+
+    assert AdaptiveParts.manual_gradeable_part_ids(content) ==
+             MapSet.new(["janus_capi_iframe-1"])
+  end
+
+  test "keeps an explicitly manual iframe manual even when referenced by a scoring rule" do
+    # Mirrors the real MER-5766 regression: the iframe carries requiresManualGrading in
+    # partsLayout, has stale gradingApproach "automatic" in authoring.parts, and is also
+    # referenced by a trap-state rule condition. The rule reference must not silently
+    # downgrade the part back to automatic.
+    content = %{
+      "partsLayout" => [
+        %{
+          "id" => "janus_capi_iframe-1",
+          "type" => "janus-capi-iframe",
+          "custom" => %{"requiresManualGrading" => true}
+        }
+      ],
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "janus_capi_iframe-1",
+            "type" => "janus-capi-iframe",
+            "gradingApproach" => "automatic"
+          }
+        ],
+        "rules" => [
+          %{
+            "id" => "r.correct",
+            "disabled" => false,
+            "conditions" => %{
+              "all" => [
+                %{
+                  "fact" => "stage.janus_capi_iframe-1.reportComplete",
+                  "operator" => "equal",
+                  "value" => "true"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+
+    part = AdaptiveParts.part_definition(content, "janus_capi_iframe-1")
+
+    assert AdaptiveParts.rule_scored_part?(content, "janus_capi_iframe-1")
+    assert AdaptiveParts.persisted_part_grading_approach(content, part) == :manual
+
+    assert AdaptiveParts.manual_gradeable_part_ids(content) ==
+             MapSet.new(["janus_capi_iframe-1"])
+  end
+
   test "ignores missing ids when collecting persisted-only stateful parts" do
     content = %{
       "partsLayout" => [
