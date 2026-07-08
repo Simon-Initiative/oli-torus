@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
+import { FileManager } from '@core/FileManager';
 import path from 'node:path';
 import { openStudentDeliveryPracticeForLoggedInStudent } from './support/common';
 import {
@@ -14,6 +15,9 @@ import { configureStudentDeliveryRuntimeConfig, seedStudentDeliveryScenario } fr
 const runId = `-${Date.now()}`;
 const scenarioPath = path.resolve(__dirname, './file-upload-delivery.scenario.yaml');
 const activityTitle = 'File Upload Practice';
+// A real asset (~525 KB) — well over the oversize activity's 10-byte limit, and well under
+// the normal activity's 10 MB limit, so it drives both the oversize and happy paths.
+const uploadFilePath = FileManager.mediaPath('img-mock-05-16-2025.jpg');
 
 // F1/F4 upload to object storage (S3 in the nightly env, minio locally). Set
 // STORAGE_TESTS=1 in an environment with a storage backend to run them; otherwise they
@@ -85,11 +89,7 @@ test.describe('file upload delivery', () => {
       const activity = fileUploadActivity(page);
 
       await expect(activity).toBeVisible();
-      await fileUploadInput(activity).setInputFiles({
-        name: 'too-big.txt',
-        mimeType: 'text/plain',
-        buffer: Buffer.from('this content is well over ten bytes'),
-      });
+      await fileUploadInput(activity).setInputFiles(uploadFilePath);
 
       await expect(fileUploadError(activity)).toHaveText(
         'This file exceeds the maximum allowed file size',
@@ -99,7 +99,7 @@ test.describe('file upload delivery', () => {
     });
   });
 
-  test('file upload accepts a file, records the submission, and restores it @nightly', async ({
+  test('file upload accepts a file, records the submission, and restores it', async ({
     homeTask,
     page,
   }) => {
@@ -115,11 +115,7 @@ test.describe('file upload delivery', () => {
       await expect(activity).toBeVisible();
       await expect(submitButton).toBeDisabled();
 
-      await fileUploadInput(activity).setInputFiles({
-        name: 'submission.txt',
-        mimeType: 'text/plain',
-        buffer: Buffer.from('my uploaded work'),
-      });
+      await fileUploadInput(activity).setInputFiles(uploadFilePath);
 
       await expect(fileUploadListItems(activity)).toHaveCount(1);
       await expect(submitButton).toBeEnabled();
@@ -132,11 +128,7 @@ test.describe('file upload delivery', () => {
       await openStudentDeliveryPracticeForLoggedInStudent(page, sections.restore, activityTitle);
       const activity = fileUploadActivity(page);
 
-      await fileUploadInput(activity).setInputFiles({
-        name: 'submission.txt',
-        mimeType: 'text/plain',
-        buffer: Buffer.from('my uploaded work'),
-      });
+      await fileUploadInput(activity).setInputFiles(uploadFilePath);
       await expect(fileUploadListItems(activity)).toHaveCount(1);
       await fileUploadSubmit(activity).click();
       await expect(activity.getByText('Your response has been received')).toBeVisible();
