@@ -3,6 +3,7 @@ import { test } from '@fixture/my-fixture';
 import path from 'node:path';
 import { openStudentDeliveryPracticeForLoggedInStudent } from './support/common';
 import {
+  expectImageCodingSource,
   getImageCodingSource,
   imageCodingResultCanvas,
   runImageCodingUntilCanvasReady,
@@ -310,7 +311,7 @@ test.describe('image coding delivery', () => {
 
       activity = imageCodingActivity(page, activityStems.text);
 
-      await expect(getImageCodingSource(activity)).resolves.toBe('print("correct")');
+      await expectImageCodingSource(activity, 'print("correct")');
       await expect(imageCodingSubmitButton(activity)).toBeDisabled();
     });
   });

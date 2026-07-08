@@ -65,6 +65,20 @@ export async function getImageCodingSource(activity: Locator) {
 }
 
 /**
+ * Waits until the Ace editor source matches the expected code. This is useful
+ * after reloads, where the editor can become visible before Torus restores the
+ * learner's saved draft into the activity state.
+ */
+export async function expectImageCodingSource(activity: Locator, expectedCode: string) {
+  await expect
+    .poll(async () => getImageCodingSource(activity), {
+      timeout: 10000,
+      intervals: [250, 500, 1000],
+    })
+    .toBe(expectedCode);
+}
+
+/**
  * Returns the rendered result canvas used by image-processing image coding
  * activities after a successful run.
  */
