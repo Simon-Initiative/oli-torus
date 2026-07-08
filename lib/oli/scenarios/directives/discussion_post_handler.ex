@@ -45,26 +45,38 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
   defp post_attrs(student, section, root_section_resource, parent_post, body, anonymous) do
     config = root_section_resource.collab_space_config
 
-    if anonymous && !anonymous_posting_enabled?(config) do
-      {:error, "Anonymous posting is not enabled for section '#{section.slug}'"}
-    else
-      auto_accept = is_nil(config) or Map.get(config, :auto_accept, true)
+    cond do
+      !discussions_enabled?(section, config) ->
+        {:error, "Discussions are not enabled for section '#{section.slug}'"}
 
-      attrs =
-        %{
-          user_id: student.id,
-          section_id: section.id,
-          resource_id: root_section_resource.resource_id,
-          status: if(auto_accept, do: :approved, else: :submitted),
-          visibility: :public,
-          anonymous: anonymous,
-          content: %PostContent{message: body}
-        }
-        |> maybe_put_parent(parent_post)
+      anonymous && !anonymous_posting_enabled?(config) ->
+        {:error, "Anonymous posting is not enabled for section '#{section.slug}'"}
 
-      {:ok, attrs}
+      true ->
+        auto_accept = auto_accept_enabled?(config)
+
+        attrs =
+          %{
+            user_id: student.id,
+            section_id: section.id,
+            resource_id: root_section_resource.resource_id,
+            status: if(auto_accept, do: :approved, else: :submitted),
+            visibility: :public,
+            anonymous: anonymous,
+            content: %PostContent{message: body}
+          }
+          |> maybe_put_parent(parent_post)
+
+        {:ok, attrs}
     end
   end
+
+  defp discussions_enabled?(section, config) do
+    (section.contains_discussions == true and config) && Map.get(config, :status) == :enabled
+  end
+
+  defp auto_accept_enabled?(nil), do: true
+  defp auto_accept_enabled?(config), do: Map.get(config, :auto_accept) != false
 
   defp anonymous_posting_enabled?(nil), do: false
   defp anonymous_posting_enabled?(config), do: Map.get(config, :anonymous_posting, false)

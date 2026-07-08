@@ -52,6 +52,104 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
       assert error =~ "Anonymous posting is not enabled"
     end
 
+    test "rejects posts when discussions are disabled" do
+      yaml = """
+      - project:
+          name: "disabled_discussion_course"
+          title: "Disabled Discussion Course"
+          root:
+            children:
+              - page: "Welcome"
+
+      - product:
+          name: "disabled_discussion_product"
+          title: "Disabled Discussion Product"
+          from: "disabled_discussion_course"
+
+      - discussion_config:
+          section: "disabled_discussion_product"
+          enabled: false
+
+      - section:
+          name: "disabled_discussion_section"
+          title: "Disabled Discussion Section"
+          from: "disabled_discussion_product"
+
+      - user:
+          name: "disabled_discussion_student"
+          type: "student"
+          email: "disabled_discussion_student@test.edu"
+
+      - enroll:
+          user: "disabled_discussion_student"
+          section: "disabled_discussion_section"
+
+      - discussion_post:
+          name: "disabled_discussion_post"
+          student: "disabled_discussion_student"
+          section: "disabled_discussion_section"
+          body: "This post should be rejected."
+      """
+
+      result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+      assert [{_, error}] = result.errors
+      assert error =~ "Discussions are not enabled"
+    end
+
+    test "defaults posts to approved when auto accept is not configured" do
+      yaml = """
+      - project:
+          name: "auto_accept_default_course"
+          title: "Auto Accept Default Course"
+          root:
+            children:
+              - page: "Welcome"
+
+      - product:
+          name: "auto_accept_default_product"
+          title: "Auto Accept Default Product"
+          from: "auto_accept_default_course"
+
+      - discussion_config:
+          section: "auto_accept_default_product"
+          enabled: true
+
+      - section:
+          name: "auto_accept_default_section"
+          title: "Auto Accept Default Section"
+          from: "auto_accept_default_product"
+
+      - user:
+          name: "auto_accept_default_student"
+          type: "student"
+          email: "auto_accept_default_student@test.edu"
+
+      - enroll:
+          user: "auto_accept_default_student"
+          section: "auto_accept_default_section"
+
+      - discussion_post:
+          name: "auto_accept_default_post"
+          student: "auto_accept_default_student"
+          section: "auto_accept_default_section"
+          body: "This post should be auto-approved."
+
+      - assert:
+          discussion:
+            section: "auto_accept_default_section"
+            post: "auto_accept_default_post"
+            student: "auto_accept_default_student"
+            status: "approved"
+            visible: true
+      """
+
+      result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+      assert result.errors == []
+      assert Enum.all?(result.verifications, & &1.passed)
+    end
+
     test "rejects replies to posts from another section" do
       yaml = """
       - project:
@@ -174,6 +272,66 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
 
       assert [{_, error}] = result.errors
       assert error =~ "not authorized to moderate"
+    end
+  end
+
+  describe "discussion_delete" do
+    test "rejects deletion by a user who is neither the post owner nor section instructor" do
+      yaml = """
+      - project:
+          name: "delete_auth_course"
+          title: "Delete Auth Course"
+          root:
+            children:
+              - page: "Welcome"
+
+      - product:
+          name: "delete_auth_product"
+          title: "Delete Auth Product"
+          from: "delete_auth_course"
+
+      - discussion_config:
+          section: "delete_auth_product"
+          enabled: true
+
+      - section:
+          name: "delete_auth_section"
+          title: "Delete Auth Section"
+          from: "delete_auth_product"
+
+      - user:
+          name: "delete_post_owner"
+          type: "student"
+          email: "delete_post_owner@test.edu"
+
+      - user:
+          name: "delete_other_student"
+          type: "student"
+          email: "delete_other_student@test.edu"
+
+      - enroll:
+          user: "delete_post_owner"
+          section: "delete_auth_section"
+
+      - enroll:
+          user: "delete_other_student"
+          section: "delete_auth_section"
+
+      - discussion_post:
+          name: "owned_post"
+          student: "delete_post_owner"
+          section: "delete_auth_section"
+          body: "Only the owner or instructor can delete this."
+
+      - discussion_delete:
+          post: "owned_post"
+          actor: "delete_other_student"
+      """
+
+      result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+      assert [{_, error}] = result.errors
+      assert error =~ "not authorized to delete"
     end
   end
 end

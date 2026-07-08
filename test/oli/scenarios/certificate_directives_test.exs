@@ -40,6 +40,10 @@ defmodule Oli.Scenarios.CertificateDirectivesTest do
         from: "certificate_product"
         title: "Certificate Section"
 
+    - discussion_config:
+        section: "certificate_section"
+        enabled: true
+
     - user:
         name: "instructor_1"
         type: "instructor"

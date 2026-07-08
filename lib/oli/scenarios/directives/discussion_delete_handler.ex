@@ -3,6 +3,7 @@ defmodule Oli.Scenarios.Directives.DiscussionDeleteHandler do
   Deletes named discussion posts through the collaboration authorization path.
   """
 
+  alias Oli.Delivery.Sections
   alias Oli.Repo
   alias Oli.Resources.Collaboration
   alias Oli.Scenarios.DirectiveTypes.{DiscussionDeleteDirective, ExecutionState}
@@ -14,6 +15,7 @@ defmodule Oli.Scenarios.Directives.DiscussionDeleteHandler do
       ) do
     with {:ok, actor} <- fetch_user(state, actor_name),
          {:ok, post} <- fetch_post(state, post_name),
+         :ok <- authorize_delete(actor, post),
          {count, nil} when count > 0 <- Collaboration.soft_delete_post(post.id, actor),
          updated_post <- Collaboration.get_post_by(%{id: post.id}) |> Repo.preload(:user) do
       {:ok, Engine.put_discussion_post(state, post_name, updated_post)}
@@ -30,6 +32,21 @@ defmodule Oli.Scenarios.Directives.DiscussionDeleteHandler do
     case Engine.get_user(state, name) do
       nil -> {:error, "User '#{name}' not found"}
       user -> {:ok, user}
+    end
+  end
+
+  defp authorize_delete(actor, post) do
+    post = Repo.preload(post, :section)
+
+    cond do
+      post.user_id == actor.id ->
+        :ok
+
+      post.section && Sections.is_instructor?(actor, post.section.slug) ->
+        :ok
+
+      true ->
+        {:error, "User '#{actor.email}' is not authorized to delete this discussion post"}
     end
   end
 
