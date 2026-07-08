@@ -256,6 +256,24 @@
         "admin_title3": { "type": "string" }
       }
     },
+    "discussionAssertion": {
+      "type": "object",
+      "required": ["section"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "post": { "type": "string" },
+        "student": { "type": "string" },
+        "visible": { "$ref": "#/definitions/booleanLike" },
+        "status": {
+          "type": "string",
+          "enum": ["submitted", "approved", "deleted", "archived"]
+        },
+        "contains_discussions": { "$ref": "#/definitions/booleanLike" },
+        "auto_accept": { "$ref": "#/definitions/booleanLike" },
+        "anonymous_posting": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
     "gatingAssertion": {
       "type": "object",
       "additionalProperties": false,
@@ -471,6 +489,7 @@
         "activity_customization": { "$ref": "#/definitions/activityCustomizationAssertion" },
         "page_objectives": { "$ref": "#/definitions/pageObjectivesAssertion" },
         "activity_objectives": { "$ref": "#/definitions/activityObjectivesAssertion" },
+        "discussion": { "$ref": "#/definitions/discussionAssertion" },
         "assertions": {}
       }
     },
@@ -492,6 +511,7 @@
         "activity_customization": { "$ref": "#/definitions/activityCustomizationAssertion" },
         "page_objectives": { "$ref": "#/definitions/pageObjectivesAssertion" },
         "activity_objectives": { "$ref": "#/definitions/activityObjectivesAssertion" },
+        "discussion": { "$ref": "#/definitions/discussionAssertion" },
         "assertions": {}
       }
     },
@@ -1642,6 +1662,24 @@
         },
         {
           "type": "object",
+          "required": ["discussion_config"],
+          "additionalProperties": false,
+          "properties": {
+            "discussion_config": {
+              "type": "object",
+              "required": ["section"],
+              "additionalProperties": false,
+              "properties": {
+                "section": { "type": "string" },
+                "enabled": { "$ref": "#/definitions/booleanLike" },
+                "auto_accept": { "$ref": "#/definitions/booleanLike" },
+                "anonymous_posting": { "$ref": "#/definitions/booleanLike" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["discussion_post"],
           "additionalProperties": false,
           "properties": {
@@ -1650,9 +1688,48 @@
               "required": ["student", "section", "body"],
               "additionalProperties": false,
               "properties": {
+                "name": { "type": "string" },
                 "student": { "type": "string" },
                 "section": { "type": "string" },
-                "body": { "type": "string" }
+                "body": { "type": "string" },
+                "reply_to": { "type": "string" },
+                "anonymous": { "$ref": "#/definitions/booleanLike" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["discussion_moderation"],
+          "additionalProperties": false,
+          "properties": {
+            "discussion_moderation": {
+              "type": "object",
+              "required": ["post", "instructor", "action"],
+              "additionalProperties": false,
+              "properties": {
+                "post": { "type": "string" },
+                "instructor": { "type": "string" },
+                "action": {
+                  "type": "string",
+                  "enum": ["approve", "reject"]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["discussion_delete"],
+          "additionalProperties": false,
+          "properties": {
+            "discussion_delete": {
+              "type": "object",
+              "required": ["post", "actor"],
+              "additionalProperties": false,
+              "properties": {
+                "post": { "type": "string" },
+                "actor": { "type": "string" }
               }
             }
           }

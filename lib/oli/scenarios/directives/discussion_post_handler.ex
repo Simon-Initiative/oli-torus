@@ -5,33 +5,68 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
 
   alias Oli.CertificationEligibility
   alias Oli.Delivery.GrantedCertificates
+  alias Oli.Repo
+  alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.PostContent
   alias Oli.Scenarios.DirectiveTypes.{DiscussionPostDirective, ExecutionState}
   alias Oli.Scenarios.Engine
 
   def handle(
-        %DiscussionPostDirective{student: student_name, section: section_name, body: body},
+        %DiscussionPostDirective{
+          name: post_name,
+          student: student_name,
+          section: section_name,
+          body: body,
+          reply_to: reply_to,
+          anonymous: anonymous
+        },
         %ExecutionState{} = state
       ) do
     with {:ok, student} <- fetch_user(state, student_name),
          {:ok, section} <- fetch_section(state, section_name),
-         {:ok, _post} <-
+         {:ok, root_section_resource} <- fetch_root_section_resource(section),
+         {:ok, parent_post} <- fetch_parent_post(state, reply_to),
+         attrs <-
+           post_attrs(student, section, root_section_resource, parent_post, body, anonymous),
+         {:ok, post} <-
            CertificationEligibility.create_post_and_verify_qualification(
-             %{
-               user_id: student.id,
-               section_id: section.id,
-               visibility: :public,
-               content: %PostContent{message: body}
-             },
+             attrs,
              true
            ) do
       GrantedCertificates.has_qualified(student.id, section.id)
-      {:ok, state}
+      {:ok, maybe_store_post(state, post_name, post)}
     else
       {:error, reason} ->
         {:error, "Failed to create discussion post: #{inspect(reason)}"}
     end
   end
+
+  defp post_attrs(student, section, root_section_resource, parent_post, body, anonymous) do
+    config = root_section_resource.collab_space_config
+    auto_accept = is_nil(config) or Map.get(config, :auto_accept, true)
+
+    %{
+      user_id: student.id,
+      section_id: section.id,
+      resource_id: root_section_resource.resource_id,
+      status: if(auto_accept, do: :approved, else: :submitted),
+      visibility: :public,
+      anonymous: anonymous,
+      content: %PostContent{message: body}
+    }
+    |> maybe_put_parent(parent_post)
+  end
+
+  defp maybe_put_parent(attrs, nil), do: attrs
+
+  defp maybe_put_parent(attrs, parent_post) do
+    attrs
+    |> Map.put(:parent_post_id, parent_post.id)
+    |> Map.put(:thread_root_id, parent_post.thread_root_id || parent_post.id)
+  end
+
+  defp maybe_store_post(state, nil, _post), do: state
+  defp maybe_store_post(state, name, post), do: Engine.put_discussion_post(state, name, post)
 
   defp fetch_user(state, name) do
     case Engine.get_user(state, name) do
@@ -44,6 +79,27 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
     case Engine.get_section(state, name) do
       nil -> {:error, "Section '#{name}' not found"}
       section -> {:ok, section}
+    end
+  end
+
+  defp fetch_root_section_resource(section) do
+    section = Repo.preload(section, :root_section_resource)
+
+    case section.root_section_resource do
+      nil -> {:error, "Root section resource not found for section '#{section.slug}'"}
+      root_section_resource -> {:ok, root_section_resource}
+    end
+  end
+
+  defp fetch_parent_post(_state, nil), do: {:ok, nil}
+
+  defp fetch_parent_post(state, name) do
+    case Engine.get_discussion_post(state, name) do
+      nil ->
+        {:error, "Discussion post '#{name}' not found"}
+
+      post ->
+        {:ok, Collaboration.get_post_by(%{id: post.id}) || post}
     end
   end
 end

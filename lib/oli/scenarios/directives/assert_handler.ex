@@ -19,6 +19,7 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
     ActivityCustomizationAssertion,
     PageObjectivesAssertion,
     ActivityObjectivesAssertion,
+    DiscussionAssertion,
     GeneralAssertion
   }
 
@@ -64,6 +65,9 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
 
       directive.activity_objectives != nil ->
         ActivityObjectivesAssertion.assert(directive, state)
+
+      directive.discussion != nil ->
+        DiscussionAssertion.assert(directive, state)
 
       directive.progress != nil ->
         ProgressAssertion.assert(directive, state)
