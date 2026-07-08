@@ -115,7 +115,7 @@ defmodule OliWeb.PlaywrightScenarioController do
     state = result.state
 
     %{
-      params: params,
+      params: Map.merge(params, state.params || %{}),
       projects: map_entities(state.projects, fn built -> built.project.slug end),
       sections: map_entities(state.sections, fn section -> section.slug end),
       products: map_entities(state.products, fn product -> product.slug end),
