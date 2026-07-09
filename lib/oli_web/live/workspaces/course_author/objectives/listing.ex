@@ -10,7 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   attr(:revision_history_link, :boolean, required: true)
   attr(:rows, :list, required: true)
   attr(:selected, :string, required: true)
-  attr(:pending_delete_slug, :string, default: nil)
+  attr(:pending_delete_slugs, :any, default: MapSet.new())
 
   def render(assigns) do
     ~H"""
@@ -65,22 +65,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                       :if={!is_nil(sub_objective)}
                       class={[
                         "list-group-item p-2 d-flex align-items-center group/item",
-                        sub_objective.slug == @pending_delete_slug && "opacity-50"
+                        MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "opacity-50"
                       ]}
                     >
                       <div class={[
                         "py-1.5 w-75",
-                        sub_objective.slug == @pending_delete_slug && "line-through"
+                        MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "line-through"
                       ]}>
                         {sub_objective.title}
                       </div>
                       <.loader
-                        :if={sub_objective.slug == @pending_delete_slug}
+                        :if={MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
                         class="ml-2"
                         icon_class="text-secondary"
                       />
                       <div
-                        :if={sub_objective.slug != @pending_delete_slug}
+                        :if={!MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
                         class="ml-2 invisible group-hover/item:visible"
                       >
                         <.button

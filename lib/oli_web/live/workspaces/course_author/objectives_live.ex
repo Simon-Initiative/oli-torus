@@ -53,7 +53,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        all_objectives: all_objectives,
        all_children: all_children,
        objective_attachments: [],
-       pending_sub_objective_delete_slug: nil,
+       pending_sub_objective_delete_slugs: MapSet.new(),
        query: "",
        selected: "",
        offset: 0,
@@ -107,7 +107,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           }
           rows={@table_model.rows}
           selected={@selected}
-          pending_delete_slug={@pending_sub_objective_delete_slug}
+          pending_delete_slugs={@pending_sub_objective_delete_slugs}
           project_slug={@project.slug}
         />
       </Table.render>
@@ -190,8 +190,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        table_model: table_model,
        total_count: length(objectives),
        all_objectives: all_objectives,
-       all_children: all_children,
-       pending_sub_objective_delete_slug: nil
+       all_children: all_children
      )
      |> hide_modal(modal_assigns: nil)
      |> push_patch(to: live_path(socket, socket.assigns.params))}
@@ -460,26 +459,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     socket = clear_flash(socket)
     %{project: %{slug: project_slug}, author: %{email: author_email}} = socket.assigns
 
-    case socket.assigns.pending_sub_objective_delete_slug do
-      nil ->
-        socket =
-          socket
-          |> assign(pending_sub_objective_delete_slug: slug)
-          |> hide_modal(modal_assigns: nil)
-          |> start_async({:delete_sub_objective, slug}, fn ->
-            project = Course.get_project_by_slug(project_slug)
-            author = Accounts.get_author_by_email(author_email)
+    if MapSet.member?(socket.assigns.pending_sub_objective_delete_slugs, slug) do
+      {:noreply,
+       socket
+       |> hide_modal(modal_assigns: nil)
+       |> put_flash(:error, "That sub-objective is already being deleted")}
+    else
+      socket =
+        socket
+        |> assign(
+          pending_sub_objective_delete_slugs:
+            MapSet.put(socket.assigns.pending_sub_objective_delete_slugs, slug)
+        )
+        |> hide_modal(modal_assigns: nil)
+        |> start_async({:delete_sub_objective, slug}, fn ->
+          project = Course.get_project_by_slug(project_slug)
+          author = Accounts.get_author_by_email(author_email)
 
-            delete_objective_result(slug, parent_slug, project, author)
-          end)
+          delete_objective_result(slug, parent_slug, project, author)
+        end)
 
-        {:noreply, socket}
-
-      _pending_slug ->
-        {:noreply,
-         socket
-         |> hide_modal(modal_assigns: nil)
-         |> put_flash(:error, "A sub-objective is already being deleted")}
+      {:noreply, socket}
     end
   end
 
@@ -574,7 +574,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   @impl Phoenix.LiveView
   def handle_async({:delete_sub_objective, slug}, result, socket) do
-    if socket.assigns.pending_sub_objective_delete_slug == slug do
+    if MapSet.member?(socket.assigns.pending_sub_objective_delete_slugs, slug) do
       flash_type =
         case result do
           {:ok, flash_type} ->
@@ -590,6 +590,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           :ok -> fn socket -> put_flash(socket, :info, "Objective successfully removed") end
           :error -> fn socket -> put_flash(socket, :error, "Could not remove objective") end
         end
+
+      socket =
+        assign(socket,
+          pending_sub_objective_delete_slugs:
+            MapSet.delete(socket.assigns.pending_sub_objective_delete_slugs, slug)
+        )
 
       return_updated_data(socket.assigns.project, flash_fn, socket)
     else
