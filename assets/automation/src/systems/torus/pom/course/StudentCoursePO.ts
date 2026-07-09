@@ -1,5 +1,5 @@
 import { Verifier } from '@core/verify/Verifier';
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 
 export class StudentCoursePO {
   private readonly courseHomeMarkers: Locator[];
@@ -33,22 +33,22 @@ export class StudentCoursePO {
     await Verifier.expectIsVisible(l);
   }
 
+  courseContentReady(pageName: string): Locator {
+    return this.galleryTitle(pageName).or(this.outlineTitle(pageName));
+  }
+
   async openPage(pageName: string) {
-    const galleryTitle = this.page.getByRole('heading', {
-      name: pageName,
-      exact: true,
-      level: 5,
-    });
+    const galleryTitle = this.galleryTitle(pageName);
     const galleryCard = this.page
       .locator('div[phx-click="navigate_to_resource"]')
       .filter({ has: galleryTitle })
       .first();
 
-    const outlineTitle = this.page.getByRole('button', {
-      name: new RegExp(`\\b${escapeRegExp(pageName)}\\b`),
-    });
+    const outlineTitle = this.outlineTitle(pageName);
 
-    if (await galleryTitle.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await expect(this.courseContentReady(pageName).first()).toBeVisible();
+
+    if (await galleryTitle.isVisible()) {
       await Promise.all([
         this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
           timeout: 15000,
@@ -66,6 +66,20 @@ export class StudentCoursePO {
     }
 
     await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
+  }
+
+  private galleryTitle(pageName: string) {
+    return this.page.getByRole('heading', {
+      name: pageName,
+      exact: true,
+      level: 5,
+    });
+  }
+
+  private outlineTitle(pageName: string) {
+    return this.page.getByRole('button', {
+      name: new RegExp(`\\b${escapeRegExp(pageName)}\\b`),
+    });
   }
 
   async goToCourseIfPrompted() {

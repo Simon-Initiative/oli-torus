@@ -101,7 +101,11 @@ export async function openStudentDeliveryPracticeForLoggedInStudent(
 
   const practiceButton = page.getByText('Practice', { exact: true }).first();
 
-  if (await practiceButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+  await expect(
+    practiceButton.or(studentCourse.courseContentReady(activityTitle)).first(),
+  ).toBeVisible();
+
+  if (await practiceButton.isVisible()) {
     await practiceButton.click();
     await expect(page.getByText(activityTitle).first()).toBeVisible();
     return;
