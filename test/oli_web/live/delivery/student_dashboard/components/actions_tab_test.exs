@@ -519,7 +519,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       |> render_click("finish_transfer_enrollment")
 
       # shows success message
-      assert has_element?(view, "div.alert.alert-info", "Enrollment successfully transfered")
+      assert has_element?(view, "div.alert.alert-info", "Enrollment successfully transferred")
     end
 
     test "shows text if there are no sections to transfer data", %{conn: conn, user_1: user_1} do

@@ -2,7 +2,11 @@ import { expect, type Page } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
 import { MenuDropdownCO } from '@pom/home/MenuDropdownCO';
 import path from 'node:path';
-import { configureStudentDeliveryRuntimeConfig, seedStudentDeliveryScenario } from './support';
+import {
+  configureStudentDeliveryRuntimeConfig,
+  seedStudentDeliveryScenario,
+  waitForMainLiveView,
+} from './support';
 
 const runId = `-${Date.now()}`;
 const scenarioPath = path.resolve(__dirname, './sayg-saved-work-notice.scenario.yaml');
@@ -220,14 +224,6 @@ async function revealBottomNavigation(page: Page) {
 
   await expect(bottomBarWrapper).toBeAttached();
   await bottomBarWrapper.hover();
-}
-
-async function waitForMainLiveView(page: Page) {
-  await page.waitForFunction(
-    () => document.querySelector('[data-phx-main]')?.classList.contains('phx-connected'),
-    undefined,
-    { timeout: 15_000 },
-  );
 }
 
 async function enterCourseIfNeeded(page: Page) {
