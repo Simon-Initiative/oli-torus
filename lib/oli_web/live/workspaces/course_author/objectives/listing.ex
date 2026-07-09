@@ -97,6 +97,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           phx-click="display_sub_objective_delete_modal"
                           phx-value-slug={sub_objective.slug}
                           phx-value-parent_slug={item.slug}
+                          phx-value-title={sub_objective.title}
                         >
                           <i class="fas fa-trash-alt fa-lg"></i> Delete
                         </.button>
