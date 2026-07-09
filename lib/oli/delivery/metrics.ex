@@ -1268,7 +1268,7 @@ defmodule Oli.Delivery.Metrics do
           FROM activity_attempts AS aa2
           JOIN target ON target.resource_attempt_id = aa2.resource_attempt_id
           WHERE aa2.scoreable = true
-          ORDER BY aa2.resource_id, aa2.id DESC
+          ORDER BY aa2.resource_id, aa2.attempt_number DESC, aa2.id DESC
         ),
         counts AS (
           SELECT

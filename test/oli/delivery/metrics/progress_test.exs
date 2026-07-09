@@ -331,6 +331,42 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       assert_in_delta 1.0, ra.progress, 0.0001
     end
 
+    test "page level progress selects latest activity attempts by attempt number", map do
+      [p1, _, _] = map.mod1_pages
+
+      map =
+        map
+        |> Map.put(:our_page, %{revision: p1.revision, resource: p1.resource})
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          :this_user,
+          :our_page,
+          :attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 2, lifecycle_state: :evaluated, scoreable: true},
+          :activity_a,
+          :attempt1,
+          :activity_a_attempt2
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, scoreable: true},
+          :activity_a,
+          :attempt1,
+          :activity_a_attempt1
+        )
+
+      {:ok, _resource_access} =
+        ResourceAccess
+        |> Oli.Repo.get!(map.attempt1.resource_access_id)
+        |> Core.update_resource_access(%{progress: 0.0})
+
+      assert {:ok, :updated} = Metrics.update_page_progress(map.activity_a_attempt2.attempt_guid)
+
+      ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
+      assert_in_delta 1.0, ra.progress, 0.0001
+    end
+
     test "progress_for_page/3 calculates correctly", %{
       mod1_pages: mod1_pages,
       this_user: this_user,
