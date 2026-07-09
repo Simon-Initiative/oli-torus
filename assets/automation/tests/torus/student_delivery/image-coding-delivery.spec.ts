@@ -24,6 +24,31 @@ const activityStems = {
   table: 'Load the table resource and submit the expected value.',
 };
 
+const imageCodingImagePrograms = {
+  exact: ['image = new SimpleImage("image_coding_sample.png");', 'print(image);'].join('\n'),
+  slightDifference: [
+    'image = new SimpleImage("image_coding_sample.png");',
+    'pixel = image.getPixel(0, 0);',
+    'pixel.setRed(pixel.getRed() + 1);',
+    'print(image);',
+  ].join('\n'),
+  largeDifference: [
+    'image = new SimpleImage("image_coding_sample.png");',
+    'var width = image.getWidth();',
+    'var height = image.getHeight();',
+    'var targetWidth = Math.floor(width * 0.3);',
+    'for (var y = 0; y < height; y += 1) {',
+    '  for (var x = 0; x < targetWidth; x += 1) {',
+    '    pixel = image.getPixel(x, y);',
+    '    pixel.setRed(255);',
+    '    pixel.setGreen(0);',
+    '    pixel.setBlue(255);',
+    '  }',
+    '}',
+    'print(image);',
+  ].join('\n'),
+};
+
 configureStudentDeliveryRuntimeConfig(runId, {
   student: {
     type: 'student',
@@ -142,7 +167,7 @@ test.describe('image coding delivery', () => {
       const submitButton = imageCodingSubmitButton(activity);
       const errorMessage = activity.locator('span', { hasText: 'Error:' }).first();
 
-      await setImageCodingSource(activity, 'print(');
+      await setImageCodingSource(activity, 'print(missingVariable)');
       await runButton.click();
 
       await expect(errorMessage).toBeVisible();
@@ -162,7 +187,6 @@ test.describe('image coding delivery', () => {
         imageActivityTitle,
       );
       const activity = imageCodingActivity(page, activityStems.image);
-      const runButton = imageCodingRunButton(activity);
       const submitButton = imageCodingSubmitButton(activity);
       const resetButton = imageCodingResetButton(activity);
       const resultCanvas = imageCodingResultCanvas(activity);
@@ -170,27 +194,45 @@ test.describe('image coding delivery', () => {
       await expect(activity).toBeVisible();
       await expect(submitButton).toBeDisabled();
 
-      // Image-processing correct path: run code that renders the same image as the solution.
-      await setImageCodingSource(activity, 'print(new SimpleImage("image_coding_sample.png"))');
-      await runImageCodingUntilCanvasReady(activity, resultCanvas);
-      await expect(submitButton).toBeEnabled();
-      await submitButton.click();
-      await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
-      await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
-        'Congratulations! you found the GOAT',
+      await test.step('image coding image: exact image match evaluates correctly', async () => {
+        await setImageCodingSource(activity, imageCodingImagePrograms.exact);
+        await runImageCodingUntilCanvasReady(activity, resultCanvas);
+        await expect(submitButton).toBeEnabled();
+        await submitButton.click();
+        await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+        await expect(activity.locator('.evaluation.feedback.correct')).toContainText(
+          'Congratulations! you found the GOAT',
+        );
+      });
+
+      await test.step(
+        'image coding image: slight pixel difference stays within tolerance',
+        async () => {
+          await resetButton.click();
+          await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+          await setImageCodingSource(activity, imageCodingImagePrograms.slightDifference);
+          await runImageCodingUntilCanvasReady(activity, resultCanvas);
+          await expect(submitButton).toBeEnabled();
+          await submitButton.click();
+          await expect(activity.locator('.evaluation.feedback.correct')).toBeVisible();
+        },
       );
 
-      // Image-processing incorrect path: reset, then replace the code with a non-image output.
-      await resetButton.click();
-      await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+      await test.step(
+        'image coding image: large visual difference evaluates incorrectly',
+        async () => {
+          await resetButton.click();
+          await expect(activity.locator('.evaluation.feedback.correct')).toHaveCount(0);
+          await setImageCodingSource(activity, imageCodingImagePrograms.largeDifference);
+          await runImageCodingUntilCanvasReady(activity, resultCanvas);
+          await expect(submitButton).toBeEnabled();
+          await submitButton.click();
 
-      await setImageCodingSource(activity, 'print("wrong")');
-      await runButton.click();
-      await submitButton.click();
-
-      await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
-      await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
-        'Incorrect. Try again.',
+          await expect(activity.locator('.evaluation.feedback.incorrect')).toBeVisible();
+          await expect(activity.locator('.evaluation.feedback.incorrect')).toContainText(
+            'Incorrect. Try again.',
+          );
+        },
       );
     });
 
@@ -202,7 +244,6 @@ test.describe('image coding delivery', () => {
       );
       const activity = imageCodingActivity(page, activityStems.table);
       const output = imageCodingOutput(activity);
-      const runButton = imageCodingRunButton(activity);
       const submitButton = imageCodingSubmitButton(activity);
       const resetButton = imageCodingResetButton(activity);
 

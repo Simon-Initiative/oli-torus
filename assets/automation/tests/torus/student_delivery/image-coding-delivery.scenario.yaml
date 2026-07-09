@@ -85,8 +85,8 @@
             children:
               - text: 'Load the image resource and submit the expected rendered result.'
       isExample: false
-      starterCode: 'print("wrong")'
-      solutionCode: 'print(new SimpleImage("image_coding_sample.png"))'
+      starterCode: 'image = new SimpleImage("image_coding_sample.png"); print(image)'
+      solutionCode: 'image = new SimpleImage("image_coding_sample.png"); print(image)'
       resourceURLs:
         - '/test/support/image_coding_sample.png'
       tolerance: 0.1
@@ -111,7 +111,7 @@
             gradingApproach: 'automatic'
             responses:
               - id: 'image_coding_image_correct'
-                rule: 'input like {print(new SimpleImage("image_coding_sample.png"))}'
+                rule: 'input like {print(image)}'
                 score: 1
                 correct: true
                 feedback:

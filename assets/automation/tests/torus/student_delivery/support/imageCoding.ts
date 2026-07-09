@@ -10,31 +10,43 @@ import { expect, type Locator } from '@playwright/test';
 /**
  * Replaces the current source in the Ace editor with the provided code by
  * using the editor instance attached to the rendered `.ace_editor` element.
+ * We insert source through Ace directly so auto-indent, brace completion, and
+ * per-keystroke autosaves do not make the tests flaky.
  */
 export async function setImageCodingSource(activity: Locator, code: string) {
   const editor = activity.locator('.ace_editor').first();
+  const textInput = editor.locator('textarea.ace_text-input').first();
 
   await expect(editor).toBeVisible();
+  await expect(textInput).toBeAttached();
 
-  await editor.evaluate((node, value) => {
-    const aceEditor = (
-      node as HTMLDivElement & {
-        env?: {
-          editor?: {
-            setValue: (code: string, cursorPos?: number) => void;
-            clearSelection: () => void;
+  await editor.click();
+  await textInput.evaluate((node) => {
+    (node as HTMLTextAreaElement).focus();
+  });
+
+  await editor.evaluate(
+    (node, source) => {
+      const aceEditor = (
+        node as HTMLDivElement & {
+          env?: {
+            editor?: {
+              setValue: (value: string, cursorPos?: number) => void;
+            };
           };
-        };
+        }
+      ).env?.editor;
+
+      if (!aceEditor) {
+        throw new Error('Ace editor instance was not available');
       }
-    ).env?.editor;
 
-    if (!aceEditor) {
-      throw new Error('Ace editor instance was not available');
-    }
+      aceEditor.setValue(source, -1);
+    },
+    code,
+  );
 
-    aceEditor.setValue(value, -1);
-    aceEditor.clearSelection();
-  }, code);
+  await expectImageCodingSource(activity, code);
 }
 
 /**
