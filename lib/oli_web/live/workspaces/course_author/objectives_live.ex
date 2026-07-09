@@ -6,6 +6,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   use OliWeb.Common.SortableTable.TableHandlers
   use OliWeb.Common.Modal
 
+  require Logger
+
   alias Oli.Accounts
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Publishing
@@ -22,6 +24,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     Listing,
     SelectExistingSubModal,
     SelectionsModal,
+    SubObjectiveDeleteModal,
     TableModel
   }
 
@@ -49,6 +52,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        all_objectives: all_objectives,
        all_children: all_children,
        objective_attachments: [],
+       pending_sub_objective_delete_slug: nil,
        query: "",
        selected: "",
        offset: 0,
@@ -102,6 +106,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           }
           rows={@table_model.rows}
           selected={@selected}
+          pending_delete_slug={@pending_sub_objective_delete_slug}
           project_slug={@project.slug}
         />
       </Table.render>
@@ -184,7 +189,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        table_model: table_model,
        total_count: length(objectives),
        all_objectives: all_objectives,
-       all_children: all_children
+       all_children: all_children,
+       pending_sub_objective_delete_slug: nil
      )
      |> hide_modal(modal_assigns: nil)
      |> push_patch(to: live_path(socket, socket.assigns.params))}
@@ -410,11 +416,105 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     end
   end
 
+  def handle_event(
+        "display_sub_objective_delete_modal",
+        %{"slug" => slug, "parent_slug" => parent_slug},
+        socket
+      ) do
+    socket = clear_flash(socket)
+
+    %{project: project} = socket.assigns
+    %{title: title} = AuthoringResolver.from_revision_slug(project.slug, slug)
+
+    modal_assigns = %{
+      id: "delete_sub_objective_modal",
+      slug: slug,
+      parent_slug: parent_slug,
+      title: title
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <SubObjectiveDeleteModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
   def handle_event("delete", %{"slug" => slug} = params, socket) do
     socket = clear_flash(socket)
 
     parent_slug = Map.get(params, "parent_slug", "")
     %{project: project, author: author, objectives: objectives} = socket.assigns
+
+    flash_fn = delete_objective(slug, parent_slug, project, author, objectives)
+
+    return_updated_data(project, flash_fn, socket)
+  end
+
+  def handle_event(
+        "delete_sub_objective",
+        %{"slug" => slug, "parent_slug" => parent_slug},
+        socket
+      ) do
+    socket = clear_flash(socket)
+    %{project: project, author: author, objectives: objectives} = socket.assigns
+    pid = self()
+
+    Task.start(fn ->
+      flash_type =
+        try do
+          delete_objective_result(slug, parent_slug, project, author, objectives)
+        rescue
+          e ->
+            Logger.error(Exception.format(:error, e, __STACKTRACE__))
+            :error
+        end
+
+      send(pid, {:finish_sub_objective_delete, flash_type})
+    end)
+
+    {:noreply,
+     socket
+     |> assign(pending_sub_objective_delete_slug: slug)
+     |> hide_modal(modal_assigns: nil)}
+  end
+
+  def handle_event(
+        "add_existing_sub",
+        %{"slug" => slug, "parent_slug" => parent_slug} = _params,
+        socket
+      ) do
+    socket = clear_flash(socket)
+
+    %{project: project, author: author} = socket.assigns
+
+    flash_fn =
+      case ObjectiveEditor.add_new_parent_for_sub_objective(
+             slug,
+             parent_slug,
+             project.slug,
+             author
+           ) do
+        {:ok, _revision} ->
+          fn socket -> put_flash(socket, :info, "Sub-objective successfully added") end
+
+        {:error, _} ->
+          fn socket -> put_flash(socket, :error, "Could not add sub-objective") end
+      end
+
+    return_updated_data(project, flash_fn, socket)
+  end
+
+  defp delete_objective(slug, parent_slug, project, author, objectives) do
+    case delete_objective_result(slug, parent_slug, project, author, objectives) do
+      :ok -> fn socket -> put_flash(socket, :info, "Objective successfully removed") end
+      :error -> fn socket -> put_flash(socket, :error, "Could not remove objective") end
+    end
+  end
+
+  defp delete_objective_result(slug, parent_slug, project, author, objectives) do
     %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
 
     ObjectiveEditor.detach_objective(resource_id, project, author)
@@ -453,45 +553,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         end
       end
 
-    flash_fn =
-      case delete_fn.() do
-        {:ok, _} ->
-          fn socket -> put_flash(socket, :info, "Objective successfully removed") end
-
-        {:error, _error} ->
-          fn socket -> put_flash(socket, :error, "Could not remove objective") end
-      end
-
-    return_updated_data(project, flash_fn, socket)
-  end
-
-  def handle_event(
-        "add_existing_sub",
-        %{"slug" => slug, "parent_slug" => parent_slug} = _params,
-        socket
-      ) do
-    socket = clear_flash(socket)
-
-    %{project: project, author: author} = socket.assigns
-
-    flash_fn =
-      case ObjectiveEditor.add_new_parent_for_sub_objective(
-             slug,
-             parent_slug,
-             project.slug,
-             author
-           ) do
-        {:ok, _revision} ->
-          fn socket -> put_flash(socket, :info, "Sub-objective successfully added") end
-
-        {:error, _} ->
-          fn socket -> put_flash(socket, :error, "Could not add sub-objective") end
-      end
-
-    return_updated_data(project, flash_fn, socket)
+    case delete_fn.() do
+      {:ok, _} -> :ok
+      {:error, _error} -> :error
+    end
   end
 
   @impl Phoenix.LiveView
+  def handle_info({:finish_sub_objective_delete, flash_type}, socket) do
+    flash_fn =
+      case flash_type do
+        :ok -> fn socket -> put_flash(socket, :info, "Objective successfully removed") end
+        :error -> fn socket -> put_flash(socket, :error, "Could not remove objective") end
+      end
+
+    return_updated_data(socket.assigns.project, flash_fn, socket)
+  end
+
   def handle_info({:finish_attachments, {objectives_attachments, flash_fn}}, socket) do
     page_id = ResourceType.id_for_page()
     activity_id = ResourceType.id_for_activity()

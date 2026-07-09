@@ -679,7 +679,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
 
       view
-      |> element("button[phx-click='delete'][phx-value-slug=#{sub_obj.slug}]")
+      |> element(
+        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
+      )
+      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
+
+      assert has_element?(view, "#delete_sub_objective_modal", "Delete Sub-Objective")
+      assert has_element?(view, "#delete_sub_objective_modal", "#{sub_obj.title}")
+
+      view
+      |> element("button[phx-click='delete_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
       assert view
@@ -720,7 +729,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       view
       |> element(
-        "button[phx-click='delete'][phx-value-slug=#{sub_obj.slug}][phx-value-parent_slug=#{obj_a.slug}]"
+        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}][phx-value-parent_slug=#{obj_a.slug}]"
+      )
+      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
+
+      assert has_element?(view, "#delete_sub_objective_modal", "Delete Sub-Objective")
+
+      view
+      |> element(
+        "button[phx-click='delete_sub_objective'][phx-value-slug=#{sub_obj.slug}][phx-value-parent_slug=#{obj_a.slug}]"
       )
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
 
