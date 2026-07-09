@@ -691,10 +691,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> element("button[phx-click='delete_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
-      assert view
-             |> element(~s{div[role="alert"].alert-info})
-             |> render() =~
-               "Objective successfully removed"
+      assert has_element?(view, ".collapse .line-through", "#{sub_obj.title}")
+      assert has_element?(view, ".collapse .spinner-border")
+
+      wait_until(fn ->
+        has_element?(view, ~s{div[role="alert"].alert-info}, "Objective successfully removed")
+      end)
 
       assert 1 ==
                project
@@ -741,10 +743,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       )
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
 
-      assert view
-             |> element(~s{div[role="alert"].alert-info})
-             |> render() =~
-               "Objective successfully removed"
+      assert has_element?(view, "##{obj_a.slug} .line-through", "#{sub_obj.title}")
+      assert has_element?(view, "##{obj_a.slug} .spinner-border")
+
+      wait_until(fn ->
+        has_element?(view, ~s{div[role="alert"].alert-info}, "Objective successfully removed")
+      end)
 
       assert 3 ==
                project
