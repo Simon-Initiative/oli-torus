@@ -5,11 +5,13 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
 
   alias Oli.CertificationEligibility
   alias Oli.Delivery.GrantedCertificates
+  alias Oli.Delivery.Sections
   alias Oli.Repo
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.PostContent
   alias Oli.Scenarios.DirectiveTypes.{DiscussionPostDirective, ExecutionState}
   alias Oli.Scenarios.Engine
+  alias Lti_1p3.Roles.ContextRoles
 
   def handle(
         %DiscussionPostDirective{
@@ -24,6 +26,7 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
       ) do
     with {:ok, student} <- fetch_user(state, student_name),
          {:ok, section} <- fetch_section(state, section_name),
+         :ok <- validate_student_enrollment(student, section),
          {:ok, root_section_resource} <- fetch_root_section_resource(section),
          {:ok, parent_post} <- fetch_parent_post(state, reply_to),
          :ok <- validate_parent_post(parent_post, section, root_section_resource),
@@ -80,6 +83,24 @@ defmodule Oli.Scenarios.Directives.DiscussionPostHandler do
 
   defp anonymous_posting_enabled?(nil), do: false
   defp anonymous_posting_enabled?(config), do: Map.get(config, :anonymous_posting, false)
+
+  defp validate_student_enrollment(student, section) do
+    learner_role_id = ContextRoles.get_role(:context_learner).id
+
+    case Sections.get_enrollment(section.slug, student.id) do
+      nil ->
+        {:error, "Student '#{student.email}' is not enrolled in section '#{section.slug}'"}
+
+      enrollment ->
+        enrollment = Repo.preload(enrollment, :context_roles)
+
+        if Enum.any?(enrollment.context_roles, &(&1.id == learner_role_id)) do
+          :ok
+        else
+          {:error, "Student '#{student.email}' is not enrolled in section '#{section.slug}'"}
+        end
+    end
+  end
 
   defp validate_parent_post(nil, _section, _root_section_resource), do: :ok
 

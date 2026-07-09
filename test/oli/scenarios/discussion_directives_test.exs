@@ -97,6 +97,47 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
       assert error =~ "Discussions are not enabled"
     end
 
+    test "rejects posts by students who are not enrolled in the section" do
+      yaml = """
+      - project:
+          name: "unenrolled_discussion_course"
+          title: "Unenrolled Discussion Course"
+          root:
+            children:
+              - page: "Welcome"
+
+      - product:
+          name: "unenrolled_discussion_product"
+          title: "Unenrolled Discussion Product"
+          from: "unenrolled_discussion_course"
+
+      - discussion_config:
+          section: "unenrolled_discussion_product"
+          enabled: true
+
+      - section:
+          name: "unenrolled_discussion_section"
+          title: "Unenrolled Discussion Section"
+          from: "unenrolled_discussion_product"
+
+      - user:
+          name: "unenrolled_discussion_student"
+          type: "student"
+          email: "unenrolled_discussion_student@test.edu"
+
+      - discussion_post:
+          name: "unenrolled_discussion_post"
+          student: "unenrolled_discussion_student"
+          section: "unenrolled_discussion_section"
+          body: "This post should be rejected."
+      """
+
+      result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+      assert [{_, error}] = result.errors
+      assert error =~ "is not enrolled in section"
+    end
+
     test "defaults posts to approved when auto accept is not configured" do
       yaml = """
       - project:
@@ -210,6 +251,69 @@ defmodule Oli.Scenarios.DiscussionDirectivesTest do
 
       assert [{_, error}] = result.errors
       assert error =~ "Parent discussion post does not belong to section"
+    end
+  end
+
+  describe "discussion assertions" do
+    test "fail when a named post belongs to another section even without visibility asserted" do
+      yaml = """
+      - project:
+          name: "assert_post_scope_course"
+          title: "Assert Post Scope Course"
+          root:
+            children:
+              - page: "Welcome"
+
+      - product:
+          name: "assert_post_scope_product"
+          title: "Assert Post Scope Product"
+          from: "assert_post_scope_course"
+
+      - discussion_config:
+          section: "assert_post_scope_product"
+          enabled: true
+
+      - section:
+          name: "assert_first_section"
+          title: "Assert First Section"
+          from: "assert_post_scope_product"
+
+      - section:
+          name: "assert_second_section"
+          title: "Assert Second Section"
+          from: "assert_post_scope_product"
+
+      - user:
+          name: "assert_post_scope_student"
+          type: "student"
+          email: "assert_post_scope_student@test.edu"
+
+      - enroll:
+          user: "assert_post_scope_student"
+          section: "assert_first_section"
+
+      - enroll:
+          user: "assert_post_scope_student"
+          section: "assert_second_section"
+
+      - discussion_post:
+          name: "first_section_status_post"
+          student: "assert_post_scope_student"
+          section: "assert_first_section"
+          body: "This post belongs to the first section."
+
+      - assert:
+          discussion:
+            section: "assert_second_section"
+            post: "first_section_status_post"
+            status: "approved"
+      """
+
+      result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+      assert result.errors == []
+      assert [%{passed: false, message: message}] = result.verifications
+      assert message =~ "post does not belong to section"
     end
   end
 

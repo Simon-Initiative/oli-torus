@@ -54,6 +54,10 @@ defmodule Oli.Scenarios.CertificateDirectivesTest do
         type: "student"
         email: "student_1@test.edu"
 
+    - enroll:
+        user: "student_1"
+        section: "certificate_section"
+
     - assert:
         certificate:
           section: "certificate_section"

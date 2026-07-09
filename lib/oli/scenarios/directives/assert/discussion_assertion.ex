@@ -56,6 +56,7 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
           discussion_data.anonymous_posting,
           "anonymous_posting"
         ),
+        check_post_scope(section, post),
         compare_field(post && post.status, discussion_data.status, "status"),
         check_visibility(section, student, post, discussion_data.visible)
       ]
@@ -84,6 +85,18 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
     if actual == expected,
       do: :ok,
       else: "expected #{label}=#{inspect(expected)}, got #{inspect(actual)}"
+  end
+
+  defp check_post_scope(_section, nil), do: :ok
+
+  defp check_post_scope(section, post) do
+    root_resource_id = section.root_section_resource && section.root_section_resource.resource_id
+
+    if post.section_id == section.id and post.resource_id == root_resource_id do
+      :ok
+    else
+      "post does not belong to section '#{section.slug}'"
+    end
   end
 
   defp check_visibility(_section, _student, _post, nil), do: :ok
