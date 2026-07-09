@@ -1,4 +1,8 @@
-# Scenario: Assessment outcomes populate the dashboard assessments panel and summary card.
+# Scenario: Assessment outcomes
+#
+# This scenario submits graded checkpoint attempts with different scores. It
+# verifies that finalized assessment activity feeds both the average assessment
+# score summary card and the assessments panel row data shown to instructors.
 
 - use:
     file: "base.scenario.yaml"

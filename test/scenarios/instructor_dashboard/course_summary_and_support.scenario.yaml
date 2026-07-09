@@ -1,4 +1,10 @@
-# Scenario: Course summary, progress, and student support reflect learner patterns.
+# Scenario: Course summary, progress, and student support
+#
+# This scenario creates distinct learner behavior patterns at course scope:
+# one learner completes all practice pages correctly, one completes one unit,
+# one struggles through partial work, and one has no activity. It verifies the
+# top summary progress card, the course progress tile, and student support
+# bucket counts/default ordering for those patterns.
 
 - use:
     file: "base.scenario.yaml"
@@ -213,6 +219,12 @@
         total_students: 4
         active_students: 4
         inactive_students: 0
+      default_bucket_id: "struggling"
+      bucket_priority:
+        - "struggling"
+        - "on_track"
+        - "excelling"
+        - "not_enough_information"
       buckets:
         struggling:
           count: 1

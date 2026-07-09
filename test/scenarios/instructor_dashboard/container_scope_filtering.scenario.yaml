@@ -1,4 +1,9 @@
-# Scenario: Dashboard panels respect selected container scope filters.
+# Scenario: Container scope filtering
+#
+# This scenario verifies that dashboard projections change when the instructor
+# selects a specific course container. It checks scoped progress labels/items and
+# scoped challenging objectives so the dashboard does not accidentally report
+# course-wide data while a unit filter is active.
 
 - use:
     file: "base.scenario.yaml"
@@ -287,6 +292,7 @@
       section: "instructor_dashboard_section"
       scope:
         container: "Applications Unit"
+      scope_label: "Applications Unit"
       state: "populated"
       row_count: 1
       rows_by_title:

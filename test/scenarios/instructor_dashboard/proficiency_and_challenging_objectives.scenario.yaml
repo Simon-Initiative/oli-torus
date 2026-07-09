@@ -1,4 +1,9 @@
-# Scenario: Proficiency distribution drives summary and challenging objectives.
+# Scenario: Proficiency summary and challenging objectives
+#
+# This scenario focuses on objective-level proficiency rather than page
+# completion. It gives one objective strong evidence and another weak evidence,
+# then verifies the average class proficiency summary card and the challenging
+# objectives panel that lists low-proficiency objectives.
 
 - use:
     file: "base.scenario.yaml"

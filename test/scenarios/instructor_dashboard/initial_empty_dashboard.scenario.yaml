@@ -1,4 +1,9 @@
-# Scenario: Initial dashboard shows empty/no-data states before learners interact.
+# Scenario: Initial dashboard no-data state
+#
+# This scenario verifies that a freshly created section with enrolled learners
+# but no learner activity renders sensible dashboard defaults. It covers the
+# course-scope progress tile at 0% completion and the student support tile when
+# there is not enough activity/proficiency data to classify learners.
 
 - use:
     file: "base.scenario.yaml"
@@ -30,6 +35,12 @@
         total_students: 4
         active_students: 4
         inactive_students: 0
+      default_bucket_id: "not_enough_information"
+      bucket_priority:
+        - "struggling"
+        - "on_track"
+        - "excelling"
+        - "not_enough_information"
       buckets:
         struggling:
           count: 0
