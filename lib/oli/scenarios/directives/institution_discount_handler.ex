@@ -4,6 +4,7 @@ defmodule Oli.Scenarios.Directives.InstitutionDiscountHandler do
   """
 
   alias Oli.Delivery.Paywall
+  alias Oli.Scenarios.Directives.DirectiveAttrs
   alias Oli.Scenarios.DirectiveTypes.InstitutionDiscountDirective
   alias Oli.Scenarios.Engine
 
@@ -27,14 +28,12 @@ defmodule Oli.Scenarios.Directives.InstitutionDiscountHandler do
         {:error, "Product '#{product_name}' not found"}
 
       {institution, product} ->
-        case Paywall.create_or_update_discount(%{
-               institution_id: institution.id,
-               section_id: product.id,
-               type: type,
-               percentage: percentage,
-               amount: build_money(amount),
-               bypass_paywall: bypass_paywall
-             }) do
+        attrs =
+          %{type: type, percentage: percentage, amount: amount, bypass_paywall: bypass_paywall}
+          |> DirectiveAttrs.discount_attrs()
+          |> Map.merge(%{institution_id: institution.id, section_id: product.id})
+
+        case Paywall.create_or_update_discount(attrs) do
           {:ok, _discount} ->
             {:ok, state}
 
@@ -43,7 +42,4 @@ defmodule Oli.Scenarios.Directives.InstitutionDiscountHandler do
         end
     end
   end
-
-  defp build_money(nil), do: nil
-  defp build_money(%{"amount" => amount, "currency" => currency}), do: Money.new(amount, currency)
 end

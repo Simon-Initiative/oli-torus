@@ -2,6 +2,7 @@ defmodule Oli.Scenarios.ProductTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Paywall
+  alias Oli.Scenarios.Engine
   alias Oli.Scenarios.TestHelpers
   alias Oli.Scenarios.DirectiveTypes.ExecutionResult
 
@@ -182,10 +183,12 @@ defmodule Oli.Scenarios.ProductTest do
       assert overridden.grace_period_days == 7
       assert overridden.grace_period_strategy == :relative_to_section
 
+      assert institution = Engine.get_institution(result.state, "paid_school")
+
       assert discount =
                Paywall.get_discount_by!(
                  section_id: product.id,
-                 institution_id: result.state.current_institution.id
+                 institution_id: institution.id
                )
 
       assert discount.type == :percentage

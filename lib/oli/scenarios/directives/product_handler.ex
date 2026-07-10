@@ -6,6 +6,7 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
 
   alias Oli.Scenarios.DirectiveTypes.{ProductDirective, ExecutionState}
   alias Oli.Scenarios.Engine
+  alias Oli.Scenarios.Directives.DirectiveAttrs
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
 
@@ -26,7 +27,7 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
              title || name,
              customizations,
              nil,
-             build_blueprint_attrs(directive)
+             DirectiveAttrs.blueprint_attrs(Map.from_struct(directive))
            ) do
       # Store the product in state
       updated_state = Engine.put_product(state, name, blueprint)
@@ -64,24 +65,4 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
       labels -> Map.from_struct(labels)
     end
   end
-
-  defp build_blueprint_attrs(directive) do
-    %{}
-    |> maybe_put("requires_payment", directive.requires_payment)
-    |> maybe_put(
-      "payment_options",
-      directive.payment_options && Atom.to_string(directive.payment_options)
-    )
-    |> maybe_put("pay_by_institution", directive.pay_by_institution)
-    |> maybe_put("amount", directive.amount)
-    |> maybe_put("has_grace_period", directive.has_grace_period)
-    |> maybe_put("grace_period_days", directive.grace_period_days)
-    |> maybe_put(
-      "grace_period_strategy",
-      directive.grace_period_strategy && Atom.to_string(directive.grace_period_strategy)
-    )
-  end
-
-  defp maybe_put(attrs, _key, nil), do: attrs
-  defp maybe_put(attrs, key, value), do: Map.put(attrs, key, value)
 end
