@@ -59,6 +59,58 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert section.end_date == ~U[2026-12-31 23:59:59Z]
   end
 
+  test "schema and parser accept paywall fields on product and section plus institution discounts" do
+    yaml = """
+    - institution:
+        name: "demo_institution"
+        country_code: "US"
+        institution_email: "admin@example.edu"
+        institution_url: "https://example.edu"
+
+    - product:
+        name: "paid_product"
+        from: "demo_project"
+        requires_payment: true
+        payment_options: "direct_and_deferred"
+        pay_by_institution: false
+        amount:
+          amount: 25
+          currency: "USD"
+        has_grace_period: true
+        grace_period_days: 5
+        grace_period_strategy: "relative_to_student"
+
+    - institution_discount:
+        institution: "demo_institution"
+        product: "paid_product"
+        type: "percentage"
+        percentage: 20
+
+    - section:
+        name: "paid_section"
+        from: "paid_product"
+        requires_payment: true
+        payment_options: "deferred"
+        amount:
+          amount: 25
+          currency: "USD"
+        has_grace_period: false
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [institution, product, discount, section] = DirectiveParser.parse_yaml!(yaml)
+
+    assert institution.name == "demo_institution"
+    assert product.payment_options == :direct_and_deferred
+    assert product.grace_period_strategy == :relative_to_student
+    assert product.amount == %{"amount" => 25, "currency" => "USD"}
+    assert discount.type == :percentage
+    assert discount.percentage == 20.0
+    assert section.payment_options == :deferred
+    assert section.has_grace_period == false
+  end
+
   test "schema accepts phase 2 gating directives" do
     yaml = """
     - project:

@@ -9,7 +9,14 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
 
-  def handle(%ProductDirective{name: name, title: title, from: from}, %ExecutionState{} = state) do
+  def handle(
+        %ProductDirective{
+          name: name,
+          title: title,
+          from: from
+        } = directive,
+        %ExecutionState{} = state
+      ) do
     with source_project when not is_nil(source_project) <- Engine.get_project(state, from),
          _publication <- ensure_publication(source_project, state),
          customizations <- extract_customizations(source_project),
@@ -17,7 +24,9 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
            Blueprint.create_blueprint(
              source_project.project.slug,
              title || name,
-             customizations
+             customizations,
+             nil,
+             build_blueprint_attrs(directive)
            ) do
       # Store the product in state
       updated_state = Engine.put_product(state, name, blueprint)
@@ -55,4 +64,24 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
       labels -> Map.from_struct(labels)
     end
   end
+
+  defp build_blueprint_attrs(directive) do
+    %{}
+    |> maybe_put("requires_payment", directive.requires_payment)
+    |> maybe_put(
+      "payment_options",
+      directive.payment_options && Atom.to_string(directive.payment_options)
+    )
+    |> maybe_put("pay_by_institution", directive.pay_by_institution)
+    |> maybe_put("amount", directive.amount)
+    |> maybe_put("has_grace_period", directive.has_grace_period)
+    |> maybe_put("grace_period_days", directive.grace_period_days)
+    |> maybe_put(
+      "grace_period_strategy",
+      directive.grace_period_strategy && Atom.to_string(directive.grace_period_strategy)
+    )
+  end
+
+  defp maybe_put(attrs, _key, nil), do: attrs
+  defp maybe_put(attrs, key, value), do: Map.put(attrs, key, value)
 end

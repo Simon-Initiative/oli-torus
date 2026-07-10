@@ -20,6 +20,13 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :slug,
       :open_and_free,
       :requires_enrollment,
+      :requires_payment,
+      :payment_options,
+      :pay_by_institution,
+      :amount,
+      :has_grace_period,
+      :grace_period_days,
+      :grace_period_strategy,
       :start_date,
       :end_date
     ]
@@ -30,7 +37,25 @@ defmodule Oli.Scenarios.DirectiveTypes do
     Creates a product (blueprint) from a project.
     Products are templates that can be used to create sections.
     """
-    defstruct [:name, :title, :from]
+    defstruct [
+      :name,
+      :title,
+      :from,
+      :requires_payment,
+      :payment_options,
+      :pay_by_institution,
+      :amount,
+      :has_grace_period,
+      :grace_period_days,
+      :grace_period_strategy
+    ]
+  end
+
+  defmodule InstitutionDiscountDirective do
+    @moduledoc """
+    Creates or updates an institution discount for a product.
+    """
+    defstruct [:institution, :product, :type, :percentage, :amount, :bypass_paywall]
   end
 
   defmodule RemixDirective do

@@ -8,6 +8,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
   alias Oli.Publishing
   alias Oli.Delivery
   alias Oli.Delivery.Sections
+  alias Money
 
   def handle(
         %SectionDirective{
@@ -19,6 +20,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
           slug: slug,
           open_and_free: open_and_free,
           requires_enrollment: requires_enrollment,
+          requires_payment: requires_payment,
+          payment_options: payment_options,
+          pay_by_institution: pay_by_institution,
+          amount: amount,
+          has_grace_period: has_grace_period,
+          grace_period_days: grace_period_days,
+          grace_period_strategy: grace_period_strategy,
           start_date: start_date,
           end_date: end_date
         },
@@ -36,6 +44,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
             slug,
             open_and_free,
             requires_enrollment,
+            requires_payment,
+            payment_options,
+            pay_by_institution,
+            amount,
+            has_grace_period,
+            grace_period_days,
+            grace_period_strategy,
             start_date,
             end_date,
             state
@@ -49,6 +64,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
             slug,
             open_and_free,
             requires_enrollment,
+            requires_payment,
+            payment_options,
+            pay_by_institution,
+            amount,
+            has_grace_period,
+            grace_period_days,
+            grace_period_strategy,
             start_date,
             end_date,
             state
@@ -73,6 +95,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
          slug,
          open_and_free,
          requires_enrollment,
+         requires_payment,
+         payment_options,
+         pay_by_institution,
+         amount,
+         has_grace_period,
+         grace_period_days,
+         grace_period_strategy,
          start_date,
          end_date,
          state
@@ -94,6 +123,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
               slug,
               open_and_free,
               requires_enrollment,
+              requires_payment,
+              payment_options,
+              pay_by_institution,
+              amount,
+              has_grace_period,
+              grace_period_days,
+              grace_period_strategy,
               start_date,
               end_date,
               state
@@ -110,6 +146,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
           slug,
           open_and_free,
           requires_enrollment,
+          requires_payment,
+          payment_options,
+          pay_by_institution,
+          amount,
+          has_grace_period,
+          grace_period_days,
+          grace_period_strategy,
           start_date,
           end_date,
           state
@@ -125,6 +168,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
          slug,
          open_and_free,
          requires_enrollment,
+         requires_payment,
+         payment_options,
+         pay_by_institution,
+         amount,
+         has_grace_period,
+         grace_period_days,
+         grace_period_strategy,
          start_date,
          end_date,
          state
@@ -154,6 +204,14 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         registration_open: reg_open,
         open_and_free: open_and_free,
         requires_enrollment: requires_enrollment,
+        requires_payment: requires_payment,
+        payment_options: payment_options,
+        pay_by_institution: pay_by_institution,
+        amount: build_money(amount),
+        has_grace_period: requires_payment_value(requires_payment, has_grace_period),
+        grace_period_days:
+          maybe_include_grace_period_days(requires_payment, has_grace_period, grace_period_days),
+        grace_period_strategy: grace_period_strategy,
         start_date: start_date,
         end_date: end_date,
         context_id: "context_#{System.unique_integer([:positive])}",
@@ -161,6 +219,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         base_project_id: built_project.project.id,
         type: type || :enrollable
       }
+      |> reject_nil_values()
       |> maybe_put_slug(slug)
 
     {:ok, section} = Sections.create_section(attrs)
@@ -179,6 +238,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
          slug,
          open_and_free,
          requires_enrollment,
+         requires_payment,
+         payment_options,
+         pay_by_institution,
+         amount,
+         has_grace_period,
+         grace_period_days,
+         grace_period_strategy,
          start_date,
          end_date,
          state
@@ -190,6 +256,14 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         registration_open: reg_open,
         open_and_free: open_and_free,
         requires_enrollment: requires_enrollment,
+        requires_payment: requires_payment,
+        payment_options: payment_options,
+        pay_by_institution: pay_by_institution,
+        amount: build_money(amount),
+        has_grace_period: requires_payment_value(requires_payment, has_grace_period),
+        grace_period_days:
+          maybe_include_grace_period_days(requires_payment, has_grace_period, grace_period_days),
+        grace_period_strategy: grace_period_strategy,
         start_date: start_date,
         end_date: end_date,
         context_id: "context_#{System.unique_integer([:positive])}",
@@ -197,6 +271,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         blueprint_id: product.id,
         type: type || :enrollable
       }
+      |> reject_nil_values()
       |> maybe_put_slug(slug)
 
     {:ok, section} = Delivery.create_from_product(state.current_author, product, section_params)
@@ -211,6 +286,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
          slug,
          open_and_free,
          requires_enrollment,
+         requires_payment,
+         payment_options,
+         pay_by_institution,
+         amount,
+         has_grace_period,
+         grace_period_days,
+         grace_period_strategy,
          start_date,
          end_date,
          state
@@ -238,6 +320,14 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         registration_open: reg_open,
         open_and_free: open_and_free,
         requires_enrollment: requires_enrollment,
+        requires_payment: requires_payment,
+        payment_options: payment_options,
+        pay_by_institution: pay_by_institution,
+        amount: build_money(amount),
+        has_grace_period: requires_payment_value(requires_payment, has_grace_period),
+        grace_period_days:
+          maybe_include_grace_period_days(requires_payment, has_grace_period, grace_period_days),
+        grace_period_strategy: grace_period_strategy,
         start_date: start_date,
         end_date: end_date,
         context_id: "context_#{System.unique_integer([:positive])}",
@@ -245,6 +335,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         base_project_id: project.id,
         type: type || :enrollable
       }
+      |> reject_nil_values()
       |> maybe_put_slug(slug)
 
     {:ok, section} = Sections.create_section(section_attrs)
@@ -257,4 +348,28 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
 
   defp maybe_put_slug(attrs, nil), do: attrs
   defp maybe_put_slug(attrs, slug), do: Map.put(attrs, :slug, slug)
+
+  defp reject_nil_values(attrs) do
+    Map.reject(attrs, fn {_key, value} -> is_nil(value) end)
+  end
+
+  defp build_money(nil), do: nil
+
+  defp build_money(%{"amount" => amount, "currency" => currency}) do
+    Money.new(amount, currency)
+  end
+
+  defp requires_payment_value(nil, nil), do: nil
+  defp requires_payment_value(nil, value), do: value
+  defp requires_payment_value(false, _value), do: false
+  defp requires_payment_value(true, nil), do: true
+  defp requires_payment_value(true, value), do: value
+
+  defp maybe_include_grace_period_days(requires_payment, has_grace_period, grace_period_days) do
+    if requires_payment != false and has_grace_period != false do
+      grace_period_days
+    else
+      nil
+    end
+  end
 end

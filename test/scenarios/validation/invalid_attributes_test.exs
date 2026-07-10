@@ -54,6 +54,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "institution_discount directive with unknown attribute fails" do
+      yaml = """
+      - institution_discount:
+          institution: "school"
+          product: "product_1"
+          type: "percentage"
+          percentage: 10
+          expires_on: "2026-01-01"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'institution_discount' directive: \["expires_on"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "user directive with misspelled attribute fails" do
       yaml = """
       - user:

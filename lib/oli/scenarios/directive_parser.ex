@@ -18,6 +18,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
+    InstitutionDiscountDirective,
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
@@ -164,6 +165,13 @@ defmodule Oli.Scenarios.DirectiveParser do
       "slug",
       "open_and_free",
       "requires_enrollment",
+      "requires_payment",
+      "payment_options",
+      "pay_by_institution",
+      "amount",
+      "has_grace_period",
+      "grace_period_days",
+      "grace_period_strategy",
       "start_date",
       "end_date"
     ]
@@ -180,6 +188,17 @@ defmodule Oli.Scenarios.DirectiveParser do
           open_and_free: parse_boolean(section_data["open_and_free"], false, "open_and_free"),
           requires_enrollment:
             parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment"),
+          requires_payment:
+            parse_optional_boolean(section_data["requires_payment"], "requires_payment"),
+          payment_options: parse_optional_payment_options(section_data["payment_options"]),
+          pay_by_institution:
+            parse_optional_boolean(section_data["pay_by_institution"], "pay_by_institution"),
+          amount: parse_optional_money_map(section_data["amount"]),
+          has_grace_period:
+            parse_optional_boolean(section_data["has_grace_period"], "has_grace_period"),
+          grace_period_days: parse_optional_integer(section_data["grace_period_days"]),
+          grace_period_strategy:
+            parse_optional_grace_period_strategy(section_data["grace_period_strategy"]),
           start_date: parse_optional_datetime(section_data["start_date"]),
           end_date: parse_optional_datetime(section_data["end_date"])
         }
@@ -191,14 +210,59 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"product" => product_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "from"]
+    allowed_attrs = [
+      "name",
+      "title",
+      "from",
+      "requires_payment",
+      "payment_options",
+      "pay_by_institution",
+      "amount",
+      "has_grace_period",
+      "grace_period_days",
+      "grace_period_strategy"
+    ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, product_data, "product") do
       :ok ->
         %ProductDirective{
           name: product_data["name"] || product_data["title"],
           title: product_data["title"],
-          from: product_data["from"]
+          from: product_data["from"],
+          requires_payment:
+            parse_optional_boolean(product_data["requires_payment"], "requires_payment"),
+          payment_options: parse_optional_payment_options(product_data["payment_options"]),
+          pay_by_institution:
+            parse_optional_boolean(product_data["pay_by_institution"], "pay_by_institution"),
+          amount: parse_optional_money_map(product_data["amount"]),
+          has_grace_period:
+            parse_optional_boolean(product_data["has_grace_period"], "has_grace_period"),
+          grace_period_days: parse_optional_integer(product_data["grace_period_days"]),
+          grace_period_strategy:
+            parse_optional_grace_period_strategy(product_data["grace_period_strategy"])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"institution_discount" => discount_data}) do
+    allowed_attrs = ["institution", "product", "type", "percentage", "amount", "bypass_paywall"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           discount_data,
+           "institution_discount"
+         ) do
+      :ok ->
+        %InstitutionDiscountDirective{
+          institution: discount_data["institution"],
+          product: discount_data["product"],
+          type: parse_discount_type(discount_data["type"]),
+          percentage: parse_optional_float(discount_data["percentage"]),
+          amount: parse_optional_money_map(discount_data["amount"]),
+          bypass_paywall: parse_boolean(discount_data["bypass_paywall"], false, "bypass_paywall")
         }
 
       {:error, msg} ->
@@ -934,6 +998,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "user",
          "enroll",
          "institution",
+         "institution_discount",
          "update",
          "customize",
          "create_activity",
@@ -955,7 +1020,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -980,6 +1045,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "user",
              "enroll",
              "institution",
+             "institution_discount",
              "create_activity",
              "activity_bank",
              "instructor_customization",
@@ -1009,7 +1075,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
   end
 
@@ -1589,6 +1655,64 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_section_type("open_and_free"), do: :open_and_free
   defp parse_section_type(type) when is_atom(type), do: type
 
+  defp parse_optional_payment_options(nil), do: nil
+  defp parse_optional_payment_options(value) when is_atom(value), do: value
+
+  defp parse_optional_payment_options(value) when is_binary(value) do
+    case value do
+      "direct" ->
+        :direct
+
+      "deferred" ->
+        :deferred
+
+      "direct_and_deferred" ->
+        :direct_and_deferred
+
+      _ ->
+        raise(
+          "Invalid payment_options '#{value}'. Expected direct, deferred, or direct_and_deferred"
+        )
+    end
+  end
+
+  defp parse_optional_payment_options(value),
+    do: raise("Invalid payment_options value #{inspect(value)}")
+
+  defp parse_optional_grace_period_strategy(nil), do: nil
+  defp parse_optional_grace_period_strategy(value) when is_atom(value), do: value
+
+  defp parse_optional_grace_period_strategy(value) when is_binary(value) do
+    case value do
+      "relative_to_section" ->
+        :relative_to_section
+
+      "relative_to_student" ->
+        :relative_to_student
+
+      _ ->
+        raise(
+          "Invalid grace_period_strategy '#{value}'. Expected relative_to_section or relative_to_student"
+        )
+    end
+  end
+
+  defp parse_optional_grace_period_strategy(value),
+    do: raise("Invalid grace_period_strategy value #{inspect(value)}")
+
+  defp parse_discount_type(nil), do: :percentage
+  defp parse_discount_type(value) when is_atom(value), do: value
+
+  defp parse_discount_type(value) when is_binary(value) do
+    case value do
+      "percentage" -> :percentage
+      "fixed_amount" -> :fixed_amount
+      _ -> raise("Invalid discount type '#{value}'. Expected percentage or fixed_amount")
+    end
+  end
+
+  defp parse_discount_type(value), do: raise("Invalid discount type #{inspect(value)}")
+
   defp parse_user_type(nil), do: :student
   defp parse_user_type("author"), do: :author
   defp parse_user_type("instructor"), do: :instructor
@@ -1764,6 +1888,26 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_optional_float(nil), do: nil
   defp parse_optional_float(value), do: parse_float(value)
 
+  defp parse_optional_money_map(nil), do: nil
+
+  defp parse_optional_money_map(%{"amount" => amount} = value) do
+    %{
+      "amount" => normalize_money_amount(amount),
+      "currency" => Map.get(value, "currency", "USD")
+    }
+  end
+
+  defp parse_optional_money_map(%{amount: amount} = value) do
+    %{
+      "amount" => normalize_money_amount(amount),
+      "currency" => Map.get(value, :currency, "USD")
+    }
+  end
+
+  defp parse_optional_money_map(value) do
+    raise("Invalid amount #{inspect(value)}. Expected map with amount and optional currency")
+  end
+
   defp parse_optional_lifecycle_state(nil), do: nil
 
   defp parse_optional_lifecycle_state(value) when is_atom(value),
@@ -1800,6 +1944,18 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_datetime(value),
     do: raise("Invalid datetime value #{inspect(value)}")
+
+  defp normalize_money_amount(value) when is_integer(value) or is_float(value), do: value
+
+  defp normalize_money_amount(value) when is_binary(value) do
+    case Float.parse(value) do
+      {parsed, ""} -> parsed
+      _ -> raise("Invalid monetary amount '#{value}'")
+    end
+  end
+
+  defp normalize_money_amount(value),
+    do: raise("Invalid monetary amount #{inspect(value)}")
 
   defp parse_atom_literal(value) when is_binary(value) do
     atom_name =

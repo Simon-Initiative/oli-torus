@@ -19,6 +19,7 @@ defmodule Oli.Scenarios.Engine do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
+    InstitutionDiscountDirective,
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
@@ -59,6 +60,7 @@ defmodule Oli.Scenarios.Engine do
     UserHandler,
     EnrollmentHandler,
     InstitutionHandler,
+    InstitutionDiscountHandler,
     UpdateHandler,
     CustomizeHandler,
     ActivityHandler,
@@ -270,6 +272,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%InstitutionDirective{} = directive, state) do
     InstitutionHandler.handle(directive, state)
+  end
+
+  def execute_directive(%InstitutionDiscountDirective{} = directive, state) do
+    InstitutionDiscountHandler.handle(directive, state)
   end
 
   def execute_directive(%UpdateDirective{} = directive, state) do

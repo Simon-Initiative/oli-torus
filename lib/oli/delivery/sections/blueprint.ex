@@ -202,18 +202,21 @@ defmodule Oli.Delivery.Sections.Blueprint do
       "start_date" => nil,
       "end_date" => nil,
       "title" => title,
-      "description" => attrs["description"] || project.description,
-      "requires_payment" => attrs["requires_payment"] || false,
-      "payment_options" => attrs["payment_options"] || "direct_and_deferred",
-      "pay_by_institution" => attrs["pay_by_institution"] || false,
-      "registration_open" => attrs["registration_open"] || false,
-      "grace_period_days" => attrs["grace_period_days"] || 1,
+      "description" => Map.get(attrs, "description", project.description),
+      "requires_payment" => Map.get(attrs, "requires_payment", false),
+      "payment_options" => Map.get(attrs, "payment_options", "direct_and_deferred"),
+      "pay_by_institution" => Map.get(attrs, "pay_by_institution", false),
+      "registration_open" => Map.get(attrs, "registration_open", false),
+      "has_grace_period" => Map.get(attrs, "has_grace_period", true),
+      "grace_period_days" => Map.get(attrs, "grace_period_days", 1),
+      "grace_period_strategy" => Map.get(attrs, "grace_period_strategy", "relative_to_section"),
       "amount" => build_amount(attrs["amount"]),
       "publisher_id" => project.publisher_id,
       "customizations" => custom_labels,
-      "welcome_title" => attrs["welcome_title"] || project.welcome_title,
-      "encouraging_subtitle" => attrs["encouraging_subtitle"] || project.encouraging_subtitle,
-      "certificate_enabled" => attrs["certificate_enabled"] || false
+      "welcome_title" => Map.get(attrs, "welcome_title", project.welcome_title),
+      "encouraging_subtitle" =>
+        Map.get(attrs, "encouraging_subtitle", project.encouraging_subtitle),
+      "certificate_enabled" => Map.get(attrs, "certificate_enabled", false)
     }
   end
 
