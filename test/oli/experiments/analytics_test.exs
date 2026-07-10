@@ -55,8 +55,26 @@ defmodule Oli.Experiments.AnalyticsTest do
       assert {:ok, [%{count: 1}]} = Experiments.exposure_counts(query)
       assert {:ok, [%{count: 1}]} = Experiments.reward_counts(query)
 
-      assert {:ok, [%{assignment_count: 1, reward_success_count: 1}]} =
-               Experiments.policy_state_snapshot(query)
+      assert {:ok,
+              [
+                %{
+                  algorithm: :thompson_sampling,
+                  algorithm_version: "thompson_sampling:v2",
+                  assignment_count: 1,
+                  reward_success_count: 1,
+                  prior_config: %{"default" => %{"alpha" => 1.0, "beta" => 1.0}},
+                  last_updated_from_reward_id: reward_id,
+                  guardrail_state: %{
+                    "manual_pause_enabled" => true,
+                    "assignment_count" => 1,
+                    "reward_count" => 1
+                  }
+                } = snapshot
+              ]} = Experiments.policy_state_snapshot(query)
+
+      assert reward_id
+      assert snapshot.state[assignment.condition_code]["posterior_alpha"] == 2.0
+      refute Map.has_key?(snapshot, :policy_config)
     end
 
     test "rejects out-of-scope analytics queries" do

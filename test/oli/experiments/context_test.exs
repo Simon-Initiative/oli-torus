@@ -16,7 +16,7 @@ defmodule Oli.Experiments.ContextTest do
     UpdateExperimentRequest
   }
 
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, PolicyState}
   alias Oli.Authoring.Course.Project
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -111,6 +111,28 @@ defmodule Oli.Experiments.ContextTest do
              } =
                errors
     end
+
+    test "rejects malformed Thompson Sampling policy config without raising" do
+      scope = valid_scope()
+
+      for {policy_config, expected_message} <- [
+            {%{"priors" => "bad"}, "Thompson Sampling priors config must be a map"},
+            {%{"guardrails" => "bad"}, "Thompson Sampling guardrails config must be a map"},
+            {%{"priors" => %{"default" => "bad"}},
+             "Thompson Sampling default config must be a map"},
+            {%{"priors" => %{"conditions" => %{"a" => "bad"}}},
+             "Thompson Sampling per-condition prior config must be a map"}
+          ] do
+        assert {:error, %ExperimentError{type: :invalid_condition, message: ^expected_message}} =
+                 Experiments.create_experiment(%CreateExperimentRequest{
+                   scope: scope,
+                   slug: "bad-ts-#{System.unique_integer([:positive])}",
+                   name: "Bad Thompson Sampling",
+                   algorithm: :thompson_sampling,
+                   policy_config: policy_config
+                 })
+      end
+    end
   end
 
   describe "authoring graph APIs" do
@@ -176,16 +198,51 @@ defmodule Oli.Experiments.ContextTest do
       assert message == "active condition weights must have a positive total"
     end
 
-    test "rejects Thompson Sampling graph authoring without persisting adaptive config" do
+    test "creates and activates a Thompson Sampling experiment with normalized adaptive config" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
       request = %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
 
-      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
-               Experiments.create_experiment(request)
+      assert {:ok, %ExperimentDefinition{} = definition} = Experiments.create_experiment(request)
 
-      assert message == "Thompson Sampling authoring is coming soon"
-      assert {:ok, []} = Experiments.list_project_experiments(scope)
+      assert definition.algorithm == :thompson_sampling
+      assert definition.policy_config["reward_source"] == "activity_attempt:full_credit"
+      assert definition.policy_config["priors"]["default"] == %{"alpha" => 1.0, "beta" => 1.0}
+      assert definition.policy_config["guardrails"]["manual_pause_enabled"]
+
+      policy_state = Repo.get_by!(PolicyState, experiment_id: definition.id)
+      assert policy_state.algorithm == :thompson_sampling
+      assert policy_state.algorithm_version == "thompson_sampling:v2"
+      assert policy_state.prior_config == definition.policy_config["priors"]
+      assert policy_state.state["alt-a"]["posterior_alpha"] == 1.0
+      assert policy_state.state["alt-b"]["posterior_beta"] == 1.0
+
+      assert {:ok, %ExperimentDefinition{state: :active}} =
+               Experiments.activate_experiment(definition.id, lifecycle(scope))
+    end
+
+    test "rejects invalid Thompson Sampling priors and guardrails" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+
+      invalid_prior =
+        %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
+        |> Map.put(:policy_config, %{"priors" => %{"default" => %{"alpha" => 0.0, "beta" => 1.0}}})
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.create_experiment(invalid_prior)
+
+      assert message == "Thompson Sampling prior alpha must be between 0.0001 and 1000"
+
+      invalid_guardrail =
+        %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
+        |> Map.put(:policy_config, %{"guardrails" => %{"max_condition_share" => 2.0}})
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.create_experiment(invalid_guardrail)
+
+      assert message ==
+               "Thompson Sampling max condition share must be greater than 0 and at most 1"
     end
 
     test "blocks assigned condition deletion and deactivation" do

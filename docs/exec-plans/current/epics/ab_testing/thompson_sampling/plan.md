@@ -50,16 +50,16 @@ Out of scope:
 ## Phase 2: Context Normalization, Transactions, And Idempotency
 - Goal: Persist and mutate Thompson Sampling policy state safely through `Oli.Experiments` for FR-002, FR-004, AC-002, and AC-004.
 - Tasks:
-  - [ ] Add context-level normalization for Thompson Sampling `policy_config` and `prior_config`.
-  - [ ] Initialize `experiment_policy_states` for Thompson Sampling with normalized priors, explicit per-condition posterior state, `thompson_sampling:v2`, zero reward counts, and zero assignment count.
-  - [ ] Update `get_or_create_policy_state/2` behavior so missing Thompson Sampling state is initialized from experiment conditions and policy config rather than an empty map.
-  - [ ] Lock the relevant policy-state row or add equivalent optimistic retry behavior during reward policy updates.
-  - [ ] Ensure `experiment_policy_updates.reward_id` remains the durable policy-update idempotency boundary.
-  - [ ] Ensure assignment count and reward counters are changed only inside `Oli.Experiments`.
-  - [ ] Add telemetry metadata for algorithm version, selected condition, reward class, and update error type without learner-identifying data.
+  - [x] Add context-level normalization for Thompson Sampling `policy_config` and `prior_config`.
+  - [x] Initialize `experiment_policy_states` for Thompson Sampling with normalized priors, explicit per-condition posterior state, `thompson_sampling:v2`, zero reward counts, and zero assignment count.
+  - [x] Update `get_or_create_policy_state/2` behavior so missing Thompson Sampling state is initialized from experiment conditions and policy config rather than an empty map.
+  - [x] Lock the relevant policy-state row or add equivalent optimistic retry behavior during reward policy updates.
+  - [x] Ensure `experiment_policy_updates.reward_id` remains the durable policy-update idempotency boundary.
+  - [x] Ensure assignment count and reward counters are changed only inside `Oli.Experiments`.
+  - [x] Add telemetry metadata for algorithm version, selected condition, reward class, and update error type without learner-identifying data.
 - Testing Tasks:
-  - [ ] Add context/runtime tests for initial policy-state creation, idempotent reward replay, assigned-condition-only update, and concurrent reward updates.
-  - [ ] Add tests proving reused reward receipts do not create duplicate policy updates or change posterior counts.
+  - [x] Add context/runtime tests for initial policy-state creation, idempotent reward replay, assigned-condition-only update, and concurrent reward updates.
+  - [x] Add tests proving reused reward receipts do not create duplicate policy updates or change posterior counts.
   - Command(s): `mix test test/oli/experiments/context_test.exs test/oli/experiments/runtime_test.exs`
 - Definition of Done:
   - Thompson Sampling policy state is auditable and replay-safe.
@@ -74,16 +74,16 @@ Out of scope:
 ## Phase 3: Assignment Guardrails And Runtime Behavior
 - Goal: Apply Thompson Sampling safely on first assignment while preserving sticky assignment and MVP guardrails for FR-003, FR-005, AC-003, and AC-005.
 - Tasks:
-  - [ ] Add backend guardrail validation for warm-up assignment count, maximum condition share, optional fixed control allocation, imbalance threshold, and manual pause support.
-  - [ ] Apply guardrails inside first-assignment flow after sticky assignment lookup and before policy sampling.
-  - [ ] Increment or derive assignment counters consistently when a new Thompson Sampling assignment is created.
-  - [ ] Ensure paused, completed, archived, draft, invalid, or condition-mismatched experiments use existing controlled fallback behavior.
-  - [ ] Emit telemetry for guardrail action values such as `:none`, `:warm_up`, `:traffic_cap`, `:fixed_control`, `:imbalance_flag`, and `:paused`.
-  - [ ] Keep delivery student UI unchanged except for the assigned alternative content.
+  - [x] Add backend guardrail validation for warm-up assignment count, maximum condition share, optional fixed control allocation, imbalance threshold, and manual pause support.
+  - [x] Apply guardrails inside first-assignment flow after sticky assignment lookup and before policy sampling.
+  - [x] Increment or derive assignment counters consistently when a new Thompson Sampling assignment is created.
+  - [x] Ensure paused, completed, archived, draft, invalid, or condition-mismatched experiments use existing controlled fallback behavior.
+  - [x] Emit telemetry for guardrail action values such as `:none`, `:warm_up`, `:traffic_cap`, `:fixed_control`, `:imbalance_flag`, and `:paused`.
+  - [x] Keep delivery student UI unchanged except for the assigned alternative content.
 - Testing Tasks:
-  - [ ] Add runtime tests proving first assignment samples, repeated visits reuse sticky assignments, and posterior changes do not reassign existing learners.
-  - [ ] Add guardrail tests for pause, warm-up, cap/fixed-control behavior, and imbalance flag telemetry or inspection state.
-  - [ ] Add fallback tests for malformed policy state, no active conditions, and controlled policy errors.
+  - [x] Add runtime tests proving first assignment samples, repeated visits reuse sticky assignments, and posterior changes do not reassign existing learners.
+  - [x] Add guardrail tests for pause, warm-up, cap/fixed-control behavior, and imbalance flag telemetry or inspection state.
+  - [x] Add fallback tests for malformed policy state, no active conditions, and controlled policy errors.
   - Command(s): `mix test test/oli/experiments/runtime_test.exs`
 - Definition of Done:
   - First assignments use Thompson Sampling only when valid and active.
@@ -99,16 +99,16 @@ Out of scope:
 ## Phase 4: Authoring And Lifecycle Enablement
 - Goal: Replace the disabled Thompson Sampling affordance with lifecycle-safe authoring controls for FR-006 and AC-006.
 - Tasks:
-  - [ ] Update `Oli.Experiments.create_experiment/1` and `update_experiment/2` validation to accept Thompson Sampling graph requests when priors, reward source, guardrails, and condition mappings are valid.
-  - [ ] Update `activate_experiment/2` validation to allow Thompson Sampling only when reward readiness, priors, guardrails, lifecycle state, and condition mappings pass.
-  - [ ] Keep unsafe condition edits blocked after assignments exist.
-  - [ ] Update `OliWeb.Workspaces.CourseAuthor.ExperimentsLive` to present a selectable Thompson Sampling option with safe defaults.
-  - [ ] Add authoring controls for default priors and MVP guardrails without exposing implementation internals.
-  - [ ] Replace "Coming soon" disabled copy with validation states and form-safe errors.
-  - [ ] Enforce existing project author/admin authorization and avoid trusting browser-submitted adaptive fields.
+  - [x] Update `Oli.Experiments.create_experiment/1` and `update_experiment/2` validation to accept Thompson Sampling graph requests when priors, reward source, guardrails, and condition mappings are valid.
+  - [x] Update `activate_experiment/2` validation to allow Thompson Sampling only when reward readiness, priors, guardrails, lifecycle state, and condition mappings pass.
+  - [x] Keep unsafe condition edits blocked after assignments exist.
+  - [x] Update `OliWeb.Workspaces.CourseAuthor.ExperimentsLive` to present a selectable Thompson Sampling option with safe defaults.
+  - [x] Add authoring controls for default priors and MVP guardrails without exposing implementation internals.
+  - [x] Replace "Coming soon" disabled copy with validation states and form-safe errors.
+  - [x] Enforce existing project author/admin authorization and avoid trusting browser-submitted adaptive fields.
 - Testing Tasks:
-  - [ ] Add context tests for Thompson Sampling create/update/activation success and validation failures.
-  - [ ] Add LiveView tests for selectable Thompson Sampling, default priors, guardrail fields, validation errors, activation blockers, and unauthorized access.
+  - [x] Add context tests for Thompson Sampling create/update/activation success and validation failures.
+  - [x] Add LiveView tests for selectable Thompson Sampling, default priors, guardrail fields, validation errors, activation blockers, and unauthorized access.
   - Command(s): `mix test test/oli/experiments/context_test.exs test/oli_web/live/workspaces/course_author/experiments_live_test.exs`
 - Definition of Done:
   - Authorized users can create or update Thompson Sampling experiments only with valid adaptive configuration.
@@ -123,15 +123,15 @@ Out of scope:
 ## Phase 5: Inspection, Telemetry, And Operational Evidence
 - Goal: Expose enough metadata for research review and operations while preserving privacy for FR-002, FR-005, AC-002, and AC-005.
 - Tasks:
-  - [ ] Add or extend `Oli.Experiments` inspection/read functions such as `policy_state_snapshot/1` or existing analytics summary output.
-  - [ ] Include algorithm, algorithm version, prior config, posterior alpha/beta per condition, assignment count, reward success/failure counts, last update provenance, and guardrail state.
-  - [ ] Ensure inspection responses use authorized public structs or maps and never return private schemas.
-  - [ ] Add telemetry assertions or handler-based tests for Thompson Sampling assignment, reward update, guardrail action, and policy update failures where practical.
-  - [ ] Review logs/metadata to exclude learner names, LMS identifiers, raw activity responses, API tokens, and full activity payloads.
-  - [ ] Add notes for AppSignal/telemetry observability in the execution record or PR description.
+  - [x] Add or extend `Oli.Experiments` inspection/read functions such as `policy_state_snapshot/1` or existing analytics summary output.
+  - [x] Include algorithm, algorithm version, prior config, posterior alpha/beta per condition, assignment count, reward success/failure counts, last update provenance, and guardrail state.
+  - [x] Ensure inspection responses use authorized public structs or maps and never return private schemas.
+  - [x] Add telemetry assertions or handler-based tests for Thompson Sampling assignment, reward update, guardrail action, and policy update failures where practical.
+  - [x] Review logs/metadata to exclude learner names, LMS identifiers, raw activity responses, API tokens, and full activity payloads.
+  - [x] Add notes for AppSignal/telemetry observability in the execution record or PR description.
 - Testing Tasks:
-  - [ ] Add analytics/inspection tests for posterior state visibility and privacy boundaries.
-  - [ ] Add telemetry metadata tests for non-sensitive IDs and guardrail action.
+  - [x] Add analytics/inspection tests for posterior state visibility and privacy boundaries.
+  - [x] Add telemetry metadata tests for non-sensitive IDs and guardrail action.
   - Command(s): `mix test test/oli/experiments/analytics_test.exs test/oli/experiments/runtime_test.exs`
 - Definition of Done:
   - Operators and researchers have an approved inspection path for policy evidence.
@@ -146,17 +146,17 @@ Out of scope:
 ## Phase 6: End-To-End Workflow Coverage And Release Hardening
 - Goal: Validate the full authoring-to-delivery-to-reward workflow and prepare implementation for review and release.
 - Tasks:
-  - [ ] Add `Oli.Scenarios` coverage for authoring alternatives, creating a Thompson Sampling experiment, publishing, section delivery, sticky assignment, evaluated attempt reward, and posterior update.
-  - [ ] Add scenario or ExUnit replay coverage for reward idempotency if current scenario directives can express it cleanly.
-  - [ ] Run targeted policy, context, runtime, authoring LiveView, reward handoff, analytics/inspection, and scenario tests.
-  - [ ] Run `mix format`.
-  - [ ] Run a focused performance review of assignment hot-path queries, sticky reuse, guardrail checks, reward update row locking, and inspection query cost.
-  - [ ] Run a focused security/privacy review of scope validation, authoring authorization, inspection responses, telemetry metadata, and reward/policy metadata.
-  - [ ] Document unresolved product decisions in the PR or execution record: custom prior audience, final guardrail thresholds, analytics UI ownership, and partial-credit reward policy.
+  - [x] Add `Oli.Scenarios` coverage for authoring alternatives, creating a Thompson Sampling experiment, publishing, section delivery, sticky assignment, evaluated attempt reward, and posterior update.
+  - [x] Add scenario or ExUnit replay coverage for reward idempotency if current scenario directives can express it cleanly.
+  - [x] Run targeted policy, context, runtime, authoring LiveView, reward handoff, analytics/inspection, and scenario tests.
+  - [x] Run `mix format`.
+  - [x] Run a focused performance review of assignment hot-path queries, sticky reuse, guardrail checks, reward update row locking, and inspection query cost.
+  - [x] Run a focused security/privacy review of scope validation, authoring authorization, inspection responses, telemetry metadata, and reward/policy metadata.
+  - [x] Document unresolved product decisions in the PR or execution record: custom prior audience, final guardrail thresholds, analytics UI ownership, and partial-credit reward policy.
 - Testing Tasks:
-  - [ ] Validate scenario files with `Oli.Scenarios.validate_file/1` while authoring.
-  - [ ] Run the targeted scenario runner or ExUnit scenario module added for this work.
-  - [ ] Run all targeted ExUnit modules touched by the implementation.
+  - [x] Validate scenario files with `Oli.Scenarios.validate_file/1` while authoring.
+  - [x] Run the targeted scenario runner or ExUnit scenario module added for this work.
+  - [x] Run all targeted ExUnit modules touched by the implementation.
   - Command(s): `mix test test/oli/experiments/policy_test.exs test/oli/experiments/context_test.exs test/oli/experiments/runtime_test.exs test/oli/delivery/experiments/reward_handoff_test.exs test/oli/experiments/analytics_test.exs test/oli_web/live/workspaces/course_author/experiments_live_test.exs`
   - Command(s): `mix format`
 - Definition of Done:

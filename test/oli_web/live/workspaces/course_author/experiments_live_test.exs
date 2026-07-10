@@ -166,7 +166,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       insert_alternatives_group(project)
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
-      assert render(view) =~ "Coming soon"
+      refute render(view) =~ "Coming soon"
       refute has_element?(view, "a", "Download Experiment JSON")
 
       view
@@ -175,9 +175,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         "experiment" => %{
           "name" => "Homepage Study",
           "slug" => "homepage-study",
+          "algorithm" => "weighted_random",
           "decision_point" => selected_decision_point_value(view),
           "weight_a" => "2",
-          "weight_b" => "1"
+          "weight_b" => "1",
+          "prior_alpha" => "1",
+          "prior_beta" => "1",
+          "warm_up_assignments" => "0",
+          "max_condition_share" => "1"
         }
       })
 
@@ -190,6 +195,77 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_click()
 
       assert has_element?(view, "#ab-experiments-table", "Active")
+    end
+
+    test "creates and starts a Thompson Sampling A/B Testing experiment", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      assert has_element?(view, "#experiment_algorithm option", "Thompson Sampling")
+      refute render(view) =~ "Coming soon"
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Adaptive Study",
+          "slug" => "adaptive-study",
+          "algorithm" => "thompson_sampling",
+          "decision_point" => selected_decision_point_value(view),
+          "weight_a" => "1",
+          "weight_b" => "1",
+          "prior_alpha" => "1",
+          "prior_beta" => "1",
+          "warm_up_assignments" => "0",
+          "max_condition_share" => "1"
+        }
+      })
+
+      assert has_element?(view, "#ab-experiments-table", "Adaptive Study")
+      assert has_element?(view, "#ab-experiments-table", "Thompson Sampling")
+      assert has_element?(view, "#ab-experiments-table", "Draft")
+
+      view
+      |> element("button[phx-click='start_experiment']", "Start")
+      |> render_click()
+
+      assert has_element?(view, "#ab-experiments-table", "Active")
+    end
+
+    test "shows field error for malformed Thompson Sampling numeric input", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Adaptive Study",
+          "slug" => "adaptive-study",
+          "algorithm" => "thompson_sampling",
+          "decision_point" => selected_decision_point_value(view),
+          "weight_a" => "1",
+          "weight_b" => "1",
+          "prior_alpha" => "1abc",
+          "prior_beta" => "1",
+          "warm_up_assignments" => "0",
+          "max_condition_share" => "1"
+        }
+      })
+
+      assert has_element?(
+               view,
+               "#experiment_prior_alpha_error",
+               "Prior alpha must be between 0.0001 and 1000."
+             )
+
+      assert has_element?(view, "#experiment_prior_alpha.is-invalid")
     end
 
     test "does not expose obsolete creation terminology or JSON workflows", %{view: view} do

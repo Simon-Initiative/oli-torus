@@ -50,6 +50,141 @@ defmodule Oli.Experiments.RuntimeTest do
       assert Repo.aggregate(Assignment, :count, :id) == 1
     end
 
+    test "preserves Thompson Sampling sticky assignment after posterior updates" do
+      %{scope: scope, revision: revision} =
+        active_experiment_with_conditions(algorithm: :thompson_sampling)
+
+      assert {:ok, %AssignmentDecision{reused?: false} = first} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      reward_request = %RecordRewardRequest{
+        scope: scope,
+        assignment_id: first.assignment_id,
+        reward_value: 1.0,
+        reward_source: "test",
+        idempotency_key: "sticky-ts-reward:#{first.assignment_id}"
+      }
+
+      assert {:ok, %RewardReceipt{reused?: false}} = Experiments.record_reward(reward_request)
+
+      assert {:ok, %AssignmentDecision{reused?: true} = second} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert second.assignment_id == first.assignment_id
+      assert second.condition_id == first.condition_id
+      assert second.condition_code == first.condition_code
+    end
+
+    test "emits Thompson Sampling guardrail metadata for first assignments" do
+      attach_telemetry([[:oli, :experiments, :assignment, :guardrail]])
+
+      %{scope: scope, revision: revision} =
+        active_experiment_with_conditions(
+          algorithm: :thompson_sampling,
+          policy_config: %{"guardrails" => %{"warm_up_assignments" => 1}}
+        )
+
+      assert {:ok, %AssignmentDecision{status: :assigned}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :guardrail], %{count: 1},
+                      %{algorithm: :thompson_sampling, guardrail_action: :warm_up}}
+    end
+
+    test "applies fixed-control and traffic-cap guardrails before Thompson Sampling" do
+      %{scope: scope, revision: revision, definition: definition, decision_point: decision_point} =
+        active_experiment_with_conditions(
+          algorithm: :thompson_sampling,
+          policy_config: %{"guardrails" => %{"fixed_control_allocation" => 0.5}}
+        )
+
+      assert {:ok, %AssignmentDecision{condition_code: "a"}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      %{
+        scope: cap_scope,
+        revision: cap_revision,
+        definition: cap_definition,
+        decision_point: cap_dp
+      } =
+        active_experiment_with_conditions(
+          algorithm: :thompson_sampling,
+          policy_config: %{"guardrails" => %{"max_condition_share" => 0.5}}
+        )
+
+      condition_a = Repo.get_by!(Condition, experiment_id: cap_definition.id, condition_code: "a")
+      insert_assignment!(cap_definition, cap_dp, condition_a, valid_scope())
+
+      assert {:ok, %AssignmentDecision{condition_code: "b"}} =
+               Experiments.assign_condition(assign_request(cap_scope, cap_revision, ["a", "b"]))
+
+      assert definition.id
+      assert decision_point.id
+    end
+
+    test "reports imbalance guardrail flag without blocking sticky fallback" do
+      attach_telemetry([[:oli, :experiments, :assignment, :guardrail]])
+
+      %{scope: scope, revision: revision, definition: definition, decision_point: decision_point} =
+        active_experiment_with_conditions(
+          algorithm: :thompson_sampling,
+          policy_config: %{"guardrails" => %{"imbalance_threshold" => 0.5}}
+        )
+
+      condition_a = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "a")
+      insert_assignment!(definition, decision_point, condition_a, valid_scope())
+
+      assert {:ok, %AssignmentDecision{condition_code: "a"}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a"]))
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :guardrail], %{count: 1},
+                      %{guardrail_action: :none, imbalance_flag?: true}}
+    end
+
+    test "paused and malformed Thompson Sampling experiments use controlled fallback errors" do
+      %{scope: scope, revision: revision, definition: definition} =
+        active_experiment_with_conditions(algorithm: :thompson_sampling)
+
+      assert {:ok, _paused} =
+               Experiments.pause_experiment(definition.id, %LifecycleRequest{
+                 scope: %{
+                   scope
+                   | publication_id: nil,
+                     section_id: nil,
+                     user_id: nil,
+                     enrollment_id: nil
+                 }
+               })
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      %{
+        scope: bad_scope,
+        revision: bad_revision,
+        definition: bad_definition,
+        decision_point: bad_decision_point
+      } =
+        active_experiment_with_conditions(algorithm: :thompson_sampling)
+
+      %PolicyState{}
+      |> PolicyState.changeset(%{
+        experiment_id: bad_definition.id,
+        decision_point_id: bad_decision_point.id,
+        algorithm: :thompson_sampling,
+        algorithm_version: "thompson_sampling:v2",
+        state: %{"a" => %{"successes" => "bad"}},
+        prior_config: %{},
+        reward_success_count: 0,
+        reward_failure_count: 0,
+        assignment_count: 0
+      })
+      |> Repo.insert!()
+
+      assert {:error, %{type: :invalid_condition, message: "policy could not assign a condition"}} =
+               Experiments.assign_condition(assign_request(bad_scope, bad_revision, ["a", "b"]))
+    end
+
     test "rejects active experiment condition mismatches" do
       %{scope: scope, revision: revision} = active_experiment_with_conditions()
 
@@ -168,19 +303,64 @@ defmodule Oli.Experiments.RuntimeTest do
       assert policy_update.next_state[assignment.condition_code]["successes"] == 1
       assert Repo.aggregate(PolicyUpdate, :count, :id) == 1
     end
+
+    test "records concurrent Thompson Sampling rewards without losing posterior increments" do
+      %{scope: scope, revision: revision} =
+        active_experiment_with_conditions(algorithm: :thompson_sampling)
+
+      second_scope = sibling_runtime_scope(scope)
+
+      {:ok, first_assignment} =
+        Experiments.assign_condition(assign_request(scope, revision, ["a"]))
+
+      {:ok, second_assignment} =
+        Experiments.assign_condition(assign_request(second_scope, revision, ["a"]))
+
+      first_request = %RecordRewardRequest{
+        scope: scope,
+        assignment_id: first_assignment.assignment_id,
+        reward_value: 1.0,
+        reward_source: "test",
+        idempotency_key: "concurrent-ts-reward:#{first_assignment.assignment_id}"
+      }
+
+      second_request = %RecordRewardRequest{
+        scope: second_scope,
+        assignment_id: second_assignment.assignment_id,
+        reward_value: 1.0,
+        reward_source: "test",
+        idempotency_key: "concurrent-ts-reward:#{second_assignment.assignment_id}"
+      }
+
+      [first_result, second_result] =
+        [first_request, second_request]
+        |> Enum.map(&Task.async(fn -> Experiments.record_reward(&1) end))
+        |> Enum.map(&Task.await(&1, 5_000))
+
+      assert {:ok, %RewardReceipt{reused?: false}} = first_result
+      assert {:ok, %RewardReceipt{reused?: false}} = second_result
+
+      policy_state = Repo.get_by!(PolicyState, experiment_id: first_assignment.experiment_id)
+      assert policy_state.reward_success_count == 2
+      assert policy_state.state["a"]["successes"] == 2
+      assert policy_state.state["a"]["posterior_alpha"] == 3.0
+      assert Repo.aggregate(PolicyUpdate, :count, :id) == 2
+    end
   end
 
   defp active_experiment_with_conditions(opts \\ []) do
     scope = valid_scope()
     revision = insert(:revision)
     algorithm = Keyword.get(opts, :algorithm, :weighted_random)
+    policy_config = Keyword.get(opts, :policy_config, %{})
 
     {:ok, definition} =
       Experiments.create_experiment(%CreateExperimentRequest{
         scope: scope,
         slug: "runtime-#{System.unique_integer([:positive])}",
         name: "Runtime experiment",
-        algorithm: algorithm
+        algorithm: algorithm,
+        policy_config: policy_config
       })
 
     {:ok, active} =
@@ -242,6 +422,14 @@ defmodule Oli.Experiments.RuntimeTest do
     }
   end
 
+  defp sibling_runtime_scope(%Scope{} = scope) do
+    section = Repo.get!(Oli.Delivery.Sections.Section, scope.section_id)
+    user = insert(:user)
+    enrollment = insert(:enrollment, section: section, user: user)
+
+    %{scope | user_id: user.id, enrollment_id: enrollment.id}
+  end
+
   defp attach_telemetry(events) do
     parent = self()
     handler_id = "experiment-runtime-test-#{System.unique_integer([:positive])}"
@@ -256,5 +444,24 @@ defmodule Oli.Experiments.RuntimeTest do
     )
 
     on_exit(fn -> :telemetry.detach(handler_id) end)
+  end
+
+  defp insert_assignment!(definition, decision_point, condition, scope) do
+    %Assignment{}
+    |> Assignment.changeset(%{
+      experiment_id: definition.id,
+      decision_point_id: decision_point.id,
+      condition_id: condition.id,
+      institution_id: scope.institution_id,
+      section_id: scope.section_id,
+      enrollment_id: scope.enrollment_id,
+      user_id: scope.user_id,
+      publication_id: scope.publication_id,
+      assigned_by_policy: Atom.to_string(definition.algorithm),
+      policy_version: "test",
+      assignment_key: "test-assignment-#{System.unique_integer([:positive])}",
+      assigned_at: DateTime.utc_now() |> DateTime.truncate(:second)
+    })
+    |> Repo.insert!()
   end
 end

@@ -136,11 +136,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       <% end %>
 
       <div class="mt-3">
-        <h5>Create weighted random experiment</h5>
+        <h5>Create A/B Testing experiment</h5>
         <%= if Enum.empty?(@decision_point_candidates) do %>
           <div>Create an alternatives group before adding an A/B Testing experiment.</div>
         <% else %>
-          <.form for={@experiment_form} id="create-ab-experiment-form" phx-submit="create_experiment">
+          <.form
+            for={@experiment_form}
+            id="create-ab-experiment-form"
+            phx-change="change_experiment_form"
+            phx-submit="create_experiment"
+          >
             <div class="form-group">
               <label for="experiment_name">Name</label>
               <input id="experiment_name" class="form-control" name="experiment[name]" required />
@@ -162,6 +167,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   value={candidate.alternatives_revision_id}
                 >
                   {candidate.title}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="experiment_algorithm">Assignment policy</label>
+              <select
+                id="experiment_algorithm"
+                class="form-control"
+                name="experiment[algorithm]"
+              >
+                <option value="weighted_random" selected={@experiment_algorithm == "weighted_random"}>
+                  Weighted random
+                </option>
+                <option
+                  value="thompson_sampling"
+                  selected={@experiment_algorithm == "thompson_sampling"}
+                >
+                  Thompson Sampling
                 </option>
               </select>
             </div>
@@ -191,10 +214,108 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                 required
               />
             </div>
-            <div class="form-group">
-              <label>Thompson Sampling</label>
-              <input class="form-control" value="Coming soon" disabled />
-            </div>
+            <%= if @experiment_algorithm == "thompson_sampling" do %>
+              <div class="border rounded p-3 mb-3" id="thompson-sampling-config">
+                <h6>Thompson Sampling configuration</h6>
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="experiment_prior_alpha">Default prior successes</label>
+                    <input
+                      id="experiment_prior_alpha"
+                      class={"form-control #{field_error_class(@experiment_field_errors, :prior_alpha)}"}
+                      type="number"
+                      min="0.0001"
+                      max="1000"
+                      step="0.0001"
+                      name="experiment[prior_alpha]"
+                      value="1"
+                      aria-invalid={field_invalid?(@experiment_field_errors, :prior_alpha)}
+                      aria-describedby="experiment_prior_alpha_help experiment_prior_alpha_error"
+                    />
+                    <small id="experiment_prior_alpha_help" class="form-text text-muted">
+                      Initial success evidence for each condition, from 0.0001 to 1000.
+                    </small>
+                    <%= if error = field_error(@experiment_field_errors, :prior_alpha) do %>
+                      <div id="experiment_prior_alpha_error" class="invalid-feedback d-block">
+                        {error}
+                      </div>
+                    <% end %>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="experiment_prior_beta">Default prior failures</label>
+                    <input
+                      id="experiment_prior_beta"
+                      class={"form-control #{field_error_class(@experiment_field_errors, :prior_beta)}"}
+                      type="number"
+                      min="0.0001"
+                      max="1000"
+                      step="0.0001"
+                      name="experiment[prior_beta]"
+                      value="1"
+                      aria-invalid={field_invalid?(@experiment_field_errors, :prior_beta)}
+                      aria-describedby="experiment_prior_beta_help experiment_prior_beta_error"
+                    />
+                    <small id="experiment_prior_beta_help" class="form-text text-muted">
+                      Initial failure evidence for each condition, from 0.0001 to 1000.
+                    </small>
+                    <%= if error = field_error(@experiment_field_errors, :prior_beta) do %>
+                      <div id="experiment_prior_beta_error" class="invalid-feedback d-block">
+                        {error}
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="experiment_warm_up_assignments">Warm-up assignments</label>
+                    <input
+                      id="experiment_warm_up_assignments"
+                      class={"form-control #{field_error_class(@experiment_field_errors, :warm_up_assignments)}"}
+                      type="number"
+                      min="0"
+                      step="1"
+                      name="experiment[warm_up_assignments]"
+                      value="0"
+                      aria-invalid={field_invalid?(@experiment_field_errors, :warm_up_assignments)}
+                      aria-describedby="experiment_warm_up_assignments_help experiment_warm_up_assignments_error"
+                    />
+                    <small id="experiment_warm_up_assignments_help" class="form-text text-muted">
+                      Number of initial assignments served evenly before adaptive sampling.
+                    </small>
+                    <%= if error = field_error(@experiment_field_errors, :warm_up_assignments) do %>
+                      <div id="experiment_warm_up_assignments_error" class="invalid-feedback d-block">
+                        {error}
+                      </div>
+                    <% end %>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="experiment_max_condition_share">
+                      Maximum traffic share per condition
+                    </label>
+                    <input
+                      id="experiment_max_condition_share"
+                      class={"form-control #{field_error_class(@experiment_field_errors, :max_condition_share)}"}
+                      type="number"
+                      min="0.01"
+                      max="1"
+                      step="0.01"
+                      name="experiment[max_condition_share]"
+                      value="1"
+                      aria-invalid={field_invalid?(@experiment_field_errors, :max_condition_share)}
+                      aria-describedby="experiment_max_condition_share_help experiment_max_condition_share_error"
+                    />
+                    <small id="experiment_max_condition_share_help" class="form-text text-muted">
+                      Highest allowed assignment share for one condition, from 0.01 to 1.0.
+                    </small>
+                    <%= if error = field_error(@experiment_field_errors, :max_condition_share) do %>
+                      <div id="experiment_max_condition_share_error" class="invalid-feedback d-block">
+                        {error}
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
             <button type="submit" class="btn btn-primary">Create experiment</button>
           </.form>
         <% end %>
@@ -229,11 +350,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
        |> assign_authoring_experiments()}
     else
       {:error, message} when is_binary(message) ->
-        {:noreply, assign(socket, experiment_error: message, experiment_success: nil)}
+        {:noreply,
+         assign(socket,
+           experiment_error: message,
+           experiment_success: nil,
+           experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
+           experiment_field_errors: field_errors_for_message(message)
+         )}
 
       {:error, %Oli.Experiments.ExperimentError{} = error} ->
-        {:noreply, assign(socket, experiment_error: error.message, experiment_success: nil)}
+        {:noreply,
+         assign(socket,
+           experiment_error: error.message,
+           experiment_success: nil,
+           experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
+           experiment_field_errors: field_errors_for_message(error.message)
+         )}
     end
+  end
+
+  def handle_event("change_experiment_form", %{"experiment" => params}, socket) do
+    {:noreply,
+     assign(socket,
+       experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
+       experiment_field_errors: %{}
+     )}
   end
 
   def handle_event("start_experiment", %{"id" => experiment_id}, socket) do
@@ -586,6 +727,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       decision_point_candidates: candidates,
       experiment_error: error,
       experiment_success: nil,
+      experiment_algorithm: "weighted_random",
+      experiment_field_errors: %{},
       experiment_form: to_form(%{}, as: :experiment)
     )
   end
@@ -644,15 +787,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   defp selected_candidate(_candidates, _params), do: {:error, "Select an alternatives group."}
 
   defp create_request(scope, candidate, params) do
-    with {:ok, weight_a} <- parse_weight(params["weight_a"]),
+    with {:ok, algorithm} <- parse_algorithm(params["algorithm"]),
+         {:ok, weight_a} <- parse_weight(params["weight_a"]),
          {:ok, weight_b} <- parse_weight(params["weight_b"]),
+         {:ok, policy_config} <- policy_config(algorithm, params),
          [option_a, option_b | _rest] <- candidate.options do
       {:ok,
        %CreateExperimentRequest{
          scope: scope,
          slug: params["slug"],
          name: params["name"],
-         algorithm: :weighted_random,
+         algorithm: algorithm,
+         policy_config: policy_config,
          decision_point: %{
            alternatives_resource_id: candidate.alternatives_resource_id,
            alternatives_revision_id: candidate.alternatives_revision_id,
@@ -684,14 +830,111 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     end
   end
 
+  defp parse_algorithm("thompson_sampling"), do: {:ok, :thompson_sampling}
+  defp parse_algorithm("weighted_random"), do: {:ok, :weighted_random}
+  defp parse_algorithm(nil), do: {:ok, :weighted_random}
+  defp parse_algorithm(_algorithm), do: {:error, "Select a supported assignment policy."}
+
+  defp policy_config(:weighted_random, _params), do: {:ok, %{}}
+
+  defp policy_config(:thompson_sampling, params) do
+    with {:ok, prior_alpha} <- parse_positive_number(params["prior_alpha"], "Prior alpha"),
+         {:ok, prior_beta} <- parse_positive_number(params["prior_beta"], "Prior beta"),
+         {:ok, warm_up_assignments} <- parse_non_negative_integer(params["warm_up_assignments"]),
+         {:ok, max_condition_share} <-
+           parse_share(params["max_condition_share"], "Max condition share") do
+      {:ok,
+       %{
+         "reward_source" => "activity_attempt:full_credit",
+         "priors" => %{
+           "default" => %{"alpha" => prior_alpha, "beta" => prior_beta},
+           "conditions" => %{}
+         },
+         "guardrails" => %{
+           "manual_pause_enabled" => true,
+           "warm_up_assignments" => warm_up_assignments,
+           "max_condition_share" => max_condition_share,
+           "fixed_control_allocation" => nil,
+           "imbalance_threshold" => 1.0
+         }
+       }}
+    end
+  end
+
   defp parse_weight(value) when is_binary(value) do
-    case Float.parse(value) do
-      {weight, _rest} when weight >= 0.0 -> {:ok, weight}
+    case parse_exact_float(value) do
+      {:ok, weight} when weight >= 0.0 -> {:ok, weight}
       _ -> {:error, "Weights must be non-negative numbers."}
     end
   end
 
   defp parse_weight(_value), do: {:error, "Weights must be non-negative numbers."}
+
+  defp parse_positive_number(value, label) when is_binary(value) do
+    case parse_exact_float(value) do
+      {:ok, number} when number >= 0.0001 and number <= 1000.0 -> {:ok, number}
+      _ -> {:error, "#{label} must be between 0.0001 and 1000."}
+    end
+  end
+
+  defp parse_positive_number(_value, label),
+    do: {:error, "#{label} must be between 0.0001 and 1000."}
+
+  defp parse_non_negative_integer(value) when is_binary(value) do
+    case parse_exact_integer(value) do
+      {:ok, number} when number >= 0 -> {:ok, number}
+      _ -> {:error, "Warm-up assignments must be a non-negative integer."}
+    end
+  end
+
+  defp parse_non_negative_integer(_value),
+    do: {:error, "Warm-up assignments must be a non-negative integer."}
+
+  defp parse_share(value, label) when is_binary(value) do
+    case parse_exact_float(value) do
+      {:ok, number} when number > 0.0 and number <= 1.0 -> {:ok, number}
+      _ -> {:error, "#{label} must be greater than 0 and at most 1."}
+    end
+  end
+
+  defp parse_share(_value, label), do: {:error, "#{label} must be greater than 0 and at most 1."}
+
+  defp parse_exact_float(value) do
+    value = String.trim(value)
+
+    case Float.parse(value) do
+      {number, ""} -> {:ok, number}
+      {_number, rest} when is_binary(rest) -> :error
+      :error -> :error
+    end
+  end
+
+  defp parse_exact_integer(value) do
+    value = String.trim(value)
+
+    case Integer.parse(value) do
+      {number, ""} -> {:ok, number}
+      {_number, rest} when is_binary(rest) -> :error
+      :error -> :error
+    end
+  end
+
+  defp field_errors_for_message("Prior alpha" <> _ = message), do: %{prior_alpha: message}
+  defp field_errors_for_message("Prior beta" <> _ = message), do: %{prior_beta: message}
+
+  defp field_errors_for_message("Warm-up assignments" <> _ = message),
+    do: %{warm_up_assignments: message}
+
+  defp field_errors_for_message("Max condition share" <> _ = message),
+    do: %{max_condition_share: message}
+
+  defp field_errors_for_message(_message), do: %{}
+
+  defp field_error(errors, field), do: Map.get(errors, field)
+  defp field_invalid?(errors, field), do: Map.has_key?(errors, field)
+
+  defp field_error_class(errors, field),
+    do: if(field_invalid?(errors, field), do: "is-invalid", else: "")
 
   defp format_state(state) do
     state

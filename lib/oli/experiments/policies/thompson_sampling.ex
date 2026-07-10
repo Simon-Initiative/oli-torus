@@ -13,6 +13,36 @@ defmodule Oli.Experiments.Policies.ThompsonSampling do
   @min_prior 0.0001
   @max_prior 1_000.0
 
+  def version, do: @version
+
+  def default_policy_config do
+    %{
+      "reward_source" => "activity_attempt:full_credit",
+      "priors" => %{
+        "default" => %{"alpha" => @default_prior_alpha, "beta" => @default_prior_beta},
+        "conditions" => %{}
+      },
+      "guardrails" => %{
+        "manual_pause_enabled" => true,
+        "warm_up_assignments" => 0,
+        "max_condition_share" => 1.0,
+        "fixed_control_allocation" => nil,
+        "imbalance_threshold" => 1.0
+      }
+    }
+  end
+
+  def initial_state(policy_config, conditions) when is_list(conditions) do
+    Enum.reduce_while(conditions, {:ok, %{}}, fn condition, {:ok, state} ->
+      condition_code = condition.condition_code
+
+      case normalize_condition_state(policy_config || %{}, %{}, condition_code) do
+        {:ok, condition_state} -> {:cont, {:ok, Map.put(state, condition_code, condition_state)}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
   @impl true
   def assign(policy_config, policy_state, %{conditions: conditions} = context) do
     case conditions do

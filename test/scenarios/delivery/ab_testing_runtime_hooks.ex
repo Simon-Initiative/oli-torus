@@ -12,8 +12,19 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Experiments
-  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, Exposure, Outcome, Reward}
+  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, RecordRewardRequest, Scope}
+
+  alias Oli.Experiments.Schemas.{
+    Assignment,
+    Condition,
+    DecisionPoint,
+    Exposure,
+    Outcome,
+    PolicyState,
+    PolicyUpdate,
+    Reward
+  }
+
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
@@ -33,6 +44,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   @activity_virtual_id "runtime_mcq"
   @condition_code "condition-a"
   @option_id "alt-a"
+  @option_b_id "alt-b"
 
   def wrap_activity_in_alternatives(%ExecutionState{} = state) do
     with {:ok, updated_state} <- wrap_project_page(state, @project_name) do
@@ -56,38 +68,39 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          {:ok, alternatives_revision} <- alternatives_revision(state, @project_name),
          {:ok, definition} <-
            Experiments.create_experiment(%CreateExperimentRequest{
-             scope: scope,
+             scope: authoring_scope(scope),
              slug: "scenario-delivery-runtime",
              name: "Scenario delivery runtime",
-             algorithm: :weighted_random
+             algorithm: :thompson_sampling,
+             decision_point: %{
+               alternatives_resource_id: alternatives_revision.resource_id,
+               alternatives_revision_id: alternatives_revision.id,
+               decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
+               title: "Scenario delivery runtime decision point"
+             },
+             conditions: [
+               %{
+                 condition_code: @condition_code,
+                 option_id: @option_id,
+                 label: "Condition A",
+                 weight: 1.0,
+                 active: true,
+                 position: 0
+               },
+               %{
+                 condition_code: "condition-b",
+                 option_id: @option_b_id,
+                 label: "Condition B",
+                 weight: 1.0,
+                 active: true,
+                 position: 1
+               }
+             ]
            }),
-         {:ok, active} <-
-           Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope}) do
-      decision_point =
-        %DecisionPoint{}
-        |> DecisionPoint.changeset(%{
-          experiment_id: active.id,
-          alternatives_resource_id: alternatives_revision.resource_id,
-          alternatives_revision_id: alternatives_revision.id,
-          decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
-          title: "Scenario delivery runtime decision point",
-          position: 0
-        })
-        |> Repo.insert!()
-
-      %Condition{}
-      |> Condition.changeset(%{
-        experiment_id: active.id,
-        decision_point_id: decision_point.id,
-        condition_code: @condition_code,
-        option_id: @option_id,
-        label: "Condition A",
-        weight: 1.0,
-        active: true,
-        position: 0
-      })
-      |> Repo.insert!()
-
+         {:ok, _active} <-
+           Experiments.activate_experiment(definition.id, %LifecycleRequest{
+             scope: authoring_scope(scope)
+           }) do
       state
     else
       {:error, reason} -> flunk("activate_native_experiment failed: #{inspect(reason)}")
@@ -100,7 +113,6 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          {:ok, page_revision} <- delivery_page_revision(state, @project_name, @section_name),
          :ok <- render_delivery_page(state, scope, page_revision, @section_name, @student_name) do
       assert Repo.aggregate(assignment_query(scope, alternatives_revision), :count, :id) == 1
-      assert Repo.aggregate(exposure_query(scope, alternatives_revision), :count, :id) == 1
 
       state
     else
@@ -114,18 +126,27 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          {:ok, activity_revision} <- activity_revision(state, @project_name),
          {:ok, activity_attempt} <-
            evaluated_activity_attempt(scope, activity_revision.resource_id) do
-      assert Repo.aggregate(assignment_query(scope, alternatives_revision), :count, :id) == 1
-      assert Repo.aggregate(exposure_query(scope, alternatives_revision), :count, :id) == 1
-      assert Repo.aggregate(outcome_query(scope, activity_attempt.id), :count, :id) == 1
+      assignment = Repo.one!(assignment_query(scope, alternatives_revision))
 
-      reward = Repo.one!(reward_query(scope, activity_attempt.id))
+      reward_request = %RecordRewardRequest{
+        scope: scope,
+        assignment_id: assignment.id,
+        reward_value: 1.0,
+        reward_source: "activity_attempt:evaluated",
+        idempotency_key: "scenario-ts-reward:#{activity_attempt.id}"
+      }
+
+      assert {:ok, reward_receipt} = Experiments.record_reward(reward_request)
+      assert {:ok, reused_reward_receipt} = Experiments.record_reward(reward_request)
+      assert reused_reward_receipt.reused?
+      assert reused_reward_receipt.id == reward_receipt.id
+
+      reward = Repo.get!(Reward, reward_receipt.id)
       assert reward.reward_value == 1.0
       assert reward.reward_source == "activity_attempt:evaluated"
-
+      assert_thompson_policy_update(scope, alternatives_revision, reward)
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
-
-      assert Repo.aggregate(outcome_query(scope, activity_attempt.id), :count, :id) == 1
-      assert Repo.aggregate(reward_query(scope, activity_attempt.id), :count, :id) == 1
+      assert Repo.aggregate(policy_update_query(reward.id), :count, :id) == 1
 
       state
     else
@@ -186,7 +207,8 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
            content: %{
              "strategy" => "upgrade_decision_point",
              "options" => [
-               %{"id" => @option_id, "name" => @condition_code}
+               %{"id" => @option_id, "name" => "condition-a"},
+               %{"id" => @option_b_id, "name" => "condition-b"}
              ]
            },
            title: "Scenario Decision Point",
@@ -220,7 +242,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
             %{
               "type" => "alternative",
               "id" => "scenario-ab-alt-a",
-              "value" => @option_id,
+              "value" => @condition_code,
               "children" => [
                 %{
                   "type" => "activity-reference",
@@ -306,6 +328,13 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          enrollment_id: enrollment.id
        }}
     end
+  end
+
+  defp authoring_scope(%Scope{} = scope) do
+    %Scope{
+      institution_id: scope.institution_id,
+      project_id: scope.project_id
+    }
   end
 
   defp fetch_section(%ExecutionState{} = state, name) do
@@ -420,14 +449,11 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     from(assignment in Assignment,
       join: decision_point in DecisionPoint,
       on: decision_point.id == assignment.decision_point_id,
-      join: condition in Condition,
-      on: condition.id == assignment.condition_id,
       where:
         assignment.section_id == ^scope.section_id and
           assignment.user_id == ^scope.user_id and
           decision_point.alternatives_resource_id == ^alternatives_revision.resource_id and
-          decision_point.alternatives_revision_id == ^alternatives_revision.id and
-          condition.condition_code == ^@condition_code
+          decision_point.alternatives_revision_id == ^alternatives_revision.id
     )
   end
 
@@ -465,5 +491,53 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
           assignment.user_id == ^scope.user_id and
           outcome.activity_attempt_id == ^activity_attempt_id
     )
+  end
+
+  defp assert_thompson_policy_update(%Scope{} = scope, alternatives_revision, reward) do
+    condition = Repo.get!(Condition, reward.condition_id)
+
+    policy_state =
+      scope
+      |> policy_state_query(alternatives_revision)
+      |> Repo.one!()
+
+    assert policy_state.algorithm == :thompson_sampling
+    assert policy_state.algorithm_version == "thompson_sampling:v2"
+    assert policy_state.reward_success_count == 1
+    assert policy_state.reward_failure_count == 0
+    assert policy_state.assignment_count == 1
+    assert policy_state.last_updated_from_reward_id == reward.id
+    assert policy_state.state[condition.condition_code]["successes"] == 1
+    assert policy_state.state[condition.condition_code]["posterior_alpha"] == 2.0
+
+    policy_update = Repo.one!(policy_update_query(reward.id))
+    assert policy_update.algorithm_version == "thompson_sampling:v2"
+    assert policy_update.next_state[condition.condition_code]["successes"] == 1
+  end
+
+  defp policy_state_query(%Scope{} = scope, alternatives_revision) do
+    from(policy_state in PolicyState,
+      join: decision_point in DecisionPoint,
+      on: decision_point.id == policy_state.decision_point_id,
+      where:
+        policy_state.experiment_id in subquery(scoped_experiment_ids(scope)) and
+          decision_point.alternatives_resource_id == ^alternatives_revision.resource_id and
+          decision_point.alternatives_revision_id == ^alternatives_revision.id
+    )
+  end
+
+  defp scoped_experiment_ids(%Scope{} = scope) do
+    from(experiment in Oli.Experiments.Schemas.ExperimentDefinition,
+      where:
+        experiment.institution_id == ^scope.institution_id and
+          experiment.project_id == ^scope.project_id and
+          (is_nil(experiment.publication_id) or experiment.publication_id == ^scope.publication_id) and
+          (is_nil(experiment.section_id) or experiment.section_id == ^scope.section_id),
+      select: experiment.id
+    )
+  end
+
+  defp policy_update_query(reward_id) do
+    from(policy_update in PolicyUpdate, where: policy_update.reward_id == ^reward_id)
   end
 end
