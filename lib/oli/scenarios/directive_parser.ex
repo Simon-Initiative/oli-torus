@@ -33,6 +33,9 @@ defmodule Oli.Scenarios.DirectiveParser do
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
+    DiscussionConfigDirective,
+    DiscussionModerationDirective,
+    DiscussionDeleteDirective,
     ClassNoteDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
@@ -287,6 +290,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       "activity_customization",
       "page_objectives",
       "activity_objectives",
+      "discussion",
       "assertions"
     ]
 
@@ -308,6 +312,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
           activity_objectives:
             parse_activity_objectives_assertion(assert_data["activity_objectives"]),
+          discussion: parse_discussion_assertion(assert_data["discussion"]),
           assertions: assert_data["assertions"]
         }
 
@@ -338,6 +343,7 @@ defmodule Oli.Scenarios.DirectiveParser do
            "activity_customization",
            "page_objectives",
            "activity_objectives",
+           "discussion",
            "assertions"
          ]}
       else
@@ -357,6 +363,7 @@ defmodule Oli.Scenarios.DirectiveParser do
            "activity_customization",
            "page_objectives",
            "activity_objectives",
+           "discussion",
            "assertions"
          ]}
       end
@@ -380,6 +387,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
           activity_objectives:
             parse_activity_objectives_assertion(assert_data["activity_objectives"]),
+          discussion: parse_discussion_assertion(assert_data["discussion"]),
           assertions: assert_data["assertions"]
         }
 
@@ -717,8 +725,34 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"discussion_config" => discussion_config_data}) do
+    allowed_attrs = ["section", "enabled", "auto_accept", "anonymous_posting"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           discussion_config_data,
+           "discussion_config"
+         ) do
+      :ok ->
+        %DiscussionConfigDirective{
+          section: discussion_config_data["section"],
+          enabled: parse_optional_boolean(discussion_config_data["enabled"], "enabled"),
+          auto_accept:
+            parse_optional_boolean(discussion_config_data["auto_accept"], "auto_accept"),
+          anonymous_posting:
+            parse_optional_boolean(
+              discussion_config_data["anonymous_posting"],
+              "anonymous_posting"
+            )
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"discussion_post" => discussion_post_data}) do
-    allowed_attrs = ["student", "section", "body"]
+    allowed_attrs = ["name", "student", "section", "body", "reply_to", "anonymous"]
 
     case DirectiveValidator.validate_attributes(
            allowed_attrs,
@@ -727,9 +761,51 @@ defmodule Oli.Scenarios.DirectiveParser do
          ) do
       :ok ->
         %DiscussionPostDirective{
+          name: discussion_post_data["name"],
           student: discussion_post_data["student"],
           section: discussion_post_data["section"],
-          body: discussion_post_data["body"]
+          body: discussion_post_data["body"],
+          reply_to: discussion_post_data["reply_to"],
+          anonymous: parse_boolean(discussion_post_data["anonymous"], false, "anonymous")
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"discussion_moderation" => discussion_moderation_data}) do
+    allowed_attrs = ["post", "instructor", "action"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           discussion_moderation_data,
+           "discussion_moderation"
+         ) do
+      :ok ->
+        %DiscussionModerationDirective{
+          post: discussion_moderation_data["post"],
+          instructor: discussion_moderation_data["instructor"],
+          action: parse_discussion_moderation_action(discussion_moderation_data["action"])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"discussion_delete" => discussion_delete_data}) do
+    allowed_attrs = ["post", "actor"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           discussion_delete_data,
+           "discussion_delete"
+         ) do
+      :ok ->
+        %DiscussionDeleteDirective{
+          post: discussion_delete_data["post"],
+          actor: discussion_delete_data["actor"]
         }
 
       {:error, msg} ->
@@ -949,13 +1025,21 @@ defmodule Oli.Scenarios.DirectiveParser do
          "answer_question",
          "finalize_attempt",
          "student_exception",
+         "certificate",
+         "discussion_config",
+         "discussion_post",
+         "discussion_moderation",
+         "discussion_delete",
+         "class_note",
+         "complete_scored_page",
+         "certificate_action",
          "use",
          "collaborator",
          "media",
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -994,7 +1078,10 @@ defmodule Oli.Scenarios.DirectiveParser do
              "finalize_attempt",
              "student_exception",
              "certificate",
+             "discussion_config",
              "discussion_post",
+             "discussion_moderation",
+             "discussion_delete",
              "class_note",
              "complete_scored_page",
              "certificate_action",
@@ -1009,7 +1096,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
   end
 
@@ -1274,6 +1361,29 @@ defmodule Oli.Scenarios.DirectiveParser do
           admin_title2: data["admin_title2"],
           admin_name3: data["admin_name3"],
           admin_title3: data["admin_title3"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_discussion_assertion(nil), do: nil
+
+  defp parse_discussion_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:discussion, data) do
+      :ok ->
+        %{
+          section: data["section"],
+          post: data["post"],
+          student: data["student"],
+          visible: parse_optional_boolean(data["visible"], "visible"),
+          status: parse_optional_post_status(data["status"]),
+          contains_discussions:
+            parse_optional_boolean(data["contains_discussions"], "contains_discussions"),
+          auto_accept: parse_optional_boolean(data["auto_accept"], "auto_accept"),
+          anonymous_posting:
+            parse_optional_boolean(data["anonymous_posting"], "anonymous_posting")
         }
 
       {:error, msg} ->
@@ -1889,6 +1999,29 @@ defmodule Oli.Scenarios.DirectiveParser do
       "approve" -> :approve
       "deny" -> :deny
       other -> raise "Invalid certificate action '#{other}'. Expected approve or deny"
+    end
+  end
+
+  defp parse_discussion_moderation_action(nil),
+    do: raise("discussion_moderation requires an action")
+
+  defp parse_discussion_moderation_action(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "approve" -> :approve
+      "reject" -> :reject
+      other -> raise "Invalid discussion_moderation action '#{other}'. Expected approve or reject"
+    end
+  end
+
+  defp parse_optional_post_status(nil), do: nil
+
+  defp parse_optional_post_status(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "submitted" -> :submitted
+      "approved" -> :approved
+      "deleted" -> :deleted
+      "archived" -> :archived
+      other -> raise "Invalid discussion post status '#{other}'"
     end
   end
 
