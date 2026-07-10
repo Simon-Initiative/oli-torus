@@ -282,25 +282,28 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   defp detach_from_page(objective_id, page_slug, project_slug, author) do
     case PageEditor.acquire_lock(project_slug, page_slug, author.email) do
       {:acquired} ->
-        # We need to create the context so that we get a client-side view of the
-        # current objectives as slugs and not as ids
-        {:ok, %{objectives: objectives}} =
-          PageEditor.create_context(project_slug, page_slug, author)
+        case PageEditor.create_context(project_slug, page_slug, author) do
+          # We need to create the context so that we get a client-side view of the
+          # current objectives as slugs and not as ids.
+          {:ok, %{objectives: objectives}} ->
+            update = %{
+              "objectives" => %{
+                "attached" =>
+                  Enum.filter(Map.get(objectives, "attached"), fn s -> s != objective_id end)
+              }
+            }
 
-        # Construct the update that will filter out the objective
-        update = %{
-          "objectives" => %{
-            "attached" =>
-              Enum.filter(Map.get(objectives, "attached"), fn s -> s != objective_id end)
-          }
-        }
+            result =
+              case PageEditor.edit(project_slug, page_slug, author.email, update) do
+                {:ok, _} -> true
+                _ -> false
+              end
 
-        case PageEditor.edit(project_slug, page_slug, author.email, update) do
-          {:ok, _} ->
             PageEditor.release_lock(project_slug, page_slug, author.email)
-            true
+            result
 
           _ ->
+            PageEditor.release_lock(project_slug, page_slug, author.email)
             false
         end
 

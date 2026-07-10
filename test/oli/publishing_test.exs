@@ -445,20 +445,28 @@ defmodule Oli.PublishingTest do
 
       assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
 
+      PageEditor.acquire_lock(project.slug, activity3.slug, author.email)
+
+      assert {:ok, _} =
+               PageEditor.edit(project.slug, activity3.slug, author.email, %{deleted: true})
+
+      PageEditor.release_lock(project.slug, activity3.slug, author.email)
+
       results = Publishing.find_objective_attachments(obj1.resource_id, publication.id)
 
-      assert length(results) == 5
+      assert length(results) == 4
 
       # activity 2 should appear twice since it has the objective attached in multiple parts
       assert Enum.filter(results, fn r -> r.resource_id == activity2.resource_id end) |> length ==
                2
 
-      # the next two have it in only one part
+      # the next activity has it in only one part
       assert Enum.filter(results, fn r -> r.resource_id == activity1.resource_id end) |> length ==
                1
 
+      # this activity has the objective attached but is deleted
       assert Enum.filter(results, fn r -> r.resource_id == activity3.resource_id end) |> length ==
-               1
+               0
 
       # this activity does not have this objective attached at all
       assert Enum.filter(results, fn r -> r.resource_id == activity4.resource_id end) |> length ==
@@ -547,6 +555,25 @@ defmodule Oli.PublishingTest do
       }
 
       assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+      {:ok, %{revision: deleted_page}} =
+        Course.create_and_attach_resource(project, %{
+          objectives: %{"attached" => [obj1.resource_id]},
+          children: [],
+          content: %{},
+          title: "deleted page",
+          resource_type_id: ResourceType.id_for_page(),
+          author_id: author.id
+        })
+
+      Publishing.upsert_published_resource(publication, deleted_page)
+
+      PageEditor.acquire_lock(project.slug, deleted_page.slug, author.email)
+
+      assert {:ok, _} =
+               PageEditor.edit(project.slug, deleted_page.slug, author.email, %{deleted: true})
+
+      PageEditor.release_lock(project.slug, deleted_page.slug, author.email)
 
       results = Publishing.find_attached_objectives(publication.id)
 
