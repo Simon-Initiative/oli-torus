@@ -1702,6 +1702,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     "tolerance" => :tolerance,
     "total_rows" => :total_rows,
     "total_students" => :total_students,
+    "totals" => :totals,
     "y_axis_mode" => :y_axis_mode
   }
 

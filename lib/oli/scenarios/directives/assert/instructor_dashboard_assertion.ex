@@ -167,15 +167,8 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   defp resolve_scope(_section, "course"), do: {:ok, %{container_type: :course, container_id: nil}}
   defp resolve_scope(_section, :course), do: {:ok, %{container_type: :course, container_id: nil}}
 
-  defp resolve_scope(_section, "container:" <> id) do
-    case Integer.parse(id) do
-      {container_id, ""} when container_id > 0 ->
-        {:ok, %{container_type: :container, container_id: container_id}}
-
-      _ ->
-        {:error, "Invalid dashboard container scope '#{id}'"}
-    end
-  end
+  defp resolve_scope(section, "container:" <> id),
+    do: resolve_container_id_scope(section, id)
 
   defp resolve_scope(section, %{container: container}),
     do: resolve_container_scope(section, container)
@@ -183,22 +176,22 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   defp resolve_scope(section, %{"container" => container}),
     do: resolve_container_scope(section, container)
 
-  defp resolve_scope(_section, %{container_type: :container, container_id: id})
+  defp resolve_scope(section, %{container_type: :container, container_id: id})
        when is_integer(id) and id > 0,
-       do: {:ok, %{container_type: :container, container_id: id}}
+       do: resolve_container_id_scope(section, id)
 
-  defp resolve_scope(_section, %{"container_type" => "container", "container_id" => id}),
-    do: resolve_container_id_scope(id)
+  defp resolve_scope(section, %{"container_type" => "container", "container_id" => id}),
+    do: resolve_container_id_scope(section, id)
 
   defp resolve_scope(_section, other),
     do: {:error, "Unsupported dashboard scope #{inspect(other)}"}
 
-  defp resolve_container_scope(_section, id) when is_integer(id) and id > 0,
-    do: {:ok, %{container_type: :container, container_id: id}}
+  defp resolve_container_scope(section, id) when is_integer(id) and id > 0,
+    do: resolve_container_id_scope(section, id)
 
   defp resolve_container_scope(section, title) when is_binary(title) do
     case Integer.parse(title) do
-      {id, ""} when id > 0 -> {:ok, %{container_type: :container, container_id: id}}
+      {id, ""} when id > 0 -> resolve_container_id_scope(section, id)
       _ -> container_scope_by_title(section, title)
     end
   end
@@ -206,21 +199,35 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   defp resolve_container_scope(_section, other),
     do: {:error, "Invalid dashboard container scope #{inspect(other)}"}
 
-  defp resolve_container_id_scope(id) when is_integer(id) and id > 0,
-    do: {:ok, %{container_type: :container, container_id: id}}
+  defp resolve_container_id_scope(section, id) when is_integer(id) and id > 0,
+    do: container_scope_by_id(section, id)
 
-  defp resolve_container_id_scope(id) when is_binary(id) do
+  defp resolve_container_id_scope(section, id) when is_binary(id) do
     case Integer.parse(id) do
       {container_id, ""} when container_id > 0 ->
-        {:ok, %{container_type: :container, container_id: container_id}}
+        container_scope_by_id(section, container_id)
 
       _ ->
         {:error, "Invalid dashboard container_id #{inspect(id)}"}
     end
   end
 
-  defp resolve_container_id_scope(id),
+  defp resolve_container_id_scope(_section, id),
     do: {:error, "Invalid dashboard container_id #{inspect(id)}"}
+
+  defp container_scope_by_id(section, container_id) do
+    section.slug
+    |> DeliveryResolver.full_hierarchy()
+    |> find_node_by_resource_id(container_id)
+    |> case do
+      nil ->
+        {:error,
+         "Container id #{container_id} not found in section '#{section.slug}' dashboard hierarchy"}
+
+      _node ->
+        {:ok, %{container_type: :container, container_id: container_id}}
+    end
+  end
 
   defp container_scope_by_title(section, title) do
     section.slug
@@ -244,6 +251,16 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
 
       true ->
         Enum.find_value(node.children || [], &find_node_by_title(&1, title))
+    end
+  end
+
+  defp find_node_by_resource_id(nil, _resource_id), do: nil
+
+  defp find_node_by_resource_id(node, resource_id) do
+    if Map.get(node, :resource_id) == resource_id do
+      node
+    else
+      Enum.find_value(node.children || [], &find_node_by_resource_id(&1, resource_id))
     end
   end
 

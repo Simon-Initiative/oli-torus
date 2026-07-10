@@ -74,8 +74,9 @@ defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler do
         :ok
 
       {_, :manual} ->
-        Oban.drain_queue(queue: :snapshots, with_safety: false)
-        :ok
+        :snapshots
+        |> drain_queue()
+        |> drain_result()
 
       {_, _} ->
         :ok
@@ -84,4 +85,20 @@ defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler do
     error ->
       {:error, Exception.message(error)}
   end
+
+  defp drain_queue(queue), do: Oban.drain_queue(queue: queue, with_safety: false)
+
+  defp drain_result(result) when is_map(result) do
+    failed_counts =
+      result
+      |> Map.take([:failure, :discard, :discarded, :cancel, :cancelled])
+      |> Enum.filter(fn {_key, count} -> count != 0 end)
+
+    case failed_counts do
+      [] -> :ok
+      _ -> {:error, "snapshot queue drain failed: #{inspect(Map.new(failed_counts))}"}
+    end
+  end
+
+  defp drain_result(_result), do: :ok
 end

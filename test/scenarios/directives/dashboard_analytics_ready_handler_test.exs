@@ -1,5 +1,5 @@
 defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandlerTest do
-  use Oli.DataCase, async: true
+  use Oli.DataCase, async: false
 
   import Oli.Factory
 
