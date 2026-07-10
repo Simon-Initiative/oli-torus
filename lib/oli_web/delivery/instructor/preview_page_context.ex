@@ -826,10 +826,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     do: %{}
 
   defp bank_selection_coverage_by_objective_id(summary, exclusion_view) do
+    active_candidates = active_bank_candidate_summaries(summary, exclusion_view)
+    active_total = length(active_candidates)
+    selected_count = min(summary.count, active_total)
+
     active_counts_by_objective_id =
-      summary
-      |> active_bank_candidate_summaries(exclusion_view)
-      |> Enum.reduce(%{}, fn candidate, acc ->
+      Enum.reduce(active_candidates, %{}, fn candidate, acc ->
         Enum.reduce(candidate.objective_ids, acc, fn objective_id, objective_acc ->
           Map.update(objective_acc, objective_id, 1, &(&1 + 1))
         end)
@@ -840,9 +842,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
       {objective_id,
        %{
-         # A randomized bank can select zero questions for any individual LO even when the
-         # selection itself remains fulfillable.
-         min: 0,
+         min: max(selected_count - (active_total - active_count), 0),
          max: min(summary.count, active_count)
        }}
     end)
@@ -914,32 +914,65 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   end
 
   defp bank_selection_candidate_results_by_selection_id(section, page_revision, selections) do
+    case InstructorCustomizations.list_bank_selection_candidate_revisions_by_selection_id(
+           section,
+           page_revision,
+           selections,
+           %{}
+         ) do
+      {:ok, results_by_selection_id} ->
+        Map.new(results_by_selection_id, fn {selection_id, result} ->
+          {selection_id, normalize_bank_selection_candidate_result(selection_id, result)}
+        end)
+
+      {:error, reason} ->
+        Logger.warning(
+          "Unable to bulk summarize instructor preview bank selections for page #{page_revision.resource_id}; falling back to per-selection summaries: #{inspect(reason)}"
+        )
+
+        fallback_bank_selection_candidate_results_by_selection_id(
+          section,
+          page_revision,
+          selections
+        )
+    end
+  end
+
+  defp fallback_bank_selection_candidate_results_by_selection_id(
+         section,
+         page_revision,
+         selections
+       ) do
     Map.new(selections, fn selection ->
-      {selection["id"],
-       list_bank_selection_candidate_revisions(section, page_revision, selection)}
+      selection_id = selection["id"]
+
+      result =
+        InstructorCustomizations.list_bank_selection_candidate_revisions(
+          section,
+          page_revision,
+          selection,
+          MapSet.new()
+        )
+
+      {selection_id, normalize_bank_selection_candidate_result(selection_id, result)}
     end)
   end
 
-  defp list_bank_selection_candidate_revisions(section, page_revision, selection) do
-    case InstructorCustomizations.list_bank_selection_candidate_revisions(
-           section,
-           page_revision,
-           selection,
-           MapSet.new()
-         ) do
+  defp normalize_bank_selection_candidate_result(selection_id, result) do
+    case result do
       {:ok, revisions} ->
         {:ok, revisions}
 
       {:error, {:too_many_candidates, candidate_count}} ->
         Logger.warning(
-          "Unable to fully summarize instructor preview bank selection #{inspect(selection["id"])} because it has #{candidate_count} candidates"
+          "Unable to fully summarize instructor preview bank selection #{inspect(selection_id)} because it has #{candidate_count} candidates"
         )
 
         {:too_large, candidate_count}
 
       {:error, reason} ->
         Logger.warning(
-          "Unable to summarize instructor preview bank selection #{inspect(selection["id"])}: #{inspect(reason)}"
+          "Unable to summarize instructor preview bank selection #{inspect(selection_id)}: #{inspect(reason)}"
         )
 
         {:error, reason}

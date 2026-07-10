@@ -31,6 +31,8 @@ update this file accordingly.
 | PLAYWRIGHT_SCENARIO_TOKEN     | No       | Scenario token for Playwright automation setup endpoints                        |
 | TORUS_LTI_PROJECT_TITLE       | No       | Optional title override for the temporary Torus LTI test project                |
 | GOOGLE_DOCS_IMPORT_FILE_ID    | No       | Google Docs file ID used by Google Docs import Playwright automation            |
+| DUMMY_LTI_TOOL_ADMIN_PASSWORD | No       | Admin password used to register Torus with the dummy LTI tool                   |
+| DUMMY_LTI_TOOL_BASE_URL       | No       | Dummy LTI tool base URL used by LTI external tool Playwright automation         |
 
 - `CANVAS_*` environment variables configure the Canvas-to-Torus grade passback Playwright
   smoke test. They are not required by the Torus application runtime. The student credentials
@@ -41,8 +43,8 @@ update this file accordingly.
   and are not required for the Torus application runtime. Do not commit real Canvas credentials
   or API tokens.
 
-- Google Docs import Playwright settings are local/test-runner configuration only and are not
-  required for the Torus application runtime.
+- Google Docs import and dummy LTI external tool Playwright settings are local/test-runner
+  configuration only and are not required for the Torus application runtime.
 
 ### Infrastructure Changes
 

@@ -160,7 +160,6 @@ defmodule Oli.Scenarios.Engine do
           activity_evaluations: %{},
           gates: %{},
           scenario_time: nil,
-          params: opts[:params] || %{},
           current_author: author,
           current_institution: institution
         }

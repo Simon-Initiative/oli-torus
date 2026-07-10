@@ -93,6 +93,7 @@ const ToolbarOption: React.FC<{
       key={component}
       onClick={onClick}
       className="component-button"
+      data-component={component}
       disabled={disabled}
       ref={ref}
     >
