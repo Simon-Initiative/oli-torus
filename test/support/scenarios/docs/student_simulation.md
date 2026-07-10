@@ -261,19 +261,103 @@ directives:
 
 ## discussion_post
 
-Creates a learner discussion post in a section and then evaluates certificate qualification synchronously.
+Creates a learner course discussion post in a section. Scenario execution also processes certificate eligibility synchronously, preserving the deterministic side effect that production normally enqueues when certificate checks are required.
 
 ### Parameters
+- `name`: Scenario-local post name for later moderation, deletion, or assertions
 - `student`: Name of the student user (required)
 - `section`: Name of the section (required)
 - `body`: Post body text (required)
+- `reply_to`: Scenario-local parent post name when creating a reply
+- `anonymous`: Whether to create the post anonymously
 
 ### Example
 ```yaml
 - discussion_post:
+    name: "alice_intro"
     student: "alice"
     section: "my_section"
     body: "My discussion contribution"
+```
+
+---
+
+## discussion_config
+
+Configures course discussions on a section or product blueprint by updating the root section resource collaboration config and the section `contains_discussions` flag.
+
+### Parameters
+- `section`: Scenario name of the section or product (required)
+- `enabled`: Whether Course Discussions are enabled
+- `auto_accept`: Whether posts are visible without instructor approval
+- `anonymous_posting`: Whether anonymous posting is enabled
+
+### Example
+```yaml
+- discussion_config:
+    section: "my_product"
+    enabled: true
+    auto_accept: false
+```
+
+---
+
+## discussion_moderation
+
+Applies instructor moderation to a named discussion post.
+
+### Parameters
+- `post`: Scenario-local post name (required)
+- `instructor`: Scenario user name for the instructor (required)
+- `action`: `approve` or `reject` (required)
+
+### Example
+```yaml
+- discussion_moderation:
+    post: "alice_intro"
+    instructor: "instructor_1"
+    action: "approve"
+```
+
+---
+
+## discussion_delete
+
+Deletes a named discussion post through the collaboration authorization path.
+
+### Parameters
+- `post`: Scenario-local post name (required)
+- `actor`: Scenario user name for the deleting user (required)
+
+### Example
+```yaml
+- discussion_delete:
+    post: "alice_intro"
+    actor: "alice"
+```
+
+---
+
+## discussion assertions
+
+Use `assert.discussion` to verify course discussion configuration, named post status, and student-visible discussion listings.
+
+### Supported checks
+- `contains_discussions`
+- `auto_accept`
+- `anonymous_posting`
+- named post `status`: `submitted`, `approved`, `deleted`, or `archived`
+- named post `visible` for a specific student
+
+### Example
+```yaml
+- assert:
+    discussion:
+      section: "my_section"
+      post: "alice_intro"
+      student: "bob"
+      status: "approved"
+      visible: true
 ```
 
 ---

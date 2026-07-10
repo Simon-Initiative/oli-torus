@@ -106,6 +106,18 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "admin_title3"
           ]
 
+        :discussion ->
+          [
+            "section",
+            "post",
+            "student",
+            "visible",
+            "status",
+            "contains_discussions",
+            "auto_accept",
+            "anonymous_posting"
+          ]
+
         :gating ->
           [
             "gate",

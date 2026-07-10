@@ -114,6 +114,14 @@ export async function openStudentDeliveryPracticeForLoggedInStudent(
   await studentCourse.openPage(activityTitle);
 }
 
+export async function waitForMainLiveView(page: Page) {
+  await page.waitForFunction(
+    () => document.querySelector('[data-phx-main]')?.classList.contains('phx-connected'),
+    undefined,
+    { timeout: 15_000 },
+  );
+}
+
 function learnPath(sectionSlug: string) {
   return `/sections/${sectionSlug}/learn?sidebar_expanded=true&selected_view=outline`;
 }
