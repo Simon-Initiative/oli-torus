@@ -64,10 +64,70 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     end
   end
 
+  def select(
+        %AlternativesStrategyContext{
+          mode: :review,
+          alternative_groups_by_id: by_id,
+          activity_resource_ids: activity_resource_ids
+        } = context,
+        %{
+          "children" => children,
+          "alternatives_id" => alternatives_id
+        }
+      ) do
+    decision_point = Map.get(by_id, alternatives_id)
+
+    with [] <- select_attempted_activity_branch(children, activity_resource_ids),
+         {%Scope{} = scope, decision_point} <-
+           scoped_decision_point(context, decision_point, false),
+         {:ok, %AssignmentDecision{status: :assigned} = decision} <-
+           assigned_condition(scope, decision_point),
+         selections when selections != [] <-
+           select_matching_condition(children, decision_point, decision.condition_code) do
+      selections
+    else
+      selections when is_list(selections) and selections != [] ->
+        selections
+
+      {:ok, %AssignmentDecision{status: :no_experiment}} ->
+        []
+
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        Logger.warning(
+          "A/B testing review assignment could not be resolved: #{error.type}: #{error.message}"
+        )
+
+        []
+
+      {:error, error} ->
+        Logger.warning(
+          "A/B testing review assignment could not be resolved: #{inspect_error(error)}"
+        )
+
+        []
+
+      [] ->
+        []
+
+      _ ->
+        []
+    end
+  end
+
   def select(_, %{"children" => children}), do: display_first(children)
 
   defp assign_condition(%Scope{} = scope, decision_point) do
     Oli.Experiments.assign_condition(%AssignConditionRequest{
+      scope: scope,
+      alternatives_resource_id: decision_point.id,
+      alternatives_revision_id: decision_point.revision_id,
+      decision_point_key: decision_point_key(decision_point.id),
+      available_condition_codes: Enum.map(decision_point.options, &option_condition_code/1)
+    })
+  end
+
+  defp assigned_condition(%Scope{} = scope, decision_point) do
+    Oli.Experiments.assigned_condition(%AssignConditionRequest{
       scope: scope,
       alternatives_resource_id: decision_point.id,
       alternatives_revision_id: decision_point.revision_id,
@@ -97,9 +157,16 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     end
   end
 
-  defp scoped_decision_point(_context, nil), do: {:error, :missing_decision_point}
+  defp scoped_decision_point(context, decision_point, include_publication? \\ true)
 
-  defp scoped_decision_point(%AlternativesStrategyContext{} = context, decision_point) do
+  defp scoped_decision_point(_context, nil, _include_publication?),
+    do: {:error, :missing_decision_point}
+
+  defp scoped_decision_point(
+         %AlternativesStrategyContext{} = context,
+         decision_point,
+         include_publication?
+       ) do
     section = maybe_section(context)
     section_id = context.section_id || (section && section.id)
     project_id = context.project_id || (section && section.base_project_id)
@@ -109,7 +176,9 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
         institution_id: context.institution_id || (section && section.institution_id),
         project_id: project_id,
         project_slug: context.project_slug,
-        publication_id: context.publication_id || publication_id(section_id, decision_point.id),
+        publication_id:
+          context.publication_id ||
+            scoped_publication_id(section_id, decision_point.id, include_publication?),
         section_id: section_id,
         section_slug: context.section_slug,
         user_id: context.user && context.user.id,
@@ -159,6 +228,37 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
   defp decision_point_key(alternatives_resource_id),
     do: "alternatives:#{alternatives_resource_id}"
 
+  defp scoped_publication_id(section_id, alternatives_resource_id, true),
+    do: publication_id(section_id, alternatives_resource_id)
+
+  defp scoped_publication_id(_section_id, _alternatives_resource_id, false), do: nil
+
+  defp select_attempted_activity_branch(_children, []), do: []
+
+  defp select_attempted_activity_branch(children, activity_resource_ids) do
+    attempted = MapSet.new(activity_resource_ids)
+
+    case Enum.find(children, fn alternative ->
+           alternative
+           |> activity_ids()
+           |> Enum.any?(&MapSet.member?(attempted, &1))
+         end) do
+      nil ->
+        []
+
+      %{"value" => value} ->
+        select_matching_value(children, value)
+    end
+  end
+
+  defp activity_ids(%{"type" => "activity", "activity_id" => activity_id}), do: [activity_id]
+
+  defp activity_ids(%{"children" => children}) when is_list(children) do
+    Enum.flat_map(children, &activity_ids/1)
+  end
+
+  defp activity_ids(_element), do: []
+
   defp select_matching_condition(children, decision_point, condition) do
     case Enum.find(decision_point.options, fn option ->
            option_matches_condition?(option, condition)
@@ -167,20 +267,24 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
         []
 
       %{"id" => option_id} ->
-        selections =
-          Enum.map(children, fn alt ->
-            if alt["value"] == option_id do
-              %Selection{alternative: alt}
-            else
-              %Selection{alternative: alt, hidden: true}
-            end
-          end)
+        select_matching_value(children, option_id)
+    end
+  end
 
-        if Enum.any?(selections, &(&1.hidden == false)) do
-          selections
+  defp select_matching_value(children, value) do
+    selections =
+      Enum.map(children, fn alt ->
+        if alt["value"] == value do
+          %Selection{alternative: alt}
         else
-          []
+          %Selection{alternative: alt, hidden: true}
         end
+      end)
+
+    if Enum.any?(selections, &(&1.hidden == false)) do
+      selections
+    else
+      []
     end
   end
 
@@ -189,6 +293,9 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
   defp option_matches_condition?(option, condition) do
     condition in [Map.get(option, "id"), Map.get(option, "name")]
   end
+
+  defp inspect_error(error) when is_atom(error), do: Atom.to_string(error)
+  defp inspect_error(_error), do: "unexpected_error"
 
   defp display_first(children) do
     case children do

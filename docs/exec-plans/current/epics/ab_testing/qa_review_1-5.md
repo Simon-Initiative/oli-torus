@@ -74,6 +74,23 @@ The active experiment was also correctly started:
   - A/B decision-point delivery no longer queries active experiments to infer institution for open/free sections.
   - Added regression coverage proving an evaluated activity inside an assigned branch creates an outcome, reward, and Thompson policy update for an institutionless open/free section.
 
+### [x] Finding 7: Scored review renders fallback alternative instead of assigned branch
+
+- Status: Fixed
+- Severity: High
+- Area: Scored assessment review / native A/B decision-point rendering
+- QA context: A learner assigned to Option 1 completed an ordering activity correctly on a scored page. On the scored review page, delivery rendered the Option 2 multiple-choice activity as incorrect.
+- Expected: Review mode should render the same A/B decision-point branch the learner was assigned when they attempted the scored page.
+- Actual: Native A/B decision-point selection only ran in delivery mode. Review mode fell back to the first alternatives child, which could be a different option than the learner's assigned branch.
+- Impact:
+  - Scored review can show a different activity than the learner answered.
+  - Correct submissions can appear incorrect because the rendered activity attempt and selected branch no longer match.
+- Resolution:
+  - A/B decision-point review rendering now first selects the branch containing the activity attempts from the submitted page attempt.
+  - For non-activity branches, review falls back to a read-only lookup of prior exposure-backed assignment evidence and does not create assignments or exposures.
+  - If review cannot prove the original branch, it renders no A/B branch instead of guessing the first option.
+  - Added regression coverage proving review mode renders the assigned branch when it is not first, prefers the branch containing attempted activities, and fails closed when no prior branch can be proven.
+
 ### [x] Finding 4: Active experiments are pinned to a specific alternatives revision
 
 - Status: Fixed

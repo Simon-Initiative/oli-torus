@@ -266,6 +266,20 @@ defmodule Oli.Experiments do
   def assign_condition(_request), do: invalid_request("expected AssignConditionRequest")
 
   @doc """
+  Returns an existing assignment decision for a delivery/review decision point without
+  creating an assignment or recording exposure.
+  """
+  def assigned_condition(%Oli.Experiments.AssignConditionRequest{} = request) do
+    with {:ok, scope} <- validate_scope(request.scope),
+         :ok <- require_delivery_scope(scope),
+         {:ok, decision} <- existing_assignment_decision(request, scope) do
+      {:ok, decision}
+    end
+  end
+
+  def assigned_condition(_request), do: invalid_request("expected AssignConditionRequest")
+
+  @doc """
   Exposure recording API placeholder. Runtime evidence writes are implemented in Phase 3.
   """
   def record_exposure(%Oli.Experiments.RecordExposureRequest{} = request) do
@@ -1069,6 +1083,41 @@ defmodule Oli.Experiments do
 
     (total > 0 and condition) &&
       Map.get(assignment_counts, condition.id, 0) / total > guardrails["imbalance_threshold"]
+  end
+
+  defp existing_assignment_decision(request, scope) do
+    query =
+      from exposure in Exposure,
+        join: assignment in Assignment,
+        on: assignment.id == exposure.assignment_id,
+        join: experiment in ExperimentDefinitionSchema,
+        on: experiment.id == assignment.experiment_id,
+        join: decision_point in DecisionPoint,
+        on: decision_point.id == assignment.decision_point_id,
+        join: condition in Condition,
+        on: condition.id == assignment.condition_id,
+        where:
+          experiment.project_id == ^scope.project_id and
+            (is_nil(experiment.section_id) or experiment.section_id == ^scope.section_id) and
+            exposure.section_id == ^scope.section_id and
+            exposure.enrollment_id == ^scope.enrollment_id and
+            exposure.user_id == ^scope.user_id and
+            exposure.content_revision_id == ^request.alternatives_revision_id and
+            decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
+            decision_point.decision_point_key == ^request.decision_point_key and
+            condition.active == true and
+            condition.condition_code in ^request.available_condition_codes,
+        order_by: [desc: exposure.id],
+        limit: 1,
+        select: {assignment, condition}
+
+    case Repo.one(query) do
+      {%Assignment{} = assignment, %Condition{} = condition} ->
+        {:ok, to_assignment_decision(assignment, condition, true)}
+
+      nil ->
+        {:ok, %AssignmentDecision{status: :no_experiment}}
+    end
   end
 
   defp assign_or_reuse(%{status: :no_experiment}, _scope),

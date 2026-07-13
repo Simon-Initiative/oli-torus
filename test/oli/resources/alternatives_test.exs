@@ -395,6 +395,50 @@ defmodule Oli.Resources.AlternativesTest do
       assert Repo.aggregate(Exposure, :count, :id) == 1
     end
 
+    test "review mode renders the originally assigned native decision point condition without exposure" do
+      %{context: context, element: element} =
+        native_decision_point_setup(children: ["alt-b", "alt-a"])
+
+      assert [
+               %{alternative: %{"value" => "alt-b"}, hidden: true},
+               %{alternative: %{"value" => "alt-a"}, hidden: false}
+             ] = Alternatives.select(context, element)
+
+      review_context = %{context | mode: :review}
+
+      assert [
+               %{alternative: %{"value" => "alt-b"}, hidden: true},
+               %{alternative: %{"value" => "alt-a"}, hidden: false}
+             ] = Alternatives.select(review_context, element)
+
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+      assert Repo.aggregate(Exposure, :count, :id) == 1
+    end
+
+    test "review mode prefers the branch containing attempted activities" do
+      %{context: context, element: element} =
+        native_decision_point_setup(children: [{"alt-b", 222}, {"alt-a", 111}])
+
+      review_context = %{context | mode: :review, activity_resource_ids: [111]}
+
+      assert [
+               %{alternative: %{"value" => "alt-b"}, hidden: true},
+               %{alternative: %{"value" => "alt-a"}, hidden: false}
+             ] = Alternatives.select(review_context, element)
+
+      assert Repo.aggregate(Assignment, :count, :id) == 0
+      assert Repo.aggregate(Exposure, :count, :id) == 0
+    end
+
+    test "review mode renders no branch when no prior native assignment can be proven" do
+      %{context: context, element: element} = native_decision_point_setup(active?: false)
+
+      assert [] = Alternatives.select(%{context | mode: :review}, element)
+
+      assert Repo.aggregate(Assignment, :count, :id) == 0
+      assert Repo.aggregate(Exposure, :count, :id) == 0
+    end
+
     test "renders first option when no native experiment matches" do
       %{context: context, element: element} = native_decision_point_setup(active?: false)
 
@@ -426,6 +470,7 @@ defmodule Oli.Resources.AlternativesTest do
     active? = Keyword.get(opts, :active?, true)
     options = Keyword.get(opts, :options, native_options())
     section_institution? = Keyword.get(opts, :section_institution?, true)
+    children = Keyword.get(opts, :children, ["alt-a", "alt-b"])
 
     institution = insert(:institution)
     project = insert(:project)
@@ -494,12 +539,29 @@ defmodule Oli.Resources.AlternativesTest do
       element: %{
         "type" => "alternatives",
         "alternatives_id" => alternatives_id,
-        "children" => [
-          %{"type" => "alternative", "value" => "alt-a", "children" => []},
-          %{"type" => "alternative", "value" => "alt-b", "children" => []}
-        ]
+        "children" =>
+          Enum.map(children, fn value ->
+            alternative_child(value)
+          end)
       }
     }
+  end
+
+  defp alternative_child({value, activity_id}) do
+    %{
+      "type" => "alternative",
+      "value" => value,
+      "children" => [
+        %{
+          "type" => "activity",
+          "activity_id" => activity_id
+        }
+      ]
+    }
+  end
+
+  defp alternative_child(value) do
+    %{"type" => "alternative", "value" => value, "children" => []}
   end
 
   defp create_native_experiment(%Scope{} = scope, revision, condition_code) do
