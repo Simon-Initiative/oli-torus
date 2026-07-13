@@ -3,7 +3,8 @@
 # This scenario verifies that a freshly created section with enrolled learners
 # but no learner activity renders sensible dashboard defaults. It covers the
 # course-scope progress tile at 0% completion and the student support tile when
-# there is not enough activity/proficiency data to classify learners.
+# there is not enough activity/proficiency data to classify learners. It also
+# verifies that the assessments tile lists graded work with zero submissions.
 
 - use:
     file: "base.scenario.yaml"

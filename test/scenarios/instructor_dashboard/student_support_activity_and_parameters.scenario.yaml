@@ -235,3 +235,19 @@
           inactive_count: 1
           active_student_names: ["Recent Struggling"]
           inactive_student_names: ["Inactive Struggling"]
+
+- assert:
+    instructor_dashboard_student_support:
+      section: "support_followup_section"
+      parameters:
+        struggling_proficiency_lte: 10
+      has_activity_data: true
+      buckets:
+        struggling:
+          count: 0
+        on_track:
+          count: 2
+          active_count: 1
+          inactive_count: 1
+          active_student_names: ["Recent Struggling"]
+          inactive_student_names: ["Inactive Struggling"]
