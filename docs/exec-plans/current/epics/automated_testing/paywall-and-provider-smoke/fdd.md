@@ -186,66 +186,63 @@ Supported YAML shapes:
     payment_options: "deferred"
 ```
 
-### 5.2 Discount Setup
-This design introduces a narrow first-class scenario directive rather than a hidden hook. Discount behavior is user-visible and is part of the required matrix, so it should remain readable in YAML.
+### 5.2 Discount And Test-State Setup
+The implemented design keeps institution-qualified pricing readable in YAML without adding a new top-level discount directive. Instead, `SectionDirective` gained an `institution` field so the scenario can create the section in the qualifying institution and let the section handler resolve inherited price and `requires_payment` through the existing product pricing rules.
 
-The minimum required discount coverage for this work item is one deterministic discount type. The default implementation target is percentage discount coverage. Fixed-amount coverage remains optional unless implementation cost is comparably low.
-
-Proposed directive:
+Implemented `SectionDirective` shape:
 
 ```elixir
-defmodule InstitutionDiscountDirective do
-  defstruct [
-    :product,
-    :institution,
-    :type,
-    :amount,
-    :percentage,
-    :bypass_paywall
-  ]
-end
+defstruct [
+  :name,
+  :title,
+  :from,
+  :type,
+  :registration_open,
+  :slug,
+  :open_and_free,
+  :requires_enrollment,
+  :start_date,
+  :end_date,
+  :requires_payment,
+  :amount,
+  :payment_options,
+  :has_grace_period,
+  :grace_period_days,
+  :grace_period_strategy,
+  :pay_by_institution,
+  :institution
+]
 ```
 
-Supported YAML shapes:
+Supported YAML shape for the qualifying case:
 
 ```yaml
-- institution_discount:
-    product: "paid_template"
+- section:
+    name: "paid_section"
+    from: "paid_template"
     institution: "cmu"
-    type: "percentage"
-    percentage: 20
-```
-
-or
-
-```yaml
-- institution_discount:
-    product: "paid_template"
-    institution: "cmu"
-    type: "fixed_amount"
-    amount:
-      currency: "USD"
-      amount: 5
 ```
 
 Rationale:
 
-- keeps paid-course bootstrap readable
-- avoids burying a user-visible business rule in an opaque hook
-- gives future Lane 10 work reusable deterministic discount setup
+- keeps the qualifying versus non-qualifying difference visible in YAML
+- reuses the existing paywall pricing resolution instead of duplicating discount semantics in the scenario layer
+- avoids introducing a one-off top-level directive that this slice did not otherwise need
+
+Guest enrollment and provider-pending payment setup are handled by deterministic scenario hooks in `test/scenarios/student_payment/hooks.ex`. Those are setup-only concerns that produce seeded params for Playwright, not reusable learner-visible business concepts that need their own long-lived YAML DSL surface.
 
 ### 5.3 Payment Completion Strategy
-This design does not add provider-specific scenario directives for "mark payment successful". Instead, post-payment behavior is driven through the same Torus endpoints the app already uses, so the smoke remains closer to the production interaction.
+This design does not add provider-specific scenario directives for "mark payment successful". Instead, post-payment behavior keeps the learner-visible unlock in Playwright while allowing scenario hooks to prepare prerequisite internal state for provider-backed cases.
 
 Supported completion paths:
 
 - payment code: Playwright drives `GET /sections/:slug/payment/code` and `POST /sections/:slug/payment/code`
-- Stripe: Playwright or a shared test helper posts to:
-  - `POST /api/v1/payments/s/create-payment-intent`
-  - `POST /api/v1/payments/s/success`
-- Cashnet: Playwright or a shared test helper posts to:
-  - `POST /api/v1/payments/c/create-payment-form`
-  - `POST /api/v1/payments/c/success`
+- Stripe:
+  - a scenario hook creates a pending Stripe payment and exposes the intent id
+  - Playwright posts the simulated success payload to `POST /api/v1/payments/s/success`
+- Cashnet:
+  - a scenario hook creates a pending Cashnet payment and exposes the reference fields
+  - Playwright posts the simulated success payload to `POST /api/v1/payments/c/success`
 
 ### 5.4 Provider Payload Contracts
 Stripe payload contract is based on official Stripe `PaymentIntent` shape plus the Torus implementation's actual needs.
@@ -295,7 +292,7 @@ Scenario support may need:
 
 - parser and validator updates for new fields on product and section directives
 - handler updates to apply paywall values during or immediately after product or section creation
-- a new scenario directive for institution discounts
+- a scenario hook module for guest enrollment and provider-pending payment setup
 
 No new test-only persistent payment tables or fake-provider records should be added.
 
@@ -339,7 +336,7 @@ Mitigations:
 - If both product and section define inconsistent paywall values, the documented precedence must produce deterministic resulting section state.
 - If provider success payloads drift from current Torus expectations, provider-smoke cases should fail with explicit endpoint or unlock assertions rather than silent mismatches.
 - If Cashnet config values such as `CASHNET_NAME` are missing in test environments, the Cashnet success case must fail fast with a clear setup error.
-- If a discount directive targets an unknown product or institution, scenario execution must fail explicitly.
+- If a section targets an unknown institution for pricing resolution, scenario execution must fail explicitly.
 
 ## 11. Observability
 No new production telemetry is required for this work item.
@@ -396,16 +393,15 @@ This design is additive:
 No production behavior should change unless scenario support or test helpers accidentally leak into normal runtime paths; the implementation must avoid that.
 
 ## 15. Risks & Mitigations
-- Risk: Scenario support for paid setup sprawls into a broad commerce DSL. Mitigation: add only the explicit fields and directive needed for this work item.
-- Risk: Discount modeling becomes too opaque if hidden behind hooks. Mitigation: use a narrow first-class directive.
+- Risk: Scenario support for paid setup sprawls into a broad commerce DSL. Mitigation: add only the explicit fields needed for the cases, and keep hooks limited to setup-only states.
+- Risk: Discount modeling becomes too opaque if hidden behind hooks. Mitigation: keep institution targeting explicit on the section YAML and reserve hooks for guest and pending-payment setup only.
 - Risk: Provider-smoke cases end up bypassing too much of Torus. Mitigation: drive completion through current Torus endpoints rather than mutating DB state directly.
 - Risk: Cashnet contract remains partly inferred. Mitigation: document the assumption and anchor tests to current Torus callback expectations.
 - Risk: Product and section paywall semantics become confusing. Mitigation: document and test inheritance plus override precedence explicitly.
 
 ## 16. Open Questions & Follow-ups
-- Confirm the exact product or section service calls that should apply the new paywall fields in scenario handlers so the implementation aligns with normal domain boundaries.
-- Confirm whether any existing discount creation API can be reused directly from a scenario handler, or whether a thin orchestration wrapper should be introduced.
 - If internal Cashnet vendor docs surface later, compare them against the assumed callback contract and update the tests if necessary.
+- If later Lane 10 work needs richer discount matrices than institution-qualified pricing, reassess whether a first-class discount directive becomes worthwhile.
 
 ## 17. References
 - `docs/exec-plans/current/epics/automated_testing/paywall-and-provider-smoke/informal.md`
@@ -426,3 +422,12 @@ No production behavior should change unless scenario support or test helpers acc
 - `lib/oli/scenarios/directive_types.ex`
 - `lib/oli/scenarios/directives/product_handler.ex`
 - `lib/oli/scenarios/directives/section_handler.ex`
+- `test/scenarios/student_payment/hooks.ex`
+- `lib/oli_web/controllers/playwright_session_controller.ex`
+
+## Decision Log
+### 2026-07-13 - Replace Planned Discount Directive With Section Institution Support
+- Change: Replaced the planned `institution_discount` directive design with the implemented section-level `institution` field and documented hooks for guest and provider-pending state setup.
+- Reason: The delivered implementation reused existing paywall pricing logic and kept the YAML surface smaller while still preserving readable qualifying versus non-qualifying scenarios.
+- Evidence: `lib/oli/scenarios/directive_types.ex`, `lib/oli/scenarios/directive_parser.ex`, `lib/oli/scenarios/directives/section_handler.ex`, `test/scenarios/student_payment/hooks.ex`
+- Impact: Updates the interface contract for future scenario authors and clarifies that Stripe and Cashnet smoke coverage seeds pending payments through hooks before Playwright drives success callbacks.

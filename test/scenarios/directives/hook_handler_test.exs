@@ -231,7 +231,9 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
 
       assert length(result.errors) == 1
       [{_directive, error_msg}] = result.errors
-      refute error_msg =~ "Function Elixir.Oli.Scenarios.StudentPayment.Hooks.create_payment_code/1 not found"
+
+      refute error_msg =~
+               "Function Elixir.Oli.Scenarios.StudentPayment.Hooks.create_payment_code/1 not found"
     end
   end
 

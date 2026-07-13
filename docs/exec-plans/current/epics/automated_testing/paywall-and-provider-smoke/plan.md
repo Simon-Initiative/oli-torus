@@ -44,7 +44,7 @@ This plan does not attempt to:
 - Product-level paywall fields establish defaults for sections created from that product.
 - Section-level paywall fields explicitly override inherited defaults when a case needs section-specific behavior.
 - Discount coverage minimum is one deterministic discount type. Default implementation target is percentage discount coverage unless fixed-amount coverage is materially cheaper.
-- First-class scenario directives are preferred over opaque hooks for paywall and discount setup because these capabilities are expected to be reused by later Lane 10 work.
+- The implemented split is section-level DSL for institution-qualified pricing, plus deterministic hooks for guest enrollment and provider-pending payment setup.
 
 ## Phase 1: Lock The Coverage Contract And File Topology
 - Goal: Translate the combined requirements into an executable automation contract and identify the exact scenario/bootstrap and Playwright file inventory.
@@ -92,11 +92,12 @@ This plan does not attempt to:
     - `lib/oli/scenarios/engine.ex`
     - `lib/oli/scenarios/directives/product_handler.ex`
     - `lib/oli/scenarios/directives/section_handler.ex`
-    - `lib/oli/scenarios/directives/institution_discount_handler.ex`
     - `priv/schemas/v0-1-0/scenario.schema.json`
     - `test/support/scenarios/docs/products.md`
     - `test/support/scenarios/docs/sections.md`
-    - optional new scenario docs file if the paywall and discount surface warrants it
+    - `test/scenarios/student_payment/hooks.ex`
+    - `lib/oli_web/controllers/playwright_session_controller.ex`
+    - optional new scenario docs file if the paywall surface warrants it
 - Planned case-to-file mapping for Phase 1 lock:
   - `unpaid-no-grace`
     - bootstrap: `unpaid-no-grace.scenario.yaml`
@@ -152,8 +153,8 @@ This plan does not attempt to:
   - [ ] Extend `SectionDirective` to support the same paywall fields.
   - [ ] Implement documented precedence so section-level values override product-derived defaults.
   - [ ] Update parser, validator, engine wiring, handlers, and schema validation so the new fields are fully supported end to end.
-  - [ ] Add a first-class `institution_discount` scenario directive with deterministic product and institution targeting.
-  - [ ] Reuse existing domain APIs for discount creation if possible; otherwise add the thinnest orchestration layer needed.
+  - [ ] Add section-level institution targeting so a scenario can resolve institution-qualified pricing through existing paywall rules.
+  - [ ] Add a narrow scenario hook module only for setup-only states that are awkward or inappropriate to model as reusable YAML primitives, specifically guest enrollment and provider-pending payment setup.
   - [ ] Update scenario docs for products, sections, and any new directive doc needed for discounts.
 - Testing Tasks:
   - [ ] Add parser and validator tests for new product and section fields.
@@ -166,7 +167,7 @@ This plan does not attempt to:
   - [ ] Validate representative bootstrap YAML files as they are authored.
   - [ ] Command(s): `mix test test/scenarios/validation test/oli/scenarios`
 - Definition of Done:
-  - YAML can express paid-course setup and institution discount setup without hooks for the core covered cases.
+  - YAML can express paid-course setup and institution-qualified pricing for the core covered cases, while hooks remain limited to guest and provider-pending setup.
   - Product-to-section inheritance and section override behavior are implemented and covered.
 - Gate:
   - A representative bootstrap scenario for a paid product, paid section, enrolled learner, and institution discount parses, validates, and executes successfully.
@@ -250,11 +251,11 @@ This plan does not attempt to:
     - assert learner can now access course content
   - [ ] Implement payment code unlock by driving the real learner-facing payment code path.
   - [ ] Implement Stripe simulated unlock by:
-    - creating the pending payment through current Torus Stripe endpoints
+    - creating the pending payment through scenario setup hooks
     - posting the simulated success payload that matches current Torus expectations
     - verifying learner access unlock
   - [ ] Implement Cashnet simulated unlock by:
-    - creating the pending payment form or ref through current Torus Cashnet endpoints
+    - creating the pending payment ref through scenario setup hooks
     - posting the simulated success payload that matches current Torus expectations
     - verifying learner access unlock
   - [ ] Keep the simulated payload shapes aligned with current Torus controller contracts and documented assumptions.
@@ -314,3 +315,10 @@ This plan does not attempt to:
 - Gate D: Playwright proves the visible pre-payment learner experience across no-grace, active-grace, expired-grace, discount, and guest cases.
 - Gate E: Playwright proves learner unlock after payment code redemption and simulated Stripe and Cashnet success handling.
 - Gate F: Documentation and validation steps are aligned with the implemented automation surface.
+
+## Decision Log
+### 2026-07-13 - Record Actual DSL And Hook Boundary
+- Change: Updated the plan to reflect the implemented boundary of section-level institution support in the DSL and hooks for guest plus provider-pending setup.
+- Reason: The implementation intentionally avoided a new top-level discount directive and also avoided provider create-intent/form requests from Playwright.
+- Evidence: `lib/oli/scenarios/directive_types.ex`, `lib/oli/scenarios/directives/section_handler.ex`, `test/scenarios/student_payment/hooks.ex`, `assets/automation/tests/torus/student_payment/payment-unlock.spec.ts`
+- Impact: Future contributors can follow the implemented path without reverse-engineering why some setup lives in YAML and some in hooks.

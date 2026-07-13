@@ -45,82 +45,127 @@ acceptance_criteria:
     verification_method: automated
     proofs: []
   - id: AC-004
-    title: A first-class scenario capability can create an institution-specific discount for the product or paid-course world under test, with at least one deterministic discount type covered by the work item
+    title: A first-class scenario capability can create institution-qualified pricing for the paid-course world under test, with at least one deterministic discount path covered by the work item
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "lib/oli/scenarios/directive_types.ex"
+      - "lib/oli/scenarios/directive_parser.ex"
+      - "lib/oli/scenarios/directives/section_handler.ex"
+      - "test/oli/scenarios/product_test.exs"
   - id: AC-005
     title: The no-grace unpaid learner case redirects the learner to the payment-required UI instead of course content
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/unpaid-no-grace.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/paywall-ui.spec.ts"
   - id: AC-006
     title: The no-grace unpaid learner case shows visible payment-required messaging, the course fee, and the correct payment method controls for the configured payment options
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/unpaid-no-grace.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/paywall-ui.spec.ts"
   - id: AC-007
     title: The active-grace learner case allows the learner to access course content while still unpaid
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/unpaid-active-grace.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/paywall-ui.spec.ts"
   - id: AC-008
     title: The active-grace learner case shows a visible grace-period banner and a visible pay-now path
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/unpaid-active-grace.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/paywall-ui.spec.ts"
   - id: AC-009
     title: The expired-grace learner case blocks course access and shows the payment-required UI instead of the grace-period banner
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/unpaid-expired-grace.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/paywall-ui.spec.ts"
   - id: AC-010
     title: A learner in the qualifying institution sees the discounted price in the payment UI
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/discount-qualifying.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/paywall-ui.spec.ts"
   - id: AC-011
     title: A learner outside the qualifying institution sees the standard price rather than the discounted price
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/discount-non-qualifying.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/paywall-ui.spec.ts"
   - id: AC-012
     title: Guest learners on paid sections are blocked from a normal payment flow and shown the existing account-required or create-account messaging
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "test/scenarios/student_payment/hooks.ex"
+      - "assets/automation/tests/torus/student_payment/guest-paid-section.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/paywall-ui.spec.ts"
   - id: AC-013
     title: A learner blocked before payment code redemption can access the section after successful payment code redemption
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/payment-code-unlock.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/payment-unlock.spec.ts"
   - id: AC-014
     title: A learner blocked before Stripe payment can access the section after Torus processes a simulated Stripe success response through existing Torus payment endpoints
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "test/scenarios/student_payment/hooks.ex"
+      - "assets/automation/tests/torus/student_payment/stripe-unlock.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/payment-unlock.spec.ts"
   - id: AC-015
     title: A learner blocked before Cashnet payment can access the section after Torus processes a simulated Cashnet success response through existing Torus payment endpoints
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "test/scenarios/student_payment/hooks.ex"
+      - "assets/automation/tests/torus/student_payment/cashnet-unlock.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/payment-unlock.spec.ts"
   - id: AC-016
     title: The Stripe simulated success path uses a payload contract aligned with the current Torus Stripe integration expectations
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "test/scenarios/student_payment/hooks.ex"
+      - "assets/automation/tests/torus/student_payment/payment-unlock.spec.ts"
   - id: AC-017
     title: The Cashnet simulated success path uses a payload contract aligned with the current Torus Cashnet callback expectations
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "test/scenarios/student_payment/hooks.ex"
+      - "assets/automation/tests/torus/student_payment/payment-unlock.spec.ts"
   - id: AC-018
     title: Each Playwright case is backed by its own standalone scenario bootstrap file and can run independently from the others
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "assets/automation/tests/torus/student_payment/unpaid-no-grace.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/unpaid-active-grace.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/unpaid-expired-grace.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/discount-qualifying.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/discount-non-qualifying.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/guest-paid-section.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/payment-code-unlock.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/stripe-unlock.scenario.yaml"
+      - "assets/automation/tests/torus/student_payment/cashnet-unlock.scenario.yaml"
   - id: AC-019
     title: Browser automation does not rely on creating users, products, or sections interactively in Playwright for the covered paid-course cases
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "lib/oli_web/controllers/playwright_scenario_controller.ex"
+      - "assets/automation/src/core/seedScenario.ts"
+      - "assets/automation/tests/torus/student_payment/support.ts"

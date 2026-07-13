@@ -55,9 +55,14 @@ defmodule Oli.Scenarios.StudentPayment.Hooks do
 
   def create_payment_code(%ExecutionState{} = state) do
     product_name =
-      Map.get(state.params || %{}, "payment_code_product_name", @default_payment_code_product_name)
+      Map.get(
+        state.params || %{},
+        "payment_code_product_name",
+        @default_payment_code_product_name
+      )
 
-    param_key = Map.get(state.params || %{}, "payment_code_param_key", @default_payment_code_param_key)
+    param_key =
+      Map.get(state.params || %{}, "payment_code_param_key", @default_payment_code_param_key)
 
     product =
       Engine.get_product(state, product_name) ||
@@ -70,7 +75,9 @@ defmodule Oli.Scenarios.StudentPayment.Hooks do
   end
 
   def create_pending_stripe_payment(%ExecutionState{} = state) do
-    section_name = Map.get(state.params || %{}, "stripe_section_name", @default_stripe_section_name)
+    section_name =
+      Map.get(state.params || %{}, "stripe_section_name", @default_stripe_section_name)
+
     user_name = Map.get(state.params || %{}, "stripe_user_name", @default_stripe_user_name)
     param_key = Map.get(state.params || %{}, "stripe_param_key", @default_stripe_param_key)
 
@@ -104,6 +111,7 @@ defmodule Oli.Scenarios.StudentPayment.Hooks do
 
     user_name = Map.get(state.params || %{}, "cashnet_user_name", @default_cashnet_user_name)
     param_key = Map.get(state.params || %{}, "cashnet_param_key", @default_cashnet_param_key)
+
     lname_param_key =
       Map.get(state.params || %{}, "cashnet_lname_param_key", @default_cashnet_lname_param_key)
 

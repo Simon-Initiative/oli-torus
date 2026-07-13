@@ -122,6 +122,8 @@ At a minimum, the work item must produce automated coverage that proves:
   - `lib/oli/scenarios/directives/section_handler.ex`
   - related scenario docs under `test/support/scenarios/docs/`
 - Discount coverage may require new scenario support or a narrow deterministic hook, depending on the lowest-cost design that still produces readable and maintainable test bootstrap.
+- The implemented discount path uses scenario DSL on the section itself by letting a section target an institution and resolve the inherited product price through existing paywall pricing rules.
+- The implemented guest and provider-pending setup uses deterministic scenario hooks because those states are setup concerns rather than reusable learner-visible YAML concepts.
 - The minimum discount commitment for this work item is one deterministic discount type. The default planning assumption is percentage discount coverage unless fixed-amount coverage is materially cheaper to implement.
 - Post-payment provider smoke depends on current Torus integration boundaries for:
   - payment code redemption in `lib/oli_web/controllers/payment_controller.ex`
@@ -160,7 +162,6 @@ No end-user migration is required.
 
 ## 14. Open Questions & Assumptions
 ### Open Questions
-- For provider-smoke coverage, should the simulated success path be triggered entirely from Playwright, or should a lower test layer prepare the state while Playwright verifies the learner-visible before-and-after behavior?
 - Are there internal Cashnet vendor documents available outside the repository that should refine the callback payload contract currently inferred from the implementation?
 
 ### Assumptions
@@ -168,6 +169,7 @@ No end-user migration is required.
 - Payment code redemption is in scope because it is the concrete post-payment unlock example called out by stakeholders and exercises a real supported learner path.
 - Stripe and Cashnet live or sandbox account ownership is not required for the intended smoke coverage.
 - Scenario bootstrap must support paid-course setup from both product and section flows because the desired cases and current ticket framing require both perspectives.
+- Provider-smoke setup may be split across scenario hooks and Playwright when the hook is only creating prerequisite internal state and Playwright still drives the Torus-owned success callback plus learner-visible unlock verification.
 
 ## 15. QA Plan
 - Automated validation:
@@ -184,3 +186,10 @@ No end-user migration is required.
 - [ ] FDD created and aligned with this PRD
 - [ ] plan.md created and implementation-ready
 - [ ] validation passes
+
+## Decision Log
+### 2026-07-13 - Capture DSL Versus Hook Split
+- Change: Updated the requirements context and assumptions to reflect the implemented split of section-level DSL for institution-qualified pricing and hooks for guest enrollment plus provider-pending payment setup.
+- Reason: The implementation achieved the required coverage without adding a first-class discount directive or browser-driven provider setup, so the PRD needed to describe the accepted shape of the solution.
+- Evidence: `lib/oli/scenarios/directive_types.ex`, `lib/oli/scenarios/directives/section_handler.ex`, `test/scenarios/student_payment/hooks.ex`, `assets/automation/tests/torus/student_payment/payment-unlock.spec.ts`
+- Impact: Aligns product expectations with the delivered automation boundary and removes ambiguity about how provider-smoke setup is allowed to work.
