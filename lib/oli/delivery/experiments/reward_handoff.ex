@@ -20,7 +20,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   alias Oli.Publishing.PublishedResource
   alias Oli.Repo
 
-  @reward_source "activity_attempt:evaluated"
+  @reward_source "activity_attempt:full_credit"
 
   def record_evaluated_activity(%ActivityAttempt{id: id}), do: record_evaluated_activity(id)
 

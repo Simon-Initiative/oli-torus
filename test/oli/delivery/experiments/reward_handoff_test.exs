@@ -8,7 +8,16 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Experiments
   alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, RecordExposureRequest, Scope}
-  alias Oli.Experiments.Schemas.{Condition, DecisionPoint, Outcome, PolicyUpdate, Reward}
+
+  alias Oli.Experiments.Schemas.{
+    Condition,
+    DecisionPoint,
+    Outcome,
+    PolicyState,
+    PolicyUpdate,
+    Reward
+  }
+
   alias Oli.Resources.ResourceType
 
   describe "record_evaluated_activity/1" do
@@ -28,12 +37,12 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
 
       assert outcome.metadata == %{
                "attempt_number" => activity_attempt.attempt_number,
-               "source" => "activity_attempt:evaluated"
+               "source" => "activity_attempt:full_credit"
              }
 
       assert reward.outcome_id == outcome.id
       assert reward.reward_value == 1.0
-      assert reward.reward_source == "activity_attempt:evaluated"
+      assert reward.reward_source == "activity_attempt:full_credit"
 
       assert reward.metadata == %{
                "attempt_number" => activity_attempt.attempt_number,
@@ -86,6 +95,29 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert Repo.aggregate(PolicyUpdate, :count, :id) == 1
     end
 
+    test "records one Thompson reward per evaluated activity in an unscored alternatives branch" do
+      %{activity_attempts: [correct_attempt, incorrect_attempt]} =
+        setup_reward_context(
+          algorithm: :thompson_sampling,
+          activity_scores: [{1.0, 1.0}, {0.0, 1.0}]
+        )
+
+      assert :ok = RewardHandoff.record_evaluated_activity(correct_attempt.id)
+      assert :ok = RewardHandoff.record_evaluated_activity(incorrect_attempt.id)
+
+      assert Repo.aggregate(Outcome, :count, :id) == 2
+      assert Repo.aggregate(Reward, :count, :id) == 2
+      assert Repo.aggregate(PolicyUpdate, :count, :id) == 2
+
+      policy_state = Repo.one!(PolicyState)
+      assert policy_state.reward_success_count == 1
+      assert policy_state.reward_failure_count == 1
+      assert policy_state.state["condition-a"]["successes"] == 1
+      assert policy_state.state["condition-a"]["failures"] == 1
+      assert policy_state.state["condition-a"]["posterior_alpha"] == 2.0
+      assert policy_state.state["condition-a"]["posterior_beta"] == 2.0
+    end
+
     test "returns ok without records when no experiment assignment is eligible" do
       %{activity_attempt: activity_attempt} = setup_reward_context(assign?: false)
 
@@ -122,6 +154,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
   defp setup_reward_context(opts) do
     score = Keyword.get(opts, :score, 1.0)
     out_of = Keyword.get(opts, :out_of, 1.0)
+    activity_scores = Keyword.get(opts, :activity_scores, [{score, out_of}])
     assign? = Keyword.get(opts, :assign?, true)
     algorithm = Keyword.get(opts, :algorithm, :weighted_random)
     lifecycle_state = Keyword.get(opts, :lifecycle_state, :evaluated)
@@ -142,12 +175,21 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
     enrollment = insert(:enrollment, section: section, user: user)
 
     alternatives_revision = insert(:revision)
-    activity_revision = insert(:revision, resource_type_id: ResourceType.id_for_activity())
+
+    activity_revisions =
+      Enum.map(activity_scores, fn _score ->
+        insert(:revision, resource_type_id: ResourceType.id_for_activity())
+      end)
 
     page_revision =
       insert(:revision,
         resource_type_id: ResourceType.id_for_page(),
-        content: page_content(alternatives_revision.resource_id, activity_revision.resource_id)
+        graded: false,
+        content:
+          page_content(
+            alternatives_revision.resource_id,
+            Enum.map(activity_revisions, & &1.resource_id)
+          )
       )
 
     insert(:project_resource,
@@ -183,16 +225,22 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
         content: page_revision.content
       )
 
-    activity_attempt =
-      insert(:activity_attempt,
-        resource_attempt: resource_attempt,
-        revision: activity_revision,
-        resource: activity_revision.resource,
-        lifecycle_state: lifecycle_state,
-        score: score,
-        out_of: out_of,
-        date_evaluated: DateTime.utc_now() |> DateTime.truncate(:second)
-      )
+    activity_attempts =
+      activity_revisions
+      |> Enum.zip(activity_scores)
+      |> Enum.map(fn {activity_revision, {score, out_of}} ->
+        insert(:activity_attempt,
+          resource_attempt: resource_attempt,
+          revision: activity_revision,
+          resource: activity_revision.resource,
+          lifecycle_state: lifecycle_state,
+          score: score,
+          out_of: out_of,
+          date_evaluated: DateTime.utc_now() |> DateTime.truncate(:second)
+        )
+      end)
+
+    activity_attempt = List.first(activity_attempts)
 
     scope = %Scope{
       institution_id: if(open_and_free?, do: nil, else: institution.id),
@@ -207,7 +255,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       create_assignment_and_exposure(scope, alternatives_revision, algorithm)
     end
 
-    %{activity_attempt: activity_attempt, scope: scope}
+    %{activity_attempt: activity_attempt, activity_attempts: activity_attempts, scope: scope}
   end
 
   defp create_assignment_and_exposure(%Scope{} = scope, alternatives_revision, algorithm) do
@@ -262,7 +310,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       })
   end
 
-  defp page_content(alternatives_resource_id, activity_resource_id) do
+  defp page_content(alternatives_resource_id, activity_resource_ids) do
     %{
       "model" => [
         %{
@@ -272,13 +320,14 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
             %{
               "type" => "alternative",
               "value" => "alt-a",
-              "children" => [
-                %{
-                  "type" => "activity-reference",
-                  "activity_id" => activity_resource_id,
-                  "children" => []
-                }
-              ]
+              "children" =>
+                Enum.map(activity_resource_ids, fn activity_resource_id ->
+                  %{
+                    "type" => "activity-reference",
+                    "activity_id" => activity_resource_id,
+                    "children" => []
+                  }
+                end)
             },
             %{"type" => "alternative", "value" => "alt-b", "children" => []}
           ]

@@ -230,3 +230,14 @@ The active experiment was also correctly started:
 - Desired behavior: Alternative options should be reorderable by authors. By default, options should appear in ascending order by creation order.
 - Rationale: Predictable default ordering makes QA and authoring easier, while explicit reordering gives authors control over tab/order presentation without requiring delete-and-recreate workflows.
 - Follow-up: Define where option order is stored, update Manage Alternatives to support reordering, and ensure page editor tabs and delivery rendering respect that order.
+
+### [x] Enhancement 6: Support unscored activity rewards for Thompson Sampling
+
+- Status: Fixed
+- Area: Reward handoff / Thompson Sampling posterior updates
+- Context: Manual QA clarified that Thompson Sampling reward updates should not be limited to scored pages. Unscored pages can contain evaluated activities, and those activity correctness results should be usable as Thompson Sampling reward evidence.
+- Desired behavior: Every evaluated activity attempt inside the learner's assigned A/B branch should emit one binary reward event. Full-credit attempts emit `1.0`; non-full-credit attempts emit `0.0`.
+- Multiple activities: Each evaluated activity in the assigned branch emits its own reward and policy update. Authors should keep the number and type of reward-producing activities balanced across alternatives when they want comparable Thompson Sampling reward opportunity.
+- Resolution:
+  - Thompson reward handoff now records rewards with source `activity_attempt:full_credit`.
+  - Added regression coverage for an unscored A/B branch with two evaluated activities, proving one full-credit attempt and one non-full-credit attempt create two rewards and two Thompson policy updates.

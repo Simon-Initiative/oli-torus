@@ -149,7 +149,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
       assert reused_reward_receipt.reused?
       assert reused_reward_receipt.id == reward.id
       assert reward.reward_value == 1.0
-      assert reward.reward_source == "activity_attempt:evaluated"
+      assert reward.reward_source == "activity_attempt:full_credit"
       assert_thompson_policy_update(scope, alternatives_revision, reward)
       assert Repo.aggregate(policy_update_query(reward.id), :count, :id) == 1
 
