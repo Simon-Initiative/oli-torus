@@ -115,6 +115,7 @@ defmodule Oli.Scenarios.Directives.HookHandler do
     if function_exported?(module, function_name, arity) do
       :ok
     else
+      # Long-lived scenario runners may keep an older version of a hook module loaded.
       module
       |> module_to_path()
       |> compile_from_scenarios()

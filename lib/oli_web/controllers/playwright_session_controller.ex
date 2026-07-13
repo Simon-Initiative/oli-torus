@@ -1,9 +1,17 @@
 defmodule OliWeb.PlaywrightSessionController do
+  @moduledoc """
+  Test-only browser session helpers used by Playwright scenario-driven tests.
+  """
+
   use OliWeb, :controller
 
   alias Oli.Accounts
   alias OliWeb.UserAuth
 
+  @doc """
+  Creates a browser session for a seeded user and redirects to a validated local path.
+  """
+  @spec log_in_user(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def log_in_user(conn, params) do
     with :ok <- authorize(conn, params),
          {:ok, user} <- fetch_user(params) do

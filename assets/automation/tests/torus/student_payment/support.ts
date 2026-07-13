@@ -25,6 +25,7 @@ export type PostResponse = {
   contentType: string | null;
 };
 
+// Scenario seeding helpers used to resolve stable section and user outputs.
 export async function seedStudentPaymentScenario(
   seedScenario: (
     relativePath: string,
@@ -69,6 +70,7 @@ export async function seedScenarioUser(
   return { sectionSlug, userEmail };
 }
 
+// Browser-side auth and POST helpers keep payment flows inside the real session context.
 export async function logInAsScenarioUser(
   page: Page,
   email: string,
@@ -124,6 +126,7 @@ export async function postInBrowser(
   );
 }
 
+// Payment code redemption still goes through the real form flow, including the recaptcha field.
 export async function submitPaymentCode(page: Page, code: string) {
   await page.locator('input[name="code[value]"]').fill(code);
 
