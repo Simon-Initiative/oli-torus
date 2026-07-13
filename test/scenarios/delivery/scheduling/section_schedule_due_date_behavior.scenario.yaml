@@ -82,6 +82,7 @@ directives:
       section: "scheduling_section"
       page: "Scheduled Quiz"
 
+  # This verifies persisted gradebook data, not access through the instructor gradebook UI.
   - assert:
       gradebook:
         instructor: "instructor_1"

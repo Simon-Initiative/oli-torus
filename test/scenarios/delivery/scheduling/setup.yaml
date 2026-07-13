@@ -47,6 +47,11 @@
     email: "scheduling_student@test.edu"
 
 - enroll:
+    user: "instructor_1"
+    section: "scheduling_section"
+    role: "instructor"
+
+- enroll:
     user: "student_1"
     section: "scheduling_section"
     role: "student"
