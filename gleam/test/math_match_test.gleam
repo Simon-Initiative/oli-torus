@@ -178,6 +178,23 @@ pub fn unit_aware_numeric_config_evaluates_equal_with_number_tolerance_test() {
     ])
 }
 
+pub fn unit_aware_numeric_config_evaluates_quantity_authored_expected_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"1 m/s\",\"operator\":\"equal\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"km/hr\"]}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "1 m/s")
+    == types.MatchMatched(diagnostics: [types.ConfigAccepted, types.UnitMatched])
+  assert torus_math.evaluate_match(config, "3.6 km/hr")
+    == types.MatchMatched(diagnostics: [types.ConfigAccepted, types.UnitMatched])
+  assert torus_math.evaluate_match(config, "1 km/hr")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitNotMatched,
+    ])
+}
+
 pub fn unit_aware_numeric_config_evaluates_ordered_comparisons_test() {
   let source =
     "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10\",\"operator\":\"greater_than\",\"threshold\":\"10\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"km/hr\"]}}}"

@@ -465,10 +465,8 @@ fn evaluate_unit_numeric_aware(
   case reference_unit(config) {
     Error(error) -> types.MatchInvalidConfig(error: error)
     Ok(reference_unit) -> {
-      case
-        numeric.scale_comparison_values(spec, reference_unit.scale_to_canonical)
-      {
-        Error(error) -> types.MatchInvalidConfig(error: equality_error(error))
+      case normalize_authored_unit_numeric_spec(spec, config, reference_unit) {
+        Error(error) -> types.MatchInvalidConfig(error: error)
         Ok(canonical_spec) ->
           evaluate_unit_numeric_submission(
             canonical_spec,
@@ -480,6 +478,223 @@ fn evaluate_unit_numeric_aware(
           )
       }
     }
+  }
+}
+
+/// Numeric unit-aware comparisons historically stored scalar operands in the
+/// reference unit. Quantity editors now preserve authored units, so normalize
+/// each operand before the shared numeric evaluator applies its comparison.
+fn normalize_authored_unit_numeric_spec(
+  spec: equality_types.NumericSpec,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(equality_types.NumericSpec, types.MatchConfigError) {
+  case
+    normalize_authored_unit_numeric_comparison(
+      spec.comparison,
+      config,
+      reference_unit,
+    )
+  {
+    Error(error) -> Error(error)
+    Ok(comparison) ->
+      Ok(equality_types.NumericSpec(
+        comparison: comparison,
+        tolerance: spec.tolerance,
+        representation: spec.representation,
+        precision: spec.precision,
+      ))
+  }
+}
+
+fn normalize_authored_unit_numeric_comparison(
+  comparison: equality_types.NumericComparison,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(equality_types.NumericComparison, types.MatchConfigError) {
+  case comparison {
+    equality_types.Equal(expected) ->
+      normalize_authored_unit_numeric_input(
+        expected,
+        "expected",
+        config,
+        reference_unit,
+      )
+      |> result.map(equality_types.Equal)
+
+    equality_types.NotEqual(expected) ->
+      normalize_authored_unit_numeric_input(
+        expected,
+        "expected",
+        config,
+        reference_unit,
+      )
+      |> result.map(equality_types.NotEqual)
+
+    equality_types.GreaterThan(threshold) ->
+      normalize_authored_unit_numeric_input(
+        threshold,
+        "threshold",
+        config,
+        reference_unit,
+      )
+      |> result.map(equality_types.GreaterThan)
+
+    equality_types.GreaterThanOrEqual(threshold) ->
+      normalize_authored_unit_numeric_input(
+        threshold,
+        "threshold",
+        config,
+        reference_unit,
+      )
+      |> result.map(equality_types.GreaterThanOrEqual)
+
+    equality_types.LessThan(threshold) ->
+      normalize_authored_unit_numeric_input(
+        threshold,
+        "threshold",
+        config,
+        reference_unit,
+      )
+      |> result.map(equality_types.LessThan)
+
+    equality_types.LessThanOrEqual(threshold) ->
+      normalize_authored_unit_numeric_input(
+        threshold,
+        "threshold",
+        config,
+        reference_unit,
+      )
+      |> result.map(equality_types.LessThanOrEqual)
+
+    equality_types.Between(lower, upper, bounds) ->
+      normalize_authored_unit_numeric_range(
+        lower,
+        upper,
+        bounds,
+        equality_types.Between,
+        config,
+        reference_unit,
+      )
+
+    equality_types.NotBetween(lower, upper, bounds) ->
+      normalize_authored_unit_numeric_range(
+        lower,
+        upper,
+        bounds,
+        equality_types.NotBetween,
+        config,
+        reference_unit,
+      )
+  }
+}
+
+fn normalize_authored_unit_numeric_range(
+  lower: equality_types.NumericInput,
+  upper: equality_types.NumericInput,
+  bounds: equality_types.RangeBounds,
+  constructor: fn(
+    equality_types.NumericInput,
+    equality_types.NumericInput,
+    equality_types.RangeBounds,
+  ) -> equality_types.NumericComparison,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(equality_types.NumericComparison, types.MatchConfigError) {
+  case
+    normalize_authored_unit_numeric_input(
+      lower,
+      "lower",
+      config,
+      reference_unit,
+    ),
+    normalize_authored_unit_numeric_input(
+      upper,
+      "upper",
+      config,
+      reference_unit,
+    )
+  {
+    Ok(lower), Ok(upper) -> Ok(constructor(lower, upper, bounds))
+    Error(error), _ | _, Error(error) -> Error(error)
+  }
+}
+
+fn normalize_authored_unit_numeric_input(
+  input: equality_types.NumericInput,
+  field: String,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(equality_types.NumericInput, types.MatchConfigError) {
+  let equality_types.NumericInput(raw: raw) = input
+
+  case quantity.parse_quantity_or_expression(raw) {
+    Ok(unit_types.ParsedExpression(_)) ->
+      normalize_authored_scalar(raw, field, reference_unit.scale_to_canonical)
+
+    Ok(unit_types.ParsedQuantity(_, unit)) ->
+      normalize_authored_quantity(raw, unit, field, config, reference_unit)
+
+    Error(_) ->
+      Error(types.InvalidField(
+        field: "math." <> field,
+        reason: "expected a scalar number or quantity",
+      ))
+  }
+}
+
+fn normalize_authored_scalar(
+  raw: String,
+  field: String,
+  scale: Float,
+) -> Result(equality_types.NumericInput, types.MatchConfigError) {
+  case numeric.parse_scalar(raw) {
+    Ok(value) ->
+      Ok(equality_types.NumericInput(raw: float.to_string(value *. scale)))
+    Error(Nil) ->
+      Error(types.InvalidField(
+        field: "math." <> field,
+        reason: "expected a scalar number or quantity",
+      ))
+  }
+}
+
+fn normalize_authored_quantity(
+  raw: String,
+  unit: unit_types.UnitExpr,
+  field: String,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(equality_types.NumericInput, types.MatchConfigError) {
+  case
+    numeric.parse_scalar(submitted_numeric_value_source(raw)),
+    unit_normalize.normalize_unit(unit)
+  {
+    Ok(value), Ok(normalized_unit) ->
+      case config.mode {
+        unit_types.IgnoreUnits ->
+          Ok(equality_types.NumericInput(raw: float.to_string(value)))
+        unit_types.RequireUnits ->
+          case same_dimensions(normalized_unit, reference_unit) {
+            True ->
+              Ok(
+                equality_types.NumericInput(raw: float.to_string(
+                  value *. normalized_unit.scale_to_canonical,
+                )),
+              )
+            False ->
+              Error(types.InvalidField(
+                field: "math." <> field,
+                reason: "quantity unit is incompatible with the configured reference unit",
+              ))
+          }
+      }
+
+    _, _ ->
+      Error(types.InvalidField(
+        field: "math." <> field,
+        reason: "expected a scalar quantity with a supported unit",
+      ))
   }
 }
 

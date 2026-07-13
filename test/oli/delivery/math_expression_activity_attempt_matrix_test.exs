@@ -79,6 +79,23 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
           misses("37.08 km/hr", out_of: 2)
         ]
       ),
+      single("single number with units quantity-authored equality",
+        subtype: "number_with_units",
+        unit_policy: convertible_units(["m/s", "km/hr"]),
+        responses: [
+          correct("1 m/s", 2,
+            subtype: "number_with_units",
+            operator: "equal",
+            feedback: "unit-quantity-equality"
+          ),
+          incorrect()
+        ],
+        cases: [
+          solves("1 m/s", score: 2, out_of: 2, feedback: "unit-quantity-equality"),
+          solves("3.6 km/hr", score: 2, out_of: 2, feedback: "unit-quantity-equality"),
+          misses("1 km/hr", out_of: 2)
+        ]
+      ),
       single("single number with units numeric greater-than and unit targets",
         subtype: "number_with_units",
         unit_policy: convertible_units(["m/s"]),

@@ -318,4 +318,34 @@ describe('multi input question - default (with text input)', () => {
     const answerEditors = screen.getAllByLabelText('Correct answer');
     expect(answerEditors).toHaveLength(2);
   });
+
+  it('uses quantity editors in answer key and targeted feedback for number with units', () => {
+    const freshModel = defaultModel();
+    const originalInput = freshModel.inputs[0] as FillInTheBlank;
+    let mathModel = dispatch(
+      freshModel,
+      MultiInputActions.setQuestionType(originalInput.id, 'number_with_units'),
+    );
+    const mathInput = mathModel.inputs[0] as FillInTheBlank;
+    mathModel = dispatch(mathModel, addTargetedFeedbackFillInTheBlank(mathInput));
+    const authoringModel = JSON.parse(JSON.stringify(mathModel)) as MultiInputSchema;
+    const authoringInput = authoringModel.inputs[0] as FillInTheBlank;
+
+    render(
+      <Provider store={configureStore()}>
+        <AuthoringElementProvider
+          {...defaultAuthoringElementProps<MultiInputSchema>(authoringModel)}
+        >
+          <AnswerKeyTab input={authoringInput} />
+        </AuthoringElementProvider>
+      </Provider>,
+    );
+
+    expect(screen.getAllByRole('button', { name: 'Math expression syntax help' })).toHaveLength(2);
+
+    const answerEditors = screen.getAllByLabelText('Correct answer');
+    fireEvent.change(answerEditors[0], { target: { value: '1.2 m/s^2' } });
+
+    expect(answerEditors[0]).toHaveValue('1.2 m/s^2');
+  });
 });

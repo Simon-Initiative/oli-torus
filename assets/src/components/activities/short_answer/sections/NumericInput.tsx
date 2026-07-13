@@ -1,5 +1,6 @@
 import React, { createRef, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { MathExpressionInput } from 'components/activities/common/math_expression';
 import { InfoTip } from 'components/misc/InfoTip';
 import {
   InputKind,
@@ -14,6 +15,8 @@ import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 import { isValidNumber } from 'utils/number';
 import { disableScrollWheelChange } from '../utils';
+
+export type NumericValueInputKind = 'number' | 'quantity';
 
 // here we defined a "editable number" variant data type that contains information
 // about the number that is being edited. for example, a number input being edited
@@ -63,13 +66,34 @@ const editableNumberFromVNum = (vnum: numberOrVar): EditableNumber =>
 export interface SimpleNumericInputProps extends InputProps {
   input: InputNumeric;
   onEditInput: (input: InputNumeric) => void;
+  valueInputKind?: NumericValueInputKind;
 }
 
-export const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditInput }) => {
+export const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({
+  input,
+  onEditInput,
+  valueInputKind = 'number',
+}) => {
   const { editMode } = useAuthoringElementContext();
   const numericInputRef = createRef<HTMLInputElement>();
   const [editableNumber, setEditableNumber] = useState(editableNumberFromVNum(input.value));
   const editableNumberInvalid = editableNumber.kind === EditableNumberKind.Invalid;
+
+  if (valueInputKind === 'quantity') {
+    return (
+      <MathExpressionInput
+        disabled={!editMode}
+        layout="authoring"
+        previewMode="below_input"
+        validationKind="quantity"
+        ariaLabel="Correct answer"
+        placeholder="Correct answer"
+        value={String(input.value)}
+        onChange={(value) => onEditInput({ ...input, value })}
+      />
+    );
+  }
+
   return (
     <div>
       <input
@@ -109,9 +133,14 @@ const isInclusive = (value: string): boolean => value === 'inclusive';
 export interface RangeNumericInputProps extends InputProps {
   input: InputRange;
   onEditInput: (input: InputRange) => void;
+  valueInputKind?: NumericValueInputKind;
 }
 
-export const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInput }) => {
+export const RangeNumericInput: React.FC<RangeNumericInputProps> = ({
+  input,
+  onEditInput,
+  valueInputKind = 'number',
+}) => {
   const { editMode } = useAuthoringElementContext();
   const lowerBoundInputRef = createRef<HTMLInputElement>();
   const upperBoundInputRef = createRef<HTMLInputElement>();
@@ -123,6 +152,50 @@ export const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onE
   );
   const lowerBoundInvalid = editableLowerBound.kind === EditableNumberKind.Invalid;
   const upperBoundInvalid = editableUpperBound.kind === EditableNumberKind.Invalid;
+
+  if (valueInputKind === 'quantity') {
+    return (
+      <div className="d-flex flex-column">
+        <div className="d-md-flex flex-md-row align-items-center gap-2">
+          <MathExpressionInput
+            disabled={!editMode}
+            layout="authoring"
+            previewMode="below_input"
+            validationKind="quantity"
+            ariaLabel="Lower bound"
+            placeholder="Lower bound"
+            value={String(input.lowerBound)}
+            onChange={(lowerBound) => onEditInput({ ...input, lowerBound })}
+          />
+          <div className="mx-1">and</div>
+          <MathExpressionInput
+            disabled={!editMode}
+            layout="authoring"
+            previewMode="below_input"
+            validationKind="quantity"
+            ariaLabel="Upper bound"
+            placeholder="Upper bound"
+            value={String(input.upperBound)}
+            onChange={(upperBound) => onEditInput({ ...input, upperBound })}
+          />
+          <select
+            className="custom-select mr-1"
+            disabled={!editMode}
+            style={{ width: 400 }}
+            value={inclusiveOrExclusiveValue(input.inclusive)}
+            onChange={({ target: { value } }) => {
+              onEditInput({ ...input, inclusive: isInclusive(value) });
+            }}
+            name="range-inclusive-exclusive"
+          >
+            <option value="inclusive">Inclusive</option>
+            <option value="exclusive">Exclusive</option>
+          </select>
+          <InfoTip title="Inclusive will include the boundaries in the range. Exclusive does not include boundaries." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="d-flex flex-column">

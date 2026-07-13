@@ -203,6 +203,10 @@ const isNumericQuestion = (inputType: InputType, questionType: ShortAnswerQuesti
 const usesNumericAnswerControls = (inputType: InputType, questionType: ShortAnswerQuestionType) =>
   isNumericQuestion(inputType, questionType) || questionType === 'number_with_units';
 
+const numericValueInputKindForQuestionType = (
+  questionType: ShortAnswerQuestionType,
+): 'number' | 'quantity' => (questionType === 'number_with_units' ? 'quantity' : 'number');
+
 const isLatexQuestion = (inputType: InputType, questionType: ShortAnswerQuestionType) =>
   inputType === 'math' || questionType === 'latex_direct';
 
@@ -605,6 +609,7 @@ export const InputEntry: React.FC<InputProps> = ({
   };
 
   const showsNumericAnswerControls = usesNumericAnswerControls(inputType, activeQuestionType);
+  const numericValueInputKind = numericValueInputKindForQuestionType(activeQuestionType);
   const unitMismatchTargetControl =
     allowUnitMismatchTarget && isUnitQuestionType(activeQuestionType) ? (
       <div className="mt-2 rounded border border-gray-200 bg-gray-50 p-3 text-body-color dark:border-gray-700 dark:bg-gray-800 dark:text-body-color-dark">
@@ -645,9 +650,17 @@ export const InputEntry: React.FC<InputProps> = ({
               ))}
             </select>
             {numericState.input.kind === InputKind.Numeric ? (
-              <SimpleNumericInput input={numericState.input} onEditInput={onEditNumericInput} />
+              <SimpleNumericInput
+                input={numericState.input}
+                onEditInput={onEditNumericInput}
+                valueInputKind={numericValueInputKind}
+              />
             ) : (
-              <RangeNumericInput input={numericState.input} onEditInput={onEditNumericInput} />
+              <RangeNumericInput
+                input={numericState.input}
+                onEditInput={onEditNumericInput}
+                valueInputKind={numericValueInputKind}
+              />
             )}
           </div>
           {numericState.kind === 'tol' && (
@@ -677,8 +690,8 @@ export const InputEntry: React.FC<InputProps> = ({
           onChange={onSelectFractionMatchMode}
           aria-label="Fraction match type"
         >
-          <option value="exact">Match this answer exactly</option>
-          <option value="equivalent">Match equivalent fractions</option>
+          <option value="exact">Require a simplified fraction</option>
+          <option value="equivalent">Accept any equivalent fraction</option>
         </select>
       </div>
     ) : null;

@@ -28,6 +28,10 @@ jest.mock('gleam/torusExpression', () => ({
   ),
 }));
 
+jest.mock('components/misc/InfoTip', () => ({
+  InfoTip: () => null,
+}));
+
 // @ac "AC-024" Answer-key expected-answer editors expose validation and help.
 // @ac "AC-025" Targeted feedback editors expose validation and help.
 // @ac "AC-026" Candidate/test expression coverage is satisfied by the shared editor path when present.
@@ -362,7 +366,7 @@ describe('short answer math expression authoring', () => {
     expect(onEditResponseMatchConfig).toHaveBeenCalled();
   });
 
-  it('uses numeric answer controls for number_with_units answer editors', () => {
+  it('uses quantity validation while preserving numeric comparison controls for number_with_units', () => {
     const model = dispatch(
       defaultModel(),
       ShortAnswerActions.setQuestionType('number_with_units', '1'),
@@ -384,13 +388,12 @@ describe('short answer math expression authoring', () => {
       </AuthoringElementProvider>,
     );
 
-    expect(
-      screen.queryByRole('button', { name: 'Math expression syntax help' }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Math expression syntax help' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Correct answer')).toHaveValue('9.8 m/s^2');
     expect(screen.getByLabelText('Unit feedback match type')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Correct answer'), {
-      target: { value: '10' },
+      target: { value: '10 km/hr' },
     });
 
     expect(onEditResponseMatchConfig).toHaveBeenCalledWith(
@@ -399,8 +402,59 @@ describe('short answer math expression authoring', () => {
         type: 'math_expression',
         math: expect.objectContaining({
           mode: 'unit_aware',
-          expected: '10',
+          expected: '10 km/hr',
           operator: 'equal',
+        }),
+      }),
+    );
+  });
+
+  it('uses quantity validation for number_with_units range bounds', () => {
+    const model = dispatch(
+      defaultModel(),
+      ShortAnswerActions.setQuestionType('number_with_units', '1'),
+    );
+    const response = makeMatchConfigResponse(
+      MatchConfigs.unitAware('1 m/s', undefined, {
+        operator: 'between',
+        lower: '1 m/s',
+        upper: '2 m/s',
+        bounds: 'inclusive',
+      }),
+      0,
+    );
+    const onEditResponseMatchConfig = jest.fn();
+
+    render(
+      <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+        <InputEntry
+          inputType={model.inputType}
+          questionType={shortAnswerQuestionType(model)}
+          mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
+          response={response}
+          onEditResponseRule={jest.fn()}
+          onEditResponseMatchConfig={onEditResponseMatchConfig}
+        />
+      </AuthoringElementProvider>,
+    );
+
+    expect(screen.getAllByRole('button', { name: 'Math expression syntax help' })).toHaveLength(2);
+    expect(screen.getByLabelText('Lower bound')).toHaveValue('1 m/s');
+    expect(screen.getByLabelText('Upper bound')).toHaveValue('2 m/s');
+
+    fireEvent.change(screen.getByLabelText('Upper bound'), {
+      target: { value: '3 km/hr' },
+    });
+
+    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'unit_aware',
+          operator: 'between',
+          lower: '1 m/s',
+          upper: '3 km/hr',
         }),
       }),
     );
