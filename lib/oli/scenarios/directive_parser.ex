@@ -1653,6 +1653,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     "items" => :items,
     "metrics" => :metrics,
     "missing_slots" => :missing_slots,
+    "parameters" => :parameters,
     "row_count" => :row_count,
     "rows" => :rows,
     "rows_by_title" => :rows_by_title,

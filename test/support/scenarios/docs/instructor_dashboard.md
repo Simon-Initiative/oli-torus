@@ -127,6 +127,7 @@ Asserts the progress tile for course or container scope.
 - `tolerance`: Numeric comparison tolerance
 - `axis_label`: Expected chart axis label
 - `class_size`: Expected learner count
+- `completion_threshold`: Completion percentage threshold used to count learners as complete
 - `items`: Expected progress items keyed by unit/page label
 - `series`: Expected visible series subset
 - `series_all`: Expected full series subset
@@ -167,6 +168,7 @@ Asserts the student support tile and its learner buckets.
 - `section`: Name of the section to inspect (required)
 - `scope`: Optional scope. Use `"course"` or `{container: "Container Title"}`
 - `tolerance`: Numeric comparison tolerance
+- `parameters`: Optional Student Support thresholds for this assertion
 - `has_activity_data`: Whether dashboard support has enough activity signal
 - `totals`: Expected total, active, and inactive student counts
 - `buckets`: Expected subset of support buckets keyed by bucket id
@@ -195,6 +197,8 @@ Supported bucket ids include:
         struggling:
           count: 1
           student_names: ["Sam Struggling"]
+          active_student_names: ["Sam Struggling"]
+          inactive_student_names: []
         not_enough_information:
           count: 1
           student_names: ["Nina No Data"]

@@ -55,3 +55,15 @@
             - "Nina No Data"
             - "Olivia On Track"
             - "Sam Struggling"
+
+- assert:
+    instructor_dashboard_assessments:
+      section: "instructor_dashboard_section"
+      total_rows: 1
+      has_assessments: true
+      rows_by_title:
+        "Checkpoint Quiz":
+          completion:
+            completed_count: 0
+            total_students: 4
+            ratio: 0.0

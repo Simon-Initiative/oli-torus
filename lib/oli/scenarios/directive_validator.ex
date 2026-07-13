@@ -243,6 +243,7 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "tolerance",
             "totals",
             "buckets",
+            "parameters",
             "default_bucket_id",
             "has_activity_data",
             "has_activity_data?",

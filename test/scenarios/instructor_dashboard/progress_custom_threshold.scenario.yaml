@@ -1,0 +1,52 @@
+# Scenario: Progress custom completion threshold
+#
+# This scenario verifies that the Progress tile honors an instructor-selected
+# completion threshold below the default 100%. A learner completes two of three
+# pages in a unit, which should not count at 100% but should count at 50%.
+
+- use:
+    file: "base.scenario.yaml"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+    activity_virtual_id: "foundations_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+    activity_virtual_id: "foundations_lesson_2_mcq"
+    response: "a"
+
+- dashboard_analytics_ready:
+    section: "instructor_dashboard_section"
+
+- assert:
+    instructor_dashboard_progress:
+      section: "instructor_dashboard_section"
+      axis_label: "Course Units"
+      class_size: 4
+      completion_threshold: 50
+      items:
+        "Foundations Unit":
+          completed_count: 1
+          completed_percent: 25.0
+        "Applications Unit":
+          completed_count: 0
+          completed_percent: 0.0
+        "Assessments":
+          completed_count: 0
+          completed_percent: 0.0

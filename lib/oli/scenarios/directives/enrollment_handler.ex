@@ -4,6 +4,7 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
   """
 
   alias Oli.Scenarios.DirectiveTypes.EnrollDirective
+  alias Oli.Scenarios.Directives.AttemptSupport
   alias Oli.Scenarios.Engine
   alias Oli.Delivery.Sections
   alias Oli.Accounts
@@ -60,6 +61,7 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
           raise "Enrollment returned an empty list for section '#{section_name}' and user '#{user_name}'"
 
         {:ok, _non_empty} ->
+          AttemptSupport.align_enrollment_time(user.id, section.id, state.scenario_time)
           {:ok, state}
 
         {:error, reason} ->

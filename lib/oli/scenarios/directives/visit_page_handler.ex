@@ -19,6 +19,8 @@ defmodule Oli.Scenarios.Directives.VisitPageHandler do
          {:ok, _enrollment} <- AttemptSupport.ensure_enrollment(user, section),
          {:ok, page_revision} <- AttemptSupport.get_page_revision(state, section_name, page_title),
          {:ok, attempt_result} <- AttemptSupport.visit_page(user, section, page_revision) do
+      AttemptSupport.align_enrollment_time(user.id, section.id, state.scenario_time)
+
       {:ok,
        AttemptSupport.put_attempt_result(
          state,

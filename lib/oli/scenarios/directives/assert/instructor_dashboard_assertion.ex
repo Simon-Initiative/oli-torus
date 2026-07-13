@@ -13,9 +13,17 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   alias Oli.Scenarios.DirectiveTypes.{AssertDirective, VerificationResult}
   alias Oli.Scenarios.Directives.Assert.Helpers
 
-  @control_keys [:section, :scope, :tolerance]
+  @control_keys [:section, :scope, :tolerance, :parameters]
   @default_tolerance 0.001
   @summary_recommendation_oracle :oracle_instructor_recommendation
+  @student_support_parameter_keys %{
+    "inactivity_days" => :inactivity_days,
+    "struggling_progress_low_lt" => :struggling_progress_low_lt,
+    "struggling_progress_high_gt" => :struggling_progress_high_gt,
+    "struggling_proficiency_lte" => :struggling_proficiency_lte,
+    "excelling_progress_gte" => :excelling_progress_gte,
+    "excelling_proficiency_gte" => :excelling_proficiency_gte
+  }
 
   @spec assert(atom(), %AssertDirective{}, map()) ::
           {:ok, map(), %VerificationResult{}} | {:error, String.t()}
@@ -24,8 +32,8 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
 
     with {:ok, section} <- Helpers.get_section(state, spec.section),
          {:ok, scope} <- resolve_scope(section, Map.get(spec, :scope, "course")),
-         {:ok, bundle} <- build_bundle(capability, section, scope, state) do
-      actual = projection_view(capability, bundle)
+         {:ok, bundle} <- build_bundle(capability, section, scope, state, spec) do
+      actual = projection_view(capability, bundle, spec)
       expected = expected_subset(spec)
       tolerance = Map.get(spec, :tolerance) || @default_tolerance
       mismatches = compare_subset(expected, actual, [], tolerance)
@@ -60,7 +68,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
 
   defp spec_for(:assessments, %AssertDirective{instructor_dashboard_assessments: spec}), do: spec
 
-  defp build_bundle(capability, section, scope, state) do
+  defp build_bundle(capability, section, scope, state, spec) do
     dependency_profile = dependency_profile(capability)
 
     DataSnapshot.get_or_build(
@@ -76,7 +84,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
       dependency_profile: dependency_profile,
       runtime_results_provider: runtime_results_provider(dependency_profile),
       projection_modules: projection_modules(capability),
-      projection_opts: projection_opts(state),
+      projection_opts: projection_opts(capability, state, spec),
       request_token: "scenario-instructor-dashboard-#{capability}-#{section.id}"
     )
   end
@@ -139,12 +147,35 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   defp oracle_version(module),
     do: if(function_exported?(module, :version, 0), do: module.version(), else: 1)
 
-  defp projection_opts(state) do
+  defp projection_opts(:student_support, state, spec) do
+    settings =
+      StudentSupportParameters.default_settings()
+      |> Map.merge(student_support_parameters(Map.get(spec, :parameters, %{})))
+
+    [
+      student_support_settings: settings,
+      now: state.scenario_time || DateTime.utc_now()
+    ]
+  end
+
+  defp projection_opts(_capability, state, _spec) do
     [
       student_support_settings: StudentSupportParameters.default_settings(),
       now: state.scenario_time || DateTime.utc_now()
     ]
   end
+
+  defp student_support_parameters(parameters) when is_map(parameters) do
+    Map.new(parameters, fn
+      {key, value} when is_binary(key) ->
+        {Map.get(@student_support_parameter_keys, key, key), value}
+
+      {key, value} ->
+        {key, value}
+    end)
+  end
+
+  defp student_support_parameters(_parameters), do: %{}
 
   defp dashboard_user_id(%{current_author: %{id: id}}) when is_integer(id) and id > 0, do: id
 
@@ -267,7 +298,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
     end
   end
 
-  defp projection_view(:summary, %{projections: %{summary: projection}}) do
+  defp projection_view(:summary, %{projections: %{summary: projection}}, _spec) do
     summary_tile = Map.get(projection, :summary_tile, %{})
 
     %{
@@ -282,11 +313,17 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
     }
   end
 
-  defp projection_view(:progress, %{projections: %{progress: projection}}) do
+  defp projection_view(:progress, %{projections: %{progress: projection}}, spec) do
+    tile_state =
+      spec
+      |> Map.take([:completion_threshold, :y_axis_mode])
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
     tile =
       projection
       |> Map.get(:progress_tile, %{})
-      |> ProgressProjector.reproject()
+      |> ProgressProjector.reproject(tile_state)
 
     tile
     |> Map.put(:items, progress_items_by_label(Map.get(tile, :series_all, [])))
@@ -294,7 +331,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
     |> Map.put(:series_all, Map.get(tile, :series_all, []))
   end
 
-  defp projection_view(:student_support, %{projections: %{student_support: projection}}) do
+  defp projection_view(:student_support, %{projections: %{student_support: projection}}, _spec) do
     support = Map.get(projection, :support, %{})
 
     support
@@ -302,16 +339,20 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
     |> Map.put(:buckets, buckets_by_id(Map.get(support, :buckets, [])))
   end
 
-  defp projection_view(:challenging_objectives, %{
-         projections: %{challenging_objectives: projection}
-       }) do
+  defp projection_view(
+         :challenging_objectives,
+         %{
+           projections: %{challenging_objectives: projection}
+         },
+         _spec
+       ) do
     projection
     |> Map.put(:scope_label, get_in(projection, [:scope, :label]))
     |> Map.put(:course_title, get_in(projection, [:scope, :course_title]))
     |> Map.put(:rows_by_title, rows_by_title(Map.get(projection, :rows, [])))
   end
 
-  defp projection_view(:assessments, %{projections: %{assessments: projection}}) do
+  defp projection_view(:assessments, %{projections: %{assessments: projection}}, _spec) do
     assessments = Map.get(projection, :assessments, %{})
 
     assessments
@@ -319,7 +360,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
     |> Map.put(:rows_by_title, rows_by_title(Map.get(assessments, :rows, [])))
   end
 
-  defp projection_view(capability, bundle) do
+  defp projection_view(capability, bundle, _spec) do
     Map.get(bundle.projections, capability, %{})
   end
 
@@ -345,9 +386,17 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
       normalized =
         bucket
         |> Map.put(:student_names, Enum.map(students, &Map.get(&1, :display_name)))
+        |> Map.put(:active_student_names, student_names_by_status(students, :active))
+        |> Map.put(:inactive_student_names, student_names_by_status(students, :inactive))
 
       {bucket.id, normalized}
     end)
+  end
+
+  defp student_names_by_status(students, status) do
+    students
+    |> Enum.filter(&(Map.get(&1, :activity_status) == status))
+    |> Enum.map(&Map.get(&1, :display_name))
   end
 
   defp rows_by_title(rows) do

@@ -9,7 +9,10 @@ defmodule Oli.Scenarios.Directives.AttemptSupport do
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Repo
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
+
+  import Ecto.Query, warn: false
 
   def get_user(%ExecutionState{} = state, user_name) do
     case Map.get(state.users, user_name) do
@@ -38,6 +41,17 @@ defmodule Oli.Scenarios.Directives.AttemptSupport do
       _enrollment ->
         {:ok, :already_enrolled}
     end
+  end
+
+  def align_enrollment_time(_user_id, _section_id, nil), do: :ok
+
+  def align_enrollment_time(user_id, section_id, scenario_time) do
+    from(e in Sections.Enrollment,
+      where: e.user_id == ^user_id and e.section_id == ^section_id
+    )
+    |> Repo.update_all(set: [updated_at: scenario_time])
+
+    :ok
   end
 
   def get_page_revision(%ExecutionState{} = state, section_name, page_title) do
