@@ -62,6 +62,41 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
           misses("9 cm/s", out_of: 2)
         ]
       ),
+      single("single number with units targets non-reference authored magnitudes",
+        subtype: "number_with_units",
+        unit_policy: convertible_units(["m/s", "km/hr"]),
+        responses: [
+          correct("1 m/s", 2, feedback: "correct"),
+          targeted("3.6 km/hr", 1.5,
+            subtype: "number_with_units",
+            operator: "equal",
+            wrong_units: true,
+            feedback: "non-reference-wrong-units"
+          ),
+          targeted("3.6 km/hr", 1,
+            subtype: "number_with_units",
+            operator: "equal",
+            missing_unit: true,
+            feedback: "non-reference-missing-unit"
+          ),
+          incorrect()
+        ],
+        cases: [
+          solves("1 m/s", score: 2, out_of: 2, feedback: "correct"),
+          solves("3.6 cm/s",
+            score: 1.5,
+            out_of: 2,
+            feedback: "non-reference-wrong-units"
+          ),
+          solves("3.6",
+            score: 1,
+            out_of: 2,
+            feedback: "non-reference-missing-unit"
+          ),
+          misses("1 cm/s", out_of: 2),
+          misses("1", out_of: 2)
+        ]
+      ),
       single("single number with units numeric tolerance",
         subtype: "number_with_units",
         unit_policy: convertible_units(["m/s", "km/hr"]),
