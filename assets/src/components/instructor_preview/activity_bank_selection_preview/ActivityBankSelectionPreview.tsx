@@ -1,6 +1,7 @@
 import React from 'react';
 import { PreviewHeader } from 'components/activities/common/preview/PreviewHeader';
 import { PreviewAction, PreviewStatusPill, PreviewVisualState } from 'components/activities/types';
+import { usePreviewCustomizationState } from 'components/instructor_preview/preview_customization_store';
 import { ArrowRight } from 'components/misc/icons/Icons';
 
 interface CustomizationTarget {
@@ -125,15 +126,6 @@ const pluralize = (count: number, singular: string, plural: string) =>
 
 const labelTextClasses = 'font-open-sans text-[14px] font-bold leading-4 text-Text-text-high';
 
-const matchesCustomizationTarget = (
-  expectedTarget: CustomizationTarget,
-  replyTarget?: Partial<CustomizationTarget>,
-) =>
-  !!replyTarget &&
-  replyTarget.kind === expectedTarget.kind &&
-  replyTarget.pageResourceId === expectedTarget.pageResourceId &&
-  replyTarget.selectionId === expectedTarget.selectionId;
-
 const SampleActivityPreview: React.FC<{
   sample?: SampleActivity | null;
   visualState: PreviewVisualState;
@@ -201,78 +193,46 @@ const SampleActivityPreview: React.FC<{
 };
 
 export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
-  const [actions, setActions] = React.useState(payload.actions ?? []);
-  const [visualState, setVisualState] = React.useState(payload.visualState ?? 'default');
-  const [statusPill, setStatusPill] = React.useState(payload.statusPill ?? undefined);
-  const [availableCount, setAvailableCount] = React.useState(payload.availableCount);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  React.useEffect(() => {
-    setActions(payload.actions ?? []);
-    setVisualState(payload.visualState ?? 'default');
-    setStatusPill(payload.statusPill ?? undefined);
-    setAvailableCount(payload.availableCount);
-  }, [payload]);
-
-  React.useEffect(() => {
-    const handleCustomizationReply = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-
-      if (!matchesCustomizationTarget(payload.customizationTarget, detail?.target)) {
-        return;
-      }
-
-      setIsSubmitting(false);
-
-      if (detail.ok && Array.isArray(detail.actions)) {
-        setActions(detail.actions);
-      }
-
-      if (detail.ok && Object.prototype.hasOwnProperty.call(detail, 'visualState')) {
-        setVisualState(detail.visualState ?? 'default');
-      }
-
-      if (detail.ok && Object.prototype.hasOwnProperty.call(detail, 'statusPill')) {
-        setStatusPill(detail.statusPill ?? undefined);
-      }
-
-      if (detail.ok && typeof detail.availableCount === 'number') {
-        setAvailableCount(detail.availableCount);
-      }
-    };
-
-    window.addEventListener('oli:preview-customization:reply', handleCustomizationReply);
-
-    return () => {
-      window.removeEventListener('oli:preview-customization:reply', handleCustomizationReply);
-    };
-  }, [payload.customizationTarget]);
+  const { state, begin } = usePreviewCustomizationState(payload.customizationTarget, {
+    disposition:
+      payload.actions?.[0]?.kind === 'restore' || payload.visualState === 'removed'
+        ? 'removed'
+        : 'included',
+    canToggle: !payload.actions?.[0]?.disabled,
+    availableCount: payload.availableCount,
+  });
+  const action = state.disposition === 'removed' ? 'restore' : 'remove';
+  const visualState = state.disposition === 'removed' ? 'removed' : 'default';
+  const availableCount = state.availableCount ?? payload.availableCount;
+  const isSubmitting = state.pendingAction !== null;
 
   const headerActions =
-    payload.canCustomize && actions.length > 0 ? (
+    payload.canCustomize && (payload.actions?.length ?? 0) > 0 ? (
       <div className="flex flex-wrap items-center gap-2">
-        {actions.map((action) => (
-          <button
-            key={action.kind}
-            type="button"
-            disabled={isSubmitting}
-            className={actionButtonClasses(action.kind)}
-            onClick={() => {
-              setIsSubmitting(true);
-              window.dispatchEvent(
-                new CustomEvent('oli:preview-customization', {
-                  detail: {
-                    action: action.kind,
-                    target: payload.customizationTarget,
-                  },
-                }),
-              );
-            }}
-          >
-            {action.kind === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
-            {isSubmitting ? 'Updating...' : action.label}
-          </button>
-        ))}
+        <button
+          type="button"
+          disabled={!state.canToggle || isSubmitting}
+          aria-busy={isSubmitting}
+          className={actionButtonClasses(action)}
+          onClick={() => {
+            if (!state.canToggle || isSubmitting) {
+              return;
+            }
+
+            begin(action);
+            window.dispatchEvent(
+              new CustomEvent('oli:preview-customization', {
+                detail: {
+                  action,
+                  target: payload.customizationTarget,
+                },
+              }),
+            );
+          }}
+        >
+          {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
+          {isSubmitting ? 'Updating...' : action === 'remove' ? 'Remove' : 'Restore'}
+        </button>
       </div>
     ) : null;
 
@@ -312,9 +272,9 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
               >
                 {payload.title}
               </div>
-              {statusPill ? (
+              {state.disposition === 'removed' ? (
                 <span className="inline-flex items-center rounded-full border border-Border-border-danger bg-Fill-fill-danger px-3 py-1 pr-4 font-open-sans text-[16px] font-bold leading-4 text-Text-text-danger">
-                  {statusPill.label}
+                  Removed
                 </span>
               ) : null}
             </div>

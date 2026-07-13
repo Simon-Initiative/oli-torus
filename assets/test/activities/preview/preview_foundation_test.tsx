@@ -8,6 +8,10 @@ import {
 import { ActivityPreviewCard } from 'components/activities/common/preview/ActivityPreviewCard';
 import { ReadonlyPanel } from 'components/activities/common/preview/ReadonlyPanel';
 import { ActivityModelSchema, PreviewContext } from 'components/activities/types';
+import {
+  clearPreviewCustomizationStore,
+  getPreviewCustomizationStore,
+} from 'components/instructor_preview/preview_customization_store';
 import { InstructorPreviewCustomization } from 'hooks/instructor_preview_customization';
 
 const previewContext: PreviewContext = {
@@ -33,6 +37,9 @@ const previewContext: PreviewContext = {
 };
 
 describe('ActivityPreviewCard', () => {
+  beforeEach(() => clearPreviewCustomizationStore(10));
+  afterEach(() => clearPreviewCustomizationStore(10));
+
   test('toggles details and switches tabs with keyboard navigation', () => {
     render(
       <ActivityPreviewCard
@@ -118,26 +125,102 @@ describe('ActivityPreviewCard', () => {
     expect(screen.getByRole('button', { name: 'Updating...' })).toBeInTheDocument();
 
     act(() => {
-      window.dispatchEvent(
-        new CustomEvent('oli:preview-customization:reply', {
-          detail: {
-            ok: true,
-            target: {
-              kind: 'embedded_activity',
-              pageResourceId: 10,
-              activityResourceId: 100,
-            },
-            activityResourceId: 100,
-            visualState: 'removed',
-            statusPill: { kind: 'removed', label: 'Removed' },
-            actions: [{ kind: 'restore', label: 'Restore' }],
-          },
-        }),
-      );
+      const target = {
+        kind: 'embedded_activity' as const,
+        pageResourceId: 10,
+        activityResourceId: 100,
+      };
+      getPreviewCustomizationStore(10).applyReply(target, {
+        ok: true,
+        target,
+        visualState: 'removed',
+        actions: [{ kind: 'restore', label: 'Restore' }],
+      });
     });
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
     expect(screen.getByText('Removed')).toBeInTheDocument();
+  });
+
+  test('preserves each embedded activity removal through stale preview-context rerenders', () => {
+    const includedContext = (activityResourceId: number): PreviewContext => ({
+      ...previewContext,
+      activityResourceId,
+      activityHtmlId: `activity_${activityResourceId}`,
+      title: `Activity ${activityResourceId}`,
+      actions: [{ kind: 'remove', label: 'Remove' }],
+      visualState: 'default',
+      customizationTarget: {
+        kind: 'embedded_activity',
+        pageResourceId: 10,
+        activityResourceId,
+      },
+    });
+    const initialContexts = [includedContext(100), includedContext(200)];
+    const { rerender } = render(
+      <>
+        {initialContexts.map((context) => (
+          <ActivityPreviewCard key={context.activityResourceId} previewContext={context}>
+            <div>{`Question ${context.activityResourceId}`}</div>
+          </ActivityPreviewCard>
+        ))}
+      </>,
+    );
+
+    [100, 200].forEach((activityResourceId) => {
+      act(() => {
+        const target = {
+          kind: 'embedded_activity' as const,
+          pageResourceId: 10,
+          activityResourceId,
+        };
+        getPreviewCustomizationStore(10).applyReply(target, {
+          ok: true,
+          target,
+          visualState: 'removed',
+          actions: [{ kind: 'restore', label: 'Restore' }],
+        });
+      });
+    });
+
+    rerender(
+      <>
+        {initialContexts.map((context) => (
+          <ActivityPreviewCard
+            key={context.activityResourceId}
+            previewContext={{
+              ...context,
+              actions: [{ kind: 'remove', label: 'Remove' }],
+              customizationTarget: { ...context.customizationTarget },
+            }}
+          >
+            <div>{`Question ${context.activityResourceId}`}</div>
+          </ActivityPreviewCard>
+        ))}
+      </>,
+    );
+
+    act(() => {
+      const target = {
+        kind: 'embedded_activity' as const,
+        pageResourceId: 10,
+        activityResourceId: 200,
+      };
+      getPreviewCustomizationStore(10).applyReply(target, {
+        ok: true,
+        target,
+        visualState: 'default',
+        actions: [{ kind: 'remove', label: 'Remove' }],
+      });
+    });
+
+    const firstCard = screen.getByText('Question 100').closest('article') as HTMLElement;
+    const secondCard = screen.getByText('Question 200').closest('article') as HTMLElement;
+
+    expect(firstCard).toHaveClass('before:bg-Border-border-danger');
+    expect(firstCard).toHaveTextContent('Restore');
+    expect(secondCard).not.toHaveClass('before:bg-Border-border-danger');
+    expect(secondCard).toHaveTextContent('Remove');
   });
 
   test('matches replies for selection-based targets using the full customization target', () => {
@@ -157,28 +240,70 @@ describe('ActivityPreviewCard', () => {
       </ActivityPreviewCard>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove bank' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
     act(() => {
-      window.dispatchEvent(
-        new CustomEvent('oli:preview-customization:reply', {
-          detail: {
-            ok: true,
-            target: {
-              kind: 'bank_selection',
-              pageResourceId: 10,
-              selectionId: 'selection-1',
-            },
-            actions: [{ kind: 'restore', label: 'Restore' }],
-          },
-        }),
-      );
+      const target = {
+        kind: 'bank_selection' as const,
+        pageResourceId: 10,
+        selectionId: 'selection-1',
+      };
+      getPreviewCustomizationStore(10).applyReply(target, {
+        ok: true,
+        target,
+        visualState: 'removed',
+        actions: [{ kind: 'restore', label: 'Restore' }],
+      });
     });
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
   });
 
-  test('renders removed visual treatment only when the preview context asks for it', () => {
+  test('tracks bank-candidate disposition without applying removed-card treatment', () => {
+    const candidateTarget = {
+      kind: 'bank_candidate' as const,
+      pageResourceId: 10,
+      selectionId: 'selection-1',
+      activityResourceId: 100,
+    };
+    const candidateContext = {
+      ...previewContext,
+      actions: [{ kind: 'remove' as const, label: 'Remove' }],
+      customizationTarget: candidateTarget,
+    };
+
+    render(
+      <ActivityPreviewCard previewContext={candidateContext}>
+        <div>Candidate question</div>
+      </ActivityPreviewCard>,
+    );
+
+    act(() => {
+      getPreviewCustomizationStore(10).applyReply(candidateTarget, {
+        ok: true,
+        target: candidateTarget,
+        visualState: 'default',
+        actions: [{ kind: 'restore', label: 'Restore' }],
+      });
+    });
+
+    const card = screen.getByText('Candidate question').closest('article') as HTMLElement;
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
+    expect(card).not.toHaveClass('before:bg-Border-border-danger');
+    expect(screen.queryByText('Removed')).not.toBeInTheDocument();
+
+    act(() => {
+      getPreviewCustomizationStore(10).applyReply(candidateTarget, {
+        ok: true,
+        target: candidateTarget,
+        actions: [{ kind: 'restore', label: 'Restore', disabled: true }],
+      });
+    });
+
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeDisabled();
+  });
+
+  test('derives removed visual treatment from semantic customization state', () => {
     const removedContext = {
       ...previewContext,
       actions: [{ kind: 'restore' as const, label: 'Restore' }],
@@ -209,6 +334,14 @@ describe('ActivityPreviewCard', () => {
         <div>Question body</div>
       </ActivityPreviewCard>,
     );
+
+    act(() => {
+      getPreviewCustomizationStore(10).applyReply(previewContext.customizationTarget, {
+        ok: true,
+        target: previewContext.customizationTarget,
+        disposition: 'included',
+      });
+    });
 
     expect(screen.queryByText('Removed')).not.toBeInTheDocument();
     expect(screen.getByText('Question body').closest('article')).not.toHaveClass('border-l-4');
@@ -334,6 +467,72 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
       'before:w-[6px]',
       'before:bg-Border-border-danger',
     );
+
+    InstructorPreviewCustomization.destroyed.call(hook);
+    document.body.innerHTML = '';
+  });
+
+  test('keeps removed bank-candidate fallbacks visually default and labels bulk-disabled actions', () => {
+    document.body.innerHTML = `
+      <div class="instructor-preview-activity-wrapper instructor-preview-authoring-fallback instructor-preview-default">
+        <div data-preview-title-row="200"><h3>Fallback Candidate</h3></div>
+        <button
+          type="button"
+          data-preview-customization-action="remove"
+          data-preview-customization-target='{"kind":"bank_candidate","pageResourceId":10,"selectionId":"selection-1","activityResourceId":200}'
+          data-preview-customization-button
+        >
+          <span data-preview-customization-label>Remove</span>
+        </button>
+      </div>
+    `;
+
+    const pushEvent = jest.fn(
+      (
+        _event: string,
+        _payload: Record<string, unknown>,
+        callback?: (reply: Record<string, unknown>) => void,
+      ) => {
+        callback?.({
+          ok: true,
+          visualState: 'default',
+          actions: [{ kind: 'restore', label: 'Restore' }],
+        });
+      },
+    );
+    const handleEvent = jest.fn();
+    const hook = {
+      pushEvent,
+      handleEvent,
+      handlePreviewCustomization: undefined as ((event: Event) => void) | undefined,
+      handleFallbackPreviewCustomizationClick: undefined as ((event: Event) => void) | undefined,
+    };
+
+    InstructorPreviewCustomization.mounted.call(hook);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+
+    const wrapper = document.querySelector('.instructor-preview-activity-wrapper');
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
+    expect(wrapper).toHaveClass('instructor-preview-default');
+    expect(wrapper).not.toHaveClass('instructor-preview-removed', 'before:bg-Border-border-danger');
+    expect(screen.queryByText('Removed')).not.toBeInTheDocument();
+
+    const serverReply = handleEvent.mock.calls[0][1] as (reply: Record<string, unknown>) => void;
+    act(() => {
+      serverReply({
+        ok: true,
+        target: {
+          kind: 'bank_candidate',
+          pageResourceId: 10,
+          selectionId: 'selection-1',
+          activityResourceId: 200,
+        },
+        actions: [{ kind: 'restore', label: 'Restore', disabled: true }],
+      });
+    });
+
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Restore' })).toHaveAttribute('aria-busy', 'false');
 
     InstructorPreviewCustomization.destroyed.call(hook);
     document.body.innerHTML = '';

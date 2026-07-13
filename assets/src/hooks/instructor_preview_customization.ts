@@ -1,4 +1,9 @@
 import type { PreviewAction } from 'components/activities/types';
+import {
+  PreviewCustomizationState,
+  clearFallbackPreviewCustomizationStore,
+  getPreviewCustomizationStore,
+} from 'components/instructor_preview/preview_customization_store';
 
 type InstructorPreviewCustomizationHook = {
   pushEvent: (
@@ -9,6 +14,7 @@ type InstructorPreviewCustomizationHook = {
   handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
   handlePreviewCustomization?: (event: Event) => void;
   handleFallbackPreviewCustomizationClick?: (event: Event) => void;
+  previewCustomizationPageIds?: Set<number>;
 };
 
 const validTargetKinds = new Set(['embedded_activity', 'bank_selection', 'bank_candidate']);
@@ -16,7 +22,6 @@ const validActions = new Set(['remove', 'restore']);
 
 const isNumber = (value: unknown): value is number => typeof value === 'number';
 const isString = (value: unknown): value is string => typeof value === 'string';
-const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
 const isValidCustomizationDetail = (
   detail: unknown,
@@ -72,6 +77,12 @@ const isValidCustomizationDetail = (
 
 export const InstructorPreviewCustomization = {
   mounted(this: InstructorPreviewCustomizationHook) {
+    this.previewCustomizationPageIds = new Set<number>();
+    const storeForPage = (pageResourceId: number) => {
+      this.previewCustomizationPageIds?.add(pageResourceId);
+      return getPreviewCustomizationStore(pageResourceId);
+    };
+
     const previewActionButtonClass = (kind: 'remove' | 'restore', disabled: boolean) => {
       const shared =
         'inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none';
@@ -83,27 +94,6 @@ export const InstructorPreviewCustomization = {
       return kind === 'remove'
         ? `${shared} border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted hover:bg-[rgba(255,64,64,0.08)] dark:border-Border-border-danger dark:text-[#FFB5B7] dark:hover:bg-[rgba(255,64,64,0.18)] focus-visible:outline-Border-border-danger`
         : `${shared} bg-transparent border-[#8AB8E5] text-Text-text-button hover:bg-[#EEF6FF] hover:text-Text-text-button-hover dark:bg-transparent dark:border-[#4C82B8] dark:text-[#9FD0FF] dark:hover:bg-[#16395C] dark:hover:text-[#D7ECFF] focus-visible:outline-[#8AB8E5]`;
-    };
-
-    const normalizeReplyAction = (action: unknown): PreviewAction | null => {
-      if (!action || typeof action !== 'object') {
-        return null;
-      }
-
-      const candidate = action as Record<string, unknown>;
-
-      if (
-        (candidate.kind !== 'remove' && candidate.kind !== 'restore') ||
-        !isString(candidate.label)
-      ) {
-        return null;
-      }
-
-      return {
-        kind: candidate.kind,
-        label: candidate.label,
-        disabled: isBoolean(candidate.disabled) ? candidate.disabled : false,
-      };
     };
 
     // Some activity types still fall back to the authoring element during instructor preview.
@@ -118,12 +108,8 @@ export const InstructorPreviewCustomization = {
         activityResourceId?: number;
         selectionId?: string;
       },
-      reply: Record<string, unknown>,
+      state: PreviewCustomizationState,
     ) => {
-      if (!reply.ok) {
-        return;
-      }
-
       const wrappers = document.querySelectorAll<HTMLElement>(
         '.instructor-preview-activity-wrapper',
       );
@@ -163,7 +149,9 @@ export const InstructorPreviewCustomization = {
           return;
         }
 
-        const visualState = reply.visualState === 'removed' ? 'removed' : 'default';
+        const showRemovedTreatment =
+          state.disposition === 'removed' && target.kind !== 'bank_candidate';
+        const visualState = showRemovedTreatment ? 'removed' : 'default';
         const isAuthoringFallback = wrapper.classList.contains(
           'instructor-preview-authoring-fallback',
         );
@@ -177,38 +165,32 @@ export const InstructorPreviewCustomization = {
                 isAuthoringFallback ? ' instructor-preview-authoring-fallback' : ''
               }`;
 
-        if (Array.isArray(reply.actions) && reply.actions.length > 0) {
-          const action = normalizeReplyAction(reply.actions[0]);
+        const action: PreviewAction =
+          state.disposition === 'removed'
+            ? { kind: 'restore', label: 'Restore' }
+            : { kind: 'remove', label: 'Remove' };
+        const disabled = !state.canToggle || state.pendingAction !== null;
+        const isPending = state.pendingAction !== null;
+        button.dataset.previewCustomizationAction = action.kind;
+        button.disabled = disabled;
+        button.setAttribute('aria-busy', String(isPending));
+        button.className = previewActionButtonClass(action.kind, disabled);
 
-          if (action) {
-            const disabled = action.disabled ?? false;
-            button.dataset.previewCustomizationAction = action.kind;
-            button.disabled = disabled;
-            button.className = previewActionButtonClass(action.kind, disabled);
-
-            const label = button.querySelector<HTMLElement>('[data-preview-customization-label]');
-            if (label) {
-              label.textContent = action.label ?? (action.kind === 'remove' ? 'Remove' : 'Restore');
-            }
-
-            button.innerHTML = `${
-              action.kind === 'remove'
-                ? '<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
-                : '<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.33301 9.16667C3.33301 12.3883 5.94468 15 9.16634 15C12.388 15 14.9997 12.3883 14.9997 9.16667C14.9997 5.94501 12.388 3.33334 9.16634 3.33334C7.24384 3.33334 5.53848 4.2628 4.47595 5.69884" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5.00033 1.66666L5.00033 5.83332L9.16699 5.83332" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
-            }<span data-preview-customization-label>${
-              action.label ?? (action.kind === 'remove' ? 'Remove' : 'Restore')
-            }</span>`;
-          }
+        const label = button.querySelector<HTMLElement>('[data-preview-customization-label]');
+        if (label) {
+          label.textContent = isPending ? 'Updating...' : action.label;
         }
+
+        button.innerHTML = `${
+          action.kind === 'remove'
+            ? '<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
+            : '<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.33301 9.16667C3.33301 12.3883 5.94468 15 9.16634 15C12.388 15 14.9997 12.3883 14.9997 9.16667C14.9997 5.94501 12.388 3.33334 9.16634 3.33334C7.24384 3.33334 5.53848 4.2628 4.47595 5.69884" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5.00033 1.66666L5.00033 5.83332L9.16699 5.83332" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
+        }<span data-preview-customization-label>${isPending ? 'Updating...' : action.label}</span>`;
 
         const titleRow = wrapper.querySelector<HTMLElement>('[data-preview-title-row]');
         const existingPill = wrapper.querySelector<HTMLElement>('[data-preview-status-pill]');
-        const statusPill = reply.statusPill as { kind?: string; label?: string } | null | undefined;
-
-        if (statusPill?.kind === 'removed') {
-          const pillMarkup = `<span data-preview-status-pill class="inline-flex items-center rounded-full border border-Border-border-danger bg-[rgba(255,64,64,0.08)] px-4 py-1 font-open-sans text-[14px] font-semibold leading-4 tracking-normal text-[#C91414] dark:bg-[rgba(255,64,64,0.16)] dark:text-[#FFB5B7]">${
-            statusPill.label ?? 'Removed'
-          }</span>`;
+        if (showRemovedTreatment) {
+          const pillMarkup = `<span data-preview-status-pill class="inline-flex items-center rounded-full border border-Border-border-danger bg-[rgba(255,64,64,0.08)] px-4 py-1 font-open-sans text-[14px] font-semibold leading-4 tracking-normal text-[#C91414] dark:bg-[rgba(255,64,64,0.16)] dark:text-[#FFB5B7]">Removed</span>`;
 
           if (existingPill) {
             existingPill.outerHTML = pillMarkup;
@@ -219,6 +201,24 @@ export const InstructorPreviewCustomization = {
           existingPill.remove();
         }
       });
+    };
+
+    const applyCustomizationReply = (
+      target: {
+        kind: 'embedded_activity' | 'bank_selection' | 'bank_candidate';
+        pageResourceId: number;
+        activityResourceId?: number;
+        selectionId?: string;
+      },
+      reply: Record<string, unknown>,
+    ) => {
+      const store = storeForPage(target.pageResourceId);
+      store.applyReply(target, reply);
+      const state = store.get(target);
+
+      if (state) {
+        updateFallbackPreviewCard(target, state);
+      }
     };
 
     // Preview activities are custom elements hydrated by React, but the mutation authority stays
@@ -240,7 +240,7 @@ export const InstructorPreviewCustomization = {
         | undefined;
 
       if (target) {
-        updateFallbackPreviewCard(target, reply);
+        applyCustomizationReply(target, reply);
       }
     });
 
@@ -254,16 +254,16 @@ export const InstructorPreviewCustomization = {
       // The pushEvent callback carries the per-component reply while the same handle_event can
       // still update normal LiveView assigns for the rest of the page.
       this.pushEvent('toggle_preview_activity_customization', detail, (reply) => {
+        const mergedReply = {
+          ...detail,
+          ...reply,
+        };
+        applyCustomizationReply(detail.target, mergedReply);
         window.dispatchEvent(
           new CustomEvent('oli:preview-customization:reply', {
-            detail: {
-              ...detail,
-              ...reply,
-            },
+            detail: mergedReply,
           }),
         );
-
-        updateFallbackPreviewCard(detail.target, reply);
       });
     };
 
@@ -307,53 +307,27 @@ export const InstructorPreviewCustomization = {
 
       button.disabled = true;
       const label = button.querySelector<HTMLElement>('[data-preview-customization-label]');
-      const previousLabel = label?.textContent ?? '';
-
       if (label) {
         label.textContent = 'Updating...';
       }
 
-      this.pushEvent('toggle_preview_activity_customization', detail, (reply) => {
-        button.disabled = false;
+      const store = storeForPage(target.pageResourceId);
+      store.initialize(target, {
+        disposition: detail.action === 'restore' ? 'removed' : 'included',
+      });
+      store.begin(target, detail.action);
 
-        if (!reply.ok && label) {
-          label.textContent = previousLabel;
-        }
+      this.pushEvent('toggle_preview_activity_customization', detail, (reply) => {
+        const mergedReply = { ...detail, ...reply };
+        applyCustomizationReply(target, mergedReply);
 
         window.dispatchEvent(
           new CustomEvent('oli:preview-customization:reply', {
-            detail: {
-              ...detail,
-              ...reply,
-            },
+            detail: mergedReply,
           }),
         );
-
-        updateFallbackPreviewCard(detail.target, reply);
       });
     };
-
-    this.handleEvent?.('preview_customization_reply', (reply) => {
-      const target =
-        reply.target && typeof reply.target === 'object'
-          ? (reply.target as {
-              kind: 'embedded_activity' | 'bank_selection' | 'bank_candidate';
-              pageResourceId: number;
-              activityResourceId?: number;
-              selectionId?: string;
-            })
-          : null;
-
-      window.dispatchEvent(
-        new CustomEvent('oli:preview-customization:reply', {
-          detail: reply,
-        }),
-      );
-
-      if (target) {
-        updateFallbackPreviewCard(target, reply);
-      }
-    });
 
     window.addEventListener('oli:preview-customization', this.handlePreviewCustomization);
     window.addEventListener('click', this.handleFallbackPreviewCustomizationClick as EventListener);
@@ -370,5 +344,7 @@ export const InstructorPreviewCustomization = {
         this.handleFallbackPreviewCustomizationClick as EventListener,
       );
     }
+
+    this.previewCustomizationPageIds?.forEach(clearFallbackPreviewCustomizationStore);
   },
 };
