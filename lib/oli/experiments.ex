@@ -510,9 +510,7 @@ defmodule Oli.Experiments do
   defp scoped_experiment_query(scope, experiment_id) do
     query =
       from(experiment in ExperimentDefinitionSchema,
-        where:
-          experiment.institution_id == ^scope.institution_id and
-            experiment.project_id == ^scope.project_id
+        where: experiment.project_id == ^scope.project_id
       )
 
     query
@@ -523,8 +521,7 @@ defmodule Oli.Experiments do
   defp scoped_project_experiments_query(scope) do
     from(experiment in ExperimentDefinitionSchema,
       where:
-        experiment.institution_id == ^scope.institution_id and
-          experiment.project_id == ^scope.project_id and
+        experiment.project_id == ^scope.project_id and
           is_nil(experiment.section_id)
     )
   end
@@ -546,14 +543,13 @@ defmodule Oli.Experiments do
       from(assignment in Assignment,
         join: experiment in ExperimentDefinitionSchema,
         on: experiment.id == assignment.experiment_id,
-        where:
-          experiment.institution_id == ^scope.institution_id and
-            experiment.project_id == ^scope.project_id
+        where: experiment.project_id == ^scope.project_id
       )
 
     query
     |> maybe_filter_joined_experiment_id(experiment_id)
     |> maybe_filter_assignment_section(scope.section_id)
+    |> maybe_filter_assignment_institution(scope)
   end
 
   defp scoped_exposure_query(scope, experiment_id) do
@@ -561,15 +557,14 @@ defmodule Oli.Experiments do
       from(exposure in Exposure,
         join: experiment in ExperimentDefinitionSchema,
         on: experiment.id == exposure.experiment_id,
-        where:
-          experiment.institution_id == ^scope.institution_id and
-            experiment.project_id == ^scope.project_id
+        where: experiment.project_id == ^scope.project_id
       )
 
     query
     |> maybe_filter_joined_experiment_id(experiment_id)
     |> maybe_filter_exposure_publication(scope.publication_id)
     |> maybe_filter_exposure_section(scope.section_id)
+    |> maybe_filter_exposure_institution(scope)
   end
 
   defp scoped_reward_query(scope, experiment_id) do
@@ -577,14 +572,13 @@ defmodule Oli.Experiments do
       from(reward in Reward,
         join: experiment in ExperimentDefinitionSchema,
         on: experiment.id == reward.experiment_id,
-        where:
-          experiment.institution_id == ^scope.institution_id and
-            experiment.project_id == ^scope.project_id
+        where: experiment.project_id == ^scope.project_id
       )
 
     query
     |> maybe_filter_joined_experiment_id(experiment_id)
     |> maybe_filter_reward_section(scope.section_id)
+    |> maybe_filter_reward_institution(scope)
   end
 
   defp reward_eligible_assignment_query(scope) do
@@ -598,8 +592,7 @@ defmodule Oli.Experiments do
       join: exposure in Exposure,
       on: exposure.assignment_id == assignment.id,
       where:
-        experiment.institution_id == ^scope.institution_id and
-          experiment.project_id == ^scope.project_id and
+        experiment.project_id == ^scope.project_id and
           experiment.state == :active and
           assignment.section_id == ^scope.section_id and
           assignment.enrollment_id == ^scope.enrollment_id and
@@ -651,6 +644,23 @@ defmodule Oli.Experiments do
     where(query, [assignment, _experiment], assignment.section_id == ^section_id)
   end
 
+  defp maybe_filter_assignment_institution(query, %{institution_id: nil}), do: query
+
+  defp maybe_filter_assignment_institution(query, %{section_id: section_id})
+       when not is_nil(section_id), do: query
+
+  defp maybe_filter_assignment_institution(query, %{institution_id: institution_id}) do
+    where(
+      query,
+      [assignment, _experiment],
+      fragment(
+        "EXISTS (SELECT 1 FROM sections s WHERE s.id = ? AND s.institution_id = ?)",
+        assignment.section_id,
+        ^institution_id
+      )
+    )
+  end
+
   defp maybe_filter_exposure_publication(query, nil), do: query
 
   defp maybe_filter_exposure_publication(query, publication_id) do
@@ -663,6 +673,23 @@ defmodule Oli.Experiments do
     where(query, [exposure, _experiment], exposure.section_id == ^section_id)
   end
 
+  defp maybe_filter_exposure_institution(query, %{institution_id: nil}), do: query
+
+  defp maybe_filter_exposure_institution(query, %{section_id: section_id})
+       when not is_nil(section_id), do: query
+
+  defp maybe_filter_exposure_institution(query, %{institution_id: institution_id}) do
+    where(
+      query,
+      [exposure, _experiment],
+      fragment(
+        "EXISTS (SELECT 1 FROM sections s WHERE s.id = ? AND s.institution_id = ?)",
+        exposure.section_id,
+        ^institution_id
+      )
+    )
+  end
+
   defp maybe_filter_reward_section(query, nil), do: query
 
   defp maybe_filter_reward_section(query, section_id) do
@@ -673,6 +700,23 @@ defmodule Oli.Experiments do
         "EXISTS (SELECT 1 FROM experiment_assignments ea WHERE ea.id = ? AND ea.section_id = ?)",
         reward.assignment_id,
         ^section_id
+      )
+    )
+  end
+
+  defp maybe_filter_reward_institution(query, %{institution_id: nil}), do: query
+
+  defp maybe_filter_reward_institution(query, %{section_id: section_id})
+       when not is_nil(section_id), do: query
+
+  defp maybe_filter_reward_institution(query, %{institution_id: institution_id}) do
+    where(
+      query,
+      [reward, _experiment],
+      fragment(
+        "EXISTS (SELECT 1 FROM experiment_assignments ea JOIN sections s ON s.id = ea.section_id WHERE ea.id = ? AND s.institution_id = ?)",
+        reward.assignment_id,
+        ^institution_id
       )
     )
   end
@@ -746,9 +790,7 @@ defmodule Oli.Experiments do
       from(policy_state in PolicyState,
         join: experiment in ExperimentDefinitionSchema,
         on: experiment.id == policy_state.experiment_id,
-        where:
-          experiment.institution_id == ^scope.institution_id and
-            experiment.project_id == ^scope.project_id
+        where: experiment.project_id == ^scope.project_id
       )
 
     query
@@ -804,7 +846,6 @@ defmodule Oli.Experiments do
         on: decision_point.experiment_id == experiment.id,
         where:
           experiment.state == :active and
-            experiment.institution_id == ^scope.institution_id and
             experiment.project_id == ^scope.project_id and
             decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
             decision_point.decision_point_key == ^request.decision_point_key,
@@ -1078,7 +1119,6 @@ defmodule Oli.Experiments do
       experiment_id: match.experiment.id,
       decision_point_id: match.decision_point.id,
       condition_id: match.condition.id,
-      institution_id: scope.institution_id,
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,
@@ -1525,32 +1565,31 @@ defmodule Oli.Experiments do
   defp policy_module(:thompson_sampling), do: ThompsonSampling
 
   defp get_scoped_assignment(assignment_id, scope) do
-    with {:ok, scope} <- validate_scope(scope),
-         %Assignment{} = assignment <- Repo.get(Assignment, assignment_id),
-         :ok <- ensure_assignment_in_scope(assignment, scope) do
-      {:ok, assignment}
+    with {:ok, scope} <- validate_scope(scope) do
+      query =
+        from assignment in Assignment,
+          join: experiment in ExperimentDefinitionSchema,
+          on: experiment.id == assignment.experiment_id,
+          where:
+            assignment.id == ^assignment_id and
+              experiment.project_id == ^scope.project_id and
+              assignment.section_id == ^scope.section_id and
+              assignment.enrollment_id == ^scope.enrollment_id and
+              assignment.user_id == ^scope.user_id
+
+      case Repo.one(query) do
+        %Assignment{} = assignment ->
+          {:ok, assignment}
+
+        nil ->
+          if Repo.exists?(from assignment in Assignment, where: assignment.id == ^assignment_id) do
+            invalid_scope("assignment is outside scope", %{assignment_id: assignment_id})
+          else
+            not_found("assignment not found", %{assignment_id: assignment_id})
+          end
+      end
     else
-      nil -> not_found("assignment not found", %{assignment_id: assignment_id})
       {:error, %ExperimentError{}} = error -> error
-    end
-  end
-
-  defp ensure_assignment_in_scope(assignment, scope) do
-    cond do
-      assignment.institution_id != scope.institution_id ->
-        invalid_scope("assignment does not belong to institution")
-
-      assignment.section_id != scope.section_id ->
-        invalid_scope("assignment does not belong to section")
-
-      assignment.enrollment_id != scope.enrollment_id ->
-        invalid_scope("assignment does not belong to enrollment")
-
-      assignment.user_id != scope.user_id ->
-        invalid_scope("assignment does not belong to user")
-
-      true ->
-        :ok
     end
   end
 
@@ -1584,7 +1623,6 @@ defmodule Oli.Experiments do
     policy_config = normalize_policy_config!(request.algorithm, request.policy_config || %{})
 
     %{
-      institution_id: scope.institution_id,
       project_id: scope.project_id,
       section_id: scope.section_id,
       slug: request.slug,
@@ -2371,8 +2409,7 @@ defmodule Oli.Experiments do
 
   defp validate_scope(_scope), do: invalid_scope("scope is required")
 
-  defp validate_institution(%Scope{institution_id: nil}),
-    do: invalid_scope("institution_id is required")
+  defp validate_institution(%Scope{institution_id: nil} = scope), do: {:ok, scope}
 
   defp validate_institution(%Scope{institution_id: institution_id} = scope) do
     case Repo.get(Oli.Institutions.Institution, institution_id) do
@@ -2461,7 +2498,8 @@ defmodule Oli.Experiments do
           actual_slug: section.slug
         })
 
-      not is_nil(section.institution_id) and section.institution_id != scope.institution_id ->
+      not is_nil(scope.institution_id) and not is_nil(section.institution_id) and
+          section.institution_id != scope.institution_id ->
         invalid_scope("section does not belong to institution", %{
           section_id: section.id,
           institution_id: scope.institution_id,
@@ -2524,9 +2562,6 @@ defmodule Oli.Experiments do
 
   defp ensure_definition_in_scope(schema, scope) do
     cond do
-      schema.institution_id != scope.institution_id ->
-        invalid_scope("experiment does not belong to institution")
-
       schema.project_id != scope.project_id ->
         invalid_scope("experiment does not belong to project")
 
@@ -2542,7 +2577,6 @@ defmodule Oli.Experiments do
     %ExperimentDefinition{
       id: schema.id,
       uuid: schema.uuid,
-      institution_id: schema.institution_id,
       project_id: schema.project_id,
       section_id: schema.section_id,
       slug: schema.slug,

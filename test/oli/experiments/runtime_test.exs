@@ -480,7 +480,6 @@ defmodule Oli.Experiments.RuntimeTest do
       experiment_id: definition.id,
       decision_point_id: decision_point.id,
       condition_id: condition.id,
-      institution_id: scope.institution_id,
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,

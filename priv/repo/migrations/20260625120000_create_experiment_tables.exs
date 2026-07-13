@@ -8,7 +8,6 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
   def change do
     create table(:experiment_definitions) do
       add :uuid, :uuid, null: false
-      add :institution_id, references(:institutions, on_delete: :nothing), null: false
       add :project_id, references(:projects, on_delete: :nothing), null: false
       add :section_id, references(:sections, on_delete: :nothing)
       add :slug, :string, null: false
@@ -42,12 +41,11 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
              name: :experiment_definitions_project_slug_idx
            )
 
-    create index(:experiment_definitions, [:institution_id])
     create index(:experiment_definitions, [:project_id])
     create index(:experiment_definitions, [:section_id])
     create index(:experiment_definitions, [:state])
 
-    create index(:experiment_definitions, [:institution_id, :project_id, :state],
+    create index(:experiment_definitions, [:project_id, :state],
              name: :experiment_definitions_active_scope_idx
            )
 
@@ -109,7 +107,6 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
         null: false
 
       add :condition_id, references(:experiment_conditions, on_delete: :nothing), null: false
-      add :institution_id, references(:institutions, on_delete: :nothing), null: false
       add :section_id, references(:sections, on_delete: :nothing), null: false
       add :enrollment_id, references(:enrollments, on_delete: :nothing), null: false
       add :user_id, references(:users, on_delete: :nothing), null: false

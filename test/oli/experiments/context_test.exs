@@ -38,7 +38,6 @@ defmodule Oli.Experiments.ContextTest do
 
       assert definition.id
       assert definition.uuid
-      assert definition.institution_id == scope.institution_id
       assert definition.project_id == scope.project_id
       assert definition.section_id == scope.section_id
       assert definition.state == :draft
@@ -267,7 +266,6 @@ defmodule Oli.Experiments.ContextTest do
         experiment_id: definition.id,
         decision_point_id: decision_point.id,
         condition_id: condition.id,
-        institution_id: runtime_scope.institution_id,
         section_id: runtime_scope.section_id,
         enrollment_id: runtime_scope.enrollment_id,
         user_id: runtime_scope.user_id,

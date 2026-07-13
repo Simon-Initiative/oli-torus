@@ -27,6 +27,53 @@ The active experiment was also correctly started:
 
 ## Findings
 
+### [ ] Finding 5: Multiple active experiments can target the same decision point
+
+- Status: Open
+- Severity: High
+- Area: Experiment lifecycle validation / runtime matching
+- QA context: While preparing to validate Thompson Sampling, weighted-random QA had already confirmed that an active experiment against the same A/B decision point can receive assignments. If a second experiment is started against that same decision point, the older active experiment may continue to win runtime matching.
+- Expected: A project or section scope should not allow more than one active experiment targeting the same stable decision point identity at the same time.
+- Actual: Runtime matching orders matching active experiments by ascending experiment ID and uses the first row. This means the oldest active matching experiment wins silently, while the newer active experiment receives no assignments or exposures for that decision point.
+- Evidence:
+  - `Oli.Experiments.active_experiment_match/2` filters active experiments by project/section and stable decision point identity, then applies `order_by: [asc: experiment.id]` and `limit: 1`.
+  - Existing database constraints only prevent duplicate decision-point keys within the same experiment; they do not prevent two active experiments from targeting the same alternatives resource and decision point key in the same scope.
+- Impact:
+  - Thompson Sampling QA can be invalidated if a previous weighted-random experiment remains active for the same decision point.
+  - Authors can believe a newer experiment is active while delivery is still assigning learners through an older experiment.
+- Proposed change:
+  - Activation should reject starting an experiment when another active experiment already targets the same `project_id`, compatible `section_id` scope, `alternatives_resource_id`, and `decision_point_key`.
+  - Runtime matching should either fail loudly on multiple active matches or emit explicit diagnostic telemetry instead of silently choosing the oldest experiment.
+  - Add regression coverage for project-scoped and section-scoped conflicts, including the case where one project-scoped active experiment conflicts with a section-scoped active experiment for the same decision point.
+
+### [x] Finding 6: Thompson reward handoff misses open/free section assignments
+
+- Status: Fixed
+- Severity: High
+- Area: Reward handoff / Thompson Sampling posterior updates
+- QA context: A Thompson Sampling experiment assigned and exposed an open/free learner successfully. After adding a scored activity inside the assigned A/B decision-point branch, publishing, updating the section, and completing the activity for full credit, no `experiment_outcomes` or `experiment_rewards` rows were created.
+- Expected: Evaluating a scored activity inside the learner's assigned A/B branch should create an outcome, create a binary reward, and update the Thompson Sampling policy state for the assigned condition.
+- Actual: The activity attempt evaluated successfully with full credit, but reward handoff found no reward-eligible assignment, so no outcome/reward rows were created.
+- Evidence:
+  - Active experiment `6` is project-scoped with `institution_id = 1`.
+  - Open/free section `8` has no institution in delivery scope.
+  - Assignment `8` and exposure `7` exist for learner `user_id = 45`, `enrollment_id = 48`.
+  - Activity attempt `255` evaluated successfully with `score = 1`, `out_of = 1`.
+  - The published page content contains activity resource `12677` inside assigned option `MZM6jW5594WXv4gRUhfZdb`.
+  - A direct eligibility query using `experiment.institution_id = 1` finds assignment `8`; the same query using the raw open/free `NULL` institution scope finds no rows.
+- Impact:
+  - Thompson Sampling assignments and exposures can appear healthy, but posterior state never updates for open/free learners.
+  - Manual QA cannot validate adaptive reward behavior on open/free sections until reward eligibility uses the same institution inference as assignment.
+- Proposed change:
+  - Apply the same active-experiment institution inference used by A/B decision-point delivery to reward handoff or reward eligibility scope construction.
+  - Ensure `reward_eligible_assignments/3`, `record_outcome/1`, and `record_reward/1` can operate for institutionless open/free sections when the section belongs to the scoped project and assignment already exists.
+  - Add regression coverage proving an evaluated activity inside an assigned branch creates an outcome, reward, and Thompson posterior update for an institutionless open/free section.
+- Resolution:
+  - Removed direct institution scope from experiment definitions and assignments. Native experiments are now scoped by `project_id` and optional `section_id`.
+  - Runtime assignment, exposure, reward, analytics, and policy-state queries now use project/section scope rather than experiment-level institution equality.
+  - A/B decision-point delivery no longer queries active experiments to infer institution for open/free sections.
+  - Added regression coverage proving an evaluated activity inside an assigned branch creates an outcome, reward, and Thompson policy update for an institutionless open/free section.
+
 ### [x] Finding 4: Active experiments are pinned to a specific alternatives revision
 
 - Status: Fixed

@@ -70,6 +70,22 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert Repo.aggregate(PolicyUpdate, :count, :id) == 1
     end
 
+    test "records Thompson reward for institutionless open and free sections" do
+      %{activity_attempt: activity_attempt} =
+        setup_reward_context(
+          score: 1.0,
+          out_of: 1.0,
+          algorithm: :thompson_sampling,
+          open_and_free?: true
+        )
+
+      assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
+
+      assert Repo.aggregate(Outcome, :count, :id) == 1
+      assert Repo.aggregate(Reward, :count, :id) == 1
+      assert Repo.aggregate(PolicyUpdate, :count, :id) == 1
+    end
+
     test "returns ok without records when no experiment assignment is eligible" do
       %{activity_attempt: activity_attempt} = setup_reward_context(assign?: false)
 
@@ -109,13 +125,18 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
     assign? = Keyword.get(opts, :assign?, true)
     algorithm = Keyword.get(opts, :algorithm, :weighted_random)
     lifecycle_state = Keyword.get(opts, :lifecycle_state, :evaluated)
+    open_and_free? = Keyword.get(opts, :open_and_free?, false)
 
     institution = insert(:institution)
     project = insert(:project)
     publication = insert(:publication, project: project)
 
     section =
-      insert(:section, institution: institution, base_project: project, has_experiments: true)
+      if open_and_free? do
+        insert(:section, institution: nil, base_project: project, has_experiments: true)
+      else
+        insert(:section, institution: institution, base_project: project, has_experiments: true)
+      end
 
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
@@ -174,7 +195,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       )
 
     scope = %Scope{
-      institution_id: institution.id,
+      institution_id: if(open_and_free?, do: nil, else: institution.id),
       project_id: project.id,
       publication_id: publication.id,
       section_id: section.id,

@@ -104,12 +104,9 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     section_id = context.section_id || (section && section.id)
     project_id = context.project_id || (section && section.base_project_id)
 
-    institution_id =
-      experiment_institution_id(context, section, decision_point, project_id, section_id)
-
     {
       %Scope{
-        institution_id: institution_id,
+        institution_id: context.institution_id || (section && section.institution_id),
         project_id: project_id,
         project_slug: context.project_slug,
         publication_id: context.publication_id || publication_id(section_id, decision_point.id),
@@ -120,33 +117,6 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       },
       decision_point
     }
-  end
-
-  defp experiment_institution_id(context, section, decision_point, project_id, section_id) do
-    context.institution_id ||
-      (section && section.institution_id) ||
-      active_experiment_institution_id(project_id, section_id, decision_point.id)
-  end
-
-  defp active_experiment_institution_id(nil, _section_id, _alternatives_resource_id), do: nil
-
-  defp active_experiment_institution_id(project_id, section_id, alternatives_resource_id) do
-    decision_point_key = decision_point_key(alternatives_resource_id)
-
-    Repo.one(
-      from experiment in "experiment_definitions",
-        join: decision_point in "experiment_decision_points",
-        on: decision_point.experiment_id == experiment.id,
-        where:
-          experiment.state == "active" and
-            experiment.project_id == ^project_id and
-            decision_point.alternatives_resource_id == ^alternatives_resource_id and
-            decision_point.decision_point_key == ^decision_point_key,
-        where: is_nil(experiment.section_id) or experiment.section_id == ^section_id,
-        order_by: [asc: experiment.id],
-        select: experiment.institution_id,
-        limit: 1
-    )
   end
 
   defp maybe_section(%AlternativesStrategyContext{

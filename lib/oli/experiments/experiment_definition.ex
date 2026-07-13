@@ -6,7 +6,6 @@ defmodule Oli.Experiments.ExperimentDefinition do
   defstruct [
     :id,
     :uuid,
-    :institution_id,
     :project_id,
     :section_id,
     :slug,

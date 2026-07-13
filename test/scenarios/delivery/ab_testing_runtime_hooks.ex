@@ -42,7 +42,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   @fallback_student_name "ab_runtime_fallback_student"
   @page_title "AB Runtime Practice"
   @activity_virtual_id "runtime_mcq"
-  @condition_code "condition-a"
+  @condition_code "alt-a"
   @option_id "alt-a"
   @option_b_id "alt-b"
 
@@ -72,6 +72,9 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
              slug: "scenario-delivery-runtime",
              name: "Scenario delivery runtime",
              algorithm: :thompson_sampling,
+             policy_config: %{
+               "guardrails" => %{"fixed_control_allocation" => 1.0}
+             },
              decision_point: %{
                alternatives_resource_id: alternatives_revision.resource_id,
                alternatives_revision_id: alternatives_revision.id,
@@ -88,7 +91,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
                  position: 0
                },
                %{
-                 condition_code: "condition-b",
+                 condition_code: @option_b_id,
                  option_id: @option_b_id,
                  label: "Condition B",
                  weight: 1.0,
@@ -127,25 +130,27 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          {:ok, activity_attempt} <-
            evaluated_activity_attempt(scope, activity_revision.resource_id) do
       assignment = Repo.one!(assignment_query(scope, alternatives_revision))
+      assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
+      assert Repo.aggregate(outcome_query(scope, activity_attempt.id), :count, :id) == 1
+      assert Repo.aggregate(reward_query(scope, activity_attempt.id), :count, :id) == 1
+
+      reward = Repo.one!(reward_query(scope, activity_attempt.id))
 
       reward_request = %RecordRewardRequest{
         scope: scope,
         assignment_id: assignment.id,
-        reward_value: 1.0,
-        reward_source: "activity_attempt:evaluated",
-        idempotency_key: "scenario-ts-reward:#{activity_attempt.id}"
+        outcome_id: reward.outcome_id,
+        reward_value: reward.reward_value,
+        reward_source: reward.reward_source,
+        idempotency_key: reward.idempotency_key
       }
 
-      assert {:ok, reward_receipt} = Experiments.record_reward(reward_request)
       assert {:ok, reused_reward_receipt} = Experiments.record_reward(reward_request)
       assert reused_reward_receipt.reused?
-      assert reused_reward_receipt.id == reward_receipt.id
-
-      reward = Repo.get!(Reward, reward_receipt.id)
+      assert reused_reward_receipt.id == reward.id
       assert reward.reward_value == 1.0
       assert reward.reward_source == "activity_attempt:evaluated"
       assert_thompson_policy_update(scope, alternatives_revision, reward)
-      assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
       assert Repo.aggregate(policy_update_query(reward.id), :count, :id) == 1
 
       state
@@ -388,14 +393,27 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
           activity_attempt.resource_id == ^activity_resource_id and
           activity_attempt.lifecycle_state == :evaluated,
       order_by: [desc: activity_attempt.id],
-      limit: 1
+      limit: 10,
+      select: {activity_attempt, resource_attempt.content}
     )
-    |> Repo.one()
+    |> Repo.all()
+    |> Enum.find(fn {_activity_attempt, content} -> alternatives_page_content?(content) end)
     |> case do
-      nil -> {:error, {:evaluated_activity_attempt_not_found, activity_resource_id}}
-      activity_attempt -> {:ok, activity_attempt}
+      nil ->
+        {:error, {:evaluated_activity_attempt_not_found, activity_resource_id}}
+
+      {activity_attempt, _content} ->
+        {:ok, activity_attempt}
     end
   end
+
+  defp alternatives_page_content?(%{"model" => _model} = content) do
+    content
+    |> Oli.Resources.PageContent.flat_filter(&(Map.get(&1, "type") == "alternatives"))
+    |> Enum.any?()
+  end
+
+  defp alternatives_page_content?(_content), do: false
 
   defp delivery_page_revision(%ExecutionState{} = state, project_name, section_name) do
     with {:ok, built_project} <- fetch_project(state, project_name),
@@ -529,9 +547,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   defp scoped_experiment_ids(%Scope{} = scope) do
     from(experiment in Oli.Experiments.Schemas.ExperimentDefinition,
       where:
-        experiment.institution_id == ^scope.institution_id and
-          experiment.project_id == ^scope.project_id and
-          (is_nil(experiment.publication_id) or experiment.publication_id == ^scope.publication_id) and
+        experiment.project_id == ^scope.project_id and
           (is_nil(experiment.section_id) or experiment.section_id == ^scope.section_id),
       select: experiment.id
     )

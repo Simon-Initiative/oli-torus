@@ -7,7 +7,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
 
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
-  alias Oli.Institutions.Institution
 
   @states [:draft, :active, :paused, :completed, :archived]
   @assignment_units [:enrollment]
@@ -29,7 +28,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     field :started_at, :utc_datetime
     field :ended_at, :utc_datetime
 
-    belongs_to :institution, Institution
     belongs_to :project, Project
     belongs_to :section, Section
 
@@ -40,7 +38,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     definition
     |> cast(attrs, [
       :uuid,
-      :institution_id,
       :project_id,
       :section_id,
       :slug,
@@ -56,7 +53,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     |> put_uuid()
     |> validate_required([
       :uuid,
-      :institution_id,
       :project_id,
       :slug,
       :name,
@@ -67,7 +63,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     ])
     |> validate_length(:slug, min: 1, max: 255)
     |> validate_length(:name, min: 1, max: 255)
-    |> foreign_key_constraint(:institution_id)
     |> foreign_key_constraint(:project_id)
     |> foreign_key_constraint(:section_id)
     |> unique_constraint(:uuid, name: :experiment_definitions_uuid_idx)

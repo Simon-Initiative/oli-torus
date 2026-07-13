@@ -21,12 +21,10 @@ defmodule Oli.Experiments.PersistenceTest do
 
       refute changeset.valid?
 
-      assert %{project_id: ["can't be blank"], institution_id: ["can't be blank"]} =
-               errors_on(changeset)
+      assert %{project_id: ["can't be blank"]} = errors_on(changeset)
 
       changeset =
         ExperimentDefinition.changeset(%ExperimentDefinition{}, %{
-          institution_id: 1,
           project_id: 1,
           slug: "ab-test",
           name: "A/B Test",
@@ -49,7 +47,6 @@ defmodule Oli.Experiments.PersistenceTest do
 
       duplicate_uuid =
         %{
-          institution_id: definition.institution_id,
           project_id: insert(:project).id,
           slug: "different-slug",
           name: "Different Experiment",
@@ -63,7 +60,6 @@ defmodule Oli.Experiments.PersistenceTest do
 
       duplicate_project_slug =
         %{
-          institution_id: definition.institution_id,
           project_id: project.id,
           slug: definition.slug,
           name: "Duplicate Slug",
@@ -230,7 +226,6 @@ defmodule Oli.Experiments.PersistenceTest do
       attrs
       |> Map.take([:uuid, :slug, :name, :state, :assignment_unit, :algorithm, :policy_config])
       |> Map.merge(%{
-        institution_id: institution.id,
         project_id: project.id,
         section_id: section.id
       })
@@ -421,7 +416,6 @@ defmodule Oli.Experiments.PersistenceTest do
         experiment_id: definition.id,
         decision_point_id: graph.decision_point.id,
         condition_id: graph.condition.id,
-        institution_id: graph.institution.id,
         section_id: graph.section.id,
         enrollment_id: graph.enrollment.id,
         user_id: graph.user.id,

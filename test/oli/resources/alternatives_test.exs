@@ -380,8 +380,8 @@ defmodule Oli.Resources.AlternativesTest do
       exposure = Repo.one!(Exposure)
 
       assert context.institution_id == nil
-      assert assignment.institution_id
       assert assignment.section_id == context.section_id
+      assert assignment.enrollment_id == context.enrollment_id
       assert exposure.assignment_id == assignment.id
     end
 
