@@ -355,6 +355,12 @@ defmodule OliWeb.Router do
 
       post "/scenario-yaml", PlaywrightScenarioController, :run
     end
+
+    scope "/test", OliWeb do
+      pipe_through [:browser]
+
+      get "/log_in_user", PlaywrightSessionController, :log_in_user
+    end
   end
 
   scope "/", OliWeb do

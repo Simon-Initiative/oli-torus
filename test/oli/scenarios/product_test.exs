@@ -171,14 +171,14 @@ defmodule Oli.Scenarios.ProductTest do
       assert inherited = TestHelpers.get_section(result, "inherits_product_paywall")
       assert inherited.requires_payment == true
       assert inherited.payment_options == :direct
-      assert inherited.amount == Money.new(25, "USD")
+      assert inherited.amount == Money.new("21.25", "USD")
       assert inherited.has_grace_period == false
       assert inherited.grace_period_strategy == :relative_to_student
 
       assert overridden = TestHelpers.get_section(result, "overrides_product_paywall")
       assert overridden.requires_payment == true
       assert overridden.payment_options == :deferred
-      assert overridden.amount == Money.new(25, "USD")
+      assert overridden.amount == Money.new("21.25", "USD")
       assert overridden.has_grace_period == true
       assert overridden.grace_period_days == 7
       assert overridden.grace_period_strategy == :relative_to_section
@@ -193,6 +193,74 @@ defmodule Oli.Scenarios.ProductTest do
 
       assert discount.type == :percentage
       assert discount.percentage == 15.0
+    end
+
+    test "can target section institution explicitly for discount qualification" do
+      yaml = """
+      - institution:
+          name: "discount_school"
+          country_code: "US"
+          institution_email: "admin@discount.edu"
+          institution_url: "https://discount.edu"
+
+      - institution:
+          name: "standard_school"
+          country_code: "US"
+          institution_email: "admin@standard.edu"
+          institution_url: "https://standard.edu"
+
+      - project:
+          name: "source_project"
+          title: "Source Project"
+          root:
+            children:
+              - page: "Page 1"
+
+      - product:
+          name: "paid_product"
+          title: "Paid Product"
+          from: "source_project"
+          requires_payment: true
+          payment_options: "direct"
+          amount:
+            amount: 25
+            currency: "USD"
+          has_grace_period: false
+
+      - institution_discount:
+          institution: "discount_school"
+          product: "paid_product"
+          type: "percentage"
+          percentage: 20
+
+      - section:
+          name: "discounted_section"
+          title: "Discounted Section"
+          from: "paid_product"
+          institution: "discount_school"
+
+      - section:
+          name: "standard_section"
+          title: "Standard Section"
+          from: "paid_product"
+          institution: "standard_school"
+      """
+
+      result = TestHelpers.execute_yaml(yaml)
+
+      assert %ExecutionResult{errors: []} = result
+
+      assert discounted = TestHelpers.get_section(result, "discounted_section")
+      assert discounted.amount == Money.new(20, "USD")
+
+      assert standard = TestHelpers.get_section(result, "standard_section")
+      assert standard.amount == Money.new(25, "USD")
+
+      assert discount_school = Engine.get_institution(result.state, "discount_school")
+      assert standard_school = Engine.get_institution(result.state, "standard_school")
+
+      assert discounted.institution_id == discount_school.id
+      assert standard.institution_id == standard_school.id
     end
   end
 end

@@ -89,6 +89,7 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     - section:
         name: "paid_section"
         from: "paid_product"
+        institution: "demo_institution"
         requires_payment: true
         payment_options: "deferred"
         amount:
@@ -107,6 +108,7 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert product.amount == %{"amount" => 25, "currency" => "USD"}
     assert discount.type == :percentage
     assert discount.percentage == 20.0
+    assert section.institution == "demo_institution"
     assert section.payment_options == :deferred
     assert section.has_grace_period == false
   end

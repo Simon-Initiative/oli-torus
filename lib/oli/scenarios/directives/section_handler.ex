@@ -4,6 +4,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
   """
 
   alias Oli.Delivery
+  alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias Oli.Scenarios.DirectiveTypes.SectionDirective
@@ -48,6 +49,15 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
     end
   end
 
+  defp institution_for_section(%{institution: nil}, state), do: state.current_institution
+
+  defp institution_for_section(%{institution: institution_name}, state) do
+    case Engine.get_institution(state, institution_name) do
+      nil -> raise "Institution '#{institution_name}' not found"
+      institution -> institution
+    end
+  end
+
   defp create_from_built_project(built_project, directive_attrs, state) do
     # Reuse the latest publication, creating an initial one if the project has not been published yet.
     publication =
@@ -77,9 +87,20 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
   end
 
   defp create_from_product(product, directive_attrs, state) do
+    institution = institution_for_section(directive_attrs, state)
+
+    {amount, requires_payment} =
+      case Paywall.section_cost_from_product(product, institution) do
+        {:ok, nil} -> {product.amount, false}
+        {:ok, amount} -> {amount, product.requires_payment}
+        _ -> {product.amount, product.requires_payment}
+      end
+
     section_params =
       directive_attrs
       |> base_section_attrs(state)
+      |> Map.put(:amount, amount)
+      |> Map.put(:requires_payment, requires_payment)
       |> Map.put(:blueprint_id, product.id)
 
     {:ok, section} = Delivery.create_from_product(state.current_author, product, section_params)
@@ -115,11 +136,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
   end
 
   defp base_section_attrs(directive_attrs, state) do
+    institution = institution_for_section(directive_attrs, state)
+
     directive_attrs
     |> DirectiveAttrs.section_attrs()
     |> Map.merge(%{
       context_id: "context_#{System.unique_integer([:positive])}",
-      institution_id: state.current_institution.id
+      institution_id: institution.id
     })
   end
 end

@@ -15,6 +15,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :name,
       :title,
       :from,
+      :institution,
       :type,
       :registration_open,
       :slug,

@@ -20,6 +20,7 @@ Creates a course section from a project, product, or as a standalone section.
 - `name`: Internal identifier for the section (required)
 - `title`: Display title for the section
 - `from`: Source project or product name (optional for standalone)
+- `institution`: Scenario institution name to assign explicitly to the section
 - `type`: Section type - `enrollable` (default) or `open_and_free`
 - `registration_open`: Whether registration is open (default: true)
 - `requires_payment`: Whether the section is paywalled
@@ -74,10 +75,14 @@ Creates a course section from a project, product, or as a standalone section.
 
 #### Section-Level Paywall Override
 ```yaml
+- institution:
+    name: "partner_school"
+
 - section:
     name: "paid_section"
     title: "Paid Section"
     from: "paid_template"
+    institution: "partner_school"
     payment_options: "deferred"
     has_grace_period: true
     grace_period_days: 7

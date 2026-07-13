@@ -1082,6 +1082,7 @@
                 "name": { "type": "string" },
                 "title": { "type": "string" },
                 "from": { "type": "string" },
+                "institution": { "type": "string" },
                 "type": {
                   "type": "string",
                   "enum": ["enrollable", "open_and_free"]
