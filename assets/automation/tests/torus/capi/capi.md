@@ -18,30 +18,31 @@ The host (`ExternalActivity`) is the ground truth for the wire format — there 
 
 ## Test layers
 
-| Layer | File | Run |
-|---|---|---|
-| Protocol E2E (Playwright) | `capi.spec.ts` | `npx playwright test tests/torus/capi/capi.spec.ts` |
-| Value coercion (Jest) | `assets/test/adaptivity/capi_variable_test.ts` | `cd assets && npx jest test/adaptivity/capi_variable_test.ts` |
-| Seeding directive (ExUnit) | `test/oli/scenarios/edit_adaptive_page_test.exs` | `mix test test/oli/scenarios/edit_adaptive_page_test.exs` |
+| Layer                      | File                                             | Run                                                           |
+| -------------------------- | ------------------------------------------------ | ------------------------------------------------------------- |
+| Protocol E2E (Playwright)  | `capi.spec.ts`                                   | `npx playwright test tests/torus/capi/capi.spec.ts`           |
+| Value coercion (Jest)      | `assets/test/adaptivity/capi_variable_test.ts`   | `cd assets && npx jest test/adaptivity/capi_variable_test.ts` |
+| Seeding directive (ExUnit) | `test/oli/scenarios/edit_adaptive_page_test.exs` | `mix test test/oli/scenarios/edit_adaptive_page_test.exs`     |
 
 ## Playwright coverage
 
-| # | Test | Asserts |
-|---|---|---|
-| 1 | handshake | HANDSHAKE_REQUEST → HANDSHAKE_RESPONSE, requestToken echoed, config has context/sectionSlug/userId/questionId |
-| 2 | init sequence | ON_READY → page→sim VALUE_CHANGE (carries seeded var) → INITIAL_SETUP_COMPLETE |
-| 5 | state restore | sim sets a var, revisit lesson, value pushed back on re-init |
-| 6 | SET_DATA | SET_DATA_REQUEST → SET_DATA_RESPONSE success, value echoed |
-| 7 | GET_DATA | stored value returns `exists:true`; unknown key returns `exists:false`, value `'[]'` |
-| 8 | RESIZE | RESIZE_PARENT_CONTAINER_REQUEST (absolute + relative) → RESPONSE echoes messageId |
-| 9 | robustness | malformed / non-JSON / pre-handshake traffic does not break the listener; handshake still works after |
-| 10 | source check | a CAPI message posted from the top window (not the iframe) is ignored |
-| 11 | token gap (characterization) | a same-iframe post-handshake message with a *mismatched* `requestToken` is still processed — documents the current boundary (source enforced, token not), see finding #2 |
-| 3 | check lifecycle | CHECK_REQUEST → deck check → CHECK_START_RESPONSE + CHECK_COMPLETE_RESPONSE (seed carries a non-navigating trapstate rule) |
+| #   | Test                         | Asserts                                                                                                                                                                  |
+| --- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | handshake                    | HANDSHAKE_REQUEST → HANDSHAKE_RESPONSE, requestToken echoed, config has context/sectionSlug/userId/questionId                                                            |
+| 2   | init sequence                | ON_READY → page→sim VALUE_CHANGE (carries seeded var) → INITIAL_SETUP_COMPLETE                                                                                           |
+| 5   | state restore                | sim sets a var, revisit lesson, value pushed back on re-init                                                                                                             |
+| 6   | SET_DATA                     | SET_DATA_REQUEST → SET_DATA_RESPONSE success, value echoed                                                                                                               |
+| 7   | GET_DATA                     | stored value returns `exists:true`; unknown key returns `exists:false`, value `'[]'`                                                                                     |
+| 8   | RESIZE                       | RESIZE_PARENT_CONTAINER_REQUEST (absolute + relative) → RESPONSE echoes messageId; iframe bounding box follows (800×600 → 500×400 → 550×400)                             |
+| 9   | robustness                   | malformed / non-JSON / pre-handshake traffic does not break the listener; handshake still works after                                                                    |
+| 10  | source check                 | a CAPI message posted from the top window (not the iframe) is ignored                                                                                                    |
+| 11  | token gap (characterization) | a same-iframe post-handshake message with a _mismatched_ `requestToken` is still processed — documents the current boundary (source enforced, token not), see finding #2 |
+| 3   | check lifecycle              | CHECK_REQUEST → deck check → CHECK_START_RESPONSE + CHECK_COMPLETE_RESPONSE (seed carries a non-navigating trapstate rule)                                               |
 
 Out of this Playwright suite's scope (deliberately): outbound `CONFIG_CHANGE` and review-mode
 behavior (VALUE_CHANGE suppressed / `readonly` pushed) — these need a context-change/review flow
-beyond the protocol round-trip this suite covers, and aren't asserted here.
+beyond the protocol round-trip this suite covers, and aren't asserted here. `CONFIG_CHANGE`
+coverage is tracked as TRIAGE-2412.
 
 ## How it works
 

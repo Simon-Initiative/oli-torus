@@ -161,10 +161,13 @@ test.describe('CAPI delivery protocol', () => {
     // which the host pushes back to the sim — proving the CAPI variable reached and
     // satisfied evaluation (Kevin TC2 intent), not just that the check completed.
     await expect
-      .poll(async () => {
-        const changes = await receivedMessages(frame, CapiType.VALUE_CHANGE);
-        return changes.some((m) => `${m.values?.acknowledged?.value}` === '1');
-      }, { timeout: 15_000 })
+      .poll(
+        async () => {
+          const changes = await receivedMessages(frame, CapiType.VALUE_CHANGE);
+          return changes.some((m) => `${m.values?.acknowledged?.value}` === '1');
+        },
+        { timeout: 15_000 },
+      )
       .toBe(true);
   });
 
@@ -247,24 +250,34 @@ test.describe('CAPI delivery protocol', () => {
     await waitForCount(frame, CapiType.GET_DATA_RESPONSE);
 
     await expect
-      .poll(async () => {
-        const hits = await receivedMessages(frame, CapiType.GET_DATA_RESPONSE);
-        return hits.some(
-          (m) => m.values?.key === 'progress' && m.values?.exists === true && `${m.values?.value}`.includes('step-2'),
-        );
-      }, { timeout: 15_000 })
+      .poll(
+        async () => {
+          const hits = await receivedMessages(frame, CapiType.GET_DATA_RESPONSE);
+          return hits.some(
+            (m) =>
+              m.values?.key === 'progress' &&
+              m.values?.exists === true &&
+              `${m.values?.value}`.includes('step-2'),
+          );
+        },
+        { timeout: 15_000 },
+      )
       .toBe(true);
 
     await sendFromStub(frame, CapiType.GET_DATA_REQUEST, { simId: 'miniFeeder', key: 'never-set' });
     await expect
-      .poll(async () => {
-        const hits = await receivedMessages(frame, CapiType.GET_DATA_RESPONSE);
-        return hits.some((m) => m.values?.key === 'never-set' && m.values?.exists === false);
-      }, { timeout: 15_000 })
+      .poll(
+        async () => {
+          const hits = await receivedMessages(frame, CapiType.GET_DATA_RESPONSE);
+          return hits.some((m) => m.values?.key === 'never-set' && m.values?.exists === false);
+        },
+        { timeout: 15_000 },
+      )
       .toBe(true);
   });
 
-  // Test 8 — RESIZE round-trip (absolute then relative), response echoes messageId
+  // Test 8 — RESIZE round-trip (absolute then relative): response echoes messageId, and the
+  // rendered iframe viewport actually changes, not just the ACK. Seeded part starts 800x600.
   test('responds to RESIZE_PARENT_CONTAINER_REQUEST (absolute and relative)', async ({
     page,
     seedScenario,
@@ -272,28 +285,46 @@ test.describe('CAPI delivery protocol', () => {
     const { frame } = await setup(page, seedScenario);
     await handshakeAndReady(frame);
 
+    const simIframe = page.locator(`iframe[src="${STUB_SIM_URL}"]`);
+    const iframeBoxMatches = async (width: number, height: number) => {
+      const box = await simIframe.boundingBox();
+      return !!box && Math.abs(box.width - width) <= 1 && Math.abs(box.height - height) <= 1;
+    };
+
     await sendFromStub(frame, CapiType.RESIZE_PARENT_CONTAINER_REQUEST, {
       messageId: 'resize-abs',
       width: { type: 'absolute', value: '500' },
       height: { type: 'absolute', value: '400' },
     });
     await expect
-      .poll(async () => {
-        const r = await receivedMessages(frame, CapiType.RESIZE_PARENT_CONTAINER_RESPONSE);
-        return r.some((m) => m.values?.messageId === 'resize-abs' && m.values?.responseType === 'success');
-      }, { timeout: 15_000 })
+      .poll(
+        async () => {
+          const r = await receivedMessages(frame, CapiType.RESIZE_PARENT_CONTAINER_RESPONSE);
+          return r.some(
+            (m) => m.values?.messageId === 'resize-abs' && m.values?.responseType === 'success',
+          );
+        },
+        { timeout: 15_000 },
+      )
       .toBe(true);
+    await expect.poll(() => iframeBoxMatches(500, 400), { timeout: 15_000 }).toBe(true);
 
     await sendFromStub(frame, CapiType.RESIZE_PARENT_CONTAINER_REQUEST, {
       messageId: 'resize-rel',
       width: { type: 'relative', value: '50' },
     });
     await expect
-      .poll(async () => {
-        const r = await receivedMessages(frame, CapiType.RESIZE_PARENT_CONTAINER_RESPONSE);
-        return r.some((m) => m.values?.messageId === 'resize-rel' && m.values?.responseType === 'success');
-      }, { timeout: 15_000 })
+      .poll(
+        async () => {
+          const r = await receivedMessages(frame, CapiType.RESIZE_PARENT_CONTAINER_RESPONSE);
+          return r.some(
+            (m) => m.values?.messageId === 'resize-rel' && m.values?.responseType === 'success',
+          );
+        },
+        { timeout: 15_000 },
+      )
       .toBe(true);
+    await expect.poll(() => iframeBoxMatches(550, 400), { timeout: 15_000 }).toBe(true);
   });
 
   // Test 9 — robustness: malformed and pre-handshake traffic must not break the listener
@@ -368,15 +399,18 @@ test.describe('CAPI delivery protocol', () => {
     // Host still dispatches and responds despite the mismatched token, and the response is tied to
     // this request (echoed simId/key, miss shape) — not a coincidental unrelated response.
     await expect
-      .poll(async () => {
-        const hits = await receivedMessages(frame, CapiType.GET_DATA_RESPONSE);
-        return hits.some(
-          (m) =>
-            m.values?.simId === 'miniFeeder' &&
-            m.values?.key === 'progress' &&
-            m.values?.exists === false,
-        );
-      }, { timeout: 15_000 })
+      .poll(
+        async () => {
+          const hits = await receivedMessages(frame, CapiType.GET_DATA_RESPONSE);
+          return hits.some(
+            (m) =>
+              m.values?.simId === 'miniFeeder' &&
+              m.values?.key === 'progress' &&
+              m.values?.exists === false,
+          );
+        },
+        { timeout: 15_000 },
+      )
       .toBe(true);
   });
 });
