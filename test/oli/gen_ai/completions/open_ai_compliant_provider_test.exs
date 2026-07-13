@@ -236,6 +236,114 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
       refute Keyword.has_key?(params, :tools)
       refute Keyword.has_key?(params, :functions)
     end
+
+    test "includes response_format when passed in opts" do
+      messages = [
+        %Oli.GenAI.Completions.Message{
+          role: :user,
+          content: "Hello",
+          token_length: nil,
+          name: nil,
+          id: nil,
+          input: nil
+        }
+      ]
+
+      params =
+        OpenAICompliantProvider.completion_params("gpt-x", messages, [],
+          response_format: %{type: "json_object"}
+        )
+
+      assert Keyword.get(params, :response_format) == %{type: "json_object"}
+    end
+
+    test "omits response_format when not passed in opts" do
+      messages = [
+        %Oli.GenAI.Completions.Message{
+          role: :user,
+          content: "Hello",
+          token_length: nil,
+          name: nil,
+          id: nil,
+          input: nil
+        }
+      ]
+
+      params = OpenAICompliantProvider.completion_params("gpt-x", messages, [])
+
+      refute Keyword.has_key?(params, :response_format)
+    end
+
+    test "includes temperature and max_tokens when passed in opts" do
+      messages = [
+        %Oli.GenAI.Completions.Message{
+          role: :user,
+          content: "Hello",
+          token_length: nil,
+          name: nil,
+          id: nil,
+          input: nil
+        }
+      ]
+
+      params =
+        OpenAICompliantProvider.completion_params("gpt-x", messages, [],
+          temperature: 0.2,
+          max_tokens: 512
+        )
+
+      assert Keyword.get(params, :temperature) == 0.2
+      assert Keyword.get(params, :max_tokens) == 512
+    end
+
+    test "omits temperature and max_tokens when not passed in opts" do
+      messages = [
+        %Oli.GenAI.Completions.Message{
+          role: :user,
+          content: "Hello",
+          token_length: nil,
+          name: nil,
+          id: nil,
+          input: nil
+        }
+      ]
+
+      params = OpenAICompliantProvider.completion_params("gpt-x", messages, [])
+
+      refute Keyword.has_key?(params, :temperature)
+      refute Keyword.has_key?(params, :max_tokens)
+    end
+
+    test "combines response_format with tools and stream options" do
+      messages = [
+        %Oli.GenAI.Completions.Message{
+          role: :user,
+          content: "Hello",
+          token_length: nil,
+          name: nil,
+          id: nil,
+          input: nil
+        }
+      ]
+
+      functions = [
+        %Function{
+          name: "noop",
+          description: "noop",
+          parameters: %{"type" => "object"}
+        }
+      ]
+
+      params =
+        OpenAICompliantProvider.completion_params("gpt-x", messages, functions,
+          response_format: %{type: "json_object"},
+          stream: true
+        )
+
+      assert Keyword.has_key?(params, :tools)
+      assert Keyword.get(params, :response_format) == %{type: "json_object"}
+      assert Keyword.get(params, :stream) == true
+    end
   end
 
   describe "process_stream_chunk/1" do

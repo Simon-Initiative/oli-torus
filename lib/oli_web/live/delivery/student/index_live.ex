@@ -260,7 +260,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       aria-label="Course home sections"
       class={[
         "md:hidden fixed left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden",
-        if(@preview_mode, do: "top-[136px]", else: "top-14")
+        if(assigns[:preview_mode] == true,
+          do: "top-[136px]",
+          else: "top-14"
+        )
       ]}
     >
       <div class="relative h-12 overflow-x-auto scrollbar-hide">
@@ -1261,11 +1264,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Non-completed graded page (assignment)
   defp lesson_details(%{lesson: %{graded: true, batch_scoring: false}} = assigns) do
     ~H"""
-    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
-      <div class="flex justify-between gap-2.5 w-full">
-        <div>Score as you go</div>
-        <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
-          <div class="relative"><Icons.score_as_you_go /></div>
+    <div role="details" class="pt-2 pb-1 px-2 flex self-stretch justify-between gap-5">
+      <div class="flex items-center justify-between gap-2.5 w-full">
+        <div class="text-sm font-semibold leading-4 text-Text-text-low-alpha">Score as you go</div>
+        <div class="flex justify-end items-center gap-1 text-Icon-icon-accent-green-bold">
+          <div class="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+            <Icons.score_as_you_go color="text-Icon-icon-accent-green-bold" />
+          </div>
           <div role="score" class="text-sm font-semibold tracking-tight">
             {Utils.format_score(@lesson.score)}
           </div>
@@ -1339,8 +1344,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         :if={nil not in [@lesson.score, @lesson.out_of]}
         class="justify-end items-end gap-2.5 flex ml-auto"
       >
-        <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
-          <div class="w-4 h-4 relative"><Icons.star /></div>
+        <div class="flex justify-end items-center gap-1 text-Icon-icon-accent-green-bold">
+          <div class="inline-flex h-4 w-4 shrink-0 items-center justify-center"><Icons.star /></div>
           <div role="score" class="text-sm font-semibold tracking-tight">
             {Utils.format_score(@lesson.score)}
           </div>

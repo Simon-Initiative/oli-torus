@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.Student do
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path
           d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
-          class="fill-Icon-icon-accent-green-bold"
+          class="fill-Text-text-accent-green"
         />
       </svg>
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-Text-text-accent-green font-semibold whitespace-nowrap">
@@ -31,7 +31,7 @@ defmodule OliWeb.Components.Delivery.Student do
   def score_as_you_go_summary(assigns) do
     ~H"""
     <div role="score summary" class="flex gap-[6px] ml-auto">
-      <Icons.score_as_you_go />
+      <Icons.score_as_you_go color="text-Text-text-accent-green" />
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-Text-text-accent-green font-semibold whitespace-nowrap">
         {Utils.format_score(@raw_avg_score[:score])} / {Utils.format_score(@raw_avg_score[:out_of])}
       </span>
@@ -88,7 +88,7 @@ defmodule OliWeb.Components.Delivery.Student do
     <div class="self-stretch justify-start items-start gap-6 inline-flex relative mb-1">
       <button
         id={"#{@id}-dropdown-button"}
-        class="text-Text-text-high text-sm font-bold font-['Open Sans'] uppercase whitespace-nowrap tracking-wider"
+        class="text-Text-text-low text-sm font-bold font-['Open Sans'] uppercase whitespace-nowrap tracking-wider"
         phx-click={show_attempts_dropdown("##{@id}-dropdown", @page_revision_slug)}
         phx-value-hide-target={"##{@id}-dropdown"}
       >
@@ -183,11 +183,13 @@ defmodule OliWeb.Components.Delivery.Student do
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div class="flex flex-row p-2 justify-start vertical-align">
-        <div class="mr-2"><strong>SCORE AS YOU GO</strong></div>
-        <div>
-          <Icons.score_as_you_go />
-          <span class="text-[12px] leading-[16px] tracking-[0.02px] text-Text-text-accent-green font-semibold whitespace-nowrap">
+      <div class="flex flex-row items-center p-2 justify-start">
+        <div class="mr-2 leading-none text-Text-text-low"><strong>SCORE AS YOU GO:</strong></div>
+        <div class="flex items-center gap-1.5">
+          <span class="[&>svg]:h-[18px] [&>svg]:w-[18px]">
+            <Icons.score_as_you_go color="text-Text-text-accent-green" />
+          </span>
+          <span class="text-[18px] leading-[18px] tracking-[0.02px] text-Text-text-accent-green font-bold whitespace-nowrap">
             {Utils.format_score(@raw_avg_score[:score])} / {Utils.format_score(
               @raw_avg_score[:out_of]
             )}

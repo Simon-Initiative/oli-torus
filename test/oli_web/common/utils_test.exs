@@ -5,8 +5,6 @@ defmodule OliWeb.Common.UtilsTest do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Utils
 
-  import ExUnit.CaptureLog
-
   doctest Utils, import: true
 
   describe "name_and_email/1" do
@@ -96,7 +94,7 @@ defmodule OliWeb.Common.UtilsTest do
   end
 
   describe "extract_feedback_text/1" do
-    test "extracts the feedback text from an attempt and logs an error if it can not be parsed" do
+    test "extracts feedback text and skips unrecognized feedback shapes" do
       activity_attempts = [
         %{
           part_attempts: [
@@ -146,8 +144,7 @@ defmodule OliWeb.Common.UtilsTest do
                     %{
                       "children" => [
                         %{
-                          "text" =>
-                            "This feedback does not match any known case, so a Log error should be triggered"
+                          "text" => "This feedback does not match any known case"
                         }
                       ],
                       "id" => "7brHHbLfce3qYbdU8rkk23",
@@ -161,15 +158,9 @@ defmodule OliWeb.Common.UtilsTest do
         }
       ]
 
-      {result, log} =
-        with_log(fn ->
-          Utils.extract_feedback_text(activity_attempts)
-        end)
+      result = Utils.extract_feedback_text(activity_attempts)
 
       assert result == ["First Feedback", "Second Feedback", "Third Feedback"]
-
-      assert log =~
-               "[error] Could not parse feedback text from {\"some_other_case\", [%{\"children\" => [%{\"text\" => \"This feedback does not match any known case, so a Log error should be triggered\"}], \"id\" => \"7brHHbLfce3qYbdU8rkk23\", \"type\" => \"p\"}]}"
     end
 
     test "deduplicates repeated feedback text while preserving first-seen order" do

@@ -1,0 +1,2 @@
+- hook:
+    function: 'Oli.Scenarios.GoogleDocsImport.Hooks.assert_imported_project/1'

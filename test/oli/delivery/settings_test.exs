@@ -53,10 +53,10 @@ defmodule Oli.Delivery.SettingsTest do
                []
              )
 
-    assert {:score_as_you_go_completed} ==
+    assert {:allowed} ==
              Settings.new_attempt_allowed(%Combined{batch_scoring: false, max_attempts: 5}, 1, [])
 
-    assert {:score_as_you_go_completed} ==
+    assert {:no_attempts_remaining} ==
              Settings.new_attempt_allowed(%Combined{batch_scoring: false, max_attempts: 5}, 5, [])
 
     assert {:allowed} ==

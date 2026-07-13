@@ -6,7 +6,7 @@ defmodule OliWeb.Components.Delivery.DeliberatePracticeCardTest do
   alias OliWeb.Components.Delivery.DeliberatePractice
 
   describe "practice_card/1" do
-    test "uses the new preview lesson route in preview mode" do
+    test "uses the instructor preview lesson route in preview mode" do
       assigns = %{
         dark: false,
         practice: %{

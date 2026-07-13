@@ -256,6 +256,24 @@
         "admin_title3": { "type": "string" }
       }
     },
+    "discussionAssertion": {
+      "type": "object",
+      "required": ["section"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "post": { "type": "string" },
+        "student": { "type": "string" },
+        "visible": { "$ref": "#/definitions/booleanLike" },
+        "status": {
+          "type": "string",
+          "enum": ["submitted", "approved", "deleted", "archived"]
+        },
+        "contains_discussions": { "$ref": "#/definitions/booleanLike" },
+        "auto_accept": { "$ref": "#/definitions/booleanLike" },
+        "anonymous_posting": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
     "gatingAssertion": {
       "type": "object",
       "additionalProperties": false,
@@ -375,7 +393,57 @@
           "oneOf": [{ "type": "number" }, { "type": "string" }]
         },
         "response": {},
-        "answerable": { "$ref": "#/definitions/booleanLike" }
+        "answerable": { "$ref": "#/definitions/booleanLike" },
+        "exists": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "activityCustomizationEmbeddedExpectation": {
+      "type": "object",
+      "required": ["activity_virtual_id", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "activity_virtual_id": { "type": "string" },
+        "enabled": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "activityCustomizationSelectionExpectation": {
+      "type": "object",
+      "required": ["selection_id", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": { "type": "string" },
+        "enabled": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "activityCustomizationCandidateExpectation": {
+      "type": "object",
+      "required": ["selection_id", "activity_virtual_id", "enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": { "type": "string" },
+        "activity_virtual_id": { "type": "string" },
+        "enabled": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "activityCustomizationAssertion": {
+      "type": "object",
+      "required": ["section", "page"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "page": { "type": "string" },
+        "embedded_activities": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/activityCustomizationEmbeddedExpectation" }
+        },
+        "bank_selections": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/activityCustomizationSelectionExpectation" }
+        },
+        "bank_candidates": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/activityCustomizationCandidateExpectation" }
+        }
       }
     },
     "pageObjectivesAssertion": {
@@ -418,8 +486,10 @@
         "gradebook": { "$ref": "#/definitions/gradebookAssertion" },
         "review_attempt": { "$ref": "#/definitions/reviewAttemptAssertion" },
         "activity_attempt": { "$ref": "#/definitions/activityAttemptAssertion" },
+        "activity_customization": { "$ref": "#/definitions/activityCustomizationAssertion" },
         "page_objectives": { "$ref": "#/definitions/pageObjectivesAssertion" },
         "activity_objectives": { "$ref": "#/definitions/activityObjectivesAssertion" },
+        "discussion": { "$ref": "#/definitions/discussionAssertion" },
         "assertions": {}
       }
     },
@@ -438,8 +508,10 @@
         "gradebook": { "$ref": "#/definitions/gradebookAssertion" },
         "review_attempt": { "$ref": "#/definitions/reviewAttemptAssertion" },
         "activity_attempt": { "$ref": "#/definitions/activityAttemptAssertion" },
+        "activity_customization": { "$ref": "#/definitions/activityCustomizationAssertion" },
         "page_objectives": { "$ref": "#/definitions/pageObjectivesAssertion" },
         "activity_objectives": { "$ref": "#/definitions/activityObjectivesAssertion" },
+        "discussion": { "$ref": "#/definitions/discussionAssertion" },
         "assertions": {}
       }
     },
@@ -740,6 +812,83 @@
           "items": { "type": "integer" }
         }
       }
+    },
+    "instructorCustomizationActivityOperation": {
+      "type": "object",
+      "required": ["activity_virtual_id"],
+      "additionalProperties": false,
+      "properties": {
+        "activity_virtual_id": { "type": "string" }
+      }
+    },
+    "instructorCustomizationSelectionOperation": {
+      "type": "object",
+      "required": ["selection_id"],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": { "type": "string" }
+      }
+    },
+    "instructorCustomizationCandidateOperation": {
+      "type": "object",
+      "required": ["selection_id", "activity_virtual_id"],
+      "additionalProperties": false,
+      "properties": {
+        "selection_id": { "type": "string" },
+        "activity_virtual_id": { "type": "string" }
+      }
+    },
+    "instructorCustomizationOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["exclude_activity"],
+          "additionalProperties": false,
+          "properties": {
+            "exclude_activity": { "$ref": "#/definitions/instructorCustomizationActivityOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["restore_activity"],
+          "additionalProperties": false,
+          "properties": {
+            "restore_activity": { "$ref": "#/definitions/instructorCustomizationActivityOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["exclude_bank_selection"],
+          "additionalProperties": false,
+          "properties": {
+            "exclude_bank_selection": { "$ref": "#/definitions/instructorCustomizationSelectionOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["restore_bank_selection"],
+          "additionalProperties": false,
+          "properties": {
+            "restore_bank_selection": { "$ref": "#/definitions/instructorCustomizationSelectionOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["exclude_bank_candidate"],
+          "additionalProperties": false,
+          "properties": {
+            "exclude_bank_candidate": { "$ref": "#/definitions/instructorCustomizationCandidateOperation" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["restore_bank_candidate"],
+          "additionalProperties": false,
+          "properties": {
+            "restore_bank_candidate": { "$ref": "#/definitions/instructorCustomizationCandidateOperation" }
+          }
+        }
+      ]
     },
     "activityBankOperation": {
       "oneOf": [
@@ -1223,6 +1372,27 @@
         },
         {
           "type": "object",
+          "required": ["instructor_customization"],
+          "additionalProperties": false,
+          "properties": {
+            "instructor_customization": {
+              "type": "object",
+              "required": ["section", "page", "actor", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "section": { "type": "string" },
+                "page": { "type": "string" },
+                "actor": { "type": "string" },
+                "ops": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/instructorCustomizationOperation" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["edit_page"],
           "additionalProperties": false,
           "properties": {
@@ -1492,6 +1662,24 @@
         },
         {
           "type": "object",
+          "required": ["discussion_config"],
+          "additionalProperties": false,
+          "properties": {
+            "discussion_config": {
+              "type": "object",
+              "required": ["section"],
+              "additionalProperties": false,
+              "properties": {
+                "section": { "type": "string" },
+                "enabled": { "$ref": "#/definitions/booleanLike" },
+                "auto_accept": { "$ref": "#/definitions/booleanLike" },
+                "anonymous_posting": { "$ref": "#/definitions/booleanLike" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["discussion_post"],
           "additionalProperties": false,
           "properties": {
@@ -1500,9 +1688,48 @@
               "required": ["student", "section", "body"],
               "additionalProperties": false,
               "properties": {
+                "name": { "type": "string" },
                 "student": { "type": "string" },
                 "section": { "type": "string" },
-                "body": { "type": "string" }
+                "body": { "type": "string" },
+                "reply_to": { "type": "string" },
+                "anonymous": { "$ref": "#/definitions/booleanLike" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["discussion_moderation"],
+          "additionalProperties": false,
+          "properties": {
+            "discussion_moderation": {
+              "type": "object",
+              "required": ["post", "instructor", "action"],
+              "additionalProperties": false,
+              "properties": {
+                "post": { "type": "string" },
+                "instructor": { "type": "string" },
+                "action": {
+                  "type": "string",
+                  "enum": ["approve", "reject"]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["discussion_delete"],
+          "additionalProperties": false,
+          "properties": {
+            "discussion_delete": {
+              "type": "object",
+              "required": ["post", "actor"],
+              "additionalProperties": false,
+              "properties": {
+                "post": { "type": "string" },
+                "actor": { "type": "string" }
               }
             }
           }

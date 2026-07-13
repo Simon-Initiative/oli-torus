@@ -23,6 +23,7 @@ defmodule Oli.Scenarios.Engine do
     CustomizeDirective,
     ActivityDirective,
     ActivityBankDirective,
+    InstructorCustomizationDirective,
     EditPageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
@@ -33,6 +34,9 @@ defmodule Oli.Scenarios.Engine do
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
+    DiscussionConfigDirective,
+    DiscussionModerationDirective,
+    DiscussionDeleteDirective,
     ClassNoteDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
@@ -62,6 +66,7 @@ defmodule Oli.Scenarios.Engine do
     CustomizeHandler,
     ActivityHandler,
     ActivityBankHandler,
+    InstructorCustomizationHandler,
     EditPageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
@@ -72,6 +77,9 @@ defmodule Oli.Scenarios.Engine do
     AnswerQuestionHandler,
     CertificateHandler,
     DiscussionPostHandler,
+    DiscussionConfigHandler,
+    DiscussionModerationHandler,
+    DiscussionDeleteHandler,
     ClassNoteHandler,
     CompleteScoredPageHandler,
     FinalizeAttemptHandler,
@@ -135,12 +143,7 @@ defmodule Oli.Scenarios.Engine do
     # If a complete state is provided, use it
     case opts[:state] do
       %ExecutionState{} = state ->
-        # Add current_dir if provided
-        if opts[:current_dir] do
-          Map.put(state, :current_dir, opts[:current_dir])
-        else
-          state
-        end
+        apply_execution_opts(state, opts)
 
       nil ->
         # Use provided author or create a default one
@@ -161,18 +164,28 @@ defmodule Oli.Scenarios.Engine do
           page_attempts: %{},
           finalized_attempts: %{},
           activity_evaluations: %{},
+          discussion_posts: %{},
           gates: %{},
           scenario_time: nil,
           current_author: author,
           current_institution: institution
         }
 
-        # Add current_dir if provided
-        if opts[:current_dir] do
-          Map.put(base_state, :current_dir, opts[:current_dir])
-        else
-          base_state
-        end
+        apply_execution_opts(base_state, opts)
+    end
+  end
+
+  defp apply_execution_opts(%ExecutionState{} = state, opts) do
+    state
+    |> maybe_put_current_dir(opts)
+    |> Map.put(:params, opts[:params] || Map.get(state, :params, %{}))
+  end
+
+  defp maybe_put_current_dir(state, opts) do
+    if opts[:current_dir] do
+      Map.put(state, :current_dir, opts[:current_dir])
+    else
+      state
     end
   end
 
@@ -282,6 +295,10 @@ defmodule Oli.Scenarios.Engine do
     ActivityBankHandler.handle(directive, state)
   end
 
+  def execute_directive(%InstructorCustomizationDirective{} = directive, state) do
+    InstructorCustomizationHandler.handle(directive, state)
+  end
+
   def execute_directive(%EditPageDirective{} = directive, state) do
     EditPageHandler.handle(directive, state)
   end
@@ -320,6 +337,18 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%DiscussionPostDirective{} = directive, state) do
     DiscussionPostHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DiscussionConfigDirective{} = directive, state) do
+    DiscussionConfigHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DiscussionModerationDirective{} = directive, state) do
+    DiscussionModerationHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DiscussionDeleteDirective{} = directive, state) do
+    DiscussionDeleteHandler.handle(directive, state)
   end
 
   def execute_directive(%ClassNoteDirective{} = directive, state) do
@@ -432,6 +461,20 @@ defmodule Oli.Scenarios.Engine do
   """
   def put_user(state, name, user) do
     %{state | users: Map.put(state.users, name, user)}
+  end
+
+  @doc """
+  Gets a named discussion post from the state.
+  """
+  def get_discussion_post(state, name) do
+    Map.get(state.discussion_posts, name)
+  end
+
+  @doc """
+  Upserts a discussion post by name into the state.
+  """
+  def put_discussion_post(state, name, post) do
+    %{state | discussion_posts: Map.put(state.discussion_posts, name, post)}
   end
 
   @doc """

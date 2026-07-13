@@ -2,6 +2,7 @@ defmodule OliWeb.IngestControllerTest do
   use OliWeb.ConnCase
 
   import Oli.Factory
+  import Phoenix.LiveViewTest
 
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -47,6 +48,29 @@ defmodule OliWeb.IngestControllerTest do
       assert redirected_to(conn, 302) == Routes.ingest_path(conn, :index)
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "A valid file must be attached"
+    end
+  end
+
+  describe "process" do
+    setup [:admin_conn]
+
+    test "mounts with authenticated author when legacy author id session key is missing", %{
+      conn: conn,
+      admin: admin
+    } do
+      digest_dir = "_digests"
+      digest_path = "#{digest_dir}/#{admin.id}-digest.zip"
+
+      File.mkdir_p!(digest_dir)
+      File.write!(digest_path, "digest")
+
+      on_exit(fn -> File.rm(digest_path) end)
+
+      conn = delete_session(conn, :current_author_id)
+
+      {:ok, _view, html} = live(conn, ~p"/admin/ingest/process")
+
+      assert html =~ "Course Ingestion"
     end
   end
 

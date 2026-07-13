@@ -197,33 +197,33 @@ defmodule OliWeb.Icons do
       xmlns="http://www.w3.org/2000/svg"
     >
       <style>
-        .spinner-segment {
+        .ai-spinning .spinner-segment {
           animation: spinner-segment-fade 1.2s linear infinite;
           opacity: 0.15;
         }
 
-        .spinner-segment.s0 {
+        .ai-spinning .spinner-segment.s0 {
           animation-delay: 0s;
         }
-        .spinner-segment.s1 {
+        .ai-spinning .spinner-segment.s1 {
           animation-delay: -0.15s;
         }
-        .spinner-segment.s2 {
+        .ai-spinning .spinner-segment.s2 {
           animation-delay: -0.3s;
         }
-        .spinner-segment.s3 {
+        .ai-spinning .spinner-segment.s3 {
           animation-delay: -0.45s;
         }
-        .spinner-segment.s4 {
+        .ai-spinning .spinner-segment.s4 {
           animation-delay: -0.6s;
         }
-        .spinner-segment.s5 {
+        .ai-spinning .spinner-segment.s5 {
           animation-delay: -0.75s;
         }
-        .spinner-segment.s6 {
+        .ai-spinning .spinner-segment.s6 {
           animation-delay: -0.9s;
         }
-        .spinner-segment.s7 {
+        .ai-spinning .spinner-segment.s7 {
           animation-delay: -1.05s;
         }
 
@@ -969,6 +969,36 @@ defmodule OliWeb.Icons do
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke="currentColor"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-black dark:stroke-white"
+
+  def restore(assigns) do
+    ~H"""
+    <svg
+      class={@class}
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M3.33301 9.16667C3.33301 12.3883 5.94468 15 9.16634 15C12.388 15 14.9997 12.3883 14.9997 9.16667C14.9997 5.94501 12.388 3.33334 9.16634 3.33334C7.24384 3.33334 5.53848 4.2628 4.47595 5.69884"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M5.00033 1.66666L5.00033 5.83332L9.16699 5.83332"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
       />
     </svg>
     """
@@ -2466,6 +2496,49 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "text-current"
+
+  def edit_instructor_view(assigns) do
+    ~H"""
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M5.50984 5.56862H4.6177C4.14447 5.56862 3.69063 5.75661 3.35601 6.09123C3.02139 6.42585 2.8334 6.87969 2.8334 7.35291V15.3822C2.8334 15.8555 3.02139 16.3093 3.35601 16.6439C3.69063 16.9785 4.14447 17.1665 4.6177 17.1665H12.647C13.1202 17.1665 13.5741 16.9785 13.9087 16.6439C14.2433 16.3093 14.4313 15.8555 14.4313 15.3822V14.4901M13.5392 3.78433L16.2156 6.46077M17.4512 5.19838C17.8026 4.84701 18 4.37045 18 3.87354C18 3.37663 17.8026 2.90007 17.4512 2.5487C17.0999 2.19734 16.6233 1.99994 16.1264 1.99994C15.6295 1.99994 15.1529 2.19734 14.8016 2.5487L7.29414 10.0294V12.7058H9.97058L17.4512 5.19838Z"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "text-current"
+
+  def move(assigns) do
+    ~H"""
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M13.4333 8.66667H5.33333V7.33333H13.4333L12.4 6.3L13.3333 5.33333L16 8L13.3333 10.6667L12.4 9.7L13.4333 8.66667ZM10 6V3.33333H3.33333V12.6667H10V10H11.3333V12.6667C11.3333 13.0333 11.2028 13.3472 10.9417 13.6083C10.6806 13.8694 10.3667 14 10 14H3.33333C2.96667 14 2.65278 13.8694 2.39167 13.6083C2.13056 13.3472 2 13.0333 2 12.6667V3.33333C2 2.96667 2.13056 2.65278 2.39167 2.39167C2.65278 2.13056 2.96667 2 3.33333 2H10C10.3667 2 10.6806 2.13056 10.9417 2.39167C11.2028 2.65278 11.3333 2.96667 11.3333 3.33333V6H10Z"
+        fill="currentColor"
+      />
+    </svg>
+    """
+  end
+
   attr :class, :string, default: "stroke-[#0CAF61] dark:stroke-[#39E581]"
 
   def certificate(assigns) do
@@ -2561,6 +2634,8 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "text-[#B27308]"
+
   def lock(assigns) do
     ~H"""
     <svg
@@ -2570,10 +2645,11 @@ defmodule OliWeb.Icons do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="lock icon"
+      class={@class}
     >
       <path
         d="M9.99674 1.65991C11.1018 1.65991 12.1616 2.0989 12.943 2.8803C13.7244 3.6617 14.1634 4.72151 14.1634 5.82658V8.32658C14.8265 8.32658 15.4623 8.58997 15.9312 9.05881C16.4 9.52765 16.6634 10.1635 16.6634 10.8266V15.8266C16.6634 16.4896 16.4 17.1255 15.9312 17.5943C15.4623 18.0632 14.8265 18.3266 14.1634 18.3266H5.83008C5.16704 18.3266 4.53115 18.0632 4.06231 17.5943C3.59347 17.1255 3.33008 16.4896 3.33008 15.8266V10.8266C3.33008 10.1635 3.59347 9.52765 4.06231 9.05881C4.53115 8.58997 5.16704 8.32658 5.83008 8.32658V5.82658C5.83008 4.72151 6.26906 3.6617 7.05047 2.8803C7.83187 2.0989 8.89168 1.65991 9.99674 1.65991ZM9.99674 11.6599C9.57626 11.6598 9.17127 11.8186 8.86295 12.1045C8.55464 12.3904 8.36578 12.7823 8.33424 13.2016L8.33008 13.3266C8.33008 13.6562 8.42783 13.9784 8.61096 14.2525C8.7941 14.5266 9.0544 14.7402 9.35894 14.8664C9.66348 14.9925 9.99859 15.0255 10.3219 14.9612C10.6452 14.8969 10.9422 14.7382 11.1753 14.5051C11.4083 14.272 11.5671 13.975 11.6314 13.6517C11.6957 13.3284 11.6627 12.9933 11.5365 12.6888C11.4104 12.3842 11.1968 12.1239 10.9227 11.9408C10.6486 11.7577 10.3264 11.6599 9.99674 11.6599ZM9.99674 3.32658C9.3337 3.32658 8.69782 3.58997 8.22898 4.05881C7.76014 4.52765 7.49674 5.16354 7.49674 5.82658V8.32658H12.4967V5.82658C12.4967 5.16354 12.2334 4.52765 11.7645 4.05881C11.2957 3.58997 10.6598 3.32658 9.99674 3.32658Z"
-        fill="#B27308"
+        fill="currentColor"
       />
     </svg>
     """

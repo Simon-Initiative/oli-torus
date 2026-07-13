@@ -1,0 +1,183 @@
+# Scenario: Instructor candidate exclusions survive project republish and section update.
+
+- project:
+    name: "instructor_customization_republish_project"
+    title: "Instructor Customization Republish"
+    tags:
+      - "republish"
+    root:
+      children:
+        - page: "Practice"
+
+- create_activity:
+    project: "instructor_customization_republish_project"
+    title: "Republish Bank Question 1"
+    virtual_id: "republish_q1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["republish"]
+    content: |
+      stem_md: "What is 4 + 4?"
+      choices:
+        - id: "a"
+          body_md: "8"
+          score: 1
+        - id: "b"
+          body_md: "9"
+
+- create_activity:
+    project: "instructor_customization_republish_project"
+    title: "Republish Bank Question 2"
+    virtual_id: "republish_q2"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["republish"]
+    content: |
+      stem_md: "What is 5 + 5?"
+      choices:
+        - id: "a"
+          body_md: "10"
+          score: 1
+        - id: "b"
+          body_md: "11"
+
+- edit_page:
+    project: "instructor_customization_republish_project"
+    page: "Practice"
+    content: |
+      title: "Practice"
+      graded: false
+      blocks:
+        - type: bank-selection
+          id: "republish_selection"
+          count: 1
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["republish"]
+
+- publish:
+    to: "instructor_customization_republish_project"
+    description: "Initial publication"
+
+- section:
+    name: "instructor_customization_republish_section"
+    title: "Instructor Customization Republish Section"
+    from: "instructor_customization_republish_project"
+
+- user:
+    name: "republish_instructor"
+    type: "instructor"
+    email: "republish_instructor@example.edu"
+
+- enroll:
+    user: "republish_instructor"
+    section: "instructor_customization_republish_section"
+    role: "instructor"
+
+- user:
+    name: "republish_student"
+    type: "student"
+    email: "republish_student@example.edu"
+
+- enroll:
+    user: "republish_student"
+    section: "instructor_customization_republish_section"
+    role: "student"
+
+- instructor_customization:
+    section: "instructor_customization_republish_section"
+    page: "Practice"
+    actor: "republish_instructor"
+    ops:
+      - exclude_bank_candidate:
+          selection_id: "republish_selection"
+          activity_virtual_id: "republish_q1"
+
+- assert:
+    activity_customization:
+      section: "instructor_customization_republish_section"
+      page: "Practice"
+      bank_candidates:
+        - selection_id: "republish_selection"
+          activity_virtual_id: "republish_q1"
+          enabled: false
+
+- create_activity:
+    project: "instructor_customization_republish_project"
+    title: "Republish Bank Question 3"
+    virtual_id: "republish_q3"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["republish"]
+    content: |
+      stem_md: "What is 6 + 6?"
+      choices:
+        - id: "a"
+          body_md: "12"
+          score: 1
+        - id: "b"
+          body_md: "13"
+
+- edit_page:
+    project: "instructor_customization_republish_project"
+    page: "Practice"
+    content: |
+      title: "Practice"
+      graded: false
+      blocks:
+        - type: bank-selection
+          id: "republish_selection"
+          count: 2
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["republish"]
+
+- publish:
+    to: "instructor_customization_republish_project"
+    description: "Add a replacement bank candidate"
+
+- update:
+    from: "instructor_customization_republish_project"
+    to: "instructor_customization_republish_section"
+
+- assert:
+    activity_customization:
+      section: "instructor_customization_republish_section"
+      page: "Practice"
+      bank_candidates:
+        - selection_id: "republish_selection"
+          activity_virtual_id: "republish_q1"
+          enabled: false
+
+- view_practice_page:
+    student: "republish_student"
+    section: "instructor_customization_republish_section"
+    page: "Practice"
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_republish_section"
+      student: "republish_student"
+      page: "Practice"
+      activity_virtual_id: "republish_q1"
+      exists: false
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_republish_section"
+      student: "republish_student"
+      page: "Practice"
+      activity_virtual_id: "republish_q2"
+      exists: true
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_republish_section"
+      student: "republish_student"
+      page: "Practice"
+      activity_virtual_id: "republish_q3"
+      exists: true

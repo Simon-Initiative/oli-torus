@@ -10,7 +10,7 @@ const LicensePlugin = require('webpack-license-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 const MONACO_DIR = path.resolve(__dirname, './node_modules/monaco-editor');
-const SHADOW_DOM_ENABLED = [path.resolve(__dirname, './src/components/parts/janus-fill-blanks')];
+const SHADOW_DOM_ENABLED = [path.resolve(__dirname, './src/components/parts/janus-fill-blanks'), path.resolve(__dirname, './src/components/parts/janus-flashcards')];
 
 const BUNDLE_ANALYZER_ENABLED = process.env.BUNDLE_ANALYZER_ENABLED === 'true';
 
@@ -26,6 +26,7 @@ const populateEntries = () => {
     bibliography: ['./src/apps/BibliographyApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
+    instructor_preview_components: ['./src/apps/InstructorPreviewComponents.tsx'],
     scheduler: ['./src/apps/SchedulerApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
     cashnetclient: ['./src/payment/cashnet/client.ts'],

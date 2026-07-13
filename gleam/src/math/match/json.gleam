@@ -57,18 +57,13 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
     types.UnitAware(
       expected,
       config,
-      tolerance,
-      equivalence,
+      value_matcher,
       match_wrong_units,
       match_missing_unit,
-      expression_match,
     ) -> {
-      let fields = [
-        #("mode", gleam_json.string("unit_aware")),
-        #("expected", gleam_json.string(expected)),
-        #("unitPolicy", unit_policy_to_json(config)),
-        #("tolerance", tolerance_to_json(tolerance)),
-      ]
+      let fields = unit_value_matcher_to_json_fields(expected, value_matcher)
+      let fields =
+        list.append(fields, [#("unitPolicy", unit_policy_to_json(config))])
 
       let fields = case match_wrong_units {
         False -> fields
@@ -86,6 +81,25 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
           ])
       }
 
+      gleam_json.object(fields)
+    }
+  }
+}
+
+fn unit_value_matcher_to_json_fields(
+  expected: String,
+  value_matcher: types.UnitAwareValueMatcher,
+) -> List(#(String, gleam_json.Json)) {
+  let fields = [
+    #("mode", gleam_json.string("unit_aware")),
+    #("expected", gleam_json.string(expected)),
+  ]
+
+  case value_matcher {
+    types.UnitExpressionEquality(tolerance, equivalence, expression_match) -> {
+      let fields =
+        list.append(fields, [#("tolerance", tolerance_to_json(tolerance))])
+
       let fields = case equivalence {
         None -> fields
         Some(equivalence) ->
@@ -94,10 +108,28 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
           |> append_sampling_if_needed(equivalence)
       }
 
-      let fields = encode_expression_match_policy(fields, expression_match)
-
-      gleam_json.object(fields)
+      encode_expression_match_policy(fields, expression_match)
     }
+
+    types.UnitNumericComparison(spec) ->
+      spec.comparison
+      |> unit_numeric_comparison_fields
+      |> list.append([
+        #("operator", gleam_json.string(numeric_operator(spec.comparison))),
+        #("tolerance", numeric_tolerance_to_json(spec.tolerance)),
+        #("representation", representation_to_json(spec.representation)),
+        #("precision", numeric_precision_to_json(spec.precision)),
+      ])
+      |> list.append(fields)
+  }
+}
+
+fn unit_numeric_comparison_fields(
+  comparison: equality_types.NumericComparison,
+) -> List(#(String, gleam_json.Json)) {
+  case comparison {
+    equality_types.Equal(_) | equality_types.NotEqual(_) -> []
+    _ -> comparison_fields(comparison)
   }
 }
 
@@ -1079,47 +1111,74 @@ fn decode_unit_aware(
     Error(error) -> Error(error)
     Ok(expected) -> {
       let config = decode_unit_config(dynamic)
-      let tolerance = decode_optional_sampling_tolerance(dynamic)
-      let equivalence = decode_optional_unit_algebraic_config(dynamic)
+      let value_matcher = decode_unit_aware_value_matcher(dynamic)
       let match_wrong_units =
         read_optional_bool(dynamic, "matchWrongUnits", False)
       let match_missing_unit =
         read_optional_bool(dynamic, "matchMissingUnit", False)
-      let expression_match = decode_optional_expression_match_policy(dynamic)
 
-      case
-        config,
-        tolerance,
-        equivalence,
-        match_wrong_units,
-        match_missing_unit,
-        expression_match
-      {
+      case config, value_matcher, match_wrong_units, match_missing_unit {
         Ok(config),
-          Ok(tolerance),
-          Ok(equivalence),
+          Ok(value_matcher),
           Ok(match_wrong_units),
-          Ok(match_missing_unit),
-          Ok(expression_match)
+          Ok(match_missing_unit)
         ->
           Ok(types.UnitAware(
             expected: expected,
             config: config,
-            tolerance: tolerance,
-            equivalence: equivalence,
+            value_matcher: value_matcher,
             match_wrong_units: match_wrong_units,
             match_missing_unit: match_missing_unit,
-            expression_match: expression_match,
           ))
-        Error(error), _, _, _, _, _
-        | _, Error(error), _, _, _, _
-        | _, _, Error(error), _, _, _
-        | _, _, _, Error(error), _, _
-        | _, _, _, _, Error(error), _
-        | _, _, _, _, _, Error(error)
+        Error(error), _, _, _
+        | _, Error(error), _, _
+        | _, _, Error(error), _
+        | _, _, _, Error(error)
         -> Error(error)
       }
     }
+  }
+}
+
+fn decode_unit_aware_value_matcher(
+  dynamic: Dynamic,
+) -> Result(types.UnitAwareValueMatcher, types.MatchConfigError) {
+  case read_optional_string(dynamic, "operator") {
+    Error(error) -> Error(error)
+    Ok(Some(_)) -> decode_unit_numeric_value_matcher(dynamic)
+    Ok(None) -> decode_unit_expression_value_matcher(dynamic)
+  }
+}
+
+fn decode_unit_numeric_value_matcher(
+  dynamic: Dynamic,
+) -> Result(types.UnitAwareValueMatcher, types.MatchConfigError) {
+  case decode_numeric_spec(dynamic) {
+    Ok(types.Numeric(spec)) -> Ok(types.UnitNumericComparison(spec: spec))
+    Ok(_) ->
+      Error(types.InvalidField(
+        field: "math",
+        reason: "expected numeric unit-aware matcher",
+      ))
+    Error(error) -> Error(error)
+  }
+}
+
+fn decode_unit_expression_value_matcher(
+  dynamic: Dynamic,
+) -> Result(types.UnitAwareValueMatcher, types.MatchConfigError) {
+  let tolerance = decode_optional_sampling_tolerance(dynamic)
+  let equivalence = decode_optional_unit_algebraic_config(dynamic)
+  let expression_match = decode_optional_expression_match_policy(dynamic)
+
+  case tolerance, equivalence, expression_match {
+    Ok(tolerance), Ok(equivalence), Ok(expression_match) ->
+      Ok(types.UnitExpressionEquality(
+        tolerance: tolerance,
+        equivalence: equivalence,
+        expression_match: expression_match,
+      ))
+    Error(error), _, _ | _, Error(error), _ | _, _, Error(error) -> Error(error)
   }
 }
 

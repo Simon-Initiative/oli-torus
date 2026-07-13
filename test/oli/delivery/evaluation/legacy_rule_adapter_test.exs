@@ -78,6 +78,10 @@ defmodule Oli.Delivery.Evaluation.LegacyRuleAdapterTest do
     assert LegacyNumericRuleAdapter.match?("(!(input = {3}))", context("4", 1)) == {:ok, true}
   end
 
+  test "legacy numeric adapter treats missing input as no match" do
+    assert LegacyNumericRuleAdapter.match?("input = {3}", context(nil, 1)) == {:ok, false}
+  end
+
   test "legacy numeric adapter preserves range and significant-figure behavior" do
     cases = [
       {"input = {[1,3]}", "2"},
@@ -148,6 +152,10 @@ defmodule Oli.Delivery.Evaluation.LegacyRuleAdapterTest do
     Enum.each(cases, fn {rule, input} ->
       assert_parity(rule, input, math_part())
     end)
+  end
+
+  test "legacy math adapter treats missing input as no match" do
+    assert LegacyMathRuleAdapter.match?("input equals {x}", context(nil, 1)) == {:ok, false}
   end
 
   test "legacy math adapter preserves parser unescaping for braces and backslashes" do

@@ -57,54 +57,47 @@ export class OverviewProjectPO {
       openAddActivitiesAndTools: async () => {
         const openButton = this.page.getByRole('button', { name: '+ Add Activities and Tools' });
         const modalRoot = this.page.locator('#add-activities-tools-modal');
-        const contentProbe = modalRoot
-          .getByRole('heading', { name: /add (advanced )?activities/i })
-          .or(modalRoot.getByText(/Activities and Tools/i));
+        const modalReady = modalRoot.getByRole('button', { name: 'Apply Changes' });
 
         // Wait for the trigger button to ensure the overview section finished rendering
         await openButton.waitFor({ state: 'visible', timeout: 5000 });
 
-        // Click and wait until the modal attaches & shows content (LiveView can drop the first click)
-        for (let i = 0; i < 3; i++) {
-          await openButton.click({ delay: 250 });
-
-          let attached = false;
-          try {
-            await modalRoot.waitFor({ state: 'attached', timeout: 1500 });
-            attached = true;
-          } catch {
-            attached = false;
+        // LiveView can occasionally drop the first click. If the modal opened, do not click
+        // the covered trigger again; wait for the modal action instead.
+        for (let i = 0; i < 4; i++) {
+          if (await modalReady.isVisible({ timeout: 500 }).catch(() => false)) {
+            return;
           }
 
-          const visible = attached ? await modalRoot.isVisible().catch(() => false) : false;
-          const hasContent = attached
-            ? await contentProbe
-                .count()
-                .then((c) => c > 0)
-                .catch(() => false)
-            : false;
+          await openButton.click({ delay: 100, timeout: 5000 }).catch(async (error) => {
+            if (await modalReady.isVisible({ timeout: 500 }).catch(() => false)) {
+              return;
+            }
 
-          console.log(
-            `Attempt ${i + 1}: modal attached=${attached}, visible=${visible}, hasContent=${hasContent}`,
-          );
+            throw error;
+          });
 
-          if (attached && (visible || hasContent)) break;
+          if (await modalReady.isVisible({ timeout: 3000 }).catch(() => false)) {
+            return;
+          }
+
           await this.page.waitForTimeout(200);
         }
 
         // Final guard so test fails fast with a clear message
-        const opened = await contentProbe
-          .first()
-          .isVisible()
-          .catch(() => false);
+        const opened = await modalReady.isVisible().catch(() => false);
         if (!opened) {
-          throw new Error('Add Activities & Tools modal did not become visible after 3 attempts');
+          throw new Error('Add Activities & Tools modal did not become visible after 4 attempts');
         }
       },
       applyChanges: async () => {
         const applyButton = this.page.getByRole('button', { name: 'Apply Changes' });
         await Verifier.expectIsVisible(applyButton);
+        await expect(applyButton).toBeEnabled();
         await applyButton.click();
+        await expect(this.page.locator('#add-activities-tools-modal')).toBeHidden({
+          timeout: 10_000,
+        });
       },
     };
   }

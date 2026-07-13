@@ -7,7 +7,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
   alias Oli.Activities
   alias Oli.Analytics.Summary.ResourceSummary
+  alias Oli.Delivery.InstructorCustomizations
+  alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Sections
+  alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   alias Oli.Delivery.Attempts.Core.{
@@ -19,7 +22,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
   alias Oli.Repo
   alias Oli.Seeder
-  alias OliWeb.Delivery.Instructor.PreviewRoutes
+  alias OliWeb.Delivery.Instructor.{PreviewPageContext, PreviewReturn, PreviewRoutes}
 
   describe "instructor basic page preview lesson" do
     setup [:setup_preview_section]
@@ -38,6 +41,24 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "/js/oli_multiple_choice_preview.js"
       refute html =~ "/js/oli_multiple_choice_authoring.js"
       refute html =~ "Page Discussion"
+    end
+
+    test "renders learning objective coverage and overall available points", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert has_element?(view, "#preview-learning-objective-summary")
+      assert html =~ "LEARNING OBJECTIVES &amp; PROFICIENCY"
+      assert html =~ "Question counts update as questions are removed or restored"
+      assert html =~ "objective one"
+      assert html =~ "1 question"
+      assert has_element?(view, "#preview-learning-objective-summary [role='list']")
+      assert html =~ "Overall Points Available"
+      assert html =~ ~s|id="preview-overall-points-available"|
+      assert html =~ ~s|aria-label="Overall Points Available 10"|
     end
 
     test "uses preview lesson URLs for in-preview navigation and preserves safe return context",
@@ -200,6 +221,51 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "Return to Customize Content"
     end
 
+    test "back link returns to template Customize Content when previewing through product remix",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision
+         } do
+      return_to = "/workspaces/course_author/history_of_football/products/#{section.slug}/remix"
+
+      {:ok, _view, html} =
+        live(
+          conn,
+          PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+            "return_to" => return_to
+          })
+        )
+
+      assert html =~ ~s|href="#{return_to}"|
+      assert html =~ "Return to Customize Content"
+
+      assert html =~
+               "return_to=%2Fworkspaces%2Fcourse_author%2Fhistory_of_football%2Fproducts%2F#{section.slug}%2Fremix"
+    end
+
+    test "rejects absolute template Customize Content return URLs with valid remix paths", %{
+      section: section
+    } do
+      valid_path = "/workspaces/course_author/history_of_football/products/#{section.slug}/remix"
+      fallback_path = PreviewReturn.fallback_path(section.slug)
+
+      assert PreviewReturn.sanitize_return_to(
+               "https://attacker.example#{valid_path}",
+               section.slug
+             ) ==
+               fallback_path
+
+      assert PreviewReturn.sanitize_return_to(
+               "http://attacker.example#{valid_path}",
+               section.slug
+             ) ==
+               fallback_path
+
+      assert PreviewReturn.sanitize_return_to("//attacker.example#{valid_path}", section.slug) ==
+               fallback_path
+    end
+
     test "drops an unsafe request_path while preserving a safe return_to", %{
       conn: conn,
       section: section,
@@ -226,7 +292,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       {:error, {:redirect, %{to: path}}} =
         live(conn, PreviewRoutes.lesson_path(section.slug, adaptive_page_revision.slug))
 
-      assert path == PreviewRoutes.page_path(section.slug, adaptive_page_revision.slug)
+      assert path == PreviewRoutes.adaptive_page_path(section.slug, adaptive_page_revision.slug)
     end
 
     test "does not create learner delivery side effects for a basic page", %{
@@ -241,6 +307,895 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
       assert side_effect_counts(section, user, page_revision) == before_counts
+    end
+
+    test "remove hook event stores an exclusion and shows a success flash", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      activity_resource_id = first_activity_resource_id(page_revision)
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_revision.resource_id,
+            "activityResourceId" => activity_resource_id
+          }
+        })
+
+      assert html =~ "Question removed from this page."
+      assert html =~ "0 questions"
+      assert html =~ ~s|aria-label="Overall Points Available 0"|
+
+      exclusions =
+        InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id)
+
+      assert Enum.any?(exclusions, fn exclusion ->
+               exclusion.kind == :embedded_activity and
+                 exclusion.excluded_resource_id == activity_resource_id
+             end)
+    end
+
+    test "restore hook event removes an exclusion and shows a success flash", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_revision: page_revision
+    } do
+      activity_resource_id = first_activity_resource_id(page_revision)
+
+      {:ok, _view} =
+        InstructorCustomizations.exclude_activity(
+          section,
+          page_revision.resource_id,
+          activity_resource_id,
+          actor: user
+        )
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "restore",
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_revision.resource_id,
+            "activityResourceId" => activity_resource_id
+          }
+        })
+
+      assert html =~ "Question restored to this page."
+      assert html =~ "1 question"
+      assert html =~ ~s|aria-label="Overall Points Available 10"|
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "invalid hook target is rejected and does not write exclusions", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      activity_resource_id = first_activity_resource_id(page_revision)
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_revision.resource_id + 999_999,
+            "activityResourceId" => activity_resource_id
+          }
+        })
+
+      assert html =~ "Unable to update a question outside this page preview."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "renders activity bank selections through the React preview custom element", %{
+      conn: conn
+    } do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      {:ok, _view, html} =
+        live(
+          conn,
+          PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+            "return_to" => "/sections/#{section.slug}/remix?from=curriculum"
+          })
+        )
+
+      assert html =~ "oli-activity-bank-selection-preview"
+      assert html =~ "/js/instructor_preview_components.js"
+      assert html =~ "/js/oli_multiple_choice_preview.js"
+      assert html =~ "&quot;availableCount&quot;:2"
+      assert html =~ "&quot;selectedCount&quot;:2"
+      assert html =~ "&quot;selectionCriteriaHtml&quot;"
+      refute html =~ "&quot;criteria&quot;"
+      refute html =~ "&quot;criteriaHelperText&quot;"
+      refute html =~ "&quot;manageQuestionsUrl&quot;:null"
+
+      expected_request_path =
+        PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+          "return_to" => "/sections/#{section.slug}/remix?from=curriculum"
+        }) <> "#" <> JumpNavigation.selection_target_id("test_selection")
+
+      assert html =~ "request_path=#{URI.encode_www_form(expected_request_path)}"
+
+      assert html =~
+               "return_to=%2Fsections%2F#{section.slug}%2Fremix%3Ffrom%3Dcurriculum"
+
+      assert html =~ "&quot;sampleActivity&quot;"
+      refute html =~ "jumbotron selection"
+    end
+
+    test "renders selection criteria with included and excluded activity type labels", %{
+      conn: conn
+    } do
+      cata = Activities.get_registration_by_slug("oli_check_all_that_apply")
+      mcq = Activities.get_registration_by_slug("oli_multiple_choice")
+
+      selection_logic = %{
+        "conditions" => %{
+          "operator" => "all",
+          "children" => [
+            %{"fact" => "type", "operator" => "contains", "value" => [cata.id]},
+            %{"fact" => "type", "operator" => "does_not_contain", "value" => [mcq.id]}
+          ]
+        }
+      }
+
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn,
+          activity_slug: "oli_check_all_that_apply",
+          activity_count: 1,
+          selection_count: 1,
+          selection_logic: selection_logic
+        )
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "Selection criteria:"
+      assert html =~ "Activities must match"
+      assert html =~ "of the following."
+      assert html =~ "Activity Types contain:"
+      assert html =~ "Check All That Apply"
+      assert html =~ "Activity Types do not contain:"
+      assert html =~ "Multiple Choice"
+    end
+
+    test "renders bank selection sample with authoring fallback when no preview component exists",
+         %{
+           conn: conn
+         } do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn,
+          activity_slug: "oli_short_answer",
+          activity_count: 1,
+          selection_count: 1
+        )
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "/js/oli_short_answer_authoring.js"
+      assert html =~ "&quot;previewElement&quot;:&quot;oli-short-answer-authoring&quot;"
+      assert html =~ "&quot;renderMode&quot;:&quot;authoring_fallback&quot;"
+      assert html =~ "&quot;sampleActivity&quot;"
+    end
+
+    test "renders learning objectives for the sampled bank activity", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn,
+          activity_count: 1,
+          selection_count: 1,
+          objective_title: "Football fundamentals"
+        )
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "&quot;learningObjectives&quot;:[&quot;Football fundamentals&quot;]"
+    end
+
+    test "bank selection remove hook event stores an exclusion and shows a success flash", %{
+      conn: conn
+    } do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: true,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        },
+        selectionId: "test_selection",
+        availableCount: 0,
+        visualState: "removed",
+        statusPill: %{kind: "removed", label: "Removed"},
+        actions: [%{kind: "restore", label: "Restore"}]
+      })
+
+      assert html =~ "Activity bank selection removed"
+
+      exclusions =
+        InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id)
+
+      assert Enum.any?(exclusions, fn exclusion ->
+               exclusion.kind == :bank_selection and exclusion.selection_id == "test_selection"
+             end)
+    end
+
+    test "bank selection restore hook event removes an exclusion and returns contract state", %{
+      conn: conn
+    } do
+      %{conn: conn, section: section, page_revision: page_revision, user: user} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, _view} =
+        InstructorCustomizations.exclude_bank_selection(
+          section,
+          page_resource_id,
+          "test_selection",
+          actor: user
+        )
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "restore",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: true,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        },
+        selectionId: "test_selection",
+        availableCount: 2,
+        visualState: "default",
+        statusPill: nil,
+        actions: [%{kind: "remove", label: "Remove"}]
+      })
+
+      assert html =~ "Activity bank selection restored"
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "bank selection hook rejects stale page targets without writing", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+      stale_page_resource_id = page_resource_id + 999_999
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => stale_page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :invalid_page_target,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^stale_page_resource_id,
+          selectionId: "test_selection"
+        }
+      })
+
+      assert html =~ "Unable to update an activity bank selection outside this page preview."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "bank selection hook rejects unknown selection targets without writing", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "missing_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :invalid_selection_target,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "missing_selection"
+        }
+      })
+
+      assert html =~ "Unable to update an activity bank selection that is not part of this page."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "bank selection hook rejects malformed targets without writing", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id
+          }
+        })
+
+      assert_reply(view, %{ok: false, reason: :malformed_target})
+
+      assert html =~
+               "Unable to update an activity bank selection because the request was incomplete."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "bank selection hook rejects invalid actions without writing", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "archive",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :invalid_action,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        }
+      })
+
+      assert html =~ "Unable to update this activity bank selection."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "renders and dismisses scored warning banner when students have started attempts", %{
+      conn: conn
+    } do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      create_page_attempt(section, page_revision)
+
+      {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "preview-attempt-warning-banner"
+      assert html =~ "w-[90%]"
+      assert html =~ "max-w-[1280px]"
+
+      assert html =~
+               "Students have already started this assessment. Removing or restoring questions and activity bank selections will only impact future attempts."
+
+      view
+      |> element("button[aria-label='Dismiss warning']")
+      |> render_click()
+
+      refute render(view) =~ "preview-attempt-warning-banner"
+    end
+
+    test "renders practice warning banner when students have visited the page", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn, graded: false)
+
+      create_page_access(section, page_revision)
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "preview-attempt-warning-banner"
+
+      assert html =~
+               "Students have already visited this page. Removing or restoring questions and activity bank selections will only impact future attempts."
+    end
+
+    test "bank selection remove requires confirmation when attempts exist", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      create_page_attempt(section, page_revision)
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :confirmation_required,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        }
+      })
+
+      assert html =~ "preview-attempt-warning-modal"
+      assert html =~ "Change will affect future attempts"
+
+      assert html =~
+               "Students have already started this assessment. Removing this activity bank selection will only impact future attempts."
+
+      assert html =~ "Remove selection"
+      assert html =~ "Keep selection"
+
+      refute Enum.any?(
+               InstructorCustomizations.get_page_exclusions(section.id, page_resource_id),
+               &(&1.kind == :bank_selection and &1.selection_id == "test_selection")
+             )
+
+      html =
+        view
+        |> element("#preview-attempt-warning-modal button", "Remove selection")
+        |> render_click()
+
+      assert_push_event(view, "preview_customization_reply", %{
+        ok: true,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        },
+        selectionId: "test_selection",
+        availableCount: 0,
+        visualState: "removed",
+        statusPill: %{kind: "removed", label: "Removed"},
+        actions: [%{kind: "restore", label: "Restore"}]
+      })
+
+      assert html =~ "Activity bank selection removed"
+      refute html =~ "preview-attempt-warning-modal"
+
+      assert Enum.any?(
+               InstructorCustomizations.get_page_exclusions(section.id, page_resource_id),
+               &(&1.kind == :bank_selection and &1.selection_id == "test_selection")
+             )
+    end
+
+    test "canceling warning confirmation leaves bank selection unchanged", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      create_page_attempt(section, page_revision)
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      view
+      |> element("#instructor-preview-lesson")
+      |> render_hook("toggle_preview_activity_customization", %{
+        "action" => "remove",
+        "target" => %{
+          "kind" => "bank_selection",
+          "pageResourceId" => page_resource_id,
+          "selectionId" => "test_selection"
+        }
+      })
+
+      assert_reply(view, %{ok: false, reason: :confirmation_required})
+
+      html =
+        view
+        |> element("#preview-attempt-warning-modal button", "Keep selection")
+        |> render_click()
+
+      refute html =~ "preview-attempt-warning-modal"
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_resource_id) == []
+    end
+
+    test "bank selection restore warning uses restore selection copy", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision, user: user} =
+        setup_activity_bank_selection_preview(conn)
+
+      create_page_attempt(section, page_revision)
+      page_resource_id = page_revision.resource_id
+
+      {:ok, _view} =
+        InstructorCustomizations.exclude_bank_selection(
+          section,
+          page_resource_id,
+          "test_selection",
+          actor: user
+        )
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "restore",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :confirmation_required,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        }
+      })
+
+      assert html =~
+               "Students have already started this assessment. Restoring this activity bank selection will only impact future attempts."
+
+      assert html =~ "Restore selection"
+      assert html =~ "Cancel"
+
+      view
+      |> element("#preview-attempt-warning-modal button", "Restore selection")
+      |> render_click()
+
+      assert_push_event(view, "preview_customization_reply", %{
+        ok: true,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        },
+        selectionId: "test_selection",
+        availableCount: 2,
+        visualState: "default",
+        statusPill: nil,
+        actions: [%{kind: "remove", label: "Remove"}]
+      })
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_resource_id) == []
+    end
+
+    test "embedded activity remove requires confirmation when attempts exist", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      create_page_attempt(section, page_revision)
+
+      activity_resource_id = first_activity_resource_id(page_revision)
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_resource_id,
+            "activityResourceId" => activity_resource_id
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :confirmation_required,
+        target: %{
+          kind: "embedded_activity",
+          pageResourceId: ^page_resource_id,
+          activityResourceId: ^activity_resource_id
+        }
+      })
+
+      assert html =~ "preview-attempt-warning-modal"
+
+      assert html =~
+               "Students have already started this assessment. Removing this question will only impact future attempts."
+
+      assert html =~ "Remove question"
+      assert html =~ "Keep question"
+
+      view
+      |> element("#preview-attempt-warning-modal button", "Remove question")
+      |> render_click()
+
+      assert_push_event(view, "preview_customization_reply", %{
+        ok: true,
+        target: %{
+          kind: "embedded_activity",
+          pageResourceId: ^page_resource_id,
+          activityResourceId: ^activity_resource_id
+        },
+        activityResourceId: ^activity_resource_id,
+        visualState: "removed",
+        statusPill: %{kind: "removed", label: "Removed"},
+        actions: [%{kind: "restore", label: "Restore"}]
+      })
+
+      assert Enum.any?(
+               InstructorCustomizations.get_page_exclusions(section.id, page_resource_id),
+               &(&1.kind == :embedded_activity and &1.excluded_resource_id == activity_resource_id)
+             )
+    end
+  end
+
+  describe "jump to section navigation" do
+    setup [:setup_jump_preview_section]
+
+    test "renders ordered jump links for activity bank selections and embedded questions", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision,
+      first_activity_id: first_activity_id,
+      second_activity_id: second_activity_id
+    } do
+      {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      first_question_target = JumpNavigation.activity_target_id(first_activity_id, 1)
+      selection_target = JumpNavigation.selection_target_id("selection_a")
+      reused_question_target = JumpNavigation.activity_target_id(first_activity_id, 2)
+      second_question_target = JumpNavigation.activity_target_id(second_activity_id, 3)
+
+      assert has_element?(view, "#jump-to-section-nav summary", "Jump to Section")
+      assert html =~ "1 Activity Bank Selection"
+      assert html =~ "3 Embedded Questions"
+      assert html =~ ~s|id="jump-to-section-nav"|
+      assert html =~ "sticky top-[148px]"
+      assert html =~ "z-[55]"
+      assert html =~ "-mt-3"
+      assert html =~ "flex-1 flex flex-col overflow-visible"
+      refute html =~ "fixed left-1/2"
+
+      assert html =~ ~s|href="##{first_question_target}"|
+      assert html =~ ~s|href="##{selection_target}"|
+      assert html =~ ~s|href="##{reused_question_target}"|
+      assert html =~ ~s|href="##{second_question_target}"|
+
+      assert_in_order(html, [
+        ~s|href="##{first_question_target}"|,
+        ~s|href="##{selection_target}"|,
+        ~s|href="##{reused_question_target}"|,
+        ~s|href="##{second_question_target}"|
+      ])
+
+      assert html =~ ~s|id="#{first_question_target}"|
+      assert html =~ ~s|id="#{selection_target}"|
+      assert html =~ ~s|id="#{reused_question_target}"|
+      assert html =~ ~s|id="#{second_question_target}"|
+      assert html =~ "scroll-mt-[280px]"
+    end
+  end
+
+  describe "learning objective coverage summary with activity banks" do
+    setup [:setup_bank_selection_coverage_section]
+
+    test "renders bank selection coverage as LO ranges and includes bank points", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "Thermodynamics"
+      assert html =~ "Kinetics"
+      assert html =~ "2-3 questions"
+      assert html =~ "0-1 questions"
+      assert html =~ "Overall Points Available"
+      assert html =~ ~s|aria-label="Overall Points Available 18"|
+    end
+
+    @tag capture_log: true
+    test "bulk candidate summary errors fall back to per-selection results", %{
+      section: section,
+      user: user,
+      page_revision: page_revision
+    } do
+      invalid_selection = %{
+        "type" => "selection",
+        "id" => "invalid-bank",
+        "logic" => %{
+          "conditions" => %{
+            "fact" => "unsupported",
+            "operator" => "contains",
+            "value" => [1]
+          }
+        },
+        "count" => 1,
+        "pointsPerActivity" => 4
+      }
+
+      page_revision = %{
+        page_revision
+        | content: update_in(page_revision.content, ["model"], &(&1 ++ [invalid_selection]))
+      }
+
+      preview_context = PreviewPageContext.build(section, page_revision, user)
+
+      assert preview_context.page_summary.available_points == 18
+      assert objective_question_range(preview_context.page_summary, "Thermodynamics") == {2, 3}
+      assert objective_question_range(preview_context.page_summary, "Kinetics") == {0, 1}
+    end
+
+    test "excluded bank selections contribute zero coverage and no available points", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_revision: page_revision
+    } do
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_selection(
+                 section,
+                 page_revision.resource_id,
+                 "bank-a",
+                 actor: user
+               )
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "Thermodynamics"
+      assert html =~ "Kinetics"
+      assert html =~ "1 question"
+      assert html =~ "0 questions"
+      assert html =~ ~s|aria-label="Overall Points Available 10"|
+    end
+
+    test "bank selection points are capped by active candidate capacity", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision,
+      banked_thermo_two_id: banked_thermo_two_id,
+      banked_kinetics_id: banked_kinetics_id
+    } do
+      for candidate_id <- [banked_thermo_two_id, banked_kinetics_id] do
+        %ActivityExclusion{}
+        |> ActivityExclusion.changeset(section.id, page_revision.resource_id, %{
+          kind: :bank_candidate,
+          selection_id: "bank-a",
+          excluded_resource_id: candidate_id
+        })
+        |> Repo.insert!()
+      end
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "Thermodynamics"
+      assert html =~ "Kinetics"
+      assert html =~ ~s|aria-label="Overall Points Available 14"|
+    end
+
+    test "cached preview metadata recomputes bank candidate exclusions", %{
+      section: section,
+      user: user,
+      page_revision: page_revision,
+      banked_thermo_two_id: banked_thermo_two_id,
+      banked_kinetics_id: banked_kinetics_id
+    } do
+      preview_context = PreviewPageContext.build(section, page_revision, user)
+
+      assert preview_context.page_summary.available_points == 18
+      assert objective_question_range(preview_context.page_summary, "Kinetics") == {0, 1}
+
+      for candidate_id <- [banked_thermo_two_id, banked_kinetics_id] do
+        %ActivityExclusion{}
+        |> ActivityExclusion.changeset(section.id, page_revision.resource_id, %{
+          kind: :bank_candidate,
+          selection_id: "bank-a",
+          excluded_resource_id: candidate_id
+        })
+        |> Repo.insert!()
+      end
+
+      exclusion_view =
+        InstructorCustomizations.get_page_exclusion_view(section.id, page_revision.resource_id)
+
+      page_summary =
+        PreviewPageContext.build_page_summary(preview_context.preview_metadata, exclusion_view)
+
+      assert page_summary.available_points == 14
+      assert objective_question_range(page_summary, "Thermodynamics") == {2, 2}
+      assert objective_question_range(page_summary, "Kinetics") == {0, 0}
     end
   end
 
@@ -284,8 +1239,16 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     map =
       Seeder.base_project_with_resource2()
       |> Seeder.add_objective("objective one", :o1)
+
+    map =
+      map
       |> Seeder.add_activity(
-        %{title: "one", max_attempts: 2, content: content},
+        %{
+          title: "one",
+          max_attempts: 2,
+          content: content,
+          objectives: %{"1" => [Map.get(map, :o1).resource.id]}
+        },
         :publication,
         :project,
         :author,
@@ -362,6 +1325,121 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
      next_page_revision: map.next_page.revision,
      adaptive_page_revision: map.adaptive_page_revision}
   end
+
+  defp setup_activity_bank_selection_preview(conn, opts \\ []) do
+    map = Seeder.base_project_with_resource2()
+    project = Repo.preload(map.project, :authors)
+    author = List.first(project.authors)
+    graded? = Keyword.get(opts, :graded, true)
+    activity_count = Keyword.get(opts, :activity_count, 2)
+    activity_slug = Keyword.get(opts, :activity_slug, "oli_multiple_choice")
+    selection_count = Keyword.get(opts, :selection_count, 2)
+    selection_logic = Keyword.get(opts, :selection_logic, %{"conditions" => nil})
+    objective_title = Keyword.get(opts, :objective_title)
+
+    section = insert(:section, base_project: project, open_and_free: true)
+
+    objective_revision =
+      if objective_title do
+        objective =
+          insert(:revision,
+            resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+            title: objective_title
+          )
+
+        insert(:project_resource, %{project_id: project.id, resource_id: objective.resource.id})
+
+        objective
+      end
+
+    page_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Activity Bank Page",
+        graded: graded?,
+        content: %{
+          "model" => [
+            %{
+              "type" => "selection",
+              "id" => "test_selection",
+              "logic" => selection_logic,
+              "count" => selection_count,
+              "pointsPerActivity" => 3
+            }
+          ]
+        }
+      )
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+
+    activity_type = Activities.get_registration_by_slug(activity_slug)
+
+    activities =
+      Enum.map(1..activity_count, fn index ->
+        activity =
+          insert(:revision,
+            resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+            activity_type_id: activity_type.id,
+            title: "Banked Activity #{index}",
+            objectives: activity_objectives(objective_revision),
+            content: %{
+              "stem" => "Banked activity #{index}",
+              "authoring" => %{
+                "parts" => [
+                  %{
+                    "id" => "1",
+                    "responses" => [
+                      %{"rule" => "input like {a}", "score" => 1, "id" => "r1"}
+                    ],
+                    "scoringStrategy" => "best",
+                    "evaluationStrategy" => "regex"
+                  }
+                ]
+              },
+              "choices" => []
+            },
+            scope: :banked
+          )
+
+        insert(:project_resource, %{project_id: project.id, resource_id: activity.resource.id})
+
+        activity
+      end)
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: page_revision.resource.id})
+
+    revisions =
+      [page_revision | activities] ++
+        if objective_revision, do: [objective_revision], else: []
+
+    Enum.each(revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    user = insert(:user, author: author)
+
+    Sections.enroll(user.id, section.id, [
+      Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
+    ])
+
+    %{
+      conn: log_in_user(conn, user),
+      section: section,
+      page_revision: page_revision,
+      user: user
+    }
+  end
+
+  defp activity_objectives(nil), do: %{}
+  defp activity_objectives(objective_revision), do: %{"1" => [objective_revision.resource_id]}
 
   defp setup_mixed_preview_section(%{conn: conn}) do
     user = user_fixture(%{independent_learner: false})
@@ -452,9 +1530,268 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     {:ok, conn: log_in_user(conn, user), section: map.section, page_revision: map.page.revision}
   end
 
+  defp setup_jump_preview_section(%{conn: conn}) do
+    user = user_fixture(%{independent_learner: false})
+
+    content = %{
+      "stem" => "jump preview activity",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "part_1",
+            "responses" => [
+              %{"rule" => "input like {a}", "score" => 1, "id" => "r1"},
+              %{"rule" => "input like {b}", "score" => 0, "id" => "r2"}
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
+
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_activity(
+        %{title: "first question", content: content},
+        :publication,
+        :project,
+        :author,
+        :first_activity
+      )
+      |> Seeder.add_activity(
+        %{title: "second question", content: content},
+        :publication,
+        :project,
+        :author,
+        :second_activity
+      )
+
+    first_activity_id = Map.get(map, :first_activity).resource.id
+    second_activity_id = Map.get(map, :second_activity).resource.id
+
+    page_attrs = %{
+      graded: true,
+      title: "jump preview page",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => first_activity_id
+          },
+          %{
+            "type" => "selection",
+            "id" => "selection_a",
+            "logic" => %{"conditions" => nil},
+            "count" => 2
+          },
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => first_activity_id
+          },
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => second_activity_id
+          }
+        ]
+      }
+    }
+
+    map = Seeder.add_page(map, page_attrs, :container, :page)
+
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "jump preview page", map.author.id)
+
+    map =
+      map
+      |> Map.merge(%{publication: publication})
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
+
+    enroll_as_instructor(%{section: map.section, user: user})
+    cache_lti_context(map.section, user)
+
+    {:ok,
+     conn: log_in_user(conn, user),
+     section: map.section,
+     page_revision: map.page.revision,
+     first_activity_id: first_activity_id,
+     second_activity_id: second_activity_id}
+  end
+
+  defp setup_bank_selection_coverage_section(%{conn: conn}) do
+    user = user_fixture(%{independent_learner: false})
+
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_objective("Thermodynamics", :thermodynamics)
+      |> Seeder.add_objective("Kinetics", :kinetics)
+
+    thermodynamics_id = Map.get(map, :thermodynamics).resource.id
+    kinetics_id = Map.get(map, :kinetics).resource.id
+
+    map =
+      map
+      |> Seeder.add_activity(
+        %{
+          title: "embedded thermo question",
+          content: scored_activity_content("embedded thermo question", 10),
+          objectives: %{"1" => [thermodynamics_id]},
+          scope: :embedded
+        },
+        :publication,
+        :project,
+        :author,
+        :embedded_activity
+      )
+      |> Seeder.add_activity(
+        %{
+          title: "banked thermo one",
+          content: scored_activity_content("banked thermo one", 5),
+          objectives: %{"1" => [thermodynamics_id]},
+          scope: :banked
+        },
+        :publication,
+        :project,
+        :author,
+        :banked_thermo_one
+      )
+      |> Seeder.add_activity(
+        %{
+          title: "banked thermo two",
+          content: scored_activity_content("banked thermo two", 5),
+          objectives: %{"1" => [thermodynamics_id]},
+          scope: :banked
+        },
+        :publication,
+        :project,
+        :author,
+        :banked_thermo_two
+      )
+      |> Seeder.add_activity(
+        %{
+          title: "banked kinetics",
+          content: scored_activity_content("banked kinetics", 5),
+          objectives: %{"1" => [kinetics_id]},
+          scope: :banked
+        },
+        :publication,
+        :project,
+        :author,
+        :banked_kinetics
+      )
+
+    page_attrs = %{
+      graded: true,
+      max_attempts: 1,
+      title: "bank coverage page",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :embedded_activity).resource.id
+          },
+          %{
+            "type" => "selection",
+            "id" => "bank-a",
+            "logic" => %{"conditions" => nil},
+            "count" => 2,
+            "pointsPerActivity" => 4
+          }
+        ]
+      },
+      objectives: %{"attached" => [thermodynamics_id]}
+    }
+
+    map = Seeder.add_page(map, page_attrs, :container, :page)
+
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "bank coverage preview", map.author.id)
+
+    map =
+      map
+      |> Map.merge(%{publication: publication})
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
+
+    enroll_as_instructor(%{section: map.section, user: user})
+    cache_lti_context(map.section, user)
+
+    {:ok,
+     conn: log_in_user(conn, user),
+     user: user,
+     section: map.section,
+     page_revision: map.page.revision,
+     banked_thermo_two_id: Map.get(map, :banked_thermo_two).resource.id,
+     banked_kinetics_id: Map.get(map, :banked_kinetics).resource.id}
+  end
+
+  defp scored_activity_content(stem, points) do
+    %{
+      "stem" => stem,
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [
+              %{"rule" => "input like {a}", "score" => points, "id" => "r1"},
+              %{"rule" => "input like {b}", "score" => 0, "id" => "r2"}
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
+  end
+
+  defp objective_question_range(page_summary, title) do
+    coverage =
+      Enum.find(page_summary.learning_objective_coverages, fn coverage ->
+        coverage.title == title
+      end)
+
+    {coverage.question_count_min, coverage.question_count_max}
+  end
+
   defp enroll_as_instructor(%{section: section, user: user}) do
     enroll_user_to_section(user, section, :context_instructor)
     :ok
+  end
+
+  defp first_activity_resource_id(page_revision) do
+    page_revision.content["model"]
+    |> Enum.find_value(fn
+      %{"type" => "activity-reference", "activity_id" => activity_id} -> activity_id
+      _ -> nil
+    end)
+  end
+
+  defp create_page_access(section, page_revision) do
+    student = insert(:user)
+
+    Repo.insert!(%ResourceAccess{
+      access_count: 1,
+      user_id: student.id,
+      section_id: section.id,
+      resource_id: page_revision.resource_id
+    })
+  end
+
+  defp create_page_attempt(section, page_revision) do
+    access = create_page_access(section, page_revision)
+
+    Repo.insert!(%ResourceAttempt{
+      attempt_guid: UUID.uuid4(),
+      attempt_number: 1,
+      resource_access_id: access.id,
+      revision_id: page_revision.id,
+      content: page_revision.content
+    })
   end
 
   defp cache_lti_context(section, user) do
@@ -513,5 +1850,14 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       part_attempts: Repo.aggregate(part_attempt_query, :count),
       resource_summaries: Repo.aggregate(resource_summary_query, :count)
     }
+  end
+
+  defp assert_in_order(html, snippets) do
+    snippets
+    |> Enum.reduce(0, fn snippet, min_index ->
+      index = :binary.match(html, snippet) |> elem(0)
+      assert index >= min_index
+      index + byte_size(snippet)
+    end)
   end
 end

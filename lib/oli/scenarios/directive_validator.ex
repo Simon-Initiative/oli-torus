@@ -106,6 +106,18 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "admin_title3"
           ]
 
+        :discussion ->
+          [
+            "section",
+            "post",
+            "student",
+            "visible",
+            "status",
+            "contains_discussions",
+            "auto_accept",
+            "anonymous_posting"
+          ]
+
         :gating ->
           [
             "gate",
@@ -176,7 +188,17 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "part_score",
             "part_out_of",
             "response",
-            "answerable"
+            "answerable",
+            "exists"
+          ]
+
+        :activity_customization ->
+          [
+            "section",
+            "page",
+            "embedded_activities",
+            "bank_selections",
+            "bank_candidates"
           ]
 
         :page_objectives ->

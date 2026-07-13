@@ -272,3 +272,57 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
 | PR 3 | Entry-point integrations + banner + final verification | 5, 6 |
 
 **Rationale for combining Phases 1 + 2 in PR 1 (decided 2026-05-08):** the two phases are tightly coupled — Phase 2's substitution/send pipeline directly consumes Phase 1's facade output shape (`subject_template`, `body_template`). Reviewing both together gives reviewers the complete backend story (AI draft → per-recipient template realization → Oban dispatch) in one pass with shared context. Trade-off accepted: Phase 1 commits sit in the open draft PR until Phase 2 lands, delaying Phase 1 feedback. Mitigated by Codex CI running on each push.
+
+## Phase 7 — Instructor Link Mode (post-review fix, PR #6606)
+
+**Why:** Manual testing as an instructor (vs. the admin/author account used earlier, which masked it) revealed the body editor's link feature is non-functional for instructors — the feature's intended users. Root cause: the modal reuses the authoring `LinkModal`, which (a) fetches project pages from the author-only endpoint `GET /api/v1/project/:project/link` (`:require_authenticated_author`) → instructors get `302 → /authors/log_in` → "Failed to initialize"; and (b) the toolbar/⌘L insert sets `href` = selected text → normalizes to `http://…`, which the email `LinkValidator` rejects at send (internal `/course/link/:slug` only). Net: an instructor cannot produce a single sendable link.
+
+**Validated** across 3 Codex review rounds. Email links are internal-only by security contract (`LinkValidator`); `/course/link/:slug` is rewritten to a section delivery URL at render (`html.ex:829`). Out-of-scope side issues filed separately: TRIAGE-2352 (chart dup-key), TRIAGE-2353 (lesson-route 500 on unresolvable slug — covers post-send deleted-page links, a pre-existing delivery-routing bug; no send-time filter can prevent it).
+
+**Page source decision (locked):** link to all non-hidden section lessons via `SectionResourceDepot.get_lessons(section_id)`. No gating/schedule/`removed_from_schedule` pre-filter — delivery enforces availability at click time (`LessonLive`/`InitPage` → `Gating.blocked_by`), matching every other internal-link picker in Torus. Save `revision_slug` (not resource slug).
+
+### Design — the two non-obvious pieces
+
+**1. Picker-first insert (riskiest).** Both the toolbar button (`DescriptiveButton.onMouseDown`) and ⌘L (`hotkey.ts`) call `command.execute(context, editor)` directly. In email mode, `LinkCmd.execute` must NOT wrap the selection with a free-text href. Instead:
+  - capture the current selection up front (`Editor.rangeRef(editor, editor.selection)`) so it survives the modal stealing focus;
+  - `window.oliDispatch(modalActions.display(<page picker>))` — reuse the `LinkModal` email-mode render;
+  - on confirm: restore the range (`Transforms.select(editor, rangeRef.unref())`), then `Transforms.wrapNodes(editor, Model.link(\`/course/link/\${slug}\`), { split: true })`;
+  - on cancel: `rangeRef.unref()`, no-op.
+  - If the selection is collapsed (no text selected), insert the page title as the link text.
+
+**2. Mode + page list plumbing.** Extend `CommandContext` with an optional `linkContext?: { mode: 'email'; pages: { id; slug; title; numbering_index }[] }` (absent = current authoring behavior, unchanged). Thread: `draft_email_modal.ex` loads `get_lessons` → DTO → passes as a new `linkContext` prop on the `RichTextEditor` React component → `RichTextEditor`/`Editor` merge it into `commandContext` → reaches `LinkCmd.execute` and `LinkModal` (both already receive `commandContext`).
+
+### File-by-file
+- `assets/src/components/editing/elements/commands/interfaces.ts` — add optional `linkContext` to `CommandContext`.
+- `lib/.../tiles/draft_email_modal.ex` — load `SectionResourceDepot.get_lessons(section_id)`, project to DTO, pass as `linkContext` prop (mode `email`).
+- `assets/src/components/content/RichTextEditor.tsx` — accept `linkContext` prop, fold into `commandContext`.
+- `assets/src/components/editing/elements/link/LinkCmd.tsx` — email-mode branch: picker-first (above).
+- `assets/src/components/editing/elements/link/LinkModal.tsx` — email-mode render: skip `Persistence.pages`; page-select sourced from `linkContext.pages`; no URL/media radios; force existing internal links to `page` mode (don't trust stale `linkType`, `:34`); save `/course/link/:revision_slug`. Empty list → explain "no linkable pages" + disable confirm.
+- (authoring path: untouched in all files — guarded behind `linkContext?.mode === 'email'`.)
+
+### Tests (TDD order)
+1. Server DTO assembly (Elixir, `draft_email_modal` test): props carry only projected visible page metadata for the section, using `revision_slug`; hidden excluded; `removed_from_schedule` included.
+2. `LinkModal` email mode (jest, `--coverage=false`): skips `Persistence.pages`; renders page-select only; initializes an existing `/course/link` link to `page` mode; saves selected `revision_slug`; empty-pages state.
+3. `LinkCmd` email mode (jest): toolbar + ⌘L open the picker; confirm wraps the preserved selection with `/course/link/:slug`; cancel no-ops; collapsed-selection inserts page title.
+4. Regression: authoring mode unchanged (no `linkContext` → existing fetch + radios).
+5. `LinkValidator` (exists) + `html.ex` rewrite (exists) remain the backend guardrails.
+
+**Gate:** all targeted jest + Elixir tests pass; `mix format`; authoring link flow manually unaffected; instructor can insert + edit a course-page link end-to-end and send.
+
+### Review corrections (Codex round, locked — supersede the above where conflicting)
+
+**Blocking — verified:**
+- **Do NOT use `Model.link(\`/course/link/${slug}\`)`** — `Model.link` always runs `normalizeHref` (`factories.ts:168`) → `http:///course/link/slug`, recreating the bug. Extend the factory with an explicit page mode, e.g. `Model.link(href, 'page')` that skips normalization and sets `linkType: 'page'`; external callers (default) keep normalizing unchanged.
+- **⌘L address-bar steal:** `hotkey.ts:20` link branch never calls `e.preventDefault()`. Add it (+ test). Safe globally — address-bar steal is undesirable in authoring too.
+
+**Selection restore (mirror the shipped pattern):** follow `pageLinkActions.tsx` (promise-returning modal → mutate Slate in `.then`, no `ReactEditor.focus` needed — transforms are model ops). Safeguards: `if (!editor.selection) return;` up front; `Editor.rangeRef(editor, sel, { affinity: 'inward' })`; on confirm `const range = ref.unref(); if (!range || !ReactEditor.hasRange(editor, range)) return;` then pass `{ at: range }` to `wrapNodes` (selection) / `insertNodes` (collapsed → link node with page-title child). Make confirm/cancel cleanup **idempotent** (modal dismiss can also fire `onCancel`).
+
+**Toggle preserved:** when the selection is already inside a link, the command must keep its current **unwrap** behavior (`LinkCmd.tsx:15-19`) — do NOT open a second picker.
+
+**Context plumbing:** prefer passing the full nested `commandContext` from `draft_email_modal.ex` rather than a parallel top-level prop; if a prop is used, merge explicitly (don't replace caller fields at `RichTextEditor.tsx:117`). **`Editor`'s `React.memo` comparator (`Editor.tsx:57`) ignores `commandContext`** → add it to the comparator (or guarantee full context on the first LiveReact bridge render). Test the two-pass LiveReact init.
+
+**A11y (MER-5257 ACs):** give the modal a real title (currently `title=""`, `LinkModal.tsx:193`); move initial focus to the page-select (not the close button); verify the nested focus trap (React modal over the Phoenix Draft Email modal); sort pages by `numbering_index` then `title`+`id` (deterministic for null/equal).
+
+**Edge cases:** empty pages → explanatory state + Save disabled (never `toInternalLink(null)`); one page → preselect + Save enabled.
+
+**Added tests:** created href is exactly `/course/link/x` (never `http:///…`); ⌘L calls `preventDefault`; null/invalidated `RangeRef` exits safely; active-link invocation unwraps (no nesting); one undo restores pre-insert doc; collapsed insertion yields page-title text; full `commandContext` survives LiveReact prop updates / `React.memo`; modal accessible name, initial focus, keyboard select, Escape/cancel + focus return.

@@ -45,10 +45,10 @@ const openCanvasCourse = async (page: Page) => {
 };
 
 // Opens the course in Canvas, launches Tokamak through the module item link, and returns the tool iframe.
-const launchTokamakFromCanvas = async (page: Page, launchLinkName: string) => {
+const launchTokamakFromCanvas = async (page: Page, toolName: string) => {
   await openCanvasCourse(page);
 
-  const launchLink = page.locator(`a.item_link[title="${launchLinkName}"]`);
+  const launchLink = page.locator(`a.item_link[title="${toolName}"]`);
   await expect(launchLink).toBeVisible();
   await launchLink.click();
 
@@ -59,8 +59,8 @@ const launchTokamakFromCanvas = async (page: Page, launchLinkName: string) => {
 };
 
 // Navigates inside Tokamak to the graded page whose score should be passed back.
-const openGradedPage = async (page: Page, launchLinkName: string) => {
-  const toolFrame = await launchTokamakFromCanvas(page, launchLinkName);
+const openGradedPage = async (page: Page, toolName: string) => {
+  const toolFrame = await launchTokamakFromCanvas(page, toolName);
 
   await toolFrame.getByRole('link', { name: 'Assignments' }).click();
   await toolFrame.getByRole('link', { name: gradedPageName }).click();
@@ -70,13 +70,9 @@ const openGradedPage = async (page: Page, launchLinkName: string) => {
 };
 
 // Starts or resumes the student's page attempt, answers the activities, and submits it.
-const completeStudentAttempt = async (
-  page: Page,
-  launchLinkName: string,
-  answers: StudentAnswers,
-) => {
+const completeStudentAttempt = async (page: Page, toolName: string, answers: StudentAnswers) => {
   // Open the Canvas course, launch Tokamak, and navigate to the graded page.
-  const toolFrame = await openGradedPage(page, launchLinkName);
+  const toolFrame = await openGradedPage(page, toolName);
 
   const beginAttemptButton = toolFrame.locator('#begin_attempt_button');
   const answerTextbox = toolFrame.getByRole('textbox', { name: 'answer submission textbox' });
@@ -231,7 +227,7 @@ test('passes Tokamak graded page score back to Canvas gradebook', async ({ brows
 
   const { email: studentEmail, password: studentPassword } = getCanvasStudentCredentials();
   const { email: instructorEmail, password: instructorPassword } = getCanvasInstructorCredentials();
-  const launchLinkName = process.env.CANVAS_LTI_LAUNCH_LINK_NAME ?? 'OLI Torus (tokamak)';
+  const toolName = process.env.CANVAS_LTI_TOOL_NAME ?? 'OLI Torus (tokamak)';
   const answers = buildRandomAnswers();
 
   const studentContext = await browser.newContext();
@@ -245,7 +241,7 @@ test('passes Tokamak graded page score back to Canvas gradebook', async ({ brows
     // Log in to Canvas as the student who will complete the graded page.
     await loginToCanvas(studentPage, studentEmail, studentPassword);
     const studentName = await getCanvasUserName(studentPage);
-    await completeStudentAttempt(studentPage, launchLinkName, answers);
+    await completeStudentAttempt(studentPage, toolName, answers);
 
     // Continue in the already logged-in instructor context after the student attempt is complete.
     await instructorLogin;

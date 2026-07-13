@@ -8,6 +8,11 @@ on:
       - nextgen-ux
   # manually trigger a package build from the Actions tab
   workflow_dispatch:
+    inputs:
+      docker_tags:
+        description: "Optional comma-separated Docker tags to publish for ghcr.io/simon-initiative/oli-torus"
+        required: false
+        type: string
 
 jobs:
   amazon-linux:
@@ -112,6 +117,33 @@ jobs:
             type=semver,pattern={{major}}
             type=sha
 
+      - name: 🧾 Manual Docker tags
+        id: manual_tags
+        env:
+          DOCKER_TAGS: ${{ github.event.inputs.docker_tags || '' }}
+        run: |
+          {
+            echo "tags<<EOF"
+
+            IFS=',' read -ra tags <<< "$DOCKER_TAGS"
+            for tag in "${tags[@]}"; do
+              tag="$(printf '%s' "$tag" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+              if [ -z "$tag" ]; then
+                continue
+              fi
+
+              if [[ ! "$tag" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+                echo "Invalid Docker tag: $tag" >&2
+                exit 1
+              fi
+
+              echo "ghcr.io/simon-initiative/oli-torus:$tag"
+            done
+
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: 🔑 Log in to Github Container Registry
         uses: docker/login-action@v3
         with:
@@ -128,5 +160,7 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.info.outputs.app_version }}
             SHA=${{ steps.info.outputs.sha_short }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.manual_tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

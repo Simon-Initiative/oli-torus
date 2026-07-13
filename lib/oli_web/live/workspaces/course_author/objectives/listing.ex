@@ -10,6 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   attr(:revision_history_link, :boolean, required: true)
   attr(:rows, :list, required: true)
   attr(:selected, :string, required: true)
+  attr(:pending_delete_slugs, :any, default: MapSet.new())
 
   def render(assigns) do
     ~H"""
@@ -60,9 +61,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                 <div class="font-bold">Sub-Objectives</div>
                 <ul class="list-group list-group-flush">
                   <%= for sub_objective <- item.children do %>
-                    <li :if={!is_nil(sub_objective)} class="list-group-item p-2 d-flex group/item">
-                      <div class="py-1.5 w-75">{sub_objective.title}</div>
-                      <div class="ml-2 invisible group-hover/item:visible">
+                    <li
+                      :if={!is_nil(sub_objective)}
+                      class={[
+                        "list-group-item p-2 d-flex align-items-center group/item",
+                        MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "opacity-50"
+                      ]}
+                    >
+                      <div class={[
+                        "py-1.5 w-75",
+                        MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "line-through"
+                      ]}>
+                        {sub_objective.title}
+                      </div>
+                      <.loader
+                        :if={MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
+                        class="ml-2"
+                        icon_class="text-secondary"
+                      />
+                      <div
+                        :if={!MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
+                        class="ml-2 invisible group-hover/item:visible"
+                      >
                         <.button
                           variant={:tertiary}
                           size={:xs}
@@ -74,9 +94,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                         <.button
                           variant={:danger}
                           size={:xs}
-                          phx-click="delete"
+                          phx-click="display_sub_objective_delete_modal"
                           phx-value-slug={sub_objective.slug}
                           phx-value-parent_slug={item.slug}
+                          phx-value-title={sub_objective.title}
                         >
                           <i class="fas fa-trash-alt fa-lg"></i> Delete
                         </.button>

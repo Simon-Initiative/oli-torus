@@ -1,7 +1,7 @@
 defmodule OliWeb.ActivityBankView do
   use OliWeb, :view
 
-  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   def render_activity(activity, activity_type, section_slug) do
     tag = activity_type.authoring_element
@@ -16,8 +16,6 @@ defmodule OliWeb.ActivityBankView do
       selection_id: selection_id
     } = conn.assigns
 
-    Routes.activity_bank_path(conn, :preview, section_slug, revision_slug, selection_id,
-      offset: offset
-    )
+    PreviewRoutes.selection_path(section_slug, revision_slug, selection_id, offset: offset)
   end
 end

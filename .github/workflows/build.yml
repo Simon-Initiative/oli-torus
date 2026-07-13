@@ -40,6 +40,13 @@ jobs:
         run: |
           cp oli.example.env oli.env
 
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: assets/yarn.lock
+
       - name: 💾 Restore the deps cache
         id: mix-deps-cache
         uses: actions/cache@v3
@@ -127,9 +134,11 @@ jobs:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
       - name: 🔧 Configure
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: "16.14.2"
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: assets/yarn.lock
 
       - name: 🧪 Setup BEAM toolchain
         uses: erlef/setup-beam@v1
@@ -175,9 +184,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: 🔧 Configure
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: "16.14.2"
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: assets/yarn.lock
 
       - name: 🧪 Setup BEAM toolchain
         uses: erlef/setup-beam@v1

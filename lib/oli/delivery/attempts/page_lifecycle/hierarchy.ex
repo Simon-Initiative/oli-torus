@@ -18,6 +18,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   alias Oli.Resources.Revision
   alias Oli.Activities.Transformers
   alias Oli.Delivery.ActivityProvider.{AttemptPrototype, Result}
+  alias Oli.Delivery.InstructorCustomizations
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext}
 
   @doc """
@@ -44,6 +46,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     audience_filtered_content =
       Oli.Delivery.Audience.filter_for_role(context.audience_role, context.page_revision.content)
 
+    section = Sections.get_section_by(slug: context.section_slug)
+
+    page_exclusions =
+      InstructorCustomizations.get_page_exclusion_view(section, context.page_revision.resource_id)
+
     %Result{
       errors: errors,
       prototypes: prototypes,
@@ -55,7 +62,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         %Source{
           blacklisted_activity_ids: [],
           section_slug: context.section_slug,
-          publication_id: context.publication_id
+          publication_id: context.publication_id,
+          page_exclusions: page_exclusions
         },
         constraining_attempt_prototypes,
         context.user,

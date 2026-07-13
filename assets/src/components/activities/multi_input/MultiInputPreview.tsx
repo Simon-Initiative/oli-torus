@@ -8,14 +8,22 @@ import { PreviewRichText } from 'components/activities/common/preview/PreviewRic
 import { PreviewTab } from 'components/activities/common/preview/types';
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { getTargetedResponses } from 'components/activities/short_answer/utils';
+import {
+  expectedAnswerFromResponse,
+  getTargetedResponses,
+  mathExpressionQuestionTypeFromMatchConfig,
+} from 'components/activities/short_answer/utils';
 import { GradingApproach, Response } from 'components/activities/types';
+import { MatchConfig } from 'data/activities/model/match';
+import { numericInputFromMatchConfig } from 'data/activities/model/match_conversion';
 import {
   getCorrectResponse,
   getIncorrectResponse,
   getOutOfPoints,
+  getTargetedResponseMappings,
 } from 'data/activities/model/responses';
 import {
+  Input,
   InputKind,
   NumericOperator,
   RangeOperator,
@@ -120,58 +128,82 @@ const FeedbackSection: React.FC<{
   );
 };
 
-const RuleRow: React.FC<{ rule: string }> = ({ rule }) =>
-  parseInputFromRule(rule).caseOf({
-    just: (input) => {
-      if (input.kind === InputKind.Text) {
-        return (
-          <div className="flex flex-wrap items-center gap-[9px]">
-            <div className={readonlyLabelClasses}>{textOperatorLabels[input.operator]}</div>
-            <div className={`${readonlyControlClasses} min-w-[220px] flex-1`}>{input.value}</div>
-          </div>
-        );
-      }
+const InputRow: React.FC<{ input: Input }> = ({ input }) => {
+  if (input.kind === InputKind.Text) {
+    return (
+      <div className="flex flex-wrap items-center gap-[9px]">
+        <div className={readonlyLabelClasses}>{textOperatorLabels[input.operator]}</div>
+        <div className={`${readonlyControlClasses} min-w-[220px] flex-1`}>{input.value}</div>
+      </div>
+    );
+  }
 
-      if (input.kind === InputKind.Numeric) {
-        return (
-          <div className="flex flex-wrap items-center gap-[9px]">
-            <div className={readonlyLabelClasses}>{numericOperatorLabels[input.operator]}</div>
-            <div className={`${readonlyControlClasses} min-w-[40px]`}>{input.value}</div>
-            {input.precision !== undefined ? (
-              <>
-                <PreviewCheckboxLabel label="Significant figures" />
-                <div className={`${readonlyControlClasses} min-w-[40px]`}>{input.precision}</div>
-              </>
-            ) : null}
-          </div>
-        );
-      }
+  if (input.kind === InputKind.Numeric) {
+    return (
+      <div className="flex flex-wrap items-center gap-[9px]">
+        <div className={readonlyLabelClasses}>{numericOperatorLabels[input.operator]}</div>
+        <div className={`${readonlyControlClasses} min-w-[40px]`}>{input.value}</div>
+        {input.precision !== undefined ? (
+          <>
+            <PreviewCheckboxLabel label="Significant figures" />
+            <div className={`${readonlyControlClasses} min-w-[40px]`}>{input.precision}</div>
+          </>
+        ) : null}
+      </div>
+    );
+  }
 
-      return (
-        <div className="flex flex-wrap items-start gap-[9px]">
-          <div className={readonlyLabelClasses}>{rangeOperatorLabels[input.operator]}</div>
-          <div className={`${readonlyControlClasses} min-w-[60px]`}>{input.lowerBound}</div>
-          <div className="font-open-sans text-[16px] font-normal leading-[24px] tracking-normal text-Text-text-high">
-            and
-          </div>
-          <div className={`${readonlyControlClasses} min-w-[60px]`}>{input.upperBound}</div>
-          <div className={readonlyLabelClasses}>{input.inclusive ? 'Inclusive' : 'Exclusive'}</div>
-          {input.precision !== undefined ? (
-            <>
-              <PreviewCheckboxLabel label="Significant figures" />
-              <div className={`${readonlyControlClasses} min-w-[40px]`}>{input.precision}</div>
-            </>
-          ) : null}
-        </div>
-      );
-    },
-    nothing: () => <div className="text-sm text-Text-text-high">{rule}</div>,
+  return (
+    <div className="flex flex-wrap items-start gap-[9px]">
+      <div className={readonlyLabelClasses}>{rangeOperatorLabels[input.operator]}</div>
+      <div className={`${readonlyControlClasses} min-w-[60px]`}>{input.lowerBound}</div>
+      <div className="font-open-sans text-[16px] font-normal leading-[24px] tracking-normal text-Text-text-high">
+        and
+      </div>
+      <div className={`${readonlyControlClasses} min-w-[60px]`}>{input.upperBound}</div>
+      <div className={readonlyLabelClasses}>{input.inclusive ? 'Inclusive' : 'Exclusive'}</div>
+      {input.precision !== undefined ? (
+        <>
+          <PreviewCheckboxLabel label="Significant figures" />
+          <div className={`${readonlyControlClasses} min-w-[40px]`}>{input.precision}</div>
+        </>
+      ) : null}
+    </div>
+  );
+};
+
+const MatchConfigRow: React.FC<{ matchConfig?: MatchConfig; response: Response }> = ({
+  matchConfig,
+  response,
+}) => {
+  const numericInput = numericInputFromMatchConfig(matchConfig);
+  if (numericInput) {
+    return <InputRow input={numericInput} />;
+  }
+
+  const expected = expectedAnswerFromResponse(response);
+  if (expected.length > 0) {
+    return <div className={`${readonlyControlClasses} min-w-[220px] flex-1`}>{expected}</div>;
+  }
+
+  return null;
+};
+
+const ResponseConditionRow: React.FC<{ response: Response }> = ({ response }) => {
+  if (response.matchConfig) {
+    return <MatchConfigRow matchConfig={response.matchConfig} response={response} />;
+  }
+
+  return parseInputFromRule(response.rule).caseOf({
+    just: (input) => <InputRow input={input} />,
+    nothing: () => <div className="text-sm text-Text-text-high">{response.rule}</div>,
   });
+};
 
 const MainAnswerKeyFields: React.FC<{
   gradingApproach?: GradingApproach;
-  rule: string;
-}> = ({ gradingApproach, rule }) => (
+  response: Response;
+}> = ({ gradingApproach, response }) => (
   <div className="flex flex-col gap-[9px]">
     <div className="flex flex-wrap items-center gap-[9px]">
       <div className={sectionTitleClasses}>Grading Approach:</div>
@@ -179,7 +211,7 @@ const MainAnswerKeyFields: React.FC<{
         {gradingApproach === GradingApproach.manual ? 'Instructor manual grading' : 'Automatic'}
       </div>
     </div>
-    <RuleRow rule={rule} />
+    <ResponseConditionRow response={response} />
   </div>
 );
 
@@ -189,7 +221,7 @@ const NumericTargetedFeedback: React.FC<{ response: Response }> = ({ response })
       <div className={sectionTitleClasses}>Targeted Feedback</div>
       <div className={supportingTextClasses}>{pointsLabel(response.score ?? 0)}</div>
     </div>
-    <RuleRow rule={response.rule} />
+    <ResponseConditionRow response={response} />
     <FeedbackBox response={response} />
   </div>
 );
@@ -201,7 +233,33 @@ const TextTargetedFeedback: React.FC<{ response: Response }> = ({ response }) =>
       {response.correct ? <PreviewCheckboxLabel label="Correct" /> : null}
     </div>
     <FeedbackBox response={response} />
-    <RuleRow rule={response.rule} />
+    <ResponseConditionRow response={response} />
+  </div>
+);
+
+const RuleBasedTargetedFeedback: React.FC<{ response: Response }> = ({ response }) => (
+  <div className="flex flex-col gap-[9px]">
+    <div className="flex flex-wrap items-center gap-[9px]">
+      <div className={sectionTitleClasses}>Targeted Feedback</div>
+      <div className={supportingTextClasses}>{pointsLabel(response.score ?? 0)}</div>
+    </div>
+    <ResponseConditionRow response={response} />
+    <FeedbackBox response={response} />
+  </div>
+);
+
+const DropdownTargetedFeedback: React.FC<{
+  response: Response;
+  selectedChoiceIds: string[];
+  choices: MultiInputSchema['choices'];
+}> = ({ response, selectedChoiceIds, choices }) => (
+  <div className="flex flex-col gap-[9px]">
+    <div className="flex flex-wrap items-center gap-[9px]">
+      <div className={sectionTitleClasses}>Targeted Feedback</div>
+      <div className={supportingTextClasses}>{pointsLabel(response.score ?? 0)}</div>
+    </div>
+    <FeedbackBox response={response} />
+    <PreviewChoiceList choices={choices} selectedChoiceIds={selectedChoiceIds} surface="plain" />
   </div>
 );
 
@@ -217,6 +275,19 @@ export const MultiInputPreview: React.FC = () => {
   const correctResponse = getCorrectResponse(model, part.id);
   const incorrectResponse = getIncorrectResponse(model, part.id);
   const targetedResponses = getTargetedResponses(model, part.id);
+  const selectedQuestionType =
+    selectedInput?.inputType === 'math_expression'
+      ? mathExpressionQuestionTypeFromMatchConfig(correctResponse.matchConfig)
+      : selectedInput?.inputType;
+  const targetedResponseMappings = React.useMemo(
+    () =>
+      model.authoring.targeted
+        ? getTargetedResponseMappings(model).filter((mapping) =>
+            targetedResponses.some((response) => response.id === mapping.response.id),
+          )
+        : [],
+    [model, targetedResponses],
+  );
   const orderedPartIds = React.useMemo(() => getOrderedPartIds(model), [model]);
   const selectedPartIndex = Math.max(orderedPartIds.indexOf(part.id), 0);
   const showPartHeader = model.inputs.length > 1;
@@ -288,7 +359,7 @@ export const MultiInputPreview: React.FC = () => {
         })}
       />
     ) : (
-      <MainAnswerKeyFields gradingApproach={part.gradingApproach} rule={correctResponse.rule} />
+      <MainAnswerKeyFields gradingApproach={part.gradingApproach} response={correctResponse} />
     );
 
   const detailsHeader = showPartHeader ? (
@@ -313,9 +384,28 @@ export const MultiInputPreview: React.FC = () => {
             ? targetedResponses.map((response) => (
                 <NumericTargetedFeedback key={response.id} response={response} />
               ))
+            : selectedQuestionType === 'numeric'
+            ? targetedResponses.map((response) => (
+                <NumericTargetedFeedback key={response.id} response={response} />
+              ))
             : selectedInput?.inputType === 'text'
             ? targetedResponses.map((response) => (
                 <TextTargetedFeedback key={response.id} response={response} />
+              ))
+            : selectedInput?.inputType === 'math' || selectedInput?.inputType === 'math_expression'
+            ? targetedResponses.map((response) => (
+                <RuleBasedTargetedFeedback key={response.id} response={response} />
+              ))
+            : selectedInput?.inputType === 'dropdown'
+            ? targetedResponseMappings.map((mapping) => (
+                <DropdownTargetedFeedback
+                  key={mapping.response.id}
+                  response={mapping.response}
+                  selectedChoiceIds={mapping.choiceIds}
+                  choices={model.choices.filter((choice) =>
+                    (selectedInput as Dropdown).choiceIds.includes(choice.id),
+                  )}
+                />
               ))
             : null}
         </div>

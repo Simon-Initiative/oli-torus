@@ -15,7 +15,9 @@ defmodule Oli.Delivery.Evaluation.MathExpressionMatcher do
     |> evaluate(submitted)
   end
 
-  @spec evaluate(map() | String.t(), String.t()) :: {:ok, boolean()} | {:error, term()}
+  @spec evaluate(map() | String.t(), String.t() | nil) :: {:ok, boolean()} | {:error, term()}
+  def evaluate(_match_config, nil), do: {:ok, false}
+
   def evaluate(match_config, submitted) when is_binary(submitted) do
     case Match.evaluate_json(match_config, submitted) do
       {:ok, result} -> normalize_result(result)

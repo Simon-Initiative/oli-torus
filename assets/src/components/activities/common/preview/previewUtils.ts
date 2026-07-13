@@ -1,5 +1,6 @@
 import { Choice, ChoiceId, HasParts, Part, Response } from 'components/activities/types';
 import {
+  ResponseMapping,
   findTargetedResponses,
   getCorrectChoiceIds,
   getCorrectResponse,
@@ -37,6 +38,7 @@ export const choicesInIdOrder = (choices: Choice[], choiceIds: ChoiceId[]): Choi
 export const standardFeedbackData = (
   model: HasParts,
   partId: string,
+  targetedResponseMappings: ResponseMapping[] = [],
 ): {
   correctResponse: Response;
   incorrectResponse: Response;
@@ -44,7 +46,10 @@ export const standardFeedbackData = (
 } => ({
   correctResponse: getCorrectResponse(model, partId),
   incorrectResponse: getIncorrectResponse(model, partId),
-  targetedResponses: findTargetedResponses(model, partId),
+  targetedResponses:
+    targetedResponseMappings.length > 0
+      ? targetedResponseMappings.map((mapping) => mapping.response)
+      : findTargetedResponses(model, partId),
 });
 
 export const correctChoiceIdsForModel = (model: ModelWithCorrectChoiceIds) =>

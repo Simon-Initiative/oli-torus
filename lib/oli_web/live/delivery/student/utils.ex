@@ -26,6 +26,9 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :container_label, :string
   attr :has_assignments?, :boolean
   attr :display_curriculum_item_numbering, :boolean, default: true
+  attr :show_divider, :boolean, default: true
+  attr :show_assignment_marker, :boolean, default: true
+  attr :show_schedule_dates, :boolean, default: true
 
   def page_header(assigns) do
     ~H"""
@@ -60,7 +63,7 @@ defmodule OliWeb.Delivery.Student.Utils do
               </div>
             </div>
             <div
-              :if={@page_context.page.graded}
+              :if={@show_assignment_marker and @page_context.page.graded}
               class="px-2 py-1 bg-Specially-Tokens-Fill-fill-detail-pill rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
@@ -105,7 +108,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div
-            :if={@page_context.effective_settings.start_date}
+            :if={@show_schedule_dates and @page_context.effective_settings.start_date}
             role="page start schedule"
             class="justify-start items-start gap-1 flex"
           >
@@ -121,7 +124,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div
-            :if={@page_context.effective_settings.end_date}
+            :if={@show_schedule_dates and @page_context.effective_settings.end_date}
             role="page schedule"
             class="justify-start items-start gap-1 flex"
           >
@@ -182,7 +185,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
         </div>
       </div>
-      <span class="mb-6 border-b border-Border-border-default w-full"></span>
+      <span :if={@show_divider} class="mb-6 border-b border-Border-border-default w-full"></span>
     </div>
     """
   end
@@ -405,6 +408,9 @@ defmodule OliWeb.Delivery.Student.Utils do
   @doc """
   Generates a URL for a specific lesson.
 
+  Preview mode opens lessons through the instructor customization preview shell. Student delivery
+  previews should omit preview mode and use the normal delivery routes.
+
   ## Parameters
     - `section_slug`: The unique identifier for the section.
     - `revision_slug`: The unique identifier for the lesson revision.
@@ -420,9 +426,6 @@ defmodule OliWeb.Delivery.Student.Utils do
     {preview_mode, params} = route_preview_mode_and_params(params)
 
     case {preview_mode, params} do
-      {true, %{} = params} when map_size(params) == 0 ->
-        PreviewRoutes.lesson_path(section_slug, revision_slug)
-
       {true, params} ->
         PreviewRoutes.lesson_path(section_slug, revision_slug, params)
 
@@ -451,8 +454,17 @@ defmodule OliWeb.Delivery.Student.Utils do
   def prologue_live_path(section_slug, revision_slug, []),
     do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
 
-  def prologue_live_path(section_slug, revision_slug, params),
-    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
+  def prologue_live_path(section_slug, revision_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
+
+    case {preview_mode, params} do
+      {true, params} ->
+        PreviewRoutes.lesson_path(section_slug, revision_slug, params)
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
+    end
+  end
 
   @doc """
   Generates a URL for reviewing an attempt of a lesson.
@@ -635,7 +647,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   defp normalize_page_id(_), do: nil
 
-  defp route_preview_mode_and_params(params) do
+  def route_preview_mode_and_params(params) do
     params = Enum.into(params, %{})
 
     preview_mode =
@@ -654,6 +666,14 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns
+
+    page_link_params =
+      build_page_link_params(
+        assigns.section.slug,
+        assigns.page_context.page,
+        assigns.request_path,
+        assigns.selected_view
+      )
 
     render_context = %Context{
       enrollment:
@@ -685,13 +705,8 @@ defmodule OliWeb.Delivery.Student.Utils do
       #   project_slug: base_project_slug,
       #   submitted_surveys: submitted_surveys,
       resource_attempt: hd(page_context.resource_attempts),
-      page_link_params:
-        build_page_link_params(
-          assigns.section.slug,
-          assigns.page_context.page,
-          assigns.request_path,
-          assigns.selected_view
-        ),
+      page_link_params: page_link_params,
+      internal_link_url: &lesson_live_path(section.slug, &1, page_link_params),
       is_liveview: opts[:is_liveview] || false
     }
 

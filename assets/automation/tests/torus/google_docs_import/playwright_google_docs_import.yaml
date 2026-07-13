@@ -1,0 +1,16 @@
+- user:
+    name: 'playwright_google_docs_admin'
+    type: 'author'
+    system_role: 'system_admin'
+    email: 'google-docs-admin${RUN_ID}@example.com'
+    given_name: 'Playwright'
+    family_name: 'GoogleDocsAdmin'
+    password: 'changeme123456'
+
+- project:
+    name: 'Google Docs Import${RUN_ID}'
+    title: 'Google Docs Import${RUN_ID}'
+    slug: 'google-docs-import${RUN_ID}'
+    visibility: global
+    root:
+      children: []

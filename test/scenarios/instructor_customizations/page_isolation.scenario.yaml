@@ -1,0 +1,224 @@
+# Scenario: Instructor activity customizations are scoped to one section page.
+
+- project:
+    name: "instructor_customization_page_scope_project"
+    title: "Instructor Customization Page Scope"
+    tags:
+      - "shared"
+      - "page_b_only"
+    root:
+      children:
+        - page: "Practice A"
+        - page: "Practice B"
+
+- create_activity:
+    project: "instructor_customization_page_scope_project"
+    title: "Shared Bank Question 1"
+    virtual_id: "bank_q1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["shared", "page_b_only"]
+    content: |
+      stem_md: "What is 1 + 1?"
+      choices:
+        - id: "a"
+          body_md: "2"
+          score: 1
+        - id: "b"
+          body_md: "3"
+
+- create_activity:
+    project: "instructor_customization_page_scope_project"
+    title: "Shared Bank Question 2"
+    virtual_id: "bank_q2"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["shared"]
+    content: |
+      stem_md: "What is 2 + 2?"
+      choices:
+        - id: "a"
+          body_md: "4"
+          score: 1
+        - id: "b"
+          body_md: "5"
+
+- create_activity:
+    project: "instructor_customization_page_scope_project"
+    title: "Shared Bank Question 3"
+    virtual_id: "bank_q3"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["shared"]
+    content: |
+      stem_md: "What is 3 + 3?"
+      choices:
+        - id: "a"
+          body_md: "6"
+          score: 1
+        - id: "b"
+          body_md: "7"
+
+- edit_page:
+    project: "instructor_customization_page_scope_project"
+    page: "Practice A"
+    content: |
+      title: "Practice A"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "embedded_a"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Embedded A?"
+            choices:
+              - id: "a"
+                body_md: "Yes"
+                score: 1
+              - id: "b"
+                body_md: "No"
+        - type: bank-selection
+          id: "selection_a"
+          count: 2
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["shared"]
+
+- edit_page:
+    project: "instructor_customization_page_scope_project"
+    page: "Practice B"
+    content: |
+      title: "Practice B"
+      graded: false
+      blocks:
+        - type: bank-selection
+          id: "selection_b"
+          count: 1
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["page_b_only"]
+
+- publish:
+    to: "instructor_customization_page_scope_project"
+    description: "Initial publication"
+
+- section:
+    name: "instructor_customization_page_scope_section"
+    title: "Instructor Customization Page Scope Section"
+    from: "instructor_customization_page_scope_project"
+
+- user:
+    name: "instructor_1"
+    type: "instructor"
+    email: "instructor1@example.edu"
+
+- enroll:
+    user: "instructor_1"
+    section: "instructor_customization_page_scope_section"
+    role: "instructor"
+
+- user:
+    name: "student_a"
+    type: "student"
+    email: "studenta@example.edu"
+
+- enroll:
+    user: "student_a"
+    section: "instructor_customization_page_scope_section"
+    role: "student"
+
+- user:
+    name: "student_b"
+    type: "student"
+    email: "studentb@example.edu"
+
+- enroll:
+    user: "student_b"
+    section: "instructor_customization_page_scope_section"
+    role: "student"
+
+- instructor_customization:
+    section: "instructor_customization_page_scope_section"
+    page: "Practice A"
+    actor: "instructor_1"
+    ops:
+      - exclude_activity:
+          activity_virtual_id: "embedded_a"
+      - exclude_bank_candidate:
+          selection_id: "selection_a"
+          activity_virtual_id: "bank_q1"
+
+- assert:
+    activity_customization:
+      section: "instructor_customization_page_scope_section"
+      page: "Practice A"
+      embedded_activities:
+        - activity_virtual_id: "embedded_a"
+          enabled: false
+      bank_candidates:
+        - selection_id: "selection_a"
+          activity_virtual_id: "bank_q1"
+          enabled: false
+
+- assert:
+    activity_customization:
+      section: "instructor_customization_page_scope_section"
+      page: "Practice B"
+      bank_candidates:
+        - selection_id: "selection_b"
+          activity_virtual_id: "bank_q1"
+          enabled: true
+
+- view_practice_page:
+    student: "student_a"
+    section: "instructor_customization_page_scope_section"
+    page: "Practice A"
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_page_scope_section"
+      student: "student_a"
+      page: "Practice A"
+      activity_virtual_id: "embedded_a"
+      exists: false
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_page_scope_section"
+      student: "student_a"
+      page: "Practice A"
+      activity_virtual_id: "bank_q1"
+      exists: false
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_page_scope_section"
+      student: "student_a"
+      page: "Practice A"
+      activity_virtual_id: "bank_q2"
+      exists: true
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_page_scope_section"
+      student: "student_a"
+      page: "Practice A"
+      activity_virtual_id: "bank_q3"
+      exists: true
+
+- view_practice_page:
+    student: "student_b"
+    section: "instructor_customization_page_scope_section"
+    page: "Practice B"
+
+- assert:
+    activity_attempt:
+      section: "instructor_customization_page_scope_section"
+      student: "student_b"
+      page: "Practice B"
+      activity_virtual_id: "bank_q1"
+      exists: true

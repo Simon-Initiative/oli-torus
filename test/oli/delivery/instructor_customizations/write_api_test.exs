@@ -1,0 +1,1145 @@
+defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
+  use Oli.DataCase
+
+  import Oli.Factory
+
+  alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Accounts.SystemRole
+  alias Oli.Delivery.InstructorCustomizations
+  alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
+  alias Oli.Delivery.InstructorCustomizations.PageExclusions
+  alias Oli.Delivery.Sections
+  alias Oli.Repo
+  alias Oli.Resources.ResourceType
+
+  setup do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    embedded_activity = activity_revision("Embedded activity", :embedded)
+    objective_1 = objective_revision("Learning Objective 1")
+    objective_2 = objective_revision("Learning Objective 2")
+
+    candidates = [
+      activity_revision("Candidate 1", :banked, "oli_multiple_choice", nil, [
+        objective_1.resource_id
+      ]),
+      activity_revision(
+        "Candidate 2",
+        :banked,
+        "oli_multiple_choice",
+        "Mitochondria content",
+        [objective_2.resource_id]
+      ),
+      activity_revision(
+        "Candidate 3",
+        :banked,
+        "oli_check_all_that_apply",
+        nil,
+        [objective_1.resource_id, objective_2.resource_id]
+      )
+    ]
+
+    page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Basic page",
+        content: %{
+          "model" => [
+            %{"type" => "activity-reference", "activity_id" => embedded_activity.resource_id},
+            selection("selection-1", 2),
+            selection("selection-2", 1)
+          ]
+        }
+      )
+
+    adaptive_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Adaptive page",
+        content: %{"advancedAuthoring" => true, "model" => []}
+      )
+
+    root_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Root",
+        children: [page_revision.resource_id, adaptive_revision.resource_id],
+        content: %{}
+      )
+
+    revisions = [
+      root_revision,
+      page_revision,
+      adaptive_revision,
+      embedded_activity,
+      objective_1,
+      objective_2
+      | candidates
+    ]
+
+    Enum.each(revisions, fn revision ->
+      insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+    end)
+
+    publication =
+      insert(:publication, project: project, root_resource_id: root_revision.resource_id)
+
+    Enum.each(revisions, fn revision ->
+      insert(:published_resource,
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      )
+    end)
+
+    section = insert(:section, base_project: project)
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    instructor = insert(:user)
+
+    Sections.enroll(instructor.id, section.id, [
+      ContextRoles.get_role(:context_instructor)
+    ])
+
+    {:ok,
+     %{
+       section: section,
+       page_revision: page_revision,
+       adaptive_revision: adaptive_revision,
+       embedded_activity: embedded_activity,
+       objective_1: objective_1,
+       objective_2: objective_2,
+       candidates: candidates,
+       instructor: instructor
+     }}
+  end
+
+  describe "authorization and target validation" do
+    test "resolves preview-route bank-selection targets through the public context", context do
+      assert {:ok, page_revision, selection} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.page_revision.slug,
+                 "selection-1"
+               )
+
+      assert page_revision.id == context.page_revision.id
+      assert selection["id"] == "selection-1"
+      assert selection["count"] == 2
+    end
+
+    test "returns page-not-found for an unknown preview revision slug", context do
+      assert {:error, {:not_found, :page}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 "missing-revision-slug",
+                 "selection-1"
+               )
+    end
+
+    test "returns adaptive-page errors for unsupported preview targets", context do
+      assert {:error, {:invalid_page_type, :adaptive}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.adaptive_revision.slug,
+                 "selection-1"
+               )
+    end
+
+    test "returns selection-not-found for an unknown bank selection id", context do
+      assert {:error, {:not_found, :selection}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.page_revision.slug,
+                 "missing-selection"
+               )
+    end
+
+    test "requires an instructor or admin-equivalent actor", context do
+      unauthorized_user = insert(:user)
+
+      assert {:error, {:unauthorized, :customize_section}} =
+               InstructorCustomizations.exclude_activity(
+                 context.section,
+                 context.page_revision.resource_id,
+                 context.embedded_activity.resource_id
+               )
+
+      assert {:error, {:unauthorized, :customize_section}} =
+               InstructorCustomizations.exclude_activity(
+                 context.section,
+                 context.page_revision.resource_id,
+                 context.embedded_activity.resource_id,
+                 actor: unauthorized_user
+               )
+
+      assert {:error, {:unauthorized, :customize_section}} =
+               InstructorCustomizations.exclude_activity(
+                 context.section,
+                 context.page_revision.resource_id,
+                 context.embedded_activity.resource_id,
+                 actor: unauthorized_user,
+                 authorize?: false
+               )
+
+      admin = insert(:author, system_role_id: SystemRole.role_id().content_admin)
+
+      assert {:ok, %PageExclusions{}} =
+               InstructorCustomizations.exclude_activity(
+                 context.section,
+                 context.page_revision.resource_id,
+                 context.embedded_activity.resource_id,
+                 actor: admin
+               )
+    end
+
+    test "validates section, page, page type, and targets", context do
+      opts = [actor: context.instructor]
+      missing_id = -1
+
+      assert {:error, {:not_found, :section}} =
+               InstructorCustomizations.exclude_activity(
+                 missing_id,
+                 context.page_revision.resource_id,
+                 context.embedded_activity.resource_id,
+                 opts
+               )
+
+      assert {:error, {:not_found, :page}} =
+               InstructorCustomizations.exclude_activity(
+                 context.section,
+                 missing_id,
+                 context.embedded_activity.resource_id,
+                 opts
+               )
+
+      assert {:error, {:invalid_page_type, :adaptive}} =
+               InstructorCustomizations.exclude_activity(
+                 context.section,
+                 context.adaptive_revision.resource_id,
+                 context.embedded_activity.resource_id,
+                 opts
+               )
+
+      assert {:error, {:not_found, :activity}} =
+               InstructorCustomizations.exclude_activity(
+                 context.section,
+                 context.page_revision.resource_id,
+                 missing_id,
+                 opts
+               )
+
+      assert {:error, {:not_found, :selection}} =
+               InstructorCustomizations.exclude_bank_selection(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "missing-selection",
+                 opts
+               )
+
+      embedded_id = context.embedded_activity.resource_id
+
+      assert {:error, {:invalid_selection_candidate, ^embedded_id}} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 embedded_id,
+                 opts
+               )
+    end
+  end
+
+  describe "idempotent writes" do
+    test "disables and restores embedded activities and selections", context do
+      opts = [actor: context.instructor]
+
+      for _ <- 1..2 do
+        assert {:ok, view} =
+                 InstructorCustomizations.exclude_activity(
+                   context.section,
+                   context.page_revision.resource_id,
+                   context.embedded_activity.resource_id,
+                   opts
+                 )
+
+        refute InstructorCustomizations.activity_enabled?(
+                 view,
+                 context.embedded_activity.resource_id
+               )
+      end
+
+      assert exclusion_count(context, :embedded_activity) == 1
+
+      for _ <- 1..2 do
+        assert {:ok, view} =
+                 InstructorCustomizations.restore_activity(
+                   context.section,
+                   context.page_revision.resource_id,
+                   context.embedded_activity.resource_id,
+                   opts
+                 )
+
+        assert InstructorCustomizations.activity_enabled?(
+                 view,
+                 context.embedded_activity.resource_id
+               )
+      end
+
+      assert exclusion_count(context, :embedded_activity) == 0
+
+      for _ <- 1..2 do
+        assert {:ok, view} =
+                 InstructorCustomizations.exclude_bank_selection(
+                   context.section,
+                   context.page_revision.resource_id,
+                   "selection-1",
+                   opts
+                 )
+
+        refute InstructorCustomizations.bank_selection_enabled?(view, "selection-1")
+      end
+
+      assert exclusion_count(context, :bank_selection) == 1
+
+      for _ <- 1..2 do
+        assert {:ok, view} =
+                 InstructorCustomizations.restore_bank_selection(
+                   context.section,
+                   context.page_revision.resource_id,
+                   "selection-1",
+                   opts
+                 )
+
+        assert InstructorCustomizations.bank_selection_enabled?(view, "selection-1")
+      end
+
+      assert exclusion_count(context, :bank_selection) == 0
+    end
+
+    test "disables and restores candidates while returning the refreshed view", context do
+      candidate = hd(context.candidates)
+      opts = [actor: context.instructor]
+
+      for _ <- 1..2 do
+        assert {:ok, view} =
+                 InstructorCustomizations.exclude_bank_candidate(
+                   context.section,
+                   context.page_revision.resource_id,
+                   "selection-1",
+                   candidate.resource_id,
+                   opts
+                 )
+
+        refute InstructorCustomizations.bank_candidate_enabled?(
+                 view,
+                 "selection-1",
+                 candidate.resource_id
+               )
+      end
+
+      assert exclusion_count(context, :bank_candidate) == 1
+
+      for _ <- 1..2 do
+        assert {:ok, view} =
+                 InstructorCustomizations.restore_bank_candidate(
+                   context.section,
+                   context.page_revision.resource_id,
+                   "selection-1",
+                   candidate.resource_id,
+                   opts
+                 )
+
+        assert InstructorCustomizations.bank_candidate_enabled?(
+                 view,
+                 "selection-1",
+                 candidate.resource_id
+               )
+      end
+
+      assert exclusion_count(context, :bank_candidate) == 0
+    end
+  end
+
+  describe "candidate count protection and review" do
+    test "bulk disable and restore persist candidate rows atomically", context do
+      [first, second | _rest] = context.candidates
+      opts = [actor: context.instructor]
+
+      assert {:ok, view} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-2",
+                 [first.resource_id, second.resource_id],
+                 false,
+                 opts
+               )
+
+      refute InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-2",
+               first.resource_id
+             )
+
+      refute InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-2",
+               second.resource_id
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 2
+
+      assert {:ok, view} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-2",
+                 [first.resource_id, second.resource_id],
+                 true,
+                 opts
+               )
+
+      assert InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-2",
+               first.resource_id
+             )
+
+      assert InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-2",
+               second.resource_id
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 0
+    end
+
+    test "blocked bulk disable persists nothing from the requested set", context do
+      [first, second, third] = context.candidates
+      opts = [actor: context.instructor]
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 first.resource_id,
+                 opts
+               )
+
+      assert {:error,
+              {:insufficient_selection_candidates,
+               %{selection_id: "selection-1", count: 2, active_candidates: 0}}} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 [second.resource_id, third.resource_id],
+                 false,
+                 opts
+               )
+
+      refute Repo.exists?(
+               from exclusion in ActivityExclusion,
+                 where:
+                   exclusion.section_id == ^context.section.id and
+                     exclusion.page_resource_id == ^context.page_revision.resource_id and
+                     exclusion.kind == :bank_candidate and
+                     exclusion.selection_id == "selection-1" and
+                     exclusion.excluded_resource_id in ^[second.resource_id, third.resource_id]
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 1
+    end
+
+    test "rejects malformed candidate ids without persisting anything", context do
+      [first | _rest] = context.candidates
+      opts = [actor: context.instructor]
+
+      assert {:error, {:invalid_candidate_ids, ["bad-id", nil]}} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 [first.resource_id, "bad-id", nil],
+                 false,
+                 opts
+               )
+
+      refute Repo.exists?(
+               from exclusion in ActivityExclusion,
+                 where:
+                   exclusion.section_id == ^context.section.id and
+                     exclusion.page_resource_id == ^context.page_revision.resource_id and
+                     exclusion.kind == :bank_candidate and
+                     exclusion.selection_id == "selection-1"
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 0
+    end
+
+    test "allows disables above count, blocks at count, and allows whole-selection disable",
+         context do
+      [first, second | _] = context.candidates
+      opts = [actor: context.instructor]
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 first.resource_id,
+                 opts
+               )
+
+      assert {:error,
+              {:insufficient_selection_candidates,
+               %{selection_id: "selection-1", count: 2, active_candidates: 1}}} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 second.resource_id,
+                 opts
+               )
+
+      assert {:ok, view} =
+               InstructorCustomizations.exclude_bank_selection(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 opts
+               )
+
+      refute InstructorCustomizations.bank_selection_enabled?(view, "selection-1")
+    end
+
+    test "blocks another disable when stale exclusions already leave the selection below count",
+         context do
+      [first, second, third] = context.candidates
+
+      Enum.each([first, second], fn candidate ->
+        insert_exclusion(context, :bank_candidate,
+          selection_id: "selection-1",
+          excluded_resource_id: candidate.resource_id
+        )
+      end)
+
+      assert {:error,
+              {:insufficient_selection_candidates,
+               %{selection_id: "selection-1", count: 2, active_candidates: 0}}} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 third.resource_id,
+                 actor: context.instructor
+               )
+    end
+
+    test "candidate disable locks the page row before enforcing count", context do
+      handler_id = "candidate-lock-#{System.unique_integer([:positive])}"
+      parent = self()
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _, _, metadata, _ ->
+          if is_binary(metadata.query) and
+               String.contains?(metadata.query, ~s[FOR UPDATE]) and
+               String.contains?(metadata.query, ~s["section_resources"]) do
+            send(parent, :page_locked)
+          end
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 hd(context.candidates).resource_id,
+                 actor: context.instructor
+               )
+
+      assert_receive :page_locked
+    end
+
+    test "lists candidates with selection and action state while ignoring stale exclusions",
+         context do
+      [first, second, _third] = context.candidates
+
+      insert_exclusion(context, :bank_selection, selection_id: "selection-1")
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: first.resource_id
+      )
+
+      stale_activity = activity_revision("Stale activity", :banked)
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: stale_activity.resource_id
+      )
+
+      assert {:ok,
+              %{
+                selection_id: "selection-1",
+                count: 2,
+                selection_enabled?: false,
+                active_count: 2,
+                total_count: 3,
+                has_more?: false,
+                candidates: candidates
+              }} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1"
+               )
+
+      assert length(candidates) == 3
+      refute Enum.any?(candidates, &(&1.activity_resource_id == stale_activity.resource_id))
+
+      assert %{enabled?: false, disable_allowed?: true} =
+               Enum.find(candidates, &(&1.activity_resource_id == first.resource_id))
+
+      assert %{enabled?: true, disable_allowed?: false} =
+               Enum.find(candidates, &(&1.activity_resource_id == second.resource_id))
+
+      assert %{
+               selection_enabled?: false,
+               excluded_candidate_ids: excluded_candidate_ids
+             } =
+               InstructorCustomizations.get_selection_exclusion_view(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1"
+               )
+
+      assert excluded_candidate_ids == MapSet.new([first.resource_id, stale_activity.resource_id])
+    end
+
+    test "validates candidate-list paging and computes action state from all candidates",
+         context do
+      assert {:error, {:invalid_paging, :limit}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 limit: "1"
+               )
+
+      assert {:ok, %{candidates: [candidate], total_count: 3, has_more?: true, limit: 1}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 limit: 1
+               )
+
+      assert candidate.disable_allowed?
+    end
+
+    test "filters candidate listing by activity type before paging", context do
+      mcq_registration = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+      cata_registration = Oli.Activities.get_registration_by_slug("oli_check_all_that_apply")
+
+      assert {:ok, %{candidates: [candidate], total_count: 2, has_more?: true}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 limit: 1,
+                 filters: %{activity_type_ids: [mcq_registration.id]}
+               )
+
+      assert candidate.title == "Candidate 1"
+
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{"activity_type_ids" => "#{cata_registration.id}"}
+               )
+
+      assert candidate.title == "Candidate 3"
+    end
+
+    test "filters candidate listing by visibility before paging", context do
+      [removed_candidate | available_candidates] = context.candidates
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 removed_candidate.resource_id,
+                 actor: context.instructor
+               )
+
+      assert {:ok, %{candidates: [candidate], total_count: 2, has_more?: true}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 limit: 1,
+                 filters: %{visibility: :available}
+               )
+
+      assert candidate.activity_resource_id == hd(available_candidates).resource_id
+      assert candidate.enabled?
+
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{"visibility" => "removed"}
+               )
+
+      assert candidate.activity_resource_id == removed_candidate.resource_id
+      refute candidate.enabled?
+    end
+
+    test "filters candidate listing by text search before paging", context do
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 limit: 1,
+                 filters: %{text_search: "mitochondria"}
+               )
+
+      assert candidate.title == "Candidate 2"
+
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{text_search: "Candidate 2"}
+               )
+
+      assert candidate.title == "Candidate 2"
+
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{"text_search" => "Candidate 3"}
+               )
+
+      assert candidate.title == "Candidate 3"
+    end
+
+    test "combines candidate text search with visibility filters", context do
+      [removed_candidate | _available_candidates] = context.candidates
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 removed_candidate.resource_id,
+                 actor: context.instructor
+               )
+
+      assert {:ok, %{candidates: [], total_count: 0}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{visibility: :available, text_search: "Candidate 1"}
+               )
+
+      assert {:ok, %{candidates: [candidate], total_count: 1}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{visibility: :removed, text_search: "Candidate 1"}
+               )
+
+      assert candidate.activity_resource_id == removed_candidate.resource_id
+      refute candidate.enabled?
+    end
+
+    test "generates filter options from all selection candidates including removed rows",
+         context do
+      [removed_candidate | _available_candidates] = context.candidates
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 removed_candidate.resource_id,
+                 actor: context.instructor
+               )
+
+      assert {:ok, options} =
+               InstructorCustomizations.list_bank_selection_candidate_filter_options(
+                 context.section,
+                 context.page_revision,
+                 selection("selection-1", 2),
+                 3
+               )
+
+      assert Enum.map(options.learning_objectives, & &1.id) |> Enum.sort() ==
+               [context.objective_1.resource_id, context.objective_2.resource_id] |> Enum.sort()
+
+      assert Enum.map(options.learning_objectives, & &1.title) |> Enum.sort() ==
+               ["Learning Objective 1", "Learning Objective 2"]
+
+      activity_type_ids = Enum.map(options.activity_types, & &1.id)
+
+      assert Oli.Activities.get_registration_by_slug("oli_multiple_choice").id in activity_type_ids
+
+      assert Oli.Activities.get_registration_by_slug("oli_check_all_that_apply").id in activity_type_ids
+    end
+
+    test "combines objective and activity type candidate filters", context do
+      cata_registration = Oli.Activities.get_registration_by_slug("oli_check_all_that_apply")
+
+      assert {:ok, %{candidates: [candidate], total_count: 1}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{
+                   objective_ids: [context.objective_1.resource_id],
+                   activity_type_ids: [cata_registration.id]
+                 }
+               )
+
+      assert candidate.title == "Candidate 3"
+    end
+
+    test "matches any selected objective within the learning objective filter", context do
+      assert {:ok, %{candidates: candidates, total_count: 3}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{
+                   objective_ids: [
+                     context.objective_1.resource_id,
+                     context.objective_2.resource_id
+                   ]
+                 }
+               )
+
+      assert Enum.map(candidates, & &1.title) == ["Candidate 1", "Candidate 2", "Candidate 3"]
+    end
+
+    test "rejects invalid candidate filters", context do
+      assert {:error, {:invalid_candidate_filters, :activity_type_ids}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{activity_type_ids: ["bad"]}
+               )
+
+      assert {:error, {:invalid_candidate_filters, :visibility}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{visibility: "hidden"}
+               )
+
+      assert {:error, {:invalid_candidate_filters, :text_search}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{text_search: 42}
+               )
+
+      assert {:error, {:invalid_candidate_filters, :filters}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: 42
+               )
+
+      assert {:error, {:invalid_candidate_filters, :filters}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: [:bad_shape]
+               )
+    end
+
+    test "uses a standard default page size for candidate review", context do
+      assert {:ok, %{candidates: candidates, total_count: 3, has_more?: false, active_count: 3}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1"
+               )
+
+      assert length(candidates) == 3
+    end
+
+    test "accepts an already resolved section/page_revision/selection target", context do
+      selection = selection("selection-1", 2)
+
+      assert {:ok,
+              %{
+                selection_id: "selection-1",
+                count: 2,
+                active_count: 3,
+                total_count: 3,
+                has_more?: false,
+                candidates: candidates
+              }} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision,
+                 selection,
+                 []
+               )
+
+      assert length(candidates) == 3
+    end
+
+    test "lists all candidate activity type ids for a resolved selection target", context do
+      selection = selection("selection-1", 2)
+
+      assert {:ok, activity_type_ids} =
+               InstructorCustomizations.list_bank_selection_candidate_activity_type_ids(
+                 context.section,
+                 context.page_revision,
+                 selection,
+                 3
+               )
+
+      assert Enum.sort(activity_type_ids) ==
+               context.candidates
+               |> Enum.map(& &1.activity_type_id)
+               |> Enum.uniq()
+               |> Enum.sort()
+    end
+
+    test "lists batched selection candidates with parameterized text logic", context do
+      matching_selections =
+        Enum.map(1..12, fn index ->
+          text_selection("matching-text-selection-#{index}", "Candidate")
+        end)
+
+      empty_selection = text_selection("empty-text-selection", "Embedded")
+
+      assert {:ok, results_by_selection_id} =
+               InstructorCustomizations.list_bank_selection_candidate_revisions_by_selection_id(
+                 context.section,
+                 context.page_revision,
+                 matching_selections ++ [empty_selection]
+               )
+
+      assert Map.fetch!(results_by_selection_id, "empty-text-selection") == {:ok, []}
+
+      for selection <- matching_selections do
+        assert {:ok, matching_candidates} = Map.fetch!(results_by_selection_id, selection["id"])
+
+        assert matching_candidates |> Enum.map(& &1.resource_id) |> Enum.sort() ==
+                 context.candidates |> Enum.map(& &1.resource_id) |> Enum.sort()
+      end
+    end
+
+    test "summarizes selection candidates without returning a paged candidate list", context do
+      [first, second, third] = context.candidates
+
+      insert_exclusion(context, :bank_selection, selection_id: "selection-1")
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: first.resource_id
+      )
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: second.resource_id
+      )
+
+      assert {:ok,
+              %{
+                selection_id: "selection-1",
+                count: 2,
+                active_count: 1,
+                selection_enabled?: false,
+                sample_candidate: %{
+                  activity_resource_id: activity_resource_id,
+                  enabled?: true
+                }
+              }} =
+               InstructorCustomizations.get_bank_selection_summary(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1"
+               )
+
+      assert activity_resource_id == third.resource_id
+    end
+
+    test "samples one active candidate while respecting candidate exclusions", context do
+      [first, second, third] = context.candidates
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: first.resource_id
+      )
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: second.resource_id
+      )
+
+      assert {:ok,
+              %{
+                activity_resource_id: activity_resource_id,
+                enabled?: true
+              }} =
+               InstructorCustomizations.sample_bank_selection_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1"
+               )
+
+      assert activity_resource_id == third.resource_id
+    end
+
+    test "restores a stale candidate exclusion without requiring it to match current logic",
+         context do
+      stale_activity = activity_revision("Stale activity", :banked)
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: stale_activity.resource_id
+      )
+
+      assert {:ok, view} =
+               InstructorCustomizations.restore_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 stale_activity.resource_id,
+                 actor: context.instructor
+               )
+
+      assert InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-1",
+               stale_activity.resource_id
+             )
+    end
+
+    test "bulk restore accepts stale candidate exclusions that are already persisted",
+         context do
+      stale_activity = activity_revision("Bulk stale activity", :banked)
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: stale_activity.resource_id
+      )
+
+      assert {:ok, view} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 [stale_activity.resource_id],
+                 true,
+                 actor: context.instructor
+               )
+
+      assert InstructorCustomizations.bank_candidate_enabled?(
+               view,
+               "selection-1",
+               stale_activity.resource_id
+             )
+    end
+  end
+
+  defp activity_revision(
+         title,
+         scope,
+         activity_slug \\ "oli_multiple_choice",
+         stem \\ nil,
+         objective_ids \\ []
+       ) do
+    insert(:revision,
+      resource_type_id: ResourceType.id_for_activity(),
+      activity_type_id: Oli.Activities.get_registration_by_slug(activity_slug).id,
+      title: title,
+      scope: scope,
+      content: %{"model" => %{"stem" => stem || title}},
+      objectives: %{"1" => objective_ids}
+    )
+  end
+
+  defp objective_revision(title) do
+    insert(:revision,
+      resource_type_id: ResourceType.id_for_objective(),
+      title: title,
+      scope: "embedded",
+      content: %{},
+      objectives: %{}
+    )
+  end
+
+  defp selection(id, count) do
+    %{"type" => "selection", "id" => id, "logic" => %{"conditions" => nil}, "count" => count}
+  end
+
+  defp text_selection(id, text) do
+    %{
+      "type" => "selection",
+      "id" => id,
+      "logic" => %{
+        "conditions" => %{
+          "fact" => "text",
+          "operator" => "contains",
+          "value" => text
+        }
+      },
+      "count" => 1
+    }
+  end
+
+  defp exclusion_count(context, kind) do
+    Repo.aggregate(
+      from(exclusion in ActivityExclusion,
+        where:
+          exclusion.section_id == ^context.section.id and
+            exclusion.page_resource_id == ^context.page_revision.resource_id and
+            exclusion.kind == ^kind
+      ),
+      :count
+    )
+  end
+
+  defp insert_exclusion(context, kind, attrs) do
+    %ActivityExclusion{}
+    |> ActivityExclusion.changeset(
+      context.section.id,
+      context.page_revision.resource_id,
+      attrs |> Map.new() |> Map.put(:kind, kind)
+    )
+    |> Repo.insert!()
+  end
+end

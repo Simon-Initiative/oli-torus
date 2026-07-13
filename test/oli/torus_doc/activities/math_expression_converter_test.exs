@@ -208,6 +208,44 @@ defmodule Oli.TorusDoc.Activities.MathExpressionConverterTest do
                "threshold" => "3"
              }
     end
+
+    test "converts number with units numeric operators and tolerance" do
+      yaml = """
+      type: oli_short_answer
+      stem_md: "Enter ten meters per second."
+      input_type: math_expression
+      math_expression:
+        subtype: number_with_units
+        unit_policy:
+          type: convertible_units
+          units: ["m/s", "km/hr"]
+      responses:
+        - answer: "10"
+          score: 1
+          correct: true
+          math_expression:
+            operator: equal
+            tolerance:
+              type: absolute
+              value: 0.25
+      """
+
+      assert {:ok, json} = ActivityConverter.from_yaml(yaml)
+
+      math =
+        json["authoring"]["parts"]
+        |> hd()
+        |> Map.fetch!("responses")
+        |> hd()
+        |> get_in(["matchConfig", "math"])
+
+      assert math == %{
+               "mode" => "unit_aware",
+               "expected" => "10",
+               "operator" => "equal",
+               "tolerance" => %{"type" => "absolute", "value" => 0.25}
+             }
+    end
   end
 
   describe "multi input math_expression YAML" do

@@ -26,6 +26,45 @@ pub fn evaluate(
   }
 }
 
+/// Evaluate an already-parsed numeric value while still applying submitted-text
+/// representation and precision constraints. Unit-aware Number matching uses
+/// this after converting the submitted quantity into the reference unit.
+pub fn evaluate_submitted_value(
+  spec: types.NumericSpec,
+  submitted: String,
+  submitted_value: Float,
+) -> types.EqualityResult {
+  case validate_numeric_options(spec) {
+    Error(error) -> types.InvalidConfig(error: error)
+    Ok(Nil) -> evaluate_supported_spec(spec, submitted, submitted_value)
+  }
+}
+
+/// Parse one scalar Number-input value. This intentionally excludes expression
+/// syntax so Number with Units keeps the same scalar value contract as Number.
+pub fn parse_scalar(raw: String) -> Result(Float, Nil) {
+  parse_number(raw)
+}
+
+/// Scale all authored numeric comparison values by a unit conversion factor.
+/// This lets unit-aware matching compare canonical values while keeping the
+/// operator, tolerance, representation, and precision semantics in this module.
+pub fn scale_comparison_values(
+  spec: types.NumericSpec,
+  scale: Float,
+) -> Result(types.NumericSpec, types.EqualityConfigError) {
+  case scale_comparison(spec.comparison, scale) {
+    Error(error) -> Error(error)
+    Ok(comparison) ->
+      Ok(types.NumericSpec(
+        comparison: comparison,
+        tolerance: spec.tolerance,
+        representation: spec.representation,
+        precision: spec.precision,
+      ))
+  }
+}
+
 /// Validate option parameters before reading the submitted answer so malformed
 /// author configuration always reports as config failure, not learner failure.
 /// JSON decoding catches shape errors; this protects hand-built Gleam specs too.
@@ -168,6 +207,66 @@ fn comparison_diagnostics(
 
     types.NotBetween(lower, upper, bounds) ->
       evaluate_range(submitted_value, lower, upper, bounds, inverted: True)
+  }
+}
+
+fn scale_comparison(
+  comparison: types.NumericComparison,
+  scale: Float,
+) -> Result(types.NumericComparison, types.EqualityConfigError) {
+  case comparison {
+    types.Equal(expected) ->
+      scale_input(expected, "comparison.expected", scale)
+      |> result_map(types.Equal)
+    types.NotEqual(expected) ->
+      scale_input(expected, "comparison.expected", scale)
+      |> result_map(types.NotEqual)
+    types.GreaterThan(threshold) ->
+      scale_input(threshold, "comparison.threshold", scale)
+      |> result_map(types.GreaterThan)
+    types.GreaterThanOrEqual(threshold) ->
+      scale_input(threshold, "comparison.threshold", scale)
+      |> result_map(types.GreaterThanOrEqual)
+    types.LessThan(threshold) ->
+      scale_input(threshold, "comparison.threshold", scale)
+      |> result_map(types.LessThan)
+    types.LessThanOrEqual(threshold) ->
+      scale_input(threshold, "comparison.threshold", scale)
+      |> result_map(types.LessThanOrEqual)
+    types.Between(lower, upper, bounds) ->
+      case
+        scale_input(lower, "comparison.lower", scale),
+        scale_input(upper, "comparison.upper", scale)
+      {
+        Ok(lower), Ok(upper) -> Ok(types.Between(lower, upper, bounds))
+        Error(error), _ | _, Error(error) -> Error(error)
+      }
+    types.NotBetween(lower, upper, bounds) ->
+      case
+        scale_input(lower, "comparison.lower", scale),
+        scale_input(upper, "comparison.upper", scale)
+      {
+        Ok(lower), Ok(upper) -> Ok(types.NotBetween(lower, upper, bounds))
+        Error(error), _ | _, Error(error) -> Error(error)
+      }
+  }
+}
+
+fn scale_input(
+  input: types.NumericInput,
+  field: String,
+  scale: Float,
+) -> Result(types.NumericInput, types.EqualityConfigError) {
+  case parse_config_number(input, field) {
+    Error(error) -> Error(error)
+    Ok(value) -> Ok(types.NumericInput(raw: float.to_string(value *. scale)))
+  }
+}
+
+fn result_map(result: Result(a, e), transform: fn(a) -> b) -> Result(b, e) {
+  case result {
+    Ok(value) -> Ok(transform(value))
+    Error(error) -> Error(error)
   }
 }
 

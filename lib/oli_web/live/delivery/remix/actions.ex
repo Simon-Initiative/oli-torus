@@ -12,10 +12,26 @@ defmodule OliWeb.Delivery.Remix.Actions do
   attr :hidden, :boolean, required: true
   attr :resource_type, :integer, required: true
   attr :is_used_as_source_page, :boolean, required: true
+  attr :edit_url, :string, default: nil
+  attr :edit_label, :string, default: "Edit page in Instructor View"
 
   def render(assigns) do
     ~H"""
     <div class="entry-actions flex items-center gap-2">
+      <Button.button
+        :if={@resource_type == ResourceType.id_for_page() and not is_nil(@edit_url)}
+        variant={:secondary}
+        size={:sm}
+        class="!px-4 no-underline hover:no-underline"
+        href={@edit_url}
+        aria-label={@edit_label}
+        data-unsaved-changes-reason="instructor_view"
+      >
+        <:icon_left>
+          <OliWeb.Icons.edit_instructor_view class="h-5 w-5" />
+        </:icon_left>
+        Edit
+      </Button.button>
       <Button.button
         :if={@show_options}
         variant={:secondary}
@@ -34,7 +50,7 @@ defmodule OliWeb.Delivery.Remix.Actions do
         phx-value-uuid={@uuid}
       >
         <:icon_left>
-          <OliWeb.Icons.arrow_circle_right class="w-3.5 h-3.5 fill-current" />
+          <OliWeb.Icons.move class="h-4 w-4" />
         </:icon_left>
         Move
       </Button.button>

@@ -5,10 +5,12 @@ import {
   ItemConfigs,
   MatchConfig,
   MatchConfigs,
+  NumericComparisonSpec,
   NumericMatchSpec,
   NumericOperator,
   NumericRepresentation,
   NumericTolerance,
+  UnitPolicy,
 } from 'data/activities/model/match';
 import {
   Input,
@@ -122,26 +124,64 @@ export const numericInputToMatchConfig = (
   });
 };
 
+export const numericInputToUnitAwareMatchConfig = (
+  input: InputNumeric | InputRange,
+  rawRule?: string,
+  options: {
+    unitPolicy?: UnitPolicy;
+    representation?: NumericRepresentation;
+    tolerance?: NumericTolerance;
+    matchWrongUnits?: boolean;
+    matchMissingUnit?: boolean;
+  } = {},
+): MatchConfig => {
+  const numericMatchConfig = numericInputToMatchConfig(input, rawRule, {
+    representation: options.representation,
+    tolerance: options.tolerance,
+  }) as { math: NumericMatchSpec };
+  const { mode: _mode, ...numericSpec } = numericMatchConfig.math as NumericMatchSpec;
+  const { expected, ...numericOptions } = numericSpec;
+
+  return MatchConfigs.unitAware(
+    expected ?? numericExpectedFromSpec(numericSpec),
+    options.unitPolicy,
+    {
+      ...numericOptions,
+      ...(options.matchWrongUnits ? { matchWrongUnits: true } : {}),
+      ...(options.matchMissingUnit ? { matchMissingUnit: true } : {}),
+    },
+  );
+};
+
 export const numericInputFromMatchConfig = (
   matchConfig: MatchConfig | undefined,
 ): InputNumeric | InputRange | undefined => {
-  if (matchConfig?.type !== 'math_expression' || matchConfig.math.mode !== 'numeric') {
+  if (
+    matchConfig?.type !== 'math_expression' ||
+    (matchConfig.math.mode !== 'numeric' && matchConfig.math.mode !== 'unit_aware')
+  ) {
     return undefined;
   }
 
+  const math = matchConfig.math;
+  if (math.mode === 'unit_aware' && math.operator === undefined && math.expected.trim() === '') {
+    return undefined;
+  }
+
+  const matchOperator = math.mode === 'unit_aware' ? math.operator ?? 'equal' : math.operator;
   const precision =
-    matchConfig.math.precision?.type === 'significant_figures' ||
-    matchConfig.math.precision?.type === 'legacy_significant_figures'
-      ? matchConfig.math.precision.count
+    math.precision?.type === 'significant_figures' ||
+    math.precision?.type === 'legacy_significant_figures'
+      ? math.precision.count
       : undefined;
 
-  switch (matchConfig.math.operator) {
+  switch (matchOperator) {
     case 'equal':
     case 'not_equal':
       return {
         kind: InputKind.Numeric,
-        operator: matchConfig.math.operator === 'equal' ? 'eq' : 'neq',
-        value: matchConfig.math.expected ?? '',
+        operator: matchOperator === 'equal' ? 'eq' : 'neq',
+        value: numericExpectedValue(math.expected),
         precision,
       };
     case 'greater_than':
@@ -153,12 +193,12 @@ export const numericInputFromMatchConfig = (
         greater_than_or_equal: 'gte',
         less_than: 'lt',
         less_than_or_equal: 'lte',
-      }[matchConfig.math.operator] as InputNumeric['operator'];
+      }[matchOperator] as InputNumeric['operator'];
 
       return {
         kind: InputKind.Numeric,
         operator,
-        value: matchConfig.math.threshold ?? '',
+        value: math.threshold ?? numericExpectedValue(math.expected),
         precision,
       };
     }
@@ -166,13 +206,27 @@ export const numericInputFromMatchConfig = (
     case 'not_between':
       return {
         kind: InputKind.Range,
-        operator: matchConfig.math.operator === 'between' ? 'btw' : 'nbtw',
-        lowerBound: matchConfig.math.lower ?? '',
-        upperBound: matchConfig.math.upper ?? '',
-        inclusive: matchConfig.math.bounds !== 'exclusive',
+        operator: matchOperator === 'between' ? 'btw' : 'nbtw',
+        lowerBound: math.lower ?? numericExpectedValue(math.expected),
+        upperBound: math.upper ?? numericExpectedValue(math.expected),
+        inclusive: math.bounds !== 'exclusive',
         precision,
       };
   }
+};
+
+const numericExpectedFromSpec = (spec: NumericComparisonSpec): string => {
+  if (spec.expected !== undefined) return spec.expected;
+  if (spec.threshold !== undefined) return spec.threshold;
+  if (spec.lower !== undefined) return spec.lower;
+  return '';
+};
+
+const numericExpectedValue = (expected: string | undefined): string => {
+  const value = expected ?? '';
+  const match = value.trim().match(new RegExp(`^(${numberPattern})(?=\\s|[A-Za-z*/^]|$)`));
+
+  return match?.[1] ?? value;
 };
 
 const responseWithMatchConfig = (response: Response, matchConfig: MatchConfig): Response => {

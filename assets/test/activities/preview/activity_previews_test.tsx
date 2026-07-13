@@ -20,6 +20,8 @@ import {
   makeResponse,
   makeStem,
 } from 'components/activities/types';
+import { MatchConfigs } from 'data/activities/model/match';
+import { makeMatchConfigResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule, gteRule, iequalsRule } from 'data/activities/model/rules';
 
 const previewContext: PreviewContext = {
@@ -259,6 +261,120 @@ describe('activity previews', () => {
     expect(screen.getByText('Very close, you can still get the points.')).toBeInTheDocument();
   });
 
+  test('multi input preview renders dropdown and math targeted feedback details', () => {
+    const model = defaultMultiInputModel();
+    const dropdownChoiceA = makeChoice('Mercury');
+    const dropdownChoiceB = makeChoice('Venus');
+
+    model.choices = [dropdownChoiceA, dropdownChoiceB];
+    model.inputs = [
+      {
+        id: 'input-1',
+        inputType: 'dropdown',
+        partId: 'part-1',
+        choiceIds: [dropdownChoiceA.id, dropdownChoiceB.id],
+      },
+      { id: 'input-2', inputType: 'math', partId: 'part-2' },
+    ];
+    model.stem = {
+      id: 'stem-1',
+      content: [
+        {
+          type: 'p',
+          id: 'p-1',
+          children: [
+            { text: 'Select ' },
+            { type: 'input_ref', id: 'input-1' },
+            { text: ' and solve ' },
+            { type: 'input_ref', id: 'input-2' },
+            { text: '.' },
+          ],
+        } as any,
+      ],
+    } as any;
+    model.authoring.parts = [
+      makePart(
+        [
+          makeResponse(`input like {${dropdownChoiceA.id}}`, 1, 'Correct', true),
+          makeResponse(`input like {${dropdownChoiceB.id}}`, 0, 'Planet targeted feedback'),
+          makeResponse('input like {.*}', 0, 'Incorrect'),
+        ],
+        [],
+        'part-1',
+      ),
+      makePart(
+        [
+          makeResponse(eqRule(1), 1, 'Correct', true),
+          makeResponse('input like {x^2+2x+1}', 0, 'Math targeted feedback'),
+          makeResponse('input like {.*}', 0, 'Incorrect'),
+        ],
+        [],
+        'part-2',
+      ),
+    ];
+    model.authoring.targeted = [[[dropdownChoiceB.id], model.authoring.parts[0].responses[1].id]];
+
+    renderPreview(MultiInputPreview, model, {
+      activityTypeSlug: 'oli_multi_input',
+      activityTypeLabel: 'Multi Input',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /view details/i }));
+    expect(screen.getByText('Planet targeted feedback')).toBeInTheDocument();
+    expect(screen.getAllByText('Venus').length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: /select math input/i }));
+    expect(screen.getByText('Math targeted feedback')).toBeInTheDocument();
+    expect(screen.getByText((content) => content.includes('x^2+2x+1'))).toBeInTheDocument();
+  });
+
+  test('multi input preview renders numeric math-expression targeted feedback conditions', () => {
+    const model = defaultMultiInputModel();
+    model.inputs = [{ id: 'input-1', inputType: 'math_expression', partId: 'part-1' } as any];
+    model.authoring.parts = [
+      makePart(
+        [
+          makeMatchConfigResponse(
+            MatchConfigs.numeric({
+              operator: 'equal',
+              expected: '3',
+            }),
+            1,
+            'Correct',
+            true,
+          ),
+          makeMatchConfigResponse(
+            MatchConfigs.numeric({
+              operator: 'greater_than_or_equal',
+              threshold: '1',
+              precision: { type: 'significant_figures', count: 5 },
+            }),
+            0,
+            'Numeric math targeted feedback',
+          ),
+          makeResponse('input like {.*}', 0, 'Incorrect'),
+        ],
+        [],
+        'part-1',
+      ),
+    ];
+
+    renderPreview(MultiInputPreview, model, {
+      activityTypeSlug: 'oli_multi_input',
+      activityTypeLabel: 'Multi Input',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /view details/i }));
+
+    expect(screen.getByText('Equal to')).toBeInTheDocument();
+    expect(screen.getAllByText('3').length).toBeGreaterThan(0);
+    expect(screen.getByText('Greater than or equal to')).toBeInTheDocument();
+    expect(screen.getAllByText('1').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Significant figures').length).toBeGreaterThan(0);
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('Numeric math targeted feedback')).toBeInTheDocument();
+  });
+
   test('directed discussion preview renders participation and hints details', () => {
     const model = {
       stem: makeStem('What do you think of the article above?'),
@@ -375,6 +491,53 @@ describe('activity previews', () => {
     expect(answerKeyText.indexOf('3.Second')).toBeGreaterThan(-1);
     expect(answerKeyText.indexOf('1.Third')).toBeLessThan(answerKeyText.indexOf('2.First'));
     expect(answerKeyText.indexOf('2.First')).toBeLessThan(answerKeyText.indexOf('3.Second'));
+  });
+
+  test('ordering preview shows targeted feedback in the authored mapped order', () => {
+    const first = makeChoice('First');
+    const second = makeChoice('Second');
+    const third = makeChoice('Third');
+
+    const model = {
+      stem: makeStem('Put these in order.'),
+      choices: [first, second, third],
+      authoring: {
+        version: 2,
+        correct: [[first.id, second.id, third.id], 'response-order'],
+        targeted: [],
+        parts: [makePart([], [], 'part-1')],
+        transformations: [],
+        previewText: '',
+      },
+    } as any;
+
+    model.authoring.parts[0].responses = [
+      makeResponse(`input like {${first.id} ${second.id} ${third.id}}`, 1, 'Correct', true),
+      makeResponse(`input like {${second.id} ${third.id} ${first.id}}`, 0, 'Second mapping'),
+      makeResponse(`input like {${third.id} ${first.id} ${second.id}}`, 0, 'First mapping'),
+      makeResponse('input like {.*}', 0, 'Incorrect'),
+    ];
+    model.authoring.targeted = [
+      [[third.id, first.id, second.id], model.authoring.parts[0].responses[2].id],
+      [[second.id, third.id, first.id], model.authoring.parts[0].responses[1].id],
+    ];
+
+    renderPreview(OrderingPreview, model, {
+      activityTypeSlug: 'oli_ordering',
+      activityTypeLabel: 'Ordering',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /view details/i }));
+
+    const answerKeyPanel = screen.getByRole('tabpanel', { name: 'Answer Key' });
+    const answerKeyText = answerKeyPanel.textContent || '';
+
+    expect(answerKeyText.indexOf('First mapping')).toBeLessThan(
+      answerKeyText.indexOf('Second mapping'),
+    );
+    expect(answerKeyText.indexOf('1.Third')).toBeGreaterThan(-1);
+    expect(answerKeyText.indexOf('2.First')).toBeGreaterThan(-1);
+    expect(answerKeyText.indexOf('3.Second')).toBeGreaterThan(-1);
   });
 
   test('other scoped previews render without crashing', () => {

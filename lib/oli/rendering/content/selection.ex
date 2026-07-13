@@ -1,15 +1,28 @@
 defmodule Oli.Rendering.Content.Selection do
+  alias Oli.Rendering.Content.JumpNavigation
+  alias Oli.Rendering.Content.UrlHelpers
+
   def render(
         %Oli.Rendering.Context{
           section_slug: section_slug,
           revision_slug: revision_slug,
+          page_link_params: page_link_params,
+          selection_preview_url: selection_preview_url,
           activity_types_map: activity_types_map
         },
         %{"logic" => logic, "count" => count, "id" => id} = selection,
         include_link?
       ) do
     titles = titles_from_selection(section_slug, selection)
-    url = "/sections/#{section_slug}/preview/page/#{revision_slug}/selection/#{id}"
+
+    url =
+      selection_preview_url(
+        section_slug,
+        revision_slug,
+        id,
+        selection_preview_url,
+        page_link_params
+      )
 
     count_desc =
       case count do
@@ -18,7 +31,7 @@ defmodule Oli.Rendering.Content.Selection do
       end
 
     [
-      "<div class=\"jumbotron selection\">",
+      "<div id=\"#{JumpNavigation.selection_target_id(id)}\" class=\"jumbotron selection #{JumpNavigation.target_classes()}\">",
       "<h2 class=\"display-6\">Activity Bank Selection</h2>",
       "<p class=\"lead\">The following activity bank selection will select ",
       "<span class=\"badge badge-pill badge-primary\">#{count_desc}</span> randomly according to the following constraints:",
@@ -37,6 +50,31 @@ defmodule Oli.Rendering.Content.Selection do
       "</div>"
     ]
   end
+
+  defp selection_preview_url(
+         _section_slug,
+         revision_slug,
+         selection_id,
+         selection_preview_url,
+         _page_link_params
+       )
+       when is_function(selection_preview_url, 2),
+       do: selection_preview_url.(revision_slug, selection_id)
+
+  defp selection_preview_url(
+         section_slug,
+         revision_slug,
+         selection_id,
+         _selection_preview_url,
+         page_link_params
+       ),
+       do:
+         UrlHelpers.preview_selection_path(
+           section_slug,
+           revision_slug,
+           selection_id,
+           page_link_params
+         )
 
   defp render_html(items, titles, activity_types_map) when is_list(items) do
     Enum.map(items, fn item -> render_html(item, titles, activity_types_map) end)

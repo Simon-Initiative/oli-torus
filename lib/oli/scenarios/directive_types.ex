@@ -81,8 +81,10 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :gradebook,
       :review_attempt,
       :activity_attempt,
+      :activity_customization,
       :page_objectives,
       :activity_objectives,
+      :discussion,
       :assertions
     ]
   end
@@ -155,6 +157,13 @@ defmodule Oli.Scenarios.DirectiveTypes do
     ops: ordered list of Activity Bank operations
     """
     defstruct [:project, :ops]
+  end
+
+  defmodule InstructorCustomizationDirective do
+    @moduledoc """
+    Applies instructor activity customization operations to a section page.
+    """
+    defstruct [:section, :page, :actor, :ops]
   end
 
   defmodule EditPageDirective do
@@ -273,11 +282,44 @@ defmodule Oli.Scenarios.DirectiveTypes do
   defmodule DiscussionPostDirective do
     @moduledoc """
     Creates a discussion post for a student in a section.
+    name: optional scenario-local name for referencing the post later
     student: scenario user name
     section: scenario section name
     body: discussion post body
+    reply_to: optional scenario-local parent post name
+    anonymous: whether to create the post anonymously
     """
-    defstruct [:student, :section, :body]
+    defstruct [:name, :student, :section, :body, :reply_to, :anonymous]
+  end
+
+  defmodule DiscussionConfigDirective do
+    @moduledoc """
+    Configures course discussions on a section.
+    section: scenario section name
+    enabled: whether course discussions are enabled
+    auto_accept: whether posts are visible without approval
+    anonymous_posting: whether anonymous posting is enabled
+    """
+    defstruct [:section, :enabled, :auto_accept, :anonymous_posting]
+  end
+
+  defmodule DiscussionModerationDirective do
+    @moduledoc """
+    Applies instructor moderation to a named discussion post.
+    post: scenario-local post name
+    instructor: scenario user name
+    action: approve or reject
+    """
+    defstruct [:post, :instructor, :action]
+  end
+
+  defmodule DiscussionDeleteDirective do
+    @moduledoc """
+    Deletes a named discussion post as a scenario user.
+    post: scenario-local post name
+    actor: scenario user name
+    """
+    defstruct [:post, :actor]
   end
 
   defmodule ClassNoteDirective do
@@ -363,10 +405,14 @@ defmodule Oli.Scenarios.DirectiveTypes do
               finalized_attempts: %{},
               # {user_name, section_name, page_title, activity_virtual_id} -> evaluation result
               activity_evaluations: %{},
+              # name -> Discussion post
+              discussion_posts: %{},
               # gate name -> GatingCondition
               gates: %{},
               # scenario-local current time
               scenario_time: nil,
+              # params passed by external scenario launchers
+              params: %{},
               # Default author for operations
               current_author: nil,
               # Default institution

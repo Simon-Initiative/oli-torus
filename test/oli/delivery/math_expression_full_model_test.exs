@@ -138,6 +138,20 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
     assert MathExpressionMatcher.evaluate(exact_config, "2x + 2") == {:ok, false}
   end
 
+  test "math expression matcher treats missing submissions as no match" do
+    config = %{
+      "version" => 1,
+      "type" => "math_expression",
+      "math" => %{
+        "mode" => "numeric",
+        "expected" => "2",
+        "operator" => "equal"
+      }
+    }
+
+    assert MathExpressionMatcher.evaluate(config, nil) == {:ok, false}
+  end
+
   test "invalid math submissions return authored fallback feedback without math diagnostics" do
     model = short_answer_model()
 

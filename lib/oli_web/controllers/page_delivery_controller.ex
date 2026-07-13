@@ -26,6 +26,7 @@ defmodule OliWeb.PageDeliveryController do
   alias OliWeb.Components.Delivery.AdaptiveIFrame
   alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Delivery.Instructor.PreviewRoutes
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
   alias OliWeb.PageDeliveryView
   alias Lti_1p3.Roles.ContextRoles
 
@@ -259,7 +260,7 @@ defmodule OliWeb.PageDeliveryController do
 
       {page_link_url, container_link_url} =
         if preview_mode do
-          {&Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+          {&PreviewRoutes.lesson_path(section_slug, &1),
            &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)}
         else
           {&Routes.page_delivery_path(conn, :page, section_slug, &1),
@@ -619,7 +620,9 @@ defmodule OliWeb.PageDeliveryController do
       resettable_surveys: resettable_surveys,
       historical_attempts: context.historical_attempts,
       learning_language: base_project_attributes.learning_language,
-      effective_settings: effective_settings
+      effective_settings: effective_settings,
+      page_link_params: [],
+      internal_link_url: &StudentUtils.lesson_live_path(section_slug, &1)
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -712,7 +715,8 @@ defmodule OliWeb.PageDeliveryController do
         auto_submit: effective_settings.late_submit == :disallow,
         # TODO: implement reading time estimation
         est_reading_time: nil,
-        has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
+        has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id),
+        show_sidebar: true
       }
     )
   end
@@ -902,7 +906,7 @@ defmodule OliWeb.PageDeliveryController do
       hierarchy: Sections.build_hierarchy(section),
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       preview_mode: true,
-      page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+      page_link_url: &PreviewRoutes.lesson_path(section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
       independent_learner: true,
       collab_space_config: effective_settings.collab_space_config,
@@ -998,7 +1002,19 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
+    instructor_preview? = instructor_preview_request?(conn)
+
     case Resolver.from_revision_slug(section_slug, revision_slug) do
+      revision when not instructor_preview? ->
+        redirect(conn,
+          to:
+            StudentUtils.lesson_live_path(
+              section_slug,
+              revision.slug,
+              delivery_redirect_params(conn)
+            )
+        )
+
       %{content: %{"advancedDelivery" => true}} = revision ->
         case conn.assigns.current_user do
           nil ->
@@ -1042,7 +1058,7 @@ defmodule OliWeb.PageDeliveryController do
                 objectives: [],
                 section: section,
                 revision: revision,
-                page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+                page_link_url: &PreviewRoutes.lesson_path(section_slug, &1),
                 container_link_url:
                   &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
                 resource_slug: revision.slug,
@@ -1069,7 +1085,8 @@ defmodule OliWeb.PageDeliveryController do
               user,
               revision.content,
               revision.graded,
-              activity_types
+              activity_types,
+              is_instructor: instructor_preview?
             )
         end
 
@@ -1085,8 +1102,43 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  defp instructor_preview_request?(conn) do
+    authorized_instructor_preview?(conn)
+  end
+
+  defp authorized_instructor_preview?(conn) do
+    section_slug = preview_section_slug(conn)
+
+    Accounts.is_admin?(conn.assigns[:current_author]) or
+      Sections.is_instructor?(conn.assigns[:current_user], section_slug)
+  end
+
+  defp safe_preview_return_to(conn) do
+    section_slug = preview_section_slug(conn)
+    return_to = conn.query_params["return_to"] || conn.params["return_to"]
+
+    cond do
+      not is_binary(section_slug) -> nil
+      not is_binary(return_to) -> nil
+      return_to == "" -> nil
+      PreviewReturn.sanitize_return_to(return_to, section_slug) == return_to -> return_to
+      true -> nil
+    end
+  end
+
+  defp preview_section_slug(%{params: %{"section_slug" => section_slug}}), do: section_slug
+  defp preview_section_slug(%{assigns: %{section: %{slug: section_slug}}}), do: section_slug
+  defp preview_section_slug(_conn), do: nil
+
   defp preview_lesson_redirect_params(conn) do
     preview_redirect_params(conn.params["section_slug"], conn.query_params, conn.params)
+  end
+
+  defp delivery_redirect_params(conn) do
+    conn.query_params
+    |> Map.take(["request_path", "selected_view", "sidebar_expanded"])
+    |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
+    |> Map.new()
   end
 
   defp preview_redirect_params(section_slug, query_params, body_params) do
@@ -1178,7 +1230,7 @@ defmodule OliWeb.PageDeliveryController do
          content,
          graded,
          activity_types,
-         opts \\ []
+         opts
        ) do
     section = conn.assigns.section
 
@@ -1194,6 +1246,7 @@ defmodule OliWeb.PageDeliveryController do
       project_slug: section_slug,
       title: revision.title,
       preview_mode: true,
+      instructor_preview_shell?: true,
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       app_params: %{
         activityTypes: activity_types,
@@ -1212,7 +1265,7 @@ defmodule OliWeb.PageDeliveryController do
         previewMode: Keyword.get(opts, :preview_mode, true),
         reviewMode: Keyword.get(opts, :review_mode, false),
         preserveCapiIframeSize: Keyword.get(opts, :preserve_capi_iframe_size, false),
-        isInstructor: true
+        isInstructor: Keyword.get(opts, :is_instructor, true)
       },
       instructor_preview_return: resolve_preview_return(conn)
     )
@@ -1676,18 +1729,17 @@ defmodule OliWeb.PageDeliveryController do
   defp url_from_desc(conn, section_slug, %{"type" => "container", "slug" => slug}),
     do: Routes.page_delivery_path(conn, :container_preview, section_slug, slug)
 
-  defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
-    do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
+  defp url_from_desc(_conn, section_slug, %{"type" => "page", "slug" => slug}),
+    do: PreviewRoutes.lesson_path(section_slug, slug)
 
   defp before_start_date_message(conn, effective_settings) do
     "This assessment is not yet available. It will be available on #{date(effective_settings.start_date, conn: conn, precision: :minutes)}."
   end
 
   defp resolve_preview_return(conn) do
-    section_slug = conn.assigns.section.slug
-    return_to = conn.query_params["return_to"]
+    section_slug = preview_section_slug(conn)
 
-    if is_binary(return_to) and return_to != "" do
+    if return_to = safe_preview_return_to(conn) do
       PreviewReturn.resolve(section_slug, return_to)
     else
       PreviewReturn.fallback_context(section_slug)
