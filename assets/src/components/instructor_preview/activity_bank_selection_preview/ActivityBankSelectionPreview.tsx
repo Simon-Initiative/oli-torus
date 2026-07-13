@@ -287,12 +287,20 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
   ) : null;
 
   const cardClasses =
-    visualState === 'removed'
-      ? 'relative bg-Surface-surface-secondary-muted before:absolute before:inset-y-0 before:left-0 before:w-[6px] before:bg-Border-border-danger'
-      : 'bg-Surface-surface-primary';
+    visualState === 'removed' ? 'bg-Surface-surface-secondary-muted' : 'bg-Surface-surface-primary';
 
   return (
-    <article className={`p-[25px] font-open-sans ${cardClasses}`}>
+    <article
+      className={`relative p-[25px] font-open-sans ${cardClasses}`}
+      data-preview-visual-state={visualState}
+    >
+      {visualState === 'removed' ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-[6px] bg-Border-border-danger"
+          data-preview-removed-rail
+        />
+      ) : null}
       <div className="flex flex-col gap-[18px]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-col">
