@@ -75,13 +75,10 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
         contentItem.strategy === 'upgrade_decision_point' ? 'Select Option' : 'Select Alternative';
       const description =
         contentItem.strategy === 'upgrade_decision_point' ? 'Select Option' : 'Select Alternative';
-      const linkHref =
-        contentItem.strategy === 'upgrade_decision_point'
-          ? `/authoring/project/${projectSlug}/experiments`
-          : `/authoring/project/${projectSlug}/alternatives`;
+      const linkHref = `/workspaces/course_author/${projectSlug}/alternatives`;
       const linkText =
         contentItem.strategy === 'upgrade_decision_point'
-          ? 'Manage Upgrade Options'
+          ? 'Manage A/B Decision Point Options'
           : 'Manage Alternatives Options';
 
       window.oliDispatch(

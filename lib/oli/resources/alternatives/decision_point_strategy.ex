@@ -72,7 +72,7 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       alternatives_resource_id: decision_point.id,
       alternatives_revision_id: decision_point.revision_id,
       decision_point_key: decision_point_key(decision_point.id),
-      available_condition_codes: Enum.map(decision_point.options, & &1["name"])
+      available_condition_codes: Enum.map(decision_point.options, &option_condition_code/1)
     })
   end
 
@@ -102,11 +102,15 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
   defp scoped_decision_point(%AlternativesStrategyContext{} = context, decision_point) do
     section = maybe_section(context)
     section_id = context.section_id || (section && section.id)
+    project_id = context.project_id || (section && section.base_project_id)
+
+    institution_id =
+      experiment_institution_id(context, section, decision_point, project_id, section_id)
 
     {
       %Scope{
-        institution_id: context.institution_id || (section && section.institution_id),
-        project_id: context.project_id || (section && section.base_project_id),
+        institution_id: institution_id,
+        project_id: project_id,
         project_slug: context.project_slug,
         publication_id: context.publication_id || publication_id(section_id, decision_point.id),
         section_id: section_id,
@@ -116,6 +120,33 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       },
       decision_point
     }
+  end
+
+  defp experiment_institution_id(context, section, decision_point, project_id, section_id) do
+    context.institution_id ||
+      (section && section.institution_id) ||
+      active_experiment_institution_id(project_id, section_id, decision_point.id)
+  end
+
+  defp active_experiment_institution_id(nil, _section_id, _alternatives_resource_id), do: nil
+
+  defp active_experiment_institution_id(project_id, section_id, alternatives_resource_id) do
+    decision_point_key = decision_point_key(alternatives_resource_id)
+
+    Repo.one(
+      from experiment in "experiment_definitions",
+        join: decision_point in "experiment_decision_points",
+        on: decision_point.experiment_id == experiment.id,
+        where:
+          experiment.state == "active" and
+            experiment.project_id == ^project_id and
+            decision_point.alternatives_resource_id == ^alternatives_resource_id and
+            decision_point.decision_point_key == ^decision_point_key,
+        where: is_nil(experiment.section_id) or experiment.section_id == ^section_id,
+        order_by: [asc: experiment.id],
+        select: experiment.institution_id,
+        limit: 1
+    )
   end
 
   defp maybe_section(%AlternativesStrategyContext{
@@ -159,7 +190,9 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     do: "alternatives:#{alternatives_resource_id}"
 
   defp select_matching_condition(children, decision_point, condition) do
-    case Enum.find(decision_point.options, fn o -> o["name"] == condition end) do
+    case Enum.find(decision_point.options, fn option ->
+           option_matches_condition?(option, condition)
+         end) do
       nil ->
         []
 
@@ -179,6 +212,12 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
           []
         end
     end
+  end
+
+  defp option_condition_code(option), do: Map.get(option, "id") || Map.get(option, "name")
+
+  defp option_matches_condition?(option, condition) do
+    condition in [Map.get(option, "id"), Map.get(option, "name")]
   end
 
   defp display_first(children) do

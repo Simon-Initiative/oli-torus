@@ -232,7 +232,6 @@ defmodule Oli.Experiments.PersistenceTest do
       |> Map.merge(%{
         institution_id: institution.id,
         project_id: project.id,
-        publication_id: publication.id,
         section_id: section.id
       })
       |> insert_definition!()
@@ -426,7 +425,6 @@ defmodule Oli.Experiments.PersistenceTest do
         section_id: graph.section.id,
         enrollment_id: graph.enrollment.id,
         user_id: graph.user.id,
-        publication_id: graph.publication.id,
         assigned_by_policy: "weighted_random",
         policy_version: "v1",
         assignment_key: "assignment:#{System.unique_integer([:positive])}",

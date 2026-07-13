@@ -8,7 +8,6 @@ defmodule Oli.Experiments.ExperimentDefinition do
     :uuid,
     :institution_id,
     :project_id,
-    :publication_id,
     :section_id,
     :slug,
     :name,

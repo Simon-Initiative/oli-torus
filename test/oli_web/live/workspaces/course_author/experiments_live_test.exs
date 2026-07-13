@@ -268,6 +268,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(view, "#experiment_prior_alpha.is-invalid")
     end
 
+    test "does not offer learner preference alternatives as A/B Testing decision points", %{
+      conn: conn,
+      project: project
+    } do
+      insert_preference_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      refute has_element?(view, "#create-ab-experiment-form")
+
+      assert has_element?(
+               view,
+               "div",
+               "Create an A/B decision point before adding an A/B Testing experiment."
+             )
+    end
+
     test "does not expose obsolete creation terminology or JSON workflows", %{view: view} do
       refute has_element?(view, "a", "Download Experiment JSON")
       refute has_element?(view, "a", "Download Segment JSON")
@@ -307,6 +323,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       title: "Decision Point",
       deleted: false,
       content: %{
+        "strategy" => "upgrade_decision_point",
+        "options" => [
+          %{"id" => "alt-a", "name" => "A"},
+          %{"id" => "alt-b", "name" => "B"}
+        ]
+      }
+    })
+  end
+
+  defp insert_preference_alternatives_group(project) do
+    resource = insert(:resource)
+    insert(:project_resource, project_id: project.id, resource_id: resource.id)
+
+    insert(:revision, %{
+      resource: resource,
+      resource_type_id: ResourceType.id_for_alternatives(),
+      title: "Learner Preference",
+      deleted: false,
+      content: %{
+        "strategy" => "user_section_preference",
         "options" => [
           %{"id" => "alt-a", "name" => "A"},
           %{"id" => "alt-b", "name" => "B"}

@@ -9,7 +9,6 @@ defmodule Oli.Experiments.Schemas.Assignment do
   alias Oli.Delivery.Sections.{Enrollment, Section}
   alias Oli.Experiments.Schemas.{Condition, DecisionPoint, ExperimentDefinition}
   alias Oli.Institutions.Institution
-  alias Oli.Publishing.Publications.Publication
 
   schema "experiment_assignments" do
     field :assigned_by_policy, :string
@@ -24,7 +23,6 @@ defmodule Oli.Experiments.Schemas.Assignment do
     belongs_to :section, Section
     belongs_to :enrollment, Enrollment
     belongs_to :user, User
-    belongs_to :publication, Publication
 
     timestamps(type: :utc_datetime)
   end
@@ -39,7 +37,6 @@ defmodule Oli.Experiments.Schemas.Assignment do
       :section_id,
       :enrollment_id,
       :user_id,
-      :publication_id,
       :assigned_by_policy,
       :policy_version,
       :assignment_key,
@@ -66,7 +63,6 @@ defmodule Oli.Experiments.Schemas.Assignment do
     |> foreign_key_constraint(:section_id)
     |> foreign_key_constraint(:enrollment_id)
     |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:publication_id)
     |> unique_constraint([:experiment_id, :decision_point_id, :enrollment_id],
       name: :experiment_assignments_sticky_idx
     )

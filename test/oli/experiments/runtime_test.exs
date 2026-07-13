@@ -50,6 +50,35 @@ defmodule Oli.Experiments.RuntimeTest do
       assert Repo.aggregate(Assignment, :count, :id) == 1
     end
 
+    test "matches an active decision point after compatible alternatives revision changes" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions()
+
+      updated_revision =
+        insert(:revision, %{
+          resource: revision.resource,
+          resource_type_id: revision.resource_type_id,
+          title: "Updated Decision Point",
+          content: %{
+            "strategy" => "upgrade_decision_point",
+            "options" => [
+              %{"id" => "a", "name" => "a"},
+              %{"id" => "b", "name" => "b"}
+            ]
+          }
+        })
+
+      assert updated_revision.resource_id == revision.resource_id
+      assert updated_revision.id != decision_point.alternatives_revision_id
+
+      assert {:ok, %AssignmentDecision{status: :assigned} = assignment} =
+               Experiments.assign_condition(assign_request(scope, updated_revision, ["a", "b"]))
+
+      assert assignment.decision_point_id == decision_point.id
+      assert assignment.condition_code in ["a", "b"]
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+    end
+
     test "preserves Thompson Sampling sticky assignment after posterior updates" do
       %{scope: scope, revision: revision} =
         active_experiment_with_conditions(algorithm: :thompson_sampling)
@@ -149,8 +178,7 @@ defmodule Oli.Experiments.RuntimeTest do
                Experiments.pause_experiment(definition.id, %LifecycleRequest{
                  scope: %{
                    scope
-                   | publication_id: nil,
-                     section_id: nil,
+                   | section_id: nil,
                      user_id: nil,
                      enrollment_id: nil
                  }
@@ -456,7 +484,6 @@ defmodule Oli.Experiments.RuntimeTest do
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,
-      publication_id: scope.publication_id,
       assigned_by_policy: Atom.to_string(definition.algorithm),
       policy_version: "test",
       assignment_key: "test-assignment-#{System.unique_integer([:positive])}",

@@ -10,7 +10,6 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
       add :uuid, :uuid, null: false
       add :institution_id, references(:institutions, on_delete: :nothing), null: false
       add :project_id, references(:projects, on_delete: :nothing), null: false
-      add :publication_id, references(:publications, on_delete: :nothing)
       add :section_id, references(:sections, on_delete: :nothing)
       add :slug, :string, null: false
       add :name, :string, null: false
@@ -45,7 +44,6 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
 
     create index(:experiment_definitions, [:institution_id])
     create index(:experiment_definitions, [:project_id])
-    create index(:experiment_definitions, [:publication_id])
     create index(:experiment_definitions, [:section_id])
     create index(:experiment_definitions, [:state])
 
@@ -115,7 +113,6 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
       add :section_id, references(:sections, on_delete: :nothing), null: false
       add :enrollment_id, references(:enrollments, on_delete: :nothing), null: false
       add :user_id, references(:users, on_delete: :nothing), null: false
-      add :publication_id, references(:publications, on_delete: :nothing)
       add :assigned_by_policy, :string, null: false
       add :policy_version, :string
       add :assignment_key, :string, null: false
@@ -137,7 +134,6 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
     create index(:experiment_assignments, [:condition_id])
     create index(:experiment_assignments, [:section_id])
     create index(:experiment_assignments, [:user_id])
-    create index(:experiment_assignments, [:publication_id])
 
     create table(:experiment_exposures) do
       add :assignment_id, references(:experiment_assignments, on_delete: :nothing), null: false

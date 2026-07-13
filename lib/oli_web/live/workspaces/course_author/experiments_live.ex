@@ -138,7 +138,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       <div class="mt-3">
         <h5>Create A/B Testing experiment</h5>
         <%= if Enum.empty?(@decision_point_candidates) do %>
-          <div>Create an alternatives group before adding an A/B Testing experiment.</div>
+          <div>Create an A/B decision point before adding an A/B Testing experiment.</div>
         <% else %>
           <.form
             for={@experiment_form}
@@ -155,7 +155,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               <input id="experiment_slug" class="form-control" name="experiment[slug]" required />
             </div>
             <div class="form-group">
-              <label for="experiment_decision_point">Alternatives group</label>
+              <label for="experiment_decision_point">A/B decision point</label>
               <select
                 id="experiment_decision_point"
                 class="form-control"

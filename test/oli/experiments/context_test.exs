@@ -40,7 +40,6 @@ defmodule Oli.Experiments.ContextTest do
       assert definition.uuid
       assert definition.institution_id == scope.institution_id
       assert definition.project_id == scope.project_id
-      assert definition.publication_id == scope.publication_id
       assert definition.section_id == scope.section_id
       assert definition.state == :draft
       refute private_schema?(definition)
@@ -148,7 +147,6 @@ defmodule Oli.Experiments.ContextTest do
       assert {:ok, %ExperimentDefinition{} = definition} =
                Experiments.create_experiment(graph_request(scope, alternatives))
 
-      assert definition.publication_id == nil
       assert definition.section_id == nil
 
       assert {:ok, [%ExperimentDefinition{id: experiment_id}]} =
@@ -172,14 +170,14 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.archive_experiment(definition.id, lifecycle(scope))
     end
 
-    test "rejects section-scoped graph authoring" do
-      scope = valid_scope()
+    test "creates a section-scoped experiment graph" do
+      scope = %{valid_scope() | user_id: nil, enrollment_id: nil}
       alternatives = alternatives_revision(scope.project_id)
 
-      assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
+      assert {:ok, %ExperimentDefinition{} = definition} =
                Experiments.create_experiment(graph_request(scope, alternatives))
 
-      assert message == "authoring experiments must be project-scoped"
+      assert definition.section_id == scope.section_id
     end
 
     test "rejects invalid weighted random conditions" do
@@ -196,6 +194,16 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.create_experiment(request)
 
       assert message == "active condition weights must have a positive total"
+    end
+
+    test "rejects learner preference alternatives as experiment decision points" do
+      scope = project_scope()
+      alternatives = learner_preference_alternatives_revision(scope.project_id)
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.create_experiment(graph_request(scope, alternatives))
+
+      assert message == "selected alternatives group is not an A/B Testing decision point"
     end
 
     test "creates and activates a Thompson Sampling experiment with normalized adaptive config" do
@@ -263,7 +271,6 @@ defmodule Oli.Experiments.ContextTest do
         section_id: runtime_scope.section_id,
         enrollment_id: runtime_scope.enrollment_id,
         user_id: runtime_scope.user_id,
-        publication_id: runtime_scope.publication_id,
         assigned_by_policy: "weighted_random",
         policy_version: "weighted_random",
         assignment_key: "assigned-#{System.unique_integer([:positive])}",
@@ -460,6 +467,25 @@ defmodule Oli.Experiments.ContextTest do
       resource_type_id: ResourceType.id_for_alternatives(),
       title: "Decision Point",
       content: %{
+        "strategy" => "upgrade_decision_point",
+        "options" => [
+          %{"id" => "alt-a", "name" => "A"},
+          %{"id" => "alt-b", "name" => "B"}
+        ]
+      }
+    })
+  end
+
+  defp learner_preference_alternatives_revision(project_id) do
+    resource = insert(:resource)
+    insert(:project_resource, project_id: project_id, resource_id: resource.id)
+
+    insert(:revision, %{
+      resource: resource,
+      resource_type_id: ResourceType.id_for_alternatives(),
+      title: "Learner Preference",
+      content: %{
+        "strategy" => "user_section_preference",
         "options" => [
           %{"id" => "alt-a", "name" => "A"},
           %{"id" => "alt-b", "name" => "B"}

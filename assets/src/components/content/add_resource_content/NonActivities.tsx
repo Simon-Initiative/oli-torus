@@ -202,7 +202,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         description="Select an Alternatives Group"
         additionalControls={
           <ManageAlternativesLink
-            linkHref={`/authoring/project/${projectSlug}/alternatives`}
+            linkHref={`/workspaces/course_author/${projectSlug}/alternatives`}
             linkText="Manage Alternatives"
           />
         }
@@ -235,21 +235,56 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
 const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
   document.body.click();
 
-  Persistence.alternatives(projectSlug).then((result) => {
-    if (result.type === 'success') {
-      const experiment = result.alternatives.find((a) => a.strategy === 'upgrade_decision_point');
-      if (experiment) {
-        const children: AlternativeContent[] = [];
-        experiment.options.forEach((o) => children.push(createAlternative(o.id)));
-        onAddItem(
-          createAlternatives(
-            Number(experiment.id),
-            'upgrade_decision_point',
-            Immutable.List(children),
-          ),
-          index,
-        );
-      }
-    }
-  });
+  window.oliDispatch(
+    modalActions.display(
+      <SelectModal
+        title="Select A/B Decision Point"
+        description="Select an A/B decision point"
+        additionalControls={
+          <ManageAlternativesLink
+            linkHref={`/workspaces/course_author/${projectSlug}/alternatives`}
+            linkText="Manage A/B Decision Points"
+          />
+        }
+        onFetchOptions={() =>
+          Persistence.alternatives(projectSlug).then((result) => {
+            if (result.type === 'success') {
+              return result.alternatives
+                .filter(
+                  (a: Persistence.AlternativesGroup) => a.strategy === 'upgrade_decision_point',
+                )
+                .map((a) => ({ value: a.id, title: a.title }));
+            } else {
+              throw result.message;
+            }
+          })
+        }
+        onDone={(alternativesId: string) => {
+          Persistence.alternatives(projectSlug).then((result) => {
+            if (result.type === 'success') {
+              const experiment = result.alternatives.find(
+                (a) => a.id === Number(alternativesId) && a.strategy === 'upgrade_decision_point',
+              );
+
+              if (experiment) {
+                const children: AlternativeContent[] = [];
+                experiment.options.forEach((o) => children.push(createAlternative(o.id)));
+                onAddItem(
+                  createAlternatives(
+                    Number(experiment.id),
+                    'upgrade_decision_point',
+                    Immutable.List(children),
+                  ),
+                  index,
+                );
+              }
+            }
+
+            window.oliDispatch(modalActions.dismiss());
+          });
+        }}
+        onCancel={() => window.oliDispatch(modalActions.dismiss())}
+      />,
+    ),
+  );
 };

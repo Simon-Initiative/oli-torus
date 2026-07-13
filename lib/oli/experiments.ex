@@ -215,6 +215,7 @@ defmodule Oli.Experiments do
           select: revision
         )
         |> Repo.all()
+        |> Enum.filter(&experiment_decision_point_revision?/1)
         |> Enum.uniq_by(& &1.resource_id)
         |> Enum.map(&to_decision_point_candidate/1)
 
@@ -516,7 +517,6 @@ defmodule Oli.Experiments do
 
     query
     |> maybe_filter_experiment_id(experiment_id)
-    |> maybe_filter_experiment_publication(scope.publication_id)
     |> maybe_filter_experiment_section(scope.section_id)
   end
 
@@ -525,7 +525,6 @@ defmodule Oli.Experiments do
       where:
         experiment.institution_id == ^scope.institution_id and
           experiment.project_id == ^scope.project_id and
-          is_nil(experiment.publication_id) and
           is_nil(experiment.section_id)
     )
   end
@@ -554,7 +553,6 @@ defmodule Oli.Experiments do
 
     query
     |> maybe_filter_joined_experiment_id(experiment_id)
-    |> maybe_filter_assignment_publication(scope.publication_id)
     |> maybe_filter_assignment_section(scope.section_id)
   end
 
@@ -586,7 +584,6 @@ defmodule Oli.Experiments do
 
     query
     |> maybe_filter_joined_experiment_id(experiment_id)
-    |> maybe_filter_joined_experiment_publication(scope.publication_id)
     |> maybe_filter_reward_section(scope.section_id)
   end
 
@@ -614,7 +611,6 @@ defmodule Oli.Experiments do
       },
       distinct: assignment.id
     )
-    |> maybe_filter_joined_experiment_publication(scope.publication_id)
   end
 
   defp maybe_filter_experiment_id(query, nil), do: query
@@ -627,26 +623,6 @@ defmodule Oli.Experiments do
 
   defp maybe_filter_joined_experiment_id(query, experiment_id) do
     where(query, [_record, experiment], experiment.id == ^experiment_id)
-  end
-
-  defp maybe_filter_experiment_publication(query, nil), do: query
-
-  defp maybe_filter_experiment_publication(query, publication_id) do
-    where(
-      query,
-      [experiment],
-      is_nil(experiment.publication_id) or experiment.publication_id == ^publication_id
-    )
-  end
-
-  defp maybe_filter_joined_experiment_publication(query, nil), do: query
-
-  defp maybe_filter_joined_experiment_publication(query, publication_id) do
-    where(
-      query,
-      [_record, experiment],
-      is_nil(experiment.publication_id) or experiment.publication_id == ^publication_id
-    )
   end
 
   defp maybe_filter_experiment_section(query, nil), do: query
@@ -667,12 +643,6 @@ defmodule Oli.Experiments do
       [_record, experiment],
       is_nil(experiment.section_id) or experiment.section_id == ^section_id
     )
-  end
-
-  defp maybe_filter_assignment_publication(query, nil), do: query
-
-  defp maybe_filter_assignment_publication(query, publication_id) do
-    where(query, [assignment, _experiment], assignment.publication_id == ^publication_id)
   end
 
   defp maybe_filter_assignment_section(query, nil), do: query
@@ -783,7 +753,6 @@ defmodule Oli.Experiments do
 
     query
     |> maybe_filter_joined_experiment_id(experiment_id)
-    |> maybe_filter_joined_experiment_publication(scope.publication_id)
     |> maybe_filter_joined_experiment_section(scope.section_id)
   end
 
@@ -838,10 +807,7 @@ defmodule Oli.Experiments do
             experiment.institution_id == ^scope.institution_id and
             experiment.project_id == ^scope.project_id and
             decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
-            decision_point.alternatives_revision_id == ^request.alternatives_revision_id and
             decision_point.decision_point_key == ^request.decision_point_key,
-        where:
-          is_nil(experiment.publication_id) or experiment.publication_id == ^scope.publication_id,
         where: is_nil(experiment.section_id) or experiment.section_id == ^scope.section_id,
         order_by: [asc: experiment.id],
         limit: 1,
@@ -1116,7 +1082,6 @@ defmodule Oli.Experiments do
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,
-      publication_id: scope.publication_id,
       assigned_by_policy: Atom.to_string(match.experiment.algorithm),
       policy_version: match.policy_assignment.policy_version,
       assignment_key:
@@ -1176,7 +1141,7 @@ defmodule Oli.Experiments do
            section_id: assignment.section_id,
            enrollment_id: assignment.enrollment_id,
            user_id: assignment.user_id,
-           publication_id: assignment.publication_id,
+           publication_id: request.scope.publication_id,
            content_revision_id: request.content_revision_id,
            exposed_at: request.exposed_at || now(),
            idempotency_key: request.idempotency_key
@@ -1621,7 +1586,6 @@ defmodule Oli.Experiments do
     %{
       institution_id: scope.institution_id,
       project_id: scope.project_id,
-      publication_id: scope.publication_id,
       section_id: scope.section_id,
       slug: request.slug,
       name: request.name,
@@ -1713,7 +1677,8 @@ defmodule Oli.Experiments do
         [decision_point] ->
           conditions = active_conditions(schema.id, decision_point.id)
 
-          with :ok <- validate_minimum_active_conditions(conditions),
+          with :ok <- validate_decision_point_strategy(decision_point),
+               :ok <- validate_minimum_active_conditions(conditions),
                :ok <- validate_positive_active_weight(conditions),
                :ok <- validate_condition_option_mapping(decision_point, conditions),
                :ok <- validate_adaptive_activation(schema, conditions) do
@@ -2134,11 +2099,18 @@ defmodule Oli.Experiments do
 
     with {:ok, revision} <- get_alternatives_revision(alternatives_revision_id),
          true <- revision.resource_id == alternatives_resource_id,
-         true <- project_resource?(scope.project_id, alternatives_resource_id) do
+         true <- project_resource?(scope.project_id, alternatives_resource_id),
+         :ok <- validate_experiment_decision_point_revision(revision) do
       :ok
     else
       false -> invalid_condition("selected alternatives content does not belong to the project")
       {:error, %ExperimentError{}} = error -> error
+    end
+  end
+
+  defp validate_decision_point_strategy(decision_point) do
+    with {:ok, revision} <- get_alternatives_revision(decision_point.alternatives_revision_id) do
+      validate_experiment_decision_point_revision(revision)
     end
   end
 
@@ -2192,6 +2164,18 @@ defmodule Oli.Experiments do
       title: revision.title,
       options: revision_option_ids(revision)
     }
+  end
+
+  defp experiment_decision_point_revision?(%Revision{} = revision) do
+    get_in(revision.content || %{}, ["strategy"]) == "upgrade_decision_point"
+  end
+
+  defp validate_experiment_decision_point_revision(%Revision{} = revision) do
+    if experiment_decision_point_revision?(revision) do
+      :ok
+    else
+      invalid_condition("selected alternatives group is not an A/B Testing decision point")
+    end
   end
 
   defp public_decision_point(%DecisionPoint{} = decision_point) do
@@ -2259,7 +2243,6 @@ defmodule Oli.Experiments do
         %{
           experiment_id: schema.id,
           project_id: schema.project_id,
-          publication_id: schema.publication_id,
           section_id: schema.section_id
         },
         extra_metadata
@@ -2277,7 +2260,6 @@ defmodule Oli.Experiments do
         %{
           action: action,
           project_id: scope.project_id,
-          publication_id: scope.publication_id,
           section_id: scope.section_id,
           error_type: error.type
         },
@@ -2294,7 +2276,6 @@ defmodule Oli.Experiments do
         %{
           experiment_id: schema.id,
           project_id: schema.project_id,
-          publication_id: schema.publication_id,
           section_id: schema.section_id,
           algorithm: schema.algorithm
         },
@@ -2312,7 +2293,6 @@ defmodule Oli.Experiments do
       Map.merge(
         %{
           project_id: scope.project_id,
-          publication_id: scope.publication_id,
           section_id: scope.section_id,
           error_type: error.type
         },
@@ -2372,11 +2352,10 @@ defmodule Oli.Experiments do
   defp maybe_require_authoring_scope(_scope, false), do: :ok
   defp maybe_require_authoring_scope(scope, true), do: require_authoring_scope(scope)
 
-  defp require_authoring_scope(%Scope{publication_id: nil, section_id: nil, enrollment_id: nil}),
-    do: :ok
+  defp require_authoring_scope(%Scope{enrollment_id: nil}), do: :ok
 
   defp require_authoring_scope(_scope) do
-    invalid_scope("authoring experiments must be project-scoped")
+    invalid_scope("authoring experiments must be project- or section-scoped")
   end
 
   defp validate_scope(%Scope{} = scope) do
@@ -2482,7 +2461,7 @@ defmodule Oli.Experiments do
           actual_slug: section.slug
         })
 
-      section.institution_id != scope.institution_id ->
+      not is_nil(section.institution_id) and section.institution_id != scope.institution_id ->
         invalid_scope("section does not belong to institution", %{
           section_id: section.id,
           institution_id: scope.institution_id,
@@ -2551,9 +2530,6 @@ defmodule Oli.Experiments do
       schema.project_id != scope.project_id ->
         invalid_scope("experiment does not belong to project")
 
-      not is_nil(scope.publication_id) and schema.publication_id != scope.publication_id ->
-        invalid_scope("experiment does not belong to publication")
-
       not is_nil(scope.section_id) and schema.section_id != scope.section_id ->
         invalid_scope("experiment does not belong to section")
 
@@ -2568,7 +2544,6 @@ defmodule Oli.Experiments do
       uuid: schema.uuid,
       institution_id: schema.institution_id,
       project_id: schema.project_id,
-      publication_id: schema.publication_id,
       section_id: schema.section_id,
       slug: schema.slug,
       name: schema.name,
