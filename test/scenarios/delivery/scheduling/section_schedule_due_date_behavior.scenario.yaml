@@ -30,6 +30,12 @@ directives:
         next_attempt_ordinal: "1st"
         attempt_message: "This assessment is not yet available. It will be available on December 23, 2040 9:00 PM UTC"
 
+  - start_attempt:
+      student: "student_1"
+      section: "scheduling_section"
+      page: "Scheduled Quiz"
+      expect: "before_start_date"
+
   - manipulate:
       to: "scheduling_section"
       ops:
