@@ -54,6 +54,63 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "institution_discount directive with unknown attribute fails" do
+      yaml = """
+      - institution_discount:
+          institution: "school"
+          product: "product_1"
+          type: "percentage"
+          percentage: 10
+          expires_on: "2026-01-01"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'institution_discount' directive: \["expires_on"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "payment_options rejects unrelated existing atoms" do
+      yaml = """
+      - product:
+          name: "product_1"
+          title: "Product 1"
+          payment_options: "@atom(author)"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid payment_options '@atom\(author\)'/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "grace_period_strategy rejects unrelated existing atoms" do
+      yaml = """
+      - product:
+          name: "product_1"
+          title: "Product 1"
+          payment_options: "direct"
+          grace_period_strategy: "@atom(author)"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid grace_period_strategy '@atom\(author\)'/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "institution discount type rejects unrelated existing atoms" do
+      yaml = """
+      - institution_discount:
+          institution: "school"
+          product: "product_1"
+          type: "@atom(author)"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid discount type '@atom\(author\)'/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
     test "user directive with misspelled attribute fails" do
       yaml = """
       - user:
