@@ -1,9 +1,10 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { test } from '@fixture/my-fixture';
-import { setRuntimeConfig } from '@core/runtimeConfig';
-import { resolveAssetToFile } from '@core/remoteAsset';
+import { getScenarioToken, setRuntimeConfig } from '@core/runtimeConfig';
 import { TYPE_USER } from '@pom/types/type-user';
-import { expect, Page } from '@playwright/test';
+import { APIRequestContext, expect, Page } from '@playwright/test';
 import { HomeTask } from '@tasks/HomeTask';
 import { AdaptiveLessonTask } from '@tasks/AdaptiveLessonTask';
 import { AdaptiveDeckPO } from '@pom/delivery/AdaptiveDeckPO';
@@ -23,9 +24,12 @@ import {
  *
  * All course content — the lesson title and every correct answer — lives in a
  * PRIVATE answers JSON that must not be committed (course IP + answer keys).
- * Both the course zip and the answers JSON are kept in the team's private S3
- * bucket; each env var below accepts a local file path or an http(s) URL
- * (e.g. an S3 presigned URL).
+ * Both the course zip and the answers JSON live in the playwright assets
+ * bucket and are fetched through the server (see fetchAsset/fetchArchive
+ * below). The archive download uses plain fetch (not the Playwright request
+ * context) and lands on disk: with trace:'on', a multi-MB buffer flowing
+ * through Playwright's traced request context on BOTH the download and the
+ * multipart upload intermittently corrupts the trace archive.
  *
  * Requirements to run locally:
  *   - Torus dev server running (mix phx.server) against your local DB
@@ -37,46 +41,66 @@ import {
  *          'enabled', false, false, false, true, now(), now());"
  *     (the key name above is the default the test uses; export
  *     PLAYWRIGHT_AUTOMATION_API_KEY only if yours differs)
- *   - env PLAYWRIGHT_ASSETS_DIR=<folder with the private test assets>, holding
- *     mer-5672/real-chem-course.zip and mer-5672/answers.json (ask the team
- *     for both files). Alternatively, override per asset with
- *     MER_5672_PROJECT_ARCHIVE_PATH / MER_5672_ANSWERS_PATH (path or URL,
- *     e.g. an S3 presigned URL).
+ *   - the private assets seeded ONCE in the playwright assets bucket
+ *     (MinIO in dev, console at :9001; bucket torus-playwright-assets-dev):
+ *     mer-5672/real-chem-course.zip and mer-5672/answers.json. The test
+ *     fetches them through GET /test/assets/* on the server — no asset env
+ *     vars needed. The server must be started with PLAYWRIGHT_SCENARIO_TOKEN.
  *
  * Then: npx playwright test real-chem-greenhouse-molecules
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-// assets resolve from PLAYWRIGHT_ASSETS_DIR by convention; the per-test vars
-// remain as overrides (e.g. to point at a presigned URL)
-const archiveRef =
-  process.env.MER_5672_PROJECT_ARCHIVE_PATH || assetFromDir('real-chem-course.zip');
-const answersRef = process.env.MER_5672_ANSWERS_PATH || assetFromDir('answers.json');
+const archiveKey = 'mer-5672/real-chem-course.zip';
+const answersKey = 'mer-5672/answers.json';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY || 'my-local-automation-key';
-
-function assetFromDir(filename: string): string | undefined {
-  const dir = process.env.PLAYWRIGHT_ASSETS_DIR;
-  return dir ? `${dir}/mer-5672/${filename}` : undefined;
-}
 
 let seededCourse: AutomationSetupResponse | null = null;
 let answers: LessonAnswers | null = null;
 
 setRuntimeConfig({ baseUrl, loginData: buildLoginData('placeholder@example.com', 'placeholder') });
 
-test.skip(
-  !archiveRef || !answersRef,
-  'Set PLAYWRIGHT_ASSETS_DIR (or MER_5672_PROJECT_ARCHIVE_PATH + MER_5672_ANSWERS_PATH) to run this live Playwright test',
-);
+// fetches a small private asset (e.g. the answers JSON) from the playwright
+// assets bucket via GET /test/assets/<key>, in memory
+async function fetchAsset(request: APIRequestContext, key: string): Promise<Buffer> {
+  const url = new URL(`/test/assets/${key}`, baseUrl).toString();
+  const response = await request.get(url, {
+    headers: { 'x-playwright-scenario-token': getScenarioToken() },
+  });
+
+  if (!response.ok()) {
+    throw new Error(`Failed to download test asset (${response.status()}): ${url}`);
+  }
+
+  return response.body();
+}
+
+// fetches the (multi-MB) course archive via plain fetch, outside Playwright's
+// traced request context, and writes it to a temp file for multipart upload
+async function fetchArchiveToTempFile(key: string): Promise<string> {
+  const url = new URL(`/test/assets/${key}`, baseUrl).toString();
+  const response = await fetch(url, {
+    headers: { 'x-playwright-scenario-token': getScenarioToken() },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to download test asset (${response.status}): ${url}`);
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'torus-qa-asset-'));
+  const filePath = path.join(dir, path.basename(key));
+  await fs.writeFile(filePath, buffer);
+  return filePath;
+}
 
 test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
   test.beforeAll(async ({ request }) => {
     test.setTimeout(240_000); // course archive ingest takes ~1 min
 
-    answers = JSON.parse(
-      await fs.readFile(await resolveAssetToFile(answersRef!), 'utf8'),
-    ) as LessonAnswers;
+    const answersBuffer = await fetchAsset(request, answersKey);
+    answers = JSON.parse(answersBuffer.toString('utf8')) as LessonAnswers;
 
-    const archivePath = await resolveAssetToFile(archiveRef!);
+    const archivePath = await fetchArchiveToTempFile(archiveKey);
     seededCourse = await importArchiveAndCreateSection(request, archivePath, {
       baseUrl,
       apiKey: automationApiKey,
@@ -118,7 +142,7 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
 });
 
 // ---------------------------------------------------------------------------
-// answers file schema (see the private answers JSON in the QA S3 bucket)
+// answers file schema (see the private answers JSON in the Playwright assets bucket)
 // ---------------------------------------------------------------------------
 
 type LessonAnswers = {
