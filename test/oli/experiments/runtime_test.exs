@@ -18,7 +18,18 @@ defmodule Oli.Experiments.RuntimeTest do
     Scope
   }
 
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, PolicyState, PolicyUpdate}
+  alias Oli.Experiments.Schemas.{
+    Assignment,
+    Condition,
+    DecisionPoint,
+    Exposure,
+    PolicyState,
+    PolicyUpdate
+  }
+
+  defmodule FailingXAPI do
+    def emit(_category, _statement), do: raise("xAPI unavailable")
+  end
 
   describe "assign_condition/1" do
     test "returns no_experiment when no active experiment matches and emits fallback telemetry" do
@@ -35,6 +46,8 @@ defmodule Oli.Experiments.RuntimeTest do
     end
 
     test "creates and reuses sticky assignments by enrollment" do
+      attach_telemetry([[:oli, :experiments, :xapi, :emit, :stop]])
+
       %{scope: scope, revision: revision} = active_experiment_with_conditions()
 
       assert {:ok, %AssignmentDecision{status: :assigned, reused?: false} = first} =
@@ -48,6 +61,12 @@ defmodule Oli.Experiments.RuntimeTest do
 
       assert second.assignment_id == first.assignment_id
       assert Repo.aggregate(Assignment, :count, :id) == 1
+
+      assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :stop], %{count: 1},
+                      %{event_type: "experiment_assigned"}}
+
+      assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :stop], %{count: 1},
+                      %{event_type: "experiment_assignment_reused"}}
     end
 
     test "matches an active decision point after compatible alternatives revision changes" do
@@ -225,7 +244,9 @@ defmodule Oli.Experiments.RuntimeTest do
     test "records exposure, outcome, and reward idempotently" do
       attach_telemetry([
         [:oli, :experiments, :exposure, :recorded],
-        [:oli, :experiments, :reward, :recorded]
+        [:oli, :experiments, :reward, :recorded],
+        [:oli, :experiments, :xapi, :emit, :stop],
+        [:oli, :experiments, :xapi, :emit, :skipped_duplicate]
       ])
 
       %{scope: scope, revision: revision} = active_experiment_with_conditions()
@@ -281,6 +302,16 @@ defmodule Oli.Experiments.RuntimeTest do
 
       assert_receive {:telemetry, [:oli, :experiments, :exposure, :recorded], %{count: 1}, _}
       assert_receive {:telemetry, [:oli, :experiments, :reward, :recorded], %{count: 1}, _}
+      assert_xapi_stop("experiment_assigned")
+      assert_xapi_stop("experiment_exposed")
+      assert_xapi_stop("experiment_outcome_recorded")
+      assert_xapi_stop("experiment_reward_recorded")
+      refute_xapi_stop("experiment_exposed")
+      refute_xapi_stop("experiment_outcome_recorded")
+      refute_xapi_stop("experiment_reward_recorded")
+      assert_duplicate_skip("experiment_exposed")
+      assert_duplicate_skip("experiment_outcome_recorded")
+      assert_duplicate_skip("experiment_reward_recorded")
     end
 
     test "rejects idempotent receipts outside the caller scope" do
@@ -302,7 +333,32 @@ defmodule Oli.Experiments.RuntimeTest do
                Experiments.record_exposure(%{exposure_request | scope: other_scope})
     end
 
+    test "xAPI emission failure does not roll back runtime writes" do
+      attach_telemetry([[:oli, :experiments, :xapi, :emit, :exception]])
+      put_failing_xapi_module()
+
+      %{scope: scope, revision: revision} = active_experiment_with_conditions()
+      {:ok, assignment} = Experiments.assign_condition(assign_request(scope, revision, ["a"]))
+
+      exposure_request = %RecordExposureRequest{
+        scope: scope,
+        assignment_id: assignment.assignment_id,
+        content_revision_id: revision.id,
+        idempotency_key: "failed-xapi-exposure:#{assignment.assignment_id}"
+      }
+
+      assert {:ok, %ExposureReceipt{reused?: false} = receipt} =
+               Experiments.record_exposure(exposure_request)
+
+      assert Repo.get!(Exposure, receipt.id).id == receipt.id
+
+      assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :exception], %{count: 1},
+                      %{event_type: "experiment_exposed", kind: :error}}
+    end
+
     test "records Thompson Sampling policy state and audit updates idempotently" do
+      attach_telemetry([[:oli, :experiments, :xapi, :emit, :stop]])
+
       %{scope: scope, revision: revision} =
         active_experiment_with_conditions(algorithm: :thompson_sampling)
 
@@ -330,6 +386,7 @@ defmodule Oli.Experiments.RuntimeTest do
       policy_update = Repo.get_by!(PolicyUpdate, reward_id: reward.id)
       assert policy_update.next_state[assignment.condition_code]["successes"] == 1
       assert Repo.aggregate(PolicyUpdate, :count, :id) == 1
+      assert_xapi_stop("experiment_policy_updated")
     end
 
     test "records concurrent Thompson Sampling rewards without losing posterior increments" do
@@ -472,6 +529,35 @@ defmodule Oli.Experiments.RuntimeTest do
     )
 
     on_exit(fn -> :telemetry.detach(handler_id) end)
+  end
+
+  defp assert_xapi_stop(event_type) do
+    assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :stop], %{count: 1},
+                    %{event_type: ^event_type}}
+  end
+
+  defp refute_xapi_stop(event_type) do
+    refute_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :stop], _measurements,
+                    %{event_type: ^event_type}}
+  end
+
+  defp assert_duplicate_skip(event_type) do
+    assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :skipped_duplicate],
+                    %{count: 1}, %{event_type: ^event_type, idempotency_key_hash: hash}}
+
+    assert byte_size(hash) == 64
+  end
+
+  defp put_failing_xapi_module do
+    previous = Application.get_env(:oli, :experiments_xapi_module)
+    Application.put_env(:oli, :experiments_xapi_module, FailingXAPI)
+
+    on_exit(fn ->
+      case previous do
+        nil -> Application.delete_env(:oli, :experiments_xapi_module)
+        module -> Application.put_env(:oli, :experiments_xapi_module, module)
+      end
+    end)
   end
 
   defp insert_assignment!(definition, decision_point, condition, scope) do

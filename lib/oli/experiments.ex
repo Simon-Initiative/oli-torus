@@ -20,7 +20,8 @@ defmodule Oli.Experiments do
     OutcomeReceipt,
     RewardEligibleAssignment,
     RewardReceipt,
-    Scope
+    Scope,
+    Telemetry
   }
 
   alias Oli.Experiments.Schemas.{
@@ -280,45 +281,59 @@ defmodule Oli.Experiments do
   def assigned_condition(_request), do: invalid_request("expected AssignConditionRequest")
 
   @doc """
-  Exposure recording API placeholder. Runtime evidence writes are implemented in Phase 3.
+  Records operational exposure evidence and emits the durable xAPI exposure event.
   """
   def record_exposure(%Oli.Experiments.RecordExposureRequest{} = request) do
     with {:ok, _scope} <- validate_scope(request.scope),
          {:ok, nil} <- find_exposure_receipt(request.idempotency_key, request.scope) do
       create_exposure(request)
     else
-      {:ok, %ExposureReceipt{} = receipt} -> {:ok, receipt}
-      {:error, %ExperimentError{}} = error -> error
+      {:ok, %ExposureReceipt{} = receipt} ->
+        Telemetry.emit(:exposure_recorded, {receipt, request})
+        {:ok, receipt}
+
+      {:error, %ExperimentError{}} = error ->
+        error
     end
   end
 
   def record_exposure(_request), do: invalid_request("expected RecordExposureRequest")
 
   @doc """
-  Outcome recording API placeholder. Runtime evidence writes are implemented in Phase 3.
+  Records operational outcome evidence and emits the durable xAPI outcome event.
   """
   def record_outcome(%Oli.Experiments.RecordOutcomeRequest{} = request) do
     with {:ok, _scope} <- validate_scope(request.scope),
          {:ok, nil} <- find_outcome_receipt(request.idempotency_key, request.scope) do
       create_outcome(request)
     else
-      {:ok, %OutcomeReceipt{} = receipt} -> {:ok, receipt}
-      {:error, %ExperimentError{}} = error -> error
+      {:ok, %OutcomeReceipt{} = receipt} ->
+        Telemetry.emit(:outcome_recorded, {receipt, request})
+
+        {:ok, receipt}
+
+      {:error, %ExperimentError{}} = error ->
+        error
     end
   end
 
   def record_outcome(_request), do: invalid_request("expected RecordOutcomeRequest")
 
   @doc """
-  Reward recording API placeholder. Runtime evidence writes are implemented in Phase 3.
+  Records operational reward evidence, mutates policy state, and emits durable xAPI events.
   """
   def record_reward(%Oli.Experiments.RecordRewardRequest{} = request) do
     with {:ok, _scope} <- validate_scope(request.scope),
          {:ok, nil} <- find_reward_receipt(request.idempotency_key, request.scope) do
       create_reward(request)
     else
-      {:ok, %RewardReceipt{} = receipt} -> {:ok, receipt}
-      {:error, %ExperimentError{}} = error -> error
+      {:ok, %RewardReceipt{} = receipt} ->
+        Telemetry.emit(:reward_recorded, {receipt, request})
+
+        {:ok, receipt}
+
+      {:error, %ExperimentError{}} = error ->
+        error
     end
   end
 
@@ -353,7 +368,8 @@ defmodule Oli.Experiments do
     do: invalid_request("expected Scope")
 
   @doc """
-  Analytics read API placeholder. Aggregate reads are implemented in Phase 5.
+  Returns operational runtime counts from PostgreSQL for product surfaces that still need
+  synchronous experiment state. Durable analytics must read xAPI-derived projections.
   """
   def experiment_summary(%Oli.Experiments.AnalyticsQuery{} = query) do
     with {:ok, scope} <- validate_scope(query.scope),
@@ -374,6 +390,9 @@ defmodule Oli.Experiments do
 
   def experiment_summary(_query), do: invalid_request("expected AnalyticsQuery")
 
+  @doc """
+  Returns operational assignment counts. Durable analytics must read xAPI-derived projections.
+  """
   def assignment_counts(%Oli.Experiments.AnalyticsQuery{} = query) do
     with {:ok, scope} <- validate_scope(query.scope),
          :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
@@ -404,6 +423,9 @@ defmodule Oli.Experiments do
 
   def assignment_counts(_query), do: invalid_request("expected AnalyticsQuery")
 
+  @doc """
+  Returns operational exposure counts. Durable analytics must read xAPI-derived projections.
+  """
   def exposure_counts(%Oli.Experiments.AnalyticsQuery{} = query) do
     with {:ok, scope} <- validate_scope(query.scope),
          :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
@@ -434,6 +456,9 @@ defmodule Oli.Experiments do
 
   def exposure_counts(_query), do: invalid_request("expected AnalyticsQuery")
 
+  @doc """
+  Returns operational reward counts. Durable analytics must read xAPI-derived projections.
+  """
   def reward_counts(%Oli.Experiments.AnalyticsQuery{} = query) do
     with {:ok, scope} <- validate_scope(query.scope),
          :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
@@ -464,6 +489,10 @@ defmodule Oli.Experiments do
 
   def reward_counts(_query), do: invalid_request("expected AnalyticsQuery")
 
+  @doc """
+  Returns operational policy state for runtime inspection. Durable analytics must read
+  xAPI-derived projections.
+  """
   def policy_state_snapshot(%Oli.Experiments.AnalyticsQuery{} = query) do
     with {:ok, scope} <- validate_scope(query.scope),
          :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
@@ -837,7 +866,7 @@ defmodule Oli.Experiments do
     with {:ok, scope} <- validate_scope(request.scope),
          :ok <- require_delivery_scope(scope),
          {:ok, match} <- active_experiment_match(request, scope),
-         {:ok, decision} <- assign_or_reuse(match, scope) do
+         {:ok, decision} <- assign_or_reuse(match, scope, request) do
       {:ok, decision}
     end
   end
@@ -1120,13 +1149,14 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp assign_or_reuse(%{status: :no_experiment}, _scope),
+  defp assign_or_reuse(%{status: :no_experiment}, _scope, _request),
     do: {:ok, %AssignmentDecision{status: :no_experiment}}
 
-  defp assign_or_reuse(match, scope) do
+  defp assign_or_reuse(match, scope, request) do
     case find_assignment(match.experiment.id, match.decision_point.id, scope.enrollment_id) do
       %Assignment{} = assignment ->
         condition = Repo.get!(Condition, assignment.condition_id)
+        decision = to_assignment_decision(assignment, condition, true)
 
         :telemetry.execute([:oli, :experiments, :assignment, :reuse], %{count: 1}, %{
           experiment_id: match.experiment.id,
@@ -1138,7 +1168,8 @@ defmodule Oli.Experiments do
           guardrail_action: :sticky_reuse
         })
 
-        {:ok, to_assignment_decision(assignment, condition, true)}
+        Telemetry.emit(:assignment_decided, {decision, request}, assignment: assignment)
+        {:ok, decision}
 
       nil ->
         with {:ok, selection} <-
@@ -1148,7 +1179,7 @@ defmodule Oli.Experiments do
                  match.available_condition_codes,
                  scope
                ) do
-          create_assignment(Map.merge(match, selection), scope)
+          create_assignment(Map.merge(match, selection), scope, request)
         end
     end
   end
@@ -1163,7 +1194,7 @@ defmodule Oli.Experiments do
     )
   end
 
-  defp create_assignment(match, scope) do
+  defp create_assignment(match, scope, request) do
     attrs = %{
       experiment_id: match.experiment.id,
       decision_point_id: match.decision_point.id,
@@ -1184,13 +1215,19 @@ defmodule Oli.Experiments do
     |> case do
       {:ok, assignment} ->
         increment_assignment_count(match.experiment, match.decision_point.id)
-        {:ok, to_assignment_decision(assignment, match.condition, false)}
+        decision = to_assignment_decision(assignment, match.condition, false)
+        Telemetry.emit(:assignment_decided, {decision, request}, assignment: assignment)
+        {:ok, decision}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         if conflict?(changeset) do
-          match.experiment.id
-          |> find_assignment(match.decision_point.id, scope.enrollment_id)
-          |> then(&{:ok, to_assignment_decision(&1, match.condition, true)})
+          assignment =
+            find_assignment(match.experiment.id, match.decision_point.id, scope.enrollment_id)
+
+          condition = Repo.get!(Condition, assignment.condition_id)
+          decision = to_assignment_decision(assignment, condition, true)
+          Telemetry.emit(:assignment_decided, {decision, request}, assignment: assignment)
+          {:ok, decision}
         else
           normalize_result({:error, changeset})
         end
@@ -1241,7 +1278,14 @@ defmodule Oli.Experiments do
         decision_point_id: assignment.decision_point_id
       })
 
-      {:ok, to_exposure_receipt(exposure, false)}
+      receipt = to_exposure_receipt(exposure, false)
+
+      Telemetry.emit(:exposure_recorded, {receipt, request},
+        assignment: assignment,
+        exposure: exposure
+      )
+
+      {:ok, receipt}
     end
   end
 
@@ -1271,7 +1315,14 @@ defmodule Oli.Experiments do
            idempotency_key: request.idempotency_key
          },
          {:ok, outcome} <- insert_runtime_record(Outcome.changeset(%Outcome{}, attrs)) do
-      {:ok, to_outcome_receipt(outcome, false)}
+      receipt = to_outcome_receipt(outcome, false)
+
+      Telemetry.emit(:outcome_recorded, {receipt, request},
+        assignment: assignment,
+        outcome: outcome
+      )
+
+      {:ok, receipt}
     end
   end
 
@@ -1308,7 +1359,9 @@ defmodule Oli.Experiments do
         reward_class: reward_class(reward.reward_value)
       })
 
-      {:ok, to_reward_receipt(reward, false)}
+      receipt = to_reward_receipt(reward, false)
+      Telemetry.emit(:reward_recorded, {receipt, request}, assignment: assignment, reward: reward)
+      {:ok, receipt}
     end
   end
 
@@ -1464,7 +1517,14 @@ defmodule Oli.Experiments do
     ])
     |> case do
       {:ok, policy_update} ->
-        persist_policy_update(policy_state, reward, condition, policy_update)
+        persist_policy_update(
+          policy_state,
+          reward,
+          condition,
+          policy_update,
+          assignment,
+          experiment
+        )
 
       {:error, reason} ->
         :telemetry.execute([:oli, :experiments, :policy, :update_failed], %{count: 1}, %{
@@ -1545,7 +1605,14 @@ defmodule Oli.Experiments do
     {Atom.to_string(algorithm), %{}, %{}}
   end
 
-  defp persist_policy_update(policy_state, reward, condition, policy_update) do
+  defp persist_policy_update(
+         policy_state,
+         reward,
+         condition,
+         policy_update,
+         assignment,
+         experiment
+       ) do
     Repo.transaction(fn ->
       updated_policy_state =
         policy_state
@@ -1562,20 +1629,23 @@ defmodule Oli.Experiments do
         })
         |> Repo.update!()
 
-      %PolicyUpdate{}
-      |> PolicyUpdate.changeset(%{
-        policy_state_id: updated_policy_state.id,
-        reward_id: reward.id,
-        condition_id: condition.id,
-        previous_state: policy_update.previous_state,
-        next_state: policy_update.next_state,
-        algorithm_version: policy_update.algorithm_version,
-        update_reason: policy_update.update_reason
-      })
-      |> Repo.insert!()
+      persisted_policy_update =
+        %PolicyUpdate{}
+        |> PolicyUpdate.changeset(%{
+          policy_state_id: updated_policy_state.id,
+          reward_id: reward.id,
+          condition_id: condition.id,
+          previous_state: policy_update.previous_state,
+          next_state: policy_update.next_state,
+          algorithm_version: policy_update.algorithm_version,
+          update_reason: policy_update.update_reason
+        })
+        |> Repo.insert!()
+
+      {updated_policy_state, persisted_policy_update}
     end)
     |> case do
-      {:ok, _policy_update} ->
+      {:ok, {updated_policy_state, persisted_policy_update}} ->
         :telemetry.execute([:oli, :experiments, :policy, :updated], %{count: 1}, %{
           policy_state_id: policy_state.id,
           reward_id: reward.id,
@@ -1585,6 +1655,13 @@ defmodule Oli.Experiments do
           algorithm_version: policy_update.algorithm_version,
           reward_class: reward_class(reward.reward_value)
         })
+
+        Telemetry.emit(:policy_updated, {persisted_policy_update, reward},
+          assignment: assignment,
+          condition: condition,
+          experiment: experiment,
+          policy_state: updated_policy_state
+        )
 
         :ok
 
