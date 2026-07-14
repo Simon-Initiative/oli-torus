@@ -202,21 +202,22 @@ defmodule Oli.Delivery.Sections.Blueprint do
       "start_date" => nil,
       "end_date" => nil,
       "title" => title,
-      "description" => Map.get(attrs, "description", project.description),
-      "requires_payment" => Map.get(attrs, "requires_payment", false),
-      "payment_options" => Map.get(attrs, "payment_options", "direct_and_deferred"),
-      "pay_by_institution" => Map.get(attrs, "pay_by_institution", false),
-      "registration_open" => Map.get(attrs, "registration_open", false),
-      "has_grace_period" => Map.get(attrs, "has_grace_period", true),
-      "grace_period_days" => Map.get(attrs, "grace_period_days", 1),
-      "grace_period_strategy" => Map.get(attrs, "grace_period_strategy", "relative_to_section"),
+      "description" => value_or_default(attrs["description"], project.description),
+      "requires_payment" => value_or_default(attrs["requires_payment"], false),
+      "payment_options" => value_or_default(attrs["payment_options"], "direct_and_deferred"),
+      "pay_by_institution" => value_or_default(attrs["pay_by_institution"], false),
+      "registration_open" => value_or_default(attrs["registration_open"], false),
+      "has_grace_period" => value_or_default(attrs["has_grace_period"], true),
+      "grace_period_days" => value_or_default(attrs["grace_period_days"], 1),
+      "grace_period_strategy" =>
+        value_or_default(attrs["grace_period_strategy"], "relative_to_section"),
       "amount" => build_amount(attrs["amount"]),
       "publisher_id" => project.publisher_id,
       "customizations" => custom_labels,
-      "welcome_title" => Map.get(attrs, "welcome_title", project.welcome_title),
+      "welcome_title" => value_or_default(attrs["welcome_title"], project.welcome_title),
       "encouraging_subtitle" =>
-        Map.get(attrs, "encouraging_subtitle", project.encouraging_subtitle),
-      "certificate_enabled" => Map.get(attrs, "certificate_enabled", false)
+        value_or_default(attrs["encouraging_subtitle"], project.encouraging_subtitle),
+      "certificate_enabled" => value_or_default(attrs["certificate_enabled"], false)
     }
   end
 
@@ -234,6 +235,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
       :error -> Money.new(@default_amount, currency)
     end
   end
+
+  defp value_or_default(nil, default), do: default
+  defp value_or_default(value, _default), do: value
 
   defp migrate_section_resources(section_id) do
     case Oli.Delivery.Sections.SectionResourceMigration.migrate(section_id) do
