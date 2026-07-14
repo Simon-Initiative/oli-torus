@@ -3,10 +3,10 @@ on: pull_request
 
 permissions:
   contents: read
-  pull-requests: write     # for PR comments/reviews
-  issues: write            # label add (if used)
-  checks: write            # if using the Checks API
-  statuses: write          # allow setting commit status
+  pull-requests: write # for PR comments/reviews
+  issues: write # label add (if used)
+  checks: write # if using the Checks API
+  statuses: write # allow setting commit status
 
 jobs:
   run:

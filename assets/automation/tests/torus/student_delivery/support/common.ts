@@ -85,17 +85,29 @@ export async function openStudentDeliveryPractice(
   sectionSlug: string,
   activityTitle: string,
 ) {
+  await homeTask.login('student');
+  await openStudentDeliveryPracticeForLoggedInStudent(page, sectionSlug, activityTitle);
+}
+
+export async function openStudentDeliveryPracticeForLoggedInStudent(
+  page: Page,
+  sectionSlug: string,
+  activityTitle: string,
+) {
   const studentCourse = new StudentCoursePO(page);
 
-  await homeTask.login('student');
   await page.goto(learnPath(sectionSlug), { waitUntil: 'load' });
   await studentCourse.goToCourseIfPrompted();
 
   const practiceButton = page.getByText('Practice', { exact: true }).first();
-  await expect(practiceButton).toBeVisible();
-  await practiceButton.click();
 
-  await expect(page.getByText(activityTitle).first()).toBeVisible();
+  if (await practiceButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await practiceButton.click();
+    await expect(page.getByText(activityTitle).first()).toBeVisible();
+    return;
+  }
+
+  await studentCourse.openPage(activityTitle);
 }
 
 export async function waitForMainLiveView(page: Page) {

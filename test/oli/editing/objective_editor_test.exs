@@ -2,6 +2,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
   use Oli.DataCase
 
   alias Oli.Authoring.Editing.{ActivityEditor, ObjectiveEditor, PageEditor}
+  alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
 
@@ -117,6 +118,35 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
         AuthoringResolver.from_resource_id(project.slug, updated_revision.resource_id)
 
       assert updated_page.objectives == %{"attached" => []}
+    end
+
+    test "detach_objective/3 skips stale deleted page attachments", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, %{revision: objective}} =
+        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+
+      objectives = %{"attached" => [objective.resource_id]}
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      {:ok, _updated_revision} =
+        PageEditor.edit(project.slug, revision.slug, author.email, %{"objectives" => objectives})
+
+      PageEditor.release_lock(project.slug, revision.slug, author.email)
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _} =
+               PageEditor.edit(project.slug, revision.slug, author.email, %{deleted: true})
+
+      PageEditor.release_lock(project.slug, revision.slug, author.email)
+
+      assert [] = ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+
+      publication = Publishing.project_working_publication(project.slug)
+      assert [] = Publishing.retrieve_lock_info([revision.resource_id], publication.id)
     end
 
     test "detach_objective/3 does not remove when locked", %{

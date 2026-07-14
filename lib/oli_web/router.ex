@@ -361,6 +361,16 @@ defmodule OliWeb.Router do
 
       get "/log_in_user", PlaywrightSessionController, :log_in_user
     end
+
+    scope "/test", OliWeb do
+      get "/support/:filename", PlaywrightSupportAssetController, :support_asset
+    end
+
+    scope "/superactivity", OliWeb do
+      pipe_through [:browser]
+
+      get "/embedded/index.html", PlaywrightSupportAssetController, :embedded_runtime
+    end
   end
 
   scope "/", OliWeb do
