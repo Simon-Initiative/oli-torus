@@ -11,8 +11,8 @@ defmodule OliWeb.PlaywrightSessionControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("x-playwright-scenario-token", @scenario_token)
         |> get("/test/log_in_user", %{
-          "token" => @scenario_token,
           "email" => user.email,
           "request_path" => "/workspaces/student"
         })
@@ -27,8 +27,19 @@ defmodule OliWeb.PlaywrightSessionControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("x-playwright-scenario-token", "bad-token")
+        |> get("/test/log_in_user", %{"email" => user.email})
+
+      assert response(conn, 401) == "unauthorized"
+    end
+
+    test "rejects requests that pass the token via query params only" do
+      user = insert(:user)
+
+      conn =
+        build_conn()
         |> get("/test/log_in_user", %{
-          "token" => "bad-token",
+          "token" => @scenario_token,
           "email" => user.email
         })
 
@@ -40,10 +51,24 @@ defmodule OliWeb.PlaywrightSessionControllerTest do
 
       conn =
         build_conn()
+        |> put_req_header("x-playwright-scenario-token", @scenario_token)
         |> get("/test/log_in_user", %{
-          "token" => @scenario_token,
           "email" => user.email,
           "request_path" => "https://evil.example"
+        })
+
+      assert redirected_to(conn) == "/"
+    end
+
+    test "ignores redirect targets with backslashes" do
+      user = insert(:user)
+
+      conn =
+        build_conn()
+        |> put_req_header("x-playwright-scenario-token", @scenario_token)
+        |> get("/test/log_in_user", %{
+          "email" => user.email,
+          "request_path" => "/\\evil.example"
         })
 
       assert redirected_to(conn) == "/"

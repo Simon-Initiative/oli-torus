@@ -29,11 +29,11 @@ defmodule OliWeb.PlaywrightSessionController do
     end
   end
 
-  defp authorize(conn, params) do
+  defp authorize(conn, _params) do
     token = Application.get_env(:oli, :playwright_scenario_token)
-    provided = List.first(get_req_header(conn, "x-playwright-scenario-token")) || params["token"]
+    provided = List.first(get_req_header(conn, "x-playwright-scenario-token"))
 
-    if not is_nil(token) and provided == token do
+    if valid_token?(token, provided) do
       :ok
     else
       {:error, :unauthorized}
@@ -55,6 +55,24 @@ defmodule OliWeb.PlaywrightSessionController do
 
   defp build_redirect_path(_), do: nil
 
-  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_token?(expected, provided) when is_binary(expected) and is_binary(provided) do
+    Plug.Crypto.secure_compare(provided, expected)
+  end
+
+  defp valid_token?(_, _), do: false
+
+  defp valid_local_path?(path) when is_binary(path) do
+    uri = URI.parse(path)
+
+    String.starts_with?(path, "/") and
+      not String.starts_with?(path, "//") and
+      not String.contains?(path, "\\") and
+      not String.match?(path, ~r/[\x00-\x1F\x7F]/) and
+      is_nil(uri.scheme) and
+      is_nil(uri.host) and
+      is_binary(uri.path) and
+      String.starts_with?(uri.path, "/")
+  end
+
   defp valid_local_path?(_), do: false
 end

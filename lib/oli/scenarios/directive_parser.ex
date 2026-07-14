@@ -1788,7 +1788,18 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_section_type(type) when is_atom(type), do: type
 
   defp parse_optional_payment_options(nil), do: nil
-  defp parse_optional_payment_options(value) when is_atom(value), do: value
+
+  defp parse_optional_payment_options(value) when is_atom(value) do
+    case value do
+      option when option in [:direct, :deferred, :direct_and_deferred] ->
+        option
+
+      _ ->
+        raise(
+          "Invalid payment_options #{inspect(value)}. Expected :direct, :deferred, or :direct_and_deferred"
+        )
+    end
+  end
 
   defp parse_optional_payment_options(value) when is_binary(value) do
     case value do
@@ -1812,7 +1823,18 @@ defmodule Oli.Scenarios.DirectiveParser do
     do: raise("Invalid payment_options value #{inspect(value)}")
 
   defp parse_optional_grace_period_strategy(nil), do: nil
-  defp parse_optional_grace_period_strategy(value) when is_atom(value), do: value
+
+  defp parse_optional_grace_period_strategy(value) when is_atom(value) do
+    case value do
+      strategy when strategy in [:relative_to_section, :relative_to_student] ->
+        strategy
+
+      _ ->
+        raise(
+          "Invalid grace_period_strategy #{inspect(value)}. Expected :relative_to_section or :relative_to_student"
+        )
+    end
+  end
 
   defp parse_optional_grace_period_strategy(value) when is_binary(value) do
     case value do
@@ -1833,7 +1855,16 @@ defmodule Oli.Scenarios.DirectiveParser do
     do: raise("Invalid grace_period_strategy value #{inspect(value)}")
 
   defp parse_discount_type(nil), do: :percentage
-  defp parse_discount_type(value) when is_atom(value), do: value
+
+  defp parse_discount_type(value) when is_atom(value) do
+    case value do
+      type when type in [:percentage, :fixed_amount] ->
+        type
+
+      _ ->
+        raise("Invalid discount type #{inspect(value)}. Expected :percentage or :fixed_amount")
+    end
+  end
 
   defp parse_discount_type(value) when is_binary(value) do
     case value do
