@@ -4,13 +4,19 @@ defmodule OliWeb.PlaywrightSupportAssetController do
   @moduledoc """
   Serves deterministic support assets used by Playwright automation scenarios.
 
-  This controller handles both:
+  This controller handles:
   - the embedded runtime stub needed by delivery automation when legacy
     superactivity assets are unavailable locally
   - small fixture files that live alongside the Playwright specs so activity
     tests can exercise resource-loading behavior without depending on the media
     library or object storage
+  - private test assets (course archives, answer keys) proxied from the
+    Playwright assets bucket; these require the scenario token because their
+    contents must not be publicly reachable
   """
+
+  alias Oli.Scenarios.PlaywrightAssetStorage
+  alias OliWeb.PlaywrightAuth
 
   @allowed_files %{
     "image_coding_sample.png" => "image/png",
@@ -32,6 +38,23 @@ defmodule OliWeb.PlaywrightSupportAssetController do
 
       :error ->
         send_resp(conn, 404, "Not found")
+    end
+  end
+
+  def private_asset(conn, %{"path" => path_parts}) do
+    with :ok <- PlaywrightAuth.authorize(conn),
+         key <- Enum.join(path_parts, "/"),
+         {:ok, %{body: body, content_type: content_type}} <-
+           PlaywrightAssetStorage.get_object(key) do
+      conn
+      |> put_resp_content_type(content_type)
+      |> put_resp_header("cache-control", "no-store")
+      |> send_resp(200, body)
+    else
+      {:error, :unauthorized} -> send_resp(conn, 401, "unauthorized")
+      {:error, :invalid_key} -> send_resp(conn, 400, "invalid_key")
+      {:error, :not_found} -> send_resp(conn, 404, "not_found")
+      {:error, _reason} -> send_resp(conn, 500, "asset_fetch_failed")
     end
   end
 
