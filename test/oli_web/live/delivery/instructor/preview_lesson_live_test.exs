@@ -45,7 +45,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
       assert has_element?(
                view,
-               "#instructor-preview-lesson [data-preview-customization-status][role='status'][aria-live='polite']"
+               "#instructor-preview-lesson [data-preview-customization-status][role='status'][aria-live='polite'][phx-update='ignore']"
              )
     end
 

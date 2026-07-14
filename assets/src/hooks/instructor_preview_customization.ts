@@ -1,5 +1,5 @@
+import type { PreviewCustomizationState } from 'components/instructor_preview/preview_customization_store';
 import {
-  PreviewCustomizationState,
   clearFallbackPreviewCustomizationStore,
   getPreviewCustomizationCopy,
   getPreviewCustomizationStore,

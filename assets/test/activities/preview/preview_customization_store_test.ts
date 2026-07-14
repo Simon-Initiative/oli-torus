@@ -1,4 +1,4 @@
-import { PreviewCustomizationTarget } from 'components/activities/types';
+import type { PreviewCustomizationTarget } from 'components/activities/types';
 import { PreviewCustomizationStore } from 'components/instructor_preview/preview_customization_store';
 
 const target: PreviewCustomizationTarget = {
@@ -61,5 +61,60 @@ describe('PreviewCustomizationStore', () => {
     store.applyReply(target, { ok: true, visualState: 'default' });
 
     expect(store.get(target)?.disposition).toBe('included');
+  });
+
+  test('reconciles server updates received while an action is pending', () => {
+    const store = new PreviewCustomizationStore(10);
+
+    store.initialize(target, {
+      disposition: 'included',
+      canToggle: true,
+      availableCount: 4,
+    });
+    store.begin(target, 'remove');
+
+    store.initialize(target, {
+      disposition: 'included',
+      canToggle: false,
+      availableCount: 2,
+    });
+    store.applyReply(target, { ok: true, visualState: 'removed' });
+
+    expect(store.get(target)).toMatchObject({
+      disposition: 'removed',
+      pendingAction: null,
+      canToggle: false,
+      availableCount: 2,
+    });
+  });
+
+  test('prefers authoritative reply fields over queued server updates', () => {
+    const store = new PreviewCustomizationStore(10);
+
+    store.initialize(target, {
+      disposition: 'included',
+      canToggle: true,
+      availableCount: 4,
+    });
+    store.begin(target, 'remove');
+
+    store.initialize(target, {
+      disposition: 'included',
+      canToggle: false,
+      availableCount: 2,
+    });
+    store.applyReply(target, {
+      ok: true,
+      visualState: 'removed',
+      actions: [{ kind: 'restore', disabled: false }],
+      availableCount: 3,
+    });
+
+    expect(store.get(target)).toMatchObject({
+      disposition: 'removed',
+      pendingAction: null,
+      canToggle: true,
+      availableCount: 3,
+    });
   });
 });

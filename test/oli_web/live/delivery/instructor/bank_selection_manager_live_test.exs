@@ -64,7 +64,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
 
       assert has_element?(
                view,
-               "#bank-selection-customization-bridge [data-preview-customization-status][role='status'][aria-live='polite']"
+               "#bank-selection-customization-bridge [data-preview-customization-status][role='status'][aria-live='polite'][phx-update='ignore']"
              )
 
       assert has_element?(

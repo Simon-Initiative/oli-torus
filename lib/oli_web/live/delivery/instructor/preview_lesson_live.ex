@@ -83,6 +83,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         role="status"
         aria-live="polite"
         aria-atomic="true"
+        phx-update="ignore"
         data-preview-customization-status
       >
       </span>
@@ -169,6 +170,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         role="status"
         aria-live="polite"
         aria-atomic="true"
+        phx-update="ignore"
         data-preview-customization-status
       >
       </span>
