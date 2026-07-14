@@ -85,6 +85,7 @@ export class PreviewCustomizationStore {
   readonly pageResourceId: number;
 
   private readonly entries = new Map<string, PreviewCustomizationState>();
+  private readonly lastServerStates = new Map<string, PreviewCustomizationInitialState>();
   private readonly listeners = new Map<string, Set<Listener>>();
 
   constructor(pageResourceId: number) {
@@ -97,16 +98,45 @@ export class PreviewCustomizationStore {
   ): PreviewCustomizationState {
     const key = previewCustomizationTargetKey(target);
     const existing = this.entries.get(key);
+    const normalizedInitialState = {
+      ...initialState,
+      canToggle: initialState.canToggle ?? true,
+    };
 
     if (existing) {
-      return existing;
+      const previousInitialState = this.lastServerStates.get(key);
+
+      if (existing.pendingAction || !previousInitialState) {
+        return existing;
+      }
+
+      const state = {
+        ...existing,
+        disposition:
+          normalizedInitialState.disposition !== previousInitialState.disposition
+            ? normalizedInitialState.disposition
+            : existing.disposition,
+        canToggle:
+          normalizedInitialState.canToggle !== previousInitialState.canToggle
+            ? normalizedInitialState.canToggle
+            : existing.canToggle,
+        availableCount:
+          normalizedInitialState.availableCount !== previousInitialState.availableCount
+            ? normalizedInitialState.availableCount
+            : existing.availableCount,
+      };
+      // Reconcile only fields the server actually changed. An unchanged payload may be a stale
+      // LiveView rerender and must not overwrite newer state applied from an action reply.
+      this.lastServerStates.set(key, normalizedInitialState);
+      this.entries.set(key, state);
+      return state;
     }
 
     const state = {
-      ...initialState,
-      canToggle: initialState.canToggle ?? true,
+      ...normalizedInitialState,
       pendingAction: null,
     };
+    this.lastServerStates.set(key, normalizedInitialState);
     this.entries.set(key, state);
     return state;
   }
@@ -153,11 +183,18 @@ export class PreviewCustomizationStore {
           : state.pendingAction === 'restore'
           ? 'included'
           : undefined;
+      const dispositionFromVisualState =
+        reply.visualState === 'removed'
+          ? 'removed'
+          : reply.visualState === 'default'
+          ? 'included'
+          : undefined;
       const disposition =
         reply.disposition ??
         dispositionFromAction ??
         dispositionFromPendingAction ??
-        (reply.visualState === 'removed' ? 'removed' : state.disposition);
+        dispositionFromVisualState ??
+        state.disposition;
 
       return {
         ...state,
@@ -282,7 +319,13 @@ export const usePreviewCustomizationState = (
         setState(next);
       }
     });
-  }, [store, targetKey]);
+  }, [
+    store,
+    targetKey,
+    initialState.disposition,
+    initialState.canToggle,
+    initialState.availableCount,
+  ]);
 
   return {
     state,
