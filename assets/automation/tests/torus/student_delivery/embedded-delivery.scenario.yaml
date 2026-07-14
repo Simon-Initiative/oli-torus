@@ -1,0 +1,76 @@
+# Scenario: Seed a minimal published course for embedded activity delivery automation.
+
+- project:
+    name: 'embedded_delivery_project'
+    title: 'Embedded Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Embedded Practice'
+
+- create_activity:
+    project: 'embedded_delivery_project'
+    title: 'Embedded Activity'
+    virtual_id: 'embedded_activity'
+    type: 'oli_embedded'
+    content_format: 'json'
+    content:
+      activityType: 'oli_embedded'
+      base: 'embedded'
+      src: 'index.html'
+      title: 'Embedded Activity'
+      stem:
+        content: []
+      modelXml: |
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+          <assets>
+            <asset name="layout">webcontent/custom_activity/layout.html</asset>
+            <asset name="controls">webcontent/custom_activity/controls.html</asset>
+            <asset name="styles">webcontent/custom_activity/styles.css</asset>
+            <asset name="questions">webcontent/custom_activity/questions.xml</asset>
+          </assets>
+        </embed_activity>
+      resourceBase: 'seeded-embedded-resource-base'
+      resourceURLs: []
+      authoring:
+        parts:
+          - id: '1'
+            scoringStrategy: 'average'
+            responses: []
+            hints: []
+        previewText: ''
+
+- edit_page:
+    project: 'embedded_delivery_project'
+    page: 'Embedded Practice'
+    content: |
+      title: "Embedded Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "embedded_activity"
+
+- publish:
+    to: 'embedded_delivery_project'
+    description: 'Initial embedded delivery publication'
+
+- section:
+    name: 'embedded_delivery_section_launch'
+    title: 'Embedded Delivery Course ${RUN_ID} - Launch'
+    from: 'embedded_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'embedded_delivery_student'
+    type: 'student'
+    email: 'embedded-delivery-student${RUN_ID}@example.com'
+    given_name: 'Embedded'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'embedded_delivery_student'
+    section: 'embedded_delivery_section_launch'
+    role: 'student'
