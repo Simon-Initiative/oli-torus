@@ -15,8 +15,23 @@ export const adaptiveScorablePartTypes = new Set([
   'janus-fill-blanks',
 ]);
 
+// Stateful, non-auto-scored parts that can still be flagged for manual grading.
+// These are NOT auto-scored adaptive inputs (so they do not receive adaptive feedback
+// defaults and do not contribute an automatic screen score), but authors need to be able
+// to mark them as requiring manual grading (e.g. an embedded report inside an iframe).
+export const manualGradablePartTypes = new Set(['janus-capi-iframe']);
+
 export const isAdaptiveScorablePartType = (type?: string | null) =>
   !!type && adaptiveScorablePartTypes.has(type);
+
+export const isManualGradablePartType = (type?: string | null) =>
+  !!type && manualGradablePartTypes.has(type);
+
+// Whether the Scoring section (Requires Manual Grading, and optionally Max Score) should be
+// shown for a given part type. Auto-scored adaptive inputs show the full section; manual-only
+// parts show just the Requires Manual Grading toggle (see applyScoringSchemaVisibility).
+export const showsScoringSection = (type?: string | null) =>
+  isAdaptiveScorablePartType(type) || isManualGradablePartType(type);
 
 const partSchema: JSONSchema7 = {
   type: 'object',
@@ -310,6 +325,12 @@ export const transformModelToSchema = (model: any) => {
       requiresManualGrading: !!requiresManualGrading,
       maxScore: parseNumString(maxScore) || 1,
     };
+  } else if (isManualGradablePartType(type)) {
+    // Manual-only parts expose just the Requires Manual Grading toggle; the max score for the
+    // screen is authored at the screen level, so no part-level Max Score is surfaced here.
+    result.Scoring = {
+      requiresManualGrading: !!requiresManualGrading,
+    };
   }
 
   /* console.log('PART [transformModelToSchema]', { model, result }); */
@@ -338,6 +359,8 @@ export const transformSchemaToModel = (schema: any) => {
   if (isAdaptiveScorablePartType(type)) {
     result.custom.requiresManualGrading = Scoring?.requiresManualGrading;
     result.custom.maxScore = Scoring?.maxScore;
+  } else if (isManualGradablePartType(type)) {
+    result.custom.requiresManualGrading = Scoring?.requiresManualGrading;
   }
 
   if (palette) {
@@ -369,6 +392,76 @@ export const removeScoringFromSchema = (schema: JSONSchema7): JSONSchema7 => {
 export const removeScoringFromUiSchema = (uiSchema: Record<string, any>) => {
   const { Scoring: _scoring, ...remainingUiSchema } = uiSchema;
   return remainingUiSchema;
+};
+
+// Produces a Scoring section that only exposes the Requires Manual Grading toggle, dropping the
+// Max Score field (used for manual-only parts such as iframes where max score is authored at the
+// screen level).
+const removeMaxScoreFromScoringSchema = (schema: JSONSchema7): JSONSchema7 => {
+  const properties = (schema.properties || {}) as Record<string, any>;
+  const scoring = properties.Scoring;
+
+  if (!scoring || typeof scoring !== 'object' || !scoring.properties) {
+    return schema;
+  }
+
+  const { maxScore: _maxScore, ...remainingScoringProperties } = scoring.properties;
+
+  return {
+    ...schema,
+    properties: {
+      ...properties,
+      Scoring: {
+        ...scoring,
+        properties: remainingScoringProperties,
+      },
+    },
+  };
+};
+
+const removeMaxScoreFromScoringUiSchema = (uiSchema: Record<string, any>) => {
+  const scoring = uiSchema.Scoring;
+
+  if (!scoring || typeof scoring !== 'object') {
+    return uiSchema;
+  }
+
+  const { maxScore: _maxScore, ...remainingScoringUiSchema } = scoring;
+
+  return {
+    ...uiSchema,
+    Scoring: remainingScoringUiSchema,
+  };
+};
+
+// Centralizes how the Scoring section is shown per part type:
+// - auto-scored adaptive inputs: full Scoring section (Requires Manual Grading + Max Score)
+// - manual-only parts (e.g. iframe): Requires Manual Grading only
+// - everything else: no Scoring section
+export const applyScoringSchemaVisibility = (
+  schema: JSONSchema7,
+  type?: string | null,
+): JSONSchema7 => {
+  if (isAdaptiveScorablePartType(type)) {
+    return schema;
+  }
+  if (isManualGradablePartType(type)) {
+    return removeMaxScoreFromScoringSchema(schema);
+  }
+  return removeScoringFromSchema(schema);
+};
+
+export const applyScoringUiSchemaVisibility = (
+  uiSchema: Record<string, any>,
+  type?: string | null,
+) => {
+  if (isAdaptiveScorablePartType(type)) {
+    return uiSchema;
+  }
+  if (isManualGradablePartType(type)) {
+    return removeMaxScoreFromScoringUiSchema(uiSchema);
+  }
+  return removeScoringFromUiSchema(uiSchema);
 };
 
 export default partSchema;
