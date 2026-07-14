@@ -200,12 +200,17 @@ export const InstructorPreviewCustomization = {
         const titleRow = wrapper.querySelector<HTMLElement>('[data-preview-title-row]');
         const existingPill = wrapper.querySelector<HTMLElement>('[data-preview-status-pill]');
         if (showRemovedTreatment) {
-          const pillMarkup = `<span data-preview-status-pill class="inline-flex items-center rounded-full border border-Border-border-danger bg-[rgba(255,64,64,0.08)] px-4 py-1 font-open-sans text-[14px] font-semibold leading-4 tracking-normal text-[#C91414] dark:bg-[rgba(255,64,64,0.16)] dark:text-[#FFB5B7]">Removed</span>`;
-
           if (existingPill) {
-            existingPill.outerHTML = pillMarkup;
+            existingPill.textContent = copy.removed;
           } else if (titleRow) {
-            titleRow.insertAdjacentHTML('beforeend', pillMarkup);
+            titleRow.insertAdjacentHTML(
+              'beforeend',
+              '<span data-preview-status-pill class="inline-flex items-center rounded-full border border-Border-border-danger bg-[rgba(255,64,64,0.08)] px-4 py-1 font-open-sans text-[14px] font-semibold leading-4 tracking-normal text-[#C91414] dark:bg-[rgba(255,64,64,0.16)] dark:text-[#FFB5B7]"></span>',
+            );
+            const insertedPill = titleRow.querySelector<HTMLElement>('[data-preview-status-pill]');
+            if (insertedPill) {
+              insertedPill.textContent = copy.removed;
+            }
           }
         } else if (existingPill) {
           existingPill.remove();

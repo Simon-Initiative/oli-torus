@@ -6,6 +6,7 @@ export type PreviewCustomizationAction = 'remove' | 'restore';
 
 export interface PreviewCustomizationCopy {
   remove: string;
+  removed: string;
   restore: string;
   pending: string;
   pendingAnnouncement: string;
@@ -69,6 +70,7 @@ export const getPreviewCustomizationCopy = (): PreviewCustomizationCopy => {
 
   if (
     typeof copy.remove !== 'string' ||
+    typeof copy.removed !== 'string' ||
     typeof copy.restore !== 'string' ||
     typeof copy.pending !== 'string' ||
     typeof copy.pendingAnnouncement !== 'string'

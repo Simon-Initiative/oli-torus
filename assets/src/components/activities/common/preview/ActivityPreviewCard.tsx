@@ -117,14 +117,14 @@ export const ActivityPreviewCard: React.FC<Props> = ({
   const showRemovedTreatment =
     state.disposition === 'removed' && previewContext.customizationTarget.kind !== 'bank_candidate';
   const visualState = showRemovedTreatment ? 'removed' : 'default';
-  const statusPill = showRemovedTreatment
-    ? { kind: 'removed' as const, label: 'Removed' }
-    : undefined;
-  const isSubmitting = state.pendingAction !== null;
   const actionCopy =
     previewContext.canCustomize && (previewContext.actions?.length ?? 0) > 0
       ? getPreviewCustomizationCopy()
       : null;
+  const statusPill = showRemovedTreatment
+    ? { kind: 'removed' as const, label: (actionCopy ?? getPreviewCustomizationCopy()).removed }
+    : undefined;
+  const isSubmitting = state.pendingAction !== null;
   const detailsRegionId = React.useMemo(
     () => `${previewContext.activityHtmlId}-preview-details`,
     [previewContext.activityHtmlId],

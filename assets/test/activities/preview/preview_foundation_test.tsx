@@ -16,6 +16,7 @@ import { InstructorPreviewCustomization } from 'hooks/instructor_preview_customi
 
 const customizationCopy = {
   remove: 'Remove',
+  removed: 'Removed',
   restore: 'Restore',
   pending: 'Updating...',
   pendingAnnouncement: 'Updating activity customization.',
@@ -136,6 +137,7 @@ describe('ActivityPreviewCard', () => {
     const copyHost = document.querySelector<HTMLElement>('[data-preview-customization-copy]');
     copyHost!.dataset.previewCustomizationCopy = JSON.stringify({
       remove: 'Exclude activity',
+      removed: 'Excluded activity',
       restore: 'Include activity',
       pending: 'Saving...',
       pendingAnnouncement: 'Saving activity customization.',
@@ -170,7 +172,7 @@ describe('ActivityPreviewCard', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Include activity' })).toBeInTheDocument();
-    expect(screen.getByText('Removed')).toBeInTheDocument();
+    expect(screen.getByText('Excluded activity')).toBeInTheDocument();
   });
 
   test('preserves each embedded activity removal through stale preview-context rerenders', () => {
@@ -414,7 +416,10 @@ describe('PreviewElementProvider', () => {
 describe('InstructorPreviewCustomization fallback preview wiring', () => {
   test('updates a server-rendered authoring fallback card after a successful reply', () => {
     document.body.innerHTML = `
-      <div data-preview-customization-copy='${JSON.stringify(customizationCopy)}'>
+      <div data-preview-customization-copy='${JSON.stringify({
+        ...customizationCopy,
+        removed: 'Excluded fallback activity',
+      })}'>
         <span role="status" aria-live="polite" aria-atomic="true" data-preview-customization-status></span>
       </div>
       <div class="instructor-preview-activity-wrapper instructor-preview-authoring-fallback instructor-preview-default mb-6 rounded-lg border border-Border-border-default overflow-hidden p-6 bg-Surface-surface-primary">
@@ -503,7 +508,7 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
     act(() => customizationReply?.(successfulReply));
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
-    expect(screen.getByText('Removed')).toBeInTheDocument();
+    expect(screen.getByText('Excluded fallback activity')).toBeInTheDocument();
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
     expect(document.querySelector('.instructor-preview-activity-wrapper')).toHaveClass(
       'instructor-preview-authoring-fallback',

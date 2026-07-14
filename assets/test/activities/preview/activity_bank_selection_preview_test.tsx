@@ -12,6 +12,7 @@ import {
 
 const customizationCopy = {
   remove: 'Remove',
+  removed: 'Removed',
   restore: 'Restore',
   pending: 'Updating...',
   pendingAnnouncement: 'Updating activity customization.',
@@ -81,6 +82,7 @@ describe('ActivityBankSelectionPreview', () => {
     const copyHost = document.querySelector<HTMLElement>('[data-preview-customization-copy]');
     copyHost!.dataset.previewCustomizationCopy = JSON.stringify({
       remove: 'Exclude question',
+      removed: 'Excluded question',
       restore: 'Include question',
       pending: 'Saving...',
       pendingAnnouncement: 'Saving question customization.',
@@ -104,6 +106,7 @@ describe('ActivityBankSelectionPreview', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Include question' })).toBeInTheDocument();
+    expect(screen.getByText('Excluded question')).toBeInTheDocument();
   });
 
   test('restoring one selection removes only that card removed-state rail', () => {

@@ -212,6 +212,8 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
     payload.canCustomize && (payload.actions?.length ?? 0) > 0
       ? getPreviewCustomizationCopy()
       : null;
+  const removedCopy =
+    state.disposition === 'removed' ? actionCopy ?? getPreviewCustomizationCopy() : null;
 
   const headerActions = actionCopy ? (
     <div className="flex flex-wrap items-center gap-2">
@@ -278,9 +280,9 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
               >
                 {payload.title}
               </div>
-              {state.disposition === 'removed' ? (
+              {removedCopy ? (
                 <span className="inline-flex items-center rounded-full border border-Border-border-danger bg-Fill-fill-danger px-3 py-1 pr-4 font-open-sans text-[16px] font-bold leading-4 text-Text-text-danger">
-                  Removed
+                  {removedCopy.removed}
                 </span>
               ) : null}
             </div>

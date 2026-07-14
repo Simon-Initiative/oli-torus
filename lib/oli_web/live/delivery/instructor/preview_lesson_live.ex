@@ -1128,7 +1128,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   defp preview_visual_state("remove"), do: "removed"
   defp preview_visual_state(_action), do: "default"
 
-  defp preview_status_pill("remove"), do: %{kind: "removed", label: "Removed"}
+  defp preview_status_pill("remove"), do: PreviewCustomization.removed_status_pill()
   defp preview_status_pill(_action), do: nil
 
   defp preview_next_actions("remove"), do: [PreviewCustomization.action("restore")]

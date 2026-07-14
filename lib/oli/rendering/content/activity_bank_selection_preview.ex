@@ -138,7 +138,8 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
       canCustomize: true,
       actions: actions(selection_enabled?),
       visualState: if(selection_enabled?, do: "default", else: "removed"),
-      statusPill: if(selection_enabled?, do: nil, else: %{kind: "removed", label: "Removed"}),
+      statusPill:
+        if(selection_enabled?, do: nil, else: PreviewCustomization.removed_status_pill()),
       customizationTarget: %{
         kind: "bank_selection",
         pageResourceId: page_revision.resource_id,

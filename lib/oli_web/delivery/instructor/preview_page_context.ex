@@ -601,7 +601,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
                 activity_revision.resource_id
               ),
               do: nil,
-              else: %{kind: "removed", label: "Removed"}
+              else: PreviewCustomization.removed_status_pill()
             ),
           customization_target: %{
             kind: "embedded_activity",
