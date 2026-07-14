@@ -414,7 +414,7 @@ describe('PreviewElementProvider', () => {
 });
 
 describe('InstructorPreviewCustomization fallback preview wiring', () => {
-  test('updates a server-rendered authoring fallback card after a successful reply', () => {
+  test('recovers from a malformed callback before updating an authoring fallback', () => {
     document.body.innerHTML = `
       <div data-preview-customization-copy='${JSON.stringify({
         ...customizationCopy,
@@ -451,13 +451,9 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
       </div>
     `;
 
-    let customizationReply: ((reply: Record<string, unknown>) => void) | undefined;
+    let customizationReply: ((reply: unknown) => void) | undefined;
     const pushEvent = jest.fn(
-      (
-        _event: string,
-        _payload: Record<string, unknown>,
-        callback?: (reply: Record<string, unknown>) => void,
-      ) => {
+      (_event: string, _payload: Record<string, unknown>, callback?: (reply: unknown) => void) => {
         customizationReply = callback;
       },
     );
@@ -474,9 +470,9 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
       pushEvent: (
         event: string,
         payload: Record<string, unknown>,
-        callback?: (reply: Record<string, unknown>) => void,
+        callback?: (reply: unknown) => void,
       ) => void;
-      handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
+      handleEvent: (event: string, callback: (payload: unknown) => void) => void;
       handlePreviewCustomization?: (event: Event) => void;
       handleFallbackPreviewCustomizationClick?: (event: Event) => void;
     } = {
@@ -505,6 +501,13 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
       expect.any(Function),
     );
 
+    act(() => customizationReply?.({ ok: 'yes', visualState: 'removed' }));
+
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Remove' })).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     act(() => customizationReply?.(successfulReply));
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
@@ -522,7 +525,7 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
     document.body.innerHTML = '';
   });
 
-  test('keeps removed bank-candidate fallbacks visually default and labels bulk-disabled actions', () => {
+  test('ignores malformed broadcasts and keeps bank-candidate fallback behavior', () => {
     document.body.innerHTML = `
       <div data-preview-customization-copy='${JSON.stringify(customizationCopy)}'>
         <span role="status" aria-live="polite" aria-atomic="true" data-preview-customization-status></span>
@@ -541,11 +544,7 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
     `;
 
     const pushEvent = jest.fn(
-      (
-        _event: string,
-        _payload: Record<string, unknown>,
-        callback?: (reply: Record<string, unknown>) => void,
-      ) => {
+      (_event: string, _payload: Record<string, unknown>, callback?: (reply: unknown) => void) => {
         callback?.({
           ok: true,
           visualState: 'default',
@@ -571,7 +570,22 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
     expect(wrapper).not.toHaveClass('instructor-preview-removed', 'before:bg-Border-border-danger');
     expect(screen.queryByText('Removed')).not.toBeInTheDocument();
 
-    const serverReply = handleEvent.mock.calls[0][1] as (reply: Record<string, unknown>) => void;
+    const serverReply = handleEvent.mock.calls[0][1] as (reply: unknown) => void;
+    act(() => {
+      serverReply({
+        ok: 'yes',
+        target: {
+          kind: 'bank_candidate',
+          pageResourceId: 10,
+          selectionId: 'selection-1',
+          activityResourceId: 200,
+        },
+        actions: [{ kind: 'remove', label: 'Remove' }],
+      });
+    });
+
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeEnabled();
+
     act(() => {
       serverReply({
         ok: true,

@@ -1,4 +1,8 @@
-import type { PreviewCustomizationState } from 'components/instructor_preview/preview_customization_store';
+import type { PreviewCustomizationTarget } from 'components/activities/types';
+import type {
+  PreviewCustomizationReply,
+  PreviewCustomizationState,
+} from 'components/instructor_preview/preview_customization_store';
 import {
   clearFallbackPreviewCustomizationStore,
   getPreviewCustomizationCopy,
@@ -10,9 +14,9 @@ type InstructorPreviewCustomizationHook = {
   pushEvent: (
     event: string,
     payload: Record<string, unknown>,
-    callback?: (reply: Record<string, unknown>) => void,
+    callback?: (reply: unknown) => void,
   ) => void;
-  handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
+  handleEvent: (event: string, callback: (payload: unknown) => void) => void;
   handlePreviewCustomization?: (event: Event) => void;
   handleFallbackPreviewCustomizationClick?: (event: Event) => void;
   previewCustomizationPageIds?: Set<number>;
@@ -23,6 +27,73 @@ const validActions = new Set(['remove', 'restore']);
 
 const isNumber = (value: unknown): value is number => typeof value === 'number';
 const isString = (value: unknown): value is string => typeof value === 'string';
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object';
+
+const isValidCustomizationTarget = (value: unknown): value is PreviewCustomizationTarget => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (!isString(value.kind) || !validTargetKinds.has(value.kind)) {
+    return false;
+  }
+
+  if (!isNumber(value.pageResourceId)) {
+    return false;
+  }
+
+  if (value.activityResourceId !== undefined && !isNumber(value.activityResourceId)) {
+    return false;
+  }
+
+  if (value.selectionId !== undefined && !isString(value.selectionId)) {
+    return false;
+  }
+
+  switch (value.kind) {
+    case 'embedded_activity':
+      return isNumber(value.activityResourceId);
+
+    case 'bank_selection':
+      return isString(value.selectionId);
+
+    case 'bank_candidate':
+      return isString(value.selectionId) && isNumber(value.activityResourceId);
+
+    default:
+      return false;
+  }
+};
+
+const isValidCustomizationReply = (value: unknown): value is PreviewCustomizationReply => {
+  if (!isRecord(value) || typeof value.ok !== 'boolean') {
+    return false;
+  }
+
+  if (value.target !== undefined && !isValidCustomizationTarget(value.target)) {
+    return false;
+  }
+
+  if (
+    value.disposition !== undefined &&
+    value.disposition !== 'included' &&
+    value.disposition !== 'removed'
+  ) {
+    return false;
+  }
+
+  if (
+    value.visualState !== undefined &&
+    value.visualState !== null &&
+    value.visualState !== 'default' &&
+    value.visualState !== 'removed'
+  ) {
+    return false;
+  }
+
+  return value.availableCount === undefined || isNumber(value.availableCount);
+};
 
 const isValidCustomizationDetail = (
   detail: unknown,
@@ -35,45 +106,15 @@ const isValidCustomizationDetail = (
     selectionId?: string;
   };
 } => {
-  if (!detail || typeof detail !== 'object') {
+  if (!isRecord(detail)) {
     return false;
   }
 
-  const candidate = detail as Record<string, unknown>;
-  const target =
-    candidate.target && typeof candidate.target === 'object'
-      ? (candidate.target as Record<string, unknown>)
-      : null;
-
-  if (!target) {
+  if (!isString(detail.action) || !validActions.has(detail.action)) {
     return false;
   }
 
-  if (!isString(candidate.action) || !validActions.has(candidate.action)) {
-    return false;
-  }
-
-  if (!isString(target.kind) || !validTargetKinds.has(target.kind)) {
-    return false;
-  }
-
-  if (!isNumber(target.pageResourceId)) {
-    return false;
-  }
-
-  switch (target.kind) {
-    case 'embedded_activity':
-      return isNumber(target.activityResourceId);
-
-    case 'bank_selection':
-      return isString(target.selectionId);
-
-    case 'bank_candidate':
-      return isString(target.selectionId) && isNumber(target.activityResourceId);
-
-    default:
-      return false;
-  }
+  return isValidCustomizationTarget(detail.target);
 };
 
 export const InstructorPreviewCustomization = {
@@ -219,13 +260,8 @@ export const InstructorPreviewCustomization = {
     };
 
     const applyCustomizationReply = (
-      target: {
-        kind: 'embedded_activity' | 'bank_selection' | 'bank_candidate';
-        pageResourceId: number;
-        activityResourceId?: number;
-        selectionId?: string;
-      },
-      reply: Record<string, unknown>,
+      target: PreviewCustomizationTarget,
+      reply: PreviewCustomizationReply,
     ) => {
       clearPendingAnnouncement();
       const store = storeForPage(target.pageResourceId);
@@ -236,28 +272,33 @@ export const InstructorPreviewCustomization = {
         updateFallbackPreviewCard(target, state);
       }
     };
+    const recoverFromInvalidReply = (detail: {
+      action: 'remove' | 'restore';
+      target: PreviewCustomizationTarget;
+    }) => {
+      const failedReply = { ...detail, ok: false };
+      applyCustomizationReply(detail.target, failedReply);
+      window.dispatchEvent(
+        new CustomEvent('oli:preview-customization:reply', {
+          detail: failedReply,
+        }),
+      );
+    };
 
     // Preview activities are custom elements hydrated by React, but the mutation authority stays
     // in LiveView. This hook is the bridge from browser-side preview actions back to the socket.
     this.handleEvent('preview_customization_reply', (reply) => {
+      if (!isValidCustomizationReply(reply) || !reply.target) {
+        return;
+      }
+
       window.dispatchEvent(
         new CustomEvent('oli:preview-customization:reply', {
           detail: reply,
         }),
       );
 
-      const target = reply.target as
-        | {
-            kind: 'embedded_activity' | 'bank_selection' | 'bank_candidate';
-            pageResourceId: number;
-            activityResourceId?: number;
-            selectionId?: string;
-          }
-        | undefined;
-
-      if (target) {
-        applyCustomizationReply(target, reply);
-      }
+      applyCustomizationReply(reply.target, reply);
     });
 
     this.handlePreviewCustomization = (event: Event) => {
@@ -272,9 +313,14 @@ export const InstructorPreviewCustomization = {
       // The pushEvent callback carries the per-component reply while the same handle_event can
       // still update normal LiveView assigns for the rest of the page.
       this.pushEvent('toggle_preview_activity_customization', detail, (reply) => {
+        if (!isValidCustomizationReply(reply)) {
+          recoverFromInvalidReply(detail);
+          return;
+        }
+
         const mergedReply = {
-          ...detail,
           ...reply,
+          ...detail,
         };
         applyCustomizationReply(detail.target, mergedReply);
         window.dispatchEvent(
@@ -304,12 +350,7 @@ export const InstructorPreviewCustomization = {
         return;
       }
 
-      let target: {
-        kind: 'embedded_activity' | 'bank_selection' | 'bank_candidate';
-        pageResourceId: number;
-        activityResourceId?: number;
-        selectionId?: string;
-      };
+      let target: unknown;
 
       try {
         target = JSON.parse(encodedTarget);
@@ -331,15 +372,20 @@ export const InstructorPreviewCustomization = {
 
       announcePendingUpdate();
 
-      const store = storeForPage(target.pageResourceId);
-      store.initialize(target, {
+      const store = storeForPage(detail.target.pageResourceId);
+      store.initialize(detail.target, {
         disposition: detail.action === 'restore' ? 'removed' : 'included',
       });
-      store.begin(target, detail.action);
+      store.begin(detail.target, detail.action);
 
       this.pushEvent('toggle_preview_activity_customization', detail, (reply) => {
-        const mergedReply = { ...detail, ...reply };
-        applyCustomizationReply(target, mergedReply);
+        if (!isValidCustomizationReply(reply)) {
+          recoverFromInvalidReply(detail);
+          return;
+        }
+
+        const mergedReply = { ...reply, ...detail };
+        applyCustomizationReply(detail.target, mergedReply);
 
         window.dispatchEvent(
           new CustomEvent('oli:preview-customization:reply', {
