@@ -238,6 +238,8 @@ defmodule Oli.AutomationSetup do
         can_create_sections: false
       })
 
+    {:ok, user} = confirm_user_email(user)
+
     if section do
       Oli.Delivery.Sections.enroll(user.id, section.id, [
         ContextRoles.get_role(:context_learner)
@@ -269,7 +271,21 @@ defmodule Oli.AutomationSetup do
         author_id: if(is_nil(author), do: nil, else: author.id)
       })
 
+    {:ok, user} = confirm_user_email(user)
+
     {:ok, {user, password}}
+  end
+
+  # User.registration_changeset does not cast email confirmation attrs, so
+  # confirm explicitly — otherwise automated logins get gated by the
+  # "confirm your email" interstitial.
+  defp confirm_user_email(user) do
+    user
+    |> Ecto.Changeset.change(
+      email_verified: true,
+      email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+    )
+    |> Repo.update()
   end
 
   defp create_author(false) do
