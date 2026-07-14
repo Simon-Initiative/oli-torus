@@ -103,7 +103,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
 }) => {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
   const [activeTabId, setActiveTabId] = React.useState(detailTabs[0]?.id ?? '');
-  const { state, begin } = usePreviewCustomizationState(previewContext.customizationTarget, {
+  const { state, copy, begin } = usePreviewCustomizationState(previewContext.customizationTarget, {
     disposition:
       previewContext.actions?.[0]?.kind === 'restore' || previewContext.visualState === 'removed'
         ? 'removed'
@@ -164,7 +164,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
           }}
         >
           {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
-          {isSubmitting ? 'Updating...' : action === 'remove' ? 'Remove' : 'Restore'}
+          {isSubmitting ? copy.pending : copy[action]}
         </button>
       </div>
     ) : null;

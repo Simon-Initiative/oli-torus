@@ -8,6 +8,7 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
   alias Oli.Rendering.Content.ActivityBankSelectionCriteria
   alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Rendering.Context
+  alias Oli.Rendering.Activity.PreviewCustomization
   alias Oli.Resources.PageContent
 
   @script "instructor_preview_components.js"
@@ -319,8 +320,8 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
   defp select_count(%Selection{count: count}, _selection), do: count
   defp select_count(_parsed_selection, selection), do: Map.get(selection, "count", 0)
 
-  defp actions(true), do: [%{kind: "remove", label: "Remove"}]
-  defp actions(false), do: [%{kind: "restore", label: "Restore"}]
+  defp actions(true), do: [PreviewCustomization.action("remove")]
+  defp actions(false), do: [PreviewCustomization.action("restore")]
 
   defp manage_questions_url(section_slug, revision_slug, selection_id, navigation_params) do
     request_path =

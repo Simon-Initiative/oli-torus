@@ -4,6 +4,13 @@ import { PreviewCustomizationTarget } from 'components/activities/types';
 export type PreviewCustomizationDisposition = 'included' | 'removed';
 export type PreviewCustomizationAction = 'remove' | 'restore';
 
+export interface PreviewCustomizationCopy {
+  remove: string;
+  restore: string;
+  pending: string;
+  pendingAnnouncement: string;
+}
+
 export interface PreviewCustomizationState {
   disposition: PreviewCustomizationDisposition;
   pendingAction: PreviewCustomizationAction | null;
@@ -30,6 +37,7 @@ type Listener = () => void;
 
 const pageStoreProperty = '__oliInstructorPreviewCustomizationStore';
 const fallbackStoresProperty = '__oliInstructorPreviewCustomizationFallbackStores';
+const copyAttribute = 'data-preview-customization-copy';
 
 type PageStoreHost = HTMLElement & {
   [pageStoreProperty]?: PreviewCustomizationStore;
@@ -46,6 +54,30 @@ export const previewCustomizationTargetKey = (target: PreviewCustomizationTarget
     target.selectionId ?? '',
     target.activityResourceId ?? '',
   ].join(':');
+
+export const getPreviewCustomizationCopy = (): PreviewCustomizationCopy => {
+  const encodedCopy =
+    typeof document === 'undefined'
+      ? undefined
+      : document.querySelector<HTMLElement>(`[${copyAttribute}]`)?.getAttribute(copyAttribute);
+
+  if (!encodedCopy) {
+    throw new Error('Instructor preview customization copy is missing from the page');
+  }
+
+  const copy = JSON.parse(encodedCopy) as Partial<PreviewCustomizationCopy>;
+
+  if (
+    typeof copy.remove !== 'string' ||
+    typeof copy.restore !== 'string' ||
+    typeof copy.pending !== 'string' ||
+    typeof copy.pendingAnnouncement !== 'string'
+  ) {
+    throw new Error('Instructor preview customization copy is invalid');
+  }
+
+  return copy as PreviewCustomizationCopy;
+};
 
 export class PreviewCustomizationStore {
   readonly pageResourceId: number;
@@ -252,6 +284,7 @@ export const usePreviewCustomizationState = (
 
   return {
     state,
+    copy: getPreviewCustomizationCopy(),
     begin: (action: PreviewCustomizationAction) => store.begin(target, action),
   };
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
   ActivityBankSelectionPreview,
   ActivityBankSelectionPreviewPayload,
@@ -9,6 +9,19 @@ import {
   clearPreviewCustomizationStore,
   getPreviewCustomizationStore,
 } from 'components/instructor_preview/preview_customization_store';
+
+const customizationCopy = {
+  remove: 'Remove',
+  restore: 'Restore',
+  pending: 'Updating...',
+  pendingAnnouncement: 'Updating activity customization.',
+};
+
+const installCustomizationCopy = () => {
+  const host = document.createElement('div');
+  host.dataset.previewCustomizationCopy = JSON.stringify(customizationCopy);
+  document.body.appendChild(host);
+};
 
 const includedSelection = (selectionId: string): ActivityBankSelectionPreviewPayload => ({
   id: selectionId,
@@ -53,8 +66,45 @@ const dispatchReply = (selectionId: string, visualState: 'default' | 'removed') 
 };
 
 describe('ActivityBankSelectionPreview', () => {
-  beforeEach(() => clearPreviewCustomizationStore(10));
-  afterEach(() => clearPreviewCustomizationStore(10));
+  beforeEach(() => {
+    clearPreviewCustomizationStore(10);
+    installCustomizationCopy();
+  });
+  afterEach(() => {
+    clearPreviewCustomizationStore(10);
+    document
+      .querySelectorAll('[data-preview-customization-copy]')
+      .forEach((element) => element.remove());
+  });
+
+  test('uses the server-provided page copy for every action state', () => {
+    const copyHost = document.querySelector<HTMLElement>('[data-preview-customization-copy]');
+    copyHost!.dataset.previewCustomizationCopy = JSON.stringify({
+      remove: 'Exclude question',
+      restore: 'Include question',
+      pending: 'Saving...',
+      pendingAnnouncement: 'Saving question customization.',
+    });
+
+    render(<ActivityBankSelectionPreview payload={includedSelection('first')} />);
+
+    const target = includedSelection('first').customizationTarget;
+    expect(screen.getByRole('button', { name: 'Exclude question' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exclude question' }));
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeInTheDocument();
+
+    act(() => {
+      getPreviewCustomizationStore(10).applyReply(target, {
+        ok: true,
+        target,
+        visualState: 'removed',
+        actions: [{ kind: 'restore', label: 'This payload label is not rendered' }],
+      });
+    });
+
+    expect(screen.getByRole('button', { name: 'Include question' })).toBeInTheDocument();
+  });
 
   test('restoring one selection removes only that card removed-state rail', () => {
     const initialSelections = ['first', 'second', 'third'].map(includedSelection);

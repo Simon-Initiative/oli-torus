@@ -19,6 +19,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   alias Oli.Grading
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Rendering.Activity.PreviewCustomization
   alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Rendering.{Context, Page}
   alias Oli.Resources
@@ -1001,9 +1002,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
   defp preview_actions(exclusion_view, activity_resource_id) do
     if InstructorCustomizations.activity_enabled?(exclusion_view, activity_resource_id) do
-      [%{kind: "remove", label: "Remove"}]
+      [PreviewCustomization.action("remove")]
     else
-      [%{kind: "restore", label: "Restore"}]
+      [PreviewCustomization.action("restore")]
     end
   end
 

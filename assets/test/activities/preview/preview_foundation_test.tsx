@@ -14,6 +14,22 @@ import {
 } from 'components/instructor_preview/preview_customization_store';
 import { InstructorPreviewCustomization } from 'hooks/instructor_preview_customization';
 
+const customizationCopy = {
+  remove: 'Remove',
+  restore: 'Restore',
+  pending: 'Updating...',
+  pendingAnnouncement: 'Updating activity customization.',
+};
+
+const installCustomizationBridge = () => {
+  const host = document.createElement('div');
+  host.dataset.previewCustomizationCopy = JSON.stringify(customizationCopy);
+  host.innerHTML =
+    '<span role="status" aria-live="polite" aria-atomic="true" data-preview-customization-status></span>';
+  document.body.appendChild(host);
+  return host;
+};
+
 const previewContext: PreviewContext = {
   sectionSlug: 'section-1',
   pageResourceId: 10,
@@ -37,8 +53,16 @@ const previewContext: PreviewContext = {
 };
 
 describe('ActivityPreviewCard', () => {
-  beforeEach(() => clearPreviewCustomizationStore(10));
-  afterEach(() => clearPreviewCustomizationStore(10));
+  beforeEach(() => {
+    clearPreviewCustomizationStore(10);
+    installCustomizationBridge();
+  });
+  afterEach(() => {
+    clearPreviewCustomizationStore(10);
+    document
+      .querySelectorAll('[data-preview-customization-copy]')
+      .forEach((element) => element.remove());
+  });
 
   test('toggles details and switches tabs with keyboard navigation', () => {
     render(
@@ -109,6 +133,13 @@ describe('ActivityPreviewCard', () => {
   });
 
   test('updates action label from remove to restore after LiveView reply without remounting', () => {
+    const copyHost = document.querySelector<HTMLElement>('[data-preview-customization-copy]');
+    copyHost!.dataset.previewCustomizationCopy = JSON.stringify({
+      remove: 'Exclude activity',
+      restore: 'Include activity',
+      pending: 'Saving...',
+      pendingAnnouncement: 'Saving activity customization.',
+    });
     const actionableContext = {
       ...previewContext,
       actions: [{ kind: 'remove' as const, label: 'Remove' }],
@@ -120,9 +151,9 @@ describe('ActivityPreviewCard', () => {
       </ActivityPreviewCard>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Exclude activity' }));
 
-    expect(screen.getByRole('button', { name: 'Updating...' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeInTheDocument();
 
     act(() => {
       const target = {
@@ -134,11 +165,11 @@ describe('ActivityPreviewCard', () => {
         ok: true,
         target,
         visualState: 'removed',
-        actions: [{ kind: 'restore', label: 'Restore' }],
+        actions: [{ kind: 'restore', label: 'This payload label is not rendered' }],
       });
     });
 
-    expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Include activity' })).toBeInTheDocument();
     expect(screen.getByText('Removed')).toBeInTheDocument();
   });
 
@@ -383,6 +414,9 @@ describe('PreviewElementProvider', () => {
 describe('InstructorPreviewCustomization fallback preview wiring', () => {
   test('updates a server-rendered authoring fallback card after a successful reply', () => {
     document.body.innerHTML = `
+      <div data-preview-customization-copy='${JSON.stringify(customizationCopy)}'>
+        <span role="status" aria-live="polite" aria-atomic="true" data-preview-customization-status></span>
+      </div>
       <div class="instructor-preview-activity-wrapper instructor-preview-authoring-fallback instructor-preview-default mb-6 rounded-lg border border-Border-border-default overflow-hidden p-6 bg-Surface-surface-primary">
         <header class="mb-4 flex flex-col gap-3">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -412,22 +446,26 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
       </div>
     `;
 
+    let customizationReply: ((reply: Record<string, unknown>) => void) | undefined;
     const pushEvent = jest.fn(
       (
         _event: string,
         _payload: Record<string, unknown>,
         callback?: (reply: Record<string, unknown>) => void,
       ) => {
-        callback?.({
-          ok: true,
-          actions: [{ kind: 'restore', label: 'Restore' }],
-          visualState: 'removed',
-          statusPill: { kind: 'removed', label: 'Removed' },
-        });
+        customizationReply = callback;
       },
     );
 
+    const successfulReply = {
+      ok: true,
+      actions: [{ kind: 'restore', label: 'Restore' }],
+      visualState: 'removed',
+      statusPill: { kind: 'removed', label: 'Removed' },
+    };
+
     const hook: {
+      el: HTMLElement;
       pushEvent: (
         event: string,
         payload: Record<string, unknown>,
@@ -437,6 +475,7 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
       handlePreviewCustomization?: (event: Event) => void;
       handleFallbackPreviewCustomizationClick?: (event: Event) => void;
     } = {
+      el: document.querySelector('[data-preview-customization-copy]') as HTMLElement,
       pushEvent,
       handleEvent: jest.fn(),
     };
@@ -444,6 +483,9 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
     InstructorPreviewCustomization.mounted.call(hook);
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+
+    expect(screen.getByRole('button', { name: 'Updating...' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Updating activity customization.');
 
     expect(pushEvent).toHaveBeenCalledWith(
       'toggle_preview_activity_customization',
@@ -458,8 +500,11 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
       expect.any(Function),
     );
 
+    act(() => customizationReply?.(successfulReply));
+
     expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
     expect(screen.getByText('Removed')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
     expect(document.querySelector('.instructor-preview-activity-wrapper')).toHaveClass(
       'instructor-preview-authoring-fallback',
       'instructor-preview-removed',
@@ -474,6 +519,9 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
 
   test('keeps removed bank-candidate fallbacks visually default and labels bulk-disabled actions', () => {
     document.body.innerHTML = `
+      <div data-preview-customization-copy='${JSON.stringify(customizationCopy)}'>
+        <span role="status" aria-live="polite" aria-atomic="true" data-preview-customization-status></span>
+      </div>
       <div class="instructor-preview-activity-wrapper instructor-preview-authoring-fallback instructor-preview-default">
         <div data-preview-title-row="200"><h3>Fallback Candidate</h3></div>
         <button
@@ -502,6 +550,7 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
     );
     const handleEvent = jest.fn();
     const hook = {
+      el: document.querySelector('[data-preview-customization-copy]') as HTMLElement,
       pushEvent,
       handleEvent,
       handlePreviewCustomization: undefined as ((event: Event) => void) | undefined,

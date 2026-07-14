@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Rendering.Content.ActivityBankSelectionCriteria
+  alias Oli.Rendering.Activity.PreviewCustomization
   alias Oli.Resources.Revision
 
   alias OliWeb.Components.Delivery.ActivityBankSelectionCriteria,
@@ -532,8 +533,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       statusPill: nil,
       actions:
         if(action == "remove",
-          do: [%{kind: "restore", label: "Restore"}],
-          else: [%{kind: "remove", label: "Remove"}]
+          do: [PreviewCustomization.action("restore")],
+          else: [PreviewCustomization.action("remove")]
         )
     }
   end
@@ -637,7 +638,21 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         <.preview_flash_group flash={@flash} />
       </div>
 
-      <div id="bank-selection-customization-bridge" phx-hook="InstructorPreviewCustomization"></div>
+      <div
+        id="bank-selection-customization-bridge"
+        phx-hook="InstructorPreviewCustomization"
+        data-preview-customization-copy={Jason.encode!(PreviewCustomization.copy())}
+      >
+        <span
+          id="preview-customization-status"
+          class="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          data-preview-customization-status
+        >
+        </span>
+      </div>
       <div
         id="bank-selection-preview-script-loader"
         phx-hook="LoadSurveyScripts"
@@ -1332,9 +1347,9 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
   defp candidate_preview_actions(candidate, bulk_selection_active?) do
     if candidate.enabled? do
-      [%{kind: "remove", label: "Remove", disabled: bulk_selection_active?}]
+      [PreviewCustomization.action("remove", disabled: bulk_selection_active?)]
     else
-      [%{kind: "restore", label: "Restore", disabled: bulk_selection_active?}]
+      [PreviewCustomization.action("restore", disabled: bulk_selection_active?)]
     end
   end
 

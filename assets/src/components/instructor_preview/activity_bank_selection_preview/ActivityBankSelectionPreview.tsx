@@ -193,7 +193,7 @@ const SampleActivityPreview: React.FC<{
 };
 
 export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
-  const { state, begin } = usePreviewCustomizationState(payload.customizationTarget, {
+  const { state, copy, begin } = usePreviewCustomizationState(payload.customizationTarget, {
     disposition:
       payload.actions?.[0]?.kind === 'restore' || payload.visualState === 'removed'
         ? 'removed'
@@ -231,7 +231,7 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
           }}
         >
           {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
-          {isSubmitting ? 'Updating...' : action === 'remove' ? 'Remove' : 'Restore'}
+          {isSubmitting ? copy.pending : copy[action]}
         </button>
       </div>
     ) : null;
