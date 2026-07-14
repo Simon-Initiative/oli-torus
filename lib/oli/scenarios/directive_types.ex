@@ -177,6 +177,18 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:project, :page, :objectives, :content]
   end
 
+  defmodule EditAdaptivePageDirective do
+    @moduledoc """
+    Converts an existing page into an adaptive (advancedDelivery) page whose
+    deck references a previously created adaptive activity by virtual_id.
+    project: target project name
+    page: title of the page to edit
+    activity_virtual_id: virtual_id of the oli_adaptive activity to reference
+    graded: optional boolean, defaults to false
+    """
+    defstruct [:project, :page, :activity_virtual_id, graded: false]
+  end
+
   defmodule ViewPracticePageDirective do
     @moduledoc """
     Simulates a student viewing a practice page in a section.
