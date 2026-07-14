@@ -200,6 +200,11 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
             tolerance: absolute_tolerance(0.5),
             feedback: "single-tolerance-absolute"
           ),
+          correct("1.5", 2,
+            subtype: "numeric",
+            tolerance: absolute_tolerance(0.1),
+            feedback: "single-tolerance-boundary"
+          ),
           correct("100", 2,
             subtype: "numeric",
             tolerance: relative_tolerance(0.1),
@@ -215,6 +220,8 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
         cases: [
           solves("10", score: 2, out_of: 2, feedback: "single-tolerance-none"),
           solves("20.4", score: 2, out_of: 2, feedback: "single-tolerance-absolute"),
+          solves("1.4", score: 2, out_of: 2, feedback: "single-tolerance-boundary"),
+          solves("1.6", score: 2, out_of: 2, feedback: "single-tolerance-boundary"),
           solves("109", score: 2, out_of: 2, feedback: "single-tolerance-relative"),
           solves("1000.8",
             score: 2,
@@ -358,6 +365,13 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
             score: 2,
             feedback: "multi-tolerance-absolute"
           ),
+          input("tol_boundary",
+            subtype: "numeric",
+            answer: "1.5",
+            tolerance: absolute_tolerance(0.1),
+            score: 2,
+            feedback: "multi-tolerance-boundary"
+          ),
           input("tol_relative",
             subtype: "numeric",
             answer: "100",
@@ -378,14 +392,34 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
             %{
               "tol_none" => "10",
               "tol_absolute" => "20.4",
+              "tol_boundary" => "1.4",
               "tol_relative" => "109",
               "tol_absolute_or_relative" => "1000.8"
             },
-            score: 8,
-            out_of: 8,
+            score: 10,
+            out_of: 10,
             parts: [
               part("tol_none", 2, "multi-tolerance-none"),
               part("tol_absolute", 2, "multi-tolerance-absolute"),
+              part("tol_boundary", 2, "multi-tolerance-boundary"),
+              part("tol_relative", 2, "multi-tolerance-relative"),
+              part("tol_absolute_or_relative", 2, "multi-tolerance-absolute-or-relative")
+            ]
+          ),
+          solves(
+            %{
+              "tol_none" => "10",
+              "tol_absolute" => "20.4",
+              "tol_boundary" => "1.6",
+              "tol_relative" => "109",
+              "tol_absolute_or_relative" => "1000.8"
+            },
+            score: 10,
+            out_of: 10,
+            parts: [
+              part("tol_none", 2, "multi-tolerance-none"),
+              part("tol_absolute", 2, "multi-tolerance-absolute"),
+              part("tol_boundary", 2, "multi-tolerance-boundary"),
               part("tol_relative", 2, "multi-tolerance-relative"),
               part("tol_absolute_or_relative", 2, "multi-tolerance-absolute-or-relative")
             ]
@@ -394,14 +428,16 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
             %{
               "tol_none" => "10.1",
               "tol_absolute" => "20.6",
+              "tol_boundary" => "1.399",
               "tol_relative" => "112",
               "tol_absolute_or_relative" => "1001.1"
             },
             score: 0,
-            out_of: 8,
+            out_of: 10,
             parts: [
               part("tol_none", 0, "incorrect", 2),
               part("tol_absolute", 0, "incorrect", 2),
+              part("tol_boundary", 0, "incorrect", 2),
               part("tol_relative", 0, "incorrect", 2),
               part("tol_absolute_or_relative", 0, "incorrect", 2)
             ]

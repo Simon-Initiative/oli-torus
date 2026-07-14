@@ -138,6 +138,39 @@ pub fn absolute_tolerance_supports_boundary_inside_and_outside_values_test() {
     ])
 }
 
+pub fn decimal_absolute_tolerance_includes_authored_boundaries_test() {
+  let tolerance = types.AbsoluteTolerance(value: 0.1)
+
+  assert evaluate_with_options(
+      types.Equal(types.numeric_input("1.5")),
+      tolerance,
+      types.AnyRepresentation,
+      types.NoPrecision,
+      "1.4",
+    )
+    == matched()
+
+  assert evaluate_with_options(
+      types.Equal(types.numeric_input("1.5")),
+      tolerance,
+      types.AnyRepresentation,
+      types.NoPrecision,
+      "1.6",
+    )
+    == matched()
+
+  assert evaluate_with_options(
+      types.Equal(types.numeric_input("1.5")),
+      tolerance,
+      types.AnyRepresentation,
+      types.NoPrecision,
+      "1.399",
+    )
+    == types.EqualityNotMatched(diagnostics: [
+      types.NumericToleranceMismatch,
+    ])
+}
+
 pub fn relative_tolerance_uses_larger_magnitude_and_near_zero_behavior_test() {
   let tolerance = types.RelativeTolerance(value: 0.1)
 
