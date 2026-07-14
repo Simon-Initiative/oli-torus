@@ -226,9 +226,12 @@ The active experiment was also correctly started:
 - Status: Proposed
 - Area: Authoring UX / native experiment setup
 - Context: The immediate QA blocker was fixed by adding `New A/B Decision Point` under Manage Alternatives. That works, but it still splits experiment setup across Manage Alternatives and the A/B Testing experiments page.
-- Desired behavior: Authors should be able to create the required A/B decision point directly from the experiments UI while creating or preparing an experiment.
-- Rationale: Keeping decision-point setup in the experiments workflow would make the native A/B Testing path more discoverable and reduce the chance that authors create normal learner-preference alternatives when they intend to create experiment-controlled alternatives.
-- Follow-up: Design the experiments-page flow for creating a decision point, adding options, and then immediately using it in a weighted random or Thompson Sampling experiment.
+- Desired behavior: Authors should be able to reach and/or create the required A/B decision point directly from the experiments UI while creating or preparing an experiment.
+- Rationale: Keeping decision-point setup in or near the experiments workflow would make the native A/B Testing path more discoverable and reduce the chance that authors create normal learner-preference alternatives when they intend to create experiment-controlled alternatives.
+- Review note: Experiment creation currently depends on alternatives setup being correct before the author reaches the experiments page:
+  - An A/B decision point must already exist.
+  - The decision point must have at least two options.
+- Follow-up: Design the experiments-page flow for creating a decision point, adding options, linking to the alternatives configuration page, and then immediately using the configured decision point in a weighted random or Thompson Sampling experiment.
 
 ### [ ] Enhancement 4: Remove option-management actions from page editor alternatives tabs
 
@@ -258,3 +261,12 @@ The active experiment was also correctly started:
 - Resolution:
   - Thompson reward handoff now records rewards with source `activity_attempt:full_credit`.
   - Added regression coverage for an unscored A/B branch with two evaluated activities, proving one full-credit attempt and one non-full-credit attempt create two rewards and two Thompson policy updates.
+
+### [ ] Enhancement 7: Generate experiment slugs from experiment names
+
+- Status: Proposed
+- Area: Experiment authoring UX / identifiers
+- Context: Manual QA raised that authors must currently provide both an experiment name and slug when creating an A/B Testing experiment.
+- Desired behavior: The experiment slug should be generated automatically from the experiment name to improve consistency and reduce authoring friction.
+- Open question: Confirm whether slugs need to be user-editable for any integration, analytics, or import/export workflow. If not, auto-generate and validate uniqueness behind the scenes.
+- Follow-up: Define slug uniqueness scope, likely project scope, and update the experiment creation form to derive the slug from the name with collision handling.
