@@ -205,7 +205,22 @@ config :logger, :console, format: "[$level] $message\n"
 
 config :oli,
   enable_playwright_scenarios: true,
-  playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN")
+  playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN"),
+  playwright_assets_bucket:
+    System.get_env("PLAYWRIGHT_ASSETS_BUCKET", "torus-playwright-assets-dev"),
+  # runtime.exs points ex_aws at real AWS even in dev, so the playwright
+  # assets storage carries its own MinIO-friendly connection overrides
+  playwright_assets_s3_overrides: [
+    scheme: System.get_env("AWS_S3_SCHEME", "http") <> "://",
+    host: System.get_env("AWS_S3_HOST", "localhost"),
+    port: String.to_integer(System.get_env("AWS_S3_PORT", "9000")),
+    access_key_id:
+      System.get_env("AWS_S3_ACCESS_KEY_ID") ||
+        System.get_env("AWS_ACCESS_KEY_ID") || "your_minio_access_key",
+    secret_access_key:
+      System.get_env("AWS_S3_SECRET_ACCESS_KEY") ||
+        System.get_env("AWS_SECRET_ACCESS_KEY") || "your_minio_secret_key"
+  ]
 
 truncate =
   System.get_env("LOGGER_TRUNCATE", "8192")
