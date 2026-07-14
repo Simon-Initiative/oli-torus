@@ -1,14 +1,14 @@
 # A/B Testing Domain Boundary And API Contract - Product Requirements Document
 
 ## 1. Overview
-Define the native A/B testing domain boundary, owned persistence, and context APIs that all later MVP work depends on. The outcome is an implementation-ready contract for experiment definitions, decision points, conditions, assignments, exposures, rewards, analytics reads, and algorithm state without committing Torus to a separately deployed service.
+Define the native A/B testing domain boundary, operational persistence, telemetry contracts, and context APIs that all later MVP work depends on. The outcome is an implementation-ready contract for experiment definitions, decision points, conditions, sticky assignment state, experiment event emission, reward feedback, analytics query boundaries, and algorithm state without committing Torus to a separately deployed service.
 
 ## 2. Background & Problem Statement
-Torus currently depends on UpGrade runtime HTTP calls and UpGrade-shaped authoring/export flows for a narrow alternatives experimentation workflow. Replacing that dependency requires a native source of truth, but direct table access from delivery, authoring, or analytics would recreate long-term coupling inside the monolith. The first MVP slice must establish the data ownership and API boundary before runtime, authoring, analytics, and Thompson Sampling work proceeds.
+Torus currently depends on UpGrade runtime HTTP calls and UpGrade-shaped authoring/export flows for a narrow alternatives experimentation workflow. Replacing that dependency requires native operational state for delivery correctness and native telemetry for research evidence, but direct table access from delivery, authoring, or analytics would recreate long-term coupling inside the monolith. The first MVP slice must establish the data ownership and API boundary before runtime, authoring, analytics, and Thompson Sampling work proceeds.
 
 ## 3. Goals & Non-Goals
 ### Goals
-- Establish A/B testing as a dedicated Torus domain/context with owned persistence and stable context APIs.
+- Establish A/B testing as a dedicated Torus domain/context with owned operational persistence, experiment telemetry contracts, and stable context APIs.
 - Define domain language, identifiers, request/response shapes, and ownership rules for all MVP workflows.
 - Define assignment algorithm contracts for weighted deterministic random assignment and Thompson Sampling.
 - Preserve multi-tenant scoping and publication/delivery boundaries from the start.
@@ -39,14 +39,16 @@ Requirements are found in requirements.yml
 - The boundary must be reviewable under security and performance review lenses before dependent slices implement runtime behavior.
 
 ## 9. Data, Interfaces & Dependencies
-- Owned persistence covers experiment definitions, decision points, conditions, assignments, exposures, outcome associations, rewards, and policy state.
-- Context APIs cover delivery assignment/exposure, authoring/lifecycle commands, analytics reads, and reward/outcome feedback.
+- Owned PostgreSQL persistence covers low-volume operational state: experiment definitions, decision points, conditions, lifecycle state, sticky assignment state required for delivery correctness, and current adaptive policy state required for runtime assignment.
+- Experiment event history for assignment, exposure, outcome/reward observation, and policy-update audit evidence is emitted as xAPI and served for analytics through ClickHouse.
+- Context APIs cover delivery assignment/exposure telemetry, authoring/lifecycle commands, analytics query boundaries, and reward/outcome feedback.
 - Algorithm behavior contracts include assignment selection and reward recording semantics.
 - The contract depends on existing alternatives resources, section/project experiment flags, publication immutability, and delivery enrollment identity.
 
 ## 10. Repository & Platform Considerations
 - Backend domain logic belongs under `lib/oli/` with Phoenix web code in `lib/oli_web/` acting as transport or UI orchestration only.
-- Persistence should use Ecto/PostgreSQL and avoid analytics systems as source of truth for runtime assignment.
+- Runtime operational state should use Ecto/PostgreSQL where transactional delivery correctness requires it, and should avoid using PostgreSQL as a heavy event log or dashboard/export analytics source.
+- Experiment events should use the existing xAPI/S3/ClickHouse infrastructure so large analytics queries and dataset exports do not scan operational tables.
 - Scenario tests are expected for workflow-level integration once later slices consume the boundary.
 - Jira should track this slice as the first MVP work item because other child work depends on it.
 
@@ -60,17 +62,18 @@ No feature flags present in this work item
 ## 13. Risks & Mitigations
 - Risk: The boundary becomes a heavy pseudo-service that slows implementation. Mitigation: define a Torus context API and owned persistence boundary, not a separate runtime.
 - Risk: API contracts leak schemas and make later refactors unsafe. Mitigation: require stable IDs and domain request/response types.
-- Risk: Analytics needs force direct joins against private tables. Mitigation: define approved read models or context-owned query functions.
+- Risk: Analytics needs force direct joins against private PostgreSQL tables. Mitigation: define approved ClickHouse-backed query contracts and keep PostgreSQL event rows, if any, transitional or operational only.
 
 ## 14. Open Questions & Assumptions
 ### Open Questions
 - What exact module namespace should own the native A/B testing domain?
-- Which analytics reads need read models versus context-owned query functions?
+- Which analytics reads need ClickHouse projections versus context-owned query functions?
+- Which operational PostgreSQL records are required for delivery correctness and idempotency, and which event records should move entirely to xAPI?
 
 ### Assumptions
 - Existing and in-progress UpGrade experiments are not migrated.
 - MVP assignment is individual and enrollment-based.
-- Thompson Sampling uses binary rewards and needs auditable policy state.
+- Thompson Sampling uses binary rewards and needs current runtime policy state in PostgreSQL plus auditable policy-update evidence in xAPI/ClickHouse.
 
 ## 15. QA Plan
 - Automated validation:

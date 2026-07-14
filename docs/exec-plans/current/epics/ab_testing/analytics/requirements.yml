@@ -3,29 +3,36 @@ requirements:
 - id: FR-001
   title: Report assignments and exposures
   description: Analytics must report assignments and exposures by experiment, decision
-    point, and condition.
+    point, condition, project, and section from ClickHouse-backed experiment events.
 - id: FR-002
   title: Report outcomes and rewards
-  description: Analytics must show outcome and reward evidence based on existing attempt
-    data and/or explicit experiment events.
+  description: Analytics must show outcome and reward evidence based on experiment
+    xAPI events joined to existing attempt xAPI data and/or explicit experiment
+    outcome events.
 - id: FR-003
   title: Define join semantics
   description: Analytics must define timestamp and scope semantics for joining assignments,
-    exposures, attempts, outcomes, and rewards.
+    exposures, attempts, outcomes, rewards, and policy updates in ClickHouse-backed
+    queries.
 - id: FR-004
   title: Monitor runtime data quality
   description: Analytics or monitoring must expose missing exposures, missing outcomes,
-    failed reward updates, and unexpected assignment imbalance.
+    failed reward updates, unexpected assignment imbalance, xAPI emission failures,
+    ETL lag, and ClickHouse query failures.
 - id: FR-005
   title: Monitor Thompson Sampling state
-  description: Analytics or monitoring must expose posterior state, reward counts,
-    assignment share over time, delayed or missing rewards, and guardrail-triggered
-    pauses for Thompson Sampling experiments.
+  description: Analytics or monitoring must expose current posterior state, ClickHouse-backed
+    reward counts, assignment share over time, delayed or missing rewards, policy-update
+    history, and guardrail-triggered pauses for Thompson Sampling experiments.
+- id: FR-006
+  title: Export experiment data
+  description: Experiment event data must be available through the existing dataset/download
+    infrastructure using the xAPI/ClickHouse analytics path.
 acceptance_criteria:
 - id: AC-001
   requirement: FR-001
-  description: A native experiment report or read model shows assignment and exposure
-    counts by experiment, decision point, and condition.
+  description: A native experiment report or read model shows ClickHouse-backed assignment
+    and exposure counts by experiment, decision point, condition, project, and section.
 - id: AC-002
   requirement: FR-002
   description: Outcome or reward evidence can be inspected for a controlled evaluated
@@ -33,12 +40,17 @@ acceptance_criteria:
 - id: AC-003
   requirement: FR-003
   description: Documentation identifies the scope and timestamp rules used to relate
-    assignments, exposures, attempts, and rewards.
+    assignments, exposures, attempts, rewards, and policy updates in OLAP queries.
 - id: AC-004
   requirement: FR-004
   description: Missing or failed runtime data conditions are visible through approved
     monitoring or reporting surfaces.
 - id: AC-005
   requirement: FR-005
-  description: Thompson Sampling reports show posterior parameters or reward counts
-    and assignment share for each condition.
+  description: Thompson Sampling reports show current posterior parameters, ClickHouse-backed
+    reward/update evidence, and assignment share for each condition.
+- id: AC-006
+  requirement: FR-006
+  description: A dataset/download path includes experiment assignment, exposure,
+    reward/outcome, and policy-update evidence without querying PostgreSQL event-log
+    tables.

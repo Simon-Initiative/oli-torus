@@ -8,6 +8,8 @@ Scope and reference artifacts:
 ## Scope
 Implement the backend-only native A/B testing domain boundary described by the PRD and FDD. The work establishes `Oli.Experiments` as the owning context, introduces private persistence for experiment definitions and runtime evidence, defines stable public request/response structs, adds assignment policy contracts for weighted deterministic random and Thompson Sampling, and proves scope validation and persistence ownership through focused ExUnit coverage.
 
+Revision note, 2026-07-14: this completed plan reflects the previous PostgreSQL-heavy analytics assumption. Treat completed checklist items for exposure/outcome/reward records, policy-update audit rows, and PostgreSQL analytics reads as subject to `runtime_telemetry_reconciliation`. The current roadmap requires xAPI/S3/ClickHouse for durable experiment event history, dashboards, aggregate analytics, and dataset exports.
+
 This plan covers FR-001, FR-002, FR-003, FR-004, and FR-005. It satisfies AC-001 by implementing the native data ownership model, AC-002 by implementing documented public API surfaces, AC-003 by keeping private schemas behind the context boundary, AC-004 by adding assignment and reward policy contracts, and AC-005 by enforcing multi-tenant scope validation.
 
 Out of scope:
@@ -22,7 +24,7 @@ Out of scope:
 - Native experiment definitions may carry both project and optional section scope; delivery calls must still validate section, publication, user, and enrollment consistency before writing assignments or exposures.
 - Weighted deterministic random assignment is production-ready in this slice; Thompson Sampling exposes the behavior contract and durable state/update shape needed by the later Thompson Sampling slice.
 - The initial binary reward command accepts a caller-provided `reward_value` and idempotency key. Later delivery work selects the authoritative attempt-derived reward source.
-- Analytics work in this slice is limited to context-owned aggregate read functions over PostgreSQL records; ClickHouse and dashboard work remain in later analytics slices.
+- Superseded analytics default: context-owned aggregate reads over PostgreSQL records were implemented under the previous assumption and must be reconciled. Current analytics and export work should be backed by xAPI/S3/ClickHouse after the reconciliation and OLAP foundation slices.
 - Scenario tests are not required for this contract-only slice because learner-facing delivery behavior does not change.
 
 ## Phase 1: Persistence Foundation

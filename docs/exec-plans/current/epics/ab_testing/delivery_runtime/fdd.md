@@ -5,6 +5,8 @@ Replace learner-facing UpGrade runtime behavior with native delivery calls into 
 
 This design satisfies FR-001 through FR-005 by keeping runtime decisions inside the native A/B testing domain, preserving first-option fallback when no active native experiment matches, and adding the remaining evaluated-attempt integration needed for reliable reward records. It assumes the domain contract slice has already introduced `Oli.Experiments`, native `experiment_*` tables, request/receipt structs, telemetry, and baseline runtime command tests.
 
+Revision note, 2026-07-14: this FDD predates the product requirement to avoid PostgreSQL-heavy event logging and analytics. Keep sticky assignment and current policy-state behavior where needed for delivery correctness, but reconcile exposure, outcome, reward, and policy-update history toward xAPI emission and ClickHouse analytics before building dashboards or exports.
+
 ## 2. Requirements & Assumptions
 - Functional requirements:
   - FR-001: Delivery alternatives rendering must request condition assignment through `Oli.Experiments.assign_condition/1` for active native experiments.

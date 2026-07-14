@@ -47,7 +47,7 @@ Important constraint: existing and in-progress UpGrade-backed experiments are no
 - Treat native A/B testing as a new feature: route all new experiments to native authoring and native assignment, and do not import existing UpGrade experiments or learner assignments.
 - Put assignment, exposure, outcome, reward, and algorithm boundaries in place before enabling Thompson Sampling in production.
 - Keep authoring UI changes behind stable native runtime behavior, and deliver weighted random authoring/lifecycle before adaptive authoring controls.
-- Build analytics only after assignment, exposure, reward, and policy-state records have a reliable source of truth.
+- Build analytics only after assignment, exposure, reward, and policy-state evidence has a reliable source of truth through the corrected operational-state and xAPI/ClickHouse boundaries.
 - Treat advanced UpGrade parity as follow-on product scope, not as a blocker for removing the dependency.
 - Respect published content immutability; experiments choose delivery alternatives without mutating published revisions.
 
@@ -247,35 +247,116 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/thompson_sampling/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/thompson_sampling/plan.md`
 
-### 6. Outcome Analytics And Research Visibility
+### 6. Runtime Telemetry Reconciliation
+
+Likely directory: `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/`
+
+Deliver:
+
+- A reconciliation pass over slices 1-5 so already-implemented native A/B testing work follows the new scalable data boundary before analytics development continues.
+- Clear classification of existing implementation as keep, modify, remove, or defer.
+- A corrected source-of-truth boundary:
+  - PostgreSQL remains authoritative for experiment definitions, decision points, conditions, lifecycle state, sticky assignment state required for delivery correctness, and current adaptive policy state required for runtime assignment.
+  - xAPI JSONL in S3 becomes the durable event source for assignment, exposure, outcome, reward, and policy-update history.
+  - ClickHouse becomes the analytics serving store for dashboards, reports, and dataset exports.
+- Replacement or quarantine of PostgreSQL-heavy event-log and aggregate-reporting assumptions from prior slices.
+- Updated context contracts so delivery can emit experiment xAPI statements while preserving idempotent runtime behavior.
+- Regression tests or review checks that prevent product dashboards, exports, and large aggregates from querying PostgreSQL experiment event tables.
+- A migration/cutover note for any already-created `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, or `experiment_policy_updates` usage: these tables may be retained only as transitional operational scaffolding or removed if no longer needed, but they are not the product analytics source.
+
+Defer:
+
+- New ClickHouse schema, ETL projections, dashboards, and dataset downloads beyond contract changes needed to unblock the OLAP foundation slice.
+- Redesign of authoring lifecycle or student delivery UI.
+- New adaptive algorithms.
+
+Dependencies:
+
+- Implemented slices 1-5, including current `Oli.Experiments` APIs, native runtime replacement, authoring lifecycle, and Thompson Sampling policy state.
+- Existing xAPI upload pipeline and ClickHouse OLAP infrastructure.
+
+Why this comes here:
+
+- The new scalability requirement invalidates the previous analytics source-of-truth assumption. Reconciliation must happen before analytics or dashboard work so future slices do not deepen coupling to PostgreSQL event logs or aggregates.
+
+Expected child artifacts:
+
+- `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/fdd.md`
+- `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/plan.md`
+
+### 7. Experiment XAPI And OLAP Foundation
+
+Likely directory: `docs/exec-plans/current/epics/ab_testing/experiment_olap_foundation/`
+
+Deliver:
+
+- Canonical xAPI statement shapes for experiment assignment, sticky assignment reuse, exposure, outcome/reward observation, and adaptive policy update events.
+- Required experiment identifiers and scope fields in statements, including experiment ID/UUID, project, section, publication where available, decision point, condition, enrollment or learner reference where allowed, activity/page/resource references, algorithm, policy version, idempotency key, and event timestamp.
+- Updates to the Torus xAPI emitters so experiment runtime paths emit statements without adding heavy synchronous database logging.
+- Updates to the production ETL path so experiment statements land in ClickHouse with queryable columns or approved projections.
+- Updates to local direct ClickHouse upload and backfill behavior so local development, rebuilds, and historical reloads preserve experiment events.
+- ClickHouse schema or materialized-view support for project-level and section-level experiment analytics.
+- Dataset/export integration so experiment event data can be downloaded through the existing dataset infrastructure.
+- Scoped analytics query contracts that read from ClickHouse for dashboards, reports, and exports.
+- Data-quality and observability checks for xAPI emission failures, ETL lag, ClickHouse query failures, missing exposure/outcome/reward events, and delayed policy-update evidence.
+
+Defer:
+
+- Final dashboard UX beyond query contracts and minimum surfaces needed by the analytics slice.
+- Complex metric-query language parity with UpGrade.
+- Long-term research warehouse product decisions beyond reusing the existing xAPI/S3/ClickHouse path.
+
+Dependencies:
+
+- Runtime telemetry reconciliation.
+- Existing xAPI pipeline, S3 JSONL durable event source, Lambda/SQS ETL path, ClickHouse migrations, backfill jobs, and dataset infrastructure.
+- Runtime assignment, exposure, reward handoff, and Thompson Sampling policy state from earlier slices.
+
+Why this comes here:
+
+- Analytics must be powered by the scalable event and OLAP infrastructure before project-level or section-level dashboards are built. This slice establishes that foundation and keeps large aggregates out of PostgreSQL.
+
+Expected child artifacts:
+
+- `docs/exec-plans/current/epics/ab_testing/experiment_olap_foundation/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/experiment_olap_foundation/fdd.md`
+- `docs/exec-plans/current/epics/ab_testing/experiment_olap_foundation/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/experiment_olap_foundation/plan.md`
+
+### 8. Outcome Analytics And Research Visibility
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/analytics/`
 
 Deliver:
 
-- Assignment and exposure analytics by experiment, decision point, and condition.
-- Outcome reporting based on existing attempt data and/or explicit experiment events.
-- Clear timestamp and scope semantics for joining assignments, exposures, and activity attempts.
-- Basic monitoring for missing exposures, missing outcomes, failed reward updates, and unexpected assignment imbalance.
-- Thompson Sampling monitoring for posterior state by condition, reward counts, assignment share over time, missing/delayed rewards, and guardrail-triggered pauses.
-- Reporting surfaces needed before native A/B testing is broadly available.
+- Assignment and exposure analytics by experiment, decision point, condition, project, and section, backed by ClickHouse query contracts or projections.
+- Outcome reporting based on experiment xAPI events joined to existing attempt xAPI data and approved ClickHouse projections.
+- Clear timestamp and scope semantics for joining assignments, exposures, experiment rewards, policy updates, and activity attempts in OLAP queries.
+- Basic monitoring for missing exposures, missing outcomes, failed reward updates, ETL lag, ClickHouse query failures, and unexpected assignment imbalance.
+- Thompson Sampling monitoring for current PostgreSQL runtime policy state plus ClickHouse-backed reward counts, policy-update event history, assignment share over time, missing/delayed rewards, and guardrail-triggered pauses.
+- Project-level and section-level dashboards or reporting surfaces needed before native A/B testing is broadly available.
+- Dataset/download coverage for experiment data using the existing dataset infrastructure.
 
 Defer:
 
 - Complex metric-query language parity with UpGrade.
-- Long-term warehouse or research-data product decisions unless required for dependency removal.
+- New warehouse or research-data product infrastructure beyond the existing xAPI/S3/ClickHouse path.
 - Advanced adaptive algorithm monitoring beyond the fields needed to validate Thompson Sampling reward flow and posterior state.
 
 Dependencies:
 
-- A/B testing-owned assignment, exposure, and outcome records from delivery runtime.
-- Thompson Sampling policy state and reward records for adaptive experiments.
+- Runtime telemetry reconciliation.
+- Experiment xAPI and OLAP foundation.
+- ClickHouse projections or query APIs for experiment assignment, exposure, reward/outcome, and policy-update events.
+- Current Thompson Sampling policy state for runtime inspection and OLAP event history for research/audit analytics.
 - Lifecycle states that define which experiments should appear in reporting.
-- Analytics-facing A/B testing queries or read models rather than direct table access.
+- Analytics-facing A/B testing queries or read models rather than direct PostgreSQL event-table access.
 
 Why this comes here:
 
-- Analytics should be built on A/B testing-owned assignment and exposure data after those records are authoritative. Building dashboards earlier risks reporting against a transitional or split source of truth.
+- Analytics should be built after experiment telemetry is flowing through xAPI and ClickHouse. Building dashboards earlier would report against a transitional PostgreSQL event-log model that does not meet the new scalability requirement.
 
 Expected child artifacts:
 
@@ -284,7 +365,7 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/analytics/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/analytics/plan.md`
 
-### 7. End-To-End Manual QA Verification
+### 9. End-To-End Manual QA Verification
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/manual_qa/`
 
@@ -442,6 +523,8 @@ flowchart TD
   DELIVERY["Delivery Runtime"]
   TS["Thompson Sampling"]
   AUTHORING["Authoring Lifecycle"]
+  RECONCILE["Runtime Telemetry Reconciliation"]
+  OLAP["Experiment XAPI And OLAP"]
   ANALYTICS["Analytics"]
   QA["Manual QA"]
   end
@@ -460,7 +543,12 @@ flowchart TD
   DOMAIN --> TS
   DELIVERY --> TS
   AUTHORING --> TS
-  DELIVERY --> ANALYTICS
+  DOMAIN --> RECONCILE
+  DELIVERY --> RECONCILE
+  AUTHORING --> RECONCILE
+  TS --> RECONCILE
+  RECONCILE --> OLAP
+  OLAP --> ANALYTICS
   TS --> ANALYTICS
   AUTHORING --> ANALYTICS
   DELIVERY --> QA
@@ -478,12 +566,13 @@ flowchart TD
 
 - Cutover: existing and in-progress UpGrade experiments are not migrated; native A/B testing starts as a new feature, all learners are new participants in native experiments, and UpGrade runtime assignment/mark/log calls are removed.
 - Domain boundary and API discipline: A/B testing is a dedicated Torus domain/context inside the monolith; other Torus domains should depend on its context APIs, approved queries, events, or read models, not its schemas, private queries, or tables.
-- Data ownership and persistence: native tables should be the source of truth for experiment definitions, assignments, exposures, rewards, and auditable policy state, and those tables should be owned by the A/B testing domain.
+- Data ownership and persistence: PostgreSQL should remain the source of truth for low-volume operational state such as experiment definitions, decision points, conditions, lifecycle state, sticky assignment state needed for delivery correctness, and current adaptive policy state needed for runtime decisions. PostgreSQL should not be the heavy event log or dashboard/export source for assignments, exposures, outcomes, rewards, or policy-update history.
+- Event and analytics source of truth: xAPI JSONL in S3 should be the durable source for experiment event history, and ClickHouse should be the serving store for project dashboards, section dashboards, large aggregate reports, and dataset exports. Any PostgreSQL event rows retained from slices 1-5 are transitional operational scaffolding unless a later design explicitly justifies them.
 - Security and privacy: all reads and writes must be scoped by institution, project, section, user, and enrollment as appropriate; research exports must avoid exposing unnecessary learner data.
 - Published content immutability: experiment choices can select alternatives at delivery time but must not mutate published revisions.
-- Reliability and performance: assignment should be local and transactional, avoid repeated remote calls, and preserve fallback behavior when no active experiment applies.
-- Observability and auditability: assignment decisions, exposures, failed outcome joins, reward updates, Thompson Sampling posterior updates, lifecycle changes, and adaptive policy updates should be inspectable enough for operations and research review.
-- Testing and verification: coverage should include assignment stickiness, weighted distribution behavior, Thompson Sampling posterior sampling and updates, fallback behavior, exposure recording, project and section gating, native-only authoring gates, first-assignment behavior for all learners, attempt outcome association, permission checks, lifecycle transitions, and an end-to-end manual QA script that verifies authoring through instructor and student delivery for both non-adaptive and Thompson Sampling use cases.
+- Reliability and performance: assignment should remain local and transactional, avoid repeated remote calls, and preserve fallback behavior when no active experiment applies. Heavy event creation and analytics queries should use the xAPI/ClickHouse path rather than high-volume PostgreSQL writes or dashboard aggregates.
+- Observability and auditability: assignment decisions, exposures, failed outcome joins, reward updates, Thompson Sampling posterior updates, lifecycle changes, and adaptive policy updates should be inspectable through xAPI/ClickHouse-backed evidence, with current runtime policy state inspectable from the A/B testing domain where needed.
+- Testing and verification: coverage should include assignment stickiness, weighted distribution behavior, Thompson Sampling posterior sampling and updates, fallback behavior, experiment xAPI emission, ClickHouse projection/query behavior, dataset export inclusion, project and section analytics scoping, project and section gating, native-only authoring gates, first-assignment behavior for all learners, attempt outcome association, permission checks, lifecycle transitions, and an end-to-end manual QA script that verifies authoring through instructor and student delivery for both non-adaptive and Thompson Sampling use cases.
 - MVP scope control: the MVP includes native cut-over, weighted deterministic random assignment, Thompson Sampling, authoring/lifecycle, analytics/monitoring needed for release confidence, and end-to-end manual QA. Additional adaptive policies and advanced UpGrade parity are post-MVP follow-on candidates, not necessary MVP deliverables.
 
 ## Initial Effort Estimate
@@ -494,8 +583,11 @@ Rough implementation shape:
 
 - A/B testing domain boundary, A/B testing-owned persistence, delivery assignment API, baseline weighted assignment, Thompson Sampling policy contracts/state shape, and anti-corruption around the current UpGrade-shaped runtime interface: 8-11 weeks.
 - Native-only authoring gate, UpGrade removal, and hard cut-over to native delivery through domain APIs: 3-5 weeks.
-- Weighted random authoring lifecycle, basic analytics, and reward/outcome plumbing through context APIs/read models: 6-8 weeks.
-- Thompson Sampling implementation, adaptive guardrails, posterior-state auditability, monitoring, and the authoring updates needed to enable adaptive experiment selection: 10-14 weeks.
+- Weighted random authoring lifecycle and reward/outcome plumbing through context APIs and xAPI emission contracts: 6-8 weeks.
+- Thompson Sampling implementation, adaptive guardrails, current runtime posterior state, xAPI policy-update evidence, monitoring contracts, and the authoring updates needed to enable adaptive experiment selection: 10-14 weeks.
+- Runtime telemetry reconciliation for already-completed slices 1-5: 1-3 weeks, depending on how much PostgreSQL event-log code is removed versus retained as transitional scaffolding.
+- Experiment xAPI/ClickHouse OLAP foundation, including statement definitions, ETL/direct uploader/backfill updates, ClickHouse schema/projections, dataset export integration, and scoped query contracts: 4-7 weeks.
+- Outcome analytics and research dashboards backed by ClickHouse query contracts or projections: 3-6 weeks.
 - End-to-end manual QA script authoring, test data setup, and first completed verification run across authoring, instructor, and student workflows: 1-2 weeks.
 
 Post-MVP follow-on candidates:
@@ -509,19 +601,29 @@ Post-MVP follow-on candidates:
 - What exact context API surfaces should the A/B testing domain expose for delivery, authoring, analytics, and reward feedback?
 - What repository or module boundaries should prevent other Torus contexts from directly accessing A/B testing schemas and tables?
 - Should assignment occur at first page render, first decision point render, or first attempt creation?
-- Should outcome analytics join existing Torus attempt data or store explicit experiment event metrics?
+- Which already-implemented PostgreSQL event tables and APIs should be removed, retained as transitional operational scaffolding, or repurposed only for idempotency/current runtime behavior?
+- Which experiment xAPI statement verbs, object types, and extension keys should be canonical for assignment, exposure, reward/outcome, and policy-update events?
+- Should outcome analytics join experiment xAPI events to existing attempt xAPI events in ClickHouse, emit explicit experiment outcome events, or do both for MVP?
+- What ClickHouse table/projection shape should support project-level dashboards, section-level dashboards, and dataset exports without expensive ad hoc joins?
 - Should MVP Thompson Sampling run fully inside the A/B testing domain, behind an external policy adapter, or inside Torus first with a future extraction boundary?
 - What binary reward signal should drive MVP Thompson Sampling: correctness, completion, configured attempt success, or another success/failure metric?
 - What guardrails are required before Thompson Sampling can run in production?
 - What minimum analytics do researchers, authors, instructors, and administrators need before native A/B testing is broadly available?
+- What operational alerts or dashboards are required for xAPI emission failures, ETL lag, ClickHouse ingest/query failures, and missing experiment event evidence?
 - What canonical course, section, instructor, and student fixtures should the manual QA script use for repeatable non-adaptive and Thompson Sampling verification?
 - What should happen when authors edit condition options after learners already have assignments?
 
 ## Recommended Next Slice
 
-Start with `docs/exec-plans/current/epics/ab_testing/domain_contract/` because every later slice depends on the A/B testing context APIs, domain boundary, native data model, and ownership rules. Use `harness-analyze` next to create `docs/exec-plans/current/epics/ab_testing/domain_contract/prd.md`.
+Start with `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/` because slices 1-5 were defined and implemented under the previous PostgreSQL-heavy analytics assumption. Use `harness-analyze` next to create `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/prd.md`, then use `harness-architect` for the reconciliation FDD before implementing slice 6.
 
 ## Decision Log
+### 2026-07-14 - Reconcile Native A/B Testing With XAPI/ClickHouse Analytics
+- Change: Inserted `Runtime Telemetry Reconciliation` and `Experiment XAPI And OLAP Foundation` before analytics, moved outcome analytics to slice 8, and moved manual QA to slice 9.
+- Reason: Product requirements now require experiment event history, dashboards, and dataset exports to use the existing xAPI/S3/ClickHouse infrastructure rather than PostgreSQL-heavy event logging or aggregate analytics.
+- Evidence: Current roadmap sections 6-8 and cross-cutting data ownership rules.
+- Impact: Slices 1-5 remain partially valid for operational behavior, but their PostgreSQL event-log and analytics assumptions must be reconciled before analytics development continues. PostgreSQL remains appropriate for low-volume operational state and current adaptive policy state; xAPI/S3/ClickHouse becomes the durable event and analytics path.
+
 ### 2026-06-30 - Sequence Thompson Sampling After Authoring Lifecycle
 - Change: Moved weighted random authoring lifecycle before Thompson Sampling and made the Thompson Sampling slice responsible for enabling adaptive authoring controls.
 - Reason: The first authoring lifecycle slice should proceed without implementing Thompson Sampling, leaving adaptive controls absent or disabled until policy behavior is ready.

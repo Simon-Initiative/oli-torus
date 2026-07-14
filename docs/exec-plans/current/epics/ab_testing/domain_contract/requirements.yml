@@ -1,15 +1,16 @@
 work_item: domain_contract
 requirements:
 - id: FR-001
-  title: Own native A/B testing persistence
-  description: The A/B testing domain must explicitly own experiment definitions,
-    decision points, conditions, assignments, exposures, outcome associations, rewards,
-    and policy state.
+  title: Own native A/B testing operational state
+  description: The A/B testing domain must explicitly own operational state for
+    experiment definitions, decision points, conditions, lifecycle, sticky assignments
+    required for delivery correctness, and current adaptive policy state required
+    for runtime assignment.
 - id: FR-002
   title: Expose stable context APIs
-  description: The domain must define context APIs for delivery assignment/exposure,
-    authoring lifecycle, analytics reads, and reward/outcome feedback using domain
-    language and stable identifiers.
+  description: The domain must define context APIs for delivery assignment, exposure
+    telemetry, authoring lifecycle, analytics query boundaries, and reward/outcome
+    feedback using domain language and stable identifiers.
 - id: FR-003
   title: Prevent direct persistence coupling
   description: Delivery, authoring, and analytics consumers must not directly query
@@ -23,11 +24,15 @@ requirements:
   title: Enforce multi-tenant scope
   description: Domain API contracts must carry and validate institution, project,
     section, user, and enrollment scope where applicable.
+- id: FR-006
+  title: Define experiment telemetry boundary
+  description: The domain must distinguish PostgreSQL operational state from xAPI
+    experiment event history and ClickHouse-backed analytics data.
 acceptance_criteria:
 - id: AC-001
   requirement: FR-001
-  description: A documented native data ownership model identifies every MVP experiment
-    record type and its owning domain.
+  description: A documented native data ownership model identifies which MVP records
+    are operational PostgreSQL state and which are event history emitted through xAPI.
 - id: AC-002
   requirement: FR-002
   description: Delivery, authoring, analytics, and reward feedback API surfaces are
@@ -44,3 +49,8 @@ acceptance_criteria:
   requirement: FR-005
   description: Scope rules cover project, section, user, enrollment, and institution
     boundaries for MVP API consumers.
+- id: AC-006
+  requirement: FR-006
+  description: The PRD and later implementation plan state that dashboards, large
+    aggregate reports, and dataset exports must use xAPI/ClickHouse rather than
+    PostgreSQL event-log tables.

@@ -8,6 +8,8 @@ Scope and reference artifacts:
 ## Scope
 Deliver MVP analytics and monitoring for native A/B testing through approved `Oli.Experiments` read APIs. The plan covers scoped aggregate reads for assignments, exposures, outcomes, rewards, timestamp and scope semantics, data-quality monitoring, Thompson Sampling policy-state visibility, telemetry, privacy controls, targeted UI or export wiring, and verification.
 
+Supersession note, 2026-07-14: do not implement this plan as written. It assumes PostgreSQL-backed native `experiment_*` records are the MVP analytics source. The current roadmap requires `runtime_telemetry_reconciliation` and `experiment_olap_foundation` first, then a rewritten analytics plan backed by xAPI/S3/ClickHouse for dashboards, aggregates, and dataset exports.
+
 Guardrails:
 - Do not query private `Oli.Experiments.Schemas` modules from LiveViews, controllers, exports, `Oli.Analytics`, or delivery code.
 - Do not import or display legacy UpGrade analytics as native experiment evidence.
@@ -17,7 +19,7 @@ Guardrails:
 - Keep learner-level detail disabled by default and omit learner names, emails, LMS IDs, raw responses, and full activity payloads from analytics responses.
 
 ## Clarifications & Default Assumptions
-- Default MVP data source is PostgreSQL-backed native `experiment_*` records through `Oli.Experiments`; ClickHouse projection is deferred until direct aggregate query pressure proves the need.
+- Superseded default: PostgreSQL-backed native `experiment_*` records are no longer the MVP analytics source. The rewritten plan must use xAPI/S3/ClickHouse for experiment event history, dashboards, aggregate reporting, and dataset exports.
 - Default MVP reporting surface is backend read APIs plus the minimum product-selected LiveView/export surface. If product has not selected a surface, implement backend APIs first and leave UI/export behind a small follow-up.
 - Default data-quality grace periods should be constants or options in the analytics query layer until product approves configurable thresholds.
 - Assignment imbalance defaults should be conservative and documented in code/tests; final product thresholds can be adjusted without changing response shape.

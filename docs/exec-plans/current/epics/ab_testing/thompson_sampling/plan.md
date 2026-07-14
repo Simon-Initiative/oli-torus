@@ -7,6 +7,8 @@ Scope and reference artifacts:
 ## Scope
 Deliver MVP non-contextual Thompson Sampling for native A/B/N alternatives experiments inside `Oli.Experiments`. The plan covers Beta-Bernoulli policy math, auditable policy state, first-assignment posterior sampling, idempotent reward updates, MVP guardrails, lifecycle validation, authoring enablement, inspection metadata, telemetry, and targeted verification.
 
+Revision note, 2026-07-14: this completed plan reflects the previous assumption that PostgreSQL policy-update rows are the durable audit/reporting path. Current posterior state may remain in PostgreSQL for runtime assignment, but reward and policy-update history used by reports, dashboards, and dataset exports must be reconciled to xAPI/S3/ClickHouse.
+
 Out of scope:
 - Contextual bandits, continuous rewards, score-delta optimization, multi-objective rewards, and other adaptive algorithms.
 - Migration of UpGrade-backed experiments or learner assignments.

@@ -5,6 +5,8 @@ Upgrade the existing `Oli.Experiments` Thompson Sampling placeholder into the MV
 
 This design satisfies FR-001 through FR-006 by reusing the established `Oli.Experiments` policy, reward, policy-state, delivery, and LiveView authoring contracts. It avoids a new service boundary or client-side algorithm logic; delivery continues to ask for an assignment without knowing which algorithm is active, and authoring delegates adaptive validation to backend context commands.
 
+Revision note, 2026-07-14: this FDD predates the product requirement to route durable reward and policy-update history through xAPI/S3/ClickHouse. Current posterior state may remain in PostgreSQL for runtime assignment decisions, but research audit history, dataset exports, and large analytics over reward/policy-update events must be backed by emitted experiment telemetry and ClickHouse.
+
 ## 2. Requirements & Assumptions
 - Functional requirements:
   - FR-001: Implement non-contextual Thompson Sampling for A/B/N alternatives experiments using binary Beta-Bernoulli rewards.

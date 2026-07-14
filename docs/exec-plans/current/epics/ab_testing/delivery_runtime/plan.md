@@ -8,6 +8,8 @@ Scope and reference artifacts:
 ## Scope
 Implement native learner-facing delivery runtime behavior for A/B testing through `Oli.Experiments` APIs. The plan covers native alternatives assignment, sticky assignment reuse, exposure recording, evaluated-attempt outcome/reward handoff, telemetry, performance/security verification, and scenario coverage.
 
+Revision note, 2026-07-14: this completed plan reflects the previous PostgreSQL-heavy event logging assumption. Keep sticky assignment and runtime policy-state work where it is needed for delivery correctness, but reconcile exposure, outcome, reward, and policy-update history toward xAPI emission and ClickHouse analytics before building dashboards or dataset exports.
+
 Guardrails:
 - Do not reintroduce UpGrade assignment, mark, or log calls.
 - Do not query or mutate private experiment schemas from delivery code unless the access is behind an `Oli.Experiments` public API.

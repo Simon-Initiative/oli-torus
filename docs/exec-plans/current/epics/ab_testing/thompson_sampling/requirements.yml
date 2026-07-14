@@ -5,9 +5,9 @@ requirements:
   description: The MVP adaptive policy must implement non-contextual Thompson Sampling
     for A/B/N alternatives with Beta-Bernoulli binary rewards.
 - id: FR-002
-  title: Persist auditable policy state
-  description: The policy must persist per-condition posterior parameters, prior configuration,
-    algorithm name/version, reward counts, and update provenance.
+  title: Maintain current policy state
+  description: The policy must maintain per-condition posterior parameters, prior
+    configuration, algorithm name/version, and reward counts needed for runtime assignment.
 - id: FR-003
   title: Select assignments from posterior samples
   description: For non-sticky first assignments, the policy must sample active condition
@@ -26,6 +26,10 @@ requirements:
   description: The A/B Testing authoring surface must replace the deferred disabled
     Thompson Sampling affordance with selectable MVP-safe adaptive configuration,
     including priors, guardrails, and lifecycle activation validation.
+- id: FR-007
+  title: Emit adaptive policy telemetry
+  description: Reward processing and posterior updates must emit xAPI telemetry with
+    enough provenance for ClickHouse-backed analytics, monitoring, and dataset exports.
 acceptance_criteria:
 - id: AC-001
   requirement: FR-001
@@ -33,8 +37,8 @@ acceptance_criteria:
     with Beta posterior parameters.
 - id: AC-002
   requirement: FR-002
-  description: Policy state includes prior, posterior, algorithm version, reward counts,
-    and update metadata visible to approved reporting or inspection paths.
+  description: Current policy state includes prior, posterior, algorithm version,
+    and reward counts needed for runtime assignment and approved inspection paths.
 - id: AC-003
   requirement: FR-003
   description: First assignment selection uses sampled posterior values while existing
@@ -52,3 +56,7 @@ acceptance_criteria:
   description: Authorized users can create or update a Thompson Sampling experiment
     through the authoring surface only when priors, guardrails, reward readiness,
     lifecycle state, and condition mappings pass validation.
+- id: AC-007
+  requirement: FR-007
+  description: Processing a controlled reward emits scoped policy-update telemetry
+    suitable for xAPI/ClickHouse reports without exposing raw learner responses.

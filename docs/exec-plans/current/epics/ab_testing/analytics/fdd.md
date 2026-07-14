@@ -3,7 +3,9 @@
 ## 1. Executive Summary
 Expand native A/B testing analytics from basic context-owned aggregate reads into release-ready reporting and monitoring for assignments, exposures, outcomes, rewards, runtime data quality, and Thompson Sampling policy state.
 
-This design keeps `Oli.Experiments` as the owning read boundary. Reporting, LiveView, exports, and operations code consume `Oli.Experiments` query APIs or context-owned read models; they do not join directly against private `experiment_*` schemas. The MVP uses PostgreSQL-backed aggregates first because the native experiment records are the source of truth. ClickHouse or broader analytics warehouse integration remains an optional downstream projection after the approved read contract is stable.
+This FDD is superseded for implementation. Reporting, LiveView, exports, and operations code should consume approved A/B testing analytics APIs, but those APIs must be backed by the experiment xAPI/ClickHouse foundation for event history, large aggregates, dashboards, and dataset exports. PostgreSQL should be used only for low-volume operational state and current runtime policy inspection.
+
+Supersession note, 2026-07-14: this FDD is no longer implementation-ready. It was written before the product requirement to avoid PostgreSQL-heavy experiment event logging and analytics. The current roadmap requires `runtime_telemetry_reconciliation` and `experiment_olap_foundation` before analytics. When this analytics slice resumes, rewrite this FDD so xAPI JSONL in S3 is the durable experiment event source, ClickHouse is the analytics serving store, and PostgreSQL is used only for low-volume operational state and current runtime policy inspection.
 
 ## 2. Requirements & Assumptions
 - Functional requirements:
@@ -39,7 +41,7 @@ This design keeps `Oli.Experiments` as the owning read boundary. Reporting, Live
   - `test/oli/experiments/analytics_test.exs` already verifies scoped summary/count/policy snapshot behavior and out-of-scope rejection.
   - Delivery reward handoff records outcomes and rewards from evaluated attempts through `Oli.Experiments`, with attempt references and deterministic idempotency keys.
   - Thompson Sampling policy state stores algorithm version, JSON prior/state, reward success/failure counts, assignment count, and last reward update provenance.
-  - Existing analytics, xAPI, ClickHouse, instructor dashboard, and dashboard snapshot code provide surrounding reporting patterns, but native experiment records remain the runtime source of truth.
+  - Existing analytics, xAPI, ClickHouse, instructor dashboard, and dashboard snapshot code provide surrounding reporting patterns; the rewritten design must use xAPI/ClickHouse for experiment event analytics and PostgreSQL only for operational/runtime inspection.
 - Unknowns to confirm:
   - Which MVP surface ships first: author/research LiveView inside the course author workspace, admin/operator monitoring view, CSV export, or a combination.
   - Whether researchers need learner-level CSV rows in the MVP or aggregate condition-level exports are sufficient for release confidence.
@@ -91,7 +93,7 @@ Analytics reads include experiments in lifecycle states relevant to review: `:ac
 
 ### 4.4 Alternatives Considered
 - Query private `experiment_*` schemas directly from LiveViews or analytics modules: rejected because it violates the domain contract and makes schema refactors unsafe.
-- Build a ClickHouse projection first: not selected for MVP because direct native tables are authoritative and the immediate need is release confidence, not a warehouse product.
+- Build a ClickHouse projection first: superseded. The current roadmap now requires the xAPI/ClickHouse OLAP foundation before analytics implementation.
 - Add a complex metric query language: rejected because the PRD explicitly excludes UpGrade parity and advanced metric query capabilities.
 - Store denormalized analytics snapshots for every runtime write immediately: not selected because it adds consistency and repair complexity before aggregate query pressure is proven.
 - Expose learner-level rows by default: rejected because aggregate reporting satisfies most release-review needs and better preserves learner privacy.
@@ -154,7 +156,7 @@ Analytics reads include experiments in lifecycle states relevant to review: `:ac
 - No cache is required for MVP correctness.
 - UI pages may use normal LiveView assign state for the current request/session, but should refresh from `Oli.Experiments` when filters change.
 - Do not cache learner-level detail exports across scopes.
-- If aggregate read models are introduced, they are projections rather than caches; native tables remain authoritative.
+- If aggregate read models are introduced, they should be ClickHouse-backed analytics projections rather than PostgreSQL event-log aggregates.
 - Any future Cachex-backed summary cache must be scoped by experiment, section/publication filters, query date window, and caller-safe grouping options, and invalidated or aged out based on runtime event arrival.
 
 ## 9. Performance & Scalability Posture
@@ -228,7 +230,7 @@ Analytics reads include experiments in lifecycle states relevant to review: `:ac
 ## 14. Backwards Compatibility
 - Existing native analytics APIs remain additive. Existing callers of `experiment_summary/1`, `assignment_counts/1`, `exposure_counts/1`, `reward_counts/1`, and `policy_state_snapshot/1` should continue to work.
 - Legacy UpGrade analytics are not imported or displayed as native experiment evidence.
-- Existing native experiment records remain the source of truth; new read models, if introduced, are derived projections.
+- Existing native experiment operational records remain valid for runtime behavior, but dashboards, large aggregates, and dataset exports must use xAPI/ClickHouse-backed evidence.
 - Existing delivery, attempt, xAPI, and gradebook analytics remain unchanged. Experiment analytics adds reporting around experiment-specific records and attempt references.
 - No feature flag is required for the FDD scope. If implementation introduces a new user-facing surface gradually, use normal routing/authorization or a separate approved rollout decision.
 

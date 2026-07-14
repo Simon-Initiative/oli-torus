@@ -9,13 +9,14 @@ requirements:
   description: Delivery must reuse existing native assignment records so a learner
     sees stable alternative content across visits.
 - id: FR-003
-  title: Record exposures
-  description: Delivery must record an exposure when assigned decision point content
-    is applied.
+  title: Emit exposure telemetry
+  description: Delivery must emit exposure telemetry when assigned decision point
+    content is applied.
 - id: FR-004
   title: Record idempotent reward handoff
   description: Delivery must associate evaluated attempt outcomes with the assignment
-    and hand off an idempotent binary reward event.
+    and hand off an idempotent binary reward event for runtime policy updates and
+    xAPI emission.
 - id: FR-005
   title: Preserve fallback behavior
   description: Delivery must use first-option fallback behavior when no active native
@@ -31,12 +32,12 @@ acceptance_criteria:
     record.
 - id: AC-003
   requirement: FR-003
-  description: Applying assigned decision point content creates or confirms an exposure
-    record with the correct scope.
+  description: Applying assigned decision point content emits or confirms scoped
+    exposure telemetry suitable for the xAPI/ClickHouse pipeline.
 - id: AC-004
   requirement: FR-004
   description: Repeated processing of the same evaluated attempt does not create duplicate
-    reward events.
+    reward telemetry or duplicate runtime policy updates.
 - id: AC-005
   requirement: FR-005
   description: Inactive, missing, or non-matching experiments render the first alternative

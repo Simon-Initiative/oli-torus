@@ -5,6 +5,8 @@ Create a native A/B testing backend domain owned by `Oli.Experiments`. This cont
 
 The design satisfies FR-001 through FR-005 by defining private experiment tables and public domain request/response structs. Later delivery, authoring, analytics, and Thompson Sampling slices consume these APIs instead of joining directly against experiment-owned schemas.
 
+Revision note, 2026-07-14: this FDD predates the product requirement to route heavy experiment event history and analytics through xAPI/S3/ClickHouse. Treat PostgreSQL persistence described here as operational state only unless the reconciliation slice explicitly keeps a table for idempotency or runtime correctness. Dashboards, dataset exports, and large aggregate analytics must not be implemented against PostgreSQL experiment event-log tables.
+
 ## 2. Requirements & Assumptions
 - Functional requirements:
   - FR-001: `Oli.Experiments` owns native persistence for experiment definitions, decision points, conditions, assignments, exposures, outcome associations, rewards, and policy state.
