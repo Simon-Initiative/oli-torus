@@ -284,7 +284,6 @@ export const usePreviewCustomizationState = (
 
   return {
     state,
-    copy: getPreviewCustomizationCopy(),
     begin: (action: PreviewCustomizationAction) => store.begin(target, action),
   };
 };

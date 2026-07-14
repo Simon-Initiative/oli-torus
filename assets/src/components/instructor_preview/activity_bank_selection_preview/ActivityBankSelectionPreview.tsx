@@ -1,7 +1,10 @@
 import React from 'react';
 import { PreviewHeader } from 'components/activities/common/preview/PreviewHeader';
 import { PreviewAction, PreviewStatusPill, PreviewVisualState } from 'components/activities/types';
-import { usePreviewCustomizationState } from 'components/instructor_preview/preview_customization_store';
+import {
+  getPreviewCustomizationCopy,
+  usePreviewCustomizationState,
+} from 'components/instructor_preview/preview_customization_store';
 import { ArrowRight } from 'components/misc/icons/Icons';
 
 interface CustomizationTarget {
@@ -193,7 +196,7 @@ const SampleActivityPreview: React.FC<{
 };
 
 export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
-  const { state, copy, begin } = usePreviewCustomizationState(payload.customizationTarget, {
+  const { state, begin } = usePreviewCustomizationState(payload.customizationTarget, {
     disposition:
       payload.actions?.[0]?.kind === 'restore' || payload.visualState === 'removed'
         ? 'removed'
@@ -205,36 +208,39 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
   const visualState = state.disposition === 'removed' ? 'removed' : 'default';
   const availableCount = state.availableCount ?? payload.availableCount;
   const isSubmitting = state.pendingAction !== null;
+  const actionCopy =
+    payload.canCustomize && (payload.actions?.length ?? 0) > 0
+      ? getPreviewCustomizationCopy()
+      : null;
 
-  const headerActions =
-    payload.canCustomize && (payload.actions?.length ?? 0) > 0 ? (
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={!state.canToggle || isSubmitting}
-          aria-busy={isSubmitting}
-          className={actionButtonClasses(action)}
-          onClick={() => {
-            if (!state.canToggle || isSubmitting) {
-              return;
-            }
+  const headerActions = actionCopy ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        disabled={!state.canToggle || isSubmitting}
+        aria-busy={isSubmitting}
+        className={actionButtonClasses(action)}
+        onClick={() => {
+          if (!state.canToggle || isSubmitting) {
+            return;
+          }
 
-            begin(action);
-            window.dispatchEvent(
-              new CustomEvent('oli:preview-customization', {
-                detail: {
-                  action,
-                  target: payload.customizationTarget,
-                },
-              }),
-            );
-          }}
-        >
-          {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
-          {isSubmitting ? copy.pending : copy[action]}
-        </button>
-      </div>
-    ) : null;
+          begin(action);
+          window.dispatchEvent(
+            new CustomEvent('oli:preview-customization', {
+              detail: {
+                action,
+                target: payload.customizationTarget,
+              },
+            }),
+          );
+        }}
+      >
+        {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
+        {isSubmitting ? actionCopy.pending : actionCopy[action]}
+      </button>
+    </div>
+  ) : null;
 
   const manageQuestionsAction = payload.manageQuestionsUrl ? (
     <a

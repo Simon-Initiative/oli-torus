@@ -1,6 +1,9 @@
 import React from 'react';
 import { PreviewContext } from 'components/activities/types';
-import { usePreviewCustomizationState } from 'components/instructor_preview/preview_customization_store';
+import {
+  getPreviewCustomizationCopy,
+  usePreviewCustomizationState,
+} from 'components/instructor_preview/preview_customization_store';
 import { LearningObjectiveList } from './LearningObjectiveList';
 import { PreviewDetailsToggle } from './PreviewDetailsToggle';
 import { PreviewHeader } from './PreviewHeader';
@@ -103,7 +106,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
 }) => {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
   const [activeTabId, setActiveTabId] = React.useState(detailTabs[0]?.id ?? '');
-  const { state, copy, begin } = usePreviewCustomizationState(previewContext.customizationTarget, {
+  const { state, begin } = usePreviewCustomizationState(previewContext.customizationTarget, {
     disposition:
       previewContext.actions?.[0]?.kind === 'restore' || previewContext.visualState === 'removed'
         ? 'removed'
@@ -118,6 +121,10 @@ export const ActivityPreviewCard: React.FC<Props> = ({
     ? { kind: 'removed' as const, label: 'Removed' }
     : undefined;
   const isSubmitting = state.pendingAction !== null;
+  const actionCopy =
+    previewContext.canCustomize && (previewContext.actions?.length ?? 0) > 0
+      ? getPreviewCustomizationCopy()
+      : null;
   const detailsRegionId = React.useMemo(
     () => `${previewContext.activityHtmlId}-preview-details`,
     [previewContext.activityHtmlId],
@@ -139,35 +146,34 @@ export const ActivityPreviewCard: React.FC<Props> = ({
     }
   }, [activeTabId, detailTabs]);
 
-  const headerActions =
-    previewContext.canCustomize && (previewContext.actions?.length ?? 0) > 0 ? (
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={!state.canToggle || isSubmitting}
-          aria-busy={isSubmitting}
-          className={actionButtonClasses(action, !state.canToggle || isSubmitting)}
-          onClick={() => {
-            if (!state.canToggle || isSubmitting) {
-              return;
-            }
+  const headerActions = actionCopy ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        disabled={!state.canToggle || isSubmitting}
+        aria-busy={isSubmitting}
+        className={actionButtonClasses(action, !state.canToggle || isSubmitting)}
+        onClick={() => {
+          if (!state.canToggle || isSubmitting) {
+            return;
+          }
 
-            begin(action);
-            window.dispatchEvent(
-              new CustomEvent('oli:preview-customization', {
-                detail: {
-                  action,
-                  target: previewContext.customizationTarget,
-                },
-              }),
-            );
-          }}
-        >
-          {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
-          {isSubmitting ? copy.pending : copy[action]}
-        </button>
-      </div>
-    ) : null;
+          begin(action);
+          window.dispatchEvent(
+            new CustomEvent('oli:preview-customization', {
+              detail: {
+                action,
+                target: previewContext.customizationTarget,
+              },
+            }),
+          );
+        }}
+      >
+        {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
+        {isSubmitting ? actionCopy.pending : actionCopy[action]}
+      </button>
+    </div>
+  ) : null;
 
   return (
     <article className={`p-6 ${cardClasses}`}>
