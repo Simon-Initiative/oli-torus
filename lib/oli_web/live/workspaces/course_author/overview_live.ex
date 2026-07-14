@@ -257,7 +257,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <div :if={@can_enable_experiments} class="form-label-group mb-3 form-check">
               <.input
                 field={f[:has_experiments]}
-                label="Enable Upgrade-based Experiments"
+                label="Enable Experiments"
                 type="checkbox"
                 error_position={:bottom}
                 errors={f.errors}

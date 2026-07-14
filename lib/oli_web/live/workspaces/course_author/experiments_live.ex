@@ -14,7 +14,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Institutions
   alias OliWeb.Common.Modal.{DeleteModal, FormModal}
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
@@ -700,26 +699,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   defp assign_authoring_experiments(socket) do
     scope = authoring_scope(socket)
 
+    experiments =
+      case ABExperiments.list_project_experiments(scope) do
+        {:ok, experiments} -> experiments
+        {:error, error} -> {:error, error}
+      end
+
+    candidates =
+      case ABExperiments.list_available_decision_points(scope) do
+        {:ok, candidates} -> candidates
+        {:error, _error} -> []
+      end
+
     {experiments, candidates, error} =
-      if is_nil(scope.institution_id) do
-        {[], [], nil}
-      else
-        experiments =
-          case ABExperiments.list_project_experiments(scope) do
-            {:ok, experiments} -> experiments
-            {:error, error} -> {:error, error}
-          end
-
-        candidates =
-          case ABExperiments.list_available_decision_points(scope) do
-            {:ok, candidates} -> candidates
-            {:error, _error} -> []
-          end
-
-        case experiments do
-          {:error, error} -> {[], candidates, error.message}
-          experiments -> {experiments, candidates, nil}
-        end
+      case experiments do
+        {:error, error} -> {[], candidates, error.message}
+        experiments -> {experiments, candidates, nil}
       end
 
     assign(socket,
@@ -760,19 +755,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp authoring_scope(socket) do
     %Scope{
-      institution_id: institution_id(socket),
       project_id: socket.assigns.project.id
     }
-  end
-
-  defp institution_id(socket) do
-    cond do
-      section = socket.assigns[:section] ->
-        section.institution_id
-
-      institutions = Institutions.list_institutions() ->
-        institutions |> List.first() |> then(&(&1 && &1.id))
-    end
   end
 
   defp selected_candidate(candidates, %{"decision_point" => revision_id}) do

@@ -18,6 +18,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
   defp create_project(_conn) do
     insert(:institution)
+    create_project_fixture()
+  end
+
+  defp create_project_without_institution(_conn) do
+    create_project_fixture()
+  end
+
+  defp create_project_fixture do
     project = insert(:project)
     container_resource = insert(:resource)
 
@@ -288,6 +296,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       refute has_element?(view, "a", "Download Experiment JSON")
       refute has_element?(view, "a", "Download Segment JSON")
       refute render(view) =~ "upgrade_decision_point"
+    end
+  end
+
+  describe "experiments view without institutions" do
+    setup [:admin_conn, :create_project_without_institution]
+
+    test "lists project decision point candidates without requiring institution scope", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      assert has_element?(view, "#create-ab-experiment-form")
+      assert has_element?(view, "#experiment_decision_point option", "Decision Point")
     end
   end
 
