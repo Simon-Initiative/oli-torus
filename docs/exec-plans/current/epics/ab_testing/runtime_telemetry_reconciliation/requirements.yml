@@ -1,0 +1,72 @@
+work_item: runtime_telemetry_reconciliation
+requirements:
+- id: FR-001
+  title: Audit prior native A/B testing work
+  description: The reconciliation must review slices 1-5 and classify existing implementation,
+    planned persistence, and context contracts as keep, modify, remove, or defer.
+- id: FR-002
+  title: Define PostgreSQL operational ownership
+  description: PostgreSQL must remain authoritative only for experiment definitions,
+    decision points, conditions, lifecycle state, sticky assignment state required
+    for delivery correctness, and current adaptive policy state required for runtime
+    assignment.
+- id: FR-003
+  title: Define xAPI durable event ownership
+  description: Assignment, exposure, outcome, reward, and policy-update history must
+    be emitted as xAPI statements whose JSONL records in S3 are the durable event
+    source.
+- id: FR-004
+  title: Define ClickHouse analytics ownership
+  description: Dashboards, reports, monitoring queries, aggregate analytics, and dataset
+    exports must use ClickHouse-backed read paths rather than PostgreSQL experiment
+    event-log tables.
+- id: FR-005
+  title: Update runtime telemetry contracts
+  description: A/B testing context APIs used by delivery must support scoped, idempotent
+    experiment xAPI emission for assignments, exposures, outcomes, rewards, and policy
+    updates while preserving runtime correctness.
+- id: FR-006
+  title: Reconcile transitional event tables
+  description: Any existing or planned experiment exposure, outcome, reward, or policy-update
+    PostgreSQL tables must be documented as retained transitional operational scaffolding,
+    modified runtime state, removed persistence, or deferred cleanup, with a required
+    final removal path before the A/B testing MVP slice sequence is complete.
+- id: FR-007
+  title: Prevent PostgreSQL analytics coupling
+  description: The work must add regression tests, static checks, or review requirements
+    that prevent product dashboards, dataset exports, and large aggregate reports
+    from querying PostgreSQL experiment event tables.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: A reconciliation note or implementation review lists relevant slices
+    1-5 artifacts and classifies each affected event, persistence, or contract assumption
+    as keep, modify, remove, or defer.
+- id: AC-002
+  requirement: FR-002
+  description: Operational PostgreSQL ownership is documented and excludes product
+    analytics event history, dashboards, exports, and large aggregate reports.
+- id: AC-003
+  requirement: FR-003
+  description: Assignment, exposure, outcome, reward, and policy-update event contracts
+    identify required scoped identifiers and idempotency fields for xAPI JSONL history.
+- id: AC-004
+  requirement: FR-004
+  description: Analytics-facing contracts or review notes state that ClickHouse is
+    the serving store for dashboards, reports, monitoring queries, and dataset exports.
+- id: AC-005
+  requirement: FR-005
+  description: Runtime API tests or contract tests prove repeated delivery/reward
+    calls preserve sticky assignment and do not duplicate emitted experiment event
+    history.
+- id: AC-006
+  requirement: FR-006
+  description: Migration or cutover notes identify the disposition of experiment_exposures,
+    experiment_outcomes, experiment_rewards, experiment_policy_updates, and any equivalent
+    event-log persistence, and identify the later slice gate that removes those tables
+    after xAPI/ClickHouse history and replacement idempotency behavior are in place.
+- id: AC-007
+  requirement: FR-007
+  description: An automated check, targeted test, or mandatory review gate fails or
+    flags new dashboard/export/aggregate code that reads PostgreSQL experiment event-log
+    tables.
