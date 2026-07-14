@@ -56,6 +56,7 @@ const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY || 'my-local-
 
 let seededCourse: AutomationSetupResponse | null = null;
 let answers: LessonAnswers | null = null;
+let archiveTempDir: string | null = null;
 
 setRuntimeConfig({ baseUrl, loginData: buildLoginData('placeholder@example.com', 'placeholder') });
 
@@ -88,6 +89,7 @@ async function fetchArchiveToTempFile(key: string): Promise<string> {
 
   const buffer = Buffer.from(await response.arrayBuffer());
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'torus-qa-asset-'));
+  archiveTempDir = dir;
   const filePath = path.join(dir, path.basename(key));
   await fs.writeFile(filePath, buffer);
   return filePath;
@@ -111,9 +113,14 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
   });
 
   test.afterAll(async ({ request }) => {
-    if (!seededCourse) return;
+    if (seededCourse) {
+      await teardownAutomationCourse(request, seededCourse, { baseUrl, apiKey: automationApiKey });
+    }
 
-    await teardownAutomationCourse(request, seededCourse, { baseUrl, apiKey: automationApiKey });
+    if (archiveTempDir) {
+      await fs.rm(archiveTempDir, { recursive: true, force: true });
+      archiveTempDir = null;
+    }
   });
 
   test('student completes the greenhouse molecules happy path', async ({ page }) => {

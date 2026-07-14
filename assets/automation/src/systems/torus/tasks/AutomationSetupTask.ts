@@ -29,9 +29,8 @@ export async function importArchiveAndCreateSection(
   archivePath: string,
   { baseUrl, apiKey }: AutomationOptions,
 ): Promise<AutomationSetupResponse> {
-  // uploaded by path (not buffer): Playwright traces request/response bodies
-  // as resources when trace:'on', and snapshotting a large in-memory buffer
-  // this way intermittently corrupts the trace zip for multi-MB archives
+  // The archive is downloaded outside Playwright's traced request context first;
+  // this client only reads that file back for the multipart upload.
   const archiveBuffer = await fs.readFile(path.resolve(archivePath));
   const response = await request.post(new URL('/api/v1/automation_setup', baseUrl).toString(), {
     headers: {
