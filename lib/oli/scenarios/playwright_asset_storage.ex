@@ -92,8 +92,8 @@ defmodule Oli.Scenarios.PlaywrightAssetStorage do
     Application.get_env(:oli, :playwright_assets_s3_overrides, [])
   end
 
-  # S3 keys are flat strings (no directory traversal exists), but reject
-  # suspicious keys anyway to keep the endpoint's surface unambiguous.
+  # keys may contain "/" segments (they map to S3 object paths), so reject
+  # any segment that could be interpreted as directory traversal.
   defp validate_key(key) do
     segments = String.split(key, "/")
 
