@@ -4,13 +4,17 @@ defmodule Oli.Scenarios.Directives.ResetActivityHandler do
   """
 
   alias Oli.Delivery.Attempts.ActivityLifecycle
-  alias Oli.Scenarios.DirectiveTypes.{ExecutionState, ResetActivityDirective}
 
   alias Oli.Scenarios.Directives.{
     ActivityAttemptSupport,
     AttemptSupport
   }
 
+  alias Oli.Scenarios.DirectiveTypes.{ExecutionState, ResetActivityDirective}
+
+  @doc """
+  Resets the directive's activity and refreshes its page attempt state.
+  """
   def handle(%ResetActivityDirective{} = directive, %ExecutionState{} = state) do
     datashop_session_id = "session_#{System.unique_integer([:positive])}"
 
@@ -53,5 +57,6 @@ defmodule Oli.Scenarios.Directives.ResetActivityHandler do
   end
 
   defp format_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
+  defp format_reason(reason) when is_binary(reason), do: reason
   defp format_reason(reason), do: inspect(reason)
 end

@@ -1,8 +1,13 @@
 defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
-  @moduledoc false
+  @moduledoc """
+  Shared lookup and normalization helpers for scenario learner activity actions.
+  """
 
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
 
+  @doc """
+  Returns the active page attempt state for a student, section, and page.
+  """
   def get_attempt_state(
         %ExecutionState{} = state,
         student_name,
@@ -23,6 +28,9 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
     end
   end
 
+  @doc """
+  Resolves a scenario activity revision by its virtual ID.
+  """
   def get_activity_revision(%ExecutionState{} = state, activity_virtual_id) do
     activity_revision =
       Enum.find_value(state.activity_virtual_ids, fn
@@ -36,6 +44,9 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
     end
   end
 
+  @doc """
+  Finds and normalizes an activity attempt from a page attempt hierarchy.
+  """
   def find_activity_attempt(attempt_state, activity_revision) do
     case Map.get(attempt_state.attempt_hierarchy, activity_revision.resource_id) do
       nil ->
@@ -46,6 +57,9 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
     end
   end
 
+  @doc """
+  Selects a part attempt, requiring `part_id` when the activity has multiple parts.
+  """
   def find_part_attempt(%{activity_attempt: %{part_attempts: part_attempts}}, part_id)
       when is_list(part_attempts) do
     case {part_id, part_attempts} do

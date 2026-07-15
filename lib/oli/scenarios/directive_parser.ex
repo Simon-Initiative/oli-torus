@@ -1838,16 +1838,12 @@ defmodule Oli.Scenarios.DirectiveParser do
          ) do
       :ok ->
         parsed =
-          Enum.reduce(allowed_metrics, %{}, fn metric, acc ->
-            if Map.has_key?(expected, metric) do
-              Map.put(
-                acc,
-                insights_metric_atom(metric),
-                parse_insights_metric(metric, expected[metric])
-              )
-            else
-              acc
-            end
+          Enum.reduce(expected, %{}, fn {metric, value}, acc ->
+            Map.put(
+              acc,
+              insights_metric_atom(metric),
+              parse_insights_metric(metric, value)
+            )
           end)
 
         {:ok, parsed}

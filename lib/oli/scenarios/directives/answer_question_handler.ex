@@ -8,10 +8,10 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
   and evaluate the student's response.
   """
 
-  alias Oli.Scenarios.DirectiveTypes.{ExecutionState, AnswerQuestionDirective}
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Scenarios.Directives.{ActivityAttemptSupport, AttemptSupport}
+  alias Oli.Scenarios.DirectiveTypes.{AnswerQuestionDirective, ExecutionState}
 
   @doc """
   Handles an answer_question directive by submitting and evaluating a student's response.

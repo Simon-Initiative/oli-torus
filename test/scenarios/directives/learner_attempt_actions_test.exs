@@ -66,7 +66,9 @@ defmodule Oli.Scenarios.Directives.LearnerAttemptActionsTest do
     }
 
     assert {:error, message} = RequestHintHandler.handle(directive, %ExecutionState{})
-    assert message =~ "student must view page first"
+
+    assert message ==
+             "Failed to request hint: No attempt found - student must view page first"
   end
 
   test "reset_activity requires a known student" do
@@ -78,6 +80,6 @@ defmodule Oli.Scenarios.Directives.LearnerAttemptActionsTest do
     }
 
     assert {:error, message} = ResetActivityHandler.handle(directive, %ExecutionState{})
-    assert message =~ "User 'student' not found"
+    assert message == "Failed to reset activity: User 'student' not found"
   end
 end

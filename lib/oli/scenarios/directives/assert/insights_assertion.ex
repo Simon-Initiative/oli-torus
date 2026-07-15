@@ -6,8 +6,8 @@ defmodule Oli.Scenarios.Directives.Assert.InsightsAssertion do
   alias Oli.Analytics.Summary.{BrowseInsights, BrowseInsightsOptions}
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.ResourceType
-  alias Oli.Scenarios.DirectiveTypes.{AssertDirective, VerificationResult}
   alias Oli.Scenarios.Directives.Assert.Helpers
+  alias Oli.Scenarios.DirectiveTypes.{AssertDirective, VerificationResult}
 
   @metrics [
     :num_correct,
@@ -22,6 +22,9 @@ defmodule Oli.Scenarios.Directives.Assert.InsightsAssertion do
 
   @rate_metrics [:eventually_correct, :first_attempt_correct, :relative_difficulty]
 
+  @doc """
+  Verifies the configured insight metrics and returns a scenario verification result.
+  """
   def assert(%AssertDirective{insights: spec}, state) when is_map(spec) do
     verification =
       with {:ok, built_project} <- Helpers.get_project(state, spec.project),

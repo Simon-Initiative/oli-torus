@@ -4,9 +4,12 @@ defmodule Oli.Scenarios.Directives.RequestHintHandler do
   """
 
   alias Oli.Delivery.Attempts.ActivityLifecycle
-  alias Oli.Scenarios.DirectiveTypes.{ExecutionState, RequestHintDirective}
   alias Oli.Scenarios.Directives.ActivityAttemptSupport
+  alias Oli.Scenarios.DirectiveTypes.{ExecutionState, RequestHintDirective}
 
+  @doc """
+  Requests the next hint for the directive's active activity part attempt.
+  """
   def handle(%RequestHintDirective{} = directive, %ExecutionState{} = state) do
     with {:ok, attempt_state} <-
            ActivityAttemptSupport.get_attempt_state(
@@ -33,5 +36,6 @@ defmodule Oli.Scenarios.Directives.RequestHintHandler do
   end
 
   defp format_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
+  defp format_reason(reason) when is_binary(reason), do: reason
   defp format_reason(reason), do: inspect(reason)
 end
