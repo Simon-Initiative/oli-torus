@@ -140,6 +140,19 @@ defmodule Oli.Scenarios.Directives.LearnerAttemptActionsTest do
     assert message == "Could not find activity attempt for resource_id 3"
   end
 
+  test "a sole activity attempt must match the requested resource" do
+    attempt_state = %{
+      attempt_hierarchy: %{
+        first: {activity_attempt("first-attempt", 1), %{}}
+      }
+    }
+
+    assert {:error, message} =
+             ActivityAttemptSupport.find_activity_attempt(attempt_state, %{resource_id: 2})
+
+    assert message == "Could not find activity attempt for resource_id 2"
+  end
+
   defp activity_attempt(attempt_guid, resource_id) do
     %{
       attempt_guid: attempt_guid,

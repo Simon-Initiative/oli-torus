@@ -90,16 +90,8 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
 
     case matching_attempts do
       [attempt] -> normalize_activity_attempt(attempt)
-      [] -> find_single_activity_attempt(attempt_state, resource_id)
+      [] -> {:error, "Could not find activity attempt for resource_id #{resource_id}"}
       _ -> {:error, "Multiple activity attempts matched resource_id #{resource_id}"}
-    end
-  end
-
-  defp find_single_activity_attempt(attempt_state, resource_id) do
-    case Map.values(attempt_state.attempt_hierarchy) do
-      [attempt] -> normalize_activity_attempt(attempt)
-      [] -> {:error, "No activity attempts found in hierarchy"}
-      _ -> {:error, "Could not find activity attempt for resource_id #{resource_id}"}
     end
   end
 

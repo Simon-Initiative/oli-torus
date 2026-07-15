@@ -93,7 +93,7 @@ defmodule Oli.Scenarios.Directives.Assert.InsightsAssertion do
 
   defp browse(project_id, section_ids, resource_type, target) do
     BrowseInsights.browse_insights(
-      %Paging{offset: 0, limit: 10_000},
+      %Paging{offset: 0, limit: 2},
       %Sorting{direction: :asc, field: :title},
       %BrowseInsightsOptions{
         project_id: project_id,
