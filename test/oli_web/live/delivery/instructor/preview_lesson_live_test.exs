@@ -32,7 +32,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       section: section,
       page_revision: page_revision
     } do
-      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+      {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
       assert html =~ ~s|id="instructor-preview-header"|
       assert html =~ ~s|<main id="main"|
@@ -41,6 +41,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "/js/oli_multiple_choice_preview.js"
       refute html =~ "/js/oli_multiple_choice_authoring.js"
       refute html =~ "Page Discussion"
+      assert has_element?(view, "#instructor-preview-lesson[data-preview-customization-copy]")
+
+      assert has_element?(
+               view,
+               "#instructor-preview-lesson [data-preview-customization-status][role='status'][aria-live='polite'][phx-update='ignore']"
+             )
     end
 
     test "renders learning objective coverage and overall available points", %{
