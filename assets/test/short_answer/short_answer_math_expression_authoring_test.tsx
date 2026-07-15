@@ -283,7 +283,7 @@ describe('short answer math expression authoring', () => {
     expect(screen.getByRole('option', { name: 'Missing unit' })).toBeInTheDocument();
   });
 
-  it('stores wrong-unit and missing-unit targeted feedback match modes', () => {
+  it('stores mutually exclusive unit-targeted feedback modes for number with units', () => {
     const model = dispatch(
       defaultModel(),
       ShortAnswerActions.setQuestionType('number_with_units', '1'),
@@ -305,35 +305,41 @@ describe('short answer math expression authoring', () => {
       </AuthoringElementProvider>,
     );
 
+    expect(screen.getByRole('option', { name: 'Wrong unit' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Missing unit' })).toBeInTheDocument();
+
     fireEvent.change(screen.getByLabelText('Unit feedback match type'), {
       target: { value: 'missing_unit' },
     });
 
-    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
-      response.id,
-      expect.objectContaining({
-        type: 'math_expression',
-        math: expect.objectContaining({
-          mode: 'unit_aware',
-          matchMissingUnit: true,
-        }),
-      }),
-    );
+    let savedMatchConfig =
+      onEditResponseMatchConfig.mock.calls[onEditResponseMatchConfig.mock.calls.length - 1][1];
+    expect(savedMatchConfig.math).toMatchObject({
+      mode: 'unit_aware',
+      matchMissingUnit: true,
+    });
+    expect(savedMatchConfig.math).not.toHaveProperty('matchWrongUnits');
 
     fireEvent.change(screen.getByLabelText('Unit feedback match type'), {
       target: { value: 'wrong_units' },
     });
 
-    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
-      response.id,
-      expect.objectContaining({
-        type: 'math_expression',
-        math: expect.objectContaining({
-          mode: 'unit_aware',
-          matchWrongUnits: true,
-        }),
-      }),
-    );
+    savedMatchConfig =
+      onEditResponseMatchConfig.mock.calls[onEditResponseMatchConfig.mock.calls.length - 1][1];
+    expect(savedMatchConfig.math).toMatchObject({
+      mode: 'unit_aware',
+      matchWrongUnits: true,
+    });
+    expect(savedMatchConfig.math).not.toHaveProperty('matchMissingUnit');
+
+    fireEvent.change(screen.getByLabelText('Unit feedback match type'), {
+      target: { value: 'none' },
+    });
+
+    savedMatchConfig =
+      onEditResponseMatchConfig.mock.calls[onEditResponseMatchConfig.mock.calls.length - 1][1];
+    expect(savedMatchConfig.math).not.toHaveProperty('matchWrongUnits');
+    expect(savedMatchConfig.math).not.toHaveProperty('matchMissingUnit');
   });
 
   it('uses shared math expression help for fraction answer editors', () => {

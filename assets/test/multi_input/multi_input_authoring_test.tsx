@@ -319,7 +319,7 @@ describe('multi input question - default (with text input)', () => {
     expect(answerEditors).toHaveLength(2);
   });
 
-  it('uses quantity editors in answer key and targeted feedback for number with units', () => {
+  it('authors unit-targeted feedback end to end for number with units', () => {
     const freshModel = defaultModel();
     const originalInput = freshModel.inputs[0] as FillInTheBlank;
     let mathModel = dispatch(
@@ -347,5 +347,35 @@ describe('multi input question - default (with text input)', () => {
     fireEvent.change(answerEditors[0], { target: { value: '1.2 m/s^2' } });
 
     expect(answerEditors[0]).toHaveValue('1.2 m/s^2');
+
+    const unitMatchType = screen.getByLabelText('Unit feedback match type');
+    expect(screen.getByRole('option', { name: 'Wrong unit' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Missing unit' })).toBeInTheDocument();
+
+    fireEvent.change(unitMatchType, { target: { value: 'missing_unit' } });
+
+    let targetedMatchConfig = authoringModel.authoring.parts[0].responses[1].matchConfig;
+    expect(
+      targetedMatchConfig?.type === 'math_expression' && targetedMatchConfig.math,
+    ).toMatchObject({
+      mode: 'unit_aware',
+      matchMissingUnit: true,
+    });
+    expect(
+      targetedMatchConfig?.type === 'math_expression' && targetedMatchConfig.math,
+    ).not.toHaveProperty('matchWrongUnits');
+
+    fireEvent.change(unitMatchType, { target: { value: 'wrong_units' } });
+
+    targetedMatchConfig = authoringModel.authoring.parts[0].responses[1].matchConfig;
+    expect(
+      targetedMatchConfig?.type === 'math_expression' && targetedMatchConfig.math,
+    ).toMatchObject({
+      mode: 'unit_aware',
+      matchWrongUnits: true,
+    });
+    expect(
+      targetedMatchConfig?.type === 'math_expression' && targetedMatchConfig.math,
+    ).not.toHaveProperty('matchMissingUnit');
   });
 });
