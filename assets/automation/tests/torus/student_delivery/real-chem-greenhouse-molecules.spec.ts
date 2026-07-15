@@ -33,14 +33,12 @@ import {
  *
  * Requirements to run locally:
  *   - Torus dev server running (mix phx.server) against your local DB
- *   - An API key with automation_setup_enabled. One-time setup:
- *       psql -h localhost -U postgres -d oli_dev -c "INSERT INTO api_keys
- *         (hash, hint, status, payments_enabled, products_enabled,
- *          registration_enabled, automation_setup_enabled, inserted_at, updated_at)
- *        VALUES (upper(md5('my-local-automation-key')), 'local playwright automation',
- *          'enabled', false, false, false, true, now(), now());"
- *     (the key name above is the default the test uses; export
- *     PLAYWRIGHT_AUTOMATION_API_KEY only if yours differs)
+ *   - An API key with automation_setup_enabled, created once as admin at
+ *     /admin/api_keys: enter a hint, click "create" (this generates a random
+ *     key value), then toggle automation_setup_enabled on for it. Export the
+ *     generated value as PLAYWRIGHT_AUTOMATION_API_KEY — never reuse a value
+ *     that appears in this repo, since /api/v1/automation_setup is reachable
+ *     in every environment and gated solely by that key.
  *   - the private assets seeded ONCE in the playwright assets bucket
  *     (MinIO in dev, console at :9001; bucket torus-playwright-assets-dev):
  *     mer-5672/real-chem-course.zip and mer-5672/answers.json. The test
@@ -52,13 +50,18 @@ import {
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 const archiveKey = 'mer-5672/real-chem-course.zip';
 const answersKey = 'mer-5672/answers.json';
-const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY || 'my-local-automation-key';
+const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 
 let seededCourse: AutomationSetupResponse | null = null;
 let answers: LessonAnswers | null = null;
 let archiveTempDir: string | null = null;
 
 setRuntimeConfig({ baseUrl, loginData: buildLoginData('placeholder@example.com', 'placeholder') });
+
+test.skip(
+  !automationApiKey,
+  'Set PLAYWRIGHT_AUTOMATION_API_KEY to run this test (see setup instructions above)',
+);
 
 // fetches a small private asset (e.g. the answers JSON) from the playwright
 // assets bucket via GET /test/assets/<key>, in memory
@@ -105,7 +108,7 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
     const archivePath = await fetchArchiveToTempFile(archiveKey);
     seededCourse = await importArchiveAndCreateSection(request, archivePath, {
       baseUrl,
-      apiKey: automationApiKey,
+      apiKey: automationApiKey!,
     });
     setRuntimeConfig({
       loginData: buildLoginData(seededCourse.learner.email, seededCourse.learner.password),
@@ -115,7 +118,10 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
   test.afterAll(async ({ request }) => {
     try {
       if (seededCourse) {
-        await teardownAutomationCourse(request, seededCourse, { baseUrl, apiKey: automationApiKey });
+        await teardownAutomationCourse(request, seededCourse, {
+          baseUrl,
+          apiKey: automationApiKey!,
+        });
       }
     } finally {
       if (archiveTempDir) {
