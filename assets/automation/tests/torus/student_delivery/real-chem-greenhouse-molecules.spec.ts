@@ -39,11 +39,13 @@ import {
  *     generated value as PLAYWRIGHT_AUTOMATION_API_KEY — never reuse a value
  *     that appears in this repo, since /api/v1/automation_setup is reachable
  *     in every environment and gated solely by that key.
- *   - the private assets seeded ONCE in the playwright assets bucket
- *     (MinIO in dev, console at :9001; bucket torus-playwright-assets-dev):
- *     mer-5672/real-chem-course.zip and mer-5672/answers.json. The test
- *     fetches them through GET /test/assets/* on the server — no asset env
- *     vars needed. The server must be started with PLAYWRIGHT_SCENARIO_TOKEN.
+ *   - the private assets seeded ONCE in your own playwright assets bucket
+ *     (MinIO in dev, console at :9001; name it whatever you like, e.g.
+ *     torus-playwright-assets-dev — there's no default, export that name as
+ *     PLAYWRIGHT_ASSETS_BUCKET server-side): mer-5672/real-chem-course.zip
+ *     and mer-5672/answers.json. The test fetches them through
+ *     GET /test/assets/* on the server. The server must also be started with
+ *     PLAYWRIGHT_SCENARIO_TOKEN.
  *
  * Then: npx playwright test real-chem-greenhouse-molecules
  */

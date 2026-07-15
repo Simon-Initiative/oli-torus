@@ -66,10 +66,22 @@ defmodule Oli.Scenarios.PlaywrightAssetStorage do
     end
   end
 
-  @doc "Returns the configured Playwright assets bucket name."
+  @doc """
+  Returns the configured Playwright assets bucket name.
+
+  No hardcoded default: S3 bucket names are globally unique, so silently
+  falling back to a fixed name risks writing/reading against a bucket
+  someone else has already claimed if this ever points at real S3.
+  """
   @spec bucket_name() :: binary()
   def bucket_name do
-    Application.get_env(:oli, :playwright_assets_bucket, "torus-playwright-assets-dev")
+    case Application.get_env(:oli, :playwright_assets_bucket) do
+      bucket when is_binary(bucket) and bucket != "" ->
+        bucket
+
+      _ ->
+        raise "PLAYWRIGHT_ASSETS_BUCKET must be set to use the Playwright assets bucket"
+    end
   end
 
   # runtime.exs points the global ex_aws config at real AWS even in dev, so
