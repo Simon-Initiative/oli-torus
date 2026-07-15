@@ -34,7 +34,9 @@ export class StudentCoursePO {
   }
 
   courseContentReady(pageName: string): Locator {
-    return this.galleryTitle(pageName).or(this.outlineTitle(pageName));
+    return this.galleryTitle(pageName)
+      .or(this.outlineTitle(pageName))
+      .or(this.expandToggles().first());
   }
 
   async openPage(pageName: string) {
@@ -45,6 +47,14 @@ export class StudentCoursePO {
       .first();
 
     const outlineTitle = this.outlineTitle(pageName);
+    const groupedOutlineLink = this.page
+      .locator('a')
+      .filter({
+        has: this.page.locator('div[role="group_item"]').filter({
+          hasText: pageName,
+        }),
+      })
+      .first();
 
     await expect(this.courseContentReady(pageName).first()).toBeVisible();
 
@@ -56,13 +66,26 @@ export class StudentCoursePO {
         galleryCard.click({ force: true }),
       ]);
     } else {
-      await Verifier.expectIsVisible(outlineTitle);
-      await Promise.all([
-        this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
-          timeout: 15000,
-        }),
-        outlineTitle.click({ force: true }),
-      ]);
+      await this.expandCollapsedPageGroups();
+
+      // The course outline can render pages either as direct buttons or as links
+      // nested inside an expanded grouped schedule item.
+      if (await outlineTitle.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await Promise.all([
+          this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+            timeout: 15000,
+          }),
+          outlineTitle.click({ force: true }),
+        ]);
+      } else {
+        await Verifier.expectIsVisible(groupedOutlineLink);
+        await Promise.all([
+          this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+            timeout: 15000,
+          }),
+          groupedOutlineLink.click({ force: true }),
+        ]);
+      }
     }
 
     await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
@@ -77,9 +100,28 @@ export class StudentCoursePO {
   }
 
   private outlineTitle(pageName: string) {
-    return this.page.getByRole('button', {
-      name: new RegExp(`\\b${escapeRegExp(pageName)}\\b`),
-    });
+    return this.page
+      .locator('button')
+      .filter({ has: this.page.getByText(pageName, { exact: true }) })
+      .first();
+  }
+
+  private expandToggles() {
+    return this.page.locator('button[phx-click="expand_item"]');
+  }
+
+  private async expandCollapsedPageGroups() {
+    const groupToggles = this.expandToggles();
+    const count = await groupToggles.count();
+
+    for (let index = 0; index < count; index += 1) {
+      const toggle = groupToggles.nth(index);
+
+      if (!(await toggle.isVisible({ timeout: 250 }).catch(() => false))) continue;
+
+      await toggle.scrollIntoViewIfNeeded().catch(() => undefined);
+      await toggle.click({ force: true }).catch(() => undefined);
+    }
   }
 
   async goToCourseIfPrompted() {
@@ -207,10 +249,6 @@ export class StudentCoursePO {
       form.appendChild(response);
     });
   }
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function isStudentLessonPath(pathname: string) {

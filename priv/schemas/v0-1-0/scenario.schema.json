@@ -50,6 +50,20 @@
         { "type": "integer" }
       ]
     },
+    "moneyLike": {
+      "type": "object",
+      "required": ["amount"],
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            { "type": "number" },
+            { "type": "string" }
+          ]
+        },
+        "currency": { "type": "string" }
+      }
+    },
     "objective": {
       "oneOf": [
         { "type": "string" },
@@ -1088,6 +1102,7 @@
                 "name": { "type": "string" },
                 "title": { "type": "string" },
                 "from": { "type": "string" },
+                "institution": { "type": "string" },
                 "type": {
                   "type": "string",
                   "enum": ["enrollable", "open_and_free"]
@@ -1096,6 +1111,19 @@
                 "slug": { "type": "string" },
                 "open_and_free": { "$ref": "#/definitions/booleanLike" },
                 "requires_enrollment": { "$ref": "#/definitions/booleanLike" },
+                "requires_payment": { "$ref": "#/definitions/booleanLike" },
+                "payment_options": {
+                  "type": "string",
+                  "enum": ["direct", "deferred", "direct_and_deferred"]
+                },
+                "pay_by_institution": { "$ref": "#/definitions/booleanLike" },
+                "amount": { "$ref": "#/definitions/moneyLike" },
+                "has_grace_period": { "$ref": "#/definitions/booleanLike" },
+                "grace_period_days": { "type": "integer", "minimum": 1 },
+                "grace_period_strategy": {
+                  "type": "string",
+                  "enum": ["relative_to_section", "relative_to_student"]
+                },
                 "start_date": { "type": "string", "format": "date-time" },
                 "end_date": { "type": "string", "format": "date-time" }
               }
@@ -1114,7 +1142,43 @@
               "properties": {
                 "name": { "type": "string" },
                 "title": { "type": "string" },
-                "from": { "type": "string" }
+                "from": { "type": "string" },
+                "requires_payment": { "$ref": "#/definitions/booleanLike" },
+                "payment_options": {
+                  "type": "string",
+                  "enum": ["direct", "deferred", "direct_and_deferred"]
+                },
+                "pay_by_institution": { "$ref": "#/definitions/booleanLike" },
+                "amount": { "$ref": "#/definitions/moneyLike" },
+                "has_grace_period": { "$ref": "#/definitions/booleanLike" },
+                "grace_period_days": { "type": "integer", "minimum": 1 },
+                "grace_period_strategy": {
+                  "type": "string",
+                  "enum": ["relative_to_section", "relative_to_student"]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["institution_discount"],
+          "additionalProperties": false,
+          "properties": {
+            "institution_discount": {
+              "type": "object",
+              "required": ["institution", "product"],
+              "additionalProperties": false,
+              "properties": {
+                "institution": { "type": "string" },
+                "product": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["percentage", "fixed_amount"]
+                },
+                "percentage": { "type": "number" },
+                "amount": { "$ref": "#/definitions/moneyLike" },
+                "bypass_paywall": { "$ref": "#/definitions/booleanLike" }
               }
             }
           }
@@ -1408,6 +1472,24 @@
                   "items": { "type": "string" }
                 },
                 "content": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["edit_adaptive_page"],
+          "additionalProperties": false,
+          "properties": {
+            "edit_adaptive_page": {
+              "type": "object",
+              "required": ["project", "page", "activity_virtual_id"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "page": { "type": "string" },
+                "activity_virtual_id": { "type": "string" },
+                "graded": { "type": "boolean" }
               }
             }
           }

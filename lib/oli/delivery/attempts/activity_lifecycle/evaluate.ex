@@ -500,19 +500,30 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           )
 
         if scoringContext.isManuallyGraded do
-          with :ok <-
-                 maybe_persist_mixed_adaptive_automatic_parts(
-                   section_slug,
-                   activity_attempt_guid,
-                   client_evaluations,
-                   datashop_session_id,
-                   part_attempts
-                 ),
-               :ok <- submit_pending_manual_adaptive_attempts(activity_attempt_guid) do
-            {:ok, decodedResults}
+          # Only finalize this submission when the rules engine fires a correct result. On a
+          # correct result we persist the automatic parts (without rolling up the activity) and
+          # submit the pending manual parts for grading. On an incorrect result we leave ALL part
+          # attempts active (both automatic and manual) so the student can retry with a clean
+          # slate. Persisting automatic parts early would mark them :evaluated, and
+          # `filter_already_evaluated` would then prevent them from ever being re-scored on a later
+          # correct retry, leaving stale automatic scores in the finalized attempt.
+          if adaptive_result_correct?(decodedResults, activity_score, activity_out_of) do
+            with :ok <-
+                   maybe_persist_mixed_adaptive_automatic_parts(
+                     section_slug,
+                     activity_attempt_guid,
+                     client_evaluations,
+                     datashop_session_id,
+                     part_attempts
+                   ),
+                 :ok <- submit_pending_manual_adaptive_attempts(activity_attempt_guid) do
+              {:ok, decodedResults}
+            else
+              {:error, err} ->
+                {:error, err}
+            end
           else
-            {:error, err} ->
-              {:error, err}
+            {:ok, decodedResults}
           end
         else
           Logger.debug("Adaptive activity score: #{activity_score}")
@@ -631,6 +642,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           {:ok, _results} -> :ok
           {:error, err} -> {:error, err}
         end
+    end
+  end
+
+  # Determine whether a manually graded adaptive screen submission should be captured for
+  # grading. Prefer the rules engine's own `correct` flag, falling back to comparing the
+  # computed screen score against the screen out_of.
+  defp adaptive_result_correct?(decoded_results, activity_score, activity_out_of) do
+    case Map.get(decoded_results, "correct") do
+      correct when is_boolean(correct) ->
+        correct
+
+      _ ->
+        is_number(activity_out_of) and activity_out_of > 0 and is_number(activity_score) and
+          activity_score >= activity_out_of
     end
   end
 

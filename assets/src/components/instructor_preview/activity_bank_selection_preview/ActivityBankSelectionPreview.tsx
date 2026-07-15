@@ -1,6 +1,10 @@
 import React from 'react';
 import { PreviewHeader } from 'components/activities/common/preview/PreviewHeader';
 import { PreviewAction, PreviewStatusPill, PreviewVisualState } from 'components/activities/types';
+import {
+  getPreviewCustomizationCopy,
+  usePreviewCustomizationState,
+} from 'components/instructor_preview/preview_customization_store';
 import { ArrowRight } from 'components/misc/icons/Icons';
 
 interface CustomizationTarget {
@@ -125,15 +129,6 @@ const pluralize = (count: number, singular: string, plural: string) =>
 
 const labelTextClasses = 'font-open-sans text-[14px] font-bold leading-4 text-Text-text-high';
 
-const matchesCustomizationTarget = (
-  expectedTarget: CustomizationTarget,
-  replyTarget?: Partial<CustomizationTarget>,
-) =>
-  !!replyTarget &&
-  replyTarget.kind === expectedTarget.kind &&
-  replyTarget.pageResourceId === expectedTarget.pageResourceId &&
-  replyTarget.selectionId === expectedTarget.selectionId;
-
 const SampleActivityPreview: React.FC<{
   sample?: SampleActivity | null;
   visualState: PreviewVisualState;
@@ -201,80 +196,53 @@ const SampleActivityPreview: React.FC<{
 };
 
 export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
-  const [actions, setActions] = React.useState(payload.actions ?? []);
-  const [visualState, setVisualState] = React.useState(payload.visualState ?? 'default');
-  const [statusPill, setStatusPill] = React.useState(payload.statusPill ?? undefined);
-  const [availableCount, setAvailableCount] = React.useState(payload.availableCount);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { state, begin } = usePreviewCustomizationState(payload.customizationTarget, {
+    disposition:
+      payload.actions?.[0]?.kind === 'restore' || payload.visualState === 'removed'
+        ? 'removed'
+        : 'included',
+    canToggle: !payload.actions?.[0]?.disabled,
+    availableCount: payload.availableCount,
+  });
+  const action = state.disposition === 'removed' ? 'restore' : 'remove';
+  const visualState = state.disposition === 'removed' ? 'removed' : 'default';
+  const availableCount = state.availableCount ?? payload.availableCount;
+  const isSubmitting = state.pendingAction !== null;
+  const actionCopy =
+    payload.canCustomize && (payload.actions?.length ?? 0) > 0
+      ? getPreviewCustomizationCopy()
+      : null;
+  const removedCopy =
+    state.disposition === 'removed' ? actionCopy ?? getPreviewCustomizationCopy() : null;
 
-  React.useEffect(() => {
-    setActions(payload.actions ?? []);
-    setVisualState(payload.visualState ?? 'default');
-    setStatusPill(payload.statusPill ?? undefined);
-    setAvailableCount(payload.availableCount);
-  }, [payload]);
+  const headerActions = actionCopy ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        disabled={!state.canToggle || isSubmitting}
+        aria-busy={isSubmitting}
+        className={actionButtonClasses(action)}
+        onClick={() => {
+          if (!state.canToggle || isSubmitting) {
+            return;
+          }
 
-  React.useEffect(() => {
-    const handleCustomizationReply = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-
-      if (!matchesCustomizationTarget(payload.customizationTarget, detail?.target)) {
-        return;
-      }
-
-      setIsSubmitting(false);
-
-      if (detail.ok && Array.isArray(detail.actions)) {
-        setActions(detail.actions);
-      }
-
-      if (detail.ok && Object.prototype.hasOwnProperty.call(detail, 'visualState')) {
-        setVisualState(detail.visualState ?? 'default');
-      }
-
-      if (detail.ok && Object.prototype.hasOwnProperty.call(detail, 'statusPill')) {
-        setStatusPill(detail.statusPill ?? undefined);
-      }
-
-      if (detail.ok && typeof detail.availableCount === 'number') {
-        setAvailableCount(detail.availableCount);
-      }
-    };
-
-    window.addEventListener('oli:preview-customization:reply', handleCustomizationReply);
-
-    return () => {
-      window.removeEventListener('oli:preview-customization:reply', handleCustomizationReply);
-    };
-  }, [payload.customizationTarget]);
-
-  const headerActions =
-    payload.canCustomize && actions.length > 0 ? (
-      <div className="flex flex-wrap items-center gap-2">
-        {actions.map((action) => (
-          <button
-            key={action.kind}
-            type="button"
-            disabled={isSubmitting}
-            className={actionButtonClasses(action.kind)}
-            onClick={() => {
-              setIsSubmitting(true);
-              window.dispatchEvent(
-                new CustomEvent('oli:preview-customization', {
-                  detail: {
-                    action: action.kind,
-                    target: payload.customizationTarget,
-                  },
-                }),
-              );
-            }}
-          >
-            {action.kind === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
-            {isSubmitting ? 'Updating...' : action.label}
-          </button>
-        ))}
-      </div>
-    ) : null;
+          begin(action);
+          window.dispatchEvent(
+            new CustomEvent('oli:preview-customization', {
+              detail: {
+                action,
+                target: payload.customizationTarget,
+              },
+            }),
+          );
+        }}
+      >
+        {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
+        {isSubmitting ? actionCopy.pending : actionCopy[action]}
+      </button>
+    </div>
+  ) : null;
 
   const manageQuestionsAction = payload.manageQuestionsUrl ? (
     <a
@@ -287,12 +255,20 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
   ) : null;
 
   const cardClasses =
-    visualState === 'removed'
-      ? 'relative bg-Surface-surface-secondary-muted before:absolute before:inset-y-0 before:left-0 before:w-[6px] before:bg-Border-border-danger'
-      : 'bg-Surface-surface-primary';
+    visualState === 'removed' ? 'bg-Surface-surface-secondary-muted' : 'bg-Surface-surface-primary';
 
   return (
-    <article className={`p-[25px] font-open-sans ${cardClasses}`}>
+    <article
+      className={`relative p-[25px] font-open-sans ${cardClasses}`}
+      data-preview-visual-state={visualState}
+    >
+      {visualState === 'removed' ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-[6px] bg-Border-border-danger"
+          data-preview-removed-rail
+        />
+      ) : null}
       <div className="flex flex-col gap-[18px]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-col">
@@ -304,9 +280,9 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
               >
                 {payload.title}
               </div>
-              {statusPill ? (
+              {removedCopy ? (
                 <span className="inline-flex items-center rounded-full border border-Border-border-danger bg-Fill-fill-danger px-3 py-1 pr-4 font-open-sans text-[16px] font-bold leading-4 text-Text-text-danger">
-                  {statusPill.label}
+                  {removedCopy.removed}
                 </span>
               ) : null}
             </div>

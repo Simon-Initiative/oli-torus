@@ -15,11 +15,19 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :name,
       :title,
       :from,
+      :institution,
       :type,
       :registration_open,
       :slug,
       :open_and_free,
       :requires_enrollment,
+      :requires_payment,
+      :payment_options,
+      :pay_by_institution,
+      :amount,
+      :has_grace_period,
+      :grace_period_days,
+      :grace_period_strategy,
       :start_date,
       :end_date
     ]
@@ -30,7 +38,25 @@ defmodule Oli.Scenarios.DirectiveTypes do
     Creates a product (blueprint) from a project.
     Products are templates that can be used to create sections.
     """
-    defstruct [:name, :title, :from]
+    defstruct [
+      :name,
+      :title,
+      :from,
+      :requires_payment,
+      :payment_options,
+      :pay_by_institution,
+      :amount,
+      :has_grace_period,
+      :grace_period_days,
+      :grace_period_strategy
+    ]
+  end
+
+  defmodule InstitutionDiscountDirective do
+    @moduledoc """
+    Creates or updates an institution discount for a product.
+    """
+    defstruct [:institution, :product, :type, :percentage, :amount, :bypass_paywall]
   end
 
   defmodule RemixDirective do
@@ -175,6 +201,18 @@ defmodule Oli.Scenarios.DirectiveTypes do
     content: TorusDoc page YAML content
     """
     defstruct [:project, :page, :objectives, :content]
+  end
+
+  defmodule EditAdaptivePageDirective do
+    @moduledoc """
+    Converts an existing page into an adaptive (advancedDelivery) page whose
+    deck references a previously created adaptive activity by virtual_id.
+    project: target project name
+    page: title of the page to edit
+    activity_virtual_id: virtual_id of the oli_adaptive activity to reference
+    graded: optional boolean, defaults to false
+    """
+    defstruct [:project, :page, :activity_virtual_id, graded: false]
   end
 
   defmodule ViewPracticePageDirective do

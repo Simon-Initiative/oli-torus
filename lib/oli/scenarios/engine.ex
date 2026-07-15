@@ -19,12 +19,14 @@ defmodule Oli.Scenarios.Engine do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
+    InstitutionDiscountDirective,
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
     ActivityBankDirective,
     InstructorCustomizationDirective,
     EditPageDirective,
+    EditAdaptivePageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
     StartAttemptDirective,
@@ -62,12 +64,14 @@ defmodule Oli.Scenarios.Engine do
     UserHandler,
     EnrollmentHandler,
     InstitutionHandler,
+    InstitutionDiscountHandler,
     UpdateHandler,
     CustomizeHandler,
     ActivityHandler,
     ActivityBankHandler,
     InstructorCustomizationHandler,
     EditPageHandler,
+    EditAdaptivePageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
     StartAttemptHandler,
@@ -279,6 +283,10 @@ defmodule Oli.Scenarios.Engine do
     InstitutionHandler.handle(directive, state)
   end
 
+  def execute_directive(%InstitutionDiscountDirective{} = directive, state) do
+    InstitutionDiscountHandler.handle(directive, state)
+  end
+
   def execute_directive(%UpdateDirective{} = directive, state) do
     UpdateHandler.handle(directive, state)
   end
@@ -301,6 +309,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%EditPageDirective{} = directive, state) do
     EditPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%EditAdaptivePageDirective{} = directive, state) do
+    EditAdaptivePageHandler.handle(directive, state)
   end
 
   def execute_directive(%ViewPracticePageDirective{} = directive, state) do

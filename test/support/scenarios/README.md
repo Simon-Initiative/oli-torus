@@ -101,6 +101,7 @@ All directives are documented in detail in the linked documentation files.
 | | `time` | Override scenario-local current time for deterministic workflows | [gating.md](docs/gating.md#time) |
 | **Products** | | | |
 | | `product` | Create reusable course template | [products.md](docs/products.md#product) |
+| | `institution_discount` | Create institution-specific product discount fixtures | [products.md](docs/products.md#institution_discount) |
 | **Content** | | | |
 | | `create_activity` | Create standalone activity | [content_authoring.md](docs/content_authoring.md#create_activity) |
 | | `activity_bank` | Execute Activity Bank create/query/edit/delete workflows | [content_authoring.md](docs/content_authoring.md#activity_bank) |
