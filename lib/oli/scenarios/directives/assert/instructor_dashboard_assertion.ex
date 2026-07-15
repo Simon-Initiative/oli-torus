@@ -16,14 +16,6 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   @control_keys [:section, :scope, :tolerance, :parameters]
   @default_tolerance 0.001
   @summary_recommendation_oracle :oracle_instructor_recommendation
-  @student_support_parameter_keys %{
-    "inactivity_days" => :inactivity_days,
-    "struggling_progress_low_lt" => :struggling_progress_low_lt,
-    "struggling_progress_high_gt" => :struggling_progress_high_gt,
-    "struggling_proficiency_lte" => :struggling_proficiency_lte,
-    "excelling_progress_gte" => :excelling_progress_gte,
-    "excelling_proficiency_gte" => :excelling_proficiency_gte
-  }
 
   @spec assert(atom(), %AssertDirective{}, map()) ::
           {:ok, map(), %VerificationResult{}} | {:error, String.t()}
@@ -168,7 +160,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   defp student_support_parameters(parameters) when is_map(parameters) do
     Map.new(parameters, fn
       {key, value} when is_binary(key) ->
-        {Map.get(@student_support_parameter_keys, key, key), value}
+        {student_support_parameter_key(key), value}
 
       {key, value} ->
         {key, value}
@@ -176,6 +168,13 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   end
 
   defp student_support_parameters(_parameters), do: %{}
+
+  defp student_support_parameter_key(key) do
+    StudentSupportParameters.default_settings()
+    |> Map.keys()
+    |> Map.new(&{Atom.to_string(&1), &1})
+    |> Map.get(key, key)
+  end
 
   defp dashboard_user_id(%{current_author: %{id: id}}) when is_integer(id) and id > 0, do: id
 

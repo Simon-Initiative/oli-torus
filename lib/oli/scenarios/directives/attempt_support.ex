@@ -46,6 +46,8 @@ defmodule Oli.Scenarios.Directives.AttemptSupport do
   def align_enrollment_time(_user_id, _section_id, nil), do: :ok
 
   def align_enrollment_time(user_id, section_id, scenario_time) do
+    # Student Support uses Enrollment.updated_at as last_interaction_at when no
+    # newer ResourceAccess exists, so scenario time controls activity status.
     from(e in Sections.Enrollment,
       where: e.user_id == ^user_id and e.section_id == ^section_id
     )

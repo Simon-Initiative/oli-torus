@@ -182,6 +182,15 @@ Supported bucket ids include:
 - `excelling`
 - `not_enough_information`
 
+Supported `parameters` keys:
+
+- `inactivity_days`
+- `struggling_progress_low_lt`
+- `struggling_progress_high_gt`
+- `struggling_proficiency_lte`
+- `excelling_progress_gte`
+- `excelling_proficiency_gte`
+
 ### Example
 
 ```yaml
