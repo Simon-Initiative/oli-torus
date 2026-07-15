@@ -5632,6 +5632,10 @@ select {
   box-shadow: 0 0 0 4px #BAB8BF;
 }
 
+.bg-Border-border-danger {
+  background-color: #FF4040;
+}
+
 .dark .bg-Border-border-danger {
   background-color: #FF4040;
 }
@@ -18034,6 +18038,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[68px\] {
   width: 68px;
+}
+
+.w-\[6px\] {
+  width: 6px;
 }
 
 .w-\[70px\] {
