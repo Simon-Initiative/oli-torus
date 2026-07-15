@@ -29,6 +29,8 @@ update this file accordingly.
 | CANVAS_LTI_TOOL_NAME          | No       | Canvas external tool name used by Canvas LTI Playwright automation              |
 | CANVAS_TOOL_LAUNCH_URL        | No       | Torus LTI launch URL used by Canvas LTI Playwright automation                   |
 | PLAYWRIGHT_SCENARIO_TOKEN     | No       | Scenario token for Playwright automation setup endpoints                        |
+| PLAYWRIGHT_ASSETS_BUCKET      | No       | Bucket for private Playwright test assets (course archives, answer keys)        |
+| PLAYWRIGHT_AUTOMATION_API_KEY | No       | API key with automation_setup_enabled for the automation_setup endpoint         |
 | TORUS_LTI_PROJECT_TITLE       | No       | Optional title override for the temporary Torus LTI test project                |
 | GOOGLE_DOCS_IMPORT_FILE_ID    | No       | Google Docs file ID used by Google Docs import Playwright automation            |
 | DUMMY_LTI_TOOL_ADMIN_PASSWORD | No       | Admin password used to register Torus with the dummy LTI tool                   |
@@ -45,6 +47,13 @@ update this file accordingly.
 
 - Google Docs import and dummy LTI external tool Playwright settings are local/test-runner
   configuration only and are not required for the Torus application runtime.
+
+- `PLAYWRIGHT_ASSETS_BUCKET` and `PLAYWRIGHT_AUTOMATION_API_KEY` are local/test-runner
+  configuration only and are not required for the Torus application runtime. Neither has a
+  default value — never reuse a value that appears in this repo for either. Without
+  `PLAYWRIGHT_AUTOMATION_API_KEY` the MER-5672 Playwright test is skipped; without
+  `PLAYWRIGHT_ASSETS_BUCKET` it fails, since the private test assets endpoint has no bucket
+  to read from.
 
 ### Infrastructure Changes
 
