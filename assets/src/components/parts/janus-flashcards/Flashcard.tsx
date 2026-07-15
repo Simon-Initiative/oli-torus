@@ -101,12 +101,12 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
   }, [id, onInit, onReady]);
 
   useEffect(() => {
-    if (!ready) {
+    if (!ready || typeof onResize !== 'function') {
       return;
     }
 
-    const layoutModel = withFlashcardsLayoutDimensions(model);
-    const containerWidth = resolveContainerWidth(model.width);
+    const containerWidth = resolveContainerWidth(model.width, model.responsiveLayoutWidth);
+    const layoutModel = withFlashcardsLayoutDimensions(model, containerWidth);
     const cardCount = model.cards?.length ?? 0;
     const cardHeight = resolveCardHeightForLayout(model, containerWidth, cardCount);
     const hostHeight =

@@ -97,6 +97,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   // The size of the current component *while* it's being resized before new size is, ignored if not actively resizing
   const [dragSize, setDragSize] = useState({ width: 0, height: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   const [parts, setParts] = useState(props.parts);
 
@@ -216,6 +217,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       const { width, height, x, y } = resizeData;
       modifyPartCustomProp(partId, { width, height, x, y });
       setIsDragging(false);
+      setIsResizing(false);
     },
     [modifyPartCustomProp],
   );
@@ -225,6 +227,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       const { x, y } = dragData;
       modifyPartCustomProp(partId, { x, y });
       setIsDragging(false);
+      setIsResizing(false);
     },
     [modifyPartCustomProp],
   );
@@ -291,6 +294,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       },
       configureMode: part.id === configurePartId,
       editMode: true,
+      layoutchanging: isResizing && part.id === selectedPartId,
       portal: portalId,
       onInit: handlePartInit,
       onReady: defaultHandler,
@@ -351,6 +355,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             height: part.custom.height || 0,
           });
           setIsDragging(true);
+          setIsResizing(true);
         }}
         onDragStart={() => {
           props.onSelect(part.id);
@@ -359,6 +364,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             height: part.custom.height || 0,
           });
           setIsDragging(true);
+          setIsResizing(false);
         }}
         onDragStop={handleDragStop}
         onResize={(e, direction, ref) => {

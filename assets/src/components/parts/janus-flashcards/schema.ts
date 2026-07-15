@@ -13,6 +13,7 @@ export interface FlashcardsModel extends JanusAbsolutePositioned, JanusCustomCss
   randomize: boolean;
   flipDuration: number;
   cardHeight?: number;
+  responsiveLayoutWidth?: number | string;
   cards: FlashcardItem[];
   minCardsPerRow: number;
   maxCardsPerRow: number;
@@ -46,12 +47,19 @@ const effectiveCardFaceHeight = (cardHeight: number, containerWidth: number): nu
   return cardHeight;
 };
 
-export const resolveContainerWidth = (width?: number | string): number => {
+export const resolveContainerWidth = (
+  width?: number | string,
+  responsiveLayoutWidth?: number | string,
+): number => {
   if (typeof width === 'number' && width > 0) {
     return width;
   }
 
   if (width === '100%') {
+    if (typeof responsiveLayoutWidth === 'number' && responsiveLayoutWidth > 0) {
+      return responsiveLayoutWidth;
+    }
+
     return 960;
   }
 
@@ -125,10 +133,16 @@ export const computeFlashcardsLayoutHeight = (
   return rows * cardHeight + Math.max(0, rows - 1) * gap;
 };
 
-export const withFlashcardsLayoutDimensions = (model: FlashcardsModel): FlashcardsModel => {
+export const withFlashcardsLayoutDimensions = (
+  model: FlashcardsModel,
+  measuredContainerWidth?: number,
+): FlashcardsModel => {
   const cards = model.cards ?? [];
   const cardHeight = resolveCardHeight(model);
-  const containerWidth = resolveContainerWidth(model.width);
+  const containerWidth =
+    typeof measuredContainerWidth === 'number' && measuredContainerWidth > 0
+      ? measuredContainerWidth
+      : resolveContainerWidth(model.width, model.responsiveLayoutWidth);
 
   return {
     ...model,

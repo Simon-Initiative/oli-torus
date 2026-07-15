@@ -28,6 +28,7 @@ type FlashcardsViewProps = {
   cssBundle: 'authoring' | 'delivery';
   flipAllSignal?: number;
   onFlipStateChange?: (state: FlashcardFlipState) => void;
+  onLayoutWidthChange?: (width: number) => void;
 };
 
 const hasNodeTag = (nodes: MarkupTree[], tag: string): boolean =>
@@ -82,6 +83,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   cssBundle,
   flipAllSignal,
   onFlipStateChange,
+  onLayoutWidthChange,
 }) => {
   const { cards = [], flipDuration, customCss = '', customCssClass = '' } = model;
 
@@ -107,36 +109,46 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   const [gridGapPx, setGridGapPx] = useState(() => getFlashcardsGridGapPx());
   const durationMs = typeof flipDuration === 'number' && flipDuration >= 0 ? flipDuration : 600;
   const layoutContainerWidth =
-    containerWidth > 0 ? containerWidth : resolveContainerWidth(model.width);
+    containerWidth > 0
+      ? containerWidth
+      : resolveContainerWidth(model.width, model.responsiveLayoutWidth);
   const cardHeightPx = resolveCardHeightForLayout(model, layoutContainerWidth, cards.length);
   const cardHeight = `${cardHeightPx}px`;
 
-  const listRef = useCallback((element: HTMLDivElement | null) => {
-    resizeObserverRef.current?.disconnect();
-    resizeObserverRef.current = null;
+  const listRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
 
-    if (!element) {
-      return;
-    }
+      if (!element) {
+        return;
+      }
 
-    const updateLayoutMetrics = (width: number) => {
-      setContainerWidth(width);
-      setGridGapPx(getFlashcardsGridGapPx(element));
-    };
+      const updateLayoutMetrics = (width: number) => {
+        if (width <= 0) {
+          return;
+        }
 
-    updateLayoutMetrics(element.getBoundingClientRect().width);
+        setContainerWidth(width);
+        setGridGapPx(getFlashcardsGridGapPx(element));
+        onLayoutWidthChange?.(width);
+      };
 
-    if (typeof ResizeObserver === 'undefined') {
-      return;
-    }
+      updateLayoutMetrics(element.getBoundingClientRect().width);
 
-    const observer = new ResizeObserver(([entry]) => {
-      updateLayoutMetrics(entry.contentRect.width);
-    });
+      if (typeof ResizeObserver === 'undefined') {
+        return;
+      }
 
-    observer.observe(element);
-    resizeObserverRef.current = observer;
-  }, []);
+      const observer = new ResizeObserver(([entry]) => {
+        updateLayoutMetrics(entry.contentRect.width);
+      });
+
+      observer.observe(element);
+      resizeObserverRef.current = observer;
+    },
+    [onLayoutWidthChange],
+  );
 
   useEffect(
     () => () => {

@@ -23,6 +23,7 @@ import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import ConfigurationModal from './ConfigurationModal';
 import StagePan from './StagePan';
+import { buildPartLayoutUpdatePayload } from './partLayout';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
@@ -65,12 +66,12 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePositionChanged = async (activityId: string, partId: string, dragData: any) => {
-    const hasNumericLayoutField = ['x', 'y', 'width', 'height', 'z'].some(
-      (key) => typeof dragData?.[key] === 'number',
-    );
+    const updatePayload = buildPartLayoutUpdatePayload(activityId, partId, dragData);
+    const newPosition = updatePayload.changes.custom;
+    const hasNumericLayoutField = Object.keys(newPosition).length > 0;
 
     // if we haven't moved, no point
-    if (!hasNumericLayoutField && dragData.deltaX === 0 && dragData.deltaY === 0) {
+    if (!hasNumericLayoutField && dragData?.deltaX === 0 && dragData?.deltaY === 0) {
       return false;
     }
 
@@ -82,17 +83,7 @@ const EditingCanvas: React.FC = () => {
 
     /* console.log('[handlePositionChanged]', { activityId, partId, dragData }); */
 
-    const newPosition = {
-      ...(typeof dragData?.x === 'number' ? { x: dragData.x } : {}),
-      ...(typeof dragData?.y === 'number' ? { y: dragData.y } : {}),
-      ...(typeof dragData?.width === 'number' ? { width: dragData.width } : {}),
-      ...(typeof dragData?.height === 'number' ? { height: dragData.height } : {}),
-      ...(typeof dragData?.z === 'number' ? { z: dragData.z } : {}),
-    };
-
-    dispatch(
-      updatePart({ activityId, partId, changes: { custom: newPosition }, mergeChanges: true }),
-    );
+    dispatch(updatePart(updatePayload));
 
     return newPosition;
   };
