@@ -127,6 +127,7 @@ All directives are documented in detail in the linked documentation files.
 | | `assert.activity_customization` | Assert persisted instructor activity customization state | [instructor_customizations.md](docs/instructor_customizations.md#activity-customization-assertions) |
 | | `assert.page_objectives` | Assert delivery page learning objective titles | [content_authoring.md](docs/content_authoring.md#page-objective-assertions) |
 | | `assert.activity_objectives` | Assert objective titles attached to a scenario activity | [content_authoring.md](docs/content_authoring.md#activity-objective-assertions) |
+| | `assert.insights` | Assert authoring analytics for pages, activities, and objectives | [analytics.md](docs/analytics.md#insights-assertions) |
 | **Instructor Dashboard** | | | |
 | | `dashboard_analytics_ready` | Prepare analytics-backed instructor dashboard data after learner activity | [instructor_dashboard.md](docs/instructor_dashboard.md#dashboard_analytics_ready) |
 | | `assert.instructor_dashboard_summary` | Assert Instructor Intelligent Dashboard summary cards | [instructor_dashboard.md](docs/instructor_dashboard.md#instructor_dashboard_summary) |

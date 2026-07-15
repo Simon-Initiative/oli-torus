@@ -275,6 +275,20 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "rows_by_title"
           ]
 
+        :insights ->
+          [
+            "project",
+            "sections",
+            "resource_type",
+            "page",
+            "activity_virtual_id",
+            "objective",
+            "part_id",
+            "expected",
+            "exists",
+            "tolerance"
+          ]
+
         _ ->
           []
       end

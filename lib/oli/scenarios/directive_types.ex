@@ -110,6 +110,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :activity_customization,
       :page_objectives,
       :activity_objectives,
+      :insights,
       :discussion,
       :instructor_dashboard_summary,
       :instructor_dashboard_progress,

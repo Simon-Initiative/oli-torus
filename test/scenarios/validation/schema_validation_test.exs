@@ -67,6 +67,70 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert reset_activity.activity_virtual_id == "question"
   end
 
+  test "schema and parser accept insights assertions" do
+    yaml = """
+    - assert:
+        insights:
+          project: "demo"
+          sections:
+            - "section_one"
+            - "section_two"
+          resource_type: "activity"
+          activity_virtual_id: "question"
+          part_id: "1"
+          tolerance: 0.0001
+          expected:
+            num_attempts: 3
+            eventually_correct: 0.666667
+            relative_difficulty: 0.35
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [directive] = DirectiveParser.parse_yaml!(yaml)
+    assert directive.insights.resource_type == :activity
+    assert directive.insights.sections == ["section_one", "section_two"]
+    assert directive.insights.expected.num_attempts == 3
+    assert directive.insights.expected.eventually_correct == 0.666667
+    assert directive.insights.tolerance == 0.0001
+  end
+
+  test "schema and parser reject insights assertions without an expected metric" do
+    yaml = """
+    - assert:
+        insights:
+          project: "demo"
+          resource_type: "page"
+          page: "Practice"
+          expected: {}
+    """
+
+    assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+    assert_raise RuntimeError, ~r/requires at least one expected metric/, fn ->
+      DirectiveParser.parse_yaml!(yaml)
+    end
+  end
+
+  test "schema and parser reject insights assertions with multiple targets" do
+    yaml = """
+    - assert:
+        insights:
+          project: "demo"
+          resource_type: "page"
+          page: "Practice"
+          objective: "Understand practice"
+          expected:
+            num_attempts: 1
+    """
+
+    assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+    assert_raise RuntimeError, ~r/must specify exactly one resource target/, fn ->
+      DirectiveParser.parse_yaml!(yaml)
+    end
+  end
+
   test "schema and parser accept section scheduling dates" do
     yaml = """
     - section:

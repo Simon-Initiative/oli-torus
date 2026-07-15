@@ -256,6 +256,38 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    fn -> DirectiveParser.parse_yaml!(yaml) end
     end
 
+    test "insights assertion with unknown expected metric fails" do
+      yaml = """
+      - assert:
+          insights:
+            project: "demo"
+            resource_type: "page"
+            page: "Practice"
+            expected:
+              average_score: 0.5
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'insights expected' directive: \["average_score"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
+    test "insights assertion requires one target matching its resource type" do
+      yaml = """
+      - assert:
+          insights:
+            project: "demo"
+            resource_type: "activity"
+            page: "Practice"
+            expected:
+              num_attempts: 1
+      """
+
+      assert_raise RuntimeError,
+                   ~r/insights resource target does not match resource_type activity/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
     test "page_objectives assertion with unknown attribute fails" do
       yaml = """
       - assert:

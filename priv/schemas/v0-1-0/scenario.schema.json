@@ -1201,6 +1201,91 @@
           }
         }
       },
+      "insightsExpected": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "num_correct": { "type": "integer", "minimum": 0 },
+          "num_attempts": { "type": "integer", "minimum": 0 },
+          "num_hints": { "type": "integer", "minimum": 0 },
+          "num_first_attempts": { "type": "integer", "minimum": 0 },
+          "num_first_attempts_correct": { "type": "integer", "minimum": 0 },
+          "eventually_correct": { "type": "number", "minimum": 0, "maximum": 1 },
+          "first_attempt_correct": { "type": "number", "minimum": 0, "maximum": 1 },
+          "relative_difficulty": { "type": "number", "minimum": 0 }
+        }
+      },
+      "insightsAssertion": {
+        "type": "object",
+        "required": ["project", "resource_type", "expected"],
+        "additionalProperties": false,
+        "properties": {
+          "project": { "type": "string" },
+          "sections": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          },
+          "resource_type": {
+            "type": "string",
+            "enum": ["page", "activity", "objective"]
+          },
+          "page": { "type": "string" },
+          "activity_virtual_id": { "type": "string" },
+          "objective": { "type": "string" },
+          "part_id": { "type": "string" },
+          "expected": { "$ref": "#/definitions/insightsExpected" },
+          "exists": { "$ref": "#/definitions/booleanLike" },
+          "tolerance": { "type": "number", "exclusiveMinimum": 0 }
+        },
+        "oneOf": [
+          {
+            "required": ["page"],
+            "properties": { "resource_type": { "const": "page" } },
+            "not": {
+              "anyOf": [
+                { "required": ["activity_virtual_id"] },
+                { "required": ["objective"] },
+                { "required": ["part_id"] }
+              ]
+            }
+          },
+          {
+            "required": ["activity_virtual_id"],
+            "properties": { "resource_type": { "const": "activity" } },
+            "not": {
+              "anyOf": [
+                { "required": ["page"] },
+                { "required": ["objective"] }
+              ]
+            }
+          },
+          {
+            "required": ["objective"],
+            "properties": { "resource_type": { "const": "objective" } },
+            "not": {
+              "anyOf": [
+                { "required": ["page"] },
+                { "required": ["activity_virtual_id"] },
+                { "required": ["part_id"] }
+              ]
+            }
+          }
+        ],
+        "anyOf": [
+          {
+            "properties": {
+              "expected": { "minProperties": 1 }
+            }
+          },
+          {
+            "required": ["exists"],
+            "properties": {
+              "exists": { "enum": [false, "false", 0] }
+            }
+          }
+        ]
+      },
       "assertDirective": {
         "type": "object",
         "additionalProperties": false,
@@ -1243,6 +1328,9 @@
           },
           "activity_objectives": {
             "$ref": "#/definitions/activityObjectivesAssertion"
+          },
+          "insights": {
+            "$ref": "#/definitions/insightsAssertion"
           },
           "discussion": {
             "$ref": "#/definitions/discussionAssertion"
@@ -1310,6 +1398,9 @@
           },
           "activity_objectives": {
             "$ref": "#/definitions/activityObjectivesAssertion"
+          },
+          "insights": {
+            "$ref": "#/definitions/insightsAssertion"
           },
           "discussion": {
             "$ref": "#/definitions/discussionAssertion"
