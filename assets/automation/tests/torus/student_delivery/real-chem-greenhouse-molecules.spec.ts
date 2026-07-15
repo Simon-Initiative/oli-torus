@@ -113,13 +113,15 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
   });
 
   test.afterAll(async ({ request }) => {
-    if (seededCourse) {
-      await teardownAutomationCourse(request, seededCourse, { baseUrl, apiKey: automationApiKey });
-    }
-
-    if (archiveTempDir) {
-      await fs.rm(archiveTempDir, { recursive: true, force: true });
-      archiveTempDir = null;
+    try {
+      if (seededCourse) {
+        await teardownAutomationCourse(request, seededCourse, { baseUrl, apiKey: automationApiKey });
+      }
+    } finally {
+      if (archiveTempDir) {
+        await fs.rm(archiveTempDir, { recursive: true, force: true });
+        archiveTempDir = null;
+      }
     }
   });
 
