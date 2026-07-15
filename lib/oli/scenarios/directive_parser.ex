@@ -32,6 +32,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     GateDirective,
     TimeDirective,
     WaitDirective,
+    DashboardAnalyticsReadyDirective,
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
@@ -52,6 +53,53 @@ defmodule Oli.Scenarios.DirectiveParser do
   }
 
   alias Oli.Scenarios.Types.Node
+
+  @valid_directives [
+    "project",
+    "clone",
+    "section",
+    "product",
+    "remix",
+    "manipulate",
+    "objectives",
+    "publish",
+    "assert",
+    "verify",
+    "user",
+    "enroll",
+    "institution",
+    "institution_discount",
+    "update",
+    "customize",
+    "create_activity",
+    "activity_bank",
+    "instructor_customization",
+    "edit_page",
+    "edit_adaptive_page",
+    "view_practice_page",
+    "visit_page",
+    "start_attempt",
+    "gate",
+    "time",
+    "wait",
+    "dashboard_analytics_ready",
+    "answer_question",
+    "finalize_attempt",
+    "student_exception",
+    "certificate",
+    "discussion_config",
+    "discussion_post",
+    "discussion_moderation",
+    "discussion_delete",
+    "class_note",
+    "complete_scored_page",
+    "certificate_action",
+    "use",
+    "collaborator",
+    "media",
+    "bibliography",
+    "hook"
+  ]
 
   @doc """
   Loads and parses a YAML file containing course specification directives.
@@ -343,45 +391,11 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"assert" => assert_data}) do
     # Validate attributes
-    allowed_attrs = [
-      "structure",
-      "resource",
-      "progress",
-      "proficiency",
-      "certificate",
-      "gating",
-      "prologue",
-      "gradebook",
-      "review_attempt",
-      "activity_attempt",
-      "activity_customization",
-      "page_objectives",
-      "activity_objectives",
-      "discussion",
-      "assertions"
-    ]
+    allowed_attrs = assertion_attrs()
 
     case DirectiveValidator.validate_attributes(allowed_attrs, assert_data, "assert") do
       :ok ->
-        %AssertDirective{
-          structure: parse_structure_assertion(assert_data["structure"]),
-          resource: parse_resource_assertion(assert_data["resource"]),
-          progress: parse_progress_assertion(assert_data["progress"]),
-          proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
-          certificate: parse_certificate_assertion(assert_data["certificate"]),
-          gating: parse_gating_assertion(assert_data["gating"]),
-          prologue: parse_prologue_assertion(assert_data["prologue"]),
-          gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
-          review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
-          activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
-          activity_customization:
-            parse_activity_customization_assertion(assert_data["activity_customization"]),
-          page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
-          activity_objectives:
-            parse_activity_objectives_assertion(assert_data["activity_objectives"]),
-          discussion: parse_discussion_assertion(assert_data["discussion"]),
-          assertions: assert_data["assertions"]
-        }
+        build_assert_directive(assert_data)
 
       {:error, msg} ->
         raise msg
@@ -395,68 +409,16 @@ defmodule Oli.Scenarios.DirectiveParser do
       if Map.has_key?(verify_data, "to") && Map.has_key?(verify_data, "structure") do
         # Legacy format with "to" at top level
         {%{"structure" => Map.merge(verify_data["structure"], %{"to" => verify_data["to"]})},
-         [
-           "to",
-           "structure",
-           "resource",
-           "progress",
-           "proficiency",
-           "certificate",
-           "gating",
-           "prologue",
-           "gradebook",
-           "review_attempt",
-           "activity_attempt",
-           "activity_customization",
-           "page_objectives",
-           "activity_objectives",
-           "discussion",
-           "assertions"
-         ]}
+         ["to" | assertion_attrs()]}
       else
         # Standard format
-        {verify_data,
-         [
-           "structure",
-           "resource",
-           "progress",
-           "proficiency",
-           "certificate",
-           "gating",
-           "prologue",
-           "gradebook",
-           "review_attempt",
-           "activity_attempt",
-           "activity_customization",
-           "page_objectives",
-           "activity_objectives",
-           "discussion",
-           "assertions"
-         ]}
+        {verify_data, assertion_attrs()}
       end
 
     # Validate attributes
     case DirectiveValidator.validate_attributes(allowed_attrs, verify_data, "verify") do
       :ok ->
-        %AssertDirective{
-          structure: parse_structure_assertion(assert_data["structure"]),
-          resource: parse_resource_assertion(assert_data["resource"]),
-          progress: parse_progress_assertion(assert_data["progress"]),
-          proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
-          certificate: parse_certificate_assertion(assert_data["certificate"]),
-          gating: parse_gating_assertion(assert_data["gating"]),
-          prologue: parse_prologue_assertion(assert_data["prologue"]),
-          gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
-          review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
-          activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
-          activity_customization:
-            parse_activity_customization_assertion(assert_data["activity_customization"]),
-          page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
-          activity_objectives:
-            parse_activity_objectives_assertion(assert_data["activity_objectives"]),
-          discussion: parse_discussion_assertion(assert_data["discussion"]),
-          assertions: assert_data["assertions"]
-        }
+        build_assert_directive(assert_data)
 
       {:error, msg} ->
         raise msg
@@ -773,6 +735,22 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"dashboard_analytics_ready" => analytics_data}) do
+    allowed_attrs = ["section"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           analytics_data,
+           "dashboard_analytics_ready"
+         ) do
+      :ok ->
+        %DashboardAnalyticsReadyDirective{section: analytics_data["section"]}
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"answer_question" => answer_data}) do
     # Validate attributes
     allowed_attrs = ["student", "section", "page", "activity_virtual_id", "response"]
@@ -1080,52 +1058,8 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(map) when is_map(map) and map_size(map) == 1 do
     [{key, _value}] = Enum.to_list(map)
 
-    if key not in [
-         "project",
-         "clone",
-         "section",
-         "product",
-         "remix",
-         "manipulate",
-         "objectives",
-         "publish",
-         "assert",
-         "verify",
-         "user",
-         "enroll",
-         "institution",
-         "institution_discount",
-         "update",
-         "customize",
-         "create_activity",
-         "activity_bank",
-         "instructor_customization",
-         "edit_page",
-         "edit_adaptive_page",
-         "view_practice_page",
-         "visit_page",
-         "start_attempt",
-         "gate",
-         "time",
-         "wait",
-         "answer_question",
-         "finalize_attempt",
-         "student_exception",
-         "certificate",
-         "discussion_config",
-         "discussion_post",
-         "discussion_moderation",
-         "discussion_delete",
-         "class_note",
-         "complete_scored_page",
-         "certificate_action",
-         "use",
-         "collaborator",
-         "media",
-         "bibliography",
-         "hook"
-       ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+    if key not in valid_directives() do
+      raise unrecognized_directive_message(key)
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -1135,57 +1069,91 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Handle multiple directives in a single map (for complex YAML structures)
   defp parse_directive(map) when is_map(map) do
     Enum.flat_map(map, fn
-      {key, value}
-      when key in [
-             "project",
-             "clone",
-             "section",
-             "product",
-             "remix",
-             "manipulate",
-             "objectives",
-             "publish",
-             "assert",
-             "verify",
-             "user",
-             "enroll",
-             "institution",
-             "institution_discount",
-             "create_activity",
-             "activity_bank",
-             "instructor_customization",
-             "edit_page",
-             "edit_adaptive_page",
-             "view_practice_page",
-             "visit_page",
-             "start_attempt",
-             "gate",
-             "time",
-             "wait",
-             "answer_question",
-             "finalize_attempt",
-             "student_exception",
-             "certificate",
-             "discussion_config",
-             "discussion_post",
-             "discussion_moderation",
-             "discussion_delete",
-             "class_note",
-             "complete_scored_page",
-             "certificate_action",
-             "update",
-             "customize",
-             "use",
-             "collaborator",
-             "media",
-             "bibliography",
-             "hook"
-           ] ->
-        [parse_directive(%{key => value})]
-
-      {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+      {key, value} ->
+        if key in valid_directives() do
+          [parse_directive(%{key => value})]
+        else
+          raise unrecognized_directive_message(key)
+        end
     end)
+  end
+
+  defp valid_directives, do: @valid_directives
+
+  defp unrecognized_directive_message(key) do
+    "Unrecognized directive: '#{key}'. Valid directives are: #{Enum.join(valid_directives(), ", ")}"
+  end
+
+  defp assertion_attrs do
+    [
+      "structure",
+      "resource",
+      "progress",
+      "proficiency",
+      "certificate",
+      "gating",
+      "prologue",
+      "gradebook",
+      "review_attempt",
+      "activity_attempt",
+      "activity_customization",
+      "page_objectives",
+      "activity_objectives",
+      "discussion",
+      "instructor_dashboard_summary",
+      "instructor_dashboard_progress",
+      "instructor_dashboard_student_support",
+      "instructor_dashboard_challenging_objectives",
+      "instructor_dashboard_assessments",
+      "assertions"
+    ]
+  end
+
+  defp build_assert_directive(assert_data) do
+    %AssertDirective{
+      structure: parse_structure_assertion(assert_data["structure"]),
+      resource: parse_resource_assertion(assert_data["resource"]),
+      progress: parse_progress_assertion(assert_data["progress"]),
+      proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
+      certificate: parse_certificate_assertion(assert_data["certificate"]),
+      gating: parse_gating_assertion(assert_data["gating"]),
+      prologue: parse_prologue_assertion(assert_data["prologue"]),
+      gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
+      review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
+      activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
+      activity_customization:
+        parse_activity_customization_assertion(assert_data["activity_customization"]),
+      page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
+      activity_objectives:
+        parse_activity_objectives_assertion(assert_data["activity_objectives"]),
+      discussion: parse_discussion_assertion(assert_data["discussion"]),
+      instructor_dashboard_summary:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_summary,
+          assert_data["instructor_dashboard_summary"]
+        ),
+      instructor_dashboard_progress:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_progress,
+          assert_data["instructor_dashboard_progress"]
+        ),
+      instructor_dashboard_student_support:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_student_support,
+          assert_data["instructor_dashboard_student_support"]
+        ),
+      instructor_dashboard_challenging_objectives:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_challenging_objectives,
+          assert_data["instructor_dashboard_challenging_objectives"]
+        ),
+      instructor_dashboard_assessments:
+        parse_instructor_dashboard_assertion(
+          :instructor_dashboard_assessments,
+          assert_data["instructor_dashboard_assessments"]
+        ),
+      assertions: assert_data["assertions"]
+    }
   end
 
   defp parse_activity_bank_ops(ops) when is_list(ops) do
@@ -1650,6 +1618,65 @@ defmodule Oli.Scenarios.DirectiveParser do
       {:error, msg} ->
         raise msg
     end
+  end
+
+  defp parse_instructor_dashboard_assertion(_type, nil), do: nil
+
+  defp parse_instructor_dashboard_assertion(type, data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(type, data) do
+      :ok ->
+        data
+        |> Map.put("tolerance", parse_optional_float(data["tolerance"]))
+        |> atomize_dashboard_assertion_keys()
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  @dashboard_assertion_keys %{
+    "axis_label" => :axis_label,
+    "available_slots" => :available_slots,
+    "bucket_priority" => :bucket_priority,
+    "buckets" => :buckets,
+    "cards" => :cards,
+    "class_size" => :class_size,
+    "completion_threshold" => :completion_threshold,
+    "course_title" => :course_title,
+    "default_bucket_id" => :default_bucket_id,
+    "empty_state" => :empty_state,
+    "has_activity_data" => :has_activity_data,
+    "has_activity_data?" => :has_activity_data?,
+    "has_assessments" => :has_assessments,
+    "has_assessments?" => :has_assessments?,
+    "has_objectives" => :has_objectives,
+    "items" => :items,
+    "metrics" => :metrics,
+    "missing_slots" => :missing_slots,
+    "row_count" => :row_count,
+    "rows" => :rows,
+    "rows_by_title" => :rows_by_title,
+    "scope" => :scope,
+    "scope_label" => :scope_label,
+    "section" => :section,
+    "series" => :series,
+    "series_all" => :series_all,
+    "state" => :state,
+    "tolerance" => :tolerance,
+    "total_rows" => :total_rows,
+    "total_students" => :total_students,
+    "totals" => :totals,
+    "y_axis_mode" => :y_axis_mode
+  }
+
+  defp atomize_dashboard_assertion_keys(map) when is_map(map) do
+    Map.new(map, fn
+      {key, value} when is_binary(key) ->
+        {Map.get(@dashboard_assertion_keys, key, key), value}
+
+      {key, value} ->
+        {key, value}
+    end)
   end
 
   # Parse node structures (for project and verification structures)

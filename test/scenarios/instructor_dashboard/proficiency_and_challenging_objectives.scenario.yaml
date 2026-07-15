@@ -1,0 +1,217 @@
+# Scenario: Proficiency summary and challenging objectives
+#
+# This scenario focuses on objective-level proficiency rather than page
+# completion. It gives one objective strong evidence and another weak evidence,
+# then verifies the average class proficiency summary card and the challenging
+# objectives panel that lists low-proficiency objectives.
+
+- use:
+    file: "base.scenario.yaml"
+
+# One student completes both objectives correctly.
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+    activity_virtual_id: "foundations_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+    activity_virtual_id: "foundations_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+    activity_virtual_id: "foundations_lesson_3_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+    activity_virtual_id: "applications_lesson_1_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+    activity_virtual_id: "applications_lesson_2_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+    activity_virtual_id: "applications_lesson_3_mcq"
+    response: "a"
+
+# A second student keeps the foundations objective high.
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+    activity_virtual_id: "foundations_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+    activity_virtual_id: "foundations_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+    activity_virtual_id: "foundations_lesson_3_mcq"
+    response: "b"
+
+# Two students answer the applications objective incorrectly, making it low.
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+    activity_virtual_id: "applications_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+    activity_virtual_id: "applications_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+    activity_virtual_id: "applications_lesson_3_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+    activity_virtual_id: "applications_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+    activity_virtual_id: "applications_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+    activity_virtual_id: "applications_lesson_3_mcq"
+    response: "b"
+
+- dashboard_analytics_ready:
+    section: "instructor_dashboard_section"
+
+- assert:
+    instructor_dashboard_summary:
+      section: "instructor_dashboard_section"
+      scope:
+        container: "Applications Unit"
+      tolerance: 0.1
+      cards:
+        average_class_proficiency:
+          status: "ready"
+          value_number: 50.0
+
+- assert:
+    instructor_dashboard_challenging_objectives:
+      section: "instructor_dashboard_section"
+      scope:
+        container: "Applications Unit"
+      state: "populated"
+      row_count: 1
+      rows_by_title:
+        "Apply problem solving":
+          proficiency_label: "Low"

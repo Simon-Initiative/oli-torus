@@ -111,6 +111,11 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :page_objectives,
       :activity_objectives,
       :discussion,
+      :instructor_dashboard_summary,
+      :instructor_dashboard_progress,
+      :instructor_dashboard_student_support,
+      :instructor_dashboard_challenging_objectives,
+      :instructor_dashboard_assessments,
       :assertions
     ]
   end
@@ -294,6 +299,15 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:seconds, :milliseconds]
   end
 
+  defmodule DashboardAnalyticsReadyDirective do
+    @moduledoc """
+    Prepares dashboard analytics for a section before instructor dashboard assertions.
+
+    section: scenario name of the section whose analytics should be ready
+    """
+    defstruct [:section]
+  end
+
   defmodule AnswerQuestionDirective do
     @moduledoc """
     Simulates a student answering a question on a page.
@@ -423,7 +437,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
     """
     # name -> BuiltProject
     defstruct projects: %{},
-              # name -> Section  
+              # name -> Section
               sections: %{},
               # name -> Product (Blueprint)
               products: %{},

@@ -1,0 +1,57 @@
+# Scenario: Initial dashboard no-data state
+#
+# This scenario verifies that a freshly created section with enrolled learners
+# but no learner activity renders sensible dashboard defaults. It covers the
+# course-scope progress tile at 0% completion and the student support tile when
+# there is not enough activity/proficiency data to classify learners.
+
+- use:
+    file: "base.scenario.yaml"
+
+- dashboard_analytics_ready:
+    section: "instructor_dashboard_section"
+
+- assert:
+    instructor_dashboard_progress:
+      section: "instructor_dashboard_section"
+      axis_label: "Course Units"
+      class_size: 4
+      items:
+        "Foundations Unit":
+          completed_count: 0
+          completed_percent: 0.0
+        "Applications Unit":
+          completed_count: 0
+          completed_percent: 0.0
+        "Assessments":
+          completed_count: 0
+          completed_percent: 0.0
+
+- assert:
+    instructor_dashboard_student_support:
+      section: "instructor_dashboard_section"
+      has_activity_data: false
+      totals:
+        total_students: 4
+        active_students: 4
+        inactive_students: 0
+      default_bucket_id: "not_enough_information"
+      bucket_priority:
+        - "struggling"
+        - "on_track"
+        - "excelling"
+        - "not_enough_information"
+      buckets:
+        struggling:
+          count: 0
+        on_track:
+          count: 0
+        excelling:
+          count: 0
+        not_enough_information:
+          count: 4
+          student_names:
+            - "Eli Excelling"
+            - "Nina No Data"
+            - "Olivia On Track"
+            - "Sam Struggling"

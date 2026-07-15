@@ -33,6 +33,7 @@ defmodule Oli.Scenarios.Engine do
     GateDirective,
     TimeDirective,
     WaitDirective,
+    DashboardAnalyticsReadyDirective,
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
@@ -78,6 +79,7 @@ defmodule Oli.Scenarios.Engine do
     GateHandler,
     TimeHandler,
     WaitHandler,
+    DashboardAnalyticsReadyHandler,
     AnswerQuestionHandler,
     CertificateHandler,
     DiscussionPostHandler,
@@ -337,6 +339,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%WaitDirective{} = directive, state) do
     WaitHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DashboardAnalyticsReadyDirective{} = directive, state) do
+    DashboardAnalyticsReadyHandler.handle(directive, state)
   end
 
   def execute_directive(%AnswerQuestionDirective{} = directive, state) do
