@@ -44,6 +44,29 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     end
   end
 
+  test "schema and parser accept learner hint and activity reset directives" do
+    yaml = """
+    - request_hint:
+        student: "student"
+        section: "section"
+        page: "Practice"
+        activity_virtual_id: "question"
+        part_id: "1"
+
+    - reset_activity:
+        student: "student"
+        section: "section"
+        page: "Practice"
+        activity_virtual_id: "question"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [request_hint, reset_activity] = DirectiveParser.parse_yaml!(yaml)
+    assert request_hint.part_id == "1"
+    assert reset_activity.activity_virtual_id == "question"
+  end
+
   test "schema and parser accept section scheduling dates" do
     yaml = """
     - section:

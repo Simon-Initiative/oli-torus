@@ -320,6 +320,21 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:student, :section, :page, :activity_virtual_id, :response]
   end
 
+  defmodule RequestHintDirective do
+    @moduledoc """
+    Requests the next available hint for an activity part.
+    part_id: optional for single-part activities, required for multi-part activities
+    """
+    defstruct [:student, :section, :page, :activity_virtual_id, :part_id]
+  end
+
+  defmodule ResetActivityDirective do
+    @moduledoc """
+    Creates a new attempt for an activity and refreshes the active page attempt state.
+    """
+    defstruct [:student, :section, :page, :activity_virtual_id]
+  end
+
   defmodule CertificateDirective do
     @moduledoc """
     Configures certificate settings on a section or product.

@@ -226,6 +226,36 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "request_hint directive with unknown attribute fails" do
+      yaml = """
+      - request_hint:
+          student: "student1"
+          section: "section1"
+          page: "Practice"
+          activity_virtual_id: "question"
+          hint_index: 1
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'request_hint' directive: \["hint_index"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
+    test "reset_activity directive with unknown attribute fails" do
+      yaml = """
+      - reset_activity:
+          student: "student1"
+          section: "section1"
+          page: "Practice"
+          activity_virtual_id: "question"
+          preserve_response: true
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'reset_activity' directive: \["preserve_response"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
     test "page_objectives assertion with unknown attribute fails" do
       yaml = """
       - assert:

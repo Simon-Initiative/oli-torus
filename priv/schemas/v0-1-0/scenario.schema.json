@@ -3219,6 +3219,75 @@
           {
             "type": "object",
             "required": [
+              "request_hint"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "request_hint": {
+                "type": "object",
+                "required": [
+                  "student",
+                  "section",
+                  "page",
+                  "activity_virtual_id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "student": {
+                    "type": "string"
+                  },
+                  "section": {
+                    "type": "string"
+                  },
+                  "page": {
+                    "type": "string"
+                  },
+                  "activity_virtual_id": {
+                    "type": "string"
+                  },
+                  "part_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "reset_activity"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "reset_activity": {
+                "type": "object",
+                "required": [
+                  "student",
+                  "section",
+                  "page",
+                  "activity_virtual_id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "student": {
+                    "type": "string"
+                  },
+                  "section": {
+                    "type": "string"
+                  },
+                  "page": {
+                    "type": "string"
+                  },
+                  "activity_virtual_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
               "finalize_attempt"
             ],
             "additionalProperties": false,

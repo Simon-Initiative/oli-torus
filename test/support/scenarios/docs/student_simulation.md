@@ -7,6 +7,8 @@ This document covers directives for simulating student interactions and tracking
 - [view_practice_page](#view_practice_page) - Simulate viewing pages
 - [visit_page](#visit_page) - Simulate visiting any page
 - [answer_question](#answer_question) - Simulate answering activities
+- [request_hint](#request_hint) - Request an activity hint
+- [reset_activity](#reset_activity) - Start another activity attempt
 - [finalize_attempt](#finalize_attempt) - Finalize a learner's active page attempt
 - [dashboard_analytics_ready](#dashboard_analytics_ready) - Deterministically prepare dashboard analytics
 - [student_exception](#student_exception) - Set or remove assessment setting overrides
@@ -30,6 +32,7 @@ This document covers directives for simulating student interactions and tracking
 These directives simulate the student experience in a course section:
 - Viewing pages (creates attempts)
 - Answering questions (submits responses)
+- Requesting hints and retrying activities
 - Tracking progress (verifies completion metrics)
 
 This enables testing of:
@@ -157,6 +160,61 @@ or part id:
     response:
       speed: "36 km/hr"
       energy: "1 kJ"
+```
+
+---
+
+## request_hint
+
+Requests the next available hint for an activity on a page the student has already visited.
+The directive uses `Oli.Delivery.Attempts.ActivityLifecycle.request_hint/2`, matching the
+learner delivery path.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page containing the activity (required)
+- `activity_virtual_id`: Virtual ID of the activity (required)
+- `part_id`: Part ID to request a hint for (optional for single-part activities; required for multi-part activities)
+
+```yaml
+- request_hint:
+    student: "student"
+    section: "section"
+    page: "Practice"
+    activity_virtual_id: "mcq"
+```
+
+---
+
+## reset_activity
+
+Creates the learner's next attempt for an activity and refreshes the scenario's active page
+attempt state. A subsequent `answer_question` therefore submits against the new attempt.
+The directive uses `Oli.Delivery.Attempts.ActivityLifecycle.reset_activity/4`.
+
+Requested hint IDs are carried into the new part attempts by the delivery lifecycle, matching
+the behavior of learner-triggered activity resets.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page containing the activity (required)
+- `activity_virtual_id`: Virtual ID of the activity to retry (required)
+
+```yaml
+- reset_activity:
+    student: "student"
+    section: "section"
+    page: "Practice"
+    activity_virtual_id: "mcq"
+
+- answer_question:
+    student: "student"
+    section: "section"
+    page: "Practice"
+    activity_virtual_id: "mcq"
+    response: "b"
 ```
 
 ---

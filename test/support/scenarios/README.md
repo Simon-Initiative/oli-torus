@@ -111,6 +111,8 @@ All directives are documented in detail in the linked documentation files.
 | | `visit_page` | Simulate student visiting any page, including graded pages | [student_simulation.md](docs/student_simulation.md#visit_page) |
 | | `start_attempt` | Explicitly start a graded attempt, including password-protected attempts | [student_simulation.md](docs/student_simulation.md#start_attempt) |
 | | `answer_question` | Simulate answering activity | [student_simulation.md](docs/student_simulation.md#answer_question) |
+| | `request_hint` | Request the next available activity hint | [student_simulation.md](docs/student_simulation.md#request_hint) |
+| | `reset_activity` | Start another attempt for an activity | [student_simulation.md](docs/student_simulation.md#reset_activity) |
 | | `finalize_attempt` | Finalize a learner's active graded attempt through the real page lifecycle | [student_simulation.md](docs/student_simulation.md#finalize_attempt) |
 | | `student_exception` | Set or remove assessment setting overrides for one learner/page | [student_simulation.md](docs/student_simulation.md#student_exception) |
 | | `wait` | Pause scenario execution for real elapsed time | [student_simulation.md](docs/student_simulation.md#wait) |

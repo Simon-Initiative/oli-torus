@@ -34,6 +34,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     WaitDirective,
     DashboardAnalyticsReadyDirective,
     AnswerQuestionDirective,
+    RequestHintDirective,
+    ResetActivityDirective,
     CertificateDirective,
     DiscussionPostDirective,
     DiscussionConfigDirective,
@@ -84,6 +86,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     "wait",
     "dashboard_analytics_ready",
     "answer_question",
+    "request_hint",
+    "reset_activity",
     "finalize_attempt",
     "student_exception",
     "certificate",
@@ -763,6 +767,41 @@ defmodule Oli.Scenarios.DirectiveParser do
           page: answer_data["page"],
           activity_virtual_id: answer_data["activity_virtual_id"],
           response: answer_data["response"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"request_hint" => hint_data}) do
+    allowed_attrs = ["student", "section", "page", "activity_virtual_id", "part_id"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, hint_data, "request_hint") do
+      :ok ->
+        %RequestHintDirective{
+          student: hint_data["student"],
+          section: hint_data["section"],
+          page: hint_data["page"],
+          activity_virtual_id: hint_data["activity_virtual_id"],
+          part_id: hint_data["part_id"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"reset_activity" => reset_data}) do
+    allowed_attrs = ["student", "section", "page", "activity_virtual_id"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, reset_data, "reset_activity") do
+      :ok ->
+        %ResetActivityDirective{
+          student: reset_data["student"],
+          section: reset_data["section"],
+          page: reset_data["page"],
+          activity_virtual_id: reset_data["activity_virtual_id"]
         }
 
       {:error, msg} ->
