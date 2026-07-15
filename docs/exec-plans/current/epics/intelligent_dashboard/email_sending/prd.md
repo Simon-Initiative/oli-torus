@@ -152,10 +152,10 @@ No feature flags present in this feature
   - Existing Torus email delivery jobs are production-ready for one-job-per-recipient dispatch at expected instructor dashboard scales.
   - Existing GenAI completion stack can support prompt size and latency needs for this workflow.
   - Supported placeholder token set is finalized to the whitelist listed in this PRD unless expanded in follow-up.
-- Open Questions:
-  - Should manual recipient additions be constrained to enrolled section learners only, or permit arbitrary external email addresses?
-  - What maximum recipient count should be enforced per send action for operational safety?
-  - What exact fallback copy should appear when generation fails before any draft is produced?
+- Open Questions (all resolved — see gaps.md):
+  - ~~Should manual recipient additions be constrained to enrolled section learners only, or permit arbitrary external email addresses?~~ RESOLVED (G-J07): section-enrolled students only.
+  - ~~What maximum recipient count should be enforced per send action for operational safety?~~ RESOLVED (G-J06): **no cap enforced.** A configurable `INSTRUCTOR_EMAIL_MAX_RECIPIENTS` cap was specced then **dropped** (Session 11) — no existing Torus email send caps recipients; follow convention, revisit only if abuse surfaces. (Trade-off: a deliberate select-all on a very large cohort yields a large recipient-chip payload — accepted; chip overflow is handled client-side by `OverflowChipList`.)
+  - ~~What exact fallback copy should appear when generation fails before any draft is produced?~~ RESOLVED (G-J08): "We couldn't generate a draft right now. Try again or write your own."
 
 ## 15. Timeline & Milestones (Draft)
 - Milestone 1: Implement non-UI domain services (context builder, situation contract, prompt composer, generation facade, placeholder realization).

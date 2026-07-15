@@ -1,0 +1,317 @@
+# Scenario: Container scope filtering
+#
+# This scenario verifies that dashboard projections change when the instructor
+# selects a specific course container. It checks scoped progress labels/items and
+# scoped challenging objectives so the dashboard does not accidentally report
+# course-wide data while a unit filter is active.
+
+- use:
+    file: "base.scenario.yaml"
+
+# Two students complete every Foundations page so the Foundations Unit progress
+# scope has a distinct 50% completion pattern.
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+    activity_virtual_id: "foundations_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+    activity_virtual_id: "foundations_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+    activity_virtual_id: "foundations_lesson_3_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+    activity_virtual_id: "foundations_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+    activity_virtual_id: "foundations_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+    activity_virtual_id: "foundations_lesson_3_mcq"
+    response: "b"
+
+# Applications activity creates a low-proficiency objective only inside the
+# Applications Unit scope.
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+    activity_virtual_id: "applications_lesson_1_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+    activity_virtual_id: "applications_lesson_2_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+    activity_virtual_id: "applications_lesson_3_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+    activity_virtual_id: "applications_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+    activity_virtual_id: "applications_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+    activity_virtual_id: "applications_lesson_3_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+    activity_virtual_id: "applications_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+    activity_virtual_id: "applications_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+    activity_virtual_id: "applications_lesson_3_mcq"
+    response: "b"
+
+# Three graded checkpoint submissions make the Assessments container scope
+# return only the quiz row.
+- visit_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_foundations_mcq"
+    response: "a"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_applications_mcq"
+    response: "b"
+
+- finalize_attempt:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- visit_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_foundations_mcq"
+    response: "a"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_applications_mcq"
+    response: "a"
+
+- finalize_attempt:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- visit_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_foundations_mcq"
+    response: "b"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_applications_mcq"
+    response: "a"
+
+- finalize_attempt:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- dashboard_analytics_ready:
+    section: "instructor_dashboard_section"
+
+- assert:
+    instructor_dashboard_progress:
+      section: "instructor_dashboard_section"
+      scope:
+        container: "Foundations Unit"
+      axis_label: "Course Pages"
+      class_size: 4
+      items:
+        "Foundations Lesson 1":
+          completed_count: 2
+          completed_percent: 50.0
+        "Foundations Lesson 2":
+          completed_count: 2
+          completed_percent: 50.0
+        "Foundations Lesson 3":
+          completed_count: 2
+          completed_percent: 50.0
+
+- assert:
+    instructor_dashboard_challenging_objectives:
+      section: "instructor_dashboard_section"
+      scope:
+        container: "Applications Unit"
+      scope_label: "Applications Unit"
+      state: "populated"
+      row_count: 1
+      rows_by_title:
+        "Apply problem solving":
+          proficiency_label: "Low"
+
+- assert:
+    instructor_dashboard_assessments:
+      section: "instructor_dashboard_section"
+      scope:
+        container: "Assessments"
+      tolerance: 0.1
+      total_rows: 1
+      has_assessments: true
+      rows_by_title:
+        "Checkpoint Quiz":
+          completion:
+            completed_count: 3
+            total_students: 4
+            ratio: 0.75
+          metrics:
+            mean: 50.0

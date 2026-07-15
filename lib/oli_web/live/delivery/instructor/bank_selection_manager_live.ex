@@ -6,7 +6,13 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Rendering.Content.ActivityBankSelectionCriteria
+  alias Oli.Rendering.Activity.PreviewCustomization
   alias Oli.Resources.Revision
+
+  alias OliWeb.Components.Delivery.ActivityBankSelectionCriteria,
+    as: ActivityBankSelectionCriteriaComponent
+
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.PreviewPageContext
   alias OliWeb.Components.Delivery.Layouts
@@ -15,6 +21,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   alias OliWeb.ManualGrading.RenderedActivity
 
   @candidate_row_limit 25
+  @candidate_text_search_max_length 120
+  @type selection_mode :: :none | :available | :removed | :mixed
 
   def mount(
         %{"revision_slug" => revision_slug, "selection_id" => selection_id} = params,
@@ -37,7 +45,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
          redirect(
            socket,
            to:
-             PreviewRoutes.page_path(
+             PreviewRoutes.adaptive_page_path(
                section.slug,
                revision_slug,
                adaptive_redirect_params(params)
@@ -54,19 +62,30 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
       {:ok, revision, selection} ->
         sidebar_expanded = preview_sidebar_state(params)
+        candidate_preview_dependencies = candidate_preview_dependencies()
 
-        candidate_surface_script_sources_by_activity_type_id =
-          candidate_surface_script_sources_by_activity_type_id()
+        criteria_presentation =
+          ActivityBankSelectionCriteria.presentation(selection, section.slug)
 
-        case load_candidates(section, revision, selection) do
+        candidate_filters = default_candidate_filters()
+
+        case load_candidates(section, revision, selection, filters: candidate_filters) do
           {:ok, candidate_page} ->
+            candidate_filter_options =
+              load_candidate_filter_options(
+                section,
+                revision,
+                selection,
+                candidate_page.total_count
+              )
+
             preview_script_sources =
               candidate_surface_script_sources_for_selection(
                 section,
                 revision,
                 selection,
                 candidate_page.total_count,
-                candidate_surface_script_sources_by_activity_type_id
+                candidate_preview_dependencies.script_sources_by_activity_type_id
               )
 
             {:ok,
@@ -77,14 +96,23 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                selection: selection,
                selection_id: selection_id,
                selection_points_per_question: selection_points_per_question(selection),
-               selection_criteria_rows: selection_criteria_rows(section.slug, selection),
                instructor_preview_return:
                  socket.assigns[:instructor_preview_return] ||
                    PreviewReturn.fallback_context(section.slug),
+               selection_criteria_rows: criteria_presentation.rows,
+               selection_criteria_helper_text: criteria_presentation.helper_text,
                navigation_params: navigation_params,
                sidebar_expanded: sidebar_expanded,
                request_path: local_back_path(section.slug, revision.slug, navigation_params),
+               candidate_filters: candidate_filters,
+               candidate_filter_options: candidate_filter_options,
+               open_candidate_filter_id: nil,
                invalid_remove_warning: nil,
+               candidate_preview_activity_types_map:
+                 candidate_preview_dependencies.activity_types_map,
+               candidate_preview_payloads_by_id: %{},
+               candidate_preview_objective_titles_by_id: %{},
+               candidate_revisions_by_id: %{},
                selected_candidate_preview_html: nil,
                preview_script_sources: preview_script_sources
              )
@@ -135,35 +163,96 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       ) do
     candidate_id = parse_integer(activity_resource_id)
 
-    if Enum.any?(socket.assigns.candidates, &(&1.activity_resource_id == candidate_id)) do
-      # MER-5623 adds the bulk action side effect for these checkbox selections. In MER-5622
-      # we only persist the visible checked state so the follow-up can reuse the same selection
-      # model without coupling this ticket to batch remove/restore behavior.
+    if candidate = selected_candidate(socket.assigns.candidates, candidate_id) do
+      # Checkbox state is scoped to the visible query result so list selection and
+      # bulk actions stay aligned without persisting hidden rows across filters.
       {:noreply,
-       update(
-         socket,
+       socket
+       |> update(
          :checked_candidate_ids,
-         &toggle_checked_candidate_id(&1, candidate_id)
-       )}
+         &toggle_checked_candidate_id(
+           socket.assigns.candidates,
+           &1,
+           candidate.activity_resource_id
+         )
+       )
+       |> push_selected_candidate_preview_bulk_state()}
     else
       {:noreply, socket}
     end
   end
 
   def handle_event("toggle_all_candidate_checkboxes", _params, socket) do
-    visible_candidate_ids = visible_candidate_ids(socket.assigns.candidates)
+    selectable_candidate_ids =
+      master_selectable_candidate_ids(
+        socket.assigns.candidates,
+        socket.assigns.checked_candidate_ids
+      )
 
     checked_candidate_ids =
-      if all_visible_candidates_checked?(
+      if all_selectable_candidates_checked?(
            socket.assigns.candidates,
            socket.assigns.checked_candidate_ids
          ) do
         MapSet.new()
       else
-        MapSet.new(visible_candidate_ids)
+        MapSet.new(selectable_candidate_ids)
       end
 
-    {:noreply, assign(socket, :checked_candidate_ids, checked_candidate_ids)}
+    {:noreply,
+     socket
+     |> assign(:checked_candidate_ids, checked_candidate_ids)
+     |> push_selected_candidate_preview_bulk_state()}
+  end
+
+  def handle_event("run_bulk_selection_action", _params, socket) do
+    candidate_ids = checked_candidate_ids_in_visible_order(socket.assigns)
+
+    case selection_mode(socket.assigns.candidates, socket.assigns.checked_candidate_ids)
+         |> bulk_selection_action() do
+      :remove ->
+        run_bulk_candidate_action(socket, candidate_ids, false)
+
+      :restore ->
+        run_bulk_candidate_action(socket, candidate_ids, true)
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("filter_candidates", params, socket) do
+    candidate_filters = candidate_filters_from_params(params, socket.assigns.candidate_filters)
+
+    open_candidate_filter_id =
+      Map.get(params, "_candidate_filter_id", socket.assigns.open_candidate_filter_id)
+
+    filter_candidates(socket, candidate_filters, open_candidate_filter_id)
+  end
+
+  def handle_event("set_candidate_visibility", %{"visibility" => visibility}, socket) do
+    candidate_filters =
+      %{
+        socket.assigns.candidate_filters
+        | visibility: candidate_visibility_from_param(visibility)
+      }
+
+    filter_candidates(socket, candidate_filters)
+  end
+
+  def handle_event("clear_candidate_filters", _params, socket) do
+    filter_candidates(socket, default_candidate_filters())
+  end
+
+  def handle_event("toggle_candidate_filter_dropdown", %{"filter_id" => filter_id}, socket) do
+    open_candidate_filter_id =
+      if socket.assigns.open_candidate_filter_id == filter_id, do: nil, else: filter_id
+
+    {:noreply, assign(socket, :open_candidate_filter_id, open_candidate_filter_id)}
+  end
+
+  def handle_event("close_candidate_filter_dropdown", _params, socket) do
+    {:noreply, assign(socket, :open_candidate_filter_id, nil)}
   end
 
   def handle_event("dismiss_invalid_remove_warning", _params, socket) do
@@ -225,10 +314,17 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       section: section,
       page_revision: page_revision,
       selection: selection,
+      candidate_filters: candidate_filters,
       candidate_offset: candidate_offset
     } = socket.assigns
 
-    case load_candidates(section, page_revision, selection, offset: candidate_offset) do
+    case load_candidates(
+           section,
+           page_revision,
+           selection,
+           offset: candidate_offset,
+           filters: candidate_filters
+         ) do
       {:ok, candidate_page} ->
         {:noreply, append_candidate_page(socket, candidate_page)}
 
@@ -282,6 +378,27 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       )
 
     {:reply, reply, socket}
+  end
+
+  defp filter_candidates(socket, candidate_filters, open_candidate_filter_id \\ nil) do
+    %{
+      section: section,
+      page_revision: page_revision,
+      selection: selection
+    } = socket.assigns
+
+    case load_candidates(section, page_revision, selection, filters: candidate_filters) do
+      {:ok, candidate_page} ->
+        {:noreply,
+         socket
+         |> assign(:candidate_filters, candidate_filters)
+         |> assign(:open_candidate_filter_id, open_candidate_filter_id)
+         |> replace_candidate_page(candidate_page)}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "Unable to filter questions for this activity bank.")}
+    end
   end
 
   defp validate_bank_candidate_target(socket, target) do
@@ -347,7 +464,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
           {:insufficient_selection_candidates,
            %{count: count, active_candidates: active_candidates} = warning}}
        ) do
-    candidate = selected_candidate(socket.assigns.candidates, target.activityResourceId)
     reply = %{ok: false, target: target}
     warning = Map.put(warning, :target, target)
 
@@ -355,7 +471,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
      assign(
        socket,
        :invalid_remove_warning,
-       invalid_remove_warning_assigns(candidate, count, active_candidates, warning)
+       invalid_remove_warning_assigns(count, active_candidates, 1, warning)
      )}
   end
 
@@ -417,8 +533,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       statusPill: nil,
       actions:
         if(action == "remove",
-          do: [%{kind: "restore", label: "Restore"}],
-          else: [%{kind: "remove", label: "Remove"}]
+          do: [PreviewCustomization.action("restore")],
+          else: [PreviewCustomization.action("remove")]
         )
     }
   end
@@ -431,6 +547,67 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
   defp bank_candidate_success_message(_action),
     do: "Activity bank question updated."
+
+  defp run_bulk_candidate_action(socket, [], _enabled), do: {:noreply, socket}
+
+  defp run_bulk_candidate_action(socket, candidate_ids, enabled) do
+    action = if(enabled, do: :restore, else: :remove)
+
+    case InstructorCustomizations.set_bank_candidates_enabled(
+           socket.assigns.section,
+           socket.assigns.current_page_resource_id,
+           socket.assigns.selection_id,
+           candidate_ids,
+           enabled,
+           actor: socket.assigns.current_user
+         ) do
+      {:ok, _view} ->
+        with {:ok, refreshed_socket} <- refresh_candidate_page(socket) do
+          {:noreply,
+           refreshed_socket
+           |> assign(:invalid_remove_warning, nil)
+           |> put_flash(:info, bulk_candidate_success_message(action, length(candidate_ids)))}
+        else
+          {:error, _reason} ->
+            {:noreply,
+             put_flash(socket, :error, "Unable to refresh these activity bank questions.")}
+        end
+
+      {:error,
+       {:insufficient_selection_candidates,
+        %{count: count, active_candidates: active_candidates} = warning}} ->
+        {:noreply,
+         assign(
+           socket,
+           :invalid_remove_warning,
+           invalid_remove_warning_assigns(
+             count,
+             active_candidates,
+             length(candidate_ids),
+             warning
+           )
+         )}
+
+      {:error, {:unauthorized, :customize_section}} ->
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to customize this activity bank.")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Unable to update these activity bank questions.")}
+    end
+  end
+
+  defp bulk_candidate_success_message(:remove, 1),
+    do: "1 question removed from this activity bank selection."
+
+  defp bulk_candidate_success_message(:remove, count),
+    do: "#{count} questions removed from this activity bank selection."
+
+  defp bulk_candidate_success_message(:restore, 1),
+    do: "1 question restored to this activity bank selection."
+
+  defp bulk_candidate_success_message(:restore, count),
+    do: "#{count} questions restored to this activity bank selection."
 
   defp candidate_visible?(candidates, activity_resource_id) do
     Enum.any?(candidates, &(&1.activity_resource_id == activity_resource_id))
@@ -461,7 +638,22 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         <.preview_flash_group flash={@flash} />
       </div>
 
-      <div id="bank-selection-customization-bridge" phx-hook="InstructorPreviewCustomization"></div>
+      <div
+        id="bank-selection-customization-bridge"
+        phx-hook="InstructorPreviewCustomization"
+        data-preview-customization-copy={Jason.encode!(PreviewCustomization.copy())}
+      >
+        <span
+          id="preview-customization-status"
+          class="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          phx-update="ignore"
+          data-preview-customization-status
+        >
+        </span>
+      </div>
       <div
         id="bank-selection-preview-script-loader"
         phx-hook="LoadSurveyScripts"
@@ -499,7 +691,11 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         <p class="font-open-sans text-base font-normal leading-6 text-Text-text-high">
           This activity bank selection <strong class="font-open-sans font-bold text-Text-text-high">
             requires {@invalid_remove_warning.count} {question_word(@invalid_remove_warning.count)}
-          </strong>, and removing this <strong class="font-open-sans font-bold text-Text-text-high">
+          </strong>, and removing
+          <strong class="font-open-sans font-bold text-Text-text-high">
+            {@invalid_remove_warning.removal_subject}
+          </strong>
+          <strong class="font-open-sans font-bold text-Text-text-high">
             would leave only {@invalid_remove_warning.active_candidates}
           </strong>. To make changes, you can remove the entire activity bank selection.
         </p>
@@ -525,7 +721,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
               }
               class="inline-flex items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-6 py-2 font-open-sans text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover hover:text-Specially-Tokens-Text-text-button-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
             >
-              Keep question
+              {@invalid_remove_warning.keep_label}
             </button>
           </div>
         </:custom_footer>
@@ -560,20 +756,123 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                   </div>
                 </div>
 
-                <div class="mt-5 space-y-2.5 text-sm leading-4 text-Text-text-low">
-                  <div class="font-bold text-Text-text-high">Selection criteria:</div>
-                  <div :for={row <- @selection_criteria_rows} class="space-y-2">
-                    <div class="text-Text-text-low-alpha text-sm font-bold leading-4">
-                      {row.label}
-                    </div>
-                    <div class="bg-Specially-Tokens-Fill-fill-input-focused rounded-md px-2.5 py-2 text-Text-text-high text-base font-semibold leading-6">
-                      {row.value}
-                    </div>
-                  </div>
+                <div class="mt-5">
+                  <ActivityBankSelectionCriteriaComponent.selection_criteria
+                    rows={@selection_criteria_rows}
+                    helper_text={@selection_criteria_helper_text}
+                  />
                 </div>
               </header>
 
               <div class="mt-10">
+                <% bulk_selection_state =
+                  bulk_selection_view_state(@candidates, @checked_candidate_ids) %>
+
+                <div
+                  id="candidate-visibility-filters"
+                  class="mb-3 flex flex-wrap items-center gap-2"
+                  role="group"
+                  aria-label="Question visibility filter"
+                >
+                  <.candidate_visibility_button
+                    id="candidate-visibility-all"
+                    visibility="all"
+                    current_visibility={@candidate_filters.visibility}
+                  >
+                    Show All
+                  </.candidate_visibility_button>
+                  <.candidate_visibility_button
+                    id="candidate-visibility-available"
+                    visibility="available"
+                    current_visibility={@candidate_filters.visibility}
+                  >
+                    Available
+                  </.candidate_visibility_button>
+                  <.candidate_visibility_button
+                    id="candidate-visibility-removed"
+                    visibility="removed"
+                    current_visibility={@candidate_filters.visibility}
+                  >
+                    Removed
+                  </.candidate_visibility_button>
+                </div>
+
+                <div
+                  id="candidate-advanced-filters"
+                  class="mb-4 inline-flex max-w-full flex-wrap items-center gap-2 bg-Surface-surface-primary p-2.5 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
+                  role="group"
+                  aria-label="Advanced question filters"
+                >
+                  <form
+                    id="candidate-search-form"
+                    phx-change="filter_candidates"
+                    phx-submit="filter_candidates"
+                    class="flex h-[35px] w-full max-w-[224px] items-center gap-3 rounded-md border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-2 py-1 shadow-[0px_2px_5px_0px_rgba(0,50,99,0.10)]"
+                  >
+                    <Icons.search class="h-5 w-5 shrink-0 text-Icon-icon-default" />
+                    <label for="candidate-search-input" class="sr-only">Search questions</label>
+                    <input
+                      id="candidate-search-input"
+                      type="search"
+                      name="text_search"
+                      value={@candidate_filters.text_search}
+                      phx-debounce="300"
+                      autocomplete="off"
+                      class="min-w-0 flex-1 border-none bg-transparent p-0 font-open-sans text-base font-normal leading-6 text-Text-text-high placeholder:text-Text-text-low focus:outline-none focus:ring-0"
+                    />
+                  </form>
+
+                  <.candidate_multi_select_filter
+                    id="candidate-objective-filter"
+                    label="Learning Objectives"
+                    param_name="objective_ids"
+                    options={@candidate_filter_options.learning_objectives}
+                    selected_ids={@candidate_filters.objective_ids}
+                    open={@open_candidate_filter_id == "candidate-objective-filter"}
+                  />
+
+                  <.candidate_multi_select_filter
+                    id="candidate-activity-type-filter"
+                    label="Question Type"
+                    param_name="activity_type_ids"
+                    options={@candidate_filter_options.activity_types}
+                    selected_ids={@candidate_filters.activity_type_ids}
+                    open={@open_candidate_filter_id == "candidate-activity-type-filter"}
+                  />
+
+                  <button
+                    id="candidate-clear-filters"
+                    type="button"
+                    phx-click="clear_candidate_filters"
+                    class="inline-flex h-[35px] items-center gap-1.5 px-2 font-open-sans text-sm font-normal leading-none text-Text-text-high transition hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                  >
+                    <Icons.trash class="h-4 w-4" /> Clear All Filters
+                  </button>
+                </div>
+
+                <div :if={bulk_selection_state.action} class="mb-4">
+                  <button
+                    id="bulk-selection-action-button"
+                    type="button"
+                    phx-click="run_bulk_selection_action"
+                    class={bulk_selection_state.button_classes}
+                  >
+                    <span
+                      :if={bulk_selection_state.action == :remove}
+                      aria-hidden="true"
+                    >
+                      <Icons.trash class="h-4 w-4 stroke-current" />
+                    </span>
+                    <span
+                      :if={bulk_selection_state.action == :restore}
+                      aria-hidden="true"
+                    >
+                      <Icons.restore class="h-4 w-4 stroke-current" />
+                    </span>
+                    {bulk_selection_state.action_label}
+                  </button>
+                </div>
+
                 <div class="mt-4 text-sm font-normal text-gray-500 leading-5">
                   Showing {length(@candidates)} of {@total_candidate_count} questions
                 </div>
@@ -590,7 +889,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                         id="candidate-list-header-checkbox"
                         type="checkbox"
                         aria-label="Select all visible questions"
-                        checked={all_visible_candidates_checked?(@candidates, @checked_candidate_ids)}
+                        checked={bulk_selection_state.all_selectable_checked?}
                         phx-click="toggle_all_candidate_checkboxes"
                         class="h-4 w-4 rounded-[2px] border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-Fill-Buttons-fill-primary"
                       />
@@ -599,18 +898,56 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
                     <div class="flex flex-col h-[calc(100vh-300px)] overflow-scroll">
                       <div
+                        :if={@candidates == []}
+                        id="candidate-list-empty-state"
+                        class="flex min-h-32 items-center justify-center border-b border-Table-table-border px-6 py-8 text-center text-sm text-Text-text-low"
+                      >
+                        {candidate_empty_state_message(@candidate_filters)}
+                      </div>
+
+                      <div
                         :for={candidate <- @candidates}
                         id={"candidate-row-#{candidate.activity_resource_id}"}
                         role="option"
                         aria-selected={candidate_selected?(candidate, @selected_candidate_id)}
                         data-candidate-enabled={to_string(candidate.enabled?)}
-                        class={candidate_row_classes(candidate, @selected_candidate_id)}
+                        data-candidate-selectable={
+                          to_string(
+                            Map.get(
+                              bulk_selection_state.selectable_candidate_lookup,
+                              candidate.activity_resource_id,
+                              false
+                            )
+                          )
+                        }
+                        class={
+                          candidate_row_classes(
+                            candidate,
+                            @selected_candidate_id,
+                            Map.get(
+                              bulk_selection_state.selectable_candidate_lookup,
+                              candidate.activity_resource_id,
+                              false
+                            ),
+                            bulk_selection_state.active?
+                          )
+                        }
                       >
                         <input
                           id={"candidate-checkbox-#{candidate.activity_resource_id}"}
                           type="checkbox"
                           aria-label={"Select #{candidate.title}"}
                           checked={candidate_checked?(candidate, @checked_candidate_ids)}
+                          data-selection-mode={
+                            bulk_selection_state.selection_mode |> Atom.to_string()
+                          }
+                          disabled={
+                            !Map.get(
+                              bulk_selection_state.selectable_candidate_lookup,
+                              candidate.activity_resource_id,
+                              false
+                            )
+                          }
                           phx-click="toggle_candidate_checkbox"
                           phx-value-activity_resource_id={candidate.activity_resource_id}
                           class="h-4 w-4 rounded-[2px] border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-Fill-Buttons-fill-primary"
@@ -656,7 +993,12 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                   <%= if candidate = selected_candidate(@candidates, @selected_candidate_id) do %>
                     <%= if @selected_candidate_preview_html do %>
                       <div
-                        id={"selected-candidate-preview-shell-#{candidate.activity_resource_id}"}
+                        id={
+                          "selected-candidate-preview-shell-#{candidate.activity_resource_id}-#{preview_shell_state_key(@candidates, @checked_candidate_ids)}"
+                        }
+                        data-bulk-selection-active={
+                          to_string(bulk_selection_active?(@checked_candidate_ids))
+                        }
                         phx-update="ignore"
                         class="-mt-5 ml-1"
                       >
@@ -672,7 +1014,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                     <% end %>
                   <% else %>
                     <div class="rounded-lg border border-dashed border-Border-border-default bg-Surface-surface-secondary-hover px-6 py-12 text-center text-sm text-Text-text-low">
-                      No matching questions are currently available for this activity bank selection.
+                      {candidate_empty_state_message(@candidate_filters)}
                     </div>
                   <% end %>
                 </div>
@@ -682,6 +1024,107 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         </div>
       </div>
     </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :visibility, :string, required: true
+  attr :current_visibility, :atom, required: true
+  slot :inner_block, required: true
+
+  defp candidate_visibility_button(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :selected?,
+        assigns.current_visibility == candidate_visibility_from_param(assigns.visibility)
+      )
+
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      phx-click="set_candidate_visibility"
+      phx-value-visibility={@visibility}
+      aria-pressed={to_string(@selected?)}
+      class={[
+        "inline-flex min-h-10 items-center justify-center rounded-md border px-4 py-2 font-open-sans text-base font-semibold leading-6 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+        if(@selected?,
+          do: "border-Text-text-button bg-Background-bg-primary text-Text-text-button",
+          else:
+            "border-Border-border-default bg-Background-bg-primary text-Text-text-high hover:bg-Surface-surface-secondary-hover"
+        )
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </button>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :label, :string, required: true
+  attr :param_name, :string, required: true
+  attr :options, :list, required: true
+  attr :selected_ids, :list, required: true
+  attr :open, :boolean, required: true
+
+  defp candidate_multi_select_filter(assigns) do
+    assigns =
+      assign(assigns,
+        label_text: candidate_filter_label(assigns.label, assigns.selected_ids)
+      )
+
+    ~H"""
+    <details
+      id={@id}
+      class="group relative"
+      open={@open}
+      phx-click-away="close_candidate_filter_dropdown"
+    >
+      <summary
+        id={"#{@id}-toggle"}
+        phx-click="toggle_candidate_filter_dropdown"
+        phx-value-filter_id={@id}
+        class="flex h-[35px] cursor-pointer list-none items-center justify-center gap-2.5 rounded-[3px] border border-Border-border-default bg-Surface-surface-primary px-2.5 font-open-sans text-base font-semibold leading-6 text-Text-text-high marker:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary [&::-webkit-details-marker]:hidden"
+      >
+        <span class="max-w-[180px] truncate">{@label_text}</span>
+        <Icons.chevron_down
+          width="16"
+          height="16"
+          class="h-4 w-4 fill-Icon-icon-default transition-transform group-open:rotate-180"
+        />
+      </summary>
+      <form
+        id={"#{@id}-form"}
+        phx-change="filter_candidates"
+        class="absolute left-0 top-[38px] z-[60] w-[220px] rounded-md border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-3 py-2 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
+      >
+        <input type="hidden" name="_candidate_filter_id" value={@id} />
+        <input type="hidden" name={"#{@param_name}[]"} value="" />
+        <div
+          :if={@options == []}
+          id={"#{@id}-empty"}
+          class="py-1 font-open-sans text-sm font-normal leading-6 text-Text-text-low"
+        >
+          No options
+        </div>
+        <label
+          :for={option <- @options}
+          id={"#{@id}-option-#{option.id}"}
+          class="flex cursor-pointer items-center gap-1.5 py-1 font-open-sans text-sm font-normal leading-6 text-Text-text-high"
+        >
+          <input
+            id={"#{@id}-checkbox-#{option.id}"}
+            type="checkbox"
+            name={"#{@param_name}[]"}
+            value={option.id}
+            checked={option.id in @selected_ids}
+            class="h-4 w-4 rounded-none border-Border-border-bold text-Fill-Buttons-fill-primary focus:ring-Fill-Buttons-fill-primary"
+          />
+          <span class="min-w-0 truncate">{option.title}</span>
+        </label>
+      </form>
+    </details>
     """
   end
 
@@ -704,9 +1147,28 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   defp assign_candidate_page(socket, candidate_page) do
     candidates = candidate_page.candidates
 
+    candidate_revisions_by_id =
+      resolve_candidate_revisions(socket.assigns.section.slug, candidates)
+
+    candidate_preview_payloads_by_id =
+      resolve_candidate_preview_payloads(Map.values(candidate_revisions_by_id))
+
+    candidate_preview_objective_titles_by_id =
+      resolve_candidate_objective_titles(
+        socket.assigns.section.id,
+        Map.values(candidate_revisions_by_id)
+      )
+
+    # State model note:
+    # - `candidates` is the currently shown result set for the active query
+    # - `checked_candidate_ids` is ephemeral bulk-selection state for those shown rows
+    # - future filter/search URL params should redefine the active query, not persist checked ids
     socket
     |> assign(
       candidates: candidates,
+      candidate_preview_payloads_by_id: candidate_preview_payloads_by_id,
+      candidate_preview_objective_titles_by_id: candidate_preview_objective_titles_by_id,
+      candidate_revisions_by_id: candidate_revisions_by_id,
       checked_candidate_ids: MapSet.new(),
       selection_count: candidate_page.count,
       active_available_count: candidate_page.active_count,
@@ -719,18 +1181,46 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   end
 
   defp append_candidate_page(socket, candidate_page) do
-    candidates =
-      socket.assigns.candidates ++
-        Enum.reject(candidate_page.candidates, fn appended ->
-          Enum.any?(
-            socket.assigns.candidates,
-            &(&1.activity_resource_id == appended.activity_resource_id)
-          )
-        end)
+    # Paging can append many rows over time, so dedupe with a set instead of
+    # rescanning the existing list for every incoming candidate.
+    existing_ids = MapSet.new(Enum.map(socket.assigns.candidates, & &1.activity_resource_id))
+
+    new_candidates =
+      Enum.reject(candidate_page.candidates, fn appended ->
+        MapSet.member?(existing_ids, appended.activity_resource_id)
+      end)
+
+    candidates = socket.assigns.candidates ++ new_candidates
+
+    # Candidate preview selection can hop across the visible list, so resolve
+    # newly appended revisions in one batch instead of one query per click later.
+    appended_revisions_by_id =
+      resolve_candidate_revisions(socket.assigns.section.slug, new_candidates)
+
+    appended_preview_payloads_by_id =
+      resolve_candidate_preview_payloads(Map.values(appended_revisions_by_id))
+
+    appended_objective_titles_by_id =
+      resolve_candidate_objective_titles(
+        socket.assigns.section.id,
+        Map.values(appended_revisions_by_id)
+      )
 
     socket
     |> assign(
       candidates: candidates,
+      candidate_preview_payloads_by_id:
+        Map.merge(
+          socket.assigns.candidate_preview_payloads_by_id,
+          appended_preview_payloads_by_id
+        ),
+      candidate_preview_objective_titles_by_id:
+        Map.merge(
+          socket.assigns.candidate_preview_objective_titles_by_id,
+          appended_objective_titles_by_id
+        ),
+      candidate_revisions_by_id:
+        Map.merge(socket.assigns.candidate_revisions_by_id, appended_revisions_by_id),
       checked_candidate_ids:
         normalize_checked_candidate_ids(candidates, socket.assigns.checked_candidate_ids),
       selection_count: candidate_page.count,
@@ -744,13 +1234,30 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     )
   end
 
-  defp load_candidates(%Section{} = section, %Revision{} = page_revision, selection, opts \\ []) do
+  defp load_candidates(%Section{} = section, %Revision{} = page_revision, selection, opts) do
     InstructorCustomizations.list_bank_selection_candidates(
       section,
       page_revision,
       selection,
       Keyword.put_new(opts, :limit, @candidate_row_limit)
     )
+  end
+
+  defp load_candidate_filter_options(
+         %Section{} = section,
+         %Revision{} = page_revision,
+         selection,
+         total_count
+       ) do
+    case InstructorCustomizations.list_bank_selection_candidate_filter_options(
+           section,
+           page_revision,
+           selection,
+           total_count
+         ) do
+      {:ok, options} -> options
+      {:error, _reason} -> %{learning_objectives: [], activity_types: []}
+    end
   end
 
   defp refresh_candidate_page(socket) do
@@ -762,7 +1269,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
              socket.assigns.section,
              socket.assigns.page_revision,
              socket.assigns.selection,
-             limit: visible_candidate_count
+             limit: visible_candidate_count,
+             filters: socket.assigns.candidate_filters
            ) do
       {:ok, replace_candidate_page(socket, candidate_page)}
     end
@@ -778,18 +1286,34 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
       candidate ->
         with %Revision{} = activity_revision <-
-               Resolver.from_resource_id(
-                 socket.assigns.section.slug,
-                 candidate.activity_resource_id
-               ),
+               Map.get(socket.assigns.candidate_revisions_by_id, candidate.activity_resource_id),
              {:ok, %{html: html}} <-
                PreviewPageContext.build_bank_candidate_preview(
                  socket.assigns.section,
                  socket.assigns.page_revision,
                  activity_revision,
+                 encoded_model:
+                   socket.assigns.candidate_preview_payloads_by_id
+                   |> Map.get(candidate.activity_resource_id, %{})
+                   |> Map.get(:encoded_model),
+                 points:
+                   socket.assigns.candidate_preview_payloads_by_id
+                   |> Map.get(candidate.activity_resource_id, %{})
+                   |> Map.get(:points),
+                 activity_types_map: socket.assigns.candidate_preview_activity_types_map,
+                 learning_objectives:
+                   Map.get(
+                     socket.assigns.candidate_preview_objective_titles_by_id,
+                     candidate.activity_resource_id,
+                     []
+                   ),
                  selection_id: socket.assigns.selection_id,
                  can_customize?: true,
-                 actions: candidate_preview_actions(candidate)
+                 actions:
+                   candidate_preview_actions(
+                     candidate,
+                     bulk_selection_active?(socket.assigns.checked_candidate_ids)
+                   )
                ) do
           assign(socket, :selected_candidate_preview_html, html)
         else
@@ -799,25 +1323,54 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     end
   end
 
-  defp candidate_preview_actions(candidate) do
+  defp push_selected_candidate_preview_bulk_state(socket) do
+    case selected_candidate(socket.assigns.candidates, socket.assigns.selected_candidate_id) do
+      nil ->
+        socket
+
+      candidate ->
+        push_event(socket, "preview_customization_reply", %{
+          ok: true,
+          target: %{
+            kind: "bank_candidate",
+            pageResourceId: socket.assigns.current_page_resource_id,
+            selectionId: socket.assigns.selection_id,
+            activityResourceId: candidate.activity_resource_id
+          },
+          actions:
+            candidate_preview_actions(
+              candidate,
+              bulk_selection_active?(socket.assigns.checked_candidate_ids)
+            )
+        })
+    end
+  end
+
+  defp candidate_preview_actions(candidate, bulk_selection_active?) do
     if candidate.enabled? do
-      [%{kind: "remove", label: "Remove"}]
+      [PreviewCustomization.action("remove", disabled: bulk_selection_active?)]
     else
-      [%{kind: "restore", label: "Restore"}]
+      [PreviewCustomization.action("restore", disabled: bulk_selection_active?)]
     end
   end
 
   # Each activity type contributes whichever script the instructor-preview surface actually
   # needs: preview JS for types with dedicated preview support, or authoring JS for the
   # fallback path used by activity types that are not yet preview-capable (see Oli.Activities.preview_supported_activity_slug?).
-  defp candidate_surface_script_sources_by_activity_type_id do
-    Activities.list_activity_registrations()
-    |> Enum.reduce(%{}, fn activity_type, acc ->
-      case PreviewPageContext.preview_script_for_registration(activity_type) do
-        nil -> acc
-        script -> Map.put(acc, activity_type.id, "/js/#{script}")
-      end
-    end)
+  defp candidate_preview_dependencies do
+    activity_types = Activities.list_activity_registrations()
+
+    %{
+      activity_types_map:
+        Map.new(activity_types, fn activity_type -> {activity_type.id, activity_type} end),
+      script_sources_by_activity_type_id:
+        Enum.reduce(activity_types, %{}, fn activity_type, acc ->
+          case PreviewPageContext.preview_script_for_registration(activity_type) do
+            nil -> acc
+            script -> Map.put(acc, activity_type.id, "/js/#{script}")
+          end
+        end)
+    }
   end
 
   defp candidate_surface_script_sources_for_selection(
@@ -848,8 +1401,56 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     Enum.find(candidates, &(&1.activity_resource_id == selected_candidate_id))
   end
 
+  defp resolve_candidate_revisions(_section_slug, []), do: %{}
+
+  defp resolve_candidate_revisions(section_slug, candidates) do
+    # The visible candidate list already has all resource ids we need, so batch
+    # resolution here avoids a resolver query every time the right-side preview changes.
+    candidate_ids = Enum.map(candidates, & &1.activity_resource_id)
+
+    section_slug
+    |> Resolver.from_resource_id(candidate_ids)
+    |> Enum.reject(&is_nil/1)
+    |> Map.new(fn revision -> {revision.resource_id, revision} end)
+  end
+
+  defp resolve_candidate_objective_titles(_section_id, []), do: %{}
+
+  defp resolve_candidate_objective_titles(section_id, candidate_revisions) do
+    # The preview only needs objective titles, so reuse the depot cache once
+    # per visible batch instead of recomputing them for every selection change.
+    PreviewPageContext.objective_titles_by_activity_id(section_id, candidate_revisions)
+  end
+
+  defp resolve_candidate_preview_payloads(candidate_revisions) do
+    # Encoding the activity model is one of the few remaining CPU costs per
+    # selection change, so precompute it once for the visible batch.
+    Map.new(candidate_revisions, fn revision ->
+      {revision.resource_id,
+       %{
+         encoded_model:
+           revision.content
+           |> Jason.encode!()
+           |> Oli.Delivery.Page.ActivityContext.encode(),
+         points: Oli.Grading.determine_activity_out_of(revision)
+       }}
+    end)
+  end
+
   defp replace_candidate_page(socket, candidate_page) do
     candidates = candidate_page.candidates
+
+    candidate_revisions_by_id =
+      resolve_candidate_revisions(socket.assigns.section.slug, candidates)
+
+    candidate_preview_payloads_by_id =
+      resolve_candidate_preview_payloads(Map.values(candidate_revisions_by_id))
+
+    candidate_preview_objective_titles_by_id =
+      resolve_candidate_objective_titles(
+        socket.assigns.section.id,
+        Map.values(candidate_revisions_by_id)
+      )
 
     selected_candidate_id =
       if Enum.any?(candidates, &(&1.activity_resource_id == socket.assigns.selected_candidate_id)) do
@@ -861,6 +1462,9 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     socket
     |> assign(
       candidates: candidates,
+      candidate_preview_payloads_by_id: candidate_preview_payloads_by_id,
+      candidate_preview_objective_titles_by_id: candidate_preview_objective_titles_by_id,
+      candidate_revisions_by_id: candidate_revisions_by_id,
       checked_candidate_ids:
         normalize_checked_candidate_ids(candidates, socket.assigns.checked_candidate_ids),
       selection_count: candidate_page.count,
@@ -874,43 +1478,332 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     |> assign_selected_candidate_preview()
   end
 
-  defp toggle_checked_candidate_id(checked_candidate_ids, candidate_id) do
+  defp checked_candidate_ids_in_visible_order(assigns) do
+    assigns.candidates
+    |> Enum.filter(&candidate_checked?(&1, assigns.checked_candidate_ids))
+    |> Enum.map(& &1.activity_resource_id)
+  end
+
+  defp toggle_checked_candidate_id(candidates, checked_candidate_ids, candidate_id) do
     if MapSet.member?(checked_candidate_ids, candidate_id) do
       MapSet.delete(checked_candidate_ids, candidate_id)
     else
-      MapSet.put(checked_candidate_ids, candidate_id)
+      case selected_candidate(candidates, candidate_id) do
+        nil ->
+          checked_candidate_ids
+
+        candidate ->
+          # The first checked row establishes the active selection mode for the
+          # currently shown query result: available or removed.
+          case selection_mode(candidates, checked_candidate_ids) do
+            :none ->
+              MapSet.put(checked_candidate_ids, candidate_id)
+
+            selection_mode ->
+              # Once a mode is active, opposite-state rows stay unchecked so
+              # bulk selection can never mix available and removed ids.
+              if candidate_state(candidate) == selection_mode do
+                MapSet.put(checked_candidate_ids, candidate_id)
+              else
+                checked_candidate_ids
+              end
+          end
+      end
     end
   end
 
   defp normalize_checked_candidate_ids(candidates, checked_candidate_ids) do
     visible_candidate_ids = MapSet.new(visible_candidate_ids(candidates))
 
-    MapSet.intersection(checked_candidate_ids, visible_candidate_ids)
+    checked_candidate_ids
+    |> MapSet.intersection(visible_candidate_ids)
+    |> normalize_checked_candidate_selection_mode(candidates)
+  end
+
+  defp normalize_checked_candidate_selection_mode(checked_candidate_ids, candidates) do
+    case selection_mode(candidates, checked_candidate_ids) do
+      :mixed ->
+        # Refreshes and future query-param changes can invalidate part of the
+        # checked set. If mixed states sneak in, keep only the first visible
+        # state we encounter so bulk behavior stays same-state only.
+        candidates
+        |> Enum.reduce({MapSet.new(), nil}, fn candidate, {normalized_ids, chosen_mode} ->
+          if candidate_checked?(candidate, checked_candidate_ids) do
+            candidate_mode = candidate_state(candidate)
+
+            cond do
+              is_nil(chosen_mode) ->
+                {MapSet.put(normalized_ids, candidate.activity_resource_id), candidate_mode}
+
+              chosen_mode == candidate_mode ->
+                {MapSet.put(normalized_ids, candidate.activity_resource_id), chosen_mode}
+
+              true ->
+                {normalized_ids, chosen_mode}
+            end
+          else
+            {normalized_ids, chosen_mode}
+          end
+        end)
+        |> elem(0)
+
+      _selection_mode ->
+        checked_candidate_ids
+    end
   end
 
   defp visible_candidate_ids(candidates) do
     Enum.map(candidates, & &1.activity_resource_id)
   end
 
+  # The bulk-selection mode is derived from the checked rows in the current
+  # query result. `:mixed` is a defensive state that can appear transiently
+  # during refresh/normalization, but the UI should settle back to one state.
+  defp selection_mode(candidates, checked_candidate_ids) do
+    # Fold once so we do not build the intermediate checked-candidate/state lists
+    # on every render and checkbox event.
+    candidates
+    |> Enum.reduce(:none, fn candidate, mode ->
+      if candidate_checked?(candidate, checked_candidate_ids) do
+        candidate_mode = candidate_state(candidate)
+
+        case mode do
+          :none -> candidate_mode
+          ^candidate_mode -> mode
+          _ -> :mixed
+        end
+      else
+        mode
+      end
+    end)
+  end
+
+  defp bulk_selection_active?(checked_candidate_ids), do: MapSet.size(checked_candidate_ids) > 0
+
+  defp bulk_selection_view_state(candidates, checked_candidate_ids) do
+    selection_mode = selection_mode(candidates, checked_candidate_ids)
+    selectable_candidate_ids = selectable_visible_candidate_ids(candidates, selection_mode)
+    count = MapSet.size(checked_candidate_ids)
+    action = bulk_selection_action(selection_mode)
+
+    # The template asks "is this row selectable?" several times per candidate.
+    # Precomputing a lookup keeps those checks O(1) and avoids repeated scans.
+    selectable_candidate_lookup =
+      Map.new(selectable_candidate_ids, fn candidate_id -> {candidate_id, true} end)
+
+    %{
+      selection_mode: selection_mode,
+      active?: count > 0,
+      action: action,
+      action_label: bulk_selection_action_label(action, count),
+      button_classes: bulk_selection_action_button_classes(action),
+      all_selectable_checked?:
+        all_selectable_candidates_checked?(candidates, checked_candidate_ids),
+      selectable_candidate_lookup: selectable_candidate_lookup
+    }
+  end
+
+  defp selectable_visible_candidate_ids(candidates, selection_mode) do
+    case selection_mode do
+      :none ->
+        visible_candidate_ids(candidates)
+
+      :mixed ->
+        []
+
+      active_selection_mode ->
+        candidates
+        |> Enum.filter(&(candidate_state(&1) == active_selection_mode))
+        |> visible_candidate_ids()
+    end
+  end
+
+  defp bulk_selection_action(selection_mode) do
+    case selection_mode do
+      :available -> :remove
+      :removed -> :restore
+      _ -> nil
+    end
+  end
+
+  defp bulk_selection_action_label(action, count) do
+    case action do
+      :remove -> "Remove Selected (#{count})"
+      :restore -> "Restore Selected (#{count})"
+      nil -> nil
+    end
+  end
+
+  defp bulk_selection_action_button_classes(action) do
+    shared =
+      "inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+
+    case action do
+      :remove ->
+        "#{shared} border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted focus-visible:outline-Border-border-danger"
+
+      :restore ->
+        "#{shared} bg-transparent border-[#8AB8E5] text-Text-text-button focus-visible:outline-[#8AB8E5]"
+
+      nil ->
+        shared
+    end
+  end
+
+  defp preview_shell_state_key(candidates, checked_candidate_ids) do
+    "#{selection_mode(candidates, checked_candidate_ids)}-#{MapSet.size(checked_candidate_ids)}"
+  end
+
+  defp master_selectable_candidate_ids(candidates, checked_candidate_ids) do
+    master_selection_mode = master_selection_mode(candidates, checked_candidate_ids)
+
+    candidates
+    |> Enum.filter(&selectable_candidate?(&1, master_selection_mode))
+    |> visible_candidate_ids()
+  end
+
+  defp master_selection_mode(candidates, checked_candidate_ids) do
+    case selection_mode(candidates, checked_candidate_ids) do
+      :none -> preferred_master_selection_mode(candidates)
+      active_selection_mode -> active_selection_mode
+    end
+  end
+
+  defp preferred_master_selection_mode(candidates) do
+    cond do
+      Enum.any?(candidates, &(candidate_state(&1) == :available)) -> :available
+      Enum.any?(candidates, &(candidate_state(&1) == :removed)) -> :removed
+      true -> :none
+    end
+  end
+
+  defp selectable_candidate?(_candidate, :none), do: true
+  defp selectable_candidate?(_candidate, :mixed), do: false
+
+  defp selectable_candidate?(candidate, active_selection_mode) do
+    candidate_state(candidate) == active_selection_mode
+  end
+
+  defp candidate_state(%{enabled?: true}), do: :available
+  defp candidate_state(%{enabled?: false}), do: :removed
+
   defp candidate_checked?(candidate, checked_candidate_ids) do
     MapSet.member?(checked_candidate_ids, candidate.activity_resource_id)
   end
 
-  defp all_visible_candidates_checked?([], _checked_candidate_ids), do: false
+  defp all_selectable_candidates_checked?([], _checked_candidate_ids), do: false
 
-  defp all_visible_candidates_checked?(candidates, checked_candidate_ids) do
-    Enum.all?(candidates, &candidate_checked?(&1, checked_candidate_ids))
+  defp all_selectable_candidates_checked?(candidates, checked_candidate_ids) do
+    selectable_candidate_ids =
+      master_selectable_candidate_ids(candidates, checked_candidate_ids)
+
+    selectable_candidate_ids != [] and
+      Enum.all?(selectable_candidate_ids, &MapSet.member?(checked_candidate_ids, &1))
   end
 
   defp remaining_candidate_count(total_candidate_count, candidates) do
     max(total_candidate_count - length(candidates), 0)
   end
 
+  defp candidate_empty_state_message(candidate_filters) do
+    if candidate_filters_active?(candidate_filters) do
+      "No questions match the selected filters."
+    else
+      "No matching questions are currently available for this activity bank selection."
+    end
+  end
+
+  defp candidate_filters_active?(%{
+         visibility: visibility,
+         text_search: text_search,
+         activity_type_ids: activity_type_ids,
+         objective_ids: objective_ids
+       }) do
+    visibility != :all or text_search != "" or activity_type_ids != [] or objective_ids != []
+  end
+
+  defp default_candidate_filters do
+    %{visibility: :all, text_search: "", activity_type_ids: [], objective_ids: []}
+  end
+
+  defp candidate_filter_label(label, []), do: label
+  defp candidate_filter_label(label, selected_ids), do: "#{label} (#{length(selected_ids)})"
+
+  defp candidate_filters_from_params(params, current_filters) do
+    %{
+      visibility:
+        params
+        |> Map.get("visibility", current_filters.visibility)
+        |> candidate_visibility_from_param(),
+      text_search: candidate_text_search_from_params(params, current_filters.text_search),
+      activity_type_ids:
+        candidate_filter_ids_from_params(
+          params,
+          "activity_type_ids",
+          current_filters.activity_type_ids
+        ),
+      objective_ids:
+        candidate_filter_ids_from_params(params, "objective_ids", current_filters.objective_ids)
+    }
+  end
+
+  defp candidate_visibility_from_param(visibility)
+       when visibility in [:all, :available, :removed],
+       do: visibility
+
+  defp candidate_visibility_from_param("available"), do: :available
+  defp candidate_visibility_from_param("removed"), do: :removed
+  defp candidate_visibility_from_param(_visibility), do: :all
+
+  defp candidate_text_search_from_params(params, current_text_search) do
+    case Map.fetch(params, "text_search") do
+      {:ok, value} when is_binary(value) -> normalize_candidate_text_search(value)
+      {:ok, _value} -> ""
+      :error -> current_text_search
+    end
+  end
+
+  defp normalize_candidate_text_search(value) do
+    value
+    |> String.trim()
+    |> String.slice(0, @candidate_text_search_max_length)
+  end
+
+  defp candidate_filter_ids_from_params(params, key, current_ids) do
+    case Map.fetch(params, key) do
+      {:ok, value} -> parse_candidate_filter_ids(value)
+      :error -> current_ids
+    end
+  end
+
+  defp parse_candidate_filter_ids(value) do
+    value
+    |> List.wrap()
+    |> Enum.flat_map(fn
+      value when is_binary(value) -> String.split(value, ",", trim: true)
+      value when is_integer(value) -> [Integer.to_string(value)]
+      _value -> []
+    end)
+    |> Enum.reduce([], fn value, acc ->
+      case Integer.parse(value) do
+        {id, ""} when id > 0 -> [id | acc]
+        _ -> acc
+      end
+    end)
+    |> Enum.reverse()
+    |> Enum.uniq()
+  end
+
   defp candidate_selected?(candidate, selected_candidate_id) do
     candidate.activity_resource_id == selected_candidate_id
   end
 
-  defp candidate_row_classes(candidate, selected_candidate_id) do
+  defp candidate_row_classes(
+         candidate,
+         selected_candidate_id,
+         selectable?,
+         bulk_selection_active?
+       ) do
     selected? = candidate_selected?(candidate, selected_candidate_id)
 
     [
@@ -922,19 +1815,31 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       if(!candidate.enabled?,
         do: "bg-Surface-surface-secondary-muted opacity-60 h-[88px]",
         else: "h-12"
-      )
+      ),
+      if(bulk_selection_active? and !selectable?, do: "opacity-50", else: nil)
     ]
   end
 
-  defp invalid_remove_warning_assigns(_candidate, count, active_candidates, warning) do
+  defp invalid_remove_warning_assigns(count, active_candidates, removal_count, warning) do
     %{
       warning: warning,
-      title: "Cannot remove this question",
+      title: invalid_remove_warning_title(removal_count),
       count: count,
       active_candidates: active_candidates,
+      keep_label: invalid_remove_warning_keep_label(removal_count),
+      removal_subject: invalid_remove_warning_subject(removal_count),
       target: Map.get(warning, :target) || Map.get(warning, "target")
     }
   end
+
+  defp invalid_remove_warning_title(1), do: "Cannot remove this question"
+  defp invalid_remove_warning_title(_count), do: "Cannot remove these questions"
+
+  defp invalid_remove_warning_keep_label(1), do: "Keep question"
+  defp invalid_remove_warning_keep_label(_count), do: "Keep questions"
+
+  defp invalid_remove_warning_subject(1), do: "this question"
+  defp invalid_remove_warning_subject(count), do: "these #{count} questions"
 
   defp question_word(1), do: "question"
   defp question_word(_count), do: "questions"
@@ -1028,8 +1933,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     end
   end
 
-  defp sidebar_expanded_from_path(_), do: true
-
   defp parse_integer(value) when is_integer(value), do: value
 
   defp parse_integer(value) when is_binary(value) do
@@ -1049,144 +1952,4 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
        do: points
 
   defp selection_points_per_question(_selection), do: 1
-
-  # Selection criteria can combine tags, learning objectives, activity type, and text expressions.
-  # We keep the summary local to this LiveView so the manager can show authored criteria without
-  # introducing a separate presentation layer just for this ticket.
-  defp selection_criteria_rows(_section_slug, %{"logic" => %{"conditions" => nil}}),
-    do: [%{label: "All questions", value: "No additional filters"}]
-
-  defp selection_criteria_rows(section_slug, %{"logic" => %{"conditions" => conditions}})
-       when is_map(conditions) do
-    title_map = selection_resource_titles(section_slug, conditions)
-    activity_type_titles = activity_type_titles()
-
-    selection_condition_rows(conditions, title_map, activity_type_titles)
-  end
-
-  defp selection_criteria_rows(_section_slug, _selection),
-    do: [%{label: "All questions", value: "No additional filters"}]
-
-  defp selection_condition_rows(
-         %{"children" => children, "operator" => operator},
-         title_map,
-         activity_type_titles
-       )
-       when is_list(children) do
-    child_rows =
-      Enum.flat_map(children, &selection_condition_rows(&1, title_map, activity_type_titles))
-
-    if child_rows == [] do
-      [%{label: "Selection logic", value: logical_operator_label(operator)}]
-    else
-      Enum.with_index(child_rows, 1)
-      |> Enum.map(fn {row, index} ->
-        %{label: "#{logical_operator_label(operator)} #{index}: #{row.label}", value: row.value}
-      end)
-    end
-  end
-
-  defp selection_condition_rows(
-         %{"fact" => fact, "operator" => operator, "value" => value},
-         title_map,
-         activity_type_titles
-       ) do
-    [
-      %{
-        label: criteria_label(fact),
-        value: criteria_value(fact, operator, value, title_map, activity_type_titles)
-      }
-    ]
-  end
-
-  defp selection_condition_rows(_conditions, _title_map, _activity_type_titles), do: []
-
-  defp selection_resource_titles(section_slug, conditions) do
-    resource_ids =
-      collect_selection_resource_ids(conditions)
-      |> Enum.uniq()
-
-    if resource_ids == [] do
-      %{}
-    else
-      # Criteria ids are authored into the published selection, so resolve them through the
-      # current section slug instead of the mutable authoring project boundary.
-      Resolver.from_resource_id(section_slug, resource_ids)
-      |> Enum.reject(&is_nil/1)
-      |> Map.new(fn revision -> {revision.resource_id, revision.title} end)
-    end
-  end
-
-  defp collect_selection_resource_ids(%{"children" => children}) when is_list(children) do
-    Enum.flat_map(children, &collect_selection_resource_ids/1)
-  end
-
-  defp collect_selection_resource_ids(%{"fact" => fact, "value" => value})
-       when fact in ["tags", "objectives"] and is_list(value),
-       do: value
-
-  defp collect_selection_resource_ids(%{"conditions" => conditions}) when is_map(conditions),
-    do: collect_selection_resource_ids(conditions)
-
-  defp collect_selection_resource_ids(_), do: []
-
-  defp activity_type_titles do
-    Activities.list_activity_registrations()
-    |> Map.new(fn registration -> {registration.id, registration.title} end)
-  end
-
-  defp criteria_label("tags"), do: "Tags:"
-  defp criteria_label("objectives"), do: "Learning objectives:"
-  defp criteria_label("type"), do: "Question type:"
-  defp criteria_label("text"), do: "Activity content:"
-  defp criteria_label(_fact), do: "Selection rule:"
-
-  defp criteria_value("tags", operator, value, title_map, _activity_type_titles),
-    do: prefixed_criteria_value(operator, map_titles(value, title_map))
-
-  defp criteria_value("objectives", operator, value, title_map, _activity_type_titles),
-    do: prefixed_criteria_value(operator, map_titles(value, title_map))
-
-  defp criteria_value("type", operator, value, _title_map, activity_type_titles),
-    do: prefixed_criteria_value(operator, map_type_titles(value, activity_type_titles))
-
-  defp criteria_value("text", operator, value, _title_map, _activity_type_titles)
-       when is_binary(value),
-       do: prefixed_criteria_value(operator, value)
-
-  defp criteria_value(_fact, operator, value, _title_map, _activity_type_titles),
-    do: prefixed_criteria_value(operator, inspect(value))
-
-  defp prefixed_criteria_value(operator, text) do
-    prefix =
-      case operator do
-        "contains" -> "Contains "
-        "does_not_contain" -> "Does not contain "
-        "equals" -> "Equals "
-        "does_not_equal" -> "Does not equal "
-        _ -> ""
-      end
-
-    prefix <> text
-  end
-
-  defp map_titles(values, title_map) when is_list(values) do
-    values
-    |> Enum.map(fn id -> Map.get(title_map, id, to_string(id)) end)
-    |> Enum.join(", ")
-  end
-
-  defp map_titles(value, _title_map), do: to_string(value)
-
-  defp map_type_titles(values, activity_type_titles) when is_list(values) do
-    values
-    |> Enum.map(fn id -> Map.get(activity_type_titles, id, to_string(id)) end)
-    |> Enum.join(", ")
-  end
-
-  defp map_type_titles(value, _activity_type_titles), do: to_string(value)
-
-  defp logical_operator_label("all"), do: "All of"
-  defp logical_operator_label("any"), do: "Any of"
-  defp logical_operator_label(_operator), do: "Selection logic"
 end

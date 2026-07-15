@@ -6,6 +6,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   alias Oli.Delivery.{Gating, Metrics, PreviousNextIndex, Settings}
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Page.{PageContext, PrologueContext, PrologueState}
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
 
@@ -295,7 +296,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     do: ~p"/sections/#{section_slug}/preview/container/#{slug}"
 
   defp url_from_desc(section_slug, %{"type" => "page", "slug" => slug}),
-    do: ~p"/sections/#{section_slug}/preview/page/#{slug}"
+    do: PreviewRoutes.lesson_path(section_slug, slug)
 
   defp to_epoch(nil), do: nil
 

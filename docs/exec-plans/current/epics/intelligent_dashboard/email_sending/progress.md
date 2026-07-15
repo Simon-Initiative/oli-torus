@@ -1,28 +1,28 @@
-# Progress — email_sending (MER-5257)
+# Progress — email_sending (MER-5257 → MER-5642)
 
-Live status of the work. Edit this file as items complete; the live page at `/dev/mer-5257` reads it on each click. Detailed task content lives in `plan.md`; this file is the at-a-glance tracker.
+Live status of the work. Detailed task content lives in `plan.md`; this file is the at-a-glance tracker.
 
-- Jira: [MER-5257](https://eliterate.atlassian.net/browse/MER-5257)
+- Jira (backend, merged): [MER-5257](https://eliterate.atlassian.net/browse/MER-5257)
+- Jira (frontend, active): [MER-5642](https://eliterate.atlassian.net/browse/MER-5642)
 - Plan (full detail): [plan.md](plan.md)
 - PRD: [prd.md](prd.md)
 - Requirements: [requirements.yml](requirements.yml)
 - Open gaps: [gaps.md](gaps.md)
-- Figma node: https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=955-17500
+- Figma node (Support Email): https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=955-17500
+- Figma node (Assignment Email): https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=1115-18333
 
 ## Current Status
 
-- **Phase:** Phase 2 COMPLETE — staged locally (5 new lib modules + 5 test files + Phase 1 fixture updates + plan/progress doc updates). Awaiting commit.
-- **Last updated:** 2026-05-11
-- **Next step:** Commit Phase 2, push, then open the PR 1 review loop (bundles Phases 1 + 2). After review: Phase 3 / 4 (modal).
-- **Branch:** `MER-5257-ai-email-capabilities-updates` (2 plan-commits ahead of remote; Phase 2 implementation uncommitted on top)
-- **Verification (Phase 2):**
-  - New ExUnit tests: 17 (`substitution_test.exs`) + 9 (`realization_test.exs`) + 12 (`validator_test.exs`) + 4 (`send_worker_test.exs`) + 12 (`email_test.exs` integration) = 54 new tests
-  - Phase 1 test fixtures updated (`context_builder_test.exs` +2, `prompt_composer_test.exs` / `ai_draft_facade_test.exs` factories) — backward-compat preserved
-  - Combined instructor-dashboard + mailer suite: 303 tests, 0 failures
-  - `Oli.Rendering.Content.Html.escape_xml!/1` brace-preservation regression test guards Option B post-render substitution
-  - Mechanical: `mix format --check-formatted` ✓ + `mix compile --warnings-as-errors` ✓
-- **Verification (Phase 1):**
-  - 84 mocked unit tests + 5 fixture replay tests + manual `scripts/dev/email_sending_phase_1_check.exs` (35/35) — all still green
+- **Phase:** Phases 4–6 COMPLETE. Phase 6 manual QA done (2026-06-08..09) — all cases 6.1–6.21 pass; 4 bugs found → fixed via TDD → committed; 1 backlog logged; AI-review loop CLOSED; B1 RESOLVED. Remaining = docs commit + GenAI backlog ticket + archive.
+- **Last updated:** 2026-06-09
+- **Next step:** commit docs (this file + `gaps.md` + `prd.md`) → write the **GenAI model inflight-counter underflow** backlog ticket (see 6.4 note) → archive feature docs (`current/` → `archive/`). Final gate (6.19) already green.
+- **Branch:** `MER-5642-context-aware-email-draft-modal-ui-implementation` (PR #6606)
+- **PR 1 (Phases 1+2):** MERGED to master (`09fdf332bc` — PR #6556)
+- **Phase 3:** COMPLETE (all B2/B3 gaps resolved in prior sessions)
+- **Phase 4:** COMPLETE (modal LiveComponent + tests + Button `:close` fix)
+- **Phase 5:** COMPLETE — 5.1–5.7 all committed + pushed; 5.7 banner VERIFIED (Session 13)
+- **Phase 6:** COMPLETE — manual QA Blocks A–D all pass (Session 15)
+- **B1:** RESOLVED — `Button` atom-key globals fix committed (kept `[ENHANCEMENT]` per type-stickiness; Session 14)
 
 ## Status legend
 
@@ -57,44 +57,312 @@ Live status of the work. Edit this file as items complete; the live page at `/de
 
 ### Phase 4 — Reusable Draft Email Modal (UI + a11y)
 
-- [ ] 4.1 — LiveComponent state model
-- [ ] 4.2 — Recipient chip pills + remove + manual add
-- [ ] 4.3 — Tone buttons (Neutral / Encouraging / Firm)
-- [ ] 4.4 — Subject input
-- [ ] 4.5 — Body textarea + scroll + hyperlink editor
-- [ ] 4.6 — Generate / Send / Cancel buttons
-- [ ] 4.7 — Focus trap + keyboard ops
-- [ ] 4.8 — Loading / error / empty / validation states
-- [ ] 4.9 — Live region announcements
-- [ ] 4.10 — Smoke harness page
+#### Pre-work
+- [x] 4.0a — Add `Fill-Buttons-fill-primary-bold` token to `assets/tailwind.tokens.js`
+- [x] 4.0b — Decision: drop `INSTRUCTOR_EMAIL_MAX_RECIPIENTS` cap
+
+#### Implementation Steps
+
+- [x] **4.1 — LiveComponent scaffold + state model**
+- [x] **4.2 — Recipient chip pills + overflow + remove**
+- [x] **4.3 — Tone buttons (Neutral / Encouraging / Firm)**
+- [x] **4.4 — Subject input**
+- [x] **4.5 — Body editor (Slate RichTextEditor + markdown→Slate conversion)**
+- [x] **4.6 — Generate / Send / Cancel buttons + backend wiring**
+- [x] **4.7 — Focus trap + keyboard ops**
+- [x] **4.8 — Loading / error / empty / validation states**
+- [x] **4.9 — Live region announcements**
+- [x] **4.10 — Testing**
+
+#### Extra work (discovered during Phase 4)
+- [x] **Button `:close` variant aria-label fix** — pre-existing bug where custom `aria-label` was swallowed. Root cause: HEEx `@rest` keys are atoms, code read string keys. Fixed in `button.ex` `normalize_button_assigns/1`.
+- [x] **Unused function cleanup** — removed `inject_summary_recommendation/3` and `assert_eventually/2` from `instructor_dashboard_live_test.exs` (pre-existing dead code causing compile warnings).
 
 ### Phase 5 — Entry-Point Integrations
 
-- [ ] 5.1 — Student Support tile launcher
-- [ ] 5.2 — Assessments tile launcher
-- [ ] 5.3 — Student Overview launcher
-- [ ] 5.4 — Content → Student list launcher
-- [ ] 5.5 — Learning Objectives → Student list launcher
+- [x] 5.1 — Student Support tile launcher
+- [x] 5.2 — Assessments tile launcher
+- [x] 5.3 — Student Overview launcher (swap legacy EmailModal → DraftEmailModal in `students.ex`)
+- [x] 5.4 — Content → Student list launcher (same shared `students.ex` mount)
+- [x] 5.5 — Learning Objectives → Student list launcher (`student_proficiency_list.ex`; wired + tested, committed `54f0bd2e41`)
 - [x] 5.6 — Additional entry points (G-J01 resolved: closed list = the 5 explicit entry points)
-- [ ] 5.7 — "Email sent" banner
+- [x] 5.7 — "Email sent" banner — VERIFIED 2026-06-01. Chain: modal send success (`draft_email_modal.ex:365-366`) → `send(self(), {:flash_message, {:info, "Email sent to N student(s)"}})` → parent `handle_info` (`instructor_dashboard_live.ex:1170-1171`) → `put_flash(:info, …)` → renders in `#flash_container` z-50 (`layouts/instructor_dashboard.html.heex:17`), above sticky thead z-[40]. Manually dismissible; no auto-dismiss (design polish, flagged G-D10). Copy decision: kept "Email sent to N student(s)" per ticket AC §2.5.a + PRD L48 — §2.5.b's "Queued N emails" accuracy revision intentionally NOT adopted ("sent" is the term instructors expect; enqueue-vs-deliver distinction is internal).
+
+#### Extra work (GenAI cleanup, discovered during Phase 5 — driven by AIDraftFacade needing `response_format: %{type: "json_object"}`)
+
+- [x] **Provider opts plumbing** — added `provider_opts:` pass-through from `Execution.generate_with_metadata/5` → `Completions.generate/4` → `Provider.generate/4`. `OpenAICompliantProvider.completion_params/4` now appends `response_format`, `temperature`, `max_tokens` when present. Behaviour callback `Provider.generate/4` updated. Three providers (`OpenAICompliantProvider`, `ClaudeProvider`, `NullProvider`) + 4 test mocks updated.
+- [x] **AIDraftFacade JSON mode** — passes `provider_opts: [response_format: %{type: "json_object"}]` for Ollama API-level JSON constraint. JSON repair pipeline kept as defense-in-depth.
+- [x] **LLMBridge type-vs-impl mismatch fix** — `@type opts` declared `temperature`/`max_tokens` since Aug 2025 (MER-4864) but `call_with_routing/3` dropped them. Now wired through `provider_opts:`.
+- [x] **LLMBridge signature refactor** — `next_decision/2` → `next_decision/3`. Required `%ServiceConfig{}` struct pattern-matched as 2nd positional arg (replaces runtime `Map.fetch!`). Optional knobs as `opts \\ []` keyword list. New `@type completion_opts` documents all four optional keys (`temperature`, `max_tokens`, `section_id`, `actor_id`) — old type spec under-declared `section_id`/`actor_id`. Caller in `server.ex` updated.
+- [x] **LLMBridge dead-code removal** — `call_provider/3` orphan from MER-5222 (Jan 2026) refactor. Audit found zero live callers (only its own def + skipped placeholder test). Deleted public function + skipped describe block + unused `Completions` alias.
+
+#### Open GenAI items (flag for PR reviewer / Darren)
+
+- [ ] **Claude `response_format` gap — needs empirical check + decision.** `ClaudeProvider.generate/4` silently drops `provider_opts`. Anthropic API (Claude 3.x) has no `response_format` parameter; only OpenAI-compliant providers (Ollama, OpenAI) honor the JSON-mode constraint added this session. Risk: if any active `ServiceConfig` uses Claude as primary or backup for a feature whose facade passes `response_format` (currently only `:instructor_email` via `AIDraftFacade`), routing to Claude returns unconstrained text — JSON repair pipeline + `:parse_failure` UX absorbs the impact but Generate-button retries increase. **Cannot verify from local env (no prod DB access).** Mitigation options if Claude routing is real:
+  - **E** — feature/capability flag at routing layer so JSON-required features never pick Claude providers (cleanest).
+  - **D** — implement native Anthropic JSON via forced tool use (most reliable; coexistence with agent tool calling needs design; Claude 4 unsupported by current `ClaudeProvider`).
+  - **A** — moduledoc note in `ClaudeProvider` documenting the drop (always do this regardless).
+
+  **Ask Darren:** is Claude in any active ServiceConfig today (or planned)? Answer determines whether this is paperwork (A) or implementation (D/E).
+
+#### Extra work (discovered during Phase 5 manual QA)
+
+- [x] **Send-close teardown regression (all entry points).** After **Send**, the modal closed server-side (parent removes the component via `:if`), but `phx-remove` does NOT fire on wholesale `LiveComponent` removal — so `Modal.show_modal`'s `overflow-hidden` on `<body>` + the fixed backdrop + focus trap leaked. Result: page scroll dead, clicks blocked, flash trapped under the sticky header. Cancel/X were unaffected because they run `Modal.hide_modal` client-side before closing. **Fix:** on send success, `draft_email_modal.ex` sets a `closing` flag and renders a one-shot `phx-hook="OnMountAndUpdate"` element with `data-event={Modal.hide_modal(@modal_dom_id)}`, replaying the same teardown before removal. Failure path unchanged. Single shared-component change → fixes 5.1–5.5. Verified manually (browser-only behavior; not unit-testable). Re-check: QA step 6.9 "Page stays responsive after close".
+- [x] **Flash banner hidden behind sticky table header.** The instructor-dashboard flash container was `z-40` and the insights tables' sticky `<thead>` is `z-[40]` — equal z-index, so the header painted over the "Email sent" banner (and any flash on those tabs). **Fix:** bumped the flash container to `z-50` in `instructor_dashboard.html.heex`. Pre-existing; surfaced by the send flash on the Learning Objectives tab.
+- [x] **DotDistributionChart React duplicate-key + hover bug (Learning Objectives proficiency chart).** Tower dots were keyed by `towerDot.student_id`, but objective proficiency rows (`Metrics.student_proficiency_for_objective`) expose `id`, not `student_id` → `student_id` was `undefined`, giving every tower dot `key="undefined"` (React "two children with same key" warning) and a shared `dotId` (hovering one dot highlighted all). Surfaced by seeding multiple students at the same proficiency value (a tower). **Fix:** key/id tower dots by the map index in `DotDistributionChart.tsx`. Pre-existing; separate component from the email feature.
 
 ### Phase 6 — End-to-End Verification + Manual QA
 
-- [ ] 6.1 — Targeted test suites
-- [ ] 6.2 — Telemetry verification
-- [ ] 6.3 — Manual keyboard walkthrough
-- [ ] 6.4 — Screen-reader verification
-- [ ] 6.5 — Context-quality entry-point spot checks
-- [ ] 6.6 — Banner placement verified
-- [ ] 6.7 — `mix format` + lints
-- [ ] 6.8 — `requirements.yml` proofs updated
-- [ ] 6.9 — Review notes prepared
+#### Quick-Start Access (read this first — make access easy)
+
+**1. Log in once (admin can open any section's instructor dashboard):**
+- Go to `http://localhost/authors/log_in`
+- Email: `admin@example.edu` · Password: `changeme`
+- (Admin passes the dashboard gate `is_section_instructor_or_admin?` — no per-section instructor account needed; none are enrolled.)
+
+**2. Entry-point URLs (paths — prepend `http://localhost`):**
+
+| Case | Entry point | Path |
+|------|-------------|------|
+| 6.1 | Student Support tile | `/sections/example_course_section/instructor_dashboard/insights/dashboard?dashboard_scope=course` |
+| 6.2 | Assessments tile | same dashboard page (scroll to the **Assessments** tile) |
+| 6.16 | Overview → Students | `/sections/example_course_section/instructor_dashboard/overview/students` |
+| 6.17 | Content → student list | `/sections/dashboard_hierarchy_demo/instructor_dashboard/insights/content` → click **Unit 1** → **Module 1** |
+| 6.18 | Objectives → proficiency | `/sections/dashboard_objectives_demo/instructor_dashboard/insights/learning_objectives` → expand an objective → pick a proficiency level |
+
+**3. Which students to select** (`example_course_section` roster):
+- **Have email (will receive):** Alice Johnson, Bob Smith, Carol Williams, David Lee, Emma Garcia, Frank Brown, Henry Wilson.
+- **No email (use for the excluded-note — 6.8 / 6.21):** **Grace Davis**, **Admin User**.
+- Tip: select e.g. *Alice Johnson + Bob Smith + Grace Davis* → you'll see Alice/Bob as chips **and** the "1 selected student … does not have an associated email" note (Grace).
+
+**4. AI generate (6.4):** runs on **local Ollama** (`llama3.1:8b`) — no cloud key. Ensure `ollama serve` is running (`ollama list` shows the model). Click **Generate New Draft** → subject + body fill in (first run may take a few seconds).
+
+#### Suggested Run Order (avoid re-opening the modal / re-navigating)
+
+Cases are grouped by feature, not execution order. Run them in this order so the shared `DraftEmailModal` is exercised **once**, then each entry point only gets a "does it open with the right context" check (no duplicate modal-internal testing).
+
+- **Block A — One full modal pass** (open the modal ONCE via Overview→students; run every in-modal behavior in that session; end by sending):
+  6.16 (open) → 6.3 tone → 6.4 generate/regenerate → 6.6 subject → 6.20 debounce → 6.21 Send-state → 6.14 toolbar → 6.7 recipients → 6.8 excluded → 6.11 keyboard → 6.10 cancel → **6.9 send** (closes modal — check teardown/flash here).
+- **Block B — Entry-point opens** (verify each launcher opens the modal with correct recipients/context; do NOT re-test modal internals):
+  6.1 Support tile · 6.2 Assessments · 6.17 Content · 6.18 Objectives · 6.15 button styles.
+- **Block C — Error / edge:**
+  6.5 generate error (e.g. stop `ollama serve`, then Generate) · 6.12 context-builder error.
+- **Block D — Automated gates:**
+  6.19 (`mix test` + `mix format --check-formatted`).
+
+> **Manual-testing phase:** only commit if a case surfaces a **bug or an improvement** → then fix via TDD → commit. Otherwise just tick the checkboxes; no commits.
+
+#### Prerequisites
+
+- Admin login: http://localhost/authors/log_in → `admin@example.edu` / `changeme`
+- Verify `:instructor_email` FeatureConfig: `Oli.Repo.get_by(Oli.GenAI.FeatureConfig, feature: :instructor_email)`
+- Dashboard URL: http://localhost/sections/example_course_section/instructor_dashboard/insights/dashboard?dashboard_scope=course
+- Admin sections list: http://localhost/admin/sections
+- Seed demo data: **already present in this machine's dev DB** (verified 2026-06-08) — `example_course_section` (9 students, 2 without email), `dashboard_hierarchy_demo` (8), `dashboard_objectives_demo` (8). Enrolled-but-no-activity students intentionally surface in every entry point (Support→"Not enough information", Objectives→"Not enough data", Assessments→"not completed", Overview→listed), so no seeded attempts are needed. ⚠️ The original `scripts/dev/seed_dashboard_data.exs` is **lost** (was dev-only / uncommitted); the data survives in the dev DB but would need re-creation if the DB is reset or on a fresh environment.
+- AI draft generation runs against **local Ollama** (no cloud key/cost): `:instructor_email` FeatureConfig → RegisteredModel `ollama-local` (provider `:open_ai`, model `llama3.1:8b`, `url_template http://localhost:11434`). Requires `ollama serve` running with the model pulled (`ollama list`). Generate-success (6.4) is testable locally; verified the OpenAI-compatible `/v1/chat/completions` + `response_format: json_object` returns `{subject, body}`.
+- Hierarchy demo section (6.17): http://localhost/sections/dashboard_hierarchy_demo/instructor_dashboard/insights/content
+- Objectives demo section (6.18): http://localhost/sections/dashboard_objectives_demo/instructor_dashboard/insights/learning_objectives
+
+#### 6.1 — Student Support Tile → Modal — ✅ PASS (2026-06-08)
+
+- [x] Navigate to dashboard URL. Wait for tiles to load.
+- [x] Click a bucket (Struggling/Excelling/On Track/Inactive) to expand student list
+- [x] Select students via checkboxes
+- [x] Click **"Email Selected"** button
+- [x] Modal opens with selected students as recipient chips
+- [x] Tone buttons visible: Neutral (selected), Encouraging, Firm
+- [x] Subject input empty, Body editor empty
+- [x] "Generate New Draft" enabled
+- [x] "Send" appears disabled — greyed + `aria-disabled="true"`, but still keyboard-focusable (not hard-`disabled`); empty subject + body
+- [x] Footer shows "Fields contained in square brackets like {first_name} will be personalized automatically." (matches Figma node 1115:18333; note: the "square brackets / {braces}" wording is a known design inconsistency carried from the mock — not an impl bug)
+
+> Verified: bucket `on_track` → toggled Carol (id 6) + Grace (id 10, no email) → "Email Selected" → modal opened with Carol chip + Grace in the excluded note. Recipient wiring correct. (Context `situation_key` not distinguishable here — dev students have no activity → all map to `beginning_course`; data limitation, not a wiring bug.)
+
+#### 6.2 — Assessment Tile → Modal — ✅ PASS (2026-06-08)
+
+- [x] Same dashboard page
+- [x] Expand an assessment row (click it)
+- [x] Click **"Email Students Not Completed"**
+- [x] Modal opens with auto-populated recipients (students without attempts)
+- [x] Same modal structure as 6.1
+
+> Verified: expanded "Page one" (assessment_id 2, status 6/8 completed) → "Email Students Not Completed" → `grades_oracle.students_without_attempt_emails` (row_count=2, ~90ms single query, no N+1) → modal auto-populated the 2 non-completers (Emma Garcia + Frank Brown). Recipients correctly derived from completion data — the core context-aware behavior.
+
+#### 6.3 — Tone Selection — ✅ PASS (2026-06-08)
+
+- [x] Open modal via either tile
+- [x] Click **Encouraging** — shows `aria-pressed="true"`, Neutral shows `false`
+- [x] Click **Firm** — Firm pressed, others not
+- [x] Changing tone does NOT auto-trigger generation
+
+> Verified via server logs: `set_tone encouraging` then `set_tone firm` fired, **no** generate event; Subject + Body stayed empty. Radio-like single selection, readable selected style (post-contrast-fix).
+
+#### 6.4 — Generate Draft — ✅ PASS (2026-06-08)
+
+- [x] Click **"Generate New Draft"**
+- [x] During generation: button shows "Generating draft..." with spinner, button disabled
+- [x] On success: subject populated, body populated, button changes to "Regenerate Draft"
+- [x] "Send" button becomes enabled
+- [x] Click **"Regenerate Draft"** — new draft replaces previous subject + body
+- [x] While regenerating, "Send" returns to disabled (greyed / `aria-disabled`), then re-enables when the new draft arrives (#1)
+
+> Verified via Ollama (`llama3.1:8b`): placeholders (`{course_name}`, `{instructor_name}`, `{first_name}`) preserved as tokens for send-time personalization; firm tone reflected; regenerate produced distinct subject+body. Config lookup = 3 queries/generate (feature_config → service_config → registered_model), **no recipient N+1**.
+
+> **⚠️ BACKLOG (separate ticket — NOT MER-5642; write at end of manual testing): GenAI model inflight-counter underflow.**
+> **Symptom:** `[warning] GenAI counter below zero for {:inflight, :model, 1}; clamping to 0` fires once per draft generation.
+> **Root cause (confirmed by code read):** asymmetric admit/release in the shared GenAI routing layer.
+> - `OliWeb`… → `Oli.GenAI.Router.admit_model_if_enabled/1` increments the model inflight counter **only if** `model_limit_enabled?/1` (routing breaker enabled for the model). Breaker **disabled** → returns `:ok` **without** incrementing.
+> - `build_plan` always tags the plan `admission: :admit`.
+> - `Oli.GenAI.Execution.release_admission!/1` **unconditionally** decrements the model counter for any non-`:bypass` plan.
+> - So a model with the breaker disabled (local Ollama, id 1): admit `+0`, release `−1` → counter underflows. Pool counter is balanced (always `+1/−1`).
+> **Impact:** functionally clamped to 0 today (harmless), but the model inflight count is wrong → under real load the routing breaker's concurrency tracking is skewed.
+> **Scope:** shared GenAI routing infra (`lib/oli/gen_ai/router.ex`, `lib/oli/gen_ai/execution.ex`, `lib/oli/gen_ai/admission_control.ex`) — MER-5642 only *exercises* it; NOT introduced here. Out of scope for this PR.
+> **Proposed fix (one line):** in `admit_model_if_enabled/1`, the `else` branch should still `AdmissionControl.increment_model(model.id)` (track inflight without enforcing a cap — mirrors the `max_concurrent: nil` path in `admit_model/1`), so admit/release stay balanced.
+> **Test plan:** ExUnit regression — admit a model with breaker disabled, then release, assert `model_count` stays `>= 0` and no underflow warning; assert balanced count after a full admit→release cycle.
+
+#### 6.5 — Generate Draft Error — ✅ PASS (2026-06-08)
+
+- [x] Trigger error (disconnect network / AI service down)
+- [x] Error message appears (e.g., "Draft generation timed out")
+- [x] Generate button re-enables for retry
+
+> Verified by stopping the local Ollama service (`brew services stop ollama`) → Generate New Draft → inline red error **"AI service is temporarily unavailable. Please try again."**; modal stayed open; Generate re-enabled (not spinning). Graceful degradation confirmed. (Wording is the service-unavailable path, distinct from the G-J08 no-draft-yet fallback — both valid.)
+
+> **Two bugs found during the 6.18 objectives re-test + fixed (committed):**
+> 1. **Email modal z-index / overlay (commit `ef5d5acf41`).** From the Objectives entry point, the Draft Email modal was rendered inside the objectives table's expanded `<td>` (`StudentProficiencyList`), trapping it under the table's sticky `thead z-[40]` so the header bled over the modal. We introduced this nesting in 5.5 (`54f0bd2e41`). Fix: hoist the modal to a sibling of the table in `LearningObjectives` (state lifted via `email_modal_payload` → EmailButton → root router → LearningObjectives), mirroring the working `Students` path. Verified: 88 component + 239 dashboard-live tests; browser-confirmed the modal now overlays the dimmed page cleanly.
+> 2. **Dangling `<label>` a11y (commit `087cc4d915`).** The "To:" (`recipient_chip_list`) and "Body:" (`draft_email_modal`) labels were `<label>` elements labelling ARIA `role="group"`/`role="textbox"` containers via `aria-labelledby` — DevTools "label not associated with a form field". Fix: `<label>` → `<span>` (ids/classes/aria refs unchanged; identical SR behavior). Subject keeps its real `<label for>`.
+
+#### 6.6 — Subject Editing — ✅ PASS (2026-06-08)
+
+- [x] Edit subject field → value updates
+- [x] Clear subject completely → "Send" returns to disabled (greyed / `aria-disabled`)
+- [x] Type new subject → "Send" re-enables (if body present)
+
+> Subject pushes per-keystroke (`update_subject`, ~0.3–0.8ms reply) — intentional, not debounced (gives instant Send gating; subject is a short field). Body is the debounced one (6.20). No action.
+
+#### 6.7 — Recipient Management — ✅ PASS (2026-06-08)
+
+- [x] Click X on a recipient chip → chip removed
+- [x] Remaining recipients still shown
+- [x] Remove all recipients → "Send" disabled (greyed / `aria-disabled`)
+- [x] Empty state: "No students currently need this message" (full: "…You can review the draft, but sending stays disabled until at least one recipient is available.")
+
+> **Bug found + fixed (TDD): stale Send-validation message.** After clicking Send while incomplete, the inline error (e.g. "Add a subject before sending.") persisted unchanged after the user filled that field — it was only cleared on `generate_draft`, never on `update_subject`/`update_body_slate`/`remove_recipient`/`set_tone`. Fix: new `clear_validation/1` (clears both visible `:error` and the SR `:live_announcement`) called from all four edit handlers — matches the click-to-validate design (error shows on Send attempt, clears on next edit). Test `draft_email_modal_test.exs:534`. 32 modal tests pass.
+
+#### 6.8 — Excluded Recipients — ✅ PASS (2026-06-08)
+
+- [x] Open modal where a selected student has no email on file
+- [x] Note appears: "N selected student(s)" + " do/does not have an associated email…"; names are in the tooltip (`title`) AND exposed via `aria-label` on the focusable span (screen-reader/keyboard accessible — see U1 fix). **Verified:** selected Alice+Bob+Grace (no email) → note "1 selected student does not have an associated email and will not receive this message."; Alice/Bob remain valid chips. `title`+`aria-label` carry the name(s) (`recipient_chip_list.ex:80-81`, capped at 3 + "…and N others", "Unknown student" fallback).
+
+#### 6.9 — Send Email — ✅ PASS (2026-06-08)
+
+- [x] Generate draft (or manually fill subject + body), at least one recipient
+- [x] Click **"Send"**
+- [x] Modal closes
+- [x] **Page stays responsive after close**: scroll works, no leftover backdrop blocking clicks, flash banner visible (not trapped under the sticky header). Guards the send-close teardown regression.
+- [x] Flash message: email sent confirmation ("Success! Email sent to 1 student(s)")
+- [x] Verify Oban jobs: `Oli.Repo.all(Oban.Job) |> Enum.filter(& &1.worker == "Oli.InstructorDashboard.Email.SendWorker")`
+
+> ✅ 1 SendWorker job enqueued — args: `to: alice.johnson@example.edu`, `subject: "HI"`, html+text body, `section_id: 1`, `situation_key: "beginning_course"`, `user_id: 4`. Flash visible below nav, page interactive (teardown clean).
+> **Also closes 6.20 box 2/3 + 6.21 box 3:** typed body to "…going to be late." then immediately clicked Send → Oban job body = the **full** text (debounced push flushed, no lost trailing chars); Send was enabled and dispatched.
+
+#### 6.10 — Cancel / Close
+
+- [x] Open modal, make changes (tone, subject)
+- [x] Click **"Cancel"** → modal closes
+- [x] Reopen modal
+- [x] Click X (close) button → modal closes
+- [x] Inspect X button: `aria-label="Close draft email modal"`
+> ✅ PASS (2026-06-08) — both `close_email_modal` paths (Cancel + X) fire and close; X aria-label confirmed in snapshot.
+
+#### 6.11 — Keyboard Navigation — ✅ PASS (2026-06-08)
+
+- [x] Open modal
+- [x] Tab through: chips → subject → tone buttons → Generate → body → Cancel → Send → Close (X)
+- [x] Focus stays trapped inside modal (doesn't escape to background)
+
+> Focus trap holds, all controls reachable, Esc closes. On open, initial focus lands on the **first focusable element** (the first recipient chip's remove-X) via the shared modal's `JS.focus_first` (`modal.ex:324`). **Researched (W3C ARIA APG — Dialog/Modal pattern):** default = focus first focusable element ✅; the "focus the least-destructive action" exception applies only to *irreversible final steps* (delete data, financial transaction) — removing a recipient chip is trivially reversible, so it does **not** apply. Behavior is APG-compliant. **Not a bug; accepted as-is.**
+- [ ] Press **Escape** → modal closes
+
+#### 6.12 — Context Builder Error — ✅ PASS (by automated test) (2026-06-08)
+
+- [x] Hard to trigger manually — requires invalid situation_key (no UI path produces one)
+- [x] If testable: error "Unable to prepare email context" shown, Generate disabled. **Covered by** `draft_email_modal_test.exs:581` (`situation_key: :nonexistent_situation` → asserts "Unable to prepare email context"); passes.
+
+#### 6.14 — Body editor toolbar restricted to Link (Task 1) — ✅ PASS (2026-06-08)
+
+- [x] Open any Draft Email modal (e.g. via 6.1)
+- [x] In the Body editor toolbar, only the **Link** button is visible (no bold/italic/code/blocks/undo)
+- [x] Select text → click Link → inline link popover still works (editing flow intact). **Verified:** selected "syllabus" → Link → Settings dialog (Page-in-course / External / Media + URL) → Save; slate node `type: "a", href: "https://example.com", linkType: "url"`. Link UI fetches course pages only on open (`GET …/link`, 200/57ms).
+
+#### 6.15 — "Email Selected" button matches Figma (button fix) — ✅ PASS (2026-06-08)
+
+- [x] On the Student Support tile (6.1), select ≥1 student to enable the button
+- [x] Inspect the **Email Selected** button (enabled state): transparent background, 8px corner radius, 4px gap between mail icon and label, white `#FFFFFF80` border
+
+> Verified in code (`email_button.ex:28`, `:minimal` variant used by support tile `student_support_tile.ex:418`): `!bg-transparent` (transparent ✅), `!rounded-lg` (8px ✅), `!gap-1` (4px ✅); border from `:secondary` → `border-Border-border-bold` = `#FFFFFF80` dark (matches Figma dark mock) / `#8AB8E5` light (token counterpart). All four properties match.
+
+#### 6.16 — Student Overview → Modal (5.3) — ✅ PASS (2026-06-08)
+
+- [x] Navigate to http://localhost/sections/example_course_section/instructor_dashboard/overview/students
+- [x] Select students via row checkboxes (e.g. Bob Smith, Alice Johnson — both have email)
+- [x] Click **Email** → **Send email**
+- [x] The **context-aware Draft Email modal** opens (tone buttons + "Generate New Draft" — NOT the old plain modal) with selected emails as recipients
+
+> **Bug found + fixed (tone-button contrast).** Selected tone button rendered blue text on a dark-blue fill in **light mode** (unreadable). Root cause: active state used `bg-Fill-Buttons-fill-secondary-hover` (light `#1B67B2`) paired with blue text. Verified vs Figma node `955:17500` (no dark-blue selected-tone fill in design) + DS node `1007:432` (secondary button) + the codebase secondary-button primitive (`button.ex:594` uses `Surface-surface-secondary-hover`). Fix: active branch → `bg-Surface-surface-secondary-hover` (light `#F2F9FF`+blue text; dark `#2F2C33`+white). Localized to the modal — rejected the global token-value fix (would regress the support-tile `View Profile` hover, which is white-on-`#1B67B2`). 31 modal tests pass; no behavior test touched the class.
+
+#### 6.17 — Content → Student list → Modal (5.4) — ✅ PASS (2026-06-08)
+
+- [x] Navigate to the hierarchy demo section content URL (Prerequisites)
+- [x] Click a **Unit** to reach its student-insights list (nav goes Units → unit list directly; there is **no** "Module 1" drill-down at this level — earlier doc wording was inaccurate, corrected)
+- [x] Select students → **Email** → **Send email**
+- [x] Draft Email modal opens, scoped to the container, with recipients
+
+> Verified: `dashboard_hierarchy_demo` (section_id 3) → Content → Unit 1 student list → selected ids 4 (Alice) + 5 (Bob) → modal opened with both chips, no excluded note (matches DB roster). Roster confirmed via direct Ecto query.
+
+#### 6.18 — Learning Objectives → Student list → Modal (5.5) — ✅ PASS (2026-06-08)
+
+- [x] Navigate to the objectives demo section learning-objectives URL (Prerequisites)
+- [x] Expand objective **parent1** → click a proficiency level (e.g. **Low**)
+- [x] Select students in the proficiency list → **Email** → **Send email**
+- [x] Draft Email modal opens with the objective context (Low → `:low_proficiency_objectives`) and recipients
+
+> Verified: `dashboard_objectives_demo` (section_id 4) → expanded objective parent1 (id 82) → **High** band → `show_students_list proficiency_level: "High"` → selected ids 11 (Henry) + 4 (Alice) → modal opened with both chips. Recipients scoped to the objective's proficiency band (context-aware). Roster confirmed via direct Ecto query.
+
+#### 6.19 — Automated Checks — ✅ PASS (2026-06-09)
+
+- [x] `mix format --check-formatted` — clean (exit 0)
+- [x] `mix test …/draft_email_modal_test.exs` — **32** pass (added stale-validation regression test)
+- [x] `mix test …/markdown_to_slate_test.exs` — **8** pass
+- [x] `mix test …/instructor_dashboard_live_test.exs` + `…/learning_objectives/` — **95** pass (incl. new LearningObjectives modal-render-outside-table test)
+- [x] `mix test …/button_test.exs` — **11** pass (Button `aria_disabled`, atom-key globals, backward-compat)
+- [x] `mix test …/link_validator_test.exs` + `…/sections_test.exs` — pass (incl. `/course/link` single-slug, `get_section_with_base_project`)
+- [x] No new compile warnings (`mix compile --warnings-as-errors` clean)
+
+> Run 2026-06-09: format clean; **262** MER-5642-related tests pass across the listed files (167 unit/component + 95 live/objectives). No warnings.
+
+#### 6.20 — Body editor debounce (browser-only; no unit test)
+
+The body editor pushes are debounced (400ms) via `RichTextEditor` `onEditDebounceMs`, flushed on blur/unmount. This path runs through Slate + the LiveReact bridge and is not unit-tested — verify manually:
+
+- [x] Open a Draft Email modal; type a multi-word body. Confirm typing is smooth (pushes coalesced, not per-keystroke). **Verified 2026-06-08:** ~7 `update_body_slate` pushes for ~70 chars (one push spanned "ed to put more a" = 16 chars) — clearly coalesced, not per-keystroke.
+- [x] Type body + subject, then **immediately click Send** (within ~400ms of the last keystroke). The sent email body must contain the **full latest text** (blur-on-Send flushes the pending push — guards against losing the last characters). **Verified at 6.9:** Oban job body = full typed text, no lost trailing chars.
+- [x] Generate a draft, edit the body, Send → body reflects the edits. **Verified at 6.9:** sent body matched the edited text.
+- [x] Sanity: the other `RichTextEditor` callers (course-authoring page options, curriculum entry options) are unaffected (no `onEditDebounceMs` passed → unchanged behavior). **Verified:** `grep onEditDebounceMs` → set only at `draft_email_modal.ex:169` (=400); absent prop → `debouncedPush = null` → immediate push (unchanged).
+
+#### 6.21 — Send button state: aria-disabled + click-to-validate (U4, #1)
+
+The Send button is no longer hard-`disabled`; it is **`aria-disabled`** (greyed but focusable) and validates on click. Verify:
+
+- [x] With an incomplete draft (missing recipients, subject, or body), inspect "Send": greyed, `aria-disabled="true"`, and **keyboard-focusable** (Tab reaches it; not the HTML `disabled` attribute). **Verified 2026-06-08:** code `modal:212 aria_disabled={@send_disabled}` (no hard `disabled`); screenshot shows Send with a **focus ring** (focusable → confirms aria-disabled, not hard-disabled).
+- [x] Click (or Enter/Space) "Send" while incomplete → it does **NOT** send; an inline message names what's missing, e.g. "Add a subject and a body before sending." (omits any item already present). **Verified:** subject-only-missing → inline red **"Add a subject before sending."**; no send fired (modal stayed open).
+- [x] Complete the draft (≥1 recipient + subject + body) → "Send" becomes enabled (no `aria-disabled`), and clicking it sends. **Verified at 6.9:** Send enabled with recipient+subject+body, click dispatched + enqueued the job.
+- [x] Screen reader announces the Send button's disabled/enabled state as it changes (it's reachable, unlike a hard-disabled button). **Verified:** button reachable (focus ring) + status live-region present ("Draft generated. Review the subject and body before sending.").
 
 ## PR split
 
-- [~] PR 1 — Backend domain + send pipeline (Phases 1, 2) — Phase 1 + Phase 2 implementation complete; staged locally; awaiting commit + review opening
-- [ ] PR 2 — Modal LiveComponent (Phases 3, 4)
-- [ ] PR 3 — Entry points + final verification (Phases 5, 6)
+- [x] PR 1 — Backend domain + send pipeline (Phases 1, 2) — MERGED (`09fdf332bc`, PR #6556)
+- [~] PR 2 — Modal + entry-point wiring + verification (Phases 4-6) — branch `MER-5642-context-aware-email-draft-modal-ui-implementation`
 
 ## Gap status (from `gaps.md`)
 
@@ -250,3 +518,108 @@ Update these counts as `gaps.md` items move through statuses.
 - 558 tests + 2 doctests still pass; format clean.
 - **Outstanding:** none for PR 1. #2 architectural decoupling + #5 URL-menu pattern queued for Phase 5.
 - **Next:** commit doc-only updates + push. Hand off PR to human reviewer (Darren/team). Local AI review iteration loop has converged.
+
+### Session 11 — 2026-05-25 (MER-5642 planning)
+
+- New ticket MER-5642 covers Phases 4-6 (frontend UI). New branch: `MER-5642-context-aware-email-draft-modal-ui-implementation`.
+- PR 1 (Phases 1+2) confirmed MERGED to master (`09fdf332bc`, PR #6556). All backend code available on new branch.
+- **Figma context gathered:**
+  - Node `955:17500` (Support Email) — primary reference, dark mode. Design context + variable defs fetched.
+  - Node `1115:18333` (Assignment Email) — confirms hyperlinks in body, numbered lists.
+  - Light mode auto-derived from token system (G-D01 resolved).
+- **Figma skill audit:** Only one exists — `~/.claude/rules/figma-to-code.md` (root-level). MCP server skills (`/figma-use`, `/figma-generate-design`) are for writing to Figma, not our use case.
+- **Compatibility audit (all components verified against current codebase):**
+  - `Modal.modal` — fully compatible. Has `:custom_footer` slot, `<.focus_wrap>` focus trap, Escape close, backdrop click-away, `z-[2000]`.
+  - `Button.button` primitive — `:primary`, `:secondary`, `:close` variants. `:icon_left`/`:icon_right` slots. `phx-disable-with` support.
+  - `OverflowChipList` hook — battle-tested, already in existing email modal. `data-overflow-chip` / `data-overflow-toggle` structure.
+  - Slate `RichTextEditor` — `allowBlockElements={false}` for inline-only. LiveView bridge via `OliWeb.Common.React.component/4` + `phx-update="ignore"`. Link insert via `LinkCmd.tsx`.
+  - Icons: `ai_spinner` (188), `send` (2142), `close` (601), `close_sm` (617) — all present in `icons.ex`.
+- **Critical dependency verified:** `serializeMarkdown()` exists in `assets/src/components/editing/markdown_editor/content_markdown_serializer.ts`. Converts markdown string → Slate JSON nodes. Used by `MarkdownEditor.tsx`. Phase 4 needs this for AI draft body → Slate editor.
+- **Missing items identified:**
+  - `Fill-Buttons-fill-primary-bold` token — NOT in `tailwind.tokens.js`. Must add per G-T01.
+  - `INSTRUCTOR_EMAIL_MAX_RECIPIENTS` — decided to DROP. No existing email send in codebase has a recipient limit. Follow convention. Add later if abuse surfaces.
+- **Phase 4 plan expanded** in progress.md with implementation detail per step (4.0a pre-work through 4.10 testing).
+- Deferred items from PR 1 review still queued: #2 architectural decoupling (Oli → OliWeb cross-layer in AIDraftFacade), #5 URL-menu pattern. Both Phase 5+.
+- **Next:** begin Phase 4.0a (token addition) then 4.1 (LiveComponent scaffold).
+
+### Session 12 — 2026-05-25 (Phase 4 completion + Phase 5 wiring)
+
+- **Phase 4 completed** — DraftEmailModal LiveComponent fully built (scaffold, recipients, tone, subject, body editor, generate/send/cancel, focus trap, loading/error states, live announcements, tests).
+- **Pre-existing Button `:close` variant bug fixed:**
+  - Root cause: Phoenix HEEx stores `@rest` keys as atoms (e.g., `:"aria-label"`), not strings. `@rest["aria-label"]` always returned `nil` → `close_aria_label(nil)` → hardcoded `"Close"`, swallowing any custom `aria-label`.
+  - Fix: extract `:"aria-label"` and `:title` in `normalize_button_assigns/1` (Elixir code, before HEEx evaluation) where `@rest` keys are still accessible. Updated `:close` template to use explicit assigns + `Map.drop(@rest, [:"aria-label", :title])`.
+  - Removed unused `close_aria_label/1` and `close_title/2` helpers.
+  - File: `lib/oli_web/components/design_tokens/primitives/button.ex`
+- **Phase 5 wiring (5.1 + 5.2):**
+  - `StudentSupportTile` — swapped `StudentSupportEmailModal` → `DraftEmailModal`, added `@bucket_to_situation` mapping, `support_bucket_context/1` helper (proper `%{label:, count:}` map).
+  - `AssessmentsTile` — swapped similarly, added `assessment_scope_label/1`, `assessment_context/1` helpers.
+  - `InstructorDashboardLive` — added `handle_info({:generate_draft, ...})` using `Task.Supervisor.async_nolink(Oli.TaskSupervisor, ...)` with ref tracking in `draft_tasks` map. Success/crash handlers guarantee `deliver_draft_result` always fires.
+- **Code review (10 findings addressed):**
+  - generate_draft message changed to 3-tuple `{:generate_draft, id, email_context}` (context passed through)
+  - `excluded_recipient_students` moved from render to update/2
+  - `support_bucket` type mismatch fixed (was bare string, now proper map)
+  - `generate_draft/2` signature corrected (takes `(context, opts)` not `(context, tone)`)
+  - Duplicate `:DOWN` handler merged with existing recommendation task handler
+  - Removed redundant `try/rescue` — switched to `Task.Supervisor.async_nolink` pattern
+  - `Process.demonitor(ref, [:flush])` on success path (removes monitor + flushes queued `:DOWN`)
+- **Integration tests added** for LiveView `handle_info` handlers (3 tests: success, crash, unknown ref).
+- **Flaky test fix:** added `on_exit` callback in `instructor_dashboard_live_test.exs` to wait for `Oli.TaskSupervisor` children before test process exits. Root cause: `start_dashboard_runtime_loads/4` spawns `Task.Supervisor.start_child` with `timeout: :infinity`, tasks outlive test process and crash when Ecto Sandbox connection owner dies.
+- **Compile warning fix:** removed duplicate `replace_liveview_sockets/2` helper — reused existing recursive version at line 1113.
+- 38 dashboard live tests + 20 DraftEmailModal tests pass.
+- **Next:** Phase 6 — E2E verification + browser testing.
+
+### Session 13 — 2026-06-01..06 (AI-review hardening, rounds 1–2)
+
+- **Reconciled** stale `progress.md` (Phase 5 header/5.5/5.7) and corrected Phase 6 checklist strings (6.1 footer copy, 6.8 excluded note, 6.19 test counts).
+- **Verified 5.7** "Email sent" banner end-to-end (flash → parent `put_flash` → `#flash_container` z-50). Kept "Email sent to N student(s)" copy per ticket AC over plan §2.5.b's "Queued" wording.
+- **Manual-QA / Playwright evaluation:** considered a Playwright E2E suite (infra exists at `assets/automation/`, YAML scenario seeding). Concluded a full suite is overkill — ExUnit already covers server logic; only ~4 browser-only behaviors are uniquely E2E. Chose ExUnit TDD for fixes + a short manual smoke for the browser-only set.
+- **AI-reviewer mechanism mapped:** CI uses **OpenAI Codex CLI**, per-role specialists (`.github/workflows/ai-review.yml` + `.review/*.md`), **diff-only / added-lines-only** (silent post-filter). `ui` glob excludes the modal (`lib/oli_web/components/...`).
+- **Blind round (15 agents, 3×/role)** → deduped → compared to CI's posted comments → adversarial validation. Artifacts in `ai-review/` (blind/, comparison.md, validation.md). Key insight: Claude and Codex are **complementary** (Claude=cross-file logic/a11y; Codex=security/perf) — union both, don't expect parity.
+- **Fixed (TDD, committed):** X1 rebuild email_context on remove; E6 actionable send-error messages; M2+E2 single-query slugs, drop rescue; M1 tone whitelist (no crash); U1 excluded names a11y; U2 subject `aria-required`; U4 Send → `aria-disabled` + click-to-validate (+ additive `Button` `aria_disabled`); E4 `MarkdownToSlate` (reuse `TorusDoc` parser, flatten blocks, validate link targets); round-2: shared `DraftEmailModal.recipients/3` (keep no-email + display_name), compute excluded names once, `/course/link` single-slug regex, MarkdownToSlate link guard.
+- **Verified not-required (cited):** X4/X5 render rescan (`:if`+change-tracking); **X6 fan-out backpressure — G-J12 (AI quota deferred)**; U6 i18n (not the repo convention); **S1 authz — mount-gated** (`ensure_instructor`, not UI-only); **S2 send-time re-resolution — snapshot accepted** (short drift window, server-set recipients); E8 footer copy **faithful to Figma** (mock itself says "square brackets like {first_name}"); U3 tone `aria-pressed` (WCAG-valid; no reusable radiogroup component exists); U5 generating cue (live region already announces); M3/E5 broad `{ref,result}` (no behavior change).
+- **False positives (proven):** X2/CE-r2-3 arity (prod uses nil branch), X3 close-path (atom keys correct), X7 `/course/link` scheme (cond ordering), E7 variant default, X8 DotChart (CI fix non-functional).
+- **Held (decision pending):** **B1** — pre-existing non-close `Button` variants read string `@rest` keys (always nil → dead truncate/override/dedup helpers). Same class as the Session-12 close-variant fix, not propagated. Outside MER-5642 diff.
+- **Lists-in-Figma vs inline-only editor:** confirmed via Figma node 1115:18333 (numbered list + hyperlink in body); resolved per Jess — RTE inline+link approved, mock list is illustrative.
+- 2 PR pushes (round 1 + round 2 pending). All touched suites green; `mix format` clean.
+- **Next:** push round-2 commits (CI round 3); manual smoke of browser-only behaviors; then archive feature docs.
+
+### Session 14 — 2026-06-08 (HANDOFF → manual testing)
+
+**Current phase: MANUAL TESTING (Phase 6).** All code complete + pushed; branch `MER-5642-context-aware-email-draft-modal-ui-implementation`, PR #6606. HEAD = `0765194b9f`-era + later commits (`7d0a422140` excluded-names/ref-comment, `8f09cb3318` map-shown-names, `0765194b9f` regenerate-Send-disable). `git log master..HEAD` for the full list.
+
+**Done + pushed:** Phases 4–5 (modal + 5 entry points), all AI-review rounds 1–3 resolved (fixed or verified-not-required), B1 (button atom-key globals), legacy `Students.EmailModal` retired. Every fix was TDD'd.
+
+**AI-review loop: CLOSED (converged).** Remaining CI flags are adjudicated re-flags / proven false positives (X7 link-scheme false, X8 DotChart index-key correct, X6 fan-out = G-J12 deferred, render-path rescan = `:if`+change-tracked). Do not "fix" those.
+
+**How to resume manual testing:**
+- Read Phase 6 above: **Quick-Start Access** (login `admin@example.edu`/`changeme`; per-case URLs; which students to pick) → **Suggested Run Order** (Blocks A–D) → cases 6.1–6.21 (checkboxes).
+- Dev DB already seeded (3 demo sections, students incl. 2 no-email). AI generate runs on **local Ollama** (`llama3.1:8b`, `ollama serve` must be up).
+- Evaluate observed UI/behavior against **MER-5257 AC** (Atlassian MCP `getJiraIssue`) + **Figma 955:17500** Support / **1115:18333** Assignment (Figma MCP). Fetch references **on-demand, minimal slices** (context frugality).
+- **Commit ONLY if a case surfaces a real bug/improvement** → verify vs code → TDD → one commit ([ENHANCEMENT] [MER-5642], type-sticky; no co-author trailer). Otherwise just tick checkboxes.
+
+**Uncommitted (intentional, manual phase):** docs only — `progress.md` (this + Session 13 + Phase 6 quick-start/run-order/case updates), `prd.md` + `gaps.md` (recipient-cap reconcile), and untracked `ai-review/` (blind round, comparison, validation). Commit these at wrap-up.
+
+**Pending after manual testing:** commit docs → archive feature docs (`current/`→`archive/`, per Darren convention) → final `mix test` + `mix format --check-formatted`.
+
+**Parked / out-of-scope:** seed script `seed_dashboard_data.exs` lost (data survives in dev DB; recreate only if DB reset); `:instructor_dashboard` `on_mount` relies on `SetSection`+HTTP pipeline rather than an explicit instructor-role on_mount (pre-existing, separate).
+
+### Session 15 — 2026-06-08..09 (Phase 6 manual QA — COMPLETE)
+
+Ran Phase 6 via browser MCP (assistant drove navigation/observation; user performed precise clicks after browser-MCP click-targeting proved unreliable on the LiveView tables). Evaluated each case against MER-5257 AC + Figma 955:17500 / 1115:18333.
+
+- **All cases pass** (Blocks A–D, 6.1–6.21). Each marked above with verification notes.
+- **4 bugs found → fixed (TDD where applicable) → committed:**
+  1. `d320b652f2` — selected **tone-button contrast** (light mode): active state used `bg-Fill-Buttons-fill-secondary-hover` (#1B67B2) + blue text = unreadable. Verified vs Figma (no dark-blue selected-tone fill) + DS button + codebase secondary-button primitive → `bg-Surface-surface-secondary-hover`.
+  2. `3d35079e0c` — **stale Send-validation message**: inline error (and SR `live_announcement`) persisted after the user filled the missing field. Added `clear_validation/1` on all edit handlers. Regression test added; TDD caught an incomplete first fix (cleared `:error` only, not the SR region).
+  3. `ef5d5acf41` — **objectives email-modal z-index/overlay**: the modal was rendered inside the objectives table's expanded `<td>` (introduced in 5.5), trapping it under the sticky `thead z-[40]`. Hoisted it to a sibling of the table in `LearningObjectives` (state lifted via `email_modal_payload` → EmailButton → root router → LearningObjectives), mirroring the working `Students` path. Browser-verified.
+  4. `087cc4d915` — **dangling `<label>` a11y**: "To:" + "Body:" labelled ARIA `role` containers via `aria-labelledby` (DevTools "label not associated with a form field"). `<label>` → `<span>`. Browser-confirmed cleared.
+- **Backlog logged (separate ticket, pending writeup):** GenAI **model inflight-counter underflow** — `admit_model_if_enabled/1` skips the model increment when the routing breaker is disabled, but `release_admission!/1` always decrements → `{:inflight, :model, _}` underflows (clamped, warning per generate). Root cause + one-line fix + test plan captured in the 6.4 note. Out of MER-5642 scope (shared GenAI routing infra).
+- **Researched + cleared (not a bug):** modal **initial-focus** lands on the first focusable element (a recipient remove-X). Confirmed APG-compliant (W3C ARIA Authoring Practices — Dialog/Modal: default = first focusable; the "least-destructive" exception is only for *irreversible* final-step actions, which chip-removal is not).
+- **Doc fix:** 6.17 nav wording (no "Module 1" drill-down; clicking a Unit lands directly on its student list).
+- **DB-verified rosters** for `dashboard_hierarchy_demo` + `dashboard_objectives_demo` via direct Ecto query (caught that the no-email student there is **Admin User**, not Grace).
+- **Final gate (6.19):** `mix format --check-formatted` clean; **262** MER-5642 tests pass; `mix compile --warnings-as-errors` clean.
+- **Next:** commit docs (this file + `gaps.md` + `prd.md`; **exclude** untracked `ai-review/` — conclusions already in Session 13) → write the GenAI inflight-counter backlog ticket → archive feature docs.
+
+## Figma Audit — DraftEmailModal vs node 955:17500
+
+Detailed audit in [figma-audit.md](figma-audit.md). Summary: 28 items found, 28 fixed, 4 accepted minor differences.

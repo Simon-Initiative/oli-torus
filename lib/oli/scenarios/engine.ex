@@ -19,21 +19,27 @@ defmodule Oli.Scenarios.Engine do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
+    InstitutionDiscountDirective,
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
     ActivityBankDirective,
     InstructorCustomizationDirective,
     EditPageDirective,
+    EditAdaptivePageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
     StartAttemptDirective,
     GateDirective,
     TimeDirective,
     WaitDirective,
+    DashboardAnalyticsReadyDirective,
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
+    DiscussionConfigDirective,
+    DiscussionModerationDirective,
+    DiscussionDeleteDirective,
     ClassNoteDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
@@ -59,21 +65,27 @@ defmodule Oli.Scenarios.Engine do
     UserHandler,
     EnrollmentHandler,
     InstitutionHandler,
+    InstitutionDiscountHandler,
     UpdateHandler,
     CustomizeHandler,
     ActivityHandler,
     ActivityBankHandler,
     InstructorCustomizationHandler,
     EditPageHandler,
+    EditAdaptivePageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
     StartAttemptHandler,
     GateHandler,
     TimeHandler,
     WaitHandler,
+    DashboardAnalyticsReadyHandler,
     AnswerQuestionHandler,
     CertificateHandler,
     DiscussionPostHandler,
+    DiscussionConfigHandler,
+    DiscussionModerationHandler,
+    DiscussionDeleteHandler,
     ClassNoteHandler,
     CompleteScoredPageHandler,
     FinalizeAttemptHandler,
@@ -137,12 +149,7 @@ defmodule Oli.Scenarios.Engine do
     # If a complete state is provided, use it
     case opts[:state] do
       %ExecutionState{} = state ->
-        # Add current_dir if provided
-        if opts[:current_dir] do
-          Map.put(state, :current_dir, opts[:current_dir])
-        else
-          state
-        end
+        apply_execution_opts(state, opts)
 
       nil ->
         # Use provided author or create a default one
@@ -163,18 +170,28 @@ defmodule Oli.Scenarios.Engine do
           page_attempts: %{},
           finalized_attempts: %{},
           activity_evaluations: %{},
+          discussion_posts: %{},
           gates: %{},
           scenario_time: nil,
           current_author: author,
           current_institution: institution
         }
 
-        # Add current_dir if provided
-        if opts[:current_dir] do
-          Map.put(base_state, :current_dir, opts[:current_dir])
-        else
-          base_state
-        end
+        apply_execution_opts(base_state, opts)
+    end
+  end
+
+  defp apply_execution_opts(%ExecutionState{} = state, opts) do
+    state
+    |> maybe_put_current_dir(opts)
+    |> Map.put(:params, opts[:params] || Map.get(state, :params, %{}))
+  end
+
+  defp maybe_put_current_dir(state, opts) do
+    if opts[:current_dir] do
+      Map.put(state, :current_dir, opts[:current_dir])
+    else
+      state
     end
   end
 
@@ -268,6 +285,10 @@ defmodule Oli.Scenarios.Engine do
     InstitutionHandler.handle(directive, state)
   end
 
+  def execute_directive(%InstitutionDiscountDirective{} = directive, state) do
+    InstitutionDiscountHandler.handle(directive, state)
+  end
+
   def execute_directive(%UpdateDirective{} = directive, state) do
     UpdateHandler.handle(directive, state)
   end
@@ -290,6 +311,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%EditPageDirective{} = directive, state) do
     EditPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%EditAdaptivePageDirective{} = directive, state) do
+    EditAdaptivePageHandler.handle(directive, state)
   end
 
   def execute_directive(%ViewPracticePageDirective{} = directive, state) do
@@ -316,6 +341,10 @@ defmodule Oli.Scenarios.Engine do
     WaitHandler.handle(directive, state)
   end
 
+  def execute_directive(%DashboardAnalyticsReadyDirective{} = directive, state) do
+    DashboardAnalyticsReadyHandler.handle(directive, state)
+  end
+
   def execute_directive(%AnswerQuestionDirective{} = directive, state) do
     AnswerQuestionHandler.handle(directive, state)
   end
@@ -326,6 +355,18 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%DiscussionPostDirective{} = directive, state) do
     DiscussionPostHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DiscussionConfigDirective{} = directive, state) do
+    DiscussionConfigHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DiscussionModerationDirective{} = directive, state) do
+    DiscussionModerationHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DiscussionDeleteDirective{} = directive, state) do
+    DiscussionDeleteHandler.handle(directive, state)
   end
 
   def execute_directive(%ClassNoteDirective{} = directive, state) do
@@ -438,6 +479,20 @@ defmodule Oli.Scenarios.Engine do
   """
   def put_user(state, name, user) do
     %{state | users: Map.put(state.users, name, user)}
+  end
+
+  @doc """
+  Gets a named discussion post from the state.
+  """
+  def get_discussion_post(state, name) do
+    Map.get(state.discussion_posts, name)
+  end
+
+  @doc """
+  Upserts a discussion post by name into the state.
+  """
+  def put_discussion_post(state, name, post) do
+    %{state | discussion_posts: Map.put(state.discussion_posts, name, post)}
   end
 
   @doc """

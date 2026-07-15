@@ -1,0 +1,124 @@
+work_item: ui_core
+requirements:
+- id: FR-001
+  title: Render Activity Bank Selection previews with required Instructor View metadata
+    and sample question
+  status: proposed
+- id: FR-002
+  title: Support whole Activity Bank Selection remove and restore actions in Instructor
+    View
+  status: proposed
+- id: FR-003
+  title: Route bank-selection preview actions through the shared LiveView/React customization
+    contract into core instructor customizations
+  status: proposed
+- id: FR-004
+  title: Warn instructors that remove/restore changes apply only to future attempts
+    when existing attempts or visits are present
+  status: proposed
+- id: FR-005
+  title: Keep customization page-scoped and preserve authored content, other pages,
+    other sections, and existing student progress
+  status: proposed
+- id: FR-006
+  title: Treat embedded activity remove/restore as already implemented infrastructure
+    from MER-5622 / PR 6659
+  status: proposed
+acceptance_criteria:
+- id: AC-001
+  requirement_id: FR-001
+  title: Given a user is in Instructor View and a page contains an Activity Bank Selection,
+    the selection displays the updated Instructor View UI with heading, available-question
+    count, select count, points per question, authored criteria, and one sample question.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-002
+  requirement_id: FR-002
+  title: Given an active Activity Bank Selection is displayed, only a Remove action
+    is shown; when selected and confirmed if required, the whole selection enters
+    removed state, questions available updates to 0, success confirmation appears
+    above the selection, and the action changes to Restore.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-003
+  requirement_id: FR-002
+  title: Given an Activity Bank Selection is removed, only a Restore action is shown;
+    when selected and confirmed if required, the selection returns to default visual
+    state, questions available returns to the original value, and success confirmation
+    appears above the selection.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-004
+  requirement_id: FR-002
+  title: Removed Activity Bank Selections show the approved removed-state treatment,
+    including red border or accent, gray background, and Removed pill or badge, while
+    keeping the sample question visible and keyboard-operable.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-005
+  requirement_id: FR-003
+  title: Activity Bank Selection remove/restore emits a customization intent with
+    target kind bank_selection and the required pageResourceId and selectionId, and
+    the owning LiveView dispatches to the core instructor customization implementation.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-006
+  requirement_id: FR-003
+  title: On success, LiveView returns a targeted reply that updates card-local actions,
+    visualState, and statusPill without remounting the initiating preview card; on
+    failure, it replies ok false so local submitting state can clear.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-007
+  requirement_id: FR-004
+  title: 'Given students have already started a scored assessment, the page displays
+    the warning text: Students have already started this assessment. Removing or restoring
+    questions and activity bank selections will only impact future attempts.'
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-008
+  requirement_id: FR-004
+  title: 'Given students have already visited a practice page, the page displays the
+    warning text: Students have already visited this page. Removing or restoring questions
+    and activity bank selections will only impact future attempts.'
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-009
+  requirement_id: FR-004
+  title: Given existing attempts or visits are present, attempting to remove or restore
+    an Activity Bank Selection shows a warning modal and proceeds only when the user
+    confirms the action.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-010
+  requirement_id: FR-005
+  title: Removing or restoring a whole Activity Bank Selection affects only the current
+    page and section/template scope and does not globally remove the selection, modify
+    authored source content, affect other pages, or change existing student progress.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-011
+  requirement_id: FR-005
+  title: Remove/restore controls are keyboard accessible, have visible focus states,
+    include accessible labels, and preserve hover and disabled states from approved
+    Figma patterns.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+- id: AC-012
+  requirement_id: FR-006
+  title: Embedded activity remove/restore behavior is not reimplemented by MER-5620
+    and remains functional after Activity Bank Selection changes.
+  status: proposed
+  verification_method: hybrid
+  proofs: []

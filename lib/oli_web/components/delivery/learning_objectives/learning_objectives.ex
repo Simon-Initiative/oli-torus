@@ -3,6 +3,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   alias OliWeb.Common.{Params, StripedPagedTable, SearchInput}
   alias OliWeb.Components.Delivery.CardHighlights
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
   alias OliWeb.Delivery.Content.MultiSelect
   alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -136,7 +137,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        selected_proficiency_ids: selected_proficiency_ids,
        card_props: card_props,
        expanded_objectives: expanded_objectives
+     )
+     |> assign(
+       :email_modal_payload,
+       Map.get(assigns, :email_modal_payload, socket.assigns[:email_modal_payload])
      )}
+  end
+
+  # Partial update from the root LiveView to open/close the Draft Email modal. The main update/2
+  # clause above only matches the full assign set (it requires objectives_tab, params,
+  # section_slug, v25_migration), so a send_update carrying only :email_modal_payload does not
+  # match it and falls through to this clause. The modal is rendered by this component (a sibling
+  # of the objectives table), not the in-row StudentProficiencyList, so it escapes the table's
+  # sticky-header stacking context and overlays the page correctly.
+  def update(%{email_modal_payload: payload}, socket) do
+    {:ok, assign(socket, :email_modal_payload, payload)}
   end
 
   attr(:params, :any)
@@ -254,6 +269,16 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           <h6 class="text-center py-4 bg-white dark:bg-gray-800">There are no objectives to show</h6>
         <% end %>
       </div>
+
+      <.live_component
+        :if={@email_modal_payload}
+        id={"draft_email_modal_objectives_#{@section_slug}"}
+        module={DraftEmailModal}
+        modal_dom_id={"draft_email_modal_objectives_#{@section_slug}"}
+        show_modal={true}
+        email_handler_id={"objectives_table_#{@section_slug}"}
+        {@email_modal_payload}
+      />
     </div>
     """
   end

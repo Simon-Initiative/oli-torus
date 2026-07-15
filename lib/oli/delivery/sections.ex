@@ -1194,6 +1194,24 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns `{institution_id, research_consent}` for a section slug in a single
+  query (joining its institution), or nil when the slug is unknown.
+
+  `institution_id` is nil when the section has no associated institution. Used
+  by research consent routing to resolve the authoritative setting without
+  loading the full section.
+  """
+  def get_section_research_consent_by_slug(slug) do
+    from(s in Section,
+      left_join: i in Oli.Institutions.Institution,
+      on: i.id == s.institution_id,
+      where: s.slug == ^slug,
+      select: {s.institution_id, i.research_consent}
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Gets a single section by slug with base_project preloaded.
   ## Examples
       iex> get_section_by_slug_with_base_project("123")
@@ -1217,6 +1235,20 @@ defmodule Oli.Delivery.Sections do
         blueprint: blueprint,
         base_project: bp
       ]
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Gets a single section by id with `base_project` preloaded, in one query.
+
+  Returns `nil` when no section matches.
+  """
+  def get_section_with_base_project(id) do
+    from(s in Section,
+      left_join: bp in assoc(s, :base_project),
+      where: s.id == ^id,
+      preload: [base_project: bp]
     )
     |> Repo.one()
   end

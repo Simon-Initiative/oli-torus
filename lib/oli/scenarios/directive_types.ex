@@ -15,11 +15,19 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :name,
       :title,
       :from,
+      :institution,
       :type,
       :registration_open,
       :slug,
       :open_and_free,
       :requires_enrollment,
+      :requires_payment,
+      :payment_options,
+      :pay_by_institution,
+      :amount,
+      :has_grace_period,
+      :grace_period_days,
+      :grace_period_strategy,
       :start_date,
       :end_date
     ]
@@ -30,7 +38,25 @@ defmodule Oli.Scenarios.DirectiveTypes do
     Creates a product (blueprint) from a project.
     Products are templates that can be used to create sections.
     """
-    defstruct [:name, :title, :from]
+    defstruct [
+      :name,
+      :title,
+      :from,
+      :requires_payment,
+      :payment_options,
+      :pay_by_institution,
+      :amount,
+      :has_grace_period,
+      :grace_period_days,
+      :grace_period_strategy
+    ]
+  end
+
+  defmodule InstitutionDiscountDirective do
+    @moduledoc """
+    Creates or updates an institution discount for a product.
+    """
+    defstruct [:institution, :product, :type, :percentage, :amount, :bypass_paywall]
   end
 
   defmodule RemixDirective do
@@ -84,6 +110,12 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :activity_customization,
       :page_objectives,
       :activity_objectives,
+      :discussion,
+      :instructor_dashboard_summary,
+      :instructor_dashboard_progress,
+      :instructor_dashboard_student_support,
+      :instructor_dashboard_challenging_objectives,
+      :instructor_dashboard_assessments,
       :assertions
     ]
   end
@@ -176,6 +208,18 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:project, :page, :objectives, :content]
   end
 
+  defmodule EditAdaptivePageDirective do
+    @moduledoc """
+    Converts an existing page into an adaptive (advancedDelivery) page whose
+    deck references a previously created adaptive activity by virtual_id.
+    project: target project name
+    page: title of the page to edit
+    activity_virtual_id: virtual_id of the oli_adaptive activity to reference
+    graded: optional boolean, defaults to false
+    """
+    defstruct [:project, :page, :activity_virtual_id, graded: false]
+  end
+
   defmodule ViewPracticePageDirective do
     @moduledoc """
     Simulates a student viewing a practice page in a section.
@@ -255,6 +299,15 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:seconds, :milliseconds]
   end
 
+  defmodule DashboardAnalyticsReadyDirective do
+    @moduledoc """
+    Prepares dashboard analytics for a section before instructor dashboard assertions.
+
+    section: scenario name of the section whose analytics should be ready
+    """
+    defstruct [:section]
+  end
+
   defmodule AnswerQuestionDirective do
     @moduledoc """
     Simulates a student answering a question on a page.
@@ -281,11 +334,44 @@ defmodule Oli.Scenarios.DirectiveTypes do
   defmodule DiscussionPostDirective do
     @moduledoc """
     Creates a discussion post for a student in a section.
+    name: optional scenario-local name for referencing the post later
     student: scenario user name
     section: scenario section name
     body: discussion post body
+    reply_to: optional scenario-local parent post name
+    anonymous: whether to create the post anonymously
     """
-    defstruct [:student, :section, :body]
+    defstruct [:name, :student, :section, :body, :reply_to, :anonymous]
+  end
+
+  defmodule DiscussionConfigDirective do
+    @moduledoc """
+    Configures course discussions on a section.
+    section: scenario section name
+    enabled: whether course discussions are enabled
+    auto_accept: whether posts are visible without approval
+    anonymous_posting: whether anonymous posting is enabled
+    """
+    defstruct [:section, :enabled, :auto_accept, :anonymous_posting]
+  end
+
+  defmodule DiscussionModerationDirective do
+    @moduledoc """
+    Applies instructor moderation to a named discussion post.
+    post: scenario-local post name
+    instructor: scenario user name
+    action: approve or reject
+    """
+    defstruct [:post, :instructor, :action]
+  end
+
+  defmodule DiscussionDeleteDirective do
+    @moduledoc """
+    Deletes a named discussion post as a scenario user.
+    post: scenario-local post name
+    actor: scenario user name
+    """
+    defstruct [:post, :actor]
   end
 
   defmodule ClassNoteDirective do
@@ -351,7 +437,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
     """
     # name -> BuiltProject
     defstruct projects: %{},
-              # name -> Section  
+              # name -> Section
               sections: %{},
               # name -> Product (Blueprint)
               products: %{},
@@ -371,10 +457,14 @@ defmodule Oli.Scenarios.DirectiveTypes do
               finalized_attempts: %{},
               # {user_name, section_name, page_title, activity_virtual_id} -> evaluation result
               activity_evaluations: %{},
+              # name -> Discussion post
+              discussion_posts: %{},
               # gate name -> GatingCondition
               gates: %{},
               # scenario-local current time
               scenario_time: nil,
+              # params passed by external scenario launchers
+              params: %{},
               # Default author for operations
               current_author: nil,
               # Default institution

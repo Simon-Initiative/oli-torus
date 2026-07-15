@@ -1,0 +1,137 @@
+# Scenario: Assessment outcomes
+#
+# This scenario submits graded checkpoint attempts with different scores. It
+# verifies that finalized assessment activity feeds both the average assessment
+# score summary card and the assessments panel row data shown to instructors.
+
+- use:
+    file: "base.scenario.yaml"
+
+# Eli completes the graded checkpoint with a perfect score.
+- visit_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_foundations_mcq"
+    response: "a"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_applications_mcq"
+    response: "b"
+
+- finalize_attempt:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+# Olivia completes the checkpoint with one correct answer.
+- visit_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_foundations_mcq"
+    response: "a"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_applications_mcq"
+    response: "a"
+
+- finalize_attempt:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+# Sam completes the checkpoint with no correct answers.
+- visit_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_foundations_mcq"
+    response: "b"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+    activity_virtual_id: "checkpoint_applications_mcq"
+    response: "a"
+
+- finalize_attempt:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Checkpoint Quiz"
+
+- dashboard_analytics_ready:
+    section: "instructor_dashboard_section"
+
+- assert:
+    instructor_dashboard_summary:
+      section: "instructor_dashboard_section"
+      tolerance: 0.1
+      total_students: 4
+      cards:
+        average_assessment_score:
+          status: "ready"
+          value_number: 50.0
+
+- assert:
+    instructor_dashboard_assessments:
+      section: "instructor_dashboard_section"
+      tolerance: 0.1
+      total_rows: 1
+      has_assessments: true
+      rows_by_title:
+        "Checkpoint Quiz":
+          completion:
+            completed_count: 3
+            total_students: 4
+            ratio: 0.75
+            status: "good"
+          metrics:
+            minimum: 0.0
+            median: 50.0
+            mean: 50.0
+            maximum: 100.0
+            standard_deviation: 40.8
+          histogram_bins:
+            - range: "0-10"
+              count: 1
+            - range: "10-20"
+              count: 0
+            - range: "20-30"
+              count: 0
+            - range: "30-40"
+              count: 0
+            - range: "40-50"
+              count: 0
+            - range: "50-60"
+              count: 1
+            - range: "60-70"
+              count: 0
+            - range: "70-80"
+              count: 0
+            - range: "80-90"
+              count: 0
+            - range: "90-100"
+              count: 1

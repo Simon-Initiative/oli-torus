@@ -8,9 +8,10 @@ Before using this workflow in Torus, install the shared Harness and its reusable
 - Install the Harness skills into your user-level agent skills directory, not into this repository.
 - After installing the Harness, use the Torus repository as the target repo where the Harness contract and work artifacts live.
 
-Only four Torus-specific skills remain installed in this repository under `.agents/skills`:
+Only five Torus-specific skills remain installed in this repository under `.agents/skills`:
 
 - `build_scenario`
+- `change-cleanup`
 - `extend_scenario`
 - `implement_ui`
 - `pr-review-followup`
@@ -177,6 +178,7 @@ Supporting Harness skills:
 Torus-specific repo-local skills:
 
 - `build_scenario` -- Creates `Oli.Scenarios` integration coverage for Torus workflows.
+- `change-cleanup` -- Cleans up code introduced by the current branch with a diff-scoped workflow for docs, specs, deduplication, and stale state removal, in `self-driving`, `smart`, or `assisted` mode.
 - `extend_scenario` -- Extends the Torus scenario infrastructure when new directives or infrastructure support are needed.
 - `implement_ui` -- Converts Figma-driven UI requirements into a Torus-specific implementation brief covering tokens, icons, reusable components, and file targets before coding.
 - `pr-review-followup` -- Triages GitHub PR review comments using Torus review guidelines, aligns on which comments to take, then drives follow-up code changes and thread replies.

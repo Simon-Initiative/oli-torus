@@ -10,9 +10,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Students.EmailButton
 
-  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportEmailModal
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportParametersModal
+
+  @bucket_to_situation %{
+    "struggling" => :struggling_students,
+    "excelling" => :excelling_students,
+    "on_track" => :active_students_on_track,
+    "not_enough_information" => :inactive_students
+  }
 
   @bucket_styles %{
     "struggling" => %{
@@ -487,17 +494,19 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
                 <.live_component
                   :if={@show_email_modal}
-                  id={"student_support_email_modal_#{@id}"}
-                  module={StudentSupportEmailModal}
+                  id={"draft_email_modal_#{@id}"}
+                  module={DraftEmailModal}
+                  modal_dom_id={"draft_email_modal_#{@id}"}
                   students={@selected_students_data}
+                  section_id={@section_id}
                   section_title={@section_title}
                   instructor_email={@instructor_email}
                   instructor_name={@instructor_name}
-                  section_slug={@section_slug}
-                  selected_bucket_id={@selected_bucket_id}
+                  situation_key={bucket_to_situation(@selected_bucket_id)}
+                  scope_label={bucket_title(@selected_bucket_id, @selected_bucket)}
+                  support_bucket={support_bucket_context(@selected_bucket)}
                   show_modal={@show_email_modal}
                   email_handler_id={@id}
-                  modal_dom_id={"student_support_email_modal_#{@id}"}
                 />
                 <StudentSupportParametersModal.modal
                   :if={@show_student_support_parameters_modal}
@@ -1166,4 +1175,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       params
     )
   end
+
+  defp bucket_to_situation(bucket_id),
+    do: Map.get(@bucket_to_situation, bucket_id, :struggling_students)
+
+  defp support_bucket_context(nil), do: nil
+
+  defp support_bucket_context(bucket) do
+    %{label: bucket.label, count: bucket.count}
+    |> maybe_put(:active_count, Map.get(bucket, :active_count))
+    |> maybe_put(:inactive_count, Map.get(bucket, :inactive_count))
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 end

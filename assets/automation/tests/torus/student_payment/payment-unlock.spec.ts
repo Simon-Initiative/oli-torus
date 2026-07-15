@@ -1,0 +1,229 @@
+import { expect, type Page } from '@playwright/test';
+import { type SeedScenarioResponse } from '@core/seedScenario';
+import { test } from '@fixture/my-fixture';
+import { StudentCoursePO } from '@pom/course/StudentCoursePO';
+import path from 'node:path';
+import {
+  logInAsScenarioUser,
+  postInBrowser,
+  postJsonInBrowser,
+  seedStudentPaymentScenario,
+  type SeededScenarioUser,
+  submitPaymentCode,
+} from './support';
+
+const scenarioPaths = {
+  paymentCode: path.resolve(__dirname, './payment-code-unlock.scenario.yaml'),
+  stripe: path.resolve(__dirname, './stripe-unlock.scenario.yaml'),
+  cashnet: path.resolve(__dirname, './cashnet-unlock.scenario.yaml'),
+} as const;
+
+type UnlockScenario = SeededScenarioUser & {
+  extra: string;
+  extra2?: string;
+};
+
+type SeedScenarioFn = (
+  relativePath: string,
+  params?: Record<string, unknown>,
+) => Promise<SeedScenarioResponse>;
+
+test.describe('student payment unlock', () => {
+  test('learner unlocks a paid section with a payment code', async ({ page, seedScenario }, testInfo) => {
+    const paymentCodeScenario = await seedPaymentCodeScenario(seedScenario, testInfo.title);
+    await openBlockedSection(page, paymentCodeScenario);
+
+    await page.goto(sectionPaymentCodePath(paymentCodeScenario.sectionSlug), { waitUntil: 'load' });
+    await expect(page.getByRole('heading', { name: 'Enter Payment Code' })).toBeVisible();
+
+    await submitPaymentCode(page, paymentCodeScenario.extra);
+
+    await expect(page.getByRole('heading', { name: 'Payment Code Applied' })).toBeVisible();
+    await page.getByRole('link', { name: 'Go to my course' }).click();
+
+    await expectUnlockedCourse(page, paymentCodeScenario.sectionSlug);
+  });
+
+  test('invalid payment code keeps the learner blocked', async ({ page, seedScenario }, testInfo) => {
+    const paymentCodeScenario = await seedPaymentCodeScenario(seedScenario, testInfo.title);
+    await openBlockedSection(page, paymentCodeScenario);
+
+    await page.goto(sectionPaymentCodePath(paymentCodeScenario.sectionSlug), { waitUntil: 'load' });
+    await expect(page.getByRole('heading', { name: 'Enter Payment Code' })).toBeVisible();
+
+    await submitPaymentCode(page, 'BAD-CODE');
+
+    await expect(page.getByRole('heading', { name: 'Enter Payment Code' })).toBeVisible();
+    await expect(page.getByText('This is an invalid code')).toBeVisible();
+
+    await page.goto(sectionRootPath(paymentCodeScenario.sectionSlug), { waitUntil: 'load' });
+    await expectBlockedCourse(page, paymentCodeScenario.sectionSlug);
+  });
+
+  test('learner unlocks a paid section after simulated Stripe success', async ({ page, seedScenario }, testInfo) => {
+    const stripeScenario = await seedStripeScenario(seedScenario, testInfo.title);
+    await openBlockedSection(page, stripeScenario);
+
+    const result = await postJsonInBrowser<{ result: string; url?: string }>(page, '/api/v1/payments/s/success', {
+      intent: { id: stripeScenario.extra, status: 'succeeded' },
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body.result).toBe('success');
+
+    await page.goto(result.body.url ?? sectionRootPath(stripeScenario.sectionSlug), { waitUntil: 'load' });
+    await expectUnlockedCourse(page, stripeScenario.sectionSlug);
+  });
+
+  test('unknown Stripe intent does not unlock the paid section', async ({ page, seedScenario }, testInfo) => {
+    const stripeScenario = await seedStripeScenario(seedScenario, testInfo.title);
+    await openBlockedSection(page, stripeScenario);
+
+    const result = await postJsonInBrowser<{ result: string; reason?: string }>(page, '/api/v1/payments/s/success', {
+      intent: { id: 'pi_missing_unlock', status: 'succeeded' },
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body.result).toBe('failure');
+
+    await page.goto(sectionRootPath(stripeScenario.sectionSlug), { waitUntil: 'load' });
+    await expectBlockedCourse(page, stripeScenario.sectionSlug);
+  });
+
+  test(
+    'learner unlocks a paid section after simulated Cashnet success',
+    async ({ page, seedScenario }, testInfo) => {
+      const cashnetScenario = await seedCashnetScenario(seedScenario, testInfo.title);
+      await openBlockedSection(page, cashnetScenario);
+
+      const result = await postJsonInBrowser<{ result: string }>(page, '/api/v1/payments/c/success', {
+        result: '0',
+        respmessage: 'SUCCESS',
+        lname: cashnetScenario.extra2 ?? 'none',
+        ref1val1: cashnetScenario.extra,
+      });
+
+      expect(result.status).toBe(200);
+      expect(result.body.result).toBe('success');
+
+      await page.goto(sectionRootPath(cashnetScenario.sectionSlug), { waitUntil: 'load' });
+      await expectUnlockedCourse(page, cashnetScenario.sectionSlug);
+    },
+  );
+
+  test('invalid Cashnet payload does not unlock the paid section', async ({ page, seedScenario }, testInfo) => {
+    const cashnetScenario = await seedCashnetScenario(seedScenario, testInfo.title);
+    await openBlockedSection(page, cashnetScenario);
+
+    const result = await postInBrowser(page, '/api/v1/payments/c/success', {
+      result: '1',
+      respmessage: 'FAILURE',
+      lname: 'bad-source',
+      ref1val1: cashnetScenario.extra,
+    });
+
+    expect(result.status).toBe(401);
+    expect(result.text).toContain('unauthorized');
+
+    await page.goto(sectionRootPath(cashnetScenario.sectionSlug), { waitUntil: 'load' });
+    await expectBlockedCourse(page, cashnetScenario.sectionSlug);
+  });
+});
+
+async function seedPaymentCodeScenario(seedScenario: SeedScenarioFn, _seedKey: string): Promise<UnlockScenario> {
+  const paymentCodeOutputs = await seedStudentPaymentScenario(
+    seedScenario,
+    scenarioPaths.paymentCode,
+    uniqueRunId(),
+  );
+
+  const scenario = {
+    sectionSlug: paymentCodeOutputs.sections?.student_payment_code_unlock_section ?? '',
+    userEmail: paymentCodeOutputs.users?.student_payment_code_unlock_student ?? '',
+    extra: paymentCodeOutputs.params?.payment_code ?? '',
+  };
+
+  expect(scenario.sectionSlug).toBeTruthy();
+  expect(scenario.userEmail).toBeTruthy();
+  expect(scenario.extra).toBeTruthy();
+
+  return scenario;
+}
+
+async function seedStripeScenario(seedScenario: SeedScenarioFn, _seedKey: string): Promise<UnlockScenario> {
+  const stripeOutputs = await seedStudentPaymentScenario(
+    seedScenario,
+    scenarioPaths.stripe,
+    uniqueRunId(),
+  );
+
+  const scenario = {
+    sectionSlug: stripeOutputs.sections?.student_payment_stripe_unlock_section ?? '',
+    userEmail: stripeOutputs.users?.student_payment_stripe_unlock_student ?? '',
+    extra: stripeOutputs.params?.stripe_intent_id ?? '',
+  };
+
+  expect(scenario.sectionSlug).toBeTruthy();
+  expect(scenario.userEmail).toBeTruthy();
+  expect(scenario.extra).toBeTruthy();
+
+  return scenario;
+}
+
+async function seedCashnetScenario(seedScenario: SeedScenarioFn, _seedKey: string): Promise<UnlockScenario> {
+  const cashnetOutputs = await seedStudentPaymentScenario(
+    seedScenario,
+    scenarioPaths.cashnet,
+    uniqueRunId(),
+  );
+
+  const scenario = {
+    sectionSlug: cashnetOutputs.sections?.student_payment_cashnet_unlock_section ?? '',
+    userEmail: cashnetOutputs.users?.student_payment_cashnet_unlock_student ?? '',
+    extra: cashnetOutputs.params?.cashnet_payment_ref ?? '',
+    extra2: cashnetOutputs.params?.cashnet_lname ?? '',
+  };
+
+  expect(scenario.sectionSlug).toBeTruthy();
+  expect(scenario.userEmail).toBeTruthy();
+  expect(scenario.extra).toBeTruthy();
+  expect(scenario.extra2).toBeTruthy();
+
+  return scenario;
+}
+
+async function openBlockedSection(page: Page, scenario: SeededScenarioUser) {
+  await logInAsScenarioUser(page, scenario.userEmail, sectionRootPath(scenario.sectionSlug));
+  await expectBlockedCourse(page, scenario.sectionSlug);
+}
+
+async function expectUnlockedCourse(page: Page, sectionSlug: string) {
+  const studentCourse = new StudentCoursePO(page);
+
+  await page.goto(sectionLearnPath(sectionSlug), { waitUntil: 'load' });
+  await studentCourse.goToCourseIfPrompted();
+  await studentCourse.presentAssignmentBlock();
+  await expect(page).not.toHaveURL(/\/payment(\/code)?$/);
+  await expect(page).toHaveURL(new RegExp(`/sections/${sectionSlug}`));
+}
+
+async function expectBlockedCourse(page: Page, sectionSlug: string) {
+  await expect(page).toHaveURL(new RegExp(`/sections/${sectionSlug}(/payment)?$`));
+  await expect(page.getByRole('heading', { name: 'Payment Required' })).toBeVisible();
+}
+
+function sectionRootPath(sectionSlug: string) {
+  return `/sections/${sectionSlug}`;
+}
+
+function sectionPaymentCodePath(sectionSlug: string) {
+  return `/sections/${sectionSlug}/payment/code`;
+}
+
+function sectionLearnPath(sectionSlug: string) {
+  return `/sections/${sectionSlug}/learn?sidebar_expanded=true&selected_view=outline`;
+}
+
+function uniqueRunId() {
+  return `-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+}

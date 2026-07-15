@@ -515,6 +515,82 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     end
   end
 
+  # Adaptive stateful non-scorable parts (e.g. a manually graded janus-capi-iframe) do not carry a
+  # meaningful part-level `out_of`; their score is authored at the screen level via
+  # `custom.maxScore`. The authoring sync persists a bogus default `outOf` of 1 for them (there is
+  # no per-part Max Score field), so without this override the instructor would grade out of 1
+  # instead of the screen's max score. We therefore assign the screen max score to those manual
+  # part attempts, splitting it evenly when more than one such part exists so they still sum to the
+  # screen max.
+  #
+  # Scorable adaptive inputs (e.g. janus-multi-line-text) DO expose a per-part Max Score whose
+  # authored value is persisted to `outOf`, so we leave their `out_of` untouched to respect the
+  # author-configured per-part maximum.
+  defp apply_adaptive_manual_out_of(
+         parts_map,
+         model,
+         %{activity_type_id: activity_type_id} = activity_attempt,
+         part_attempts
+       ) do
+    with true <- AdaptiveParts.adaptive_activity?(%{activity_type_id: activity_type_id}),
+         screen_max when is_number(screen_max) and screen_max > 0 <-
+           adaptive_screen_max_score(model) do
+      content = activity_attempt.revision.content
+
+      manual_part_ids =
+        part_attempts
+        |> Enum.filter(fn pa -> pa.grading_approach == :manual end)
+        |> Enum.map(& &1.part_id)
+        |> Enum.uniq()
+        |> Enum.filter(&Map.has_key?(parts_map, &1))
+        |> Enum.filter(fn part_id ->
+          case AdaptiveParts.part_definition(content, part_id) do
+            nil -> false
+            part -> not AdaptiveParts.scorable_part?(part)
+          end
+        end)
+
+      case manual_part_ids do
+        [] ->
+          parts_map
+
+        ids ->
+          per_part = screen_max / length(ids)
+
+          Enum.reduce(ids, parts_map, fn part_id, acc ->
+            Map.update!(acc, part_id, fn %Part{} = part -> %{part | out_of: per_part} end)
+          end)
+      end
+    else
+      _ -> parts_map
+    end
+  end
+
+  defp apply_adaptive_manual_out_of(parts_map, _model, _activity_attempt, _part_attempts),
+    do: parts_map
+
+  defp adaptive_screen_max_score(%Oli.Activities.Model{delivery: delivery})
+       when is_map(delivery) do
+    delivery
+    |> Map.get("custom", %{})
+    |> Map.get("maxScore")
+    |> normalize_number()
+  end
+
+  defp adaptive_screen_max_score(_), do: nil
+
+  defp normalize_number(value) when is_integer(value), do: value * 1.0
+  defp normalize_number(value) when is_float(value), do: value
+
+  defp normalize_number(value) when is_binary(value) do
+    case Float.parse(value) do
+      {parsed, ""} -> parsed
+      _ -> nil
+    end
+  end
+
+  defp normalize_number(_), do: nil
+
   @spec patch_with(Phoenix.LiveView.Socket.t(), map) :: {:noreply, Phoenix.LiveView.Socket.t()}
   def patch_with(socket, changes) do
     {:noreply,
@@ -585,7 +661,12 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         OliWeb.ManualGrading.Rendering.render(rendering_context, :instructor_preview)
 
       {:ok, model} = Oli.Activities.Model.parse(activity_attempt.revision.content)
-      parts_map = Enum.reduce(model.parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+      parts_map =
+        model.parts
+        |> Enum.reduce(%{}, fn p, m -> Map.put(m, p.id, p) end)
+        |> apply_adaptive_manual_out_of(model, activity_attempt, part_attempts)
+
       selected_part_attempt = List.first(part_attempts)
 
       [

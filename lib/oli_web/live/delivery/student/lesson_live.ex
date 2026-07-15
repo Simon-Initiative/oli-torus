@@ -1137,7 +1137,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           current_out_of={@current_out_of}
         />
 
-        <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] sm:pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="flex-1 w-full max-w-[1170px] px-4 sm:px-[80px] lg:px-0 sm:pt-20 pb-24 lg:pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -1153,7 +1153,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
 
-          <div :if={@questions != []} class="relative min-h-[500px] justify-center">
+          <div :if={@questions != []} class="relative min-h-[500px] w-full justify-center">
             <.live_component
               id="one_at_a_time_questions"
               module={OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion}
@@ -1472,13 +1472,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score(assigns) do
     ~H"""
-    <div class="flex items-center gap-3">
-      <span class="font-open-sans text-[14px] font-normal leading-[21px] tracking-[-0.14px] text-Text-text-high">
+    <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+      <span class="font-open-sans text-[14px] font-normal leading-[21px] text-Text-text-high">
         Overall Page Score
       </span>
       <div class="inline-flex items-center gap-1.5 rounded-[4px] bg-Fill-Accent-fill-accent-green-bold px-3 py-2 text-Text-text-white">
         <Icons.star color="text-white" />
-        <strong class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[-0.3125px]">
+        <strong class="font-open-sans text-[16px] font-bold leading-[16px]">
           {format_score(@score)} / {format_score(@out_of)}
         </strong>
       </div>
@@ -1537,7 +1537,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       <div
         id="countdown_timer_display"
         phx-update="ignore"
-        class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5]"
+        class="relative w-full px-4 py-2 text-center text-lg font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5] sm:absolute sm:top-2 sm:right-6 sm:mt-4 sm:w-auto sm:p-0"
         phx-hook="CountdownTimer"
         data-timer-id="countdown_timer_display"
         data-submit-button-id="submit_answers"
@@ -1553,7 +1553,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <div
           id="countdown_timer_display"
           phx-update="ignore"
-          class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5]"
+          class="relative w-full px-4 py-2 text-center text-lg font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5] sm:absolute sm:top-2 sm:right-6 sm:mt-4 sm:w-auto sm:p-0"
           phx-hook="EndDateTimer"
           data-timer-id="countdown_timer_display"
           data-submit-button-id="submit_answers"
@@ -1600,13 +1600,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{page_context: %{effective_settings: %{batch_scoring: false}}} = assigns
       ) do
     ~H"""
-    <div class="w-full lg:px-20 px-40 py-9 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
+    <div class="w-full px-4 py-9 sm:px-10 lg:px-20 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
       <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
         <div class="dark:text-white text-sm font-bold uppercase tracking-wider">
           Score as you go Activity
         </div>
       </div>
-      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
+      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6 text-center sm:text-left">
         You can start or stop at any time, and your progress will be saved. Your score is updated as you complete questions on this page.
       </div>
     </div>
@@ -1615,13 +1615,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def scored_page_banner(assigns) do
     ~H"""
-    <div class="w-full lg:px-20 px-40 py-9 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
+    <div class="w-full px-4 py-9 sm:px-10 lg:px-20 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
       <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
         <div class="dark:text-white text-sm font-bold uppercase tracking-wider">
           Scored Activity
         </div>
       </div>
-      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
+      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6 text-center sm:text-left">
         You can start or stop at any time, and your progress will be saved. When you submit your answers using the Submit button, it will count as an attempt. So make sure you have answered all the questions before submitting.
       </div>
     </div>

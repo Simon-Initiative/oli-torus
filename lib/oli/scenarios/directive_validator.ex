@@ -106,6 +106,18 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "admin_title3"
           ]
 
+        :discussion ->
+          [
+            "section",
+            "post",
+            "student",
+            "visible",
+            "status",
+            "contains_discussions",
+            "auto_accept",
+            "anonymous_posting"
+          ]
+
         :gating ->
           [
             "gate",
@@ -194,6 +206,74 @@ defmodule Oli.Scenarios.DirectiveValidator do
 
         :activity_objectives ->
           ["project", "activity_virtual_id", "expected"]
+
+        :instructor_dashboard_summary ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "metrics",
+            "total_students",
+            "scope_label",
+            "course_title",
+            "cards",
+            "available_slots",
+            "missing_slots"
+          ]
+
+        :instructor_dashboard_progress ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "axis_label",
+            "class_size",
+            "completion_threshold",
+            "y_axis_mode",
+            "items",
+            "series",
+            "series_all",
+            "empty_state"
+          ]
+
+        :instructor_dashboard_student_support ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "totals",
+            "buckets",
+            "default_bucket_id",
+            "has_activity_data",
+            "has_activity_data?",
+            "bucket_priority"
+          ]
+
+        :instructor_dashboard_challenging_objectives ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "state",
+            "has_objectives",
+            "row_count",
+            "rows",
+            "rows_by_title",
+            "scope_label",
+            "course_title"
+          ]
+
+        :instructor_dashboard_assessments ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "total_rows",
+            "has_assessments",
+            "has_assessments?",
+            "rows",
+            "rows_by_title"
+          ]
 
         _ ->
           []
