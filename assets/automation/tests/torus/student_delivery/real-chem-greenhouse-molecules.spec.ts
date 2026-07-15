@@ -104,10 +104,12 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
   test.beforeAll(async ({ request }) => {
     test.setTimeout(240_000); // course archive ingest takes ~1 min
 
-    const answersBuffer = await fetchAsset(request, answersKey);
+    const [answersBuffer, archivePath] = await Promise.all([
+      fetchAsset(request, answersKey),
+      fetchArchiveToTempFile(archiveKey),
+    ]);
     answers = JSON.parse(answersBuffer.toString('utf8')) as LessonAnswers;
 
-    const archivePath = await fetchArchiveToTempFile(archiveKey);
     seededCourse = await importArchiveAndCreateSection(request, archivePath, {
       baseUrl,
       apiKey: automationApiKey!,

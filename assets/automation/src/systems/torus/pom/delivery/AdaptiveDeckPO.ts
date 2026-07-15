@@ -459,6 +459,8 @@ export class AdaptiveDeckPO {
       const left = frame.locator('.left-column .item').filter({ hasText: leftText }).first();
       const right = frame.locator('.right-column .item').filter({ hasText: rightText }).first();
 
+      let linked = false;
+
       for (let retry = 0; retry < 4; retry += 1) {
         const leftClass = (await left.getAttribute('class').catch(() => '')) || '';
         if (!/isSelected/i.test(leftClass)) {
@@ -474,9 +476,18 @@ export class AdaptiveDeckPO {
             .locator('.remove-links')
             .getAttribute('aria-label')
             .catch(() => '')) || '';
-        if (!/Unlink 0 /i.test(unlinkLabel)) break; // link registered
+        if (!/Unlink 0 /i.test(unlinkLabel)) {
+          linked = true;
+          break; // link registered
+        }
 
         await this.page.waitForTimeout(1_000);
+      }
+
+      if (!linked) {
+        throw new Error(
+          `Failed to link matching pair (left: ${leftText}, right: ${rightText}) after 4 retries`,
+        );
       }
     }
   }

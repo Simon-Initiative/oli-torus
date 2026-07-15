@@ -6,6 +6,7 @@ defmodule Oli.AutomationSetup do
   alias Lti_1p3.Roles.ContextRoles
 
   alias Oli.Repo
+  alias Oli.Accounts.User
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.Resource
@@ -281,10 +282,10 @@ defmodule Oli.AutomationSetup do
   # "confirm your email" interstitial.
   defp confirm_user_email(user) do
     user
-    |> Ecto.Changeset.change(
+    |> User.noauth_changeset(%{
       email_verified: true,
       email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second)
-    )
+    })
     |> Repo.update()
   end
 
