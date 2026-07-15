@@ -41,8 +41,8 @@ defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler do
 
   defp rebuild_contained_pages(%{id: id, slug: slug} = section)
        when is_integer(id) and is_binary(slug) do
-    Sections
-    |> apply(:rebuild_contained_pages, [section])
+    section
+    |> Sections.rebuild_contained_pages()
     |> contained_pages_result()
   rescue
     error -> {:error, "could not rebuild contained pages: #{Exception.message(error)}"}
@@ -51,10 +51,6 @@ defmodule Oli.Scenarios.Directives.DashboardAnalyticsReadyHandler do
   defp rebuild_contained_pages(_section), do: :ok
 
   defp contained_pages_result({:ok, _}), do: :ok
-  defp contained_pages_result(:ok), do: :ok
-
-  defp contained_pages_result({:error, reason}),
-    do: {:error, "could not rebuild contained pages: #{inspect(reason)}"}
 
   defp rebuild_contained_objectives(%{id: id, slug: slug} = section)
        when is_integer(id) and is_binary(slug) do

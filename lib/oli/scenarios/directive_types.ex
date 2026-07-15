@@ -301,7 +301,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule DashboardAnalyticsReadyDirective do
     @moduledoc """
-    Drains pending dashboard analytics snapshot work for a section.
+    Prepares dashboard analytics for a section before instructor dashboard assertions.
+
     section: scenario name of the section whose analytics should be ready
     """
     defstruct [:section]

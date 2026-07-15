@@ -54,6 +54,53 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   alias Oli.Scenarios.Types.Node
 
+  @valid_directives [
+    "project",
+    "clone",
+    "section",
+    "product",
+    "remix",
+    "manipulate",
+    "objectives",
+    "publish",
+    "assert",
+    "verify",
+    "user",
+    "enroll",
+    "institution",
+    "institution_discount",
+    "update",
+    "customize",
+    "create_activity",
+    "activity_bank",
+    "instructor_customization",
+    "edit_page",
+    "edit_adaptive_page",
+    "view_practice_page",
+    "visit_page",
+    "start_attempt",
+    "gate",
+    "time",
+    "wait",
+    "dashboard_analytics_ready",
+    "answer_question",
+    "finalize_attempt",
+    "student_exception",
+    "certificate",
+    "discussion_config",
+    "discussion_post",
+    "discussion_moderation",
+    "discussion_delete",
+    "class_note",
+    "complete_scored_page",
+    "certificate_action",
+    "use",
+    "collaborator",
+    "media",
+    "bibliography",
+    "hook"
+  ]
+
   @doc """
   Loads and parses a YAML file containing course specification directives.
   Returns a list of parsed directives in the order they appear.
@@ -1011,53 +1058,8 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(map) when is_map(map) and map_size(map) == 1 do
     [{key, _value}] = Enum.to_list(map)
 
-    if key not in [
-         "project",
-         "clone",
-         "section",
-         "product",
-         "remix",
-         "manipulate",
-         "objectives",
-         "publish",
-         "assert",
-         "verify",
-         "user",
-         "enroll",
-         "institution",
-         "institution_discount",
-         "update",
-         "customize",
-         "create_activity",
-         "activity_bank",
-         "instructor_customization",
-         "edit_page",
-         "edit_adaptive_page",
-         "view_practice_page",
-         "visit_page",
-         "start_attempt",
-         "gate",
-         "time",
-         "wait",
-         "dashboard_analytics_ready",
-         "answer_question",
-         "finalize_attempt",
-         "student_exception",
-         "certificate",
-         "discussion_config",
-         "discussion_post",
-         "discussion_moderation",
-         "discussion_delete",
-         "class_note",
-         "complete_scored_page",
-         "certificate_action",
-         "use",
-         "collaborator",
-         "media",
-         "bibliography",
-         "hook"
-       ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, dashboard_analytics_ready, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+    if key not in valid_directives() do
+      raise unrecognized_directive_message(key)
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -1067,58 +1069,19 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Handle multiple directives in a single map (for complex YAML structures)
   defp parse_directive(map) when is_map(map) do
     Enum.flat_map(map, fn
-      {key, value}
-      when key in [
-             "project",
-             "clone",
-             "section",
-             "product",
-             "remix",
-             "manipulate",
-             "objectives",
-             "publish",
-             "assert",
-             "verify",
-             "user",
-             "enroll",
-             "institution",
-             "institution_discount",
-             "create_activity",
-             "activity_bank",
-             "instructor_customization",
-             "edit_page",
-             "edit_adaptive_page",
-             "view_practice_page",
-             "visit_page",
-             "start_attempt",
-             "gate",
-             "time",
-             "wait",
-             "dashboard_analytics_ready",
-             "answer_question",
-             "finalize_attempt",
-             "student_exception",
-             "certificate",
-             "discussion_config",
-             "discussion_post",
-             "discussion_moderation",
-             "discussion_delete",
-             "class_note",
-             "complete_scored_page",
-             "certificate_action",
-             "update",
-             "customize",
-             "use",
-             "collaborator",
-             "media",
-             "bibliography",
-             "hook"
-           ] ->
-        [parse_directive(%{key => value})]
-
-      {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, objectives, publish, assert, verify, user, enroll, institution, institution_discount, update, customize, create_activity, activity_bank, instructor_customization, edit_page, edit_adaptive_page, view_practice_page, visit_page, start_attempt, gate, time, wait, dashboard_analytics_ready, answer_question, finalize_attempt, student_exception, certificate, discussion_config, discussion_post, discussion_moderation, discussion_delete, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+      {key, value} ->
+        if key in valid_directives() do
+          [parse_directive(%{key => value})]
+        else
+          raise unrecognized_directive_message(key)
+        end
     end)
+  end
+
+  defp valid_directives, do: @valid_directives
+
+  defp unrecognized_directive_message(key) do
+    "Unrecognized directive: '#{key}'. Valid directives are: #{Enum.join(valid_directives(), ", ")}"
   end
 
   defp assertion_attrs do
