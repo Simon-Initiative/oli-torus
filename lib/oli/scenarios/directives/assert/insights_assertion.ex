@@ -30,7 +30,7 @@ defmodule Oli.Scenarios.Directives.Assert.InsightsAssertion do
       with {:ok, built_project} <- Helpers.get_project(state, spec.project),
            {:ok, section_ids} <- resolve_section_ids(state, spec.sections),
            {:ok, target} <- resolve_target(state, built_project, spec),
-           rows <- browse(built_project.project.id, section_ids, spec.resource_type),
+           rows <- browse(built_project.project.id, section_ids, spec.resource_type, target),
            matches <- matching_rows(rows, target),
            {:ok, verification} <- verify_matches(spec, target, matches) do
         verification
@@ -91,14 +91,16 @@ defmodule Oli.Scenarios.Directives.Assert.InsightsAssertion do
     end
   end
 
-  defp browse(project_id, section_ids, resource_type) do
+  defp browse(project_id, section_ids, resource_type, target) do
     BrowseInsights.browse_insights(
       %Paging{offset: 0, limit: 10_000},
       %Sorting{direction: :asc, field: :title},
       %BrowseInsightsOptions{
         project_id: project_id,
         section_ids: section_ids,
-        resource_type_id: resource_type_id(resource_type)
+        resource_type_id: resource_type_id(resource_type),
+        resource_id: target.resource_id,
+        part_id: Map.get(target, :part_id)
       }
     )
   end

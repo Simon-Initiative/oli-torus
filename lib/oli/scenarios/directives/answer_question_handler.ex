@@ -28,7 +28,11 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
            ),
          {:ok, section} <- AttemptSupport.get_section(state, directive.section),
          {:ok, activity_revision} <-
-           ActivityAttemptSupport.get_activity_revision(state, directive.activity_virtual_id),
+           ActivityAttemptSupport.get_activity_revision(
+             state,
+             directive.section,
+             directive.activity_virtual_id
+           ),
          {:ok, activity_attempt_info} <-
            ActivityAttemptSupport.find_activity_attempt(attempt_state, activity_revision),
          # Don't get part_id from revision, get it from the actual attempt

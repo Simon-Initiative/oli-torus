@@ -12,7 +12,12 @@ defmodule Oli.Scenarios.Directives.LearnerAttemptActionsTest do
     ResetActivityDirective
   }
 
-  alias Oli.Scenarios.Directives.{RequestHintHandler, ResetActivityHandler}
+  alias Oli.Scenarios.Directives.{
+    ActivityAttemptSupport,
+    RequestHintHandler,
+    ResetActivityHandler
+  }
+
   alias Oli.Scenarios.RuntimeOpts
 
   @scenario_path Path.join(__DIR__, "learner_attempt_actions.scenario.yaml")
@@ -81,5 +86,68 @@ defmodule Oli.Scenarios.Directives.LearnerAttemptActionsTest do
 
     assert {:error, message} = ResetActivityHandler.handle(directive, %ExecutionState{})
     assert message == "Failed to reset activity: User 'student' not found"
+  end
+
+  test "activity revisions are scoped to the section's project" do
+    first_revision = %{resource_id: 1}
+    second_revision = %{resource_id: 2}
+
+    state = %ExecutionState{
+      projects: %{
+        "first_project" => %{project: %{id: 10}},
+        "second_project" => %{project: %{id: 20}}
+      },
+      sections: %{
+        "second_section" => %{base_project_id: 20, slug: "second-section"}
+      },
+      activity_virtual_ids: %{
+        {"first_project", "shared_question"} => first_revision,
+        {"second_project", "shared_question"} => second_revision
+      }
+    }
+
+    assert {:ok, ^second_revision} =
+             ActivityAttemptSupport.get_activity_revision(
+               state,
+               "second_section",
+               "shared_question"
+             )
+  end
+
+  test "activity attempts use resource identity instead of activity type" do
+    first_attempt = activity_attempt("first-attempt", 1)
+    second_attempt = activity_attempt("second-attempt", 2)
+
+    attempt_state = %{
+      attempt_hierarchy: %{
+        first: {first_attempt, %{}},
+        second: {second_attempt, %{}}
+      }
+    }
+
+    assert {:ok, %{attempt_guid: "second-attempt"}} =
+             ActivityAttemptSupport.find_activity_attempt(attempt_state, %{
+               resource_id: 2,
+               content: %{"activityType" => "oli_multiple_choice"}
+             })
+
+    assert {:error, message} =
+             ActivityAttemptSupport.find_activity_attempt(attempt_state, %{
+               resource_id: 3,
+               content: %{"activityType" => "oli_multiple_choice"}
+             })
+
+    assert message == "Could not find activity attempt for resource_id 3"
+  end
+
+  defp activity_attempt(attempt_guid, resource_id) do
+    %{
+      attempt_guid: attempt_guid,
+      part_attempts: [],
+      revision: %{
+        resource_id: resource_id,
+        content: %{"activityType" => "oli_multiple_choice"}
+      }
+    }
   end
 end

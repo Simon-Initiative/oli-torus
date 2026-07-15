@@ -3,6 +3,7 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
   Shared lookup and normalization helpers for scenario learner activity actions.
   """
 
+  alias Oli.Scenarios.Directives.AttemptSupport
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
 
   @doc """
@@ -29,18 +30,12 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
   end
 
   @doc """
-  Resolves a scenario activity revision by its virtual ID.
+  Resolves a scenario activity revision by its section's project and virtual ID.
   """
-  def get_activity_revision(%ExecutionState{} = state, activity_virtual_id) do
-    activity_revision =
-      Enum.find_value(state.activity_virtual_ids, fn
-        {{_project_name, ^activity_virtual_id}, revision} -> revision
-        _ -> nil
-      end)
-
-    case activity_revision do
-      nil -> {:error, "Activity with virtual_id '#{activity_virtual_id}' not found"}
-      revision -> {:ok, revision}
+  def get_activity_revision(%ExecutionState{} = state, section_name, activity_virtual_id) do
+    with {:ok, section} <- AttemptSupport.get_section(state, section_name),
+         {:ok, project_name} <- project_name_for_section(state, section) do
+      fetch_activity_revision(state, project_name, activity_virtual_id)
     end
   end
 
@@ -50,7 +45,7 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
   def find_activity_attempt(attempt_state, activity_revision) do
     case Map.get(attempt_state.attempt_hierarchy, activity_revision.resource_id) do
       nil ->
-        find_activity_by_content(attempt_state, activity_revision)
+        find_activity_by_resource_id(attempt_state, activity_revision.resource_id)
 
       attempt ->
         normalize_activity_attempt(attempt)
@@ -83,29 +78,56 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
   def find_part_attempt(_activity_attempt_info, _part_id),
     do: {:error, "Could not find part attempt"}
 
-  defp find_activity_by_content(attempt_state, activity_revision) do
-    activity_type = activity_type(activity_revision.content)
-
-    matching_attempt =
+  defp find_activity_by_resource_id(attempt_state, resource_id) do
+    matching_attempts =
       attempt_state.attempt_hierarchy
       |> Map.values()
-      |> Enum.find(fn
-        {%{revision: %{content: content}}, _} -> activity_type(content) == activity_type
-        %{revision: %{content: content}} -> activity_type(content) == activity_type
+      |> Enum.filter(fn
+        {%{revision: %{resource_id: ^resource_id}}, _part_attempts} -> true
+        %{revision: %{resource_id: ^resource_id}} -> true
         _ -> false
       end)
 
-    case matching_attempt do
-      nil -> find_single_activity_attempt(attempt_state, activity_type)
-      attempt -> normalize_activity_attempt(attempt)
+    case matching_attempts do
+      [attempt] -> normalize_activity_attempt(attempt)
+      [] -> find_single_activity_attempt(attempt_state, resource_id)
+      _ -> {:error, "Multiple activity attempts matched resource_id #{resource_id}"}
     end
   end
 
-  defp find_single_activity_attempt(attempt_state, activity_type) do
+  defp find_single_activity_attempt(attempt_state, resource_id) do
     case Map.values(attempt_state.attempt_hierarchy) do
       [attempt] -> normalize_activity_attempt(attempt)
       [] -> {:error, "No activity attempts found in hierarchy"}
-      _ -> {:error, "Could not find matching activity attempt for type: #{activity_type}"}
+      _ -> {:error, "Could not find activity attempt for resource_id #{resource_id}"}
+    end
+  end
+
+  defp project_name_for_section(state, section) do
+    project_name =
+      Enum.find_value(state.projects, fn
+        {project_name, %{project: %{id: project_id}}}
+        when project_id == section.base_project_id ->
+          project_name
+
+        _ ->
+          nil
+      end)
+
+    case project_name do
+      nil -> {:error, "Source project for section '#{section.slug}' not found"}
+      project_name -> {:ok, project_name}
+    end
+  end
+
+  defp fetch_activity_revision(state, project_name, activity_virtual_id) do
+    case Map.get(state.activity_virtual_ids, {project_name, activity_virtual_id}) do
+      nil ->
+        {:error,
+         "Activity with virtual_id '#{activity_virtual_id}' not found in project '#{project_name}'"}
+
+      revision ->
+        {:ok, revision}
     end
   end
 
@@ -122,6 +144,4 @@ defmodule Oli.Scenarios.Directives.ActivityAttemptSupport do
     do: {:ok, %{attempt_guid: guid, activity_attempt: thin_info}}
 
   defp normalize_activity_attempt(_), do: {:error, "Unexpected attempt hierarchy format"}
-
-  defp activity_type(content), do: content["activityType"] || content["type"]
 end

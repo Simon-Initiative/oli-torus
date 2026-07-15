@@ -19,7 +19,11 @@ defmodule Oli.Scenarios.Directives.RequestHintHandler do
              directive.page
            ),
          {:ok, activity_revision} <-
-           ActivityAttemptSupport.get_activity_revision(state, directive.activity_virtual_id),
+           ActivityAttemptSupport.get_activity_revision(
+             state,
+             directive.section,
+             directive.activity_virtual_id
+           ),
          {:ok, activity_attempt_info} <-
            ActivityAttemptSupport.find_activity_attempt(attempt_state, activity_revision),
          {:ok, part_attempt} <-
