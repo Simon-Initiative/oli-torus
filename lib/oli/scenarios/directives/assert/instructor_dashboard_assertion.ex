@@ -9,7 +9,7 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   alias Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector, as: ProgressProjector
   alias Oli.InstructorDashboard.OracleRegistry
   alias Oli.InstructorDashboard.StudentSupportParameters
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Scenarios.DirectiveTypes.{AssertDirective, VerificationResult}
   alias Oli.Scenarios.Directives.Assert.Helpers
 
@@ -17,8 +17,8 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   @default_tolerance 0.001
   @summary_recommendation_oracle :oracle_instructor_recommendation
 
-  @spec assert(atom(), AssertDirective.t(), map()) ::
-          {:ok, map(), VerificationResult.t()} | {:error, String.t()}
+  @spec assert(atom(), %AssertDirective{}, map()) ::
+          {:ok, map(), %VerificationResult{}} | {:error, String.t()}
   def assert(capability, %AssertDirective{} = directive, state) do
     spec = spec_for(capability, directive)
 
@@ -216,8 +216,8 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
     do: {:error, "Invalid dashboard container_id #{inspect(id)}"}
 
   defp container_scope_by_id(section, container_id) do
-    section.slug
-    |> DeliveryResolver.full_hierarchy()
+    section
+    |> section_dashboard_hierarchy()
     |> find_node_by_resource_id(container_id)
     |> case do
       nil ->
@@ -230,14 +230,17 @@ defmodule Oli.Scenarios.Directives.Assert.InstructorDashboardAssertion do
   end
 
   defp container_scope_by_title(section, title) do
-    section.slug
-    |> DeliveryResolver.full_hierarchy()
+    section
+    |> section_dashboard_hierarchy()
     |> find_node_by_title(title)
     |> case do
       nil -> {:error, "Container '#{title}' not found in section '#{section.slug}'"}
       node -> {:ok, %{container_type: :container, container_id: node.resource_id}}
     end
   end
+
+  defp section_dashboard_hierarchy(section),
+    do: SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
 
   defp find_node_by_title(nil, _title), do: nil
 
