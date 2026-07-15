@@ -94,9 +94,9 @@ export class AdaptiveDeckPO {
       }
 
       if (await footer.isVisible({ timeout: 1_500 }).catch(() => false)) {
-        await footer.click().catch(() => undefined);
+        await footer.click(ACTION_TIMEOUT).catch(() => undefined);
       } else if (await nav.isVisible({ timeout: 1_500 }).catch(() => false)) {
-        await nav.click().catch(() => undefined);
+        await nav.click(ACTION_TIMEOUT).catch(() => undefined);
       } else {
         break;
       }
