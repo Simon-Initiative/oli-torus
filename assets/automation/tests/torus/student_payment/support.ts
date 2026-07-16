@@ -78,14 +78,22 @@ export async function logInAsScenarioUser(
   expectedPath = requestPath,
 ) {
   const baseUrl = getBaseUrl();
+  const scenarioToken = getScenarioToken();
   const loginUrl = new URL('/test/log_in_user', baseUrl);
 
-  loginUrl.searchParams.set('token', getScenarioToken());
   loginUrl.searchParams.set('email', email);
   loginUrl.searchParams.set('request_path', requestPath);
 
-  await page.goto(loginUrl.toString(), { waitUntil: 'load' });
-  await expect(page).toHaveURL(new RegExp(escapeRegExp(expectedPath)));
+  await page.context().setExtraHTTPHeaders({
+    'x-playwright-scenario-token': scenarioToken,
+  });
+
+  try {
+    await page.goto(loginUrl.toString(), { waitUntil: 'load' });
+    await expect(page).toHaveURL(new RegExp(escapeRegExp(expectedPath)));
+  } finally {
+    await page.context().setExtraHTTPHeaders({});
+  }
 }
 
 export async function postJsonInBrowser<T>(
