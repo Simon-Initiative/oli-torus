@@ -7,6 +7,7 @@ defmodule Oli.AutomationSetup do
 
   alias Oli.Repo
   alias Oli.Accounts.User
+  alias Oli.Analytics.Summary.StudentResponse
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.Resource
@@ -132,6 +133,9 @@ defmodule Oli.AutomationSetup do
       {:error, message} -> %{success: false, message: message}
       _ -> %{success: false, message: "Unknown Reason"}
     end
+  rescue
+    e in Ecto.ConstraintError ->
+      %{success: false, message: "Could not delete project: #{Exception.message(e)}"}
   end
 
   def teardown_section(nil) do
@@ -147,6 +151,9 @@ defmodule Oli.AutomationSetup do
       {:error, message} -> %{success: false, message: message}
       _ -> %{success: false, message: "Unknown Reason"}
     end
+  rescue
+    e in Ecto.ConstraintError ->
+      %{success: false, message: "Could not delete section: #{Exception.message(e)}"}
   end
 
   def teardown_educator(email, password) do
@@ -376,8 +383,20 @@ defmodule Oli.AutomationSetup do
 
       {:ok, user} ->
         Logger.info("Deleting test user #{email}")
-        Oli.Repo.delete(user)
-        %{success: true}
+
+        # student_responses has non-cascading FKs on user_id, section_id, and
+        # page_id — clearing this user's rows here (before user/section/project
+        # teardown) removes the same rows that would otherwise block those
+        # later steps too.
+        Repo.delete_all(from(sr in StudentResponse, where: sr.user_id == ^user.id))
+
+        try do
+          {:ok, _} = Oli.Repo.delete(user)
+          %{success: true}
+        rescue
+          e in Ecto.ConstraintError ->
+            %{success: false, message: "Could not delete user: #{Exception.message(e)}"}
+        end
     end
   end
 
