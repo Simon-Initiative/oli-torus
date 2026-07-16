@@ -1,4 +1,9 @@
 defmodule Oli.Scenarios.Features.MixedContentHooks do
+  @moduledoc """
+  Scenario hooks that rebuild mixed-workflow context and assert author preview
+  plus published delivery content after Playwright authoring steps.
+  """
+
   import ExUnit.Assertions
   import Phoenix.ConnTest, only: [get: 2, html_response: 2]
 
@@ -20,6 +25,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   @author_name "workflow_author"
   @student_name "workflow_student"
 
+  @doc """
+  Rebuilds the scenario execution state from workflow params after a Playwright step.
+  """
   def bind_workflow_context(%ExecutionState{} = state) do
     author = fetch_author_from_params!(state)
     student = fetch_student_from_params!(state)
@@ -45,11 +53,17 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     }
   end
 
+  @doc """
+  Captures the authored page revision slug into scenario params for later workflow steps.
+  """
   def capture_workflow_page_revision_slug(%ExecutionState{} = state) do
     revision = fetch_page_revision!(state)
     %{state | params: Map.put(state.params || %{}, "workflow_page_revision_slug", revision.slug)}
   end
 
+  @doc """
+  Asserts that the author preview renders the expected code block content.
+  """
   def assert_author_preview_codeblock(%ExecutionState{} = state) do
     html = author_preview_html(state)
     text = html_text(html)
@@ -60,6 +74,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that the published delivery revision contains the expected code block content.
+  """
   def assert_student_delivery_codeblock(%ExecutionState{} = state) do
     content = delivered_revision_content(state)
 
@@ -69,18 +86,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
-  def assert_author_preview_reachable(%ExecutionState{} = state) do
-    html = author_preview_html(state)
-    assert_contains(html_text(html), "Preview Mode")
-    state
-  end
-
-  def assert_delivery_revision_reachable(%ExecutionState{} = state) do
-    content = delivered_revision_content(state)
-    assert is_map(content)
-    state
-  end
-
+  @doc """
+  Asserts that the author preview renders the expected callout content.
+  """
   def assert_author_preview_callout(%ExecutionState{} = state) do
     html = author_preview_html(state)
     text = html_text(html)
@@ -90,6 +98,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that the published delivery revision contains the expected callout content.
+  """
   def assert_student_delivery_callout(%ExecutionState{} = state) do
     content = delivered_revision_content(state)
 

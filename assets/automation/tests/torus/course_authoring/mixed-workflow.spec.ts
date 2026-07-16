@@ -58,7 +58,7 @@ setRuntimeConfig({
 test.describe('mixed workflow', () => {
   test.setTimeout(120_000);
 
-  test('seeds a draft page, authors two mixed-content changes in Playwright, and validates preview plus delivery after each publish', async ({
+  test('publishes mixed page updates and validates preview plus delivery for code block and callout', async ({
     runWorkflow,
   }) => {
     await test.step('execute mixed workflow end-to-end', async () => {

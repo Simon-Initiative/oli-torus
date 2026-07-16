@@ -7,11 +7,11 @@ import { ProjectTask } from '@tasks/ProjectTask';
 import { StudentTask } from '@tasks/StudentTask';
 
 export type WorkflowScalar = string | number | boolean | null;
-export type WorkflowValue =
-  | WorkflowScalar
-  | WorkflowValue[]
-  | { [key: string]: WorkflowValue | unknown }
-  | unknown;
+export type WorkflowObject = {
+  [key: string]: WorkflowValue;
+};
+
+export type WorkflowValue = WorkflowScalar | WorkflowValue[] | WorkflowObject;
 
 export type WorkflowParams = Record<string, WorkflowValue>;
 export type WorkflowOutputs = Record<string, WorkflowValue>;
