@@ -77,7 +77,10 @@ export const Choices: React.FC<Props> = ({
                         {renderChoiceIcon(icon, choice, index)}
                         {simpleText ? (
                           <input
-                            className="form-control border-none"
+                            className={classNames(
+                              'form-control border-none',
+                              readOnly && styles.readOnlySimpleTextChoice,
+                            )}
                             placeholder="Answer choice"
                             value={toSimpleText(choice.content)}
                             readOnly={readOnly}

@@ -12,3 +12,9 @@
 .addChoiceContainer {
   padding-left: 32px;
 }
+
+.readOnlySimpleTextChoice {
+  &:focus {
+    box-shadow: none;
+  }
+}
