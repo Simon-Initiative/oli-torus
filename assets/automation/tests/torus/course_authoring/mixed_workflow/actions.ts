@@ -1,6 +1,8 @@
 import { WorkflowActionRegistry } from '@core/workflow/types';
-import { expect, test } from '@playwright/test';
+import { expect, Locator, Page, test } from '@playwright/test';
 import { TypeProgrammingLanguage } from '@pom/types/type-programming-language';
+
+const BASE_CONTENT_TEXT = 'Base content for mixed workflow coverage.';
 
 const curriculumPath = (projectSlug: string) =>
   `/workspaces/course_author/${encodeURIComponent(projectSlug)}/curriculum`;
@@ -50,7 +52,11 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     });
 
     await test.step('insert a callout block from the editor toolbar and wait for it to render', async () => {
-      await curriculumTask.clickOnParagraphAndSelectContent('auto', 'Insert...', 'Callout');
+      await focusBaseParagraphForBlockInsert(page);
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('button', { name: 'Insert...' })).toBeVisible();
+      await page.getByRole('button', { name: 'Insert...' }).click();
+      await page.getByRole('button', { name: 'Callout' }).click();
       await page.keyboard.type(calloutText);
       await curriculumTask.waitChangeVisualize(calloutText);
       await expect(page).toHaveURL(new RegExp(`/curriculum/${escapeRegExp(pageRevisionSlug)}/edit$`));
@@ -73,4 +79,29 @@ function asString(value: unknown, key: string) {
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function focusBaseParagraphForBlockInsert(page: Page) {
+  const insertButton = page.getByRole('button', { name: 'Insert...' });
+  const focusTargets: Locator[] = [
+    page.locator('[data-slate-string="true"]').filter({ hasText: BASE_CONTENT_TEXT }).first(),
+    page.getByText(BASE_CONTENT_TEXT, { exact: true }).first(),
+    page.getByRole('paragraph').filter({ hasText: BASE_CONTENT_TEXT }).first(),
+  ];
+
+  for (const target of focusTargets) {
+    await target.click();
+    await page.keyboard.press('End');
+
+    const insertVisible = await insertButton
+      .waitFor({ state: 'visible', timeout: 1000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (insertVisible) {
+      return;
+    }
+  }
+
+  throw new Error('Could not focus the base paragraph strongly enough to expose the block insert toolbar');
 }
