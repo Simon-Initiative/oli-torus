@@ -13,6 +13,13 @@
 
     &.disabled {
       background: var(--color-gray-100);
+
+      :global(.formula),
+      :global(.formula-inline),
+      :global(.resize-selection-box-handle),
+      :global(.resize-selection-box-border) {
+        cursor: default !important;
+      }
     }
   }
   .toolbar {

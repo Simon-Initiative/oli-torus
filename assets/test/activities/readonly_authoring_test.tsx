@@ -2,6 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
+import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Explanation } from 'components/activities/common/explanation/ExplanationAuthoring';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
@@ -187,6 +188,51 @@ describe('readonly activity authoring components', () => {
     renderWithAuthoringContext(<AnswerKeyTab input={model.inputs[0]} />, { model });
 
     expect(screen.getByTestId('choices-delivery')).toHaveAttribute('data-disabled', 'true');
+  });
+
+  it('disables simple text choice authoring in locked authoring', () => {
+    const onEdit = jest.fn();
+    const setAll = jest.fn();
+
+    renderWithAuthoringContext(
+      <ChoicesAuthoring
+        icon={(_choice, index) => <span>{index + 1}.</span>}
+        choices={[choiceA, choiceB]}
+        addOne={jest.fn()}
+        setAll={setAll}
+        onEdit={onEdit}
+        onRemove={jest.fn()}
+        simpleText
+      />,
+    );
+
+    expect(screen.getAllByPlaceholderText('Answer choice')[0]).toHaveAttribute('readonly');
+    expect(screen.getAllByRole('button', { name: 'Remove' })[0]).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add choice' })).toBeDisabled();
+
+    fireEvent.change(screen.getAllByPlaceholderText('Answer choice')[0], {
+      target: { value: 'edited' },
+    });
+
+    expect(onEdit).not.toHaveBeenCalled();
+    expect(setAll).not.toHaveBeenCalled();
+  });
+
+  it('disables rich text choice authoring in locked authoring', () => {
+    renderWithAuthoringContext(
+      <ChoicesAuthoring
+        choices={[choiceA, choiceB]}
+        addOne={jest.fn()}
+        setAll={jest.fn()}
+        onEdit={jest.fn()}
+        onRemove={jest.fn()}
+      />,
+    );
+
+    expect(screen.getAllByLabelText('Answer choice')[0]).toBeDisabled();
+    expect(screen.getAllByLabelText('Answer choice')[0]).toHaveAttribute('data-edit-mode', 'false');
+    expect(screen.getAllByRole('button', { name: 'Remove' })[0]).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add choice' })).toBeDisabled();
   });
 
   it('disables ResponseMulti rule controls in instructor preview fallback', () => {
