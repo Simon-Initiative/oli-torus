@@ -33,7 +33,7 @@ import { RectangleEditor } from './Sections/RectangleEditor';
 import { ImageHotspotActions } from './actions';
 import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot, shapeType } from './schema';
 
-const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
+export const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
   const { dispatch, editMode, model, mode, projectSlug, authoringContext } =
     useAuthoringElementContext<ImageHotspotModelSchema>();
 
@@ -188,17 +188,14 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                           id={hotspot.id}
                           label={hotspotNumeral(model, hotspot.id)}
                           selected={hotspot.id === selectedHotspot}
+                          readOnly={readOnly}
                           boundingClientRect={
                             imgRef.current
                               ? Maybe.just(imgRef.current.getBoundingClientRect())
                               : Maybe.nothing()
                           }
                           coords={Immutable.List(hotspot.coords)}
-                          onSelect={(id) => {
-                            if (!readOnly) {
-                              setSelectedHotspot(id);
-                            }
-                          }}
+                          onSelect={setSelectedHotspot}
                           onEdit={(coords) => {
                             if (!readOnly) {
                               onEditCoords(hotspot.id, coords);

@@ -7,6 +7,7 @@ import { Explanation } from 'components/activities/common/explanation/Explanatio
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
+import { ImageHotspot } from 'components/activities/image_hotspot/ImageHotspotAuthoring';
 import { Dropdown } from 'components/activities/multi_input/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { ResponseTab } from 'components/activities/response_multi/sections/ResponseTab';
@@ -50,6 +51,10 @@ jest.mock('components/activities/common/choices/delivery/ChoicesDelivery', () =>
       ))}
     </div>
   ),
+}));
+
+jest.mock('components/activities/common/responses/SimpleFeedback', () => ({
+  SimpleFeedback: () => <div data-testid="simple-feedback" />,
 }));
 
 const partId = 'part-1';
@@ -272,5 +277,32 @@ describe('readonly activity authoring components', () => {
 
     expect(screen.getByLabelText('all')).toBeDisabled();
     expect(screen.getByTestId('choices-delivery')).toHaveAttribute('data-disabled', 'true');
+  });
+
+  it('allows image hotspots to be selected for inspection in locked authoring', () => {
+    const model = {
+      ...baseModel(),
+      imageURL: 'https://example.com/hotspot.png',
+      width: 300,
+      height: 200,
+      multiple: false,
+      choices: [
+        {
+          ...choiceA,
+          coords: [50, 50, 25],
+        },
+      ],
+    };
+    const props = defaultAuthoringElementProps<any>(model as any);
+    const { container } = renderWithAuthoringContext(<ImageHotspot {...props} />, { model });
+
+    const hotspot = container.querySelector('circle.shapeEditor');
+    expect(hotspot).not.toBeNull();
+    expect(hotspot).not.toHaveClass('shape-selected');
+
+    fireEvent.mouseDown(hotspot!);
+
+    expect(hotspot).toHaveClass('shape-selected');
+    expect(container.querySelector('.shape-handle')).not.toBeInTheDocument();
   });
 });
