@@ -212,6 +212,7 @@ describe('readonly activity authoring components', () => {
     );
 
     expect(screen.getAllByPlaceholderText('Answer choice')[0]).toHaveAttribute('readonly');
+    expect(screen.getAllByPlaceholderText('Answer choice')[0]).toHaveAttribute('tabindex', '-1');
     expect(screen.getAllByRole('button', { name: 'Remove' })[0]).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Add choice' })).toBeDisabled();
 

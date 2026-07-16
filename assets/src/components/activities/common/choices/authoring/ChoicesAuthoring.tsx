@@ -84,7 +84,11 @@ export const Choices: React.FC<Props> = ({
                             placeholder="Answer choice"
                             value={toSimpleText(choice.content)}
                             readOnly={readOnly}
+                            tabIndex={readOnly ? -1 : undefined}
                             style={{ cursor: readOnly ? 'default' : 'text' }}
+                            onMouseDown={(e) => {
+                              if (readOnly) e.preventDefault();
+                            }}
                             onChange={(e) => {
                               if (!readOnly) onEdit(choice.id, makeContent(e.target.value).content);
                             }}
