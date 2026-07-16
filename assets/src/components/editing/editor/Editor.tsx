@@ -80,6 +80,25 @@ export const validateEditorContentValue = (value: any): Descendant[] => {
   return value;
 };
 
+const readOnlyInteractiveSelector = [
+  'button',
+  'input',
+  'select',
+  'textarea',
+  '[role="button"]',
+  '.formula',
+  '.formula-inline',
+  '.resize-selection-box-handle',
+  '.resize-selection-box-border',
+].join(',');
+
+const shouldSuppressReadOnlyInteraction = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.closest('audio, video')) return false;
+
+  return target.closest(readOnlyInteractiveSelector) !== null;
+};
+
 export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => {
   const editor = useMemo(() => {
     if (props.editorOverride) {
@@ -145,6 +164,13 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     }
   };
 
+  const suppressReadOnlyInteraction = (e: React.SyntheticEvent<HTMLDivElement>) => {
+    if (props.editMode || !shouldSuppressReadOnlyInteraction(e.target)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <React.Fragment>
       <Slate
@@ -180,6 +206,8 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           onFocus={props.onFocus || emptyOnFocus}
           onBlur={props.onBlur}
           onPaste={onPaste}
+          onMouseDownCapture={suppressReadOnlyInteraction}
+          onClickCapture={suppressReadOnlyInteraction}
         />
       </Slate>
     </React.Fragment>
