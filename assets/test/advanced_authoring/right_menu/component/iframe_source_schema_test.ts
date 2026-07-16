@@ -1,10 +1,60 @@
 import {
+  DEFAULT_IFRAME_TITLE,
+  createSchema,
   decodeSourceConfig,
+  resolveIframeTitle,
+  schema,
+  simpleSchema,
   transformModelToSchema,
   transformSchemaToModel,
 } from 'components/parts/janus-capi-iframe/schema';
 
 describe('janus-capi-iframe source schema transforms', () => {
+  it('exposes the accessible title in simple and advanced authoring', () => {
+    expect(simpleSchema.description).toMatchObject({
+      title: 'Title',
+      type: 'string',
+    });
+    expect(schema.description).toMatchObject({
+      title: 'Title',
+      type: 'string',
+    });
+  });
+
+  it('creates new iframes with the default accessible title', () => {
+    expect(createSchema().description).toBe(DEFAULT_IFRAME_TITLE);
+  });
+
+  it.each([undefined, '', '   '])(
+    'uses the default accessible title when the stored title is %p',
+    (description) => {
+      expect(resolveIframeTitle(description)).toBe(DEFAULT_IFRAME_TITLE);
+      expect(
+        transformModelToSchema({ src: 'https://example.com/widget', description }).description,
+      ).toBe(DEFAULT_IFRAME_TITLE);
+    },
+  );
+
+  it('preserves an author-provided accessible title', () => {
+    const description = 'Interactive population model';
+
+    expect(resolveIframeTitle(description)).toBe(description);
+    expect(
+      transformModelToSchema({ src: 'https://example.com/widget', description }).description,
+    ).toBe(description);
+    expect(
+      transformSchemaToModel({
+        source: JSON.stringify({
+          mode: 'url',
+          pageId: null,
+          pageSlug: '',
+          url: 'https://example.com/widget',
+        }),
+        description,
+      }).description,
+    ).toBe(description);
+  });
+
   it('encodes legacy external src into source config for editor', () => {
     const transformed = transformModelToSchema({
       src: 'https://example.com/widget',

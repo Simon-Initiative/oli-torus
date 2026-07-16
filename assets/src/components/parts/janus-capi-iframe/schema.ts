@@ -20,6 +20,7 @@ export interface IframeDynamicLinkFallback {
 
 export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
+  description?: string;
   source?: string;
   sourceType?: IframeSourceMode;
   sourcePageSlug?: string;
@@ -30,6 +31,11 @@ export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss
   configData: any;
   allowScrolling: boolean;
 }
+
+export const DEFAULT_IFRAME_TITLE = 'Embedded content';
+
+export const resolveIframeTitle = (title?: string): string =>
+  title?.trim() ? title : DEFAULT_IFRAME_TITLE;
 
 const SOURCE_PREFIX = '/course/link/';
 const defaultSourceConfig = (): IframeSourceEditorConfig => ({
@@ -108,8 +114,8 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'boolean',
   },
   description: {
-    title: 'description',
-    description: 'provides title and aria-label content',
+    title: 'Title',
+    description: 'Provides an accessible title for the embedded content',
     type: 'string',
   },
 };
@@ -124,8 +130,8 @@ export const schema: JSONSchema7Object = {
     type: 'string',
   },
   description: {
-    title: 'description',
-    description: 'provides title and aria-label content',
+    title: 'Title',
+    description: 'Provides an accessible title for the embedded content',
     type: 'string',
   },
   allowScrolling: {
@@ -228,6 +234,7 @@ export const transformModelToSchema = (model: Partial<CapiIframeModel>) => {
 
   return {
     ...model,
+    description: resolveIframeTitle(model.description),
     source: encodeSourceConfig(sourceConfig),
   };
 };
@@ -282,6 +289,7 @@ export const simpleUISchema = {
 
 export const createSchema = (): Partial<CapiIframeModel> => ({
   customCssClass: '',
+  description: DEFAULT_IFRAME_TITLE,
   src: '',
   source: encodeSourceConfig(defaultSourceConfig()),
   sourceType: 'url',

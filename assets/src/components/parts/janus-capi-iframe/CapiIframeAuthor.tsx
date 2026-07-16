@@ -9,12 +9,13 @@ import { clone, parseBoolean } from 'utils/common';
 import { CapiVariable } from '../../../adaptivity/capi';
 import CapiVariablePicker from './CapiVariablePicker';
 import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
-import { CapiIframeModel } from './schema';
+import { CapiIframeModel, resolveIframeTitle } from './schema';
 import { resolveAdaptiveIframeSource } from './sourceResolver';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
   const { model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
   const { z, width, height, src, configData } = model;
+  const iframeTitle = resolveIframeTitle(model.description);
   const id: string = props.id;
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const messageListener = useRef<any>(null);
@@ -390,6 +391,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
         {configClicked ? (
           <iframe
             ref={frameRef}
+            title={iframeTitle}
             style={{ height: '100%', width: '100%' }}
             data-janus-type={tagName}
             src={resolvedSrc}
@@ -417,6 +419,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
                     }
                     <iframe
                       ref={frameRef}
+                      title={iframeTitle}
                       style={{ display: 'none', height: '100%', width: '100%' }}
                       data-janus-type={tagName}
                       scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}

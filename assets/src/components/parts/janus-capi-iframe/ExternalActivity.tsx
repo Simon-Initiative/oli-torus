@@ -17,7 +17,7 @@ import {
   getExternalIframeStyles,
   shouldAllowIframeScrolling,
 } from './iframeBehavior';
-import { CapiIframeModel } from './schema';
+import { CapiIframeModel, resolveIframeTitle } from './schema';
 import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from './sourceResolver';
 
 const externalActivityMap: Map<string, any> = new Map();
@@ -1225,6 +1225,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       ? templatizeText(description, simLife?.snapshot, scriptEnv)
       : description;
   }, [description, simLife.snapshot, scriptEnv]);
+  const iframeTitle = resolveIframeTitle(formattedDescription);
 
   const resolvedFrameSrc = resolveAdaptiveIframeSource(frameSrc);
 
@@ -1234,10 +1235,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         data-janus-type={tagName}
         ref={frameRef}
         style={getExternalIframeStyles(externalActivityStyles, iframeScrollingEnabled)}
-        title={formattedDescription || description}
+        title={iframeTitle}
         src={resolvedFrameSrc}
         scrolling={scrolling}
-        aria-label={formattedDescription || description}
         aria-describedby={id}
         allow="accelerometer *; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad *;"
       />
