@@ -17,7 +17,7 @@ import {
   getExternalIframeStyles,
   shouldAllowIframeScrolling,
 } from './iframeBehavior';
-import { CapiIframeModel, resolveIframeTitle } from './schema';
+import { CapiIframeModel, resolveIframeDescription, resolveIframeTitle } from './schema';
 import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from './sourceResolver';
 
 const externalActivityMap: Map<string, any> = new Map();
@@ -31,6 +31,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateBindToFacts, setInitStateBindToFacts] = useState<any>({});
   const [screenContext, setScreenContext] = useState('');
   const id: string = props.id;
+  const descriptionId = `${id}-description`;
   const contextRef = useRef('VIEWER');
 
   const [scriptEnv, setScriptEnv] = useState<any>();
@@ -52,7 +53,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [lessonId, setLessonId] = useState('');
 
   // these rely on being set every render and the "model" useState value being set
-  const { configData, description } = model;
+  const { configData, description, title } = model;
   const iframeFallback = model?.dynamicLinkFallback;
   const showIframeFallback = iframeFallback?.type === 'unresolved_internal_source';
   const fallbackMessage =
@@ -1225,7 +1226,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       ? templatizeText(description, simLife?.snapshot, scriptEnv)
       : description;
   }, [description, simLife.snapshot, scriptEnv]);
-  const iframeTitle = resolveIframeTitle(formattedDescription);
+  const iframeTitle = resolveIframeTitle(title);
+  const iframeDescription = resolveIframeDescription(formattedDescription);
 
   const resolvedFrameSrc = resolveAdaptiveIframeSource(frameSrc);
 
@@ -1238,9 +1240,14 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         title={iframeTitle}
         src={resolvedFrameSrc}
         scrolling={scrolling}
-        aria-describedby={id}
+        aria-describedby={iframeDescription ? descriptionId : undefined}
         allow="accelerometer *; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad *;"
       />
+      {iframeDescription && (
+        <span id={descriptionId} className="sr-only">
+          {iframeDescription}
+        </span>
+      )}
       {showIframeFallback && (
         <div role="status" aria-live="polite" style={fallbackOverlayStyles}>
           <div>{fallbackMessage}</div>

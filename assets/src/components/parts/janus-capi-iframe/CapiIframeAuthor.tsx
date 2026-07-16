@@ -9,14 +9,16 @@ import { clone, parseBoolean } from 'utils/common';
 import { CapiVariable } from '../../../adaptivity/capi';
 import CapiVariablePicker from './CapiVariablePicker';
 import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
-import { CapiIframeModel, resolveIframeTitle } from './schema';
+import { CapiIframeModel, resolveIframeDescription, resolveIframeTitle } from './schema';
 import { resolveAdaptiveIframeSource } from './sourceResolver';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
   const { model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
   const { z, width, height, src, configData } = model;
-  const iframeTitle = resolveIframeTitle(model.description);
   const id: string = props.id;
+  const iframeTitle = resolveIframeTitle(model.title);
+  const iframeDescription = resolveIframeDescription(model.description);
+  const descriptionId = `${id}-description`;
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const messageListener = useRef<any>(null);
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
@@ -392,6 +394,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
           <iframe
             ref={frameRef}
             title={iframeTitle}
+            aria-describedby={iframeDescription ? descriptionId : undefined}
             style={{ height: '100%', width: '100%' }}
             data-janus-type={tagName}
             src={resolvedSrc}
@@ -420,6 +423,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
                     <iframe
                       ref={frameRef}
                       title={iframeTitle}
+                      aria-describedby={iframeDescription ? descriptionId : undefined}
                       style={{ display: 'none', height: '100%', width: '100%' }}
                       data-janus-type={tagName}
                       scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
@@ -429,6 +433,11 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
               </div>
             </div>
           </div>
+        )}
+        {iframeDescription && (
+          <span id={descriptionId} className="sr-only">
+            {iframeDescription}
+          </span>
         )}
       </div>
     </React.Fragment>
