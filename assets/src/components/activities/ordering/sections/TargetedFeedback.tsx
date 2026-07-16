@@ -13,10 +13,12 @@ import { getTargetedResponseMappings, hasCustomScoring } from 'data/activities/m
 import { defaultWriterContext } from 'data/content/writers/context';
 
 export const TargetedFeedback: React.FC = () => {
-  const { model, dispatch, authoringContext, editMode, projectSlug } =
+  const { model, dispatch, authoringContext, editMode, mode, projectSlug } =
     useAuthoringElementContext<OrderingSchema>();
   const writerContext = defaultWriterContext({ projectSlug });
   const customScoring = hasCustomScoring(model);
+  const isInstructorPreview = mode === 'instructor_preview';
+  const responseEditMode = editMode && !isInstructorPreview;
 
   return (
     <>
@@ -41,6 +43,7 @@ export const TargetedFeedback: React.FC = () => {
           removeResponse={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
           updateScore={(id, score) => dispatch(ResponseActions.editResponseScore(id, score))}
           customScoring={customScoring}
+          editMode={responseEditMode}
           key={mapping.response.id}
         >
           <ResponseChoices
@@ -54,10 +57,11 @@ export const TargetedFeedback: React.FC = () => {
                 ),
               )
             }
+            disabled={!responseEditMode}
           />
           {authoringContext.contentBreaksExist ? (
             <ShowPage
-              editMode={editMode}
+              editMode={responseEditMode}
               index={mapping.response.showPage}
               onChange={(showPage: any) =>
                 dispatch(ResponseActions.editShowPage(mapping.response.id, showPage))

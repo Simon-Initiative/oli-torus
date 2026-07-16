@@ -16,7 +16,9 @@ interface Props {
   partId: string;
 }
 export const Explanation: React.FC<Props> = (props) => {
-  const { dispatch, model, projectSlug } = useAuthoringElementContext<HasParts>();
+  const { dispatch, editMode, mode, model, projectSlug } = useAuthoringElementContext<HasParts>();
+  const isInstructorPreview = mode === 'instructor_preview';
+
   return (
     <SlateOrMarkdownEditor
       placeholder="Explanation"
@@ -25,7 +27,7 @@ export const Explanation: React.FC<Props> = (props) => {
       onEditorTypeChange={(editor: EditorType) =>
         dispatch(setExplanationEditor(props.partId, editor))
       }
-      editMode={true}
+      editMode={editMode && !isInstructorPreview}
       editorType={getExplanationEditor(model, props.partId)}
       allowBlockElements={true}
       projectSlug={projectSlug}

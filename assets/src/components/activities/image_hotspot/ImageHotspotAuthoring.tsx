@@ -34,7 +34,7 @@ import { ImageHotspotActions } from './actions';
 import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot, shapeType } from './schema';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
-  const { dispatch, model, mode, projectSlug, authoringContext } =
+  const { dispatch, editMode, model, mode, projectSlug, authoringContext } =
     useAuthoringElementContext<ImageHotspotModelSchema>();
 
   const selectedPartId = model.authoring.parts[0].id;
@@ -42,6 +42,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
     projectSlug: projectSlug,
   });
   const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   const [selectedHotspot, setSelectedHotspot] = useState<string | null>(null);
   const [addPolyMode, setAddPolyMode] = useState<boolean>(false);
@@ -193,15 +194,27 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                               : Maybe.nothing()
                           }
                           coords={Immutable.List(hotspot.coords)}
-                          onSelect={setSelectedHotspot}
-                          onEdit={(coords) => onEditCoords(hotspot.id, coords)}
+                          onSelect={(id) => {
+                            if (!readOnly) {
+                              setSelectedHotspot(id);
+                            }
+                          }}
+                          onEdit={(coords) => {
+                            if (!readOnly) {
+                              onEditCoords(hotspot.id, coords);
+                            }
+                          }}
                         />
                       );
                     }
                   })}
                   {addPolyMode && (
                     <PolygonAdder
-                      onEdit={onAddPoly}
+                      onEdit={(coords) => {
+                        if (!readOnly) {
+                          onAddPoly(coords);
+                        }
+                      }}
                       boundingClientRect={imgRef.current!.getBoundingClientRect()}
                     />
                   )}
@@ -213,21 +226,29 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
                 <p>{addPolyMsg}</p>
               </div>
             )}
-            <button className="btn btn-primary mt-2" onClick={setImageURL}>
+            <button className="btn btn-primary mt-2" onClick={setImageURL} disabled={readOnly}>
               Choose Image
             </button>
             &nbsp; &nbsp;
-            <button className="btn btn-primary mt-2" disabled={!model.imageURL} onClick={addCircle}>
+            <button
+              className="btn btn-primary mt-2"
+              disabled={readOnly || !model.imageURL}
+              onClick={addCircle}
+            >
               Add Circle
             </button>
             &nbsp;&nbsp;
-            <button className="btn btn-primary mt-2" disabled={!model.imageURL} onClick={addRect}>
+            <button
+              className="btn btn-primary mt-2"
+              disabled={readOnly || !model.imageURL}
+              onClick={addRect}
+            >
               Add Rectangle
             </button>
             &nbsp;&nbsp;
             <button
               className="btn btn-primary mt-2"
-              disabled={!model.imageURL || addPolyMode}
+              disabled={readOnly || !model.imageURL || addPolyMode}
               onClick={beginAddPolyMode}
             >
               Add Polygon
@@ -236,7 +257,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             <button
               className="btn btn-primary mt-2"
               onClick={(e) => removeHotspot(selectedHotspot!)}
-              disabled={!selectedHotspot || model.choices.length <= 1}
+              disabled={readOnly || !selectedHotspot || model.choices.length <= 1}
             >
               Remove
             </button>
@@ -249,6 +270,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
               id="multiple-toggle"
               aria-label="Checkbox for multiple selection"
               checked={model.multiple}
+              disabled={readOnly}
               onChange={(e: any) =>
                 dispatch(ImageHotspotActions.setMultipleSelection(e.target.checked))
               }
@@ -278,6 +300,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             }
             isEvaluated={false}
             context={writerContext}
+            disabled={readOnly}
             multiSelect={model.multiple}
           />
           <SimpleFeedback partId={selectedPartId} />
@@ -289,6 +312,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             addTargetedResponse={() => dispatch(MCActions.addTargetedFeedback(selectedPartId))}
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
+            disabled={readOnly}
           />
         </TabbedNavigation.Tab>
 

@@ -25,8 +25,9 @@ interface Props {
 }
 
 export const ResponseCard: React.FC<Props> = (props) => {
-  const { projectSlug } = useAuthoringElementContext();
-  const editMode = props.editMode ?? true;
+  const { editMode: contextEditMode, mode, projectSlug } = useAuthoringElementContext();
+  const isInstructorPreview = mode === 'instructor_preview';
+  const editMode = props.editMode ?? (contextEditMode && !isInstructorPreview);
 
   const onEditorTypeChange = (editor: EditorType) =>
     props.updateFeedbackEditor!(props.response.id, editor);

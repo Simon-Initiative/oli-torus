@@ -8,7 +8,9 @@ interface Props {
   partId: string;
 }
 export const Hints: React.FC<Props> = (props) => {
-  const { dispatch, model } = useAuthoringElementContext<HasParts>();
+  const { dispatch, editMode, mode, model } = useAuthoringElementContext<HasParts>();
+  const isInstructorPreview = mode === 'instructor_preview';
+
   return (
     <HintsAuthoring
       addOne={() => dispatch(HintUtils.addCognitiveHint(makeHint(''), props.partId))}
@@ -21,6 +23,7 @@ export const Hints: React.FC<Props> = (props) => {
       deerInHeadlightsHint={HintUtils.getDeerInHeadlightsHint(model, props.partId)}
       cognitiveHints={HintUtils.getCognitiveHints(model, props.partId)}
       bottomOutHint={HintUtils.getBottomOutHint(model, props.partId)}
+      editMode={editMode && !isInstructorPreview}
     />
   );
 };

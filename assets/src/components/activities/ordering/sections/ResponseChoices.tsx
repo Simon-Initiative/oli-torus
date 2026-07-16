@@ -19,7 +19,15 @@ export const ResponseChoices: React.FC<Props> = ({
   writerContext: { projectSlug },
 }) => {
   return (
-    <Draggable.Column displayOutline items={choices} setItems={setChoices}>
+    <Draggable.Column
+      displayOutline
+      items={choices}
+      setItems={(choices) => {
+        if (!disabled) {
+          setChoices(choices);
+        }
+      }}
+    >
       {choices.map((choice, index) => (
         <Draggable.Item
           isDragDisabled={disabled ?? false}
