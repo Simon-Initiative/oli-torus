@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { createEditor, Descendant } from 'slate';
+import { Descendant, createEditor } from 'slate';
 import { Editable, Slate, withReact } from 'slate-react';
 import { Editor } from 'components/editing/editor/Editor';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
@@ -11,11 +11,7 @@ const mockFormulaClick = jest.fn();
 jest.mock('components/editing/editor/modelEditorDispatch', () => ({
   editorFor: (element: any, props: any) => (
     <span {...props.attributes}>
-      <span
-        className={element.className}
-        data-testid={element.testId}
-        onClick={mockFormulaClick}
-      >
+      <span className={element.className} data-testid={element.testId} onClick={mockFormulaClick}>
         {props.children}
       </span>
     </span>
