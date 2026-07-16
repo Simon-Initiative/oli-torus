@@ -7,15 +7,31 @@ import { Editor } from 'components/editing/editor/Editor';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 
 const mockFormulaClick = jest.fn();
+const mockControlClick = jest.fn();
 
 jest.mock('components/editing/editor/modelEditorDispatch', () => ({
-  editorFor: (element: any, props: any) => (
-    <span {...props.attributes}>
-      <span className={element.className} data-testid={element.testId} onClick={mockFormulaClick}>
-        {props.children}
+  editorFor: (element: any, props: any) => {
+    if (element.type === 'button_control') {
+      return (
+        <span {...props.attributes}>
+          <button type="button" onClick={mockControlClick}>
+            <svg data-testid="button-icon">
+              <circle cx="5" cy="5" r="5" />
+            </svg>
+            {props.children}
+          </button>
+        </span>
+      );
+    }
+
+    return (
+      <span {...props.attributes}>
+        <span className={element.className} data-testid={element.testId} onClick={mockFormulaClick}>
+          {props.children}
+        </span>
       </span>
-    </span>
-  ),
+    );
+  },
   markFor: (_mark: string, children: React.ReactNode) => children,
 }));
 
@@ -39,6 +55,7 @@ const renderReadOnlySlate = (children: React.ReactNode) => {
 describe('read-only slate editor elements', () => {
   beforeEach(() => {
     mockFormulaClick.mockClear();
+    mockControlClick.mockClear();
   });
 
   it('does not render slate toolbars while the editor is read-only', () => {
@@ -73,5 +90,27 @@ describe('read-only slate editor elements', () => {
     fireEvent.click(screen.getByTestId('formula'));
 
     expect(mockFormulaClick).not.toHaveBeenCalled();
+  });
+
+  it('suppresses svg descendant clicks inside read-only authoring controls', () => {
+    render(
+      <Editor
+        commandContext={commandContext}
+        editMode={false}
+        onEdit={jest.fn()}
+        toolbarInsertDescs={[]}
+        value={[
+          {
+            type: 'button_control',
+            children: [{ text: '' }],
+          } as any,
+        ]}
+      />,
+    );
+
+    fireEvent.mouseDown(screen.getByTestId('button-icon'));
+    fireEvent.click(screen.getByTestId('button-icon'));
+
+    expect(mockControlClick).not.toHaveBeenCalled();
   });
 });

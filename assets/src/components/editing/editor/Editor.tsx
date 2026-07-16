@@ -93,7 +93,7 @@ const readOnlyInteractiveSelector = [
 ].join(',');
 
 const shouldSuppressReadOnlyInteraction = (target: EventTarget | null) => {
-  if (!(target instanceof HTMLElement)) return false;
+  if (!(target instanceof Element)) return false;
   if (target.closest('audio, video')) return false;
 
   return target.closest(readOnlyInteractiveSelector) !== null;
