@@ -1,4 +1,6 @@
 import React, { PropsWithChildren } from 'react';
+import { useSlate } from 'slate-react';
+import { getEditMode } from 'components/editing/elements/utils';
 import { ToolbarContext, ToolbarContextT } from 'components/editing/toolbar/hooks/useToolbar';
 import { CommandContext } from '../elements/commands/interfaces';
 import styles from './Toolbar.modules.scss';
@@ -8,6 +10,7 @@ interface Props {
   fixed?: boolean;
 }
 export const Toolbar = (props: PropsWithChildren<Props>) => {
+  const editor = useSlate();
   const [submenu, setSubmenu] = React.useState<React.MutableRefObject<HTMLButtonElement> | null>(
     null,
   );
@@ -23,6 +26,8 @@ export const Toolbar = (props: PropsWithChildren<Props>) => {
   );
 
   const cssClasses = props.fixed ? `${styles.toolbar} ${styles.fixedToolbar}` : styles.toolbar;
+
+  if (!getEditMode(editor)) return null;
 
   return (
     <ToolbarContext.Provider value={context}>

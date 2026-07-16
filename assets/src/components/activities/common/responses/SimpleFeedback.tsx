@@ -45,7 +45,6 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
         update={(_id, content) => updateFeedback(correctResponse.id, content as RichText)}
         updateEditor={(editor) => updateFeedbackEditor(correctResponse.id, editor)}
         placeholder="Encourage students or explain why the answer is correct"
-        editMode={editMode && !isInstructorPreview}
       >
         {authoringContext.contentBreaksExist ? (
           <ShowPage
@@ -65,7 +64,6 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
           updateTextDirection(incorrectResponse.id, textDirection)
         }
         placeholder="Enter catch-all feedback for incorrect answers"
-        editMode={editMode && !isInstructorPreview}
       >
         {authoringContext.contentBreaksExist ? (
           <ShowPage

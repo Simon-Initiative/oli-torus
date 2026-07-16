@@ -40,6 +40,10 @@ export const ChoicesDelivery: React.FC<Props> = ({
 }) => {
   const choiceRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
+  const renderIcon = (icon: React.ReactNode) =>
+    React.isValidElement<{ disabled?: boolean }>(icon)
+      ? React.cloneElement(icon, { disabled: disabled || icon.props.disabled })
+      : icon;
 
   // Track which choice is currently focusable (roving tabindex)
   // Initialize to selected index, or 0 if nothing selected
@@ -165,7 +169,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
           <div className={styles.choicesChoiceWrapper} dir={choice.textDirection}>
             <div className={styles.choicesChoiceLabel}>
               <div className="d-flex align-items-center col">
-                {isSelected(choice.id) ? selectedIcon : unselectedIcon}
+                {renderIcon(isSelected(choice.id) ? selectedIcon : unselectedIcon)}
                 <div className={classNames('content', styles.choicesChoiceContent)}>
                   <HtmlContentModelRenderer
                     content={choice.content}

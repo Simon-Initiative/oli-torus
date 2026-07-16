@@ -25,6 +25,7 @@ export interface PolygonEditorProps {
   label: string;
   coords: Immutable.List<number>;
   selected: boolean;
+  readOnly?: boolean;
   boundingClientRect: Maybe<DOMRect>;
   onSelect: (id: string) => void;
   onEdit: (coords: Immutable.List<number>) => void;
@@ -239,7 +240,7 @@ export class PolygonEditor extends React.PureComponent<PolygonEditorProps, Polyg
   }
 
   render() {
-    const { id, label, coords, selected } = this.props;
+    const { id, label, coords, selected, readOnly } = this.props;
     const { newCoords } = this.state;
     const renderCoords = newCoords.valueOr(coords);
 
@@ -252,7 +253,9 @@ export class PolygonEditor extends React.PureComponent<PolygonEditorProps, Polyg
           className={`shapeEditor ${selected ? 'shape-selected' : ''}`}
           onMouseDown={(e) => {
             this.onSelect(id, e);
-            this.beginMove(e);
+            if (!readOnly) {
+              this.beginMove(e);
+            }
           }}
           onMouseUp={(e) => this.endMove(e)}
           {...mapCoordsToPolygonProps(renderCoords)}
@@ -260,7 +263,7 @@ export class PolygonEditor extends React.PureComponent<PolygonEditorProps, Polyg
         <text className="shape-label" x={centeroid.x - 7} y={centeroid.y + 7}>
           {label}
         </text>
-        {selected && this.renderResizeHandles(renderCoords)}
+        {selected && !readOnly && this.renderResizeHandles(renderCoords)}
       </React.Fragment>
     );
   }

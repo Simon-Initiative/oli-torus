@@ -9,11 +9,14 @@ interface Props {
   partId: string;
 }
 export const HintsEditor: React.FC<Props> = (props) => {
-  const { model, dispatch, projectSlug } = useAuthoringElementContext<CustomDnDSchema>();
+  const { model, dispatch, editMode, mode, projectSlug } =
+    useAuthoringElementContext<CustomDnDSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
 
   return (
     <CognitiveHints
       key={props.partId}
+      editMode={editMode && !isInstructorPreview}
       hints={Hints.byPart(model, props.partId)}
       updateOne={(id, content) => dispatch(Hints.setContent(id, content as RichText))}
       updateOneEditor={(id, editor) => dispatch(Hints.setEditor(id, editor))}

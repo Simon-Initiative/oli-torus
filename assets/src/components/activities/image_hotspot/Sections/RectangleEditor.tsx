@@ -19,6 +19,7 @@ export interface RectangleEditorProps {
   label: string;
   coords: Immutable.List<number>;
   selected: boolean;
+  readOnly?: boolean;
   boundingClientRect: Maybe<DOMRect>;
   onSelect: (id: string) => void;
   onEdit: (coords: Immutable.List<number>) => void;
@@ -304,7 +305,7 @@ export class RectangleEditor extends React.PureComponent<
   }
 
   render() {
-    const { id, label, coords, selected } = this.props;
+    const { id, label, coords, selected, readOnly } = this.props;
     const { newCoords } = this.state;
     const renderCoords = newCoords.valueOr(coords);
 
@@ -314,7 +315,9 @@ export class RectangleEditor extends React.PureComponent<
           className={`shapeEditor ${selected ? 'shape-selected' : ''}`}
           onMouseDown={(e) => {
             this.onSelect(id, e);
-            this.beginMove(e);
+            if (!readOnly) {
+              this.beginMove(e);
+            }
           }}
           onMouseUp={(e) => this.endMove(e)}
           {...mapCoordsToRectProps(renderCoords)}
@@ -330,7 +333,7 @@ export class RectangleEditor extends React.PureComponent<
         >
           {label}
         </text>
-        {selected && this.renderResizeHandles(renderCoords)}
+        {selected && !readOnly && this.renderResizeHandles(renderCoords)}
       </React.Fragment>
     );
   }

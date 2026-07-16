@@ -117,6 +117,7 @@ const MultipleChoice: React.FC = () => {
     projectSlug: projectSlug,
   });
   const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   return (
     <>
@@ -164,7 +165,7 @@ const MultipleChoice: React.FC = () => {
             }
             isEvaluated={false}
             context={writerContext}
-            disabled={isInstructorPreview}
+            disabled={readOnly}
           />
           <SimpleFeedback partId={model.authoring.parts[0].id} />
           <ActivityScoring partId={model.authoring.parts[0].id} />
@@ -178,7 +179,7 @@ const MultipleChoice: React.FC = () => {
             }
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
-            disabled={isInstructorPreview}
+            disabled={readOnly}
           />
         </TabbedNavigation.Tab>
 

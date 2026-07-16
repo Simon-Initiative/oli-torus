@@ -91,6 +91,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
     projectSlug: projectSlug,
   });
   const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   // const transformedData = {
   //   values: model.choices
@@ -232,6 +233,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
                 id="descending-toggle"
                 aria-label="Checkbox for descending order"
                 checked={model.orderDescending}
+                disabled={readOnly}
                 onChange={(e: any) => dispatch(LikertActions.setOrderDescending(e.target.checked))}
               />
               <label className="form-check-label" htmlFor="descending-toggle">
@@ -267,7 +269,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, selectedPartId))}
             isEvaluated={false}
             context={writerContext}
-            disabled={isInstructorPreview}
+            disabled={readOnly}
           />
           <SimpleFeedback partId={selectedPartId} />
           <ActivityScoring partId={model.authoring.parts[0].id} />
@@ -281,7 +283,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             }
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
-            disabled={isInstructorPreview}
+            disabled={readOnly}
           />
         </TabbedNavigation.Tab>
 
