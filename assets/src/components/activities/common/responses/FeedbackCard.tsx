@@ -16,15 +16,7 @@ export const FeedbackCard: React.FC<{
   updateTextDirection: (textDirection: TextDirection) => void;
   placeholder?: string;
   children: any;
-}> = ({
-  title,
-  feedback,
-  update,
-  placeholder,
-  children,
-  updateEditor,
-  updateTextDirection,
-}) => {
+}> = ({ title, feedback, update, placeholder, children, updateEditor, updateTextDirection }) => {
   const { editMode: contextEditMode, mode, projectSlug } = useAuthoringElementContext();
   const isInstructorPreview = mode === 'instructor_preview';
   const editMode = contextEditMode && !isInstructorPreview;
