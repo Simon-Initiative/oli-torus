@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Page, type Route } from '@playwright/test';
 import { type SeedScenarioResponse } from '@core/seedScenario';
 import { getBaseUrl, getScenarioToken } from '@core/runtimeConfig';
 
@@ -83,17 +83,10 @@ export async function logInAsScenarioUser(
 
   loginUrl.searchParams.set('email', email);
   loginUrl.searchParams.set('request_path', requestPath);
-
-  await page.context().setExtraHTTPHeaders({
-    'x-playwright-scenario-token': scenarioToken,
-  });
-
-  try {
+  await withScenarioTokenOnLoginRequest(page, loginUrl, scenarioToken, async () => {
     await page.goto(loginUrl.toString(), { waitUntil: 'load' });
     await expect(page).toHaveURL(new RegExp(escapeRegExp(expectedPath)));
-  } finally {
-    await page.context().setExtraHTTPHeaders({});
-  }
+  });
 }
 
 export async function postJsonInBrowser<T>(
@@ -156,6 +149,31 @@ export async function submitPaymentCode(page: Page, code: string) {
   });
 
   await page.getByRole('button', { name: 'Submit' }).click();
+}
+
+async function withScenarioTokenOnLoginRequest(
+  page: Page,
+  loginUrl: URL,
+  scenarioToken: string,
+  action: () => Promise<void>,
+) {
+  const loginUrlPattern = `${loginUrl.toString()}**`;
+  const addScenarioTokenToLoginRequest = async (route: Route) => {
+    await route.fallback({
+      headers: {
+        ...route.request().headers(),
+        'x-playwright-scenario-token': scenarioToken,
+      },
+    });
+  };
+
+  await page.route(loginUrlPattern, addScenarioTokenToLoginRequest);
+
+  try {
+    await action();
+  } finally {
+    await page.unroute(loginUrlPattern, addScenarioTokenToLoginRequest);
+  }
 }
 
 function escapeRegExp(value: string) {
