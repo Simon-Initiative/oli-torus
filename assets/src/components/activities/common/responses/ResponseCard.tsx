@@ -21,13 +21,12 @@ interface Props {
   removeResponse: (responseId: ID) => void;
   updateScore?: (responseId: ID, score: number) => void;
   customScoring?: boolean;
-  editMode?: boolean;
 }
 
 export const ResponseCard: React.FC<Props> = (props) => {
   const { editMode: contextEditMode, mode, projectSlug } = useAuthoringElementContext();
   const isInstructorPreview = mode === 'instructor_preview';
-  const editMode = props.editMode ?? (contextEditMode && !isInstructorPreview);
+  const editMode = contextEditMode && !isInstructorPreview;
 
   const onEditorTypeChange = (editor: EditorType) =>
     props.updateFeedbackEditor!(props.response.id, editor);

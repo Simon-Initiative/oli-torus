@@ -107,7 +107,6 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
           removeResponse={hook.removeFeedback}
           updateFeedbackTextDirection={hook.updateFeedbackTextDirection}
           customScoring={customScoring}
-          editMode={responseEditMode}
         >
           <ChoicesDelivery
             unselectedIcon={props.unselectedIcon}

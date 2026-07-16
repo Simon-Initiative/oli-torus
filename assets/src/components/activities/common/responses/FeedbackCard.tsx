@@ -16,7 +16,6 @@ export const FeedbackCard: React.FC<{
   updateTextDirection: (textDirection: TextDirection) => void;
   placeholder?: string;
   children: any;
-  editMode?: boolean;
 }> = ({
   title,
   feedback,
@@ -25,11 +24,10 @@ export const FeedbackCard: React.FC<{
   children,
   updateEditor,
   updateTextDirection,
-  editMode,
 }) => {
   const { editMode: contextEditMode, mode, projectSlug } = useAuthoringElementContext();
   const isInstructorPreview = mode === 'instructor_preview';
-  const effectiveEditMode = editMode ?? (contextEditMode && !isInstructorPreview);
+  const editMode = contextEditMode && !isInstructorPreview;
 
   return (
     <Card.Card>
@@ -40,7 +38,7 @@ export const FeedbackCard: React.FC<{
           content={feedback.content}
           onEdit={(content) => update(feedback.id, content)}
           onEditorTypeChange={updateEditor}
-          editMode={effectiveEditMode}
+          editMode={editMode}
           editorType={feedback.editor || DEFAULT_EDITOR}
           allowBlockElements={true}
           projectSlug={projectSlug}

@@ -43,7 +43,6 @@ export const TargetedFeedback: React.FC = () => {
           removeResponse={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
           updateScore={(id, score) => dispatch(ResponseActions.editResponseScore(id, score))}
           customScoring={customScoring}
-          editMode={responseEditMode}
           key={mapping.response.id}
         >
           <ResponseChoices
