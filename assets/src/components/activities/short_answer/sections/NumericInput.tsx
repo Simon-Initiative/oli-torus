@@ -183,6 +183,7 @@ export const RangeNumericInput: React.FC<RangeNumericInputProps> = ({
             className="custom-select mr-1"
             disabled={!editMode}
             style={{ width: 400 }}
+            aria-label="Range boundary inclusion"
             value={inclusiveOrExclusiveValue(input.inclusive)}
             onChange={({ target: { value } }) => {
               onEditInput({ ...input, inclusive: isInclusive(value) });
@@ -244,6 +245,7 @@ export const RangeNumericInput: React.FC<RangeNumericInputProps> = ({
           className="custom-select mr-1"
           disabled={!editMode}
           style={{ width: 400 }}
+          aria-label="Range boundary inclusion"
           value={inclusiveOrExclusiveValue(input.inclusive)}
           onChange={({ target: { value } }) => {
             onEditInput({ ...input, inclusive: isInclusive(value) });
