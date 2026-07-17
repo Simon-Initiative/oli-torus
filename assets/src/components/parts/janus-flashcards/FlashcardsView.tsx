@@ -1,7 +1,7 @@
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MarkupTree, renderFlow } from 'components/parts/janus-text-flow/TextFlow';
 import './Flashcard.css';
-import { getFaceNodes } from './flashcardContent';
+import { getFaceNodes, stripFlashcardImageDimensions } from './flashcardContent';
 import {
   FLASHCARDS_GRID_GAP_REM,
   FLASHCARD_NARROW_MIN_HEIGHT_PX,
@@ -10,7 +10,9 @@ import {
   MIN_CARD_WIDTH_PX,
   computeCardsPerRow,
   getFlashcardsGridGapPx,
+  resolveCardHeightForLayout,
   resolveCardsPerRowBounds,
+  resolveContainerWidth,
 } from './schema';
 
 export type FlashcardFlipState = {
@@ -26,6 +28,7 @@ type FlashcardsViewProps = {
   cssBundle: 'authoring' | 'delivery';
   flipAllSignal?: number;
   onFlipStateChange?: (state: FlashcardFlipState) => void;
+  onLayoutWidthChange?: (width: number) => void;
 };
 
 const hasNodeTag = (nodes: MarkupTree[], tag: string): boolean =>
@@ -64,9 +67,13 @@ const FlashcardFaceContent: React.FC<FlashcardFaceContentProps> = ({ contentKeyP
     .filter(Boolean)
     .join(' ');
 
+  const renderNodes = useMemo(() => stripFlashcardImageDimensions(nodes), [nodes]);
+
   return (
     <div className={className}>
-      {nodes.map((subtree, index) => renderFlow(`${contentKeyPrefix}-${index}`, subtree, {}, []))}
+      {renderNodes.map((subtree, index) =>
+        renderFlow(`${contentKeyPrefix}-${index}`, subtree, {}, []),
+      )}
     </div>
   );
 };
@@ -76,8 +83,9 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   cssBundle,
   flipAllSignal,
   onFlipStateChange,
+  onLayoutWidthChange,
 }) => {
-  const { cards = [], flipDuration, height, customCss = '', customCssClass = '' } = model;
+  const { cards = [], flipDuration, customCss = '', customCssClass = '' } = model;
 
   const [flippedById, setFlippedById] = useState<Record<string, boolean>>({});
   const [, setFlippedCards] = useState<number[]>([]);
@@ -100,34 +108,47 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [gridGapPx, setGridGapPx] = useState(() => getFlashcardsGridGapPx());
   const durationMs = typeof flipDuration === 'number' && flipDuration >= 0 ? flipDuration : 600;
-  const cardHeight = typeof height === 'number' && height > 0 ? `${height}px` : '180px';
+  const layoutContainerWidth =
+    containerWidth > 0
+      ? containerWidth
+      : resolveContainerWidth(model.width, model.responsiveLayoutWidth);
+  const cardHeightPx = resolveCardHeightForLayout(model, layoutContainerWidth, cards.length);
+  const cardHeight = `${cardHeightPx}px`;
 
-  const listRef = useCallback((element: HTMLDivElement | null) => {
-    resizeObserverRef.current?.disconnect();
-    resizeObserverRef.current = null;
+  const listRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
 
-    if (!element) {
-      return;
-    }
+      if (!element) {
+        return;
+      }
 
-    const updateLayoutMetrics = (width: number) => {
-      setContainerWidth(width);
-      setGridGapPx(getFlashcardsGridGapPx(element));
-    };
+      const updateLayoutMetrics = (width: number) => {
+        if (width <= 0) {
+          return;
+        }
 
-    updateLayoutMetrics(element.getBoundingClientRect().width);
+        setContainerWidth(width);
+        setGridGapPx(getFlashcardsGridGapPx(element));
+        onLayoutWidthChange?.(width);
+      };
 
-    if (typeof ResizeObserver === 'undefined') {
-      return;
-    }
+      updateLayoutMetrics(element.getBoundingClientRect().width);
 
-    const observer = new ResizeObserver(([entry]) => {
-      updateLayoutMetrics(entry.contentRect.width);
-    });
+      if (typeof ResizeObserver === 'undefined') {
+        return;
+      }
 
-    observer.observe(element);
-    resizeObserverRef.current = observer;
-  }, []);
+      const observer = new ResizeObserver(([entry]) => {
+        updateLayoutMetrics(entry.contentRect.width);
+      });
+
+      observer.observe(element);
+      resizeObserverRef.current = observer;
+    },
+    [onLayoutWidthChange],
+  );
 
   useEffect(
     () => () => {
@@ -141,8 +162,8 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
     [model.minCardsPerRow, model.maxCardsPerRow],
   );
   const columns = useMemo(
-    () => computeCardsPerRow(containerWidth, bounds, MIN_CARD_WIDTH_PX, gridGapPx),
-    [containerWidth, bounds, gridGapPx],
+    () => computeCardsPerRow(layoutContainerWidth, bounds, MIN_CARD_WIDTH_PX, gridGapPx),
+    [layoutContainerWidth, bounds, gridGapPx],
   );
 
   const rootStyle = {

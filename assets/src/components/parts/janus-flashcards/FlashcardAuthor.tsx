@@ -10,11 +10,31 @@ import guid from 'utils/guid';
 import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
 import { FlashcardsView } from './FlashcardsView';
 import { getFaceNodes, plainTextToDefaultNodes } from './flashcardContent';
-import { FlashcardItem, FlashcardsModel } from './schema';
+import {
+  FlashcardItem,
+  FlashcardsModel,
+  computeFlashcardsLayoutHeight,
+  resolveCardHeight,
+  resolveCardHeightForLayout,
+  resolveContainerWidth,
+  withFlashcardsLayoutDimensions,
+} from './schema';
 
 type ActiveEdit = {
   cardId: string;
   side: 'front' | 'back';
+};
+
+type FlashcardAuthorProps = AuthorPartComponentProps<FlashcardsModel> & {
+  editmode?: string | boolean | number;
+  layoutchanging?: string | boolean | number;
+};
+
+type PreviousLayout = {
+  key: string;
+  observedModelHeight?: number;
+  observedModelWidth?: number | string;
+  requestedHeight?: number;
 };
 
 const newCard = (label: string): FlashcardItem => ({
@@ -24,11 +44,21 @@ const newCard = (label: string): FlashcardItem => ({
 });
 
 const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (props) => {
-  const { id, model, configuremode, onConfigure, onSaveConfigure, onCancelConfigure } = props;
+  const { id, model, configuremode, onConfigure, onSaveConfigure, onCancelConfigure, onResize } =
+    props;
+  const editMode = parseBoolean((props as FlashcardAuthorProps).editmode ?? props.editMode);
+  const layoutChanging = parseBoolean((props as FlashcardAuthorProps).layoutchanging ?? false);
   const [inConfigureMode, setInConfigureMode] = React.useState(configuremode);
   const [activeEdit, setActiveEdit] = React.useState<ActiveEdit | null>(null);
   const [draftCards, setDraftCards] = React.useState<FlashcardItem[]>(model.cards ?? []);
   const [portalElement, setPortalElement] = React.useState<HTMLElement | null>(null);
+  const [measuredContainerWidth, setMeasuredContainerWidth] = React.useState(0);
+  const previousLayoutRef = React.useRef<PreviousLayout | null>(null);
+  const layoutChangingRef = React.useRef(false);
+  const containerWidth =
+    measuredContainerWidth > 0
+      ? measuredContainerWidth
+      : resolveContainerWidth(model.width, model.responsiveLayoutWidth);
 
   useEffect(() => {
     registerEditor();
@@ -60,7 +90,11 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
         const cards = model.cards?.length ? model.cards : [newCard('New Card')];
         setDraftCards(cards);
         setActiveEdit({ cardId: cards[0].id, side: 'front' });
-        onConfigure({ id, configure: true, context: { fullscreen: true } });
+        onConfigure({
+          id,
+          configure: true,
+          context: { fullscreen: true, customClassName: 'flashcards-config-modal' },
+        });
       }
     },
     [id, model.cards, onConfigure],
@@ -69,11 +103,124 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
   const handleSave = useCallback(async () => {
     const modelClone = clone(model);
     modelClone.cards = draftCards;
+    modelClone.cardHeight = resolveCardHeightForLayout(
+      { ...modelClone, cards: draftCards },
+      containerWidth,
+      draftCards.length,
+    );
 
     await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
     setActiveEdit(null);
-  }, [draftCards, id, model, onSaveConfigure]);
+  }, [containerWidth, draftCards, id, model, onSaveConfigure]);
+
+  const previewModel = useMemo(() => {
+    const base = { ...model, cards: draftCards };
+    const cardHeight = resolveCardHeightForLayout(base, containerWidth, draftCards.length);
+    const autoHeight = computeFlashcardsLayoutHeight(draftCards.length, containerWidth, {
+      ...base,
+      cardHeight,
+    });
+
+    return {
+      ...base,
+      cardHeight,
+      height: typeof model.height === 'number' ? model.height : autoHeight,
+    };
+  }, [containerWidth, model, draftCards]);
+
+  useEffect(() => {
+    if (layoutChanging) {
+      layoutChangingRef.current = true;
+      return;
+    }
+
+    if (!editMode || typeof onResize !== 'function') {
+      return;
+    }
+
+    const layoutInteractionEnded = layoutChangingRef.current;
+    layoutChangingRef.current = false;
+    const layoutWidth = model.width === '100%' ? containerWidth : model.width;
+    const layoutKey = [
+      draftCards.length,
+      layoutWidth,
+      model.minCardsPerRow,
+      model.maxCardsPerRow,
+    ].join(':');
+    const modelHeight =
+      typeof model.height === 'number' && model.height > 0 ? model.height : undefined;
+    const previousLayout = previousLayoutRef.current;
+    const layoutChanged = previousLayout === null || layoutKey !== previousLayout.key;
+    const requestedHeightApplied =
+      previousLayout?.requestedHeight !== undefined &&
+      modelHeight === previousLayout.requestedHeight;
+    const manualHeightChanged =
+      previousLayout !== null &&
+      modelHeight !== previousLayout.observedModelHeight &&
+      !requestedHeightApplied;
+    const manualWidthChanged =
+      previousLayout !== null &&
+      model.width !== '100%' &&
+      model.width !== previousLayout.observedModelWidth;
+    const manualDimensionsChanged =
+      layoutInteractionEnded || manualHeightChanged || manualWidthChanged;
+
+    if (!layoutChanged && !manualDimensionsChanged) {
+      if (previousLayout !== null && modelHeight !== previousLayout.observedModelHeight) {
+        previousLayoutRef.current = {
+          ...previousLayout,
+          observedModelHeight: modelHeight,
+          requestedHeight: requestedHeightApplied ? undefined : previousLayout.requestedHeight,
+        };
+      }
+      return;
+    }
+
+    const autoModel = withFlashcardsLayoutDimensions(
+      { ...model, cards: draftCards },
+      containerWidth,
+    );
+    const nextHeight =
+      manualDimensionsChanged && modelHeight !== undefined ? modelHeight : autoModel.height;
+    const nextCardHeight =
+      manualDimensionsChanged && modelHeight !== undefined
+        ? resolveCardHeightForLayout(
+            { ...model, cards: draftCards },
+            containerWidth,
+            draftCards.length,
+          )
+        : autoModel.cardHeight ?? resolveCardHeight(model);
+    if (typeof nextHeight !== 'number') {
+      return;
+    }
+
+    previousLayoutRef.current = {
+      key: layoutKey,
+      observedModelHeight: modelHeight,
+      observedModelWidth: model.width,
+      requestedHeight: nextHeight === modelHeight ? undefined : nextHeight,
+    };
+
+    void onResize({
+      id,
+      settings: {
+        height: { value: nextHeight },
+        cardHeight: { value: nextCardHeight },
+      },
+    });
+  }, [
+    draftCards.length,
+    containerWidth,
+    id,
+    layoutChanging,
+    model,
+    model.maxCardsPerRow,
+    model.minCardsPerRow,
+    model.width,
+    onResize,
+    editMode,
+  ]);
 
   const handleCancel = useCallback(() => {
     setDraftCards(model.cards ?? []);
@@ -246,7 +393,11 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
 
   return (
     <>
-      <FlashcardsView model={{ ...model, cards: draftCards }} cssBundle="authoring" />
+      <FlashcardsView
+        model={previewModel}
+        cssBundle="authoring"
+        onLayoutWidthChange={setMeasuredContainerWidth}
+      />
       {configureContent}
     </>
   );

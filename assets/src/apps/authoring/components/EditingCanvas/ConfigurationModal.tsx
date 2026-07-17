@@ -58,7 +58,9 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
 
   return (
     <Modal
-      dialogClassName={`config-modal ${customClassName} ${fullscreen ? 'modal-90w' : ''}`}
+      dialogClassName={`config-modal modal-dialog-scrollable ${customClassName} ${
+        fullscreen ? 'modal-90w' : ''
+      }`}
       show={show}
       onHide={handleCancelClick}
       enforceFocus={enforceFocus}

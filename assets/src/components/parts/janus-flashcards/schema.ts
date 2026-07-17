@@ -12,6 +12,8 @@ export interface FlashcardsModel extends JanusAbsolutePositioned, JanusCustomCss
   enabled: boolean;
   randomize: boolean;
   flipDuration: number;
+  cardHeight?: number;
+  responsiveLayoutWidth?: number | string;
   cards: FlashcardItem[];
   minCardsPerRow: number;
   maxCardsPerRow: number;
@@ -33,6 +35,124 @@ export const MIN_CARD_WIDTH_PX = 180;
 export const FLASHCARDS_GRID_GAP_REM = 1;
 export const FLASHCARD_NARROW_CONTAINER_MAX_PX = 480;
 export const FLASHCARD_NARROW_MIN_HEIGHT_PX = 140;
+export const DEFAULT_CARD_HEIGHT_PX = 180;
+export const DEFAULT_LAYOUT_WIDTH_PX = 480;
+export const FLASHCARDS_EMPTY_MIN_HEIGHT_PX = 120;
+
+const effectiveCardFaceHeight = (cardHeight: number, containerWidth: number): number => {
+  if (containerWidth > 0 && containerWidth <= FLASHCARD_NARROW_CONTAINER_MAX_PX) {
+    return Math.max(cardHeight, FLASHCARD_NARROW_MIN_HEIGHT_PX);
+  }
+
+  return cardHeight;
+};
+
+export const resolveContainerWidth = (
+  width?: number | string,
+  responsiveLayoutWidth?: number | string,
+): number => {
+  if (typeof width === 'number' && width > 0) {
+    return width;
+  }
+
+  if (width === '100%') {
+    if (typeof responsiveLayoutWidth === 'number' && responsiveLayoutWidth > 0) {
+      return responsiveLayoutWidth;
+    }
+
+    return 960;
+  }
+
+  return DEFAULT_LAYOUT_WIDTH_PX;
+};
+
+export const resolveCardHeight = (
+  model: Pick<FlashcardsModel, 'cardHeight' | 'height'>,
+): number => {
+  if (typeof model.cardHeight === 'number' && model.cardHeight > 0) {
+    return model.cardHeight;
+  }
+
+  if (
+    typeof model.height === 'number' &&
+    model.height > 0 &&
+    model.height <= DEFAULT_CARD_HEIGHT_PX * 1.5
+  ) {
+    return model.height;
+  }
+
+  return DEFAULT_CARD_HEIGHT_PX;
+};
+
+export const resolveCardHeightForLayout = (
+  model: FlashcardsModel,
+  containerWidth: number,
+  cardCount: number,
+): number => {
+  if (cardCount === 0) {
+    return resolveCardHeight(model);
+  }
+
+  const storedCardHeight = resolveCardHeight(model);
+  const autoHeight = computeFlashcardsLayoutHeight(cardCount, containerWidth, model);
+  const layoutHeight =
+    typeof model.height === 'number' && model.height > 0 ? model.height : autoHeight;
+
+  if (Math.abs(layoutHeight - autoHeight) <= 1) {
+    return effectiveCardFaceHeight(storedCardHeight, containerWidth);
+  }
+
+  const bounds = resolveCardsPerRowBounds(model);
+  const columns = computeCardsPerRow(containerWidth, bounds);
+  const rows = Math.ceil(cardCount / columns);
+  const gap = getFlashcardsGridGapPx();
+  const derived = (layoutHeight - Math.max(0, rows - 1) * gap) / rows;
+  const minFaceHeight =
+    containerWidth > 0 && containerWidth <= FLASHCARD_NARROW_CONTAINER_MAX_PX
+      ? FLASHCARD_NARROW_MIN_HEIGHT_PX
+      : 48;
+
+  return Math.max(minFaceHeight, Math.round(derived));
+};
+
+export const computeFlashcardsLayoutHeight = (
+  cardCount: number,
+  containerWidth: number,
+  model: Pick<FlashcardsModel, 'minCardsPerRow' | 'maxCardsPerRow' | 'cardHeight' | 'height'>,
+): number => {
+  if (cardCount === 0) {
+    return FLASHCARDS_EMPTY_MIN_HEIGHT_PX;
+  }
+
+  const cardHeight = effectiveCardFaceHeight(resolveCardHeight(model), containerWidth);
+  const bounds = resolveCardsPerRowBounds(model);
+  const columns = computeCardsPerRow(containerWidth, bounds);
+  const rows = Math.ceil(cardCount / columns);
+  const gap = getFlashcardsGridGapPx();
+
+  return rows * cardHeight + Math.max(0, rows - 1) * gap;
+};
+
+export const withFlashcardsLayoutDimensions = (
+  model: FlashcardsModel,
+  measuredContainerWidth?: number,
+): FlashcardsModel => {
+  const cards = model.cards ?? [];
+  const cardHeight = resolveCardHeight(model);
+  const containerWidth =
+    typeof measuredContainerWidth === 'number' && measuredContainerWidth > 0
+      ? measuredContainerWidth
+      : resolveContainerWidth(model.width, model.responsiveLayoutWidth);
+
+  return {
+    ...model,
+    cardHeight,
+    height: computeFlashcardsLayoutHeight(cards.length, containerWidth, {
+      ...model,
+      cardHeight,
+    }),
+  };
+};
 
 export const getFlashcardsGridGapPx = (element?: Element | null): number => {
   if (typeof document === 'undefined') {
@@ -138,14 +258,26 @@ export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
   return adaptivitySchema;
 };
 
-export const createSchema = (): Partial<FlashcardsModel> => ({
-  width: 170,
-  height: 90,
-  cssClasses: '',
-  randomize: false,
-  minCardsPerRow: MIN_CARDS_PER_ROW_DEFAULT,
-  maxCardsPerRow: MAX_CARDS_PER_ROW_DEFAULT,
-  flipDuration: 600,
-  correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
-  incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
-});
+export const createSchema = (): Partial<FlashcardsModel> => {
+  const cardHeight = DEFAULT_CARD_HEIGHT_PX;
+  const width = DEFAULT_LAYOUT_WIDTH_PX;
+  const layoutModel = {
+    minCardsPerRow: MIN_CARDS_PER_ROW_DEFAULT,
+    maxCardsPerRow: MAX_CARDS_PER_ROW_DEFAULT,
+    cardHeight,
+    height: cardHeight,
+  };
+
+  return {
+    width,
+    cardHeight,
+    height: computeFlashcardsLayoutHeight(0, width, layoutModel),
+    cssClasses: '',
+    randomize: false,
+    minCardsPerRow: MIN_CARDS_PER_ROW_DEFAULT,
+    maxCardsPerRow: MAX_CARDS_PER_ROW_DEFAULT,
+    flipDuration: 600,
+    correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+    incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+  };
+};
