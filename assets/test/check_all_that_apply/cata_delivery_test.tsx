@@ -54,7 +54,7 @@ describe('check all that apply delivery', () => {
     );
 
     // expect 2 choices
-    const choices = screen.queryAllByLabelText(/choice [0-9]/);
+    const choices = screen.getAllByRole('checkbox', { name: /Choice [12]/ });
     expect(choices).toHaveLength(2);
 
     // expect submit button
