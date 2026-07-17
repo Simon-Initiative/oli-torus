@@ -3,7 +3,8 @@
 # This scenario verifies that a freshly created section with enrolled learners
 # but no learner activity renders sensible dashboard defaults. It covers the
 # course-scope progress tile at 0% completion and the student support tile when
-# there is not enough activity/proficiency data to classify learners.
+# there is not enough activity/proficiency data to classify learners. It also
+# verifies that the assessments tile lists graded work with zero submissions.
 
 - use:
     file: "base.scenario.yaml"
@@ -55,3 +56,15 @@
             - "Nina No Data"
             - "Olivia On Track"
             - "Sam Struggling"
+
+- assert:
+    instructor_dashboard_assessments:
+      section: "instructor_dashboard_section"
+      total_rows: 1
+      has_assessments: true
+      rows_by_title:
+        "Checkpoint Quiz":
+          completion:
+            completed_count: 0
+            total_students: 4
+            ratio: 0.0

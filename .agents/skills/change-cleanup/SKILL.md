@@ -129,6 +129,15 @@ Evaluate the changed surface for the following:
    - whether it is definitely actionable, needs user input, or should be left alone
    - whether it requires touching a file outside the diff
 
+5. After applying approved cleanup changes, always include a suggested commit
+   message in the final response.
+   - Use the format `"[TICKET-ID] Commit message"`.
+   - Derive `TICKET-ID` from the branch name, changed docs, PR/ticket context,
+     or previously established conversation context.
+   - If no ticket id can be found, use `"[TICKET-ID]"` literally and mention
+     that the placeholder should be replaced.
+   - Keep the message concise and specific to the cleanup performed.
+
 ## Mode Behavior
 
 ### `self-driving`
