@@ -364,6 +364,7 @@ defmodule OliWeb.Router do
 
     scope "/test", OliWeb do
       get "/support/:filename", PlaywrightSupportAssetController, :support_asset
+      get "/assets/*path", PlaywrightSupportAssetController, :private_asset
     end
 
     scope "/superactivity", OliWeb do
