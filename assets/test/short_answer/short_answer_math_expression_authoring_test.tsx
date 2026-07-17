@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { act } from 'react-dom/test-utils';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { quantityValueSource } from 'gleam/torusExpression';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
 import { ShortAnswerActions } from 'components/activities/short_answer/actions';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
@@ -17,6 +18,7 @@ import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
 
 jest.mock('gleam/torusExpression', () => ({
+  quantityValueSource: jest.fn((source: string) => source.replace(/\s+[A-Za-zµÅΩ].*$/, '')),
   previewMathExpressionSyntax: jest.fn((expression: string, kind: 'expression' | 'quantity') =>
     expression.includes('bad')
       ? { status: 'invalid', debug: 'invalid expression' }
@@ -27,6 +29,8 @@ jest.mock('gleam/torusExpression', () => ({
         },
   ),
 }));
+
+const quantityValueSourceMock = quantityValueSource as jest.Mock;
 
 jest.mock('components/misc/InfoTip', () => ({
   InfoTip: () => null,
@@ -41,6 +45,7 @@ describe('short answer math expression authoring', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
+    quantityValueSourceMock.mockClear();
     restoreMathJax = window.MathJax;
     window.MathJax = {
       startup: { promise: Promise.resolve() },
@@ -50,6 +55,7 @@ describe('short answer math expression authoring', () => {
 
   afterEach(() => {
     window.MathJax = restoreMathJax;
+    jest.clearAllTimers();
     jest.useRealTimers();
   });
 
@@ -372,6 +378,43 @@ describe('short answer math expression authoring', () => {
     expect(onEditResponseMatchConfig).toHaveBeenCalled();
   });
 
+  it('preserves numeric significant-figure inference for number questions', () => {
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('numeric', '1'));
+    const response = makeMatchConfigResponse(
+      MatchConfigs.numeric({ operator: 'equal', expected: '12.30' }),
+      0,
+    );
+    const onEditResponseMatchConfig = jest.fn();
+
+    render(
+      <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+        <InputEntry
+          inputType={model.inputType}
+          questionType={shortAnswerQuestionType(model)}
+          mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
+          response={response}
+          onEditResponseRule={jest.fn()}
+          onEditResponseMatchConfig={onEditResponseMatchConfig}
+        />
+      </AuthoringElementProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Significant Figures' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Significant Figures' })).toHaveValue(4);
+    expect(quantityValueSourceMock).not.toHaveBeenCalled();
+    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'numeric',
+          precision: { type: 'significant_figures', count: 4 },
+        }),
+      }),
+    );
+  });
+
   it('uses quantity validation while preserving numeric comparison controls for number_with_units', () => {
     const model = dispatch(
       defaultModel(),
@@ -398,6 +441,21 @@ describe('short answer math expression authoring', () => {
     expect(screen.getByLabelText('Correct answer')).toHaveValue('9.8 m/s^2');
     expect(screen.getByLabelText('Unit feedback match type')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Significant Figures' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Significant Figures' })).toHaveValue(2);
+    expect(quantityValueSourceMock).toHaveBeenCalledWith('9.8 m/s^2');
+    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'unit_aware',
+          precision: { type: 'significant_figures', count: 2 },
+        }),
+      }),
+    );
+
     fireEvent.change(screen.getByLabelText('Correct answer'), {
       target: { value: '10 km/hr' },
     });
@@ -421,10 +479,10 @@ describe('short answer math expression authoring', () => {
       ShortAnswerActions.setQuestionType('number_with_units', '1'),
     );
     const response = makeMatchConfigResponse(
-      MatchConfigs.unitAware('1 m/s', undefined, {
+      MatchConfigs.unitAware('1.2 m/s^2', undefined, {
         operator: 'between',
-        lower: '1 m/s',
-        upper: '2 m/s',
+        lower: '1.2 m/s^2',
+        upper: '34.5 km/hr^10',
         bounds: 'inclusive',
       }),
       0,
@@ -445,8 +503,24 @@ describe('short answer math expression authoring', () => {
     );
 
     expect(screen.getAllByRole('button', { name: 'Math expression syntax help' })).toHaveLength(2);
-    expect(screen.getByLabelText('Lower bound')).toHaveValue('1 m/s');
-    expect(screen.getByLabelText('Upper bound')).toHaveValue('2 m/s');
+    expect(screen.getByLabelText('Lower bound')).toHaveValue('1.2 m/s^2');
+    expect(screen.getByLabelText('Upper bound')).toHaveValue('34.5 km/hr^10');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Significant Figures' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Significant Figures' })).toHaveValue(2);
+    expect(quantityValueSourceMock).toHaveBeenNthCalledWith(1, '1.2 m/s^2');
+    expect(quantityValueSourceMock).toHaveBeenNthCalledWith(2, '34.5 km/hr^10');
+    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'unit_aware',
+          precision: { type: 'significant_figures', count: 2 },
+        }),
+      }),
+    );
 
     fireEvent.change(screen.getByLabelText('Upper bound'), {
       target: { value: '3 km/hr' },
@@ -459,7 +533,7 @@ describe('short answer math expression authoring', () => {
         math: expect.objectContaining({
           mode: 'unit_aware',
           operator: 'between',
-          lower: '1 m/s',
+          lower: '1.2 m/s^2',
           upper: '3 km/hr',
         }),
       }),

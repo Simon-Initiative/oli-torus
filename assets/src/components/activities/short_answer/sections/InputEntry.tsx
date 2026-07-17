@@ -669,7 +669,11 @@ export const InputEntry: React.FC<InputProps> = ({
               onChange={onEditNumericTolerance}
             />
           )}
-          <PrecisionInput input={numericState.input} onEditInput={onEditNumericInput} />
+          <PrecisionInput
+            input={numericState.input}
+            onEditInput={onEditNumericInput}
+            valueInputKind={numericValueInputKind}
+          />
           {activeQuestionType === 'number_with_units' && unitMismatchTargetControl}
         </div>
       </div>

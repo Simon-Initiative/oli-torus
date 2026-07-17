@@ -1,4 +1,5 @@
 import React, { createRef, useState } from 'react';
+import { quantityValueSource } from 'gleam/torusExpression';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MathExpressionInput } from 'components/activities/common/math_expression';
 import { InfoTip } from 'components/misc/InfoTip';
@@ -332,23 +333,39 @@ const DIGITS: Record<string, boolean> = {
   '9': true,
 };
 const isDigit = (c: string): boolean => DIGITS[c];
-const numberOfDigits = (value: numberOrVar) => value.toString().split('').filter(isDigit).length;
+const numberOfDigits = (value: numberOrVar, valueInputKind: NumericValueInputKind) => {
+  const source = value.toString();
+  const numericSource = valueInputKind === 'quantity' ? quantityValueSource(source) : source;
 
-const inferPrecision = (input: InputNumeric | InputRange) => {
+  return numericSource.split('').filter(isDigit).length;
+};
+
+const inferPrecision = (
+  input: InputNumeric | InputRange,
+  valueInputKind: NumericValueInputKind,
+) => {
   switch (input.kind) {
     case InputKind.Numeric:
-      return numberOfDigits(input.value);
+      return numberOfDigits(input.value, valueInputKind);
     case InputKind.Range:
-      return Math.min(numberOfDigits(input.lowerBound), numberOfDigits(input.upperBound));
+      return Math.min(
+        numberOfDigits(input.lowerBound, valueInputKind),
+        numberOfDigits(input.upperBound, valueInputKind),
+      );
   }
 };
 
 export interface PrecisionInputProps {
   input: InputNumeric | InputRange;
   onEditInput: (input: InputNumeric | InputRange) => void;
+  valueInputKind?: NumericValueInputKind;
 }
 
-export const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInput }) => {
+export const PrecisionInput: React.FC<PrecisionInputProps> = ({
+  input,
+  onEditInput,
+  valueInputKind = 'number',
+}) => {
   const { editMode } = useAuthoringElementContext();
   const numericInputRef = createRef<HTMLInputElement>();
   const [precision, setPrecision] = useState(precisionFromNumberOrUndefined(input.precision));
@@ -362,7 +379,10 @@ export const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInp
       setPrecision({ kind: PrecisionKind.None });
       onEditInput({ ...input, precision: undefined });
     } else {
-      const p = { kind: PrecisionKind.WithPrecision, value: inferPrecision(input) };
+      const p = {
+        kind: PrecisionKind.WithPrecision,
+        value: inferPrecision(input, valueInputKind),
+      };
       setPrecision(p);
       onEditInput({ ...input, precision: p.value });
     }
