@@ -387,11 +387,15 @@ defmodule Oli.AutomationSetup do
         # student_responses has non-cascading FKs on user_id, section_id, and
         # page_id — clearing this user's rows here (before user/section/project
         # teardown) removes the same rows that would otherwise block those
-        # later steps too.
-        Repo.delete_all(from(sr in StudentResponse, where: sr.user_id == ^user.id))
-
+        # later steps too. Wrapped in a transaction with the user delete so a
+        # later constraint failure rolls back the response cleanup too,
+        # instead of leaving the user partially cleaned up.
         try do
-          {:ok, _} = Oli.Repo.delete(user)
+          Repo.transaction(fn ->
+            Repo.delete_all(from(sr in StudentResponse, where: sr.user_id == ^user.id))
+            Repo.delete!(user)
+          end)
+
           %{success: true}
         rescue
           e in Ecto.ConstraintError ->

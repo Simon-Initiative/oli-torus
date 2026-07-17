@@ -23,6 +23,11 @@ defmodule OliWeb.PlaywrightSupportAssetController do
     "image_coding_table.csv" => "text/csv"
   }
 
+  # private_asset serves S3-controlled content: never trust its content-type
+  # enough to let a browser render it inline (stored-XSS risk if an object
+  # were ever uploaded as text/html or image/svg+xml).
+  @safe_content_types ~w(application/zip application/json)
+
   def embedded_runtime(conn, _params) do
     conn
     |> put_resp_content_type("text/html")
@@ -47,7 +52,8 @@ defmodule OliWeb.PlaywrightSupportAssetController do
          {:ok, %{body: body, content_type: content_type}} <-
            PlaywrightAssetStorage.get_object(key) do
       conn
-      |> put_resp_content_type(content_type)
+      |> put_resp_content_type(safe_content_type(content_type))
+      |> put_resp_header("content-disposition", "attachment")
       |> put_resp_header("cache-control", "no-store")
       |> send_resp(200, body)
     else
@@ -57,6 +63,9 @@ defmodule OliWeb.PlaywrightSupportAssetController do
       {:error, _reason} -> send_resp(conn, 500, "asset_fetch_failed")
     end
   end
+
+  defp safe_content_type(content_type) when content_type in @safe_content_types, do: content_type
+  defp safe_content_type(_content_type), do: "application/octet-stream"
 
   defp embedded_runtime_path do
     Path.expand("../../../test/support/embedded_runtime_stub/index.html", __DIR__)
