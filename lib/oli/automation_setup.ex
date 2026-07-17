@@ -135,7 +135,8 @@ defmodule Oli.AutomationSetup do
     end
   rescue
     e in Ecto.ConstraintError ->
-      %{success: false, message: "Could not delete project: #{Exception.message(e)}"}
+      Logger.error("Could not delete automation test project: #{Exception.message(e)}")
+      %{success: false, message: "Could not delete project"}
   end
 
   def teardown_section(nil) do
@@ -153,7 +154,8 @@ defmodule Oli.AutomationSetup do
     end
   rescue
     e in Ecto.ConstraintError ->
-      %{success: false, message: "Could not delete section: #{Exception.message(e)}"}
+      Logger.error("Could not delete automation test section: #{Exception.message(e)}")
+      %{success: false, message: "Could not delete section"}
   end
 
   def teardown_educator(email, password) do
@@ -399,7 +401,11 @@ defmodule Oli.AutomationSetup do
           %{success: true}
         rescue
           e in Ecto.ConstraintError ->
-            %{success: false, message: "Could not delete user: #{Exception.message(e)}"}
+            Logger.error(
+              "Could not delete automation test user #{email}: #{Exception.message(e)}"
+            )
+
+            %{success: false, message: "Could not delete user"}
         end
     end
   end
