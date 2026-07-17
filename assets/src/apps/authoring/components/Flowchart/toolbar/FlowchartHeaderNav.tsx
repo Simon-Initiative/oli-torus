@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import type { PartComponentDefinition } from 'components/activities/types';
 import {
   selectCurrentPartPropertyFocus,
   setCurrentSelection,
@@ -37,7 +38,7 @@ import { TextInputIcon } from './TextInputIcon';
 import { UndoIcon } from './UndoIcon';
 import { toolbarIcons, toolbarTooltips } from './toolbar-icons';
 
-export const staticComponents: string[] = [
+export const staticComponents = [
   'janus_text_flow',
   'janus_image',
   'janus_video',
@@ -47,7 +48,7 @@ export const staticComponents: string[] = [
   'janus_audio',
   'janus_capi_iframe',
   'janus_ai_trigger',
-];
+] as const;
 
 export const questionComponents: string[] = [
   'janus_mcq',
@@ -62,7 +63,9 @@ export const questionComponents: string[] = [
 
 const normalizeAdaptivePartSlug = (slug: string) => slug.replace(/_/g, '-');
 
-export const applySimpleAuthorPartDefaults = (part: any) =>
+export const applySimpleAuthorPartDefaults = (
+  part: PartComponentDefinition,
+): PartComponentDefinition =>
   part.type === 'janus-flashcards'
     ? { ...part, custom: { ...part.custom, capiEnabled: false } }
     : part;
@@ -163,7 +166,7 @@ export const FlowchartHeaderNav: React.FC = () => {
     dispatch(redo(null));
   };
 
-  const addPartToCurrentScreen = (newPartData: any) => {
+  const addPartToCurrentScreen = (newPartData: PartComponentDefinition) => {
     if (!currentActivityTree?.length) {
       return;
     }
