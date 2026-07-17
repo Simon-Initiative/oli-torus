@@ -37,10 +37,11 @@ import { TextInputIcon } from './TextInputIcon';
 import { UndoIcon } from './UndoIcon';
 import { toolbarIcons, toolbarTooltips } from './toolbar-icons';
 
-const staticComponents: string[] = [
+export const staticComponents: string[] = [
   'janus_text_flow',
   'janus_image',
   'janus_video',
+  'janus_flashcards',
   'janus_formula',
   'janus_popup',
   'janus_audio',
@@ -60,6 +61,11 @@ export const questionComponents: string[] = [
 ];
 
 const normalizeAdaptivePartSlug = (slug: string) => slug.replace(/_/g, '-');
+
+export const applySimpleAuthorPartDefaults = (part: any) =>
+  part.type === 'janus-flashcards'
+    ? { ...part, custom: { ...part.custom, capiEnabled: false } }
+    : part;
 
 export const simpleAuthorQuestionPartTypes = new Set(
   questionComponents.map(normalizeAdaptivePartSlug),
@@ -163,7 +169,12 @@ export const FlowchartHeaderNav: React.FC = () => {
     }
 
     const [currentActivity] = currentActivityTree.slice(-1);
-    dispatch(addPart({ activityId: currentActivity.id, newPartData }));
+    dispatch(
+      addPart({
+        activityId: currentActivity.id,
+        newPartData: applySimpleAuthorPartDefaults(newPartData),
+      }),
+    );
   };
 
   const handlePartPasteClick = () => {

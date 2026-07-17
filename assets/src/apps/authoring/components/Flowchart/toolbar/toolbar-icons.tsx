@@ -4,6 +4,7 @@ import { AudioIcon } from './AudioIcon';
 import { CarouselIcon } from './CarouselIcon';
 import { CheckboxIcon } from './CheckboxIcon';
 import { DropdownIcon } from './DropdownIcon';
+import { FlashcardIcon } from './FlashcardIcon';
 import { FormulaIcon } from './FormulaIcon';
 import { HubSpokeIcon } from './HubSpokeIcon';
 import { IframeIcon } from './IframeIcon';
@@ -20,6 +21,7 @@ export const toolbarIcons: Record<string, React.FC<{ fill?: string; stroke?: str
   janus_text_flow: ParagraphIcon,
   janus_image: ImageIcon,
   janus_video: VideoIcon,
+  janus_flashcards: FlashcardIcon,
   janus_image_carousel: CarouselIcon,
   janus_popup: PopupIcon,
   janus_audio: AudioIcon,
@@ -40,6 +42,7 @@ export const toolbarTooltips: Record<string, string> = {
   janus_text_flow: 'Text block',
   janus_image: 'Image',
   janus_video: 'Video',
+  janus_flashcards: 'Flashcards',
   janus_image_carousel: 'Image carousel',
   janus_popup: 'Popup',
   janus_audio: 'Audio',

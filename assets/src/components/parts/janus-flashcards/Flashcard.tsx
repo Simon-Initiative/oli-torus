@@ -35,12 +35,13 @@ const buildFlipResponses = (
 
 const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
   const { id, model, onInit, onReady, onSave, onResize } = props;
+  const capiEnabled = model.capiEnabled !== false;
   const [ready, setReady] = useState(false);
   const [flipAllSignal, setFlipAllSignal] = useState(0);
   const lastAutoLayoutKeyRef = useRef('');
 
   useEffect(() => {
-    if (!props.notify) return;
+    if (!capiEnabled || !props.notify) return;
 
     const handleChanges = (changes: PrimitiveChanges) => {
       const flipAll = changes[`stage.${id}.flipAllCards`];
@@ -66,7 +67,7 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
       stateUnsub();
       contextUnsub();
     };
-  }, [props.notify, id]);
+  }, [capiEnabled, props.notify, id]);
 
   useEffect(() => {
     let mounted = true;
@@ -75,11 +76,13 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
       try {
         await onInit({
           id,
-          responses: buildFlipResponses({
-            flippedCards: [],
-            hasCardBeenFlipped: false,
-            allCardsFlipped: false,
-          }),
+          responses: capiEnabled
+            ? buildFlipResponses({
+                flippedCards: [],
+                hasCardBeenFlipped: false,
+                allCardsFlipped: false,
+              })
+            : [],
         });
         if (!mounted) {
           return;
@@ -98,7 +101,7 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
     return () => {
       mounted = false;
     };
-  }, [id, onInit, onReady]);
+  }, [capiEnabled, id, onInit, onReady]);
 
   useEffect(() => {
     if (!ready || typeof onResize !== 'function') {
@@ -158,7 +161,7 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
       model={model}
       cssBundle="delivery"
       flipAllSignal={flipAllSignal}
-      onFlipStateChange={handleFlipStateChange}
+      onFlipStateChange={capiEnabled ? handleFlipStateChange : undefined}
     />
   ) : null;
 };
