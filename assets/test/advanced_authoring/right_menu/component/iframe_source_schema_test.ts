@@ -1,10 +1,93 @@
 import {
+  DEFAULT_IFRAME_TITLE,
+  createSchema,
   decodeSourceConfig,
+  resolveIframeDescription,
+  resolveIframeTitle,
+  schema,
+  simpleSchema,
   transformModelToSchema,
   transformSchemaToModel,
 } from 'components/parts/janus-capi-iframe/schema';
 
 describe('janus-capi-iframe source schema transforms', () => {
+  it('exposes separate accessible title and description fields in both authoring modes', () => {
+    expect(simpleSchema.title).toMatchObject({
+      title: 'Title',
+      type: 'string',
+    });
+    expect(simpleSchema.description).toMatchObject({
+      title: 'Description',
+      type: 'string',
+    });
+    expect(schema.title).toMatchObject({
+      title: 'Title',
+      type: 'string',
+    });
+    expect(schema.description).toMatchObject({
+      title: 'Description',
+      type: 'string',
+    });
+  });
+
+  it('creates new iframes with the default accessible title', () => {
+    expect(createSchema()).toMatchObject({
+      title: DEFAULT_IFRAME_TITLE,
+      description: '',
+    });
+  });
+
+  it.each([undefined, '', '   '])(
+    'uses the default accessible title when the stored title is %p',
+    (title) => {
+      expect(resolveIframeTitle(title)).toBe(DEFAULT_IFRAME_TITLE);
+      expect(transformModelToSchema({ src: 'https://example.com/widget', title }).title).toBe(
+        DEFAULT_IFRAME_TITLE,
+      );
+    },
+  );
+
+  it.each([undefined, '', '   '])(
+    'omits the accessible description when the stored description is %p',
+    (description) => {
+      expect(resolveIframeDescription(description)).toBeUndefined();
+    },
+  );
+
+  it('preserves separate author-provided title and description values', () => {
+    const title = 'Population model';
+    const description = 'An interactive model of population growth';
+
+    expect(resolveIframeTitle(title)).toBe(title);
+    expect(resolveIframeDescription(description)).toBe(description);
+    expect(
+      transformModelToSchema({ src: 'https://example.com/widget', title, description }),
+    ).toMatchObject({ title, description });
+    expect(
+      transformSchemaToModel({
+        source: JSON.stringify({
+          mode: 'url',
+          pageId: null,
+          pageSlug: '',
+          url: 'https://example.com/widget',
+        }),
+        title,
+        description,
+      }),
+    ).toMatchObject({ title, description });
+  });
+
+  it('maps an existing description to the accessible description and defaults its title', () => {
+    const description = 'Legacy iframe description';
+
+    expect(
+      transformModelToSchema({ src: 'https://example.com/widget', description }),
+    ).toMatchObject({
+      title: DEFAULT_IFRAME_TITLE,
+      description,
+    });
+  });
+
   it('encodes legacy external src into source config for editor', () => {
     const transformed = transformModelToSchema({
       src: 'https://example.com/widget',
