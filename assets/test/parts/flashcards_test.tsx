@@ -1,7 +1,12 @@
-import { act, waitFor } from '@testing-library/react';
+import React from 'react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { EventEmitter } from 'events';
+import { NotificationType } from '../../src/apps/delivery/components/NotificationContext';
+import Flashcard from '../../src/components/parts/janus-flashcards/Flashcard';
 import '../../src/components/parts/janus-flashcards/authoring-entry';
 import { stripFlashcardImageDimensions } from '../../src/components/parts/janus-flashcards/flashcardContent';
 import {
+  adaptivitySchema,
   computeCardsPerRow,
   computeFlashcardsLayoutHeight,
   resolveCardHeightForLayout,
@@ -32,6 +37,18 @@ const fiveCardResponsiveModel = {
   cards: Array.from({ length: 5 }, (_, index) => ({ id: `responsive-card-${index + 1}` })),
 };
 
+const buildDeliveryProps = (model: typeof fourCardModel & { capiEnabled?: boolean }) => ({
+  id: 'flashcards-delivery',
+  type: 'janus-flashcards',
+  model,
+  state: {},
+  onInit: jest.fn().mockResolvedValue({ snapshot: {} }),
+  onReady: jest.fn().mockResolvedValue(true),
+  onSave: jest.fn().mockResolvedValue(true),
+  onSubmit: jest.fn().mockResolvedValue(true),
+  onResize: jest.fn().mockResolvedValue(true),
+});
+
 describe('flashcard layout helpers', () => {
   test('normalizes row bounds and computes the four-card layout', () => {
     const bounds = resolveCardsPerRowBounds({ minCardsPerRow: 4, maxCardsPerRow: 2 });
@@ -53,6 +70,76 @@ describe('flashcard layout helpers', () => {
 
     expect(containerWidth).toBe(470);
     expect(computeFlashcardsLayoutHeight(5, containerWidth, fiveCardResponsiveModel)).toBe(572);
+  });
+});
+
+describe('flashcard CAPI behavior', () => {
+  test('returns no adaptivity variables when CAPI is disabled', () => {
+    expect(adaptivitySchema({ currentModel: { capiEnabled: false } })).toEqual({});
+    expect(adaptivitySchema({ currentModel: {} })).toEqual({
+      flippedCards: expect.any(Number),
+      hasCardBeenFlipped: expect.any(Number),
+      allCardsFlipped: expect.any(Number),
+      flipAllCards: expect.any(Number),
+    });
+  });
+
+  test('keeps disabled-CAPI flips local and ignores flip-all notifications', async () => {
+    const notify = new EventEmitter();
+    const props = buildDeliveryProps({ ...fourCardModel, capiEnabled: false });
+
+    render(<Flashcard {...props} notify={notify} />);
+
+    const [firstCard, secondCard] = await screen.findAllByRole('button');
+    expect(props.onInit).toHaveBeenCalledWith({ id: props.id, responses: [] });
+
+    act(() => {
+      notify.emit(NotificationType.STATE_CHANGED, {
+        mutateChanges: { [`stage.${props.id}.flipAllCards`]: true },
+      });
+    });
+    expect(firstCard).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(firstCard);
+    expect(firstCard).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.keyDown(secondCard, { key: 'Enter' });
+    expect(secondCard).toHaveAttribute('aria-pressed', 'true');
+    expect(props.onSave).not.toHaveBeenCalled();
+  });
+
+  test('preserves existing Advanced Author CAPI behavior by default', async () => {
+    const notify = new EventEmitter();
+    const props = buildDeliveryProps(fourCardModel);
+
+    render(<Flashcard {...props} notify={notify} />);
+
+    const cards = await screen.findAllByRole('button');
+    expect(props.onInit).toHaveBeenCalledWith({
+      id: props.id,
+      responses: expect.arrayContaining([
+        expect.objectContaining({ key: 'flippedCards', value: [] }),
+        expect.objectContaining({ key: 'hasCardBeenFlipped', value: false }),
+        expect.objectContaining({ key: 'allCardsFlipped', value: false }),
+        expect.objectContaining({ key: 'flipAllCards', value: false }),
+      ]),
+    });
+
+    act(() => {
+      notify.emit(NotificationType.STATE_CHANGED, {
+        mutateChanges: { [`stage.${props.id}.flipAllCards`]: true },
+      });
+    });
+
+    await waitFor(() =>
+      cards.forEach((card) => expect(card).toHaveAttribute('aria-pressed', 'true')),
+    );
+    expect(props.onSave).toHaveBeenCalledWith({
+      id: props.id,
+      responses: expect.arrayContaining([
+        expect.objectContaining({ key: 'allCardsFlipped', value: true }),
+      ]),
+    });
   });
 });
 
