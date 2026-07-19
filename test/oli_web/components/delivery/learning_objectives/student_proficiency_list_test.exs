@@ -4,7 +4,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
   import LiveComponentTests
   import Phoenix.LiveViewTest
 
-  alias LiveComponentTests.Driver
   alias OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList
 
   describe "StudentProficiencyList component" do

@@ -1,0 +1,51 @@
+- user:
+    name: 'workflow_author'
+    type: 'author'
+    email: 'author${RUN_ID}@example.com'
+    given_name: 'Playwright'
+    family_name: 'Author'
+    password: 'changeme123456'
+
+- user:
+    name: 'workflow_student'
+    type: 'student'
+    email: 'student${RUN_ID}@example.com'
+    given_name: 'Jane'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- project:
+    name: 'workflow_authoring_project'
+    title: 'Mixed Workflow ${RUN_ID}'
+    root:
+      children:
+        - page: 'Mixed Workflow Page'
+
+- edit_page:
+    project: 'workflow_authoring_project'
+    page: 'Mixed Workflow Page'
+    content: |
+      title: "Mixed Workflow Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Base content for mixed workflow coverage."
+
+- publish:
+    to: 'workflow_authoring_project'
+    description: 'Initial mixed workflow publication'
+
+- section:
+    name: 'workflow_delivery_section'
+    title: 'Mixed Workflow Section ${RUN_ID}'
+    from: 'workflow_authoring_project'
+    type: 'enrollable'
+    registration_open: true
+
+- enroll:
+    user: 'workflow_student'
+    section: 'workflow_delivery_section'
+    role: 'student'
+
+- hook:
+    function: 'Oli.Scenarios.Features.MixedContentHooks.capture_workflow_page_revision_slug/1'
