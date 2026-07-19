@@ -1,0 +1,188 @@
+# Scenario: Seed published courses for Directed Discussion delivery automation.
+# Directed discussion is participation-based (no submit/evaluate): the learner posts, and
+# the post round-trips through the discussion REST API (no Phoenix channel needed for the
+# poster's own post). Two single-page projects are seeded (single-page navigation the shared
+# delivery helper expects): a normal one (minPosts: 1, unlimited words) and a word-limited
+# one (maxWordLength: 3) to exercise the client-side word-limit gate. Sections isolate posts.
+
+- project:
+    name: 'dd_delivery_project'
+    title: 'Discussion Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Discussion Practice'
+
+- create_activity:
+    project: 'dd_delivery_project'
+    title: 'Discussion Question'
+    virtual_id: 'directed_discussion'
+    type: 'oli_directed_discussion'
+    content_format: 'json'
+    content:
+      activityType: 'oli_directed_discussion'
+      stem:
+        id: 'dd_stem'
+        content:
+          - type: 'p'
+            id: 'dd_stem_p'
+            children:
+              - text: 'Share your thoughts with the group.'
+      maxWords: 0
+      participation:
+        maxPosts: 0
+        maxReplies: 0
+        minPosts: 1
+        minReplies: 0
+        maxWordLength: 0
+      authoring:
+        version: 1
+        transformations: []
+        previewText: ''
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            responses:
+              - id: 'dd_response'
+                rule: 'input like {.*}'
+                score: 0
+                feedback:
+                  id: 'dd_feedback'
+                  content:
+                    - type: 'p'
+                      id: 'dd_feedback_p'
+                      children:
+                        - text: 'Thanks for participating.'
+            hints: []
+
+- edit_page:
+    project: 'dd_delivery_project'
+    page: 'Discussion Practice'
+    content: |
+      title: "Discussion Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "directed_discussion"
+
+- publish:
+    to: 'dd_delivery_project'
+    description: 'Initial Directed Discussion delivery publication'
+
+- project:
+    name: 'dd_wordlimit_project'
+    title: 'Discussion Word Limit Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Discussion Practice'
+
+- create_activity:
+    project: 'dd_wordlimit_project'
+    title: 'Discussion Word Limit Question'
+    virtual_id: 'directed_discussion_wordlimit'
+    type: 'oli_directed_discussion'
+    content_format: 'json'
+    content:
+      activityType: 'oli_directed_discussion'
+      stem:
+        id: 'dd_wordlimit_stem'
+        content:
+          - type: 'p'
+            id: 'dd_wordlimit_stem_p'
+            children:
+              - text: 'Share your thoughts (3 words max).'
+      maxWords: 0
+      participation:
+        maxPosts: 0
+        maxReplies: 0
+        minPosts: 0
+        minReplies: 0
+        maxWordLength: 3
+      authoring:
+        version: 1
+        transformations: []
+        previewText: ''
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            responses:
+              - id: 'dd_wordlimit_response'
+                rule: 'input like {.*}'
+                score: 0
+                feedback:
+                  id: 'dd_wordlimit_feedback'
+                  content:
+                    - type: 'p'
+                      id: 'dd_wordlimit_feedback_p'
+                      children:
+                        - text: 'Thanks for participating.'
+            hints: []
+
+- edit_page:
+    project: 'dd_wordlimit_project'
+    page: 'Discussion Practice'
+    content: |
+      title: "Discussion Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "directed_discussion_wordlimit"
+
+- publish:
+    to: 'dd_wordlimit_project'
+    description: 'Initial Directed Discussion word-limit publication'
+
+- section:
+    name: 'dd_delivery_section'
+    title: 'Discussion Delivery Course ${RUN_ID}'
+    from: 'dd_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'dd_delivery_section_gating'
+    title: 'Discussion Delivery Course ${RUN_ID} - Gating'
+    from: 'dd_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'dd_delivery_section_restore'
+    title: 'Discussion Delivery Course ${RUN_ID} - Restore'
+    from: 'dd_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'dd_delivery_section_wordlimit'
+    title: 'Discussion Word Limit Course ${RUN_ID}'
+    from: 'dd_wordlimit_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'dd_delivery_student'
+    type: 'student'
+    email: 'dd-delivery-student${RUN_ID}@example.com'
+    given_name: 'Discussion'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'dd_delivery_student'
+    section: 'dd_delivery_section'
+    role: 'student'
+
+- enroll:
+    user: 'dd_delivery_student'
+    section: 'dd_delivery_section_gating'
+    role: 'student'
+
+- enroll:
+    user: 'dd_delivery_student'
+    section: 'dd_delivery_section_restore'
+    role: 'student'
+
+- enroll:
+    user: 'dd_delivery_student'
+    section: 'dd_delivery_section_wordlimit'
+    role: 'student'
