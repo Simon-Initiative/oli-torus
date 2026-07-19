@@ -57,34 +57,52 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     end
   end
 
-  defp build_where_by(%BrowseInsightsOptions{
+  defp build_where_by(%BrowseInsightsOptions{} = options) do
+    options
+    |> section_filter()
+    |> maybe_filter_resource(options.resource_id)
+    |> maybe_filter_part(options.part_id)
+  end
+
+  defp section_filter(%BrowseInsightsOptions{
          project_id: project_id,
+         resource_type_id: resource_type_id,
+         section_ids: []
+       }) do
+    dynamic(
+      [s, pub, pr, _],
+      s.project_id == ^project_id and
+        s.resource_id == pr.resource_id and
+        is_nil(pub.published) and
+        s.resource_type_id == ^resource_type_id and
+        s.section_id == -1 and
+        s.user_id == -1
+    )
+  end
+
+  defp section_filter(%BrowseInsightsOptions{
          resource_type_id: resource_type_id,
          section_ids: section_ids
        }) do
-    case section_ids do
-      [] ->
-        dynamic(
-          [s, pub, pr, _],
-          s.project_id == ^project_id and
-            s.resource_id == pr.resource_id and
-            is_nil(pub.published) and
-            s.resource_type_id == ^resource_type_id and
-            s.section_id == -1 and
-            s.user_id == -1
-        )
-
-      section_ids ->
-        dynamic(
-          [s, pub, pr, _],
-          s.resource_id == pr.resource_id and
-            is_nil(pub.published) and
-            s.resource_type_id == ^resource_type_id and
-            s.section_id in ^section_ids and
-            s.user_id == -1
-        )
-    end
+    dynamic(
+      [s, pub, pr, _],
+      s.resource_id == pr.resource_id and
+        is_nil(pub.published) and
+        s.resource_type_id == ^resource_type_id and
+        s.section_id in ^section_ids and
+        s.user_id == -1
+    )
   end
+
+  defp maybe_filter_resource(where_by, nil), do: where_by
+
+  defp maybe_filter_resource(where_by, resource_id),
+    do: dynamic([s, _pub, _pr, _rev], ^where_by and s.resource_id == ^resource_id)
+
+  defp maybe_filter_part(where_by, nil), do: where_by
+
+  defp maybe_filter_part(where_by, part_id),
+    do: dynamic([s, _pub, _pr, _rev], ^where_by and s.part_id == ^part_id)
 
   defmacro safe_div_fragment(numerator, denominator) do
     quote do

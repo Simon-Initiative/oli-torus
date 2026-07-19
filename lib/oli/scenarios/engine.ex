@@ -35,6 +35,8 @@ defmodule Oli.Scenarios.Engine do
     WaitDirective,
     DashboardAnalyticsReadyDirective,
     AnswerQuestionDirective,
+    RequestHintDirective,
+    ResetActivityDirective,
     CertificateDirective,
     DiscussionPostDirective,
     DiscussionConfigDirective,
@@ -81,6 +83,8 @@ defmodule Oli.Scenarios.Engine do
     WaitHandler,
     DashboardAnalyticsReadyHandler,
     AnswerQuestionHandler,
+    RequestHintHandler,
+    ResetActivityHandler,
     CertificateHandler,
     DiscussionPostHandler,
     DiscussionConfigHandler,
@@ -347,6 +351,14 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%AnswerQuestionDirective{} = directive, state) do
     AnswerQuestionHandler.handle(directive, state)
+  end
+
+  def execute_directive(%RequestHintDirective{} = directive, state) do
+    RequestHintHandler.handle(directive, state)
+  end
+
+  def execute_directive(%ResetActivityDirective{} = directive, state) do
+    ResetActivityHandler.handle(directive, state)
   end
 
   def execute_directive(%CertificateDirective{} = directive, state) do

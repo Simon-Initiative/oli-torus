@@ -34,6 +34,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     WaitDirective,
     DashboardAnalyticsReadyDirective,
     AnswerQuestionDirective,
+    RequestHintDirective,
+    ResetActivityDirective,
     CertificateDirective,
     DiscussionPostDirective,
     DiscussionConfigDirective,
@@ -84,6 +86,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     "wait",
     "dashboard_analytics_ready",
     "answer_question",
+    "request_hint",
+    "reset_activity",
     "finalize_attempt",
     "student_exception",
     "certificate",
@@ -770,6 +774,41 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"request_hint" => hint_data}) do
+    allowed_attrs = ["student", "section", "page", "activity_virtual_id", "part_id"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, hint_data, "request_hint") do
+      :ok ->
+        %RequestHintDirective{
+          student: hint_data["student"],
+          section: hint_data["section"],
+          page: hint_data["page"],
+          activity_virtual_id: hint_data["activity_virtual_id"],
+          part_id: hint_data["part_id"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"reset_activity" => reset_data}) do
+    allowed_attrs = ["student", "section", "page", "activity_virtual_id"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, reset_data, "reset_activity") do
+      :ok ->
+        %ResetActivityDirective{
+          student: reset_data["student"],
+          section: reset_data["section"],
+          page: reset_data["page"],
+          activity_virtual_id: reset_data["activity_virtual_id"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"certificate" => certificate_data}) do
     allowed_attrs = ["target", "enabled", "thresholds", "design"]
 
@@ -1099,6 +1138,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       "activity_customization",
       "page_objectives",
       "activity_objectives",
+      "insights",
       "discussion",
       "instructor_dashboard_summary",
       "instructor_dashboard_progress",
@@ -1126,6 +1166,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
       activity_objectives:
         parse_activity_objectives_assertion(assert_data["activity_objectives"]),
+      insights: parse_insights_assertion(assert_data["insights"]),
       discussion: parse_discussion_assertion(assert_data["discussion"]),
       instructor_dashboard_summary:
         parse_instructor_dashboard_assertion(
@@ -1679,6 +1720,162 @@ defmodule Oli.Scenarios.DirectiveParser do
         {key, value}
     end)
   end
+
+  defp parse_insights_assertion(nil), do: nil
+
+  defp parse_insights_assertion(data) when is_map(data) do
+    with :ok <- DirectiveValidator.validate_assertion_attributes(:insights, data),
+         :ok <- require_insights_expected(data),
+         :ok <- validate_insights_target(data),
+         {:ok, resource_type} <- parse_insights_resource_type(data["resource_type"]),
+         :ok <- validate_insights_target_type(data, resource_type),
+         :ok <- validate_insights_part_id(data, resource_type),
+         {:ok, sections} <- parse_insights_sections(data["sections"]),
+         {:ok, expected} <- parse_insights_expected(data["expected"]) do
+      exists = parse_optional_boolean(data["exists"], "exists") != false
+      tolerance = parse_optional_float(data["tolerance"]) || 1.0e-6
+
+      cond do
+        exists and map_size(expected) == 0 ->
+          raise "insights assertion requires at least one expected metric"
+
+        tolerance <= 0 ->
+          raise "insights tolerance must be greater than zero"
+
+        true ->
+          %{
+            project: data["project"],
+            sections: sections,
+            resource_type: resource_type,
+            page: data["page"],
+            activity_virtual_id: data["activity_virtual_id"],
+            objective: data["objective"],
+            part_id: data["part_id"],
+            expected: expected,
+            exists: exists,
+            tolerance: tolerance
+          }
+      end
+    else
+      {:error, msg} -> raise msg
+    end
+  end
+
+  defp require_insights_expected(data) do
+    if Map.has_key?(data, "expected"),
+      do: :ok,
+      else: {:error, "insights assertion requires expected metrics"}
+  end
+
+  defp validate_insights_target(data) do
+    targets =
+      ["page", "activity_virtual_id", "objective"]
+      |> Enum.filter(&is_binary(data[&1]))
+
+    case targets do
+      [_target] -> :ok
+      [] -> {:error, "insights assertion requires page, activity_virtual_id, or objective"}
+      _ -> {:error, "insights assertion must specify exactly one resource target"}
+    end
+  end
+
+  defp parse_insights_resource_type("page"), do: {:ok, :page}
+  defp parse_insights_resource_type("activity"), do: {:ok, :activity}
+  defp parse_insights_resource_type("objective"), do: {:ok, :objective}
+
+  defp parse_insights_resource_type(value),
+    do: {:error, "Invalid insights resource_type: #{inspect(value)}"}
+
+  defp validate_insights_target_type(%{"page" => page}, :page) when is_binary(page), do: :ok
+
+  defp validate_insights_target_type(%{"activity_virtual_id" => virtual_id}, :activity)
+       when is_binary(virtual_id),
+       do: :ok
+
+  defp validate_insights_target_type(%{"objective" => objective}, :objective)
+       when is_binary(objective),
+       do: :ok
+
+  defp validate_insights_target_type(_data, resource_type),
+    do: {:error, "insights resource target does not match resource_type #{resource_type}"}
+
+  defp validate_insights_part_id(%{"part_id" => part_id}, :activity) when is_binary(part_id),
+    do: :ok
+
+  defp validate_insights_part_id(%{"part_id" => _part_id}, _resource_type),
+    do: {:error, "insights part_id is only valid for activity resources"}
+
+  defp validate_insights_part_id(_data, _resource_type), do: :ok
+
+  defp parse_insights_sections(nil), do: {:ok, []}
+
+  defp parse_insights_sections(sections) when is_list(sections) do
+    if Enum.all?(sections, &is_binary/1),
+      do: {:ok, sections},
+      else: {:error, "insights sections must be a list of section names"}
+  end
+
+  defp parse_insights_sections(_),
+    do: {:error, "insights sections must be a list of section names"}
+
+  defp parse_insights_expected(nil), do: {:ok, %{}}
+
+  defp parse_insights_expected(expected) when is_map(expected) do
+    allowed_metrics = [
+      "num_correct",
+      "num_attempts",
+      "num_hints",
+      "num_first_attempts",
+      "num_first_attempts_correct",
+      "eventually_correct",
+      "first_attempt_correct",
+      "relative_difficulty"
+    ]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_metrics,
+           expected,
+           "insights expected"
+         ) do
+      :ok ->
+        parsed =
+          Enum.reduce(expected, %{}, fn {metric, value}, acc ->
+            Map.put(
+              acc,
+              insights_metric_atom(metric),
+              parse_insights_metric(metric, value)
+            )
+          end)
+
+        {:ok, parsed}
+
+      {:error, msg} ->
+        {:error, msg}
+    end
+  end
+
+  defp parse_insights_expected(_), do: {:error, "insights expected must be a map"}
+
+  defp parse_insights_metric(metric, value)
+       when metric in [
+              "num_correct",
+              "num_attempts",
+              "num_hints",
+              "num_first_attempts",
+              "num_first_attempts_correct"
+            ],
+       do: parse_optional_integer(value)
+
+  defp parse_insights_metric(_metric, value), do: parse_optional_float(value)
+
+  defp insights_metric_atom("num_correct"), do: :num_correct
+  defp insights_metric_atom("num_attempts"), do: :num_attempts
+  defp insights_metric_atom("num_hints"), do: :num_hints
+  defp insights_metric_atom("num_first_attempts"), do: :num_first_attempts
+  defp insights_metric_atom("num_first_attempts_correct"), do: :num_first_attempts_correct
+  defp insights_metric_atom("eventually_correct"), do: :eventually_correct
+  defp insights_metric_atom("first_attempt_correct"), do: :first_attempt_correct
+  defp insights_metric_atom("relative_difficulty"), do: :relative_difficulty
 
   # Parse node structures (for project and verification structures)
   defp parse_node(nil), do: nil

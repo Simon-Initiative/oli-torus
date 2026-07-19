@@ -1,0 +1,135 @@
+- project:
+    name: "learner_attempt_actions"
+    title: "Learner Attempt Actions"
+    root:
+      children:
+        - page: "Hint and Retry Practice"
+
+- create_activity:
+    project: "learner_attempt_actions"
+    title: "Hint and Retry Question"
+    virtual_id: "hint_and_retry_question"
+    type: "oli_multiple_choice"
+    content_format: "json"
+    content:
+      activityType: "oli_multiple_choice"
+      stem:
+        id: "hint_retry_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Choose the correct option."
+      choices:
+        - id: "a"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+        - id: "b"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "correct_response"
+                rule: "input like {b}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "correct_feedback"
+                  content: []
+              - id: "incorrect_response"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "incorrect_feedback"
+                  content: []
+            hints:
+              - id: "try_again_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Review both options before answering."
+
+- edit_page:
+    project: "learner_attempt_actions"
+    page: "Hint and Retry Practice"
+    content: |
+      title: "Hint and Retry Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "hint_and_retry_question"
+
+- publish:
+    to: "learner_attempt_actions"
+    description: "Publish hint and retry workflow"
+
+- section:
+    name: "learner_attempt_actions_section"
+    title: "Learner Attempt Actions Section"
+    from: "learner_attempt_actions"
+
+- user:
+    name: "student"
+    type: "student"
+
+- enroll:
+    user: "student"
+    section: "learner_attempt_actions_section"
+    role: "student"
+
+- visit_page:
+    student: "student"
+    section: "learner_attempt_actions_section"
+    page: "Hint and Retry Practice"
+
+- request_hint:
+    student: "student"
+    section: "learner_attempt_actions_section"
+    page: "Hint and Retry Practice"
+    activity_virtual_id: "hint_and_retry_question"
+
+- answer_question:
+    student: "student"
+    section: "learner_attempt_actions_section"
+    page: "Hint and Retry Practice"
+    activity_virtual_id: "hint_and_retry_question"
+    response: "a"
+
+- reset_activity:
+    student: "student"
+    section: "learner_attempt_actions_section"
+    page: "Hint and Retry Practice"
+    activity_virtual_id: "hint_and_retry_question"
+
+- answer_question:
+    student: "student"
+    section: "learner_attempt_actions_section"
+    page: "Hint and Retry Practice"
+    activity_virtual_id: "hint_and_retry_question"
+    response: "b"
+
+- assert:
+    activity_attempt:
+      section: "learner_attempt_actions_section"
+      student: "student"
+      page: "Hint and Retry Practice"
+      activity_virtual_id: "hint_and_retry_question"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "b"
+      answerable: false
