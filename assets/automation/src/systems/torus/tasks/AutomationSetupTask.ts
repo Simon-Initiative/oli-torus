@@ -91,6 +91,42 @@ export async function teardownAutomationCourse(
     console.warn(
       `automation_teardown failed (${response.status()}): ${await truncatedBody(response)}`,
     );
+    return;
+  }
+
+  const context = `project=${seeded.project.slug} section=${seeded.section.slug}`;
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+    console.warn(
+      `automation_teardown returned unreadable payload (${context}): ${await truncatedBody(response)}`,
+    );
+    return;
+  }
+
+  const entityResults = [
+    'author_deleted',
+    'educator_deleted',
+    'learner_deleted',
+    'section_deleted',
+    'project_deleted',
+  ];
+  const failures = entityResults.flatMap((entity) => {
+    const result = (payload as Record<string, unknown>)[entity];
+    if (typeof result !== 'object' || result === null) {
+      return [`${entity}: missing or malformed result`];
+    }
+    const { success, message } = result as { success?: unknown; message?: unknown };
+    if (success === true) return [];
+    return [`${entity}: ${typeof message === 'string' ? message : 'no message'}`];
+  });
+
+  if (failures.length > 0) {
+    console.warn(`automation_teardown left records behind (${context}): ${failures.join('; ')}`);
   }
 }
 
