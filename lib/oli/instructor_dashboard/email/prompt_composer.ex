@@ -2,8 +2,8 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
   @moduledoc """
   Composes the AI prompt for instructor email draft generation.
 
-  Consumes a normalized `%EmailContext{}` and produces a single-system-message
-  prompt list compatible with the GenAI completion infrastructure. Output
+  Consumes a normalized `%EmailContext{}` and produces a system-prompt + user-turn
+  message list compatible with the GenAI completion infrastructure. Output
   schema instructs the AI to return a `Subject` + `Body` template containing
   whitelisted placeholder tokens for runtime substitution per recipient.
 
@@ -51,10 +51,10 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
   @doc """
   Composes the AI prompt for the given `%EmailContext{}`.
 
-  Returns a list with a single `%{role: :system, content: String.t()}` map,
-  ready to be passed to the completion provider.
+  Returns a `%{role: :system | :user, content: String.t()}` message list (a system
+  prompt followed by the user turn), ready to be passed to the completion provider.
   """
-  @spec compose(EmailContext.t()) :: [%{role: :system, content: String.t()}]
+  @spec compose(EmailContext.t()) :: [%{role: :system | :user, content: String.t()}]
   def compose(%EmailContext{} = context) do
     content =
       [
@@ -69,7 +69,10 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
       |> Enum.join("\n\n")
       |> String.trim()
 
-    [%{role: :system, content: content}]
+    [
+      %{role: :system, content: content},
+      %{role: :user, content: "Generate the email draft now."}
+    ]
   end
 
   defp role_section do
@@ -105,9 +108,14 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
     Personalization placeholders (use only these; do not invent others):
     #{placeholders}
 
-    Square-bracket text like [Your Name] is for the instructor to fill in
-    manually before sending — do NOT introduce new square-bracket placeholders
-    on your own.
+    - Always use `{instructor_name}` to refer to the instructor (including in
+      the signature). Never write `[Your Name]`, `[Instructor Name]`,
+      `[instructor's name]`, or any other square-bracket placeholder.
+    - Do not use square-bracket placeholders of any kind. Any `[text]`
+      placeholder will cause the draft to be rejected and regenerated.
+    - If you need to refer to a person or value not covered by the
+      placeholders above, write a generic phrase in plain text instead of a
+      bracketed placeholder.
     """
     |> String.trim()
   end

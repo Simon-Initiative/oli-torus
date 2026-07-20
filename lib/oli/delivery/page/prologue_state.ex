@@ -7,10 +7,10 @@ defmodule Oli.Delivery.Page.PrologueState do
   """
 
   alias Oli.Delivery.{Gating, Settings}
+  alias Oli.Delivery.Attempts.FeedbackText
   alias Oli.Delivery.Page.PrologueContext
   alias Oli.Delivery.Sections.Section
-  alias OliWeb.Common.FormatDateTime
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.{FormatDateTime, SessionContext}
 
   @default_ctx %SessionContext{
     browser_timezone: "Etc/UTC",
@@ -31,6 +31,7 @@ defmodule Oli.Delivery.Page.PrologueState do
     :attempts_summary,
     :next_attempt_ordinal,
     :new_attempt_allowed,
+    :assignment_terms,
     :terms
   ]
 
@@ -44,10 +45,13 @@ defmodule Oli.Delivery.Page.PrologueState do
     ctx = Keyword.get(opts, :ctx, @default_ctx)
     is_admin? = Keyword.get(opts, :is_admin?, false)
 
-    resource_attempts =
+    graded_resource_attempts =
       Enum.filter(page_context.resource_attempts, fn a -> a.revision.graded end)
 
-    attempts_taken = length(resource_attempts)
+    feedback_texts_by_attempt_guid =
+      feedback_texts_by_attempt_guid(graded_resource_attempts, adaptive_page?(page_context.page))
+
+    attempts_taken = length(graded_resource_attempts)
     blocking_gates = blocking_gates(section, user, page_context, is_admin?)
 
     new_attempt_allowed =
@@ -63,11 +67,19 @@ defmodule Oli.Delivery.Page.PrologueState do
       Oli.Delivery.Page.PrologueTerms.build(
         page_context.effective_settings,
         ctx,
-        Oli.Delivery.Sections.Scheduling.has_scheduled_resources?(section.id)
+        false
+      )
+
+    assignment_terms =
+      Oli.Delivery.Page.AssignmentTerms.build(
+        page_context.effective_settings,
+        graded_resource_attempts,
+        allow_attempt?: new_attempt_allowed == {:allowed},
+        feedback_texts_by_attempt_guid: feedback_texts_by_attempt_guid
       )
 
     %__MODULE__{
-      page_context: %{page_context | historical_attempts: resource_attempts},
+      page_context: %{page_context | historical_attempts: graded_resource_attempts},
       allow_attempt?: new_attempt_allowed == {:allowed},
       attempt_message:
         attempt_message(
@@ -84,6 +96,7 @@ defmodule Oli.Delivery.Page.PrologueState do
       attempts_summary: "Attempts #{attempts_taken}/#{max_attempts}",
       next_attempt_ordinal: ordinal_attempt(attempts_taken + 1),
       new_attempt_allowed: new_attempt_allowed,
+      assignment_terms: assignment_terms,
       terms: terms
     }
   end
@@ -115,6 +128,15 @@ defmodule Oli.Delivery.Page.PrologueState do
       end)
     end
   end
+
+  defp adaptive_page?(%{content: %{"advancedDelivery" => true}}), do: true
+  defp adaptive_page?(_), do: false
+
+  defp feedback_texts_by_attempt_guid(resource_attempts, true) do
+    FeedbackText.manual_feedback_texts_by_resource_attempt_guid(resource_attempts)
+  end
+
+  defp feedback_texts_by_attempt_guid(_resource_attempts, false), do: %{}
 
   defp attempt_message(
          {:blocking_gates},

@@ -10,14 +10,14 @@ defmodule OliWeb.CollaborationLiveTest do
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Collaboration.Post, as: PostSchema
   alias OliWeb.CollaborationLive.{CollabSpaceView, CollabSpaceConfigView}
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Presence
 
   defp live_view_author_edit(project_slug, page_revision_slug),
     do: Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, page_revision_slug)
 
   defp live_view_instructor_preview(section_slug, page_revision_slug),
-    do:
-      Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, page_revision_slug)
+    do: PreviewRoutes.lesson_path(section_slug, page_revision_slug)
 
   defp live_view_collab_space_index(section_slug),
     do: ~p"/sections/#{section_slug}/collaborative_spaces"
@@ -186,14 +186,15 @@ defmodule OliWeb.CollaborationLiveTest do
                "/authoring/project/#{project.slug}/resource/#{page_revision.slug}"
     end
 
-    test "returns forbidden when accessing the instructor preview page view", %{
+    test "redirects to new session when accessing the instructor preview page view", %{
       conn: conn,
       section: section,
       page_revision: page_revision
     } do
-      assert conn
-             |> get(live_view_instructor_preview(section.slug, page_revision.slug))
-             |> html_response(403)
+      conn = get(conn, live_view_instructor_preview(section.slug, page_revision.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/users/log_in"
     end
 
     test "redirects to new session when accessing the instructor index view", %{
@@ -262,7 +263,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert conn
              |> get(live_view_instructor_preview(section.slug, page_revision.slug))
              |> html_response(302) =~
-               "You are being <a href=\"/sections/#{section.slug}/page/#{page_revision.slug}"
+               "You are being <a href=\"/sections/#{section.slug}/lesson/#{page_revision.slug}"
     end
 
     test "redirects to unauthorized when accessing the instructor index view", %{

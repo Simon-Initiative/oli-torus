@@ -50,6 +50,18 @@ const defaultHandler = async () => {
   };
 };
 
+const AUTO_RESIZE_ALLOWED_KEYS = new Set(['width', 'height', 'cardHeight']);
+const AUTO_RESIZE_MIN = 1;
+const AUTO_RESIZE_MAX = 10000;
+
+const parseAutoResizeValue = (value: unknown): number | undefined => {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n) || n < AUTO_RESIZE_MIN || n > AUTO_RESIZE_MAX) {
+    return undefined;
+  }
+  return Math.round(n);
+};
+
 const toolBarTopOffset = -38;
 
 const getPartAndCapabilities = (
@@ -76,7 +88,7 @@ const getPartAndCapabilities = (
 
 const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
-
+  const usesExternalEditor = Boolean(props.configurePortalId);
   const pusher = useMemo(
     () => pusherContext || new EventEmitter().setMaxListeners(50),
     [pusherContext],
@@ -85,6 +97,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   // The size of the current component *while* it's being resized before new size is, ignored if not actively resizing
   const [dragSize, setDragSize] = useState({ width: 0, height: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   const [parts, setParts] = useState(props.parts);
 
@@ -152,6 +165,109 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
 
+  const modifyPartCustomProp = useCallback(
+    (partId: string, modifications: Record<string, any>) => {
+      const originalPart = parts.find((p: any) => p.id === partId);
+      if (!originalPart) {
+        console.error("Tried to modify part that doesn't exist", { partId, modifications });
+        return;
+      }
+
+      if (!originalPart.custom) {
+        console.error('Tried to modify part with no custom attribute', { part: originalPart });
+        return;
+      }
+
+      const changes = Object.keys(modifications).filter(
+        (key) => modifications[key] !== originalPart.custom[key],
+      );
+
+      if (changes.length === 0) {
+        return;
+      }
+
+      console.info('Modifying part ', partId, modifications);
+      const newPart = clone(originalPart);
+      newPart.custom = { ...originalPart.custom, ...modifications };
+      const newParts = parts.map((p: any) => (p.id === partId ? newPart : p));
+
+      setParts(newParts);
+
+      const isLayoutOnlyChange = changes.every((key) =>
+        ['x', 'y', 'z', 'width', 'height', 'cardHeight'].includes(key),
+      );
+
+      if (isLayoutOnlyChange && props.onPartLayoutChange) {
+        props.onPartLayoutChange(partId, modifications);
+      } else {
+        props.onChange(newParts);
+      }
+    },
+    [parts, props],
+  );
+
+  const handlePartResize = useCallback(
+    ({
+      partId,
+      resizeData,
+    }: {
+      partId: string;
+      resizeData: { x: number; y: number; width: number; height: number };
+    }) => {
+      const { width, height, x, y } = resizeData;
+      modifyPartCustomProp(partId, { width, height, x, y });
+      setIsDragging(false);
+      setIsResizing(false);
+    },
+    [modifyPartCustomProp],
+  );
+
+  const handlePartDrag = useCallback(
+    ({ partId, dragData }: { partId: string; dragData: { x: number; y: number } }) => {
+      const { x, y } = dragData;
+      modifyPartCustomProp(partId, { x, y });
+      setIsDragging(false);
+      setIsResizing(false);
+    },
+    [modifyPartCustomProp],
+  );
+
+  const handlePartAutoResize = useCallback(
+    async (payload: any) => {
+      const partId = payload?.id;
+      const settings = payload?.settings;
+
+      if (!partId || !settings || typeof partId !== 'string') {
+        return true;
+      }
+
+      if (!parts.some((p) => p.id === partId)) {
+        console.warn('Ignoring auto-resize for unknown part', { partId });
+        return true;
+      }
+
+      const modifications: Record<string, number> = {};
+
+      Object.entries(settings).forEach(([key, setting]) => {
+        if (!AUTO_RESIZE_ALLOWED_KEYS.has(key)) {
+          return;
+        }
+
+        const value = parseAutoResizeValue((setting as { value?: unknown })?.value);
+        if (value !== undefined) {
+          modifications[key] = value;
+        }
+      });
+
+      if (Object.keys(modifications).length > 0) {
+        modifyPartCustomProp(partId, modifications);
+      }
+
+      return true;
+    },
+    [modifyPartCustomProp, parts],
+  );
+
   // Helper function to render individual parts
   const renderPart = (part: AnyPartComponent, idx: number) => {
     // For images with only lockAspectRatio (no scaleContent), preserve original width to maintain aspect ratio
@@ -178,12 +294,13 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       },
       configureMode: part.id === configurePartId,
       editMode: true,
+      layoutchanging: isResizing && part.id === selectedPartId,
       portal: portalId,
       onInit: handlePartInit,
       onReady: defaultHandler,
       onSave: defaultHandler,
       onSubmit: defaultHandler,
-      onResize: defaultHandler,
+      onResize: handlePartAutoResize,
     };
 
     const disableDrag =
@@ -238,6 +355,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             height: part.custom.height || 0,
           });
           setIsDragging(true);
+          setIsResizing(true);
         }}
         onDragStart={() => {
           props.onSelect(part.id);
@@ -246,6 +364,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             height: part.custom.height || 0,
           });
           setIsDragging(true);
+          setIsResizing(false);
         }}
         onDragStop={handleDragStop}
         onResize={(e, direction, ref) => {
@@ -329,80 +448,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       props.onSelect(payload.id);
     },
     [props.onSelect, selectedPartId],
-  );
-
-  /**
-   * Given a part ID, this will clone and modify values on part.custom and post the changes up the chain.
-   *
-   * Example:
-   *   modifyPartCustomProp("part-123", { x: 100, y: 200 });
-   */
-  const modifyPartCustomProp = useCallback(
-    (partId: string, modifications: Record<string, any>) => {
-      const originalPart = parts.find((p: any) => p.id === partId);
-      if (!originalPart) {
-        console.error("Tried to modify part that doesn't exist", { partId, modifications });
-        return;
-      }
-
-      if (!originalPart.custom) {
-        console.error('Tried to modify part with no custom attribute', { part: originalPart });
-        return;
-      }
-
-      const changes = Object.keys(modifications).filter(
-        (key) => modifications[key] !== originalPart.custom[key],
-      );
-
-      if (changes.length === 0) {
-        // console.log('No changes to make', { partId, modifications });
-        return;
-      }
-
-      console.info('Modifying part ', partId, modifications);
-      const newPart = clone(originalPart);
-      newPart.custom = { ...originalPart.custom, ...modifications };
-      const newParts = parts.map((p: any) => (p.id === partId ? newPart : p));
-
-      // optimistically update parts
-      setParts(newParts);
-
-      const isLayoutOnlyChange = changes.every((key) =>
-        ['x', 'y', 'z', 'width', 'height'].includes(key),
-      );
-
-      if (isLayoutOnlyChange && props.onPartLayoutChange) {
-        props.onPartLayoutChange(partId, modifications);
-      } else {
-        // update parent with changes
-        props.onChange(newParts);
-      }
-    },
-    [parts, props],
-  );
-
-  const handlePartResize = useCallback(
-    ({
-      partId,
-      resizeData,
-    }: {
-      partId: string;
-      resizeData: { x: number; y: number; width: number; height: number };
-    }) => {
-      const { width, height, x, y } = resizeData;
-      modifyPartCustomProp(partId, { width, height, x, y });
-      setIsDragging(false);
-    },
-    [modifyPartCustomProp],
-  );
-
-  const handlePartDrag = useCallback(
-    ({ partId, dragData }: { partId: string; dragData: { x: number; y: number } }) => {
-      const { x, y } = dragData;
-      modifyPartCustomProp(partId, { x, y });
-      setIsDragging(false);
-    },
-    [modifyPartCustomProp],
   );
 
   const handlePartConfigure = useCallback(
@@ -740,7 +785,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         </style>
         <div
           className="part-config-container"
-          style={{ display: configurePartId.trim() ? 'block' : 'none' }}
+          style={{ display: configurePartId.trim() && !usesExternalEditor ? 'block' : 'none' }}
           onClick={handlePortalBgClick}
         >
           <div id={fallbackPortalId} className="part-config-container-inner"></div>

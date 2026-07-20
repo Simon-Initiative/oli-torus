@@ -708,6 +708,58 @@ defmodule OliWeb.LtiControllerTest do
       refute html_response(conn, 200) =~ "/js/app.js"
     end
 
+    test "authorize_redirect get successful for user from login hint", %{conn: conn} do
+      user = user_fixture()
+      section = insert(:section)
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(user.id, %{
+          "section" => section.slug,
+          "resource_id" => "1"
+        })
+
+      target_link_uri = "some-valid-url"
+      nonce = "some-nonce"
+      client_id = "some-client-id"
+      state = "some-state"
+      lti_message_hint = "some-lti-message-hint"
+
+      {:ok, {_, _, _}} =
+        PlatformExternalTools.register_lti_external_tool_activity(%{
+          "name" => "some-platform",
+          "description" => "some-description",
+          "target_link_uri" => "target_link_uri",
+          "client_id" => "some-client-id",
+          "login_url" => "some-login-url",
+          "keyset_url" => "some-keyset-url",
+          "redirect_uris" => "some-valid-url"
+        })
+
+      params = %{
+        "client_id" => client_id,
+        "login_hint" => login_hint,
+        "lti_message_hint" => lti_message_hint,
+        "nonce" => nonce,
+        "prompt" => "none",
+        "redirect_uri" => target_link_uri,
+        "response_mode" => "form_post",
+        "response_type" => "id_token",
+        "scope" => "openid",
+        "state" => state
+      }
+
+      conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
+
+      assert html_response(conn, 200) =~ "You are being redirected..."
+
+      assert html_response(conn, 200) =~
+               "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+
+      refute html_response(conn, 200) =~ "phx-"
+      refute html_response(conn, 200) =~ "/live"
+      refute html_response(conn, 200) =~ "/js/app.js"
+    end
+
     test "authorize_redirect get successful for author", %{conn: conn} do
       author = author_fixture()
       project = insert(:project)
@@ -749,6 +801,58 @@ defmodule OliWeb.LtiControllerTest do
       }
 
       conn = log_in_author(conn, author)
+
+      conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
+
+      assert html_response(conn, 200) =~ "You are being redirected..."
+
+      assert html_response(conn, 200) =~
+               "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+
+      refute html_response(conn, 200) =~ "phx-"
+      refute html_response(conn, 200) =~ "/live"
+      refute html_response(conn, 200) =~ "/js/app.js"
+    end
+
+    test "authorize_redirect get successful for author from login hint", %{conn: conn} do
+      author = author_fixture()
+      project = insert(:project)
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(author.id, %{
+          "project" => project.slug,
+          "resource_id" => "some_resource_id"
+        })
+
+      target_link_uri = "some-valid-url"
+      nonce = "some-nonce"
+      client_id = "some-client-id"
+      state = "some-state"
+      lti_message_hint = "some-lti-message-hint"
+
+      {:ok, {_, _, _}} =
+        PlatformExternalTools.register_lti_external_tool_activity(%{
+          "name" => "some-platform",
+          "description" => "some-description",
+          "target_link_uri" => "target_link_uri",
+          "client_id" => "some-client-id",
+          "login_url" => "some-login-url",
+          "keyset_url" => "some-keyset-url",
+          "redirect_uris" => "some-valid-url"
+        })
+
+      params = %{
+        "client_id" => client_id,
+        "login_hint" => login_hint,
+        "lti_message_hint" => lti_message_hint,
+        "nonce" => nonce,
+        "prompt" => "none",
+        "redirect_uri" => target_link_uri,
+        "response_mode" => "form_post",
+        "response_type" => "id_token",
+        "scope" => "openid",
+        "state" => state
+      }
 
       conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
 

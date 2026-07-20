@@ -28,8 +28,21 @@ export type CommandDescription = {
   tooltip?: string;
 };
 
+export interface LinkablePage {
+  id: number;
+  slug: string;
+  title: string;
+  numbering_index?: number | null;
+}
+
 export interface CommandContext {
   projectSlug: string;
+  // When present (email-mode link picker), the link command/modal source internal
+  // course-page links from this list instead of the author-only pages endpoint.
+  linkContext?: {
+    mode: 'email';
+    pages: LinkablePage[];
+  };
   resourceSlug?: string;
   editorType?: string;
   inputRefContext?: {

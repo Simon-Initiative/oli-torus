@@ -136,11 +136,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
             </button>
           </li>
         ))}
-        {activitySettings && (
-          <li className="nav-item ml-auto" role="presentation">
-            {activitySettings}
-          </li>
-        )}
+        {activitySettings}
       </ul>
       <div className="tab-content">
         {validChildren.map((child, index) => (

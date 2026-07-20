@@ -1,0 +1,320 @@
+# Instructor Dashboard Base Scenario
+#
+# Reusable setup for instructor dashboard analytics scenarios.
+# It creates:
+# - 2 objectives with 3 practice opportunities each, enough for proficiency buckets
+# - 2 instructional units and 1 graded assessment page
+# - 1 instructor and 4 enrolled students for later behavior scenarios
+
+- project:
+    name: "instructor_dashboard_base_project"
+    title: "Instructor Dashboard Analytics Base"
+    objectives:
+      - "Understand foundations"
+      - "Apply problem solving"
+    root:
+      children:
+        - container: "Foundations Unit"
+          children:
+            - page: "Foundations Lesson 1"
+            - page: "Foundations Lesson 2"
+            - page: "Foundations Lesson 3"
+        - container: "Applications Unit"
+          children:
+            - page: "Applications Lesson 1"
+            - page: "Applications Lesson 2"
+            - page: "Applications Lesson 3"
+        - container: "Assessments"
+          children:
+            - page: "Checkpoint Quiz"
+
+- edit_page:
+    project: "instructor_dashboard_base_project"
+    page: "Foundations Lesson 1"
+    objectives:
+      - "Understand foundations"
+    content: |
+      title: "Foundations Lesson 1"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Foundations Lesson 1\n\nIntroduces the first core concept."
+        - type: activity
+          virtual_id: "foundations_lesson_1_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Foundations Check 1"
+            objectives: ["Understand foundations"]
+            stem_md: "Which choice shows a strong foundation?"
+            choices:
+              - id: "a"
+                body_md: "Guessing without evidence"
+              - id: "b"
+                body_md: "Explaining the core idea clearly"
+                score: 1
+              - id: "c"
+                body_md: "Skipping the concept"
+
+- edit_page:
+    project: "instructor_dashboard_base_project"
+    page: "Foundations Lesson 2"
+    objectives:
+      - "Understand foundations"
+    content: |
+      title: "Foundations Lesson 2"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Foundations Lesson 2\n\nPractices recognizing the concept."
+        - type: activity
+          virtual_id: "foundations_lesson_2_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Foundations Check 2"
+            objectives: ["Understand foundations"]
+            stem_md: "What is the best sign that a learner understands a foundation?"
+            choices:
+              - id: "a"
+                body_md: "They can apply it to a familiar example"
+                score: 1
+              - id: "b"
+                body_md: "They avoid practice"
+              - id: "c"
+                body_md: "They memorize one phrase"
+
+- edit_page:
+    project: "instructor_dashboard_base_project"
+    page: "Foundations Lesson 3"
+    objectives:
+      - "Understand foundations"
+    content: |
+      title: "Foundations Lesson 3"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Foundations Lesson 3\n\nConnects the concept to later work."
+        - type: activity
+          virtual_id: "foundations_lesson_3_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Foundations Check 3"
+            objectives: ["Understand foundations"]
+            stem_md: "How should learners prepare for advanced work?"
+            choices:
+              - id: "a"
+                body_md: "By ignoring foundational gaps"
+              - id: "b"
+                body_md: "By building confidence with the basics"
+                score: 1
+              - id: "c"
+                body_md: "By only reading summaries"
+
+- edit_page:
+    project: "instructor_dashboard_base_project"
+    page: "Applications Lesson 1"
+    objectives:
+      - "Apply problem solving"
+    content: |
+      title: "Applications Lesson 1"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Applications Lesson 1\n\nIntroduces problem-solving transfer."
+        - type: activity
+          virtual_id: "applications_lesson_1_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Application Check 1"
+            objectives: ["Apply problem solving"]
+            stem_md: "What is a useful first step in a new problem?"
+            choices:
+              - id: "a"
+                body_md: "Identify what is known and unknown"
+                score: 1
+              - id: "b"
+                body_md: "Pick an answer randomly"
+              - id: "c"
+                body_md: "Stop when the problem looks unfamiliar"
+
+- edit_page:
+    project: "instructor_dashboard_base_project"
+    page: "Applications Lesson 2"
+    objectives:
+      - "Apply problem solving"
+    content: |
+      title: "Applications Lesson 2"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Applications Lesson 2\n\nPractices selecting a strategy."
+        - type: activity
+          virtual_id: "applications_lesson_2_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Application Check 2"
+            objectives: ["Apply problem solving"]
+            stem_md: "Which behavior supports problem solving?"
+            choices:
+              - id: "a"
+                body_md: "Using the same method for every problem"
+              - id: "b"
+                body_md: "Choosing a strategy based on the situation"
+                score: 1
+              - id: "c"
+                body_md: "Avoiding feedback"
+
+- edit_page:
+    project: "instructor_dashboard_base_project"
+    page: "Applications Lesson 3"
+    objectives:
+      - "Apply problem solving"
+    content: |
+      title: "Applications Lesson 3"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Applications Lesson 3\n\nApplies strategies to a complex task."
+        - type: activity
+          virtual_id: "applications_lesson_3_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Application Check 3"
+            objectives: ["Apply problem solving"]
+            stem_md: "What helps when a solution path fails?"
+            choices:
+              - id: "a"
+                body_md: "Review the attempt and choose another strategy"
+                score: 1
+              - id: "b"
+                body_md: "Repeat the same mistake"
+              - id: "c"
+                body_md: "Ignore the result"
+
+- edit_page:
+    project: "instructor_dashboard_base_project"
+    page: "Checkpoint Quiz"
+    objectives:
+      - "Understand foundations"
+      - "Apply problem solving"
+    content: |
+      title: "Checkpoint Quiz"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "checkpoint_foundations_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Checkpoint Foundations"
+            objectives: ["Understand foundations"]
+            stem_md: "Which response best reflects foundational understanding?"
+            choices:
+              - id: "a"
+                body_md: "Clear explanation with an example"
+                score: 1
+              - id: "b"
+                body_md: "Unrelated facts"
+              - id: "c"
+                body_md: "No explanation"
+        - type: activity
+          virtual_id: "checkpoint_applications_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Checkpoint Applications"
+            objectives: ["Apply problem solving"]
+            stem_md: "Which response best reflects applied problem solving?"
+            choices:
+              - id: "a"
+                body_md: "Try a random answer"
+              - id: "b"
+                body_md: "Select and explain an appropriate strategy"
+                score: 1
+              - id: "c"
+                body_md: "Avoid the problem"
+
+- publish:
+    to: "instructor_dashboard_base_project"
+    description: "Initial instructor dashboard analytics base publication"
+
+- section:
+    name: "instructor_dashboard_section"
+    title: "Instructor Dashboard Analytics Section"
+    from: "instructor_dashboard_base_project"
+
+- user:
+    name: "dashboard_instructor"
+    type: "instructor"
+    email: "dashboard_instructor@example.edu"
+    given_name: "Dana"
+    family_name: "Instructor"
+
+- user:
+    name: "student_excelling"
+    type: "student"
+    email: "student_excelling@example.edu"
+    given_name: "Eli"
+    family_name: "Excelling"
+
+- user:
+    name: "student_on_track"
+    type: "student"
+    email: "student_on_track@example.edu"
+    given_name: "Olivia"
+    family_name: "On Track"
+
+- user:
+    name: "student_struggling"
+    type: "student"
+    email: "student_struggling@example.edu"
+    given_name: "Sam"
+    family_name: "Struggling"
+
+- user:
+    name: "student_no_data"
+    type: "student"
+    email: "student_no_data@example.edu"
+    given_name: "Nina"
+    family_name: "No Data"
+
+- enroll:
+    user: "dashboard_instructor"
+    section: "instructor_dashboard_section"
+    role: "instructor"
+
+- enroll:
+    user: "student_excelling"
+    section: "instructor_dashboard_section"
+    role: "student"
+
+- enroll:
+    user: "student_on_track"
+    section: "instructor_dashboard_section"
+    role: "student"
+
+- enroll:
+    user: "student_struggling"
+    section: "instructor_dashboard_section"
+    role: "student"
+
+- enroll:
+    user: "student_no_data"
+    section: "instructor_dashboard_section"
+    role: "student"
+
+- assert:
+    structure:
+      to: "instructor_dashboard_section"
+      root:
+        children:
+          - container: "Foundations Unit"
+            children:
+              - page: "Foundations Lesson 1"
+              - page: "Foundations Lesson 2"
+              - page: "Foundations Lesson 3"
+          - container: "Applications Unit"
+            children:
+              - page: "Applications Lesson 1"
+              - page: "Applications Lesson 2"
+              - page: "Applications Lesson 3"
+          - container: "Assessments"
+            children:
+              - page: "Checkpoint Quiz"

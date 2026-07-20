@@ -7,8 +7,10 @@ import {
   MathExpressionItemConfig,
   MathExpressionQuestionConfig,
   MathExpressionQuestionType,
+  NumericComparisonSpec,
   NumericRepresentation,
   SamplingConfig,
+  UnitAwareSpec,
   VariableDomain,
 } from 'data/activities/model/match';
 import {
@@ -260,6 +262,7 @@ export const mathExpressionMatchConfigForQuestionType = (
     matchMissingUnit?: boolean;
     fractionMatch?: 'exact' | 'equivalent';
     expressionMatch?: 'equivalent' | 'exact';
+    numericMatch?: Partial<NumericComparisonSpec>;
   } = {},
 ): MatchConfig => {
   switch (type) {
@@ -274,6 +277,7 @@ export const mathExpressionMatchConfigForQuestionType = (
     case 'number_with_units':
     case 'expression_with_units':
       return MatchConfigs.unitAware(expected, undefined, {
+        ...(type === 'number_with_units' ? options.numericMatch : {}),
         ...(options.matchWrongUnits ? { matchWrongUnits: true } : {}),
         ...(options.matchMissingUnit ? { matchMissingUnit: true } : {}),
         ...(type === 'expression_with_units' && config.sampling
@@ -329,11 +333,35 @@ export const applyMathExpressionConfigToMatchConfig = (
     (matchConfig.math.mode === 'algebraic_equivalence' || matchConfig.math.mode === 'unit_aware')
       ? matchConfig.math.expressionMatch
       : undefined;
+  const numericMatch =
+    questionType === 'number_with_units' &&
+    matchConfig?.type === 'math_expression' &&
+    matchConfig.math.mode === 'unit_aware'
+      ? unitAwareNumericFields(matchConfig.math)
+      : undefined;
 
   return mathExpressionMatchConfigForQuestionType(questionType, fallbackExpected, config, {
     ...options,
     expressionMatch,
+    numericMatch,
   });
+};
+
+const unitAwareNumericFields = (
+  math: UnitAwareSpec,
+): Partial<NumericComparisonSpec> | undefined => {
+  const fields: Partial<NumericComparisonSpec> = {
+    ...(math.operator ? { operator: math.operator } : {}),
+    ...(math.threshold ? { threshold: math.threshold } : {}),
+    ...(math.lower ? { lower: math.lower } : {}),
+    ...(math.upper ? { upper: math.upper } : {}),
+    ...(math.bounds ? { bounds: math.bounds } : {}),
+    ...(math.tolerance ? { tolerance: math.tolerance } : {}),
+    ...(math.representation ? { representation: math.representation } : {}),
+    ...(math.precision ? { precision: math.precision } : {}),
+  };
+
+  return Object.keys(fields).length > 0 ? fields : undefined;
 };
 
 export const expectedAnswerFromResponse = (response: Response): string => {

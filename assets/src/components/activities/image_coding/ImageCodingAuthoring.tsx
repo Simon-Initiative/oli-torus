@@ -24,18 +24,16 @@ import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import { lastPart } from './utils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
-  const {
-    dispatch,
-    model,
-    mode: _mode,
-    onRequestMedia,
-  } = useAuthoringElementContext<ImageCodingModelSchema>();
+  const { dispatch, editMode, model, mode, onRequestMedia } =
+    useAuthoringElementContext<ImageCodingModelSchema>();
 
   const { projectSlug } = props;
+  const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   const sharedProps = {
     model: props.model,
-    editMode: props.editMode,
+    editMode: !readOnly,
     projectSlug,
     onRequestMedia,
   };
@@ -111,7 +109,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
         <p>Image problems: Solution Code {!usesImage() ? '-- add image to enable' : ''}</p>
         <ImageCodeEditor
-          disabled={!usesImage()}
+          disabled={readOnly || !usesImage()}
           value={model.solutionCode}
           onChange={(newValue: string) => dispatch(ICActions.editSolutionCode(newValue))}
         />
@@ -121,7 +119,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
           <input
             type="number"
             value={model.tolerance}
-            disabled={!usesImage()}
+            disabled={readOnly || !usesImage()}
             onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}
           />
           &nbsp;(Average per-pixel error allowed.)
@@ -134,7 +132,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
           <input
             type="text"
             value={model.regex}
-            disabled={usesImage()}
+            disabled={readOnly || usesImage()}
             onChange={(e: any) => dispatch(ICActions.editRegex(e.target.value))}
           />
           &nbsp;Pattern for correct text output
@@ -161,11 +159,19 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             </li>
           ))}
         </ul>
-        <button className="btn btn-primary mt-2" onClick={addImage} disabled={usesSpreadsheet()}>
+        <button
+          className="btn btn-primary mt-2"
+          onClick={addImage}
+          disabled={readOnly || usesSpreadsheet()}
+        >
           Add Image...
         </button>
         &nbsp;&nbsp;&nbsp;
-        <button className="btn btn-primary mt-2" onClick={addSpreadsheet} disabled={usesImage()}>
+        <button
+          className="btn btn-primary mt-2"
+          onClick={addSpreadsheet}
+          disabled={readOnly || usesImage()}
+        >
           Add Spreadsheet...
         </button>
       </div>
@@ -173,7 +179,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
       <Heading title="Starter Code" id="starter-code" />
       <ImageCodeEditor
-        disabled={false}
+        disabled={readOnly}
         value={model.starterCode}
         onChange={(newValue: string) => dispatch(ICActions.editStarterCode(newValue))}
       />
@@ -186,6 +192,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
           id="example-toggle"
           aria-label="Checkbox for example"
           checked={model.isExample}
+          disabled={readOnly}
           onChange={(e: any) => dispatch(ICActions.editIsExample(e.target.checked))}
         />
         <label className="form-check-label" htmlFor="example-toggle">

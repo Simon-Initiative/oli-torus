@@ -6,6 +6,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   alias Oli.Delivery.{Gating, Metrics, PreviousNextIndex, Settings}
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Page.{PageContext, PrologueContext, PrologueState}
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
 
@@ -295,7 +296,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     do: ~p"/sections/#{section_slug}/preview/container/#{slug}"
 
   defp url_from_desc(section_slug, %{"type" => "page", "slug" => slug}),
-    do: ~p"/sections/#{section_slug}/preview/page/#{slug}"
+    do: PreviewRoutes.lesson_path(section_slug, slug)
 
   defp to_epoch(nil), do: nil
 
@@ -310,6 +311,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       page_context: prologue_state.page_context,
       allow_attempt?: prologue_state.allow_attempt?,
       attempt_message: prologue_state.attempt_message,
+      assignment_terms: prologue_state.assignment_terms,
       terms: prologue_state.terms,
       view: :prologue,
       show_blocking_gates?: prologue_state.show_blocking_gates?

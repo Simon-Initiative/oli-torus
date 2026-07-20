@@ -47,6 +47,7 @@ export const Choices: React.FC<Props> = ({
 }) => {
   const { projectSlug, editMode, mode } = useAuthoringElementContext();
   const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   return (
     <>
@@ -66,26 +67,33 @@ export const Choices: React.FC<Props> = ({
                     className="mb-4"
                     item={choice}
                     color={colorMap?.get(choice.id)}
+                    isDragDisabled={readOnly}
                   >
                     {(choice, index) => (
                       <>
-                        {!isInstructorPreview && <Draggable.DragIndicator />}
+                        {!isInstructorPreview && (
+                          <Draggable.DragIndicator isDragDisabled={readOnly} />
+                        )}
                         {renderChoiceIcon(icon, choice, index)}
                         {simpleText ? (
                           <input
                             className="form-control border-none"
                             placeholder="Answer choice"
                             value={toSimpleText(choice.content)}
-                            onChange={(e) => onEdit(choice.id, makeContent(e.target.value).content)}
+                            readOnly={readOnly}
+                            style={{ cursor: readOnly ? 'default' : 'text' }}
+                            onChange={(e) => {
+                              if (!readOnly) onEdit(choice.id, makeContent(e.target.value).content);
+                            }}
                           />
                         ) : (
                           <SlateOrMarkdownEditor
                             style={{
                               flexGrow: 1,
-                              cursor: isInstructorPreview ? 'default' : 'text',
+                              cursor: readOnly ? 'default' : 'text',
                               backgroundColor: colorMap?.get(choice.id),
                             }}
-                            editMode={editMode && !isInstructorPreview}
+                            editMode={!readOnly}
                             editorType={choice.editor || DEFAULT_EDITOR}
                             placeholder="Answer choice"
                             content={choice.content}

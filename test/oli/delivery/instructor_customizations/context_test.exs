@@ -106,6 +106,82 @@ defmodule Oli.Delivery.InstructorCustomizationsTest do
     end
   end
 
+  describe "duplicate_section_exclusions/2" do
+    test "copies all exclusion kinds from one section to another", context do
+      destination_section = insert(:section)
+
+      insert_exclusion(context, :embedded_activity)
+      insert_exclusion(context, :bank_selection)
+      insert_exclusion(context, :bank_candidate)
+
+      assert {:ok, 3} =
+               InstructorCustomizations.duplicate_section_exclusions(
+                 context.section,
+                 destination_section
+               )
+
+      assert %PageExclusions{
+               section_id: section_id,
+               page_resource_id: page_resource_id,
+               excluded_activity_ids: excluded_activity_ids,
+               excluded_selection_ids: excluded_selection_ids,
+               excluded_bank_candidate_ids_by_selection: candidates
+             } =
+               InstructorCustomizations.get_page_exclusion_view(
+                 destination_section,
+                 context.page_resource.id
+               )
+
+      assert section_id == destination_section.id
+      assert page_resource_id == context.page_resource.id
+      assert excluded_activity_ids == MapSet.new([context.activity_resource.id])
+      assert excluded_selection_ids == MapSet.new(["selection-1"])
+      assert candidates == %{"selection-1" => MapSet.new([context.candidate_resource.id])}
+
+      assert length(
+               InstructorCustomizations.get_page_exclusions(
+                 context.section,
+                 context.page_resource.id
+               )
+             ) == 3
+    end
+
+    test "is idempotent for the same destination section", context do
+      destination_section = insert(:section)
+
+      insert_exclusion(context, :embedded_activity)
+
+      assert {:ok, 1} =
+               InstructorCustomizations.duplicate_section_exclusions(
+                 context.section.id,
+                 destination_section.id
+               )
+
+      assert {:ok, 0} =
+               InstructorCustomizations.duplicate_section_exclusions(
+                 context.section.id,
+                 destination_section.id
+               )
+
+      assert [
+               %ActivityExclusion{
+                 section_id: section_id,
+                 page_resource_id: page_resource_id,
+                 kind: :embedded_activity,
+                 excluded_resource_id: excluded_resource_id
+               }
+             ] =
+               InstructorCustomizations.get_page_exclusions(
+                 destination_section.id,
+                 context.page_resource.id
+               )
+
+      assert section_id == destination_section.id
+      assert page_resource_id == context.page_resource.id
+      assert excluded_resource_id == context.activity_resource.id
+    end
+  end
+
   describe "predicate helpers" do
     test "answers enabled state from the page view", context do
       view =

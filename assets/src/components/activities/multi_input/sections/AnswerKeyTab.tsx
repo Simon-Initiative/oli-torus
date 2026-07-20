@@ -81,8 +81,10 @@ interface Props {
   input: MultiInput;
 }
 export const AnswerKeyTab: React.FC<Props> = (props) => {
-  const { model, dispatch, authoringContext, editMode, projectSlug } =
+  const { model, dispatch, authoringContext, editMode, mode, projectSlug } =
     useAuthoringElementContext<MultiInputSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
   const correctResponse =
     props.input.inputType === 'dropdown'
       ? undefined
@@ -117,6 +119,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, props.input.partId))}
           isEvaluated={false}
           context={defaultWriterContext({ projectSlug: projectSlug })}
+          disabled={readOnly}
         />
 
         <SimpleFeedback partId={props.input.partId} />
@@ -139,6 +142,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           }
           unselectedIcon={<Radio.Unchecked />}
           selectedIcon={<Radio.Checked />}
+          disabled={readOnly}
         />
       </>
     );

@@ -20,7 +20,10 @@ interface Props {
   editRule: (id: ResponseId, inputId: string, rule: string) => void;
 }
 export const RulesTab: React.FC<Props> = (props) => {
-  const { model, projectSlug, dispatch } = useAuthoringElementContext<ResponseMultiInputSchema>();
+  const { model, projectSlug, dispatch, editMode, mode } =
+    useAuthoringElementContext<ResponseMultiInputSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   const removeInputFromResponse = () => {
     dispatch(ResponseMultiInputActions.removeInputFromResponse(props.input.id, props.response.id));
@@ -53,6 +56,7 @@ export const RulesTab: React.FC<Props> = (props) => {
             isEvaluated={false}
             context={defaultWriterContext({ projectSlug: projectSlug })}
             multiSelect={orRule}
+            disabled={readOnly}
           />
         )}
         <div className="choicesAuthoring__removeButtonContainer">

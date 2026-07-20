@@ -34,6 +34,8 @@ export type NumericMatchSpec = {
   precision?: NumericPrecision;
 };
 
+export type NumericComparisonSpec = Omit<NumericMatchSpec, 'mode'>;
+
 export type ExactFormConfig =
   | { type: 'none' | 'integer' | 'fraction' | 'simplified_fraction' }
   | {
@@ -120,7 +122,14 @@ export type UnitAwareSpec = {
   unitPolicy?: UnitPolicy;
   validation?: AlgebraicValidationConfig;
   sampling?: SamplingConfig;
-  tolerance?: { type: 'absolute_or_relative'; absolute: number; relative: number };
+  operator?: NumericOperator;
+  threshold?: string;
+  lower?: string;
+  upper?: string;
+  bounds?: 'inclusive' | 'exclusive';
+  tolerance?: NumericTolerance;
+  representation?: NumericRepresentation;
+  precision?: NumericPrecision;
   matchWrongUnits?: boolean;
   matchMissingUnit?: boolean;
   expressionMatch?: 'equivalent' | 'exact';
@@ -185,15 +194,7 @@ export const MatchConfigs = {
   unitAware: (
     expected: string,
     unitPolicy?: UnitPolicy,
-    options: Pick<
-      UnitAwareSpec,
-      | 'tolerance'
-      | 'validation'
-      | 'sampling'
-      | 'matchWrongUnits'
-      | 'matchMissingUnit'
-      | 'expressionMatch'
-    > = {},
+    options: Omit<UnitAwareSpec, 'mode' | 'expected' | 'unitPolicy'> = {},
   ): MathExpressionMatchConfig => ({
     version: 1,
     type: 'math_expression',

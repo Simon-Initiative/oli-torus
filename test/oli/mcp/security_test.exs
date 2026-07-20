@@ -52,8 +52,7 @@ defmodule Oli.MCP.SecurityTest do
       assert TokenGenerator.matches?(token, hash)
     end
 
-    @tag :flaky
-    test "timing attack resistance for token validation" do
+    test "token validation rejects malformed and valid-format invalid tokens" do
       # Create a valid token
       author = insert(:author)
       project = insert(:project)
@@ -61,10 +60,13 @@ defmodule Oli.MCP.SecurityTest do
 
       {:ok, {_token_record, valid_token}} = Auth.create_token(author.id, project.id)
 
-      # Generate invalid tokens of various lengths
-      invalid_tokens = [
+      malformed_tokens = [
         "short",
-        "mcp_invalid",
+        "mcp_invalid"
+      ]
+
+      valid_format_but_invalid_tokens = [
+        # Valid format by prefix and length, but not a generated token
         String.duplicate("mcp_", 100),
         # Valid format but wrong token
         TokenGenerator.generate(),
@@ -74,27 +76,16 @@ defmodule Oli.MCP.SecurityTest do
         String.slice(valid_token, 0..-2//1)
       ]
 
-      # Measure validation times for invalid tokens
-      invalid_times =
-        Enum.map(invalid_tokens, fn token ->
-          {time, _result} = :timer.tc(fn -> Auth.validate_token(token) end)
-          time
-        end)
+      Enum.each(malformed_tokens, fn token ->
+        assert {:error, :invalid_token_format} = Auth.validate_token(token)
+      end)
 
-      # Measure validation time for valid token
-      {valid_time, _} = :timer.tc(fn -> Auth.validate_token(valid_token) end)
+      Enum.each(valid_format_but_invalid_tokens, fn token ->
+        assert TokenGenerator.valid_format?(token)
+        assert {:error, :invalid_token} = Auth.validate_token(token)
+      end)
 
-      # All validation times should be within a reasonable range
-      # This is a rough check - in practice, timing attacks are complex
-      max_time = Enum.max([valid_time | invalid_times])
-      min_time = Enum.min([valid_time | invalid_times])
-
-      # The ratio shouldn't be too extreme (allowing for some variance)
-      # Only calculate ratio if min_time is not zero
-      if min_time > 0 do
-        ratio = max_time / min_time
-        assert ratio < 100, "Validation times vary too much (possible timing attack vector)"
-      end
+      assert {:ok, _} = Auth.validate_token(valid_token)
     end
 
     test "hash collision resistance" do

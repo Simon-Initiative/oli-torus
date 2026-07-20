@@ -7,6 +7,7 @@ import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 export interface VideoModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
   alt: string;
+  ariaLabel: string;
   triggerCheck: boolean;
   autoPlay: boolean;
   startTime: number;
@@ -34,8 +35,12 @@ export const schema: JSONSchema7Object = {
     title: 'Source',
     type: 'string',
   },
+  ariaLabel: {
+    title: 'ARIA Label',
+    type: 'string',
+  },
   alt: {
-    title: 'Audio Description (optional)',
+    title: 'Audio Description',
     type: 'string',
   },
   triggerCheck: {
@@ -94,8 +99,12 @@ export const simpleSchema: JSONSchema7Object = {
     title: 'Source',
     type: 'string',
   },
+  ariaLabel: {
+    title: 'ARIA Label',
+    type: 'string',
+  },
   alt: {
-    title: 'Audio Description (optional)',
+    title: 'Audio Description',
     type: 'string',
   },
   autoPlay: {
@@ -201,6 +210,7 @@ export const createSchema = (): Partial<VideoModel> => ({
   endTime: 0,
   src: '',
   alt: '',
+  ariaLabel: '',
   customCssClass: '',
   triggerCheck: false,
   subtitles: [],

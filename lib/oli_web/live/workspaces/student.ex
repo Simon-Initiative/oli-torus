@@ -172,6 +172,7 @@ defmodule OliWeb.Workspaces.Student do
         Hi, <span class="font-bold">{user_given_name(@ctx)}</span>
       </h1>
     </div>
+    <OliWeb.Components.Delivery.Layouts.sayg_saved_work_notice container_class="relative z-[45] mx-4 mt-4 md:mx-6" />
     <div class="flex flex-col items-start py-6 md:py-[60px] px-4 md:px-[100px]">
       <div class="flex flex-col md:flex-row mb-9 w-full">
         <h2 class="w-full py-2 md:py-0 text-xl md:text-[26px] md:leading-[32px] tracking-[0.02px] font-semibold dark:text-white">

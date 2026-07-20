@@ -85,6 +85,43 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert Enum.at(results, 0).total_count == 6
     end
 
+    test "filters activities by resource and part", %{project: project, a1: a1} do
+      activity_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+      paging = %Oli.Repo.Paging{limit: 10, offset: 0}
+      sorting = %Oli.Repo.Sorting{direction: :asc, field: :title}
+
+      results =
+        BrowseInsights.browse_insights(
+          paging,
+          sorting,
+          %Oli.Analytics.Summary.BrowseInsightsOptions{
+            project_id: project.id,
+            section_ids: [],
+            resource_type_id: activity_type_id,
+            resource_id: a1.resource.id
+          }
+        )
+
+      assert Enum.map(results, & &1.part_id) == ["part1", "part2"]
+      assert Enum.all?(results, &(&1.resource_id == a1.resource.id))
+
+      [part] =
+        BrowseInsights.browse_insights(
+          paging,
+          sorting,
+          %Oli.Analytics.Summary.BrowseInsightsOptions{
+            project_id: project.id,
+            section_ids: [],
+            resource_type_id: activity_type_id,
+            resource_id: a1.resource.id,
+            part_id: "part2"
+          }
+        )
+
+      assert part.resource_id == a1.resource.id
+      assert part.part_id == "part2"
+    end
+
     test "sorting", %{
       project: project
     } do
@@ -157,6 +194,31 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert Enum.at(results, 0).title == "A"
       assert Enum.at(results, 1).title == "B"
       assert Enum.at(results, 2).title == "C"
+    end
+
+    test "filters deleted objectives after fetching insights", %{
+      project: project,
+      o2: o2
+    } do
+      objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+      from(r in Oli.Resources.Revision, where: r.resource_id == ^o2.resource.id)
+      |> Repo.update_all(set: [deleted: true])
+
+      results =
+        BrowseInsights.browse_insights(
+          %Oli.Repo.Paging{limit: 4, offset: 0},
+          %Oli.Repo.Sorting{direction: :asc, field: :title},
+          %Oli.Analytics.Summary.BrowseInsightsOptions{
+            project_id: project.id,
+            section_ids: [],
+            resource_type_id: objective_type_id
+          }
+        )
+
+      assert Enum.map(results, & &1.title) == ["A", "C"]
+      assert Enum.all?(results, &(&1.total_count == 2))
+      refute Enum.any?(results, & &1.deleted)
     end
   end
 

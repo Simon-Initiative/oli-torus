@@ -39,16 +39,14 @@ defmodule Oli.Scenarios.Directives.HookHandler do
           if arity != 1 do
             {:error, "Hook function must have arity 1, got #{arity}"}
           else
-            # Ensure module is loaded
+            # Ensure module is loaded and, if necessary, refreshed from disk
             ensure_module_loaded(module)
 
-            # Check if function exists
-            if function_exported?(module, function_name, 1) do
-              # Execute the function
+            with :ok <- ensure_function_loaded(module, function_name, 1) do
               result = apply(module, function_name, [state])
               {:ok, result}
             else
-              {:error, "Function #{module}.#{function_name}/1 not found"}
+              {:error, reason} -> {:error, reason}
             end
           end
 
@@ -110,6 +108,23 @@ defmodule Oli.Scenarios.Directives.HookHandler do
           {:error, compile_reason} ->
             raise "Failed to load module #{module}: Module not loaded and could not compile from #{module_path}: #{compile_reason}"
         end
+    end
+  end
+
+  defp ensure_function_loaded(module, function_name, arity) do
+    if function_exported?(module, function_name, arity) do
+      :ok
+    else
+      # Long-lived scenario runners may keep an older version of a hook module loaded.
+      module
+      |> module_to_path()
+      |> compile_from_scenarios()
+
+      if function_exported?(module, function_name, arity) do
+        :ok
+      else
+        {:error, "Function #{module}.#{function_name}/#{arity} not found"}
+      end
     end
   end
 

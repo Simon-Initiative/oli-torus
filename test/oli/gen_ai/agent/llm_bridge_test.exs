@@ -69,44 +69,7 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
     end
   end
 
-  describe "call_provider/3" do
-    setup do
-      # Start ToolBroker if not already running
-      ToolBroker.start()
-
-      model = %RegisteredModel{
-        model: "test-model",
-        provider: :null,
-        url_template: "http://localhost",
-        api_key: "test-key",
-        secondary_api_key: "test-org",
-        timeout: 8000,
-        recv_timeout: 60000
-      }
-
-      messages = [
-        %{role: :system, content: "You are a helpful assistant"},
-        %{role: :user, content: "Hello"}
-      ]
-
-      {:ok, model: model, messages: messages}
-    end
-
-    @tag :skip
-    test "successfully calls provider with real completions", %{
-      model: _model,
-      messages: _messages
-    } do
-      # This test would require actual provider setup and mocking
-      # Skipping as it requires integration with the real Completions module
-      _opts = %{temperature: 0.7}
-
-      # Would need to mock Oli.GenAI.Completions.generate/3
-      # assert {:ok, response} = LLMBridge.call_provider(model, messages, opts)
-    end
-  end
-
-  describe "next_decision/2" do
+  describe "next_decision/3" do
     setup do
       # Start ToolBroker if not already running
       ToolBroker.start()
@@ -140,39 +103,24 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
       {:ok, config: service_config, messages: messages}
     end
 
-    test "requires service_config in opts", %{messages: messages} do
-      # Should raise when service_config is missing
-      assert_raise KeyError, fn ->
+    test "requires service_config as a ServiceConfig struct", %{messages: messages} do
+      assert_raise FunctionClauseError, fn ->
         LLMBridge.next_decision(messages, %{})
       end
     end
 
     @tag :skip
-    test "accepts service_config with temperature", %{config: config, messages: _messages} do
+    test "accepts service_config with temperature", %{config: _config, messages: _messages} do
       # Skip this test as it would call the NullProvider which returns mock responses
       # This is not a useful unit test for the LLMBridge functionality
-      _opts = %{
-        service_config: config,
-        temperature: 0.5
-      }
-
-      # The NullProvider would return a mock response, but this doesn't test
-      # the real LLMBridge logic in a meaningful way
-      # assert {:ok, _decision} = LLMBridge.next_decision(messages, opts)
+      # assert {:ok, _decision} = LLMBridge.next_decision(messages, config, temperature: 0.5)
     end
 
     @tag :skip
-    test "accepts service_config with max_tokens", %{config: config, messages: _messages} do
+    test "accepts service_config with max_tokens", %{config: _config, messages: _messages} do
       # Skip this test as it would call the NullProvider which returns mock responses
       # This is not a useful unit test for the LLMBridge functionality
-      _opts = %{
-        service_config: config,
-        max_tokens: 2000
-      }
-
-      # The NullProvider would return a mock response, but this doesn't test
-      # the real LLMBridge logic in a meaningful way
-      # assert {:ok, _decision} = LLMBridge.next_decision(messages, opts)
+      # assert {:ok, _decision} = LLMBridge.next_decision(messages, config, max_tokens: 2000)
     end
 
     test "returns error when service_config has no primary model", %{messages: messages} do
@@ -181,10 +129,8 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
         backup_model: nil
       }
 
-      opts = %{service_config: invalid_config}
-
       assert {:error, "ServiceConfig missing primary model"} =
-               LLMBridge.next_decision(messages, opts)
+               LLMBridge.next_decision(messages, invalid_config)
     end
   end
 

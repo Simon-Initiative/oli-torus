@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.BlueprintBrowseOptions
+  alias Oli.Delivery.InstructorCustomizations
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -201,18 +202,22 @@ defmodule Oli.Delivery.Sections.Blueprint do
       "start_date" => nil,
       "end_date" => nil,
       "title" => title,
-      "description" => attrs["description"] || project.description,
-      "requires_payment" => attrs["requires_payment"] || false,
-      "payment_options" => attrs["payment_options"] || "direct_and_deferred",
-      "pay_by_institution" => attrs["pay_by_institution"] || false,
-      "registration_open" => attrs["registration_open"] || false,
-      "grace_period_days" => attrs["grace_period_days"] || 1,
+      "description" => value_or_default(attrs["description"], project.description),
+      "requires_payment" => value_or_default(attrs["requires_payment"], false),
+      "payment_options" => value_or_default(attrs["payment_options"], "direct_and_deferred"),
+      "pay_by_institution" => value_or_default(attrs["pay_by_institution"], false),
+      "registration_open" => value_or_default(attrs["registration_open"], false),
+      "has_grace_period" => value_or_default(attrs["has_grace_period"], true),
+      "grace_period_days" => value_or_default(attrs["grace_period_days"], 1),
+      "grace_period_strategy" =>
+        value_or_default(attrs["grace_period_strategy"], "relative_to_section"),
       "amount" => build_amount(attrs["amount"]),
       "publisher_id" => project.publisher_id,
       "customizations" => custom_labels,
-      "welcome_title" => attrs["welcome_title"] || project.welcome_title,
-      "encouraging_subtitle" => attrs["encouraging_subtitle"] || project.encouraging_subtitle,
-      "certificate_enabled" => attrs["certificate_enabled"] || false
+      "welcome_title" => value_or_default(attrs["welcome_title"], project.welcome_title),
+      "encouraging_subtitle" =>
+        value_or_default(attrs["encouraging_subtitle"], project.encouraging_subtitle),
+      "certificate_enabled" => value_or_default(attrs["certificate_enabled"], false)
     }
   end
 
@@ -230,6 +235,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
       :error -> Money.new(@default_amount, currency)
     end
   end
+
+  defp value_or_default(nil, default), do: default
+  defp value_or_default(value, _default), do: value
 
   defp migrate_section_resources(section_id) do
     case Oli.Delivery.Sections.SectionResourceMigration.migrate(section_id) do
@@ -265,7 +273,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
                root_section_resource_id: duplicated_root_resource.id
-             }) do
+             }),
+           {:ok, _count} <-
+             InstructorCustomizations.duplicate_section_exclusions(section, blueprint) do
         Oli.Delivery.Gating.duplicate_gates(section, blueprint)
 
         blueprint
@@ -295,13 +305,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
           context_id: UUID.uuid4(),
           start_date: nil,
           end_date: nil,
+          brand_id: section.brand_id,
           title: section.title <> " Copy",
           invite_token: nil,
           passcode: nil,
           blueprint_id: nil,
           lti_1p3_deployment_id: nil,
           institution_id: nil,
-          brand_id: nil,
           delivery_policy_id: nil,
           customizations: custom_labels,
           contains_explorations: section.contains_explorations,

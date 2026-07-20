@@ -4,6 +4,8 @@ import gleam/list
 import gleam/string
 import math/equality/types
 
+const tolerance_boundary_relative_epsilon = 0.000000000001
+
 /// Evaluate the standard/basic page numeric comparison family. This is kept out
 /// of the expression parser because Number inputs historically accept scalar
 /// numeric answers, not full math expressions with variables or operators.
@@ -23,6 +25,45 @@ pub fn evaluate(
         Ok(submitted_value) ->
           evaluate_supported_spec(spec, submitted, submitted_value)
       }
+  }
+}
+
+/// Evaluate an already-parsed numeric value while still applying submitted-text
+/// representation and precision constraints. Unit-aware Number matching uses
+/// this after converting the submitted quantity into the reference unit.
+pub fn evaluate_submitted_value(
+  spec: types.NumericSpec,
+  submitted: String,
+  submitted_value: Float,
+) -> types.EqualityResult {
+  case validate_numeric_options(spec) {
+    Error(error) -> types.InvalidConfig(error: error)
+    Ok(Nil) -> evaluate_supported_spec(spec, submitted, submitted_value)
+  }
+}
+
+/// Parse one scalar Number-input value. This intentionally excludes expression
+/// syntax so Number with Units keeps the same scalar value contract as Number.
+pub fn parse_scalar(raw: String) -> Result(Float, Nil) {
+  parse_number(raw)
+}
+
+/// Scale all authored numeric comparison values by a unit conversion factor.
+/// This lets unit-aware matching compare canonical values while keeping the
+/// operator, tolerance, representation, and precision semantics in this module.
+pub fn scale_comparison_values(
+  spec: types.NumericSpec,
+  scale: Float,
+) -> Result(types.NumericSpec, types.EqualityConfigError) {
+  case scale_comparison(spec.comparison, scale) {
+    Error(error) -> Error(error)
+    Ok(comparison) ->
+      Ok(types.NumericSpec(
+        comparison: comparison,
+        tolerance: spec.tolerance,
+        representation: spec.representation,
+        precision: spec.precision,
+      ))
   }
 }
 
@@ -171,6 +212,66 @@ fn comparison_diagnostics(
   }
 }
 
+fn scale_comparison(
+  comparison: types.NumericComparison,
+  scale: Float,
+) -> Result(types.NumericComparison, types.EqualityConfigError) {
+  case comparison {
+    types.Equal(expected) ->
+      scale_input(expected, "comparison.expected", scale)
+      |> result_map(types.Equal)
+    types.NotEqual(expected) ->
+      scale_input(expected, "comparison.expected", scale)
+      |> result_map(types.NotEqual)
+    types.GreaterThan(threshold) ->
+      scale_input(threshold, "comparison.threshold", scale)
+      |> result_map(types.GreaterThan)
+    types.GreaterThanOrEqual(threshold) ->
+      scale_input(threshold, "comparison.threshold", scale)
+      |> result_map(types.GreaterThanOrEqual)
+    types.LessThan(threshold) ->
+      scale_input(threshold, "comparison.threshold", scale)
+      |> result_map(types.LessThan)
+    types.LessThanOrEqual(threshold) ->
+      scale_input(threshold, "comparison.threshold", scale)
+      |> result_map(types.LessThanOrEqual)
+    types.Between(lower, upper, bounds) ->
+      case
+        scale_input(lower, "comparison.lower", scale),
+        scale_input(upper, "comparison.upper", scale)
+      {
+        Ok(lower), Ok(upper) -> Ok(types.Between(lower, upper, bounds))
+        Error(error), _ | _, Error(error) -> Error(error)
+      }
+    types.NotBetween(lower, upper, bounds) ->
+      case
+        scale_input(lower, "comparison.lower", scale),
+        scale_input(upper, "comparison.upper", scale)
+      {
+        Ok(lower), Ok(upper) -> Ok(types.NotBetween(lower, upper, bounds))
+        Error(error), _ | _, Error(error) -> Error(error)
+      }
+  }
+}
+
+fn scale_input(
+  input: types.NumericInput,
+  field: String,
+  scale: Float,
+) -> Result(types.NumericInput, types.EqualityConfigError) {
+  case parse_config_number(input, field) {
+    Error(error) -> Error(error)
+    Ok(value) -> Ok(types.NumericInput(raw: float.to_string(value *. scale)))
+  }
+}
+
+fn result_map(result: Result(a, e), transform: fn(a) -> b) -> Result(b, e) {
+  case result {
+    Ok(value) -> Ok(transform(value))
+    Error(error) -> Error(error)
+  }
+}
+
 /// Equality-style scalar comparisons are the only Phase 4 operators where
 /// tolerance changes value equality. Ordered and range comparisons keep their
 /// threshold semantics while still allowing representation and precision checks.
@@ -282,15 +383,35 @@ fn values_equal(
   case tolerance {
     types.NoTolerance -> submitted_value == expected_value
     types.AbsoluteTolerance(value) ->
-      absolute_difference(submitted_value, expected_value) <=. value
+      within_tolerance_window(
+        absolute_difference(submitted_value, expected_value),
+        value,
+      )
     types.RelativeTolerance(value) ->
-      absolute_difference(submitted_value, expected_value)
-      <=. relative_window(submitted_value, expected_value, value)
+      within_tolerance_window(
+        absolute_difference(submitted_value, expected_value),
+        relative_window(submitted_value, expected_value, value),
+      )
     types.AbsoluteOrRelativeTolerance(absolute, relative) ->
-      absolute_difference(submitted_value, expected_value) <=. absolute
-      || absolute_difference(submitted_value, expected_value)
-      <=. relative_window(submitted_value, expected_value, relative)
+      within_tolerance_window(
+        absolute_difference(submitted_value, expected_value),
+        absolute,
+      )
+      || within_tolerance_window(
+        absolute_difference(submitted_value, expected_value),
+        relative_window(submitted_value, expected_value, relative),
+      )
   }
+}
+
+/// Decimal authoring values such as `1.5 +/- 0.1` can parse to binary floats
+/// where an exact boundary lands a few ULPs outside the authored tolerance.
+/// Keep authored positive tolerance windows inclusive without changing exact
+/// no-tolerance comparisons.
+fn within_tolerance_window(difference: Float, window: Float) -> Bool {
+  difference <=. window
+  || window >. 0.0
+  && difference <=. window +. window *. tolerance_boundary_relative_epsilon
 }
 
 /// Use the tolerance diagnostic only when a tolerance was part of the author

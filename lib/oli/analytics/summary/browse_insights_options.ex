@@ -13,13 +13,17 @@ defmodule Oli.Analytics.Summary.BrowseInsightsOptions do
     :project_id,
     :section_ids,
     :resource_type_id,
-    :text_search
+    :text_search,
+    :resource_id,
+    :part_id
   ]
 
   @type t() :: %__MODULE__{
           project_id: integer(),
           section_ids: list(),
           resource_type_id: integer(),
-          text_search: String.t()
+          text_search: String.t() | nil,
+          resource_id: integer() | nil,
+          part_id: String.t() | nil
         }
 end

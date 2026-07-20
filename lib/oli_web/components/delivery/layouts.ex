@@ -67,7 +67,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
       id="header"
       class={[
         "sticky w-full py-2.5 h-14 flex flex-row gap-6 bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-        if(@preview_mode, do: "top-20 z-[60]", else: "top-0 z-50")
+        if(assigns[:preview_mode] == true,
+          do: "top-20 z-[60]",
+          else: "top-0 z-50"
+        )
       ]}
     >
       <.link
@@ -182,6 +185,45 @@ defmodule OliWeb.Components.Delivery.Layouts do
             Exit Preview
           </.link>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :container_class, :string, default: "absolute left-4 right-4 z-[45] md:left-6 md:right-6"
+
+  attr :class, :string, default: nil
+  attr :static, :boolean, default: false
+
+  def sayg_saved_work_notice(assigns) do
+    ~H"""
+    <div
+      id="sayg_saved_work_notice"
+      phx-hook="ScoreAsYouGoSavedWorkNotice"
+      data-sayg-saved-work-static={@static}
+      class={[
+        "hidden rounded-lg border border-Specially-Tokens-Border-border-input bg-Background-bg-primary px-5 py-4 shadow-md backdrop-blur-sm md:px-8",
+        @container_class,
+        @class
+      ]}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <p
+          data-sayg-saved-work-message
+          class="text-base font-normal leading-[30px] text-Text-text-high"
+        >
+        </p>
+        <button
+          type="button"
+          data-sayg-saved-work-dismiss
+          class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-Icon-icon-default hover:bg-Fill-fill-hover focus:outline-none focus:ring-2 focus:ring-Border-border-active"
+          aria-label="Close"
+        >
+          <Icons.close_sm class="h-5 w-5 stroke-current" />
+        </button>
       </div>
     </div>
     """
@@ -1343,8 +1385,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
             navigation_params
             |> Map.take(["return_to"])
             |> Map.put("request_path", preview_request_path)
+            |> Map.put("preview_mode", true)
 
-          OliWeb.Delivery.Instructor.PreviewRoutes.lesson_path(
+          Utils.lesson_live_path(
             section_slug,
             slug,
             preview_navigation_params

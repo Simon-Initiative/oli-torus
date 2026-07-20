@@ -24,10 +24,10 @@ import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import partSchema, {
+  applyScoringSchemaVisibility,
+  applyScoringUiSchemaVisibility,
   isAdaptiveScorablePartType,
   partUiSchema,
-  removeScoringFromSchema,
-  removeScoringFromUiSchema,
   responsivePartSchema,
   responsivePartUiSchema,
   simplifiedPartSchema,
@@ -100,15 +100,9 @@ const getSimplifiedComponentSchema = (
   allowTriggers: boolean,
 ): JSONSchema7 => {
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
-  const showScoring = isAdaptiveScorablePartType(tagName);
-  const responsiveBaseSchema = showScoring
-    ? simplifiedResponsivePartSchema
-    : removeScoringFromSchema(simplifiedResponsivePartSchema);
   const baseSchema = responsiveLayout
-    ? responsiveBaseSchema
-    : showScoring
-    ? simplifiedPartSchema
-    : removeScoringFromSchema(simplifiedPartSchema);
+    ? applyScoringSchemaVisibility(simplifiedResponsivePartSchema, tagName)
+    : applyScoringSchemaVisibility(simplifiedPartSchema, tagName);
 
   if (instance && instance.getSchema) {
     const customPartSchema = instance.getSchema('simple', { allowAiTriggers: allowTriggers });
@@ -143,12 +137,11 @@ const getExpertComponentSchema = (
 ): JSONSchema7 => {
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const baseSchema = responsiveLayout ? responsivePartSchema : partSchema;
-  const showScoring = isAdaptiveScorablePartType(tagName);
-  const filteredBaseSchema = showScoring ? baseSchema : removeScoringFromSchema(baseSchema);
+  const filteredBaseSchema = applyScoringSchemaVisibility(baseSchema, tagName);
 
   if (instance && instance.getSchema) {
     const customPartSchema = instance.getSchema('expert', { allowAiTriggers: allowTriggers });
-    const simplePartSchema = showScoring
+    const simplePartSchema = isAdaptiveScorablePartType(tagName)
       ? instance.getSchema('simple', { allowAiTriggers: allowTriggers })
       : null;
 
@@ -189,6 +182,7 @@ const simplifiedLabels: Record<string, string> = {
   'janus-image': 'Image',
   'janus-ai-trigger': 'AI Activation Point',
   'janus-video': 'Video',
+  'janus-flashcards': 'Flashcards',
   'janus-popup': 'Popup Icon',
   'janus-audio': 'Audio',
   'janus-capi-iframe': 'iFrame',
@@ -199,6 +193,7 @@ const simplifiedLabels: Record<string, string> = {
   'janus-slider': 'Slider',
   'janus-multi-line-text': 'Multi line text input',
   'janus-hub-spoke': 'Hub and Spoke',
+  'janus-item-bank': 'Item Bank',
 };
 
 const simplifiedDescriptionLabels: Record<string, string> = {
@@ -211,14 +206,9 @@ const getSimplifiedComponentUISchema = (instance: any, responsiveLayout: boolean
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const title = simplifiedLabels[tagName] || 'Component Options';
   const componentDescription = simplifiedDescriptionLabels[tagName] || '';
-  const responsiveBaseUiSchema = isAdaptiveScorablePartType(tagName)
-    ? simplifiedResponsivePartUiSchema
-    : removeScoringFromUiSchema(simplifiedResponsivePartUiSchema);
   const baseUiSchema = responsiveLayout
-    ? responsiveBaseUiSchema
-    : isAdaptiveScorablePartType(tagName)
-    ? simplifiedPartUiSchema
-    : removeScoringFromUiSchema(simplifiedPartUiSchema);
+    ? applyScoringUiSchemaVisibility(simplifiedResponsivePartUiSchema, tagName)
+    : applyScoringUiSchemaVisibility(simplifiedPartUiSchema, tagName);
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('simple');
     const newUiSchema = {
@@ -238,9 +228,7 @@ const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) =>
   // ui schema
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const componentUiSchema = responsiveLayout ? responsivePartUiSchema : partUiSchema;
-  const baseUiSchema = isAdaptiveScorablePartType(tagName)
-    ? componentUiSchema
-    : removeScoringFromUiSchema(componentUiSchema);
+  const baseUiSchema = applyScoringUiSchemaVisibility(componentUiSchema, tagName);
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('expert');
     const simplePartUiSchema =

@@ -73,6 +73,21 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "delivery_controller research_consent" do
+    test "renders SAYG saved work notice static mount point", %{conn: conn} do
+      student = user_fixture(%{independent_learner: true, research_opt_out: nil})
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(Routes.delivery_path(conn, :show_research_consent))
+
+      html = html_response(conn, 200)
+
+      assert html =~ ~s(id="sayg_saved_work_notice")
+    end
+  end
+
   describe "delivery_controller deleted_project" do
     setup [:setup_lti_session]
 
@@ -189,6 +204,49 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert Flash.get(conn.assigns.flash, :error) ==
                "This enrollment has been suspended. Please contact your instructor or technical support for further details or to reinstate the enrollment."
+    end
+  end
+
+  describe "show_research_consent" do
+    setup %{conn: conn} do
+      Oli.Delivery.update_system_research_consent_form_setting(:oli_form)
+      user = insert(:user, independent_learner: true, research_opt_out: nil)
+      {:ok, conn: log_in_user(conn, user), user: user}
+    end
+
+    defp direct_section(institution) do
+      insert(:section,
+        open_and_free: true,
+        institution: institution,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
+      )
+    end
+
+    test "renders the form when the return-to section requires consent", %{conn: conn} do
+      section = direct_section(insert(:institution, research_consent: :oli_form))
+
+      conn =
+        get(conn, ~p"/research_consent?user_return_to=/sections/#{section.slug}")
+
+      assert html_response(conn, 200) =~ "Consent"
+    end
+
+    test "redirects away when the return-to section institution disables consent (MER-5717)", %{
+      conn: conn
+    } do
+      section = direct_section(insert(:institution, research_consent: :no_form))
+
+      conn =
+        get(conn, ~p"/research_consent?user_return_to=/sections/#{section.slug}")
+
+      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+    end
+
+    test "falls back to the global setting for a non-section return path", %{conn: conn} do
+      conn = get(conn, ~p"/research_consent?user_return_to=/not/a/section")
+
+      assert html_response(conn, 200) =~ "Consent"
     end
   end
 

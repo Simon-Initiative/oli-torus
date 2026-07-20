@@ -319,6 +319,8 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     outline: 'none',
   };
 
+  const playAriaLabel = model.ariaLabel?.trim() ? `Play ${model.ariaLabel.trim()}` : 'Play audio';
+
   useEffect(() => {
     const styleChanges: any = {};
     if (width !== undefined) {
@@ -540,6 +542,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
             onPlay={handleAudioPlay}
             onPause={handleAudioPause}
             onEnded={handleAudioEnd}
+            aria-label={playAriaLabel}
           >
             <source src={finalSrc} />
 

@@ -37,6 +37,7 @@ import { HighlightCode } from './highlight_code';
 import { HomeMobileTabs } from './home_mobile_tabs';
 import { IframeLoadState } from './iframe_load_state';
 import { InputAutoSelect } from './input_auto_select';
+import { InstructorPreviewCustomization } from './instructor_preview_customization';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
@@ -64,8 +65,13 @@ import { RenderedActivityIframeState } from './rendered_activity_iframe_state';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
+import {
+  ScoreAsYouGoNavigationNotice,
+  ScoreAsYouGoSavedWorkNotice,
+} from './score_as_you_go_saved_work_notice';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
+import { SectionCreatedUrlCleanup } from './section_created_url_cleanup';
 import { SelectListener } from './select_listener';
 import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
@@ -104,6 +110,7 @@ export const Hooks = {
   DropTarget,
   DragSource,
   HomeMobileTabs,
+  InstructorPreviewCustomization,
   ModalLaunch,
   InputAutoSelect,
   IframeLoadState,
@@ -180,5 +187,8 @@ export const Hooks = {
   TagsComponent,
   SaveCookiePreferences,
   ScrollToTheTop,
+  SectionCreatedUrlCleanup,
   ContainerToggleAriaLabel,
+  ScoreAsYouGoNavigationNotice,
+  ScoreAsYouGoSavedWorkNotice,
 };

@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
 
   defp live_view_route(project_slug, params \\ %{}),
@@ -107,6 +108,46 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     })
 
     {:ok, page_revision}
+  end
+
+  defp create_embedded_activity_with_objective(
+         project,
+         publication,
+         objective_id,
+         slug
+       ) do
+    activity_resource = insert(:resource)
+
+    activity_revision =
+      insert(:revision, %{
+        resource: activity_resource,
+        objectives: %{"1" => [objective_id]},
+        resource_type_id: ResourceType.id_for_activity(),
+        children: [],
+        content: %{},
+        deleted: false,
+        title: "Activity",
+        slug: slug,
+        scope: :embedded
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: activity_resource.id})
+
+    published_resource =
+      insert(:published_resource, %{
+        author: hd(project.authors),
+        publication: publication,
+        resource: activity_resource,
+        revision: activity_revision
+      })
+
+    {:ok, _} =
+      Oli.Publishing.update_published_resource(published_resource, %{
+        locked_by_id: nil,
+        lock_updated_at: nil
+      })
+
+    {:ok, activity_revision}
   end
 
   describe "user cannot access when is not logged in" do
@@ -426,6 +467,50 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
+    test "remove objective with orphaned embedded activity attachment", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, obj} = create_objective(project, publication, "obj_a", "Objective A")
+
+      {:ok, activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          obj.resource_id,
+          "orphaned_activity"
+        )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element("button[phx-click='set_selected'][phx-value-slug=#{obj.slug}]")
+      |> render_click(%{"slug" => obj.slug})
+
+      view
+      |> element("button[phx-click='display_delete_modal'][phx-value-slug=#{obj.slug}]")
+      |> render_click(%{"slug" => obj.slug})
+
+      assert has_element?(view, "#delete_objective_modal", "Delete Objective")
+
+      view
+      |> element("button[phx-click='delete'][phx-value-slug=#{obj.slug}]")
+      |> render_click(%{"slug" => obj.slug, "parent_slug" => ""})
+
+      assert view
+             |> element(~s{div[role="alert"].alert-info})
+             |> render() =~
+               "Objective successfully removed"
+
+      updated_activity = AuthoringResolver.from_resource_id(project.slug, activity.resource_id)
+
+      refute updated_activity.objectives
+             |> Map.values()
+             |> List.flatten()
+             |> Enum.member?(obj.resource_id)
+    end
+
     test "add existing sub objective", %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj_a} = create_objective(project, publication, "sub_obj_a", "Sub Objective A")
 
@@ -594,13 +679,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
 
       view
-      |> element("button[phx-click='delete'][phx-value-slug=#{sub_obj.slug}]")
+      |> element(
+        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}]"
+      )
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
-      assert view
-             |> element(~s{div[role="alert"].alert-info})
-             |> render() =~
-               "Objective successfully removed"
+      assert has_element?(view, "#delete_sub_objective_modal", "Delete Sub-Objective")
+      assert has_element?(view, "#delete_sub_objective_modal", "#{sub_obj.title}")
+
+      view
+      |> element("button[phx-click='delete_sub_objective'][phx-value-slug=#{sub_obj.slug}]")
+      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
+
+      assert has_element?(view, ".collapse .line-through", "#{sub_obj.title}")
+      assert has_element?(view, ".collapse .spinner-border")
+
+      wait_until(fn ->
+        has_element?(view, ~s{div[role="alert"].alert-info}, "Objective successfully removed")
+      end)
 
       assert 1 ==
                project
@@ -635,14 +731,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       view
       |> element(
-        "button[phx-click='delete'][phx-value-slug=#{sub_obj.slug}][phx-value-parent_slug=#{obj_a.slug}]"
+        "button[phx-click='display_sub_objective_delete_modal'][phx-value-slug=#{sub_obj.slug}][phx-value-parent_slug=#{obj_a.slug}]"
       )
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
 
-      assert view
-             |> element(~s{div[role="alert"].alert-info})
-             |> render() =~
-               "Objective successfully removed"
+      assert has_element?(view, "#delete_sub_objective_modal", "Delete Sub-Objective")
+
+      view
+      |> element(
+        "button[phx-click='delete_sub_objective'][phx-value-slug=#{sub_obj.slug}][phx-value-parent_slug=#{obj_a.slug}]"
+      )
+      |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
+
+      assert has_element?(view, "##{obj_a.slug} .line-through", "#{sub_obj.title}")
+      assert has_element?(view, "##{obj_a.slug} .spinner-border")
+
+      wait_until(fn ->
+        has_element?(view, ~s{div[role="alert"].alert-info}, "Objective successfully removed")
+      end)
 
       assert 3 ==
                project

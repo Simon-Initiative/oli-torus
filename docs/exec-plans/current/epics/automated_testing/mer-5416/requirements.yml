@@ -1,0 +1,101 @@
+work_item: mer-5416
+requirements:
+- title: Support a two-phase automation pattern for basic page authoring tests
+  status: proposed
+  id: FR-001
+- title: Enable post-Playwright scenario assertions for authoring preview and student
+    delivery
+  status: proposed
+  id: FR-002
+- title: Keep the first delivery slice limited to infrastructure plus representative
+    `MIXED` groups
+  status: proposed
+  id: FR-003
+- title: Reuse and extend the existing course authoring Playwright helpers instead
+    of creating a parallel style
+  status: proposed
+  id: FR-004
+- title: Organize `MIXED` coverage into grouped follow-up slices after the initial
+    infrastructure PR
+  status: proposed
+  id: FR-005
+- title: Preserve deterministic scenario-driven setup and avoid external pre-seeded
+    state
+  status: proposed
+  id: FR-006
+- title: Validate authored content across persisted state, authoring preview, and
+    learner delivery
+  status: proposed
+  id: FR-007
+- title: Document remaining `MIXED` groups and follow-up slices explicitly after the
+    first PR
+  status: proposed
+  id: FR-008
+- title: Maintain a row-complete workflow coverage matrix for every `MIXED` spreadsheet
+    row
+  status: proposed
+  id: FR-009
+acceptance_criteria:
+- title: The Playwright automation stack can seed a project and page with scenario
+    YAML, perform authoring mutations in the browser, and then execute a second scenario-based
+    assertion phase against the same authored state
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-001
+- title: The post-Playwright assertion phase can evaluate authoring preview rendering
+    for the authored page without requiring manual browser inspection
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-002
+- title: The post-Playwright assertion phase can evaluate learner delivery rendering
+    for the published page in a section context without requiring manual browser inspection
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-003
+- title: The initial implementation PR covers one or two representative `MIXED` groups
+    end to end using the new pattern and proves the pattern is reusable
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-004
+- title: The initial implementation PR does not attempt to absorb full `MIXED`-tab
+    coverage into one batch and instead leaves an explicit grouped follow-up plan
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-005
+- title: Existing Playwright scenario seeding behavior remains compatible for current
+    authoring and student delivery specs that do not use the new post-Playwright phase
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-006
+- title: The first slice preserves the agreed interpretation that authoring preview
+    assertions target author preview, not instructor preview
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-007
+- title: The selected initial groups are validated across persisted authoring state,
+    preview rendering, and learner delivery rendering when those surfaces are in scope
+    for the row group
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-008
+- title: The work item documents the remaining `MIXED` groups in follow-up slices
+    organized by shared authoring behavior rather than spreadsheet row order
+  status: proposed
+  verification_method: doc
+  proofs: []
+  id: AC-009
+- title: The work item includes a row-complete matrix that maps all 80 `MIXED` spreadsheet
+    rows to workflow coverage status and target follow-up slice, and that matrix
+    is kept current through the initial PR and its immediate follow-up PR
+  status: proposed
+  verification_method: doc
+  proofs: []
+  id: AC-010

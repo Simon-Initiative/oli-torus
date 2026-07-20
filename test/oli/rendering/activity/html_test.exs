@@ -5,6 +5,7 @@ defmodule Oli.Content.Activity.HtmlTest do
   alias Oli.Rendering.Activity
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Settings.Combined
   alias Oli.Accounts
 
   import ExUnit.CaptureLog
@@ -163,6 +164,7 @@ defmodule Oli.Content.Activity.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       assert rendered_html_string =~ "instructor-preview-activity-wrapper"
+      assert rendered_html_string =~ ~s|id="jump-question-1"|
       assert rendered_html_string =~ "<oli-multiple-choice-preview"
       assert rendered_html_string =~ "mode=\"preview\""
       assert rendered_html_string =~ "previewcontext="
@@ -205,6 +207,7 @@ defmodule Oli.Content.Activity.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                assert rendered_html_string =~ "instructor-preview-activity-wrapper"
+               assert rendered_html_string =~ ~s|id="jump-question-1"|
                assert rendered_html_string =~ "p-6"
                assert rendered_html_string =~ "border-Border-border-default"
                assert rendered_html_string =~ "bg-Surface-surface-primary"
@@ -298,6 +301,47 @@ defmodule Oli.Content.Activity.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       assert rendered_html_string =~ "&quot;showMathPreviews&quot;:false"
+    end
+
+    test "includes score-as-you-go reset messaging state in delivery context", %{author: author} do
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: true,
+          state: "{ \"active\": true }",
+          model: "{ \"stem\": \"test\" }",
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "activity-guid-456",
+          lifecycle_state: :evaluated,
+          aggregate_score: 0.75,
+          aggregate_out_of: 1.0,
+          aggregate_includes_current_attempt: true
+        }
+      }
+
+      rendered_html =
+        Activity.render(
+          %Context{
+            user: author,
+            activity_map: activity_map,
+            effective_settings: %Combined{
+              replacement_strategy: :dynamic,
+              scoring_strategy_id: 1,
+              max_attempts: 4
+            }
+          },
+          %{"activity_id" => 1, "purpose" => "none"},
+          Activity.Html
+        )
+
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~ "&quot;aggregateScore&quot;:0.75"
+      assert rendered_html_string =~ "&quot;aggregateOutOf&quot;:1.0"
+      assert rendered_html_string =~ "&quot;aggregateIncludesCurrentAttempt&quot;:true"
+      assert rendered_html_string =~ "&quot;replacementStrategy&quot;:&quot;dynamic&quot;"
     end
 
     test "uses empty map for pageState when extrinsic_state is nil", %{author: author} do

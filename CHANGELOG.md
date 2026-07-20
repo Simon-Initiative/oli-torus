@@ -11,25 +11,30 @@ update this file accordingly.
 
 ### Environment Configs
 
-| Name                        | Required | Description                                                                     |
-| --------------------------- | -------- | ------------------------------------------------------------------------------- |
-| CANVAS_STUDENT_EMAIL        | No       | Canvas student email required by the grade passback Playwright smoke test       |
-| CANVAS_STUDENT_PASSWORD     | No       | Canvas student password required by the grade passback Playwright smoke test    |
-| CANVAS_INSTRUCTOR_EMAIL     | No       | Canvas instructor email required by Canvas LTI Playwright automation            |
-| CANVAS_INSTRUCTOR_PASSWORD  | No       | Canvas instructor password required by Canvas LTI Playwright automation         |
-| CANVAS_ADMIN_EMAIL          | No       | Canvas admin email alternative for the grade passback Playwright smoke test     |
-| CANVAS_ADMIN_PASSWORD       | No       | Canvas admin password alternative for the grade passback Playwright smoke test  |
-| TORUS_BASE_URL              | No       | Torus base URL for Canvas LTI Playwright automation                             |
-| TORUS_ADMIN_EMAIL           | No       | Torus admin email required when running Canvas LTI Playwright automation        |
-| TORUS_ADMIN_PASSWORD        | No       | Torus admin password required when running Canvas LTI Playwright automation     |
-| CANVAS_BASE_URL             | No       | Canvas base URL for Canvas LTI Playwright automation                            |
-| CANVAS_ACCOUNT_ID           | No       | Canvas account ID required when running Canvas LTI Playwright automation        |
-| CANVAS_API_TOKEN            | No       | Canvas API token required when running Canvas LTI Playwright automation         |
-| CANVAS_INSTRUCTOR_USER_ID   | No       | Optional Canvas instructor user ID to enroll in generated test courses          |
-| CANVAS_LTI_TOOL_NAME        | No       | Canvas external tool name used by Canvas LTI Playwright automation              |
-| CANVAS_TOOL_LAUNCH_URL      | No       | Torus LTI launch URL used by Canvas LTI Playwright automation                   |
-| PLAYWRIGHT_SCENARIO_TOKEN   | No       | Scenario token for Playwright automation setup endpoints                        |
-| TORUS_LTI_PROJECT_TITLE     | No       | Optional title override for the temporary Torus LTI test project                |
+| Name                          | Required | Description                                                                     |
+| ----------------------------- | -------- | ------------------------------------------------------------------------------- |
+| CANVAS_STUDENT_EMAIL          | No       | Canvas student email required by the grade passback Playwright smoke test       |
+| CANVAS_STUDENT_PASSWORD       | No       | Canvas student password required by the grade passback Playwright smoke test    |
+| CANVAS_INSTRUCTOR_EMAIL       | No       | Canvas instructor email required by Canvas LTI Playwright automation            |
+| CANVAS_INSTRUCTOR_PASSWORD    | No       | Canvas instructor password required by Canvas LTI Playwright automation         |
+| CANVAS_ADMIN_EMAIL            | No       | Canvas admin email alternative for the grade passback Playwright smoke test     |
+| CANVAS_ADMIN_PASSWORD         | No       | Canvas admin password alternative for the grade passback Playwright smoke test  |
+| TORUS_BASE_URL                | No       | Torus base URL for Canvas LTI Playwright automation                             |
+| TORUS_ADMIN_EMAIL             | No       | Torus admin email required when running Canvas LTI Playwright automation        |
+| TORUS_ADMIN_PASSWORD          | No       | Torus admin password required when running Canvas LTI Playwright automation     |
+| CANVAS_BASE_URL               | No       | Canvas base URL for Canvas LTI Playwright automation                            |
+| CANVAS_ACCOUNT_ID             | No       | Canvas account ID required when running Canvas LTI Playwright automation        |
+| CANVAS_API_TOKEN              | No       | Canvas API token required when running Canvas LTI Playwright automation         |
+| CANVAS_INSTRUCTOR_USER_ID     | No       | Optional Canvas instructor user ID to enroll in generated test courses          |
+| CANVAS_LTI_TOOL_NAME          | No       | Canvas external tool name used by Canvas LTI Playwright automation              |
+| CANVAS_TOOL_LAUNCH_URL        | No       | Torus LTI launch URL used by Canvas LTI Playwright automation                   |
+| PLAYWRIGHT_SCENARIO_TOKEN     | No       | Scenario token for Playwright automation setup endpoints                        |
+| PLAYWRIGHT_ASSETS_BUCKET      | No       | Bucket for private Playwright test assets (course archives, answer keys)        |
+| PLAYWRIGHT_AUTOMATION_API_KEY | No       | API key with automation_setup_enabled for the automation_setup endpoint         |
+| TORUS_LTI_PROJECT_TITLE       | No       | Optional title override for the temporary Torus LTI test project                |
+| GOOGLE_DOCS_IMPORT_FILE_ID    | No       | Google Docs file ID used by Google Docs import Playwright automation            |
+| DUMMY_LTI_TOOL_ADMIN_PASSWORD | No       | Admin password used to register Torus with the dummy LTI tool                   |
+| DUMMY_LTI_TOOL_BASE_URL       | No       | Dummy LTI tool base URL used by LTI external tool Playwright automation         |
 
 - `CANVAS_*` environment variables configure the Canvas-to-Torus grade passback Playwright
   smoke test. They are not required by the Torus application runtime. The student credentials
@@ -39,6 +44,16 @@ update this file accordingly.
 - Canvas LTI course-provisioning Playwright settings are local/test-runner configuration only
   and are not required for the Torus application runtime. Do not commit real Canvas credentials
   or API tokens.
+
+- Google Docs import and dummy LTI external tool Playwright settings are local/test-runner
+  configuration only and are not required for the Torus application runtime.
+
+- `PLAYWRIGHT_ASSETS_BUCKET` and `PLAYWRIGHT_AUTOMATION_API_KEY` are local/test-runner
+  configuration only and are not required for the Torus application runtime. Neither has a
+  default value — never reuse a value that appears in this repo for either. Without
+  `PLAYWRIGHT_AUTOMATION_API_KEY` the MER-5672 Playwright test is skipped; without
+  `PLAYWRIGHT_ASSETS_BUCKET` it fails, since the private test assets endpoint has no bucket
+  to read from.
 
 ### Infrastructure Changes
 

@@ -1,0 +1,21 @@
+- hook:
+    function: 'Oli.Scenarios.Features.MixedContentHooks.bind_workflow_context/1'
+
+- hook:
+    function: 'Oli.Scenarios.Features.MixedContentHooks.assert_author_preview_codeblock/1'
+
+- publish:
+    to: 'workflow_authoring_project'
+    description: 'Publish code block workflow update'
+
+- update:
+    from: 'workflow_authoring_project'
+    to: 'workflow_delivery_section'
+
+- view_practice_page:
+    student: 'workflow_student'
+    section: 'workflow_delivery_section'
+    page: 'Mixed Workflow Page'
+
+- hook:
+    function: 'Oli.Scenarios.Features.MixedContentHooks.assert_student_delivery_codeblock/1'

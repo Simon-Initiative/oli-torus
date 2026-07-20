@@ -123,7 +123,9 @@ interface InputSizeEditorProps {
 }
 
 const InputSizeEditor: React.FC<InputSizeEditorProps> = ({ input }) => {
-  const { dispatch } = useAuthoringElementContext<MultiInputSchema>();
+  const { dispatch, editMode, mode } = useAuthoringElementContext<MultiInputSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   return (
     <div className="inline-flex items-baseline mb-2">
@@ -131,6 +133,7 @@ const InputSizeEditor: React.FC<InputSizeEditorProps> = ({ input }) => {
       <select
         className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
         value={input.size || 'medium'}
+        disabled={readOnly}
         onChange={({ target: { value } }) => {
           dispatch(MultiInputActions.setInputSize(input.id, value as MultiInputSize));
         }}

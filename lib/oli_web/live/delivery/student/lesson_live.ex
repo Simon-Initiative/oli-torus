@@ -181,7 +181,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           review_mode: page_context.review_mode,
           current_score: resource_attempt.score,
           current_out_of: current_out_of,
-          effective_settings: page_context.effective_settings
+          effective_settings: page_context.effective_settings,
+          sayg_saved_work_notice: sayg_saved_work_notice(page_context.effective_settings)
         )
         |> slim_assigns()
         |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
@@ -292,6 +293,37 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp format_score(nil), do: "--"
   defp format_score(v), do: Utils.parse_score(v)
+
+  defp sayg_saved_work_notice(%{batch_scoring: false, end_date: end_date})
+       when is_nil(end_date) do
+    "Your work has been saved. You can resume the assignment anytime."
+  end
+
+  defp sayg_saved_work_notice(%{
+         batch_scoring: false,
+         scheduling_type: :read_by,
+         end_date: _end_date
+       }) do
+    "Your work has been saved. You can resume the assignment anytime before the read by date."
+  end
+
+  defp sayg_saved_work_notice(%{batch_scoring: false}) do
+    "Your work has been saved. You can resume the assignment anytime before the due date."
+  end
+
+  defp sayg_saved_work_notice(_effective_settings), do: nil
+
+  defp sayg_navigation_notice_source(assigns) do
+    ~H"""
+    <div
+      :if={@message}
+      id="sayg_navigation_notice_source"
+      phx-hook="ScoreAsYouGoNavigationNotice"
+      data-message={@message}
+    >
+    </div>
+    """
+  end
 
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
     {:noreply, assign(socket, error: true)}
@@ -1095,6 +1127,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     ~H"""
     <.countdown {assigns} />
+    <.sayg_navigation_notice_source message={@sayg_saved_work_notice} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
@@ -1104,7 +1137,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           current_out_of={@current_out_of}
         />
 
-        <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] sm:pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="flex-1 w-full max-w-[1170px] px-4 sm:px-[80px] lg:px-0 sm:pt-20 pb-24 lg:pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -1120,7 +1153,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
 
-          <div :if={@questions != []} class="relative min-h-[500px] justify-center">
+          <div :if={@questions != []} class="relative min-h-[500px] w-full justify-center">
             <.live_component
               id="one_at_a_time_questions"
               module={OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion}
@@ -1130,9 +1163,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               datashop_session_id={@datashop_session_id}
               ctx={@ctx}
               bib_app_params={@bib_app_params}
-              request_path={@request_path}
-              revision_slug={@revision_slug}
-              attempt_guid={@attempt_guid}
               section_slug={@section.slug}
               effective_settings={@page_context.effective_settings}
             />
@@ -1153,6 +1183,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <.countdown {assigns} />
+    <.sayg_navigation_notice_source message={@sayg_saved_work_notice} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
@@ -1441,13 +1472,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score(assigns) do
     ~H"""
-    <div class="flex items-center gap-3">
-      <span class="font-open-sans text-[14px] font-normal leading-[21px] tracking-[-0.14px] text-Text-text-high">
+    <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+      <span class="font-open-sans text-[14px] font-normal leading-[21px] text-Text-text-high">
         Overall Page Score
       </span>
       <div class="inline-flex items-center gap-1.5 rounded-[4px] bg-Fill-Accent-fill-accent-green-bold px-3 py-2 text-Text-text-white">
         <Icons.star color="text-white" />
-        <strong class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[-0.3125px]">
+        <strong class="font-open-sans text-[16px] font-bold leading-[16px]">
           {format_score(@score)} / {format_score(@out_of)}
         </strong>
       </div>
@@ -1506,7 +1537,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       <div
         id="countdown_timer_display"
         phx-update="ignore"
-        class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5]"
+        class="relative w-full px-4 py-2 text-center text-lg font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5] sm:absolute sm:top-2 sm:right-6 sm:mt-4 sm:w-auto sm:p-0"
         phx-hook="CountdownTimer"
         data-timer-id="countdown_timer_display"
         data-submit-button-id="submit_answers"
@@ -1522,7 +1553,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <div
           id="countdown_timer_display"
           phx-update="ignore"
-          class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5]"
+          class="relative w-full px-4 py-2 text-center text-lg font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5] sm:absolute sm:top-2 sm:right-6 sm:mt-4 sm:w-auto sm:p-0"
           phx-hook="EndDateTimer"
           data-timer-id="countdown_timer_display"
           data-submit-button-id="submit_answers"
@@ -1569,13 +1600,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{page_context: %{effective_settings: %{batch_scoring: false}}} = assigns
       ) do
     ~H"""
-    <div class="w-full lg:px-20 px-40 py-9 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
+    <div class="w-full px-4 py-9 sm:px-10 lg:px-20 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
       <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
         <div class="dark:text-white text-sm font-bold uppercase tracking-wider">
           Score as you go Activity
         </div>
       </div>
-      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
+      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6 text-center sm:text-left">
         You can start or stop at any time, and your progress will be saved. Your score is updated as you complete questions on this page.
       </div>
     </div>
@@ -1584,13 +1615,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def scored_page_banner(assigns) do
     ~H"""
-    <div class="w-full lg:px-20 px-40 py-9 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
+    <div class="w-full px-4 py-9 sm:px-10 lg:px-20 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
       <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
         <div class="dark:text-white text-sm font-bold uppercase tracking-wider">
           Scored Activity
         </div>
       </div>
-      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
+      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6 text-center sm:text-left">
         You can start or stop at any time, and your progress will be saved. When you submit your answers using the Submit button, it will count as an attempt. So make sure you have answered all the questions before submitting.
       </div>
     </div>

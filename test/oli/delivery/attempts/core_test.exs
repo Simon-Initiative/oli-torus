@@ -160,6 +160,28 @@ defmodule Oli.Delivery.Attempts.CoreTest do
     test "has_any_attempts?/3 returns false when no attempts exist", ctx do
       refute Core.has_any_attempts?(ctx.user, ctx.section, ctx.resource.id)
     end
+
+    test "has_any_resource_attempts?/2 returns true when any learner attempt exists", ctx do
+      insert(:resource_attempt, %{
+        resource_access: ctx.resource_access
+      })
+
+      assert Core.has_any_resource_attempts?(ctx.section, ctx.resource.id)
+    end
+
+    test "has_any_resource_attempts?/2 returns false when no learner attempts exist", ctx do
+      refute Core.has_any_resource_attempts?(ctx.section, ctx.resource.id)
+    end
+
+    test "has_any_resource_accesses?/2 returns true when any learner access exists", ctx do
+      assert Core.has_any_resource_accesses?(ctx.section, ctx.resource.id)
+    end
+
+    test "has_any_resource_accesses?/2 returns false when no learner accesses exist", ctx do
+      other_resource = insert(:resource)
+
+      refute Core.has_any_resource_accesses?(ctx.section, other_resource.id)
+    end
   end
 
   describe "resource access retrieval" do

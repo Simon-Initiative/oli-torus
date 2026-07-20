@@ -50,6 +50,7 @@ This epic initially targets basic pages for the LiveView shell migration. Adapti
 
 - `docs/exec-plans/current/epics/instructor_customizations/core/informal.md`
 - `docs/exec-plans/current/epics/instructor_customizations/preview_components/informal.md`
+- `docs/exec-plans/current/epics/instructor_customizations/preview_customization_wiring.md`
 - `docs/exec-plans/current/epics/instructor_customizations/instructor_view_shell/prd.md`
 - `docs/exec-plans/current/epics/instructor_customizations/plan.md`
 

@@ -140,7 +140,10 @@ Oli.Registrar.register_local_part_components(
     "janus_hub_spoke",
     "janus-text-slider",
     "janus-formula",
-    "janus_ai_trigger"
+    "janus_ai_trigger",
+    "janus_item_bank",
+    "janus_list_sort",
+    "janus_flashcards"
   ])
 )
 
@@ -233,12 +236,6 @@ case Oli.Repo.all(RegisteredModel) do
       section_id: nil
     })
 
-    Oli.Repo.insert!(%FeatureConfig{
-      feature: :instructor_dashboard_recommendation,
-      service_config_id: service_config.id,
-      section_id: nil
-    })
-
     # Dedicated ServiceConfig for the instructor email feature (MER-5257).
     # Fresh installs land the row here. Existing servers (Tokamaka, Proton)
     # get the row via the companion migration
@@ -260,6 +257,26 @@ case Oli.Repo.all(RegisteredModel) do
   _ ->
     # already seeded
     nil
+end
+
+default_service_config_name = "standard-no-backup"
+
+default_service_config =
+  Oli.Repo.get_by(Oli.GenAI.Completions.ServiceConfig, name: default_service_config_name)
+
+default_feature_config_exists? =
+  Oli.Repo.exists?(
+    from(fc in FeatureConfig,
+      where: fc.feature == :instructor_dashboard_recommendation and is_nil(fc.section_id)
+    )
+  )
+
+if default_service_config && !default_feature_config_exists? do
+  Oli.Repo.insert!(%FeatureConfig{
+    feature: :instructor_dashboard_recommendation,
+    service_config_id: default_service_config.id,
+    section_id: nil
+  })
 end
 
 # only seed with sample data if in development mode

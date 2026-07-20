@@ -43,5 +43,5 @@ defmodule OliWeb.Sections.AssessmentSettings.Tooltips do
     do: "The number of student specific exceptions defined for this assessment"
 
   def for(:batch_scoring),
-    do: "Whether questions are scored when they are answered or when the assessment is submitted"
+    do: "Once students begin an assignment, scoring mode can no longer be changed."
 end
