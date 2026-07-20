@@ -51,7 +51,7 @@ update this file accordingly.
 - `PLAYWRIGHT_ASSETS_BUCKET` and `PLAYWRIGHT_AUTOMATION_API_KEY` are local/test-runner
   configuration only and are not required for the Torus application runtime. Neither has a
   default value — never reuse a value that appears in this repo for either. Without
-  `PLAYWRIGHT_AUTOMATION_API_KEY` the MER-5672 Playwright test is skipped; without
+  `PLAYWRIGHT_AUTOMATION_API_KEY` the MER-5672 and MER-5673 Playwright tests are skipped; without
   `PLAYWRIGHT_ASSETS_BUCKET` it fails, since the private test assets endpoint has no bucket
   to read from.
 
