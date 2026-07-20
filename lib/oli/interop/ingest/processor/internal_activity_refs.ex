@@ -4,9 +4,7 @@ defmodule Oli.Interop.Ingest.Processor.InternalActivityRefs do
   alias Oli.Interop.Ingest.State
 
   @doc """
-  Makes a pass across all activities to rewire internal activity references. Currently
-  the only place this is used is in the flowchart paths, where the destinationScreenId
-  is a reference to a resource id of another activity.
+  Makes a pass across all activities to rewire internal activity references.
   """
   def process(
         %State{project: project, legacy_to_resource_id_map: legacy_to_resource_id_map} = state
@@ -40,32 +38,18 @@ defmodule Oli.Interop.Ingest.Processor.InternalActivityRefs do
   defp rewire_internal_refs(revision, activity_map) do
     try do
       case revision.content do
-        %{"authoring" => %{"flowchart" => %{"paths" => paths} = flowchart} = authoring} ->
-          if Enum.any?(paths, fn p -> Map.has_key?(p, "destinationScreenId") end) do
-            paths =
-              Enum.map(paths, fn path ->
-                case path do
-                  %{"destinationScreenId" => id} ->
-                    id_as_str = Integer.to_string(id)
+        %{"authoring" => authoring} ->
+          authoring =
+            authoring
+            |> rewire_flowchart(activity_map)
+            |> rewire_activities_required_for_evaluation(activity_map)
 
-                    Map.put(
-                      path,
-                      "destinationScreenId",
-                      Map.get(activity_map, id_as_str).resource_id
-                    )
+          content = Map.put(revision.content, "authoring", authoring)
 
-                  other ->
-                    other
-                end
-              end)
-
-            flowchart = Map.put(flowchart, "paths", paths)
-            authoring = Map.put(authoring, "flowchart", flowchart)
-            content = Map.put(revision.content, "authoring", authoring)
-
-            Oli.Resources.update_revision(revision, %{content: content})
-          else
+          if content == revision.content do
             {:ok, revision}
+          else
+            Oli.Resources.update_revision(revision, %{content: content})
           end
 
         _ ->
@@ -73,6 +57,80 @@ defmodule Oli.Interop.Ingest.Processor.InternalActivityRefs do
       end
     rescue
       _ in KeyError -> {:ok, revision}
+    end
+  end
+
+  defp rewire_flowchart(authoring, activity_map) do
+    case Map.fetch(authoring, "flowchart") do
+      {:ok, flowchart} when is_map(flowchart) ->
+        Map.put(authoring, "flowchart", rewire_flowchart_paths(flowchart, activity_map))
+
+      _ ->
+        authoring
+    end
+  end
+
+  defp rewire_flowchart_paths(flowchart, activity_map) do
+    case Map.fetch(flowchart, "paths") do
+      {:ok, paths} when is_list(paths) ->
+        paths =
+          Enum.map(paths, fn
+            %{"destinationScreenId" => id} = path ->
+              case mapped_resource_id(activity_map, id) do
+                nil -> path
+                resource_id -> Map.put(path, "destinationScreenId", resource_id)
+              end
+
+            other ->
+              other
+          end)
+
+        Map.put(flowchart, "paths", paths)
+
+      _ ->
+        flowchart
+    end
+  end
+
+  defp rewire_activities_required_for_evaluation(authoring, activity_map) do
+    case Map.fetch(authoring, "activitiesRequiredForEvaluation") do
+      {:ok, ids} when is_list(ids) ->
+        ids = Enum.map(ids, fn id -> mapped_resource_id(activity_map, id) || id end)
+        Map.put(authoring, "activitiesRequiredForEvaluation", ids)
+
+      _ ->
+        authoring
+    end
+  end
+
+  defp mapped_resource_id(activity_map, id) do
+    activity_map
+    |> get_mapped_activity(id)
+    |> case do
+      nil -> nil
+      revision -> revision.resource_id
+    end
+  end
+
+  defp get_mapped_activity(activity_map, id) do
+    case Map.get(activity_map, id) do
+      nil ->
+        case id do
+          integer when is_integer(integer) ->
+            Map.get(activity_map, Integer.to_string(integer))
+
+          binary when is_binary(binary) ->
+            case Integer.parse(binary) do
+              {integer, ""} -> Map.get(activity_map, integer)
+              _ -> nil
+            end
+
+          _ ->
+            nil
+        end
+
+      activity ->
+        activity
     end
   end
 end
