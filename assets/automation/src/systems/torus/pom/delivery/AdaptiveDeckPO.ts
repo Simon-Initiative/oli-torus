@@ -24,6 +24,7 @@ export type ScreenScan = {
   firstSelectOptions: string[];
   fibs: number;
   radios: number;
+  radioGroups: Array<{ group: string; labels: string }>;
   checkboxes: number;
   mcqLabels: string;
   textInputs: number;
@@ -195,12 +196,26 @@ export class AdaptiveDeckPO {
             .filter((el) => vis(el) && !inFeedback(el));
         const firstSelect = q('select.dropdown')[0] as HTMLSelectElement | undefined;
 
+        const radioInputs = q('.mcq-item input[type="radio"]');
+        const byGroup = new Map<string, string[]>();
+        radioInputs.forEach((input, i) => {
+          const item = input.closest('.mcq-item');
+          if (!item) return;
+          const name = (input as HTMLInputElement).name || `anon:${i}`;
+          const label = ((item as HTMLElement).innerText || '').trim();
+          byGroup.set(name, [...(byGroup.get(name) ?? []), label]);
+        });
+
         return {
           iframes: q('iframe').map((f) => (f as HTMLIFrameElement).src),
           selects: q('select.dropdown').length,
           firstSelectOptions: firstSelect ? Array.from(firstSelect.options).map((o) => o.text) : [],
           fibs: q('.fib-select-display').length,
-          radios: q('.mcq-item input[type="radio"]').length,
+          radios: radioInputs.length,
+          radioGroups: Array.from(byGroup, ([group, labels]) => ({
+            group,
+            labels: labels.join(' | '),
+          })),
           checkboxes: q('.mcq-item input[type="checkbox"]').length,
           mcqLabels: q('.mcq-item label')
             .map((l) => (l as HTMLElement).innerText)
@@ -214,6 +229,7 @@ export class AdaptiveDeckPO {
         firstSelectOptions: [],
         fibs: 0,
         radios: 0,
+        radioGroups: [],
         checkboxes: 0,
         mcqLabels: '',
         textInputs: 0,
@@ -223,21 +239,33 @@ export class AdaptiveDeckPO {
   // ------------------------------------------------------------ janus parts
 
   /** Select the MCQ item (radio or checkbox) whose text matches. */
-  async selectMcqByText(text: RegExp) {
+  async selectMcqByText(text: RegExp): Promise<boolean> {
     const item = this.page.locator('.mcq-item').filter({ hasText: text }).first();
-    if (!(await item.isVisible({ timeout: 2_000 }).catch(() => false))) return;
-    await this.selectMcqItem(item);
+    if (!(await item.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
+    return this.selectMcqItem(item);
   }
 
-  async selectFirstMcqItem() {
-    await this.selectMcqItem(this.page.locator('.mcq-item').first());
+  /** Select the radio option matching pick within one group (input name). */
+  async selectMcqInGroup(group: string, pick: RegExp): Promise<boolean> {
+    const scope = group.startsWith('anon:')
+      ? this.page.locator('.mcq-item')
+      : this.page
+          .locator('.mcq-item')
+          .filter({ has: this.page.locator(`input[name=${JSON.stringify(group)}]`) });
+    const item = scope.filter({ hasText: pick }).first();
+    if (!(await item.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
+    return this.selectMcqItem(item);
+  }
+
+  async selectFirstMcqItem(): Promise<boolean> {
+    return this.selectMcqItem(this.page.locator('.mcq-item').first());
   }
 
   /**
    * Click the label (like a real user); verify the input registered and retry
    * through input.check — React-controlled inputs can lag right after mount.
    */
-  private async selectMcqItem(item: Locator) {
+  private async selectMcqItem(item: Locator): Promise<boolean> {
     await item
       .locator('label')
       .first()
@@ -246,9 +274,9 @@ export class AdaptiveDeckPO {
     await this.page.waitForTimeout(300);
 
     const input = item.locator('input').first();
-    if (!(await input.isChecked({ timeout: 2_000 }).catch(() => false))) {
-      await input.check({ force: true, ...ACTION_TIMEOUT }).catch(() => undefined);
-    }
+    if (await input.isChecked({ timeout: 2_000 }).catch(() => false)) return true;
+    await input.check({ force: true, ...ACTION_TIMEOUT }).catch(() => undefined);
+    return input.isChecked({ timeout: 1_000 }).catch(() => false);
   }
 
   /**
@@ -404,26 +432,32 @@ export class AdaptiveDeckPO {
     return true;
   }
 
-  /** Swiper image carousel: click next arrow until all slides viewed. */
+  /** Swiper image carousels: click each carousel's next arrow until all its slides viewed. */
   async clickThroughCarousels(): Promise<number> {
-    const bullets = this.page.locator('.janus-image-carousel .swiper-pagination-bullet');
-    const count = await bullets.count();
-    if (count <= 1) return 0;
+    const carousels = this.page.locator('.janus-image-carousel');
+    const carouselCount = await carousels.count();
 
     let clicked = 0;
-    const nextBtn = this.page.locator('.janus-image-carousel .swiper-button-next').first();
-    for (let i = 1; i < count; i++) {
-      const ok = await nextBtn.click({ timeout: 3_000 }).then(
-        () => true,
-        () => false,
-      );
-      if (ok) clicked++;
-      await this.page.waitForTimeout(500);
+    for (let c = 0; c < carouselCount; c++) {
+      const carousel = carousels.nth(c);
+      const bullets = await carousel.locator('.swiper-pagination-bullet').count();
+      if (bullets <= 1) continue;
+
+      const nextBtn = carousel.locator('.swiper-button-next').first();
+      for (let i = 1; i < bullets; i++) {
+        const ok = await nextBtn.click({ timeout: 3_000 }).then(
+          () => true,
+          () => false,
+        );
+        if (!ok) break;
+        clicked++;
+        await this.page.waitForTimeout(500);
+      }
     }
     return clicked;
   }
 
-  /** Play any video at 16x speed so CAPI registers a full watch quickly. */
+  /** Play any video at 16x speed to its ended event, so CAPI registers a full watch. */
   async playVideos(): Promise<number> {
     const videos = this.page.locator('video');
     const count = await videos.count();
@@ -431,8 +465,8 @@ export class AdaptiveDeckPO {
 
     let played = 0;
     for (let i = 0; i < count; i++) {
-      const duration = await videos
-        .nth(i)
+      const video = videos.nth(i);
+      const duration = await video
         .evaluate(async (v: HTMLVideoElement) => {
           v.muted = true;
           v.playbackRate = 16;
@@ -440,9 +474,28 @@ export class AdaptiveDeckPO {
           return v.duration || 0;
         })
         .catch(() => 0);
-      if (duration > 0) played++;
-      const waitMs = Math.min(Math.ceil((duration / 16) * 1000) + 1500, 15_000);
-      await this.page.waitForTimeout(waitMs);
+      if (!Number.isFinite(duration) || duration <= 0) continue;
+
+      const timeoutMs = Math.min(Math.ceil((duration / 16) * 1000) + 5_000, 120_000);
+      const ended = await video
+        .evaluate(
+          (v: HTMLVideoElement, timeout: number) =>
+            new Promise<boolean>((resolve) => {
+              if (v.ended) return resolve(true);
+              const onEnded = () => {
+                clearTimeout(timer);
+                resolve(true);
+              };
+              const timer = setTimeout(() => {
+                v.removeEventListener('ended', onEnded);
+                resolve(false);
+              }, timeout);
+              v.addEventListener('ended', onEnded, { once: true });
+            }),
+          timeoutMs,
+        )
+        .catch(() => false);
+      if (ended) played++;
     }
     return played;
   }

@@ -67,7 +67,7 @@ export async function completeAdaptiveHappyPath(
     }
 
     stuckCount += 1;
-    if (stuckCount >= 3) {
+    if (stuckCount >= 5) {
       const feedback = await deck.feedbackText();
       throw new Error(
         `Stuck at screen ${step} (${label}). Feedback: ${feedback.replace(/\s+/g, ' ').slice(0, 200)}`,
@@ -144,28 +144,34 @@ async function answerCurrentScreen(deck: AdaptiveDeckPO, key: LessonAnswers): Pr
   }
 
   if (scan.radios > 0) {
-    const matched: string[] = [];
-    for (const rule of key.mcq.radios) {
-      if (!re(rule.when_labels_match).test(scan.mcqLabels)) continue;
-      if (rule.when_iframe && !hasIframe(rule.when_iframe)) continue;
+    const labels: string[] = [];
+    for (const group of scan.radioGroups) {
+      const rule = key.mcq.radios.find(
+        (r) =>
+          re(r.when_labels_match).test(group.labels) &&
+          (!r.when_iframe || hasIframe(r.when_iframe)),
+      );
+      if (!rule) continue;
 
-      await deck.selectMcqByText(re(rule.pick));
-      matched.push(rule.pick.slice(0, 30));
-      break;
+      const pick = rule.pick.slice(0, 30);
+      labels.push(
+        (await deck.selectMcqInGroup(group.group, re(rule.pick)))
+          ? `MCQ (${pick})`
+          : `MCQ pick NOT selected (${pick})`,
+      );
     }
-    if (matched.length > 0) {
-      parts.push(`MCQ (${matched.join(' + ')})`);
-    } else {
-      await deck.selectFirstMcqItem();
-      parts.push('MCQ (any)');
+    if (labels.length === 0) {
+      labels.push((await deck.selectFirstMcqItem()) ? 'MCQ (any)' : 'MCQ (none selected)');
     }
+    parts.push(...labels);
   }
 
   if (scan.checkboxes > 0) {
+    let selected = 0;
     for (const source of key.mcq.checkboxes) {
-      await deck.selectMcqByText(re(source));
+      if (await deck.selectMcqByText(re(source))) selected++;
     }
-    parts.push('checkboxes');
+    parts.push(`checkboxes (${selected} selected)`);
   }
 
   if (scan.textInputs > 0) {
