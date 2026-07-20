@@ -9,6 +9,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Oli.Seeder
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Accounts
   alias Oli.Authoring.Course
   alias OliWeb.Delivery.Instructor.PreviewRoutes
@@ -171,6 +172,79 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## Unit 1 was saved and is now part of the curriculum
       assert view |> render() =~ "Great Unit 1"
+    end
+
+    test "add materials lists and browses product sources", %{
+      conn: conn,
+      map: %{section_1: section},
+      institution: institution,
+      source_project: source_project,
+      source_publication: source_publication,
+      source_hidden_resource_id: source_hidden_resource_id
+    } do
+      product_source =
+        insert(:section, %{
+          base_project: source_project,
+          institution: institution,
+          title: "Curated Product Source",
+          type: :blueprint
+        })
+
+      {:ok, _product_source} =
+        Sections.create_section_resources(product_source, source_publication)
+
+      {1, _} =
+        Oli.Repo.update_all(
+          from(sr in SectionResource,
+            where:
+              sr.section_id == ^product_source.id and sr.resource_id == ^source_hidden_resource_id
+          ),
+          set: [hidden: true]
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      assert view
+             |> has_element?(
+               ".hierarchy table > tbody tr",
+               "Curated Product Source"
+             )
+
+      assert view |> has_element?(".hierarchy table > tbody tr", "Product/Template")
+      assert view |> has_element?(".hierarchy table > tbody tr span", "Project")
+
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Curated Product Source"
+      )
+      |> render_click()
+
+      assert view |> has_element?(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
+
+      refute view
+             |> has_element?(".hierarchy > div[id^=\"hierarchy_item_\"]", "Another orph. Page")
+
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
+      |> render_click()
+
+      view
+      |> element("button[phx-value-tab_name='all_pages']")
+      |> render_click()
+
+      assert view |> has_element?(".remix_materials_table td", "Elixir Page")
+      refute view |> has_element?(".remix_materials_table td", "Another orph. Page")
+      assert view |> has_element?(".remix_materials_table input[checked]")
+
+      html =
+        render_hook(view, "HierarchyPicker.select_publication", %{"key" => "product:missing"})
+
+      assert html =~ "This source is no longer available."
     end
 
     test "saving redirects instructor correctly", %{
@@ -1809,6 +1883,9 @@ defmodule OliWeb.RemixSectionLiveTest do
      institution: map.institution,
      project: map.project,
      publication: map.publication,
+     source_project: proj_1,
+     source_publication: proj_1_publication,
+     source_hidden_resource_id: orphan_revision_2.resource_id,
      orphan_revision_publication: map.pub2}
   end
 

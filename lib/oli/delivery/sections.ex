@@ -4778,6 +4778,29 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns pinned project publications grouped by section id for the supplied sections.
+
+  This is the set-based counterpart to `get_pinned_project_publications/1` for
+  callers that need to resolve several product sources at once.
+  """
+  def get_pinned_project_publications_for_sections([]), do: %{}
+
+  def get_pinned_project_publications_for_sections(section_ids) do
+    from(spp in SectionsProjectsPublications,
+      where: spp.section_id in ^section_ids,
+      join: publication in Publication,
+      on: publication.id == spp.publication_id,
+      select: {spp.section_id, spp.project_id, publication}
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {section_id, project_id, publication}, acc ->
+      Map.update(acc, section_id, %{project_id => publication}, fn publications ->
+        Map.put(publications, project_id, publication)
+      end)
+    end)
+  end
+
+  @doc """
   For a given section and resource, determine which project this
   resource originally belongs to.
   """
