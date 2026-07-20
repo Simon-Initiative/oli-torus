@@ -55,14 +55,38 @@ setRuntimeConfig({
   },
 });
 
-test.describe('mixed workflow', () => {
-  test.setTimeout(120_000);
+test.describe('MIXED workflow', () => {
+  test.setTimeout(300_000);
 
-  test('publishes mixed page updates and validates preview plus delivery for code block and callout', async ({
-    runWorkflow,
-  }) => {
-    await test.step('execute mixed workflow end-to-end', async () => {
-      await runWorkflow('./mixed_workflow/mixed-content.workflow.yaml', {
+  test.describe('CORE', () => {
+    test('CORE-A: typing text persists to author preview and delivery', async ({ runWorkflow }) => {
+      await runWorkflow('./mixed_workflow/core.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: {
+          RUN_ID: runId,
+        },
+      });
+    });
+  });
+
+  test.describe('CODEBLOCK', () => {
+    test('CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/codeblock.workflow.yaml', {
+          actions: mixedWorkflowActions,
+          params: {
+            RUN_ID: runId,
+        },
+      });
+    });
+  });
+
+  test.describe('CALLOUT', () => {
+    test('CALLOUT-A: block callout text persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/callout.workflow.yaml', {
         actions: mixedWorkflowActions,
         params: {
           RUN_ID: runId,

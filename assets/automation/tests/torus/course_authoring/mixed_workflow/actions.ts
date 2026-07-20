@@ -16,6 +16,28 @@ const previewFlush = async (openPreview: () => Promise<{ close(): Promise<void> 
 };
 
 export const mixedWorkflowActions: WorkflowActionRegistry = {
+  async author_core_text_editing({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const typedText = 'Mixed workflow typing stays responsive across a couple of sentences.';
+    const paragraph = page
+      .locator('[id^="resource-editor-"]')
+      .getByRole('paragraph')
+      .filter({ hasText: BASE_CONTENT_TEXT })
+      .first();
+
+    await test.step('sign in and type the CORE-A text without editor lag', async () => {
+      await homeTask.login('author');
+      await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+
+      await paragraph.fill(`${BASE_CONTENT_TEXT} ${typedText}`);
+      await expect(paragraph).toHaveText(`${BASE_CONTENT_TEXT} ${typedText}`);
+      await previewFlush(() => curriculumTask.openPreview());
+    });
+
+    return { page_revision_slug: pageRevisionSlug, typed_text: typedText };
+  },
+
   async author_add_code_block({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
@@ -31,7 +53,9 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     await test.step('insert a code block and open preview to flush the draft change', async () => {
       await curriculumTask.addCodeBlockToolbar(language, code, caption, false);
       await previewFlush(() => curriculumTask.openPreview());
-      await expect(page).toHaveURL(new RegExp(`/curriculum/${escapeRegExp(pageRevisionSlug)}/edit$`));
+      await expect(page).toHaveURL(
+        new RegExp(`/curriculum/${escapeRegExp(pageRevisionSlug)}/edit$`),
+      );
     });
 
     return {
@@ -42,12 +66,13 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     };
   },
 
-  async author_add_callout({ curriculumTask, page }, params) {
+  async author_add_callout({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
     const calloutText = asString(params.callout_text, 'callout_text');
 
-    await test.step('re-open the page editor after the first publish cycle', async () => {
+    await test.step('sign in as author and open the seeded page in the editor', async () => {
+      await homeTask.login('author');
       await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
     });
 
@@ -59,7 +84,9 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
       await page.getByRole('button', { name: 'Callout' }).click();
       await page.keyboard.type(calloutText);
       await curriculumTask.waitChangeVisualize(calloutText);
-      await expect(page).toHaveURL(new RegExp(`/curriculum/${escapeRegExp(pageRevisionSlug)}/edit$`));
+      await expect(page).toHaveURL(
+        new RegExp(`/curriculum/${escapeRegExp(pageRevisionSlug)}/edit$`),
+      );
     });
 
     return {
@@ -103,5 +130,7 @@ async function focusBaseParagraphForBlockInsert(page: Page) {
     }
   }
 
-  throw new Error('Could not focus the base paragraph strongly enough to expose the block insert toolbar');
+  throw new Error(
+    'Could not focus the base paragraph strongly enough to expose the block insert toolbar',
+  );
 }

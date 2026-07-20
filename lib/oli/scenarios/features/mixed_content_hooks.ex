@@ -75,6 +75,18 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   end
 
   @doc """
+  Asserts that the text entered for the CORE-A workflow appears in author preview.
+  """
+  def assert_author_preview_core_text_editing(%ExecutionState{} = state) do
+    state
+    |> author_preview_html()
+    |> html_text()
+    |> assert_contains(required_param!(state, "EXPECTED_TYPED_TEXT"))
+
+    state
+  end
+
+  @doc """
   Asserts that the published delivery revision contains the expected code block content.
   """
   def assert_student_delivery_codeblock(%ExecutionState{} = state) do
@@ -82,6 +94,18 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
 
     assert nested_contains?(content, state.params["EXPECTED_CODEBLOCK_CAPTION"])
     assert nested_contains?(content, state.params["EXPECTED_CODEBLOCK_CODE"])
+
+    state
+  end
+
+  @doc """
+  Asserts that the text entered for the CORE-A workflow persists to published delivery content.
+  """
+  def assert_student_delivery_core_text_editing(%ExecutionState{} = state) do
+    assert nested_contains?(
+             delivered_revision_content(state),
+             required_param!(state, "EXPECTED_TYPED_TEXT")
+           )
 
     state
   end
