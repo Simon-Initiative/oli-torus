@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.RemixSection do
         _session,
         socket
       ) do
-    case Mount.for(section_slug, socket) do
+    case remix_mount_for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
@@ -135,6 +135,26 @@ defmodule OliWeb.Delivery.RemixSection do
 
       {:author, current_author, section} ->
         mount_as_product_creator(socket, section, current_author)
+    end
+  end
+
+  defp remix_mount_for(section_slug, socket) do
+    case Oli.Delivery.Sections.get_section_by_slug(section_slug) do
+      %Section{type: :enrollable} = section ->
+        case {socket.assigns[:current_user], socket.assigns[:current_author]} do
+          {%User{hidden: true} = current_user, _current_author} ->
+            if OliWeb.ViewHelpers.is_section_instructor_or_admin?(section.slug, current_user) do
+              {:user, current_user, section}
+            else
+              Mount.for(section_slug, socket)
+            end
+
+          _ ->
+            Mount.for(section_slug, socket)
+        end
+
+      _ ->
+        Mount.for(section_slug, socket)
     end
   end
 

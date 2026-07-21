@@ -14,7 +14,7 @@ Phase: `6 - Final Verification and Release Readiness`
   - Added `Oli.Delivery.Remix.init_admin_instructor/2` for admin-authored enrollable section Remix.
   - Routed the admin/enrollable LiveView branch through the new initializer.
   - Added a section-scoped hidden-instructor user initializer branch for enrollable section Remix that augments normal user-visible sources with active-community project and product/template sources.
-  - Updated section mount precedence so hidden instructor users win over admin authors for real course section Remix.
+  - Updated Remix section mount precedence so hidden instructor users win over admin authors for real course section Remix without changing shared section mount behavior.
   - Hardened product-source page listing and selection so descendants of hidden product containers are excluded by the `SectionResourceDepot`-backed visible hierarchy.
 - [x] Data or interface changes
   - No database migration or persisted state change.
@@ -25,7 +25,7 @@ Phase: `6 - Final Verification and Release Readiness`
   - Required `Accounts.at_least_content_admin?/1`.
   - Preserved generic author initialization and product-template editing behavior.
   - Scoped hidden-instructor community expansion to `User.hidden == true` users that are instructors in the target section.
-  - Preserved admin-author precedence for non-hidden users and product/template section Remix.
+  - Preserved admin-author precedence for non-hidden users, product/template section Remix, and non-Remix delivery/admin views.
 - [x] Observability or operational updates when needed
   - No new telemetry was required; existing source-selection and add-materials telemetry paths apply after a product/template source is selected.
 
@@ -68,7 +68,7 @@ Phase: `6 - Final Verification and Release Readiness`
 - Round 3 findings:
   - Runtime validation showed mixed admin-author and hidden-instructor sessions were still matching the admin-author path first for real course section Remix.
 - Round 3 fixes:
-  - Updated mount precedence to prefer a valid hidden instructor before admin-author matching for real course sections.
+  - Updated `Delivery.RemixSection` mount precedence to prefer a valid hidden instructor before admin-author matching for real course sections, while restoring shared `OliWeb.Sections.Mount` admin precedence.
 - Round 4 findings:
   - Runtime validation showed hidden instructors could see active-community templates but not active-community projects.
 - Round 4 fixes:
