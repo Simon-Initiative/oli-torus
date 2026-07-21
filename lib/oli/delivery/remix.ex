@@ -18,17 +18,19 @@ defmodule Oli.Delivery.Remix do
   alias Oli.Delivery.Remix.State
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Groups.{Community, CommunityVisibility}
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Publishing.{PublishedResource, Publications.Publication}
+  alias Oli.Authoring.Course.Project
   alias Oli.Resources
   alias Oli.Resources.Revision
+  alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
   alias Oli.Repo
 
@@ -42,8 +44,21 @@ defmodule Oli.Delivery.Remix do
   Returns {:ok, %State{}} on success.
   """
   @spec init(Section.t(), User.t() | Author.t()) :: {:ok, State.t()} | {:error, term()}
+  def init(%Section{type: :enrollable} = section, %User{hidden: true} = user) do
+    section = Repo.preload(section, :institution)
+    user = Repo.preload(user, :author)
+
+    available_sources =
+      Publishing.retrieve_visible_sources(user, section.institution)
+      |> sources_for(section)
+      |> maybe_include_hidden_instructor_product_sources(section, user)
+
+    build_initial_state(section, available_sources)
+  end
+
   def init(%Section{} = section, %User{} = user) do
     section = Repo.preload(section, :institution)
+    user = Repo.preload(user, :author)
 
     available_sources =
       Publishing.retrieve_visible_sources(user, section.institution)
@@ -63,6 +78,37 @@ defmodule Oli.Delivery.Remix do
     build_initial_state(section, available_sources)
   end
 
+  @doc """
+  Initialize Remix state for an administrator acting as the instructor of an
+  enrollable course section.
+
+  This is intentionally scoped to real course sections so product/template
+  source visibility is not added to generic author initialization or product
+  template editing.
+  """
+  @spec init_admin_instructor(Section.t(), Author.t()) :: {:ok, State.t()} | {:error, term()}
+  def init_admin_instructor(%Section{type: :enrollable} = section, %Author{} = author) do
+    case Accounts.at_least_content_admin?(author) do
+      true ->
+        section = Repo.preload(section, :institution)
+
+        project_sources =
+          Publishing.all_available_publications()
+          |> Enum.map(&Source.project/1)
+
+        available_sources =
+          (project_sources ++ all_product_sources())
+          |> pin_precedence(section)
+
+        build_initial_state(section, available_sources)
+
+      false ->
+        {:error, :unauthorized}
+    end
+  end
+
+  def init_admin_instructor(%Section{}, %Author{}), do: {:error, :unsupported_section_type}
+
   defp sources_for(sources, section) do
     product_pinned_publications =
       sources
@@ -80,6 +126,77 @@ defmodule Oli.Delivery.Remix do
       end)
 
     pin_precedence(sources, section)
+  end
+
+  defp maybe_include_hidden_instructor_product_sources(sources, section, user) do
+    case Sections.is_instructor?(user, section.slug) do
+      true -> include_community_sources(sources, section)
+      false -> sources
+    end
+  end
+
+  defp include_community_sources(sources, section) do
+    (sources ++ all_community_project_sources() ++ all_community_product_sources())
+    |> Enum.uniq_by(& &1.key)
+    |> pin_precedence(section)
+  end
+
+  defp all_community_project_sources do
+    from(community in Community,
+      join: visibility in CommunityVisibility,
+      on: visibility.community_id == community.id,
+      join: project in Project,
+      on: project.id == visibility.project_id and project.status == :active,
+      join: last_publication in subquery(Publishing.last_publication_query()),
+      on: last_publication.project_id == project.id,
+      join: publication in Publication,
+      on: publication.id == last_publication.id,
+      where: community.status == :active,
+      select: %{publication | project: project},
+      distinct: true
+    )
+    |> Repo.all()
+    |> Enum.map(&Source.project/1)
+  end
+
+  defp all_community_product_sources do
+    products =
+      from(product in Section,
+        join: visibility in CommunityVisibility,
+        on: visibility.section_id == product.id,
+        join: community in Community,
+        on: community.id == visibility.community_id and community.status == :active,
+        where: product.type == :blueprint and product.status == :active,
+        group_by: [product.id, product.title, product.slug],
+        order_by: [asc: product.title],
+        select: struct(product, [:id, :title, :slug])
+      )
+      |> Repo.all()
+
+    products_to_sources(products)
+  end
+
+  defp all_product_sources do
+    products =
+      from(product in Section,
+        where: product.type == :blueprint and product.status == :active,
+        order_by: [asc: product.title],
+        select: struct(product, [:id, :title, :slug])
+      )
+      |> Repo.all()
+
+    products_to_sources(products)
+  end
+
+  defp products_to_sources(products) do
+    product_pinned_publications =
+      products
+      |> Enum.map(& &1.id)
+      |> Sections.get_pinned_project_publications_for_sections()
+
+    Enum.map(products, fn product ->
+      Source.product(product, Map.get(product_pinned_publications, product.id, %{}))
+    end)
   end
 
   defp pin_precedence(sources, %Section{id: section_id}) do
@@ -322,6 +439,13 @@ defmodule Oli.Delivery.Remix do
     text_filter = Map.get(params, :text_search)
     excluded_resource_ids = Map.get(params, :exclude_resource_ids, [])
 
+    visible_resource_ids =
+      product_id
+      |> visible_product_resource_pairs()
+      |> Enum.map(&elem(&1, 1))
+      |> MapSet.new()
+      |> MapSet.to_list()
+
     %{limit: limit, offset: offset} = normalize_page_params(params)
 
     query =
@@ -337,6 +461,7 @@ defmodule Oli.Delivery.Remix do
         where:
           sr.section_id == ^product_id and rev.resource_type_id == ^page_type_id and
             rev.deleted != true and (is_nil(sr.hidden) or sr.hidden == false),
+        where: sr.resource_id in ^visible_resource_ids,
         select: %{
           id: rev.id,
           title: rev.title,
@@ -387,17 +512,33 @@ defmodule Oli.Delivery.Remix do
   defp maybe_limit(query, _limit), do: query
 
   defp visible_product_resources(product_id, candidates) do
-    project_ids = Enum.map(candidates, &elem(&1, 0)) |> Enum.uniq()
-    resource_ids = Enum.map(candidates, &elem(&1, 1)) |> Enum.uniq()
+    visible_resource_pairs = visible_product_resource_pairs(product_id)
 
-    from(sr in SectionResource,
-      where:
-        sr.section_id == ^product_id and sr.project_id in ^project_ids and
-          sr.resource_id in ^resource_ids and (is_nil(sr.hidden) or sr.hidden == false),
-      select: {sr.project_id, sr.resource_id}
-    )
-    |> Repo.all()
+    candidates
+    |> Enum.filter(&MapSet.member?(visible_resource_pairs, &1))
     |> MapSet.new()
+  end
+
+  defp visible_product_resource_pairs(product_id) do
+    case Sections.get_section_by(id: product_id) do
+      %Section{} = product ->
+        product
+        |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
+        |> visible_hierarchy()
+        |> case do
+          %HierarchyNode{} = hierarchy ->
+            hierarchy
+            |> Hierarchy.flatten_hierarchy()
+            |> Enum.map(&{&1.project_id, &1.resource_id})
+            |> MapSet.new()
+
+          nil ->
+            MapSet.new()
+        end
+
+      nil ->
+        MapSet.new()
+    end
   end
 
   defp normalize_page_params(params) do

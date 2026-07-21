@@ -82,6 +82,147 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert html =~ "Customize Content"
     end
 
+    test "add materials lists product template sources for admin-authored enrollable sections", %{
+      conn: conn,
+      project: project,
+      publication: publication,
+      source_project: source_project,
+      source_publication: source_publication
+    } do
+      product_source =
+        insert(:section, %{
+          base_project: source_project,
+          title: "Admin Template Source",
+          type: :blueprint
+        })
+
+      {:ok, _product_source} =
+        Sections.create_section_resources(product_source, source_publication)
+
+      target_section =
+        insert(:section, %{
+          base_project: project,
+          title: "Admin Enrollable Target",
+          type: :enrollable
+        })
+
+      {:ok, _target_section} = Sections.create_section_resources(target_section, publication)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{target_section.slug}/remix")
+
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      view
+      |> element("form[phx-change='HierarchyPicker.publications_text_search']")
+      |> render_change(%{"text_search" => "Admin Template Source"})
+
+      assert view
+             |> has_element?(
+               ".hierarchy table > tbody tr",
+               "Admin Template Source"
+             )
+
+      assert view |> has_element?(".hierarchy table > tbody tr", "Product/Template")
+
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Admin Template Source"
+      )
+      |> render_click()
+
+      assert view |> has_element?(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
+    end
+
+    test "add materials lists community product template sources for hidden instructor sessions",
+         %{
+           conn: conn,
+           project: project,
+           publication: publication,
+           source_project: source_project,
+           source_publication: source_publication
+         } do
+      community = insert(:community, %{global_access: false})
+
+      Oli.Repo.update_all(
+        from(project in Oli.Authoring.Course.Project, where: project.id == ^source_project.id),
+        set: [visibility: :selected]
+      )
+
+      product_source =
+        insert(:section, %{
+          base_project: source_project,
+          title: "Hidden Instructor Template Source",
+          type: :blueprint
+        })
+
+      {:ok, _product_source} =
+        Sections.create_section_resources(product_source, source_publication)
+
+      insert(:community_product_visibility, %{community: community, section: product_source})
+
+      unassociated_product_source =
+        insert(:section, %{
+          base_project: source_project,
+          title: "Hidden Instructor Unassociated Template Source",
+          type: :blueprint
+        })
+
+      {:ok, _unassociated_product_source} =
+        Sections.create_section_resources(unassociated_product_source, source_publication)
+
+      target_section =
+        insert(:section, %{
+          base_project: project,
+          title: "Hidden Instructor Enrollable Target",
+          type: :enrollable
+        })
+
+      {:ok, _target_section} = Sections.create_section_resources(target_section, publication)
+      {:ok, {hidden_instructor, _token}} = Sections.fetch_hidden_instructor(target_section.id)
+
+      conn = log_in_user(conn, hidden_instructor)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{target_section.slug}/remix")
+
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      view
+      |> element("form[phx-change='HierarchyPicker.publications_text_search']")
+      |> render_change(%{"text_search" => "Hidden Instructor Unassociated Template Source"})
+
+      refute view
+             |> has_element?(
+               ".hierarchy table > tbody tr",
+               "Hidden Instructor Unassociated Template Source"
+             )
+
+      view
+      |> element("form[phx-change='HierarchyPicker.publications_text_search']")
+      |> render_change(%{"text_search" => "Hidden Instructor Template Source"})
+
+      assert view
+             |> has_element?(
+               ".hierarchy table > tbody tr",
+               "Hidden Instructor Template Source"
+             )
+
+      assert view |> has_element?(".hierarchy table > tbody tr", "Product/Template")
+
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Hidden Instructor Template Source"
+      )
+      |> render_click()
+
+      assert view |> has_element?(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
+    end
+
     test "remix section remove and save (including last course material)", %{
       conn: conn,
       section: section
@@ -1723,6 +1864,8 @@ defmodule OliWeb.RemixSectionLiveTest do
       module_2: module_2_revision,
       unit_1: unit_1_revision,
       unit_2: unit_2_revision,
+      source_project: proj_1,
+      source_publication: proj_1_publication,
       admin: admin,
       conn: conn
     }

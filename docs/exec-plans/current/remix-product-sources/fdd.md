@@ -25,6 +25,9 @@ The key implementation choice is deliberately narrow: introduce source discovery
   - Product source hierarchy should come from `Oli.Publishing.DeliveryResolver.full_hierarchy(product.slug)`.
   - The existing `sections_projects_publications` rows remain the source of truth for resolving section resources after save.
   - Instructors may select from a product and its base project in the same add operation when independently authorized, subject to existing conflict validation.
+  - Admin authors editing real course sections (`type: :enrollable`) use a scoped admin Remix initializer that includes active product/template sources through admin authority.
+  - Section-scoped hidden instructor users used for admin delivery access on real course sections are treated, within Remix source discovery only, as members of all active communities for project and product/template source visibility. This does not mutate community membership or change generic source discovery outside Remix.
+  - When both an admin author and a section-scoped hidden instructor are present for a real course section, Remix mounts through the hidden instructor path so course customization follows instructor-source semantics.
   - No feature flag is required; rollout follows the normal deployment path.
 
 ## 3. Repository Context Summary
@@ -162,6 +165,7 @@ Add flow:
 
 ## 10. Failure Modes & Resilience
 - Unauthorized product source appears: prevent by deriving sources only from authorized visibility queries and add regression tests for product-only access not exposing base project sources.
+- Admin author cannot see product/template sources while customizing a real course section: initialize admin/enrollable Remix through the admin source policy rather than the generic author initializer, and keep the policy out of product-template editing.
 - Source disappears after modal open: return `:unavailable_source` or `:unavailable_publication`, clear selection, and show the existing unavailable materials error style.
 - Product source contains a resource whose project publication is not pinned: fail the selection/add path with `:unavailable_publication`.
 - Shared-resource conflict across product and project selections: let existing `validate_no_shared_project_resources/2` reject based on resolved publication ids.

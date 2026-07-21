@@ -23,6 +23,9 @@ Out of scope:
 - Product and base project selections may coexist only when the actor is independently authorized for both; existing shared-resource conflict checks remain the arbiter (`FR-006`, `AC-006`).
 - Telemetry should use aggregate metadata only and must not include raw content, resource titles, user emails, LMS context identifiers, or LiveView params (`FR-007`, `AC-007`).
 - Scenario DSL capability is unknown. The implementation must check current `Oli.Scenarios` directives before deciding whether to use `build_scenario` only or extend the DSL with `extend_scenario` (`FR-008`, `AC-009`).
+- Admin authors customizing real course sections should get a scoped admin Remix source set that includes product/template sources.
+- Section-scoped hidden instructor users used for admin delivery access on real course sections should be treated, within Remix source discovery only, as members of all active communities for project and product/template source visibility.
+- When both an admin author and a section-scoped hidden instructor are present for a real course section, Remix should prefer the hidden instructor match over the admin-author match.
 
 ## Estimate
 Estimated engineering effort: 9-15 developer days.
@@ -184,6 +187,8 @@ Estimate drivers:
   - [ ] Run targeted domain, LiveView, telemetry, and scenario tests.
   - [ ] Run broader nearby regression tests for groups/publishing visibility if source discovery touched those modules.
   - [ ] Manually validate the `TRIAGE-135` flow: product-only community access, source picker labels, product-source remix, no unrelated base project source, and unchanged project-source remix.
+  - [ ] Manually validate the admin-author course-section flow: an admin author can open Remix on an enrollable section and see/select product/template sources.
+  - [ ] Manually validate the hidden-instructor course-section flow: the hidden instructor session created for admin delivery access can open Remix on an enrollable section and see/select active-community project and product/template sources.
   - [ ] Confirm no feature flag was introduced or document why a scoped flag became necessary.
   - [ ] Prepare review notes for `.review/security.md`, `.review/performance.md`, `.review/elixir.md`, `.review/ui.md`, and `.review/requirements.md`.
   - [ ] Confirm AppSignal/log monitoring expectations for aggregate source-selection and add-outcome signals.

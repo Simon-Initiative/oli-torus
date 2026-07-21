@@ -24,35 +24,63 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
         title: "Hidden product page"
       })
 
+    descendant_of_hidden_container =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Descendant product page"
+      })
+
+    hidden_container =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Hidden product container",
+        children: [descendant_of_hidden_container.resource_id]
+      })
+
     root =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         title: "Product root",
-        children: [visible_page.resource_id, hidden_page.resource_id]
+        children: [
+          visible_page.resource_id,
+          hidden_page.resource_id,
+          hidden_container.resource_id
+        ]
       })
 
     publication = insert(:publication, %{project: project, root_resource_id: root.resource_id})
 
-    Enum.each([root, visible_page, hidden_page], fn revision ->
-      insert(:published_resource, %{
-        publication: publication,
-        resource: revision.resource,
-        revision: revision,
-        author: author
-      })
+    Enum.each(
+      [root, visible_page, hidden_page, hidden_container, descendant_of_hidden_container],
+      fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
 
-      insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
-    end)
+        insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+      end
+    )
 
     product = insert(:section, %{base_project: project, title: "Curated product"})
     {:ok, _} = Sections.create_section_resources(product, publication)
 
-    hidden_section_resource =
+    hidden_page_section_resource =
       product.id
       |> Sections.get_section_resources()
       |> Enum.find(&(&1.resource_id == hidden_page.resource_id))
 
-    {:ok, _} = Sections.update_section_resource(hidden_section_resource, %{hidden: true})
+    {:ok, _} = Sections.update_section_resource(hidden_page_section_resource, %{hidden: true})
+
+    hidden_container_section_resource =
+      product.id
+      |> Sections.get_section_resources()
+      |> Enum.find(&(&1.resource_id == hidden_container.resource_id))
+
+    {:ok, _} =
+      Sections.update_section_resource(hidden_container_section_resource, %{hidden: true})
 
     target = insert(:section, base_project: project)
     {:ok, _} = Sections.create_section_resources(target, publication)
@@ -66,7 +94,8 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
       source: source,
       publication: publication,
       visible_page: visible_page,
-      hidden_page: hidden_page
+      hidden_page: hidden_page,
+      descendant_of_hidden_container: descendant_of_hidden_container
     }
   end
 
@@ -74,20 +103,23 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
     state: state,
     source: source,
     visible_page: visible_page,
-    hidden_page: hidden_page
+    hidden_page: hidden_page,
+    descendant_of_hidden_container: descendant_of_hidden_container
   } do
     assert {:ok, ^source, hierarchy} = Remix.source_hierarchy(source.key, state)
 
     resource_ids = hierarchy |> Hierarchy.flatten_hierarchy() |> Enum.map(& &1.resource_id)
     assert visible_page.resource_id in resource_ids
     refute hidden_page.resource_id in resource_ids
+    refute descendant_of_hidden_container.resource_id in resource_ids
   end
 
   test "lists only visible product pages with search and target exclusions", %{
     state: state,
     source: source,
     visible_page: visible_page,
-    hidden_page: hidden_page
+    hidden_page: hidden_page,
+    descendant_of_hidden_container: descendant_of_hidden_container
   } do
     assert {:ok, {1, [%{resource_id: resource_id, project_id: project_id}]}} =
              Remix.source_pages(source.key, state, %{text_search: "visible", limit: 5, offset: 0})
@@ -105,6 +137,13 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
     assert {:ok, {0, []}} =
              Remix.source_pages(source.key, state, %{text_search: "hidden", limit: 5, offset: 0})
 
+    assert {:ok, {0, []}} =
+             Remix.source_pages(source.key, state, %{
+               text_search: "descendant",
+               limit: 5,
+               offset: 0
+             })
+
     assert {:ok, {1, [_]}} =
              Remix.source_pages(source.key, state, %{limit: -1, offset: -1})
 
@@ -114,13 +153,15 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
              Remix.source_pages(source.key, state, %{limit: 5, offset: 1_000_000})
 
     assert hidden_page.resource_id != visible_page.resource_id
+    assert descendant_of_hidden_container.resource_id != visible_page.resource_id
   end
 
   test "resolves a product item through its pinned publication", %{
     source: source,
     publication: publication,
     visible_page: visible_page,
-    hidden_page: hidden_page
+    hidden_page: hidden_page,
+    descendant_of_hidden_container: descendant_of_hidden_container
   } do
     assert {:ok, {publication_id, resource_id}} =
              Remix.selection_tuple(source, %{
@@ -146,6 +187,12 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
              Remix.selection_tuple(source, %{
                project_id: publication.project_id,
                resource_id: hidden_page.resource_id
+             })
+
+    assert {:error, :unavailable_publication} =
+             Remix.selection_tuple(source, %{
+               project_id: publication.project_id,
+               resource_id: descendant_of_hidden_container.resource_id
              })
 
     assert {:error, :unavailable_publication} =

@@ -123,6 +123,9 @@ defmodule OliWeb.Delivery.RemixSection do
           section.type == :blueprint ->
             mount_as_product_creator(socket, section, current_author)
 
+          section.type == :enrollable ->
+            mount_as_admin_instructor(socket, section, current_author)
+
           true ->
             mount_as_instructor(socket, section, current_author)
         end
@@ -151,6 +154,19 @@ defmodule OliWeb.Delivery.RemixSection do
       breadcrumbs: set_breadcrumbs(:user, state.section),
       redirect_after_save: redirect_after_save(:instructor, state.section, socket)
     )
+  end
+
+  def mount_as_admin_instructor(socket, section, %Author{} = current_author) do
+    case Remix.init_admin_instructor(section, current_author) do
+      {:ok, state} ->
+        init_state_from_remix(socket, state,
+          breadcrumbs: set_breadcrumbs(:user, state.section),
+          redirect_after_save: redirect_after_save(:instructor, state.section, socket)
+        )
+
+      {:error, reason} ->
+        Mount.handle_error(socket, {:error, reason})
+    end
   end
 
   def mount_as_open_and_free(

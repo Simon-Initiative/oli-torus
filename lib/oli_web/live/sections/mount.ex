@@ -32,6 +32,12 @@ defmodule OliWeb.Sections.Mount do
           {user, nil} ->
             ensure_instructor(section, user)
 
+          {%User{hidden: true} = user, author} ->
+            case ensure_instructor(section, user) do
+              {:error, _} -> ensure_admin(section, author)
+              result -> result
+            end
+
           {user, author} ->
             # prioritize system admin over instructor
             case ensure_admin(section, author) do
