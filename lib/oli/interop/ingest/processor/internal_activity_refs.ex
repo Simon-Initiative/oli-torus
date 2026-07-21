@@ -2,6 +2,7 @@ defmodule Oli.Interop.Ingest.Processor.InternalActivityRefs do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Interop.Ingest.State
+  alias Oli.Interop.Ingest.Processing.Rewiring
 
   @doc """
   Makes a pass across all activities to rewire internal activity references.
@@ -104,33 +105,9 @@ defmodule Oli.Interop.Ingest.Processor.InternalActivityRefs do
   end
 
   defp mapped_resource_id(activity_map, id) do
-    activity_map
-    |> get_mapped_activity(id)
-    |> case do
+    case Rewiring.retrieve(activity_map, id) do
       nil -> nil
       revision -> revision.resource_id
-    end
-  end
-
-  defp get_mapped_activity(activity_map, id) do
-    case Map.get(activity_map, id) do
-      nil ->
-        case id do
-          integer when is_integer(integer) ->
-            Map.get(activity_map, Integer.to_string(integer))
-
-          binary when is_binary(binary) ->
-            case Integer.parse(binary) do
-              {integer, ""} -> Map.get(activity_map, integer)
-              _ -> nil
-            end
-
-          _ ->
-            nil
-        end
-
-      activity ->
-        activity
     end
   end
 end
