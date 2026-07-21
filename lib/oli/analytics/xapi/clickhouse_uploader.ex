@@ -21,6 +21,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     "http://adlnet.gov/expapi/verbs/experienced"
   ]
 
+  @experiment_attributions_extension "http://oli.cmu.edu/extensions/experiment_attributions"
+
   @doc """
   Upload a statement bundle directly to ClickHouse.
   Parses the JSONL bundle and inserts the video events into the appropriate table.
@@ -56,20 +58,66 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       |> String.split("\n", trim: true)
       |> Enum.map(&Jason.decode!/1)
 
-    # Transform all events to the unified raw_events format
+    # Transform all events to the unified raw_events format and fan out experiment
+    # attribution arrays into attribution-level rows.
     unified_events =
       parsed_events
       |> Enum.map(&transform_to_raw_event/1)
       |> Enum.reject(&is_nil/1)
 
-    # Insert all events into the unified table
-    case insert_raw_events(unified_events, config) do
-      {:ok, count} ->
-        Logger.debug("Successfully processed #{count} events into raw_events table")
-        {:ok, count}
+    experiment_attributions =
+      parsed_events
+      |> Enum.flat_map(&transform_experiment_attributions/1)
 
+    # Insert all events into the unified table
+    with {:ok, count} <- insert_raw_events(unified_events, config),
+         {:ok, _attribution_count} <-
+           insert_experiment_attributions(experiment_attributions, config) do
+      Logger.debug("Successfully processed #{count} events into raw_events table")
+      {:ok, count}
+    else
       {:error, reason} ->
         Logger.error("Failed to insert events: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp raw_event_base(event, event_type) do
+    context_extensions = context_extensions(event)
+    attributions = experiment_attributions(event)
+
+    %{
+      event_hash: event_hash(event),
+      user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
+      home_page: get_in(event, ["actor", "account", "homePage"]),
+      section_id: oli_extension(context_extensions, "section_id"),
+      project_id: oli_extension(context_extensions, "project_id"),
+      publication_id: oli_extension(context_extensions, "publication_id"),
+      timestamp: parse_timestamp(event["timestamp"]),
+      event_type: event_type,
+      verb_id: get_in(event, ["verb", "id"]),
+      has_experiment_attribution: attributions != [],
+      experiment_attribution_count: length(attributions)
+    }
+  end
+
+  defp insert_experiment_attributions([], _config), do: {:ok, 0}
+
+  defp insert_experiment_attributions(attributions, config) do
+    query = build_experiment_attributions_insert_query()
+
+    values =
+      attributions
+      |> Enum.map(&build_experiment_attribution_values/1)
+      |> Enum.join(",\n")
+
+    insert_statement = query <> values
+
+    case execute_clickhouse_query(insert_statement, config) do
+      {:ok, _response} ->
+        {:ok, length(attributions)}
+
+      {:error, reason} ->
         {:error, reason}
     end
   end
@@ -168,15 +216,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     context_extensions = context_extensions(event)
     object_extensions = get_in(event, ["object", "definition", "extensions"]) || %{}
 
-    %{
-      user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
-      home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: oli_extension(context_extensions, "section_id"),
-      project_id: oli_extension(context_extensions, "project_id"),
-      publication_id: oli_extension(context_extensions, "publication_id"),
-      timestamp: parse_timestamp(event["timestamp"]),
-      event_type: "video",
-      verb_id: get_in(event, ["verb", "id"]),
+    event
+    |> raw_event_base("video")
+    |> Map.merge(%{
       page_id: oli_extension(context_extensions, "page_id"),
       content_element_id:
         get_in(extensions, ["content_element_id"]) ||
@@ -201,7 +243,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       activity_id: oli_extension(context_extensions, "activity_id"),
       activity_revision_id: oli_extension(context_extensions, "activity_revision_id"),
       part_id: oli_extension(context_extensions, "part_id")
-    }
+    })
   end
 
   defp transform_activity_attempt_event(event) do
@@ -209,15 +251,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
-    %{
-      user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
-      home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: oli_extension(context_extensions, "section_id"),
-      project_id: oli_extension(context_extensions, "project_id"),
-      publication_id: oli_extension(context_extensions, "publication_id"),
-      timestamp: parse_timestamp(event["timestamp"]),
-      event_type: "activity_attempt",
-      verb_id: get_in(event, ["verb", "id"]),
+    event
+    |> raw_event_base("activity_attempt")
+    |> Map.merge(%{
       activity_attempt_guid: oli_extension(context_extensions, "activity_attempt_guid"),
       activity_attempt_number: oli_extension(context_extensions, "activity_attempt_number"),
       page_attempt_guid: oli_extension(context_extensions, "page_attempt_guid"),
@@ -231,7 +267,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       completion: result["completion"],
       response: result["response"],
       feedback: oli_extension(extensions, "feedback")
-    }
+    })
   end
 
   defp transform_page_attempt_event(event) do
@@ -239,15 +275,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
-    %{
-      user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
-      home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: oli_extension(context_extensions, "section_id"),
-      project_id: oli_extension(context_extensions, "project_id"),
-      publication_id: oli_extension(context_extensions, "publication_id"),
-      timestamp: parse_timestamp(event["timestamp"]),
-      event_type: "page_attempt",
-      verb_id: get_in(event, ["verb", "id"]),
+    event
+    |> raw_event_base("page_attempt")
+    |> Map.merge(%{
       page_attempt_guid: oli_extension(context_extensions, "page_attempt_guid"),
       page_attempt_number: oli_extension(context_extensions, "page_attempt_number"),
       page_id: oli_extension(context_extensions, "page_id"),
@@ -258,26 +288,20 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       completion: result["completion"],
       response: result["response"],
       feedback: oli_extension(extensions, "feedback")
-    }
+    })
   end
 
   defp transform_page_viewed_event(event) do
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
-    %{
-      user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
-      home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: oli_extension(context_extensions, "section_id"),
-      project_id: oli_extension(context_extensions, "project_id"),
-      publication_id: oli_extension(context_extensions, "publication_id"),
-      timestamp: parse_timestamp(event["timestamp"]),
-      event_type: "page_viewed",
-      verb_id: get_in(event, ["verb", "id"]),
+    event
+    |> raw_event_base("page_viewed")
+    |> Map.merge(%{
       page_id: oli_extension(context_extensions, "page_id"),
       page_sub_type: get_in(event, ["object", "definition", "subType"]),
       completion: result["completion"]
-    }
+    })
   end
 
   defp transform_part_attempt_event(event) do
@@ -285,15 +309,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
-    %{
-      user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
-      home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: oli_extension(context_extensions, "section_id"),
-      project_id: oli_extension(context_extensions, "project_id"),
-      publication_id: oli_extension(context_extensions, "publication_id"),
-      timestamp: parse_timestamp(event["timestamp"]),
-      event_type: "part_attempt",
-      verb_id: get_in(event, ["verb", "id"]),
+    event
+    |> raw_event_base("part_attempt")
+    |> Map.merge(%{
       part_attempt_guid: oli_extension(context_extensions, "part_attempt_guid"),
       part_attempt_number: oli_extension(context_extensions, "part_attempt_number"),
       activity_id: oli_extension(context_extensions, "activity_id"),
@@ -308,8 +326,76 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       hints_requested: oli_extension(context_extensions, "hints_requested"),
       attached_objectives: oli_extension(context_extensions, "attached_objectives"),
       session_id: oli_extension(context_extensions, "session_id")
-    }
+    })
   end
+
+  defp transform_experiment_attributions(event) do
+    result = event["result"] || %{}
+    raw_hash = event_hash(event)
+
+    host_event_type =
+      event
+      |> transform_to_raw_event()
+      |> case do
+        nil -> "unknown"
+        raw_event -> Map.get(raw_event, :event_type)
+      end
+
+    event
+    |> experiment_attributions()
+    |> Enum.map(fn attribution ->
+      idempotency_key = Map.get(attribution, "idempotency_key")
+
+      %{
+        raw_event_hash: raw_hash,
+        attribution_hash: attribution_hash(raw_hash, attribution),
+        host_event_type: host_event_type,
+        timestamp: parse_timestamp(event["timestamp"]),
+        section_id: attribution_value(attribution, "section_id"),
+        project_id: attribution_value(attribution, "project_id"),
+        publication_id: attribution_value(attribution, "publication_id"),
+        enrollment_id: attribution_value(attribution, "enrollment_id"),
+        experiment_role: attribution_value(attribution, "role"),
+        experiment_id: attribution_value(attribution, "experiment_id"),
+        experiment_uuid: attribution_value(attribution, "experiment_uuid"),
+        decision_point_id: attribution_value(attribution, "decision_point_id"),
+        decision_point_key: attribution_value(attribution, "decision_point_key"),
+        condition_id: attribution_value(attribution, "condition_id"),
+        condition_code: attribution_value(attribution, "condition_code"),
+        assignment_id: attribution_value(attribution, "assignment_id"),
+        assignment_key: attribution_value(attribution, "assignment_key"),
+        algorithm:
+          attribution_value(attribution, "algorithm") ||
+            attribution_value(attribution, "assigned_by_policy"),
+        policy_version: attribution_value(attribution, "policy_version"),
+        algorithm_version: attribution_value(attribution, "algorithm_version"),
+        idempotency_key: idempotency_key,
+        idempotency_key_hash: hash_key(idempotency_key),
+        content_revision_id: attribution_value(attribution, "content_revision_id"),
+        outcome_id: attribution_value(attribution, "outcome_id"),
+        reward_id: attribution_value(attribution, "reward_id"),
+        reward_value:
+          attribution_value(attribution, "reward_value") ||
+            get_in(result, ["score", "raw"]),
+        reward_source: attribution_value(attribution, "reward_source"),
+        policy_update_reason: attribution_value(attribution, "policy_update_reason"),
+        previous_policy_state_hash: attribution_value(attribution, "previous_policy_state_hash"),
+        next_policy_state_hash: attribution_value(attribution, "next_policy_state_hash")
+      }
+    end)
+  end
+
+  defp experiment_attributions(event) do
+    event
+    |> context_extensions()
+    |> Map.get(@experiment_attributions_extension, [])
+    |> case do
+      attributions when is_list(attributions) -> Enum.filter(attributions, &is_map/1)
+      _ -> []
+    end
+  end
+
+  defp attribution_value(attribution, key), do: Map.get(attribution, key)
 
   defp context_extensions(event), do: get_in(event, ["context", "extensions"]) || %{}
 
@@ -333,6 +419,23 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   defp parse_timestamp(_), do: nil
+
+  defp hash_key(nil), do: nil
+
+  defp hash_key(value) do
+    :crypto.hash(:sha256, to_string(value))
+    |> Base.encode16(case: :lower)
+  end
+
+  defp event_hash(event) do
+    event
+    |> Jason.encode!()
+    |> hash_key()
+  end
+
+  defp attribution_hash(event_hash, attribution) do
+    hash_key("#{event_hash}:#{Jason.encode!(attribution)}")
+  end
 
   defp insert_raw_events(events, config) do
     # Prepare the INSERT query
@@ -358,6 +461,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
     """
     INSERT INTO #{raw_events_table} (
+      event_hash,
       user_id,
       home_page,
       section_id,
@@ -394,13 +498,16 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       feedback,
       hints_requested,
       attached_objectives,
-      session_id
+      session_id,
+      has_experiment_attribution,
+      experiment_attribution_count
     ) VALUES
     """
   end
 
   defp build_raw_event_values(event) do
     [
+      escape_value(event[:event_hash]),
       escape_value(event[:user_id]),
       escape_value(event[:home_page]),
       escape_value(event[:section_id]),
@@ -437,10 +544,91 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(event[:feedback]),
       escape_value(event[:hints_requested]),
       escape_value(event[:attached_objectives]),
-      escape_value(event[:session_id])
+      escape_value(event[:session_id]),
+      escape_value(event[:has_experiment_attribution]),
+      escape_value(event[:experiment_attribution_count])
     ]
     |> Enum.join(", ")
     |> then(fn values -> "(#{values})" end)
+  end
+
+  defp build_experiment_attributions_insert_query do
+    """
+    INSERT INTO #{experiment_attributions_table()} (
+      raw_event_hash,
+      attribution_hash,
+      host_event_type,
+      timestamp,
+      section_id,
+      project_id,
+      publication_id,
+      enrollment_id,
+      experiment_role,
+      experiment_id,
+      experiment_uuid,
+      decision_point_id,
+      decision_point_key,
+      condition_id,
+      condition_code,
+      assignment_id,
+      assignment_key,
+      algorithm,
+      policy_version,
+      algorithm_version,
+      idempotency_key,
+      idempotency_key_hash,
+      content_revision_id,
+      outcome_id,
+      reward_id,
+      reward_value,
+      reward_source,
+      policy_update_reason,
+      previous_policy_state_hash,
+      next_policy_state_hash
+    ) VALUES
+    """
+  end
+
+  defp build_experiment_attribution_values(attribution) do
+    [
+      escape_value(attribution[:raw_event_hash]),
+      escape_value(attribution[:attribution_hash]),
+      escape_value(attribution[:host_event_type]),
+      escape_value(attribution[:timestamp]),
+      escape_value(attribution[:section_id]),
+      escape_value(attribution[:project_id]),
+      escape_value(attribution[:publication_id]),
+      escape_value(attribution[:enrollment_id]),
+      escape_value(attribution[:experiment_role]),
+      escape_value(attribution[:experiment_id]),
+      escape_value(attribution[:experiment_uuid]),
+      escape_value(attribution[:decision_point_id]),
+      escape_value(attribution[:decision_point_key]),
+      escape_value(attribution[:condition_id]),
+      escape_value(attribution[:condition_code]),
+      escape_value(attribution[:assignment_id]),
+      escape_value(attribution[:assignment_key]),
+      escape_value(attribution[:algorithm]),
+      escape_value(attribution[:policy_version]),
+      escape_value(attribution[:algorithm_version]),
+      escape_value(attribution[:idempotency_key]),
+      escape_value(attribution[:idempotency_key_hash]),
+      escape_value(attribution[:content_revision_id]),
+      escape_value(attribution[:outcome_id]),
+      escape_value(attribution[:reward_id]),
+      escape_value(attribution[:reward_value]),
+      escape_value(attribution[:reward_source]),
+      escape_value(attribution[:policy_update_reason]),
+      escape_value(attribution[:previous_policy_state_hash]),
+      escape_value(attribution[:next_policy_state_hash])
+    ]
+    |> Enum.join(", ")
+    |> then(fn values -> "(#{values})" end)
+  end
+
+  defp experiment_attributions_table do
+    ClickhouseAnalytics.raw_events_table()
+    |> String.replace_suffix(".raw_events", ".experiment_attributions")
   end
 
   defp escape_value(nil), do: "NULL"

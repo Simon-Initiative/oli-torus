@@ -73,6 +73,84 @@
       ],
       "additionalProperties": false
     },
+    "experimentAttribution": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "enum": [
+            "assignment",
+            "exposure",
+            "outcome",
+            "reward",
+            "rollup",
+            "media_interaction",
+            "policy_update"
+          ]
+        },
+        "experiment_id": {
+          "type": "integer"
+        },
+        "experiment_uuid": {
+          "type": "string"
+        },
+        "decision_point_id": {
+          "type": "integer"
+        },
+        "decision_point_key": {
+          "type": "string"
+        },
+        "condition_id": {
+          "type": "integer"
+        },
+        "condition_code": {
+          "type": "string"
+        },
+        "assignment_id": {
+          "type": "integer"
+        },
+        "assignment_key": {
+          "type": "string"
+        },
+        "algorithm": {
+          "type": "string"
+        },
+        "policy_version": {
+          "type": "string"
+        },
+        "algorithm_version": {
+          "type": "string"
+        },
+        "idempotency_key": {
+          "type": "string"
+        },
+        "reward_value": {
+          "type": "number"
+        },
+        "reward_source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "decision_point_id",
+        "condition_id",
+        "condition_code",
+        "assignment_id"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "experiment_id"
+          ]
+        },
+        {
+          "required": [
+            "experiment_uuid"
+          ]
+        }
+      ],
+      "additionalProperties": true
+    },
     "actor": {
       "type": "object",
       "properties": {
@@ -153,6 +231,12 @@
         },
         "http://oli.cmu.edu/extensions/page_attempt_number": {
           "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/experiment_attributions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/experimentAttribution"
+          }
         }
       },
       "required": [
@@ -229,6 +313,12 @@
         },
         "http://oli.cmu.edu/extensions/content_element_id": {
           "type": "string"
+        },
+        "http://oli.cmu.edu/extensions/experiment_attributions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/experimentAttribution"
+          }
         }
       },
       "required": [

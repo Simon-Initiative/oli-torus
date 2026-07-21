@@ -243,6 +243,97 @@ class LambdaFunctionTests(TestCase):
         source_lines = table.column("source_line").to_pylist()
         self.assertEqual(source_lines, [1, 2])
 
+    def test_transform_xapi_statement_extracts_experiment_attribution_summary(self):
+        statement = {
+            "actor": {
+                "account": {
+                    "homePage": "https://proton.oli.cmu.edu",
+                    "name": "123",
+                }
+            },
+            "verb": {"id": "http://adlnet.gov/expapi/verbs/completed"},
+            "object": {
+                "id": "https://proton.oli.cmu.edu/parts/part-1",
+                "definition": {
+                    "type": "http://adlnet.gov/expapi/activities/question"
+                }
+            },
+            "context": {
+                "extensions": {
+                    "http://oli.cmu.edu/extensions/project_id": 1001,
+                    "http://oli.cmu.edu/extensions/section_id": 2001,
+                    "http://oli.cmu.edu/extensions/publication_id": 3001,
+                    "http://oli.cmu.edu/extensions/activity_id": 606,
+                    "http://oli.cmu.edu/extensions/part_id": "part-1",
+                    "http://oli.cmu.edu/extensions/part_attempt_guid": "part-guid",
+                    "http://oli.cmu.edu/extensions/experiment_attributions": [
+                        {
+                            "role": "reward",
+                            "experiment_id": 101,
+                            "decision_point_id": 202,
+                            "condition_id": 303,
+                            "condition_code": "condition-a",
+                            "assignment_id": 404,
+                            "assignment_key": "101:202:505",
+                            "enrollment_id": 505,
+                            "algorithm": "thompson_sampling",
+                            "algorithm_version": "thompson_sampling:v2",
+                            "idempotency_key": "reward-key",
+                            "reward_source": "activity_attempt:full_credit",
+                        }
+                    ],
+                }
+            },
+            "result": {
+                "score": {"raw": 1.0, "min": 0, "max": 1},
+                "extensions": {
+                    "http://oli.cmu.edu/extensions/reward_source": "activity_attempt:full_credit"
+                },
+            },
+            "timestamp": "2026-07-14T12:00:00Z",
+        }
+
+        transformed = lambda_function.transform_xapi_statement(
+            statement,
+            raw_bytes=json.dumps(statement).encode("utf-8"),
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertEqual(transformed["event_type"], "part_attempt")
+        self.assertTrue(transformed["has_experiment_attribution"])
+        self.assertEqual(transformed["experiment_attribution_count"], 1)
+
+        rows = lambda_function.transform_experiment_attributions(
+            statement,
+            raw_bytes=json.dumps(statement).encode("utf-8"),
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(
+            rows[0]["raw_event_hash"],
+            hashlib.sha256(json.dumps(statement).encode("utf-8")).hexdigest(),
+        )
+        self.assertEqual(rows[0]["host_event_type"], "part_attempt")
+        self.assertEqual(rows[0]["experiment_role"], "reward")
+        self.assertEqual(rows[0]["experiment_id"], 101)
+        self.assertEqual(rows[0]["condition_code"], "condition-a")
+        self.assertEqual(rows[0]["reward_value"], 1.0)
+        self.assertEqual(rows[0]["reward_source"], "activity_attempt:full_credit")
+        self.assertEqual(
+            rows[0]["idempotency_key_hash"],
+            hashlib.sha256("reward-key".encode("utf-8")).hexdigest(),
+        )
+        self.assertNotIn("video_url", rows[0])
+        self.assertNotIn("activity_attempt_guid", rows[0])
+        self.assertNotIn("content_element_id", rows[0])
+
     def test_lambda_handler_sends_failed_prepare_to_dlq(self):
         body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})
         event = {

@@ -18,11 +18,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     Assignment,
     Condition,
     DecisionPoint,
-    Exposure,
-    Outcome,
-    PolicyState,
-    PolicyUpdate,
-    Reward
+    PolicyState
   }
 
   alias Oli.Publishing
@@ -131,27 +127,26 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
            evaluated_activity_attempt(scope, activity_revision.resource_id) do
       assignment = Repo.one!(assignment_query(scope, alternatives_revision))
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
-      assert Repo.aggregate(outcome_query(scope, activity_attempt.id), :count, :id) == 1
-      assert Repo.aggregate(reward_query(scope, activity_attempt.id), :count, :id) == 1
+      assert event_count(scope, "outcomes") == 0
+      assert event_count(scope, "rewards") == 1
 
-      reward = Repo.one!(reward_query(scope, activity_attempt.id))
+      reward = only_event(scope, "rewards")
 
       reward_request = %RecordRewardRequest{
         scope: scope,
         assignment_id: assignment.id,
-        outcome_id: reward.outcome_id,
-        reward_value: reward.reward_value,
-        reward_source: reward.reward_source,
-        idempotency_key: reward.idempotency_key
+        outcome_id: reward["outcome_id"],
+        reward_value: reward["reward_value"],
+        reward_source: reward["reward_source"],
+        idempotency_key: reward["idempotency_key"]
       }
 
       assert {:ok, reused_reward_receipt} = Experiments.record_reward(reward_request)
       assert reused_reward_receipt.reused?
-      assert reused_reward_receipt.id == reward.id
-      assert reward.reward_value == 1.0
-      assert reward.reward_source == "activity_attempt:full_credit"
+      assert reused_reward_receipt.id == reward["id"]
+      assert reward["reward_value"] == 1.0
+      assert reward["reward_source"] == "activity_attempt:full_credit"
       assert_thompson_policy_update(scope, alternatives_revision, reward)
-      assert Repo.aggregate(policy_update_query(reward.id), :count, :id) == 1
 
       state
     else
@@ -172,9 +167,9 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          {:ok, activity_attempt} <-
            evaluated_activity_attempt(scope, activity_revision.resource_id) do
       assert Repo.aggregate(assignment_query(scope, alternatives_revision), :count, :id) == 0
-      assert Repo.aggregate(exposure_query(scope, alternatives_revision), :count, :id) == 0
-      assert Repo.aggregate(outcome_query(scope, activity_attempt.id), :count, :id) == 0
-      assert Repo.aggregate(reward_query(scope, activity_attempt.id), :count, :id) == 0
+      assert event_count(scope, "exposures") == 0
+      assert event_count(scope, "outcomes") == 0
+      assert event_count(scope, "rewards") == 0
 
       state
     else
@@ -475,44 +470,8 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     )
   end
 
-  defp exposure_query(%Scope{} = scope, alternatives_revision) do
-    from(exposure in Exposure,
-      join: decision_point in DecisionPoint,
-      on: decision_point.id == exposure.decision_point_id,
-      where:
-        exposure.section_id == ^scope.section_id and
-          exposure.user_id == ^scope.user_id and
-          decision_point.alternatives_resource_id == ^alternatives_revision.resource_id and
-          exposure.content_revision_id == ^alternatives_revision.id
-    )
-  end
-
-  defp outcome_query(%Scope{} = scope, activity_attempt_id) do
-    from(outcome in Outcome,
-      join: assignment in Assignment,
-      on: assignment.id == outcome.assignment_id,
-      where:
-        assignment.section_id == ^scope.section_id and
-          assignment.user_id == ^scope.user_id and
-          outcome.activity_attempt_id == ^activity_attempt_id
-    )
-  end
-
-  defp reward_query(%Scope{} = scope, activity_attempt_id) do
-    from(reward in Reward,
-      join: outcome in Outcome,
-      on: outcome.id == reward.outcome_id,
-      join: assignment in Assignment,
-      on: assignment.id == reward.assignment_id,
-      where:
-        assignment.section_id == ^scope.section_id and
-          assignment.user_id == ^scope.user_id and
-          outcome.activity_attempt_id == ^activity_attempt_id
-    )
-  end
-
   defp assert_thompson_policy_update(%Scope{} = scope, alternatives_revision, reward) do
-    condition = Repo.get!(Condition, reward.condition_id)
+    condition = Repo.get!(Condition, reward["condition_id"])
 
     policy_state =
       scope
@@ -524,13 +483,8 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     assert policy_state.reward_success_count == 1
     assert policy_state.reward_failure_count == 0
     assert policy_state.assignment_count == 1
-    assert policy_state.last_updated_from_reward_id == reward.id
     assert policy_state.state[condition.condition_code]["successes"] == 1
     assert policy_state.state[condition.condition_code]["posterior_alpha"] == 2.0
-
-    policy_update = Repo.one!(policy_update_query(reward.id))
-    assert policy_update.algorithm_version == "thompson_sampling:v2"
-    assert policy_update.next_state[condition.condition_code]["successes"] == 1
   end
 
   defp policy_state_query(%Scope{} = scope, alternatives_revision) do
@@ -553,7 +507,35 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     )
   end
 
-  defp policy_update_query(reward_id) do
-    from(policy_update in PolicyUpdate, where: policy_update.reward_id == ^reward_id)
+  defp event_count(%Scope{} = scope, event_group) do
+    scope
+    |> scoped_assignments()
+    |> Repo.all()
+    |> Enum.reduce(0, fn assignment, total ->
+      total + map_size(Map.get(assignment.runtime_event_state || %{}, event_group, %{}))
+    end)
+  end
+
+  defp only_event(%Scope{} = scope, event_group) do
+    [event] =
+      scope
+      |> scoped_assignments()
+      |> Repo.all()
+      |> Enum.flat_map(fn assignment ->
+        assignment.runtime_event_state
+        |> Kernel.||(%{})
+        |> Map.get(event_group, %{})
+        |> Map.values()
+      end)
+
+    event
+  end
+
+  defp scoped_assignments(%Scope{} = scope) do
+    from(assignment in Assignment,
+      where:
+        assignment.section_id == ^scope.section_id and
+          assignment.user_id == ^scope.user_id
+    )
   end
 end

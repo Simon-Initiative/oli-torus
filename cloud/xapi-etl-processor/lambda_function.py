@@ -169,6 +169,8 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "hints_requested",
     "attached_objectives",
     "session_id",
+    "has_experiment_attribution",
+    "experiment_attribution_count",
     "event_hash",
     "source_file",
     "source_etag",
@@ -920,6 +922,8 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "hints_requested": pa.uint32(),
             "attached_objectives": pa.string(),
             "session_id": pa.string(),
+            "has_experiment_attribution": pa.bool_(),
+            "experiment_attribution_count": pa.uint16(),
             "event_hash": pa.string(),
             "source_file": pa.string(),
             "source_etag": pa.string(),
@@ -1030,6 +1034,7 @@ def transform_xapi_statement(
         hints_requested_value = _safe_int(hints_requested)
 
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    experiment_attributions = _experiment_attributions(statement)
 
     transformed: Dict[str, Any] = {
         "user_id": user_id,
@@ -1087,6 +1092,8 @@ def transform_xapi_statement(
         "hints_requested": hints_requested_value,
         "attached_objectives": attached_objectives,
         "session_id": session_id,
+        "has_experiment_attribution": bool(experiment_attributions),
+        "experiment_attribution_count": len(experiment_attributions),
         "event_hash": raw_hash,
         "source_file": f"s3://{bucket}/{key}",
         "source_etag": etag.strip('"') if isinstance(etag, str) else etag,
@@ -1132,6 +1139,87 @@ def _determine_event_type(verb_id: str, object_type: str) -> str:
     return "unknown"
 
 
+def transform_experiment_attributions(
+    statement: Mapping[str, Any],
+    *,
+    raw_bytes: bytes,
+    bucket: str,
+    key: str,
+    etag: Optional[str],
+    line_number: int,
+) -> List[Dict[str, Any]]:
+    result = statement.get("result") or {}
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    host_event_type = _determine_event_type(
+        _safe_str(_get_nested(statement, ["verb", "id"])),
+        _safe_str(_get_nested(statement, ["object", "definition", "type"])),
+    )
+
+    rows: List[Dict[str, Any]] = []
+
+    for attribution in _experiment_attributions(statement):
+        encoded_attribution = json.dumps(attribution, sort_keys=True, separators=(",", ":"))
+        idempotency_key = _safe_str(attribution.get("idempotency_key"))
+
+        rows.append(
+            {
+                "raw_event_hash": raw_hash,
+                "attribution_hash": hashlib.sha256(
+                    f"{raw_hash}:{encoded_attribution}".encode("utf-8")
+                ).hexdigest(),
+                "host_event_type": host_event_type,
+                "timestamp": statement.get("timestamp"),
+                "section_id": _safe_int(attribution.get("section_id")),
+                "project_id": _safe_int(attribution.get("project_id")),
+                "publication_id": _safe_int(attribution.get("publication_id")),
+                "enrollment_id": _safe_int(attribution.get("enrollment_id")),
+                "experiment_role": _safe_str(attribution.get("role")),
+                "experiment_id": _safe_int(attribution.get("experiment_id")),
+                "experiment_uuid": _safe_str(attribution.get("experiment_uuid")),
+                "decision_point_id": _safe_int(attribution.get("decision_point_id")),
+                "decision_point_key": _safe_str(attribution.get("decision_point_key")),
+                "condition_id": _safe_int(attribution.get("condition_id")),
+                "condition_code": _safe_str(attribution.get("condition_code")),
+                "assignment_id": _safe_int(attribution.get("assignment_id")),
+                "assignment_key": _safe_str(attribution.get("assignment_key")),
+                "algorithm": _safe_str(
+                    attribution.get("algorithm") or attribution.get("assigned_by_policy")
+                ),
+                "policy_version": _safe_str(attribution.get("policy_version")),
+                "algorithm_version": _safe_str(attribution.get("algorithm_version")),
+                "idempotency_key": idempotency_key,
+                "idempotency_key_hash": _hash_or_none(idempotency_key),
+                "content_revision_id": _safe_int(attribution.get("content_revision_id")),
+                "outcome_id": _safe_str(attribution.get("outcome_id")),
+                "reward_id": _safe_str(attribution.get("reward_id")),
+                "reward_value": _safe_float(
+                    attribution.get("reward_value") or _get_nested(result, ["score", "raw"])
+                ),
+                "reward_source": _safe_str(attribution.get("reward_source")),
+                "policy_update_reason": _safe_str(attribution.get("policy_update_reason")),
+                "previous_policy_state_hash": _safe_str(
+                    attribution.get("previous_policy_state_hash")
+                ),
+                "next_policy_state_hash": _safe_str(attribution.get("next_policy_state_hash")),
+                "source_file": f"s3://{bucket}/{key}",
+                "source_etag": etag.strip('"') if isinstance(etag, str) else etag,
+                "source_line": line_number,
+            }
+        )
+
+    return rows
+
+
+def _experiment_attributions(statement: Mapping[str, Any]) -> List[Mapping[str, Any]]:
+    extensions = _get_nested(statement, ["context", "extensions"]) or {}
+    attributions = extensions.get("http://oli.cmu.edu/extensions/experiment_attributions")
+
+    if not isinstance(attributions, list):
+        return []
+
+    return [attribution for attribution in attributions if isinstance(attribution, Mapping)]
+
+
 def _safe_int(value: Any) -> Optional[int]:
     if value is None or value == "":
         return None
@@ -1174,6 +1262,22 @@ def _safe_float(value: Any) -> Optional[float]:
         return float(value)  # type: ignore[arg-type]
     except Exception:  # pylint: disable=broad-except
         return None
+
+
+def _safe_str(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped or None
+    return str(value)
+
+
+def _hash_or_none(value: Any) -> Optional[str]:
+    normalized = _safe_str(value)
+    if normalized is None:
+        return None
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def _coerce_bool(value: Any) -> Optional[bool]:
@@ -1577,4 +1681,5 @@ __all__ = [
     "env_flag",
     "ensure_pyarrow_available",
     "transform_xapi_statement",
+    "transform_experiment_attributions",
 ]

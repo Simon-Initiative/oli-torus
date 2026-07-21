@@ -16,121 +16,127 @@ defmodule Oli.Experiments.TelemetryTest do
 
   alias Oli.Experiments.Schemas.{
     Assignment,
-    Exposure,
     ExperimentDefinition,
-    Outcome,
-    PolicyState,
-    PolicyUpdate,
-    Reward
+    PolicyState
   }
 
-  @extension "http://oli.cmu.edu/extensions/"
+  @extension "http://oli.cmu.edu/extensions/experiment_attributions"
 
-  test "builds assignment statement with scoped identifiers and assignment idempotency key" do
-    statement =
-      Telemetry.assignment_statement(assignment_decision(false), assign_request(),
+  test "builds assignment attribution without a dedicated xAPI statement" do
+    attribution =
+      Telemetry.assignment_attribution(assignment_decision(false), assign_request(),
         assignment: assignment()
       )
 
-    extensions = extensions(statement)
-    base_url = Oli.Utils.get_base_url()
-
-    assert verb(statement) == "http://oli.cmu.edu/extensions/verbs/experiment_assigned"
-    assert get_in(statement, ["actor", "account", "homePage"]) == base_url
-    assert get_in(statement, ["object", "id"]) =~ "#{base_url}/experiments/10/decision-points/20"
-    assert extensions["#{@extension}event_type"] == "experiment_assigned"
-    assert extensions["#{@extension}experiment_id"] == 10
-    assert extensions["#{@extension}project_id"] == 100
-    assert extensions["#{@extension}section_id"] == 300
-    assert extensions["#{@extension}publication_id"] == 200
-    assert extensions["#{@extension}decision_point_id"] == 20
-    assert extensions["#{@extension}alternatives_resource_id"] == 700
-    assert extensions["#{@extension}alternatives_revision_id"] == 701
-    assert extensions["#{@extension}condition_id"] == 30
-    assert extensions["#{@extension}condition_code"] == "a"
-    assert extensions["#{@extension}assignment_key"] == "10:20:500"
-    assert extensions["#{@extension}enrollment_id"] == 500
-    assert extensions["#{@extension}user_id"] == 400
-    assert extensions["#{@extension}assigned_by_policy"] == "weighted_random"
-    assert extensions["#{@extension}policy_version"] == "weighted_random"
-    assert extensions["#{@extension}idempotency_key"] == "10:20:500"
+    assert attribution["role"] == "assignment"
+    assert attribution["experiment_id"] == 10
+    assert attribution["project_id"] == 100
+    assert attribution["section_id"] == 300
+    assert attribution["publication_id"] == 200
+    assert attribution["decision_point_id"] == 20
+    assert attribution["alternatives_resource_id"] == 700
+    assert attribution["alternatives_revision_id"] == 701
+    assert attribution["condition_id"] == 30
+    assert attribution["condition_code"] == "a"
+    assert attribution["assignment_key"] == "10:20:500"
+    assert attribution["enrollment_id"] == 500
+    assert attribution["user_id"] == 400
+    assert attribution["algorithm"] == "weighted_random"
+    assert attribution["policy_version"] == "weighted_random"
+    assert attribution["idempotency_key"] == "10:20:500"
   end
 
-  test "builds exposure, outcome, reward, and policy update statements" do
-    exposure_statement =
-      Telemetry.exposure_statement(exposure_receipt(), exposure_request(),
-        assignment: assignment(),
-        exposure: %Exposure{exposed_at: timestamp()}
+  test "builds exposure, outcome, reward, and policy update attribution evidence" do
+    [exposure] =
+      Telemetry.attributions_for_page_view(exposure_receipt(), exposure_request(),
+        assignment: assignment()
       )
 
-    outcome_statement =
-      Telemetry.outcome_statement(outcome_receipt(), outcome_request(),
-        assignment: assignment(),
-        outcome: %Outcome{observed_at: timestamp()}
+    [outcome] =
+      Telemetry.attributions_for_part_attempt(outcome_receipt(), outcome_request(),
+        assignment: assignment()
       )
 
-    reward_statement =
-      Telemetry.reward_statement(reward_receipt(), reward_request(),
-        assignment: assignment(),
-        reward: reward()
+    [reward] =
+      Telemetry.attributions_for_part_attempt(reward_receipt(), reward_request(),
+        assignment: assignment()
       )
 
-    policy_statement =
-      Telemetry.policy_update_statement(policy_update(), reward(),
+    policy_update =
+      Telemetry.policy_update_evidence(policy_update(), reward(),
         assignment: assignment(),
         experiment: experiment(),
         condition: %{condition_code: "a"},
         policy_state: policy_state()
       )
 
-    assert extensions(exposure_statement)["#{@extension}event_type"] == "experiment_exposed"
-    assert extensions(exposure_statement)["#{@extension}exposure_id"] == 60
-    assert extensions(exposure_statement)["#{@extension}content_revision_id"] == 701
+    assert exposure["role"] == "exposure"
+    assert exposure["exposure_id"] == 60
+    assert exposure["content_revision_id"] == 701
 
-    assert extensions(outcome_statement)["#{@extension}event_type"] ==
-             "experiment_outcome_recorded"
+    assert outcome["role"] == "outcome"
+    assert outcome["outcome_id"] == 70
+    assert outcome["activity_attempt_id"] == 800
+    assert outcome["resource_attempt_id"] == 801
+    assert outcome["activity_resource_id"] == 802
+    assert outcome["score"] == 1.0
+    assert outcome["out_of"] == 1.0
 
-    assert extensions(outcome_statement)["#{@extension}outcome_id"] == 70
-    assert extensions(outcome_statement)["#{@extension}activity_attempt_id"] == 800
-    assert extensions(outcome_statement)["#{@extension}resource_attempt_id"] == 801
-    assert extensions(outcome_statement)["#{@extension}activity_resource_id"] == 802
-    assert get_in(outcome_statement, ["result", "score"]) == %{"raw" => 1.0, "max" => 1.0}
+    assert reward["role"] == "reward"
+    assert reward["reward_id"] == 80
+    assert reward["outcome_id"] == 70
+    assert reward["reward_source"] == "activity_attempt:full_credit"
+    assert reward["reward_value"] == 1.0
 
-    assert extensions(reward_statement)["#{@extension}event_type"] == "experiment_reward_recorded"
-    assert extensions(reward_statement)["#{@extension}reward_id"] == 80
-    assert extensions(reward_statement)["#{@extension}outcome_id"] == 70
-
-    assert extensions(reward_statement)["#{@extension}reward_source"] ==
-             "activity_attempt:full_credit"
-
-    assert get_in(reward_statement, ["result", "score"]) == %{
-             "raw" => 1.0,
-             "min" => 0,
-             "max" => 1
-           }
-
-    assert extensions(policy_statement)["#{@extension}event_type"] == "experiment_policy_updated"
-    assert extensions(policy_statement)["#{@extension}policy_update_id"] == 90
-    assert extensions(policy_statement)["#{@extension}policy_state_id"] == 91
-    assert extensions(policy_statement)["#{@extension}algorithm"] == "thompson_sampling"
-
-    assert extensions(policy_statement)["#{@extension}algorithm_version"] ==
-             "thompson_sampling:v2"
-
-    assert byte_size(extensions(policy_statement)["#{@extension}previous_state_hash"]) == 64
-    assert byte_size(extensions(policy_statement)["#{@extension}next_state_hash"]) == 64
+    assert policy_update["role"] == "policy_update"
+    assert policy_update["policy_update_id"] == 90
+    assert policy_update["policy_state_id"] == 91
+    assert policy_update["algorithm"] == "thompson_sampling"
+    assert policy_update["algorithm_version"] == "thompson_sampling:v2"
+    assert byte_size(policy_update["previous_policy_state_hash"]) == 64
+    assert byte_size(policy_update["next_policy_state_hash"]) == 64
   end
 
-  test "statement payloads exclude learner names, raw responses, and full policy state" do
-    statement =
-      Telemetry.policy_update_statement(policy_update(), reward(),
+  test "attaches optional experiment_attributions array to host statements" do
+    statement = %{
+      "context" => %{"extensions" => %{"http://oli.cmu.edu/extensions/page_id" => 44}}
+    }
+
+    attribution =
+      Telemetry.exposure_attribution(exposure_receipt(), exposure_request(),
+        assignment: assignment()
+      )
+
+    statement = Telemetry.attach_attributions(statement, [attribution])
+
+    assert [attached] = get_in(statement, ["context", "extensions", @extension])
+    assert attached["role"] == "exposure"
+    assert attached["experiment_id"] == 10
+  end
+
+  test "rollup and media helpers rewrite roles on existing attribution payloads" do
+    attribution =
+      Telemetry.exposure_attribution(exposure_receipt(), exposure_request(),
+        assignment: assignment()
+      )
+
+    assert [%{"role" => "rollup"}] = Telemetry.attributions_for_activity_attempt([attribution])
+    assert [%{"role" => "rollup"}] = Telemetry.attributions_for_page_attempt([attribution])
+
+    assert [%{"role" => "media_interaction"}] =
+             Telemetry.attributions_for_media_event([attribution])
+  end
+
+  test "attribution payloads exclude learner names, raw responses, and full policy state" do
+    policy_update =
+      Telemetry.policy_update_evidence(policy_update(), reward(),
         assignment: assignment(),
         experiment: experiment(),
         condition: %{condition_code: "a"},
         policy_state: policy_state()
       )
 
-    encoded = Jason.encode!(statement)
+    encoded = Jason.encode!(policy_update)
 
     refute encoded =~ "Ada"
     refute encoded =~ "Lovelace"
@@ -138,9 +144,6 @@ defmodule Oli.Experiments.TelemetryTest do
     refute encoded =~ "posterior_alpha"
     refute encoded =~ "posterior_beta"
   end
-
-  defp extensions(statement), do: get_in(statement, ["context", "extensions"])
-  defp verb(statement), do: get_in(statement, ["verb", "id"])
 
   defp scope do
     %Scope{
@@ -258,7 +261,7 @@ defmodule Oli.Experiments.TelemetryTest do
   end
 
   defp reward do
-    %Reward{
+    %{
       id: 80,
       assignment_id: 40,
       outcome_id: 70,
@@ -273,7 +276,7 @@ defmodule Oli.Experiments.TelemetryTest do
   end
 
   defp policy_update do
-    %PolicyUpdate{
+    %{
       id: 90,
       policy_state_id: 91,
       reward_id: 80,

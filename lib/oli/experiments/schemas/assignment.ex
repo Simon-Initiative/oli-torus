@@ -14,6 +14,7 @@ defmodule Oli.Experiments.Schemas.Assignment do
     field :policy_version, :string
     field :assignment_key, :string
     field :assigned_at, :utc_datetime
+    field :runtime_event_state, :map, default: %{}
 
     belongs_to :experiment, ExperimentDefinition
     belongs_to :decision_point, DecisionPoint
@@ -37,7 +38,8 @@ defmodule Oli.Experiments.Schemas.Assignment do
       :assigned_by_policy,
       :policy_version,
       :assignment_key,
-      :assigned_at
+      :assigned_at,
+      :runtime_event_state
     ])
     |> validate_required([
       :experiment_id,
@@ -48,7 +50,8 @@ defmodule Oli.Experiments.Schemas.Assignment do
       :user_id,
       :assigned_by_policy,
       :assignment_key,
-      :assigned_at
+      :assigned_at,
+      :runtime_event_state
     ])
     |> validate_length(:assigned_by_policy, min: 1, max: 255)
     |> validate_length(:assignment_key, min: 1, max: 255)

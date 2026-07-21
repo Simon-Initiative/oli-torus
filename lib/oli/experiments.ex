@@ -28,11 +28,7 @@ defmodule Oli.Experiments do
     Assignment,
     Condition,
     DecisionPoint,
-    Exposure,
-    Outcome,
-    PolicyState,
-    PolicyUpdate,
-    Reward
+    PolicyState
   }
 
   alias Oli.Experiments.Policies.{ThompsonSampling, WeightedRandom}
@@ -284,16 +280,8 @@ defmodule Oli.Experiments do
   Records operational exposure evidence and emits the durable xAPI exposure event.
   """
   def record_exposure(%Oli.Experiments.RecordExposureRequest{} = request) do
-    with {:ok, _scope} <- validate_scope(request.scope),
-         {:ok, nil} <- find_exposure_receipt(request.idempotency_key, request.scope) do
+    with {:ok, _scope} <- validate_scope(request.scope) do
       create_exposure(request)
-    else
-      {:ok, %ExposureReceipt{} = receipt} ->
-        Telemetry.emit(:exposure_recorded, {receipt, request})
-        {:ok, receipt}
-
-      {:error, %ExperimentError{}} = error ->
-        error
     end
   end
 
@@ -303,17 +291,8 @@ defmodule Oli.Experiments do
   Records operational outcome evidence and emits the durable xAPI outcome event.
   """
   def record_outcome(%Oli.Experiments.RecordOutcomeRequest{} = request) do
-    with {:ok, _scope} <- validate_scope(request.scope),
-         {:ok, nil} <- find_outcome_receipt(request.idempotency_key, request.scope) do
+    with {:ok, _scope} <- validate_scope(request.scope) do
       create_outcome(request)
-    else
-      {:ok, %OutcomeReceipt{} = receipt} ->
-        Telemetry.emit(:outcome_recorded, {receipt, request})
-
-        {:ok, receipt}
-
-      {:error, %ExperimentError{}} = error ->
-        error
     end
   end
 
@@ -323,25 +302,16 @@ defmodule Oli.Experiments do
   Records operational reward evidence, mutates policy state, and emits durable xAPI events.
   """
   def record_reward(%Oli.Experiments.RecordRewardRequest{} = request) do
-    with {:ok, _scope} <- validate_scope(request.scope),
-         {:ok, nil} <- find_reward_receipt(request.idempotency_key, request.scope) do
+    with {:ok, _scope} <- validate_scope(request.scope) do
       create_reward(request)
-    else
-      {:ok, %RewardReceipt{} = receipt} ->
-        Telemetry.emit(:reward_recorded, {receipt, request})
-
-        {:ok, receipt}
-
-      {:error, %ExperimentError{}} = error ->
-        error
     end
   end
 
   def record_reward(_request), do: invalid_request("expected RecordRewardRequest")
 
   @doc """
-  Returns exposed native assignments whose selected alternatives branch contains
-  the evaluated activity resource.
+  Returns native assignments whose selected alternatives branch contains the evaluated
+  activity resource.
   """
   def reward_eligible_assignments(%Scope{} = scope, activity_resource_id, page_content) do
     with {:ok, scope} <- validate_scope(scope) do
@@ -381,9 +351,8 @@ defmodule Oli.Experiments do
          experiments: Repo.aggregate(experiment_query, :count, :id),
          assignments:
            Repo.aggregate(scoped_assignment_query(scope, query.experiment_id), :count, :id),
-         exposures:
-           Repo.aggregate(scoped_exposure_query(scope, query.experiment_id), :count, :id),
-         rewards: Repo.aggregate(scoped_reward_query(scope, query.experiment_id), :count, :id)
+         exposures: 0,
+         rewards: runtime_event_count(scope, query.experiment_id, "rewards")
        }}
     end
   end
@@ -424,33 +393,13 @@ defmodule Oli.Experiments do
   def assignment_counts(_query), do: invalid_request("expected AnalyticsQuery")
 
   @doc """
-  Returns operational exposure counts. Durable analytics must read xAPI-derived projections.
+  Exposure evidence is emitted through xAPI host statements and served from ClickHouse.
+  PostgreSQL no longer retains exposure event state.
   """
   def exposure_counts(%Oli.Experiments.AnalyticsQuery{} = query) do
     with {:ok, scope} <- validate_scope(query.scope),
          :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
-      counts =
-        scope
-        |> scoped_exposure_query(query.experiment_id)
-        |> join(:inner, [exposure, _experiment], condition in Condition,
-          on: condition.id == exposure.condition_id
-        )
-        |> group_by([exposure, _experiment, condition], [
-          exposure.experiment_id,
-          exposure.decision_point_id,
-          exposure.condition_id,
-          condition.condition_code
-        ])
-        |> select([exposure, _experiment, condition], %{
-          experiment_id: exposure.experiment_id,
-          decision_point_id: exposure.decision_point_id,
-          condition_id: exposure.condition_id,
-          condition_code: condition.condition_code,
-          count: count(exposure.id)
-        })
-        |> Repo.all()
-
-      {:ok, counts}
+      {:ok, []}
     end
   end
 
@@ -464,7 +413,7 @@ defmodule Oli.Experiments do
          :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
       counts =
         scope
-        |> scoped_reward_query(query.experiment_id)
+        |> scoped_assignment_query(query.experiment_id)
         |> join(:inner, [reward, _experiment], condition in Condition,
           on: condition.id == reward.condition_id
         )
@@ -481,6 +430,10 @@ defmodule Oli.Experiments do
           condition_code: condition.condition_code,
           count: count(reward.id)
         })
+        |> where(
+          [reward, _experiment, _condition],
+          fragment("? \\? 'rewards'", reward.runtime_event_state)
+        )
         |> Repo.all()
 
       {:ok, counts}
@@ -510,7 +463,6 @@ defmodule Oli.Experiments do
           reward_success_count: policy_state.reward_success_count,
           reward_failure_count: policy_state.reward_failure_count,
           assignment_count: policy_state.assignment_count,
-          last_updated_from_reward_id: policy_state.last_updated_from_reward_id,
           updated_at: policy_state.updated_at
         })
         |> Repo.all()
@@ -595,35 +547,6 @@ defmodule Oli.Experiments do
     |> maybe_filter_assignment_institution(scope)
   end
 
-  defp scoped_exposure_query(scope, experiment_id) do
-    query =
-      from(exposure in Exposure,
-        join: experiment in ExperimentDefinitionSchema,
-        on: experiment.id == exposure.experiment_id,
-        where: experiment.project_id == ^scope.project_id
-      )
-
-    query
-    |> maybe_filter_joined_experiment_id(experiment_id)
-    |> maybe_filter_exposure_publication(scope.publication_id)
-    |> maybe_filter_exposure_section(scope.section_id)
-    |> maybe_filter_exposure_institution(scope)
-  end
-
-  defp scoped_reward_query(scope, experiment_id) do
-    query =
-      from(reward in Reward,
-        join: experiment in ExperimentDefinitionSchema,
-        on: experiment.id == reward.experiment_id,
-        where: experiment.project_id == ^scope.project_id
-      )
-
-    query
-    |> maybe_filter_joined_experiment_id(experiment_id)
-    |> maybe_filter_reward_section(scope.section_id)
-    |> maybe_filter_reward_institution(scope)
-  end
-
   defp reward_eligible_assignment_query(scope) do
     from(assignment in Assignment,
       join: experiment in ExperimentDefinitionSchema,
@@ -632,8 +555,6 @@ defmodule Oli.Experiments do
       on: decision_point.id == assignment.decision_point_id,
       join: condition in Condition,
       on: condition.id == assignment.condition_id,
-      join: exposure in Exposure,
-      on: exposure.assignment_id == assignment.id,
       where:
         experiment.project_id == ^scope.project_id and
           experiment.state == :active and
@@ -704,64 +625,14 @@ defmodule Oli.Experiments do
     )
   end
 
-  defp maybe_filter_exposure_publication(query, nil), do: query
-
-  defp maybe_filter_exposure_publication(query, publication_id) do
-    where(query, [exposure, _experiment], exposure.publication_id == ^publication_id)
-  end
-
-  defp maybe_filter_exposure_section(query, nil), do: query
-
-  defp maybe_filter_exposure_section(query, section_id) do
-    where(query, [exposure, _experiment], exposure.section_id == ^section_id)
-  end
-
-  defp maybe_filter_exposure_institution(query, %{institution_id: nil}), do: query
-
-  defp maybe_filter_exposure_institution(query, %{section_id: section_id})
-       when not is_nil(section_id), do: query
-
-  defp maybe_filter_exposure_institution(query, %{institution_id: institution_id}) do
-    where(
-      query,
-      [exposure, _experiment],
-      fragment(
-        "EXISTS (SELECT 1 FROM sections s WHERE s.id = ? AND s.institution_id = ?)",
-        exposure.section_id,
-        ^institution_id
-      )
+  defp runtime_event_count(scope, experiment_id, event_group) do
+    scope
+    |> scoped_assignment_query(experiment_id)
+    |> where(
+      [assignment, _experiment],
+      fragment("? \\? ?", assignment.runtime_event_state, ^event_group)
     )
-  end
-
-  defp maybe_filter_reward_section(query, nil), do: query
-
-  defp maybe_filter_reward_section(query, section_id) do
-    where(
-      query,
-      [reward, _experiment],
-      fragment(
-        "EXISTS (SELECT 1 FROM experiment_assignments ea WHERE ea.id = ? AND ea.section_id = ?)",
-        reward.assignment_id,
-        ^section_id
-      )
-    )
-  end
-
-  defp maybe_filter_reward_institution(query, %{institution_id: nil}), do: query
-
-  defp maybe_filter_reward_institution(query, %{section_id: section_id})
-       when not is_nil(section_id), do: query
-
-  defp maybe_filter_reward_institution(query, %{institution_id: institution_id}) do
-    where(
-      query,
-      [reward, _experiment],
-      fragment(
-        "EXISTS (SELECT 1 FROM experiment_assignments ea JOIN sections s ON s.id = ea.section_id WHERE ea.id = ? AND s.institution_id = ?)",
-        reward.assignment_id,
-        ^institution_id
-      )
-    )
+    |> Repo.aggregate(:count, :id)
   end
 
   defp matching_alternatives_branches(%{"model" => _model} = page_content, activity_resource_id) do
@@ -1116,9 +987,7 @@ defmodule Oli.Experiments do
 
   defp existing_assignment_decision(request, scope) do
     query =
-      from exposure in Exposure,
-        join: assignment in Assignment,
-        on: assignment.id == exposure.assignment_id,
+      from assignment in Assignment,
         join: experiment in ExperimentDefinitionSchema,
         on: experiment.id == assignment.experiment_id,
         join: decision_point in DecisionPoint,
@@ -1128,15 +997,14 @@ defmodule Oli.Experiments do
         where:
           experiment.project_id == ^scope.project_id and
             (is_nil(experiment.section_id) or experiment.section_id == ^scope.section_id) and
-            exposure.section_id == ^scope.section_id and
-            exposure.enrollment_id == ^scope.enrollment_id and
-            exposure.user_id == ^scope.user_id and
-            exposure.content_revision_id == ^request.alternatives_revision_id and
+            assignment.section_id == ^scope.section_id and
+            assignment.enrollment_id == ^scope.enrollment_id and
+            assignment.user_id == ^scope.user_id and
             decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
             decision_point.decision_point_key == ^request.decision_point_key and
             condition.active == true and
             condition.condition_code in ^request.available_condition_codes,
-        order_by: [desc: exposure.id],
+        order_by: [desc: assignment.id],
         limit: 1,
         select: {assignment, condition}
 
@@ -1245,145 +1113,148 @@ defmodule Oli.Experiments do
     |> Repo.update_all(inc: [assignment_count: 1])
   end
 
-  defp find_exposure_receipt(idempotency_key, scope) do
-    case Repo.get_by(Exposure, idempotency_key: idempotency_key) do
-      nil ->
-        {:ok, nil}
-
-      exposure ->
-        with {:ok, _assignment} <- get_scoped_assignment(exposure.assignment_id, scope) do
-          {:ok, to_exposure_receipt(exposure, true)}
-        end
-    end
-  end
-
   defp create_exposure(request) do
-    with {:ok, assignment} <- get_scoped_assignment(request.assignment_id, request.scope),
-         attrs <- %{
-           assignment_id: assignment.id,
-           experiment_id: assignment.experiment_id,
-           decision_point_id: assignment.decision_point_id,
-           condition_id: assignment.condition_id,
-           section_id: assignment.section_id,
-           enrollment_id: assignment.enrollment_id,
-           user_id: assignment.user_id,
-           publication_id: request.scope.publication_id,
-           content_revision_id: request.content_revision_id,
-           exposed_at: request.exposed_at || now(),
-           idempotency_key: request.idempotency_key
-         },
-         {:ok, exposure} <- insert_runtime_record(Exposure.changeset(%Exposure{}, attrs)) do
-      :telemetry.execute([:oli, :experiments, :exposure, :recorded], %{count: 1}, %{
-        experiment_id: assignment.experiment_id,
-        decision_point_id: assignment.decision_point_id
-      })
+    Repo.transaction(fn ->
+      assignment = get_scoped_assignment!(request.assignment_id, request.scope, lock: false)
+      {assignment, Map.put(runtime_event(request), "reused", false)}
+    end)
+    |> normalize_transaction_result()
+    |> case do
+      {:ok, {assignment, event}} ->
+        receipt = exposure_receipt(assignment, event)
 
-      receipt = to_exposure_receipt(exposure, false)
+        :telemetry.execute([:oli, :experiments, :exposure, :recorded], %{count: 1}, %{
+          experiment_id: assignment.experiment_id,
+          decision_point_id: assignment.decision_point_id
+        })
 
-      Telemetry.emit(:exposure_recorded, {receipt, request},
-        assignment: assignment,
-        exposure: exposure
-      )
+        Telemetry.emit(:exposure_recorded, {receipt, request}, assignment: assignment)
+        {:ok, receipt}
 
-      {:ok, receipt}
-    end
-  end
-
-  defp find_outcome_receipt(idempotency_key, scope) do
-    case Repo.get_by(Outcome, idempotency_key: idempotency_key) do
-      nil ->
-        {:ok, nil}
-
-      outcome ->
-        with {:ok, _assignment} <- get_scoped_assignment(outcome.assignment_id, scope) do
-          {:ok, to_outcome_receipt(outcome, true)}
-        end
+      {:error, %ExperimentError{}} = error ->
+        error
     end
   end
 
   defp create_outcome(request) do
-    with {:ok, assignment} <- get_scoped_assignment(request.assignment_id, request.scope),
-         attrs <- %{
-           assignment_id: assignment.id,
-           activity_attempt_id: request.activity_attempt_id,
-           resource_attempt_id: request.resource_attempt_id,
-           activity_resource_id: request.activity_resource_id,
-           score: request.score,
-           out_of: request.out_of,
-           metadata: request.metadata || %{},
-           observed_at: request.observed_at || now(),
-           idempotency_key: request.idempotency_key
-         },
-         {:ok, outcome} <- insert_runtime_record(Outcome.changeset(%Outcome{}, attrs)) do
-      receipt = to_outcome_receipt(outcome, false)
+    Repo.transaction(fn ->
+      assignment = get_scoped_assignment!(request.assignment_id, request.scope, lock: false)
+      {assignment, Map.put(runtime_event(request), "reused", false)}
+    end)
+    |> normalize_transaction_result()
+    |> case do
+      {:ok, {assignment, event}} ->
+        receipt = outcome_receipt(assignment, event)
+        Telemetry.emit(:outcome_recorded, {receipt, request}, assignment: assignment)
+        {:ok, receipt}
 
-      Telemetry.emit(:outcome_recorded, {receipt, request},
-        assignment: assignment,
-        outcome: outcome
-      )
-
-      {:ok, receipt}
-    end
-  end
-
-  defp find_reward_receipt(idempotency_key, scope) do
-    case Repo.get_by(Reward, idempotency_key: idempotency_key) do
-      nil ->
-        {:ok, nil}
-
-      reward ->
-        with {:ok, _assignment} <- get_scoped_assignment(reward.assignment_id, scope) do
-          {:ok, to_reward_receipt(reward, true)}
-        end
+      {:error, %ExperimentError{}} = error ->
+        error
     end
   end
 
   defp create_reward(request) do
-    with {:ok, assignment} <- get_scoped_assignment(request.assignment_id, request.scope),
-         attrs <- %{
-           assignment_id: assignment.id,
-           outcome_id: request.outcome_id,
-           experiment_id: assignment.experiment_id,
-           decision_point_id: assignment.decision_point_id,
-           condition_id: assignment.condition_id,
-           reward_value: request.reward_value,
-           reward_source: request.reward_source,
-           idempotency_key: request.idempotency_key,
-           metadata: request.metadata || %{}
-         },
-         {:ok, reward} <- insert_reward_and_update_policy(assignment, attrs) do
-      :telemetry.execute([:oli, :experiments, :reward, :recorded], %{count: 1}, %{
-        experiment_id: assignment.experiment_id,
-        decision_point_id: assignment.decision_point_id,
-        condition_id: assignment.condition_id,
-        reward_class: reward_class(reward.reward_value)
-      })
-
-      receipt = to_reward_receipt(reward, false)
-      Telemetry.emit(:reward_recorded, {receipt, request}, assignment: assignment, reward: reward)
-      {:ok, receipt}
-    end
-  end
-
-  defp insert_reward_and_update_policy(assignment, attrs) do
     Repo.transaction(fn ->
-      reward =
-        %Reward{}
-        |> Reward.changeset(attrs)
-        |> Repo.insert!()
+      assignment = get_scoped_assignment!(request.assignment_id, request.scope, lock: true)
+      state = assignment.runtime_event_state || %{}
+      reward_events = Map.get(state, "rewards", %{})
 
-      case record_policy_reward(assignment, reward) do
-        :ok -> reward
-        {:error, error} -> Repo.rollback(error)
+      case Map.get(reward_events, request.idempotency_key) do
+        nil ->
+          event = reward_event(request)
+          update_assignment_event_state!(assignment, "rewards", request.idempotency_key, event)
+
+          case record_policy_reward(assignment, request, event) do
+            :ok ->
+              {assignment, Map.put(event, "reused", false), nil}
+
+            {:ok, policy_update_emit} ->
+              {assignment, Map.put(event, "reused", false), policy_update_emit}
+
+            {:error, error} ->
+              Repo.rollback(error)
+          end
+
+        event ->
+          {assignment, Map.put(event, "reused", true), nil}
       end
     end)
     |> normalize_transaction_result()
+    |> case do
+      {:ok, {assignment, event, policy_update_emit}} ->
+        receipt = reward_receipt(assignment, event)
+
+        if receipt.reused? == false do
+          :telemetry.execute([:oli, :experiments, :reward, :recorded], %{count: 1}, %{
+            experiment_id: assignment.experiment_id,
+            decision_point_id: assignment.decision_point_id,
+            condition_id: assignment.condition_id,
+            reward_class: reward_class(request.reward_value)
+          })
+        end
+
+        Telemetry.emit(:reward_recorded, {receipt, request}, assignment: assignment)
+        emit_policy_update(policy_update_emit)
+        {:ok, receipt}
+
+      {:error, %ExperimentError{}} = error ->
+        error
+    end
   end
 
-  defp insert_runtime_record(changeset) do
-    changeset
-    |> Repo.insert()
-    |> normalize_result()
+  defp update_assignment_event_state!(assignment, event_group, idempotency_key, event) do
+    state = assignment.runtime_event_state || %{}
+    events = Map.get(state, event_group, %{})
+    updated_state = Map.put(state, event_group, Map.put(events, idempotency_key, event))
+
+    assignment
+    |> Assignment.changeset(%{runtime_event_state: updated_state})
+    |> Repo.update!()
+  end
+
+  defp runtime_event(%Oli.Experiments.RecordExposureRequest{} = request) do
+    %{
+      "id" => receipt_id("exposure", request.idempotency_key),
+      "assignment_id" => request.assignment_id,
+      "idempotency_key" => request.idempotency_key,
+      "content_revision_id" => request.content_revision_id,
+      "publication_id" => request.scope && request.scope.publication_id,
+      "recorded_at" => request.exposed_at || now()
+    }
+  end
+
+  defp runtime_event(%Oli.Experiments.RecordOutcomeRequest{} = request) do
+    %{
+      "id" => receipt_id("outcome", request.idempotency_key),
+      "assignment_id" => request.assignment_id,
+      "idempotency_key" => request.idempotency_key,
+      "activity_attempt_id" => request.activity_attempt_id,
+      "resource_attempt_id" => request.resource_attempt_id,
+      "activity_resource_id" => request.activity_resource_id,
+      "score" => request.score,
+      "out_of" => request.out_of,
+      "recorded_at" => request.observed_at || now()
+    }
+  end
+
+  defp reward_event(%Oli.Experiments.RecordRewardRequest{} = request) do
+    %{
+      "id" => receipt_id("reward", request.idempotency_key),
+      "assignment_id" => request.assignment_id,
+      "outcome_id" => request.outcome_id,
+      "outcome_idempotency_key" => request.outcome_idempotency_key,
+      "idempotency_key" => request.idempotency_key,
+      "reward_value" => request.reward_value,
+      "reward_source" => request.reward_source,
+      "recorded_at" => now()
+    }
+  end
+
+  defp receipt_id(prefix, idempotency_key) do
+    <<int::unsigned-integer-size(64), _rest::binary>> =
+      :crypto.hash(:sha256, "#{prefix}:#{idempotency_key}")
+
+    int
   end
 
   defp insert_definition_graph(attrs, request) do
@@ -1491,16 +1362,16 @@ defmodule Oli.Experiments do
     |> Map.update(:position, fallback_position, &(&1 || fallback_position))
   end
 
-  defp record_policy_reward(assignment, reward) do
+  defp record_policy_reward(assignment, request, reward_event) do
     experiment = Repo.get!(ExperimentDefinitionSchema, assignment.experiment_id)
 
     case experiment.algorithm do
       :weighted_random -> :ok
-      _algorithm -> record_mutating_policy_reward(experiment, assignment, reward)
+      _algorithm -> record_mutating_policy_reward(experiment, assignment, request, reward_event)
     end
   end
 
-  defp record_mutating_policy_reward(experiment, assignment, reward) do
+  defp record_mutating_policy_reward(experiment, assignment, request, reward_event) do
     condition = Repo.get!(Condition, assignment.condition_id)
 
     policy_state =
@@ -1513,13 +1384,14 @@ defmodule Oli.Experiments do
     |> apply(:record_reward, [
       experiment.policy_config,
       policy_state.state,
-      %{condition_code: condition.condition_code, reward_value: reward.reward_value}
+      %{condition_code: condition.condition_code, reward_value: request.reward_value}
     ])
     |> case do
       {:ok, policy_update} ->
         persist_policy_update(
           policy_state,
-          reward,
+          request,
+          reward_event,
           condition,
           policy_update,
           assignment,
@@ -1529,10 +1401,10 @@ defmodule Oli.Experiments do
       {:error, reason} ->
         :telemetry.execute([:oli, :experiments, :policy, :update_failed], %{count: 1}, %{
           policy_state_id: policy_state.id,
-          reward_id: reward.id,
+          reward_idempotency_key_hash: hash_key(request.idempotency_key),
           algorithm: experiment.algorithm,
           algorithm_version: policy_state.algorithm_version,
-          reward_class: reward_class(reward.reward_value),
+          reward_class: reward_class(request.reward_value),
           error_type: reason
         })
 
@@ -1607,80 +1479,72 @@ defmodule Oli.Experiments do
 
   defp persist_policy_update(
          policy_state,
-         reward,
+         request,
+         reward_event,
          condition,
          policy_update,
          assignment,
          experiment
        ) do
-    Repo.transaction(fn ->
-      updated_policy_state =
-        policy_state
-        |> PolicyState.changeset(%{
-          algorithm_version: policy_update.algorithm_version,
-          state: policy_update.next_state,
-          reward_success_count:
-            policy_state.reward_success_count +
-              Map.get(policy_update.counters, :reward_success_count, 0),
-          reward_failure_count:
-            policy_state.reward_failure_count +
-              Map.get(policy_update.counters, :reward_failure_count, 0),
-          last_updated_from_reward_id: reward.id
-        })
-        |> Repo.update!()
+    policy_update_idempotency_key = "policy_update:#{request.idempotency_key}"
 
-      persisted_policy_update =
-        %PolicyUpdate{}
-        |> PolicyUpdate.changeset(%{
-          policy_state_id: updated_policy_state.id,
-          reward_id: reward.id,
-          condition_id: condition.id,
-          previous_state: policy_update.previous_state,
-          next_state: policy_update.next_state,
-          algorithm_version: policy_update.algorithm_version,
-          update_reason: policy_update.update_reason
-        })
-        |> Repo.insert!()
+    updated_policy_state =
+      policy_state
+      |> PolicyState.changeset(%{
+        algorithm_version: policy_update.algorithm_version,
+        state: policy_update.next_state,
+        reward_success_count:
+          policy_state.reward_success_count +
+            Map.get(policy_update.counters, :reward_success_count, 0),
+        reward_failure_count:
+          policy_state.reward_failure_count +
+            Map.get(policy_update.counters, :reward_failure_count, 0)
+      })
+      |> Repo.update!()
 
-      {updated_policy_state, persisted_policy_update}
-    end)
-    |> case do
-      {:ok, {updated_policy_state, persisted_policy_update}} ->
-        :telemetry.execute([:oli, :experiments, :policy, :updated], %{count: 1}, %{
-          policy_state_id: policy_state.id,
-          reward_id: reward.id,
-          condition_id: condition.id,
-          condition_code: condition.condition_code,
-          algorithm: policy_state.algorithm,
-          algorithm_version: policy_update.algorithm_version,
-          reward_class: reward_class(reward.reward_value)
-        })
+    :telemetry.execute([:oli, :experiments, :policy, :updated], %{count: 1}, %{
+      policy_state_id: policy_state.id,
+      reward_idempotency_key_hash: hash_key(request.idempotency_key),
+      condition_id: condition.id,
+      condition_code: condition.condition_code,
+      algorithm: policy_state.algorithm,
+      algorithm_version: policy_update.algorithm_version,
+      reward_class: reward_class(request.reward_value)
+    })
 
-        Telemetry.emit(:policy_updated, {persisted_policy_update, reward},
-          assignment: assignment,
-          condition: condition,
-          experiment: experiment,
-          policy_state: updated_policy_state
-        )
+    {:ok,
+     {%{
+        id: receipt_id("policy_update", policy_update_idempotency_key),
+        policy_state_id: updated_policy_state.id,
+        reward_id: reward_event["id"],
+        condition_id: condition.id,
+        previous_state: policy_update.previous_state,
+        next_state: policy_update.next_state,
+        algorithm_version: policy_update.algorithm_version,
+        update_reason: policy_update.update_reason,
+        idempotency_key: policy_update_idempotency_key,
+        inserted_at: now()
+      },
+      %{
+        id: reward_event["id"],
+        experiment_id: assignment.experiment_id,
+        decision_point_id: assignment.decision_point_id,
+        condition_id: assignment.condition_id,
+        reward_value: request.reward_value,
+        idempotency_key: request.idempotency_key
+      },
+      [
+        assignment: assignment,
+        condition: condition,
+        experiment: experiment,
+        policy_state: updated_policy_state
+      ]}}
+  end
 
-        :ok
+  defp emit_policy_update(nil), do: :ok
 
-      {:error, reason} ->
-        :telemetry.execute([:oli, :experiments, :policy, :update_failed], %{count: 1}, %{
-          policy_state_id: policy_state.id,
-          reward_id: reward.id,
-          algorithm: policy_state.algorithm,
-          algorithm_version: policy_state.algorithm_version,
-          error_type: reason
-        })
-
-        {:error,
-         %ExperimentError{
-           type: :persistence_error,
-           message: "policy update could not be persisted",
-           details: %{reason: reason}
-         }}
-    end
+  defp emit_policy_update({policy_update, reward, opts}) do
+    Telemetry.emit(:policy_updated, {policy_update, reward}, opts)
   end
 
   defp reward_class(reward_value) when reward_value in [1, 1.0], do: :success
@@ -1690,7 +1554,36 @@ defmodule Oli.Experiments do
   defp policy_module(:weighted_random), do: WeightedRandom
   defp policy_module(:thompson_sampling), do: ThompsonSampling
 
-  defp get_scoped_assignment(assignment_id, scope) do
+  defp get_scoped_assignment!(assignment_id, scope, opts) do
+    lock? = Keyword.get(opts, :lock, false)
+
+    case get_scoped_assignment_query(assignment_id, scope, lock?) do
+      {:ok, query} ->
+        case Repo.one(query) do
+          %Assignment{} = assignment ->
+            assignment
+
+          nil ->
+            Repo.rollback(
+              if Repo.exists?(
+                   from assignment in Assignment, where: assignment.id == ^assignment_id
+                 ) do
+                elem(
+                  invalid_scope("assignment is outside scope", %{assignment_id: assignment_id}),
+                  1
+                )
+              else
+                elem(not_found("assignment not found", %{assignment_id: assignment_id}), 1)
+              end
+            )
+        end
+
+      {:error, %ExperimentError{} = error} ->
+        Repo.rollback(error)
+    end
+  end
+
+  defp get_scoped_assignment_query(assignment_id, scope, lock?) do
     with {:ok, scope} <- validate_scope(scope) do
       query =
         from assignment in Assignment,
@@ -1703,19 +1596,7 @@ defmodule Oli.Experiments do
               assignment.enrollment_id == ^scope.enrollment_id and
               assignment.user_id == ^scope.user_id
 
-      case Repo.one(query) do
-        %Assignment{} = assignment ->
-          {:ok, assignment}
-
-        nil ->
-          if Repo.exists?(from assignment in Assignment, where: assignment.id == ^assignment_id) do
-            invalid_scope("assignment is outside scope", %{assignment_id: assignment_id})
-          else
-            not_found("assignment not found", %{assignment_id: assignment_id})
-          end
-      end
-    else
-      {:error, %ExperimentError{}} = error -> error
+      {:ok, if(lock?, do: lock(query, "FOR UPDATE"), else: query)}
     end
   end
 
@@ -2732,34 +2613,35 @@ defmodule Oli.Experiments do
     }
   end
 
-  defp to_exposure_receipt(%Exposure{} = exposure, reused?) do
+  defp exposure_receipt(%Assignment{} = assignment, event) do
     %ExposureReceipt{
-      id: exposure.id,
-      assignment_id: exposure.assignment_id,
-      idempotency_key: exposure.idempotency_key,
-      recorded_at: exposure.exposed_at,
-      reused?: reused?
+      id: event["id"],
+      assignment_id: assignment.id,
+      idempotency_key: event["idempotency_key"],
+      recorded_at: event["recorded_at"],
+      reused?: Map.get(event, "reused", false)
     }
   end
 
-  defp to_outcome_receipt(%Outcome{} = outcome, reused?) do
+  defp outcome_receipt(%Assignment{} = assignment, event) do
     %OutcomeReceipt{
-      id: outcome.id,
-      assignment_id: outcome.assignment_id,
-      idempotency_key: outcome.idempotency_key,
-      recorded_at: outcome.observed_at,
-      reused?: reused?
+      id: event["id"],
+      assignment_id: assignment.id,
+      idempotency_key: event["idempotency_key"],
+      recorded_at: event["recorded_at"],
+      reused?: Map.get(event, "reused", false)
     }
   end
 
-  defp to_reward_receipt(%Reward{} = reward, reused?) do
+  defp reward_receipt(%Assignment{} = assignment, event) do
     %RewardReceipt{
-      id: reward.id,
-      assignment_id: reward.assignment_id,
-      outcome_id: reward.outcome_id,
-      idempotency_key: reward.idempotency_key,
-      recorded_at: reward.inserted_at,
-      reused?: reused?
+      id: event["id"],
+      assignment_id: assignment.id,
+      outcome_id: event["outcome_id"],
+      outcome_idempotency_key: event["outcome_idempotency_key"],
+      idempotency_key: event["idempotency_key"],
+      recorded_at: event["recorded_at"],
+      reused?: Map.get(event, "reused", false)
     }
   end
 
@@ -2780,6 +2662,13 @@ defmodule Oli.Experiments do
   end
 
   defp now, do: DateTime.utc_now() |> DateTime.truncate(:second)
+
+  defp hash_key(nil), do: nil
+
+  defp hash_key(value) do
+    :crypto.hash(:sha256, to_string(value))
+    |> Base.encode16(case: :lower)
+  end
 
   defp normalize_result({:ok, schema}), do: {:ok, schema}
 

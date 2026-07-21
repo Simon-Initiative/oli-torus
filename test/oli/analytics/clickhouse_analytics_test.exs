@@ -4,6 +4,8 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
   import Mox
 
   alias Oli.Analytics.ClickhouseAnalytics
+  alias Oli.Experiments.ClickHouseAnalytics, as: ExperimentClickHouseAnalytics
+  alias Oli.Experiments.Scope
   alias Oli.Test.MockHTTP
 
   setup :verify_on_exit!
@@ -134,6 +136,26 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
 
       assert message =~ "ClickHouse admin credentials are not configured"
       assert message =~ "CLICKHOUSE_ADMIN_USER"
+    end
+  end
+
+  describe "experiment query contracts" do
+    test "event counts use scoped attribution columns and distinct attribution identities" do
+      expect(MockHTTP, :post, fn _url, query, _headers, _opts ->
+        assert query =~ "experiment_attributions"
+        assert query =~ "project_id = 10"
+        assert query =~ "section_id = 20"
+        assert query =~ "publication_id = 30"
+        assert query =~ "experiment_id = 40"
+        assert query =~ "countDistinct(attribution_hash)"
+        {:ok, %{status_code: 200, body: ~s({"data":[]})}}
+      end)
+
+      assert {:ok, _response} =
+               ExperimentClickHouseAnalytics.experiment_event_counts(
+                 %Scope{project_id: 10, section_id: 20, publication_id: 30},
+                 %{experiment_id: 40}
+               )
     end
   end
 end

@@ -22,14 +22,8 @@ defmodule Oli.Experiments.RuntimeTest do
     Assignment,
     Condition,
     DecisionPoint,
-    Exposure,
-    PolicyState,
-    PolicyUpdate
+    PolicyState
   }
-
-  defmodule FailingXAPI do
-    def emit(_category, _statement), do: raise("xAPI unavailable")
-  end
 
   describe "assign_condition/1" do
     test "returns no_experiment when no active experiment matches and emits fallback telemetry" do
@@ -46,7 +40,7 @@ defmodule Oli.Experiments.RuntimeTest do
     end
 
     test "creates and reuses sticky assignments by enrollment" do
-      attach_telemetry([[:oli, :experiments, :xapi, :emit, :stop]])
+      attach_telemetry([[:oli, :experiments, :telemetry, :assignment_decided]])
 
       %{scope: scope, revision: revision} = active_experiment_with_conditions()
 
@@ -62,11 +56,9 @@ defmodule Oli.Experiments.RuntimeTest do
       assert second.assignment_id == first.assignment_id
       assert Repo.aggregate(Assignment, :count, :id) == 1
 
-      assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :stop], %{count: 1},
-                      %{event_type: "experiment_assigned"}}
+      assert_operational_event(:assignment_decided, "assignment")
 
-      assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :stop], %{count: 1},
-                      %{event_type: "experiment_assignment_reused"}}
+      assert_operational_event(:assignment_decided, "assignment")
     end
 
     test "matches an active decision point after compatible alternatives revision changes" do
@@ -241,11 +233,14 @@ defmodule Oli.Experiments.RuntimeTest do
   end
 
   describe "runtime evidence commands" do
-    test "records exposure, outcome, and reward idempotently" do
+    test "records exposure and outcome without runtime state and reward idempotently" do
       attach_telemetry([
         [:oli, :experiments, :exposure, :recorded],
         [:oli, :experiments, :reward, :recorded],
-        [:oli, :experiments, :xapi, :emit, :stop],
+        [:oli, :experiments, :telemetry, :assignment_decided],
+        [:oli, :experiments, :telemetry, :exposure_recorded],
+        [:oli, :experiments, :telemetry, :outcome_recorded],
+        [:oli, :experiments, :telemetry, :reward_recorded],
         [:oli, :experiments, :xapi, :emit, :skipped_duplicate]
       ])
 
@@ -262,7 +257,7 @@ defmodule Oli.Experiments.RuntimeTest do
       assert {:ok, %ExposureReceipt{reused?: false} = exposure} =
                Experiments.record_exposure(exposure_request)
 
-      assert {:ok, %ExposureReceipt{reused?: true, id: exposure_id}} =
+      assert {:ok, %ExposureReceipt{reused?: false, id: exposure_id}} =
                Experiments.record_exposure(exposure_request)
 
       assert exposure_id == exposure.id
@@ -278,7 +273,7 @@ defmodule Oli.Experiments.RuntimeTest do
       assert {:ok, %OutcomeReceipt{reused?: false} = outcome} =
                Experiments.record_outcome(outcome_request)
 
-      assert {:ok, %OutcomeReceipt{reused?: true, id: outcome_id}} =
+      assert {:ok, %OutcomeReceipt{reused?: false, id: outcome_id}} =
                Experiments.record_outcome(outcome_request)
 
       assert outcome_id == outcome.id
@@ -302,16 +297,11 @@ defmodule Oli.Experiments.RuntimeTest do
 
       assert_receive {:telemetry, [:oli, :experiments, :exposure, :recorded], %{count: 1}, _}
       assert_receive {:telemetry, [:oli, :experiments, :reward, :recorded], %{count: 1}, _}
-      assert_xapi_stop("experiment_assigned")
-      assert_xapi_stop("experiment_exposed")
-      assert_xapi_stop("experiment_outcome_recorded")
-      assert_xapi_stop("experiment_reward_recorded")
-      refute_xapi_stop("experiment_exposed")
-      refute_xapi_stop("experiment_outcome_recorded")
-      refute_xapi_stop("experiment_reward_recorded")
-      assert_duplicate_skip("experiment_exposed")
-      assert_duplicate_skip("experiment_outcome_recorded")
-      assert_duplicate_skip("experiment_reward_recorded")
+      assert_operational_event(:assignment_decided, "assignment")
+      assert_operational_event(:exposure_recorded, "exposure")
+      assert_operational_event(:outcome_recorded, "outcome")
+      assert_operational_event(:reward_recorded, "reward")
+      assert_duplicate_skip("reward")
     end
 
     test "rejects idempotent receipts outside the caller scope" do
@@ -333,10 +323,7 @@ defmodule Oli.Experiments.RuntimeTest do
                Experiments.record_exposure(%{exposure_request | scope: other_scope})
     end
 
-    test "xAPI emission failure does not roll back runtime writes" do
-      attach_telemetry([[:oli, :experiments, :xapi, :emit, :exception]])
-      put_failing_xapi_module()
-
+    test "experiment telemetry does not perform direct xAPI emission for exposure receipts" do
       %{scope: scope, revision: revision} = active_experiment_with_conditions()
       {:ok, assignment} = Experiments.assign_condition(assign_request(scope, revision, ["a"]))
 
@@ -347,17 +334,17 @@ defmodule Oli.Experiments.RuntimeTest do
         idempotency_key: "failed-xapi-exposure:#{assignment.assignment_id}"
       }
 
-      assert {:ok, %ExposureReceipt{reused?: false} = receipt} =
+      assert {:ok, %ExposureReceipt{reused?: false}} =
                Experiments.record_exposure(exposure_request)
 
-      assert Repo.get!(Exposure, receipt.id).id == receipt.id
+      persisted_assignment = Repo.get!(Assignment, assignment.assignment_id)
+      refute Map.has_key?(persisted_assignment.runtime_event_state || %{}, "exposures")
 
-      assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :exception], %{count: 1},
-                      %{event_type: "experiment_exposed", kind: :error}}
+      refute_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :exception], _, _}
     end
 
     test "records Thompson Sampling policy state and audit updates idempotently" do
-      attach_telemetry([[:oli, :experiments, :xapi, :emit, :stop]])
+      attach_telemetry([[:oli, :experiments, :telemetry, :policy_updated]])
 
       %{scope: scope, revision: revision} =
         active_experiment_with_conditions(algorithm: :thompson_sampling)
@@ -372,8 +359,7 @@ defmodule Oli.Experiments.RuntimeTest do
         idempotency_key: "ts-reward:#{assignment.assignment_id}"
       }
 
-      assert {:ok, %RewardReceipt{reused?: false} = reward} =
-               Experiments.record_reward(reward_request)
+      assert {:ok, %RewardReceipt{reused?: false}} = Experiments.record_reward(reward_request)
 
       assert {:ok, %RewardReceipt{reused?: true}} = Experiments.record_reward(reward_request)
 
@@ -381,12 +367,8 @@ defmodule Oli.Experiments.RuntimeTest do
       assert policy_state.algorithm == :thompson_sampling
       assert policy_state.reward_success_count == 1
       assert policy_state.reward_failure_count == 0
-      assert policy_state.last_updated_from_reward_id == reward.id
-
-      policy_update = Repo.get_by!(PolicyUpdate, reward_id: reward.id)
-      assert policy_update.next_state[assignment.condition_code]["successes"] == 1
-      assert Repo.aggregate(PolicyUpdate, :count, :id) == 1
-      assert_xapi_stop("experiment_policy_updated")
+      assert policy_state.state[assignment.condition_code]["successes"] == 1
+      assert_operational_event(:policy_updated, "policy_update")
     end
 
     test "records concurrent Thompson Sampling rewards without losing posterior increments" do
@@ -429,7 +411,6 @@ defmodule Oli.Experiments.RuntimeTest do
       assert policy_state.reward_success_count == 2
       assert policy_state.state["a"]["successes"] == 2
       assert policy_state.state["a"]["posterior_alpha"] == 3.0
-      assert Repo.aggregate(PolicyUpdate, :count, :id) == 2
     end
   end
 
@@ -531,33 +512,16 @@ defmodule Oli.Experiments.RuntimeTest do
     on_exit(fn -> :telemetry.detach(handler_id) end)
   end
 
-  defp assert_xapi_stop(event_type) do
-    assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :stop], %{count: 1},
-                    %{event_type: ^event_type}}
-  end
-
-  defp refute_xapi_stop(event_type) do
-    refute_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :stop], _measurements,
-                    %{event_type: ^event_type}}
+  defp assert_operational_event(event, role) do
+    assert_receive {:telemetry, [:oli, :experiments, :telemetry, ^event], %{count: 1},
+                    %{"role" => ^role}}
   end
 
   defp assert_duplicate_skip(event_type) do
     assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :skipped_duplicate],
-                    %{count: 1}, %{event_type: ^event_type, idempotency_key_hash: hash}}
+                    %{count: 1}, %{attribution_role: ^event_type, idempotency_key_hash: hash}}
 
     assert byte_size(hash) == 64
-  end
-
-  defp put_failing_xapi_module do
-    previous = Application.get_env(:oli, :experiments_xapi_module)
-    Application.put_env(:oli, :experiments_xapi_module, FailingXAPI)
-
-    on_exit(fn ->
-      case previous do
-        nil -> Application.delete_env(:oli, :experiments_xapi_module)
-        module -> Application.put_env(:oli, :experiments_xapi_module, module)
-      end
-    end)
   end
 
   defp insert_assignment!(definition, decision_point, condition, scope) do

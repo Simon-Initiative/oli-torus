@@ -1,0 +1,78 @@
+work_item: experiment_olap_foundation
+requirements:
+- title: Define canonical experiment xAPI attribution
+  description: The work item must define canonical experiment attribution extensions
+    for existing xAPI statements, including page views, evaluated attempts, activity
+    or page attempt rollups, and media events rendered inside decision point alternatives,
+    with stable identifiers, scope fields, timestamps, algorithm metadata, attribution
+    roles, and privacy-safe payloads.
+  id: FR-001
+- title: Emit experiment-attributed xAPI from runtime paths
+  description: Experiment runtime paths must attach canonical experiment attribution
+    to existing Torus xAPI host statements where appropriate without adding direct
+    S3, ClickHouse, or other heavy analytics work to learner-facing transactions.
+  id: FR-002
+- title: Ingest experiment attributions into ClickHouse
+  description: Production ETL, local direct upload, and backfill or replay behavior
+    must ingest experiment attribution arrays from xAPI host statements into ClickHouse
+    with queryable attribution-level columns, projections, or materialized views suitable
+    for project-level and section-level analytics.
+  id: FR-003
+- title: Provide analytics query contracts
+  description: The work item must provide approved ClickHouse-backed query contracts
+    or read models for downstream dashboards, monitoring, reports, and dataset exports
+    without querying temporary PostgreSQL experiment event-history tables.
+  id: FR-004
+- title: Integrate experiment attribution with datasets
+  description: Experiment exposure, outcome or reward, rollup, media attribution, and
+    policy-update evidence must be available through the existing dataset or export
+    infrastructure using the xAPI and ClickHouse analytics path.
+  id: FR-005
+- title: Monitor experiment telemetry quality
+  description: The work item must expose operational and data-quality signals for
+    xAPI emission failures, statement validation failures, ETL lag, ingest failures,
+    ClickHouse query failures, dataset export failures, missing exposure/outcome/reward
+    evidence, and delayed policy-update evidence.
+  id: FR-006
+- title: Replace temporary PostgreSQL event-history dependencies
+  description: The work item must define replacement idempotency and runtime evidence
+    contracts for exposure, outcome, reward, and policy-update behavior and remove
+    the temporary PostgreSQL event-history tables before this slice is complete.
+  id: FR-007
+acceptance_criteria:
+- requirement: FR-001
+  description: Documentation or tests identify required fields and privacy exclusions
+    for canonical experiment attribution on each supported host statement type.
+  id: AC-001
+- requirement: FR-002
+  description: A controlled runtime flow emits page-view exposure attribution, evaluated
+    part-attempt outcome or reward attribution, media attribution where applicable,
+    and policy-update evidence through existing xAPI or operational telemetry paths
+    without direct ClickHouse writes in the delivery transaction.
+  id: AC-002
+- requirement: FR-003
+  description: Experiment attributions from production-style ETL, local direct upload,
+    and backfill or replay paths can be queried in ClickHouse by experiment, project,
+    section, decision point, condition, host event type, attribution role, timestamp,
+    algorithm, and policy version.
+  id: AC-003
+- requirement: FR-004
+  description: Downstream analytics, reports, monitoring, and export code have an
+    approved ClickHouse-backed read contract and do not query `experiment_exposures`,
+    `experiment_outcomes`, `experiment_rewards`, or `experiment_policy_updates`.
+  id: AC-004
+- requirement: FR-005
+  description: Dataset export output includes experiment exposure, outcome or reward,
+    rollup, media attribution, and policy-update evidence from the xAPI/ClickHouse path.
+  id: AC-005
+- requirement: FR-006
+  description: Emission, validation, ingest, lag, query, export, missing-event, and
+    delayed-policy-update failures are observable through approved telemetry, logs,
+    monitoring, or reporting checks.
+  id: AC-006
+- requirement: FR-007
+  description: Runtime idempotency and duplicate policy-update protection no longer
+    depend on temporary PostgreSQL event-history rows, and the schema no longer contains
+    `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, or `experiment_policy_updates`
+    after this slice is complete.
+  id: AC-007

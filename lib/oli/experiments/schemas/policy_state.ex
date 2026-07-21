@@ -5,7 +5,7 @@ defmodule Oli.Experiments.Schemas.PolicyState do
 
   import Ecto.Changeset
 
-  alias Oli.Experiments.Schemas.{DecisionPoint, ExperimentDefinition, Reward}
+  alias Oli.Experiments.Schemas.{DecisionPoint, ExperimentDefinition}
 
   @algorithms ExperimentDefinition.algorithms()
 
@@ -20,7 +20,6 @@ defmodule Oli.Experiments.Schemas.PolicyState do
 
     belongs_to :experiment, ExperimentDefinition
     belongs_to :decision_point, DecisionPoint
-    belongs_to :last_updated_from_reward, Reward
 
     timestamps(type: :utc_datetime)
   end
@@ -36,8 +35,7 @@ defmodule Oli.Experiments.Schemas.PolicyState do
       :prior_config,
       :reward_success_count,
       :reward_failure_count,
-      :assignment_count,
-      :last_updated_from_reward_id
+      :assignment_count
     ])
     |> validate_required([
       :experiment_id,
@@ -56,7 +54,6 @@ defmodule Oli.Experiments.Schemas.PolicyState do
     |> validate_number(:assignment_count, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:experiment_id)
     |> foreign_key_constraint(:decision_point_id)
-    |> foreign_key_constraint(:last_updated_from_reward_id)
     |> unique_constraint([:experiment_id, :decision_point_id, :algorithm],
       name: :experiment_policy_states_unique_idx
     )

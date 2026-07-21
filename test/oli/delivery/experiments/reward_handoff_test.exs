@@ -7,15 +7,13 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Experiments
-  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, RecordExposureRequest, Scope}
+  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
 
   alias Oli.Experiments.Schemas.{
+    Assignment,
     Condition,
     DecisionPoint,
-    Outcome,
-    PolicyState,
-    PolicyUpdate,
-    Reward
+    PolicyState
   }
 
   alias Oli.Resources.ResourceType
@@ -26,28 +24,12 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
 
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
 
-      outcome = Repo.one!(Outcome)
-      reward = Repo.one!(Reward)
+      reward = only_event("rewards")
 
-      assert outcome.activity_attempt_id == activity_attempt.id
-      assert outcome.resource_attempt_id == activity_attempt.resource_attempt_id
-      assert outcome.activity_resource_id == activity_attempt.resource_id
-      assert outcome.score == 1.0
-      assert outcome.out_of == 1.0
-
-      assert outcome.metadata == %{
-               "attempt_number" => activity_attempt.attempt_number,
-               "source" => "activity_attempt:full_credit"
-             }
-
-      assert reward.outcome_id == outcome.id
-      assert reward.reward_value == 1.0
-      assert reward.reward_source == "activity_attempt:full_credit"
-
-      assert reward.metadata == %{
-               "attempt_number" => activity_attempt.attempt_number,
-               "binary_rule" => "full_credit"
-             }
+      assert event_count("outcomes") == 0
+      assert is_integer(reward["outcome_id"])
+      assert reward["reward_value"] == 1.0
+      assert reward["reward_source"] == "activity_attempt:full_credit"
     end
 
     test "records non-full-credit reward value 0.0" do
@@ -55,7 +37,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
 
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
 
-      assert Repo.one!(Reward).reward_value == 0.0
+      assert only_event("rewards")["reward_value"] == 0.0
     end
 
     test "accepts activity attempt guids for bulk/finalization handoff paths" do
@@ -63,20 +45,19 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
 
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.attempt_guid)
 
-      assert Repo.aggregate(Outcome, :count, :id) == 1
-      assert Repo.aggregate(Reward, :count, :id) == 1
+      assert event_count("outcomes") == 0
+      assert event_count("rewards") == 1
     end
 
-    test "reprocessing an evaluated attempt reuses outcome and reward idempotently" do
+    test "reprocessing an evaluated attempt reuses reward idempotently" do
       %{activity_attempt: activity_attempt} =
         setup_reward_context(score: 1.0, out_of: 1.0, algorithm: :thompson_sampling)
 
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
 
-      assert Repo.aggregate(Outcome, :count, :id) == 1
-      assert Repo.aggregate(Reward, :count, :id) == 1
-      assert Repo.aggregate(PolicyUpdate, :count, :id) == 1
+      assert event_count("outcomes") == 0
+      assert event_count("rewards") == 1
     end
 
     test "records Thompson reward for institutionless open and free sections" do
@@ -90,9 +71,8 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
 
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
 
-      assert Repo.aggregate(Outcome, :count, :id) == 1
-      assert Repo.aggregate(Reward, :count, :id) == 1
-      assert Repo.aggregate(PolicyUpdate, :count, :id) == 1
+      assert event_count("outcomes") == 0
+      assert event_count("rewards") == 1
     end
 
     test "records one Thompson reward per evaluated activity in an unscored alternatives branch" do
@@ -105,9 +85,8 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert :ok = RewardHandoff.record_evaluated_activity(correct_attempt.id)
       assert :ok = RewardHandoff.record_evaluated_activity(incorrect_attempt.id)
 
-      assert Repo.aggregate(Outcome, :count, :id) == 2
-      assert Repo.aggregate(Reward, :count, :id) == 2
-      assert Repo.aggregate(PolicyUpdate, :count, :id) == 2
+      assert event_count("outcomes") == 0
+      assert event_count("rewards") == 2
 
       policy_state = Repo.one!(PolicyState)
       assert policy_state.reward_success_count == 1
@@ -123,8 +102,8 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
 
       assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
 
-      assert Repo.aggregate(Outcome, :count, :id) == 0
-      assert Repo.aggregate(Reward, :count, :id) == 0
+      assert event_count("outcomes") == 0
+      assert event_count("rewards") == 0
     end
 
     test "rollup persists evaluated attempt when reward handoff fails" do
@@ -252,13 +231,13 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
     }
 
     if assign? do
-      create_assignment_and_exposure(scope, alternatives_revision, algorithm)
+      create_assignment(scope, alternatives_revision, algorithm)
     end
 
     %{activity_attempt: activity_attempt, activity_attempts: activity_attempts, scope: scope}
   end
 
-  defp create_assignment_and_exposure(%Scope{} = scope, alternatives_revision, algorithm) do
+  defp create_assignment(%Scope{} = scope, alternatives_revision, algorithm) do
     {:ok, definition} =
       Experiments.create_experiment(%CreateExperimentRequest{
         scope: scope,
@@ -292,21 +271,13 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
     })
     |> Repo.insert!()
 
-    {:ok, assignment} =
+    {:ok, _assignment} =
       Experiments.assign_condition(%Oli.Experiments.AssignConditionRequest{
         scope: scope,
         alternatives_resource_id: alternatives_revision.resource_id,
         alternatives_revision_id: alternatives_revision.id,
         decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
         available_condition_codes: ["condition-a"]
-      })
-
-    {:ok, _exposure} =
-      Experiments.record_exposure(%RecordExposureRequest{
-        scope: scope,
-        assignment_id: assignment.assignment_id,
-        content_revision_id: alternatives_revision.id,
-        idempotency_key: "exposure:#{assignment.assignment_id}"
       })
   end
 
@@ -334,5 +305,27 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
         }
       ]
     }
+  end
+
+  defp event_count(event_group) do
+    Assignment
+    |> Repo.all()
+    |> Enum.reduce(0, fn assignment, total ->
+      total + map_size(Map.get(assignment.runtime_event_state || %{}, event_group, %{}))
+    end)
+  end
+
+  defp only_event(event_group) do
+    [event] =
+      Assignment
+      |> Repo.all()
+      |> Enum.flat_map(fn assignment ->
+        assignment.runtime_event_state
+        |> Kernel.||(%{})
+        |> Map.get(event_group, %{})
+        |> Map.values()
+      end)
+
+    event
   end
 end

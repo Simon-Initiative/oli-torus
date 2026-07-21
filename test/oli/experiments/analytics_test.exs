@@ -44,7 +44,7 @@ defmodule Oli.Experiments.AnalyticsTest do
 
       query = %AnalyticsQuery{scope: scope, experiment_id: experiment_id}
 
-      assert {:ok, %{experiments: 1, assignments: 1, exposures: 1, rewards: 1}} =
+      assert {:ok, %{experiments: 1, assignments: 1, exposures: 0, rewards: 1}} =
                Experiments.experiment_summary(query)
 
       assert {:ok, [%{condition_code: condition_code, count: 1}]} =
@@ -52,7 +52,7 @@ defmodule Oli.Experiments.AnalyticsTest do
 
       assert condition_code in ["a", "b"]
 
-      assert {:ok, [%{count: 1}]} = Experiments.exposure_counts(query)
+      assert {:ok, []} = Experiments.exposure_counts(query)
       assert {:ok, [%{count: 1}]} = Experiments.reward_counts(query)
 
       assert {:ok,
@@ -63,7 +63,6 @@ defmodule Oli.Experiments.AnalyticsTest do
                   assignment_count: 1,
                   reward_success_count: 1,
                   prior_config: %{"default" => %{"alpha" => 1.0, "beta" => 1.0}},
-                  last_updated_from_reward_id: reward_id,
                   guardrail_state: %{
                     "manual_pause_enabled" => true,
                     "assignment_count" => 1,
@@ -72,7 +71,6 @@ defmodule Oli.Experiments.AnalyticsTest do
                 } = snapshot
               ]} = Experiments.policy_state_snapshot(query)
 
-      assert reward_id
       assert snapshot.state[assignment.condition_code]["posterior_alpha"] == 2.0
       refute Map.has_key?(snapshot, :policy_config)
     end

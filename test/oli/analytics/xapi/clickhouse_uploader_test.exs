@@ -167,6 +167,42 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     assert {:ok, 2} = ClickHouseUploader.upload(bundle)
   end
 
+  test "upload maps host statement experiment attribution arrays into attribution table rows" do
+    statement = attributed_part_attempt_statement()
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-exp"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "has_experiment_attribution"
+      assert query =~ "experiment_attribution_count"
+      assert query =~ "'part_attempt'"
+      assert query =~ "1"
+      refute query =~ "experiment_event_type"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "INSERT INTO analytics.experiment_attributions"
+      assert query =~ "raw_event_hash"
+      assert query =~ "experiment_role"
+      assert query =~ "'reward'"
+      assert query =~ "101"
+      assert query =~ "'condition-a'"
+      assert query =~ "'reward-key'"
+      assert query =~ "'activity_attempt:full_credit'"
+      refute query =~ "video_url"
+      refute query =~ "activity_attempt_guid"
+      refute query =~ "content_element_id"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
   defp video_statement(verb_id, result_extensions) do
     %{
       "actor" => %{
@@ -194,6 +230,62 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       },
       "result" => %{"extensions" => result_extensions},
       "timestamp" => "2026-03-27T12:00:00Z"
+    }
+  end
+
+  defp attributed_part_attempt_statement do
+    %{
+      "actor" => %{
+        "account" => %{
+          "homePage" => "https://proton.oli.cmu.edu",
+          "name" => "123"
+        },
+        "objectType" => "Agent"
+      },
+      "verb" => %{
+        "id" => "http://adlnet.gov/expapi/verbs/completed",
+        "display" => %{"en-US" => "completed"}
+      },
+      "object" => %{
+        "id" => "https://proton.oli.cmu.edu/parts/part-1",
+        "definition" => %{
+          "type" => "http://adlnet.gov/expapi/activities/question",
+          "name" => %{"en-US" => "Part 1"}
+        }
+      },
+      "context" => %{
+        "extensions" => %{
+          "http://oli.cmu.edu/extensions/project_id" => 1001,
+          "http://oli.cmu.edu/extensions/section_id" => 2001,
+          "http://oli.cmu.edu/extensions/publication_id" => 3001,
+          "http://oli.cmu.edu/extensions/activity_id" => 606,
+          "http://oli.cmu.edu/extensions/part_id" => "part-1",
+          "http://oli.cmu.edu/extensions/part_attempt_guid" => "part-guid",
+          "http://oli.cmu.edu/extensions/experiment_attributions" => [
+            %{
+              "role" => "reward",
+              "experiment_id" => 101,
+              "decision_point_id" => 202,
+              "condition_id" => 303,
+              "condition_code" => "condition-a",
+              "assignment_id" => 404,
+              "assignment_key" => "101:202:505",
+              "enrollment_id" => 505,
+              "algorithm" => "thompson_sampling",
+              "algorithm_version" => "thompson_sampling:v2",
+              "idempotency_key" => "reward-key",
+              "reward_source" => "activity_attempt:full_credit"
+            }
+          ]
+        }
+      },
+      "result" => %{
+        "score" => %{"raw" => 1.0, "min" => 0, "max" => 1},
+        "extensions" => %{
+          "http://oli.cmu.edu/extensions/reward_source" => "activity_attempt:full_credit"
+        }
+      },
+      "timestamp" => "2026-07-14T12:00:00Z"
     }
   end
 end

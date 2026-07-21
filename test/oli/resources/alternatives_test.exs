@@ -10,7 +10,7 @@ defmodule Oli.Resources.AlternativesTest do
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Delivery.ExtrinsicState
   alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, Exposure}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint}
 
   @select_all_el %{
     "type" => "alternatives",
@@ -359,12 +359,11 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(context, element)
 
       assignment = Repo.one!(Assignment)
-      exposure = Repo.one!(Exposure)
 
       assert assignment.section_id == context.section_id
-      assert exposure.assignment_id == assignment.id
-      assert exposure.publication_id == context.publication_id
-      assert exposure.idempotency_key =~ ":assignment:#{assignment.id}"
+      exposure = only_event(assignment, "exposures")
+      assert exposure["publication_id"] == context.publication_id
+      assert exposure["idempotency_key"] =~ ":assignment:#{assignment.id}"
     end
 
     test "renders assigned native decision point condition for an institutionless open/free section" do
@@ -377,12 +376,11 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(context, element)
 
       assignment = Repo.one!(Assignment)
-      exposure = Repo.one!(Exposure)
 
       assert context.institution_id == nil
       assert assignment.section_id == context.section_id
       assert assignment.enrollment_id == context.enrollment_id
-      assert exposure.assignment_id == assignment.id
+      assert only_event(assignment, "exposures")
     end
 
     test "reuses sticky native assignment on repeat delivery selection" do
@@ -392,7 +390,7 @@ defmodule Oli.Resources.AlternativesTest do
       Alternatives.select(context, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert Repo.aggregate(Exposure, :count, :id) == 1
+      assert event_count("exposures") == 1
     end
 
     test "review mode renders the originally assigned native decision point condition without exposure" do
@@ -412,7 +410,7 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(review_context, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert Repo.aggregate(Exposure, :count, :id) == 1
+      assert event_count("exposures") == 1
     end
 
     test "review mode prefers the branch containing attempted activities" do
@@ -427,7 +425,7 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(review_context, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 0
-      assert Repo.aggregate(Exposure, :count, :id) == 0
+      assert event_count("exposures") == 0
     end
 
     test "review mode renders no branch when no prior native assignment can be proven" do
@@ -436,7 +434,7 @@ defmodule Oli.Resources.AlternativesTest do
       assert [] = Alternatives.select(%{context | mode: :review}, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 0
-      assert Repo.aggregate(Exposure, :count, :id) == 0
+      assert event_count("exposures") == 0
     end
 
     test "renders first option when no native experiment matches" do
@@ -448,7 +446,7 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(context, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 0
-      assert Repo.aggregate(Exposure, :count, :id) == 0
+      assert event_count("exposures") == 0
     end
 
     @tag capture_log: true
@@ -462,7 +460,7 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(context, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert Repo.aggregate(Exposure, :count, :id) == 0
+      assert event_count("exposures") == 0
     end
   end
 
@@ -603,5 +601,23 @@ defmodule Oli.Resources.AlternativesTest do
       %{"id" => "alt-a", "name" => "condition-a"},
       %{"id" => "alt-b", "name" => "condition-b"}
     ]
+  end
+
+  defp event_count(event_group) do
+    Assignment
+    |> Repo.all()
+    |> Enum.reduce(0, fn assignment, total ->
+      total + map_size(Map.get(assignment.runtime_event_state || %{}, event_group, %{}))
+    end)
+  end
+
+  defp only_event(%Assignment{} = assignment, event_group) do
+    [event] =
+      assignment.runtime_event_state
+      |> Kernel.||(%{})
+      |> Map.get(event_group, %{})
+      |> Map.values()
+
+    event
   end
 end
