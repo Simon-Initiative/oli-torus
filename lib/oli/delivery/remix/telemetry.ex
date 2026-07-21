@@ -24,10 +24,7 @@ defmodule Oli.Delivery.Remix.Telemetry do
   end
 
   defp safe_execute(event, measurements, metadata) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-      :telemetry.execute(event, measurements, metadata)
-    end)
-
+    :telemetry.execute(event, measurements, metadata)
     :ok
   rescue
     _ -> :ok

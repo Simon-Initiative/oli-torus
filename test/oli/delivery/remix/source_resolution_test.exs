@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
   alias Oli.Delivery.Remix
   alias Oli.Delivery.Remix.Source
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResource
 
   setup do
     author = insert(:author)
@@ -48,7 +49,12 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
         ]
       })
 
-    publication = insert(:publication, %{project: project, root_resource_id: root.resource_id})
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: root.resource_id,
+        published: ~U[2023-06-26 00:00:00Z]
+      })
 
     Enum.each(
       [root, visible_page, hidden_page, hidden_container, descendant_of_hidden_container],
@@ -65,7 +71,7 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
     )
 
     product = insert(:section, %{base_project: project, title: "Curated product"})
-    {:ok, _} = Sections.create_section_resources(product, publication)
+    {:ok, product} = Sections.create_section_resources(product, publication)
 
     hidden_page_section_resource =
       product.id
@@ -90,8 +96,11 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
     state = %{state | available_sources: [source]}
 
     %{
+      author: author,
       state: state,
       source: source,
+      product: product,
+      project: project,
       publication: publication,
       visible_page: visible_page,
       hidden_page: hidden_page,
@@ -154,6 +163,118 @@ defmodule Oli.Delivery.Remix.SourceResolutionTest do
 
     assert hidden_page.resource_id != visible_page.resource_id
     assert descendant_of_hidden_container.resource_id != visible_page.resource_id
+  end
+
+  test "sorts product pages by pinned publication date", %{
+    author: author,
+    state: state,
+    source: source,
+    product: product,
+    publication: publication,
+    visible_page: visible_page
+  } do
+    older_project = insert(:project, authors: [author])
+
+    older_page =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Older publication page"
+      })
+
+    older_root =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Older publication root",
+        children: [older_page.resource_id]
+      })
+
+    older_publication =
+      insert(:publication, %{
+        project: older_project,
+        root_resource_id: older_root.resource_id,
+        published: ~U[2023-06-25 00:00:00Z]
+      })
+
+    Enum.each([older_root, older_page], fn revision ->
+      insert(:project_resource, %{project_id: older_project.id, resource_id: revision.resource_id})
+
+      insert(:published_resource, %{
+        publication: older_publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    insert(:section_project_publication, %{
+      section: product,
+      project: older_project,
+      publication: older_publication
+    })
+
+    older_page_section_resource =
+      insert(:section_resource, %{
+        section: product,
+        project: older_project,
+        resource: older_page.resource,
+        resource_id: older_page.resource_id,
+        resource_type_id: older_page.resource_type_id,
+        revision_id: older_page.id,
+        revision_slug: older_page.slug,
+        project_slug: older_project.slug,
+        title: older_page.title,
+        graded: older_page.graded,
+        hidden: false,
+        numbering_index: 2,
+        numbering_level: 1,
+        children: []
+      })
+
+    root_section_resource = Oli.Repo.get!(SectionResource, product.root_section_resource_id)
+
+    {:ok, _root_section_resource} =
+      Sections.update_section_resource(root_section_resource, %{
+        children: root_section_resource.children ++ [older_page_section_resource.id]
+      })
+
+    source =
+      Source.product(
+        product,
+        Map.put(source.pinned_publications, older_project.id, older_publication)
+      )
+
+    state = %{state | available_sources: [source]}
+
+    assert {:ok, {2, asc_pages}} =
+             Remix.source_pages(source.key, state, %{
+               sort_by: :publication_date,
+               sort_order: :asc,
+               limit: 10,
+               offset: 0
+             })
+
+    assert Enum.map(asc_pages, & &1.resource_id) == [
+             older_page.resource_id,
+             visible_page.resource_id
+           ]
+
+    assert Enum.map(asc_pages, & &1.publication_date) == [
+             older_publication.published,
+             publication.published
+           ]
+
+    assert {:ok, {2, desc_pages}} =
+             Remix.source_pages(source.key, state, %{
+               sort_by: :publication_date,
+               sort_order: :desc,
+               limit: 10,
+               offset: 0
+             })
+
+    assert Enum.map(desc_pages, & &1.resource_id) == [
+             visible_page.resource_id,
+             older_page.resource_id
+           ]
   end
 
   test "resolves a product item through its pinned publication", %{

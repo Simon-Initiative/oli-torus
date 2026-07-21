@@ -26,7 +26,9 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
                     NOTE: Callers are responsible for filtering preselected items from their data before
                     rendering (e.g., via exclude_resource_ids at the query level). The component uses
                     preselected to hide items in the curriculum tab but does not enforce filtering in
-                    the All Pages table tab.
+                    the All Pages table tab. Product/template sources compare preselected items by
+                    resource id because their pinned publications can differ from the target section's
+                    pinned publications for the same project.
 
   ## Optional Parameters:
 
@@ -422,6 +424,24 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   defp apply_custom_filter(children, %{filter_items_fn: f}) when is_function(f), do: f.(children)
   defp apply_custom_filter(children, _assigns), do: children
+
+  defp reject_preselected(children, %{
+         select_mode: :multiple,
+         preselected: preselected,
+         selected_source: %Source{type: :product}
+       }) do
+    preselected_resource_ids =
+      preselected
+      |> Enum.map(&elem(&1, 1))
+      |> MapSet.new()
+
+    Enum.reject(children, fn child ->
+      case Map.fetch(child, :resource_id) do
+        {:ok, resource_id} -> MapSet.member?(preselected_resource_ids, resource_id)
+        :error -> false
+      end
+    end)
+  end
 
   defp reject_preselected(children, %{
          select_mode: :multiple,

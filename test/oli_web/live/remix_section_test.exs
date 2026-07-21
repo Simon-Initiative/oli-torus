@@ -136,6 +136,134 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> has_element?(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
     end
 
+    test "add materials hides existing product source pages when pinned publication differs", %{
+      conn: conn,
+      author: author
+    } do
+      project = insert(:project, title: "Pinned Publication Project", authors: [author])
+
+      existing_page_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Existing Product Page"
+        })
+
+      new_page_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "New Product Page"
+        })
+
+      root_resource = insert(:resource)
+
+      target_root_revision =
+        insert(:revision, %{
+          resource: root_resource,
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          children: [existing_page_revision.resource_id],
+          title: "Root Container"
+        })
+
+      product_root_revision =
+        insert(:revision, %{
+          resource: root_resource,
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          children: [existing_page_revision.resource_id, new_page_revision.resource_id],
+          title: "Root Container"
+        })
+
+      Enum.each(
+        [existing_page_revision, new_page_revision, target_root_revision],
+        fn revision ->
+          insert(:project_resource, %{
+            project_id: project.id,
+            resource_id: revision.resource_id
+          })
+        end
+      )
+
+      target_publication =
+        insert(:publication, %{
+          project: project,
+          published: ~U[2023-06-25 00:36:38.112566Z],
+          root_resource_id: root_resource.id
+        })
+
+      product_publication =
+        insert(:publication, %{
+          project: project,
+          published: ~U[2023-06-26 00:36:38.112566Z],
+          root_resource_id: root_resource.id
+        })
+
+      Enum.each([existing_page_revision, target_root_revision], fn revision ->
+        insert(:published_resource, %{
+          publication: target_publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      Enum.each([existing_page_revision, new_page_revision, product_root_revision], fn revision ->
+        insert(:published_resource, %{
+          publication: product_publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      target_section =
+        insert(:section, %{
+          base_project: project,
+          title: "Pinned Publication Target",
+          type: :enrollable
+        })
+
+      {:ok, _target_section} =
+        Sections.create_section_resources(target_section, target_publication)
+
+      product_source =
+        insert(:section, %{
+          base_project: project,
+          title: "Pinned Publication Product Source",
+          type: :blueprint
+        })
+
+      {:ok, _product_source} =
+        Sections.create_section_resources(product_source, product_publication)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{target_section.slug}/remix")
+
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      view
+      |> element("form[phx-change='HierarchyPicker.publications_text_search']")
+      |> render_change(%{"text_search" => "Pinned Publication Product Source"})
+
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Pinned Publication Product Source"
+      )
+      |> render_click()
+
+      assert view |> has_element?(".hierarchy > div[id^=\"hierarchy_item_\"]", "New Product Page")
+
+      refute view
+             |> has_element?(".hierarchy > div[id^=\"hierarchy_item_\"]", "Existing Product Page")
+
+      view
+      |> element("button[phx-value-tab_name='all_pages']")
+      |> render_click()
+
+      assert view |> has_element?(".remix_materials_table td", "New Product Page")
+      refute view |> has_element?(".remix_materials_table td", "Existing Product Page")
+    end
+
     test "add materials lists community product template sources for hidden instructor sessions",
          %{
            conn: conn,
@@ -1465,6 +1593,13 @@ defmodule OliWeb.RemixSectionLiveTest do
       # Can sort by published date
       assert view
              |> has_element?("th[data-sortable=\"true\"]", "Published on")
+
+      view
+      |> element("th[phx-value-sort_by='publication_date']", "Published on")
+      |> render_click()
+
+      assert view
+             |> has_element?("th[phx-value-sort_by='publication_date'][data-sort-column='true']")
     end
 
     test "remix section items - add materials - all pages view can be filtered by text", %{

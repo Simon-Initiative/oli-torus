@@ -506,6 +506,11 @@ defmodule Oli.Delivery.Remix do
     order_by(query, [_sr, _spp, _pr, rev], [{^sort_order, field(rev, ^sort_by)}])
   end
 
+  defp order_product_pages(query, %{sort_by: :publication_date, sort_order: sort_order})
+       when sort_order in [:asc, :desc] do
+    order_by(query, [_sr, _spp, _pr, _rev, pub], [{^sort_order, pub.published}])
+  end
+
   defp order_product_pages(query, _params), do: query
 
   defp maybe_limit(query, limit) when is_integer(limit), do: limit(query, ^limit)

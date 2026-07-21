@@ -1328,6 +1328,7 @@ defmodule OliWeb.Delivery.RemixSection do
   defp page_sort_by("title"), do: {:ok, :title}
   defp page_sort_by("graded"), do: {:ok, :graded}
   defp page_sort_by("updated_at"), do: {:ok, :updated_at}
+  defp page_sort_by("publication_date"), do: {:ok, :publication_date}
   defp page_sort_by(_), do: :error
 
   defp parse_page_param(value, max) when is_binary(value) and byte_size(value) <= 5 do
