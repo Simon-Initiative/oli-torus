@@ -111,6 +111,160 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   end
 
   @doc """
+  Asserts that inline marks plus block format/direction render in author preview.
+  """
+  def assert_author_preview_inline_formatting(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    expected_inline_formatting!(state)
+    |> Enum.each(fn expected ->
+      assert_preview_formatting!(html, expected)
+    end)
+
+    state
+  end
+
+  @doc """
+  Asserts that inline marks plus block format/direction persist to delivery.
+  """
+  def assert_student_delivery_inline_formatting(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+
+    expected_inline_formatting!(state)
+    |> Enum.each(fn expected ->
+      assert_delivery_formatting!(content, expected)
+    end)
+
+    state
+  end
+
+  def assert_author_preview_inline_link(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    link_text = required_param!(state, "EXPECTED_LINK_TEXT")
+    link_type = required_param!(state, "EXPECTED_LINK_TYPE")
+
+    case link_type do
+      "url" ->
+        href = required_param!(state, "EXPECTED_LINK_HREF")
+
+        assert html_has_text?(html, ~s|a[href="#{href}"]|, link_text),
+               "Expected external author-preview link #{inspect(href)}"
+
+      "page" ->
+        href = required_param!(state, "EXPECTED_LINK_HREF")
+
+        assert html_has_link_to_target?(html, href, link_text),
+               "Expected internal author-preview link #{inspect(link_text)}"
+    end
+
+    state
+  end
+
+  def assert_student_delivery_inline_link(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    link_text = required_param!(state, "EXPECTED_LINK_TEXT")
+    link_type = required_param!(state, "EXPECTED_LINK_TYPE")
+
+    expected_link? =
+      case link_type do
+        "url" ->
+          href = required_param!(state, "EXPECTED_LINK_HREF")
+          &(&1["type"] == "a" and &1["href"] == href and nested_contains?(&1, link_text))
+
+        "page" ->
+          href = required_param!(state, "EXPECTED_LINK_HREF")
+
+          &(&1["type"] == "a" and &1["linkType"] == "page" and &1["href"] == href and
+              nested_contains?(&1, link_text))
+      end
+
+    assert nested_map?(content, expected_link?),
+           "Expected published #{link_type} link #{inspect(link_text)}"
+
+    state
+  end
+
+  def assert_author_preview_inline_embeds(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    for key <- ["EXPECTED_FOREIGN_TEXT", "EXPECTED_POPUP_TRIGGER", "EXPECTED_CALLOUT_TEXT"] do
+      assert_contains(html_text(html), required_param!(state, key))
+    end
+
+    state
+  end
+
+  def assert_student_delivery_inline_embeds(%ExecutionState{} = state) do
+    published_json = delivered_revision_content(state) |> Jason.encode!()
+
+    for {type, text} <- [
+          {"foreign", required_param!(state, "EXPECTED_FOREIGN_TEXT")},
+          {"popup", required_param!(state, "EXPECTED_POPUP_CONTENT")},
+          {"callout_inline", required_param!(state, "EXPECTED_CALLOUT_TEXT")}
+        ] do
+      assert published_json =~ ~s|"type":"#{type}"|
+      assert published_json =~ text
+    end
+
+    state
+  end
+
+  def assert_author_preview_inline_foreign(%ExecutionState{} = state),
+    do: assert_preview_text(state, "EXPECTED_TEXT")
+
+  def assert_author_preview_inline_popup(%ExecutionState{} = state),
+    do: assert_preview_text(state, "EXPECTED_TRIGGER")
+
+  def assert_author_preview_inline_callout(%ExecutionState{} = state),
+    do: assert_preview_text(state, "EXPECTED_TEXT")
+
+  def assert_student_delivery_inline_foreign(%ExecutionState{} = state),
+    do: assert_delivery_element_text(state, "foreign", "EXPECTED_TEXT")
+
+  def assert_student_delivery_inline_popup(%ExecutionState{} = state),
+    do: assert_delivery_element_text(state, "popup", "EXPECTED_CONTENT")
+
+  def assert_student_delivery_inline_callout(%ExecutionState{} = state),
+    do: assert_delivery_element_text(state, "callout_inline", "EXPECTED_TEXT")
+
+  def assert_author_preview_list_formatting(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    styled_item = required_param!(state, "EXPECTED_STYLED_LIST_ITEM")
+    indented_item = required_param!(state, "EXPECTED_INDENTED_LIST_ITEM")
+
+    assert html_has_text?(html, "ul", styled_item), "Expected styled item in author-preview list"
+
+    assert html_has_text?(html, "ul ul", indented_item),
+           "Expected indented item in nested author-preview list"
+
+    state
+  end
+
+  def assert_student_delivery_list_formatting(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    styled_item = required_param!(state, "EXPECTED_STYLED_LIST_ITEM")
+    indented_item = required_param!(state, "EXPECTED_INDENTED_LIST_ITEM")
+
+    assert nested_map?(
+             content,
+             &(&1["type"] == "ul" and &1["style"] == "circle" and
+                 nested_contains?(&1, styled_item))
+           ),
+           "Expected published circle-style list item"
+
+    assert nested_map?(content, fn node ->
+             node["type"] == "ul" and
+               nested_map?(
+                 node["children"] || [],
+                 &(&1["type"] == "ul" and nested_contains?(&1, indented_item))
+               )
+           end),
+           "Expected published nested list item"
+
+    state
+  end
+
+  @doc """
   Asserts that the author preview renders the expected callout content.
   """
   def assert_author_preview_callout(%ExecutionState{} = state) do
@@ -263,6 +417,103 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     |> Plug.Conn.put_session(:author_token, token)
     |> Plug.Conn.put_session(:current_author_id, author.id)
   end
+
+  defp expected_inline_formatting!(state) do
+    state
+    |> required_param!("EXPECTED_INLINE_FORMATTING")
+    |> Jason.decode!()
+  end
+
+  defp assert_preview_formatting!(html, %{"text" => text, "mark" => mark}) do
+    selector =
+      case mark do
+        "strong" -> "strong"
+        "em" -> "em"
+        "code" -> "code"
+        "underline" -> ~s|span[style*="underline"]|
+        "strikethrough" -> ~s|span[style*="line-through"]|
+        "sub" -> "sub"
+        "sup" -> "sup"
+        "term" -> ".term"
+      end
+
+    assert html_has_text?(html, selector, text),
+           "Expected author preview #{selector} to contain #{inspect(text)}"
+  end
+
+  defp assert_preview_formatting!(html, %{"text" => text, "element" => element}) do
+    selector = if element == "heading", do: "h1, h2, h3, h4, h5, h6", else: element
+
+    assert html_has_text?(html, selector, text),
+           "Expected author preview #{element} to contain #{inspect(text)}"
+  end
+
+  defp assert_preview_formatting!(html, %{"text" => text, "direction" => "rtl"}) do
+    assert html_has_text?(html, "[dir=rtl]", text),
+           "Expected right-to-left author preview content #{inspect(text)}"
+  end
+
+  defp assert_delivery_formatting!(content, %{"text" => text, "mark" => mark}) do
+    assert nested_map?(content, &(&1["text"] == text and &1[mark] == true)),
+           "Expected delivery content #{inspect(text)} with #{mark} mark"
+  end
+
+  defp assert_delivery_formatting!(content, %{"text" => text, "element" => element}) do
+    matches_element? = fn node ->
+      node["type"] == element or
+        (element == "heading" and is_binary(node["type"]) and
+           String.match?(node["type"], ~r/^h[1-6]$/))
+    end
+
+    assert nested_map?(content, &(matches_element?.(&1) and nested_contains?(&1, text))),
+           "Expected delivery #{element} containing #{inspect(text)}"
+  end
+
+  defp assert_delivery_formatting!(content, %{"text" => text, "direction" => "rtl"}) do
+    assert nested_map?(content, &(&1["textDirection"] == "rtl" and nested_contains?(&1, text))),
+           "Expected right-to-left delivery content #{inspect(text)}"
+  end
+
+  defp html_has_text?(html, selector, text) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find(selector)
+    |> Floki.text(sep: " ")
+    |> String.contains?(text)
+  end
+
+  defp assert_preview_text(state, key) do
+    assert_contains(html_text(author_preview_html(state)), required_param!(state, key))
+    state
+  end
+
+  defp assert_delivery_element_text(state, type, key) do
+    published_json = delivered_revision_content(state) |> Jason.encode!()
+    assert published_json =~ ~s|"type":"#{type}"|
+    assert published_json =~ required_param!(state, key)
+    state
+  end
+
+  defp html_has_link_to_target?(html, target_href, text) do
+    target_slug = Path.basename(target_href)
+
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("a")
+    |> Enum.any?(fn anchor ->
+      href = Floki.attribute(anchor, "href") |> List.first() || ""
+      String.ends_with?(href, target_slug) and Floki.text(anchor) =~ text
+    end)
+  end
+
+  defp nested_map?(value, predicate) when is_map(value) do
+    predicate.(value) or Enum.any?(Map.values(value), &nested_map?(&1, predicate))
+  end
+
+  defp nested_map?(value, predicate) when is_list(value),
+    do: Enum.any?(value, &nested_map?(&1, predicate))
+
+  defp nested_map?(_, _predicate), do: false
 
   defp nested_contains?(value, expected) when is_binary(expected) and expected != "" do
     case value do

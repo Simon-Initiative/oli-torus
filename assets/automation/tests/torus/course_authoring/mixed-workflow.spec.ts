@@ -3,11 +3,11 @@ import { setRuntimeConfig } from '@core/runtimeConfig';
 import { TYPE_USER } from '@pom/types/type-user';
 import { mixedWorkflowActions } from './mixed_workflow/actions';
 
-const runId = `-${Date.now()}`;
 const baseUrl = 'http://localhost';
 const defaultPassword = 'changeme123456';
 
-setRuntimeConfig({
+const configureWorkflowRun = (runId: string) =>
+  setRuntimeConfig({
   baseUrl,
   scenarioToken: 'my-token',
   loginData: {
@@ -53,18 +53,87 @@ setRuntimeConfig({
       header: 'Course Author',
     },
   },
-});
+  });
+
+const workflowParams = () => {
+  const runId = `-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  configureWorkflowRun(runId);
+  return { RUN_ID: runId };
+};
 
 test.describe('MIXED workflow', () => {
-  test.setTimeout(300_000);
+  test.setTimeout(90_000);
 
   test.describe('CORE', () => {
     test('CORE-A: typing text persists to author preview and delivery', async ({ runWorkflow }) => {
       await runWorkflow('./mixed_workflow/core.workflow.yaml', {
         actions: mixedWorkflowActions,
-        params: {
-          RUN_ID: runId,
-        },
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('INLINE', () => {
+    test('INLINE-C/D/E/I/J/K/L/M/S/T: formatting persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/inline-formatting.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+
+    test('INLINE-F: internal course link persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/inline-internal-link.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+
+    test('INLINE-G: external link persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/inline-external-link.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+
+    test('INLINE-N: foreign text persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/inline-foreign.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+
+    test('INLINE-O: popup content persists to author preview and delivery', async ({ runWorkflow }) => {
+      await runWorkflow('./mixed_workflow/inline-popup.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+
+    test('INLINE-R: inline callout persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/inline-callout.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('LIST', () => {
+    test('LIST-C/D: circle bullet style and indentation persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/list-formatting.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
       });
     });
   });
@@ -75,9 +144,7 @@ test.describe('MIXED workflow', () => {
     }) => {
       await runWorkflow('./mixed_workflow/codeblock.workflow.yaml', {
           actions: mixedWorkflowActions,
-          params: {
-            RUN_ID: runId,
-        },
+          params: workflowParams(),
       });
     });
   });
@@ -88,9 +155,7 @@ test.describe('MIXED workflow', () => {
     }) => {
       await runWorkflow('./mixed_workflow/callout.workflow.yaml', {
         actions: mixedWorkflowActions,
-        params: {
-          RUN_ID: runId,
-        },
+        params: workflowParams(),
       });
     });
   });

@@ -82,28 +82,28 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `INLINE-C` | Apply bold | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline formatting workflow family. |
-| `INLINE-D` | Apply italic | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline formatting workflow family. |
-| `INLINE-E` | Apply code | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline formatting workflow family. |
-| `INLINE-F` | Create hyperlink to another page in the course | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline link workflow family. |
-| `INLINE-G` | Create hyperlink to an external site | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline link workflow family. |
-| `INLINE-I` | Apply underline | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline formatting workflow family. |
-| `INLINE-J` | Apply strikethrough | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline formatting workflow family. |
-| `INLINE-K` | Apply subscript | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline formatting workflow family. |
-| `INLINE-L` | Apply superscript | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline formatting workflow family. |
-| `INLINE-M` | Apply term | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline semantic-markup workflow family. |
-| `INLINE-N` | Apply foreign. Select a language | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline semantic-markup workflow family. |
-| `INLINE-O` | Apply popup content | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Inline popup workflow family. |
-| `INLINE-R` | Apply inline callout | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Distinct from block callout in `CALLOUT-A`. |
-| `INLINE-S` | Change text to be a heading | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Block-format workflow family. |
-| `INLINE-T` | Change text direction | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | Directionality workflow family. |
+| `INLINE-C` | Apply bold | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; exact mark is asserted in Preview and published Delivery. |
+| `INLINE-D` | Apply italic | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; exact mark is asserted in Preview and published Delivery. |
+| `INLINE-E` | Apply code | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; exact mark is asserted in Preview and published Delivery. |
+| `INLINE-F` | Create hyperlink to another page in the course | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-F` in `inline-internal-link.workflow.yaml`; selected course-page target is asserted in Preview and Delivery. |
+| `INLINE-G` | Create hyperlink to an external site | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-G` in `inline-external-link.workflow.yaml`; external URL and link text are asserted in Preview and Delivery. |
+| `INLINE-I` | Apply underline | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; exact mark is asserted in Preview and published Delivery. |
+| `INLINE-J` | Apply strikethrough | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; exact mark is asserted in Preview and published Delivery. |
+| `INLINE-K` | Apply subscript | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; exact mark is asserted in Preview and published Delivery. |
+| `INLINE-L` | Apply superscript | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; exact mark is asserted in Preview and published Delivery. |
+| `INLINE-M` | Apply term | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; exact mark is asserted in Preview and published Delivery. |
+| `INLINE-N` | Apply foreign. Select a language | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-N` in `inline-foreign.workflow.yaml`; Arabic foreign element is asserted in Preview and published Delivery. |
+| `INLINE-O` | Apply popup content | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-O` in `inline-popup.workflow.yaml`; trigger is asserted in Preview and popup content in published Delivery. |
+| `INLINE-R` | Apply inline callout | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-R` in `inline-callout.workflow.yaml`; inline callout is asserted in Preview and published Delivery. |
+| `INLINE-S` | Change text to be a heading | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; heading structure is asserted in Preview and published Delivery. |
+| `INLINE-T` | Change text direction | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `INLINE-C/D/E/I/J/K/L/M/S/T` in `inline-formatting.workflow.yaml`; RTL direction is asserted in Preview and published Delivery. |
 
 ### `LIST`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `LIST-C` | Customize the bullet style of one of the lists | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | List formatting workflow family. |
-| `LIST-D` | Indent one of the list items | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 2` | List formatting workflow family. |
+| `LIST-C` | Customize the bullet style of one of the lists | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `LIST-C/D` in `list-formatting.workflow.yaml`; circle bullet style is asserted in Preview and published Delivery. |
+| `LIST-D` | Indent one of the list items | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 2` | `LIST-C/D` in `list-formatting.workflow.yaml`; nested-list indentation is asserted in Preview and published Delivery. |
 
 ### `TABLE`
 
