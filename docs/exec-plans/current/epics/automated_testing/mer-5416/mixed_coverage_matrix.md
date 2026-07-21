@@ -121,11 +121,11 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `IMAGE-B` | Insert a block image. In media manager, upload both a PNG and JPG image. Select the PNG | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 4` | Media insertion workflow family. |
-| `IMAGE-C` | Change the image to the JPG | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 4` | Media replacement workflow family. |
-| `IMAGE-D` | Enter a caption | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 4` | Image caption workflow family. |
-| `IMAGE-E` | Using image settings, specify alternate text | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 4` | Accessibility workflow family. |
-| `IMAGE-F` | Using image settings, define a custom width | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 4` | Media settings workflow family. |
+| `IMAGE-B` | Insert a block image. In media manager, upload both a PNG and JPG image. Select the PNG | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 4` | `IMAGE-B/C/D/E/F` in `image.workflow.yaml`; uploads JPG then PNG, inserts JPG, and replaces it with PNG so the final authored image is PNG. This intentionally reverses the spreadsheet's B/C order while covering the same insertion and replacement capabilities. |
+| `IMAGE-C` | Change the image to the JPG | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 4` | `IMAGE-B/C/D/E/F` in `image.workflow.yaml`; covers image replacement in the agreed reverse order (JPG → PNG), with final PNG asserted in Preview and Delivery. |
+| `IMAGE-D` | Enter a caption | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 4` | `IMAGE-B/C/D/E/F` in `image.workflow.yaml`; asserts caption in Preview and Delivery. Verified in Playwright. |
+| `IMAGE-E` | Using image settings, specify alternate text | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 4` | `IMAGE-B/C/D/E/F` in `image.workflow.yaml`; asserts alternative text in Preview and Delivery. Verified in Playwright. |
+| `IMAGE-F` | Using image settings, define a custom width | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 4` | `IMAGE-B/C/D/E/F` in `image.workflow.yaml`; asserts rendered width in Preview and numeric width in Delivery. Verified in Playwright. |
 
 ### `YOUTUBE`
 
@@ -191,8 +191,8 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `FIGURE-B` | Edit Figure title | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 4` | Figure settings workflow family. |
-| `FIGURE-C` | Insert other block content within Figure content | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 4` | Nested-content workflow family. |
+| `FIGURE-B` | Edit Figure title | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 4` | `FIGURE-B/C` in `figure.workflow.yaml`; asserts title in Preview and Delivery. Verified in Playwright. |
+| `FIGURE-C` | Insert other block content within Figure content | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 4` | `FIGURE-B/C` in `figure.workflow.yaml`; inserts nested content and asserts it in Preview and Delivery. Verified in Playwright. |
 
 ### `DIALOG`
 

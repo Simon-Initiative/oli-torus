@@ -2,6 +2,7 @@ import { WorkflowActionRegistry } from '@core/workflow/types';
 import { expect, Locator, Page, test } from '@playwright/test';
 import { TypeProgrammingLanguage } from '@pom/types/type-programming-language';
 import { TypeToolbar } from '@pom/types/type-toolbar';
+import path from 'node:path';
 
 const BASE_CONTENT_TEXT = 'Base content for mixed workflow coverage.';
 
@@ -122,6 +123,59 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
       merged_text: mergedText,
       page_revision_slug: pageRevisionSlug,
     };
+  },
+
+  async author_image_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const pngName = 'image_coding_sample.png';
+    const jpgName = 'img-mock-05-16-2025.jpg';
+    const caption = 'IMAGE-D authored image caption';
+    const alt = 'IMAGE-E alternative text';
+    const width = '320';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+
+    await insertBlockImage(page);
+    await uploadImage(page, path.resolve(process.cwd(), 'tests/resources/media_files', jpgName), jpgName);
+    await uploadImage(page, path.resolve(process.cwd(), 'tests/torus/student_delivery/support', pngName), pngName);
+    await page.locator('.name').getByText(jpgName, { exact: true }).click();
+    await page.getByRole('button', { name: 'Select', exact: true }).click();
+    await expect(page.locator('[data-slate-editor="true"] img')).toHaveAttribute(
+      'src',
+      new RegExp(escapeRegExp(jpgName)),
+    );
+    await selectImageSettings(page, 'Select Image');
+    await expect(page.getByRole('heading', { name: 'Select Image' })).toBeVisible();
+    await page.locator('.name').getByText(pngName, { exact: true }).click();
+    await page.getByRole('button', { name: 'Select', exact: true }).click();
+
+    await page.locator('.captions-input').fill(caption);
+    await selectImageSettings(page, 'Settings');
+    await page.getByPlaceholder('Enter a short description of this image').fill(alt);
+    await page.locator('input[type="number"]').fill(width);
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { alt, caption, final_image: pngName, page_revision_slug: pageRevisionSlug, width };
+  },
+
+  async author_figure_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const title = 'FIGURE-B authored title';
+    const content = 'FIGURE-C nested figure content';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addFigureToolbar(title, false);
+    const figureContent = page.locator('.figure-editor .figure-content > p');
+    await figureContent.click();
+    await page.keyboard.type(content);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { content, page_revision_slug: pageRevisionSlug, title };
   },
 
   async author_table_styles({ curriculumTask, homeTask, page }, params) {
@@ -401,6 +455,33 @@ async function focusBaseParagraphForBlockInsert(page: Page) {
   );
 }
 
+async function insertBlockImage(page: Page) {
+  await focusTableInsertionPoint(page);
+  await page.getByRole('button', { name: 'Insert Image' }).click();
+  await page.getByRole('button', { name: 'Choose image' }).click();
+}
+
+async function uploadAndSelectImage(page: Page, filePath: string, fileName: string) {
+  await uploadImage(page, filePath, fileName);
+  await page.locator('.name').getByText(fileName, { exact: true }).click();
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
+}
+
+async function uploadImage(page: Page, filePath: string, fileName: string) {
+  const upload = page.getByRole('button', { name: 'Upload' });
+  const fileChooser = page.waitForEvent('filechooser');
+  await upload.click();
+  await (await fileChooser).setFiles(filePath);
+  await expect(page.locator('.name').getByText(fileName, { exact: true })).toBeVisible();
+}
+
+async function selectImageSettings(page: Page, setting: 'Select Image' | 'Settings') {
+  const image = page.locator('[data-slate-editor="true"] img');
+  await image.scrollIntoViewIfNeeded();
+  await image.click();
+  await page.getByRole('button', { name: setting }).last().click({ force: true });
+}
+
 async function insertTable(page: Page) {
   const tables = page.locator('[data-slate-editor="true"] .table-editor');
   const countBefore = await tables.count();
@@ -415,8 +496,11 @@ async function insertTable(page: Page) {
 }
 
 async function focusTableInsertionPoint(page: Page) {
-  const editor = page.locator('[data-slate-editor="true"]');
-  const firstParagraph = editor.getByRole('paragraph').first();
+  // A content block can contain nested Slate editors (captions, figure titles,
+  // table cells). Limit this to the block's root editor so an insertion always
+  // happens in the authored page, not one of those nested editors.
+  const editor = page.locator('[id^="resource-editor-"] [data-slate-editor="true"]').first();
+  const firstParagraph = editor.locator('> p').first();
 
   await firstParagraph.click();
   await page.keyboard.press('Home');
@@ -516,14 +600,25 @@ async function clearSlateEditor(page: Page) {
 
 async function selectSlateText(page: Page, text: string) {
   const leaf = page.locator('[data-slate-string="true"]').filter({ hasText: text }).last();
+  const rendered = await leaf
+    .waitFor({ state: 'visible', timeout: 3_000 })
+    .then(() => true)
+    .catch(() => false);
 
-  await leaf.evaluate((node) => {
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(node);
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-  });
+  if (rendered) {
+    await leaf.evaluate((node) => {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    });
+    return;
+  }
+
+  // The link text is typed into a new paragraph. This fallback avoids a
+  // transient Slate render from consuming the full test timeout.
+  await page.keyboard.press('Shift+Home');
 }
 
 function toolbarButton(page: Page, toolbar: TypeToolbar) {

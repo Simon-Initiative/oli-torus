@@ -352,6 +352,59 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  def assert_author_preview_image_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    image = required_param!(state, "EXPECTED_IMAGE")
+    caption = required_param!(state, "EXPECTED_CAPTION")
+    alt = required_param!(state, "EXPECTED_ALT")
+    width = required_param!(state, "EXPECTED_WIDTH")
+    assert html_has_text?(html, ~s|img[src*="#{image}"][alt="#{alt}"]|, "")
+    assert html_has_text?(html, ".figure-caption", caption)
+    assert html_has_text?(html, ~s|img[src*="#{image}"][style*="#{width}"]|, "")
+    state
+  end
+
+  def assert_student_delivery_image_workflow(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+
+    assert nested_map?(
+             content,
+             &(&1["type"] == "img" and
+                 String.contains?(&1["src"] || "", required_param!(state, "EXPECTED_IMAGE")) and
+                 &1["alt"] == required_param!(state, "EXPECTED_ALT") and
+                 &1["width"] == String.to_integer(required_param!(state, "EXPECTED_WIDTH")))
+           )
+
+    assert nested_contains?(content, required_param!(state, "EXPECTED_CAPTION"))
+    state
+  end
+
+  def assert_author_preview_figure_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    assert html_has_text?(html, ".figure figcaption", required_param!(state, "EXPECTED_TITLE"))
+
+    assert html_has_text?(
+             html,
+             ".figure .figure-content",
+             required_param!(state, "EXPECTED_CONTENT")
+           )
+
+    state
+  end
+
+  def assert_student_delivery_figure_workflow(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+
+    assert nested_map?(
+             content,
+             &(&1["type"] == "figure" and
+                 nested_contains?(&1, required_param!(state, "EXPECTED_TITLE")) and
+                 nested_contains?(&1, required_param!(state, "EXPECTED_CONTENT")))
+           )
+
+    state
+  end
+
   @doc """
   Asserts that the author preview renders the expected callout content.
   """

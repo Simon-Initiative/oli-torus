@@ -158,6 +158,18 @@ test.describe('MIXED workflow', () => {
     });
   });
 
+  test.describe('IMAGE', () => {
+    test('IMAGE-B/C/D/E/F: image replacement and settings persist to author preview and delivery', async ({ runWorkflow }) => {
+      await runWorkflow('./mixed_workflow/image.workflow.yaml', { actions: mixedWorkflowActions, params: workflowParams() });
+    });
+  });
+
+  test.describe('FIGURE', () => {
+    test('FIGURE-B/C: title and nested content persist to author preview and delivery', async ({ runWorkflow }) => {
+      await runWorkflow('./mixed_workflow/figure.workflow.yaml', { actions: mixedWorkflowActions, params: workflowParams() });
+    });
+  });
+
   test.describe('CODEBLOCK', () => {
     test('CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery', async ({
       runWorkflow,
