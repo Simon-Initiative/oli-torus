@@ -264,6 +264,94 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  def assert_author_preview_table_structure(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    header_text = required_param!(state, "EXPECTED_HEADER_TEXT")
+    merged_text = required_param!(state, "EXPECTED_MERGED_TEXT")
+    aligned_text = required_param!(state, "EXPECTED_ALIGNED_TEXT")
+
+    assert html_has_text?(html, "table th", header_text), "Expected author-preview table header"
+
+    assert html_has_text?(html, "table [colspan=\"2\"]", merged_text),
+           "Expected author-preview merged table cells"
+
+    assert html_has_text?(html, "table .text-center", aligned_text),
+           "Expected author-preview centered table cell"
+
+    assert html |> Floki.parse_document!() |> Floki.find("table tr") |> length() >= 3,
+           "Expected author-preview table to contain the added row"
+
+    assert html
+           |> Floki.parse_document!()
+           |> Floki.find("table tr:first-child td, table tr:first-child th")
+           |> length() >= 3,
+           "Expected author-preview table to contain the added column"
+
+    state
+  end
+
+  def assert_student_delivery_table_structure(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    header_text = required_param!(state, "EXPECTED_HEADER_TEXT")
+    merged_text = required_param!(state, "EXPECTED_MERGED_TEXT")
+    aligned_text = required_param!(state, "EXPECTED_ALIGNED_TEXT")
+
+    assert nested_map?(content, &(&1["type"] == "table" and length(&1["children"] || []) >= 3)),
+           "Expected published table to contain the added row"
+
+    assert nested_map?(content, &(&1["type"] == "th" and nested_contains?(&1, header_text))),
+           "Expected published table header"
+
+    assert nested_map?(
+             content,
+             &(&1["type"] == "td" and &1["colspan"] == 2 and nested_contains?(&1, merged_text))
+           ),
+           "Expected published merged table cells"
+
+    assert nested_map?(
+             content,
+             &(&1["type"] == "td" and &1["align"] == "center" and
+                 nested_contains?(&1, aligned_text))
+           ),
+           "Expected published centered table cell"
+
+    state
+  end
+
+  def assert_author_preview_table_styles(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    alternating_text = required_param!(state, "EXPECTED_ALTERNATING_TEXT")
+    hidden_border_text = required_param!(state, "EXPECTED_HIDDEN_BORDER_TEXT")
+
+    assert html_has_text?(html, "table.table-striped", alternating_text),
+           "Expected author-preview alternating-row table"
+
+    assert html_has_text?(html, "table.table-borderless", hidden_border_text),
+           "Expected author-preview hidden-border table"
+
+    state
+  end
+
+  def assert_student_delivery_table_styles(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    alternating_text = required_param!(state, "EXPECTED_ALTERNATING_TEXT")
+    hidden_border_text = required_param!(state, "EXPECTED_HIDDEN_BORDER_TEXT")
+
+    assert nested_map?(content, fn node ->
+             node["type"] == "table" and node["rowstyle"] == "alternating" and
+               length(node["children"] || []) == 4 and nested_contains?(node, alternating_text)
+           end),
+           "Expected published four-row alternating table"
+
+    assert nested_map?(content, fn node ->
+             node["type"] == "table" and node["border"] == "hidden" and
+               nested_contains?(node, hidden_border_text)
+           end),
+           "Expected published hidden-border table"
+
+    state
+  end
+
   @doc """
   Asserts that the author preview renders the expected callout content.
   """

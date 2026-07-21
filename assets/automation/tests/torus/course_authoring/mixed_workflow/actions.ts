@@ -87,6 +87,75 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     };
   },
 
+  async author_table_structure({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const headerText = 'TABLE-D header cell';
+    const mergedText = 'TABLE-E merged cells';
+    const alignedText = 'TABLE-F centered cell';
+
+    await test.step('author table column, row, header, merge, and alignment changes', async () => {
+      await homeTask.login('author');
+      await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+
+      const table = await insertTable(page);
+      await fillTableCell(table, 0, 0, headerText);
+      await fillTableCell(table, 0, 1, 'TABLE-B original second cell');
+      await fillTableCell(table, 1, 0, mergedText);
+      await fillTableCell(table, 1, 1, 'TABLE-E merge target');
+
+      await selectTableMenuItem(page, table, 0, 0, 'Column after');
+      await selectTableMenuItem(page, table, 0, 0, 'Row after');
+      await selectTableMenuItem(page, table, 0, 0, 'Toggle Header');
+      // "Row after" inserts a blank second row, moving the prefilled merge target
+      // to the third row.
+      await selectTableMenuItem(page, table, 2, 0, 'Merge Right');
+      await setTableCellAlignment(table, 0, 1, 'center');
+      await fillTableCell(table, 0, 1, alignedText);
+
+      await previewFlush(() => curriculumTask.openPreview());
+    });
+
+    return {
+      aligned_text: alignedText,
+      header_text: headerText,
+      merged_text: mergedText,
+      page_revision_slug: pageRevisionSlug,
+    };
+  },
+
+  async author_table_styles({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const alternatingText = 'TABLE-G alternating fourth row';
+    const hiddenBorderText = 'TABLE-H hidden border table';
+
+    await test.step('author second alternating table and third hidden-border table', async () => {
+      await homeTask.login('author');
+      await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+
+      await insertTable(page);
+
+      const alternatingTable = await insertTable(page);
+      await selectTableMenuItem(page, alternatingTable, 0, 0, 'Row after');
+      await selectTableMenuItem(page, alternatingTable, 2, 0, 'Row after');
+      await fillTableCell(alternatingTable, 3, 0, alternatingText);
+      await selectTableMenuItem(page, alternatingTable, 0, 0, 'Alternating Stripes');
+
+      const hiddenBorderTable = await insertTable(page);
+      await fillTableCell(hiddenBorderTable, 0, 0, hiddenBorderText);
+      await selectTableMenuItem(page, hiddenBorderTable, 0, 0, 'Hidden');
+
+      await previewFlush(() => curriculumTask.openPreview());
+    });
+
+    return {
+      alternating_text: alternatingText,
+      hidden_border_text: hiddenBorderText,
+      page_revision_slug: pageRevisionSlug,
+    };
+  },
+
   async author_inline_embeds({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
@@ -330,6 +399,68 @@ async function focusBaseParagraphForBlockInsert(page: Page) {
   throw new Error(
     'Could not focus the base paragraph strongly enough to expose the block insert toolbar',
   );
+}
+
+async function insertTable(page: Page) {
+  const tables = page.locator('[data-slate-editor="true"] .table-editor');
+  const countBefore = await tables.count();
+
+  await focusTableInsertionPoint(page);
+  await expect(page.getByRole('button', { name: 'Insert...' })).toBeVisible();
+  await page.getByRole('button', { name: 'Insert...' }).click();
+  await page.getByRole('button', { name: 'Insert Table' }).click();
+  await expect(tables).toHaveCount(countBefore + 1);
+
+  return tables.first();
+}
+
+async function focusTableInsertionPoint(page: Page) {
+  const editor = page.locator('[data-slate-editor="true"]');
+  const firstParagraph = editor.getByRole('paragraph').first();
+
+  await firstParagraph.click();
+  await page.keyboard.press('Home');
+}
+
+function tableCell(table: Locator, row: number, column: number) {
+  return table.locator('tbody tr').nth(row).locator('td, th').nth(column);
+}
+
+async function fillTableCell(table: Locator, row: number, column: number, text: string) {
+  await tableCell(table, row, column).fill(text);
+}
+
+async function selectTableMenuItem(
+  page: Page,
+  table: Locator,
+  row: number,
+  column: number,
+  item: string,
+) {
+  const cell = tableCell(table, row, column);
+  await cell.click();
+
+  const menu = cell.locator('.table-dropdown');
+  await expect(menu).toBeVisible();
+  await menu.locator('.dropdown-toggle').click();
+  await page.getByRole('button', { name: item, exact: true }).click();
+}
+
+async function setTableCellAlignment(
+  table: Locator,
+  row: number,
+  column: number,
+  alignment: 'left' | 'center' | 'right',
+) {
+  const cell = tableCell(table, row, column);
+  await cell.click();
+
+  const menu = cell.locator('.table-dropdown');
+  await expect(menu).toBeVisible();
+  await menu.locator('.dropdown-toggle').click();
+
+  const index = { left: 0, center: 1, right: 2 }[alignment];
+  await menu.locator('.btn-group-toggle button').nth(index).click();
 }
 
 async function applyToolbarToNewParagraph(

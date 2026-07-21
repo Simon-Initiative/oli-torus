@@ -109,13 +109,13 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `TABLE-B` | Add a column | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 3` | Table structure workflow family. |
-| `TABLE-C` | Add a row | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 3` | Table structure workflow family. |
-| `TABLE-D` | Toggle a cell to be a header | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 3` | Table semantics workflow family. |
-| `TABLE-E` | Merge the contents of two cells | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 3` | Table structure workflow family. |
-| `TABLE-F` | Change the alignment of one cell | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 3` | Table formatting workflow family. |
-| `TABLE-G` | Create a second table with four rows and set row style set to Alternating | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 3` | Table style workflow family. |
-| `TABLE-H` | Create a third table with border style set to Hidden | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 3` | Table style workflow family. |
+| `TABLE-B` | Add a column | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 3` | `TABLE-B/C/D/E/F` in `table-structure.workflow.yaml`; Preview verifies three cells in the first row and Delivery verifies the table row structure. Verified in Playwright. |
+| `TABLE-C` | Add a row | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 3` | `TABLE-B/C/D/E/F` in `table-structure.workflow.yaml`; Preview and Delivery assert a three-row table. Verified in Playwright. |
+| `TABLE-D` | Toggle a cell to be a header | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 3` | `TABLE-B/C/D/E/F` in `table-structure.workflow.yaml`; Preview asserts `th` and Delivery asserts `type: th`. Verified in Playwright. |
+| `TABLE-E` | Merge the contents of two cells | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 3` | `TABLE-B/C/D/E/F` in `table-structure.workflow.yaml`; Preview and Delivery assert the merged cell's `colspan: 2`. Verified in Playwright. |
+| `TABLE-F` | Change the alignment of one cell | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 3` | `TABLE-B/C/D/E/F` in `table-structure.workflow.yaml`; Preview asserts `.text-center` and Delivery asserts `align: center`. Verified in Playwright. |
+| `TABLE-G` | Create a second table with four rows and set row style set to Alternating | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 3` | `TABLE-G/H` in `table-styles.workflow.yaml`; creates a baseline first table, then a four-row second table; Preview asserts `table-striped` and Delivery asserts `rowstyle: alternating`. Verified in Playwright. |
+| `TABLE-H` | Create a third table with border style set to Hidden | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 3` | `TABLE-G/H` in `table-styles.workflow.yaml`; creates a baseline first table and alternating second table before the hidden-border third table; Preview asserts `table-borderless` and Delivery asserts `border: hidden`. Verified in Playwright. |
 
 ### `IMAGE`
 

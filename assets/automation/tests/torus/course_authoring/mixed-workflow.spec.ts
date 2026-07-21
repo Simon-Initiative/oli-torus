@@ -138,6 +138,26 @@ test.describe('MIXED workflow', () => {
     });
   });
 
+  test.describe('TABLE', () => {
+    test('TABLE-B/C/D/E/F: table structure and cell formatting persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/table-structure.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+
+    test('TABLE-G/H: alternating rows and hidden borders persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/table-styles.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
   test.describe('CODEBLOCK', () => {
     test('CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery', async ({
       runWorkflow,
