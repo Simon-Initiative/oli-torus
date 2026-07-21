@@ -102,6 +102,10 @@ test.describe.serial('Real Chem II dazzling d-orbitals adaptive lesson', () => {
   });
 
   test.afterAll(async ({ request }) => {
+    // Full-course project deletion was observed to exceed both cowboy's 60s
+    // idle_timeout and the 600s dev Repo timeout (see TRIAGE-2419: unindexed
+    // FKs referencing revisions), so cleanup is bounded and best-effort;
+    // leaked slugs are named in the warning below.
     try {
       if (seededCourse) {
         await Promise.race([
