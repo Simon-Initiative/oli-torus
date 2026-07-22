@@ -83,7 +83,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Model
-  alias Oli.Delivery.Experiments.LogWorker
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.AdaptiveRuleRequirements
   alias Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation
@@ -258,7 +257,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       result
     end)
     |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
-    |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
   end
 
   @doc """

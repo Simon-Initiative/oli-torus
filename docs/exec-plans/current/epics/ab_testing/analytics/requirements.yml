@@ -1,0 +1,44 @@
+work_item: analytics
+requirements:
+- id: FR-001
+  title: Report assignments and exposures
+  description: Analytics must report assignments and exposures by experiment, decision
+    point, and condition.
+- id: FR-002
+  title: Report outcomes and rewards
+  description: Analytics must show outcome and reward evidence based on existing attempt
+    data and/or explicit experiment events.
+- id: FR-003
+  title: Define join semantics
+  description: Analytics must define timestamp and scope semantics for joining assignments,
+    exposures, attempts, outcomes, and rewards.
+- id: FR-004
+  title: Monitor runtime data quality
+  description: Analytics or monitoring must expose missing exposures, missing outcomes,
+    failed reward updates, and unexpected assignment imbalance.
+- id: FR-005
+  title: Monitor Thompson Sampling state
+  description: Analytics or monitoring must expose posterior state, reward counts,
+    assignment share over time, delayed or missing rewards, and guardrail-triggered
+    pauses for Thompson Sampling experiments.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: A native experiment report or read model shows assignment and exposure
+    counts by experiment, decision point, and condition.
+- id: AC-002
+  requirement: FR-002
+  description: Outcome or reward evidence can be inspected for a controlled evaluated
+    attempt.
+- id: AC-003
+  requirement: FR-003
+  description: Documentation identifies the scope and timestamp rules used to relate
+    assignments, exposures, attempts, and rewards.
+- id: AC-004
+  requirement: FR-004
+  description: Missing or failed runtime data conditions are visible through approved
+    monitoring or reporting surfaces.
+- id: AC-005
+  requirement: FR-005
+  description: Thompson Sampling reports show posterior parameters or reward counts
+    and assignment share for each condition.

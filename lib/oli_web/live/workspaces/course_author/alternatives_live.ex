@@ -28,9 +28,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
         @alternatives_type_id
       )
 
-    alternatives =
-      Enum.filter(alternatives, fn a -> a.content["strategy"] != "upgrade_decision_point" end)
-
     subscriptions = subscribe(alternatives, project.slug)
 
     {:ok,
@@ -55,6 +52,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
       <h2>Alternatives</h2>
       <div class="d-flex flex-row">
         <div class="flex-grow-1"></div>
+        <button class="btn btn-outline-primary mr-2" phx-click="show_create_experiment">
+          <i class="fa fa-plus"></i> New A/B Decision Point
+        </button>
         <button class="btn btn-primary" phx-click="show_create_modal">
           <i class="fa fa-plus"></i> New Alternative
         </button>
@@ -137,7 +137,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
           @form,
           :name,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-          placeholder: "Enter the name of the experiment decision point from Upgrade",
+          placeholder: "Enter a name for the A/B decision point",
           phx_hook: "InputAutoSelect",
           required: true
         )}
@@ -147,7 +147,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
 
     modal_assigns = %{
       id: "create_modal",
-      title: "Create Experiment Decision Point",
+      title: "Create A/B Decision Point",
       submit_label: "Create",
       changeset: changeset,
       form_body_fn: form_body_fn,
@@ -216,6 +216,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
         author,
         @alternatives_type_id,
         %{title: name, content: %{"options" => [], "strategy" => "user_section_preference"}}
+      )
+
+    {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
+  end
+
+  def handle_event("create_experiment", %{"params" => %{"name" => name}}, socket) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+
+    {:ok, group} =
+      ResourceEditor.create(
+        project.slug,
+        author,
+        @alternatives_type_id,
+        %{title: name, content: %{"options" => [], "strategy" => "upgrade_decision_point"}}
       )
 
     {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}

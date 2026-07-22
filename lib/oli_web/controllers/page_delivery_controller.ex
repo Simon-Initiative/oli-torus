@@ -598,6 +598,9 @@ defmodule OliWeb.PageDeliveryController do
         else
           user
         end,
+      institution_id: section.institution_id,
+      project_id: section.base_project_id,
+      section_id: section.id,
       section_slug: section_slug,
       project_slug: base_project_slug,
       resource_attempt: hd(context.resource_attempts),

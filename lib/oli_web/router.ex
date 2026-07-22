@@ -629,9 +629,6 @@ defmodule OliWeb.Router do
 
     live("/:project_id/embeddings", Search.EmbeddingsLive)
 
-    # Alternatives Groups
-    live("/:project_id/alternatives", Resources.AlternativesEditor)
-
     # Activity Bank
     get("/:project_id/bank", ActivityBankController, :index)
 

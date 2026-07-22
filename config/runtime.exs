@@ -534,11 +534,6 @@ if runtime_env == :prod do
     cashnet_client: System.get_env("CASHNET_CLIENT"),
     cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
 
-  config :oli, :upgrade_experiment_provider,
-    url: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_URL"),
-    user_url: System.get_env("UPGRADE_EXPERIMENT_USER_URL"),
-    api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
-
   # Configure reCAPTCHA
   config :oli, :recaptcha,
     verify_url: "https://www.google.com/recaptcha/api/siteverify",

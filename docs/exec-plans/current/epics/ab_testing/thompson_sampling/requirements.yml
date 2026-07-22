@@ -1,0 +1,54 @@
+work_item: thompson_sampling
+requirements:
+- id: FR-001
+  title: Support Beta-Bernoulli Thompson Sampling
+  description: The MVP adaptive policy must implement non-contextual Thompson Sampling
+    for A/B/N alternatives with Beta-Bernoulli binary rewards.
+- id: FR-002
+  title: Persist auditable policy state
+  description: The policy must persist per-condition posterior parameters, prior configuration,
+    algorithm name/version, reward counts, and update provenance.
+- id: FR-003
+  title: Select assignments from posterior samples
+  description: For non-sticky first assignments, the policy must sample active condition
+    posteriors and select the condition with the highest sampled value.
+- id: FR-004
+  title: Update posterior state idempotently
+  description: Reward processing must update only the assigned condition and must
+    not double-count repeated reward events.
+- id: FR-005
+  title: Provide MVP adaptive guardrails
+  description: The policy must support required MVP guardrails such as warm-up, traffic
+    caps, fixed control allocation, manual pause, or imbalance monitoring where selected
+    for release.
+- id: FR-006
+  title: Enable Thompson Sampling authoring
+  description: The A/B Testing authoring surface must replace the deferred disabled
+    Thompson Sampling affordance with selectable MVP-safe adaptive configuration,
+    including priors, guardrails, and lifecycle activation validation.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: Tests verify Thompson Sampling uses binary success and failure rewards
+    with Beta posterior parameters.
+- id: AC-002
+  requirement: FR-002
+  description: Policy state includes prior, posterior, algorithm version, reward counts,
+    and update metadata visible to approved reporting or inspection paths.
+- id: AC-003
+  requirement: FR-003
+  description: First assignment selection uses sampled posterior values while existing
+    sticky assignments remain unchanged.
+- id: AC-004
+  requirement: FR-004
+  description: Replaying an already processed reward event does not change posterior
+    counts a second time.
+- id: AC-005
+  requirement: FR-005
+  description: Selected MVP guardrails can pause, constrain, or flag adaptive assignment
+    behavior as designed.
+- id: AC-006
+  requirement: FR-006
+  description: Authorized users can create or update a Thompson Sampling experiment
+    through the authoring surface only when priors, guardrails, reward readiness,
+    lifecycle state, and condition mappings pass validation.

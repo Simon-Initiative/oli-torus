@@ -23,8 +23,13 @@ defmodule Oli.Rendering.Alternatives do
         %Context{
           enrollment: enrollment,
           user: user,
+          institution_id: institution_id,
+          project_id: project_id,
+          publication_id: publication_id,
+          section_id: section_id,
           section_slug: section_slug,
           project_slug: project_slug,
+          activity_map: activity_map,
           mode: mode,
           alternatives_selector_fn: alternatives_selector_fn,
           alternatives_groups_fn: groups_fn
@@ -45,9 +50,14 @@ defmodule Oli.Rendering.Alternatives do
       %AlternativesStrategyContext{
         enrollment_id: enrollment_id,
         user: user,
+        institution_id: institution_id,
+        project_id: project_id,
+        publication_id: publication_id,
+        section_id: section_id,
         section_slug: section_slug,
         mode: mode,
         project_slug: project_slug,
+        activity_resource_ids: activity_resource_ids(activity_map),
         alternative_groups_by_id: by_id
       },
       element
@@ -95,4 +105,7 @@ defmodule Oli.Rendering.Alternatives do
         rendered
     end
   end
+
+  defp activity_resource_ids(activity_map) when is_map(activity_map), do: Map.keys(activity_map)
+  defp activity_resource_ids(_activity_map), do: []
 end

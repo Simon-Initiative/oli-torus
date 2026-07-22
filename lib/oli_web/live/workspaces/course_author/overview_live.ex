@@ -10,7 +10,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Course.{CreativeCommons, Project}
-  alias Oli.Delivery.Experiments
   alias Oli.LanguageCodesIso639
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
@@ -77,7 +76,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           |> Enum.group_by(& &1.author_project_status),
         project_selected_activities:
           Activities.selected_activities_for_project(project.id, is_admin?),
-        can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
+        can_enable_experiments: is_admin?,
         is_admin: is_admin?,
         changeset: Project.changeset(project),
         latest_published_publication: latest_published_publication,
@@ -258,7 +257,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <div :if={@can_enable_experiments} class="form-label-group mb-3 form-check">
               <.input
                 field={f[:has_experiments]}
-                label="Enable Upgrade-based Experiments"
+                label="Enable Experiments"
                 type="checkbox"
                 error_position={:bottom}
                 errors={f.errors}

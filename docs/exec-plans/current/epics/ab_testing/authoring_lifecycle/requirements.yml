@@ -1,0 +1,49 @@
+work_item: authoring_lifecycle
+requirements:
+- id: FR-001
+  title: Use plain A/B Testing authoring language
+  description: Authoring must avoid provider-migration terminology, prior-provider
+    labels, the term "native", and JSON workflow affordances in experiment creation
+    and management.
+- id: FR-002
+  title: Manage lifecycle states
+  description: Authorized users must be able to create, edit, start, pause, complete,
+    and archive A/B testing experiments where required for MVP.
+- id: FR-003
+  title: Configure non-adaptive weights
+  description: Authorized users must be able to configure condition weights for simple
+    A/B/N weighted assignment experiments.
+- id: FR-004
+  title: Defer Thompson Sampling authoring
+  description: Thompson Sampling must not be selectable, submittable, persisted,
+    or activation-eligible in this slice; any visible affordance must be disabled
+    with clear "Coming soon" copy until the Thompson Sampling slice enables adaptive
+    authoring.
+- id: FR-005
+  title: Validate condition changes
+  description: Authoring must prevent or constrain unsafe condition edits after learner
+    assignments exist.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: A/B testing authoring screens use plain A/B Testing language and do
+    not present prior-provider labels, "native" terminology, or JSON export/import
+    as the creation path for new experiments.
+- id: AC-002
+  requirement: FR-002
+  description: Lifecycle transitions enforce state rules and allow only accepted
+    project collaborators, content admins, account admins, and system admins to start,
+    pause, complete, or archive experiments.
+- id: AC-003
+  requirement: FR-003
+  description: A weighted A/B/N experiment can be configured with valid condition
+    weights and rejected with invalid weights.
+- id: AC-004
+  requirement: FR-004
+  description: Thompson Sampling controls are absent or disabled, and attempts to
+    submit or persist adaptive configuration are rejected without creating an active
+    adaptive experiment.
+- id: AC-005
+  requirement: FR-005
+  description: Attempts to edit assigned conditions after assignments exist produce
+    safe validation behavior and clear user feedback.
