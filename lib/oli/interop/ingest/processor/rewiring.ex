@@ -8,7 +8,11 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
   alias Oli.Resources.PageContent
   require Logger
 
-  defp retrieve(map, key) do
+  @doc """
+  Looks up a key in a map while accepting integer and numeric-string id forms.
+  """
+  @spec retrieve(map(), term()) :: term() | nil
+  def retrieve(map, key) do
     case Map.get(map, key) do
       nil ->
         case key do
