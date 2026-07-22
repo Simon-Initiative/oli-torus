@@ -1,0 +1,16 @@
+- hook:
+    function: 'Oli.Scenarios.Features.MixedContentHooks.bind_workflow_context/1'
+
+- hook:
+    function: 'Oli.Scenarios.Features.MixedContentHooks.assert_author_preview_list_formatting/1'
+
+- publish:
+    to: 'workflow_authoring_project'
+    description: 'Publish list formatting workflow update'
+
+- update:
+    from: 'workflow_authoring_project'
+    to: 'workflow_delivery_section'
+
+- hook:
+    function: 'Oli.Scenarios.Features.MixedContentHooks.assert_student_delivery_list_formatting/1'

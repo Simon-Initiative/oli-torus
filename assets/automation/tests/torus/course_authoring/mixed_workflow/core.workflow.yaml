@@ -1,0 +1,25 @@
+workflow:
+  - id: seed_authoring_and_delivery_context
+    scenario:
+      file: 'mixed-content.setup.scenario.yaml'
+      params:
+        RUN_ID: '${RUN_ID}'
+
+  - id: author_core_text_editing_in_playwright
+    playwright_action:
+      action: 'author_core_text_editing'
+      params:
+        project_slug: '${seed_authoring_and_delivery_context.outputs.projects.workflow_authoring_project}'
+        page_revision_slug: '${seed_authoring_and_delivery_context.outputs.params.workflow_page_revision_slug}'
+
+  - id: assert_core_text_editing_after_publish
+    scenario:
+      file: 'assert-core-text-editing.scenario.yaml'
+      params:
+        RUN_ID: '${RUN_ID}'
+        AUTHOR_EMAIL: '${seed_authoring_and_delivery_context.outputs.users.workflow_author}'
+        STUDENT_EMAIL: '${seed_authoring_and_delivery_context.outputs.users.workflow_student}'
+        PROJECT_SLUG: '${seed_authoring_and_delivery_context.outputs.projects.workflow_authoring_project}'
+        SECTION_SLUG: '${seed_authoring_and_delivery_context.outputs.sections.workflow_delivery_section}'
+        PAGE_REVISION_SLUG: '${author_core_text_editing_in_playwright.outputs.page_revision_slug}'
+        EXPECTED_TYPED_TEXT: '${author_core_text_editing_in_playwright.outputs.typed_text}'

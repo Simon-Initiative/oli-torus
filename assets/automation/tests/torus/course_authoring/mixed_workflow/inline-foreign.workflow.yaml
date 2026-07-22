@@ -1,0 +1,19 @@
+workflow:
+  - id: seed
+    scenario: { file: 'mixed-content.setup.scenario.yaml', params: { RUN_ID: '${RUN_ID}' } }
+  - id: author
+    playwright_action:
+      action: 'author_inline_foreign'
+      params:
+        project_slug: '${seed.outputs.projects.workflow_authoring_project}'
+        page_revision_slug: '${seed.outputs.params.workflow_page_revision_slug}'
+  - id: assert
+    scenario:
+      file: 'assert-inline-foreign.scenario.yaml'
+      params:
+        AUTHOR_EMAIL: '${seed.outputs.users.workflow_author}'
+        STUDENT_EMAIL: '${seed.outputs.users.workflow_student}'
+        PROJECT_SLUG: '${seed.outputs.projects.workflow_authoring_project}'
+        SECTION_SLUG: '${seed.outputs.sections.workflow_delivery_section}'
+        PAGE_REVISION_SLUG: '${author.outputs.page_revision_slug}'
+        EXPECTED_TEXT: '${author.outputs.text}'
