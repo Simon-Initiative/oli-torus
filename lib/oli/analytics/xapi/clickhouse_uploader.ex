@@ -56,7 +56,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     parsed_events =
       body
       |> String.split("\n", trim: true)
-      |> Enum.map(&Jason.decode!/1)
+      |> Enum.map(fn raw_line -> {raw_line, Jason.decode!(raw_line)} end)
 
     # Transform all events to the unified raw_events format and fan out experiment
     # attribution arrays into attribution-level rows.
@@ -82,12 +82,12 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     end
   end
 
-  defp raw_event_base(event, event_type) do
+  defp raw_event_base({raw_line, event}, event_type) do
     context_extensions = context_extensions(event)
     attributions = experiment_attributions(event)
 
     %{
-      event_hash: event_hash(event),
+      event_hash: event_hash(raw_line),
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       home_page: get_in(event, ["actor", "account", "homePage"]),
       section_id: oli_extension(context_extensions, "section_id"),
@@ -200,24 +200,24 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   # Transform an xAPI event to the unified raw_events table format
-  defp transform_to_raw_event(event) do
+  defp transform_to_raw_event({raw_line, event}) do
     cond do
-      is_video_event?(event) -> transform_video_event(event)
-      is_activity_attempt_event?(event) -> transform_activity_attempt_event(event)
-      is_page_attempt_event?(event) -> transform_page_attempt_event(event)
-      is_page_viewed_event?(event) -> transform_page_viewed_event(event)
-      is_part_attempt_event?(event) -> transform_part_attempt_event(event)
+      is_video_event?(event) -> transform_video_event({raw_line, event})
+      is_activity_attempt_event?(event) -> transform_activity_attempt_event({raw_line, event})
+      is_page_attempt_event?(event) -> transform_page_attempt_event({raw_line, event})
+      is_page_viewed_event?(event) -> transform_page_viewed_event({raw_line, event})
+      is_part_attempt_event?(event) -> transform_part_attempt_event({raw_line, event})
       true -> nil
     end
   end
 
-  defp transform_video_event(event) do
+  defp transform_video_event({raw_line, event}) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
     object_extensions = get_in(event, ["object", "definition", "extensions"]) || %{}
 
     event
-    |> raw_event_base("video")
+    |> then(&raw_event_base({raw_line, &1}, "video"))
     |> Map.merge(%{
       page_id: oli_extension(context_extensions, "page_id"),
       content_element_id:
@@ -246,13 +246,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_activity_attempt_event(event) do
+  defp transform_activity_attempt_event({raw_line, event}) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     event
-    |> raw_event_base("activity_attempt")
+    |> then(&raw_event_base({raw_line, &1}, "activity_attempt"))
     |> Map.merge(%{
       activity_attempt_guid: oli_extension(context_extensions, "activity_attempt_guid"),
       activity_attempt_number: oli_extension(context_extensions, "activity_attempt_number"),
@@ -270,13 +270,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_page_attempt_event(event) do
+  defp transform_page_attempt_event({raw_line, event}) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     event
-    |> raw_event_base("page_attempt")
+    |> then(&raw_event_base({raw_line, &1}, "page_attempt"))
     |> Map.merge(%{
       page_attempt_guid: oli_extension(context_extensions, "page_attempt_guid"),
       page_attempt_number: oli_extension(context_extensions, "page_attempt_number"),
@@ -291,12 +291,12 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_page_viewed_event(event) do
+  defp transform_page_viewed_event({raw_line, event}) do
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     event
-    |> raw_event_base("page_viewed")
+    |> then(&raw_event_base({raw_line, &1}, "page_viewed"))
     |> Map.merge(%{
       page_id: oli_extension(context_extensions, "page_id"),
       page_sub_type: get_in(event, ["object", "definition", "subType"]),
@@ -304,13 +304,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_part_attempt_event(event) do
+  defp transform_part_attempt_event({raw_line, event}) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     event
-    |> raw_event_base("part_attempt")
+    |> then(&raw_event_base({raw_line, &1}, "part_attempt"))
     |> Map.merge(%{
       part_attempt_guid: oli_extension(context_extensions, "part_attempt_guid"),
       part_attempt_number: oli_extension(context_extensions, "part_attempt_number"),
@@ -329,13 +329,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_experiment_attributions(event) do
+  defp transform_experiment_attributions({raw_line, event}) do
     result = event["result"] || %{}
-    raw_hash = event_hash(event)
+    raw_hash = event_hash(raw_line)
 
     host_event_type =
       event
-      |> transform_to_raw_event()
+      |> then(&transform_to_raw_event({raw_line, &1}))
       |> case do
         nil -> "unknown"
         raw_event -> Map.get(raw_event, :event_type)
@@ -427,15 +427,34 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     |> Base.encode16(case: :lower)
   end
 
-  defp event_hash(event) do
-    event
-    |> Jason.encode!()
-    |> hash_key()
-  end
+  defp event_hash(raw_line) when is_binary(raw_line), do: hash_key(raw_line)
 
   defp attribution_hash(event_hash, attribution) do
-    hash_key("#{event_hash}:#{Jason.encode!(attribution)}")
+    hash_key("#{event_hash}:#{canonical_json(attribution)}")
   end
+
+  defp canonical_json(value) when is_map(value) do
+    entries =
+      value
+      |> Enum.sort_by(fn {key, _value} -> to_string(key) end)
+      |> Enum.map(fn {key, value} ->
+        "#{encode_canonical_json_value(to_string(key))}:#{canonical_json(value)}"
+      end)
+      |> Enum.join(",")
+
+    "{#{entries}}"
+  end
+
+  defp canonical_json(value) when is_list(value) do
+    value
+    |> Enum.map(&canonical_json/1)
+    |> Enum.join(",")
+    |> then(fn entries -> "[#{entries}]" end)
+  end
+
+  defp canonical_json(value), do: encode_canonical_json_value(value)
+
+  defp encode_canonical_json_value(value), do: Jason.encode!(value, escape: :unicode_safe)
 
   defp insert_raw_events(events, config) do
     # Prepare the INSERT query

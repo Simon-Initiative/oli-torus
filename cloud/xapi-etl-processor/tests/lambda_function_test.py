@@ -23,6 +23,9 @@ except ModuleNotFoundError:
     pytest.skip("pyarrow is required for these tests; install it or run under Python 3.11", allow_module_level=True)
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "lambda_function.py"
+FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "experiment_attributed_part_attempt.jsonl"
+FIXTURE_EVENT_HASH = "a7f351e505b2acd1513d4b05034847114b6b35b2cea8de975487ff0e82334a63"
+FIXTURE_ATTRIBUTION_HASH = "db0d6397a8a68edda66118d8ae099b757ae37b234861bacaa6be3994847c00e2"
 spec = importlib.util.spec_from_file_location("lambda_function", MODULE_PATH)
 lambda_function = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = lambda_function
@@ -73,6 +76,12 @@ class LambdaFunctionTests(TestCase):
         return lambda_function.pa.Table.from_pylist(
             [{"event_hash": f"hash-{index}", "source_line": index + 1} for index in range(row_count)]
         )
+
+    def _experiment_attributed_part_attempt_fixture(self):
+        raw_line = next(
+            line for line in FIXTURE_PATH.read_bytes().splitlines() if line.strip()
+        )
+        return raw_line, json.loads(raw_line)
 
     def test_extract_s3_references_from_event(self):
         event = {
@@ -244,58 +253,11 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(source_lines, [1, 2])
 
     def test_transform_xapi_statement_extracts_experiment_attribution_summary(self):
-        statement = {
-            "actor": {
-                "account": {
-                    "homePage": "https://proton.oli.cmu.edu",
-                    "name": "123",
-                }
-            },
-            "verb": {"id": "http://adlnet.gov/expapi/verbs/completed"},
-            "object": {
-                "id": "https://proton.oli.cmu.edu/parts/part-1",
-                "definition": {
-                    "type": "http://adlnet.gov/expapi/activities/question"
-                }
-            },
-            "context": {
-                "extensions": {
-                    "http://oli.cmu.edu/extensions/project_id": 1001,
-                    "http://oli.cmu.edu/extensions/section_id": 2001,
-                    "http://oli.cmu.edu/extensions/publication_id": 3001,
-                    "http://oli.cmu.edu/extensions/activity_id": 606,
-                    "http://oli.cmu.edu/extensions/part_id": "part-1",
-                    "http://oli.cmu.edu/extensions/part_attempt_guid": "part-guid",
-                    "http://oli.cmu.edu/extensions/experiment_attributions": [
-                        {
-                            "role": "reward",
-                            "experiment_id": 101,
-                            "decision_point_id": 202,
-                            "condition_id": 303,
-                            "condition_code": "condition-a",
-                            "assignment_id": 404,
-                            "assignment_key": "101:202:505",
-                            "enrollment_id": 505,
-                            "algorithm": "thompson_sampling",
-                            "algorithm_version": "thompson_sampling:v2",
-                            "idempotency_key": "reward-key",
-                            "reward_source": "activity_attempt:full_credit",
-                        }
-                    ],
-                }
-            },
-            "result": {
-                "score": {"raw": 1.0, "min": 0, "max": 1},
-                "extensions": {
-                    "http://oli.cmu.edu/extensions/reward_source": "activity_attempt:full_credit"
-                },
-            },
-            "timestamp": "2026-07-14T12:00:00Z",
-        }
+        raw_line, statement = self._experiment_attributed_part_attempt_fixture()
 
         transformed = lambda_function.transform_xapi_statement(
             statement,
-            raw_bytes=json.dumps(statement).encode("utf-8"),
+            raw_bytes=raw_line,
             bucket="bucket",
             key="events/file.jsonl",
             etag='"etag"',
@@ -308,7 +270,7 @@ class LambdaFunctionTests(TestCase):
 
         rows = lambda_function.transform_experiment_attributions(
             statement,
-            raw_bytes=json.dumps(statement).encode("utf-8"),
+            raw_bytes=raw_line,
             bucket="bucket",
             key="events/file.jsonl",
             etag='"etag"',
@@ -316,10 +278,9 @@ class LambdaFunctionTests(TestCase):
         )
 
         self.assertEqual(len(rows), 1)
-        self.assertEqual(
-            rows[0]["raw_event_hash"],
-            hashlib.sha256(json.dumps(statement).encode("utf-8")).hexdigest(),
-        )
+        self.assertEqual(transformed["event_hash"], FIXTURE_EVENT_HASH)
+        self.assertEqual(rows[0]["raw_event_hash"], FIXTURE_EVENT_HASH)
+        self.assertEqual(rows[0]["attribution_hash"], FIXTURE_ATTRIBUTION_HASH)
         self.assertEqual(rows[0]["host_event_type"], "part_attempt")
         self.assertEqual(rows[0]["experiment_role"], "reward")
         self.assertEqual(rows[0]["experiment_id"], 101)

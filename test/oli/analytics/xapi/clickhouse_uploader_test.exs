@@ -7,6 +7,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Test.MockHTTP
 
+  @fixture_path Path.expand(
+                  "../../../../cloud/xapi-etl-processor/tests/fixtures/experiment_attributed_part_attempt.jsonl",
+                  __DIR__
+                )
+  @fixture_event_hash "a7f351e505b2acd1513d4b05034847114b6b35b2cea8de975487ff0e82334a63"
+  @fixture_attribution_hash "db0d6397a8a68edda66118d8ae099b757ae37b234861bacaa6be3994847c00e2"
+
   setup :verify_on_exit!
 
   setup do
@@ -203,6 +210,35 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     assert {:ok, 1} = ClickHouseUploader.upload(bundle)
   end
 
+  test "raw event and attribution hashes match lambda raw-line hashing contract" do
+    raw_line = attributed_part_attempt_json_line()
+    reencoded_hash = raw_line |> Jason.decode!() |> Jason.encode!() |> sha256()
+
+    assert sha256(raw_line) == @fixture_event_hash
+    refute @fixture_event_hash == reencoded_hash
+
+    bundle = %StatementBundle{
+      body: raw_line,
+      category: :attempt,
+      bundle_id: "bundle-hash"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "'#{@fixture_event_hash}'"
+      refute query =~ "'#{reencoded_hash}'"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "'#{@fixture_event_hash}'"
+      assert query =~ "'#{@fixture_attribution_hash}'"
+      refute query =~ "'#{reencoded_hash}'"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
   defp video_statement(verb_id, result_extensions) do
     %{
       "actor" => %{
@@ -287,5 +323,17 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       },
       "timestamp" => "2026-07-14T12:00:00Z"
     }
+  end
+
+  defp attributed_part_attempt_json_line do
+    @fixture_path
+    |> File.stream!()
+    |> Enum.find(&(String.trim(&1) != ""))
+    |> String.trim_trailing("\n")
+  end
+
+  defp sha256(value) do
+    :crypto.hash(:sha256, value)
+    |> Base.encode16(case: :lower)
   end
 end
