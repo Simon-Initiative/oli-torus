@@ -8,7 +8,12 @@ import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { ProjectTask } from '@tasks/ProjectTask';
 import { StudentTask } from '@tasks/StudentTask';
-import { getBaseUrl, getScenarioToken, shouldAutoCloseBrowser } from '@core/runtimeConfig';
+import {
+  getBaseUrl,
+  getScenarioToken,
+  hasRuntimeBaseUrl,
+  shouldAutoCloseBrowser,
+} from '@core/runtimeConfig';
 
 type MyFixtures = {
   forEachTest: void;
@@ -19,13 +24,20 @@ type MyFixtures = {
   homeTask: HomeTask;
   projectTask: ProjectTask;
   studentTask: StudentTask;
-  seedScenario: (relativePath: string, params?: Record<string, unknown>) => Promise<SeedScenarioResponse>;
+  seedScenario: (
+    relativePath: string,
+    params?: Record<string, unknown>,
+  ) => Promise<SeedScenarioResponse>;
 };
 
 export const test = base.extend<MyFixtures>({
   forEachTest: [
-    async ({ homeTask }, use) => {
-      await homeTask.goToSite();
+    async ({ homeTask }, use, testInfo) => {
+      const baseUrl = hasRuntimeBaseUrl()
+        ? getBaseUrl()
+        : ((testInfo.project.use.baseURL as string) ?? getBaseUrl());
+
+      await homeTask.goToSite(baseUrl);
       await use();
 
       if (shouldAutoCloseBrowser()) {
@@ -75,7 +87,9 @@ export const test = base.extend<MyFixtures>({
     async ({ request }, use, testInfo) => {
       const scenarioRunner = async (relativePath: string, params: Record<string, unknown> = {}) => {
         const scenarioPath = path.resolve(path.dirname(testInfo.file), relativePath);
-        const projectBaseUrl = (testInfo.project.use.baseURL as string) || getBaseUrl();
+        const projectBaseUrl = hasRuntimeBaseUrl()
+          ? getBaseUrl()
+          : ((testInfo.project.use.baseURL as string) ?? getBaseUrl());
         return seedScenarioFromFile(
           request,
           scenarioPath,

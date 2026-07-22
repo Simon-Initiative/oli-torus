@@ -218,6 +218,8 @@ defmodule Oli.Scenarios.DirectiveParser do
       "slug",
       "open_and_free",
       "requires_enrollment",
+      "assistant_enabled",
+      "assistant_service_config",
       "requires_payment",
       "payment_options",
       "pay_by_institution",
@@ -242,6 +244,13 @@ defmodule Oli.Scenarios.DirectiveParser do
           open_and_free: parse_boolean(section_data["open_and_free"], false, "open_and_free"),
           requires_enrollment:
             parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment"),
+          assistant_enabled:
+            parse_optional_boolean(section_data["assistant_enabled"], "assistant_enabled"),
+          assistant_service_config:
+            parse_optional_non_empty_string(
+              section_data["assistant_service_config"],
+              "assistant_service_config"
+            ),
           requires_payment:
             parse_optional_boolean(section_data["requires_payment"], "requires_payment"),
           payment_options: parse_optional_payment_options(section_data["payment_options"]),
@@ -2168,6 +2177,18 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_optional_string_or_atom(nil), do: nil
   defp parse_optional_string_or_atom(value) when is_binary(value), do: value
   defp parse_optional_string_or_atom(value) when is_atom(value), do: Atom.to_string(value)
+
+  defp parse_optional_non_empty_string(nil, _field), do: nil
+
+  defp parse_optional_non_empty_string(value, field) when is_binary(value) do
+    case String.trim(value) do
+      "" -> raise "Invalid non-empty string for #{field}: #{inspect(value)}"
+      normalized -> normalized
+    end
+  end
+
+  defp parse_optional_non_empty_string(value, field),
+    do: raise("Invalid non-empty string for #{field}: #{inspect(value)}")
 
   defp parse_optional_string_or_integer(nil), do: nil
   defp parse_optional_string_or_integer(value) when is_integer(value), do: value

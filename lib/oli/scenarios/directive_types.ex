@@ -21,6 +21,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :slug,
       :open_and_free,
       :requires_enrollment,
+      :assistant_enabled,
+      :assistant_service_config,
       :requires_payment,
       :payment_options,
       :pay_by_institution,

@@ -59,6 +59,21 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert section.end_date == ~U[2026-12-31 23:59:59Z]
   end
 
+  test "schema and parser accept enabling the section assistant" do
+    yaml = """
+    - section:
+        name: "assistant_section"
+        assistant_enabled: true
+        assistant_service_config: "nightly-dot-service"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [section] = DirectiveParser.parse_yaml!(yaml)
+    assert section.assistant_enabled == true
+    assert section.assistant_service_config == "nightly-dot-service"
+  end
+
   test "schema and parser accept paywall fields on product and section plus institution discounts" do
     yaml = """
     - institution:

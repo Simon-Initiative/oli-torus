@@ -1,18 +1,27 @@
 defmodule Oli.Scenarios.Directives.SectionHandler do
   @moduledoc """
   Handles section creation directives.
+
+  A section may also select a named GenAI service configuration for Dot. This
+  creates a section-specific `:student_dialogue` feature configuration after
+  the section itself has been persisted.
   """
 
   alias Oli.Delivery
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
+  alias Oli.GenAI
+  alias Oli.GenAI.Completions.ServiceConfig
   alias Oli.Publishing
+  alias Oli.Repo
   alias Oli.Scenarios.DirectiveTypes.SectionDirective
   alias Oli.Scenarios.Directives.DirectiveAttrs
   alias Oli.Scenarios.Engine
 
   def handle(%SectionDirective{name: name, title: title, from: from} = directive, state) do
     try do
+      assistant_service = resolve_assistant_service!(directive)
+
       directive_attrs =
         directive
         |> Map.from_struct()
@@ -26,6 +35,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
           # Create a standalone section with an auto-generated backing project.
           create_standalone(directive_attrs, state)
         end
+
+      section = configure_assistant_service(section, assistant_service)
 
       {:ok, Engine.put_section(state, name, section)}
     rescue
@@ -144,5 +155,35 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       context_id: "context_#{System.unique_integer([:positive])}",
       institution_id: institution.id
     })
+  end
+
+  defp configure_assistant_service(section, nil),
+    do: section
+
+  defp configure_assistant_service(section, %ServiceConfig{id: service_config_id}) do
+    attrs = %{
+      feature: :student_dialogue,
+      section_id: section.id,
+      service_config_id: service_config_id
+    }
+
+    case GenAI.create_feature_config(attrs) do
+      {:ok, _feature_config} -> section
+      {:error, changeset} -> raise "Failed to configure Dot service: #{inspect(changeset.errors)}"
+    end
+  end
+
+  defp resolve_assistant_service!(%SectionDirective{assistant_service_config: nil}), do: nil
+
+  defp resolve_assistant_service!(%SectionDirective{
+         assistant_enabled: true,
+         assistant_service_config: service_name
+       }) do
+    Repo.get_by(ServiceConfig, name: service_name) ||
+      raise "GenAI service config '#{service_name}' not found"
+  end
+
+  defp resolve_assistant_service!(%SectionDirective{assistant_service_config: service_name}) do
+    raise "assistant_service_config '#{service_name}' requires assistant_enabled: true"
   end
 end
