@@ -138,6 +138,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that an inline link renders with the expected target in author preview.
+  """
   def assert_author_preview_inline_link(%ExecutionState{} = state) do
     html = author_preview_html(state)
     link_text = required_param!(state, "EXPECTED_LINK_TEXT")
@@ -160,6 +163,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that an inline link preserves its type, target, and text in delivery content.
+  """
   def assert_student_delivery_inline_link(%ExecutionState{} = state) do
     content = delivered_revision_content(state)
     link_text = required_param!(state, "EXPECTED_LINK_TEXT")
@@ -184,49 +190,45 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
-  def assert_author_preview_inline_embeds(%ExecutionState{} = state) do
-    html = author_preview_html(state)
-
-    for key <- ["EXPECTED_FOREIGN_TEXT", "EXPECTED_POPUP_TRIGGER", "EXPECTED_CALLOUT_TEXT"] do
-      assert_contains(html_text(html), required_param!(state, key))
-    end
-
-    state
-  end
-
-  def assert_student_delivery_inline_embeds(%ExecutionState{} = state) do
-    published_json = delivered_revision_content(state) |> Jason.encode!()
-
-    for {type, text} <- [
-          {"foreign", required_param!(state, "EXPECTED_FOREIGN_TEXT")},
-          {"popup", required_param!(state, "EXPECTED_POPUP_CONTENT")},
-          {"callout_inline", required_param!(state, "EXPECTED_CALLOUT_TEXT")}
-        ] do
-      assert published_json =~ ~s|"type":"#{type}"|
-      assert published_json =~ text
-    end
-
-    state
-  end
-
+  @doc """
+  Asserts that inline foreign text renders in author preview.
+  """
   def assert_author_preview_inline_foreign(%ExecutionState{} = state),
     do: assert_preview_text(state, "EXPECTED_TEXT")
 
+  @doc """
+  Asserts that an inline popup trigger renders in author preview.
+  """
   def assert_author_preview_inline_popup(%ExecutionState{} = state),
     do: assert_preview_text(state, "EXPECTED_TRIGGER")
 
+  @doc """
+  Asserts that an inline callout renders in author preview.
+  """
   def assert_author_preview_inline_callout(%ExecutionState{} = state),
     do: assert_preview_text(state, "EXPECTED_TEXT")
 
+  @doc """
+  Asserts that inline foreign text persists in delivery content.
+  """
   def assert_student_delivery_inline_foreign(%ExecutionState{} = state),
     do: assert_delivery_element_text(state, "foreign", "EXPECTED_TEXT")
 
+  @doc """
+  Asserts that inline popup content persists in delivery content.
+  """
   def assert_student_delivery_inline_popup(%ExecutionState{} = state),
     do: assert_delivery_element_text(state, "popup", "EXPECTED_CONTENT")
 
+  @doc """
+  Asserts that an inline callout persists in delivery content.
+  """
   def assert_student_delivery_inline_callout(%ExecutionState{} = state),
     do: assert_delivery_element_text(state, "callout_inline", "EXPECTED_TEXT")
 
+  @doc """
+  Asserts that list style and nesting render in author preview.
+  """
   def assert_author_preview_list_formatting(%ExecutionState{} = state) do
     html = author_preview_html(state)
     styled_item = required_param!(state, "EXPECTED_STYLED_LIST_ITEM")
@@ -240,6 +242,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that list style and nesting persist in delivery content.
+  """
   def assert_student_delivery_list_formatting(%ExecutionState{} = state) do
     content = delivered_revision_content(state)
     styled_item = required_param!(state, "EXPECTED_STYLED_LIST_ITEM")
@@ -264,6 +269,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that table structure and cell formatting render in author preview.
+  """
   def assert_author_preview_table_structure(%ExecutionState{} = state) do
     html = author_preview_html(state)
     header_text = required_param!(state, "EXPECTED_HEADER_TEXT")
@@ -290,6 +298,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that table structure and cell formatting persist in delivery content.
+  """
   def assert_student_delivery_table_structure(%ExecutionState{} = state) do
     content = delivered_revision_content(state)
     header_text = required_param!(state, "EXPECTED_HEADER_TEXT")
@@ -318,6 +329,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that table row and border styles render in author preview.
+  """
   def assert_author_preview_table_styles(%ExecutionState{} = state) do
     html = author_preview_html(state)
     alternating_text = required_param!(state, "EXPECTED_ALTERNATING_TEXT")
@@ -332,6 +346,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that table row and border styles persist in delivery content.
+  """
   def assert_student_delivery_table_styles(%ExecutionState{} = state) do
     content = delivered_revision_content(state)
     alternating_text = required_param!(state, "EXPECTED_ALTERNATING_TEXT")
@@ -352,18 +369,30 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that image selection and settings render in author preview.
+  """
   def assert_author_preview_image_workflow(%ExecutionState{} = state) do
     html = author_preview_html(state)
     image = required_param!(state, "EXPECTED_IMAGE")
     caption = required_param!(state, "EXPECTED_CAPTION")
     alt = required_param!(state, "EXPECTED_ALT")
     width = required_param!(state, "EXPECTED_WIDTH")
-    assert html_has_text?(html, ~s|img[src*="#{image}"][alt="#{alt}"]|, "")
+
+    assert html_has_selector?(html, ~s|img[src*="#{image}"][alt="#{alt}"]|),
+           "Expected author-preview image #{inspect(image)} with alternative text"
+
     assert html_has_text?(html, ".figure-caption", caption)
-    assert html_has_text?(html, ~s|img[src*="#{image}"][style*="#{width}"]|, "")
+
+    assert html_has_selector?(html, ~s|img[src*="#{image}"][width="#{width}"]|),
+           "Expected author-preview image #{inspect(image)} with width #{inspect(width)}"
+
     state
   end
 
+  @doc """
+  Asserts that image selection and settings persist in delivery content.
+  """
   def assert_student_delivery_image_workflow(%ExecutionState{} = state) do
     content = delivered_revision_content(state)
 
@@ -373,12 +402,16 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
                  String.contains?(&1["src"] || "", required_param!(state, "EXPECTED_IMAGE")) and
                  &1["alt"] == required_param!(state, "EXPECTED_ALT") and
                  &1["width"] == String.to_integer(required_param!(state, "EXPECTED_WIDTH")))
-           )
+           ),
+           "Expected published image with selected source, alternative text, and width"
 
     assert nested_contains?(content, required_param!(state, "EXPECTED_CAPTION"))
     state
   end
 
+  @doc """
+  Asserts that a figure title and nested content render in author preview.
+  """
   def assert_author_preview_figure_workflow(%ExecutionState{} = state) do
     html = author_preview_html(state)
     assert html_has_text?(html, ".figure figcaption", required_param!(state, "EXPECTED_TITLE"))
@@ -392,6 +425,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that a figure title and nested content persist in delivery content.
+  """
   def assert_student_delivery_figure_workflow(%ExecutionState{} = state) do
     content = delivered_revision_content(state)
 
@@ -621,6 +657,13 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     |> Floki.find(selector)
     |> Floki.text(sep: " ")
     |> String.contains?(text)
+  end
+
+  defp html_has_selector?(html, selector) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find(selector)
+    |> Enum.any?()
   end
 
   defp assert_preview_text(state, key) do

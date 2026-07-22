@@ -138,8 +138,16 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
 
     await insertBlockImage(page);
-    await uploadImage(page, path.resolve(process.cwd(), 'tests/resources/media_files', jpgName), jpgName);
-    await uploadImage(page, path.resolve(process.cwd(), 'tests/torus/student_delivery/support', pngName), pngName);
+    await uploadImage(
+      page,
+      path.resolve(process.cwd(), 'tests/resources/media_files', jpgName),
+      jpgName,
+    );
+    await uploadImage(
+      page,
+      path.resolve(process.cwd(), 'tests/torus/student_delivery/support', pngName),
+      pngName,
+    );
     await page.locator('.name').getByText(jpgName, { exact: true }).click();
     await page.getByRole('button', { name: 'Select', exact: true }).click();
     await expect(page.locator('[data-slate-editor="true"] img')).toHaveAttribute(
@@ -210,33 +218,6 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     };
   },
 
-  async author_inline_embeds({ curriculumTask, homeTask, page }, params) {
-    const projectSlug = asString(params.project_slug, 'project_slug');
-    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
-    const foreignText = 'INLINE-N foreign text';
-    const popupTrigger = 'INLINE-O popup trigger';
-    const popupContent = 'INLINE-O popup content';
-    const calloutText = 'INLINE-R inline callout text';
-
-    await test.step('author foreign text, popup content, and inline callout', async () => {
-      await homeTask.login('author');
-      await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
-
-      await curriculumTask.addForeignToolbar(foreignText, 'arabic', false);
-      await curriculumTask.addPopUpToolbar(popupTrigger, popupContent, false);
-      await curriculumTask.addCalloutToolbar(calloutText, false);
-      await previewFlush(() => curriculumTask.openPreview());
-    });
-
-    return {
-      callout_text: calloutText,
-      foreign_text: foreignText,
-      page_revision_slug: pageRevisionSlug,
-      popup_content: popupContent,
-      popup_trigger: popupTrigger,
-    };
-  },
-
   async author_inline_external_link({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
@@ -294,12 +275,22 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
   async author_inline_formatting({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
-    const formatting: Array<{ text: string; toolbar: TypeToolbar; mark: string; inMore?: boolean }> = [
+    const formatting: Array<{
+      text: string;
+      toolbar: TypeToolbar;
+      mark: string;
+      inMore?: boolean;
+    }> = [
       { text: 'INLINE-C bold text', toolbar: 'Bold', mark: 'strong' },
       { text: 'INLINE-D italic text', toolbar: 'Italic', mark: 'em' },
       { text: 'INLINE-E code text', toolbar: 'Code', mark: 'code' },
       { text: 'INLINE-I underline text', toolbar: 'Underline', mark: 'underline', inMore: true },
-      { text: 'INLINE-J strikethrough text', toolbar: 'Strikethrough', mark: 'strikethrough', inMore: true },
+      {
+        text: 'INLINE-J strikethrough text',
+        toolbar: 'Strikethrough',
+        mark: 'strikethrough',
+        inMore: true,
+      },
       { text: 'INLINE-K subscript text', toolbar: 'Subscript', mark: 'sub', inMore: true },
       { text: 'INLINE-L superscript text', toolbar: 'Superscript', mark: 'sup', inMore: true },
       { text: 'INLINE-M term text', toolbar: 'Term', mark: 'term', inMore: true },
@@ -461,12 +452,6 @@ async function insertBlockImage(page: Page) {
   await page.getByRole('button', { name: 'Choose image' }).click();
 }
 
-async function uploadAndSelectImage(page: Page, filePath: string, fileName: string) {
-  await uploadImage(page, filePath, fileName);
-  await page.locator('.name').getByText(fileName, { exact: true }).click();
-  await page.getByRole('button', { name: 'Select', exact: true }).click();
-}
-
 async function uploadImage(page: Page, filePath: string, fileName: string) {
   const upload = page.getByRole('button', { name: 'Upload' });
   const fileChooser = page.waitForEvent('filechooser');
@@ -586,7 +571,11 @@ async function insertLink(page: Page, text: string, configure: () => Promise<voi
   await page.getByRole('button', { name: /Link \(.*\)$/ }).click();
   const link = page.locator('a.inline-link').filter({ hasText: text });
   await link.click();
-  await page.locator('.hover-container').filter({ hasText: 'Settings' }).getByRole('button').click();
+  await page
+    .locator('.hover-container')
+    .filter({ hasText: 'Settings' })
+    .getByRole('button')
+    .click();
   await configure();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 }
@@ -623,9 +612,7 @@ async function selectSlateText(page: Page, text: string) {
 
 function toolbarButton(page: Page, toolbar: TypeToolbar) {
   const accessibleName =
-    toolbar === 'Subscript'
-      ? /(?<!Double )Subscript$/
-      : new RegExp(`${escapeRegExp(toolbar)}$`);
+    toolbar === 'Subscript' ? /(?<!Double )Subscript$/ : new RegExp(`${escapeRegExp(toolbar)}$`);
 
   return page.getByRole('button', { name: accessibleName });
 }

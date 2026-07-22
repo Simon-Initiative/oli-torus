@@ -8,51 +8,51 @@ const defaultPassword = 'changeme123456';
 
 const configureWorkflowRun = (runId: string) =>
   setRuntimeConfig({
-  baseUrl,
-  scenarioToken: 'my-token',
-  loginData: {
-    student: {
-      type: TYPE_USER.student,
-      pageTitle: 'OLI Torus',
-      role: 'Student',
-      welcomeText: 'Welcome to OLI Torus',
-      welcomeTitle: 'Hi, Jane',
-      email: `student${runId}@example.com`,
-      name: 'Jane',
-      last_name: 'Student',
-      pass: defaultPassword,
+    baseUrl,
+    scenarioToken: 'my-token',
+    loginData: {
+      student: {
+        type: TYPE_USER.student,
+        pageTitle: 'OLI Torus',
+        role: 'Student',
+        welcomeText: 'Welcome to OLI Torus',
+        welcomeTitle: 'Hi, Jane',
+        email: `student${runId}@example.com`,
+        name: 'Jane',
+        last_name: 'Student',
+        pass: defaultPassword,
+      },
+      instructor: {
+        type: TYPE_USER.instructor,
+        pageTitle: 'OLI Torus',
+        role: 'Instructor',
+        welcomeText: 'Welcome to OLI Torus',
+        welcomeTitle: 'Instructor Dashboard',
+        email: `instructor${runId}@example.com`,
+        pass: defaultPassword,
+        header: 'Instructor Dashboard',
+      },
+      author: {
+        type: TYPE_USER.author,
+        pageTitle: 'OLI Torus',
+        role: 'Course Author',
+        welcomeText: 'Welcome to OLI Torus',
+        welcomeTitle: 'Course Author',
+        email: `author${runId}@example.com`,
+        pass: defaultPassword,
+        header: 'Course Author',
+      },
+      administrator: {
+        type: TYPE_USER.administrator,
+        pageTitle: 'OLI Torus',
+        role: 'Course Author',
+        welcomeText: 'Welcome to OLI Torus',
+        welcomeTitle: 'Course Author',
+        email: `admin${runId}@example.com`,
+        pass: defaultPassword,
+        header: 'Course Author',
+      },
     },
-    instructor: {
-      type: TYPE_USER.instructor,
-      pageTitle: 'OLI Torus',
-      role: 'Instructor',
-      welcomeText: 'Welcome to OLI Torus',
-      welcomeTitle: 'Instructor Dashboard',
-      email: `instructor${runId}@example.com`,
-      pass: defaultPassword,
-      header: 'Instructor Dashboard',
-    },
-    author: {
-      type: TYPE_USER.author,
-      pageTitle: 'OLI Torus',
-      role: 'Course Author',
-      welcomeText: 'Welcome to OLI Torus',
-      welcomeTitle: 'Course Author',
-      email: `author${runId}@example.com`,
-      pass: defaultPassword,
-      header: 'Course Author',
-    },
-    administrator: {
-      type: TYPE_USER.administrator,
-      pageTitle: 'OLI Torus',
-      role: 'Course Author',
-      welcomeText: 'Welcome to OLI Torus',
-      welcomeTitle: 'Course Author',
-      email: `admin${runId}@example.com`,
-      pass: defaultPassword,
-      header: 'Course Author',
-    },
-  },
   });
 
 const workflowParams = () => {
@@ -110,7 +110,9 @@ test.describe('MIXED workflow', () => {
       });
     });
 
-    test('INLINE-O: popup content persists to author preview and delivery', async ({ runWorkflow }) => {
+    test('INLINE-O: popup content persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
       await runWorkflow('./mixed_workflow/inline-popup.workflow.yaml', {
         actions: mixedWorkflowActions,
         params: workflowParams(),
@@ -159,14 +161,24 @@ test.describe('MIXED workflow', () => {
   });
 
   test.describe('IMAGE', () => {
-    test('IMAGE-B/C/D/E/F: image replacement and settings persist to author preview and delivery', async ({ runWorkflow }) => {
-      await runWorkflow('./mixed_workflow/image.workflow.yaml', { actions: mixedWorkflowActions, params: workflowParams() });
+    test('IMAGE-B/C/D/E/F: image replacement and settings persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/image.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
     });
   });
 
   test.describe('FIGURE', () => {
-    test('FIGURE-B/C: title and nested content persist to author preview and delivery', async ({ runWorkflow }) => {
-      await runWorkflow('./mixed_workflow/figure.workflow.yaml', { actions: mixedWorkflowActions, params: workflowParams() });
+    test('FIGURE-B/C: title and nested content persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/figure.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
     });
   });
 
@@ -175,8 +187,8 @@ test.describe('MIXED workflow', () => {
       runWorkflow,
     }) => {
       await runWorkflow('./mixed_workflow/codeblock.workflow.yaml', {
-          actions: mixedWorkflowActions,
-          params: workflowParams(),
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
       });
     });
   });
