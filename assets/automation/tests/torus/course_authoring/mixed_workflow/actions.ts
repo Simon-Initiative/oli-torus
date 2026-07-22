@@ -25,8 +25,11 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
 
     await homeTask.login('author');
     await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
-    await clearSlateEditor(page);
-    await curriculumTask.addForeignToolbar(text, 'arabic', false);
+    await insertInlineElement(page, curriculumTask, 'Foreign', text);
+    await page.getByRole('button', { name: 'Change Language' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Foreign Language Settings' });
+    await dialog.getByRole('combobox').selectOption('ar');
+    await dialog.getByRole('button', { name: 'Save' }).click();
     await previewFlush(() => curriculumTask.openPreview());
 
     return { page_revision_slug: pageRevisionSlug, text };
@@ -40,7 +43,10 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
 
     await homeTask.login('author');
     await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
-    await curriculumTask.addPopUpToolbar(trigger, content, false);
+    await insertInlineElement(page, curriculumTask, 'Popup Content', trigger);
+    await page.getByRole('button', { name: 'Edit Popup Content' }).click();
+    await page.getByRole('paragraph').getByRole('textbox').fill(content);
+    await page.getByRole('button', { name: 'Save' }).click();
     await previewFlush(() => curriculumTask.openPreview());
 
     return { content, page_revision_slug: pageRevisionSlug, trigger };
@@ -53,7 +59,7 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
 
     await homeTask.login('author');
     await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
-    await curriculumTask.addCalloutToolbar(text, false);
+    await insertInlineElement(page, curriculumTask, 'Callout', text);
     await previewFlush(() => curriculumTask.openPreview());
 
     return { page_revision_slug: pageRevisionSlug, text };
@@ -580,11 +586,19 @@ async function insertLink(page: Page, text: string, configure: () => Promise<voi
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 }
 
-async function clearSlateEditor(page: Page) {
-  const editor = page.locator('[data-slate-editor="true"]');
-  await editor.click();
-  await page.keyboard.press('Meta+A');
-  await page.keyboard.press('Backspace');
+async function insertInlineElement(
+  page: Page,
+  curriculumTask: {
+    clickOnParagraphAndSelectContent: (
+      index?: number | 'auto',
+      ...elements: TypeToolbar[]
+    ) => Promise<void>;
+  },
+  toolbar: TypeToolbar,
+  text: string,
+) {
+  await curriculumTask.clickOnParagraphAndSelectContent('auto', 'More', toolbar);
+  await page.keyboard.type(text);
 }
 
 async function selectSlateText(page: Page, text: string) {

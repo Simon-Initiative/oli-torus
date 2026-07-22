@@ -155,8 +155,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
 
       "page" ->
         href = required_param!(state, "EXPECTED_LINK_HREF")
+        project_slug = fetch_project!(state).project.slug
 
-        assert html_has_link_to_target?(html, href, link_text),
+        assert html_has_link_to_target?(html, href, project_slug, link_text),
                "Expected internal author-preview link #{inspect(link_text)}"
     end
 
@@ -197,10 +198,21 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     do: assert_preview_text(state, "EXPECTED_TEXT")
 
   @doc """
-  Asserts that an inline popup trigger renders in author preview.
+  Asserts that an inline popup trigger is passed to the author-preview React renderer.
   """
-  def assert_author_preview_inline_popup(%ExecutionState{} = state),
-    do: assert_preview_text(state, "EXPECTED_TRIGGER")
+  def assert_author_preview_inline_popup(%ExecutionState{} = state) do
+    trigger = required_param!(state, "EXPECTED_TRIGGER")
+
+    assert html_has_attribute_text?(
+             author_preview_html(state),
+             ~s|[data-react-class="Components.DeliveryElementRenderer"]|,
+             "data-react-props",
+             trigger
+           ),
+           "Expected author-preview popup renderer to receive #{inspect(trigger)}"
+
+    state
+  end
 
   @doc """
   Asserts that an inline callout renders in author preview.
@@ -666,28 +678,50 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     |> Enum.any?()
   end
 
+  defp html_has_attribute_text?(html, selector, attribute, text) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find(selector)
+    |> Enum.any?(fn element ->
+      element
+      |> Floki.attribute(attribute)
+      |> Enum.any?(&String.contains?(&1, text))
+    end)
+  end
+
   defp assert_preview_text(state, key) do
     assert_contains(html_text(author_preview_html(state)), required_param!(state, key))
     state
   end
 
   defp assert_delivery_element_text(state, type, key) do
-    published_json = delivered_revision_content(state) |> Jason.encode!()
-    assert published_json =~ ~s|"type":"#{type}"|
-    assert published_json =~ required_param!(state, key)
+    content = delivered_revision_content(state)
+    text = required_param!(state, key)
+
+    assert nested_map?(content, &(&1["type"] == type and nested_contains?(&1, text))),
+           "Expected published #{type} element containing #{inspect(text)}"
+
     state
   end
 
-  defp html_has_link_to_target?(html, target_href, text) do
-    target_slug = Path.basename(target_href)
+  defp html_has_link_to_target?(html, target_href, project_slug, text) do
+    expected_path = author_preview_link_path(target_href, project_slug)
 
     html
     |> Floki.parse_document!()
     |> Floki.find("a")
     |> Enum.any?(fn anchor ->
       href = Floki.attribute(anchor, "href") |> List.first() || ""
-      String.ends_with?(href, target_slug) and Floki.text(anchor) =~ text
+      URI.parse(href).path == expected_path and Floki.text(anchor) =~ text
     end)
+  end
+
+  defp author_preview_link_path("/course/link/" <> revision_slug, project_slug)
+       when revision_slug != "",
+       do: "/authoring/project/#{project_slug}/preview/#{revision_slug}"
+
+  defp author_preview_link_path(target_href, _project_slug) do
+    raise "Expected internal course link, got: #{inspect(target_href)}"
   end
 
   defp nested_map?(value, predicate) when is_map(value) do
