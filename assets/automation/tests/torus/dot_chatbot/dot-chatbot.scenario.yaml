@@ -1,0 +1,51 @@
+# Scenario bootstrap for the parameterized Dot chatbot smoke test.
+
+- project:
+    name: '${PROJECT_NAME}'
+    title: '${PROJECT_TITLE}'
+    root:
+      children:
+        - page: '${PAGE_TITLE}'
+
+- edit_page:
+    project: '${PROJECT_NAME}'
+    page: '${PAGE_TITLE}'
+    content: |
+      title: "${PAGE_TITLE}"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "This page is used to verify that Dot can stream a response."
+
+- publish:
+    to: '${PROJECT_NAME}'
+    description: 'Initial publication for the Dot chatbot smoke test'
+
+- section:
+    name: '${SECTION_NAME}'
+    title: '${SECTION_TITLE}'
+    from: '${PROJECT_NAME}'
+    type: 'enrollable'
+    registration_open: true
+    assistant_enabled: true
+    assistant_service_config: '${ASSISTANT_SERVICE_CONFIG}'
+
+- user:
+    name: '${STUDENT_NAME}'
+    type: 'student'
+    email: '${STUDENT_EMAIL}'
+    given_name: '${STUDENT_GIVEN_NAME}'
+    family_name: '${STUDENT_FAMILY_NAME}'
+    password: '${password}'
+
+- enroll:
+    user: '${STUDENT_NAME}'
+    section: '${SECTION_NAME}'
+    role: 'student'
+
+- assert:
+    structure:
+      to: '${SECTION_NAME}'
+      root:
+        children:
+          - page: '${PAGE_TITLE}'

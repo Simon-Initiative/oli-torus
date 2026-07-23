@@ -28,6 +28,7 @@ defmodule Oli.Scenarios.Directives.DirectiveAttrs do
       registration_open: Map.fetch!(directive_attrs, :registration_open),
       open_and_free: Map.fetch!(directive_attrs, :open_and_free),
       requires_enrollment: Map.fetch!(directive_attrs, :requires_enrollment),
+      assistant_enabled: Map.get(directive_attrs, :assistant_enabled),
       requires_payment: Map.get(directive_attrs, :requires_payment),
       payment_options: Map.get(directive_attrs, :payment_options),
       pay_by_institution: Map.get(directive_attrs, :pay_by_institution),

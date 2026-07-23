@@ -37,6 +37,31 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "section directive rejects an invalid assistant_enabled value" do
+      yaml = """
+      - section:
+          name: "test_section"
+          assistant_enabled: "enabled"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid boolean for assistant_enabled: enabled/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "section directive rejects an empty assistant service config name" do
+      yaml = """
+      - section:
+          name: "test_section"
+          assistant_enabled: true
+          assistant_service_config: "  "
+      """
+
+      assert_raise RuntimeError, ~r/Invalid non-empty string for assistant_service_config/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
     test "clone directive with extra attributes fails" do
       yaml = """
       - clone:
@@ -561,6 +586,7 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           from: "test"
           type: "enrollable"
           registration_open: true
+          assistant_enabled: true
 
       - user:
           name: "testuser"

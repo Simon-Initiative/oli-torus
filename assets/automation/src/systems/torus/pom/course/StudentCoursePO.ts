@@ -91,6 +91,29 @@ export class StudentCoursePO {
     await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
   }
 
+  async openFirstPage(pageName: string) {
+    const startCourse = this.page.getByRole('link', { name: 'Start course', exact: true });
+    const pageEntry = this.page.getByText(pageName, { exact: true });
+
+    await Verifier.expectIsVisible(startCourse.or(pageEntry).first());
+
+    if (await startCourse.isVisible().catch(() => false)) {
+      await Promise.all([
+        this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+          timeout: 15000,
+        }),
+        startCourse.click(),
+      ]);
+
+      await Verifier.expectIsVisible(
+        this.page.getByRole('heading', { name: pageName, exact: true }),
+      );
+      return;
+    }
+
+    await this.openPage(pageName);
+  }
+
   private galleryTitle(pageName: string) {
     return this.page.getByRole('heading', {
       name: pageName,
