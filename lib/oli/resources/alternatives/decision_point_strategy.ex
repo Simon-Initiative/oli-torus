@@ -5,11 +5,11 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     AssignmentDecision,
     AssignConditionRequest,
     RecordExposureRequest,
-    Scope,
-    Telemetry
+    Scope
   }
 
   alias Oli.Experiments.Schemas.Assignment
+  alias Oli.Experiments.XAPI.Attributions
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Resources.Alternatives.Selection
   alias Oli.Authoring.Course.ProjectResource
@@ -361,7 +361,7 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
        ) do
     case Repo.get(Assignment, assignment_id) do
       %Assignment{} = assignment ->
-        Telemetry.attributions_for_page_view(receipt, request, assignment: assignment)
+        Attributions.attributions_for_page_view(receipt, request, assignment: assignment)
 
       nil ->
         []

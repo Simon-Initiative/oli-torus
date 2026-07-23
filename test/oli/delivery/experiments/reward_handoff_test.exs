@@ -3,11 +3,15 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
 
   import Oli.Factory
 
+  alias Oli.Analytics.Summary.AttemptGroup
+  alias Oli.Analytics.XAPI.Events.Context
+  alias Oli.Analytics.XAPI.StatementFactory
   alias Oli.Delivery.Experiments.RewardHandoff
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
-  alias Oli.Delivery.Attempts.Core.ActivityAttempt
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Experiments
   alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
+  alias Oli.Resources.Revision
 
   alias Oli.Experiments.Schemas.{
     Assignment,
@@ -30,6 +34,79 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert is_integer(reward["outcome_id"])
       assert reward["reward_value"] == 1.0
       assert reward["reward_source"] == "activity_attempt:full_credit"
+    end
+
+    test "attaches outcome, reward, and rollup attributions to evaluated attempt xAPI" do
+      %{activity_attempt: activity_attempt, scope: scope} =
+        setup_reward_context(score: 1.0, out_of: 1.0)
+
+      part_attempt =
+        insert(:part_attempt,
+          activity_attempt: activity_attempt,
+          lifecycle_state: :evaluated,
+          score: 1.0,
+          out_of: 1.0,
+          date_evaluated: DateTime.utc_now() |> DateTime.truncate(:second)
+        )
+
+      assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
+
+      activity_revision = Repo.get!(Revision, activity_attempt.revision_id)
+      resource_attempt = Repo.get!(ResourceAttempt, activity_attempt.resource_attempt_id)
+      resource_access = Repo.get!(ResourceAccess, resource_attempt.resource_access_id)
+
+      part_attempt =
+        Map.merge(part_attempt, %{
+          activity_attempt: activity_attempt,
+          activity_revision: activity_revision
+        })
+
+      attempt_group = %AttemptGroup{
+        context: %Context{
+          host_name: "http://example.edu",
+          user_id: scope.user_id,
+          section_id: scope.section_id,
+          project_id: scope.project_id,
+          publication_id: scope.publication_id
+        },
+        part_attempts: [part_attempt],
+        activity_attempts: [activity_attempt],
+        resource_attempt:
+          resource_attempt
+          |> Map.put(:resource_id, resource_access.resource_id)
+          |> Map.merge(%{
+            lifecycle_state: :evaluated,
+            score: 1.0,
+            out_of: 1.0,
+            date_evaluated: DateTime.utc_now() |> DateTime.truncate(:second)
+          })
+      }
+
+      statements = StatementFactory.to_statements(attempt_group)
+
+      part_attributions =
+        statements
+        |> statement_by_object_type("http://adlnet.gov/expapi/activities/question")
+        |> experiment_attributions()
+
+      activity_attributions =
+        statements
+        |> statement_by_object_type("http://oli.cmu.edu/extensions/activity_attempt")
+        |> experiment_attributions()
+
+      page_attributions =
+        statements
+        |> statement_by_object_type("http://oli.cmu.edu/extensions/page_attempt")
+        |> experiment_attributions()
+
+      assert Enum.map(part_attributions, & &1["role"]) == ["outcome", "reward"]
+      assert Enum.map(activity_attributions, & &1["role"]) == ["rollup", "rollup"]
+      assert Enum.map(page_attributions, & &1["role"]) == ["rollup", "rollup"]
+
+      for attributions <- [part_attributions, activity_attributions, page_attributions] do
+        assert Enum.all?(attributions, &(&1["assignment_id"] != nil))
+        assert Enum.all?(attributions, &(&1["experiment_id"] != nil))
+      end
     end
 
     test "records non-full-credit reward value 0.0" do
@@ -327,5 +404,19 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       end)
 
     event
+  end
+
+  defp statement_by_object_type(statements, object_type) do
+    Enum.find(statements, fn statement ->
+      get_in(statement, ["object", "definition", "type"]) == object_type
+    end)
+  end
+
+  defp experiment_attributions(statement) do
+    get_in(statement, [
+      "context",
+      "extensions",
+      "http://oli.cmu.edu/extensions/experiment_attributions"
+    ])
   end
 end

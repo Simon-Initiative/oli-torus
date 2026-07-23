@@ -1,4 +1,4 @@
-defmodule Oli.Experiments.TelemetryTest do
+defmodule Oli.Experiments.XAPI.AttributionsTest do
   use ExUnit.Case, async: true
 
   alias Oli.Experiments.{
@@ -10,9 +10,10 @@ defmodule Oli.Experiments.TelemetryTest do
     RecordOutcomeRequest,
     RecordRewardRequest,
     RewardReceipt,
-    Scope,
-    Telemetry
+    Scope
   }
+
+  alias Oli.Experiments.XAPI.Attributions
 
   alias Oli.Experiments.Schemas.{
     Assignment,
@@ -24,7 +25,7 @@ defmodule Oli.Experiments.TelemetryTest do
 
   test "builds assignment attribution without a dedicated xAPI statement" do
     attribution =
-      Telemetry.assignment_attribution(assignment_decision(false), assign_request(),
+      Attributions.assignment_attribution(assignment_decision(false), assign_request(),
         assignment: assignment()
       )
 
@@ -48,22 +49,22 @@ defmodule Oli.Experiments.TelemetryTest do
 
   test "builds exposure, outcome, reward, and policy update attribution evidence" do
     [exposure] =
-      Telemetry.attributions_for_page_view(exposure_receipt(), exposure_request(),
+      Attributions.attributions_for_page_view(exposure_receipt(), exposure_request(),
         assignment: assignment()
       )
 
     [outcome] =
-      Telemetry.attributions_for_part_attempt(outcome_receipt(), outcome_request(),
+      Attributions.attributions_for_part_attempt(outcome_receipt(), outcome_request(),
         assignment: assignment()
       )
 
     [reward] =
-      Telemetry.attributions_for_part_attempt(reward_receipt(), reward_request(),
+      Attributions.attributions_for_part_attempt(reward_receipt(), reward_request(),
         assignment: assignment()
       )
 
     policy_update =
-      Telemetry.policy_update_evidence(policy_update(), reward(),
+      Attributions.policy_update_evidence(policy_update(), reward(),
         assignment: assignment(),
         experiment: experiment(),
         condition: %{condition_code: "a"},
@@ -103,11 +104,11 @@ defmodule Oli.Experiments.TelemetryTest do
     }
 
     attribution =
-      Telemetry.exposure_attribution(exposure_receipt(), exposure_request(),
+      Attributions.exposure_attribution(exposure_receipt(), exposure_request(),
         assignment: assignment()
       )
 
-    statement = Telemetry.attach_attributions(statement, [attribution])
+    statement = Attributions.attach_attributions(statement, [attribution])
 
     assert [attached] = get_in(statement, ["context", "extensions", @extension])
     assert attached["role"] == "exposure"
@@ -116,20 +117,20 @@ defmodule Oli.Experiments.TelemetryTest do
 
   test "rollup and media helpers rewrite roles on existing attribution payloads" do
     attribution =
-      Telemetry.exposure_attribution(exposure_receipt(), exposure_request(),
+      Attributions.exposure_attribution(exposure_receipt(), exposure_request(),
         assignment: assignment()
       )
 
-    assert [%{"role" => "rollup"}] = Telemetry.attributions_for_activity_attempt([attribution])
-    assert [%{"role" => "rollup"}] = Telemetry.attributions_for_page_attempt([attribution])
+    assert [%{"role" => "rollup"}] = Attributions.attributions_for_activity_attempt([attribution])
+    assert [%{"role" => "rollup"}] = Attributions.attributions_for_page_attempt([attribution])
 
     assert [%{"role" => "media_interaction"}] =
-             Telemetry.attributions_for_media_event([attribution])
+             Attributions.attributions_for_media_event([attribution])
   end
 
   test "attribution payloads exclude learner names, raw responses, and full policy state" do
     policy_update =
-      Telemetry.policy_update_evidence(policy_update(), reward(),
+      Attributions.policy_update_evidence(policy_update(), reward(),
         assignment: assignment(),
         experiment: experiment(),
         condition: %{condition_code: "a"},

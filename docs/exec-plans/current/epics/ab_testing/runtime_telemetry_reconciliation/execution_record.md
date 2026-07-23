@@ -9,7 +9,7 @@ Changed runtime code:
 - Classified PostgreSQL aggregate helpers in `Oli.Experiments` as operational-only through function docs.
 
 Changed tests:
-- Added statement-builder and privacy tests in `test/oli/experiments/telemetry_test.exs`.
+- Added statement-builder and privacy tests in `test/oli/experiments/xapi_attributions_test.exs`.
 - Extended runtime tests for assignment/reuse xAPI events, duplicate suppression, policy-update emission, and xAPI failure rollback safety.
 - Added `test/oli/experiments/coupling_test.exs` to block non-experiment product code from direct temporary event-table coupling.
 
@@ -56,7 +56,7 @@ Jira/release tracking note:
 ## Verification
 
 Commands run:
-- `mix test test/oli/experiments/telemetry_test.exs test/oli/experiments/runtime_test.exs test/oli/experiments/analytics_test.exs test/oli/experiments/coupling_test.exs test/oli/analytics/xapi/schema_validator_test.exs`
+- `mix test test/oli/experiments/xapi_attributions_test.exs test/oli/experiments/runtime_test.exs test/oli/experiments/analytics_test.exs test/oli/experiments/coupling_test.exs test/oli/analytics/xapi/schema_validator_test.exs`
 - `mix format`
 - `rg -n "durable.*PostgreSQL|PostgreSQL.*analytics|experiment_exposures|experiment_outcomes|experiment_rewards|experiment_policy_updates" docs/exec-plans/current/epics/ab_testing`
 - `rg -n "experiment_exposures|experiment_outcomes|experiment_rewards|experiment_policy_updates|Oli\\.Experiments\\.Schemas\\.(Exposure|Outcome|Reward|PolicyUpdate)|assignment_counts\\(|exposure_counts\\(|reward_counts\\(|experiment_summary\\(" lib test`

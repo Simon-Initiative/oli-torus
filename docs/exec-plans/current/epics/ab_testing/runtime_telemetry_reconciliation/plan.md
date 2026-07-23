@@ -66,7 +66,7 @@ Guardrails:
   - [x] Add unit tests for each statement builder shape and required extension field.
   - [x] Add privacy tests proving experiment statements do not include raw learner responses or learner names.
   - [x] Add schema validation or schema-extension tests for experiment xAPI statements.
-  - Command(s): `mix test test/oli/experiments/telemetry_test.exs`
+  - Command(s): `mix test test/oli/experiments/xapi_attributions_test.exs`
   - Command(s): `mix test test/oli/analytics/xapi/schema_validator_test.exs`
 - Definition of Done:
   - Experiment xAPI statement builders exist and produce deterministic, scoped, privacy-safe statements.
@@ -95,7 +95,7 @@ Guardrails:
   - [x] Add tests proving repeated exposure, outcome, and reward idempotency keys do not duplicate PostgreSQL rows or xAPI events.
   - [x] Add tests proving xAPI emission failures do not roll back runtime writes.
   - [x] Add tests proving policy-state updates still update current PostgreSQL state for Thompson Sampling.
-  - Command(s): `mix test test/oli/experiments/runtime_test.exs test/oli/experiments/telemetry_test.exs`
+  - Command(s): `mix test test/oli/experiments/runtime_test.exs test/oli/experiments/xapi_attributions_test.exs`
 - Definition of Done:
   - Runtime APIs emit xAPI statements after successful writes and preserve sticky assignment, reward idempotency, and current policy-state behavior.
   - xAPI failure modes are observable but do not break learner-facing delivery.
@@ -169,7 +169,7 @@ Guardrails:
   - [x] Run all targeted ExUnit tests added or changed by this work.
   - [x] Run formatting.
   - [x] Run harness validation.
-  - Command(s): `mix test test/oli/experiments/runtime_test.exs test/oli/experiments/telemetry_test.exs test/oli/experiments/analytics_test.exs test/oli/experiments/coupling_test.exs`
+  - Command(s): `mix test test/oli/experiments/runtime_test.exs test/oli/experiments/xapi_attributions_test.exs test/oli/experiments/analytics_test.exs test/oli/experiments/coupling_test.exs`
   - Command(s): `mix format`
   - Command(s): `python3 /Users/eliknebel/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation --action verify_plan`
   - Command(s): `python3 /Users/eliknebel/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation --action master_validate --stage plan_present`

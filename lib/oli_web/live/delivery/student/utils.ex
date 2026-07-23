@@ -18,7 +18,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
-  alias Oli.Experiments.Telemetry, as: ExperimentTelemetry
+  alias Oli.Experiments.XAPI.Attributions, as: ExperimentAttributions
 
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, SessionContext
@@ -1190,7 +1190,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     event = Oli.Analytics.XAPI.Events.Attempt.PageViewed.new(context, page_details)
 
     event =
-      ExperimentTelemetry.attach_attributions(
+      ExperimentAttributions.attach_attributions(
         event,
         experiment_attributions
       )

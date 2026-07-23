@@ -17,6 +17,10 @@ defmodule Oli.Analytics.XAPI do
   import Ecto.Query
   alias Oli.Analytics.XAPI.Events.Context
   alias Oli.Analytics.XAPI.StatementBundle
+  alias Oli.Delivery.Experiments.MediaAttributions
+  alias Oli.Experiments.XAPI.Attributions
+  alias Oli.Publishing.PublishedResource
+  alias Oli.Resources.Revision
 
   def emit(%StatementBundle{} = bundle) do
     config = Application.fetch_env!(:oli, :xapi_upload_pipeline)
@@ -94,14 +98,15 @@ defmodule Oli.Analytics.XAPI do
         order_by: [desc: p.attempt_number],
         limit: 1,
         select:
-          {p.attempt_number, a.resource_id, a.section_id, a.user_id, sr.project_id,
+          {p.attempt_number, p.content, a.resource_id, a.section_id, a.user_id, sr.project_id,
            spp.publication_id}
 
     case Oli.Repo.one(query) do
       nil ->
         {:error, "page attempt not found"}
 
-      {page_attempt_number, page_id, section_id, ^expected_user_id, project_id, publication_id} ->
+      {page_attempt_number, page_content, page_id, section_id, ^expected_user_id, project_id,
+       publication_id} ->
         context = %Context{
           user_id: expected_user_id,
           host_name: host_name,
@@ -134,6 +139,11 @@ defmodule Oli.Analytics.XAPI do
           end
 
         content_element_id = Map.get(details, :content_element_id, "unknown")
+
+        experiment_attributions =
+          MediaAttributions.for_media_event(context, page_content, content_element_id)
+
+        event = Attributions.attach_attributions(event, experiment_attributions)
 
         {:ok,
          %StatementBundle{
@@ -168,16 +178,20 @@ defmodule Oli.Analytics.XAPI do
         on: s.id == sr.section_id,
         join: e in Oli.Delivery.Sections.Enrollment,
         on: s.id == e.section_id,
+        left_join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id,
+        left_join: revision in Revision,
+        on: revision.id == pr.revision_id,
         where:
           sr.resource_id == ^resource_id and e.user_id == ^expected_user_id and
             s.id == ^section_id,
-        select: {sr.project_id, spp.publication_id}
+        select: {sr.project_id, spp.publication_id, revision.content}
 
     case Oli.Repo.one(query) do
       nil ->
         {:error, "section resource not found"}
 
-      {project_id, publication_id} ->
+      {project_id, publication_id, page_content} ->
         context = %Context{
           user_id: expected_user_id,
           host_name: host_name,
@@ -210,6 +224,11 @@ defmodule Oli.Analytics.XAPI do
           end
 
         content_element_id = Map.get(details, :content_element_id, "unknown")
+
+        experiment_attributions =
+          MediaAttributions.for_media_event(context, page_content, content_element_id)
+
+        event = Attributions.attach_attributions(event, experiment_attributions)
 
         {:ok,
          %StatementBundle{

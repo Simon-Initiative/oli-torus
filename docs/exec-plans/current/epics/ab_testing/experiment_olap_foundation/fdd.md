@@ -128,10 +128,11 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
 
 ## 5. Interfaces
 - Runtime attribution interface:
-  - `Oli.Experiments.Telemetry.attributions_for_page_view(...)` returns zero-or-more exposure attributions for a `page_viewed` statement.
-  - `Oli.Experiments.Telemetry.attributions_for_part_attempt(...)` returns zero-or-more outcome/reward attributions for a `part_attempt` statement.
-  - `Oli.Experiments.Telemetry.attributions_for_activity_attempt(...)` and `attributions_for_page_attempt(...)` return zero-or-more rollup attributions where the rolled-up scope is unambiguous.
-  - `Oli.Experiments.Telemetry.attributions_for_media_event(...)` returns zero-or-more exposure/interaction attributions for media events rendered inside decision point alternatives.
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_page_view(...)` returns zero-or-more exposure attributions for a `page_viewed` statement.
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_part_attempt(...)` returns zero-or-more outcome/reward attributions for a `part_attempt` statement.
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_activity_attempt(...)` and `attributions_for_page_attempt(...)` return zero-or-more rollup attributions where the rolled-up scope is unambiguous.
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_media_event(...)` returns zero-or-more exposure/interaction attributions for media events rendered inside decision point alternatives.
+  - `Oli.Experiments.XAPI.Attributions.attach_attributions(...)` attaches attribution arrays to existing host xAPI statements.
   - `Oli.Experiments.Telemetry.emit(:policy_updated, {policy_update_result, reward_context}, opts)` may remain operational telemetry, but it is not modeled as a learner activity xAPI object.
 - Receipt contracts after table removal:
   - `ExposureReceipt`, `OutcomeReceipt`, and `RewardReceipt` remain public domain receipts, but IDs must become deterministic receipt IDs or optional values derived from idempotency keys where no PostgreSQL row exists.

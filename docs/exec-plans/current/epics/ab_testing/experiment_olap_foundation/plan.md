@@ -22,7 +22,7 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 ## Phase 1: Attribution Contract And Runtime Telemetry Hardening
 - Goal: Make experiment attribution on existing xAPI statements canonical, privacy-safe, and independent of soon-to-be-removed event-history schemas.
 - Tasks:
-  - [x] Audit `Oli.Experiments.Telemetry` statement builders against FR-001 and AC-001.
+  - [x] Audit `Oli.Experiments.XAPI.Attributions` statement payload builders against FR-001 and AC-001.
   - [x] Finalize canonical `experiment_attributions` extension shape, required attribution fields, attribution roles, and host-event mapping for page views, part attempts, activity/page attempts, and media events.
   - [x] Refactor attribution builders so exposure/outcome/reward/rollup/media attribution can be built from request structs, receipts, retained assignment/policy state, and plain policy-update result structs or maps rather than `%Exposure{}`, `%Outcome{}`, `%Reward{}`, or `%PolicyUpdate{}`.
   - [x] Extend or version the xAPI statement schema to allow experiment attribution arrays on existing host events.
@@ -32,7 +32,7 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
   - [x] Add/adjust ExUnit tests for experiment attribution on page, attempt, and media host statement types, required fields, timestamps, and privacy exclusions.
   - [x] Add schema validation tests for host xAPI statements with zero, one, and multiple experiment attributions.
   - [x] Add tests that xAPI emission failures do not roll back runtime state where covered by current runtime boundaries.
-  - Command(s): `mix test test/oli/experiments/telemetry_test.exs test/oli/analytics/xapi/schema_validator_test.exs`
+  - Command(s): `mix test test/oli/experiments/xapi_attributions_test.exs test/oli/analytics/xapi/schema_validator_test.exs`
 - Definition of Done:
   - AC-001 is covered by tests or documented statement fixtures.
   - AC-002 is covered for the runtime emission boundary, excluding later table-removal behavior.
@@ -40,7 +40,7 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 - Gate:
   - Do not start PostgreSQL schema-removal work until canonical attribution payloads are stable and tests prove the extension contract.
 - Dependencies:
-  - Existing `Oli.Experiments.Telemetry`, runtime request structs, receipt structs, and xAPI pipeline.
+  - Existing `Oli.Experiments.Telemetry` operational events, `Oli.Experiments.XAPI.Attributions`, runtime request structs, receipt structs, and xAPI pipeline.
 - Parallelizable Work:
   - ClickHouse migration design in Phase 2 can begin after attribution field names are stable.
 
