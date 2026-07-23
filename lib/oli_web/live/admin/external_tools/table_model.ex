@@ -71,8 +71,10 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
     """
   end
 
-  def render_usage_count_column(assigns, row, _) do
-    assigns = Map.merge(assigns, %{usage_count: row.usage_count, platform_instance_id: row.id})
+  def render_usage_count_column(assigns, %{usage_count: usage_count, id: id}, _)
+      when is_integer(usage_count) do
+    assigns =
+      Map.merge(assigns, %{usage_count: usage_count, platform_instance_id: id})
 
     ~H"""
     <.link
@@ -81,6 +83,18 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
     >
       {@usage_count}
     </.link>
+    """
+  end
+
+  def render_usage_count_column(assigns, %{usage_count: :loading}, _) do
+    ~H"""
+    <span class="text-sm text-gray-500 dark:text-gray-400">Calculating...</span>
+    """
+  end
+
+  def render_usage_count_column(assigns, _row, _) do
+    ~H"""
+    <span class="text-sm text-gray-500 dark:text-gray-400">Unknown</span>
     """
   end
 
