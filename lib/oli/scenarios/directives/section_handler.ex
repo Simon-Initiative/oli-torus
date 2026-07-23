@@ -42,19 +42,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
     end
   end
 
+  defp create_section_with_assistant(from, directive_attrs, state, nil) do
+    create_section(from, directive_attrs, state)
+  end
+
   defp create_section_with_assistant(from, directive_attrs, state, assistant_service) do
     case Repo.transaction(fn ->
-           section =
-             case from do
-               nil ->
-                 # Create a standalone section with an auto-generated backing project.
-                 create_standalone(directive_attrs, state)
-
-               source ->
-                 # Create a section from an existing project or product.
-                 create_from_source(source, directive_attrs, state)
-             end
-
+           section = create_section(from, directive_attrs, state)
            configure_assistant_service(section, assistant_service)
          end) do
       {:ok, section} ->
@@ -67,6 +61,14 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         raise "Section transaction failed: #{inspect(reason)}"
     end
   end
+
+  # Create a standalone section with an auto-generated backing project.
+  defp create_section(nil, directive_attrs, state),
+    do: create_standalone(directive_attrs, state)
+
+  # Create a section from an existing project or product.
+  defp create_section(source, directive_attrs, state),
+    do: create_from_source(source, directive_attrs, state)
 
   defp create_from_source(source_name, directive_attrs, state) do
     case Engine.get_product(state, source_name) do
