@@ -1159,7 +1159,6 @@ def transform_experiment_attributions(
 
     for attribution in _experiment_attributions(statement):
         encoded_attribution = json.dumps(attribution, sort_keys=True, separators=(",", ":"))
-        idempotency_key = _safe_str(attribution.get("idempotency_key"))
 
         rows.append(
             {
@@ -1186,21 +1185,11 @@ def transform_experiment_attributions(
                     attribution.get("algorithm") or attribution.get("assigned_by_policy")
                 ),
                 "policy_version": _safe_str(attribution.get("policy_version")),
-                "algorithm_version": _safe_str(attribution.get("algorithm_version")),
-                "idempotency_key": idempotency_key,
-                "idempotency_key_hash": _hash_or_none(idempotency_key),
                 "content_revision_id": _safe_int(attribution.get("content_revision_id")),
-                "outcome_id": _safe_str(attribution.get("outcome_id")),
-                "reward_id": _safe_str(attribution.get("reward_id")),
                 "reward_value": _safe_float(
                     attribution.get("reward_value") or _get_nested(result, ["score", "raw"])
                 ),
                 "reward_source": _safe_str(attribution.get("reward_source")),
-                "policy_update_reason": _safe_str(attribution.get("policy_update_reason")),
-                "previous_policy_state_hash": _safe_str(
-                    attribution.get("previous_policy_state_hash")
-                ),
-                "next_policy_state_hash": _safe_str(attribution.get("next_policy_state_hash")),
                 "source_file": f"s3://{bucket}/{key}",
                 "source_etag": etag.strip('"') if isinstance(etag, str) else etag,
                 "source_line": line_number,
@@ -1271,13 +1260,6 @@ def _safe_str(value: Any) -> Optional[str]:
         stripped = value.strip()
         return stripped or None
     return str(value)
-
-
-def _hash_or_none(value: Any) -> Optional[str]:
-    normalized = _safe_str(value)
-    if normalized is None:
-        return None
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def _coerce_bool(value: Any) -> Optional[bool]:

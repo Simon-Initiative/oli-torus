@@ -49,6 +49,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
         experiment.project_id == ^context.project_id and
           assignment.section_id == ^context.section_id and
           assignment.user_id == ^context.user_id,
+      preload: [experiment: experiment],
       select: %{
         assignment: assignment,
         decision_point: decision_point,

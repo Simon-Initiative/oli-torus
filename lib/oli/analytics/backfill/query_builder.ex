@@ -165,9 +165,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         inserted_at, host_event_type, timestamp, section_id,
         project_id, publication_id, enrollment_id, experiment_role, experiment_id, experiment_uuid, decision_point_id,
         decision_point_key, condition_id, condition_code, assignment_id, assignment_key,
-        algorithm, policy_version, algorithm_version, idempotency_key, idempotency_key_hash,
-        content_revision_id, outcome_id, reward_id, reward_value, reward_source,
-        policy_update_reason, previous_policy_state_hash, next_policy_state_hash
+        algorithm, policy_version,
+        content_revision_id, reward_value, reward_source
     )
     SELECT
         lower(hex(SHA256(json))) AS raw_event_hash,
@@ -196,20 +195,12 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         nullIf(JSON_VALUE(#{attribution}, '$.assignment_key'), '') AS assignment_key,
         coalesce(nullIf(JSON_VALUE(#{attribution}, '$.algorithm'), ''), nullIf(JSON_VALUE(#{attribution}, '$.assigned_by_policy'), '')) AS algorithm,
         nullIf(JSON_VALUE(#{attribution}, '$.policy_version'), '') AS policy_version,
-        nullIf(JSON_VALUE(#{attribution}, '$.algorithm_version'), '') AS algorithm_version,
-        nullIf(JSON_VALUE(#{attribution}, '$.idempotency_key'), '') AS idempotency_key,
-        lower(hex(SHA256(nullIf(JSON_VALUE(#{attribution}, '$.idempotency_key'), '')))) AS idempotency_key_hash,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.content_revision_id'), '')) AS content_revision_id,
-        nullIf(JSON_VALUE(#{attribution}, '$.outcome_id'), '') AS outcome_id,
-        nullIf(JSON_VALUE(#{attribution}, '$.reward_id'), '') AS reward_id,
         coalesce(
           toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_value'), '')),
           toFloat64OrNull(#{json_value_or_null("$.result.score.raw")})
         ) AS reward_value,
-        nullIf(JSON_VALUE(#{attribution}, '$.reward_source'), '') AS reward_source,
-        nullIf(JSON_VALUE(#{attribution}, '$.policy_update_reason'), '') AS policy_update_reason,
-        nullIf(JSON_VALUE(#{attribution}, '$.previous_policy_state_hash'), '') AS previous_policy_state_hash,
-        nullIf(JSON_VALUE(#{attribution}, '$.next_policy_state_hash'), '') AS next_policy_state_hash
+        nullIf(JSON_VALUE(#{attribution}, '$.reward_source'), '') AS reward_source
     FROM #{s3_source}
     ARRAY JOIN JSONExtractArrayRaw(json, 'context.extensions."http://oli.cmu.edu/extensions/experiment_attributions"') AS #{attribution}
     #{settings_clause}

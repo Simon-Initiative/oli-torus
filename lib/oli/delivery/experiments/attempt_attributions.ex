@@ -110,7 +110,8 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
           experiment.project_id == ^attempt_group.context.project_id and
             assignment.section_id == ^attempt_group.context.section_id and
             assignment.user_id == ^attempt_group.context.user_id and
-            fragment("? \\? 'rewards'", assignment.runtime_event_state)
+            fragment("? \\? 'rewards'", assignment.runtime_event_state),
+        preload: [experiment: experiment]
       )
       |> Repo.all()
       |> Enum.filter(&has_reward_for_any_activity?(&1, activity_attempt_ids))
@@ -210,6 +211,10 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
   defp reward_key(activity_attempt_id, assignment_id),
     do: "reward:activity_attempt:#{activity_attempt_id}:assignment:#{assignment_id}"
 
+  # Reconstructs the deterministic receipt ID that Oli.Experiments returns for
+  # a logical outcome or reward. This is not a PostgreSQL primary key; it lets
+  # evaluated attempt xAPI rebuild the same attribution payload from
+  # runtime_event_state during later rollups.
   defp receipt_id(prefix, idempotency_key) do
     <<int::unsigned-integer-size(64), _rest::binary>> =
       :crypto.hash(:sha256, "#{prefix}:#{idempotency_key}")

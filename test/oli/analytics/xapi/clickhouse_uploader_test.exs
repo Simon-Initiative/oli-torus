@@ -11,8 +11,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
                   "../../../../cloud/xapi-etl-processor/tests/fixtures/experiment_attributed_part_attempt.jsonl",
                   __DIR__
                 )
-  @fixture_event_hash "a7f351e505b2acd1513d4b05034847114b6b35b2cea8de975487ff0e82334a63"
-  @fixture_attribution_hash "db0d6397a8a68edda66118d8ae099b757ae37b234861bacaa6be3994847c00e2"
+  @fixture_event_hash "ee8a8266137dc930ebd5a1b0c2daddcabeefae4615b02a6b089bcddd0d6d10b5"
+  @fixture_attribution_hash "7033183577a7f5c6b310e7dddc788a88f63b98401a24d08f08049d00fce5936e"
 
   setup :verify_on_exit!
 
@@ -198,9 +198,19 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       assert query =~ "experiment_role"
       assert query =~ "'reward'"
       assert query =~ "101"
+      assert query =~ "'11111111-2222-3333-4444-555555555555'"
       assert query =~ "'condition-a'"
-      assert query =~ "'reward-key'"
+      assert query =~ "policy_version"
+      refute query =~ sha256("reward-key")
+      refute query =~ "'reward-key'"
       assert query =~ "'activity_attempt:full_credit'"
+      refute query =~ "idempotency_key_hash"
+      refute query =~ "algorithm_version"
+      refute query =~ "policy_update_reason"
+      refute query =~ "outcome_id"
+      refute query =~ "reward_id"
+      refute query =~ "previous_policy_state_hash"
+      refute query =~ "next_policy_state_hash"
       refute query =~ "video_url"
       refute query =~ "activity_attempt_guid"
       refute query =~ "content_element_id"
@@ -301,6 +311,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
             %{
               "role" => "reward",
               "experiment_id" => 101,
+              "experiment_uuid" => "11111111-2222-3333-4444-555555555555",
               "decision_point_id" => 202,
               "condition_id" => 303,
               "condition_code" => "condition-a",
@@ -308,7 +319,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
               "assignment_key" => "101:202:505",
               "enrollment_id" => 505,
               "algorithm" => "thompson_sampling",
-              "algorithm_version" => "thompson_sampling:v2",
+              "policy_version" => "thompson_sampling:v2",
               "idempotency_key" => "reward-key",
               "reward_source" => "activity_attempt:full_credit"
             }

@@ -86,7 +86,7 @@ Outcome and reward:
 1. `Oli.Delivery.Experiments.RewardHandoff` derives deterministic outcome and reward idempotency keys from activity attempt ID and assignment ID.
 2. `record_outcome/1` validates assignment scope and returns a deterministic outcome receipt without inserting `experiment_outcomes` or mutating `experiment_assignments.runtime_event_state`.
 3. Evaluated `part_attempt` xAPI statements carry canonical `role: "outcome"` and `role: "reward"` attributions when the outcome/reward is derived from that part attempt. `activity_attempt` and `page_attempt` may carry `role: "rollup"` attribution only when the rolled-up attempt has an unambiguous experiment assignment or can safely include an attribution array.
-4. `record_reward/1` validates assignment scope, applies a reward idempotency guard, and mutates `experiment_policy_states` when appropriate. If Thompson Sampling state changes, policy-update evidence is emitted as operational telemetry or projected analytics data rather than learner activity xAPI; no `experiment_policy_updates` row is inserted.
+4. `record_reward/1` validates assignment scope, applies a reward idempotency guard, and mutates `experiment_policy_states` when appropriate. If Thompson Sampling state changes, policy-update evidence is emitted as operational telemetry rather than learner activity xAPI; no `experiment_policy_updates` row is inserted.
 
 Media:
 
@@ -96,7 +96,7 @@ Media:
 Analytics:
 
 1. Existing xAPI host events with experiment attribution arrays become JSONL in S3 and raw rows in ClickHouse.
-2. ClickHouse projections/query contracts expose attribution-level exposure, outcome/reward, rollup, and policy-update history grouped by experiment, decision point, condition, project, section, publication, algorithm, policy version, host event type, attribution role, and time. Queries that need page, activity, part, attempt, or media details join `experiment_attributions.raw_event_hash` to `raw_events.event_hash`.
+2. ClickHouse projections/query contracts expose attribution-level exposure, outcome/reward, and rollup history grouped by experiment, decision point, condition, project, section, publication, algorithm, policy version, host event type, attribution role, and time. Queries that need page, activity, part, attempt, or media details join `experiment_attributions.raw_event_hash` to `raw_events.event_hash`. Policy-update history remains operational telemetry rather than learner xAPI attribution data.
 3. Dataset exports read the ClickHouse-backed experiment contract.
 4. PostgreSQL remains available only for low-volume operational state such as definitions, assignments, and current policy state.
 
@@ -148,18 +148,17 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
   - `context.extensions["http://oli.cmu.edu/extensions/experiment_attributions"]` is an array. It may be empty or omitted when no experiment applies.
 - Required attribution object fields:
   - `role`: `exposure`, `outcome`, `reward`, `rollup`, or `media_interaction`.
-  - `experiment_id` and/or stable `experiment_uuid` when available.
+  - `experiment_id` and stable `experiment_uuid`.
   - `decision_point_id`, `decision_point_key`, `condition_id`, `condition_code`, `assignment_id`, `assignment_key`.
-  - `algorithm`, `policy_version`, and `algorithm_version` when available.
+  - `algorithm` and `policy_version` when available.
   - Host context is inherited from the xAPI statement: actor, timestamp, section/project/publication, page/activity/part/media identifiers, score/result, and raw event hash. Detailed host fields are not repeated in the attribution payload unless needed for a stable experiment dimension.
   - Reward-specific attribution fields: `reward_value` and `reward_source`.
-  - Policy-update provenance belongs to operational telemetry or a projection, with `policy_update_reason`, `previous_policy_state_hash`, and `next_policy_state_hash`; it is not required on learner activity statements.
+  - Policy-update provenance belongs to operational telemetry; policy-update-specific reason fields are not required on learner activity statements.
 - ClickHouse read interface:
   - `experiment_event_counts(query)` for grouped exposure/reward/outcome/rollup/policy counts from attribution projections.
   - `experiment_assignment_share(query)` for assignment share by condition and time.
   - `experiment_reward_summary(query)` for reward counts and rates.
-  - `experiment_policy_update_history(query)` for policy-update audit history.
-  - `experiment_data_quality(query)` for missing exposure/outcome/reward evidence and delayed policy updates.
+  - `experiment_data_quality(query)` for missing exposure/outcome/reward evidence.
 - Dataset interface:
   - Extend dataset job configuration or query generation so experiment attribution filters include attribution projection rows from ClickHouse.
 
@@ -174,7 +173,7 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
   - Preserve `raw_events` as one row per xAPI statement. Do not duplicate raw rows for each experiment decision point.
   - Add a raw JSON/string column or equivalent extraction path for the `experiment_attributions` extension if the existing raw statement JSON is not sufficient for replay.
   - Add nullable raw summary columns only when they are unambiguous, such as `has_experiment_attribution` and `experiment_attribution_count`. Avoid flat `experiment_id`, `decision_point_id`, `condition_id`, or `assignment_id` columns on `raw_events` as canonical analytics fields because one raw event may carry multiple attributions.
-  - Add an attribution-level ClickHouse projection/table that contains one row per attribution with a compact set of stable query dimensions. The attribution row should include `raw_event_hash` as the logical parent reference to `raw_events.event_hash`, `attribution_hash`, `host_event_type`, `experiment_role`, `experiment_id`, `experiment_uuid`, `decision_point_id`, `decision_point_key`, `condition_id`, `condition_code`, `assignment_id`, `assignment_key`, `algorithm`, `policy_version`, `algorithm_version`, `reward_value`, `reward_source`, `section_id`, `project_id`, `publication_id`, `enrollment_id`, `content_revision_id`, policy-update hashes, and `timestamp`.
+  - Add an attribution-level ClickHouse projection/table that contains one row per attribution with a compact set of stable query dimensions. The attribution row should include `raw_event_hash` as the logical parent reference to `raw_events.event_hash`, `attribution_hash`, `host_event_type`, `experiment_role`, `experiment_id`, `experiment_uuid`, `decision_point_id`, `decision_point_key`, `condition_id`, `condition_code`, `assignment_id`, `assignment_key`, `algorithm`, `policy_version`, `reward_value`, `reward_source`, `section_id`, `project_id`, `publication_id`, `enrollment_id`, `content_revision_id`, source provenance, and `timestamp`. It should not store raw idempotency keys, hashed idempotency keys, outcome/reward receipt ids, or policy-update hashes unless later query pressure justifies adding them.
   - Do not duplicate detailed host/media/attempt fields such as attempt GUIDs, video URLs, content element IDs, activity revision IDs, page IDs, activity IDs, or part IDs in the attribution projection unless a later query-pressure review justifies the denormalization. Query those details by joining `experiment_attributions.raw_event_hash` back to `raw_events.event_hash`.
   - Add indexes for attribution query dimensions where ClickHouse supports the selected index types.
 - ETL mapping:
@@ -224,8 +223,8 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
   - ClickHouse insert/query failures;
   - ETL lag by source file timestamp and ClickHouse inserted time;
   - dataset export failures for experiment attribution jobs;
-  - missing exposure/outcome/reward evidence and delayed policy-update evidence.
-- Metadata must be privacy-safe: include experiment_id or experiment_uuid, decision_point_id, condition_id, condition_code, section_id, project_id, publication_id, algorithm, policy_version, host_event_type, and attribution_role; exclude learner names, LMS IDs, raw responses, and full policy state.
+  - missing exposure/outcome/reward evidence.
+- Metadata must be privacy-safe: include experiment_id, experiment_uuid, decision_point_id, condition_id, condition_code, section_id, project_id, publication_id, algorithm, policy_version, host_event_type, and attribution_role; exclude learner names, LMS IDs, raw idempotency keys, hashed idempotency keys, raw responses, receipt ids, and full policy state.
 - AppSignal should surface xAPI emission failures, ETL lag/failure, ClickHouse query failure, and reward duplicate-guard exceptions.
 
 ## 12. Security & Privacy
@@ -239,7 +238,7 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
 ## 13. Testing Strategy
 - ExUnit runtime tests:
   - Page views, part attempts, activity/page attempts, and media events include canonical experiment attribution arrays with required fields and privacy exclusions when applicable (AC-001, AC-002).
-  - Exposure, outcome, reward, and policy-update paths preserve attribution/projection evidence without inserting rows into removed event-history tables (AC-002, AC-007).
+  - Exposure, outcome, and reward paths preserve attribution/projection evidence without inserting rows into removed event-history tables; policy-update paths preserve operational telemetry without inserting rows into removed event-history tables (AC-002, AC-007).
   - Duplicate reward calls do not double-update Thompson Sampling policy state after the replacement idempotency contract is implemented (AC-007).
   - Reward eligibility works from sticky assignment state plus page-content branch matching after `experiment_exposures` is removed (AC-007).
   - xAPI emission failure does not roll back runtime state (AC-002).
@@ -281,7 +280,6 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
 ## 16. Open Questions & Follow-ups
 - Confirm whether later dashboard, monitoring, or export workloads justify denormalizing selected raw host fields into `experiment_attributions`. The current implementation keeps the projection compact and relies on `raw_event_hash` joins for detailed host/media/attempt context.
 - Consolidate or contract-test the duplicated xAPI-to-ClickHouse transform logic between `Oli.Analytics.XAPI.ClickHouseUploader`, `cloud/xapi-etl-processor/lambda_function.py`, and `Oli.Analytics.Backfill.QueryBuilder`. Known variations are event-type detection, page-view verb support, timestamp conversion, hash canonicalization, source metadata behavior, and scalar/JSON type coercion.
-- Confirm whether `experiment_uuid` is currently available everywhere statements are emitted or must be added to runtime query/preload paths.
 - Confirm the exact replacement storage for reward duplicate protection before implementation starts; it must not recreate a broad event-history table.
 - Follow up in the analytics slice with final dashboard/report UX and Thompson Sampling monitoring surfaces.
 - Follow up in manual QA with evidence that the four temporary PostgreSQL tables are absent in the target schema.

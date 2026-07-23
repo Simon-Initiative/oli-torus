@@ -24,8 +24,8 @@ except ModuleNotFoundError:
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "lambda_function.py"
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "experiment_attributed_part_attempt.jsonl"
-FIXTURE_EVENT_HASH = "a7f351e505b2acd1513d4b05034847114b6b35b2cea8de975487ff0e82334a63"
-FIXTURE_ATTRIBUTION_HASH = "db0d6397a8a68edda66118d8ae099b757ae37b234861bacaa6be3994847c00e2"
+FIXTURE_EVENT_HASH = "ee8a8266137dc930ebd5a1b0c2daddcabeefae4615b02a6b089bcddd0d6d10b5"
+FIXTURE_ATTRIBUTION_HASH = "7033183577a7f5c6b310e7dddc788a88f63b98401a24d08f08049d00fce5936e"
 spec = importlib.util.spec_from_file_location("lambda_function", MODULE_PATH)
 lambda_function = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = lambda_function
@@ -284,16 +284,21 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(rows[0]["host_event_type"], "part_attempt")
         self.assertEqual(rows[0]["experiment_role"], "reward")
         self.assertEqual(rows[0]["experiment_id"], 101)
+        self.assertEqual(rows[0]["experiment_uuid"], "11111111-2222-3333-4444-555555555555")
         self.assertEqual(rows[0]["condition_code"], "condition-a")
         self.assertEqual(rows[0]["reward_value"], 1.0)
         self.assertEqual(rows[0]["reward_source"], "activity_attempt:full_credit")
-        self.assertEqual(
-            rows[0]["idempotency_key_hash"],
-            hashlib.sha256("reward-key".encode("utf-8")).hexdigest(),
-        )
         self.assertNotIn("video_url", rows[0])
         self.assertNotIn("activity_attempt_guid", rows[0])
         self.assertNotIn("content_element_id", rows[0])
+        self.assertNotIn("algorithm_version", rows[0])
+        self.assertNotIn("policy_update_reason", rows[0])
+        self.assertNotIn("idempotency_key_hash", rows[0])
+        self.assertNotIn("idempotency_key", rows[0])
+        self.assertNotIn("outcome_id", rows[0])
+        self.assertNotIn("reward_id", rows[0])
+        self.assertNotIn("previous_policy_state_hash", rows[0])
+        self.assertNotIn("next_policy_state_hash", rows[0])
 
     def test_lambda_handler_sends_failed_prepare_to_dlq(self):
         body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})

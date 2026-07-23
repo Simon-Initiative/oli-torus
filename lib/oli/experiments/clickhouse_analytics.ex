@@ -11,6 +11,7 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
       """
       SELECT
         experiment_id,
+        experiment_uuid,
         decision_point_id,
         condition_id,
         condition_code,
@@ -18,8 +19,8 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
         countDistinct(attribution_hash) AS count
       FROM #{experiment_attributions_table()}
       WHERE #{where_clause(scope, filters)}
-      GROUP BY experiment_id, decision_point_id, condition_id, condition_code, experiment_role
-      ORDER BY experiment_id, decision_point_id, condition_id, experiment_role
+      GROUP BY experiment_id, experiment_uuid, decision_point_id, condition_id, condition_code, experiment_role
+      ORDER BY experiment_id, experiment_uuid, decision_point_id, condition_id, experiment_role
       """
 
     execute(query, "experiment event counts", scope, filters)
@@ -30,14 +31,15 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
       """
       SELECT
         experiment_id,
+        experiment_uuid,
         decision_point_id,
         condition_id,
         condition_code,
         countDistinct(attribution_hash) AS assignments
       FROM #{experiment_attributions_table()}
       WHERE #{where_clause(scope, Map.put(filters, :experiment_role, "assignment"))}
-      GROUP BY experiment_id, decision_point_id, condition_id, condition_code
-      ORDER BY experiment_id, decision_point_id, condition_id
+      GROUP BY experiment_id, experiment_uuid, decision_point_id, condition_id, condition_code
+      ORDER BY experiment_id, experiment_uuid, decision_point_id, condition_id
       """
 
     execute(query, "experiment assignment share", scope, filters)
@@ -48,6 +50,7 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
       """
       SELECT
         experiment_id,
+        experiment_uuid,
         decision_point_id,
         condition_id,
         condition_code,
@@ -55,34 +58,11 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
         avg(reward_value) AS average_reward
       FROM #{experiment_attributions_table()}
       WHERE #{where_clause(scope, Map.put(filters, :experiment_role, "reward"))}
-      GROUP BY experiment_id, decision_point_id, condition_id, condition_code
-      ORDER BY experiment_id, decision_point_id, condition_id
+      GROUP BY experiment_id, experiment_uuid, decision_point_id, condition_id, condition_code
+      ORDER BY experiment_id, experiment_uuid, decision_point_id, condition_id
       """
 
     execute(query, "experiment reward summary", scope, filters)
-  end
-
-  def experiment_policy_update_history(%Scope{} = scope, filters \\ %{}) do
-    query =
-      """
-      SELECT
-        timestamp,
-        experiment_id,
-        decision_point_id,
-        condition_id,
-        condition_code,
-        algorithm,
-        algorithm_version,
-        policy_update_reason,
-        previous_policy_state_hash,
-        next_policy_state_hash,
-        attribution_hash
-      FROM #{experiment_attributions_table()}
-      WHERE #{where_clause(scope, Map.put(filters, :experiment_role, "policy_update"))}
-      ORDER BY timestamp ASC
-      """
-
-    execute(query, "experiment policy update history", scope, filters)
   end
 
   def experiment_data_quality(%Scope{} = scope, filters \\ %{}) do
@@ -90,17 +70,17 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
       """
       SELECT
         experiment_id,
+        experiment_uuid,
         decision_point_id,
         assignment_id,
         countIf(experiment_role = 'exposure') AS exposures,
         countIf(experiment_role = 'outcome') AS outcomes,
-        countIf(experiment_role = 'reward') AS rewards,
-        countIf(experiment_role = 'policy_update') AS policy_updates
+        countIf(experiment_role = 'reward') AS rewards
       FROM #{experiment_attributions_table()}
       WHERE #{where_clause(scope, filters)}
-      GROUP BY experiment_id, decision_point_id, assignment_id
-      HAVING exposures = 0 OR (outcomes > 0 AND rewards = 0) OR (rewards > 0 AND policy_updates = 0)
-      ORDER BY experiment_id, decision_point_id, assignment_id
+      GROUP BY experiment_id, experiment_uuid, decision_point_id, assignment_id
+      HAVING exposures = 0 OR (outcomes > 0 AND rewards = 0)
+      ORDER BY experiment_id, experiment_uuid, decision_point_id, assignment_id
       """
 
     execute(query, "experiment data quality", scope, filters)
@@ -141,6 +121,7 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
       equals_clause("section_id", scope.section_id),
       equals_clause("publication_id", scope.publication_id),
       equals_clause("experiment_id", Map.get(filters, :experiment_id)),
+      string_clause("experiment_uuid", Map.get(filters, :experiment_uuid)),
       equals_clause("decision_point_id", Map.get(filters, :decision_point_id)),
       equals_clause("condition_id", Map.get(filters, :condition_id)),
       string_clause(

@@ -344,8 +344,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     event
     |> experiment_attributions()
     |> Enum.map(fn attribution ->
-      idempotency_key = Map.get(attribution, "idempotency_key")
-
       %{
         raw_event_hash: raw_hash,
         attribution_hash: attribution_hash(raw_hash, attribution),
@@ -368,19 +366,11 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
           attribution_value(attribution, "algorithm") ||
             attribution_value(attribution, "assigned_by_policy"),
         policy_version: attribution_value(attribution, "policy_version"),
-        algorithm_version: attribution_value(attribution, "algorithm_version"),
-        idempotency_key: idempotency_key,
-        idempotency_key_hash: hash_key(idempotency_key),
         content_revision_id: attribution_value(attribution, "content_revision_id"),
-        outcome_id: attribution_value(attribution, "outcome_id"),
-        reward_id: attribution_value(attribution, "reward_id"),
         reward_value:
           attribution_value(attribution, "reward_value") ||
             get_in(result, ["score", "raw"]),
-        reward_source: attribution_value(attribution, "reward_source"),
-        policy_update_reason: attribution_value(attribution, "policy_update_reason"),
-        previous_policy_state_hash: attribution_value(attribution, "previous_policy_state_hash"),
-        next_policy_state_hash: attribution_value(attribution, "next_policy_state_hash")
+        reward_source: attribution_value(attribution, "reward_source")
       }
     end)
   end
@@ -593,17 +583,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       assignment_key,
       algorithm,
       policy_version,
-      algorithm_version,
-      idempotency_key,
-      idempotency_key_hash,
       content_revision_id,
-      outcome_id,
-      reward_id,
       reward_value,
-      reward_source,
-      policy_update_reason,
-      previous_policy_state_hash,
-      next_policy_state_hash
+      reward_source
     ) VALUES
     """
   end
@@ -629,17 +611,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(attribution[:assignment_key]),
       escape_value(attribution[:algorithm]),
       escape_value(attribution[:policy_version]),
-      escape_value(attribution[:algorithm_version]),
-      escape_value(attribution[:idempotency_key]),
-      escape_value(attribution[:idempotency_key_hash]),
       escape_value(attribution[:content_revision_id]),
-      escape_value(attribution[:outcome_id]),
-      escape_value(attribution[:reward_id]),
       escape_value(attribution[:reward_value]),
-      escape_value(attribution[:reward_source]),
-      escape_value(attribution[:policy_update_reason]),
-      escape_value(attribution[:previous_policy_state_hash]),
-      escape_value(attribution[:next_policy_state_hash])
+      escape_value(attribution[:reward_source])
     ]
     |> Enum.join(", ")
     |> then(fn values -> "(#{values})" end)

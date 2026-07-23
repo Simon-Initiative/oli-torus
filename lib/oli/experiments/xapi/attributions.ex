@@ -81,10 +81,12 @@ defmodule Oli.Experiments.XAPI.Attributions do
         opts
       ) do
     assignment = Keyword.get(opts, :assignment)
+    experiment = Keyword.get(opts, :experiment)
 
     %{
       role: "assignment",
       experiment_id: decision.experiment_id,
+      experiment_uuid: experiment_uuid(assignment, experiment),
       decision_point_id: decision.decision_point_id,
       condition_id: decision.condition_id,
       condition_code: decision.condition_code,
@@ -199,6 +201,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
       assignment_id: assignment.id,
       assignment_key: assignment.assignment_key,
       experiment_id: assignment.experiment_id,
+      experiment_uuid: experiment_uuid(assignment),
       decision_point_id: assignment.decision_point_id,
       condition_id: assignment.condition_id,
       section_id: assignment.section_id,
@@ -234,6 +237,18 @@ defmodule Oli.Experiments.XAPI.Attributions do
 
   defp assignment_value(%Assignment{} = assignment, key), do: Map.get(assignment, key)
   defp assignment_value(_assignment, _key), do: nil
+
+  defp experiment_uuid(assignment, experiment \\ nil)
+
+  defp experiment_uuid(_assignment, %ExperimentDefinitionSchema{uuid: uuid}), do: uuid
+
+  defp experiment_uuid(
+         %Assignment{experiment: %ExperimentDefinitionSchema{uuid: uuid}},
+         _experiment
+       ),
+       do: uuid
+
+  defp experiment_uuid(_assignment, _experiment), do: nil
 
   defp map_value(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
 

@@ -22,6 +22,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
   }
 
   @extension "http://oli.cmu.edu/extensions/experiment_attributions"
+  @experiment_uuid "11111111-2222-3333-4444-555555555555"
 
   test "builds assignment attribution without a dedicated xAPI statement" do
     attribution =
@@ -31,6 +32,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
     assert attribution["role"] == "assignment"
     assert attribution["experiment_id"] == 10
+    assert attribution["experiment_uuid"] == @experiment_uuid
     assert attribution["project_id"] == 100
     assert attribution["section_id"] == 300
     assert attribution["publication_id"] == 200
@@ -73,10 +75,12 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
     assert exposure["role"] == "exposure"
     assert exposure["exposure_id"] == 60
+    assert exposure["experiment_uuid"] == @experiment_uuid
     assert exposure["content_revision_id"] == 701
 
     assert outcome["role"] == "outcome"
     assert outcome["outcome_id"] == 70
+    assert outcome["experiment_uuid"] == @experiment_uuid
     assert outcome["activity_attempt_id"] == 800
     assert outcome["resource_attempt_id"] == 801
     assert outcome["activity_resource_id"] == 802
@@ -86,6 +90,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert reward["role"] == "reward"
     assert reward["reward_id"] == 80
     assert reward["outcome_id"] == 70
+    assert reward["experiment_uuid"] == @experiment_uuid
     assert reward["reward_source"] == "activity_attempt:full_credit"
     assert reward["reward_value"] == 1.0
 
@@ -191,7 +196,8 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       assigned_by_policy: "weighted_random",
       policy_version: "weighted_random",
       assignment_key: "10:20:500",
-      assigned_at: timestamp()
+      assigned_at: timestamp(),
+      experiment: experiment()
     }
   end
 
@@ -303,6 +309,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
   defp experiment do
     %ExperimentDefinition{
       id: 10,
+      uuid: @experiment_uuid,
       project_id: 100,
       section_id: 300,
       algorithm: :thompson_sampling

@@ -30,18 +30,10 @@ CREATE TABLE IF NOT EXISTS experiment_attributions (
     assignment_key Nullable(String),
     algorithm Nullable(String),
     policy_version Nullable(String),
-    algorithm_version Nullable(String),
-    idempotency_key Nullable(String),
-    idempotency_key_hash Nullable(String),
 
     content_revision_id Nullable(UInt64),
-    outcome_id Nullable(String),
-    reward_id Nullable(String),
     reward_value Nullable(Float64),
-    reward_source Nullable(String),
-    policy_update_reason Nullable(String),
-    previous_policy_state_hash Nullable(String),
-    next_policy_state_hash Nullable(String)
+    reward_source Nullable(String)
 ) ENGINE = ReplacingMergeTree(event_version)
 ORDER BY (raw_event_hash, attribution_hash)
 PRIMARY KEY (raw_event_hash, attribution_hash)
@@ -49,10 +41,10 @@ PARTITION BY toYYYYMM(timestamp)
 SETTINGS allow_nullable_key = 0, index_granularity = 8192, insert_deduplicate = 1;
 
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_experiment_id experiment_id TYPE minmax GRANULARITY 1;
+ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_experiment_uuid experiment_uuid TYPE bloom_filter() GRANULARITY 1;
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_experiment_role experiment_role TYPE set(0) GRANULARITY 1;
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_condition_id condition_id TYPE minmax GRANULARITY 1;
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_assignment_id assignment_id TYPE minmax GRANULARITY 1;
-ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_idempotency_key_hash idempotency_key_hash TYPE bloom_filter() GRANULARITY 1;
 
 -- +goose Down
 DROP TABLE IF EXISTS experiment_attributions;

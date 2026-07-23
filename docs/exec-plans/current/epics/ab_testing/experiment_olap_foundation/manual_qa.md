@@ -137,6 +137,7 @@ docker compose exec clickhouse clickhouse-client \
       r.experiment_attribution_count,
       e.experiment_role,
       e.experiment_id,
+      e.experiment_uuid,
       e.decision_point_id,
       e.condition_id,
       e.raw_event_hash = r.event_hash AS joins_parent
@@ -181,10 +182,9 @@ docker compose exec clickhouse clickhouse-client \
       r.out_of,
       r.scaled_score,
       e.experiment_role,
+      e.experiment_uuid,
       e.reward_value,
       e.reward_source,
-      e.outcome_id,
-      e.reward_id,
       e.raw_event_hash = r.event_hash AS joins_parent
     FROM experiment_attributions e
     INNER JOIN raw_events r ON r.event_hash = e.raw_event_hash
@@ -251,13 +251,13 @@ Pass criteria:
        SELECT
          experiment_id,
          assignment_id,
-         reward_id,
+         attribution_hash,
          count() AS rows,
          uniqExact(attribution_hash) AS unique_attributions
        FROM experiment_attributions
        WHERE experiment_id = <experiment_id>
          AND experiment_role = 'reward'
-       GROUP BY experiment_id, assignment_id, reward_id
+       GROUP BY experiment_id, assignment_id, attribution_hash
        ORDER BY rows DESC
      "
    ```

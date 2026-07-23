@@ -1084,7 +1084,12 @@ defmodule Oli.Experiments do
       {:ok, assignment} ->
         increment_assignment_count(match.experiment, match.decision_point.id)
         decision = to_assignment_decision(assignment, match.condition, false)
-        Telemetry.emit(:assignment_decided, {decision, request}, assignment: assignment)
+
+        Telemetry.emit(:assignment_decided, {decision, request},
+          assignment: assignment,
+          experiment: match.experiment
+        )
+
         {:ok, decision}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -1094,7 +1099,12 @@ defmodule Oli.Experiments do
 
           condition = Repo.get!(Condition, assignment.condition_id)
           decision = to_assignment_decision(assignment, condition, true)
-          Telemetry.emit(:assignment_decided, {decision, request}, assignment: assignment)
+
+          Telemetry.emit(:assignment_decided, {decision, request},
+            assignment: assignment,
+            experiment: match.experiment
+          )
+
           {:ok, decision}
         else
           normalize_result({:error, changeset})
@@ -1594,7 +1604,8 @@ defmodule Oli.Experiments do
               experiment.project_id == ^scope.project_id and
               assignment.section_id == ^scope.section_id and
               assignment.enrollment_id == ^scope.enrollment_id and
-              assignment.user_id == ^scope.user_id
+              assignment.user_id == ^scope.user_id,
+          preload: [experiment: experiment]
 
       {:ok, if(lock?, do: lock(query, "FOR UPDATE"), else: query)}
     end
