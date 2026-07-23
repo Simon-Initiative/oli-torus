@@ -51,17 +51,17 @@ Guardrails:
 - Parallelizable Work:
   - xAPI event shape drafting in Phase 2 can start while the inventory is underway, but final required fields should wait for the disposition review.
 
-## Phase 2: Experiment XAPI Contract And Builder
-- Goal: Define and implement canonical experiment xAPI statement construction for FR-003, FR-005, AC-003, and AC-005.
+## Phase 2: Experiment XAPI Attribution Contract And Builder
+- Goal: Define and implement canonical experiment attribution payload construction for existing xAPI host statements for FR-003, FR-005, AC-003, and AC-005.
 - Tasks:
-  - [x] Add `Oli.Experiments.Telemetry` or equivalent internal module for experiment event emission.
-  - [x] Add event builder functions for assignment created, assignment reused, exposure recorded, outcome observed, reward recorded, and policy updated.
-  - [x] Use existing xAPI actor, object, verb, context, timestamp, bundle, and JSONL conventions from `Oli.Analytics.XAPI`.
-  - [x] Include required identifiers: experiment ID/UUID, project, section, publication where available, decision point, alternatives resource/revision, condition, assignment key, enrollment or learner reference where allowed, algorithm, policy version, event type, and idempotency key.
-  - [x] Include event-specific references for exposure, outcome, reward, policy update, activity attempt, resource attempt, reward value/source, and compact policy-state hashes.
-  - [x] Keep raw learner responses, learner names, LMS identifiers, full policy state, and full request payloads out of xAPI statements and logs.
-  - [x] Route experiment statements through `Oli.Analytics.XAPI.emit(:experiment, ...)`.
-  - [x] Add telemetry around experiment xAPI emission start, stop, exception, and skipped duplicate decisions.
+  - [x] Add `Oli.Experiments.XAPI.Attributions` or equivalent internal module for experiment attribution payload construction and host statement attachment.
+  - [x] Add attribution builder functions for exposure, outcome, reward, activity/page rollups, media interactions, and compact operational policy-update evidence.
+  - [x] Use existing xAPI actor, object, verb, context, timestamp, bundle, and JSONL conventions from host statements emitted by `Oli.Analytics.XAPI`.
+  - [x] Include required identifiers: experiment ID, project, section, publication where available, decision point, alternatives resource/revision, condition, assignment key, enrollment or learner reference where allowed, algorithm, policy version, role, and idempotency key.
+  - [x] Include event-specific references for exposure, outcome, reward, activity attempt, resource attempt, reward value/source, and compact policy-state hashes where used for operational telemetry.
+  - [x] Keep raw learner responses, learner names, LMS identifiers, full policy state, and full request payloads out of xAPI attribution payloads and logs.
+  - [x] Attach experiment attributions to existing page, attempt, and media host statements; do not emit dedicated learner-facing experiment xAPI events.
+  - [x] Keep `Oli.Experiments.Telemetry` scoped to internal operational telemetry and skipped duplicate decisions.
 - Testing Tasks:
   - [x] Add unit tests for each statement builder shape and required extension field.
   - [x] Add privacy tests proving experiment statements do not include raw learner responses or learner names.
@@ -69,7 +69,7 @@ Guardrails:
   - Command(s): `mix test test/oli/experiments/xapi_attributions_test.exs`
   - Command(s): `mix test test/oli/analytics/xapi/schema_validator_test.exs`
 - Definition of Done:
-  - Experiment xAPI statement builders exist and produce deterministic, scoped, privacy-safe statements.
+  - Experiment xAPI attribution builders exist and produce deterministic, scoped, privacy-safe attribution payloads.
   - Emission telemetry exists and carries non-sensitive metadata.
   - Statement tests cover all MVP event types.
 - Gate:

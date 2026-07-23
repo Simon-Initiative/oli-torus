@@ -3,39 +3,37 @@
 ## Implementation Summary
 
 Changed runtime code:
-- Added `Oli.Experiments.Telemetry` for experiment xAPI statement construction and emission.
-- Wired `Oli.Experiments` assignment, exposure, outcome, reward, and Thompson Sampling policy-update paths to emit experiment xAPI statements after successful runtime writes.
-- Preserved PostgreSQL idempotency behavior while marking reused exposure/outcome/reward receipts with `[:oli, :experiments, :xapi, :emit, :skipped_duplicate]` telemetry instead of duplicate xAPI events.
+- Added `Oli.Experiments.XAPI.Attributions` for experiment xAPI attribution payload construction and host statement attachment.
+- Kept `Oli.Experiments.Telemetry` scoped to internal operational telemetry and duplicate-suppression signals.
+- Wired page, attempt, and media host xAPI statements to carry experiment attribution arrays after successful runtime evidence exists.
 - Classified PostgreSQL aggregate helpers in `Oli.Experiments` as operational-only through function docs.
 
 Changed tests:
 - Added statement-builder and privacy tests in `test/oli/experiments/xapi_attributions_test.exs`.
-- Extended runtime tests for assignment/reuse xAPI events, duplicate suppression, policy-update emission, and xAPI failure rollback safety.
+- Extended runtime tests for attribution payloads, duplicate suppression, policy-update telemetry, and xAPI failure rollback safety.
 - Added `test/oli/experiments/coupling_test.exs` to block non-experiment product code from direct temporary event-table coupling.
 
 Changed docs:
 - Added `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/reconciliation.md`.
 - Marked all implementation plan phase checkboxes complete in `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/plan.md`.
 
-## XAPI Event List
+## XAPI Attribution Hosts
 
-Implemented event types:
-- `experiment_assigned`
-- `experiment_assignment_reused`
-- `experiment_exposed`
-- `experiment_outcome_recorded`
-- `experiment_reward_recorded`
-- `experiment_policy_updated`
+Implemented host statement attribution:
+- `page_viewed` carries exposure attributions.
+- `part_attempt_evaluated` carries outcome and reward attributions.
+- `activity_attempt_evaluated` and `page_attempt_evaluated` may carry rollup attributions.
+- Video/media events may carry media interaction attributions.
 
-Each statement includes scoped identifiers, event type, idempotency key, and event-specific references. Policy-update statements include compact previous/next state hashes instead of full policy state.
+Each attribution includes scoped identifiers, role, idempotency key, and event-specific references. Policy-update evidence is internal operational telemetry and includes compact previous/next state hashes instead of full policy state.
 
 ## Security Review Notes
 
-Reviewed payload construction in `Oli.Experiments.Telemetry`:
-- Raw learner responses are not copied from outcome metadata into xAPI statements.
+Reviewed payload construction in `Oli.Experiments.XAPI.Attributions`:
+- Raw learner responses are not copied from outcome metadata into xAPI attribution payloads.
 - Learner names and LMS identifiers are not included.
-- Full policy state is not included; only SHA-256 hashes are emitted.
-- Telemetry metadata carries non-sensitive IDs, event type, algorithm/version where available, and hashed idempotency keys.
+- Full policy state is not included; only SHA-256 hashes are emitted where compact operational policy evidence is needed.
+- Telemetry metadata carries non-sensitive IDs, role, algorithm/version where available, and hashed idempotency keys.
 - Runtime emits only after `Oli.Experiments.Scope` validation succeeds in the owning context.
 
 ## Performance Review Notes

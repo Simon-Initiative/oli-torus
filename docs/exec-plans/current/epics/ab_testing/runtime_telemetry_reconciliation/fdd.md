@@ -3,9 +3,9 @@
 ## 1. Executive Summary
 Reconcile native A/B testing runtime telemetry so PostgreSQL remains the operational authority for delivery correctness while durable experiment event history moves to xAPI JSONL in S3 and product analytics reads move to ClickHouse-backed contracts.
 
-This design satisfies FR-001 through FR-007 by auditing the already-created A/B testing event tables and analytics APIs, keeping `experiment_assignments` and current `experiment_policy_states` as runtime state, treating `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, and `experiment_policy_updates` as temporary scaffolding only, and introducing an `Oli.Experiments.Telemetry` boundary that emits canonical experiment xAPI statements through the existing `Oli.Analytics.XAPI` upload pipeline. Existing PostgreSQL aggregate functions in `Oli.Experiments` are quarantined for operational/debug use and must not power dashboards, reports, or dataset exports.
+This design satisfies FR-001 through FR-007 by auditing the already-created A/B testing event tables and analytics APIs, keeping `experiment_assignments` and current `experiment_policy_states` as runtime state, treating `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, and `experiment_policy_updates` as temporary scaffolding only, and using existing learner xAPI host statements with `context.extensions["http://oli.cmu.edu/extensions/experiment_attributions"]` for durable attribution history. Existing PostgreSQL aggregate functions in `Oli.Experiments` are quarantined for operational/debug use and must not power dashboards, reports, or dataset exports.
 
-The simplest adequate approach is not to remove the event tables in this reconciliation slice because runtime reward and policy update idempotency currently depends on those rows. The end state is still removal: `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, and `experiment_policy_updates` must be dropped before the A/B testing MVP slice sequence is considered complete, after xAPI/ClickHouse history and replacement idempotency behavior are proven. This slice documents and enforces the corrected boundary, adds xAPI emission contracts next to the runtime writes, and adds regression checks so later analytics work cannot deepen PostgreSQL event-log coupling while the temporary tables still exist.
+The simplest adequate approach is not to remove every event table in this reconciliation slice until replacement runtime behavior is proven. The current end state is still removal: `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, and `experiment_policy_updates` must be dropped before the A/B testing MVP slice sequence is considered complete, after xAPI/ClickHouse history and replacement runtime state behavior are proven. This slice documents and enforces the corrected boundary, adds host-statement attribution contracts next to the runtime writes, and adds regression checks so later analytics work cannot deepen PostgreSQL event-log coupling while the temporary tables still exist.
 
 ## 2. Requirements & Assumptions
 - Functional requirements:
@@ -56,8 +56,8 @@ The simplest adequate approach is not to remove the event tables in this reconci
 `Oli.Experiments` remains the runtime owner. This slice adds a narrow telemetry sub-boundary and changes the analytics-read posture without creating a separate service.
 
 - `Oli.Experiments`: continues to validate scope, create sticky assignments, record temporary exposure/outcome/reward rows while replacement idempotency is being introduced, update current policy state, and return domain receipts.
-- `Oli.Experiments.Telemetry`: new internal module that converts successful assignment, exposure, outcome, reward, and policy-update receipts into experiment xAPI statement maps and emits them through `Oli.Analytics.XAPI.emit/2`.
-- `Oli.Experiments.Telemetry.Event`: optional helper struct or map contract for canonical event data before xAPI rendering. It keeps field normalization out of the main context module.
+- `Oli.Experiments.Telemetry`: internal operational telemetry only. It emits `:telemetry.execute/3` metadata for runtime observability and duplicate suppression, not learner xAPI statements.
+- `Oli.Experiments.XAPI.Attributions`: builds normalized attribution maps and attaches attribution arrays to existing learner xAPI host statements.
 - `Oli.Analytics.XAPI`: unchanged upload boundary used for S3 JSONL and direct local ClickHouse upload.
 - `Oli.Analytics.XAPI.Events.Experiment.*`: optional event modules, one per event type, if the implementation follows existing attempt event patterns.
 - `Oli.Experiments.AnalyticsQuery` and PostgreSQL aggregate functions: retained only for low-volume operational inspection or temporarily deprecated wrappers. They must not be used by product dashboards, reports, monitoring queries, or dataset exports.
@@ -68,21 +68,29 @@ Assignment flow:
 
 1. Delivery calls `Oli.Experiments.assign_condition/1`.
 2. `Oli.Experiments` validates scope, reuses or creates `experiment_assignments`, and returns `%AssignmentDecision{}`.
-3. After the assignment transaction succeeds, `Oli.Experiments.Telemetry` emits an xAPI statement for `experiment_assigned` or `experiment_assignment_reused`.
-4. The statement includes the assignment idempotency key or assignment key so downstream ETL can de-duplicate.
+3. Assignment decisions are retained in render context when alternatives are precomputed.
+4. Assignment evidence may be represented as operational telemetry. Learner-facing xAPI history is attached to semantic host statements when exposure, outcome, reward, rollup, or media interaction evidence exists.
 
 Exposure flow:
 
 1. Delivery calls `record_exposure/1` after assigned content is applied.
 2. PostgreSQL exposure row insertion or receipt reuse preserves runtime idempotency.
-3. `Oli.Experiments.Telemetry` emits `experiment_exposed` once for a newly recorded exposure. Receipt reuse must not produce duplicate durable event history unless the event contract explicitly marks it as replayed.
+3. `Oli.Experiments.XAPI.Attributions` builds an exposure attribution.
+4. Delivery emits the existing `page_viewed` statement with the attribution array attached.
 
 Outcome and reward flow:
 
 1. Evaluated attempt reward handoff calls `record_outcome/1` and `record_reward/1`.
 2. PostgreSQL outcome and reward rows remain temporary operational records and idempotency guards until replacement idempotency is implemented.
-3. New outcome/reward rows emit `experiment_outcome_observed` and `experiment_reward_recorded` statements.
-4. Reward processing that changes Thompson Sampling state emits `experiment_policy_updated` with previous/next policy state references or compact update metadata.
+3. Evaluated attempt xAPI generation attaches outcome and reward attributions to the canonical `part_attempt_evaluated` host statement.
+4. Activity and page attempt host statements may carry rollup attributions where the rolled-up scope is unambiguous.
+5. Reward processing that changes Thompson Sampling state emits compact operational telemetry with previous/next policy state hashes. Policy updates are not modeled as learner xAPI.
+
+Media flow:
+
+1. Video/media xAPI events are built through the existing `Oli.Analytics.XAPI.construct_bundle/2` paths.
+2. When the media content element appears inside the learner's selected experiment-backed alternatives branch, the video host statement carries a `media_interaction` attribution.
+3. Media attribution is based on existing learner assignment/page content evidence and does not require the experiment to still be active at the later media event timestamp.
 
 Analytics flow:
 
@@ -100,7 +108,8 @@ PostgreSQL ownership:
 
 xAPI/S3 ownership:
 
-- Durable event history for assignments, assignment reuse, exposures, outcomes, rewards, and policy updates.
+- Durable learner-facing event history for exposures, outcomes, rewards, rollups, and media interactions through attribution arrays on existing host statements.
+- Operational assignment and policy-update evidence may be emitted through internal telemetry, but policy updates are not learner xAPI statements.
 - Historical reload/backfill source for ClickHouse.
 
 ClickHouse ownership:
@@ -116,29 +125,32 @@ ClickHouse ownership:
 - Add a new feature flag: rejected because the PRD states no feature flags are present and the safer rollout path is sequencing before analytics work.
 
 ## 5. Interfaces
-- New internal telemetry boundary:
-  - `Oli.Experiments.Telemetry.emit_assignment(%AssignmentDecision{}, %AssignConditionRequest{}, keyword()) :: :ok`
-  - `emit_exposure(%ExposureReceipt{}, %RecordExposureRequest{}, keyword()) :: :ok`
-  - `emit_outcome(%OutcomeReceipt{}, %RecordOutcomeRequest{}, keyword()) :: :ok`
-  - `emit_reward(%RewardReceipt{}, %RecordRewardRequest{}, keyword()) :: :ok`
-  - `emit_policy_update(%PolicyUpdate{} | map(), %RewardReceipt{}, keyword()) :: :ok`
+- Internal telemetry boundary:
+  - `Oli.Experiments.Telemetry.emit(event, payload, keyword()) :: :ok`
+  - This boundary emits internal operational telemetry only.
+- xAPI attribution boundary:
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_page_view(...) :: [map()]`
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_part_attempt(...) :: [map()]`
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_activity_attempt([map()]) :: [map()]`
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_page_attempt([map()]) :: [map()]`
+  - `Oli.Experiments.XAPI.Attributions.attributions_for_media_event([map()]) :: [map()]`
+  - `Oli.Experiments.XAPI.Attributions.attach_attributions(statement, [map()]) :: map()`
 - Emission semantics:
   - Emit only after the corresponding runtime transaction succeeds.
   - Emit once for newly created runtime evidence. Receipt reuse returns success without duplicate emission unless implementation can prove the original event was not emitted and marks the replay with the same idempotency key.
   - Never let xAPI pipeline failure roll back assignment, exposure, outcome, reward, or policy-state writes. The xAPI pipeline already persists failed bundles for replay.
 - xAPI statement contract:
-  - `actor`: user account using existing Torus xAPI conventions.
-  - `verb.id`: Torus-specific experiment verbs, for example `http://oli.cmu.edu/extensions/verbs/experiment-assigned`, `experiment-assignment-reused`, `experiment-exposed`, `experiment-outcome-observed`, `experiment-reward-recorded`, and `experiment-policy-updated`.
-  - `object.id`: stable experiment event object such as `https://torus.example/experiment/{experiment_uuid}/decision_point/{decision_point_id}`.
-  - `object.definition.type`: `http://oli.cmu.edu/extensions/types/experiment_event`.
-  - `context.extensions`: scoped IDs and event metadata.
-  - `timestamp`: runtime event timestamp from the receipt where available.
+  - Existing host statements retain their existing `actor`, `verb`, `object`, `result`, `context`, and `timestamp` semantics.
+  - Experiment data is attached only through `context.extensions["http://oli.cmu.edu/extensions/experiment_attributions"]`.
+  - The attribution extension is an array because one host statement can represent zero, one, or many experiment attributions.
+  - Canonical host statements are `page_viewed` for exposure, `part_attempt_evaluated` for outcome/reward, `activity_attempt_evaluated` and `page_attempt_evaluated` for rollups, and video/media statements for media interactions inside selected alternatives.
 - Required context extensions:
   - `experiment_id`, `experiment_uuid`, `project_id`, `section_id`, `publication_id` where available, `decision_point_id`, `alternatives_resource_id`, `alternatives_revision_id`, `condition_id`, `condition_code`, `assignment_id`, `assignment_key`, `enrollment_id` or learner reference where allowed, `user_id`, `algorithm`, `policy_version`, `event_type`, `idempotency_key`.
   - Event-specific references such as `exposure_id`, `outcome_id`, `reward_id`, `policy_update_id`, `activity_attempt_id`, `resource_attempt_id`, `activity_resource_id`, `reward_value`, `reward_source`, `previous_policy_state_hash`, `next_policy_state_hash`, and `guardrail_action`.
 - Category and bundle:
-  - Use `Oli.Analytics.XAPI.emit(:experiment, statement_or_statements)`.
-  - Bundle partition remains `:section` for delivery/runtime experiment statements.
+  - Use the existing host event category, such as `:page_viewed`, attempt summary bundles, or `:video`.
+  - No dedicated learner-facing `:experiment` xAPI category is introduced.
+  - Bundle partition remains `:section` for delivery/runtime host statements.
 - Analytics coupling check:
   - Add a focused test or static assertion that scans product dashboard/export/reporting modules for aliases/imports of `Oli.Experiments.Schemas.Exposure`, `Outcome`, `Reward`, `PolicyUpdate`, and calls to PostgreSQL aggregate functions where the caller is not explicitly operational/admin inspection.
   - Code review must treat new product analytics reads against `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, or `experiment_policy_updates` as a blocker.
@@ -215,9 +227,9 @@ ClickHouse ownership:
 
 ## 13. Testing Strategy
 - ExUnit contract tests:
-  - `assign_condition/1` emits assignment-created xAPI for first assignment and assignment-reused xAPI for sticky reuse with stable idempotency metadata.
-  - `record_exposure/1`, `record_outcome/1`, `record_reward/1`, and policy update paths build the expected xAPI statements for new records.
-  - Replaying the same exposure/outcome/reward idempotency key does not create duplicate PostgreSQL rows or duplicate xAPI events.
+  - `page_viewed`, `part_attempt_evaluated`, `activity_attempt_evaluated`, `page_attempt_evaluated`, and video/media host statements attach the expected experiment attribution arrays.
+  - Assignment and policy update paths emit internal operational telemetry only.
+  - Replaying the same runtime evidence does not create duplicate PostgreSQL runtime state or duplicate attribution rows downstream.
   - xAPI emission failures do not roll back runtime writes.
   - Policy-state updates still update current PostgreSQL state for Thompson Sampling.
 - Static/review gate tests:
@@ -225,9 +237,9 @@ ClickHouse ownership:
   - Product analytics callers must not call PostgreSQL-backed `assignment_counts/1`, `exposure_counts/1`, `reward_counts/1`, or `experiment_summary/1` unless explicitly listed as operational/admin inspection.
   - Direct SQL/Ecto references to `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, and `experiment_policy_updates` outside `Oli.Experiments` fail or are flagged.
 - xAPI tests:
-  - Experiment statements validate against the existing xAPI schema or a schema extension added in this slice.
+  - Existing host statements with zero, one, or many experiment attributions validate against the xAPI schema.
   - Statement context includes required experiment identifiers and no raw learner responses.
-  - `Oli.Analytics.XAPI.emit(:experiment, ...)` builds bundles with `partition: :section` and category `:experiment`.
+  - Existing host event categories continue to build bundles with `partition: :section`; no dedicated learner-facing `:experiment` category is introduced.
 - Regression tests:
   - Existing `test/oli/experiments/analytics_test.exs` should be reclassified or adjusted so PostgreSQL aggregate functions are operational-only, not evidence for product analytics.
 - Validation gates:

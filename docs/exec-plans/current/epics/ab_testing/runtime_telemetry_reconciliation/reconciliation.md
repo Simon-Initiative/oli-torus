@@ -28,13 +28,13 @@ Defer to downstream slices:
 
 `Oli.Experiments` remains the only owner of native A/B testing PostgreSQL tables. Runtime APIs may write temporary event-history rows while the replacement idempotency path is being introduced, but those rows are not durable analytics history.
 
-`Oli.Experiments.Telemetry` emits durable experiment history through `Oli.Analytics.XAPI.emit(:experiment, ...)` for:
-- `experiment_assigned`
-- `experiment_assignment_reused`
-- `experiment_exposed`
-- `experiment_outcome_recorded`
-- `experiment_reward_recorded`
-- `experiment_policy_updated`
+Learner-facing durable experiment history is represented as attribution arrays on existing xAPI host statements, not as dedicated experiment xAPI events:
+- `page_viewed` carries exposure attributions.
+- `part_attempt_evaluated` carries outcome and reward attributions.
+- `activity_attempt_evaluated` and `page_attempt_evaluated` may carry rollup attributions.
+- Video/media xAPI events may carry media interaction attributions when the media element appears inside the learner's selected experiment-backed alternatives branch.
+
+`Oli.Experiments.Telemetry` is limited to internal operational telemetry, while `Oli.Experiments.XAPI.Attributions` owns xAPI attribution payload construction and attachment.
 
 Product dashboards, reports, exports, and aggregate analytics must use xAPI/ClickHouse-derived read paths from downstream slices, not PostgreSQL event-history tables or the temporary runtime aggregate helpers in `Oli.Experiments`.
 

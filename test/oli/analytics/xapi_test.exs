@@ -70,6 +70,70 @@ defmodule Oli.Analytics.XAPITest do
              |> statement_from_bundle()
              |> get_in(["context", "extensions", @experiment_attributions_key])
     end
+
+    test "keeps media interaction attribution after experiment is no longer active" do
+      %{
+        user: user,
+        resource_attempt: resource_attempt,
+        experiment: experiment,
+        assignment: assignment,
+        scope: scope
+      } = setup_video_experiment_context()
+
+      assert {:ok, _completed} =
+               Experiments.complete_experiment(experiment.id, %LifecycleRequest{scope: scope})
+
+      {:ok, %StatementBundle{} = bundle} =
+        XAPI.construct_bundle(
+          %{
+            "category" => "video",
+            "event_type" => "played",
+            "host_name" => "http://example.edu",
+            "key" => %{"page_attempt_guid" => resource_attempt.attempt_guid},
+            "video_url" => "https://example.edu/video.mp4",
+            "video_title" => "Example video",
+            "video_length" => 60,
+            "video_play_time" => 0,
+            "content_element_id" => "video-in-selected-branch"
+          },
+          user.id
+        )
+
+      assert [%{"role" => "media_interaction", "assignment_id" => assignment_id}] =
+               bundle
+               |> statement_from_bundle()
+               |> get_in(["context", "extensions", @experiment_attributions_key])
+
+      assert assignment_id == assignment.id
+    end
+
+    test "attaches media interaction attributions for resource-only video events" do
+      %{user: user, section: section, page_revision: page_revision, assignment: assignment} =
+        setup_video_experiment_context()
+
+      {:ok, %StatementBundle{} = bundle} =
+        XAPI.construct_bundle(
+          %{
+            "category" => "video",
+            "event_type" => "played",
+            "host_name" => "http://example.edu",
+            "key" => %{"resource_id" => page_revision.resource_id, "section_id" => section.id},
+            "video_url" => "https://example.edu/video.mp4",
+            "video_title" => "Example video",
+            "video_length" => 60,
+            "video_play_time" => 0,
+            "content_element_id" => "video-in-selected-branch"
+          },
+          user.id
+        )
+
+      assert [%{"role" => "media_interaction", "assignment_id" => assignment_id}] =
+               bundle
+               |> statement_from_bundle()
+               |> get_in(["context", "extensions", @experiment_attributions_key])
+
+      assert assignment_id == assignment.id
+    end
   end
 
   defp setup_video_experiment_context do
@@ -110,6 +174,12 @@ defmodule Oli.Analytics.XAPITest do
       publication: publication
     )
 
+    insert(:published_resource,
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision
+    )
+
     resource_access =
       insert(:resource_access,
         section: section,
@@ -137,10 +207,13 @@ defmodule Oli.Analytics.XAPITest do
 
     %{
       user: user,
+      section: section,
+      page_revision: page_revision,
       resource_attempt: resource_attempt,
       experiment:
         Repo.get!(Oli.Experiments.Schemas.ExperimentDefinition, assignment.experiment_id),
-      assignment: assignment
+      assignment: assignment,
+      scope: scope
     }
   end
 

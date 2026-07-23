@@ -47,7 +47,6 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       on: condition.id == assignment.condition_id,
       where:
         experiment.project_id == ^context.project_id and
-          experiment.state == :active and
           assignment.section_id == ^context.section_id and
           assignment.user_id == ^context.user_id,
       select: %{
