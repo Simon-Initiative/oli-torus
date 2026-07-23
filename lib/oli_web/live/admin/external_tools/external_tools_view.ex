@@ -191,7 +191,12 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
 
       platform_instance_ids ->
         start_async(socket, :usage_counts, fn ->
-          PlatformExternalTools.count_sections_by_platform_instance_ids(platform_instance_ids)
+          Appsignal.instrument(
+            "OliWeb.Admin.ExternalTools.ExternalToolsView#load_usage_counts",
+            fn ->
+              PlatformExternalTools.count_sections_by_platform_instance_ids(platform_instance_ids)
+            end
+          )
         end)
     end
   end
