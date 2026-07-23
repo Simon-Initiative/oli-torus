@@ -1,7 +1,9 @@
 import { availableQuestionTypes } from '../../src/apps/authoring/components/Flowchart/paths/path-options';
 import {
+  applySimpleAuthorPartDefaults,
   hasSimpleAuthorQuestionPart,
   questionComponents,
+  staticComponents,
 } from '../../src/apps/authoring/components/Flowchart/toolbar/FlowchartHeaderNav';
 import {
   adaptiveScorablePartTypes,
@@ -57,10 +59,27 @@ describe('adaptive scorable part types', () => {
     expect(
       hasSimpleAuthorQuestionPart({
         content: {
-          partsLayout: [{ type: 'janus-input-text' }],
+          partsLayout: [{ type: 'janus-flashcards' }, { type: 'janus-input-text' }],
         },
       }),
     ).toBe(true);
+  });
+
+  it('adds flashcards as static Simple Author components with CAPI disabled', () => {
+    expect(staticComponents).toContain('janus_flashcards');
+    expect(questionComponents).not.toContain('janus_flashcards');
+
+    const flashcard = {
+      id: 'janus-flashcards-1',
+      type: 'janus-flashcards',
+      custom: { capiEnabled: true, cards: [] },
+    };
+
+    expect(applySimpleAuthorPartDefaults(flashcard)).toEqual({
+      ...flashcard,
+      custom: { ...flashcard.custom, capiEnabled: false },
+    });
+    expect(flashcard.custom.capiEnabled).toBe(true);
   });
 
   describe('manual-only part scoring transforms (capi iframe)', () => {

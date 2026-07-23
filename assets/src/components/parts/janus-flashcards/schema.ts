@@ -8,6 +8,7 @@ import { MarkupTree } from '../janus-text-flow/TextFlow';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface FlashcardsModel extends JanusAbsolutePositioned, JanusCustomCss {
+  capiEnabled?: boolean;
   customCssClass: string;
   enabled: boolean;
   randomize: boolean;
@@ -249,6 +250,10 @@ export const getCapabilities = () => ({
 });
 
 export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
+  if (currentModel?.capiEnabled === false) {
+    return {};
+  }
+
   const adaptivitySchema: Record<string, unknown> = {};
   adaptivitySchema.flippedCards = CapiVariableTypes.ARRAY;
   adaptivitySchema.hasCardBeenFlipped = CapiVariableTypes.BOOLEAN;

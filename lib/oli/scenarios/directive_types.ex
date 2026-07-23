@@ -112,6 +112,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :activity_customization,
       :page_objectives,
       :activity_objectives,
+      :insights,
       :discussion,
       :instructor_dashboard_summary,
       :instructor_dashboard_progress,
@@ -320,6 +321,21 @@ defmodule Oli.Scenarios.DirectiveTypes do
     response: the student's response (e.g., "b" for multiple choice)
     """
     defstruct [:student, :section, :page, :activity_virtual_id, :response]
+  end
+
+  defmodule RequestHintDirective do
+    @moduledoc """
+    Requests the next available hint for an activity part.
+    part_id: optional for single-part activities, required for multi-part activities
+    """
+    defstruct [:student, :section, :page, :activity_virtual_id, :part_id]
+  end
+
+  defmodule ResetActivityDirective do
+    @moduledoc """
+    Creates a new attempt for an activity and refreshes the active page attempt state.
+    """
+    defstruct [:student, :section, :page, :activity_virtual_id]
   end
 
   defmodule CertificateDirective do

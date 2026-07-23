@@ -181,7 +181,7 @@ export const numericInputFromMatchConfig = (
       return {
         kind: InputKind.Numeric,
         operator: matchOperator === 'equal' ? 'eq' : 'neq',
-        value: numericExpectedValue(math.expected),
+        value: math.mode === 'unit_aware' ? math.expected : numericExpectedValue(math.expected),
         precision,
       };
     case 'greater_than':

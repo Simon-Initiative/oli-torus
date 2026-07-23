@@ -1,0 +1,133 @@
+work_item: online-project-fix
+requirements:
+- title: Restrict the project-scoped repair tool to system administrators
+  id: FR-001
+- title: Analyze current unpublished revisions for Basic pages without mutating project
+    state
+  id: FR-002
+- title: Exclude Adaptive pages from all analysis, reporting, and repair behavior
+  id: FR-003
+- title: Detect nested activity references with bounded page-content memory usage
+  id: FR-004
+- title: Resolve and report missing activity references without changing page content
+  id: FR-005
+- title: Detect and classify activity resources referenced by more than one Basic
+    page
+  id: FR-006
+- title: Present a project-scoped preview with actionable issue details and page-editor
+    links
+  id: FR-007
+- title: Require an explicit repair action based on fresh authoring state
+  id: FR-008
+- title: Repair resolvable shared activities through established activity-copy and
+    page-revision APIs
+  id: FR-009
+- title: Skip repair for every shared activity resource that does not resolve
+  id: FR-010
+- title: Return structured analysis, repair, and failure results suitable for tests,
+    rendering, and operational reporting
+  id: FR-011
+acceptance_criteria:
+- title: A system administrator can open `/workspaces/course_author/:project_slug/repair_tool`
+    for an existing project without selecting it from a project picker
+  verification_method: hybrid
+  id: AC-001
+- title: A user who is not a system administrator is denied access to the repair route
+    and cannot invoke its repair action
+  verification_method: automated
+  id: AC-002
+- title: Initial project analysis creates no resources or revisions and makes no changes
+    to project, publication, delivery, or learner state
+  verification_method: automated
+  id: AC-003
+- title: 'A page whose top-level content contains boolean `advancedDelivery: true`
+    is not scanned for issues, reported, cloned for, or updated'
+  verification_method: automated
+  id: AC-004
+- title: 'Pages with a missing `advancedDelivery` key or boolean `advancedDelivery:
+    false` are analyzed as Basic pages'
+  verification_method: automated
+  id: AC-005
+- title: Activity references nested at every content depth supported by existing page
+    duplication traversal are included in analysis
+  verification_method: automated
+  id: AC-006
+- title: Analysis processes revision content incrementally and does not retain all
+    full page content payloads after relationship extraction
+  verification_method: hybrid
+  id: AC-007
+- title: A page with no activity references is analyzed without error and produces
+    no activity issue
+  verification_method: automated
+  id: AC-008
+- title: Multiple references to the same activity within one page are deduplicated
+    for cross-page sharing detection
+  verification_method: automated
+  id: AC-009
+- title: An activity id that returns `nil` from the selected project's `AuthoringResolver`
+    is reported with its Basic page id, page title, missing resource id, and editor-link
+    target
+  verification_method: automated
+  id: AC-010
+- title: Missing activity references remain unchanged after both analysis and repair
+    actions
+  verification_method: automated
+  id: AC-011
+- title: A resolvable activity referenced by two or more Basic pages is reported as
+    one repairable shared group with its resource id, page count, affected page identities,
+    and editor-link targets
+  verification_method: automated
+  id: AC-012
+- title: A missing activity id referenced by two or more Basic pages is reported as
+    missing and as a non-repairable shared group
+  verification_method: automated
+  id: AC-013
+- title: Preview summary counts distinguish scanned Basic pages, skipped Adaptive
+    pages, missing references and affected pages, repairable shared resources and
+    affected pages, and non-repairable shared missing resources
+  verification_method: automated
+  id: AC-014
+- title: '`Make Changes` is available only when the fresh report contains at least
+    one repairable shared activity'
+  verification_method: manual
+  id: AC-015
+- title: Invoking `Make Changes` reruns analysis or equivalently validates current
+    authoring revisions before deriving mutations
+  verification_method: automated
+  id: AC-016
+- title: For each resolvable shared group, the Basic page selected by deterministic
+    page-resource ordering retains the original activity resource
+  verification_method: automated
+  id: AC-017
+- title: Every other Basic page in a resolvable shared group receives a distinct complete
+    activity copy created through the existing tested duplication implementation
+  verification_method: automated
+  id: AC-018
+- title: Each repaired Basic page receives an authoring revision whose nested activity
+    reference points to its new activity resource
+  verification_method: automated
+  id: AC-019
+- title: No activity resource is created and no page is updated for a shared group
+    whose activity does not resolve
+  verification_method: automated
+  id: AC-020
+- title: Multiple independent resolvable shared groups can be repaired without conflating
+    their page or activity mappings
+  verification_method: automated
+  id: AC-021
+- title: Analysis after a successful repair no longer reports the repaired cross-page
+    shared relationships while still reporting unresolved missing references
+  verification_method: automated
+  id: AC-022
+- title: Analysis and repair return structured counts, grouped issue data, and explicit
+    error information that the LiveView can render without implementing domain logic
+  verification_method: automated
+  id: AC-023
+- title: The LiveView displays page titles as working links to the existing editor
+    route and clearly displays refreshed success or failure status after repair
+  verification_method: manual
+  id: AC-024
+- title: Operational output records bounded project identity, counts, duration, and
+    outcome without recording full page content
+  verification_method: hybrid
+  id: AC-025

@@ -542,6 +542,24 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   def deep_copy_activity(%{"type" => "activity-reference"} = item, project_slug, author) do
     activity_revision = AuthoringResolver.from_resource_id(project_slug, item["activity_id"])
 
+    deep_copy_activity_revision(item, project_slug, author, activity_revision)
+  end
+
+  def deep_copy_activity(item, _project_slug, _author), do: {:ok, item}
+
+  @doc """
+  Copies an activity-reference node from a revision that has already been resolved.
+
+  This keeps `deep_copy_activity/3` behavior available for ordinary callers while
+  allowing repair tools to batch-resolve activity revisions before cloning many
+  sources. The create path below remains the same tested duplication mechanism.
+  """
+  def deep_copy_activity_revision(
+        %{"type" => "activity-reference"} = item,
+        project_slug,
+        author,
+        %Revision{} = activity_revision
+      ) do
     activity_type = Activities.get_registration(activity_revision.activity_type_id)
 
     case ActivityEditor.create(
@@ -568,7 +586,8 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     end
   end
 
-  def deep_copy_activity(item, _project_slug, _author), do: {:ok, item}
+  def deep_copy_activity_revision(item, _project_slug, _author, _activity_revision),
+    do: {:ok, item}
 
   # if no container is specified then this is a no-op
   defp remove_from_container(nil, _project_slug, _revision, _author), do: {:ok, nil}

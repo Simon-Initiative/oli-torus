@@ -251,6 +251,68 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "request_hint directive with unknown attribute fails" do
+      yaml = """
+      - request_hint:
+          student: "student1"
+          section: "section1"
+          page: "Practice"
+          activity_virtual_id: "question"
+          hint_index: 1
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'request_hint' directive: \["hint_index"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
+    test "reset_activity directive with unknown attribute fails" do
+      yaml = """
+      - reset_activity:
+          student: "student1"
+          section: "section1"
+          page: "Practice"
+          activity_virtual_id: "question"
+          preserve_response: true
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'reset_activity' directive: \["preserve_response"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
+    test "insights assertion with unknown expected metric fails" do
+      yaml = """
+      - assert:
+          insights:
+            project: "demo"
+            resource_type: "page"
+            page: "Practice"
+            expected:
+              average_score: 0.5
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'insights expected' directive: \["average_score"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
+    test "insights assertion requires one target matching its resource type" do
+      yaml = """
+      - assert:
+          insights:
+            project: "demo"
+            resource_type: "activity"
+            page: "Practice"
+            expected:
+              num_attempts: 1
+      """
+
+      assert_raise RuntimeError,
+                   ~r/insights resource target does not match resource_type activity/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
     test "page_objectives assertion with unknown attribute fails" do
       yaml = """
       - assert:

@@ -1,0 +1,129 @@
+- project:
+    name: "insights_assertion_course"
+    title: "Insights Assertion Course"
+    objectives:
+      - "Recognize the correct choice"
+    root:
+      children:
+        - page: "Answered Practice"
+        - page: "Unanswered Practice"
+
+- edit_page:
+    project: "insights_assertion_course"
+    page: "Answered Practice"
+    objectives:
+      - "Recognize the correct choice"
+    content: |
+      title: "Answered Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "insights_question"
+          activity:
+            type: oli_multiple_choice
+            title: "Insights Question"
+            objectives:
+              - "Recognize the correct choice"
+            stem_md: "Which option is correct?"
+            choices:
+              - id: "a"
+                body_md: "Incorrect"
+                score: 0
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "insights_assertion_course"
+    page: "Unanswered Practice"
+    content: |
+      title: "Unanswered Practice"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "No learner visits this page."
+
+- publish:
+    to: "insights_assertion_course"
+    description: "Publish insights assertion coverage"
+
+- section:
+    name: "insights_assertion_section"
+    title: "Insights Assertion Section"
+    from: "insights_assertion_course"
+
+- user:
+    name: "student"
+    type: "student"
+
+- enroll:
+    user: "student"
+    section: "insights_assertion_section"
+    role: "student"
+
+- visit_page:
+    student: "student"
+    section: "insights_assertion_section"
+    page: "Answered Practice"
+
+- answer_question:
+    student: "student"
+    section: "insights_assertion_section"
+    page: "Answered Practice"
+    activity_virtual_id: "insights_question"
+    response: "b"
+
+- assert:
+    insights:
+      project: "insights_assertion_course"
+      sections:
+        - "insights_assertion_section"
+      resource_type: "activity"
+      activity_virtual_id: "insights_question"
+      expected:
+        num_correct: 1
+        num_attempts: 1
+        num_hints: 0
+        num_first_attempts: 1
+        num_first_attempts_correct: 1
+        eventually_correct: 0.9999995
+        first_attempt_correct: 1.0
+        relative_difficulty: 0.0
+
+- assert:
+    insights:
+      project: "insights_assertion_course"
+      sections:
+        - "insights_assertion_section"
+      resource_type: "page"
+      page: "Answered Practice"
+      expected:
+        num_attempts: 1
+        num_hints: 0
+        eventually_correct: 1.0
+        first_attempt_correct: 1.0
+        relative_difficulty: 0.0
+
+- assert:
+    insights:
+      project: "insights_assertion_course"
+      sections:
+        - "insights_assertion_section"
+      resource_type: "objective"
+      objective: "Recognize the correct choice"
+      expected:
+        num_attempts: 1
+        num_hints: 0
+        eventually_correct: 1.0
+        first_attempt_correct: 1.0
+        relative_difficulty: 0.0
+
+- assert:
+    insights:
+      project: "insights_assertion_course"
+      sections:
+        - "insights_assertion_section"
+      resource_type: "page"
+      page: "Unanswered Practice"
+      exists: false
+      expected: {}

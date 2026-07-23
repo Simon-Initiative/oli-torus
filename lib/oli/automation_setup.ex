@@ -6,6 +6,8 @@ defmodule Oli.AutomationSetup do
   alias Lti_1p3.Roles.ContextRoles
 
   alias Oli.Repo
+  alias Oli.Accounts.User
+  alias Oli.Analytics.Summary.StudentResponse
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.Resource
@@ -131,6 +133,10 @@ defmodule Oli.AutomationSetup do
       {:error, message} -> %{success: false, message: message}
       _ -> %{success: false, message: "Unknown Reason"}
     end
+  rescue
+    e in Ecto.ConstraintError ->
+      Logger.error("Could not delete automation test project: #{Exception.message(e)}")
+      %{success: false, message: "Could not delete project"}
   end
 
   def teardown_section(nil) do
@@ -146,6 +152,10 @@ defmodule Oli.AutomationSetup do
       {:error, message} -> %{success: false, message: message}
       _ -> %{success: false, message: "Unknown Reason"}
     end
+  rescue
+    e in Ecto.ConstraintError ->
+      Logger.error("Could not delete automation test section: #{Exception.message(e)}")
+      %{success: false, message: "Could not delete section"}
   end
 
   def teardown_educator(email, password) do
@@ -238,6 +248,8 @@ defmodule Oli.AutomationSetup do
         can_create_sections: false
       })
 
+    {:ok, user} = confirm_user_email(user)
+
     if section do
       Oli.Delivery.Sections.enroll(user.id, section.id, [
         ContextRoles.get_role(:context_learner)
@@ -269,7 +281,21 @@ defmodule Oli.AutomationSetup do
         author_id: if(is_nil(author), do: nil, else: author.id)
       })
 
+    {:ok, user} = confirm_user_email(user)
+
     {:ok, {user, password}}
+  end
+
+  # User.registration_changeset does not cast email confirmation attrs, so
+  # confirm explicitly — otherwise automated logins get gated by the
+  # "confirm your email" interstitial.
+  defp confirm_user_email(user) do
+    user
+    |> User.noauth_changeset(%{
+      email_verified: true,
+      email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+    })
+    |> Repo.update()
   end
 
   defp create_author(false) do
@@ -359,8 +385,28 @@ defmodule Oli.AutomationSetup do
 
       {:ok, user} ->
         Logger.info("Deleting test user #{email}")
-        Oli.Repo.delete(user)
-        %{success: true}
+
+        # student_responses has non-cascading FKs on user_id, section_id, and
+        # page_id — clearing this user's rows here (before user/section/project
+        # teardown) removes the same rows that would otherwise block those
+        # later steps too. Wrapped in a transaction with the user delete so a
+        # later constraint failure rolls back the response cleanup too,
+        # instead of leaving the user partially cleaned up.
+        try do
+          Repo.transaction(fn ->
+            Repo.delete_all(from(sr in StudentResponse, where: sr.user_id == ^user.id))
+            Repo.delete!(user)
+          end)
+
+          %{success: true}
+        rescue
+          e in Ecto.ConstraintError ->
+            Logger.error(
+              "Could not delete automation test user #{email}: #{Exception.message(e)}"
+            )
+
+            %{success: false, message: "Could not delete user"}
+        end
     end
   end
 

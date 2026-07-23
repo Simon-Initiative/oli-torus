@@ -182,6 +182,7 @@ const simplifiedLabels: Record<string, string> = {
   'janus-image': 'Image',
   'janus-ai-trigger': 'AI Activation Point',
   'janus-video': 'Video',
+  'janus-flashcards': 'Flashcards',
   'janus-popup': 'Popup Icon',
   'janus-audio': 'Audio',
   'janus-capi-iframe': 'iFrame',

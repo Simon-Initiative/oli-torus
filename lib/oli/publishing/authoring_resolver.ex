@@ -61,6 +61,39 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
+  @doc """
+  Returns the subset of resource ids that resolve to current project activities.
+
+  This projection is intended for callers that need existence and type validation
+  without loading complete activity revision content. The query remains scoped to
+  the project's unpublished publication and preserves no caller ordering; callers
+  that require deterministic presentation should sort their own compact ids.
+  """
+  @spec existing_activity_resource_ids(String.t(), [pos_integer()]) :: [pos_integer()]
+  def existing_activity_resource_ids(_project_slug, []), do: []
+
+  def existing_activity_resource_ids(project_slug, resource_ids) when is_list(resource_ids) do
+    fn ->
+      from(mapping in PublishedResource,
+        join: revision in Revision,
+        on:
+          revision.id == mapping.revision_id and
+            revision.resource_id == mapping.resource_id,
+        where:
+          mapping.publication_id in subquery(project_working_publication(project_slug)) and
+            mapping.resource_id in ^resource_ids and
+            revision.resource_type_id == @activity_id and
+            revision.deleted == false and
+            revision.resource_scope == :project,
+        select: mapping.resource_id,
+        distinct: true
+      )
+      |> Repo.all()
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :authoring], :duration)
+  end
+
   @impl Resolver
   def from_revision_slug(project_slug, revision_slug) do
     fn ->

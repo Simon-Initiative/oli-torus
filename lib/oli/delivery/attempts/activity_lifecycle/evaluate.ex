@@ -85,6 +85,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Activities.Model
   alias Oli.Delivery.Experiments.LogWorker
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
+  alias Oli.Delivery.Attempts.ActivityLifecycle.AdaptiveRuleRequirements
   alias Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
   alias Oli.Activities.AdaptiveParts
@@ -444,6 +445,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
          datashop_session_id,
          part_attempts
        ) do
+    activitiesRequiredForEvaluation =
+      AdaptiveRuleRequirements.infer(
+        resource_attempt,
+        activitiesRequiredForEvaluation,
+        rules
+      )
+
     state =
       case variablesRequiredForEvaluation do
         nil ->

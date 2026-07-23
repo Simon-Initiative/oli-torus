@@ -1,5 +1,5 @@
 import { Verifier } from '@core/verify/Verifier';
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 
 export class StudentCoursePO {
   private readonly courseHomeMarkers: Locator[];
@@ -33,21 +33,20 @@ export class StudentCoursePO {
     await Verifier.expectIsVisible(l);
   }
 
+  courseContentReady(pageName: string): Locator {
+    return this.galleryTitle(pageName)
+      .or(this.outlineTitle(pageName))
+      .or(this.expandToggles().first());
+  }
+
   async openPage(pageName: string) {
-    const galleryTitle = this.page.getByRole('heading', {
-      name: pageName,
-      exact: true,
-      level: 5,
-    });
+    const galleryTitle = this.galleryTitle(pageName);
     const galleryCard = this.page
       .locator('div[phx-click="navigate_to_resource"]')
       .filter({ has: galleryTitle })
       .first();
 
-    const outlineTitle = this.page
-      .locator('button')
-      .filter({ has: this.page.getByText(pageName, { exact: true }) })
-      .first();
+    const outlineTitle = this.outlineTitle(pageName);
     const groupedOutlineLink = this.page
       .locator('a')
       .filter({
@@ -57,7 +56,9 @@ export class StudentCoursePO {
       })
       .first();
 
-    if (await galleryTitle.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await expect(this.courseContentReady(pageName).first()).toBeVisible();
+
+    if (await galleryTitle.isVisible()) {
       await Promise.all([
         this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
           timeout: 15000,
@@ -113,8 +114,27 @@ export class StudentCoursePO {
     await this.openPage(pageName);
   }
 
+  private galleryTitle(pageName: string) {
+    return this.page.getByRole('heading', {
+      name: pageName,
+      exact: true,
+      level: 5,
+    });
+  }
+
+  private outlineTitle(pageName: string) {
+    return this.page
+      .locator('button')
+      .filter({ has: this.page.getByText(pageName, { exact: true }) })
+      .first();
+  }
+
+  private expandToggles() {
+    return this.page.locator('button[phx-click="expand_item"]');
+  }
+
   private async expandCollapsedPageGroups() {
-    const groupToggles = this.page.locator('button[phx-click="expand_item"]');
+    const groupToggles = this.expandToggles();
     const count = await groupToggles.count();
 
     for (let index = 0; index < count; index += 1) {

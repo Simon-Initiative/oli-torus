@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { act } from 'react-dom/test-utils';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { quantityValueSource } from 'gleam/torusExpression';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
 import { ShortAnswerActions } from 'components/activities/short_answer/actions';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
@@ -17,6 +18,7 @@ import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
 
 jest.mock('gleam/torusExpression', () => ({
+  quantityValueSource: jest.fn((source: string) => source.replace(/\s+[A-Za-zµÅΩ].*$/, '')),
   previewMathExpressionSyntax: jest.fn((expression: string, kind: 'expression' | 'quantity') =>
     expression.includes('bad')
       ? { status: 'invalid', debug: 'invalid expression' }
@@ -28,6 +30,12 @@ jest.mock('gleam/torusExpression', () => ({
   ),
 }));
 
+const quantityValueSourceMock = quantityValueSource as jest.Mock;
+
+jest.mock('components/misc/InfoTip', () => ({
+  InfoTip: () => null,
+}));
+
 // @ac "AC-024" Answer-key expected-answer editors expose validation and help.
 // @ac "AC-025" Targeted feedback editors expose validation and help.
 // @ac "AC-026" Candidate/test expression coverage is satisfied by the shared editor path when present.
@@ -37,6 +45,7 @@ describe('short answer math expression authoring', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
+    quantityValueSourceMock.mockClear();
     restoreMathJax = window.MathJax;
     window.MathJax = {
       startup: { promise: Promise.resolve() },
@@ -46,6 +55,7 @@ describe('short answer math expression authoring', () => {
 
   afterEach(() => {
     window.MathJax = restoreMathJax;
+    jest.clearAllTimers();
     jest.useRealTimers();
   });
 
@@ -279,7 +289,7 @@ describe('short answer math expression authoring', () => {
     expect(screen.getByRole('option', { name: 'Missing unit' })).toBeInTheDocument();
   });
 
-  it('stores wrong-unit and missing-unit targeted feedback match modes', () => {
+  it('stores mutually exclusive unit-targeted feedback modes for number with units', () => {
     const model = dispatch(
       defaultModel(),
       ShortAnswerActions.setQuestionType('number_with_units', '1'),
@@ -301,35 +311,41 @@ describe('short answer math expression authoring', () => {
       </AuthoringElementProvider>,
     );
 
+    expect(screen.getByRole('option', { name: 'Wrong unit' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Missing unit' })).toBeInTheDocument();
+
     fireEvent.change(screen.getByLabelText('Unit feedback match type'), {
       target: { value: 'missing_unit' },
     });
 
-    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
-      response.id,
-      expect.objectContaining({
-        type: 'math_expression',
-        math: expect.objectContaining({
-          mode: 'unit_aware',
-          matchMissingUnit: true,
-        }),
-      }),
-    );
+    let savedMatchConfig =
+      onEditResponseMatchConfig.mock.calls[onEditResponseMatchConfig.mock.calls.length - 1][1];
+    expect(savedMatchConfig.math).toMatchObject({
+      mode: 'unit_aware',
+      matchMissingUnit: true,
+    });
+    expect(savedMatchConfig.math).not.toHaveProperty('matchWrongUnits');
 
     fireEvent.change(screen.getByLabelText('Unit feedback match type'), {
       target: { value: 'wrong_units' },
     });
 
-    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
-      response.id,
-      expect.objectContaining({
-        type: 'math_expression',
-        math: expect.objectContaining({
-          mode: 'unit_aware',
-          matchWrongUnits: true,
-        }),
-      }),
-    );
+    savedMatchConfig =
+      onEditResponseMatchConfig.mock.calls[onEditResponseMatchConfig.mock.calls.length - 1][1];
+    expect(savedMatchConfig.math).toMatchObject({
+      mode: 'unit_aware',
+      matchWrongUnits: true,
+    });
+    expect(savedMatchConfig.math).not.toHaveProperty('matchMissingUnit');
+
+    fireEvent.change(screen.getByLabelText('Unit feedback match type'), {
+      target: { value: 'none' },
+    });
+
+    savedMatchConfig =
+      onEditResponseMatchConfig.mock.calls[onEditResponseMatchConfig.mock.calls.length - 1][1];
+    expect(savedMatchConfig.math).not.toHaveProperty('matchWrongUnits');
+    expect(savedMatchConfig.math).not.toHaveProperty('matchMissingUnit');
   });
 
   it('uses shared math expression help for fraction answer editors', () => {
@@ -362,7 +378,44 @@ describe('short answer math expression authoring', () => {
     expect(onEditResponseMatchConfig).toHaveBeenCalled();
   });
 
-  it('uses numeric answer controls for number_with_units answer editors', () => {
+  it('preserves numeric significant-figure inference for number questions', () => {
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('numeric', '1'));
+    const response = makeMatchConfigResponse(
+      MatchConfigs.numeric({ operator: 'equal', expected: '12.30' }),
+      0,
+    );
+    const onEditResponseMatchConfig = jest.fn();
+
+    render(
+      <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+        <InputEntry
+          inputType={model.inputType}
+          questionType={shortAnswerQuestionType(model)}
+          mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
+          response={response}
+          onEditResponseRule={jest.fn()}
+          onEditResponseMatchConfig={onEditResponseMatchConfig}
+        />
+      </AuthoringElementProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Significant Figures' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Significant Figures' })).toHaveValue(4);
+    expect(quantityValueSourceMock).not.toHaveBeenCalled();
+    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'numeric',
+          precision: { type: 'significant_figures', count: 4 },
+        }),
+      }),
+    );
+  });
+
+  it('uses quantity validation while preserving numeric comparison controls for number_with_units', () => {
     const model = dispatch(
       defaultModel(),
       ShortAnswerActions.setQuestionType('number_with_units', '1'),
@@ -384,13 +437,27 @@ describe('short answer math expression authoring', () => {
       </AuthoringElementProvider>,
     );
 
-    expect(
-      screen.queryByRole('button', { name: 'Math expression syntax help' }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Math expression syntax help' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Correct answer')).toHaveValue('9.8 m/s^2');
     expect(screen.getByLabelText('Unit feedback match type')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Significant Figures' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Significant Figures' })).toHaveValue(2);
+    expect(quantityValueSourceMock).toHaveBeenCalledWith('9.8 m/s^2');
+    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'unit_aware',
+          precision: { type: 'significant_figures', count: 2 },
+        }),
+      }),
+    );
+
     fireEvent.change(screen.getByLabelText('Correct answer'), {
-      target: { value: '10' },
+      target: { value: '10 km/hr' },
     });
 
     expect(onEditResponseMatchConfig).toHaveBeenCalledWith(
@@ -399,8 +466,75 @@ describe('short answer math expression authoring', () => {
         type: 'math_expression',
         math: expect.objectContaining({
           mode: 'unit_aware',
-          expected: '10',
+          expected: '10 km/hr',
           operator: 'equal',
+        }),
+      }),
+    );
+  });
+
+  it('uses quantity validation for number_with_units range bounds', () => {
+    const model = dispatch(
+      defaultModel(),
+      ShortAnswerActions.setQuestionType('number_with_units', '1'),
+    );
+    const response = makeMatchConfigResponse(
+      MatchConfigs.unitAware('1.2 m/s^2', undefined, {
+        operator: 'between',
+        lower: '1.2 m/s^2',
+        upper: '34.5 km/hr^10',
+        bounds: 'inclusive',
+      }),
+      0,
+    );
+    const onEditResponseMatchConfig = jest.fn();
+
+    render(
+      <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+        <InputEntry
+          inputType={model.inputType}
+          questionType={shortAnswerQuestionType(model)}
+          mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
+          response={response}
+          onEditResponseRule={jest.fn()}
+          onEditResponseMatchConfig={onEditResponseMatchConfig}
+        />
+      </AuthoringElementProvider>,
+    );
+
+    expect(screen.getAllByRole('button', { name: 'Math expression syntax help' })).toHaveLength(2);
+    expect(screen.getByLabelText('Lower bound')).toHaveValue('1.2 m/s^2');
+    expect(screen.getByLabelText('Upper bound')).toHaveValue('34.5 km/hr^10');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Significant Figures' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Significant Figures' })).toHaveValue(2);
+    expect(quantityValueSourceMock).toHaveBeenNthCalledWith(1, '1.2 m/s^2');
+    expect(quantityValueSourceMock).toHaveBeenNthCalledWith(2, '34.5 km/hr^10');
+    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'unit_aware',
+          precision: { type: 'significant_figures', count: 2 },
+        }),
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText('Upper bound'), {
+      target: { value: '3 km/hr' },
+    });
+
+    expect(onEditResponseMatchConfig).toHaveBeenLastCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'unit_aware',
+          operator: 'between',
+          lower: '1.2 m/s^2',
+          upper: '3 km/hr',
         }),
       }),
     );

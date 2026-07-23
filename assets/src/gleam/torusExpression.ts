@@ -55,6 +55,11 @@ export type MathExpressionPreviewResult =
   | { status: 'invalid'; debug: string }
   | { status: 'unknown'; debug: string };
 
+type ParsedQuantity = {
+  value: { span: { end: number } };
+  unit: unknown;
+};
+
 export function validateMathExpressionSyntax(
   expression: string,
   kind: MathExpressionSyntaxKind,
@@ -87,6 +92,14 @@ export function previewMathExpressionSyntax(
   }
 
   return kind === 'quantity' ? previewQuantityExpression(trimmed) : previewPlainExpression(trimmed);
+}
+
+export function quantityValueSource(source: string): string {
+  const result = parse_quantity_or_expression(source);
+
+  if (!isOk(result) || !isParsedQuantity(result[0])) return source;
+
+  return source.slice(0, result[0].value.span.end);
 }
 
 function previewPlainExpression(expression: string): MathExpressionPreviewResult {
@@ -144,5 +157,22 @@ function isError(result: unknown): result is { 0: any; isOk: () => false } {
     result !== null &&
     typeof (result as { isOk?: unknown }).isOk === 'function' &&
     !(result as { isOk: () => boolean }).isOk()
+  );
+}
+
+function isParsedQuantity(value: unknown): value is ParsedQuantity {
+  if (typeof value !== 'object' || value === null || !('unit' in value) || !('value' in value)) {
+    return false;
+  }
+
+  const parsedValue = (value as { value: unknown }).value;
+
+  return (
+    typeof parsedValue === 'object' &&
+    parsedValue !== null &&
+    'span' in parsedValue &&
+    typeof (parsedValue as { span: unknown }).span === 'object' &&
+    (parsedValue as { span: { end?: unknown } }).span !== null &&
+    typeof (parsedValue as { span: { end?: unknown } }).span.end === 'number'
   );
 }

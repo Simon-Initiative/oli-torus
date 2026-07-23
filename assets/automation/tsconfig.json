@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
     "paths": {
-      "@core/*": ["src/core/*"],
-      "@fixture/*": ["src/core/fixture/*"],
-      "@pom/*": ["src/systems/torus/pom/*"],
-      "@tasks/*": ["src/systems/torus/tasks/*"]
+      "@core/*": ["./src/core/*"],
+      "@fixture/*": ["./src/core/fixture/*"],
+      "@pom/*": ["./src/systems/torus/pom/*"],
+      "@tasks/*": ["./src/systems/torus/tasks/*"]
     },
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["node"]
   }
 }

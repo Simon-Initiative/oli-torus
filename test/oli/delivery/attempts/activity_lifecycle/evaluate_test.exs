@@ -824,6 +824,160 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_dropdown_2.lifecycle_state == :evaluated
     end
 
+    test "infers required adaptive activity attempts from deck sequence ids when stored resource ids are stale" do
+      user = insert(:user)
+      section = insert(:section)
+
+      required_activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "authoring" => %{"rules" => [], "parts" => []},
+          "partsLayout" => []
+        })
+
+      current_activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 1, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "targetFeasible",
+              "type" => "janus-mcq",
+              "custom" => %{}
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [715_804],
+            "parts" => [
+              %{
+                "id" => "targetFeasible",
+                "type" => "janus-mcq",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.targetFeasible.selectedChoice",
+                      "operator" => "equal",
+                      "value" => 1
+                    },
+                    %{
+                      "fact" => "q:1461939992574:666|stage.maxWarmingTarget.selectedChoice",
+                      "operator" => "equal",
+                      "value" => 3
+                    }
+                  ]
+                },
+                "event" => %{"params" => %{"actions" => []}}
+              },
+              %{
+                "id" => "defaultWrong",
+                "name" => "defaultWrong",
+                "disabled" => false,
+                "default" => true,
+                "correct" => false,
+                "conditions" => %{"all" => []},
+                "event" => %{"params" => %{"actions" => []}}
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, current_activity_revision, [
+          "targetFeasible"
+        ])
+
+      page_content = %{
+        "model" => [
+          %{
+            "type" => "group",
+            "layout" => "deck",
+            "children" => [
+              %{
+                "type" => "activity-reference",
+                "activity_id" => required_activity_revision.resource_id,
+                "custom" => %{"sequenceId" => "q:1461939992574:666"}
+              },
+              %{
+                "type" => "activity-reference",
+                "activity_id" => current_activity_revision.resource_id,
+                "custom" => %{"sequenceId" => "q:1461940707229:780"}
+              }
+            ]
+          }
+        ]
+      }
+
+      setup.page_revision
+      |> Ecto.Changeset.change(content: page_content)
+      |> Oli.Repo.update!()
+
+      setup.resource_attempt
+      |> Ecto.Changeset.change(content: page_content)
+      |> Oli.Repo.update!()
+
+      required_activity_attempt =
+        %Core.ActivityAttempt{
+          attempt_guid: Ecto.UUID.generate(),
+          attempt_number: 1,
+          resource_id: required_activity_revision.resource_id,
+          revision_id: required_activity_revision.id,
+          resource_attempt_id: setup.resource_attempt.id,
+          lifecycle_state: :evaluated,
+          score: 1.0,
+          out_of: 1.0,
+          scoreable: true
+        }
+        |> Oli.Repo.insert!()
+
+      insert(:part_attempt,
+        activity_attempt: required_activity_attempt,
+        part_id: "maxWarmingTarget",
+        lifecycle_state: :evaluated,
+        response: %{
+          "selectedChoice" => %{
+            "path" => "q:1461939992574:666|stage.maxWarmingTarget.selectedChoice",
+            "value" => 3
+          }
+        }
+      )
+
+      [target_feasible_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: target_feasible_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedChoice" => %{
+                "path" => "q:1461940707229:780|stage.targetFeasible.selectedChoice",
+                "value" => 1
+              }
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 1.0
+      assert result["out_of"] == 1.0
+    end
+
     test "finalizes automatic adaptive inputs even when the screen also contains manual inputs" do
       user = insert(:user)
       section = insert(:section)

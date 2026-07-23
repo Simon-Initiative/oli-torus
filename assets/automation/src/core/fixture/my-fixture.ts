@@ -3,6 +3,8 @@ import { test as base } from '@playwright/test';
 import { Utils } from '@core/Utils';
 import { Verifier } from '@core/verify/Verifier';
 import { seedScenarioFromFile, SeedScenarioResponse } from '@core/seedScenario';
+import { runWorkflowFromFile } from '@core/workflow/runWorkflow';
+import { RunWorkflowOptions, WorkflowState } from '@core/workflow/types';
 import { AdministrationTask } from '@tasks/AdministrationTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
@@ -28,6 +30,7 @@ type MyFixtures = {
     relativePath: string,
     params?: Record<string, unknown>,
   ) => Promise<SeedScenarioResponse>;
+  runWorkflow: (relativePath: string, options: RunWorkflowOptions) => Promise<WorkflowState>;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -102,5 +105,30 @@ export const test = base.extend<MyFixtures>({
       await use(scenarioRunner);
     },
     { title: '🧪 Scenario Seeder' },
+  ],
+  runWorkflow: [
+    async (
+      { administrationTask, curriculumTask, homeTask, page, projectTask, request, studentTask },
+      use,
+      testInfo,
+    ) => {
+      const workflowRunner = async (relativePath: string, options: RunWorkflowOptions) => {
+        const workflowPath = path.resolve(path.dirname(testInfo.file), relativePath);
+
+        return runWorkflowFromFile(workflowPath, options, {
+          administrationTask,
+          curriculumTask,
+          homeTask,
+          page,
+          projectTask,
+          request,
+          studentTask,
+          testInfo,
+        });
+      };
+
+      await use(workflowRunner);
+    },
+    { title: '🔁 Workflow Runner' },
   ],
 });
