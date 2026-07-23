@@ -1,8 +1,12 @@
 defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
   use OliWeb.ConnCase, async: true
+
+  import ExUnit.CaptureLog
   import Phoenix.LiveViewTest
   import Oli.Factory
   import Oli.TestHelpers
+
+  alias OliWeb.Admin.ExternalTools.{ExternalToolsView, TableModel}
 
   describe "External Tools LiveView" do
     setup [:admin_conn]
@@ -108,6 +112,55 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
       assert has_element?(view, "td", platform1.description)
 
       assert has_element?(view, "h1", "LTI 1.3 External Tools")
+    end
+
+    test "loads usage counts asynchronously", %{
+      conn: conn,
+      deployment1: deployment,
+      platform1: platform
+    } do
+      section = insert(:section)
+
+      insert(:section_resource,
+        section: section,
+        activity_type_id: deployment.activity_registration_id
+      )
+
+      insert(:section_resource,
+        section: section,
+        activity_type_id: deployment.activity_registration_id
+      )
+
+      {:ok, view, html} = live(conn, ~p"/admin/external_tools")
+
+      assert html =~ "Calculating..."
+
+      render_async(view, 2_000)
+
+      assert has_element?(
+               view,
+               "a[href='/admin/external_tools/#{platform.id}/usage']",
+               "1"
+             )
+    end
+
+    test "marks usage counts as unknown when asynchronous loading fails" do
+      {:ok, table_model} =
+        TableModel.new(
+          [%{id: 1, name: "Tool", usage_count: :loading}],
+          nil
+        )
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{__changed__: %{}, table_model: table_model}
+      }
+
+      capture_log(fn ->
+        assert {:noreply, socket} =
+                 ExternalToolsView.handle_async(:usage_counts, {:exit, :timeout}, socket)
+
+        assert [%{usage_count: :unknown}] = socket.assigns.table_model.rows
+      end)
     end
 
     test "the view matches the url params", %{conn: conn} do
