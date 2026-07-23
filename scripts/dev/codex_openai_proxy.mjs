@@ -28,10 +28,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, promises as fs } from 'node:fs';
 
 const PORT = Number(process.env.PORT || 4001);
-const MACOS_BUNDLED_CODEX_BIN = '/Applications/ChatGPT.app/Contents/Resources/codex';
-const CODEX_BIN =
-  process.env.CODEX_BIN ||
-  (existsSync(MACOS_BUNDLED_CODEX_BIN) ? MACOS_BUNDLED_CODEX_BIN : 'codex');
+const CODEX_BIN = process.env.CODEX_BIN || 'codex';
 const CODEX_CWD = process.env.CODEX_CWD || process.cwd();
 const CODEX_MODEL = process.env.CODEX_MODEL || '';
 const DEBUG_LOG_MAX = Number(process.env.CODEX_PROXY_DEBUG_MAX || 4000);
