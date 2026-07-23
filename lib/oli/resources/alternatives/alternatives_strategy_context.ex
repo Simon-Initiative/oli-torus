@@ -16,5 +16,8 @@ defmodule Oli.Resources.Alternatives.AlternativesStrategyContext do
             mode: nil,
 
             # map of resource ids to alternative details
-            alternative_groups_by_id: nil
+            alternative_groups_by_id: nil,
+
+            # precomputed delivery decisions keyed by alternatives resource id
+            experiment_decisions: %{}
 end

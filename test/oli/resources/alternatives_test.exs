@@ -353,44 +353,120 @@ defmodule Oli.Resources.AlternativesTest do
     test "renders assigned native decision point condition and records exposure" do
       %{context: context, element: element} = native_decision_point_setup()
 
+      {decisions, attributions} =
+        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
+
       assert [
                %{alternative: %{"value" => "alt-a"}, hidden: false},
                %{alternative: %{"value" => "alt-b"}, hidden: true}
-             ] = Alternatives.select(context, element)
+             ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
 
       assignment = Repo.one!(Assignment)
+      [exposure] = attributions
 
       assert assignment.section_id == context.section_id
-      exposure = only_event(assignment, "exposures")
       assert exposure["publication_id"] == context.publication_id
       assert exposure["idempotency_key"] =~ ":assignment:#{assignment.id}"
+      assert exposure["role"] == "exposure"
     end
 
     test "renders assigned native decision point condition for an institutionless open/free section" do
       %{context: context, element: element} =
         native_decision_point_setup(section_institution?: false)
 
+      {decisions, _attributions} =
+        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
+
       assert [
                %{alternative: %{"value" => "alt-a"}, hidden: false},
                %{alternative: %{"value" => "alt-b"}, hidden: true}
-             ] = Alternatives.select(context, element)
+             ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
 
       assignment = Repo.one!(Assignment)
 
       assert context.institution_id == nil
       assert assignment.section_id == context.section_id
       assert assignment.enrollment_id == context.enrollment_id
-      assert only_event(assignment, "exposures")
     end
 
     test "reuses sticky native assignment on repeat delivery selection" do
       %{context: context, element: element} = native_decision_point_setup()
 
-      Alternatives.select(context, element)
-      Alternatives.select(context, element)
+      {decisions, first_attributions} =
+        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
+
+      {repeat_decisions, repeat_attributions} =
+        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
+
+      Alternatives.select(%{context | experiment_decisions: decisions}, element)
+      Alternatives.select(%{context | experiment_decisions: repeat_decisions}, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert event_count("exposures") == 1
+      assert length(first_attributions ++ repeat_attributions) == 2
+    end
+
+    test "does not expose nested native decision point in an unselected branch" do
+      %{context: context, element: parent_element} = native_decision_point_setup()
+
+      project = Repo.get!(Oli.Authoring.Course.Project, context.project_id)
+      child_revision = insert(:revision)
+
+      insert(:project_resource, project_id: project.id, resource_id: child_revision.resource_id)
+
+      scope = %Scope{
+        institution_id: context.institution_id,
+        project_id: context.project_id,
+        publication_id: context.publication_id,
+        section_id: context.section_id,
+        user_id: context.user.id,
+        enrollment_id: context.enrollment_id
+      }
+
+      create_native_experiment(scope, child_revision, "nested-alt")
+
+      child_alternatives_id = child_revision.resource_id
+
+      child_element = %{
+        "type" => "alternatives",
+        "alternatives_id" => child_alternatives_id,
+        "children" => [
+          alternative_child("nested-alt"),
+          alternative_child("nested-other")
+        ]
+      }
+
+      parent_element =
+        put_in(parent_element, ["children"], [
+          alternative_child("alt-a"),
+          %{
+            "type" => "alternative",
+            "value" => "alt-b",
+            "children" => [child_element]
+          }
+        ])
+
+      context = %{
+        context
+        | alternative_groups_by_id:
+            Map.put(context.alternative_groups_by_id, child_alternatives_id, %{
+              id: child_alternatives_id,
+              revision_id: child_revision.id,
+              title: "Nested decision point",
+              options: [
+                %{"id" => "nested-alt", "name" => "nested condition"},
+                %{"id" => "nested-other", "name" => "nested other condition"}
+              ],
+              strategy: "upgrade_decision_point"
+            })
+      }
+
+      {decisions, attributions} =
+        Alternatives.prepare_delivery_decisions(context, page_content_with(parent_element))
+
+      assert Map.has_key?(decisions, parent_element["alternatives_id"])
+      refute Map.has_key?(decisions, child_alternatives_id)
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+      assert length(attributions) == 1
     end
 
     test "review mode renders the originally assigned native decision point condition without exposure" do
@@ -410,7 +486,6 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(review_context, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert event_count("exposures") == 1
     end
 
     test "review mode prefers the branch containing attempted activities" do
@@ -425,7 +500,6 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(review_context, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 0
-      assert event_count("exposures") == 0
     end
 
     test "review mode renders no branch when no prior native assignment can be proven" do
@@ -434,19 +508,21 @@ defmodule Oli.Resources.AlternativesTest do
       assert [] = Alternatives.select(%{context | mode: :review}, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 0
-      assert event_count("exposures") == 0
     end
 
     test "renders first option when no native experiment matches" do
       %{context: context, element: element} = native_decision_point_setup(active?: false)
 
+      {decisions, attributions} =
+        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
+
       assert [
                %{alternative: %{"value" => "alt-a"}, hidden: false},
                %{alternative: %{"value" => "alt-b"}, hidden: true}
-             ] = Alternatives.select(context, element)
+             ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 0
-      assert event_count("exposures") == 0
+      assert attributions == []
     end
 
     @tag capture_log: true
@@ -454,15 +530,20 @@ defmodule Oli.Resources.AlternativesTest do
       %{context: context, element: element} =
         native_decision_point_setup(options: [%{"id" => "missing-alt", "name" => "condition-a"}])
 
+      {decisions, attributions} =
+        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
+
       assert [
                %{alternative: %{"value" => "alt-a"}, hidden: false},
                %{alternative: %{"value" => "alt-b"}, hidden: true}
-             ] = Alternatives.select(context, element)
+             ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
 
       assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert event_count("exposures") == 0
+      assert attributions == []
     end
   end
+
+  defp page_content_with(element), do: %{"model" => [element]}
 
   defp native_decision_point_setup(opts \\ []) do
     active? = Keyword.get(opts, :active?, true)
@@ -601,23 +682,5 @@ defmodule Oli.Resources.AlternativesTest do
       %{"id" => "alt-a", "name" => "condition-a"},
       %{"id" => "alt-b", "name" => "condition-b"}
     ]
-  end
-
-  defp event_count(event_group) do
-    Assignment
-    |> Repo.all()
-    |> Enum.reduce(0, fn assignment, total ->
-      total + map_size(Map.get(assignment.runtime_event_state || %{}, event_group, %{}))
-    end)
-  end
-
-  defp only_event(%Assignment{} = assignment, event_group) do
-    [event] =
-      assignment.runtime_event_state
-      |> Kernel.||(%{})
-      |> Map.get(event_group, %{})
-      |> Map.values()
-
-    event
   end
 end

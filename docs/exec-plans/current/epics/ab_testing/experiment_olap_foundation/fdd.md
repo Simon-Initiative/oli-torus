@@ -75,10 +75,11 @@ Assignment and assignment reuse:
 
 Exposure:
 
-1. Delivery calls `record_exposure/1` after selected alternatives content is applied.
-2. `Oli.Experiments` validates the assignment and returns a deterministic exposure receipt without inserting `experiment_exposures` or mutating `experiment_assignments.runtime_event_state`.
-3. The existing `page_viewed` statement carries one `experiment_attributions` entry per decision point alternative shown on that page, with `role: "exposure"`.
-4. Reward eligibility reads sticky assignment state and page-content branch matching. It does not require retained exposure state because an evaluated attempt inside the selected branch is sufficient runtime evidence for reward handoff.
+1. Before emitting `page_viewed`, delivery resolves all experiment-backed alternatives decisions for the page, records exposure for renderable assigned branches, and builds exposure attribution payloads.
+2. The resolved decisions are stored in the render context keyed by alternatives resource ID or decision point key so `Alternatives.select/2` can render from precomputed decisions instead of assigning again.
+3. `Oli.Experiments` validates the assignment and returns a deterministic exposure receipt without inserting `experiment_exposures` or mutating `experiment_assignments.runtime_event_state`.
+4. The existing `page_viewed` statement carries one `experiment_attributions` entry per decision point alternative shown on that page, with `role: "exposure"`.
+5. Reward eligibility reads sticky assignment state and page-content branch matching. It does not require retained exposure state because an evaluated attempt inside the selected branch is sufficient runtime evidence for reward handoff.
 
 Outcome and reward:
 

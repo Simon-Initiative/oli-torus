@@ -79,6 +79,7 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 - Tasks:
   - [x] Identify every caller and query path that reads or writes `Exposure`, `Outcome`, `Reward`, or `PolicyUpdate` schemas.
   - [x] Add required operational fields to retained tables, limited to reward duplicate-protection state on `experiment_assignments`.
+  - [x] Rewrite delivery page setup so experiment-backed alternatives decisions and exposure attributions are prepared before `page_viewed`; rendering consumes the precomputed decision map instead of assigning or recording exposure during render.
   - [x] Rewrite `record_exposure/1` to validate assignment scope, return a deterministic `ExposureReceipt`, and make exposure attribution available to `page_viewed` without inserting `experiment_exposures` or retaining exposure state in PostgreSQL.
   - [x] Rewrite `reward_eligible_assignments/3` to use sticky assignment state plus page-content branch matching instead of joining `experiment_exposures` or requiring retained exposure state.
   - [x] Rewrite `record_outcome/1` to make outcome attribution available to evaluated part-attempt xAPI and return a deterministic `OutcomeReceipt` without inserting `experiment_outcomes` or retaining outcome state in PostgreSQL.

@@ -5,7 +5,7 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
   @assignment_units ~w(enrollment)
   @algorithms ~w(weighted_random thompson_sampling)
 
-  def change do
+  def up do
     create table(:experiment_definitions) do
       add :uuid, :uuid, null: false
       add :project_id, references(:projects, on_delete: :nothing), null: false
@@ -164,5 +164,18 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
              [:experiment_id, :decision_point_id, :algorithm],
              name: :experiment_policy_states_unique_idx
            )
+  end
+
+  def down do
+    execute("DROP TABLE IF EXISTS experiment_policy_updates CASCADE")
+    execute("DROP TABLE IF EXISTS experiment_rewards CASCADE")
+    execute("DROP TABLE IF EXISTS experiment_outcomes CASCADE")
+    execute("DROP TABLE IF EXISTS experiment_exposures CASCADE")
+
+    drop table(:experiment_policy_states)
+    drop table(:experiment_assignments)
+    drop table(:experiment_conditions)
+    drop table(:experiment_decision_points)
+    drop table(:experiment_definitions)
   end
 end

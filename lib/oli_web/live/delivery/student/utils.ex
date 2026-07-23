@@ -18,6 +18,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
+  alias Oli.Experiments.Telemetry, as: ExperimentTelemetry
 
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, SessionContext
@@ -694,7 +695,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       alternatives_groups_fn: fn ->
         Oli.Resources.alternatives_groups(section.slug, Resolver)
       end,
+      alternative_groups_by_id: Map.get(assigns, :alternative_groups_by_id),
       alternatives_selector_fn: &Oli.Resources.Alternatives.select/2,
+      experiment_decisions: Map.get(assigns, :experiment_decisions, %{}),
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       bib_app_params: page_context.bib_revisions,
       historical_attempts: page_context.historical_attempts,
@@ -1150,6 +1153,7 @@ defmodule OliWeb.Delivery.Student.Utils do
       end
 
     {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
+    experiment_attributions = Map.get(socket.assigns, :experiment_attributions, [])
 
     emit_page_viewed_helper(
       %Oli.Analytics.XAPI.Events.Context{
@@ -1165,7 +1169,8 @@ defmodule OliWeb.Delivery.Student.Utils do
         resource_id: context.page.resource_id,
         timestamp: DateTime.utc_now(),
         page_sub_type: page_sub_type
-      }
+      },
+      experiment_attributions
     )
 
     socket
@@ -1179,9 +1184,17 @@ defmodule OliWeb.Delivery.Student.Utils do
            resource_id: _page_id,
            timestamp: _timestamp,
            page_sub_type: _page_sub_type
-         } = page_details
+         } = page_details,
+         experiment_attributions
        ) do
     event = Oli.Analytics.XAPI.Events.Attempt.PageViewed.new(context, page_details)
+
+    event =
+      ExperimentTelemetry.attach_attributions(
+        event,
+        experiment_attributions
+      )
+
     Oli.Analytics.XAPI.emit(:page_viewed, event)
   end
 
