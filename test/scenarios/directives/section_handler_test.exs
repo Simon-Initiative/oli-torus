@@ -102,6 +102,53 @@ defmodule Oli.Scenarios.Directives.SectionHandlerTest do
     refute Repo.get_by(Section, title: "configured_dot_section")
   end
 
+  test "rolls back section creation when the Dot feature configuration cannot be inserted" do
+    assert {:ok, _local_codex} =
+             LocalCodex.setup(%{
+               model_name: "rollback-dot-model",
+               service_name: "rollback-dot-service"
+             })
+
+    Repo.query!("""
+    CREATE FUNCTION reject_scenario_dot_feature_config()
+    RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'forced Dot feature configuration failure';
+    END;
+    $$ LANGUAGE plpgsql;
+    """)
+
+    Repo.query!("""
+    CREATE TRIGGER reject_scenario_dot_feature_config
+    BEFORE INSERT ON gen_ai_feature_configs
+    FOR EACH ROW
+    WHEN (NEW.feature = 'student_dialogue' AND NEW.section_id IS NOT NULL)
+    EXECUTE FUNCTION reject_scenario_dot_feature_config();
+    """)
+
+    yaml = """
+    - project:
+        name: "rollback_dot_project"
+        title: "Rollback Dot Project"
+        root:
+          children:
+            - page: "Welcome"
+
+    - section:
+        name: "rollback_dot_section"
+        title: "Rollback Dot Section"
+        from: "rollback_dot_project"
+        assistant_enabled: true
+        assistant_service_config: "rollback-dot-service"
+    """
+
+    result = Scenarios.execute_yaml(yaml, RuntimeOpts.build())
+
+    assert [{_directive, message}] = result.errors
+    assert message =~ "forced Dot feature configuration failure"
+    refute Repo.get_by(Section, title: "Rollback Dot Section")
+  end
+
   test "requires Dot to be enabled when selecting an assistant service" do
     yaml = """
     - section:

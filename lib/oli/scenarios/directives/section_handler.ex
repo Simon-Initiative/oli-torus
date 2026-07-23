@@ -28,20 +28,43 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
         |> Map.put(:title, title || name)
 
       section =
-        if from do
-          # Create section from an existing project or product.
-          create_from_source(from, directive_attrs, state)
-        else
-          # Create a standalone section with an auto-generated backing project.
-          create_standalone(directive_attrs, state)
-        end
-
-      section = configure_assistant_service(section, assistant_service)
+        create_section_with_assistant(
+          from,
+          directive_attrs,
+          state,
+          assistant_service
+        )
 
       {:ok, Engine.put_section(state, name, section)}
     rescue
       e ->
         {:error, "Failed to create section '#{name}': #{Exception.message(e)}"}
+    end
+  end
+
+  defp create_section_with_assistant(from, directive_attrs, state, assistant_service) do
+    case Repo.transaction(fn ->
+           section =
+             case from do
+               nil ->
+                 # Create a standalone section with an auto-generated backing project.
+                 create_standalone(directive_attrs, state)
+
+               source ->
+                 # Create a section from an existing project or product.
+                 create_from_source(source, directive_attrs, state)
+             end
+
+           configure_assistant_service(section, assistant_service)
+         end) do
+      {:ok, section} ->
+        section
+
+      {:error, {:assistant_configuration_failed, changeset}} ->
+        raise "Failed to configure Dot service: #{inspect(changeset.errors)}"
+
+      {:error, reason} ->
+        raise "Section transaction failed: #{inspect(reason)}"
     end
   end
 
@@ -169,7 +192,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
 
     case GenAI.create_feature_config(attrs) do
       {:ok, _feature_config} -> section
-      {:error, changeset} -> raise "Failed to configure Dot service: #{inspect(changeset.errors)}"
+      {:error, changeset} -> Repo.rollback({:assistant_configuration_failed, changeset})
     end
   end
 
