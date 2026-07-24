@@ -46,7 +46,7 @@ defmodule Oli.Experiments.Telemetry do
         {%ExposureReceipt{} = receipt, %RecordExposureRequest{} = request},
         _opts
       ) do
-    skip_duplicate("exposure", receipt.key, request.scope)
+    skipped_duplicate("exposure", receipt.key, request.scope)
   end
 
   def emit(
@@ -62,7 +62,7 @@ defmodule Oli.Experiments.Telemetry do
         {%OutcomeReceipt{} = receipt, %RecordOutcomeRequest{} = request},
         _opts
       ) do
-    skip_duplicate("outcome", receipt.key, request.scope)
+    skipped_duplicate("outcome", receipt.key, request.scope)
   end
 
   def emit(
@@ -78,7 +78,7 @@ defmodule Oli.Experiments.Telemetry do
         {%RewardReceipt{} = receipt, %RecordRewardRequest{} = request},
         _opts
       ) do
-    skip_duplicate("reward", receipt.key, request.scope)
+    skipped_duplicate("reward", receipt.key, request.scope)
   end
 
   def emit(:policy_updated, {%{} = update, %{} = reward}, opts) do
@@ -87,7 +87,7 @@ defmodule Oli.Experiments.Telemetry do
 
   def emit(_event, _payload, _opts), do: :ok
 
-  defp skip_duplicate(event_type, key, %Scope{} = scope, extra \\ %{}) do
+  defp skipped_duplicate(event_type, key, %Scope{} = scope, extra \\ %{}) do
     metadata =
       %{
         attribution_role: event_type,
