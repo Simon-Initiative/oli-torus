@@ -7,7 +7,7 @@ defmodule Oli.Experiments.ExperimentDefinition do
     :id,
     :uuid,
     :project_id,
-    :section_id,
+    :section_ids,
     :slug,
     :name,
     :description,

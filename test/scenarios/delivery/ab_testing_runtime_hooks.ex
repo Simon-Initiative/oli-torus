@@ -502,7 +502,15 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     from(experiment in Oli.Experiments.Schemas.ExperimentDefinition,
       where:
         experiment.project_id == ^scope.project_id and
-          (is_nil(experiment.section_id) or experiment.section_id == ^scope.section_id),
+          (fragment(
+             "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
+             experiment.id
+           ) or
+             fragment(
+               "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
+               experiment.id,
+               ^scope.section_id
+             )),
       select: experiment.id
     )
   end

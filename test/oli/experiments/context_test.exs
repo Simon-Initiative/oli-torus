@@ -39,7 +39,7 @@ defmodule Oli.Experiments.ContextTest do
       assert definition.id
       assert definition.uuid
       assert definition.project_id == scope.project_id
-      assert definition.section_id == scope.section_id
+      assert definition.section_ids == [scope.section_id]
       assert definition.state == :draft
       refute private_schema?(definition)
     end
@@ -146,7 +146,7 @@ defmodule Oli.Experiments.ContextTest do
       assert {:ok, %ExperimentDefinition{} = definition} =
                Experiments.create_experiment(graph_request(scope, alternatives))
 
-      assert definition.section_id == nil
+      assert definition.section_ids == []
 
       assert {:ok, [%ExperimentDefinition{id: experiment_id}]} =
                Experiments.list_project_experiments(scope)
@@ -176,7 +176,35 @@ defmodule Oli.Experiments.ContextTest do
       assert {:ok, %ExperimentDefinition{} = definition} =
                Experiments.create_experiment(graph_request(scope, alternatives))
 
-      assert definition.section_id == scope.section_id
+      assert definition.section_ids == [scope.section_id]
+    end
+
+    test "creates an experiment associated with multiple sections" do
+      scope = %{valid_scope() | user_id: nil, enrollment_id: nil}
+      project = Repo.get!(Project, scope.project_id)
+      institution = Repo.get!(Institution, scope.institution_id)
+      other_section = insert(:section, institution: institution, base_project: project)
+      alternatives = alternatives_revision(scope.project_id)
+
+      request =
+        scope
+        |> graph_request(alternatives)
+        |> Map.put(:section_ids, [scope.section_id, other_section.id])
+
+      assert {:ok, %ExperimentDefinition{} = definition} =
+               Experiments.create_experiment(request)
+
+      assert Enum.sort(definition.section_ids) ==
+               Enum.sort([scope.section_id, other_section.id])
+
+      assert {:ok, %ExperimentAuthoringView{definition: scoped_definition}} =
+               Experiments.get_experiment_authoring_view(
+                 definition.id,
+                 %{scope | section_id: other_section.id}
+               )
+
+      assert Enum.sort(scoped_definition.section_ids) ==
+               Enum.sort([scope.section_id, other_section.id])
     end
 
     test "rejects invalid weighted random conditions" do

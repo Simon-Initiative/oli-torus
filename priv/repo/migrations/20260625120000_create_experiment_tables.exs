@@ -9,7 +9,6 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
     create table(:experiment_definitions) do
       add :uuid, :uuid, null: false
       add :project_id, references(:projects, on_delete: :nothing), null: false
-      add :section_id, references(:sections, on_delete: :nothing)
       add :slug, :string, null: false
       add :name, :string, null: false
       add :description, :text
@@ -42,12 +41,21 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
            )
 
     create index(:experiment_definitions, [:project_id])
-    create index(:experiment_definitions, [:section_id])
     create index(:experiment_definitions, [:state])
 
     create index(:experiment_definitions, [:project_id, :state],
              name: :experiment_definitions_active_scope_idx
            )
+
+    create table(:experiment_sections) do
+      add :experiment_id, references(:experiment_definitions, on_delete: :delete_all), null: false
+      add :section_id, references(:sections, on_delete: :delete_all), null: false
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create unique_index(:experiment_sections, [:experiment_id, :section_id])
+    create index(:experiment_sections, [:section_id])
 
     create table(:experiment_decision_points) do
       add :experiment_id, references(:experiment_definitions, on_delete: :nothing), null: false
@@ -176,6 +184,7 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
     drop table(:experiment_assignments)
     drop table(:experiment_conditions)
     drop table(:experiment_decision_points)
+    drop table(:experiment_sections)
     drop table(:experiment_definitions)
   end
 end

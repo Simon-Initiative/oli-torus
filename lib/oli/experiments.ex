@@ -28,6 +28,7 @@ defmodule Oli.Experiments do
     Assignment,
     Condition,
     DecisionPoint,
+    ExperimentSection,
     PolicyState
   }
 
@@ -72,8 +73,9 @@ defmodule Oli.Experiments do
          :ok <- validate_authoring_algorithm(request.algorithm, graph_request?(request)),
          :ok <- validate_policy_config(request.algorithm, request.policy_config || %{}),
          :ok <- validate_graph_request(request, scope),
+         {:ok, section_ids} <- validate_experiment_sections(request.section_ids, scope),
          attrs <- create_attrs(request, scope),
-         {:ok, schema} <- insert_definition_graph(attrs, request) do
+         {:ok, schema} <- insert_definition_graph(attrs, request, section_ids) do
       emit_authoring_telemetry(:create, schema, %{algorithm: schema.algorithm})
       {:ok, to_definition(schema)}
     else
@@ -103,7 +105,8 @@ defmodule Oli.Experiments do
            ),
          :ok <- validate_assignment_safe_update(schema, request),
          :ok <- validate_graph_request(request, request.scope),
-         {:ok, updated} <- update_definition_graph(schema, request) do
+         {:ok, section_ids} <- validate_experiment_sections(request.section_ids, request.scope),
+         {:ok, updated} <- update_definition_graph(schema, request, section_ids) do
       emit_authoring_telemetry(:update, updated, %{algorithm: updated.algorithm})
       {:ok, to_definition(updated)}
     else
@@ -153,6 +156,7 @@ defmodule Oli.Experiments do
         scope
         |> scoped_project_experiments_query()
         |> order_by([experiment], asc: experiment.inserted_at, asc: experiment.id)
+        |> preload(:sections)
         |> Repo.all()
         |> Enum.map(&to_definition/1)
 
@@ -517,7 +521,10 @@ defmodule Oli.Experiments do
     from(experiment in ExperimentDefinitionSchema,
       where:
         experiment.project_id == ^scope.project_id and
-          is_nil(experiment.section_id)
+          fragment(
+            "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
+            experiment.id
+          )
     )
   end
 
@@ -588,7 +595,15 @@ defmodule Oli.Experiments do
     where(
       query,
       [experiment],
-      is_nil(experiment.section_id) or experiment.section_id == ^section_id
+      fragment(
+        "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
+        experiment.id
+      ) or
+        fragment(
+          "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
+          experiment.id,
+          ^section_id
+        )
     )
   end
 
@@ -598,7 +613,15 @@ defmodule Oli.Experiments do
     where(
       query,
       [_record, experiment],
-      is_nil(experiment.section_id) or experiment.section_id == ^section_id
+      fragment(
+        "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
+        experiment.id
+      ) or
+        fragment(
+          "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
+          experiment.id,
+          ^section_id
+        )
     )
   end
 
@@ -763,7 +786,16 @@ defmodule Oli.Experiments do
             experiment.project_id == ^scope.project_id and
             decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
             decision_point.decision_point_key == ^request.decision_point_key,
-        where: is_nil(experiment.section_id) or experiment.section_id == ^scope.section_id,
+        where:
+          fragment(
+            "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
+            experiment.id
+          ) or
+            fragment(
+              "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
+              experiment.id,
+              ^scope.section_id
+            ),
         order_by: [asc: experiment.id],
         limit: 1,
         select: {experiment, decision_point}
@@ -996,7 +1028,15 @@ defmodule Oli.Experiments do
         on: condition.id == assignment.condition_id,
         where:
           experiment.project_id == ^scope.project_id and
-            (is_nil(experiment.section_id) or experiment.section_id == ^scope.section_id) and
+            (fragment(
+               "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
+               experiment.id
+             ) or
+               fragment(
+                 "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
+                 experiment.id,
+                 ^scope.section_id
+               )) and
             assignment.section_id == ^scope.section_id and
             assignment.enrollment_id == ^scope.enrollment_id and
             assignment.user_id == ^scope.user_id and
@@ -1259,10 +1299,10 @@ defmodule Oli.Experiments do
     }
   end
 
-  defp insert_definition_graph(attrs, request) do
+  defp insert_definition_graph(attrs, request, section_ids) do
     case graph_request?(request) do
       false ->
-        insert_definition(attrs)
+        insert_definition(attrs, section_ids)
 
       true ->
         Repo.transaction(fn ->
@@ -1270,6 +1310,8 @@ defmodule Oli.Experiments do
             %ExperimentDefinitionSchema{}
             |> ExperimentDefinitionSchema.changeset(attrs)
             |> Repo.insert!()
+
+          replace_experiment_sections!(definition.id, section_ids)
 
           decision_point =
             %DecisionPoint{}
@@ -1289,16 +1331,21 @@ defmodule Oli.Experiments do
           end)
 
           get_or_create_policy_state(definition, decision_point.id)
-          definition
+          Repo.preload(definition, :sections)
         end)
         |> normalize_transaction_result()
     end
   end
 
-  defp update_definition_graph(schema, request) do
+  defp update_definition_graph(schema, request, section_ids) do
     case graph_request?(request) do
       false ->
-        update_definition(schema, update_attrs(request, schema.algorithm))
+        update_definition(
+          schema,
+          update_attrs(request, schema.algorithm),
+          request.section_ids,
+          section_ids
+        )
 
       true ->
         Repo.transaction(fn ->
@@ -1307,8 +1354,9 @@ defmodule Oli.Experiments do
             |> ExperimentDefinitionSchema.changeset(update_attrs(request, schema.algorithm))
             |> Repo.update!()
 
+          maybe_replace_experiment_sections!(updated.id, request.section_ids, section_ids)
           replace_definition_graph!(updated, request)
-          updated
+          Repo.preload(updated, :sections, force: true)
         end)
         |> normalize_transaction_result()
     end
@@ -1601,24 +1649,77 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp insert_definition(attrs) do
-    %ExperimentDefinitionSchema{}
-    |> ExperimentDefinitionSchema.changeset(attrs)
-    |> Repo.insert()
-    |> normalize_result()
+  defp insert_definition(attrs, section_ids) do
+    Repo.transaction(fn ->
+      changeset =
+        %ExperimentDefinitionSchema{}
+        |> ExperimentDefinitionSchema.changeset(attrs)
+
+      case Repo.insert(changeset) do
+        {:ok, definition} ->
+          replace_experiment_sections!(definition.id, section_ids)
+          Repo.preload(definition, :sections)
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+    |> normalize_transaction_result()
   end
 
-  defp update_definition(schema, attrs) do
-    schema
-    |> ExperimentDefinitionSchema.changeset(attrs)
-    |> Repo.update()
-    |> normalize_result()
+  defp update_definition(schema, attrs),
+    do: update_definition(schema, attrs, nil, nil)
+
+  defp update_definition(schema, attrs, requested_section_ids, section_ids) do
+    Repo.transaction(fn ->
+      updated =
+        schema
+        |> ExperimentDefinitionSchema.changeset(attrs)
+        |> Repo.update!()
+
+      maybe_replace_experiment_sections!(updated.id, requested_section_ids, section_ids)
+      Repo.preload(updated, :sections, force: true)
+    end)
+    |> normalize_transaction_result()
+  end
+
+  defp maybe_replace_experiment_sections!(_experiment_id, nil, _section_ids), do: :ok
+
+  defp maybe_replace_experiment_sections!(experiment_id, _requested_section_ids, section_ids),
+    do: replace_experiment_sections!(experiment_id, section_ids)
+
+  defp replace_experiment_sections!(experiment_id, section_ids) do
+    from(experiment_section in ExperimentSection,
+      where: experiment_section.experiment_id == ^experiment_id
+    )
+    |> Repo.delete_all()
+
+    timestamp = now()
+
+    section_ids
+    |> Enum.map(fn section_id ->
+      %{
+        experiment_id: experiment_id,
+        section_id: section_id,
+        inserted_at: timestamp,
+        updated_at: timestamp
+      }
+    end)
+    |> case do
+      [] -> :ok
+      rows -> Repo.insert_all(ExperimentSection, rows)
+    end
   end
 
   defp get_scoped_definition(experiment_id, scope) do
     with {:ok, scope} <- validate_scope(scope),
          %ExperimentDefinitionSchema{} = schema <-
-           Repo.get(ExperimentDefinitionSchema, experiment_id),
+           Repo.one(
+             from(experiment in ExperimentDefinitionSchema,
+               where: experiment.id == ^experiment_id,
+               preload: :sections
+             )
+           ),
          :ok <- ensure_definition_in_scope(schema, scope) do
       {:ok, schema}
     else
@@ -1627,12 +1728,41 @@ defmodule Oli.Experiments do
     end
   end
 
+  defp validate_experiment_sections(nil, scope) do
+    {:ok, Enum.reject([scope.section_id], &is_nil/1)}
+  end
+
+  defp validate_experiment_sections(section_ids, scope) when is_list(section_ids) do
+    section_ids
+    |> Enum.uniq()
+    |> Enum.reduce_while({:ok, []}, fn section_id, {:ok, valid_ids} ->
+      case Repo.get(Section, section_id) do
+        nil ->
+          {:halt, invalid_scope("section not found", %{section_id: section_id})}
+
+        section ->
+          validation_scope = %{scope | section_id: section_id, section_slug: nil}
+
+          case validate_section_scope(validation_scope, section) do
+            {:ok, _scope} -> {:cont, {:ok, [section_id | valid_ids]}}
+            {:error, %ExperimentError{}} = error -> {:halt, error}
+          end
+      end
+    end)
+    |> case do
+      {:ok, valid_ids} -> {:ok, Enum.reverse(valid_ids)}
+      error -> error
+    end
+  end
+
+  defp validate_experiment_sections(_section_ids, _scope),
+    do: invalid_request("section_ids must be a list")
+
   defp create_attrs(request, scope) do
     policy_config = normalize_policy_config!(request.algorithm, request.policy_config || %{})
 
     %{
       project_id: scope.project_id,
-      section_id: scope.section_id,
       slug: request.slug,
       name: request.name,
       description: request.description,
@@ -2289,7 +2419,7 @@ defmodule Oli.Experiments do
         %{
           experiment_id: schema.id,
           project_id: schema.project_id,
-          section_id: schema.section_id
+          section_ids: Enum.map(schema.sections, & &1.id)
         },
         extra_metadata
       )
@@ -2322,7 +2452,7 @@ defmodule Oli.Experiments do
         %{
           experiment_id: schema.id,
           project_id: schema.project_id,
-          section_id: schema.section_id,
+          section_ids: Enum.map(schema.sections, & &1.id),
           algorithm: schema.algorithm
         },
         extra_metadata
@@ -2569,11 +2699,13 @@ defmodule Oli.Experiments do
   end
 
   defp ensure_definition_in_scope(schema, scope) do
+    section_ids = Enum.map(schema.sections, & &1.id)
+
     cond do
       schema.project_id != scope.project_id ->
         invalid_scope("experiment does not belong to project")
 
-      not is_nil(scope.section_id) and schema.section_id != scope.section_id ->
+      not is_nil(scope.section_id) and section_ids != [] and scope.section_id not in section_ids ->
         invalid_scope("experiment does not belong to section")
 
       true ->
@@ -2586,7 +2718,7 @@ defmodule Oli.Experiments do
       id: schema.id,
       uuid: schema.uuid,
       project_id: schema.project_id,
-      section_id: schema.section_id,
+      section_ids: Enum.map(schema.sections, & &1.id),
       slug: schema.slug,
       name: schema.name,
       description: schema.description,
@@ -2666,8 +2798,6 @@ defmodule Oli.Experiments do
     :crypto.hash(:sha256, to_string(value))
     |> Base.encode16(case: :lower)
   end
-
-  defp normalize_result({:ok, schema}), do: {:ok, schema}
 
   defp normalize_result({:error, %Ecto.Changeset{} = changeset}) do
     {:error,

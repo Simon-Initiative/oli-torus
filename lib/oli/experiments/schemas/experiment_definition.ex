@@ -29,7 +29,10 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     field :ended_at, :utc_datetime
 
     belongs_to :project, Project
-    belongs_to :section, Section
+
+    many_to_many :sections, Section,
+      join_through: "experiment_sections",
+      join_keys: [experiment_id: :id, section_id: :id]
 
     timestamps(type: :utc_datetime)
   end
@@ -39,7 +42,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     |> cast(attrs, [
       :uuid,
       :project_id,
-      :section_id,
       :slug,
       :name,
       :description,
@@ -64,7 +66,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     |> validate_length(:slug, min: 1, max: 255)
     |> validate_length(:name, min: 1, max: 255)
     |> foreign_key_constraint(:project_id)
-    |> foreign_key_constraint(:section_id)
     |> unique_constraint(:uuid, name: :experiment_definitions_uuid_idx)
     |> unique_constraint([:project_id, :slug], name: :experiment_definitions_project_slug_idx)
   end
