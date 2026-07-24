@@ -130,7 +130,10 @@
       answerable: false
 
 - hook:
-    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_reward_records_are_idempotent/1"
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.record_reward/1"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_reward_is_idempotent/1"
 
 - project:
     name: "ab_runtime_fallback_project"

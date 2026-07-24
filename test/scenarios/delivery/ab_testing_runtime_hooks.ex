@@ -41,6 +41,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   @condition_code "alt-a"
   @option_id "alt-a"
   @option_b_id "alt-b"
+  @reward_result_key :ab_testing_reward_result
 
   def wrap_activity_in_alternatives(%ExecutionState{} = state) do
     with {:ok, updated_state} <- wrap_project_page(state, @project_name) do
@@ -119,39 +120,61 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     end
   end
 
-  def assert_reward_records_are_idempotent(%ExecutionState{} = state) do
+  def record_reward(%ExecutionState{} = state) do
     with {:ok, scope} <- scope_for(state, @project_name, @section_name, @student_name),
          {:ok, alternatives_revision} <- alternatives_revision(state, @project_name),
          {:ok, activity_revision} <- activity_revision(state, @project_name),
          {:ok, activity_attempt} <-
-           evaluated_activity_attempt(scope, activity_revision.resource_id) do
-      assignment = Repo.one!(assignment_query(scope, alternatives_revision))
-      assert :ok = RewardHandoff.record_evaluated_activity(activity_attempt.id)
-      assert event_count(scope, "outcomes") == 0
-      assert event_count(scope, "rewards") == 1
-
-      reward = only_event(scope, "rewards")
-
-      reward_request = %RecordRewardRequest{
-        key: reward["key"],
-        scope: scope,
-        assignment_id: assignment.id,
-        outcome_key: reward["outcome_key"],
-        reward_value: reward["reward_value"],
-        reward_source: reward["reward_source"]
-      }
-
-      assert {:ok, reused_reward_receipt} = Experiments.record_reward(reward_request)
-      assert reused_reward_receipt.reused?
-      assert reused_reward_receipt.key == reward["key"]
-      assert reward["reward_value"] == 1.0
-      assert reward["reward_source"] == "activity_attempt:full_credit"
-      assert_thompson_policy_update(scope, alternatives_revision, reward)
-
-      state
+           evaluated_activity_attempt(scope, activity_revision.resource_id),
+         assignment <- Repo.one!(assignment_query(scope, alternatives_revision)),
+         :ok <- RewardHandoff.record_evaluated_activity(activity_attempt.id),
+         reward <- only_event(scope, "rewards"),
+         reward_request <- reward_request(reward, assignment.id, scope),
+         {:ok, reused_reward_receipt} <- Experiments.record_reward(reward_request) do
+      Map.put(state, @reward_result_key, %{
+        alternatives_revision: alternatives_revision,
+        receipt: reused_reward_receipt,
+        reward: reward,
+        scope: scope
+      })
     else
-      {:error, reason} -> flunk("assert_reward_records_are_idempotent failed: #{inspect(reason)}")
+      {:error, reason} -> flunk("record_reward failed: #{inspect(reason)}")
     end
+  end
+
+  def assert_reward_is_idempotent(%ExecutionState{} = state) do
+    case Map.fetch(state, @reward_result_key) do
+      {:ok,
+       %{
+         alternatives_revision: alternatives_revision,
+         receipt: reused_reward_receipt,
+         reward: reward,
+         scope: scope
+       }} ->
+        assert event_count(scope, "outcomes") == 0
+        assert event_count(scope, "rewards") == 1
+        assert reused_reward_receipt.reused?
+        assert reused_reward_receipt.key == reward["key"]
+        assert reward["reward_value"] == 1.0
+        assert reward["reward_source"] == "activity_attempt:full_credit"
+        assert_thompson_policy_update(scope, alternatives_revision, reward)
+
+        state
+
+      :error ->
+        flunk("record_reward must run before assert_reward_is_idempotent")
+    end
+  end
+
+  defp reward_request(reward, assignment_id, scope) do
+    %RecordRewardRequest{
+      key: reward["key"],
+      scope: scope,
+      assignment_id: assignment_id,
+      outcome_key: reward["outcome_key"],
+      reward_value: reward["reward_value"],
+      reward_source: reward["reward_source"]
+    }
   end
 
   def assert_fallback_has_no_experiment_records(%ExecutionState{} = state) do
