@@ -11,8 +11,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
                   "../../../../cloud/xapi-etl-processor/tests/fixtures/experiment_attributed_part_attempt.jsonl",
                   __DIR__
                 )
-  @fixture_event_hash "ee8a8266137dc930ebd5a1b0c2daddcabeefae4615b02a6b089bcddd0d6d10b5"
-  @fixture_attribution_hash "7033183577a7f5c6b310e7dddc788a88f63b98401a24d08f08049d00fce5936e"
+  @fixture_event_hash "ea851925371d2b82f27849aa3e0afa0d2236260acec50f6db6907fc6f8aca409"
+  @fixture_attribution_hash "f6427e22046b7e779c8d7cdf805b94623a7b9be54cd0a9e6e0b81a325e6062d1"
 
   setup :verify_on_exit!
 
@@ -204,7 +204,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       refute query =~ sha256("reward-key")
       refute query =~ "'reward-key'"
       assert query =~ "'activity_attempt:full_credit'"
-      refute query =~ "idempotency_key_hash"
+      refute query =~ "key_hash"
       refute query =~ "algorithm_version"
       refute query =~ "policy_update_reason"
       refute query =~ "outcome_id"
@@ -320,7 +320,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
               "enrollment_id" => 505,
               "algorithm" => "thompson_sampling",
               "policy_version" => "thompson_sampling:v2",
-              "idempotency_key" => "reward-key",
+              "key" => "reward-key",
               "reward_source" => "activity_attempt:full_credit"
             }
           ]

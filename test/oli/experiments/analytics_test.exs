@@ -27,19 +27,19 @@ defmodule Oli.Experiments.AnalyticsTest do
 
       {:ok, _exposure} =
         Experiments.record_exposure(%RecordExposureRequest{
+          key: "analytics-exposure",
           scope: scope,
           assignment_id: assignment.assignment_id,
-          content_revision_id: revision.id,
-          idempotency_key: "analytics-exposure"
+          content_revision_id: revision.id
         })
 
       {:ok, _reward} =
         Experiments.record_reward(%RecordRewardRequest{
+          key: "analytics-reward",
           scope: scope,
           assignment_id: assignment.assignment_id,
           reward_value: 1.0,
-          reward_source: "analytics",
-          idempotency_key: "analytics-reward"
+          reward_source: "analytics"
         })
 
       query = %AnalyticsQuery{scope: scope, experiment_id: experiment_id}

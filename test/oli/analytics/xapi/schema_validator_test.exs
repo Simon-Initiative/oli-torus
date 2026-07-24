@@ -129,7 +129,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
               "condition_code" => "condition-a",
               "assignment_id" => 404,
               "assignment_key" => "101:202:505",
-              "idempotency_key" => "rollup-key"
+              "key" => "rollup-key"
             }
           ]
         }

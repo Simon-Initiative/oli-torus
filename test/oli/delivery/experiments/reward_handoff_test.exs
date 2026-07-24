@@ -31,7 +31,8 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       reward = only_event("rewards")
 
       assert event_count("outcomes") == 0
-      assert is_integer(reward["outcome_id"])
+      assert reward["outcome_key"] =~ "outcome:activity_attempt:"
+      refute Map.has_key?(reward, "outcome_id")
       assert reward["reward_value"] == 1.0
       assert reward["reward_source"] == "activity_attempt:full_credit"
     end

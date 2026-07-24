@@ -6,6 +6,7 @@ defmodule Oli.Experiments.RecordOutcomeRequest do
   alias Oli.Experiments.Scope
 
   defstruct [
+    :key,
     :scope,
     :assignment_id,
     :activity_attempt_id,
@@ -14,11 +15,11 @@ defmodule Oli.Experiments.RecordOutcomeRequest do
     :score,
     :out_of,
     :metadata,
-    :observed_at,
-    :idempotency_key
+    :observed_at
   ]
 
   @type t :: %__MODULE__{
+          key: String.t(),
           scope: Scope.t(),
           assignment_id: integer(),
           activity_attempt_id: integer() | nil,
@@ -27,7 +28,6 @@ defmodule Oli.Experiments.RecordOutcomeRequest do
           score: float() | nil,
           out_of: float() | nil,
           metadata: map() | nil,
-          observed_at: DateTime.t() | nil,
-          idempotency_key: String.t()
+          observed_at: DateTime.t() | nil
         }
 end

@@ -85,7 +85,7 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
   - [x] Rewrite `record_outcome/1` to make outcome attribution available to evaluated part-attempt xAPI and return a deterministic `OutcomeReceipt` without inserting `experiment_outcomes` or retaining outcome state in PostgreSQL.
   - [x] Rewrite `record_reward/1` to use the replacement duplicate reward guard, update current policy state, make reward attribution available to evaluated part-attempt xAPI, and emit policy-update operational telemetry/projection evidence without inserting `experiment_rewards` or `experiment_policy_updates`.
   - [x] Remove or replace PostgreSQL-backed analytics helpers that depend on event-history tables.
-  - [x] Update receipt/request structs where needed, including replacing or making optional `RecordRewardRequest.outcome_id`.
+  - [x] Update receipt/request structs so receipts expose readable `key` values directly, without separate receipt ids, and reward requests use `outcome_key`.
   - [x] Update coupling checks to treat any new runtime, analytics, dashboard, report, or export reference to the four event-history tables as a blocker.
 - Testing Tasks:
   - [x] Update runtime tests for assignment, stateless exposure/outcome receipts, reward duplicate calls, reward eligibility, and Thompson Sampling policy-state updates.

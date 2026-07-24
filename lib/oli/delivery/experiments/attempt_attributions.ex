@@ -142,6 +142,7 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
         outcome_key = outcome_key(activity_attempt.id, assignment.id)
 
         outcome_request = %RecordOutcomeRequest{
+          key: outcome_key,
           scope: scope,
           assignment_id: assignment.id,
           activity_attempt_id: activity_attempt.id,
@@ -153,35 +154,30 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
           metadata: %{
             "attempt_number" => activity_attempt.attempt_number,
             "source" => Map.get(reward_event, "reward_source")
-          },
-          idempotency_key: outcome_key
+          }
         }
 
         outcome_receipt = %OutcomeReceipt{
-          id: Map.get(reward_event, "outcome_id") || receipt_id("outcome", outcome_key),
+          key: outcome_key,
           assignment_id: assignment.id,
-          idempotency_key: outcome_key,
           recorded_at: activity_attempt.date_evaluated,
           reused?: true
         }
 
         reward_request = %RecordRewardRequest{
+          key: Map.get(reward_event, "key"),
           scope: scope,
           assignment_id: assignment.id,
-          outcome_id: Map.get(reward_event, "outcome_id"),
-          outcome_idempotency_key: Map.get(reward_event, "outcome_idempotency_key"),
+          outcome_key: Map.get(reward_event, "outcome_key") || outcome_key,
           reward_value: Map.get(reward_event, "reward_value"),
           reward_source: Map.get(reward_event, "reward_source"),
-          metadata: %{"attempt_number" => activity_attempt.attempt_number},
-          idempotency_key: Map.get(reward_event, "idempotency_key")
+          metadata: %{"attempt_number" => activity_attempt.attempt_number}
         }
 
         reward_receipt = %RewardReceipt{
-          id: Map.get(reward_event, "id"),
+          key: Map.get(reward_event, "key"),
           assignment_id: assignment.id,
-          outcome_id: Map.get(reward_event, "outcome_id"),
-          outcome_idempotency_key: Map.get(reward_event, "outcome_idempotency_key"),
-          idempotency_key: Map.get(reward_event, "idempotency_key"),
+          outcome_key: Map.get(reward_event, "outcome_key") || outcome_key,
           recorded_at: Map.get(reward_event, "recorded_at"),
           reused?: true
         }
@@ -210,15 +206,4 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
 
   defp reward_key(activity_attempt_id, assignment_id),
     do: "reward:activity_attempt:#{activity_attempt_id}:assignment:#{assignment_id}"
-
-  # Reconstructs the deterministic receipt ID that Oli.Experiments returns for
-  # a logical outcome or reward. This is not a PostgreSQL primary key; it lets
-  # evaluated attempt xAPI rebuild the same attribution payload from
-  # runtime_event_state during later rollups.
-  defp receipt_id(prefix, idempotency_key) do
-    <<int::unsigned-integer-size(64), _rest::binary>> =
-      :crypto.hash(:sha256, "#{prefix}:#{idempotency_key}")
-
-    int
-  end
 end

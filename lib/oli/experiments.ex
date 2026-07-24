@@ -1169,10 +1169,10 @@ defmodule Oli.Experiments do
       state = assignment.runtime_event_state || %{}
       reward_events = Map.get(state, "rewards", %{})
 
-      case Map.get(reward_events, request.idempotency_key) do
+      case Map.get(reward_events, request.key) do
         nil ->
-          event = reward_event(request)
-          update_assignment_event_state!(assignment, "rewards", request.idempotency_key, event)
+          event = reward_event(request, assignment)
+          update_assignment_event_state!(assignment, "rewards", request.key, event)
 
           case record_policy_reward(assignment, request, event) do
             :ok ->
@@ -1212,10 +1212,10 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp update_assignment_event_state!(assignment, event_group, idempotency_key, event) do
+  defp update_assignment_event_state!(assignment, event_group, key, event) do
     state = assignment.runtime_event_state || %{}
     events = Map.get(state, event_group, %{})
-    updated_state = Map.put(state, event_group, Map.put(events, idempotency_key, event))
+    updated_state = Map.put(state, event_group, Map.put(events, key, event))
 
     assignment
     |> Assignment.changeset(%{runtime_event_state: updated_state})
@@ -1224,9 +1224,8 @@ defmodule Oli.Experiments do
 
   defp runtime_event(%Oli.Experiments.RecordExposureRequest{} = request) do
     %{
-      "id" => receipt_id("exposure", request.idempotency_key),
       "assignment_id" => request.assignment_id,
-      "idempotency_key" => request.idempotency_key,
+      "key" => request.key,
       "content_revision_id" => request.content_revision_id,
       "publication_id" => request.scope && request.scope.publication_id,
       "recorded_at" => request.exposed_at || now()
@@ -1235,9 +1234,8 @@ defmodule Oli.Experiments do
 
   defp runtime_event(%Oli.Experiments.RecordOutcomeRequest{} = request) do
     %{
-      "id" => receipt_id("outcome", request.idempotency_key),
       "assignment_id" => request.assignment_id,
-      "idempotency_key" => request.idempotency_key,
+      "key" => request.key,
       "activity_attempt_id" => request.activity_attempt_id,
       "resource_attempt_id" => request.resource_attempt_id,
       "activity_resource_id" => request.activity_resource_id,
@@ -1247,24 +1245,18 @@ defmodule Oli.Experiments do
     }
   end
 
-  defp reward_event(%Oli.Experiments.RecordRewardRequest{} = request) do
+  defp reward_event(%Oli.Experiments.RecordRewardRequest{} = request, %Assignment{} = assignment) do
     %{
-      "id" => receipt_id("reward", request.idempotency_key),
       "assignment_id" => request.assignment_id,
-      "outcome_id" => request.outcome_id,
-      "outcome_idempotency_key" => request.outcome_idempotency_key,
-      "idempotency_key" => request.idempotency_key,
+      "experiment_id" => assignment.experiment_id,
+      "decision_point_id" => assignment.decision_point_id,
+      "condition_id" => assignment.condition_id,
+      "outcome_key" => request.outcome_key,
+      "key" => request.key,
       "reward_value" => request.reward_value,
       "reward_source" => request.reward_source,
       "recorded_at" => now()
     }
-  end
-
-  defp receipt_id(prefix, idempotency_key) do
-    <<int::unsigned-integer-size(64), _rest::binary>> =
-      :crypto.hash(:sha256, "#{prefix}:#{idempotency_key}")
-
-    int
   end
 
   defp insert_definition_graph(attrs, request) do
@@ -1411,7 +1403,7 @@ defmodule Oli.Experiments do
       {:error, reason} ->
         :telemetry.execute([:oli, :experiments, :policy, :update_failed], %{count: 1}, %{
           policy_state_id: policy_state.id,
-          reward_idempotency_key_hash: hash_key(request.idempotency_key),
+          reward_key_hash: hash_key(request.key),
           algorithm: experiment.algorithm,
           algorithm_version: policy_state.algorithm_version,
           reward_class: reward_class(request.reward_value),
@@ -1496,7 +1488,7 @@ defmodule Oli.Experiments do
          assignment,
          experiment
        ) do
-    policy_update_idempotency_key = "policy_update:#{request.idempotency_key}"
+    policy_update_key = "policy_update:#{request.key}"
 
     updated_policy_state =
       policy_state
@@ -1514,7 +1506,7 @@ defmodule Oli.Experiments do
 
     :telemetry.execute([:oli, :experiments, :policy, :updated], %{count: 1}, %{
       policy_state_id: policy_state.id,
-      reward_idempotency_key_hash: hash_key(request.idempotency_key),
+      reward_key_hash: hash_key(request.key),
       condition_id: condition.id,
       condition_code: condition.condition_code,
       algorithm: policy_state.algorithm,
@@ -1524,24 +1516,22 @@ defmodule Oli.Experiments do
 
     {:ok,
      {%{
-        id: receipt_id("policy_update", policy_update_idempotency_key),
         policy_state_id: updated_policy_state.id,
-        reward_id: reward_event["id"],
+        reward_key: reward_event["key"],
         condition_id: condition.id,
         previous_state: policy_update.previous_state,
         next_state: policy_update.next_state,
         algorithm_version: policy_update.algorithm_version,
         update_reason: policy_update.update_reason,
-        idempotency_key: policy_update_idempotency_key,
+        key: policy_update_key,
         inserted_at: now()
       },
       %{
-        id: reward_event["id"],
         experiment_id: assignment.experiment_id,
         decision_point_id: assignment.decision_point_id,
         condition_id: assignment.condition_id,
         reward_value: request.reward_value,
-        idempotency_key: request.idempotency_key
+        key: request.key
       },
       [
         assignment: assignment,
@@ -2626,9 +2616,8 @@ defmodule Oli.Experiments do
 
   defp exposure_receipt(%Assignment{} = assignment, event) do
     %ExposureReceipt{
-      id: event["id"],
+      key: event["key"],
       assignment_id: assignment.id,
-      idempotency_key: event["idempotency_key"],
       recorded_at: event["recorded_at"],
       reused?: Map.get(event, "reused", false)
     }
@@ -2636,9 +2625,8 @@ defmodule Oli.Experiments do
 
   defp outcome_receipt(%Assignment{} = assignment, event) do
     %OutcomeReceipt{
-      id: event["id"],
+      key: event["key"],
       assignment_id: assignment.id,
-      idempotency_key: event["idempotency_key"],
       recorded_at: event["recorded_at"],
       reused?: Map.get(event, "reused", false)
     }
@@ -2646,11 +2634,9 @@ defmodule Oli.Experiments do
 
   defp reward_receipt(%Assignment{} = assignment, event) do
     %RewardReceipt{
-      id: event["id"],
+      key: event["key"],
       assignment_id: assignment.id,
-      outcome_id: event["outcome_id"],
-      outcome_idempotency_key: event["outcome_idempotency_key"],
-      idempotency_key: event["idempotency_key"],
+      outcome_key: event["outcome_key"],
       recorded_at: event["recorded_at"],
       reused?: Map.get(event, "reused", false)
     }

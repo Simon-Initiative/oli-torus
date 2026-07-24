@@ -98,11 +98,11 @@ defmodule Oli.Experiments.RuntimeTest do
                Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
 
       reward_request = %RecordRewardRequest{
+        key: "sticky-ts-reward:#{first.assignment_id}",
         scope: scope,
         assignment_id: first.assignment_id,
         reward_value: 1.0,
-        reward_source: "test",
-        idempotency_key: "sticky-ts-reward:#{first.assignment_id}"
+        reward_source: "test"
       }
 
       assert {:ok, %RewardReceipt{reused?: false}} = Experiments.record_reward(reward_request)
@@ -248,52 +248,58 @@ defmodule Oli.Experiments.RuntimeTest do
       {:ok, assignment} = Experiments.assign_condition(assign_request(scope, revision, ["a"]))
 
       exposure_request = %RecordExposureRequest{
+        key: "exposure:#{assignment.assignment_id}",
         scope: scope,
         assignment_id: assignment.assignment_id,
-        content_revision_id: revision.id,
-        idempotency_key: "exposure:#{assignment.assignment_id}"
+        content_revision_id: revision.id
       }
 
       assert {:ok, %ExposureReceipt{reused?: false} = exposure} =
                Experiments.record_exposure(exposure_request)
 
-      assert {:ok, %ExposureReceipt{reused?: false, id: exposure_id}} =
+      assert exposure.key == exposure_request.key
+
+      assert {:ok, %ExposureReceipt{reused?: false} = reused_exposure} =
                Experiments.record_exposure(exposure_request)
 
-      assert exposure_id == exposure.id
+      assert reused_exposure.key == exposure.key
 
       outcome_request = %RecordOutcomeRequest{
+        key: "outcome:#{assignment.assignment_id}",
         scope: scope,
         assignment_id: assignment.assignment_id,
         score: 1.0,
-        out_of: 1.0,
-        idempotency_key: "outcome:#{assignment.assignment_id}"
+        out_of: 1.0
       }
 
       assert {:ok, %OutcomeReceipt{reused?: false} = outcome} =
                Experiments.record_outcome(outcome_request)
 
-      assert {:ok, %OutcomeReceipt{reused?: false, id: outcome_id}} =
+      assert outcome.key == outcome_request.key
+
+      assert {:ok, %OutcomeReceipt{reused?: false} = reused_outcome} =
                Experiments.record_outcome(outcome_request)
 
-      assert outcome_id == outcome.id
+      assert reused_outcome.key == outcome.key
 
       reward_request = %RecordRewardRequest{
+        key: "reward:#{assignment.assignment_id}",
         scope: scope,
         assignment_id: assignment.assignment_id,
-        outcome_id: outcome.id,
+        outcome_key: outcome.key,
         reward_value: 1.0,
-        reward_source: "test",
-        idempotency_key: "reward:#{assignment.assignment_id}"
+        reward_source: "test"
       }
 
       assert {:ok, %RewardReceipt{reused?: false} = reward} =
                Experiments.record_reward(reward_request)
 
-      assert {:ok, %RewardReceipt{reused?: true, id: reward_id}} =
+      assert reward.key == reward_request.key
+
+      assert {:ok, %RewardReceipt{reused?: true} = reused_reward} =
                Experiments.record_reward(reward_request)
 
-      assert reward_id == reward.id
+      assert reused_reward.key == reward.key
 
       assert_receive {:telemetry, [:oli, :experiments, :exposure, :recorded], %{count: 1}, _}
       assert_receive {:telemetry, [:oli, :experiments, :reward, :recorded], %{count: 1}, _}
@@ -309,10 +315,10 @@ defmodule Oli.Experiments.RuntimeTest do
       {:ok, assignment} = Experiments.assign_condition(assign_request(scope, revision, ["a"]))
 
       exposure_request = %RecordExposureRequest{
+        key: "shared-key",
         scope: scope,
         assignment_id: assignment.assignment_id,
-        content_revision_id: revision.id,
-        idempotency_key: "shared-key"
+        content_revision_id: revision.id
       }
 
       assert {:ok, %ExposureReceipt{}} = Experiments.record_exposure(exposure_request)
@@ -328,10 +334,10 @@ defmodule Oli.Experiments.RuntimeTest do
       {:ok, assignment} = Experiments.assign_condition(assign_request(scope, revision, ["a"]))
 
       exposure_request = %RecordExposureRequest{
+        key: "failed-xapi-exposure:#{assignment.assignment_id}",
         scope: scope,
         assignment_id: assignment.assignment_id,
-        content_revision_id: revision.id,
-        idempotency_key: "failed-xapi-exposure:#{assignment.assignment_id}"
+        content_revision_id: revision.id
       }
 
       assert {:ok, %ExposureReceipt{reused?: false}} =
@@ -352,11 +358,11 @@ defmodule Oli.Experiments.RuntimeTest do
       {:ok, assignment} = Experiments.assign_condition(assign_request(scope, revision, ["a"]))
 
       reward_request = %RecordRewardRequest{
+        key: "ts-reward:#{assignment.assignment_id}",
         scope: scope,
         assignment_id: assignment.assignment_id,
         reward_value: 1.0,
-        reward_source: "test",
-        idempotency_key: "ts-reward:#{assignment.assignment_id}"
+        reward_source: "test"
       }
 
       assert {:ok, %RewardReceipt{reused?: false}} = Experiments.record_reward(reward_request)
@@ -384,19 +390,19 @@ defmodule Oli.Experiments.RuntimeTest do
         Experiments.assign_condition(assign_request(second_scope, revision, ["a"]))
 
       first_request = %RecordRewardRequest{
+        key: "concurrent-ts-reward:#{first_assignment.assignment_id}",
         scope: scope,
         assignment_id: first_assignment.assignment_id,
         reward_value: 1.0,
-        reward_source: "test",
-        idempotency_key: "concurrent-ts-reward:#{first_assignment.assignment_id}"
+        reward_source: "test"
       }
 
       second_request = %RecordRewardRequest{
+        key: "concurrent-ts-reward:#{second_assignment.assignment_id}",
         scope: second_scope,
         assignment_id: second_assignment.assignment_id,
         reward_value: 1.0,
-        reward_source: "test",
-        idempotency_key: "concurrent-ts-reward:#{second_assignment.assignment_id}"
+        reward_source: "test"
       }
 
       [first_result, second_result] =
@@ -519,7 +525,7 @@ defmodule Oli.Experiments.RuntimeTest do
 
   defp assert_duplicate_skip(event_type) do
     assert_receive {:telemetry, [:oli, :experiments, :xapi, :emit, :skipped_duplicate],
-                    %{count: 1}, %{attribution_role: ^event_type, idempotency_key_hash: hash}}
+                    %{count: 1}, %{attribution_role: ^event_type, key_hash: hash}}
 
     assert byte_size(hash) == 64
   end

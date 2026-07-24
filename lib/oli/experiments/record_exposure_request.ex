@@ -6,18 +6,18 @@ defmodule Oli.Experiments.RecordExposureRequest do
   alias Oli.Experiments.Scope
 
   defstruct [
+    :key,
     :scope,
     :assignment_id,
     :content_revision_id,
-    :idempotency_key,
     :exposed_at
   ]
 
   @type t :: %__MODULE__{
+          key: String.t(),
           scope: Scope.t(),
           assignment_id: integer(),
           content_revision_id: integer(),
-          idempotency_key: String.t(),
           exposed_at: DateTime.t() | nil
         }
 end

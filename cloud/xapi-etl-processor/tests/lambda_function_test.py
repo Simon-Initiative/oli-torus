@@ -24,8 +24,8 @@ except ModuleNotFoundError:
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "lambda_function.py"
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "experiment_attributed_part_attempt.jsonl"
-FIXTURE_EVENT_HASH = "ee8a8266137dc930ebd5a1b0c2daddcabeefae4615b02a6b089bcddd0d6d10b5"
-FIXTURE_ATTRIBUTION_HASH = "7033183577a7f5c6b310e7dddc788a88f63b98401a24d08f08049d00fce5936e"
+FIXTURE_EVENT_HASH = "ea851925371d2b82f27849aa3e0afa0d2236260acec50f6db6907fc6f8aca409"
+FIXTURE_ATTRIBUTION_HASH = "f6427e22046b7e779c8d7cdf805b94623a7b9be54cd0a9e6e0b81a325e6062d1"
 spec = importlib.util.spec_from_file_location("lambda_function", MODULE_PATH)
 lambda_function = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = lambda_function
@@ -293,8 +293,8 @@ class LambdaFunctionTests(TestCase):
         self.assertNotIn("content_element_id", rows[0])
         self.assertNotIn("algorithm_version", rows[0])
         self.assertNotIn("policy_update_reason", rows[0])
-        self.assertNotIn("idempotency_key_hash", rows[0])
-        self.assertNotIn("idempotency_key", rows[0])
+        self.assertNotIn("key_hash", rows[0])
+        self.assertNotIn("key", rows[0])
         self.assertNotIn("outcome_id", rows[0])
         self.assertNotIn("reward_id", rows[0])
         self.assertNotIn("previous_policy_state_hash", rows[0])

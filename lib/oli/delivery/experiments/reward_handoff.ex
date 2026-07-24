@@ -153,6 +153,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
 
     with {:ok, outcome} <-
            Oli.Experiments.record_outcome(%RecordOutcomeRequest{
+             key: outcome_key,
              scope: scope,
              assignment_id: assignment.assignment_id,
              activity_attempt_id: activity_attempt.id,
@@ -161,19 +162,18 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
              score: activity_attempt.score,
              out_of: activity_attempt.out_of,
              observed_at: activity_attempt.date_evaluated,
-             metadata: outcome_metadata(activity_attempt),
-             idempotency_key: outcome_key
+             metadata: outcome_metadata(activity_attempt)
            }),
          {:ok, _reward} <-
            Oli.Experiments.record_reward(%RecordRewardRequest{
+             key:
+               "reward:activity_attempt:#{activity_attempt.id}:assignment:#{assignment.assignment_id}",
              scope: scope,
              assignment_id: assignment.assignment_id,
-             outcome_id: outcome.id,
+             outcome_key: outcome.key,
              reward_value: reward_value(activity_attempt),
              reward_source: @reward_source,
-             metadata: reward_metadata(activity_attempt),
-             idempotency_key:
-               "reward:activity_attempt:#{activity_attempt.id}:assignment:#{assignment.assignment_id}"
+             metadata: reward_metadata(activity_attempt)
            }) do
       :ok
     end

@@ -46,7 +46,7 @@ defmodule Oli.Experiments.Telemetry do
         {%ExposureReceipt{} = receipt, %RecordExposureRequest{} = request},
         _opts
       ) do
-    skip_duplicate("exposure", receipt.idempotency_key, request.scope)
+    skip_duplicate("exposure", receipt.key, request.scope)
   end
 
   def emit(
@@ -62,7 +62,7 @@ defmodule Oli.Experiments.Telemetry do
         {%OutcomeReceipt{} = receipt, %RecordOutcomeRequest{} = request},
         _opts
       ) do
-    skip_duplicate("outcome", receipt.idempotency_key, request.scope)
+    skip_duplicate("outcome", receipt.key, request.scope)
   end
 
   def emit(
@@ -78,7 +78,7 @@ defmodule Oli.Experiments.Telemetry do
         {%RewardReceipt{} = receipt, %RecordRewardRequest{} = request},
         _opts
       ) do
-    skip_duplicate("reward", receipt.idempotency_key, request.scope)
+    skip_duplicate("reward", receipt.key, request.scope)
   end
 
   def emit(:policy_updated, {%{} = update, %{} = reward}, opts) do
@@ -87,11 +87,11 @@ defmodule Oli.Experiments.Telemetry do
 
   def emit(_event, _payload, _opts), do: :ok
 
-  defp skip_duplicate(event_type, idempotency_key, %Scope{} = scope, extra \\ %{}) do
+  defp skip_duplicate(event_type, key, %Scope{} = scope, extra \\ %{}) do
     metadata =
       %{
         attribution_role: event_type,
-        idempotency_key_hash: hash_key(idempotency_key),
+        key_hash: hash_key(key),
         section_id: scope.section_id,
         publication_id: scope.publication_id
       }
@@ -122,7 +122,7 @@ defmodule Oli.Experiments.Telemetry do
         "algorithm_version",
         "policy_version"
       ])
-      |> Map.put("idempotency_key_hash", hash_key(attribution["idempotency_key"]))
+      |> Map.put("key_hash", hash_key(attribution["key"]))
       |> reject_nil_values()
 
     :telemetry.execute([:oli, :experiments, :telemetry, event], %{count: 1}, metadata)

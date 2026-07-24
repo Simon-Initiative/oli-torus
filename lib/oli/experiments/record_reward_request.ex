@@ -6,24 +6,22 @@ defmodule Oli.Experiments.RecordRewardRequest do
   alias Oli.Experiments.Scope
 
   defstruct [
+    :key,
     :scope,
     :assignment_id,
-    :outcome_id,
-    :outcome_idempotency_key,
+    :outcome_key,
     :reward_value,
     :reward_source,
-    :metadata,
-    :idempotency_key
+    :metadata
   ]
 
   @type t :: %__MODULE__{
+          key: String.t(),
           scope: Scope.t(),
           assignment_id: integer(),
-          outcome_id: integer() | nil,
-          outcome_idempotency_key: String.t() | nil,
+          outcome_key: String.t() | nil,
           reward_value: float(),
           reward_source: String.t(),
-          metadata: map() | nil,
-          idempotency_key: String.t()
+          metadata: map() | nil
         }
 end

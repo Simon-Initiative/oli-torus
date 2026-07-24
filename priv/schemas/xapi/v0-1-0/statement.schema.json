@@ -120,7 +120,7 @@
         "algorithm_version": {
           "type": "string"
         },
-        "idempotency_key": {
+        "key": {
           "type": "string"
         },
         "reward_value": {

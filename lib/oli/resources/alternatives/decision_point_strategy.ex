@@ -171,11 +171,11 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
          decision_point
        ) do
     request = %RecordExposureRequest{
+      key:
+        "alternatives:#{decision_point.id}:#{decision_point.revision_id}:assignment:#{assignment_id}",
       scope: scope,
       assignment_id: assignment_id,
-      content_revision_id: decision_point.revision_id,
-      idempotency_key:
-        "alternatives:#{decision_point.id}:#{decision_point.revision_id}:assignment:#{assignment_id}"
+      content_revision_id: decision_point.revision_id
     }
 
     case Oli.Experiments.record_exposure(request) do
@@ -338,11 +338,11 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
          decision_point
        ) do
     request = %RecordExposureRequest{
+      key:
+        "alternatives:#{decision_point.id}:#{decision_point.revision_id}:assignment:#{assignment_id}",
       scope: scope,
       assignment_id: assignment_id,
-      content_revision_id: decision_point.revision_id,
-      idempotency_key:
-        "alternatives:#{decision_point.id}:#{decision_point.revision_id}:assignment:#{assignment_id}"
+      content_revision_id: decision_point.revision_id
     }
 
     case Oli.Experiments.record_exposure(request) do

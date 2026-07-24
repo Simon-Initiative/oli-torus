@@ -366,7 +366,7 @@ defmodule Oli.Resources.AlternativesTest do
 
       assert assignment.section_id == context.section_id
       assert exposure["publication_id"] == context.publication_id
-      assert exposure["idempotency_key"] =~ ":assignment:#{assignment.id}"
+      assert exposure["key"] =~ ":assignment:#{assignment.id}"
       assert exposure["role"] == "exposure"
     end
 

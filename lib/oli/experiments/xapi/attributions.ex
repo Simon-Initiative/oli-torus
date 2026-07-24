@@ -98,7 +98,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
       assigned_by_policy: assignment_value(assignment, :assigned_by_policy),
       algorithm: assignment_value(assignment, :assigned_by_policy),
       policy_version: assignment_value(assignment, :policy_version),
-      idempotency_key:
+      key:
         assignment_value(assignment, :assignment_key) ||
           "assignment:#{decision.assignment_id}",
       reused: decision.reused?
@@ -114,9 +114,8 @@ defmodule Oli.Experiments.XAPI.Attributions do
     assignment_attrs(assignment)
     |> Map.merge(%{
       role: "exposure",
-      exposure_id: receipt.id,
       content_revision_id: request.content_revision_id,
-      idempotency_key: receipt.idempotency_key,
+      key: receipt.key,
       recorded_at: format_timestamp(receipt.recorded_at)
     })
     |> attribution_with_scope(request.scope)
@@ -130,13 +129,12 @@ defmodule Oli.Experiments.XAPI.Attributions do
     assignment_attrs(assignment)
     |> Map.merge(%{
       role: "outcome",
-      outcome_id: receipt.id,
       activity_attempt_id: request.activity_attempt_id,
       resource_attempt_id: request.resource_attempt_id,
       activity_resource_id: request.activity_resource_id,
       score: decimal_to_number(request.score),
       out_of: decimal_to_number(request.out_of),
-      idempotency_key: receipt.idempotency_key,
+      key: receipt.key,
       recorded_at: format_timestamp(receipt.recorded_at)
     })
     |> attribution_with_scope(request.scope)
@@ -150,12 +148,10 @@ defmodule Oli.Experiments.XAPI.Attributions do
     assignment_attrs(assignment)
     |> Map.merge(%{
       role: "reward",
-      reward_id: receipt.id,
-      outcome_id: receipt.outcome_id,
-      outcome_idempotency_key: receipt.outcome_idempotency_key || request.outcome_idempotency_key,
+      outcome_key: receipt.outcome_key || request.outcome_key,
       reward_value: decimal_to_number(request.reward_value),
       reward_source: request.reward_source,
-      idempotency_key: receipt.idempotency_key,
+      key: receipt.key,
       recorded_at: format_timestamp(receipt.recorded_at)
     })
     |> attribution_with_scope(request.scope)
@@ -177,18 +173,18 @@ defmodule Oli.Experiments.XAPI.Attributions do
       decision_point_id: map_value(reward, :decision_point_id),
       condition_id: map_value(reward, :condition_id),
       condition_code: condition.condition_code,
-      policy_update_id: map_value(update, :id),
+      policy_update_key: map_value(update, :key),
       policy_state_id: map_value(update, :policy_state_id),
-      reward_id: map_value(reward, :id),
+      reward_key: map_value(reward, :key),
       reward_value: decimal_to_number(map_value(reward, :reward_value)),
       algorithm: policy_state.algorithm,
       algorithm_version: map_value(update, :algorithm_version),
       policy_update_reason: map_value(update, :update_reason),
       previous_policy_state_hash: state_hash(map_value(update, :previous_state)),
       next_policy_state_hash: state_hash(map_value(update, :next_state)),
-      idempotency_key:
-        map_value(update, :idempotency_key) ||
-          "policy_update:#{map_value(update, :id)}:reward:#{map_value(reward, :id)}",
+      key:
+        map_value(update, :key) ||
+          "policy_update:#{map_value(reward, :key)}",
       recorded_at: format_timestamp(map_value(update, :inserted_at))
     })
     |> attribution_with_scope(scope)

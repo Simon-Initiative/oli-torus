@@ -133,17 +133,17 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
       reward = only_event(scope, "rewards")
 
       reward_request = %RecordRewardRequest{
+        key: reward["key"],
         scope: scope,
         assignment_id: assignment.id,
-        outcome_id: reward["outcome_id"],
+        outcome_key: reward["outcome_key"],
         reward_value: reward["reward_value"],
-        reward_source: reward["reward_source"],
-        idempotency_key: reward["idempotency_key"]
+        reward_source: reward["reward_source"]
       }
 
       assert {:ok, reused_reward_receipt} = Experiments.record_reward(reward_request)
       assert reused_reward_receipt.reused?
-      assert reused_reward_receipt.id == reward["id"]
+      assert reused_reward_receipt.key == reward["key"]
       assert reward["reward_value"] == 1.0
       assert reward["reward_source"] == "activity_attempt:full_credit"
       assert_thompson_policy_update(scope, alternatives_revision, reward)
@@ -164,7 +164,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
            ),
          {:ok, alternatives_revision} <- alternatives_revision(state, @fallback_project_name),
          {:ok, activity_revision} <- activity_revision(state, @fallback_project_name),
-         {:ok, activity_attempt} <-
+         {:ok, _activity_attempt} <-
            evaluated_activity_attempt(scope, activity_revision.resource_id) do
       assert Repo.aggregate(assignment_query(scope, alternatives_revision), :count, :id) == 0
       assert event_count(scope, "exposures") == 0

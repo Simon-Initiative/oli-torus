@@ -46,7 +46,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert attribution["user_id"] == 400
     assert attribution["algorithm"] == "weighted_random"
     assert attribution["policy_version"] == "weighted_random"
-    assert attribution["idempotency_key"] == "10:20:500"
+    assert attribution["key"] == "10:20:500"
   end
 
   test "builds exposure, outcome, reward, and policy update attribution evidence" do
@@ -74,12 +74,12 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       )
 
     assert exposure["role"] == "exposure"
-    assert exposure["exposure_id"] == 60
+    refute Map.has_key?(exposure, "exposure_id")
     assert exposure["experiment_uuid"] == @experiment_uuid
     assert exposure["content_revision_id"] == 701
 
     assert outcome["role"] == "outcome"
-    assert outcome["outcome_id"] == 70
+    refute Map.has_key?(outcome, "outcome_id")
     assert outcome["experiment_uuid"] == @experiment_uuid
     assert outcome["activity_attempt_id"] == 800
     assert outcome["resource_attempt_id"] == 801
@@ -88,14 +88,16 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert outcome["out_of"] == 1.0
 
     assert reward["role"] == "reward"
-    assert reward["reward_id"] == 80
-    assert reward["outcome_id"] == 70
+    refute Map.has_key?(reward, "reward_id")
+    refute Map.has_key?(reward, "outcome_id")
+    assert reward["outcome_key"] == "outcome:40"
     assert reward["experiment_uuid"] == @experiment_uuid
     assert reward["reward_source"] == "activity_attempt:full_credit"
     assert reward["reward_value"] == 1.0
 
     assert policy_update["role"] == "policy_update"
-    assert policy_update["policy_update_id"] == 90
+    assert policy_update["policy_update_key"] == "policy_update:reward:40"
+    assert policy_update["reward_key"] == "reward:40"
     assert policy_update["policy_state_id"] == 91
     assert policy_update["algorithm"] == "thompson_sampling"
     assert policy_update["algorithm_version"] == "thompson_sampling:v2"
@@ -203,18 +205,17 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
   defp exposure_request do
     %RecordExposureRequest{
+      key: "exposure:40",
       scope: scope(),
       assignment_id: 40,
-      content_revision_id: 701,
-      idempotency_key: "exposure:40"
+      content_revision_id: 701
     }
   end
 
   defp exposure_receipt do
     %ExposureReceipt{
-      id: 60,
+      key: "exposure:40",
       assignment_id: 40,
-      idempotency_key: "exposure:40",
       recorded_at: timestamp(),
       reused?: false
     }
@@ -222,6 +223,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
   defp outcome_request do
     %RecordOutcomeRequest{
+      key: "outcome:40",
       scope: scope(),
       assignment_id: 40,
       activity_attempt_id: 800,
@@ -229,16 +231,14 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       activity_resource_id: 802,
       score: 1.0,
       out_of: 1.0,
-      metadata: %{"raw_response" => "student response"},
-      idempotency_key: "outcome:40"
+      metadata: %{"raw_response" => "student response"}
     }
   end
 
   defp outcome_receipt do
     %OutcomeReceipt{
-      id: 70,
+      key: "outcome:40",
       assignment_id: 40,
-      idempotency_key: "outcome:40",
       recorded_at: timestamp(),
       reused?: false
     }
@@ -246,22 +246,21 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
   defp reward_request do
     %RecordRewardRequest{
+      key: "reward:40",
       scope: scope(),
       assignment_id: 40,
-      outcome_id: 70,
+      outcome_key: "outcome:40",
       reward_value: 1.0,
       reward_source: "activity_attempt:full_credit",
-      metadata: %{"learner_name" => "Ada Lovelace"},
-      idempotency_key: "reward:40"
+      metadata: %{"learner_name" => "Ada Lovelace"}
     }
   end
 
   defp reward_receipt do
     %RewardReceipt{
-      id: 80,
+      key: "reward:40",
       assignment_id: 40,
-      outcome_id: 70,
-      idempotency_key: "reward:40",
+      outcome_key: "outcome:40",
       recorded_at: timestamp(),
       reused?: false
     }
@@ -269,29 +268,27 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
   defp reward do
     %{
-      id: 80,
       assignment_id: 40,
-      outcome_id: 70,
       experiment_id: 10,
       decision_point_id: 20,
       condition_id: 30,
       reward_value: 1.0,
       reward_source: "activity_attempt:full_credit",
-      idempotency_key: "reward:40",
+      key: "reward:40",
       inserted_at: timestamp()
     }
   end
 
   defp policy_update do
     %{
-      id: 90,
       policy_state_id: 91,
-      reward_id: 80,
+      reward_key: "reward:40",
       condition_id: 30,
       previous_state: %{"a" => %{"posterior_alpha" => 1.0, "posterior_beta" => 1.0}},
       next_state: %{"a" => %{"posterior_alpha" => 2.0, "posterior_beta" => 1.0}},
       algorithm_version: "thompson_sampling:v2",
       update_reason: "reward_recorded",
+      key: "policy_update:reward:40",
       inserted_at: timestamp()
     }
   end
