@@ -176,6 +176,121 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     return { alt, caption, final_image: pngName, page_revision_slug: pageRevisionSlug, width };
   },
 
+  async author_youtube_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const initialId = 'zHIIzcWqsP0';
+    const youtubeId = '2QAMzupR_C4';
+    const caption = 'YOUTUBE-C authored caption';
+    const alt = 'YOUTUBE-G alternative text';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addYoutubeToolbar(initialId, initialId, false);
+
+    const youtube = page.locator('.youtube-editor');
+    await youtube.click();
+    await youtube.locator('.captions-input').fill(caption);
+    await selectVoidElement(youtube);
+
+    const [newTab] = await Promise.all([
+      page.context().waitForEvent('page'),
+      hoverToolbarButton(page, 'Open Video').click(),
+    ]);
+    await newTab.waitForLoadState('domcontentloaded');
+    await expect(newTab).toHaveURL(new RegExp(initialId));
+    await newTab.close();
+
+    await hoverToolbarSettingsButton(page).click();
+    const settings = page.getByRole('dialog', { name: 'YouTube Video Settings' });
+    await settings.getByPlaceholder('Video ID or URL').fill(youtubeId);
+    await settings.getByPlaceholder('Enter a short description of this video').fill(alt);
+    await settings.getByRole('button', { name: 'Save', exact: true }).click();
+
+    await deleteAndUndo(page, youtube);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { alt, caption, page_revision_slug: pageRevisionSlug, youtube_id: youtubeId };
+  },
+
+  async author_webpage_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const initialUrl = 'https://example.com/mixed-workflow-initial';
+    const webpageUrl = 'https://example.com/mixed-workflow-final';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addWebPageToolbar(initialUrl, false);
+
+    const webpage = page.locator('.webpage-editor');
+    await webpage.click();
+    const [newTab] = await Promise.all([
+      page.context().waitForEvent('page'),
+      webpage.getByRole('button', { name: 'Open Webpage', exact: true }).click(),
+    ]);
+    await newTab.waitForLoadState('domcontentloaded');
+    await expect(newTab).toHaveURL(initialUrl);
+    await newTab.close();
+
+    await webpage.click();
+    await webpage.getByRole('button', { name: /Settings$/ }).click();
+    const settings = page.getByRole('dialog').filter({ hasText: 'Change Webpage Embed URL' });
+    await settings.getByPlaceholder('Webpage Embed URL').fill(webpageUrl);
+    await settings.getByRole('button', { name: 'Save', exact: true }).click();
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { page_revision_slug: pageRevisionSlug, webpage_url: webpageUrl };
+  },
+
+  async author_video_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const videoName = 'video-test-01.mp4';
+    const poster = 'img-mock-05-16-2025.jpg';
+    const captionTrack = 'video-test-captions.vtt';
+    const width = '640';
+    const height = '360';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addVideoToolbar(videoName, false);
+
+    const video = page.locator('.video-react').first();
+    await video.hover();
+    await page.getByRole('button', { name: 'Settings' }).last().click();
+    const settings = page.getByRole('dialog', { name: 'Video Settings' });
+
+    await settings.getByRole('button', { name: 'Add New' }).click();
+    await selectMediaFromPanel(page, videoName);
+
+    await settings.getByRole('tab', { name: 'Accessibility' }).click();
+    await settings.getByRole('button', { name: 'Add New' }).click();
+    await selectMediaFromPanel(page, captionTrack);
+
+    await settings.getByRole('tab', { name: 'Poster Image' }).click();
+    await settings.getByRole('button', { name: 'Choose Poster Image' }).click();
+    await selectMediaFromPanel(page, poster);
+
+    await settings.getByRole('tab', { name: 'Size' }).click();
+    const dimensions = settings.locator('input[type="number"]');
+    await dimensions.nth(0).fill(width);
+    await dimensions.nth(1).fill(height);
+    await settings.getByRole('button', { name: 'Save', exact: true }).click();
+
+    await deleteAndUndo(page, video);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return {
+      caption_track: captionTrack,
+      height,
+      page_revision_slug: pageRevisionSlug,
+      poster,
+      video_name: videoName,
+      width,
+    };
+  },
+
   async author_figure_workflow({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
@@ -500,6 +615,51 @@ async function selectImageSettings(page: Page, setting: 'Select Image' | 'Settin
   await image.scrollIntoViewIfNeeded();
   await image.click();
   await page.getByRole('button', { name: setting }).last().click({ force: true });
+}
+
+async function selectMediaFromPanel(page: Page, name: string) {
+  const panel = page
+    .locator('.picker-panel')
+    .filter({ has: page.getByText(name, { exact: true }) });
+  await panel.getByText(name, { exact: true }).click();
+  await expect(panel).toBeHidden();
+}
+
+async function deleteAndUndo(page: Page, element: Locator) {
+  await element.click();
+  const deleteButton = element
+    .locator('xpath=ancestor::*[@role="option"]')
+    .getByRole('button', { name: 'delete', exact: true });
+
+  if ((await deleteButton.count()) > 0) {
+    await deleteButton.click();
+  } else {
+    await page.keyboard.press('Backspace');
+  }
+
+  await expect(element).toHaveCount(0);
+  const toastUndo = page.getByRole('button', { name: 'Undo', exact: true });
+
+  if ((await toastUndo.count()) > 0) {
+    await toastUndo.click();
+  } else {
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+  }
+
+  await expect(element).toHaveCount(1);
+}
+
+async function selectVoidElement(element: Locator) {
+  await element.click({ position: { x: 1, y: 1 } });
+  await expect(element).toHaveCSS('border-top-color', 'rgb(173, 216, 230)');
+}
+
+function hoverToolbarButton(page: Page, name: string) {
+  return page.locator(`.hover-container button:has([aria-label="${name}"])`).last();
+}
+
+function hoverToolbarSettingsButton(page: Page) {
+  return page.locator('.hover-container button', { hasText: 'Settings' }).last();
 }
 
 async function insertTable(page: Page) {

@@ -131,14 +131,14 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `YOUTUBE-B` | Insert YouTube video using only the YouTube video id | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed insertion workflow family. |
-| `YOUTUBE-C` | Edit the caption of the YouTube video | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed caption workflow family. |
-| `YOUTUBE-D` | Click to open the YouTube video in full screen in new tab | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | New-tab behavior may remain browser-only within the workflow. |
+| `YOUTUBE-B` | Insert YouTube video using only the YouTube video id | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-C` | Edit the caption of the YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-D` | Click to open the YouTube video in full screen in new tab | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; verifies new tab plus preview and delivery persistence. |
 | `YOUTUBE-E` | Click to copy the YouTube video URL to the clipboard | `needs-triage` | `needs-triage` | `needs-triage` | `needs-triage` | `Follow-up Slice 5` | Clipboard assertions need a stable local strategy. |
-| `YOUTUBE-F` | Using settings menu, change the video to a new id | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed settings workflow family. |
-| `YOUTUBE-G` | Using settings menu, set the alternative text for YouTube video | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Accessibility workflow family. |
-| `YOUTUBE-H` | Delete a YouTube video | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed lifecycle workflow family. |
-| `YOUTUBE-I` | Undo the deletion (Ctrl-z) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed lifecycle workflow family. |
+| `YOUTUBE-F` | Using settings menu, change the video to a new id | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-G` | Using settings menu, set the alternative text for YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-H` | Delete a YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-I` | Undo the deletion (Ctrl-z) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
 
 ### `CODEBLOCK`
 
@@ -153,21 +153,21 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `VIDEO-B` | Add additional video track via Settings dialog | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Video settings workflow family. |
-| `VIDEO-C` | Add caption track via Settings dialog | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Accessibility workflow family. |
-| `VIDEO-D` | Set poster image via Settings dialog | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Video settings workflow family. |
-| `VIDEO-E` | Set size of the video via Settings dialog | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Video settings workflow family. |
-| `VIDEO-F` | Delete the video | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Media lifecycle workflow family. |
-| `VIDEO-G` | Undo the deletion (ctrl-z) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Media lifecycle workflow family. |
+| `VIDEO-B` | Add additional video track via Settings dialog | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-C` | Add caption track via Settings dialog | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-D` | Set poster image via Settings dialog | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-E` | Set size of the video via Settings dialog | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-F` | Delete the video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-G` | Undo the deletion (ctrl-z) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
 
 ### `WEBPAGE`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `WEBPAGE-A` | Insert webpage (iframe) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed insertion workflow family. |
-| `WEBPAGE-B` | Click to open in new tab | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | New-tab browser behavior plus persist/delivery validation. |
+| `WEBPAGE-A` | Insert webpage (iframe) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; `WEBPAGE-A/B/D` Playwright workflow. |
+| `WEBPAGE-B` | Click to open in new tab | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; verifies new tab plus preview and delivery persistence. |
 | `WEBPAGE-C` | Click to copy URL | `needs-triage` | `needs-triage` | `needs-triage` | `needs-triage` | `Follow-up Slice 5` | Clipboard assertions need a stable local strategy. |
-| `WEBPAGE-D` | Using settings dialog, change the URL | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed settings workflow family. |
+| `WEBPAGE-D` | Using settings dialog, change the URL | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; `WEBPAGE-A/B/D` Playwright workflow. |
 
 ### `FORMULA`
 

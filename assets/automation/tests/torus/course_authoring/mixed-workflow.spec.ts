@@ -182,6 +182,39 @@ test.describe('MIXED workflow', () => {
     });
   });
 
+  test.describe('YOUTUBE', () => {
+    test('YOUTUBE-B/C/D/F/G/H/I: YouTube editing and lifecycle persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/youtube.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('VIDEO', () => {
+    test('VIDEO-B/C/D/E/F/G: video settings and lifecycle persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/video.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('WEBPAGE', () => {
+    test('WEBPAGE-A/B/D: webpage editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/webpage.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
   test.describe('CODEBLOCK', () => {
     test('CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery', async ({
       runWorkflow,

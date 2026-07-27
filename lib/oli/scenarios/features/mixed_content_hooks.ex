@@ -474,6 +474,109 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   end
 
   @doc """
+  Asserts that the edited YouTube player is passed to the author-preview renderer.
+  """
+  def assert_author_preview_youtube_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    assert_react_preview_props!(html, "Components.YoutubePlayer", [
+      required_param!(state, "EXPECTED_YOUTUBE_ID"),
+      required_param!(state, "EXPECTED_CAPTION"),
+      required_param!(state, "EXPECTED_ALT")
+    ])
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited YouTube player persists to published delivery content.
+  """
+  def assert_student_delivery_youtube_workflow(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    youtube_id = required_param!(state, "EXPECTED_YOUTUBE_ID")
+    caption = required_param!(state, "EXPECTED_CAPTION")
+    alt = required_param!(state, "EXPECTED_ALT")
+
+    assert nested_map?(content, fn node ->
+             node["type"] == "youtube" and node["src"] == youtube_id and node["alt"] == alt and
+               nested_contains?(node["caption"], caption)
+           end),
+           "Expected published YouTube video with edited id, caption, and alternative text"
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited webpage URL renders in author preview.
+  """
+  def assert_author_preview_webpage_workflow(%ExecutionState{} = state) do
+    url = required_param!(state, "EXPECTED_WEBPAGE_URL")
+
+    assert html_has_selector?(author_preview_html(state), ~s|iframe[src="#{url}"]|),
+           "Expected author-preview webpage iframe #{inspect(url)}"
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited webpage URL persists to published delivery content.
+  """
+  def assert_student_delivery_webpage_workflow(%ExecutionState{} = state) do
+    url = required_param!(state, "EXPECTED_WEBPAGE_URL")
+
+    assert nested_map?(
+             delivered_revision_content(state),
+             &(&1["type"] == "iframe" and &1["src"] == url)
+           ),
+           "Expected published webpage iframe #{inspect(url)}"
+
+    state
+  end
+
+  @doc """
+  Asserts that video sources, captions, poster, and size are passed to author preview.
+  """
+  def assert_author_preview_video_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    assert_react_preview_props!(html, "Components.VideoPlayer", [
+      required_param!(state, "EXPECTED_VIDEO_NAME"),
+      required_param!(state, "EXPECTED_POSTER"),
+      required_param!(state, "EXPECTED_CAPTION_TRACK"),
+      required_param!(state, "EXPECTED_WIDTH"),
+      required_param!(state, "EXPECTED_HEIGHT")
+    ])
+
+    state
+  end
+
+  @doc """
+  Asserts that video sources, captions, poster, and size persist to published delivery content.
+  """
+  def assert_student_delivery_video_workflow(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    video_name = required_param!(state, "EXPECTED_VIDEO_NAME")
+    poster = required_param!(state, "EXPECTED_POSTER")
+    caption_track = required_param!(state, "EXPECTED_CAPTION_TRACK")
+    width = String.to_integer(required_param!(state, "EXPECTED_WIDTH"))
+    height = String.to_integer(required_param!(state, "EXPECTED_HEIGHT"))
+
+    assert nested_map?(content, fn node ->
+             node["type"] == "video" and node["width"] == width and node["height"] == height and
+               String.contains?(node["poster"] || "", poster) and
+               Enum.count(node["src"] || []) >= 2 and
+               Enum.all?(node["src"] || [], &String.contains?(&1["url"] || "", video_name)) and
+               Enum.any?(
+                 node["captions"] || [],
+                 &String.contains?(&1["src"] || "", caption_track)
+               )
+           end),
+           "Expected published video with multiple sources, caption track, poster image, and size"
+
+    state
+  end
+
+  @doc """
   Asserts that the author preview renders the expected callout content.
   """
   def assert_author_preview_callout(%ExecutionState{} = state) do
@@ -707,6 +810,19 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
       |> Floki.attribute(attribute)
       |> Enum.any?(&String.contains?(&1, text))
     end)
+  end
+
+  defp assert_react_preview_props!(html, component, expected_values) do
+    props =
+      html
+      |> Floki.parse_document!()
+      |> Floki.find(~s|[data-react-class="#{component}"]|)
+      |> Enum.map(&(Floki.attribute(&1, "data-react-props") |> List.first() || ""))
+
+    assert Enum.any?(props, fn props ->
+             Enum.all?(expected_values, &String.contains?(props, &1))
+           end),
+           "Expected author-preview #{component} props to contain #{inspect(expected_values)}"
   end
 
   defp assert_preview_text(state, key) do
