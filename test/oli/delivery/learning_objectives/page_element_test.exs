@@ -302,6 +302,43 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
       assert Enum.find_index(objectives, &(&1.resource_id == parent.resource_id)) <
                Enum.find_index(objectives, &(&1.resource_id == child.resource_id))
     end
+
+    test "includes every parent hierarchy for a shared directly matched sub-objective", %{
+      seeds: %{section: section, resources: resources}
+    } do
+      force_children(section, resources.obj_resource_d.id, [resources.obj_resource_c1.id])
+      force_related_activities(section, resources.obj_resource_c.id, [])
+      force_related_activities(section, resources.obj_resource_d.id, [])
+
+      force_related_activities(section, resources.obj_resource_c1.id, [
+        resources.act_resource_y.id
+      ])
+
+      assert {:ok, objectives} =
+               PageElement.included_objectives(section, resources.module_resource_1.id)
+
+      parent_c = Enum.find(objectives, &(&1.resource_id == resources.obj_resource_c.id))
+      parent_d = Enum.find(objectives, &(&1.resource_id == resources.obj_resource_d.id))
+      child = Enum.find(objectives, &(&1.resource_id == resources.obj_resource_c1.id))
+
+      refute parent_c.directly_matched?
+      refute parent_d.directly_matched?
+      assert child.directly_matched?
+
+      assert parent_c.children == [resources.obj_resource_c1.id]
+      assert parent_d.children == [resources.obj_resource_c1.id]
+
+      assert Enum.sort(child.parent_resource_ids) == [
+               resources.obj_resource_c.id,
+               resources.obj_resource_d.id
+             ]
+
+      assert Enum.find_index(objectives, &(&1.resource_id == parent_c.resource_id)) <
+               Enum.find_index(objectives, &(&1.resource_id == child.resource_id))
+
+      assert Enum.find_index(objectives, &(&1.resource_id == parent_d.resource_id)) <
+               Enum.find_index(objectives, &(&1.resource_id == child.resource_id))
+    end
   end
 
   defp create_delivery_project(_) do
@@ -351,6 +388,17 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
     section.id
     |> SectionResourceDepot.get_section_resource(objective_resource_id)
     |> Sections.update_section_resource(%{related_activities: activity_resource_ids})
+    |> case do
+      {:ok, section_resource} ->
+        SectionResourceDepot.update_section_resource(section_resource)
+        section_resource
+    end
+  end
+
+  defp force_children(section, objective_resource_id, child_resource_ids) do
+    section.id
+    |> SectionResourceDepot.get_section_resource(objective_resource_id)
+    |> Sections.update_section_resource(%{children: child_resource_ids})
     |> case do
       {:ok, section_resource} ->
         SectionResourceDepot.update_section_resource(section_resource)

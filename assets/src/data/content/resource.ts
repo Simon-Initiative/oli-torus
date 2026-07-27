@@ -29,6 +29,7 @@ export type ResolvedLearningObjective = {
   title: string;
   description?: string | null;
   parent_resource_id?: ResourceId | null;
+  parent_resource_ids?: ResourceId[];
   children: ResourceId[];
   related_activity_ids: ResourceId[];
   directly_matched: boolean;

@@ -83,6 +83,36 @@ defmodule Oli.Authoring.LearningObjectives.PageElementTest do
       assert child.related_activity_ids == [resources.act_resource_y.id]
     end
 
+    test "includes every parent for a shared directly matched sub-objective", %{seeds: seeds} do
+      %{project: project, publication: publication, resources: resources, revisions: revisions} =
+        seeds
+
+      author = hd(project.authors)
+
+      {:ok, _} =
+        Resources.update_revision(revisions.obj_revision_d, %{
+          author_id: author.id,
+          children: [resources.obj_resource_c1.id]
+        })
+
+      resolved =
+        resolve_for_page(project.slug, publication.id, resources.page_resource_2.id)
+
+      included_ids =
+        resolved
+        |> Enum.map(& &1.resource_id)
+
+      child = Enum.find(resolved, &(&1.resource_id == resources.obj_resource_c1.id))
+
+      assert resources.obj_resource_c.id in included_ids
+      assert resources.obj_resource_d.id in included_ids
+
+      assert Enum.sort(child.parent_resource_ids) == [
+               resources.obj_resource_c.id,
+               resources.obj_resource_d.id
+             ]
+    end
+
     test "does not leak objectives from another project", %{seeds: seeds} do
       other_project = create_full_project_with_objectives()
       %{project: project, publication: publication, resources: resources} = seeds
@@ -205,6 +235,79 @@ defmodule Oli.Authoring.LearningObjectives.PageElementTest do
       assert config["revisit_pages"] == [valid_page_id]
       assert config["practice_pages"] == [valid_page_id]
     end
+
+    test "treats malformed learning objectives config as an empty list" do
+      seeds = create_full_project_with_objectives()
+
+      %{project: project, revisions: revisions} = seeds
+      author = hd(project.authors)
+
+      PageEditor.acquire_lock(project.slug, revisions.page_revision_2.slug, author.email)
+
+      content = %{
+        "version" => "0.1.0",
+        "model" =>
+          [
+            %{
+              "type" => "learning_objectives",
+              "id" => "lo-1",
+              "mode" => "summary",
+              "include_sub_objectives" => true,
+              "learning_objectives" => "not-a-list"
+            }
+          ] ++ activity_references(revisions)
+      }
+
+      assert {:ok, updated_revision} =
+               PageEditor.edit(project.slug, revisions.page_revision_2.slug, author.email, %{
+                 "content" => content
+               })
+
+      [element | _activity_references] = updated_revision.content["model"]
+
+      assert element["learning_objectives"] == []
+    end
+
+    test "treats malformed learning objective recommendation fields as empty lists" do
+      seeds = create_full_project_with_objectives()
+
+      %{project: project, resources: resources, revisions: revisions} = seeds
+      author = hd(project.authors)
+
+      PageEditor.acquire_lock(project.slug, revisions.page_revision_2.slug, author.email)
+
+      content = %{
+        "version" => "0.1.0",
+        "model" =>
+          [
+            %{
+              "type" => "learning_objectives",
+              "id" => "lo-1",
+              "mode" => "summary",
+              "include_sub_objectives" => true,
+              "learning_objectives" => [
+                %{
+                  "resource_id" => resources.obj_resource_c.id,
+                  "enabled" => true,
+                  "revisit_pages" => "not-a-list",
+                  "practice_pages" => %{"bad" => "shape"}
+                }
+              ]
+            }
+          ] ++ activity_references(revisions)
+      }
+
+      assert {:ok, updated_revision} =
+               PageEditor.edit(project.slug, revisions.page_revision_2.slug, author.email, %{
+                 "content" => content
+               })
+
+      [element | _activity_references] = updated_revision.content["model"]
+      [config] = element["learning_objectives"]
+
+      assert config["revisit_pages"] == []
+      assert config["practice_pages"] == []
+    end
   end
 
   defp resolve_for_page(project_slug, publication_id, page_resource_id) do
@@ -212,6 +315,23 @@ defmodule Oli.Authoring.LearningObjectives.PageElementTest do
     objectives = Publishing.get_published_objective_details(publication_id)
 
     PageElement.resolve(project_slug, page_resource_id, hierarchy, objectives)
+  end
+
+  defp activity_references(revisions) do
+    [
+      %{
+        "type" => "activity-reference",
+        "id" => "activity-y",
+        "activitySlug" => revisions.act_revision_y.slug,
+        "children" => []
+      },
+      %{
+        "type" => "activity-reference",
+        "id" => "activity-z",
+        "activitySlug" => revisions.act_revision_z.slug,
+        "children" => []
+      }
+    ]
   end
 
   defp out_of_project_page_id(author) do

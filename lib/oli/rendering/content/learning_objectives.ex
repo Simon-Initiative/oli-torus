@@ -366,28 +366,36 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   end
 
   defp enabled_objective?(
-         %IncludedObjective{resource_id: resource_id, parent_resource_id: parent_id},
+         %IncludedObjective{resource_id: resource_id} = objective,
          objectives_by_id,
          config
        ) do
+    parent_ids = parent_resource_ids(objective)
+
     objective_enabled?(resource_id, config) &&
-      include_objective_depth?(parent_id, config) &&
-      !disabled_ancestor?(parent_id, objectives_by_id, config)
+      include_objective_depth?(parent_ids, config) &&
+      !disabled_ancestors?(parent_ids, objectives_by_id, config)
   end
 
   defp enabled_objective?(_objective, _objectives_by_id, _config), do: false
 
-  defp include_objective_depth?(nil, _config), do: true
-  defp include_objective_depth?(_parent_id, %{include_sub_objectives?: true}), do: true
-  defp include_objective_depth?(_parent_id, _config), do: false
+  defp include_objective_depth?([], _config), do: true
+  defp include_objective_depth?(_parent_ids, %{include_sub_objectives?: true}), do: true
+  defp include_objective_depth?(_parent_ids, _config), do: false
+
+  defp disabled_ancestors?([], _objectives_by_id, _config), do: false
+
+  defp disabled_ancestors?(parent_ids, objectives_by_id, config) do
+    Enum.all?(parent_ids, &disabled_ancestor?(&1, objectives_by_id, config))
+  end
 
   defp disabled_ancestor?(nil, _objectives_by_id, _config), do: false
 
   defp disabled_ancestor?(parent_id, objectives_by_id, config) do
     case Map.get(objectives_by_id, parent_id) do
-      %IncludedObjective{parent_resource_id: grandparent_id} ->
+      %IncludedObjective{} = parent ->
         !objective_enabled?(parent_id, config) ||
-          disabled_ancestor?(grandparent_id, objectives_by_id, config)
+          disabled_ancestors?(parent_resource_ids(parent), objectives_by_id, config)
 
       _ ->
         false
@@ -415,10 +423,16 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     visible_ids = MapSet.new(Enum.map(objectives, & &1.resource_id))
 
     Enum.filter(objectives, fn objective ->
-      is_nil(objective.parent_resource_id) ||
-        !MapSet.member?(visible_ids, objective.parent_resource_id)
+      not Enum.any?(parent_resource_ids(objective), &MapSet.member?(visible_ids, &1))
     end)
   end
+
+  defp parent_resource_ids(%IncludedObjective{parent_resource_ids: parent_ids})
+       when is_list(parent_ids) and parent_ids != [],
+       do: parent_ids
+
+  defp parent_resource_ids(%IncludedObjective{parent_resource_id: nil}), do: []
+  defp parent_resource_ids(%IncludedObjective{parent_resource_id: parent_id}), do: [parent_id]
 
   defp visible_children(%IncludedObjective{children: child_ids}, objectives_by_id) do
     child_ids

@@ -25,6 +25,7 @@ defmodule Oli.Authoring.LearningObjectives.PageElement do
           title: String.t(),
           description: String.t() | nil,
           parent_resource_id: pos_integer() | nil,
+          parent_resource_ids: [pos_integer()],
           children: [pos_integer()],
           related_activity_ids: [pos_integer()],
           directly_matched: boolean()
@@ -169,25 +170,27 @@ defmodule Oli.Authoring.LearningObjectives.PageElement do
       |> Enum.map(fn objective -> {objective.resource_id, objective} end)
       |> Map.new()
 
-    parent_by_child = parent_by_child(objective_revisions)
+    parent_ids_by_child = parent_ids_by_child(objective_revisions)
     children_by_parent = children_by_parent(objective_revisions)
 
     included_ids =
       directly_matched_ids
-      |> include_parent_objectives(parent_by_child)
+      |> include_parent_objectives(parent_ids_by_child)
       |> MapSet.intersection(MapSet.new(Map.keys(objectives_by_id)))
 
     objective_revisions
-    |> ordered_objective_ids(parent_by_child, children_by_parent)
+    |> ordered_objective_ids(parent_ids_by_child, children_by_parent)
     |> Enum.filter(&MapSet.member?(included_ids, &1))
     |> Enum.map(fn objective_id ->
       objective = Map.fetch!(objectives_by_id, objective_id)
+      parent_resource_ids = Map.get(parent_ids_by_child, objective.resource_id, [])
 
       %{
         resource_id: objective.resource_id,
         title: objective.title,
         description: Map.get(objective, :description),
-        parent_resource_id: Map.get(parent_by_child, objective.resource_id),
+        parent_resource_id: List.first(parent_resource_ids),
+        parent_resource_ids: parent_resource_ids,
         children: Map.get(children_by_parent, objective.resource_id, []),
         related_activity_ids: Map.get(related_by_objective, objective.resource_id, []),
         directly_matched: MapSet.member?(directly_matched_ids, objective.resource_id)
@@ -195,12 +198,18 @@ defmodule Oli.Authoring.LearningObjectives.PageElement do
     end)
   end
 
-  defp parent_by_child(objective_revisions) do
-    Enum.reduce(objective_revisions, %{}, fn objective, acc ->
+  defp parent_ids_by_child(objective_revisions) do
+    objective_revisions
+    |> Enum.reduce(%{}, fn objective, acc ->
       objective.children
       |> Enum.reduce(acc, fn child_id, acc ->
-        Map.put_new(acc, child_id, objective.resource_id)
+        Map.update(acc, child_id, MapSet.new([objective.resource_id]), fn parent_ids ->
+          MapSet.put(parent_ids, objective.resource_id)
+        end)
       end)
+    end)
+    |> Enum.into(%{}, fn {child_id, parent_ids} ->
+      {child_id, parent_ids |> MapSet.to_list() |> Enum.sort()}
     end)
   end
 
@@ -212,50 +221,125 @@ defmodule Oli.Authoring.LearningObjectives.PageElement do
     |> Map.new()
   end
 
-  defp include_parent_objectives(objective_ids, parent_by_child) do
+  defp include_parent_objectives(objective_ids, parent_ids_by_child) do
     Enum.reduce(objective_ids, objective_ids, fn objective_id, included ->
-      include_ancestors(objective_id, included, parent_by_child)
+      include_ancestors(objective_id, included, parent_ids_by_child)
     end)
   end
 
-  defp include_ancestors(objective_id, included, parent_by_child) do
-    case Map.get(parent_by_child, objective_id) do
-      nil ->
-        included
-
-      parent_id ->
-        include_ancestors(parent_id, MapSet.put(included, parent_id), parent_by_child)
-    end
+  defp include_ancestors(objective_id, included, parent_ids_by_child) do
+    parent_ids_by_child
+    |> Map.get(objective_id, [])
+    |> Enum.reduce(included, fn parent_id, included ->
+      include_ancestors(parent_id, MapSet.put(included, parent_id), parent_ids_by_child)
+    end)
   end
 
-  defp ordered_objective_ids(objective_revisions, parent_by_child, children_by_parent) do
+  defp ordered_objective_ids(objective_revisions, parent_ids_by_child, children_by_parent) do
     known_ids = MapSet.new(Enum.map(objective_revisions, & &1.resource_id))
     objectives_by_id = Map.new(objective_revisions, &{&1.resource_id, &1})
 
     root_ids =
       objective_revisions
       |> Enum.map(& &1.resource_id)
-      |> Enum.reject(&Map.has_key?(parent_by_child, &1))
+      |> Enum.reject(&Map.has_key?(parent_ids_by_child, &1))
 
-    root_ids
-    |> sort_ids(objectives_by_id)
-    |> Enum.flat_map(&preorder_ids(&1, children_by_parent, objectives_by_id, known_ids))
-  end
+    {ordered_ids, emitted_ids} =
+      root_ids
+      |> sort_ids(objectives_by_id)
+      |> visit_ids(
+        children_by_parent,
+        parent_ids_by_child,
+        objectives_by_id,
+        known_ids,
+        [],
+        MapSet.new()
+      )
 
-  defp preorder_ids(objective_id, children_by_parent, objectives_by_id, known_ids) do
-    children =
-      children_by_parent
-      |> Map.get(objective_id, [])
-      |> Enum.filter(&MapSet.member?(known_ids, &1))
+    remaining_ids =
+      known_ids
+      |> MapSet.difference(emitted_ids)
+      |> MapSet.to_list()
       |> sort_ids(objectives_by_id)
 
-    [
-      objective_id
-      | Enum.flat_map(
-          children,
-          &preorder_ids(&1, children_by_parent, objectives_by_id, known_ids)
+    {ordered_ids, _emitted_ids} =
+      visit_ids(
+        remaining_ids,
+        children_by_parent,
+        parent_ids_by_child,
+        objectives_by_id,
+        known_ids,
+        ordered_ids,
+        emitted_ids
+      )
+
+    ordered_ids
+  end
+
+  defp visit_ids(
+         objective_ids,
+         children_by_parent,
+         parent_ids_by_child,
+         objectives_by_id,
+         known_ids,
+         ordered_ids,
+         emitted_ids
+       ) do
+    Enum.reduce(objective_ids, {ordered_ids, emitted_ids}, fn objective_id,
+                                                              {ordered_ids, emitted_ids} ->
+      visit_id(
+        objective_id,
+        children_by_parent,
+        parent_ids_by_child,
+        objectives_by_id,
+        known_ids,
+        ordered_ids,
+        emitted_ids
+      )
+    end)
+  end
+
+  defp visit_id(
+         objective_id,
+         children_by_parent,
+         parent_ids_by_child,
+         objectives_by_id,
+         known_ids,
+         ordered_ids,
+         emitted_ids
+       ) do
+    cond do
+      MapSet.member?(emitted_ids, objective_id) ->
+        {ordered_ids, emitted_ids}
+
+      waiting_for_parent?(objective_id, parent_ids_by_child, known_ids, emitted_ids) ->
+        {ordered_ids, emitted_ids}
+
+      true ->
+        child_ids =
+          children_by_parent
+          |> Map.get(objective_id, [])
+          |> Enum.filter(&MapSet.member?(known_ids, &1))
+          |> sort_ids(objectives_by_id)
+
+        visit_ids(
+          child_ids,
+          children_by_parent,
+          parent_ids_by_child,
+          objectives_by_id,
+          known_ids,
+          ordered_ids ++ [objective_id],
+          MapSet.put(emitted_ids, objective_id)
         )
-    ]
+    end
+  end
+
+  defp waiting_for_parent?(objective_id, parent_ids_by_child, known_ids, emitted_ids) do
+    parent_ids_by_child
+    |> Map.get(objective_id, [])
+    |> Enum.any?(fn parent_id ->
+      MapSet.member?(known_ids, parent_id) && !MapSet.member?(emitted_ids, parent_id)
+    end)
   end
 
   defp sort_ids(ids, objectives_by_id) do

@@ -282,7 +282,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
       []
     else
       objectives_by_resource_id = Map.new(objectives, &{&1.resource_id, &1})
-      parent_by_child_resource_id = parent_by_child_resource_id(objectives)
+      parent_ids_by_child_resource_id = parent_ids_by_child_resource_id(objectives)
 
       directly_matched_ids =
         objectives
@@ -297,12 +297,12 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
       included_ids =
         directly_matched_ids
         |> Enum.reduce(directly_matched_ids, fn objective_id, included_ids ->
-          include_ancestors(objective_id, parent_by_child_resource_id, included_ids)
+          include_ancestors(objective_id, parent_ids_by_child_resource_id, included_ids)
         end)
 
       order_objectives(
         objectives_by_resource_id,
-        parent_by_child_resource_id,
+        parent_ids_by_child_resource_id,
         included_ids,
         directly_matched_ids,
         activity_ids
@@ -310,30 +310,37 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
     end
   end
 
-  defp include_ancestors(objective_id, parent_by_child_resource_id, included_ids) do
-    case Map.get(parent_by_child_resource_id, objective_id) do
-      nil ->
-        included_ids
-
-      parent_id ->
-        parent_id
-        |> include_ancestors(parent_by_child_resource_id, MapSet.put(included_ids, parent_id))
-    end
+  defp include_ancestors(objective_id, parent_ids_by_child_resource_id, included_ids) do
+    parent_ids_by_child_resource_id
+    |> Map.get(objective_id, [])
+    |> Enum.reduce(included_ids, fn parent_id, included_ids ->
+      include_ancestors(
+        parent_id,
+        parent_ids_by_child_resource_id,
+        MapSet.put(included_ids, parent_id)
+      )
+    end)
   end
 
-  defp parent_by_child_resource_id(objectives) do
-    Enum.reduce(objectives, %{}, fn objective, acc ->
+  defp parent_ids_by_child_resource_id(objectives) do
+    objectives
+    |> Enum.reduce(%{}, fn objective, acc ->
       objective.children
       |> List.wrap()
       |> Enum.reduce(acc, fn child_resource_id, acc ->
-        Map.put(acc, child_resource_id, objective.resource_id)
+        Map.update(acc, child_resource_id, MapSet.new([objective.resource_id]), fn parent_ids ->
+          MapSet.put(parent_ids, objective.resource_id)
+        end)
       end)
+    end)
+    |> Enum.into(%{}, fn {child_resource_id, parent_ids} ->
+      {child_resource_id, parent_ids |> MapSet.to_list() |> Enum.sort()}
     end)
   end
 
   defp order_objectives(
          objectives_by_resource_id,
-         parent_by_child_resource_id,
+         parent_ids_by_child_resource_id,
          included_ids,
          directly_matched_ids,
          activity_ids
@@ -362,37 +369,134 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
       |> Map.values()
       |> Enum.filter(fn objective ->
         MapSet.member?(included_ids, objective.resource_id) &&
-          !MapSet.member?(
-            included_ids,
-            Map.get(parent_by_child_resource_id, objective.resource_id)
+          not Enum.any?(
+            Map.get(parent_ids_by_child_resource_id, objective.resource_id, []),
+            &MapSet.member?(included_ids, &1)
           )
       end)
       |> sort_objectives()
 
-    Enum.flat_map(roots, fn root ->
-      build_included_objective_tree(
-        root,
+    {ordered_objectives, emitted_ids} =
+      visit_objectives(
+        roots,
         children_by_parent_resource_id,
-        parent_by_child_resource_id,
+        parent_ids_by_child_resource_id,
+        included_ids,
+        [],
+        MapSet.new()
+      )
+
+    remaining_objectives =
+      included_ids
+      |> MapSet.difference(emitted_ids)
+      |> Enum.map(&Map.fetch!(objectives_by_resource_id, &1))
+      |> sort_objectives()
+
+    {ordered_objectives, _emitted_ids} =
+      visit_objectives(
+        remaining_objectives,
+        children_by_parent_resource_id,
+        parent_ids_by_child_resource_id,
+        included_ids,
+        ordered_objectives,
+        emitted_ids
+      )
+
+    Enum.map(ordered_objectives, fn objective ->
+      build_included_objective(
+        objective,
+        children_by_parent_resource_id,
+        parent_ids_by_child_resource_id,
         directly_matched_ids,
         activity_ids
       )
     end)
   end
 
-  defp build_included_objective_tree(
+  defp visit_objectives(
+         objectives,
+         children_by_parent_resource_id,
+         parent_ids_by_child_resource_id,
+         included_ids,
+         ordered_objectives,
+         emitted_ids
+       ) do
+    Enum.reduce(objectives, {ordered_objectives, emitted_ids}, fn objective,
+                                                                  {ordered_objectives,
+                                                                   emitted_ids} ->
+      visit_objective(
+        objective,
+        children_by_parent_resource_id,
+        parent_ids_by_child_resource_id,
+        included_ids,
+        ordered_objectives,
+        emitted_ids
+      )
+    end)
+  end
+
+  defp visit_objective(
          objective,
          children_by_parent_resource_id,
-         parent_by_child_resource_id,
+         parent_ids_by_child_resource_id,
+         included_ids,
+         ordered_objectives,
+         emitted_ids
+       ) do
+    cond do
+      MapSet.member?(emitted_ids, objective.resource_id) ->
+        {ordered_objectives, emitted_ids}
+
+      waiting_for_included_parent?(
+        objective,
+        parent_ids_by_child_resource_id,
+        included_ids,
+        emitted_ids
+      ) ->
+        {ordered_objectives, emitted_ids}
+
+      true ->
+        children = Map.get(children_by_parent_resource_id, objective.resource_id, [])
+
+        visit_objectives(
+          children,
+          children_by_parent_resource_id,
+          parent_ids_by_child_resource_id,
+          included_ids,
+          ordered_objectives ++ [objective],
+          MapSet.put(emitted_ids, objective.resource_id)
+        )
+    end
+  end
+
+  defp waiting_for_included_parent?(
+         objective,
+         parent_ids_by_child_resource_id,
+         included_ids,
+         emitted_ids
+       ) do
+    parent_ids_by_child_resource_id
+    |> Map.get(objective.resource_id, [])
+    |> Enum.any?(fn parent_id ->
+      MapSet.member?(included_ids, parent_id) && !MapSet.member?(emitted_ids, parent_id)
+    end)
+  end
+
+  defp build_included_objective(
+         objective,
+         children_by_parent_resource_id,
+         parent_ids_by_child_resource_id,
          directly_matched_ids,
          activity_ids
        ) do
     children = Map.get(children_by_parent_resource_id, objective.resource_id, [])
+    parent_resource_ids = Map.get(parent_ids_by_child_resource_id, objective.resource_id, [])
 
-    included = %IncludedObjective{
+    %IncludedObjective{
       resource_id: objective.resource_id,
       title: objective.title,
-      parent_resource_id: Map.get(parent_by_child_resource_id, objective.resource_id),
+      parent_resource_id: List.first(parent_resource_ids),
+      parent_resource_ids: parent_resource_ids,
       children: Enum.map(children, & &1.resource_id),
       related_activity_ids:
         objective.related_activities
@@ -400,17 +504,6 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
         |> Enum.filter(&MapSet.member?(activity_ids, &1)),
       directly_matched?: MapSet.member?(directly_matched_ids, objective.resource_id)
     }
-
-    [included] ++
-      Enum.flat_map(children, fn child ->
-        build_included_objective_tree(
-          child,
-          children_by_parent_resource_id,
-          parent_by_child_resource_id,
-          directly_matched_ids,
-          activity_ids
-        )
-      end)
   end
 
   defp sort_objectives(objectives), do: Enum.sort_by(objectives, &{&1.title, &1.resource_id})

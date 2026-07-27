@@ -625,6 +625,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
               Enum.map(configs, &normalize_learning_objective_config(&1, valid_page_ids))
             )
 
+          %{"type" => "learning_objectives"} = element ->
+            Map.put(element, "learning_objectives", [])
+
           element ->
             element
         end)
@@ -646,10 +649,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
           %{"type" => "learning_objectives"} = element, {_found?, ids}, _tr_context ->
             element_ids =
               element
-              |> Map.get("learning_objectives", [])
-              |> Enum.flat_map(fn config ->
-                Map.get(config, "revisit_pages", []) ++ Map.get(config, "practice_pages", [])
-              end)
+              |> learning_objective_configs()
+              |> Enum.flat_map(&learning_objective_recommendation_ids/1)
 
             {element, {true, element_ids ++ ids}}
 
@@ -660,6 +661,21 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     {has_learning_objectives?, ids |> Enum.filter(&is_integer/1) |> Enum.uniq()}
   end
+
+  defp learning_objective_configs(%{"learning_objectives" => configs}) when is_list(configs),
+    do: configs
+
+  defp learning_objective_configs(_element), do: []
+
+  defp learning_objective_recommendation_ids(config) when is_map(config) do
+    recommendation_id_list(Map.get(config, "revisit_pages", [])) ++
+      recommendation_id_list(Map.get(config, "practice_pages", []))
+  end
+
+  defp learning_objective_recommendation_ids(_config), do: []
+
+  defp recommendation_id_list(ids) when is_list(ids), do: ids
+  defp recommendation_id_list(_ids), do: []
 
   defp normalize_learning_objective_config(config, valid_page_ids) when is_map(config) do
     config

@@ -100,7 +100,7 @@ export const LearningObjectivesEditor = ({
     // Include Sub-Objectives is only a display filter for this element. Child
     // config rows stay preserved so toggling the checkbox does not discard
     // advisory remove/restore or recommendation state for those objectives.
-    (objective) => includeSubObjectives || objective.parent_resource_id == null,
+    (objective) => includeSubObjectives || parentResourceIds(objective).length === 0,
   );
 
   const editContent = (updates: Partial<LearningObjectivesContent>) =>
@@ -195,11 +195,11 @@ export const LearningObjectivesEditor = ({
     >
       <div className="learning-objectives-editor mb-3">
         <div className="learning-objectives-editor__header">
-          <div className="label">
+          <h3 className="label">
             {contentItem.mode === 'summary'
               ? 'Learning Objective Summary'
               : 'Learning Objective Introduction'}
-          </div>
+          </h3>
           <label className="sr-only" htmlFor={`${contentItem.id}-mode`}>
             Learning Objectives mode
           </label>
@@ -292,7 +292,7 @@ const ObjectiveRow = ({
   onAddRecommendation,
   onRemoveRecommendation,
 }: ObjectiveRowProps) => {
-  const isSubObjective = objective.parent_resource_id != null;
+  const isSubObjective = parentResourceIds(objective).length > 0;
 
   return (
     <li
@@ -425,28 +425,53 @@ const orderObjectives = (objectives: ResolvedLearningObjective[]): ResolvedLearn
   const roots: ResolvedLearningObjective[] = [];
 
   objectives.forEach((objective) => {
-    const parentResourceId = objective.parent_resource_id;
+    const inScopeParentResourceIds = parentResourceIds(objective).filter((parentResourceId) =>
+      byResourceId.has(parentResourceId),
+    );
 
-    if (parentResourceId == null || !byResourceId.has(parentResourceId)) {
+    if (inScopeParentResourceIds.length === 0) {
       roots.push(objective);
       return;
     }
 
-    childrenByParent.set(parentResourceId, [
-      ...(childrenByParent.get(parentResourceId) || []),
-      objective,
-    ]);
+    inScopeParentResourceIds.forEach((parentResourceId) => {
+      childrenByParent.set(parentResourceId, [
+        ...(childrenByParent.get(parentResourceId) || []),
+        objective,
+      ]);
+    });
   });
 
   const ordered: ResolvedLearningObjective[] = [];
+  const emittedResourceIds = new Set<number>();
+
   const visit = (objective: ResolvedLearningObjective) => {
+    if (emittedResourceIds.has(objective.resource_id) || isWaitingForParent(objective)) {
+      return;
+    }
+
     ordered.push(objective);
+    emittedResourceIds.add(objective.resource_id);
     (childrenByParent.get(objective.resource_id) || []).forEach(visit);
   };
 
+  const isWaitingForParent = (objective: ResolvedLearningObjective) =>
+    parentResourceIds(objective)
+      .filter((parentResourceId) => byResourceId.has(parentResourceId))
+      .some((parentResourceId) => !emittedResourceIds.has(parentResourceId));
+
   roots.forEach(visit);
+  objectives.filter((objective) => !emittedResourceIds.has(objective.resource_id)).forEach(visit);
 
   return ordered;
+};
+
+const parentResourceIds = (objective: ResolvedLearningObjective): number[] => {
+  if (objective.parent_resource_ids && objective.parent_resource_ids.length > 0) {
+    return objective.parent_resource_ids;
+  }
+
+  return objective.parent_resource_id == null ? [] : [objective.parent_resource_id];
 };
 
 const isLearningObjectivesContentMode = (value: string): value is LearningObjectivesContentMode =>

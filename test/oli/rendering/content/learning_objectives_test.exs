@@ -87,6 +87,36 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered == ""
     end
 
+    test "keeps a shared sub-objective visible through an enabled parent path" do
+      rendered =
+        render_content(
+          context(
+            payload([
+              objective(10, "Disabled parent", children: [12]),
+              objective(11, "Enabled parent", children: [12]),
+              objective(12, "Shared sub-objective",
+                parent_resource_id: 10,
+                parent_resource_ids: [10, 11]
+              )
+            ])
+          ),
+          %{
+            "type" => "learning_objectives",
+            "id" => "lo-intro",
+            "mode" => "introduction",
+            "learning_objectives" => [
+              %{"resource_id" => 10, "enabled" => false},
+              %{"resource_id" => 11, "enabled" => true},
+              %{"resource_id" => 12, "enabled" => true}
+            ]
+          }
+        )
+
+      refute rendered =~ "Disabled parent"
+      assert rendered =~ "Enabled parent"
+      assert rendered =~ "Shared sub-objective"
+    end
+
     test "renders nothing when no objectives were discovered" do
       rendered =
         render_content(
@@ -236,6 +266,7 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       resource_id: resource_id,
       title: title,
       parent_resource_id: Keyword.get(opts, :parent_resource_id),
+      parent_resource_ids: Keyword.get(opts, :parent_resource_ids, []),
       children: Keyword.get(opts, :children, [])
     }
   end

@@ -684,6 +684,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         ),
       user: page_context.user,
       page_id: page_context.page.resource_id,
+      section_id: section.id,
       section_slug: section.slug,
       project_slug: Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug,
       mode: mode,

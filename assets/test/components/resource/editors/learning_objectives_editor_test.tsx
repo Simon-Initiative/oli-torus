@@ -15,11 +15,13 @@ const resolvedObjective = (
   resourceId: number,
   title: string,
   parentResourceId: number | null = null,
+  parentResourceIds: number[] = parentResourceId == null ? [] : [parentResourceId],
 ): ResolvedLearningObjective => ({
   resource_id: resourceId,
   title,
   description: null,
   parent_resource_id: parentResourceId,
+  parent_resource_ids: parentResourceIds,
   children: [],
   related_activity_ids: [],
   directly_matched: true,
@@ -214,6 +216,24 @@ describe('LearningObjectivesEditor', () => {
 
     expect(titles).toEqual(expect.arrayContaining(['Linear equations', 'Slope intercept form']));
     expect(titles.indexOf('Linear equations')).toBeLessThan(titles.indexOf('Slope intercept form'));
+  });
+
+  it('renders every parent before a shared sub-objective', () => {
+    const props = defaultEditorProps(element());
+    props.resourceContext = resourceContext([
+      resolvedObjective(3, 'Shared strategy', 1, [1, 2]),
+      resolvedObjective(1, 'Linear equations'),
+      resolvedObjective(2, 'Graphing equations'),
+    ]);
+
+    render(<LearningObjectivesEditor {...props} />);
+    const titles = screen.getAllByRole('listitem').map((element) => element.textContent);
+
+    expect(titles).toEqual(
+      expect.arrayContaining(['Linear equations', 'Graphing equations', 'Shared strategy']),
+    );
+    expect(titles.indexOf('Linear equations')).toBeLessThan(titles.indexOf('Shared strategy'));
+    expect(titles.indexOf('Graphing equations')).toBeLessThan(titles.indexOf('Shared strategy'));
   });
 
   it('updates objective enabled state without deleting the config row', () => {

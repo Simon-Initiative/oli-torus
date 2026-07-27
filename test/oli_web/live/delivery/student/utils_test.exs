@@ -53,6 +53,51 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       assert html =~ "Objective C1"
       assert html =~ "Objective D"
     end
+
+    test "renders Learning Objectives Summary recommendation links in LiveView delivery" do
+      %{section: section, resources: resources, revisions: revisions, project: project} =
+        create_full_project_with_objectives()
+
+      author = hd(project.authors)
+      user = insert(:user)
+
+      {:ok, _enrollment} =
+        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} =
+        Resources.update_revision(revisions.page_revision_2, %{
+          author_id: author.id,
+          content: learning_objectives_summary_content(resources),
+          activity_refs: [resources.act_resource_y.id, resources.act_resource_z.id]
+        })
+
+      PostProcessing.apply(section, :related_activities)
+      SectionResourceDepot.process_table_creation(section.id)
+
+      page_context =
+        PageContext.create_for_visit(section, revisions.page_revision_2.slug, user, UUID.uuid4())
+
+      html =
+        Utils.build_html(
+          %{
+            section: section,
+            page_context: page_context,
+            request_path: nil,
+            selected_view: nil
+          },
+          :delivery,
+          is_liveview: true
+        )
+        |> IO.iodata_to_binary()
+
+      assert html =~ "Learning Objective Summary"
+      assert html =~ "Review"
+      assert html =~ "Practice"
+      assert html =~ "Page 1"
+      assert html =~ "Page 3"
+      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_1?|
+      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_3?|
+    end
   end
 
   describe "week_range/2" do
@@ -346,6 +391,27 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
           "mode" => "introduction",
           "include_sub_objectives" => true,
           "learning_objectives" => []
+        }
+      ]
+    }
+  end
+
+  defp learning_objectives_summary_content(resources) do
+    %{
+      "model" => [
+        %{
+          "type" => "learning_objectives",
+          "id" => "lo-summary",
+          "mode" => "summary",
+          "include_sub_objectives" => true,
+          "learning_objectives" => [
+            %{
+              "resource_id" => resources.obj_resource_c.id,
+              "enabled" => true,
+              "revisit_pages" => [resources.page_resource_1.id],
+              "practice_pages" => [resources.page_resource_3.id]
+            }
+          ]
         }
       ]
     }
