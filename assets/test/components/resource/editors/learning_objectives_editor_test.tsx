@@ -69,8 +69,22 @@ const defaultEditorProps = (contentItem: LearningObjectivesContent) => ({
 });
 
 describe('Learning Objectives insert menu', () => {
-  it('shows the Objectives content type at the page root and inserts the default element', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('shows the Objectives content type at the page root and inserts the default element', async () => {
+    const resolved = [
+      resolvedObjective(1, 'Linear equations'),
+      resolvedObjective(2, 'Slope intercept form', 1),
+    ];
+    jest.spyOn(Persistence, 'learningObjectives').mockResolvedValue({
+      type: 'success',
+      learningObjectives: resolved,
+    });
+
     const onAddItem = jest.fn();
+    const onRefreshLearningObjectives = jest.fn();
     const onSetTip = jest.fn();
     const onResetTip = jest.fn();
 
@@ -79,6 +93,7 @@ describe('Learning Objectives insert menu', () => {
         index={[0]}
         parents={[]}
         onAddItem={onAddItem}
+        onRefreshLearningObjectives={onRefreshLearningObjectives}
         onSetTip={onSetTip}
         onResetTip={onResetTip}
         featureFlags={{ adaptivity: false, equity: false, survey: true }}
@@ -107,6 +122,12 @@ describe('Learning Objectives insert menu', () => {
       }),
       [0],
     );
+
+    const inserted = onAddItem.mock.calls[0][0] as LearningObjectivesContent;
+
+    await waitFor(() =>
+      expect(onRefreshLearningObjectives).toHaveBeenCalledWith(inserted.id, resolved),
+    );
   });
 
   it('does not show the Objectives content type for nested insert positions', () => {
@@ -115,6 +136,7 @@ describe('Learning Objectives insert menu', () => {
         index={[0, 0]}
         parents={[createGroup() as ResourceContent]}
         onAddItem={jest.fn()}
+        onRefreshLearningObjectives={jest.fn()}
         onSetTip={jest.fn()}
         onResetTip={jest.fn()}
         featureFlags={{ adaptivity: false, equity: false, survey: true }}

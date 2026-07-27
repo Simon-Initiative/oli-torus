@@ -48,6 +48,26 @@ defmodule OliWeb.Api.ResourceController do
     end
   end
 
+  def learning_objectives(conn, %{"project" => project_slug, "resource" => resource_slug}) do
+    case Course.get_project_by_slug(project_slug) do
+      nil ->
+        error(conn, 404, "not found")
+
+      project ->
+        if Accounts.can_access?(conn.assigns[:current_author], project) do
+          case PageEditor.resolve_learning_objectives(project.slug, resource_slug) do
+            {:ok, learning_objectives} ->
+              json(conn, %{"type" => "success", "learningObjectives" => learning_objectives})
+
+            {:error, :not_found} ->
+              error(conn, 404, "not found")
+          end
+        else
+          error(conn, 403, "unauthorized")
+        end
+    end
+  end
+
   def update(conn, %{"project" => project_slug, "resource" => resource_slug, "update" => update}) do
     author = conn.assigns[:current_author]
 

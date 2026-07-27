@@ -3,6 +3,8 @@ defmodule OliWeb.Api.ResourceControllerTest do
 
   import Oli.Factory
 
+  alias Oli.Resources
+
   describe "GET /api/v1/project/:project/link" do
     setup [:author_conn, :create_project_with_pages]
 
@@ -57,6 +59,52 @@ defmodule OliWeb.Api.ResourceControllerTest do
         get(
           conn,
           "/api/v1/project/#{other_project.slug}/link"
+        )
+
+      assert response(conn, 403)
+    end
+  end
+
+  describe "GET /api/v1/project/:project/resource/:resource/learning_objectives" do
+    setup [:author_conn]
+
+    test "returns resolved learning objectives for a page before it contains the element", %{
+      conn: conn
+    } do
+      %{project: project, resources: resources, revisions: revisions} =
+        create_full_project_with_objectives()
+
+      author = hd(project.authors)
+
+      {:ok, _} =
+        Resources.update_revision(revisions.page_revision_2, %{
+          author_id: author.id,
+          activity_refs: [resources.act_resource_y.id]
+        })
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> get(
+          "/api/v1/project/#{project.slug}/resource/#{revisions.page_revision_2.slug}/learning_objectives"
+        )
+
+      assert %{"type" => "success", "learningObjectives" => learning_objectives} =
+               json_response(conn, 200)
+
+      assert Enum.map(learning_objectives, & &1["resource_id"]) == [
+               resources.obj_resource_c.id,
+               resources.obj_resource_c1.id
+             ]
+    end
+
+    test "returns 403 when the author cannot access the project", %{conn: conn} do
+      %{project: other_project, revisions: revisions} = create_full_project_with_objectives()
+
+      conn =
+        get(
+          conn,
+          "/api/v1/project/#{other_project.slug}/resource/#{revisions.page_revision_2.slug}/learning_objectives"
         )
 
       assert response(conn, 403)

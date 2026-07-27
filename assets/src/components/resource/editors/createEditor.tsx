@@ -7,7 +7,7 @@ import { FeatureFlags } from 'apps/page-editor/types';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Objective } from 'data/content/objective';
-import { ResourceContent, ResourceContext } from 'data/content/resource';
+import { ResolvedLearningObjective, ResourceContent, ResourceContext } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
 import { ActivityEditor } from './ActivityEditor';
 import { AlternativesEditor } from './AlternativesEditor';
@@ -43,6 +43,10 @@ export type EditorProps = {
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
   onAddItem: AddCallback;
+  onRefreshLearningObjectives: (
+    contentId: string,
+    learningObjectives: ResolvedLearningObjective[],
+  ) => void;
   onDuplicate: (context: ActivityEditContext) => void;
 };
 

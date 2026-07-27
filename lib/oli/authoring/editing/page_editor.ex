@@ -288,15 +288,42 @@ defmodule Oli.Authoring.Editing.PageEditor do
     # page load refreshes membership from the current container hierarchy so new
     # or removed activity objective tags are reflected before the next normal save.
     if LearningObjectivesPageElement.has_learning_objectives_element?(revision.content) do
-      LearningObjectivesPageElement.resolve(
-        project_slug,
-        revision.resource_id,
-        hierarchy,
-        objectives
-      )
+      resolve_learning_objectives_for_revision(project_slug, revision, hierarchy, objectives)
     else
       []
     end
+  end
+
+  @doc """
+  Resolves the current container-scoped Learning Objectives for a page on demand.
+
+  This supports the authoring insertion flow, where the page editor was loaded
+  before a Learning Objectives element existed in the page content. The returned
+  payload is the same snapshot used during normal page-editor load.
+  """
+  def resolve_learning_objectives(project_slug, revision_slug) do
+    with {:ok, publication} <-
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         {:ok, %{deleted: false} = revision} <-
+           AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
+         {:ok, objectives} <-
+           Publishing.get_published_objective_details(publication.id) |> trap_nil() do
+      hierarchy = AuthoringResolver.full_hierarchy(project_slug)
+
+      {:ok,
+       resolve_learning_objectives_for_revision(project_slug, revision, hierarchy, objectives)}
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp resolve_learning_objectives_for_revision(project_slug, revision, hierarchy, objectives) do
+    LearningObjectivesPageElement.resolve(
+      project_slug,
+      revision.resource_id,
+      hierarchy,
+      objectives
+    )
   end
 
   def render_page_html(project_slug, content, author, options \\ []) do

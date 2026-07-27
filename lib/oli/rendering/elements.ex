@@ -38,6 +38,9 @@ defmodule Oli.Rendering.Elements do
         %{"type" => "selection"} ->
           {output ++ writer.content(context, element), br_count}
 
+        %{"type" => "learning_objectives"} ->
+          {output ++ writer.content(context, element), br_count}
+
         %{"type" => "activity-reference"} ->
           {output ++ writer.activity(context, element), br_count}
 
