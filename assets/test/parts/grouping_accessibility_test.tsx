@@ -148,7 +148,7 @@ describe('GroupingBoard accessibility', () => {
       expect(item).not.toHaveClass('is-disabled');
     });
     container.querySelectorAll('.grouping-dropzone').forEach((dropzone) => {
-      expect(dropzone).toHaveAttribute('aria-dropeffect', 'move');
+      expect(dropzone).not.toHaveAttribute('aria-dropeffect');
     });
     expect(screen.getAllByText('Drop items here')).toHaveLength(2);
   });

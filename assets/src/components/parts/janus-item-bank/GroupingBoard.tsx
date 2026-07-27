@@ -172,12 +172,7 @@ const DropZone: React.FC<DropZoneProps> = ({
       aria-label={`${title}, ${itemCount} item${itemCount === 1 ? '' : 's'}`}
     >
       <header className="grouping-column-header">{title}</header>
-      <div
-        id={domId}
-        ref={setNodeRef}
-        className={dropzoneClasses.join(' ')}
-        aria-dropeffect={enabled ? 'move' : undefined}
-      >
+      <div id={domId} ref={setNodeRef} className={dropzoneClasses.join(' ')}>
         {children}
         {itemCount === 0 && (
           <div className="grouping-empty-hint" aria-hidden="true">
