@@ -364,10 +364,12 @@ defmodule Oli.Resources.AlternativesTest do
       assignment = Repo.one!(Assignment)
       experiment = Repo.get!(ExperimentDefinition, assignment.experiment_id)
       condition = Repo.get!(Condition, assignment.condition_id)
+      decision_point = Repo.get!(DecisionPoint, assignment.decision_point_id)
       [exposure] = attributions
 
       assert assignment.section_id == context.section_id
       assert exposure["experiment_uuid"] == experiment.uuid
+      assert exposure["decision_point_key"] == decision_point.decision_point_key
       assert exposure["condition_code"] == condition.condition_code
       assert exposure["publication_id"] == context.publication_id
       assert exposure["key"] =~ ":assignment:#{assignment.id}"

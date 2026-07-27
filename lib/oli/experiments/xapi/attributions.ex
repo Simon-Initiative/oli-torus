@@ -17,6 +17,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
 
   alias Oli.Experiments.Schemas.Assignment
   alias Oli.Experiments.Schemas.Condition
+  alias Oli.Experiments.Schemas.DecisionPoint
   alias Oli.Experiments.Schemas.ExperimentDefinition, as: ExperimentDefinitionSchema
 
   @extension_base "http://oli.cmu.edu/extensions/"
@@ -200,6 +201,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
       experiment_id: assignment.experiment_id,
       experiment_uuid: experiment_uuid(assignment),
       decision_point_id: assignment.decision_point_id,
+      decision_point_key: decision_point_key(assignment),
       condition_id: assignment.condition_id,
       condition_code: condition_code(assignment),
       section_id: assignment.section_id,
@@ -252,6 +254,13 @@ defmodule Oli.Experiments.XAPI.Attributions do
     do: condition_code
 
   defp condition_code(_assignment), do: nil
+
+  defp decision_point_key(%Assignment{
+         decision_point: %DecisionPoint{decision_point_key: decision_point_key}
+       }),
+       do: decision_point_key
+
+  defp decision_point_key(_assignment), do: nil
 
   defp map_value(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
 

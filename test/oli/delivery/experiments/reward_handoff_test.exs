@@ -110,11 +110,18 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
         Repo.get!(Oli.Experiments.Schemas.ExperimentDefinition, assignment.experiment_id)
 
       condition = Repo.get!(Condition, assignment.condition_id)
+      decision_point = Repo.get!(DecisionPoint, assignment.decision_point_id)
 
       for attributions <- [part_attributions, activity_attributions, page_attributions] do
         assert Enum.all?(attributions, &(&1["assignment_id"] != nil))
         assert Enum.all?(attributions, &(&1["experiment_id"] != nil))
         assert Enum.all?(attributions, &(&1["experiment_uuid"] == experiment.uuid))
+
+        assert Enum.all?(
+                 attributions,
+                 &(&1["decision_point_key"] == decision_point.decision_point_key)
+               )
+
         assert Enum.all?(attributions, &(&1["condition_code"] == condition.condition_code))
       end
     end

@@ -18,6 +18,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
   alias Oli.Experiments.Schemas.{
     Assignment,
     Condition,
+    DecisionPoint,
     ExperimentDefinition,
     PolicyState
   }
@@ -77,12 +78,14 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert exposure["role"] == "exposure"
     refute Map.has_key?(exposure, "exposure_id")
     assert exposure["experiment_uuid"] == @experiment_uuid
+    assert exposure["decision_point_key"] == "alternatives:700"
     assert exposure["condition_code"] == "a"
     assert exposure["content_revision_id"] == 701
 
     assert outcome["role"] == "outcome"
     refute Map.has_key?(outcome, "outcome_id")
     assert outcome["experiment_uuid"] == @experiment_uuid
+    assert outcome["decision_point_key"] == "alternatives:700"
     assert outcome["condition_code"] == "a"
     assert outcome["activity_attempt_id"] == 800
     assert outcome["resource_attempt_id"] == 801
@@ -95,6 +98,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     refute Map.has_key?(reward, "outcome_id")
     assert reward["outcome_key"] == "outcome:40"
     assert reward["experiment_uuid"] == @experiment_uuid
+    assert reward["decision_point_key"] == "alternatives:700"
     assert reward["condition_code"] == "a"
     assert reward["reward_source"] == "activity_attempt:full_credit"
     assert reward["reward_value"] == 1.0
@@ -103,6 +107,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert policy_update["policy_update_key"] == "policy_update:reward:40"
     assert policy_update["reward_key"] == "reward:40"
     assert policy_update["policy_state_id"] == 91
+    assert policy_update["decision_point_key"] == "alternatives:700"
     assert policy_update["algorithm"] == "thompson_sampling"
     assert policy_update["algorithm_version"] == "thompson_sampling:v2"
     assert byte_size(policy_update["previous_policy_state_hash"]) == 64
@@ -204,7 +209,8 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       assignment_key: "10:20:500",
       assigned_at: timestamp(),
       experiment: experiment(),
-      condition: %Condition{condition_code: "a"}
+      condition: %Condition{condition_code: "a"},
+      decision_point: %DecisionPoint{decision_point_key: "alternatives:700"}
     }
   end
 

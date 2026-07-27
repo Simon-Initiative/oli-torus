@@ -363,8 +363,15 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       from assignment in Assignment,
         join: experiment in assoc(assignment, :experiment),
         join: condition in assoc(assignment, :condition),
+        on: condition.experiment_id == experiment.id,
+        join: decision_point in assoc(assignment, :decision_point),
+        on: decision_point.experiment_id == experiment.id,
         where: assignment.id == ^assignment_id,
-        preload: [experiment: experiment, condition: condition]
+        preload: [
+          experiment: experiment,
+          condition: condition,
+          decision_point: decision_point
+        ]
 
     case Repo.one(query) do
       %Assignment{} = assignment ->

@@ -1710,15 +1710,9 @@ defmodule Oli.Experiments do
   defp get_scoped_assignment_with_decision_point!(assignment_id, scope) do
     case get_scoped_assignment_query(assignment_id, scope, false) do
       {:ok, query} ->
-        query =
-          from [assignment, _experiment] in query,
-            join: decision_point in DecisionPoint,
-            on: decision_point.id == assignment.decision_point_id,
-            select: {assignment, decision_point.alternatives_resource_id}
-
         case Repo.one(query) do
-          {%Assignment{} = assignment, alternatives_resource_id} ->
-            {assignment, alternatives_resource_id}
+          %Assignment{decision_point: %DecisionPoint{} = decision_point} = assignment ->
+            {assignment, decision_point.alternatives_resource_id}
 
           nil ->
             scoped_assignment_not_found!(assignment_id)
@@ -1749,14 +1743,24 @@ defmodule Oli.Experiments do
           join: experiment in ExperimentDefinitionSchema,
           on: experiment.id == assignment.experiment_id,
           join: condition in Condition,
-          on: condition.id == assignment.condition_id,
+          on:
+            condition.id == assignment.condition_id and
+              condition.experiment_id == experiment.id,
+          join: decision_point in DecisionPoint,
+          on:
+            decision_point.id == assignment.decision_point_id and
+              decision_point.experiment_id == experiment.id,
           where:
             assignment.id == ^assignment_id and
               experiment.project_id == ^scope.project_id and
               assignment.section_id == ^scope.section_id and
               assignment.enrollment_id == ^scope.enrollment_id and
               assignment.user_id == ^scope.user_id,
-          preload: [experiment: experiment, condition: condition]
+          preload: [
+            experiment: experiment,
+            condition: condition,
+            decision_point: decision_point
+          ]
 
       {:ok, if(lock?, do: lock(query, "FOR UPDATE"), else: query)}
     end
