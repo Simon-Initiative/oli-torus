@@ -13,6 +13,7 @@ import { ActivityEditor } from './ActivityEditor';
 import { AlternativesEditor } from './AlternativesEditor';
 import { ContentBreakEditor } from './ContentBreak';
 import { ContentEditor } from './ContentEditor';
+import { LearningObjectivesEditor } from './LearningObjectivesEditor';
 import { PurposeGroupEditor } from './PurposeGroupEditor';
 import { ReportEditor } from './ReportEditor';
 import { SelectionEditor } from './SelectionEditor';
@@ -56,6 +57,8 @@ export const createEditor = (editorProps: EditorProps): JSX.Element => {
       return <ActivityEditor {...editorProps} contentItem={contentItem} />;
     case 'selection':
       return <SelectionEditor {...editorProps} contentItem={contentItem} />;
+    case 'learning_objectives':
+      return <LearningObjectivesEditor {...editorProps} contentItem={contentItem} />;
     case 'group':
       return <PurposeGroupEditor {...editorProps} contentItem={contentItem} />;
     case 'survey':

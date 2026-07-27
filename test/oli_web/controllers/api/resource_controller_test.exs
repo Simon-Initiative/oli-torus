@@ -49,6 +49,18 @@ defmodule OliWeb.Api.ResourceControllerTest do
 
       assert response(conn, 404)
     end
+
+    test "returns 403 when the author cannot access the project", %{conn: conn} do
+      other_project = insert(:project)
+
+      conn =
+        get(
+          conn,
+          "/api/v1/project/#{other_project.slug}/link"
+        )
+
+      assert response(conn, 403)
+    end
   end
 
   defp create_project_with_pages(%{author: author}) do

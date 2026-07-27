@@ -8,6 +8,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
+  alias Oli.Delivery.LearningObjectives.PageElement, as: LearningObjectivesPageElement
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections, Settings}
   alias Oli.Delivery.Sections
@@ -598,6 +599,7 @@ defmodule OliWeb.PageDeliveryController do
         else
           user
         end,
+      section_id: section.id,
       section_slug: section_slug,
       project_slug: base_project_slug,
       resource_attempt: hd(context.resource_attempts),
@@ -632,6 +634,17 @@ defmodule OliWeb.PageDeliveryController do
       else
         this_attempt.content
       end
+
+    render_context = %Context{
+      render_context
+      | learning_objectives:
+          LearningObjectivesPageElement.prepare_render_payload(
+            section,
+            context.page.resource_id,
+            attempt_content,
+            render_context.user
+          )
+    }
 
     html = render_content_html(render_context, attempt_content, context.page.slug)
 

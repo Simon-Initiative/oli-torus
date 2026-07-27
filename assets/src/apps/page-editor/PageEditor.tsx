@@ -21,6 +21,7 @@ import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { ActivityEditContext } from 'data/content/activity';
 import { guaranteeValididty } from 'data/content/bank';
 import { ActivityEditorMap } from 'data/content/editors';
+import { reconcileLearningObjectivesInPageContent } from 'data/content/learningObjectives';
 import { Objective } from 'data/content/objective';
 import {
   ActivityMap,
@@ -146,6 +147,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   previewRequestedListener: any;
   pageOptionsFlushRequestedListener: any;
   editorsRef: React.RefObject<HTMLDivElement> = React.createRef();
+  pendingLearningObjectivesReconciliationSave = false;
 
   constructor(props: PageEditorProps) {
     super(props);
@@ -168,6 +170,13 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       resourceId: String(props.resourceId),
     });
 
+    const reconciledContent = reconcileLearningObjectivesInPageContent(
+      PageEditorContent.fromPersistence(content),
+      props.learningObjectives,
+    );
+
+    this.pendingLearningObjectivesReconciliationSave = reconciledContent.changed;
+
     this.state = {
       activityContexts,
       messages: [],
@@ -177,7 +186,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       resourceSlug: props.resourceSlug,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
-      content: PageEditorContent.fromPersistence(content),
+      content: reconciledContent.content,
       persistence: 'idle',
       allObjectives: arrangeObjectives(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
@@ -208,15 +217,21 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         (persistence) => this.setState({ persistence }),
       )
       .then((editMode) => {
-        this.setState({ editMode });
-        this.pushTitleLockState(editMode);
-        if (editMode) {
-          this.initActivityPersistence();
-          this.windowUnloadListener = registerUnload(this.persistence);
-        } else if (this.persistence.getLockResult().type === 'not_acquired') {
-          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
-          this.editingLockedMessage(notAcquired.user);
-        }
+        this.setState({ editMode }, () => {
+          this.pushTitleLockState(editMode);
+          if (editMode) {
+            this.initActivityPersistence();
+            this.windowUnloadListener = registerUnload(this.persistence);
+
+            if (this.pendingLearningObjectivesReconciliationSave) {
+              this.pendingLearningObjectivesReconciliationSave = false;
+              this.save();
+            }
+          } else if (this.persistence.getLockResult().type === 'not_acquired') {
+            const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
+            this.editingLockedMessage(notAcquired.user);
+          }
+        });
       });
 
     this.titleUpdatedListener = (event: Event) => {

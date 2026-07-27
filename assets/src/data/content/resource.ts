@@ -24,11 +24,22 @@ export type AttachedObjectives = {
   attached: ResourceId[];
 };
 
+export type ResolvedLearningObjective = {
+  resource_id: ResourceId;
+  title: string;
+  description?: string | null;
+  parent_resource_id?: ResourceId | null;
+  children: ResourceId[];
+  related_activity_ids: ResourceId[];
+  directly_matched: boolean;
+};
+
 // Items that can be present as elements in a resource content array
 export type ResourceContent =
   | StructuredContent
   | ActivityReference
   | ActivityBankSelection
+  | LearningObjectivesContent
   | PurposeGroupContent
   | SurveyContent
   | ReportContent
@@ -41,6 +52,7 @@ export const isResourceContent = (content: any) =>
     'content',
     'activity-reference',
     'selection',
+    'learning_objectives',
     'group',
     'survey',
     'report',
@@ -81,6 +93,8 @@ export const getResourceContentName = (content: ResourceContent): string => {
       return 'Page Break';
     case 'selection':
       return 'Selection';
+    case 'learning_objectives':
+      return 'Learning Objectives';
     default:
       return 'Unknown';
   }
@@ -95,20 +109,24 @@ export const allElements = [
   'alternatives',
   'break',
   'selection',
+  'learning_objectives',
 ];
+
+// Learning Objectives is a terminal page-level element; container children use this narrower list.
+const nestedElements = allElements.filter((type) => type !== 'learning_objectives');
 
 export const allowedContentItems = (content: ResourceContent): string[] => {
   switch (content.type) {
     case 'group':
-      return allElements;
+      return nestedElements;
     case 'survey':
-      return allElements;
+      return nestedElements;
     case 'report':
       return ['activity-reference'];
     case 'alternatives':
       return ['alternative'];
     case 'alternative':
-      return allElements;
+      return nestedElements;
     default:
       return [];
   }
@@ -122,6 +140,8 @@ export const canInsert = (content: ResourceContent, parents: ResourceContent[]):
 
   const parent = parents[parents.length - 1];
   switch (content.type) {
+    case 'learning_objectives':
+      return false;
     case 'group':
       return (
         allowedContentItems(parent).some((t) => t === content.type) &&
@@ -174,6 +194,7 @@ export type ResourceContext = {
   content: PageContent; // Content of the resource
   objectives: AttachedObjectives; // Attached objectives
   allObjectives: Objective[]; // All objectives
+  learningObjectives?: ResolvedLearningObjective[]; // Resolved LOs for this page's container scope
   allTags: Tag[]; // All available tags
   activityContexts: ActivityEditContext[]; // Contexts for inline activity editing
   optionalContentTypes: OptionalContentTypes; // Optional content types
@@ -285,6 +306,14 @@ export const createDefaultSelection = () => {
   } as ActivityBankSelection;
 };
 
+export const createDefaultLearningObjectivesContent = (): LearningObjectivesContent => ({
+  type: 'learning_objectives',
+  id: guid(),
+  mode: 'introduction',
+  include_sub_objectives: true,
+  learning_objectives: [],
+});
+
 export type EditorType = 'slate' | 'markdown';
 
 export interface StructuredContent {
@@ -304,6 +333,23 @@ export interface ActivityBankSelection {
   count: number;
   pointsPerActivity?: number;
   children: undefined;
+}
+
+export type LearningObjectivesContentMode = 'introduction' | 'summary';
+
+export interface LearningObjectiveConfig {
+  resource_id: number;
+  enabled: boolean;
+  revisit_pages: number[];
+  practice_pages: number[];
+}
+
+export interface LearningObjectivesContent {
+  type: 'learning_objectives';
+  id: string;
+  mode: LearningObjectivesContentMode;
+  include_sub_objectives: boolean;
+  learning_objectives: LearningObjectiveConfig[];
 }
 
 export interface ActivityReference {

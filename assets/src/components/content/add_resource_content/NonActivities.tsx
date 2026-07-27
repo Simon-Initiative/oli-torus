@@ -8,8 +8,10 @@ import { FeatureFlags } from 'apps/page-editor/types';
 import {
   AlternativeContent,
   ResourceContext,
+  canInsert,
   createAlternative,
   createAlternatives,
+  createDefaultLearningObjectivesContent,
   createDefaultStructuredContent,
   createGroup,
   createReport,
@@ -88,6 +90,17 @@ export const NonActivities: React.FC<Props> = ({
             document.body.click();
           }}
         />
+        {canInsert(createDefaultLearningObjectivesContent(), parents) && (
+          <ResourceChoice
+            icon="bullseye"
+            label="Objectives"
+            onHoverStart={() => onSetTip('Render a learning objective introduction or summary')}
+            onHoverEnd={() => onResetTip()}
+            key={'learning_objectives'}
+            disabled={false}
+            onClick={() => addLearningObjectives(onAddItem, index)}
+          />
+        )}
         <ResourceChoice
           icon="columns"
           label="Break"
@@ -154,6 +167,11 @@ const addGroup = (onAddItem: AddCallback, index: number[]) => {
 
 const addPageBreak = (onAddItem: AddCallback, index: number[]) => {
   onAddItem(createBreak(), index);
+  document.body.click();
+};
+
+const addLearningObjectives = (onAddItem: AddCallback, index: number[]) => {
+  onAddItem(createDefaultLearningObjectivesContent(), index);
   document.body.click();
 };
 
