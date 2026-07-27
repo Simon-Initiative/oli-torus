@@ -98,11 +98,11 @@ The active experiment was also correctly started:
 - Area: Experiment matching / publishing compatibility
 - QA context: After adding a new A/B decision point to pages, publishing, and updating the section, the active experiment still pointed at the old alternatives resource/revision (`12673` / `23390`), while the section delivered a new A/B decision point resource/revision (`12675` / `23402`). No assignments were created.
 - Expected: An experiment should remain attached to the intended decision point across normal authoring edits, publication, and section updates, as long as the decision point's condition options remain compatible.
-- Actual: Runtime matching requires the exact `alternatives_revision_id`, so a published revision change prevents the active experiment from matching delivery content.
+- Resolved: Runtime matching targets the alternatives resource and validates the caller's exact revision against the section's deployed publication, allowing compatible published revisions to continue.
 - Evidence:
   - `Oli.Resources.Alternatives.DecisionPointStrategy` sends both `alternatives_resource_id` and `alternatives_revision_id` to `Oli.Experiments.assign_condition/1`.
-  - `Oli.Experiments.active_experiment_match/2` filters on `decision_point.alternatives_revision_id == request.alternatives_revision_id`.
-  - `experiment_decision_points` stores both `alternatives_resource_id` and `alternatives_revision_id`.
+  - `Oli.Experiments.active_experiment_match/2` matches the durable resource target and requires full condition compatibility with the deployed revision.
+  - `experiment_decision_points` stores `alternatives_resource_id`; exact revision IDs remain on validated runtime evidence.
 - Proposed change:
   - Treat the alternatives resource ID plus decision point key as the stable decision-point identity for runtime matching.
   - Keep revision IDs for audit, validation, exposure metadata, and option-compatibility checks, but do not require an active experiment to match only one historical alternatives revision.

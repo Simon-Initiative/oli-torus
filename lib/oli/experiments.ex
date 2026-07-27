@@ -8,7 +8,7 @@ defmodule Oli.Experiments do
 
   alias Oli.Accounts.User
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.{Enrollment, Section}
+  alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications}
 
   alias Oli.Experiments.{
     AssignmentDecision,
@@ -35,7 +35,7 @@ defmodule Oli.Experiments do
   alias Oli.Experiments.Policies.{ThompsonSampling, WeightedRandom}
 
   alias Oli.Experiments.Schemas.ExperimentDefinition, as: ExperimentDefinitionSchema
-  alias Oli.Authoring.Course.ProjectResource
+  alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Resources.{ResourceType, Revision}
@@ -205,19 +205,10 @@ defmodule Oli.Experiments do
     with {:ok, scope} <- validate_scope(scope),
          :ok <- require_authoring_scope(scope) do
       candidates =
-        from(revision in Revision,
-          join: project_resource in ProjectResource,
-          on: project_resource.resource_id == revision.resource_id,
-          where:
-            project_resource.project_id == ^scope.project_id and
-              revision.resource_type_id == ^ResourceType.id_for_alternatives() and
-              revision.deleted == false,
-          order_by: [asc: revision.title, desc: revision.id],
-          select: revision
-        )
-        |> Repo.all()
+        scope.project_slug
+        |> AuthoringResolver.revisions_of_type(ResourceType.id_for_alternatives())
         |> Enum.filter(&experiment_decision_point_revision?/1)
-        |> Enum.uniq_by(& &1.resource_id)
+        |> Enum.sort_by(&{&1.title, &1.id})
         |> Enum.map(&to_decision_point_candidate/1)
 
       {:ok, candidates}
@@ -273,6 +264,7 @@ defmodule Oli.Experiments do
   def assigned_condition(%Oli.Experiments.AssignConditionRequest{} = request) do
     with {:ok, scope} <- validate_scope(request.scope),
          :ok <- require_delivery_scope(scope),
+         {:ok, _revision} <- resolve_delivery_revision(request, scope),
          {:ok, decision} <- existing_assignment_decision(request, scope) do
       {:ok, decision}
     end
@@ -284,8 +276,8 @@ defmodule Oli.Experiments do
   Records operational exposure evidence and emits the durable xAPI exposure event.
   """
   def record_exposure(%Oli.Experiments.RecordExposureRequest{} = request) do
-    with {:ok, _scope} <- validate_scope(request.scope) do
-      create_exposure(request)
+    with {:ok, scope} <- validate_scope(request.scope) do
+      create_exposure(%{request | scope: scope})
     end
   end
 
@@ -717,8 +709,7 @@ defmodule Oli.Experiments do
       decision_point_id: assignment.decision_point_id,
       condition_id: assignment.condition_id,
       condition_code: condition.condition_code,
-      alternatives_resource_id: decision_point.alternatives_resource_id,
-      alternatives_revision_id: decision_point.alternatives_revision_id
+      alternatives_resource_id: decision_point.alternatives_resource_id
     }
   end
 
@@ -759,7 +750,8 @@ defmodule Oli.Experiments do
   defp do_assign_condition(request) do
     with {:ok, scope} <- validate_scope(request.scope),
          :ok <- require_delivery_scope(scope),
-         {:ok, match} <- active_experiment_match(request, scope),
+         {:ok, revision} <- resolve_delivery_revision(request, scope),
+         {:ok, match} <- active_experiment_match(request, scope, revision),
          {:ok, decision} <- assign_or_reuse(match, scope, request) do
       {:ok, decision}
     end
@@ -776,7 +768,7 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp active_experiment_match(request, scope) do
+  defp active_experiment_match(request, scope, revision) do
     query =
       from experiment in ExperimentDefinitionSchema,
         join: decision_point in DecisionPoint,
@@ -811,29 +803,76 @@ defmodule Oli.Experiments do
         {:ok, %{status: :no_experiment}}
 
       {experiment, decision_point} ->
-        {:ok,
-         %{
-           experiment: experiment,
-           decision_point: decision_point,
-           available_condition_codes: request.available_condition_codes
-         }}
+        with {:ok, conditions} <-
+               validate_runtime_condition_compatibility(
+                 experiment,
+                 decision_point,
+                 revision
+               ) do
+          {:ok,
+           %{
+             experiment: experiment,
+             decision_point: decision_point,
+             conditions: conditions,
+             available_condition_codes: request.available_condition_codes
+           }}
+        end
     end
   end
 
-  defp select_condition(_experiment, _decision_point, [], _scope),
+  defp resolve_delivery_revision(request, scope) do
+    case DeliveryResolver.from_resource_id(
+           scope.section_slug,
+           request.alternatives_resource_id
+         ) do
+      %Revision{} = revision ->
+        with true <- revision.id == request.alternatives_revision_id,
+             true <- revision.resource_type_id == ResourceType.id_for_alternatives(),
+             :ok <- validate_experiment_decision_point_revision(revision) do
+          {:ok, revision}
+        else
+          false ->
+            invalid_condition(
+              "delivery alternatives revision or options do not match the deployed publication",
+              %{
+                alternatives_resource_id: request.alternatives_resource_id,
+                requested_revision_id: request.alternatives_revision_id,
+                resolved_revision_id: revision.id
+              }
+            )
+
+          {:error, %ExperimentError{}} = error ->
+            error
+        end
+
+      nil ->
+        invalid_condition("alternatives resource is not deployed to section", %{
+          alternatives_resource_id: request.alternatives_resource_id,
+          section_id: scope.section_id
+        })
+    end
+  end
+
+  defp validate_runtime_condition_compatibility(experiment, decision_point, revision) do
+    conditions = active_conditions(experiment.id, decision_point.id)
+
+    with :ok <- validate_condition_option_mapping(revision, conditions) do
+      {:ok, conditions}
+    end
+  end
+
+  defp select_condition(_experiment, _decision_point, _conditions, [], _scope),
     do: invalid_condition("no condition codes supplied")
 
-  defp select_condition(experiment, decision_point, available_condition_codes, scope) do
+  defp select_condition(
+         experiment,
+         decision_point,
+         active_conditions,
+         available_condition_codes,
+         scope
+       ) do
     conditions =
-      from(condition in Condition,
-        where:
-          condition.experiment_id == ^experiment.id and
-            condition.decision_point_id == ^decision_point.id and
-            condition.active == true and
-            condition.condition_code in ^available_condition_codes,
-        order_by: [asc: condition.position, asc: condition.id]
-      )
-      |> Repo.all()
+      Enum.filter(active_conditions, &(&1.condition_code in available_condition_codes))
 
     case conditions do
       [] ->
@@ -1084,6 +1123,7 @@ defmodule Oli.Experiments do
                select_condition(
                  match.experiment,
                  match.decision_point,
+                 match.conditions,
                  match.available_condition_codes,
                  scope
                ) do
@@ -1165,8 +1205,19 @@ defmodule Oli.Experiments do
 
   defp create_exposure(request) do
     Repo.transaction(fn ->
-      assignment = get_scoped_assignment!(request.assignment_id, request.scope, lock: false)
-      {assignment, Map.put(runtime_event(request), "reused", false)}
+      {assignment, alternatives_resource_id} =
+        get_scoped_assignment_with_decision_point!(
+          request.assignment_id,
+          request.scope
+        )
+
+      case validate_exposure_revision(alternatives_resource_id, request) do
+        :ok ->
+          {assignment, Map.put(runtime_event(request), "reused", false)}
+
+        {:error, %ExperimentError{} = error} ->
+          Repo.rollback(error)
+      end
     end)
     |> normalize_transaction_result()
     |> case do
@@ -1183,6 +1234,32 @@ defmodule Oli.Experiments do
 
       {:error, %ExperimentError{}} = error ->
         error
+    end
+  end
+
+  defp validate_exposure_revision(alternatives_resource_id, request) do
+    case DeliveryResolver.from_resource_id(
+           request.scope.section_slug,
+           alternatives_resource_id
+         ) do
+      %Revision{id: revision_id} when revision_id == request.content_revision_id ->
+        :ok
+
+      %Revision{id: revision_id} ->
+        invalid_condition(
+          "exposure revision does not match the alternatives revision deployed to section",
+          %{
+            alternatives_resource_id: alternatives_resource_id,
+            content_revision_id: request.content_revision_id,
+            resolved_revision_id: revision_id
+          }
+        )
+
+      nil ->
+        invalid_condition("exposure alternatives resource is not deployed to section", %{
+          alternatives_resource_id: alternatives_resource_id,
+          section_id: request.scope.section_id
+        })
     end
   end
 
@@ -1393,7 +1470,6 @@ defmodule Oli.Experiments do
     |> atomize_keys()
     |> Map.take([
       :alternatives_resource_id,
-      :alternatives_revision_id,
       :decision_point_key,
       :title,
       :position
@@ -1631,6 +1707,41 @@ defmodule Oli.Experiments do
     end
   end
 
+  defp get_scoped_assignment_with_decision_point!(assignment_id, scope) do
+    case get_scoped_assignment_query(assignment_id, scope, false) do
+      {:ok, query} ->
+        query =
+          from [assignment, _experiment] in query,
+            join: decision_point in DecisionPoint,
+            on: decision_point.id == assignment.decision_point_id,
+            select: {assignment, decision_point.alternatives_resource_id}
+
+        case Repo.one(query) do
+          {%Assignment{} = assignment, alternatives_resource_id} ->
+            {assignment, alternatives_resource_id}
+
+          nil ->
+            scoped_assignment_not_found!(assignment_id)
+        end
+
+      {:error, %ExperimentError{} = error} ->
+        Repo.rollback(error)
+    end
+  end
+
+  defp scoped_assignment_not_found!(assignment_id) do
+    Repo.rollback(
+      if Repo.exists?(from assignment in Assignment, where: assignment.id == ^assignment_id) do
+        elem(
+          invalid_scope("assignment is outside scope", %{assignment_id: assignment_id}),
+          1
+        )
+      else
+        elem(not_found("assignment not found", %{assignment_id: assignment_id}), 1)
+      end
+    )
+  end
+
   defp get_scoped_assignment_query(assignment_id, scope, lock?) do
     with {:ok, scope} <- validate_scope(scope) do
       query =
@@ -1853,10 +1964,11 @@ defmodule Oli.Experiments do
         [decision_point] ->
           conditions = active_conditions(schema.id, decision_point.id)
 
-          with :ok <- validate_decision_point_strategy(decision_point),
+          with {:ok, revisions} <- activation_revisions(schema, decision_point),
+               :ok <- validate_decision_point_strategies(revisions),
                :ok <- validate_minimum_active_conditions(conditions),
                :ok <- validate_positive_active_weight(conditions),
-               :ok <- validate_condition_option_mapping(decision_point, conditions),
+               :ok <- validate_condition_option_mappings(revisions, conditions),
                :ok <- validate_adaptive_activation(schema, conditions) do
             :ok
           end
@@ -1896,23 +2008,77 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp validate_condition_option_mapping(decision_point, conditions) do
-    with {:ok, revision} <- get_alternatives_revision(decision_point.alternatives_revision_id),
-         option_ids <- revision_option_ids(revision),
-         missing <- Enum.reject(conditions, &((&1.option_id || &1.condition_code) in option_ids)) do
-      case missing do
-        [] ->
-          :ok
-
-        _ ->
-          invalid_condition(
-            "experiment conditions must match the selected alternatives options",
-            %{
-              missing_option_ids: Enum.map(missing, &(&1.option_id || &1.condition_code))
-            }
-          )
+  defp validate_condition_option_mappings(revisions, conditions) do
+    Enum.reduce_while(revisions, :ok, fn revision, :ok ->
+      case validate_condition_option_mapping(revision, conditions) do
+        :ok -> {:cont, :ok}
+        {:error, %ExperimentError{}} = error -> {:halt, error}
       end
+    end)
+  end
+
+  defp validate_condition_option_mapping(revision, conditions) do
+    option_ids = revision_option_ids(revision)
+    missing = Enum.reject(conditions, &((&1.option_id || &1.condition_code) in option_ids))
+
+    case missing do
+      [] ->
+        :ok
+
+      _ ->
+        invalid_condition(
+          "experiment conditions must match the currently resolved alternatives options",
+          %{
+            alternatives_revision_id: revision.id,
+            missing_option_ids: Enum.map(missing, &(&1.option_id || &1.condition_code))
+          }
+        )
     end
+  end
+
+  defp activation_revisions(schema, decision_point) do
+    case schema.sections do
+      [] ->
+        project = Repo.get!(Project, schema.project_id)
+
+        with {:ok, revision} <-
+               resolve_authoring_revision(project.slug, decision_point.alternatives_resource_id) do
+          {:ok, [revision]}
+        end
+
+      sections ->
+        resolved =
+          Enum.map(sections, fn section ->
+            {section.id,
+             DeliveryResolver.from_resource_id(
+               section.slug,
+               decision_point.alternatives_resource_id
+             )}
+          end)
+
+        missing_section_ids =
+          for {section_id, nil} <- resolved, do: section_id
+
+        case missing_section_ids do
+          [] ->
+            {:ok, Enum.map(resolved, &elem(&1, 1))}
+
+          _ ->
+            invalid_condition(
+              "alternatives content is not deployed to every experiment section",
+              %{missing_section_ids: missing_section_ids}
+            )
+        end
+    end
+  end
+
+  defp validate_decision_point_strategies(revisions) do
+    Enum.reduce_while(revisions, :ok, fn revision, :ok ->
+      case validate_experiment_decision_point_revision(revision) do
+        :ok -> {:cont, :ok}
+        {:error, %ExperimentError{}} = error -> {:halt, error}
+      end
+    end)
   end
 
   defp validate_update_state(schema, request) do
@@ -2023,7 +2189,8 @@ defmodule Oli.Experiments do
         with :ok <- validate_one_decision_point(request.decision_point),
              :ok <- validate_authoring_conditions(request.conditions),
              :ok <- validate_alternatives_reference(request.decision_point, scope),
-             :ok <- validate_condition_options(request.decision_point, request.conditions),
+             :ok <-
+               validate_condition_options(request.decision_point, request.conditions, scope),
              :ok <- validate_policy_config(request.algorithm, request.policy_config || %{}) do
           :ok
         end
@@ -2269,31 +2436,27 @@ defmodule Oli.Experiments do
 
   defp validate_alternatives_reference(decision_point, scope) do
     attrs = atomize_keys(decision_point)
-
-    alternatives_revision_id = Map.get(attrs, :alternatives_revision_id)
     alternatives_resource_id = Map.get(attrs, :alternatives_resource_id)
 
-    with {:ok, revision} <- get_alternatives_revision(alternatives_revision_id),
-         true <- revision.resource_id == alternatives_resource_id,
-         true <- project_resource?(scope.project_id, alternatives_resource_id),
+    with true <- is_integer(alternatives_resource_id),
+         {:ok, revision} <-
+           resolve_authoring_revision(scope.project_slug, alternatives_resource_id),
          :ok <- validate_experiment_decision_point_revision(revision) do
       :ok
     else
-      false -> invalid_condition("selected alternatives content does not belong to the project")
+      false -> invalid_condition("alternatives_resource_id is required")
       {:error, %ExperimentError{}} = error -> error
     end
   end
 
-  defp validate_decision_point_strategy(decision_point) do
-    with {:ok, revision} <- get_alternatives_revision(decision_point.alternatives_revision_id) do
-      validate_experiment_decision_point_revision(revision)
-    end
-  end
-
-  defp validate_condition_options(decision_point, conditions) do
+  defp validate_condition_options(decision_point, conditions, scope) do
     attrs = atomize_keys(decision_point)
 
-    with {:ok, revision} <- get_alternatives_revision(Map.get(attrs, :alternatives_revision_id)) do
+    with {:ok, revision} <-
+           resolve_authoring_revision(
+             scope.project_slug,
+             Map.get(attrs, :alternatives_resource_id)
+           ) do
       option_ids = revision_option_ids(revision)
 
       missing =
@@ -2315,20 +2478,18 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp get_alternatives_revision(nil),
-    do: invalid_condition("alternatives_revision_id is required")
-
-  defp get_alternatives_revision(revision_id) do
-    case Repo.get(Revision, revision_id) do
+  defp resolve_authoring_revision(project_slug, resource_id) do
+    case AuthoringResolver.from_resource_id(project_slug, resource_id) do
       %Revision{} = revision ->
-        if revision.resource_type_id == ResourceType.id_for_alternatives() do
-          {:ok, revision}
-        else
-          invalid_condition("selected revision is not an alternatives group")
+        case revision.resource_type_id == ResourceType.id_for_alternatives() do
+          true -> {:ok, revision}
+          false -> invalid_condition("selected resource is not an alternatives group")
         end
 
       nil ->
-        not_found("alternatives revision not found", %{alternatives_revision_id: revision_id})
+        not_found("alternatives resource is not in the project working publication", %{
+          alternatives_resource_id: resource_id
+        })
     end
   end
 
@@ -2358,7 +2519,6 @@ defmodule Oli.Experiments do
     %{
       id: decision_point.id,
       alternatives_resource_id: decision_point.alternatives_resource_id,
-      alternatives_revision_id: decision_point.alternatives_revision_id,
       decision_point_key: decision_point.decision_point_key,
       title: decision_point.title,
       position: decision_point.position
@@ -2400,7 +2560,6 @@ defmodule Oli.Experiments do
   end
 
   defp authoring_payload_key("alternatives_resource_id"), do: :alternatives_resource_id
-  defp authoring_payload_key("alternatives_revision_id"), do: :alternatives_revision_id
   defp authoring_payload_key("decision_point_key"), do: :decision_point_key
   defp authoring_payload_key("title"), do: :title
   defp authoring_payload_key("position"), do: :position
@@ -2503,16 +2662,6 @@ defmodule Oli.Experiments do
 
   defp normalize_transaction_result(result), do: result
 
-  defp project_resource?(project_id, resource_id) do
-    Repo.exists?(
-      from(project_resource in ProjectResource,
-        where:
-          project_resource.project_id == ^project_id and
-            project_resource.resource_id == ^resource_id
-      )
-    )
-  end
-
   defp revision_option_ids(%Revision{content: %{"options" => options}}) when is_list(options) do
     Enum.map(options, &(Map.get(&1, "id") || Map.get(&1, :id) || Map.get(&1, "name")))
   end
@@ -2537,8 +2686,8 @@ defmodule Oli.Experiments do
   defp validate_scope(%Scope{} = scope) do
     with {:ok, scope} <- validate_institution(scope),
          {:ok, scope} <- validate_project(scope),
-         {:ok, scope} <- validate_publication(scope),
          {:ok, scope} <- validate_section(scope),
+         {:ok, scope} <- validate_publication(scope),
          {:ok, scope} <- validate_user(scope),
          {:ok, scope} <- validate_enrollment(scope) do
       {:ok, scope}
@@ -2562,15 +2711,21 @@ defmodule Oli.Experiments do
 
   defp validate_project(%Scope{project_id: project_id} = scope) when not is_nil(project_id) do
     case Repo.get(Project, project_id) do
-      nil -> invalid_scope("project not found", %{project_id: project_id})
-      project -> validate_project_slug(%{scope | project_id: project.id}, project)
+      nil ->
+        invalid_scope("project not found", %{project_id: project_id})
+
+      project ->
+        validate_project_slug(
+          %{scope | project_id: project.id, project_slug: scope.project_slug || project.slug},
+          project
+        )
     end
   end
 
   defp validate_project(%Scope{project_slug: project_slug} = scope) do
     case Repo.get_by(Project, slug: project_slug) do
       nil -> invalid_scope("project not found", %{project_slug: project_slug})
-      project -> {:ok, %{scope | project_id: project.id}}
+      project -> {:ok, %{scope | project_id: project.id, project_slug: project.slug}}
     end
   end
 
@@ -2600,7 +2755,7 @@ defmodule Oli.Experiments do
         invalid_scope("publication not found", %{publication_id: publication_id})
 
       %Publication{project_id: ^project_id} ->
-        {:ok, scope}
+        validate_section_publication(scope)
 
       %Publication{project_id: actual_project_id} ->
         invalid_scope("publication does not belong to project", %{
@@ -2611,19 +2766,54 @@ defmodule Oli.Experiments do
     end
   end
 
+  defp validate_section_publication(%Scope{section_id: nil} = scope), do: {:ok, scope}
+
+  defp validate_section_publication(%Scope{} = scope) do
+    case Repo.exists?(
+           from(spp in SectionsProjectsPublications,
+             where:
+               spp.section_id == ^scope.section_id and
+                 spp.project_id == ^scope.project_id and
+                 spp.publication_id == ^scope.publication_id
+           )
+         ) do
+      true ->
+        {:ok, scope}
+
+      false ->
+        invalid_scope("publication is not deployed to section", %{
+          publication_id: scope.publication_id,
+          project_id: scope.project_id,
+          section_id: scope.section_id
+        })
+    end
+  end
+
   defp validate_section(%Scope{section_id: nil, section_slug: nil} = scope), do: {:ok, scope}
 
   defp validate_section(%Scope{section_id: section_id} = scope) when not is_nil(section_id) do
     case Repo.get(Section, section_id) do
-      nil -> invalid_scope("section not found", %{section_id: section_id})
-      section -> validate_section_scope(%{scope | section_id: section.id}, section)
+      nil ->
+        invalid_scope("section not found", %{section_id: section_id})
+
+      section ->
+        validate_section_scope(
+          %{scope | section_id: section.id, section_slug: scope.section_slug || section.slug},
+          section
+        )
     end
   end
 
   defp validate_section(%Scope{section_slug: section_slug} = scope) do
     case Repo.get_by(Section, slug: section_slug) do
-      nil -> invalid_scope("section not found", %{section_slug: section_slug})
-      section -> validate_section_scope(%{scope | section_id: section.id}, section)
+      nil ->
+        invalid_scope("section not found", %{section_slug: section_slug})
+
+      section ->
+        validate_section_scope(
+          %{scope | section_id: section.id, section_slug: section.slug},
+          section
+        )
     end
   end
 

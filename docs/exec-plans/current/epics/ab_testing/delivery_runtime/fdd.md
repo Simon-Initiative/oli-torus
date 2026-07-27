@@ -96,10 +96,12 @@ Assignments are owned by `Oli.Experiments` for the lifetime of an active experim
 - Native assignment:
   - `Oli.Experiments.assign_condition(%AssignConditionRequest{}) :: {:ok, %AssignmentDecision{}} | {:error, %ExperimentError{}}`
   - Required request fields: `%Scope{institution_id, project_id or project_slug, publication_id, section_id or section_slug, user_id, enrollment_id}`, `alternatives_resource_id`, `alternatives_revision_id`, `decision_point_key`, and `available_condition_codes`.
+  - `alternatives_revision_id` identifies the exact revision rendered by the caller; the context verifies it against the section's deployed publication. The experiment itself floats by resource ID and is eligible only when its complete condition set is compatible with that resolved revision.
   - Delivery treats `%AssignmentDecision{status: :no_experiment}` as first-option fallback.
 - Native exposure:
   - `Oli.Experiments.record_exposure(%RecordExposureRequest{}) :: {:ok, %ExposureReceipt{}} | {:error, %ExperimentError{}}`
   - Required request fields: scope, assignment_id, content_revision_id, idempotency_key, optional exposed_at.
+  - `content_revision_id` is immutable delivery evidence and must match the decision-point resource revision resolved for the supplied section and publication.
   - Exposure failures are logged/telemetered but do not block content rendering.
 - Native outcome:
   - `Oli.Experiments.record_outcome(%RecordOutcomeRequest{}) :: {:ok, %OutcomeReceipt{}} | {:error, %ExperimentError{}}`

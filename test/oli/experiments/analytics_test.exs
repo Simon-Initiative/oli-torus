@@ -89,7 +89,34 @@ defmodule Oli.Experiments.AnalyticsTest do
 
   defp active_experiment_with_conditions do
     scope = valid_scope()
-    revision = insert(:revision)
+
+    revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_alternatives(),
+        content: %{
+          "strategy" => "upgrade_decision_point",
+          "options" => [
+            %{"id" => "a", "name" => "A"},
+            %{"id" => "b", "name" => "B"}
+          ]
+        }
+      )
+
+    publication = Repo.get!(Oli.Publishing.Publications.Publication, scope.publication_id)
+    project = Repo.get!(Oli.Authoring.Course.Project, scope.project_id)
+    section = Repo.get!(Oli.Delivery.Sections.Section, scope.section_id)
+
+    insert(:published_resource,
+      publication: publication,
+      resource: revision.resource,
+      revision: revision
+    )
+
+    insert(:section_resource,
+      project: project,
+      section: section,
+      resource_id: revision.resource_id
+    )
 
     {:ok, definition} =
       Experiments.create_experiment(%CreateExperimentRequest{
@@ -107,7 +134,6 @@ defmodule Oli.Experiments.AnalyticsTest do
       |> DecisionPoint.changeset(%{
         experiment_id: active.id,
         alternatives_resource_id: revision.resource_id,
-        alternatives_revision_id: revision.id,
         decision_point_key: decision_point_key(revision)
       })
       |> Repo.insert!()
@@ -145,6 +171,13 @@ defmodule Oli.Experiments.AnalyticsTest do
     project = insert(:project)
     publication = insert(:publication, project: project)
     section = insert(:section, institution: institution, base_project: project)
+
+    insert(:section_project_publication,
+      section: section,
+      project: project,
+      publication: publication
+    )
+
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
 

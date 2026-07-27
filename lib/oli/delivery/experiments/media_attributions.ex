@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
   alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
   alias Oli.Experiments.XAPI.Attributions
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
   alias Oli.Resources.PageContent
 
@@ -27,11 +28,13 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
         []
 
       _ ->
-        context
-        |> assignment_query()
-        |> Repo.all()
-        |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
-        |> Enum.flat_map(&media_attribution(&1, context))
+        assignments =
+          context
+          |> assignment_query()
+          |> Repo.all()
+          |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
+
+        media_attributions(assignments, context)
     end
   end
 
@@ -45,6 +48,8 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       on: decision_point.id == assignment.decision_point_id,
       join: condition in Condition,
       on: condition.id == assignment.condition_id,
+      join: section in Oli.Delivery.Sections.Section,
+      on: section.id == assignment.section_id,
       where:
         experiment.project_id == ^context.project_id and
           assignment.section_id == ^context.section_id and
@@ -53,10 +58,30 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       select: %{
         assignment: assignment,
         decision_point: decision_point,
-        condition: condition
+        condition: condition,
+        section_slug: section.slug
       },
       distinct: assignment.id
     )
+  end
+
+  defp media_attributions([], _context), do: []
+
+  defp media_attributions(assignments, context) do
+    section_slug = assignments |> hd() |> Map.fetch!(:section_slug)
+
+    resource_ids =
+      assignments
+      |> Enum.map(& &1.decision_point.alternatives_resource_id)
+      |> Enum.uniq()
+
+    revisions_by_resource =
+      section_slug
+      |> DeliveryResolver.from_resource_id(resource_ids)
+      |> Enum.reject(&is_nil/1)
+      |> Map.new(&{&1.resource_id, &1})
+
+    Enum.flat_map(assignments, &media_attribution(&1, context, revisions_by_resource))
   end
 
   defp media_attribution(
@@ -65,8 +90,11 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
            decision_point: %DecisionPoint{} = decision_point,
            condition: %Condition{} = condition
          },
-         %Context{} = context
+         %Context{} = context,
+         revisions_by_resource
        ) do
+    revision = Map.get(revisions_by_resource, decision_point.alternatives_resource_id)
+
     decision = %AssignmentDecision{
       status: :assigned,
       experiment_id: assignment.experiment_id,
@@ -80,7 +108,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
     request = %AssignConditionRequest{
       scope: scope(context, assignment),
       alternatives_resource_id: decision_point.alternatives_resource_id,
-      alternatives_revision_id: decision_point.alternatives_revision_id,
+      alternatives_revision_id: revision && revision.id,
       decision_point_key: decision_point.decision_point_key,
       available_condition_codes: [condition.condition_code]
     }

@@ -133,7 +133,8 @@ Create private schemas and migrations for tables under an `experiment_` prefix t
   - `id`, `uuid`, `institution_id`, `project_id`, `publication_id`, `section_id`, `slug`, `name`, `description`, `state`, `assignment_unit`, `algorithm`, `policy_config`, `started_at`, `ended_at`, timestamps.
   - Indexes on `project_id`, `publication_id`, `section_id`, `state`, and unique `uuid`.
 - `experiment_decision_points`
-  - `id`, `experiment_id`, `alternatives_resource_id`, `alternatives_revision_id`, `decision_point_key`, `title`, `position`, timestamps.
+  - `id`, `experiment_id`, `alternatives_resource_id`, `decision_point_key`, `title`, `position`, timestamps.
+  - The resource ID is the durable experiment target. Current authoring and delivery revisions are resolved through their respective publication resolvers rather than persisted on the experiment.
   - Unique index on `experiment_id`, `decision_point_key`.
 - `experiment_conditions`
   - `id`, `experiment_id`, `decision_point_id`, `condition_code`, `option_id`, `label`, `weight`, `active`, `position`, timestamps.

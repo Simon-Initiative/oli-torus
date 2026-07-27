@@ -9,8 +9,7 @@ defmodule Oli.Experiments.RewardEligibleAssignment do
     :decision_point_id,
     :condition_id,
     :condition_code,
-    :alternatives_resource_id,
-    :alternatives_revision_id
+    :alternatives_resource_id
   ]
 
   @type t :: %__MODULE__{
@@ -19,7 +18,6 @@ defmodule Oli.Experiments.RewardEligibleAssignment do
           decision_point_id: integer(),
           condition_id: integer(),
           condition_code: String.t(),
-          alternatives_resource_id: integer(),
-          alternatives_revision_id: integer()
+          alternatives_resource_id: integer()
         }
 end

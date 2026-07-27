@@ -74,7 +74,6 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
              },
              decision_point: %{
                alternatives_resource_id: alternatives_revision.resource_id,
-               alternatives_revision_id: alternatives_revision.id,
                decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
                title: "Scenario delivery runtime decision point"
              },
@@ -488,8 +487,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
       where:
         assignment.section_id == ^scope.section_id and
           assignment.user_id == ^scope.user_id and
-          decision_point.alternatives_resource_id == ^alternatives_revision.resource_id and
-          decision_point.alternatives_revision_id == ^alternatives_revision.id
+          decision_point.alternatives_resource_id == ^alternatives_revision.resource_id
     )
   end
 
@@ -516,8 +514,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
       on: decision_point.id == policy_state.decision_point_id,
       where:
         policy_state.experiment_id in subquery(scoped_experiment_ids(scope)) and
-          decision_point.alternatives_resource_id == ^alternatives_revision.resource_id and
-          decision_point.alternatives_revision_id == ^alternatives_revision.id
+          decision_point.alternatives_resource_id == ^alternatives_revision.resource_id
     )
   end
 
