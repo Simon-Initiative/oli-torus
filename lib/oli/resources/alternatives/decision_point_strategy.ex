@@ -359,7 +359,14 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
          receipt,
          %RecordExposureRequest{assignment_id: assignment_id} = request
        ) do
-    case Repo.get(Assignment, assignment_id) do
+    query =
+      from assignment in Assignment,
+        join: experiment in assoc(assignment, :experiment),
+        join: condition in assoc(assignment, :condition),
+        where: assignment.id == ^assignment_id,
+        preload: [experiment: experiment, condition: condition]
+
+    case Repo.one(query) do
       %Assignment{} = assignment ->
         Attributions.attributions_for_page_view(receipt, request, assignment: assignment)
 

@@ -1748,13 +1748,15 @@ defmodule Oli.Experiments do
         from assignment in Assignment,
           join: experiment in ExperimentDefinitionSchema,
           on: experiment.id == assignment.experiment_id,
+          join: condition in Condition,
+          on: condition.id == assignment.condition_id,
           where:
             assignment.id == ^assignment_id and
               experiment.project_id == ^scope.project_id and
               assignment.section_id == ^scope.section_id and
               assignment.enrollment_id == ^scope.enrollment_id and
               assignment.user_id == ^scope.user_id,
-          preload: [experiment: experiment]
+          preload: [experiment: experiment, condition: condition]
 
       {:ok, if(lock?, do: lock(query, "FOR UPDATE"), else: query)}
     end

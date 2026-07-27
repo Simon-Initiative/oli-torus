@@ -104,9 +104,18 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert Enum.map(activity_attributions, & &1["role"]) == ["rollup", "rollup"]
       assert Enum.map(page_attributions, & &1["role"]) == ["rollup", "rollup"]
 
+      assignment = Repo.one!(Assignment)
+
+      experiment =
+        Repo.get!(Oli.Experiments.Schemas.ExperimentDefinition, assignment.experiment_id)
+
+      condition = Repo.get!(Condition, assignment.condition_id)
+
       for attributions <- [part_attributions, activity_attributions, page_attributions] do
         assert Enum.all?(attributions, &(&1["assignment_id"] != nil))
         assert Enum.all?(attributions, &(&1["experiment_id"] != nil))
+        assert Enum.all?(attributions, &(&1["experiment_uuid"] == experiment.uuid))
+        assert Enum.all?(attributions, &(&1["condition_code"] == condition.condition_code))
       end
     end
 

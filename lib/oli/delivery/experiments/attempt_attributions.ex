@@ -15,7 +15,7 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
     Scope
   }
 
-  alias Oli.Experiments.Schemas.{Assignment, ExperimentDefinition}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, ExperimentDefinition}
   alias Oli.Experiments.XAPI.Attributions
   alias Oli.Delivery.Sections.Section
   alias Oli.Repo
@@ -106,12 +106,14 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
       from(assignment in Assignment,
         join: experiment in ExperimentDefinition,
         on: experiment.id == assignment.experiment_id,
+        join: condition in Condition,
+        on: condition.id == assignment.condition_id,
         where:
           experiment.project_id == ^attempt_group.context.project_id and
             assignment.section_id == ^attempt_group.context.section_id and
             assignment.user_id == ^attempt_group.context.user_id and
             fragment("? \\? 'rewards'", assignment.runtime_event_state),
-        preload: [experiment: experiment]
+        preload: [experiment: experiment, condition: condition]
       )
       |> Repo.all()
       |> Enum.filter(&has_reward_for_any_activity?(&1, activity_attempt_ids))

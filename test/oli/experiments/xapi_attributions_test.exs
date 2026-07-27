@@ -17,6 +17,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
   alias Oli.Experiments.Schemas.{
     Assignment,
+    Condition,
     ExperimentDefinition,
     PolicyState
   }
@@ -76,11 +77,13 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert exposure["role"] == "exposure"
     refute Map.has_key?(exposure, "exposure_id")
     assert exposure["experiment_uuid"] == @experiment_uuid
+    assert exposure["condition_code"] == "a"
     assert exposure["content_revision_id"] == 701
 
     assert outcome["role"] == "outcome"
     refute Map.has_key?(outcome, "outcome_id")
     assert outcome["experiment_uuid"] == @experiment_uuid
+    assert outcome["condition_code"] == "a"
     assert outcome["activity_attempt_id"] == 800
     assert outcome["resource_attempt_id"] == 801
     assert outcome["activity_resource_id"] == 802
@@ -92,6 +95,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     refute Map.has_key?(reward, "outcome_id")
     assert reward["outcome_key"] == "outcome:40"
     assert reward["experiment_uuid"] == @experiment_uuid
+    assert reward["condition_code"] == "a"
     assert reward["reward_source"] == "activity_attempt:full_credit"
     assert reward["reward_value"] == 1.0
 
@@ -199,7 +203,8 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       policy_version: "weighted_random",
       assignment_key: "10:20:500",
       assigned_at: timestamp(),
-      experiment: experiment()
+      experiment: experiment(),
+      condition: %Condition{condition_code: "a"}
     }
   end
 

@@ -10,7 +10,7 @@ defmodule Oli.Resources.AlternativesTest do
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Delivery.ExtrinsicState
   alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
 
   @select_all_el %{
     "type" => "alternatives",
@@ -362,9 +362,13 @@ defmodule Oli.Resources.AlternativesTest do
              ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
 
       assignment = Repo.one!(Assignment)
+      experiment = Repo.get!(ExperimentDefinition, assignment.experiment_id)
+      condition = Repo.get!(Condition, assignment.condition_id)
       [exposure] = attributions
 
       assert assignment.section_id == context.section_id
+      assert exposure["experiment_uuid"] == experiment.uuid
+      assert exposure["condition_code"] == condition.condition_code
       assert exposure["publication_id"] == context.publication_id
       assert exposure["key"] =~ ":assignment:#{assignment.id}"
       assert exposure["role"] == "exposure"
