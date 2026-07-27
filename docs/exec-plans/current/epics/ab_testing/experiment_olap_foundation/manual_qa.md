@@ -133,8 +133,6 @@ docker compose exec clickhouse clickhouse-client \
   --query "
     SELECT
       r.event_type,
-      r.has_experiment_attribution,
-      r.experiment_attribution_count,
       e.experiment_role,
       e.experiment_id,
       e.experiment_uuid,
@@ -155,7 +153,7 @@ Pass criteria:
 - At least one `experiment_attributions` row exists with `experiment_role = 'exposure'`.
 - Joined `raw_events.event_type` is `page_viewed`.
 - `joins_parent` is `1`.
-- Parent `raw_events` has `has_experiment_attribution = 1` and `experiment_attribution_count >= 1`.
+- Experiment presence is represented exclusively by the joined `experiment_attributions` row; `raw_events` contains no experiment-specific summary columns.
 
 ## Outcome And Reward Flow
 
@@ -219,12 +217,10 @@ Use this flow if the page can expose more than one active experiment attribution
        SELECT
          r.event_hash,
          r.event_type,
-         r.experiment_attribution_count,
          count(e.attribution_hash) AS projected_attributions
        FROM raw_events r
        INNER JOIN experiment_attributions e ON e.raw_event_hash = r.event_hash
-       WHERE r.has_experiment_attribution = 1
-       GROUP BY r.event_hash, r.event_type, r.experiment_attribution_count
+       GROUP BY r.event_hash, r.event_type
        HAVING projected_attributions > 1
        ORDER BY projected_attributions DESC
        LIMIT 10
@@ -234,7 +230,7 @@ Use this flow if the page can expose more than one active experiment attribution
 Pass criteria:
 
 - One parent `raw_events` row can project multiple attribution rows.
-- `experiment_attribution_count` matches the number of projected rows for that host statement after dedupe has settled.
+- Attribution cardinality is derived from `experiment_attributions` after dedupe has settled.
 
 ## Duplicate Reward Guard
 
@@ -330,15 +326,16 @@ docker compose exec clickhouse clickhouse-client \
   --database oli_analytics_dev \
   --query "
     SELECT count()
-    FROM raw_events
-    WHERE has_experiment_attribution = 1
-      AND event_hash NOT IN (
-        SELECT raw_event_hash FROM experiment_attributions
-      )
+    FROM experiment_attributions
+    WHERE raw_event_hash NOT IN (
+      SELECT event_hash FROM raw_events
+    )
   "
 ```
 
 Expected result: `0`.
+
+This verifies that every attribution references an ingested host event. Because `raw_events` intentionally contains no experiment summary state, expected-versus-inserted attribution counts are monitored at the ingest batch level and reconciled from the replayable JSONL source rather than inferred from `raw_events`.
 
 ## Troubleshooting
 
@@ -364,3 +361,11 @@ docker volume rm oli-torus_clickhouse_data
 ```
 
 Only remove the volume when local analytics data can be discarded.
+
+## Decision Log
+
+### 2026-07-27 - Verify Experiment Relationships From The Attribution Projection
+- Change: Replaced checks against raw-event experiment summary columns with attribution-to-parent joins, attribution grouping, and orphan-attribution checks.
+- Reason: The raw-event schema is experiment-independent; experiment presence and cardinality are properties of `experiment_attributions`.
+- Evidence: Amended ClickHouse migration and equivalent direct-upload, Lambda, and backfill transforms.
+- Impact: Manual QA uses `raw_event_hash` to verify parent relationships and leaves missing-projection reconciliation to ingest observability and JSONL replay.

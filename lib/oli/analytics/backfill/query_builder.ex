@@ -36,8 +36,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         page_attempt_guid, page_attempt_number, part_attempt_guid,
         part_attempt_number, activity_id, activity_revision_id, part_id,
         page_sub_type, score, out_of, scaled_score, success, completion,
-        response, feedback, hints_requested, attached_objectives, session_id,
-        has_experiment_attribution, experiment_attribution_count
+        response, feedback, hints_requested, attached_objectives, session_id
     )
     SELECT
         lower(hex(SHA256(json))) AS event_hash,
@@ -147,10 +146,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         #{json_value_or_null("$.result.extensions.\"http://oli.cmu.edu/extensions/feedback\"")} AS feedback,
         toUInt32OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/hints_requested\"")}) AS hints_requested,
         #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/attached_objectives\"")} AS attached_objectives,
-        #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/session_id\"")} AS session_id,
-
-        JSONLength(json, '$.context.extensions."http://oli.cmu.edu/extensions/experiment_attributions"') > 0 AS has_experiment_attribution,
-        toUInt16(JSONLength(json, '$.context.extensions."http://oli.cmu.edu/extensions/experiment_attributions"')) AS experiment_attribution_count
+        #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/session_id\"")} AS session_id
     FROM #{s3_source}
     #{settings_clause}
     """

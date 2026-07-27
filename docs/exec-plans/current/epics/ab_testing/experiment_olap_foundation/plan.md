@@ -47,7 +47,7 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 ## Phase 2: ClickHouse Schema, ETL, Local Upload, And Backfill
 - Goal: Ensure experiment attributions on existing xAPI events land in ClickHouse with compact, queryable attribution-level columns through all ingest paths.
 - Tasks:
-  - [x] Add a ClickHouse migration under `priv/clickhouse/migrations/` for raw attribution summary support and a compact attribution-level projection/table, following `priv/clickhouse/AGENTS.md`.
+  - [x] Add a ClickHouse migration under `priv/clickhouse/migrations/` for a compact attribution-level projection/table while keeping `raw_events` independent of experiment-specific concerns, following `priv/clickhouse/AGENTS.md`.
   - [x] Add ClickHouse indexes or projections only where justified by attribution query contracts and supported by ClickHouse.
   - [x] Update `Oli.Analytics.XAPI.ClickHouseUploader` to transform host statements with `experiment_attributions` into attribution projection rows or equivalent queryable fields.
   - [x] Update `cloud/xapi-etl-processor/lambda_function.py` to extract the same attribution fields into Parquet/ClickHouse insert columns.
@@ -217,3 +217,9 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 - Reason: Local direct upload must bypass production S3/Lambda while preserving equivalent ClickHouse semantics, but hand-maintained transforms can drift.
 - Evidence: Code comparison of `lib/oli/analytics/xapi/clickhouse_uploader.ex`, `cloud/xapi-etl-processor/lambda_function.py`, and `lib/oli/analytics/backfill/query_builder.ex`.
 - Impact: A later hardening task should add shared fixtures, parity assertions, or a canonical extraction contract before relying on exact cross-path equivalence for production investigations.
+
+### 2026-07-27 - Remove Experiment Summaries From Raw Events
+- Change: Amended Phase 2 so the ClickHouse migration and all three ingest paths write experiment data only to `experiment_attributions`, with no experiment summary fields on `raw_events`.
+- Reason: `raw_events` is the experiment-independent host-event fact, while attribution presence and cardinality are properties of the experiment-owned projection.
+- Evidence: Amended ClickHouse migration, direct-uploader transform, Lambda transform, backfill SQL, and focused tests.
+- Impact: Phase 2 verification and manual QA derive attribution counts from `experiment_attributions` and use `raw_event_hash` only to join host context.

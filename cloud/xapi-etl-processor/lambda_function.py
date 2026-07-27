@@ -169,8 +169,6 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "hints_requested",
     "attached_objectives",
     "session_id",
-    "has_experiment_attribution",
-    "experiment_attribution_count",
     "event_hash",
     "source_file",
     "source_etag",
@@ -922,8 +920,6 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "hints_requested": pa.uint32(),
             "attached_objectives": pa.string(),
             "session_id": pa.string(),
-            "has_experiment_attribution": pa.bool_(),
-            "experiment_attribution_count": pa.uint16(),
             "event_hash": pa.string(),
             "source_file": pa.string(),
             "source_etag": pa.string(),
@@ -1034,7 +1030,6 @@ def transform_xapi_statement(
         hints_requested_value = _safe_int(hints_requested)
 
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
-    experiment_attributions = _experiment_attributions(statement)
 
     transformed: Dict[str, Any] = {
         "user_id": user_id,
@@ -1092,8 +1087,6 @@ def transform_xapi_statement(
         "hints_requested": hints_requested_value,
         "attached_objectives": attached_objectives,
         "session_id": session_id,
-        "has_experiment_attribution": bool(experiment_attributions),
-        "experiment_attribution_count": len(experiment_attributions),
         "event_hash": raw_hash,
         "source_file": f"s3://{bucket}/{key}",
         "source_etag": etag.strip('"') if isinstance(etag, str) else etag,

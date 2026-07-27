@@ -252,7 +252,7 @@ class LambdaFunctionTests(TestCase):
         source_lines = table.column("source_line").to_pylist()
         self.assertEqual(source_lines, [1, 2])
 
-    def test_transform_xapi_statement_extracts_experiment_attribution_summary(self):
+    def test_transform_xapi_statement_keeps_experiment_fields_out_of_raw_event(self):
         raw_line, statement = self._experiment_attributed_part_attempt_fixture()
 
         transformed = lambda_function.transform_xapi_statement(
@@ -265,8 +265,9 @@ class LambdaFunctionTests(TestCase):
         )
 
         self.assertEqual(transformed["event_type"], "part_attempt")
-        self.assertTrue(transformed["has_experiment_attribution"])
-        self.assertEqual(transformed["experiment_attribution_count"], 1)
+        self.assertNotIn("has_experiment_attribution", transformed)
+        self.assertNotIn("experiment_attribution_count", transformed)
+        self.assertNotIn("experiment_uuid", transformed)
 
         rows = lambda_function.transform_experiment_attributions(
             statement,

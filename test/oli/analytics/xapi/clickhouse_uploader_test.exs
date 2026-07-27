@@ -184,10 +184,10 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     }
 
     expect(MockHTTP, :post, fn _url, query, _headers ->
-      assert query =~ "has_experiment_attribution"
-      assert query =~ "experiment_attribution_count"
       assert query =~ "'part_attempt'"
-      assert query =~ "1"
+      refute query =~ "has_experiment_attribution"
+      refute query =~ "experiment_attribution_count"
+      refute query =~ "experiment_uuid"
       refute query =~ "experiment_event_type"
       {:ok, %{status_code: 200, body: ""}}
     end)

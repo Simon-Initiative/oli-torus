@@ -172,7 +172,7 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
 - ClickHouse migration:
   - Preserve `raw_events` as one row per xAPI statement. Do not duplicate raw rows for each experiment decision point.
   - Add a raw JSON/string column or equivalent extraction path for the `experiment_attributions` extension if the existing raw statement JSON is not sufficient for replay.
-  - Add nullable raw summary columns only when they are unambiguous, such as `has_experiment_attribution` and `experiment_attribution_count`. Avoid flat `experiment_id`, `decision_point_id`, `condition_id`, or `assignment_id` columns on `raw_events` as canonical analytics fields because one raw event may carry multiple attributions.
+  - Keep `raw_events` independent of experiment analytics. Do not add experiment presence, cardinality, or identity columns to the raw-event schema because those concerns are owned by the attribution projection and one raw event may carry multiple attributions.
   - Add an attribution-level ClickHouse projection/table that contains one row per attribution with a compact set of stable query dimensions. The attribution row should include `raw_event_hash` as the logical parent reference to `raw_events.event_hash`, `attribution_hash`, `host_event_type`, `experiment_role`, `experiment_id`, `experiment_uuid`, `decision_point_id`, `decision_point_key`, `condition_id`, `condition_code`, `assignment_id`, `assignment_key`, `algorithm`, `policy_version`, `reward_value`, `reward_source`, `section_id`, `project_id`, `publication_id`, `enrollment_id`, `content_revision_id`, source provenance, and `timestamp`. It should not store raw key values, hashed key values, outcome/reward receipt ids, or policy-update hashes unless later query pressure justifies adding them.
   - Do not duplicate detailed host/media/attempt fields such as attempt GUIDs, video URLs, content element IDs, activity revision IDs, page IDs, activity IDs, or part IDs in the attribution projection unless a later query-pressure review justifies the denormalization. Query those details by joining `experiment_attributions.raw_event_hash` back to `raw_events.event_hash`.
   - Add indexes for attribution query dimensions where ClickHouse supports the selected index types.
@@ -296,6 +296,12 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
 - Reason: The parent `raw_events` row already owns detailed host statement context. Keeping the attribution table compact reduces ingestion drift and avoids multiplying large or unstable host columns across attribution rows.
 - Evidence: Reconciled ClickHouse migration, direct uploader, backfill query builder, Lambda ETL, and related tests.
 - Impact: Analytics contracts use the attribution table for scoped experiment dimensions and join to `raw_events` only when detailed host/media/attempt filters or selected fields are required.
+
+### 2026-07-27 - Keep Raw Events Independent Of Experiment Analytics
+- Change: Removed experiment presence and attribution-count summary columns from the `raw_events` design; experiment relationships exist exclusively as zero-or-more `experiment_attributions` rows linked by `raw_event_hash`.
+- Reason: Summary columns duplicate projection state, can disagree with independently inserted attribution rows, and mix an optional downstream analytical concern into the general raw-event schema.
+- Evidence: `priv/clickhouse/migrations/20260714120000_add_experiment_columns_to_raw_events.sql`, `lib/oli/analytics/xapi/clickhouse_uploader.ex`, `lib/oli/analytics/backfill/query_builder.ex`, and `cloud/xapi-etl-processor/lambda_function.py`.
+- Impact: Attribution presence and cardinality are queried from `experiment_attributions`; ingestion reconciliation remains an operational concern rather than part of the raw-event fact contract.
 
 ## 17. References
 - `ARCHITECTURE.md`

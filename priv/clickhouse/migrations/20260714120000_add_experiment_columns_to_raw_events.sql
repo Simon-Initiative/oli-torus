@@ -1,8 +1,4 @@
 -- +goose Up
-ALTER TABLE raw_events ADD COLUMN IF NOT EXISTS has_experiment_attribution Bool DEFAULT false;
-ALTER TABLE raw_events ADD COLUMN IF NOT EXISTS experiment_attribution_count UInt16 DEFAULT 0;
-ALTER TABLE raw_events ADD INDEX IF NOT EXISTS idx_has_experiment_attribution has_experiment_attribution TYPE set(0) GRANULARITY 1;
-
 CREATE TABLE IF NOT EXISTS experiment_attributions (
     raw_event_hash String,
     attribution_hash String,
@@ -48,6 +44,3 @@ ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_assignment_id as
 
 -- +goose Down
 DROP TABLE IF EXISTS experiment_attributions;
-ALTER TABLE raw_events DROP INDEX IF EXISTS idx_has_experiment_attribution;
-ALTER TABLE raw_events DROP COLUMN IF EXISTS experiment_attribution_count;
-ALTER TABLE raw_events DROP COLUMN IF EXISTS has_experiment_attribution;

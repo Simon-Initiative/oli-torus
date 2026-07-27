@@ -89,7 +89,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
     refute sql =~ "video_play_time"
   end
 
-  test "extracts experiment attribution summary columns in raw events insert sql" do
+  test "keeps experiment attribution concerns out of raw events insert sql" do
     run = %BackfillRun{
       target_table: "analytics.raw_events",
       s3_pattern: "s3://bucket/section/**/*.jsonl",
@@ -98,8 +98,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
 
     sql = QueryBuilder.insert_sql(run, @creds)
 
-    assert sql =~ "has_experiment_attribution, experiment_attribution_count"
-    assert sql =~ "http://oli.cmu.edu/extensions/experiment_attributions"
+    refute sql =~ "has_experiment_attribution"
+    refute sql =~ "experiment_attribution_count"
+    refute sql =~ "experiment_attributions"
     refute sql =~ "experiment_event_type"
     refute sql =~ "'experiment'"
   end

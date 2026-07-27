@@ -84,7 +84,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp raw_event_base({raw_line, event}, event_type) do
     context_extensions = context_extensions(event)
-    attributions = experiment_attributions(event)
 
     %{
       event_hash: event_hash(raw_line),
@@ -95,9 +94,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       publication_id: oli_extension(context_extensions, "publication_id"),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: event_type,
-      verb_id: get_in(event, ["verb", "id"]),
-      has_experiment_attribution: attributions != [],
-      experiment_attribution_count: length(attributions)
+      verb_id: get_in(event, ["verb", "id"])
     }
   end
 
@@ -507,9 +504,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       feedback,
       hints_requested,
       attached_objectives,
-      session_id,
-      has_experiment_attribution,
-      experiment_attribution_count
+      session_id
     ) VALUES
     """
   end
@@ -553,9 +548,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(event[:feedback]),
       escape_value(event[:hints_requested]),
       escape_value(event[:attached_objectives]),
-      escape_value(event[:session_id]),
-      escape_value(event[:has_experiment_attribution]),
-      escape_value(event[:experiment_attribution_count])
+      escape_value(event[:session_id])
     ]
     |> Enum.join(", ")
     |> then(fn values -> "(#{values})" end)
