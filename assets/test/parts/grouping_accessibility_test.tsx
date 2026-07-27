@@ -236,7 +236,7 @@ describe('GroupingBoard accessibility', () => {
 
     jest
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockImplementation(function getGroupingRect() {
+      .mockImplementation(function getGroupingRect(this: any) {
         if (this.classList.contains('grouping-item')) {
           return rect(10, 10, 80, 40);
         }
