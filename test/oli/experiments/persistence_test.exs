@@ -108,7 +108,6 @@ defmodule Oli.Experiments.PersistenceTest do
         |> DecisionPoint.changeset(%{
           experiment_id: definition.id,
           alternatives_resource_id: revision.resource_id,
-          alternatives_revision_id: revision.id,
           decision_point_key: "alternatives:#{revision.resource_id}"
         })
         |> Repo.insert!()

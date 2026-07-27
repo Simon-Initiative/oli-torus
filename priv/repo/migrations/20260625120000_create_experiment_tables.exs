@@ -60,7 +60,6 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
     create table(:experiment_decision_points) do
       add :experiment_id, references(:experiment_definitions, on_delete: :nothing), null: false
       add :alternatives_resource_id, references(:resources, on_delete: :nothing), null: false
-      add :alternatives_revision_id, references(:revisions, on_delete: :nothing), null: false
       add :decision_point_key, :string, null: false
       add :title, :string
       add :position, :integer, null: false, default: 0
@@ -73,11 +72,8 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
            )
 
     create index(:experiment_decision_points, [:alternatives_resource_id])
-    create index(:experiment_decision_points, [:alternatives_revision_id])
 
-    create index(
-             :experiment_decision_points,
-             [:alternatives_resource_id, :alternatives_revision_id, :decision_point_key],
+    create index(:experiment_decision_points, [:alternatives_resource_id, :decision_point_key],
              name: :experiment_decision_points_lookup_idx
            )
 

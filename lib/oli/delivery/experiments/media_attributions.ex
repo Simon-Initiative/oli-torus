@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
   alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
   alias Oli.Experiments.XAPI.Attributions
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
   alias Oli.Resources.PageContent
 
@@ -67,6 +68,11 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
          },
          %Context{} = context
        ) do
+    section = Repo.get!(Oli.Delivery.Sections.Section, context.section_id)
+
+    revision =
+      DeliveryResolver.from_resource_id(section.slug, decision_point.alternatives_resource_id)
+
     decision = %AssignmentDecision{
       status: :assigned,
       experiment_id: assignment.experiment_id,
@@ -80,7 +86,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
     request = %AssignConditionRequest{
       scope: scope(context, assignment),
       alternatives_resource_id: decision_point.alternatives_resource_id,
-      alternatives_revision_id: decision_point.alternatives_revision_id,
+      alternatives_revision_id: revision && revision.id,
       decision_point_key: decision_point.decision_point_key,
       available_condition_codes: [condition.condition_code]
     }

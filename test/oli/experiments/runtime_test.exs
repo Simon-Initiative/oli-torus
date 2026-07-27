@@ -25,12 +25,15 @@ defmodule Oli.Experiments.RuntimeTest do
     PolicyState
   }
 
+  alias Oli.Resources.ResourceType
+
   describe "assign_condition/1" do
     test "returns no_experiment when no active experiment matches and emits fallback telemetry" do
       attach_telemetry([[:oli, :experiments, :assignment, :fallback]])
 
-      revision = insert(:revision)
       scope = valid_scope()
+      revision = alternatives_revision()
+      deploy_revision(scope, revision)
 
       assert {:ok, %AssignmentDecision{status: :no_experiment}} =
                Experiments.assign_condition(assign_request(scope, revision, ["a"]))
@@ -80,7 +83,18 @@ defmodule Oli.Experiments.RuntimeTest do
         })
 
       assert updated_revision.resource_id == revision.resource_id
-      assert updated_revision.id != decision_point.alternatives_revision_id
+      assert updated_revision.id != revision.id
+
+      Oli.Publishing.PublishedResource
+      |> Repo.get_by!(
+        publication_id: scope.publication_id,
+        resource_id: revision.resource_id
+      )
+      |> Ecto.Changeset.change(revision_id: updated_revision.id)
+      |> Repo.update!()
+
+      assert {:error, %{type: :invalid_condition}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
 
       assert {:ok, %AssignmentDecision{status: :assigned} = assignment} =
                Experiments.assign_condition(assign_request(scope, updated_revision, ["a", "b"]))
@@ -233,6 +247,20 @@ defmodule Oli.Experiments.RuntimeTest do
   end
 
   describe "runtime evidence commands" do
+    test "rejects exposure evidence for a revision other than the deployed decision point" do
+      %{scope: scope, revision: revision} = active_experiment_with_conditions()
+      {:ok, assignment} = Experiments.assign_condition(assign_request(scope, revision, ["a"]))
+      other_revision = insert(:revision)
+
+      assert {:error, %{type: :invalid_condition}} =
+               Experiments.record_exposure(%RecordExposureRequest{
+                 key: "mismatched-exposure:#{assignment.assignment_id}",
+                 scope: scope,
+                 assignment_id: assignment.assignment_id,
+                 content_revision_id: other_revision.id
+               })
+    end
+
     test "records exposure and outcome without runtime state and reward idempotently" do
       attach_telemetry([
         [:oli, :experiments, :exposure, :recorded],
@@ -422,7 +450,9 @@ defmodule Oli.Experiments.RuntimeTest do
 
   defp active_experiment_with_conditions(opts \\ []) do
     scope = valid_scope()
-    revision = insert(:revision)
+    revision = alternatives_revision()
+
+    deploy_revision(scope, revision)
     algorithm = Keyword.get(opts, :algorithm, :weighted_random)
     policy_config = Keyword.get(opts, :policy_config, %{})
 
@@ -443,7 +473,6 @@ defmodule Oli.Experiments.RuntimeTest do
       |> DecisionPoint.changeset(%{
         experiment_id: active.id,
         alternatives_resource_id: revision.resource_id,
-        alternatives_revision_id: revision.id,
         decision_point_key: decision_point_key(revision)
       })
       |> Repo.insert!()
@@ -464,6 +493,22 @@ defmodule Oli.Experiments.RuntimeTest do
     %{scope: scope, revision: revision, definition: active, decision_point: decision_point}
   end
 
+  defp alternatives_revision do
+    resource = insert(:resource)
+
+    insert(:revision,
+      resource: resource,
+      resource_type_id: ResourceType.id_for_alternatives(),
+      content: %{
+        "strategy" => "upgrade_decision_point",
+        "options" => [
+          %{"id" => "a", "name" => "A"},
+          %{"id" => "b", "name" => "B"}
+        ]
+      }
+    )
+  end
+
   defp assign_request(scope, revision, condition_codes) do
     %Oli.Experiments.AssignConditionRequest{
       scope: scope,
@@ -481,6 +526,13 @@ defmodule Oli.Experiments.RuntimeTest do
     project = insert(:project)
     publication = insert(:publication, project: project)
     section = insert(:section, institution: institution, base_project: project)
+
+    insert(:section_project_publication,
+      section: section,
+      project: project,
+      publication: publication
+    )
+
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
 
@@ -492,6 +544,24 @@ defmodule Oli.Experiments.RuntimeTest do
       user_id: user.id,
       enrollment_id: enrollment.id
     }
+  end
+
+  defp deploy_revision(scope, revision) do
+    publication = Repo.get!(Oli.Publishing.Publications.Publication, scope.publication_id)
+    project = Repo.get!(Oli.Authoring.Course.Project, scope.project_id)
+    section = Repo.get!(Oli.Delivery.Sections.Section, scope.section_id)
+
+    insert(:published_resource,
+      publication: publication,
+      resource: revision.resource,
+      revision: revision
+    )
+
+    insert(:section_resource,
+      project: project,
+      section: section,
+      resource_id: revision.resource_id
+    )
   end
 
   defp sibling_runtime_scope(%Scope{} = scope) do

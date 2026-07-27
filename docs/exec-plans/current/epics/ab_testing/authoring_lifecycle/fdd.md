@@ -81,7 +81,7 @@ A/B testing edit flow:
 
 Lifecycle flow:
 
-1. `activate_experiment/2` validates that the definition has exactly one decision point, at least two active conditions, valid policy config, and alternatives content matching the condition set.
+1. `activate_experiment/2` validates that the definition has exactly one decision point, at least two active conditions, valid policy config, and alternatives content matching the condition set. Project-wide experiments use the working publication; section-associated experiments validate every section's deployed revision.
 2. `pause_experiment/2` makes the experiment ineligible for new runtime assignment while preserving existing records.
 3. `complete_experiment/2` ends enrollment for the experiment and prevents further authoring edits that affect assignments.
 4. `archive_experiment/2` hides the experiment from default authoring lists while preserving audit and analytics evidence.
@@ -90,7 +90,7 @@ Lifecycle flow:
 
 Lifecycle state on `experiment_definitions.state` is authoritative for delivery eligibility. `:active` is the only state that creates or reuses learner assignments during delivery. `:paused`, `:completed`, `:archived`, and `:draft` definitions are not assignment-eligible.
 
-The experiment definition graph belongs to `Oli.Experiments` and is authored at the project level. Alternatives resources and revisions remain content owned by authoring/resources. Experiment records reference alternatives content through `alternatives_resource_id`, `alternatives_revision_id`, and `decision_point_key`; they do not mutate published resources during delivery. Sections use the project-authored experiment configuration when rendering eligible published content rather than defining separate section-authored experiments.
+The experiment definition graph belongs to `Oli.Experiments` and is authored at the project level. Alternatives resources and revisions remain content owned by authoring/resources. Experiment records reference alternatives content through the durable `alternatives_resource_id` and `decision_point_key`; they do not pin a revision or mutate published resources during delivery. Authoring resolves the current working revision through `AuthoringResolver`, while delivery resolves each section's deployed revision through `DeliveryResolver`.
 
 ### 4.4 Alternatives Considered
 
@@ -112,7 +112,7 @@ The experiment definition graph belongs to `Oli.Experiments` and is authored at 
   - Reject Thompson Sampling algorithm or policy payloads with a form-safe unavailable error until the Thompson Sampling slice enables adaptive authoring.
   - Keep `activate_experiment/2`, `pause_experiment/2`, `complete_experiment/2`, and `archive_experiment/2` as lifecycle commands.
 - Decision point payload:
-  - Required fields: `alternatives_resource_id`, `alternatives_revision_id`, `decision_point_key`, `title`, and `position`.
+  - Required fields: `alternatives_resource_id`, `decision_point_key`, `title`, and `position`.
   - MVP supports exactly one alternatives decision point per experiment.
 - Condition payload:
   - Required fields: `condition_code`, `option_id`, `label`, `weight`, `active`, and `position`.

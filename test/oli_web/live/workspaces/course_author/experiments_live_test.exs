@@ -341,19 +341,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     resource = insert(:resource)
     insert(:project_resource, project_id: project.id, resource_id: resource.id)
 
-    insert(:revision, %{
-      resource: resource,
-      resource_type_id: ResourceType.id_for_alternatives(),
-      title: "Decision Point",
-      deleted: false,
-      content: %{
-        "strategy" => "upgrade_decision_point",
-        "options" => [
-          %{"id" => "alt-a", "name" => "A"},
-          %{"id" => "alt-b", "name" => "B"}
-        ]
-      }
-    })
+    revision =
+      insert(:revision, %{
+        resource: resource,
+        resource_type_id: ResourceType.id_for_alternatives(),
+        title: "Decision Point",
+        deleted: false,
+        content: %{
+          "strategy" => "upgrade_decision_point",
+          "options" => [
+            %{"id" => "alt-a", "name" => "A"},
+            %{"id" => "alt-b", "name" => "B"}
+          ]
+        }
+      })
+
+    publication = Oli.Publishing.project_working_publication(project.slug)
+    insert(:published_resource, publication: publication, resource: resource, revision: revision)
+    revision
   end
 
   defp insert_preference_alternatives_group(project) do
@@ -377,14 +382,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
   defp selected_decision_point_value(view) do
     [experiment] = project_experiments(view)
-    experiment.alternatives_revision_id |> to_string()
+    experiment.alternatives_resource_id |> to_string()
   end
 
   defp project_experiments(view) do
     html = render(view)
 
     Regex.scan(~r/<option[^>]+value="(\d+)"/, html, capture: :all_but_first)
-    |> Enum.map(fn [id] -> %{alternatives_revision_id: String.to_integer(id)} end)
+    |> Enum.map(fn [id] -> %{alternatives_resource_id: String.to_integer(id)} end)
   end
 
   defp evaluate_assertion(to_evaluate, assert_or_refute) do

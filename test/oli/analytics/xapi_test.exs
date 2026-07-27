@@ -147,7 +147,14 @@ defmodule Oli.Analytics.XAPITest do
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
 
-    alternatives_revision = insert(:revision)
+    alternatives_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_alternatives(),
+        content: %{
+          "strategy" => "upgrade_decision_point",
+          "options" => [%{"id" => "alt-a", "name" => "Condition A"}]
+        }
+      )
 
     page_revision =
       insert(:revision,
@@ -168,6 +175,12 @@ defmodule Oli.Analytics.XAPITest do
       resource_id: page_revision.resource_id
     )
 
+    insert(:section_resource,
+      section: section,
+      project: project,
+      resource_id: alternatives_revision.resource_id
+    )
+
     insert(:section_project_publication,
       section: section,
       project: project,
@@ -178,6 +191,12 @@ defmodule Oli.Analytics.XAPITest do
       publication: publication,
       resource: page_revision.resource,
       revision: page_revision
+    )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: alternatives_revision.resource,
+      revision: alternatives_revision
     )
 
     resource_access =
@@ -234,7 +253,6 @@ defmodule Oli.Analytics.XAPITest do
       |> DecisionPoint.changeset(%{
         experiment_id: active.id,
         alternatives_resource_id: alternatives_revision.resource_id,
-        alternatives_revision_id: alternatives_revision.id,
         decision_point_key: "alternatives:#{alternatives_revision.resource_id}"
       })
       |> Repo.insert!()

@@ -308,7 +308,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       id: 10,
       uuid: @experiment_uuid,
       project_id: 100,
-      section_id: 300,
       algorithm: :thompson_sampling
     }
   end

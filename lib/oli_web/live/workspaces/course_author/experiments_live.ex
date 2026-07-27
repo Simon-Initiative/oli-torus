@@ -163,7 +163,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               >
                 <option
                   :for={candidate <- @decision_point_candidates}
-                  value={candidate.alternatives_revision_id}
+                  value={candidate.alternatives_resource_id}
                 >
                   {candidate.title}
                 </option>
@@ -759,10 +759,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     }
   end
 
-  defp selected_candidate(candidates, %{"decision_point" => revision_id}) do
-    revision_id = ensure_integer(revision_id)
+  defp selected_candidate(candidates, %{"decision_point" => resource_id}) do
+    resource_id = ensure_integer(resource_id)
 
-    case Enum.find(candidates, &(&1.alternatives_revision_id == revision_id)) do
+    case Enum.find(candidates, &(&1.alternatives_resource_id == resource_id)) do
       nil -> {:error, "Select an alternatives group."}
       candidate -> {:ok, candidate}
     end
@@ -785,7 +785,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          policy_config: policy_config,
          decision_point: %{
            alternatives_resource_id: candidate.alternatives_resource_id,
-           alternatives_revision_id: candidate.alternatives_revision_id,
            decision_point_key: candidate.decision_point_key,
            title: candidate.title
          },

@@ -6,7 +6,7 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
   import Ecto.Changeset
 
   alias Oli.Experiments.Schemas.ExperimentDefinition
-  alias Oli.Resources.{Resource, Revision}
+  alias Oli.Resources.Resource
 
   schema "experiment_decision_points" do
     field :decision_point_key, :string
@@ -15,7 +15,6 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
 
     belongs_to :experiment, ExperimentDefinition
     belongs_to :alternatives_resource, Resource
-    belongs_to :alternatives_revision, Revision
 
     timestamps(type: :utc_datetime)
   end
@@ -25,7 +24,6 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
     |> cast(attrs, [
       :experiment_id,
       :alternatives_resource_id,
-      :alternatives_revision_id,
       :decision_point_key,
       :title,
       :position
@@ -33,7 +31,6 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
     |> validate_required([
       :experiment_id,
       :alternatives_resource_id,
-      :alternatives_revision_id,
       :decision_point_key,
       :position
     ])
@@ -41,7 +38,6 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:experiment_id)
     |> foreign_key_constraint(:alternatives_resource_id)
-    |> foreign_key_constraint(:alternatives_revision_id)
     |> unique_constraint([:experiment_id, :decision_point_key],
       name: :experiment_decision_points_key_idx
     )

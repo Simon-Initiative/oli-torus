@@ -184,6 +184,14 @@ defmodule Oli.Experiments.ContextTest do
       project = Repo.get!(Project, scope.project_id)
       institution = Repo.get!(Institution, scope.institution_id)
       other_section = insert(:section, institution: institution, base_project: project)
+      publication = Repo.get!(Oli.Publishing.Publications.Publication, scope.publication_id)
+
+      insert(:section_project_publication,
+        section: other_section,
+        project: project,
+        publication: publication
+      )
+
       alternatives = alternatives_revision(scope.project_id)
 
       request =
@@ -311,7 +319,6 @@ defmodule Oli.Experiments.ContextTest do
         name: paused.name,
         decision_point: %{
           alternatives_resource_id: alternatives.resource_id,
-          alternatives_revision_id: alternatives.id,
           decision_point_key: "alternatives:#{alternatives.resource_id}",
           title: alternatives.title
         },
@@ -443,6 +450,13 @@ defmodule Oli.Experiments.ContextTest do
     project = insert(:project)
     publication = insert(:publication, project: project)
     section = insert(:section, institution: institution, base_project: project)
+
+    insert(:section_project_publication,
+      section: section,
+      project: project,
+      publication: publication
+    )
+
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
 
@@ -471,6 +485,13 @@ defmodule Oli.Experiments.ContextTest do
     institution = Repo.get!(Institution, project_scope.institution_id)
     publication = insert(:publication, project: project)
     section = insert(:section, institution: institution, base_project: project)
+
+    insert(:section_project_publication,
+      section: section,
+      project: project,
+      publication: publication
+    )
+
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
 
@@ -488,36 +509,81 @@ defmodule Oli.Experiments.ContextTest do
     resource = insert(:resource)
     insert(:project_resource, project_id: project_id, resource_id: resource.id)
 
-    insert(:revision, %{
-      resource: resource,
-      resource_type_id: ResourceType.id_for_alternatives(),
-      title: "Decision Point",
-      content: %{
-        "strategy" => "upgrade_decision_point",
-        "options" => [
-          %{"id" => "alt-a", "name" => "A"},
-          %{"id" => "alt-b", "name" => "B"}
-        ]
-      }
-    })
+    revision =
+      insert(:revision, %{
+        resource: resource,
+        resource_type_id: ResourceType.id_for_alternatives(),
+        title: "Decision Point",
+        content: %{
+          "strategy" => "upgrade_decision_point",
+          "options" => [
+            %{"id" => "alt-a", "name" => "A"},
+            %{"id" => "alt-b", "name" => "B"}
+          ]
+        }
+      })
+
+    attach_revision_to_project_publications(project_id, revision)
+    revision
   end
 
   defp learner_preference_alternatives_revision(project_id) do
     resource = insert(:resource)
     insert(:project_resource, project_id: project_id, resource_id: resource.id)
 
-    insert(:revision, %{
-      resource: resource,
-      resource_type_id: ResourceType.id_for_alternatives(),
-      title: "Learner Preference",
-      content: %{
-        "strategy" => "user_section_preference",
-        "options" => [
-          %{"id" => "alt-a", "name" => "A"},
-          %{"id" => "alt-b", "name" => "B"}
-        ]
-      }
-    })
+    revision =
+      insert(:revision, %{
+        resource: resource,
+        resource_type_id: ResourceType.id_for_alternatives(),
+        title: "Learner Preference",
+        content: %{
+          "strategy" => "user_section_preference",
+          "options" => [
+            %{"id" => "alt-a", "name" => "A"},
+            %{"id" => "alt-b", "name" => "B"}
+          ]
+        }
+      })
+
+    attach_revision_to_project_publications(project_id, revision)
+    revision
+  end
+
+  defp attach_revision_to_project_publications(project_id, revision) do
+    project = Repo.get!(Project, project_id)
+
+    publications =
+      Oli.Publishing.Publications.Publication
+      |> Ecto.Query.where([publication], publication.project_id == ^project_id)
+      |> Repo.all()
+
+    publications =
+      case Enum.any?(publications, &is_nil(&1.published)) do
+        true -> publications
+        false -> [insert(:publication, project: project, published: nil) | publications]
+      end
+
+    Enum.each(publications, fn publication ->
+      insert(:published_resource,
+        publication: publication,
+        resource: revision.resource,
+        revision: revision
+      )
+    end)
+
+    Oli.Delivery.Sections.SectionsProjectsPublications
+    |> Ecto.Query.where([mapping], mapping.project_id == ^project_id)
+    |> Repo.all()
+    |> Enum.uniq_by(& &1.section_id)
+    |> Enum.each(fn mapping ->
+      section = Repo.get!(Oli.Delivery.Sections.Section, mapping.section_id)
+
+      insert(:section_resource,
+        project: project,
+        section: section,
+        resource_id: revision.resource_id
+      )
+    end)
   end
 
   defp graph_request(scope, alternatives, conditions \\ nil) do
@@ -528,7 +594,6 @@ defmodule Oli.Experiments.ContextTest do
       algorithm: :weighted_random,
       decision_point: %{
         alternatives_resource_id: alternatives.resource_id,
-        alternatives_revision_id: alternatives.id,
         decision_point_key: "alternatives:#{alternatives.resource_id}",
         title: alternatives.title
       },

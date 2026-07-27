@@ -569,7 +569,15 @@ defmodule Oli.Resources.AlternativesTest do
 
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
-    revision = insert(:revision)
+
+    revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_alternatives(),
+        content: %{
+          "strategy" => "upgrade_decision_point",
+          "options" => options
+        }
+      )
 
     insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
 
@@ -577,6 +585,18 @@ defmodule Oli.Resources.AlternativesTest do
       section: section,
       project: project,
       publication: publication
+    )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: revision.resource,
+      revision: revision
+    )
+
+    insert(:section_resource,
+      section: section,
+      project: project,
+      resource_id: revision.resource_id
     )
 
     scope = %Scope{
@@ -660,7 +680,6 @@ defmodule Oli.Resources.AlternativesTest do
       |> DecisionPoint.changeset(%{
         experiment_id: active.id,
         alternatives_resource_id: revision.resource_id,
-        alternatives_revision_id: revision.id,
         decision_point_key: "alternatives:#{revision.resource_id}"
       })
       |> Repo.insert!()
