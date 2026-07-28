@@ -8,7 +8,8 @@ defmodule Oli.Experiments.DecisionPointCandidate do
     :alternatives_revision_id,
     :decision_point_key,
     :title,
-    options: []
+    options: [],
+    option_labels: %{}
   ]
 
   @type t :: %__MODULE__{}

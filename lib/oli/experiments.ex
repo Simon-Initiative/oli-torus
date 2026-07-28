@@ -173,7 +173,7 @@ defmodule Oli.Experiments do
       experiments =
         scope
         |> scoped_project_experiments_query()
-        |> order_by([experiment], asc: experiment.inserted_at, asc: experiment.id)
+        |> order_by([experiment], desc: experiment.id)
         |> preload(:sections)
         |> Repo.all()
         |> Enum.map(&to_definition/1)
@@ -2758,7 +2758,8 @@ defmodule Oli.Experiments do
       alternatives_revision_id: revision.id,
       decision_point_key: "alternatives:#{revision.resource_id}",
       title: revision.title,
-      options: revision_option_ids(revision)
+      options: revision_option_ids(revision),
+      option_labels: revision_option_labels(revision)
     }
   end
 
@@ -2926,6 +2927,17 @@ defmodule Oli.Experiments do
   end
 
   defp revision_option_ids(_revision), do: []
+
+  defp revision_option_labels(%Revision{content: %{"options" => options}})
+       when is_list(options) do
+    Map.new(options, fn option ->
+      id = Map.get(option, "id") || Map.get(option, :id) || Map.get(option, "name")
+      label = Map.get(option, "name") || Map.get(option, :name) || id
+      {id, label}
+    end)
+  end
+
+  defp revision_option_labels(_revision), do: %{}
 
   defp graph_request?(%{decision_point: nil, conditions: conditions})
        when conditions in [nil, []],

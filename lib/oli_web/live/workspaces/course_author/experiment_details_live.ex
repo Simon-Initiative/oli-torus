@@ -17,20 +17,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         resource_title: project.title
       )
 
+    scope = authoring_scope(socket)
+
     with {:ok, experiment_id} <- parse_positive_integer(experiment_id),
          {:ok, authoring_view} <-
            ABExperiments.get_experiment_authoring_view(
              experiment_id,
-             authoring_scope(socket)
+             scope
            ),
          {:ok, participation} <-
-           ABExperiments.get_section_participation(experiment_id, authoring_scope(socket)) do
+           ABExperiments.get_section_participation(experiment_id, scope) do
       experiment = authoring_view.definition
 
       {:ok,
        assign(socket,
          experiment: experiment,
          authoring_view: authoring_view,
+         option_labels: option_labels(authoring_view, scope),
          participation: participation,
          read_only: experiment.state in [:completed, :archived],
          page: 1,
@@ -66,7 +69,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     <div id="experiment-configuration">
       <.link
         navigate={~p"/workspaces/course_author/#{@project.slug}/experiments"}
-        class="text-muted"
+        class="text-primary"
       >
         ← Back to experiments
       </.link>
@@ -74,7 +77,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div>
           <h2 class="mb-1">{@experiment.name}</h2>
-          <p class="text-muted mb-0">Review this experiment’s configuration and participation.</p>
+          <p class="text-muted mb-0">Configure this experiment and section participation.</p>
         </div>
         <span class={["badge px-3 py-2", state_badge_class(@experiment.state)]}>
           {format_state(@experiment.state)}
@@ -120,18 +123,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             >
               <h4 class="h6 font-weight-bold mb-3">Conditions</h4>
               <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
+                <table id="experiment-conditions-table" class="table table-sm table-hover mb-0">
                   <thead class="thead-light">
                     <tr>
                       <th scope="col">Condition</th>
-                      <th scope="col">Option</th>
+                      <th scope="col">Option ID</th>
                       <th scope="col">Weight</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr :for={condition <- @authoring_view.conditions}>
-                      <td class="font-weight-bold">{condition.label}</td>
-                      <td>{condition.option_id}</td>
+                      <td class="font-weight-bold">
+                        {condition_label(condition, @option_labels)}
+                      </td>
+                      <td><span class="font-monospace text-muted">{condition.option_id}</span></td>
                       <td>{condition.weight}</td>
                     </tr>
                   </tbody>
@@ -293,6 +298,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       <div :if={not @monospace}>{@value}</div>
     </div>
     """
+  end
+
+  defp option_labels(authoring_view, scope) do
+    resource_ids =
+      authoring_view.decision_points
+      |> Enum.map(& &1.alternatives_resource_id)
+      |> MapSet.new()
+
+    case ABExperiments.list_available_decision_points(scope) do
+      {:ok, candidates} ->
+        candidates
+        |> Enum.filter(&MapSet.member?(resource_ids, &1.alternatives_resource_id))
+        |> Enum.reduce(%{}, &Map.merge(&2, &1.option_labels))
+
+      _error ->
+        %{}
+    end
+  end
+
+  defp condition_label(condition, option_labels) do
+    Map.get(option_labels, condition.option_id) || condition.label || condition.condition_code
   end
 
   defp authoring_scope(socket) do

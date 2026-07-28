@@ -145,6 +145,7 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.list_available_decision_points(scope)
 
       assert candidate.alternatives_resource_id == alternatives.resource_id
+      assert candidate.option_labels == %{"alt-a" => "A", "alt-b" => "B"}
 
       assert {:ok, %ExperimentDefinition{} = definition} =
                Experiments.create_experiment(graph_request(scope, alternatives))
@@ -202,7 +203,7 @@ defmodule Oli.Experiments.ContextTest do
         )
 
       assert {:ok, definitions} = Experiments.list_project_experiments(scope)
-      assert Enum.sort(Enum.map(definitions, & &1.id)) == Enum.sort([unselected.id, selected.id])
+      assert Enum.map(definitions, & &1.id) == [selected.id, unselected.id]
 
       assert {:ok, %ExperimentAuthoringView{definition: %{id: id}}} =
                Experiments.get_experiment_authoring_view(selected.id, scope)

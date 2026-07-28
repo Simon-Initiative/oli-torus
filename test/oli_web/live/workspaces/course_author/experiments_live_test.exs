@@ -237,6 +237,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       refute render(view) =~ "Coming soon"
       refute has_element?(view, "a", "Download Experiment JSON")
+      assert has_element?(view, "#show-archived-experiments")
+      refute has_element?(view, "#show-archived-experiments[checked]")
 
       open_create_experiment(view)
 
@@ -330,6 +332,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> element("#confirm-experiment-transition-modal button", "Archive")
       |> render_click()
 
+      refute has_element?(view, "#ab-experiments-table", "Homepage Study")
+
+      view
+      |> element("#show-archived-experiments")
+      |> render_click()
+
+      assert has_element?(view, "#show-archived-experiments[checked]")
+      assert has_element?(view, "#ab-experiments-table", "Homepage Study")
       assert has_element?(view, "#ab-experiments-table", "Archived")
     end
 
@@ -382,6 +392,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "#experiment-configuration h2", "Configuration Study")
       assert has_element?(details_view, "#experiment-details-heading", "Experiment details")
       assert has_element?(details_view, "#experiment-configuration", "Weighted random")
+      assert has_element?(details_view, "#experiment-conditions-table th", "Option ID")
+      assert has_element?(details_view, "#experiment-conditions-table td", "A")
+      assert has_element?(details_view, "#experiment-conditions-table td", "B")
+      assert has_element?(details_view, "#experiment-conditions-table td", "alt-a")
 
       assert has_element?(
                details_view,

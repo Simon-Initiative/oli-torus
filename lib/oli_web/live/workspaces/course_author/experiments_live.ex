@@ -39,13 +39,32 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   @impl Phoenix.LiveView
   def render(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :visible_ab_experiments,
+        visible_experiments(assigns.ab_experiments, assigns.show_archived_experiments)
+      )
+
     ~H"""
     <h2 id="header_id" class="pb-2">Experiments</h2>
     {render_modal(assigns)}
 
     <p>Create and manage A/B experiments in this project.</p>
     <section class="mt-4">
-      <div class="d-flex justify-content-end mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-check">
+          <input
+            id="show-archived-experiments"
+            type="checkbox"
+            class="form-check-input"
+            checked={@show_archived_experiments}
+            phx-click="toggle_archived_experiments"
+          />
+          <label class="form-check-label" for="show-archived-experiments">
+            Show archived experiments
+          </label>
+        </div>
         <button
           type="button"
           class="btn btn-primary"
@@ -68,8 +87,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         <div class="alert alert-success" role="status">{@experiment_success}</div>
       <% end %>
 
-      <%= if Enum.empty?(@ab_experiments) do %>
-        <div>No A/B Testing experiments have been created yet.</div>
+      <%= if Enum.empty?(@visible_ab_experiments) do %>
+        <div>
+          <%= if Enum.empty?(@ab_experiments) do %>
+            No A/B Testing experiments have been created yet.
+          <% else %>
+            No non-archived experiments to display.
+          <% end %>
+        </div>
       <% else %>
         <table class="table table-sm" id="ab-experiments-table">
           <caption class="sr-only">A/B Testing experiments</caption>
@@ -83,7 +108,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             </tr>
           </thead>
           <tbody>
-            <tr :for={experiment <- @ab_experiments} id={"ab-experiment-#{experiment.id}"}>
+            <tr
+              :for={experiment <- @visible_ab_experiments}
+              id={"ab-experiment-#{experiment.id}"}
+            >
               <td>
                 <.link navigate={
                   ~p"/workspaces/course_author/#{@project.slug}/experiments/#{experiment.id}"
@@ -495,6 +523,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
        experiment_params: %{},
        experiment_slug_suggestion: nil
      )}
+  end
+
+  def handle_event("toggle_archived_experiments", _params, socket) do
+    {:noreply,
+     assign(socket, show_archived_experiments: not socket.assigns.show_archived_experiments)}
   end
 
   def handle_event(
@@ -1014,6 +1047,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       show_create_experiment: Map.get(socket.assigns, :show_create_experiment, false),
       experiment_params: Map.get(socket.assigns, :experiment_params, %{}),
       experiment_slug_suggestion: Map.get(socket.assigns, :experiment_slug_suggestion),
+      show_archived_experiments: Map.get(socket.assigns, :show_archived_experiments, false),
       pending_experiment_transition: Map.get(socket.assigns, :pending_experiment_transition),
       eligible_sections: Map.get(socket.assigns, :eligible_sections, []),
       eligible_sections_status: Map.get(socket.assigns, :eligible_sections_status, :loading),
@@ -1089,7 +1123,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            %{
              condition_code: option_a,
              option_id: option_a,
-             label: option_a,
+             label: Map.get(candidate.option_labels, option_a, option_a),
              weight: weight_a,
              active: true,
              position: 0
@@ -1097,7 +1131,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            %{
              condition_code: option_b,
              option_id: option_b,
-             label: option_b,
+             label: Map.get(candidate.option_labels, option_b, option_b),
              weight: weight_b,
              active: true,
              position: 1
@@ -1285,6 +1319,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   defp suggested_experiment_slug(_name), do: nil
+
+  defp visible_experiments(experiments, true), do: experiments
+
+  defp visible_experiments(experiments, false),
+    do: Enum.reject(experiments, &(&1.state == :archived))
 
   defp edit_group_title(
          project_slug,
