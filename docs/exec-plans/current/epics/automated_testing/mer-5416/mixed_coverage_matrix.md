@@ -173,7 +173,7 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `FORMULA-B` | Insert block formula, change type to Latex, and enter valid Latex | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Block math workflow family. |
+| `FORMULA-B` | Insert block formula, change type to Latex, and enter valid Latex | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `FORMULA-B` in `formula.workflow.yaml`; inserts the block formula, selects LaTeX, replaces its source in Monaco, and asserts Preview plus published `formula` subtype/source. Verified in Playwright. |
 
 ### `CALLOUT`
 
@@ -185,7 +185,7 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `DEFINITION-B` | Click edit and change the term, add multiple definitions, a translation and a pronunciation | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Definition editing workflow family. |
+| `DEFINITION-B` | Click edit and change the term, add multiple definitions, a translation and a pronunciation | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DEFINITION-B` in `definition.workflow.yaml`; edits the term, creates a second meaning, translation, and pronunciation, then asserts Preview and Delivery. Verified in Playwright. |
 
 ### `FIGURE`
 
@@ -226,13 +226,13 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `DESCRIPTIONLIST-B` | Edit Description List title | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Description-list editing workflow family. |
-| `DESCRIPTIONLIST-C` | Edit default term and description | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Description-list editing workflow family. |
-| `DESCRIPTIONLIST-D` | Add term | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Description-list structure workflow family. |
-| `DESCRIPTIONLIST-E` | Add multiple definitions | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Description-list structure workflow family. |
+| `DESCRIPTIONLIST-B` | Edit Description List title | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DESCRIPTIONLIST-B/C/D/E` in `description-list.workflow.yaml`; edits and asserts the title in Preview and Delivery. Verified in Playwright. |
+| `DESCRIPTIONLIST-C` | Edit default term and description | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DESCRIPTIONLIST-B/C/D/E` in `description-list.workflow.yaml`; authors and asserts the initial term and definition. Verified in Playwright. |
+| `DESCRIPTIONLIST-D` | Add term | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DESCRIPTIONLIST-B/C/D/E` in `description-list.workflow.yaml`; adds and asserts a second term. Verified in Playwright. |
+| `DESCRIPTIONLIST-E` | Add multiple definitions | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DESCRIPTIONLIST-B/C/D/E` in `description-list.workflow.yaml`; adds and asserts two further definitions. Verified in Playwright. |
 
 ### `THEOREM`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `THEOREM-B` | Edit title, statement, proof | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Theorem editing workflow family. |
+| `THEOREM-B` | Edit title, statement, proof | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `THEOREM-B` in `theorem.workflow.yaml`; edits the blueprint title, statement, and proof, then asserts Preview and Delivery. Verified in Playwright. |

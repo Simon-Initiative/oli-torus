@@ -637,6 +637,133 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   end
 
   @doc """
+  Asserts that the edited definition renders its term, meanings, translation, and pronunciation.
+  """
+  def assert_author_preview_definition_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    [
+      "EXPECTED_TERM",
+      "EXPECTED_FIRST_MEANING",
+      "EXPECTED_SECOND_MEANING",
+      "EXPECTED_TRANSLATION",
+      "EXPECTED_PRONUNCIATION"
+    ]
+    |> Enum.each(fn key ->
+      assert html_has_text?(html, ".definition", required_param!(state, key)),
+             "Expected author-preview definition to contain #{key}"
+    end)
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited definition persists to published delivery content.
+  """
+  def assert_student_delivery_definition_workflow(%ExecutionState{} = state) do
+    expected = [
+      required_param!(state, "EXPECTED_TERM"),
+      required_param!(state, "EXPECTED_FIRST_MEANING"),
+      required_param!(state, "EXPECTED_SECOND_MEANING"),
+      required_param!(state, "EXPECTED_TRANSLATION"),
+      required_param!(state, "EXPECTED_PRONUNCIATION")
+    ]
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "definition" and Enum.all?(expected, &nested_contains?(node, &1))
+           end),
+           "Expected published definition with term, meanings, translation, and pronunciation"
+
+    state
+  end
+
+  @doc """
+  Asserts that the description-list title, terms, and definitions render in author preview.
+  """
+  def assert_author_preview_description_list_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    title = required_param!(state, "EXPECTED_TITLE")
+
+    assert html_has_text?(html, "h4", title),
+           "Expected author-preview description-list title #{inspect(title)}"
+
+    description_list_values!(state)
+    |> Enum.drop(1)
+    |> Enum.each(fn value ->
+      assert html_has_text?(html, "dl", value),
+             "Expected author-preview description list to contain #{inspect(value)}"
+    end)
+
+    state
+  end
+
+  @doc """
+  Asserts that the description-list title, terms, and definitions persist to delivery.
+  """
+  def assert_student_delivery_description_list_workflow(%ExecutionState{} = state) do
+    expected = description_list_values!(state)
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "dl" and Enum.all?(expected, &nested_contains?(node, &1))
+           end),
+           "Expected published description list with authored title, terms, and definitions"
+
+    state
+  end
+
+  @doc """
+  Asserts that an authored theorem title, statement, and proof render in Preview.
+  """
+  def assert_author_preview_theorem_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    theorem_values!(state)
+    |> Enum.each(fn value ->
+      assert html_text(html) =~ value,
+             "Expected author-preview theorem to contain #{inspect(value)}"
+    end)
+
+    state
+  end
+
+  @doc """
+  Asserts that an authored theorem title, statement, and proof persist to Delivery.
+  """
+  def assert_student_delivery_theorem_workflow(%ExecutionState{} = state) do
+    assert Enum.all?(
+             theorem_values!(state),
+             &nested_contains?(delivered_revision_content(state), &1)
+           ),
+           "Expected published theorem title, statement, and proof"
+
+    state
+  end
+
+  @doc """
+  Asserts that the authored LaTeX formula is provided to author Preview.
+  """
+  def assert_author_preview_formula_workflow(%ExecutionState{} = state) do
+    assert String.contains?(author_preview_html(state), required_param!(state, "EXPECTED_LATEX")),
+           "Expected author-preview formula to contain the authored LaTeX"
+
+    state
+  end
+
+  @doc """
+  Asserts that the authored LaTeX formula persists as a formula node in Delivery.
+  """
+  def assert_student_delivery_formula_workflow(%ExecutionState{} = state) do
+    latex = required_param!(state, "EXPECTED_LATEX")
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "formula" and node["subtype"] == "latex" and node["src"] == latex
+           end),
+           "Expected published LaTeX formula"
+
+    state
+  end
+
+  @doc """
   Asserts that the author preview renders the expected callout content.
   """
   def assert_author_preview_callout(%ExecutionState{} = state) do
@@ -687,6 +814,25 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
       nil -> raise "Project #{@project_name} not found in scenario state"
       built_project -> built_project
     end
+  end
+
+  defp description_list_values!(state) do
+    [
+      required_param!(state, "EXPECTED_TITLE"),
+      required_param!(state, "EXPECTED_INITIAL_TERM"),
+      required_param!(state, "EXPECTED_INITIAL_DEFINITION"),
+      required_param!(state, "EXPECTED_ADDED_TERM"),
+      required_param!(state, "EXPECTED_ADDED_DEFINITION"),
+      required_param!(state, "EXPECTED_SECOND_DEFINITION")
+    ]
+  end
+
+  defp theorem_values!(state) do
+    [
+      required_param!(state, "EXPECTED_TITLE"),
+      required_param!(state, "EXPECTED_STATEMENT"),
+      required_param!(state, "EXPECTED_PROOF")
+    ]
   end
 
   defp fetch_section!(%ExecutionState{} = state) do

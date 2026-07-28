@@ -1,0 +1,24 @@
+workflow:
+  - id: seed
+    scenario: { file: 'mixed-content.setup.scenario.yaml', params: { RUN_ID: '${RUN_ID}' } }
+  - id: author
+    playwright_action:
+      action: 'author_description_list_workflow'
+      params:
+        project_slug: '${seed.outputs.projects.workflow_authoring_project}'
+        page_revision_slug: '${seed.outputs.params.workflow_page_revision_slug}'
+  - id: assert
+    scenario:
+      file: 'assert-description-list-workflow.scenario.yaml'
+      params:
+        AUTHOR_EMAIL: '${seed.outputs.users.workflow_author}'
+        STUDENT_EMAIL: '${seed.outputs.users.workflow_student}'
+        PROJECT_SLUG: '${seed.outputs.projects.workflow_authoring_project}'
+        SECTION_SLUG: '${seed.outputs.sections.workflow_delivery_section}'
+        PAGE_REVISION_SLUG: '${author.outputs.page_revision_slug}'
+        EXPECTED_TITLE: '${author.outputs.title}'
+        EXPECTED_INITIAL_TERM: '${author.outputs.initial_term}'
+        EXPECTED_INITIAL_DEFINITION: '${author.outputs.initial_definition}'
+        EXPECTED_ADDED_TERM: '${author.outputs.added_term}'
+        EXPECTED_ADDED_DEFINITION: '${author.outputs.added_definition}'
+        EXPECTED_SECOND_DEFINITION: '${author.outputs.second_definition}'

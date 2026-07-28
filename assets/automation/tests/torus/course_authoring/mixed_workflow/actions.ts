@@ -327,6 +327,127 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     };
   },
 
+  async author_definition_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const term = 'DEFINITION-B authored term';
+    const firstMeaning = 'DEFINITION-B first meaning';
+    const secondMeaning = 'DEFINITION-B second meaning';
+    const translation = 'DEFINITION-B translation';
+    const pronunciation = 'DEFINITION-B pronunciation';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await page.locator('[data-slate-editor="true"]').first().waitFor({ state: 'visible' });
+    await curriculumTask.addDefinitionToolbar(term, firstMeaning, false);
+
+    const definition = page.locator('.definition-editor').last();
+    await definition.getByRole('button', { name: 'Add', exact: true }).first().click();
+    await definition.locator('.definition-row .definition-input [data-slate-editor="true"]').nth(1).fill(secondMeaning);
+    await definition.getByRole('button', { name: 'Add', exact: true }).last().click();
+    await definition.locator('.definition-row .definition-input [data-slate-editor="true"]').nth(2).fill(translation);
+    await definition.locator('.pronunciation-editor [data-slate-editor="true"]').fill(pronunciation);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return {
+      first_meaning: firstMeaning,
+      page_revision_slug: pageRevisionSlug,
+      pronunciation,
+      second_meaning: secondMeaning,
+      term,
+      translation,
+    };
+  },
+
+  async author_description_list_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const title = 'DESCRIPTIONLIST-B authored title';
+    const initialTerm = 'DESCRIPTIONLIST-C initial term';
+    const initialDefinition = 'DESCRIPTIONLIST-C initial definition';
+    const addedTerm = 'DESCRIPTIONLIST-D added term';
+    const addedDefinition = 'DESCRIPTIONLIST-E added definition';
+    const secondDefinition = 'DESCRIPTIONLIST-E second definition';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await page.locator('[data-slate-editor="true"]').first().waitFor({ state: 'visible' });
+    await page.locator('[data-slate-editor="true"] p').first().click();
+    const toolbar = page
+      .locator('.hover-container')
+      .filter({ has: page.getByRole('button', { name: 'Insert...' }) });
+    await toolbar.getByRole('button', { name: 'Insert...' }).click();
+    await page.getByText('Description List', { exact: true }).last().click();
+
+    const descriptionList = page.locator('.description-list-editor').last();
+    await descriptionList.locator('h4 p').fill(title);
+    await descriptionList.locator('dt [data-slate-editor="true"]').first().fill(initialTerm);
+    await descriptionList.locator('dd [data-slate-editor="true"]').first().fill(initialDefinition);
+    await descriptionList.getByRole('button', { name: 'Add Term', exact: true }).click();
+    await descriptionList.locator('dt [data-slate-editor="true"]').last().fill(addedTerm);
+    await descriptionList.getByRole('button', { name: 'Add Definition', exact: true }).click();
+    await descriptionList.locator('dd [data-slate-editor="true"]').last().fill(addedDefinition);
+    await descriptionList.getByRole('button', { name: 'Add Definition', exact: true }).click();
+    await descriptionList.locator('dd [data-slate-editor="true"]').last().fill(secondDefinition);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return {
+      added_definition: addedDefinition,
+      added_term: addedTerm,
+      initial_definition: initialDefinition,
+      initial_term: initialTerm,
+      page_revision_slug: pageRevisionSlug,
+      second_definition: secondDefinition,
+      title,
+    };
+  },
+
+  async author_theorem_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const title = 'THEOREM-B authored title';
+    const statement = 'THEOREM-B authored statement';
+    const proof = 'THEOREM-B authored proof';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await page.locator('[data-slate-editor="true"]').first().waitFor({ state: 'visible' });
+    await curriculumTask.addTheoremToolbar('', false);
+
+    await replaceSlateText(page, page.getByRole('heading', { name: 'Theorem Title' }).last(), title);
+    await replaceSlateText(page, page.locator('p').filter({ hasText: 'Enter a statement here' }), statement);
+    await replaceSlateText(page, page.locator('p').filter({ hasText: 'Enter the proof here' }), proof);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { page_revision_slug: pageRevisionSlug, proof, statement, title };
+  },
+
+  async author_formula_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const latex = '\\frac{a}{b} = c';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await page.locator('[data-slate-editor="true"]').first().waitFor({ state: 'visible' });
+    await page.locator('[data-slate-editor="true"] p').first().click();
+    const toolbar = page.locator('.hover-container').filter({ has: page.getByRole('button', { name: 'Insert...' }) });
+    await toolbar.getByRole('button', { name: 'Insert...' }).click();
+    await page.getByText('Formula', { exact: true }).last().click();
+    await page.locator('span.formula').last().click();
+
+    const settings = page.getByRole('dialog', { name: 'Edit Formula' });
+    await settings.getByRole('button', { name: 'Latex', exact: true }).click();
+    const monacoInput = settings.locator('.monaco-editor textarea');
+    await monacoInput.click();
+    await monacoInput.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+    await monacoInput.pressSequentially(latex);
+    await settings.getByRole('button', { name: 'Save', exact: true }).click();
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { latex, page_revision_slug: pageRevisionSlug };
+  },
+
   async author_video_workflow({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');

@@ -237,6 +237,48 @@ test.describe('MIXED workflow', () => {
     });
   });
 
+  test.describe('DEFINITION', () => {
+    test('DEFINITION-B: definition editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/definition.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('DESCRIPTIONLIST', () => {
+    test('DESCRIPTIONLIST-B/C/D/E: description list editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/description-list.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('THEOREM', () => {
+    test('THEOREM-B: theorem editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/theorem.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('FORMULA', () => {
+    test('FORMULA-B: LaTeX formula persists to author preview and delivery', async ({ runWorkflow }) => {
+      await runWorkflow('./mixed_workflow/formula.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
   test.describe('CODEBLOCK', () => {
     test('CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery', async ({
       runWorkflow,
