@@ -198,29 +198,29 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `DIALOG-B` | Edit dialog title | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog editing workflow family. |
-| `DIALOG-C` | Add a speaker | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog speaker workflow family. |
-| `DIALOG-D` | Associate an image with a speaker | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog media workflow family. |
-| `DIALOG-E` | Delete a speaker | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog speaker workflow family. |
-| `DIALOG-F` | Edit a speaker label | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog speaker workflow family. |
-| `DIALOG-G` | Add a dialog line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
-| `DIALOG-H` | Edit the text within speaker line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
-| `DIALOG-I` | Add content element within speaker line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog nested-content workflow family. |
-| `DIALOG-J` | Toggle the speaker associated with a line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
-| `DIALOG-K` | Add a second line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
-| `DIALOG-L` | Delete line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
+| `DIALOG-B` | Edit dialog title | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; edits title and asserts Preview and Delivery. Verified in Playwright. |
+| `DIALOG-C` | Add a speaker | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; adds a temporary speaker before finalizing the dialog. Verified in Playwright. |
+| `DIALOG-D` | Associate an image with a speaker | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; selects speaker portrait and asserts Preview and Delivery. Verified in Playwright. |
+| `DIALOG-E` | Delete a speaker | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; deletes the temporary speaker. Verified in Playwright. |
+| `DIALOG-F` | Edit a speaker label | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; edits the surviving speaker and asserts Delivery. Verified in Playwright. |
+| `DIALOG-G` | Add a dialog line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; creates the initial and temporary second line. Verified in Playwright. |
+| `DIALOG-H` | Edit the text within speaker line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; edits the retained line and asserts Preview and Delivery. Verified in Playwright. |
+| `DIALOG-I` | Add content element within speaker line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; authors line content in the nested Slate editor and asserts Preview and Delivery. Verified in Playwright. |
+| `DIALOG-J` | Toggle the speaker associated with a line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; cycles the speaker associated with the retained line. Verified in Playwright. |
+| `DIALOG-K` | Add a second line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; adds a second line before lifecycle cleanup. Verified in Playwright. |
+| `DIALOG-L` | Delete line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; deletes the temporary second line and asserts retained delivery state. Verified in Playwright. |
 
 ### `CONJUGATION`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `CONJUGATION-B` | Edit title | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation editing workflow family. |
-| `CONJUGATION-C` | Edit verb | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation editing workflow family. |
-| `CONJUGATION-D` | Edit pronunciation | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation editing workflow family. |
-| `CONJUGATION-E` | Edit conjugation table headers (singular, plural) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation table workflow family. |
-| `CONJUGATION-F` | Edit conjugate content | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation table workflow family. |
-| `CONJUGATION-G` | Edit conjugate pronouns | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation table workflow family. |
-| `CONJUGATION-H` | Associate audio clip with conjugate | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation media workflow family. |
+| `CONJUGATION-B` | Edit title | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; asserts Preview and Delivery. Verified in Playwright. |
+| `CONJUGATION-C` | Edit verb | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; asserts Preview and Delivery. Verified in Playwright. |
+| `CONJUGATION-D` | Edit pronunciation | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; asserts Preview and Delivery. Verified in Playwright. |
+| `CONJUGATION-E` | Edit conjugation table headers (singular, plural) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; edits both headers and asserts Delivery. Verified in Playwright. |
+| `CONJUGATION-F` | Edit conjugate content | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; edits cell content and asserts Delivery. Verified in Playwright. |
+| `CONJUGATION-G` | Edit conjugate pronouns | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; edits the row label and pronoun field, then asserts Delivery. Verified in Playwright. |
+| `CONJUGATION-H` | Associate audio clip with conjugate | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; selects the pronunciation audio asset and asserts Delivery. Verified in Playwright. |
 
 ### `DESCRIPTIONLIST`
 

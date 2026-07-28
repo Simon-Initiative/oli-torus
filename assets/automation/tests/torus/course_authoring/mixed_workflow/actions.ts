@@ -243,6 +243,90 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     return { page_revision_slug: pageRevisionSlug, webpage_url: webpageUrl };
   },
 
+  async author_dialog_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const title = 'DIALOG-B authored title';
+    const speaker = 'DIALOG-F final speaker';
+    const lineText = 'DIALOG-H authored line';
+    const image = 'img-mock-05-16-2025.jpg';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addDialogToolbar(title, 'DIALOG initial speaker', lineText, false);
+
+    const dialog = page.locator('.dialog-editor');
+
+    await dialog.getByLabel('Title').fill(title);
+    await dialog.locator('.new-speaker button').click();
+    const speakers = dialog.locator('.speaker-editor:not(.new-speaker)');
+    await speakers.nth(1).locator('input').fill('DIALOG-E removed speaker');
+    await speakers.nth(1).locator('.delete-btn').click();
+    await speakers.nth(0).locator('input').fill(speaker);
+
+    await speakers.nth(0).locator('.browse-btn').click();
+    const mediaPicker = page.getByRole('dialog', { name: 'Select Image' });
+    await mediaPicker.getByText(image, { exact: true }).click();
+    await mediaPicker.getByRole('button', { name: 'Select', exact: true }).click();
+
+    const lines = dialog.locator('.dialog-row');
+    await lines.nth(0).locator('[data-slate-editor="true"]').fill(lineText);
+    await lines.nth(0).locator('.cycle-speaker-btn').click();
+    await lines.last().getByRole('button', { name: 'Add', exact: true }).click();
+    await dialog
+      .locator('.dialog-row')
+      .nth(1)
+      .locator('[data-slate-editor="true"]')
+      .fill('DIALOG-K second line');
+    await dialog.locator('.dialog-row').nth(1).getByRole('button').last().click();
+
+    await previewFlush(() => curriculumTask.openPreview());
+    return { image, line_text: lineText, page_revision_slug: pageRevisionSlug, speaker, title };
+  },
+
+  async author_conjugation_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addConjugationToolbar('', '', '', '', '', false);
+
+    const conjugationPreview = page.locator('.conjugation');
+    await conjugationPreview.click({ position: { x: 1, y: 1 } });
+    await page.locator('.hover-container button', { hasText: 'Edit' }).last().click();
+
+    const conjugation = page.locator('.conjugation-editor');
+
+    await conjugation.locator('input').nth(0).fill('CONJUGATION-B title');
+    await conjugation.locator('input').nth(1).fill('CONJUGATION-C verb');
+
+    const pronunciation = 'CONJUGATION-D pronunciation';
+    await conjugation.locator('.pronunciation-editor [data-slate-editor="true"]').fill(pronunciation);
+
+    const headers = conjugation.locator('.table-editor th p');
+    await replaceSlateText(page, headers.nth(1), 'CONJUGATION-E singular');
+    await replaceSlateText(page, headers.nth(2), 'CONJUGATION-E plural');
+    await replaceSlateText(page, headers.nth(3), 'CONJUGATION-G first person');
+
+    await conjugation.getByPlaceholder('Pronouns (optional)').nth(0).fill('CONJUGATION-G pronoun');
+    await replaceSlateText(page, conjugation.locator('.tc-content p').first(), 'CONJUGATION-F conjugate');
+
+    await conjugation.locator('.pronunciation-editor .audio-picker button').click();
+    const audioPicker = page.getByRole('dialog', { name: 'Select Audio' });
+    await audioPicker.getByText('audio-test-01.mp3', { exact: true }).click();
+    await audioPicker.getByRole('button', { name: 'Select', exact: true }).click();
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return {
+      audio: 'audio-test-01.mp3',
+      page_revision_slug: pageRevisionSlug,
+      pronunciation,
+      title: 'CONJUGATION-B title',
+      verb: 'CONJUGATION-C verb',
+    };
+  },
+
   async author_video_workflow({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
@@ -837,6 +921,18 @@ async function selectSlateText(page: Page, text: string) {
   // The link text is typed into a new paragraph. This fallback avoids a
   // transient Slate render from consuming the full test timeout.
   await page.keyboard.press('Shift+Home');
+}
+
+async function replaceSlateText(page: Page, locator: Locator, text: string) {
+  await locator.click();
+  await locator.evaluate((node) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  });
+  await page.keyboard.type(text);
 }
 
 function toolbarButton(page: Page, toolbar: TypeToolbar) {

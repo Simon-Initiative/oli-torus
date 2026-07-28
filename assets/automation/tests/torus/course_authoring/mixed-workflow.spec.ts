@@ -215,6 +215,28 @@ test.describe('MIXED workflow', () => {
     });
   });
 
+  test.describe('DIALOG', () => {
+    test('DIALOG-B/C/D/E/F/G/H/I/J/K/L: dialog editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/dialog.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('CONJUGATION', () => {
+    test('CONJUGATION-B/C/D/E/F/G/H: conjugation editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/conjugation.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
   test.describe('CODEBLOCK', () => {
     test('CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery', async ({
       runWorkflow,

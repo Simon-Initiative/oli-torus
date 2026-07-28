@@ -577,6 +577,66 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   end
 
   @doc """
+  Asserts that the edited dialog renders with its final title, speaker, line, and portrait in author preview.
+  """
+  def assert_author_preview_dialog_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    assert html_has_text?(html, ".dialog", required_param!(state, "EXPECTED_TITLE"))
+    assert html_has_text?(html, ".dialog", required_param!(state, "EXPECTED_LINE"))
+    assert html_has_selector?(html, ".dialog .speaker-portrait")
+
+    state
+  end
+
+  @doc """
+  Asserts that dialog edits persist to published delivery content.
+  """
+  def assert_student_delivery_dialog_workflow(%ExecutionState{} = state) do
+    title = required_param!(state, "EXPECTED_TITLE")
+    speaker = required_param!(state, "EXPECTED_SPEAKER")
+    line = required_param!(state, "EXPECTED_LINE")
+    image = required_param!(state, "EXPECTED_IMAGE")
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "dialog" and node["title"] == title and
+               Enum.any?(node["speakers"] || [], fn dialog_speaker ->
+                 dialog_speaker["name"] == speaker and
+                   String.contains?(dialog_speaker["image"] || "", image)
+               end) and nested_contains?(node["lines"] || [], line)
+           end),
+           "Expected published dialog with edited title, speaker portrait, and line"
+
+    state
+  end
+
+  def assert_author_preview_conjugation_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    assert html_has_text?(html, ".conjugation", required_param!(state, "EXPECTED_TITLE"))
+    assert html_has_text?(html, ".conjugation", required_param!(state, "EXPECTED_VERB"))
+    assert html_has_text?(html, ".conjugation", required_param!(state, "EXPECTED_PRONUNCIATION"))
+    state
+  end
+
+  def assert_student_delivery_conjugation_workflow(%ExecutionState{} = state) do
+    title = required_param!(state, "EXPECTED_TITLE")
+    verb = required_param!(state, "EXPECTED_VERB")
+    pronunciation = required_param!(state, "EXPECTED_PRONUNCIATION")
+    audio = required_param!(state, "EXPECTED_AUDIO")
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "conjugation" and node["title"] == title and node["verb"] == verb and
+               nested_contains?(node["pronunciation"] || %{}, pronunciation) and
+               nested_contains?(node["table"] || %{}, "CONJUGATION-F conjugate") and
+               nested_contains?(node["table"] || %{}, "CONJUGATION-G pronoun") and
+               nested_contains?(node["pronunciation"] || %{}, audio)
+           end),
+           "Expected published conjugation with edited fields, table content, and audio"
+
+    state
+  end
+
+  @doc """
   Asserts that the author preview renders the expected callout content.
   """
   def assert_author_preview_callout(%ExecutionState{} = state) do

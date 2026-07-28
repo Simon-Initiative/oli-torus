@@ -56,6 +56,11 @@
 
 - media:
     project: 'workflow_authoring_project'
+    path: 'assets/automation/tests/resources/media_files/audio-test-01.mp3'
+    mime: 'audio/mpeg'
+
+- media:
+    project: 'workflow_authoring_project'
     path: 'assets/automation/tests/torus/course_authoring/mixed_workflow/video-test-captions.vtt'
     mime: 'text/vtt'
 
