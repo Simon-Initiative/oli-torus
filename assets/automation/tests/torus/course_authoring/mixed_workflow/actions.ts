@@ -702,8 +702,10 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
       await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
     });
 
-    await test.step('insert a code block and open preview to flush the draft change', async () => {
+    await test.step('insert a code block, delete and undo it, then open preview to flush the draft change', async () => {
       await curriculumTask.addCodeBlockToolbar(language, code, caption, false);
+
+      await deleteAndUndo(page, page.getByRole('textbox', { name: /Editor content/i }).first());
       await previewFlush(() => curriculumTask.openPreview());
       await expect(page).toHaveURL(
         new RegExp(`/curriculum/${escapeRegExp(pageRevisionSlug)}/edit$`),

@@ -144,10 +144,10 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `CODEBLOCK-B` | Change language to Python | `covered` | `covered` | `covered` | `covered` | `Initial Slice` | `mixed-workflow.spec.ts > MIXED workflow > CODEBLOCK > CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery`; `codeblock.workflow.yaml` selects Python and the assertion scenario verifies the published result. |
-| `CODEBLOCK-C` | Edit source of CodeBlock to insert a few lines of actual, formatted Python code | `covered` | `covered` | `covered` | `covered` | `Initial Slice` | `mixed-workflow.spec.ts > MIXED workflow > CODEBLOCK > CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery`; `codeblock.workflow.yaml` writes `print("mixed workflow code block")` and the assertion scenario verifies it in author preview and published delivery. |
-| `CODEBLOCK-D` | Delete the CodeBlock | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 8` | Lifecycle row, separate from insertion coverage. |
-| `CODEBLOCK-E` | Undo the deletion (ctrl-z) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 8` | Lifecycle row, separate from insertion coverage. |
+| `CODEBLOCK-B` | Change language to Python | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 8` | `mixed-workflow.spec.ts > MIXED workflow > CODEBLOCK > CODEBLOCK-B/C/D/E`; `codeblock.workflow.yaml` selects Python and verifies the restored, published result. |
+| `CODEBLOCK-C` | Edit source of CodeBlock to insert a few lines of actual, formatted Python code | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 8` | `mixed-workflow.spec.ts > MIXED workflow > CODEBLOCK > CODEBLOCK-B/C/D/E`; `codeblock.workflow.yaml` writes `print("mixed workflow code block")` and verifies it after restoration in author preview and published delivery. |
+| `CODEBLOCK-D` | Delete the CodeBlock | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 8` | `author_add_code_block` deletes the authored CodeBlock and asserts its editor textbox is absent before Undo restores it. |
+| `CODEBLOCK-E` | Undo the deletion (ctrl-z) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 8` | `author_add_code_block` uses the available `Undo` action, asserts the CodeBlock returns, and verifies its restored state in author preview and published delivery. |
 
 ### `VIDEO`
 

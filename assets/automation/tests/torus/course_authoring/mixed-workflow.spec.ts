@@ -280,7 +280,7 @@ test.describe('MIXED workflow', () => {
   });
 
   test.describe('CODEBLOCK', () => {
-    test('CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery', async ({
+    test('CODEBLOCK-B/C/D/E: Python language and formatted source survive delete/undo and persist to author preview and delivery', async ({
       runWorkflow,
     }) => {
       await runWorkflow('./mixed_workflow/codeblock.workflow.yaml', {
