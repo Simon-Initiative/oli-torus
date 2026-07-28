@@ -11,9 +11,27 @@ defmodule OliWeb.Common.MultiSelectInput do
           id: id,
           placeholder: placeholder,
           on_select_message: on_select_message
-        },
+        } = assigns,
         socket
       ) do
+    controlled? = Map.has_key?(assigns, :selected_ids)
+
+    selected_ids =
+      if controlled?,
+        do: assigns.selected_ids,
+        else: socket.assigns |> Map.get(:selected_values, %{}) |> Map.keys()
+
+    options =
+      Enum.map(options, fn option ->
+        selected? = if controlled?, do: option.id in selected_ids, else: option.selected
+        %{option | selected: selected?}
+      end)
+
+    selected_values =
+      options
+      |> Enum.filter(& &1.selected)
+      |> Map.new(&{&1.id, &1.name})
+
     {:ok,
      socket
      |> assign(id: id)
@@ -22,7 +40,8 @@ defmodule OliWeb.Common.MultiSelectInput do
      |> assign(:options, options)
      |> assign(uuid: uuid)
      |> assign(on_select_message: on_select_message)
-     |> assign(selected_values: %{})}
+     |> assign(selected_values: selected_values)
+     |> assign(initialized?: true)}
   end
 
   attr :placeholder, :string, default: "Select an option"
@@ -31,19 +50,12 @@ defmodule OliWeb.Common.MultiSelectInput do
   attr :id, :string
   attr :on_select_message, :string, doc: "The message to send when an option is selected"
   attr :uuid, :string, default: UUID.uuid4()
+  attr :selected_ids, :list, default: []
 
   def render(assigns) do
     ~H"""
     <div class="flex flex-col border relative">
       <div
-        phx-click={
-          if(!@disabled,
-            do:
-              JS.toggle(to: "##{@id}-options-container")
-              |> JS.toggle(to: "##{@id}-down-icon")
-              |> JS.toggle(to: "##{@id}-up-icon")
-          )
-        }
         class={[
           "flex justify-between min-h-[40px] items-center p-2 w-96 hover:cursor-pointer",
           if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
@@ -54,29 +66,51 @@ defmodule OliWeb.Common.MultiSelectInput do
           <span :if={@selected_values == %{}}>{@placeholder}</span>
           <div :for={{id, name} <- @selected_values} class="bg-blue-500 rounded-lg px-2 flex gap-1">
             <span class="whitespace-nowrap text-white">{name}</span>
-            <div
-              class="stroke-white hover:stroke-white/50 w-2 h-2 mr-2"
+            <button
+              type="button"
+              aria-label={"Remove #{name}"}
+              class="stroke-white hover:stroke-white/50 min-w-6 min-h-6 p-1 mr-1"
               phx-click="remove_selected"
               phx-value-id={id}
               phx-target={@myself}
             >
               <Icons.close />
-            </div>
+            </button>
           </div>
         </div>
-        <div id={"#{@id}-down-icon"}>
-          <i class="fa-solid fa-chevron-up rotate-180"></i>
-        </div>
-        <div class="hidden" id={"#{@id}-up-icon"}>
-          <i class="fa-solid fa-chevron-up"></i>
-        </div>
+        <button
+          type="button"
+          aria-label={@placeholder}
+          aria-expanded="false"
+          aria-controls={"#{@id}-options-container"}
+          disabled={@disabled}
+          phx-click={
+            if(!@disabled,
+              do:
+                JS.toggle(to: "##{@id}-options-container")
+                |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+                |> JS.toggle(to: "##{@id}-down-icon")
+                |> JS.toggle(to: "##{@id}-up-icon")
+            )
+          }
+        >
+          <span id={"#{@id}-down-icon"}><i class="fa-solid fa-chevron-up rotate-180"></i></span>
+          <span class="hidden" id={"#{@id}-up-icon"}><i class="fa-solid fa-chevron-up"></i></span>
+        </button>
       </div>
       <div class="relative">
         <div
           class="p-4 hidden absolute dark:bg-gray-700 bg-white w-96 border max-h-56 overflow-y-scroll"
           id={"#{@id}-options-container"}
+          role="group"
+          aria-label={@placeholder}
           phx-click-away={
-            JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
+            JS.hide()
+            |> JS.hide(to: "##{@id}-up-icon")
+            |> JS.show(to: "##{@id}-down-icon")
+            |> JS.set_attribute({"aria-expanded", "false"},
+              to: "##{@id}-selected-options-container button[aria-controls]"
+            )
           }
         >
           <div>

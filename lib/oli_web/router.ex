@@ -1061,6 +1061,7 @@ defmodule OliWeb.Router do
         live("/:project_id/activity_bank", ActivityBankLive)
         live("/:project_id/objectives", ObjectivesLive)
         live("/:project_id/experiments", ExperimentsLive)
+        live("/:project_id/experiments/:experiment_id", ExperimentDetailsLive)
         live("/:project_id/bibliography", BibliographyLive)
         live("/:project_id/curriculum", CurriculumLive)
         live("/:project_id/curriculum/:container_slug", CurriculumLive)

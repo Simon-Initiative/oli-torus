@@ -11,6 +11,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   defp live_view_experiments_route(project_slug, params \\ %{}),
     do: ~p"/workspaces/course_author/#{project_slug}/experiments?#{params}"
 
+  defp experiment_id(view) do
+    [_, id] = Regex.run(~r/phx-value-id="(\d+)"/, render(view))
+
+    id
+  end
+
   defp put_view(context) do
     {:ok, view, _html} = live(context.conn, live_view_experiments_route(context.project.slug))
     [view: view]
@@ -107,19 +113,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       {view, %{}}
       |> step(:test_has_title_AB_testing)
       |> step(:test_has_message_integrate_with_AB_platform)
-      |> step(:test_has_checkbox)
-    end
 
-    test "A/B testing toggle updates project without creating a legacy alternatives revision", %{
-      view: view,
-      project: project
-    } do
-      {view, %{}}
-      |> step(:test_has_alternatives_group, :refute)
-      |> step(:click_on_checkbox)
-
-      assert Oli.Authoring.Course.get_project_by_slug(project.slug).has_experiments
-      assert nil == Experiments.get_latest_experiment(project.slug)
+      refute has_element?(view, "#ab-experiments-toggle-form")
     end
 
     test "legacy alternatives are rendered read-only without export controls", %{
@@ -151,11 +146,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> step(:test_has_button_download_experiment_json, :refute)
     end
 
-    test "download buttons remain absent when A/B testing is enabled", %{view: view} do
+    test "download buttons remain absent", %{view: view} do
       {view, %{}}
-      |> step(:test_has_button_download_segment_json, :refute)
-      |> step(:test_has_button_download_experiment_json, :refute)
-      |> step(:click_on_checkbox)
       |> step(:test_has_button_download_segment_json, :refute)
       |> step(:test_has_button_download_experiment_json, :refute)
     end
@@ -167,6 +159,75 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
                "Experiments"
     end
 
+    test "suggests and applies a unique slug from the experiment name", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_change(%{
+        "experiment" => %{
+          "name" => "Suggested Study",
+          "algorithm" => "weighted_random"
+        }
+      })
+
+      suggestion =
+        view
+        |> element("#use-suggested-experiment-slug")
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.text()
+        |> String.trim()
+
+      assert suggestion == "suggested_study"
+
+      view
+      |> element("#use-suggested-experiment-slug")
+      |> render_click()
+
+      assert has_element?(view, "#experiment_slug[value='suggested_study']")
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Suggested Study",
+          "slug" => suggestion,
+          "algorithm" => "weighted_random",
+          "decision_point" => selected_decision_point_value(view),
+          "weight_a" => "1",
+          "weight_b" => "1"
+        }
+      })
+
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_change(%{
+        "experiment" => %{
+          "name" => "Suggested Study",
+          "algorithm" => "weighted_random"
+        }
+      })
+
+      unique_suggestion =
+        view
+        |> element("#use-suggested-experiment-slug")
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.text()
+        |> String.trim()
+
+      assert unique_suggestion != suggestion
+      assert String.starts_with?(unique_suggestion, "suggested_study_")
+    end
+
     test "creates and starts a weighted random A/B Testing experiment", %{
       conn: conn,
       project: project
@@ -176,6 +237,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       refute render(view) =~ "Coming soon"
       refute has_element?(view, "a", "Download Experiment JSON")
+
+      open_create_experiment(view)
+
+      assert has_element?(
+               view,
+               "#create-experiment-modal [role='dialog'][aria-modal='true']"
+             )
+
+      assert has_element?(
+               view,
+               "#create-ab-experiment-form > .form-group:first-child label",
+               "Assignment Policy"
+             )
+
+      assert has_element?(view, "#create-ab-experiment-form button", "Cancel")
+      assert has_element?(view, "#create-ab-experiment-form button[type='submit']", "Create")
+      refute has_element?(view, "#create-experiment-sections")
 
       view
       |> element("#create-ab-experiment-form")
@@ -198,11 +276,182 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(view, "#ab-experiments-table", "Weighted random")
       assert has_element?(view, "#ab-experiments-table", "Draft")
 
+      refute has_element?(
+               view,
+               "button[phx-click='request_experiment_transition'][phx-value-action='archive']",
+               "Archive"
+             )
+
       view
       |> element("button[phx-click='start_experiment']", "Start")
       |> render_click()
 
       assert has_element?(view, "#ab-experiments-table", "Active")
+
+      refute has_element?(
+               view,
+               "button[phx-click='request_experiment_transition'][phx-value-action='archive']",
+               "Archive"
+             )
+
+      view
+      |> element(
+        "button[phx-click='request_experiment_transition'][phx-value-action='complete']",
+        "Complete"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#confirm-experiment-transition-modal [role='dialog']",
+               "Complete “Homepage Study”?"
+             )
+
+      view
+      |> element("#confirm-experiment-transition-modal button", "Complete")
+      |> render_click()
+
+      assert has_element?(view, "#ab-experiments-table", "Completed")
+
+      view
+      |> element(
+        "button[phx-click='request_experiment_transition'][phx-value-action='archive']",
+        "Archive"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#confirm-experiment-transition-modal [role='dialog']",
+               "Archive “Homepage Study”?"
+             )
+
+      view
+      |> element("#confirm-experiment-transition-modal button", "Archive")
+      |> render_click()
+
+      assert has_element?(view, "#ab-experiments-table", "Archived")
+    end
+
+    test "configuration page shows details and paginates editable participating sections", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      insert_alternatives_group(project)
+      {:ok, index_view, _html} = live(conn, live_view_experiments_route(project.slug))
+      open_create_experiment(index_view)
+
+      index_view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Configuration Study",
+          "slug" => "configuration-study",
+          "algorithm" => "weighted_random",
+          "decision_point" => selected_decision_point_value(index_view),
+          "weight_a" => "1",
+          "weight_b" => "1"
+        }
+      })
+
+      id = experiment_id(index_view)
+      institution = insert(:institution)
+
+      sections =
+        for ordinal <- 1..11 do
+          section =
+            insert(:section,
+              institution: institution,
+              base_project: project,
+              title: "Eligible Section #{ordinal}"
+            )
+
+          insert(:section_project_publication,
+            section: section,
+            project: project,
+            publication: publication
+          )
+
+          section
+        end
+
+      path = ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}"
+      {:ok, details_view, _html} = live(conn, path)
+
+      assert has_element?(details_view, "#experiment-configuration h2", "Configuration Study")
+      assert has_element?(details_view, "#experiment-details-heading", "Experiment details")
+      assert has_element?(details_view, "#experiment-configuration", "Weighted random")
+
+      assert has_element?(
+               details_view,
+               "a[href^='/workspaces/course_author/#{project.slug}/experiments?'] [class*='font-semibold']",
+               "Experiments"
+             )
+
+      assert has_element?(details_view, "#participating-section-#{Enum.at(sections, 0).id}")
+      assert has_element?(details_view, "#participating-section-#{Enum.at(sections, 9).id}")
+      refute has_element?(details_view, "#participating-section-#{Enum.at(sections, 10).id}")
+      refute has_element?(details_view, "#participating-sections-table th", "Participating")
+
+      assert has_element?(
+               details_view,
+               "#participating-section-#{Enum.at(sections, 0).id} a[href='/sections/#{Enum.at(sections, 0).slug}/manage']",
+               Enum.at(sections, 0).title
+             )
+
+      assert has_element?(details_view, "nav[aria-label='Participating sections pages']")
+
+      first_section = hd(sections)
+
+      details_view
+      |> element("#participating-section-#{first_section.id} input[type='checkbox']")
+      |> render_click()
+
+      assert has_element?(
+               details_view,
+               "#participating-section-#{first_section.id} input[type='checkbox'][checked]"
+             )
+
+      {:ok, page_two_view, _html} = live(conn, "#{path}?page=2")
+
+      assert has_element?(page_two_view, "#participating-section-#{Enum.at(sections, 10).id}")
+      refute has_element?(page_two_view, "#participating-section-#{Enum.at(sections, 0).id}")
+    end
+
+    test "configures accessible empty section participation and preserves explicit fallback copy",
+         %{
+           conn: conn,
+           project: project
+         } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Section Study",
+          "slug" => "section-study",
+          "algorithm" => "weighted_random",
+          "decision_point" => selected_decision_point_value(view),
+          "weight_a" => "1",
+          "weight_b" => "1"
+        }
+      })
+
+      id = experiment_id(view)
+
+      view
+      |> element("#ab-experiments-table a", "Section Study")
+      |> render_click()
+
+      assert_redirect(
+        view,
+        ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}"
+      )
     end
 
     test "creates and starts a Thompson Sampling A/B Testing experiment", %{
@@ -212,8 +461,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       insert_alternatives_group(project)
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
+      open_create_experiment(view)
+
       assert has_element?(view, "#experiment_algorithm option", "Thompson Sampling")
       refute render(view) =~ "Coming soon"
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_change(%{"experiment" => %{"algorithm" => "thompson_sampling"}})
+
+      assert has_element?(
+               view,
+               "#thompson-sampling-options.font-weight-bold",
+               "Thompson Sampling Options"
+             )
+
+      refute has_element?(view, "#thompson-sampling-config")
+      assert has_element?(view, "#experiment_prior_alpha")
 
       view
       |> element("#create-ab-experiment-form")
@@ -250,6 +514,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       insert_alternatives_group(project)
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
+      open_create_experiment(view)
+
       view
       |> element("#create-ab-experiment-form")
       |> render_submit(%{
@@ -283,6 +549,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       insert_preference_alternatives_group(project)
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
+      assert has_element?(view, "button[disabled]", "Create Experiment")
       refute has_element?(view, "#create-ab-experiment-form")
 
       assert has_element?(
@@ -309,6 +576,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       insert_alternatives_group(project)
 
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      open_create_experiment(view)
 
       assert has_element?(view, "#create-ab-experiment-form")
       assert has_element?(view, "#experiment_decision_point option", "Decision Point")
@@ -438,21 +707,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     {view, ctx}
   end
 
-  defp step({view, ctx}, :test_has_checkbox, assert_or_refute) do
-    to_evaluate = has_element?(view, "label", "Enable A/B testing")
-    evaluate_assertion(to_evaluate, assert_or_refute)
-    {view, ctx}
-  end
-
   defp step({view, ctx}, :test_has_message_integrate_with_AB_platform, assert_or_refute) do
-    target_text = "A/B testing is a Torus feature"
+    target_text = "Create and manage A/B experiments in this project."
     to_evaluate = element(view, "p") |> render() =~ target_text
     evaluate_assertion(to_evaluate, assert_or_refute)
     {view, ctx}
   end
 
   defp step({view, ctx}, :test_has_title_AB_testing, assert_or_refute) do
-    to_evaluate = element(view, "h3") |> render() =~ "A/B Testing"
+    to_evaluate = has_element?(view, "#header_id", "Experiments")
     evaluate_assertion(to_evaluate, assert_or_refute)
     {view, ctx}
   end
@@ -540,11 +803,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     {view, ctx}
   end
 
-  defp step({view, ctx}, :click_on_checkbox, _assert_or_refute) do
-    view |> element("input[phx-click='toggle_ab_testing']") |> render_click()
-    {view, ctx}
-  end
-
   defp step({view, ctx}, :click_on_create_option_button, _assert_or_refute) do
     resource_id = Map.get(ctx, :resource_id)
     assert resource_id
@@ -624,5 +882,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> Floki.attribute("phx-value-resource-id")
 
     {view, Map.put(ctx, :resource_id, resource_id)}
+  end
+
+  defp open_create_experiment(view) do
+    view
+    |> element("button[phx-click='open_create_experiment']", "Create Experiment")
+    |> render_click()
   end
 end

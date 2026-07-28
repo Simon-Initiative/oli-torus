@@ -7,15 +7,18 @@ defmodule Oli.Experiments do
   import Ecto.Query
 
   alias Oli.Accounts.User
+  alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications}
 
   alias Oli.Experiments.{
     AssignmentDecision,
     DecisionPointCandidate,
+    EligibleExperimentSection,
     ExperimentDefinition,
     ExperimentAuthoringView,
     ExperimentError,
+    ExperimentSectionParticipation,
     ExposureReceipt,
     OutcomeReceipt,
     RewardEligibleAssignment,
@@ -147,6 +150,21 @@ defmodule Oli.Experiments do
     do: transition(experiment_id, request, :archive_experiment)
 
   @doc """
+  Returns whether a project has at least one native experiment that is not archived.
+
+  Experiment lifecycle state is authoritative; the legacy project and section
+  `has_experiments` fields are not consulted.
+  """
+  def project_has_experiments?(project_id) when is_integer(project_id) and project_id > 0 do
+    Repo.exists?(
+      from experiment in ExperimentDefinitionSchema,
+        where: experiment.project_id == ^project_id and experiment.state != :archived
+    )
+  end
+
+  def project_has_experiments?(_project_id), do: false
+
+  @doc """
   Lists project-scoped experiment definitions for authoring.
   """
   def list_project_experiments(%Scope{} = scope) do
@@ -165,6 +183,97 @@ defmodule Oli.Experiments do
   end
 
   def list_project_experiments(_scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Lists authoring-safe summaries for active sections currently related to the scoped project.
+  """
+  def list_eligible_sections(%Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope),
+         :ok <- require_eligible_section_reader(scope) do
+      sections =
+        scope
+        |> eligible_sections_query()
+        |> order_by([section], asc: section.title, asc: section.id)
+        |> select([section], %EligibleExperimentSection{
+          id: section.id,
+          slug: section.slug,
+          title: section.title,
+          status: section.status,
+          start_date: section.start_date,
+          end_date: section.end_date
+        })
+        |> Repo.all()
+
+      {:ok, sections}
+    end
+  end
+
+  def list_eligible_sections(_scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Returns eligible, selected, and stale section participation for an experiment.
+  """
+  def get_section_participation(experiment_id, %Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope),
+         :ok <- require_eligible_section_reader(scope),
+         {:ok, schema} <- get_scoped_definition(experiment_id, scope) do
+      {:ok, section_participation(schema, scope)}
+    end
+  end
+
+  def get_section_participation(_experiment_id, _scope),
+    do: invalid_request("expected Scope")
+
+  @doc """
+  Atomically replaces the selected section set for a mutable experiment.
+  """
+  def update_section_participation(experiment_id, %Scope{} = scope, section_ids)
+      when is_list(section_ids) do
+    normalized_ids = section_ids |> Enum.uniq() |> Enum.sort()
+
+    result =
+      Repo.transaction(fn ->
+        with {:ok, scope} <- validate_scope(scope),
+             :ok <- require_authoring_scope(scope),
+             :ok <- require_eligible_section_reader(scope),
+             %ExperimentDefinitionSchema{} = schema <-
+               Repo.one(
+                 from(experiment in ExperimentDefinitionSchema,
+                   where: experiment.id == ^experiment_id,
+                   lock: "FOR UPDATE",
+                   preload: :sections
+                 )
+               ),
+             :ok <- ensure_definition_in_scope(schema, scope),
+             :ok <- validate_participation_update_state(schema),
+             :ok <- validate_eligible_section_ids(normalized_ids, scope) do
+          previous_ids = Enum.map(schema.sections, & &1.id)
+          replace_experiment_sections!(schema.id, normalized_ids)
+          updated = Repo.preload(schema, :sections, force: true)
+          participation = section_participation(updated, scope)
+
+          emit_participation_updated(schema, previous_ids, normalized_ids, participation)
+          participation
+        else
+          nil -> Repo.rollback(not_found("experiment not found", %{experiment_id: experiment_id}))
+          {:error, %ExperimentError{} = error} -> Repo.rollback(error)
+        end
+      end)
+
+    case result do
+      {:ok, %ExperimentSectionParticipation{} = participation} ->
+        {:ok, participation}
+
+      {:error, %ExperimentError{} = error} ->
+        emit_participation_validation_failed(experiment_id, scope, normalized_ids, error)
+        {:error, error}
+    end
+  end
+
+  def update_section_participation(_experiment_id, _scope, _section_ids),
+    do: invalid_request("section_ids must be a list")
 
   @doc """
   Returns a public experiment graph view for authoring.
@@ -262,7 +371,7 @@ defmodule Oli.Experiments do
   creating an assignment or recording exposure.
   """
   def assigned_condition(%Oli.Experiments.AssignConditionRequest{} = request) do
-    with {:ok, scope} <- validate_scope(request.scope),
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope),
          :ok <- require_delivery_scope(scope),
          {:ok, _revision} <- resolve_delivery_revision(request, scope),
          {:ok, decision} <- existing_assignment_decision(request, scope) do
@@ -276,7 +385,7 @@ defmodule Oli.Experiments do
   Records operational exposure evidence and emits the durable xAPI exposure event.
   """
   def record_exposure(%Oli.Experiments.RecordExposureRequest{} = request) do
-    with {:ok, scope} <- validate_scope(request.scope) do
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope) do
       create_exposure(%{request | scope: scope})
     end
   end
@@ -287,8 +396,8 @@ defmodule Oli.Experiments do
   Records operational outcome evidence and emits the durable xAPI outcome event.
   """
   def record_outcome(%Oli.Experiments.RecordOutcomeRequest{} = request) do
-    with {:ok, _scope} <- validate_scope(request.scope) do
-      create_outcome(request)
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope) do
+      create_outcome(%{request | scope: scope})
     end
   end
 
@@ -298,8 +407,8 @@ defmodule Oli.Experiments do
   Records operational reward evidence, mutates policy state, and emits durable xAPI events.
   """
   def record_reward(%Oli.Experiments.RecordRewardRequest{} = request) do
-    with {:ok, _scope} <- validate_scope(request.scope) do
-      create_reward(request)
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope) do
+      create_reward(%{request | scope: scope})
     end
   end
 
@@ -310,7 +419,7 @@ defmodule Oli.Experiments do
   activity resource.
   """
   def reward_eligible_assignments(%Scope{} = scope, activity_resource_id, page_content) do
-    with {:ok, scope} <- validate_scope(scope) do
+    with {:ok, scope} <- validate_delivery_participation_scope(scope) do
       matching_branches = matching_alternatives_branches(page_content, activity_resource_id)
 
       case matching_branches do
@@ -501,6 +610,7 @@ defmodule Oli.Experiments do
   defp scoped_experiment_query(scope, experiment_id) do
     query =
       from(experiment in ExperimentDefinitionSchema,
+        as: :experiment,
         where: experiment.project_id == ^scope.project_id
       )
 
@@ -511,12 +621,7 @@ defmodule Oli.Experiments do
 
   defp scoped_project_experiments_query(scope) do
     from(experiment in ExperimentDefinitionSchema,
-      where:
-        experiment.project_id == ^scope.project_id and
-          fragment(
-            "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
-            experiment.id
-          )
+      where: experiment.project_id == ^scope.project_id
     )
   end
 
@@ -536,6 +641,7 @@ defmodule Oli.Experiments do
     query =
       from(assignment in Assignment,
         join: experiment in ExperimentDefinitionSchema,
+        as: :experiment,
         on: experiment.id == assignment.experiment_id,
         where: experiment.project_id == ^scope.project_id
       )
@@ -549,6 +655,7 @@ defmodule Oli.Experiments do
   defp reward_eligible_assignment_query(scope) do
     from(assignment in Assignment,
       join: experiment in ExperimentDefinitionSchema,
+      as: :experiment,
       on: experiment.id == assignment.experiment_id,
       join: decision_point in DecisionPoint,
       on: decision_point.id == assignment.decision_point_id,
@@ -557,6 +664,7 @@ defmodule Oli.Experiments do
       where:
         experiment.project_id == ^scope.project_id and
           experiment.state == :active and
+          exists(participating_section_query(scope.section_id)) and
           assignment.section_id == ^scope.section_id and
           assignment.enrollment_id == ^scope.enrollment_id and
           assignment.user_id == ^scope.user_id,
@@ -584,36 +692,28 @@ defmodule Oli.Experiments do
   defp maybe_filter_experiment_section(query, nil), do: query
 
   defp maybe_filter_experiment_section(query, section_id) do
-    where(
-      query,
-      [experiment],
-      fragment(
-        "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
-        experiment.id
-      ) or
-        fragment(
-          "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
-          experiment.id,
-          ^section_id
-        )
-    )
+    where(query, [experiment: _experiment], exists(participating_section_query(section_id)))
   end
 
   defp maybe_filter_joined_experiment_section(query, nil), do: query
 
   defp maybe_filter_joined_experiment_section(query, section_id) do
-    where(
-      query,
-      [_record, experiment],
-      fragment(
-        "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
-        experiment.id
-      ) or
-        fragment(
-          "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
-          experiment.id,
-          ^section_id
-        )
+    where(query, [experiment: _experiment], exists(participating_section_query(section_id)))
+  end
+
+  defp participating_section_query(section_id) do
+    from(experiment_section in ExperimentSection,
+      join: section in Section,
+      on: section.id == experiment_section.section_id,
+      join: spp in SectionsProjectsPublications,
+      on:
+        spp.section_id == section.id and
+          spp.project_id == parent_as(:experiment).project_id,
+      where:
+        experiment_section.experiment_id == parent_as(:experiment).id and
+          experiment_section.section_id == ^section_id and
+          section.status == :active,
+      select: 1
     )
   end
 
@@ -637,6 +737,16 @@ defmodule Oli.Experiments do
         assignment.section_id,
         ^institution_id
       )
+    )
+  end
+
+  defp maybe_filter_section_institution(query, nil), do: query
+
+  defp maybe_filter_section_institution(query, institution_id) do
+    where(
+      query,
+      [section],
+      is_nil(section.institution_id) or section.institution_id == ^institution_id
     )
   end
 
@@ -748,13 +858,32 @@ defmodule Oli.Experiments do
   defp add_policy_inspection_metadata(snapshot), do: Map.delete(snapshot, :policy_config)
 
   defp do_assign_condition(request) do
-    with {:ok, scope} <- validate_scope(request.scope),
-         :ok <- require_delivery_scope(scope),
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope),
+         :ok <- require_delivery_scope(scope) do
+      case scope.project_relationship? do
+        true -> do_assign_condition_for_current_project(request, scope)
+        false -> nonparticipating_assignment_fallback(:section_no_longer_eligible)
+      end
+    end
+  end
+
+  defp do_assign_condition_for_current_project(request, scope) do
+    with {:ok, scope} <- validate_publication(scope),
          {:ok, revision} <- resolve_delivery_revision(request, scope),
          {:ok, match} <- active_experiment_match(request, scope, revision),
          {:ok, decision} <- assign_or_reuse(match, scope, request) do
       {:ok, decision}
     end
+  end
+
+  defp nonparticipating_assignment_fallback(reason) do
+    :telemetry.execute(
+      [:oli, :experiments, :assignment, :fallback],
+      %{count: 1},
+      %{reason: reason}
+    )
+
+    {:ok, %AssignmentDecision{status: :no_experiment}}
   end
 
   defp require_delivery_scope(scope) do
@@ -771,6 +900,7 @@ defmodule Oli.Experiments do
   defp active_experiment_match(request, scope, revision) do
     query =
       from experiment in ExperimentDefinitionSchema,
+        as: :experiment,
         join: decision_point in DecisionPoint,
         on: decision_point.experiment_id == experiment.id,
         where:
@@ -778,16 +908,6 @@ defmodule Oli.Experiments do
             experiment.project_id == ^scope.project_id and
             decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
             decision_point.decision_point_key == ^request.decision_point_key,
-        where:
-          fragment(
-            "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
-            experiment.id
-          ) or
-            fragment(
-              "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
-              experiment.id,
-              ^scope.section_id
-            ),
         order_by: [asc: experiment.id],
         limit: 1,
         select: {experiment, decision_point}
@@ -803,21 +923,45 @@ defmodule Oli.Experiments do
         {:ok, %{status: :no_experiment}}
 
       {experiment, decision_point} ->
-        with {:ok, conditions} <-
-               validate_runtime_condition_compatibility(
-                 experiment,
-                 decision_point,
-                 revision
-               ) do
-          {:ok,
-           %{
-             experiment: experiment,
-             decision_point: decision_point,
-             conditions: conditions,
-             available_condition_codes: request.available_condition_codes
-           }}
+        if participating_section?(experiment.id, scope.section_id, scope.project_id) do
+          with {:ok, conditions} <-
+                 validate_runtime_condition_compatibility(
+                   experiment,
+                   decision_point,
+                   revision
+                 ) do
+            {:ok,
+             %{
+               experiment: experiment,
+               decision_point: decision_point,
+               conditions: conditions,
+               available_condition_codes: request.available_condition_codes
+             }}
+          end
+        else
+          :telemetry.execute(
+            [:oli, :experiments, :assignment, :fallback],
+            %{count: 1},
+            %{reason: :section_not_participating}
+          )
+
+          {:ok, %{status: :no_experiment}}
         end
     end
+  end
+
+  defp participating_section?(experiment_id, section_id, project_id) do
+    Repo.exists?(
+      from experiment_section in ExperimentSection,
+        join: section in Section,
+        on: section.id == experiment_section.section_id,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == section.id and spp.project_id == ^project_id,
+        where:
+          experiment_section.experiment_id == ^experiment_id and
+            experiment_section.section_id == ^section_id and
+            section.status == :active
+    )
   end
 
   defp resolve_delivery_revision(request, scope) do
@@ -1060,6 +1204,7 @@ defmodule Oli.Experiments do
     query =
       from assignment in Assignment,
         join: experiment in ExperimentDefinitionSchema,
+        as: :experiment,
         on: experiment.id == assignment.experiment_id,
         join: decision_point in DecisionPoint,
         on: decision_point.id == assignment.decision_point_id,
@@ -1067,15 +1212,7 @@ defmodule Oli.Experiments do
         on: condition.id == assignment.condition_id,
         where:
           experiment.project_id == ^scope.project_id and
-            (fragment(
-               "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
-               experiment.id
-             ) or
-               fragment(
-                 "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
-                 experiment.id,
-                 ^scope.section_id
-               )) and
+            exists(participating_section_query(scope.section_id)) and
             assignment.section_id == ^scope.section_id and
             assignment.enrollment_id == ^scope.enrollment_id and
             assignment.user_id == ^scope.user_id and
@@ -1737,10 +1874,11 @@ defmodule Oli.Experiments do
   end
 
   defp get_scoped_assignment_query(assignment_id, scope, lock?) do
-    with {:ok, scope} <- validate_scope(scope) do
+    with {:ok, scope} <- validate_delivery_participation_scope(scope) do
       query =
         from assignment in Assignment,
           join: experiment in ExperimentDefinitionSchema,
+          as: :experiment,
           on: experiment.id == assignment.experiment_id,
           join: condition in Condition,
           on:
@@ -1753,6 +1891,7 @@ defmodule Oli.Experiments do
           where:
             assignment.id == ^assignment_id and
               experiment.project_id == ^scope.project_id and
+              exists(participating_section_query(scope.section_id)) and
               assignment.section_id == ^scope.section_id and
               assignment.enrollment_id == ^scope.enrollment_id and
               assignment.user_id == ^scope.user_id,
@@ -1828,6 +1967,128 @@ defmodule Oli.Experiments do
     end
   end
 
+  defp validate_participation_update_state(%ExperimentDefinitionSchema{
+         state: state
+       })
+       when state in [:draft, :active, :paused],
+       do: :ok
+
+  defp validate_participation_update_state(%ExperimentDefinitionSchema{state: state}) do
+    invalid_state("section participation is read-only", %{state: state})
+  end
+
+  defp validate_eligible_section_ids(section_ids, scope) do
+    if section_ids == [] do
+      :ok
+    else
+      validate_nonempty_eligible_section_ids(section_ids, scope)
+    end
+  end
+
+  defp validate_nonempty_eligible_section_ids(section_ids, scope) do
+    eligible_ids =
+      scope
+      |> eligible_sections_query()
+      |> where([section], section.id in ^section_ids)
+      |> select([section], section.id)
+      |> Repo.all()
+      |> MapSet.new()
+
+    invalid_ids = Enum.reject(section_ids, &MapSet.member?(eligible_ids, &1))
+
+    case invalid_ids do
+      [] -> :ok
+      _ -> invalid_scope("one or more sections are not eligible", %{section_ids: invalid_ids})
+    end
+  end
+
+  defp eligible_sections_query(scope) do
+    Section
+    |> join(:inner, [section], spp in SectionsProjectsPublications,
+      on: spp.section_id == section.id
+    )
+    |> where(
+      [section, spp],
+      spp.project_id == ^scope.project_id and section.status == :active
+    )
+    |> maybe_filter_section_institution(scope.institution_id)
+    |> distinct([section], section.id)
+  end
+
+  defp section_participation(schema, scope) do
+    eligible_sections =
+      scope
+      |> eligible_sections_query()
+      |> order_by([section], asc: section.title, asc: section.id)
+      |> select([section], %EligibleExperimentSection{
+        id: section.id,
+        slug: section.slug,
+        title: section.title,
+        status: section.status,
+        start_date: section.start_date,
+        end_date: section.end_date
+      })
+      |> Repo.all()
+
+    eligible_ids = MapSet.new(eligible_sections, & &1.id)
+
+    selected_ids =
+      schema.sections |> Enum.map(& &1.id) |> Enum.filter(&MapSet.member?(eligible_ids, &1))
+
+    stale_sections =
+      schema.sections
+      |> Enum.reject(&MapSet.member?(eligible_ids, &1.id))
+      |> Enum.sort_by(&{&1.title, &1.id})
+      |> Enum.map(&to_eligible_section/1)
+
+    %ExperimentSectionParticipation{
+      experiment_id: schema.id,
+      eligible_sections: eligible_sections,
+      selected_ids: Enum.sort(selected_ids),
+      stale_sections: stale_sections
+    }
+  end
+
+  defp to_eligible_section(%Section{} = section) do
+    %EligibleExperimentSection{
+      id: section.id,
+      slug: section.slug,
+      title: section.title,
+      status: section.status,
+      start_date: section.start_date,
+      end_date: section.end_date
+    }
+  end
+
+  defp emit_participation_updated(schema, previous_ids, new_ids, participation) do
+    previous = MapSet.new(previous_ids)
+    current = MapSet.new(new_ids)
+
+    :telemetry.execute([:oli, :experiments, :participation, :updated], %{count: 1}, %{
+      experiment_id: schema.id,
+      project_id: schema.project_id,
+      previous_selected_count: MapSet.size(previous),
+      selected_count: MapSet.size(current),
+      added_count: MapSet.difference(current, previous) |> MapSet.size(),
+      removed_count: MapSet.difference(previous, current) |> MapSet.size(),
+      stale_count: length(participation.stale_sections),
+      state: schema.state
+    })
+  end
+
+  defp emit_participation_validation_failed(experiment_id, scope, section_ids, error) do
+    :telemetry.execute(
+      [:oli, :experiments, :participation, :validation_failed],
+      %{count: 1},
+      %{
+        experiment_id: experiment_id,
+        project_id: scope && scope.project_id,
+        requested_count: length(section_ids),
+        error_type: error.type
+      }
+    )
+  end
+
   defp get_scoped_definition(experiment_id, scope) do
     with {:ok, scope} <- validate_scope(scope),
          %ExperimentDefinitionSchema{} = schema <-
@@ -1853,17 +2114,9 @@ defmodule Oli.Experiments do
     section_ids
     |> Enum.uniq()
     |> Enum.reduce_while({:ok, []}, fn section_id, {:ok, valid_ids} ->
-      case Repo.get(Section, section_id) do
-        nil ->
-          {:halt, invalid_scope("section not found", %{section_id: section_id})}
-
-        section ->
-          validation_scope = %{scope | section_id: section_id, section_slug: nil}
-
-          case validate_section_scope(validation_scope, section) do
-            {:ok, _scope} -> {:cont, {:ok, [section_id | valid_ids]}}
-            {:error, %ExperimentError{}} = error -> {:halt, error}
-          end
+      case validate_eligible_section_ids([section_id], scope) do
+        :ok -> {:cont, {:ok, [section_id | valid_ids]}}
+        {:error, %ExperimentError{}} = error -> {:halt, error}
       end
     end)
     |> case do
@@ -2689,6 +2942,33 @@ defmodule Oli.Experiments do
     invalid_scope("authoring experiments must be project- or section-scoped")
   end
 
+  defp require_eligible_section_reader(%Scope{
+         author_id: author_id,
+         project_id: project_id
+       })
+       when not is_nil(author_id) do
+    author = Repo.get(Oli.Accounts.Author, author_id)
+
+    accepted_collaborator? =
+      Repo.exists?(
+        from(author_project in AuthorProject,
+          where:
+            author_project.author_id == ^author_id and
+              author_project.project_id == ^project_id and
+              author_project.status == :accepted
+        )
+      )
+
+    case accepted_collaborator? or Oli.Accounts.is_admin?(author) do
+      true -> :ok
+      false -> invalid_scope("author cannot access project sections")
+    end
+  end
+
+  defp require_eligible_section_reader(_scope) do
+    invalid_scope("author scope is required")
+  end
+
   defp validate_scope(%Scope{} = scope) do
     with {:ok, scope} <- validate_institution(scope),
          {:ok, scope} <- validate_project(scope),
@@ -2701,6 +2981,18 @@ defmodule Oli.Experiments do
   end
 
   defp validate_scope(_scope), do: invalid_scope("scope is required")
+
+  defp validate_delivery_participation_scope(%Scope{} = scope) do
+    with {:ok, scope} <- validate_institution(scope),
+         {:ok, scope} <- validate_project(scope),
+         {:ok, scope} <- validate_participation_section(scope),
+         {:ok, scope} <- validate_user(scope),
+         {:ok, scope} <- validate_enrollment(scope) do
+      {:ok, scope}
+    end
+  end
+
+  defp validate_delivery_participation_scope(_scope), do: invalid_scope("scope is required")
 
   defp validate_institution(%Scope{institution_id: nil} = scope), do: {:ok, scope}
 
@@ -2823,6 +3115,102 @@ defmodule Oli.Experiments do
     end
   end
 
+  defp validate_participation_section(%Scope{section_id: nil, section_slug: nil} = scope),
+    do: {:ok, scope}
+
+  defp validate_participation_section(%Scope{section_id: section_id} = scope)
+       when not is_nil(section_id) do
+    case participation_section(section_id, scope.project_id) do
+      nil ->
+        invalid_scope("section not found", %{section_id: section_id})
+
+      {section, project_relationship?} ->
+        validate_participation_section_scope(
+          %{
+            scope
+            | section_id: section.id,
+              section_slug: scope.section_slug || section.slug,
+              project_relationship?: project_relationship?
+          },
+          section
+        )
+    end
+  end
+
+  defp validate_participation_section(%Scope{section_slug: section_slug} = scope) do
+    case participation_section_by_slug(section_slug, scope.project_id) do
+      nil ->
+        invalid_scope("section not found", %{section_slug: section_slug})
+
+      {section, project_relationship?} ->
+        validate_participation_section_scope(
+          %{
+            scope
+            | section_id: section.id,
+              section_slug: section.slug,
+              project_relationship?: project_relationship?
+          },
+          section
+        )
+    end
+  end
+
+  defp participation_section(section_id, project_id) do
+    from(section in Section,
+      as: :section,
+      where: section.id == ^section_id,
+      select:
+        {section,
+         exists(
+           from(spp in SectionsProjectsPublications,
+             where:
+               spp.section_id == parent_as(:section).id and
+                 spp.project_id == ^project_id
+           )
+         )}
+    )
+    |> Repo.one()
+  end
+
+  defp participation_section_by_slug(section_slug, project_id) do
+    from(section in Section,
+      as: :section,
+      where: section.slug == ^section_slug,
+      select:
+        {section,
+         exists(
+           from(spp in SectionsProjectsPublications,
+             where:
+               spp.section_id == parent_as(:section).id and
+                 spp.project_id == ^project_id
+           )
+         )}
+    )
+    |> Repo.one()
+  end
+
+  defp validate_participation_section_scope(scope, section) do
+    cond do
+      section.slug != scope.section_slug ->
+        invalid_scope("section slug does not match section_id", %{
+          section_id: scope.section_id,
+          section_slug: scope.section_slug,
+          actual_slug: section.slug
+        })
+
+      not is_nil(scope.institution_id) and not is_nil(section.institution_id) and
+          section.institution_id != scope.institution_id ->
+        invalid_scope("section does not belong to institution", %{
+          section_id: section.id,
+          institution_id: scope.institution_id,
+          actual_institution_id: section.institution_id
+        })
+
+      true ->
+        {:ok, scope}
+    end
+  end
+
   defp validate_section_scope(scope, section) do
     cond do
       not is_nil(scope.section_slug) and section.slug != scope.section_slug ->
@@ -2895,13 +3283,19 @@ defmodule Oli.Experiments do
   end
 
   defp ensure_definition_in_scope(schema, scope) do
-    section_ids = Enum.map(schema.sections, & &1.id)
-
     cond do
       schema.project_id != scope.project_id ->
         invalid_scope("experiment does not belong to project")
 
-      not is_nil(scope.section_id) and section_ids != [] and scope.section_id not in section_ids ->
+      not is_nil(scope.section_id) and
+          not Repo.exists?(
+            from(experiment in ExperimentDefinitionSchema,
+              as: :experiment,
+              where:
+                experiment.id == ^schema.id and
+                    exists(participating_section_query(scope.section_id))
+            )
+          ) ->
         invalid_scope("experiment does not belong to section")
 
       true ->
@@ -3043,5 +3437,9 @@ defmodule Oli.Experiments do
 
   defp invalid_condition(message, details \\ %{}) do
     {:error, %ExperimentError{type: :invalid_condition, message: message, details: details}}
+  end
+
+  defp invalid_state(message, details) do
+    {:error, %ExperimentError{type: :invalid_state, message: message, details: details}}
   end
 end

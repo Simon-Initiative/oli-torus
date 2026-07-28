@@ -22,6 +22,7 @@ defmodule Oli.Experiments.RuntimeTest do
     Assignment,
     Condition,
     DecisionPoint,
+    ExperimentSection,
     PolicyState
   }
 
@@ -62,6 +63,81 @@ defmodule Oli.Experiments.RuntimeTest do
       assert_operational_event(:assignment_decided, "assignment")
 
       assert_operational_event(:assignment_decided, "assignment")
+    end
+
+    test "an active experiment with no selected sections applies nowhere" do
+      attach_telemetry([[:oli, :experiments, :assignment, :fallback]])
+
+      %{scope: scope, revision: revision, definition: definition} =
+        active_experiment_with_conditions()
+
+      Repo.delete_all(
+        from(experiment_section in ExperimentSection,
+          where: experiment_section.experiment_id == ^definition.id
+        )
+      )
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert Repo.aggregate(Assignment, :count, :id) == 0
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :fallback], %{count: 1},
+                      %{reason: :section_not_participating}}
+    end
+
+    test "a selected section stops participating when inactive" do
+      attach_telemetry([[:oli, :experiments, :assignment, :fallback]])
+
+      %{scope: scope, revision: revision} = active_experiment_with_conditions()
+
+      Oli.Delivery.Sections.Section
+      |> Repo.get!(scope.section_id)
+      |> Ecto.Changeset.change(status: :archived)
+      |> Repo.update!()
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert Repo.aggregate(Assignment, :count, :id) == 0
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :fallback], %{count: 1},
+                      %{reason: :section_not_participating}}
+    end
+
+    test "a selected current-remix section participates" do
+      %{scope: scope, revision: revision} = active_experiment_with_conditions()
+      other_project = insert(:project)
+
+      Oli.Delivery.Sections.Section
+      |> Repo.get!(scope.section_id)
+      |> Ecto.Changeset.change(base_project_id: other_project.id)
+      |> Repo.update!()
+
+      assert {:ok, %AssignmentDecision{status: :assigned}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+    end
+
+    test "a selected removed-remix section falls back without creating new assignments" do
+      %{scope: scope, revision: revision} = active_experiment_with_conditions()
+      other_project = insert(:project)
+
+      Oli.Delivery.Sections.Section
+      |> Repo.get!(scope.section_id)
+      |> Ecto.Changeset.change(base_project_id: other_project.id)
+      |> Repo.update!()
+
+      Oli.Delivery.Sections.SectionsProjectsPublications
+      |> where(
+        [spp],
+        spp.section_id == ^scope.section_id and spp.project_id == ^scope.project_id
+      )
+      |> Repo.delete_all()
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert Repo.aggregate(Assignment, :count, :id) == 0
     end
 
     test "matches an active decision point after compatible alternatives revision changes" do
@@ -246,7 +322,63 @@ defmodule Oli.Experiments.RuntimeTest do
     end
   end
 
+  # Implementation proof: AC-004, AC-005, AC-006
   describe "runtime evidence commands" do
+    test "deselection blocks sticky reuse and all later evidence while retaining history" do
+      %{scope: scope, revision: revision, definition: definition} =
+        active_experiment_with_conditions(algorithm: :thompson_sampling)
+
+      {:ok, assignment} =
+        Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      policy_before = Repo.get_by!(PolicyState, experiment_id: definition.id)
+
+      Repo.delete_all(
+        from(experiment_section in ExperimentSection,
+          where: experiment_section.experiment_id == ^definition.id
+        )
+      )
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assigned_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert {:error, %{type: :invalid_scope}} =
+               Experiments.record_exposure(%RecordExposureRequest{
+                 key: "after-deselection",
+                 scope: scope,
+                 assignment_id: assignment.assignment_id,
+                 content_revision_id: revision.id
+               })
+
+      assert {:error, %{type: :invalid_scope}} =
+               Experiments.record_outcome(%RecordOutcomeRequest{
+                 key: "outcome-after-deselection",
+                 scope: scope,
+                 assignment_id: assignment.assignment_id,
+                 score: 1.0,
+                 out_of: 1.0
+               })
+
+      assert {:error, %{type: :invalid_scope}} =
+               Experiments.record_reward(%RecordRewardRequest{
+                 key: "reward-after-deselection",
+                 scope: scope,
+                 assignment_id: assignment.assignment_id,
+                 reward_value: 1.0,
+                 reward_source: "test"
+               })
+
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+      assert Repo.get!(Assignment, assignment.assignment_id).runtime_event_state == %{}
+
+      policy_after = Repo.get!(PolicyState, policy_before.id)
+      assert policy_after.reward_success_count == policy_before.reward_success_count
+      assert policy_after.state == policy_before.state
+    end
+
     test "rejects exposure evidence for a revision other than the deployed decision point" do
       %{scope: scope, revision: revision} = active_experiment_with_conditions()
       {:ok, assignment} = Experiments.assign_condition(assign_request(scope, revision, ["a"]))

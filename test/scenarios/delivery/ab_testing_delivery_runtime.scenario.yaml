@@ -79,6 +79,11 @@
     title: "AB Runtime Section"
     from: "ab_runtime_project"
 
+- section:
+    name: "ab_runtime_unselected_section"
+    title: "AB Runtime Unselected Section"
+    from: "ab_runtime_project"
+
 - user:
     name: "ab_runtime_student"
     type: "student"
@@ -86,6 +91,15 @@
 - enroll:
     user: "ab_runtime_student"
     section: "ab_runtime_section"
+    role: "student"
+
+- user:
+    name: "ab_runtime_unselected_student"
+    type: "student"
+
+- enroll:
+    user: "ab_runtime_unselected_student"
+    section: "ab_runtime_unselected_section"
     role: "student"
 
 - hook:
@@ -98,6 +112,14 @@
 
 - hook:
     function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_assignment_and_exposure/1"
+
+- view_practice_page:
+    student: "ab_runtime_unselected_student"
+    section: "ab_runtime_unselected_section"
+    page: "AB Runtime Practice"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_unselected_section_has_no_experiment_records/1"
 
 - view_practice_page:
     student: "ab_runtime_student"
@@ -134,6 +156,12 @@
 
 - hook:
     function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_reward_is_idempotent/1"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.deselect_participating_section/1"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_deselection_fallback_retains_history/1"
 
 - project:
     name: "ab_runtime_fallback_project"

@@ -4,16 +4,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [uuid: 0]
-  import OliWeb.Components.Common
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
-  alias Oli.Authoring.Course
-  alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Experiments, as: LegacyExperiments
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
+  alias Oli.Utils.Slug
   alias OliWeb.Common.Modal.{DeleteModal, FormModal}
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
@@ -22,11 +20,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   def mount(_params, _session, socket) do
     project = socket.assigns.project
     experiment = LegacyExperiments.get_latest_experiment(project.slug)
-    socket = assign_authoring_experiments(socket)
+    scope = authoring_scope(socket)
+
+    socket =
+      socket
+      |> assign_authoring_experiments()
+      |> start_async(:load_eligible_sections, fn ->
+        ABExperiments.list_eligible_sections(scope)
+      end)
 
     {:ok,
      assign(socket,
-       ab_testing_enabled: project.has_experiments,
        experiment: experiment,
        resource_slug: project.slug,
        resource_title: project.title
@@ -39,30 +43,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     <h2 id="header_id" class="pb-2">Experiments</h2>
     {render_modal(assigns)}
 
-    <h3>A/B Testing</h3>
-    <p>
-      A/B testing is a Torus feature for creating and managing experiments in this project.
-    </p>
-    <.input
-      type="checkbox"
-      class="form-check-input"
-      name="experiments"
-      value={@ab_testing_enabled}
-      label="Enable A/B testing"
-      phx-click="toggle_ab_testing"
-      checked={@ab_testing_enabled}
-    />
-
-    <%= if @experiment do %>
-      <OliWeb.Resources.AlternativesEditor.group
-        group={@experiment}
-        editing_enabled={false}
-        source={:experiments}
-      />
-    <% end %>
-
+    <p>Create and manage A/B experiments in this project.</p>
     <section class="mt-4">
-      <h4>A/B Testing experiments</h4>
+      <div class="d-flex justify-content-end mb-3">
+        <button
+          type="button"
+          class="btn btn-primary"
+          phx-click="open_create_experiment"
+          disabled={Enum.empty?(@decision_point_candidates)}
+        >
+          Create Experiment
+        </button>
+      </div>
+
+      <div :if={Enum.empty?(@decision_point_candidates)} class="alert alert-info">
+        Create an A/B decision point before adding an A/B Testing experiment.
+      </div>
 
       <%= if @experiment_error do %>
         <div class="alert alert-danger" role="alert">{@experiment_error}</div>
@@ -76,18 +72,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         <div>No A/B Testing experiments have been created yet.</div>
       <% else %>
         <table class="table table-sm" id="ab-experiments-table">
+          <caption class="sr-only">A/B Testing experiments</caption>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Slug</th>
-              <th>Algorithm</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th scope="col">Name</th>
+              <th scope="col">Slug</th>
+              <th scope="col">Algorithm</th>
+              <th scope="col">Status</th>
+              <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr :for={experiment <- @ab_experiments} id={"ab-experiment-#{experiment.id}"}>
-              <td>{experiment.name}</td>
+              <td>
+                <.link navigate={
+                  ~p"/workspaces/course_author/#{@project.slug}/experiments/#{experiment.id}"
+                }>
+                  {experiment.name}
+                </.link>
+              </td>
               <td>{experiment.slug}</td>
               <td>{format_algorithm(experiment.algorithm)}</td>
               <td>{format_state(experiment.state)}</td>
@@ -114,16 +117,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   :if={experiment.state in [:active, :paused]}
                   type="button"
                   class="btn btn-sm btn-secondary"
-                  phx-click="complete_experiment"
+                  phx-click="request_experiment_transition"
+                  phx-value-action="complete"
                   phx-value-id={experiment.id}
                 >
                   Complete
                 </button>
                 <button
-                  :if={experiment.state != :archived}
+                  :if={experiment.state == :completed}
                   type="button"
                   class="btn btn-sm btn-outline-danger"
-                  phx-click="archive_experiment"
+                  phx-click="request_experiment_transition"
+                  phx-value-action="archive"
                   phx-value-id={experiment.id}
                 >
                   Archive
@@ -134,11 +139,134 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         </table>
       <% end %>
 
-      <div class="mt-3">
-        <h5>Create A/B Testing experiment</h5>
-        <%= if Enum.empty?(@decision_point_candidates) do %>
-          <div>Create an A/B decision point before adding an A/B Testing experiment.</div>
+      <section class="mt-5" aria-labelledby="decision-points-heading">
+        <h3 id="decision-points-heading" class="h4">Decision Points</h3>
+        <ul :if={not Enum.empty?(@decision_point_candidates)} class="list-group mb-3">
+          <li :for={candidate <- @decision_point_candidates} class="list-group-item">
+            {candidate.title}
+          </li>
+        </ul>
+        <%= if @experiment do %>
+          <OliWeb.Resources.AlternativesEditor.group
+            group={@experiment}
+            editing_enabled={false}
+            source={:experiments}
+          />
         <% else %>
+          <div :if={Enum.empty?(@decision_point_candidates)}>
+            No decision points have been created yet.
+          </div>
+        <% end %>
+      </section>
+
+      <OliWeb.Components.Modal.modal
+        :if={@section_participation}
+        id="experiment-section-participation"
+        show={true}
+        header_level={2}
+        wrapper_class="w-full max-w-2xl p-4"
+        on_cancel={Phoenix.LiveView.JS.push("close_section_participation")}
+      >
+        <:title>Participating sections</:title>
+        <:subtitle>
+          Select sections to participate in this experiment.
+        </:subtitle>
+        <.form
+          for={to_form(%{}, as: :participation)}
+          id="section-participation-form"
+          phx-submit="save_section_participation"
+        >
+          <input
+            type="hidden"
+            name="participation[experiment_id]"
+            value={@section_participation.experiment_id}
+          />
+          <fieldset disabled={@section_participation_read_only}>
+            <legend class="sr-only">Select participating sections</legend>
+            <div :if={Enum.empty?(@section_participation.eligible_sections)} role="status">
+              No active eligible sections are available.
+            </div>
+            <div :for={section <- @section_participation.eligible_sections} class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id={"participation-section-#{section.id}"}
+                name="participation[section_ids][]"
+                value={section.id}
+                checked={section.id in @section_participation.selected_ids}
+              />
+              <label class="form-check-label" for={"participation-section-#{section.id}"}>
+                {section.title} ({section.slug})
+              </label>
+            </div>
+          </fieldset>
+          <div
+            :if={not Enum.empty?(@section_participation.stale_sections)}
+            class="alert alert-warning"
+          >
+            <h6>Previously selected sections no longer participating</h6>
+            <ul>
+              <li :for={section <- @section_participation.stale_sections}>
+                {section.title} ({section.slug})
+              </li>
+            </ul>
+            <p>Saving removes these stale selections.</p>
+          </div>
+          <button :if={not @section_participation_read_only} type="submit" class="btn btn-primary">
+            Save participating sections
+          </button>
+          <button
+            type="button"
+            class="btn btn-link"
+            phx-click="close_section_participation"
+          >
+            Cancel
+          </button>
+        </.form>
+      </OliWeb.Components.Modal.modal>
+
+      <OliWeb.Components.Modal.modal
+        :if={@pending_experiment_transition}
+        id="confirm-experiment-transition-modal"
+        show={true}
+        header_level={2}
+        wrapper_class="w-full max-w-lg p-4"
+        on_cancel={Phoenix.LiveView.JS.push("cancel_experiment_transition")}
+      >
+        <:title>{transition_title(@pending_experiment_transition.action)}</:title>
+        <p>{transition_confirmation(@pending_experiment_transition)}</p>
+        <:custom_footer>
+          <div class="d-flex justify-content-end gap-2 p-4 pt-0">
+            <button type="button" class="btn btn-link" phx-click="cancel_experiment_transition">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class={[
+                "btn",
+                if(@pending_experiment_transition.action == :archive,
+                  do: "btn-danger",
+                  else: "btn-primary"
+                )
+              ]}
+              phx-click="confirm_experiment_transition"
+            >
+              {transition_button_label(@pending_experiment_transition.action)}
+            </button>
+          </div>
+        </:custom_footer>
+      </OliWeb.Components.Modal.modal>
+
+      <OliWeb.Components.Modal.modal
+        :if={@show_create_experiment}
+        id="create-experiment-modal"
+        show={true}
+        header_level={2}
+        wrapper_class="w-full max-w-3xl p-4"
+        on_cancel={Phoenix.LiveView.JS.push("close_create_experiment")}
+      >
+        <:title>Create Experiment</:title>
+        <%= unless Enum.empty?(@decision_point_candidates) do %>
           <.form
             for={@experiment_form}
             id="create-ab-experiment-form"
@@ -146,12 +274,53 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             phx-submit="create_experiment"
           >
             <div class="form-group">
+              <label for="experiment_algorithm">Assignment Policy</label>
+              <select
+                id="experiment_algorithm"
+                class="form-control"
+                name="experiment[algorithm]"
+              >
+                <option value="weighted_random" selected={@experiment_algorithm == "weighted_random"}>
+                  Weighted random
+                </option>
+                <option
+                  value="thompson_sampling"
+                  selected={@experiment_algorithm == "thompson_sampling"}
+                >
+                  Thompson Sampling
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="experiment_name">Name</label>
-              <input id="experiment_name" class="form-control" name="experiment[name]" required />
+              <input
+                id="experiment_name"
+                class="form-control"
+                name="experiment[name]"
+                value={@experiment_params["name"]}
+                phx-debounce="300"
+                required
+              />
             </div>
             <div class="form-group">
               <label for="experiment_slug">Slug</label>
-              <input id="experiment_slug" class="form-control" name="experiment[slug]" required />
+              <input
+                id="experiment_slug"
+                class="form-control"
+                name="experiment[slug]"
+                value={@experiment_params["slug"]}
+                required
+              />
+              <div :if={@experiment_slug_suggestion} class="form-text">
+                Suggested slug:
+                <a
+                  href="#"
+                  id="use-suggested-experiment-slug"
+                  phx-click="use_suggested_experiment_slug"
+                >
+                  {@experiment_slug_suggestion}
+                </a>
+              </div>
             </div>
             <div class="form-group">
               <label for="experiment_decision_point">A/B decision point</label>
@@ -166,24 +335,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   value={candidate.alternatives_resource_id}
                 >
                   {candidate.title}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="experiment_algorithm">Assignment policy</label>
-              <select
-                id="experiment_algorithm"
-                class="form-control"
-                name="experiment[algorithm]"
-              >
-                <option value="weighted_random" selected={@experiment_algorithm == "weighted_random"}>
-                  Weighted random
-                </option>
-                <option
-                  value="thompson_sampling"
-                  selected={@experiment_algorithm == "thompson_sampling"}
-                >
-                  Thompson Sampling
                 </option>
               </select>
             </div>
@@ -214,126 +365,177 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               />
             </div>
             <%= if @experiment_algorithm == "thompson_sampling" do %>
-              <div class="border rounded p-3 mb-3" id="thompson-sampling-config">
-                <h6>Thompson Sampling configuration</h6>
-                <div class="form-row">
-                  <div class="form-group col-md-6">
-                    <label for="experiment_prior_alpha">Default prior successes</label>
-                    <input
-                      id="experiment_prior_alpha"
-                      class={"form-control #{field_error_class(@experiment_field_errors, :prior_alpha)}"}
-                      type="number"
-                      min="0.0001"
-                      max="1000"
-                      step="0.0001"
-                      name="experiment[prior_alpha]"
-                      value="1"
-                      aria-invalid={field_invalid?(@experiment_field_errors, :prior_alpha)}
-                      aria-describedby="experiment_prior_alpha_help experiment_prior_alpha_error"
-                    />
-                    <small id="experiment_prior_alpha_help" class="form-text text-muted">
-                      Initial success evidence for each condition, from 0.0001 to 1000.
-                    </small>
-                    <%= if error = field_error(@experiment_field_errors, :prior_alpha) do %>
-                      <div id="experiment_prior_alpha_error" class="invalid-feedback d-block">
-                        {error}
-                      </div>
-                    <% end %>
+              <h6 id="thompson-sampling-options" class="font-weight-bold">
+                Thompson Sampling Options
+              </h6>
+              <div class="form-group">
+                <label for="experiment_prior_alpha">Default prior successes</label>
+                <input
+                  id="experiment_prior_alpha"
+                  class={"form-control #{field_error_class(@experiment_field_errors, :prior_alpha)}"}
+                  type="number"
+                  min="0.0001"
+                  max="1000"
+                  step="0.0001"
+                  name="experiment[prior_alpha]"
+                  value="1"
+                  aria-invalid={field_invalid?(@experiment_field_errors, :prior_alpha)}
+                  aria-describedby="experiment_prior_alpha_help experiment_prior_alpha_error"
+                />
+                <small id="experiment_prior_alpha_help" class="form-text text-muted">
+                  Initial success evidence for each condition, from 0.0001 to 1000.
+                </small>
+                <%= if error = field_error(@experiment_field_errors, :prior_alpha) do %>
+                  <div id="experiment_prior_alpha_error" class="invalid-feedback d-block">
+                    {error}
                   </div>
-                  <div class="form-group col-md-6">
-                    <label for="experiment_prior_beta">Default prior failures</label>
-                    <input
-                      id="experiment_prior_beta"
-                      class={"form-control #{field_error_class(@experiment_field_errors, :prior_beta)}"}
-                      type="number"
-                      min="0.0001"
-                      max="1000"
-                      step="0.0001"
-                      name="experiment[prior_beta]"
-                      value="1"
-                      aria-invalid={field_invalid?(@experiment_field_errors, :prior_beta)}
-                      aria-describedby="experiment_prior_beta_help experiment_prior_beta_error"
-                    />
-                    <small id="experiment_prior_beta_help" class="form-text text-muted">
-                      Initial failure evidence for each condition, from 0.0001 to 1000.
-                    </small>
-                    <%= if error = field_error(@experiment_field_errors, :prior_beta) do %>
-                      <div id="experiment_prior_beta_error" class="invalid-feedback d-block">
-                        {error}
-                      </div>
-                    <% end %>
+                <% end %>
+              </div>
+              <div class="form-group">
+                <label for="experiment_prior_beta">Default prior failures</label>
+                <input
+                  id="experiment_prior_beta"
+                  class={"form-control #{field_error_class(@experiment_field_errors, :prior_beta)}"}
+                  type="number"
+                  min="0.0001"
+                  max="1000"
+                  step="0.0001"
+                  name="experiment[prior_beta]"
+                  value="1"
+                  aria-invalid={field_invalid?(@experiment_field_errors, :prior_beta)}
+                  aria-describedby="experiment_prior_beta_help experiment_prior_beta_error"
+                />
+                <small id="experiment_prior_beta_help" class="form-text text-muted">
+                  Initial failure evidence for each condition, from 0.0001 to 1000.
+                </small>
+                <%= if error = field_error(@experiment_field_errors, :prior_beta) do %>
+                  <div id="experiment_prior_beta_error" class="invalid-feedback d-block">
+                    {error}
                   </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group col-md-6">
-                    <label for="experiment_warm_up_assignments">Warm-up assignments</label>
-                    <input
-                      id="experiment_warm_up_assignments"
-                      class={"form-control #{field_error_class(@experiment_field_errors, :warm_up_assignments)}"}
-                      type="number"
-                      min="0"
-                      step="1"
-                      name="experiment[warm_up_assignments]"
-                      value="0"
-                      aria-invalid={field_invalid?(@experiment_field_errors, :warm_up_assignments)}
-                      aria-describedby="experiment_warm_up_assignments_help experiment_warm_up_assignments_error"
-                    />
-                    <small id="experiment_warm_up_assignments_help" class="form-text text-muted">
-                      Number of initial assignments served evenly before adaptive sampling.
-                    </small>
-                    <%= if error = field_error(@experiment_field_errors, :warm_up_assignments) do %>
-                      <div id="experiment_warm_up_assignments_error" class="invalid-feedback d-block">
-                        {error}
-                      </div>
-                    <% end %>
+                <% end %>
+              </div>
+              <div class="form-group">
+                <label for="experiment_warm_up_assignments">Warm-up assignments</label>
+                <input
+                  id="experiment_warm_up_assignments"
+                  class={"form-control #{field_error_class(@experiment_field_errors, :warm_up_assignments)}"}
+                  type="number"
+                  min="0"
+                  step="1"
+                  name="experiment[warm_up_assignments]"
+                  value="0"
+                  aria-invalid={field_invalid?(@experiment_field_errors, :warm_up_assignments)}
+                  aria-describedby="experiment_warm_up_assignments_help experiment_warm_up_assignments_error"
+                />
+                <small id="experiment_warm_up_assignments_help" class="form-text text-muted">
+                  Number of initial assignments served evenly before adaptive sampling.
+                </small>
+                <%= if error = field_error(@experiment_field_errors, :warm_up_assignments) do %>
+                  <div id="experiment_warm_up_assignments_error" class="invalid-feedback d-block">
+                    {error}
                   </div>
-                  <div class="form-group col-md-6">
-                    <label for="experiment_max_condition_share">
-                      Maximum traffic share per condition
-                    </label>
-                    <input
-                      id="experiment_max_condition_share"
-                      class={"form-control #{field_error_class(@experiment_field_errors, :max_condition_share)}"}
-                      type="number"
-                      min="0.01"
-                      max="1"
-                      step="0.01"
-                      name="experiment[max_condition_share]"
-                      value="1"
-                      aria-invalid={field_invalid?(@experiment_field_errors, :max_condition_share)}
-                      aria-describedby="experiment_max_condition_share_help experiment_max_condition_share_error"
-                    />
-                    <small id="experiment_max_condition_share_help" class="form-text text-muted">
-                      Highest allowed assignment share for one condition, from 0.01 to 1.0.
-                    </small>
-                    <%= if error = field_error(@experiment_field_errors, :max_condition_share) do %>
-                      <div id="experiment_max_condition_share_error" class="invalid-feedback d-block">
-                        {error}
-                      </div>
-                    <% end %>
+                <% end %>
+              </div>
+              <div class="form-group">
+                <label for="experiment_max_condition_share">
+                  Maximum traffic share per condition
+                </label>
+                <input
+                  id="experiment_max_condition_share"
+                  class={"form-control #{field_error_class(@experiment_field_errors, :max_condition_share)}"}
+                  type="number"
+                  min="0.01"
+                  max="1"
+                  step="0.01"
+                  name="experiment[max_condition_share]"
+                  value="1"
+                  aria-invalid={field_invalid?(@experiment_field_errors, :max_condition_share)}
+                  aria-describedby="experiment_max_condition_share_help experiment_max_condition_share_error"
+                />
+                <small id="experiment_max_condition_share_help" class="form-text text-muted">
+                  Highest allowed assignment share for one condition, from 0.01 to 1.0.
+                </small>
+                <%= if error = field_error(@experiment_field_errors, :max_condition_share) do %>
+                  <div id="experiment_max_condition_share_error" class="invalid-feedback d-block">
+                    {error}
                   </div>
-                </div>
+                <% end %>
               </div>
             <% end %>
-            <button type="submit" class="btn btn-primary">Create experiment</button>
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-link" phx-click="close_create_experiment">
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary">Create</button>
+            </div>
           </.form>
         <% end %>
-      </div>
+      </OliWeb.Components.Modal.modal>
     </section>
     """
   end
 
-  def handle_event("toggle_ab_testing", _params, socket) do
-    {:ok, updated_project = %Project{}} =
-      Course.update_project(socket.assigns.project, %{
-        has_experiments: !socket.assigns.project.has_experiments
-      })
-
+  def handle_event("open_create_experiment", _params, socket) do
     {:noreply,
      assign(socket,
-       ab_testing_enabled: updated_project.has_experiments,
-       project: updated_project
+       show_create_experiment: true,
+       experiment_error: nil,
+       experiment_success: nil,
+       experiment_params: %{},
+       experiment_slug_suggestion: nil
      )}
+  end
+
+  def handle_event("close_create_experiment", _params, socket) do
+    {:noreply,
+     assign(socket,
+       show_create_experiment: false,
+       experiment_error: nil,
+       experiment_field_errors: %{},
+       experiment_params: %{},
+       experiment_slug_suggestion: nil
+     )}
+  end
+
+  def handle_event(
+        "request_experiment_transition",
+        %{"id" => experiment_id, "action" => action},
+        socket
+      ) do
+    with {:ok, experiment_id} <- parse_positive_integer(experiment_id),
+         {:ok, action} <- parse_confirmation_action(action),
+         experiment when not is_nil(experiment) <-
+           Enum.find(socket.assigns.ab_experiments, &(&1.id == experiment_id)),
+         true <- transition_available?(experiment.state, action) do
+      {:noreply,
+       assign(socket,
+         pending_experiment_transition: %{
+           experiment_id: experiment.id,
+           experiment_name: experiment.name,
+           action: action
+         },
+         experiment_error: nil
+       )}
+    else
+      _ ->
+        {:noreply, assign(socket, experiment_error: "The requested action is not available.")}
+    end
+  end
+
+  def handle_event("cancel_experiment_transition", _params, socket) do
+    {:noreply, assign(socket, pending_experiment_transition: nil)}
+  end
+
+  def handle_event("confirm_experiment_transition", _params, socket) do
+    case socket.assigns.pending_experiment_transition do
+      %{experiment_id: experiment_id, action: action} ->
+        socket
+        |> assign(pending_experiment_transition: nil)
+        |> transition_experiment(experiment_id, action)
+
+      nil ->
+        {:noreply, assign(socket, experiment_error: "No experiment action is pending.")}
+    end
   end
 
   def handle_event("create_experiment", %{"experiment" => params}, socket) do
@@ -344,6 +546,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          {:ok, _definition} <- ABExperiments.create_experiment(request) do
       {:noreply,
        socket
+       |> assign(show_create_experiment: false)
        |> assign(experiment_success: "Experiment created.")
        |> assign(experiment_error: nil)
        |> assign_authoring_experiments()}
@@ -354,7 +557,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            experiment_error: message,
            experiment_success: nil,
            experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
-           experiment_field_errors: field_errors_for_message(message)
+           experiment_field_errors: field_errors_for_message(message),
+           experiment_params: params,
+           experiment_slug_suggestion: suggested_experiment_slug(params["name"])
          )}
 
       {:error, %Oli.Experiments.ExperimentError{} = error} ->
@@ -363,17 +568,89 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            experiment_error: error.message,
            experiment_success: nil,
            experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
-           experiment_field_errors: field_errors_for_message(error.message)
+           experiment_field_errors: field_errors_for_message(error.message),
+           experiment_params: params,
+           experiment_slug_suggestion: suggested_experiment_slug(params["name"])
          )}
     end
   end
 
   def handle_event("change_experiment_form", %{"experiment" => params}, socket) do
+    slug_suggestion =
+      case params["name"] == socket.assigns.experiment_params["name"] do
+        true -> socket.assigns.experiment_slug_suggestion
+        false -> suggested_experiment_slug(params["name"])
+      end
+
     {:noreply,
      assign(socket,
        experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
-       experiment_field_errors: %{}
+       experiment_field_errors: %{},
+       experiment_params: params,
+       experiment_slug_suggestion: slug_suggestion
      )}
+  end
+
+  def handle_event("use_suggested_experiment_slug", _params, socket) do
+    case socket.assigns.experiment_slug_suggestion do
+      nil ->
+        {:noreply, socket}
+
+      suggestion ->
+        {:noreply,
+         assign(socket,
+           experiment_params: Map.put(socket.assigns.experiment_params, "slug", suggestion)
+         )}
+    end
+  end
+
+  def handle_event("configure_sections", %{"id" => experiment_id}, socket) do
+    with {:ok, experiment_id} <- parse_positive_integer(experiment_id),
+         {:ok, participation} <-
+           ABExperiments.get_section_participation(experiment_id, authoring_scope(socket)),
+         experiment when not is_nil(experiment) <-
+           Enum.find(socket.assigns.ab_experiments, &(&1.id == experiment_id)) do
+      {:noreply,
+       assign(socket,
+         section_participation: participation,
+         section_participation_read_only: experiment.state in [:completed, :archived],
+         experiment_error: nil
+       )}
+    else
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        {:noreply, assign(socket, experiment_error: error.message)}
+
+      _ ->
+        {:noreply, assign(socket, experiment_error: "Invalid experiment selection.")}
+    end
+  end
+
+  def handle_event("save_section_participation", %{"participation" => params}, socket) do
+    with {:ok, experiment_id} <- parse_positive_integer(params["experiment_id"]),
+         {:ok, section_ids} <- parse_section_ids(params["section_ids"]),
+         {:ok, _participation} <-
+           ABExperiments.update_section_participation(
+             experiment_id,
+             authoring_scope(socket),
+             section_ids
+           ) do
+      {:noreply,
+       assign(socket,
+         section_participation: nil,
+         experiment_success: "Participating sections updated.",
+         experiment_error: nil
+       )}
+    else
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        {:noreply, assign(socket, experiment_error: error.message, experiment_success: nil)}
+
+      {:error, message} ->
+        {:noreply, assign(socket, experiment_error: message, experiment_success: nil)}
+    end
+  end
+
+  def handle_event("close_section_participation", _params, socket) do
+    {:noreply, assign(socket, section_participation: nil)}
   end
 
   def handle_event("start_experiment", %{"id" => experiment_id}, socket) do
@@ -696,6 +973,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     end
   end
 
+  @impl Phoenix.LiveView
+  def handle_async(:load_eligible_sections, {:ok, {:ok, sections}}, socket) do
+    {:noreply, assign(socket, eligible_sections: sections, eligible_sections_status: :loaded)}
+  end
+
+  def handle_async(:load_eligible_sections, _result, socket) do
+    {:noreply, assign(socket, eligible_sections: [], eligible_sections_status: :error)}
+  end
+
   defp assign_authoring_experiments(socket) do
     scope = authoring_scope(socket)
 
@@ -724,7 +1010,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       experiment_success: nil,
       experiment_algorithm: "weighted_random",
       experiment_field_errors: %{},
-      experiment_form: to_form(%{}, as: :experiment)
+      experiment_form: to_form(%{}, as: :experiment),
+      show_create_experiment: Map.get(socket.assigns, :show_create_experiment, false),
+      experiment_params: Map.get(socket.assigns, :experiment_params, %{}),
+      experiment_slug_suggestion: Map.get(socket.assigns, :experiment_slug_suggestion),
+      pending_experiment_transition: Map.get(socket.assigns, :pending_experiment_transition),
+      eligible_sections: Map.get(socket.assigns, :eligible_sections, []),
+      eligible_sections_status: Map.get(socket.assigns, :eligible_sections_status, :loading),
+      section_participation: nil,
+      section_participation_read_only: false
     )
   end
 
@@ -755,6 +1049,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp authoring_scope(socket) do
     %Scope{
+      author_id: socket.assigns.ctx.author.id,
       project_id: socket.assigns.project.id
     }
   end
@@ -774,6 +1069,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     with {:ok, algorithm} <- parse_algorithm(params["algorithm"]),
          {:ok, weight_a} <- parse_weight(params["weight_a"]),
          {:ok, weight_b} <- parse_weight(params["weight_b"]),
+         {:ok, section_ids} <- parse_section_ids(params["section_ids"]),
          {:ok, policy_config} <- policy_config(algorithm, params),
          [option_a, option_b | _rest] <- candidate.options do
       {:ok,
@@ -782,6 +1078,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          slug: params["slug"],
          name: params["name"],
          algorithm: algorithm,
+         section_ids: section_ids,
          policy_config: policy_config,
          decision_point: %{
            alternatives_resource_id: candidate.alternatives_resource_id,
@@ -817,6 +1114,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   defp parse_algorithm("weighted_random"), do: {:ok, :weighted_random}
   defp parse_algorithm(nil), do: {:ok, :weighted_random}
   defp parse_algorithm(_algorithm), do: {:error, "Select a supported assignment policy."}
+
+  defp parse_section_ids(nil), do: {:ok, []}
+
+  defp parse_section_ids(section_ids) when is_list(section_ids) do
+    Enum.reduce_while(section_ids, {:ok, []}, fn section_id, {:ok, ids} ->
+      case parse_positive_integer(section_id) do
+        {:ok, id} -> {:cont, {:ok, [id | ids]}}
+        {:error, _message} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, ids} -> {:ok, ids |> Enum.uniq() |> Enum.sort()}
+      error -> error
+    end
+  end
+
+  defp parse_section_ids(section_id) do
+    with {:ok, id} <- parse_positive_integer(section_id), do: {:ok, [id]}
+  end
+
+  defp parse_positive_integer(value) when is_integer(value) and value > 0, do: {:ok, value}
+
+  defp parse_positive_integer(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {integer, ""} when integer > 0 -> {:ok, integer}
+      _ -> {:error, "Invalid section or experiment selection."}
+    end
+  end
+
+  defp parse_positive_integer(_value), do: {:error, "Invalid section or experiment selection."}
 
   defp policy_config(:weighted_random, _params), do: {:ok, %{}}
 
@@ -927,6 +1254,37 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp format_algorithm(:weighted_random), do: "Weighted random"
   defp format_algorithm(:thompson_sampling), do: "Thompson Sampling"
+
+  defp parse_confirmation_action("complete"), do: {:ok, :complete}
+  defp parse_confirmation_action("archive"), do: {:ok, :archive}
+  defp parse_confirmation_action(_action), do: {:error, :invalid_action}
+
+  defp transition_available?(state, :complete), do: state in [:active, :paused]
+  defp transition_available?(:completed, :archive), do: true
+  defp transition_available?(_state, _action), do: false
+
+  defp transition_title(:complete), do: "Complete Experiment"
+  defp transition_title(:archive), do: "Archive Experiment"
+
+  defp transition_button_label(:complete), do: "Complete"
+  defp transition_button_label(:archive), do: "Archive"
+
+  defp transition_confirmation(%{action: :complete, experiment_name: name}) do
+    "Complete “#{name}”? Participation can no longer be changed after completion."
+  end
+
+  defp transition_confirmation(%{action: :archive, experiment_name: name}) do
+    "Archive “#{name}”? The experiment will be removed from active use."
+  end
+
+  defp suggested_experiment_slug(name) when is_binary(name) do
+    case String.trim(name) do
+      "" -> nil
+      name -> Slug.generate("experiment_definitions", name)
+    end
+  end
+
+  defp suggested_experiment_slug(_name), do: nil
 
   defp edit_group_title(
          project_slug,

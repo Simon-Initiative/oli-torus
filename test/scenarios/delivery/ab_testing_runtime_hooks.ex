@@ -18,6 +18,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     Assignment,
     Condition,
     DecisionPoint,
+    ExperimentSection,
     PolicyState
   }
 
@@ -35,6 +36,8 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   @fallback_project_name "ab_runtime_fallback_project"
   @fallback_section_name "ab_runtime_fallback_section"
   @student_name "ab_runtime_student"
+  @unselected_section_name "ab_runtime_unselected_section"
+  @unselected_student_name "ab_runtime_unselected_student"
   @fallback_student_name "ab_runtime_fallback_student"
   @page_title "AB Runtime Practice"
   @activity_virtual_id "runtime_mcq"
@@ -69,6 +72,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
              slug: "scenario-delivery-runtime",
              name: "Scenario delivery runtime",
              algorithm: :thompson_sampling,
+             section_ids: [scope.section_id],
              policy_config: %{
                "guardrails" => %{"fixed_control_allocation" => 1.0}
              },
@@ -110,12 +114,45 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     with {:ok, scope} <- scope_for(state, @project_name, @section_name, @student_name),
          {:ok, alternatives_revision} <- alternatives_revision(state, @project_name),
          {:ok, page_revision} <- delivery_page_revision(state, @project_name, @section_name),
-         :ok <- render_delivery_page(state, scope, page_revision, @section_name, @student_name) do
+         {:ok, rendered_html} <-
+           render_delivery_page(state, scope, page_revision, @section_name, @student_name) do
+      assert rendered_html =~ "alternative-alt-a"
       assert Repo.aggregate(assignment_query(scope, alternatives_revision), :count, :id) == 1
 
       state
     else
       {:error, reason} -> flunk("assert_assignment_and_exposure failed: #{inspect(reason)}")
+    end
+  end
+
+  def assert_unselected_section_has_no_experiment_records(%ExecutionState{} = state) do
+    with {:ok, scope} <-
+           scope_for(
+             state,
+             @project_name,
+             @unselected_section_name,
+             @unselected_student_name
+           ),
+         {:ok, alternatives_revision} <- alternatives_revision(state, @project_name),
+         {:ok, page_revision} <-
+           delivery_page_revision(state, @project_name, @unselected_section_name),
+         {:ok, rendered_html} <-
+           render_delivery_page(
+             state,
+             scope,
+             page_revision,
+             @unselected_section_name,
+             @unselected_student_name
+           ) do
+      assert rendered_html =~ "alternative-alt-a"
+      assert Repo.aggregate(assignment_query(scope, alternatives_revision), :count, :id) == 0
+      assert event_count(scope, "exposures") == 0
+      assert event_count(scope, "outcomes") == 0
+      assert event_count(scope, "rewards") == 0
+      state
+    else
+      {:error, reason} ->
+        flunk("assert_unselected_section_has_no_experiment_records failed: #{inspect(reason)}")
     end
   end
 
@@ -162,6 +199,60 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
 
       :error ->
         flunk("record_reward must run before assert_reward_is_idempotent")
+    end
+  end
+
+  def deselect_participating_section(%ExecutionState{} = state) do
+    with {:ok, scope} <- scope_for(state, @project_name, @section_name, @student_name),
+         {:ok, alternatives_revision} <- alternatives_revision(state, @project_name),
+         experiment_id when not is_nil(experiment_id) <-
+           Repo.one(
+             from(experiment in Oli.Experiments.Schemas.ExperimentDefinition,
+               join: decision_point in DecisionPoint,
+               on: decision_point.experiment_id == experiment.id,
+               where:
+                 experiment.project_id == ^scope.project_id and
+                   decision_point.alternatives_resource_id == ^alternatives_revision.resource_id,
+               select: experiment.id
+             )
+           ) do
+      from(experiment_section in ExperimentSection,
+        where:
+          experiment_section.experiment_id == ^experiment_id and
+            experiment_section.section_id == ^scope.section_id
+      )
+      |> Repo.delete_all()
+
+      %{
+        state
+        | params:
+            Map.put(
+              state.params,
+              :ab_assignment_count_before_deselection,
+              Repo.aggregate(Assignment, :count, :id)
+            )
+      }
+    else
+      reason -> flunk("deselect_participating_section failed: #{inspect(reason)}")
+    end
+  end
+
+  def assert_deselection_fallback_retains_history(%ExecutionState{} = state) do
+    with {:ok, scope} <- scope_for(state, @project_name, @section_name, @student_name),
+         {:ok, alternatives_revision} <- alternatives_revision(state, @project_name),
+         {:ok, page_revision} <- delivery_page_revision(state, @project_name, @section_name),
+         {:ok, rendered_html} <-
+           render_delivery_page(state, scope, page_revision, @section_name, @student_name) do
+      assert rendered_html =~ "alternative-alt-a"
+
+      assert Repo.aggregate(assignment_query(scope, alternatives_revision), :count, :id) ==
+               state.params.ab_assignment_count_before_deselection
+
+      assert event_count(scope, "rewards") == 1
+      state
+    else
+      {:error, reason} ->
+        flunk("assert_deselection_fallback_retains_history failed: #{inspect(reason)}")
     end
   end
 
@@ -456,27 +547,30 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     with {:ok, section} <- fetch_section(state, section_name),
          {:ok, user} <- fetch_user(state, student_name),
          {:ok, enrollment} <- enrollment(section.id, user.id) do
-      Page.render(
-        %Context{
-          enrollment: enrollment,
-          user: user,
-          institution_id: scope.institution_id,
-          project_id: scope.project_id,
-          publication_id: scope.publication_id,
-          section_id: scope.section_id,
-          section_slug: section.slug,
-          mode: :delivery,
-          alternatives_groups_fn: fn ->
-            Resources.alternatives_groups(section.slug, DeliveryResolver)
-          end,
-          alternatives_selector_fn: &Alternatives.select/2,
-          extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3
-        },
-        page_revision.content,
-        Page.Html
-      )
+      rendered_html =
+        Page.render(
+          %Context{
+            enrollment: enrollment,
+            user: user,
+            institution_id: scope.institution_id,
+            project_id: scope.project_id,
+            publication_id: scope.publication_id,
+            section_id: scope.section_id,
+            section_slug: section.slug,
+            mode: :delivery,
+            alternatives_groups_fn: fn ->
+              Resources.alternatives_groups(section.slug, DeliveryResolver)
+            end,
+            alternatives_selector_fn: &Alternatives.select/2,
+            extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3
+          },
+          page_revision.content,
+          Page.Html
+        )
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
 
-      :ok
+      {:ok, rendered_html}
     end
   end
 
@@ -520,17 +614,11 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
 
   defp scoped_experiment_ids(%Scope{} = scope) do
     from(experiment in Oli.Experiments.Schemas.ExperimentDefinition,
-      where:
-        experiment.project_id == ^scope.project_id and
-          (fragment(
-             "NOT EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ?)",
-             experiment.id
-           ) or
-             fragment(
-               "EXISTS (SELECT 1 FROM experiment_sections es WHERE es.experiment_id = ? AND es.section_id = ?)",
-               experiment.id,
-               ^scope.section_id
-             )),
+      join: experiment_section in ExperimentSection,
+      on:
+        experiment_section.experiment_id == experiment.id and
+          experiment_section.section_id == ^scope.section_id,
+      where: experiment.project_id == ^scope.project_id,
       select: experiment.id
     )
   end

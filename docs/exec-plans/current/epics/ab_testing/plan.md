@@ -1,6 +1,6 @@
 # Built-in A/B Testing Roadmap
 
-Last updated: 2026-06-30
+Last updated: 2026-07-27
 
 Context reference:
 
@@ -18,6 +18,7 @@ The MVP should maintain the simple A/B/N alternatives behavior Torus uses today 
 - Build A/B testing as a dedicated Torus domain/context with explicit data ownership, Torus-owned persistence, and context APIs instead of runtime HTTP calls to UpGrade.
 - Keep delivery, authoring, and analytics code behind A/B testing domain APIs or approved read models; they must not query or mutate experiment-owned persistence directly.
 - Maintain current learner-facing alternatives behavior, including sticky native assignment and first-option fallback when no active native experiment applies.
+- Require each experiment to explicitly select its participating active sections from sections created from, or currently remixing content from, the experiment's project. Sections not selected for that experiment must receive first-option fallback at its decision points.
 - Treat assignment algorithms as a first-class internal boundary inside the A/B testing domain, with weighted deterministic random assignment as the baseline non-adaptive policy and Thompson Sampling as the required MVP adaptive policy.
 - Implement Thompson Sampling initially as a non-contextual Beta-Bernoulli policy for binary rewards, following `docs/exec-plans/current/epics/ab_testing/references/EASI_ThompsonSampling.ipynb`.
 - Include the assignment, exposure, outcome, reward, and policy-state paths needed for Thompson Sampling without forcing delivery code to know which algorithm is active.
@@ -247,13 +248,55 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/thompson_sampling/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/thompson_sampling/plan.md`
 
-### 6. Runtime Telemetry Reconciliation
+### 6. Experiment Section Participation
+
+Likely directory: `docs/exec-plans/current/epics/ab_testing/section_participation/`
+
+Deliver:
+
+- An experiment configuration control that lets an authorized experiment researcher select the active sections that participate in that experiment.
+- Reuse or adapt the existing `OliWeb.Common.MultiSelectInput` section-selection pattern from `lib/oli_web/live/common/multi_select.ex` and `lib/oli_web/live/workspaces/course_author/insights_live.ex`, extending it for persisted edit selections, stale eligibility, accessible form behavior, and experiment `section_ids`.
+- An eligible section list limited to active sections that were created from the experiment's project or currently contain remixed content from that project.
+- Eligibility-query discovery should begin with `Oli.Delivery.Sections.get_sections_containing_resources_of_given_project/1`, which already backs project-scoped section selection in course-author Insights, then add or verify active-status and authorization filtering.
+- Persisted participation scoped to the experiment and section, rather than a coarse section-wide or source-project-wide A/B testing toggle.
+- Clear selected and unselected states when creating or editing an experiment, including safe handling when a previously selected section becomes inactive or no longer remixes the source project.
+- Delivery gating that applies experiment assignment, exposure, outcome, and reward behavior only when the learner's section is selected for that experiment.
+- First-option fallback at every applicable decision point when the learner's section is not selected, is no longer eligible, or otherwise is not actively participating in that experiment.
+- Authorization, multi-tenant scoping, and validation that prevent researchers from selecting unrelated, inactive, or inaccessible sections.
+
+Defer:
+
+- Per-section experiment definitions; experiments remain authored at the project level.
+- Automatic opt-in of newly created or newly remixed sections.
+- Template/product inheritance of experiment participation.
+- Section-owner or instructor self-service participation controls outside the experiment configuration page.
+
+Dependencies:
+
+- Project-level A/B testing authoring and lifecycle controls from `authoring_lifecycle`.
+- Delivery runtime assignment and first-option fallback semantics from `delivery_runtime`.
+- Reliable section-to-source-project relationships for both original and currently remixed project content.
+- A/B testing context APIs and experiment-owned operational persistence from `domain_contract`.
+
+Why this comes here:
+
+- Section participation is now required for correct data generation and learner-facing behavior, so it is MVP scope rather than a post-MVP enhancement. It follows the baseline authoring and runtime slices because it adds a per-experiment authoring control and a gating rule to those established contracts.
+- It must precede telemetry reconciliation, analytics, and release QA so experiment evidence cannot be generated for nonparticipating sections and QA can verify first-option fallback outside selected sections.
+
+Expected child artifacts:
+
+- `docs/exec-plans/current/epics/ab_testing/section_participation/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/section_participation/fdd.md`
+- `docs/exec-plans/current/epics/ab_testing/section_participation/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/section_participation/plan.md`
+
+### 7. Runtime Telemetry Reconciliation
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/`
 
 Deliver:
 
-- A reconciliation pass over slices 1-5 so already-implemented native A/B testing work follows the new scalable data boundary before analytics development continues.
+- A reconciliation pass over already-implemented slices 1-5 plus the section-participation integration so native A/B testing follows the scalable data boundary before analytics development continues.
 - Clear classification of existing implementation as keep, modify, remove, or defer.
 - A corrected source-of-truth boundary:
   - PostgreSQL remains authoritative for experiment definitions, decision points, conditions, lifecycle state, sticky assignment state required for delivery correctness, and current adaptive policy state required for runtime assignment.
@@ -274,6 +317,7 @@ Defer:
 Dependencies:
 
 - Implemented slices 1-5, including current `Oli.Experiments` APIs, native runtime replacement, authoring lifecycle, and Thompson Sampling policy state.
+- Experiment-section participation state and runtime gating from `section_participation`.
 - Existing xAPI upload pipeline and ClickHouse OLAP infrastructure.
 
 Why this comes here:
@@ -287,7 +331,7 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/plan.md`
 
-### 7. Experiment XAPI And OLAP Foundation
+### 8. Experiment XAPI And OLAP Foundation
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/experiment_olap_foundation/`
 
@@ -329,13 +373,14 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/experiment_olap_foundation/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/experiment_olap_foundation/plan.md`
 
-### 8. Outcome Analytics And Research Visibility
+### 9. Outcome Analytics And Research Visibility
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/analytics/`
 
 Deliver:
 
 - Assignment and exposure analytics by experiment, decision point, condition, project, and section, backed by ClickHouse query contracts or projections.
+- Participation-aware analytics that exclude nonparticipating-section delivery from experiment counts and allow researchers to identify the sections intentionally selected for the experiment.
 - Outcome reporting based on experiment xAPI events joined to existing attempt xAPI data and approved ClickHouse projections.
 - Clear timestamp and scope semantics for joining assignments, exposures, experiment rewards, policy updates, and activity attempts in OLAP queries.
 - Basic monitoring for missing exposures, missing outcomes, failed reward updates, ETL lag, ClickHouse query failures, and unexpected assignment imbalance.
@@ -371,15 +416,17 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/analytics/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/analytics/plan.md`
 
-### 9. End-To-End Manual QA Verification
+### 10. End-To-End Manual QA Verification
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/manual_qa/`
 
 Deliver:
 
 - A manual QA verification script that covers the A/B testing workflow from authoring through instructor and student delivery.
+- Section-participation verification covering eligible original/remixed sections, rejected inactive or unrelated sections, persisted selections, deselection, and stale eligibility.
 - Setup instructions for creating or selecting a project, section, instructor, and multiple student users needed to exercise assignment behavior.
 - Non-adaptive A/B/N verification using weighted deterministic random assignment, sticky assignment reuse, first-option fallback when no active experiment applies, exposure recording, outcome/reward handoff, and instructor/research visibility.
+- Explicit comparison of participating and nonparticipating sections, proving that nonparticipating learners receive the first choice and generate no experiment evidence.
 - Thompson Sampling adaptive verification using a binary reward signal, posterior state changes, sticky assignment after policy updates, guardrail behavior where visible, and analytics/monitoring evidence for reward counts and assignment share.
 - Role-based checks for authoring permissions, instructor-facing delivery or reporting surfaces, and student-facing alternative content rendering.
 - Pass/fail evidence expectations such as screenshots, database-safe identifiers, analytics snapshots, log-free test notes, and known cleanup steps.
@@ -395,6 +442,7 @@ Dependencies:
 
 - Native delivery runtime replacement.
 - Native authoring lifecycle controls for creating and activating non-adaptive and Thompson Sampling experiments.
+- Experiment section-participation configuration and runtime gating.
 - Thompson Sampling reward processing, policy state, and guardrails needed for MVP adaptive behavior.
 - Analytics or monitoring surfaces that show assignment, exposure, reward, and posterior-state evidence.
 - Confirmation that temporary PostgreSQL exposure, outcome, reward, and policy-update event-history tables have been dropped or have an approved blocking issue before release verification starts.
@@ -483,43 +531,6 @@ Possible child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/advanced_parity/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/advanced_parity/plan.md`
 
-### Section Participation Controls
-
-Likely directory: `docs/exec-plans/current/epics/ab_testing/section_participation/`
-
-Possible future scope:
-
-- Section-level controls for whether a course section participates in A/B testing experiments authored in its source project materials.
-- A high-level section participation toggle that defaults to enabled when a section is created from project materials with active or authorable A/B testing.
-- Fine-grained source-project participation controls for sections that contain materials from multiple source projects through remix or template/product source materials.
-- Default participation enabled for newly remixed source projects that contain A/B testing experiments.
-- Product/template inheritance so sections created from a template inherit both the high-level participation setting and any per-source-project participation settings from the template.
-- Runtime gating that checks section participation before assignment, exposure, and reward handling without changing project-level experiment authoring.
-
-Defer:
-
-- This is not MVP scope and should not block the initial A/B testing cut-over, project-level authoring lifecycle, delivery runtime replacement, Thompson Sampling MVP, analytics, or manual QA verification.
-- Per-section experiment definitions; experiments remain authored at the project level unless a later product requirement explicitly changes that model.
-
-Would depend on:
-
-- Project-level A/B testing authoring and lifecycle controls.
-- Delivery runtime assignment through `Oli.Experiments` request/scope APIs.
-- Reliable `sections_projects_publications` source-project mappings for base, remixed, and template-derived materials.
-- Template/product duplication and section creation paths that can copy participation settings.
-
-Why this is post-MVP:
-
-- The previous UpGrade-shaped workflow had project-level authoring plus coarse project/section enablement, not fine-grained per-source-project participation controls. The MVP can preserve that behavior while leaving a clean path for later section participation controls as an additive gating layer before runtime assignment.
-- Existing section/source-project mapping infrastructure makes this feasible later, but remixed-content correctness will require runtime resolution of the source project for the alternatives resource rather than assuming only the section base project.
-
-Possible child artifacts:
-
-- `docs/exec-plans/current/epics/ab_testing/section_participation/prd.md`
-- `docs/exec-plans/current/epics/ab_testing/section_participation/fdd.md`
-- `docs/exec-plans/current/epics/ab_testing/section_participation/requirements.yml`
-- `docs/exec-plans/current/epics/ab_testing/section_participation/plan.md`
-
 ## Slice Dependency Graph
 
 ```mermaid
@@ -530,6 +541,7 @@ flowchart TD
   DELIVERY["Delivery Runtime"]
   TS["Thompson Sampling"]
   AUTHORING["Authoring Lifecycle"]
+  PARTICIPATION["Section Participation"]
   RECONCILE["Runtime Telemetry Reconciliation"]
   OLAP["Experiment XAPI And OLAP"]
   ANALYTICS["Analytics"]
@@ -539,7 +551,6 @@ flowchart TD
   subgraph FOLLOWON["Post-MVP Follow-On Candidates"]
   ADAPTIVE["Additional Adaptive Policies"]
   PARITY["Advanced Parity"]
-  PARTICIPATION["Section Participation Controls"]
   end
 
   DOMAIN --> CUTOVER
@@ -550,10 +561,14 @@ flowchart TD
   DOMAIN --> TS
   DELIVERY --> TS
   AUTHORING --> TS
+  DOMAIN --> PARTICIPATION
+  DELIVERY --> PARTICIPATION
+  AUTHORING --> PARTICIPATION
   DOMAIN --> RECONCILE
   DELIVERY --> RECONCILE
   AUTHORING --> RECONCILE
   TS --> RECONCILE
+  PARTICIPATION --> RECONCILE
   RECONCILE --> OLAP
   OLAP --> ANALYTICS
   TS --> ANALYTICS
@@ -561,11 +576,10 @@ flowchart TD
   DELIVERY --> QA
   TS --> QA
   AUTHORING --> QA
+  PARTICIPATION --> QA
   ANALYTICS --> QA
   QA --> ADAPTIVE
-  QA --> PARTICIPATION
   QA --> PARITY
-  PARTICIPATION --> PARITY
   ADAPTIVE --> PARITY
 ```
 
@@ -579,8 +593,8 @@ flowchart TD
 - Published content immutability: experiment choices can select alternatives at delivery time but must not mutate published revisions.
 - Reliability and performance: assignment should remain local and transactional, avoid repeated remote calls, and preserve fallback behavior when no active experiment applies. Heavy event creation and analytics queries should use the xAPI/ClickHouse path rather than high-volume PostgreSQL writes or dashboard aggregates.
 - Observability and auditability: assignment decisions, exposures, failed outcome joins, reward updates, Thompson Sampling posterior updates, lifecycle changes, and adaptive policy updates should be inspectable through xAPI/ClickHouse-backed evidence, with current runtime policy state inspectable from the A/B testing domain where needed.
-- Testing and verification: coverage should include assignment stickiness, weighted distribution behavior, Thompson Sampling posterior sampling and updates, fallback behavior, experiment xAPI emission, ClickHouse projection/query behavior, dataset export inclusion, project and section analytics scoping, project and section gating, native-only authoring gates, first-assignment behavior for all learners, attempt outcome association, permission checks, lifecycle transitions, and an end-to-end manual QA script that verifies authoring through instructor and student delivery for both non-adaptive and Thompson Sampling use cases.
-- MVP scope control: the MVP includes native cut-over, weighted deterministic random assignment, Thompson Sampling, authoring/lifecycle, analytics/monitoring needed for release confidence, and end-to-end manual QA. Additional adaptive policies and advanced UpGrade parity are post-MVP follow-on candidates, not necessary MVP deliverables.
+- Testing and verification: coverage should include assignment stickiness, weighted distribution behavior, Thompson Sampling posterior sampling and updates, first-option fallback for sections not selected into an experiment, eligible-section filtering across original and remixed project relationships, experiment xAPI emission, ClickHouse projection/query behavior, dataset export inclusion, project and section analytics scoping, native-only authoring gates, first-assignment behavior for participating learners, attempt outcome association, permission checks, lifecycle transitions, and an end-to-end manual QA script that verifies authoring through instructor and student delivery for both participating and nonparticipating sections.
+- MVP scope control: the MVP includes native cut-over, weighted deterministic random assignment, Thompson Sampling, authoring/lifecycle, explicit per-experiment section participation, analytics/monitoring needed for release confidence, and end-to-end manual QA. Additional adaptive policies and advanced UpGrade parity are post-MVP follow-on candidates, not necessary MVP deliverables.
 
 ## Initial Effort Estimate
 
@@ -592,6 +606,7 @@ Rough implementation shape:
 - Native-only authoring gate, UpGrade removal, and hard cut-over to native delivery through domain APIs: 3-5 weeks.
 - Weighted random authoring lifecycle and reward/outcome plumbing through context APIs and xAPI emission contracts: 6-8 weeks.
 - Thompson Sampling implementation, adaptive guardrails, current runtime posterior state, xAPI policy-update evidence, monitoring contracts, and the authoring updates needed to enable adaptive experiment selection: 10-14 weeks.
+- Per-experiment section participation selection, eligibility resolution for original/remixed sections, runtime gating, and fallback verification: estimate after the section/source-project query and current experiment configuration surface are assessed.
 - Runtime telemetry reconciliation for already-completed slices 1-5: 1-3 weeks, depending on how much PostgreSQL event-log code is removed immediately versus temporarily retained while replacement idempotency behavior is introduced.
 - Experiment xAPI/ClickHouse OLAP foundation, including statement definitions, ETL/direct uploader/backfill updates, ClickHouse schema/projections, dataset export integration, scoped query contracts, replacement event idempotency/runtime contracts, and the path to dropping temporary PostgreSQL event-history tables: 4-8 weeks.
 - Outcome analytics and research dashboards backed by ClickHouse query contracts or projections: 3-6 weeks.
@@ -600,7 +615,6 @@ Rough implementation shape:
 Post-MVP follow-on candidates:
 
 - Additional adaptive policies, richer native group assignment, segments, and audit logs: estimate after concrete product or research scope is selected.
-- Section-level and per-source-project participation controls: estimate after MVP runtime and authoring surfaces settle.
 - Advanced parity such as factorial, stratified sampling, within-subjects, or feature flags: 2-4+ months depending on selected scope.
 
 ## Open Questions
@@ -620,12 +634,20 @@ Post-MVP follow-on candidates:
 - What operational alerts or dashboards are required for xAPI emission failures, ETL lag, ClickHouse ingest/query failures, and missing experiment event evidence?
 - What canonical course, section, instructor, and student fixtures should the manual QA script use for repeatable non-adaptive and Thompson Sampling verification?
 - What should happen when authors edit condition options after learners already have assignments?
+- When a selected section becomes inactive or stops remixing the experiment's project, should its participation record be retained as inactive history or removed automatically?
+- Should an active experiment permit all eligible sections to be deselected, or must activation require at least one participating section?
 
 ## Recommended Next Slice
 
-Start with `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/` because slices 1-5 were defined and implemented under the previous PostgreSQL-heavy analytics assumption. Use `harness-analyze` next to create `docs/exec-plans/current/epics/ab_testing/runtime_telemetry_reconciliation/prd.md`, then use `harness-architect` for the reconciliation FDD before implementing slice 6.
+Document `docs/exec-plans/current/epics/ab_testing/section_participation/` next with `harness-architect`, then use `harness-requirements` and `harness-plan` before implementation. This feature must be integrated before release QA and any analytics assumptions that count section participation.
 
 ## Decision Log
+### 2026-07-27 - Promote Explicit Experiment Section Participation Into MVP
+- Change: Replaced the post-MVP coarse section/source-project participation concept with an MVP feature that selects participating sections per experiment from active sections created from or currently remixing the experiment's project.
+- Reason: Researchers need deliberate control over which sections generate experiment data, and learners in nonparticipating sections must receive deterministic first-option fallback instead of an experimental assignment.
+- Evidence: `docs/exec-plans/current/epics/ab_testing/section_participation/prd.md`.
+- Impact: Authoring configuration gains an eligible-section selector; the delivery runtime must gate assignment and telemetry by experiment-section participation; telemetry, analytics, and manual QA must distinguish participating from nonparticipating sections.
+
 ### 2026-07-14 - Require Removal Of Temporary PostgreSQL Experiment Event Tables Before MVP Completion
 - Change: Clarified that `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, and `experiment_policy_updates` may be retained only temporarily while replacement idempotency/runtime behavior is introduced, and must be removed before the A/B testing MVP slice sequence is complete.
 - Reason: The MVP end state should not leave PostgreSQL event-history tables in place after xAPI/S3/ClickHouse becomes the durable history and analytics path.

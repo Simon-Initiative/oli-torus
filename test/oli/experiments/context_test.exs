@@ -11,6 +11,7 @@ defmodule Oli.Experiments.ContextTest do
     ExperimentDefinition,
     ExperimentAuthoringView,
     ExperimentError,
+    ExperimentSectionParticipation,
     LifecycleRequest,
     Scope,
     UpdateExperimentRequest
@@ -138,6 +139,8 @@ defmodule Oli.Experiments.ContextTest do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
 
+      refute Experiments.project_has_experiments?(scope.project_id)
+
       assert {:ok, [%DecisionPointCandidate{} = candidate]} =
                Experiments.list_available_decision_points(scope)
 
@@ -145,6 +148,8 @@ defmodule Oli.Experiments.ContextTest do
 
       assert {:ok, %ExperimentDefinition{} = definition} =
                Experiments.create_experiment(graph_request(scope, alternatives))
+
+      assert Experiments.project_has_experiments?(scope.project_id)
 
       assert definition.section_ids == []
 
@@ -167,6 +172,8 @@ defmodule Oli.Experiments.ContextTest do
 
       assert {:ok, %ExperimentDefinition{state: :archived}} =
                Experiments.archive_experiment(definition.id, lifecycle(scope))
+
+      refute Experiments.project_has_experiments?(scope.project_id)
     end
 
     test "creates a section-scoped experiment graph" do
@@ -177,6 +184,35 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.create_experiment(graph_request(scope, alternatives))
 
       assert definition.section_ids == [scope.section_id]
+    end
+
+    test "project authoring lists and reads experiments regardless of selected section count" do
+      scope = project_scope()
+      delivery_scope = runtime_scope(scope)
+      alternatives = alternatives_revision(scope.project_id)
+
+      {:ok, unselected} =
+        Experiments.create_experiment(graph_request(scope, alternatives))
+
+      {:ok, selected} =
+        Experiments.create_experiment(
+          scope
+          |> graph_request(alternatives)
+          |> Map.put(:section_ids, [delivery_scope.section_id])
+        )
+
+      assert {:ok, definitions} = Experiments.list_project_experiments(scope)
+      assert Enum.sort(Enum.map(definitions, & &1.id)) == Enum.sort([unselected.id, selected.id])
+
+      assert {:ok, %ExperimentAuthoringView{definition: %{id: id}}} =
+               Experiments.get_experiment_authoring_view(selected.id, scope)
+
+      assert id == selected.id
+
+      assert {:ok, %ExperimentAuthoringView{definition: %{id: unselected_id}}} =
+               Experiments.get_experiment_authoring_view(unselected.id, scope)
+
+      assert unselected_id == unselected.id
     end
 
     test "creates an experiment associated with multiple sections" do
@@ -335,6 +371,271 @@ defmodule Oli.Experiments.ContextTest do
     end
   end
 
+  describe "section participation eligibility" do
+    test "includes active base and current-remix sections exactly once" do
+      author = insert(:author)
+      institution = insert(:institution)
+      project = insert(:project)
+      insert(:author_project, author_id: author.id, project_id: project.id)
+      publication = insert(:publication, project: project)
+      other_project = insert(:project)
+
+      base =
+        insert(:section,
+          institution: institution,
+          base_project: project,
+          title: "Base section"
+        )
+
+      remix =
+        insert(:section,
+          institution: institution,
+          base_project: other_project,
+          title: "Remix section"
+        )
+
+      for section <- [base, remix] do
+        insert(:section_project_publication,
+          section: section,
+          project: project,
+          publication: publication
+        )
+      end
+
+      scope = %Scope{
+        author_id: author.id,
+        institution_id: institution.id,
+        project_id: project.id
+      }
+
+      assert {:ok, [%{id: base_id}, %{id: remix_id}]} =
+               Experiments.list_eligible_sections(scope)
+
+      assert [base_id, remix_id] == [base.id, remix.id]
+
+      request =
+        scope
+        |> graph_request(alternatives_revision(project.id))
+        |> Map.put(:section_ids, [remix.id])
+
+      assert {:ok, %{section_ids: [^remix_id]}} = Experiments.create_experiment(request)
+    end
+
+    test "excludes inactive, removed-remix, unrelated, and cross-institution sections" do
+      author = insert(:author)
+      institution = insert(:institution)
+      other_institution = insert(:institution)
+      project = insert(:project)
+      insert(:author_project, author_id: author.id, project_id: project.id)
+      publication = insert(:publication, project: project)
+      other_project = insert(:project)
+
+      eligible = insert(:section, institution: institution, base_project: project)
+
+      inactive =
+        insert(:section, institution: institution, base_project: project, status: :archived)
+
+      removed_remix = insert(:section, institution: institution, base_project: other_project)
+      _unrelated = insert(:section, institution: institution, base_project: other_project)
+      cross_institution = insert(:section, institution: other_institution, base_project: project)
+
+      for section <- [eligible, inactive, removed_remix, cross_institution] do
+        insert(:section_project_publication,
+          section: section,
+          project: project,
+          publication: publication
+        )
+      end
+
+      assert {:ok, summaries_before_removal} =
+               Experiments.list_eligible_sections(%Scope{
+                 author_id: author.id,
+                 institution_id: institution.id,
+                 project_id: project.id
+               })
+
+      assert removed_remix.id in Enum.map(summaries_before_removal, & &1.id)
+
+      Oli.Delivery.Sections.SectionsProjectsPublications
+      |> Ecto.Query.where(
+        [spp],
+        spp.section_id == ^removed_remix.id and spp.project_id == ^project.id
+      )
+      |> Repo.delete_all()
+
+      assert {:ok, [%{id: eligible_id}]} =
+               Experiments.list_eligible_sections(%Scope{
+                 author_id: author.id,
+                 institution_id: institution.id,
+                 project_id: project.id
+               })
+
+      assert eligible_id == eligible.id
+    end
+
+    test "rejects invalid project scope without leaking section metadata" do
+      assert {:error, %ExperimentError{type: :invalid_scope}} =
+               Experiments.list_eligible_sections(%Scope{project_id: -1})
+    end
+
+    test "rejects an author without accepted project access" do
+      author = insert(:author)
+      institution = insert(:institution)
+      project = insert(:project)
+
+      assert {:error, %ExperimentError{type: :invalid_scope}} =
+               Experiments.list_eligible_sections(%Scope{
+                 author_id: author.id,
+                 institution_id: institution.id,
+                 project_id: project.id
+               })
+    end
+  end
+
+  # Implementation proof: AC-001, AC-002, AC-003, AC-007
+  describe "section participation APIs" do
+    test "reads and atomically replaces independent selected section sets" do
+      {scope, author} = authorized_project_scope()
+      first_section = runtime_scope(scope)
+      second_section = runtime_scope(scope)
+      alternatives = alternatives_revision(scope.project_id)
+
+      {:ok, first} = Experiments.create_experiment(graph_request(scope, alternatives))
+      {:ok, second} = Experiments.create_experiment(graph_request(scope, alternatives))
+      authoring_scope = %{scope | author_id: author.id}
+
+      assert {:ok, %ExperimentSectionParticipation{selected_ids: []}} =
+               Experiments.get_section_participation(first.id, authoring_scope)
+
+      assert {:ok, %ExperimentSectionParticipation{selected_ids: selected_ids}} =
+               Experiments.update_section_participation(
+                 first.id,
+                 authoring_scope,
+                 [second_section.section_id, first_section.section_id, first_section.section_id]
+               )
+
+      assert selected_ids == Enum.sort([first_section.section_id, second_section.section_id])
+
+      assert {:ok, %ExperimentSectionParticipation{selected_ids: []}} =
+               Experiments.get_section_participation(second.id, authoring_scope)
+
+      assert {:ok, %ExperimentSectionParticipation{selected_ids: []}} =
+               Experiments.update_section_participation(first.id, authoring_scope, [])
+    end
+
+    test "shows stale selections and rejects forged IDs without partial mutation" do
+      {scope, author} = authorized_project_scope()
+      delivery_scope = runtime_scope(scope)
+      alternatives = alternatives_revision(scope.project_id)
+      authoring_scope = %{scope | author_id: author.id}
+
+      {:ok, definition} =
+        Experiments.create_experiment(
+          scope
+          |> graph_request(alternatives)
+          |> Map.put(:section_ids, [delivery_scope.section_id])
+        )
+
+      section = Repo.get!(Oli.Delivery.Sections.Section, delivery_scope.section_id)
+      section |> Ecto.Changeset.change(status: :archived) |> Repo.update!()
+
+      assert {:ok,
+              %ExperimentSectionParticipation{
+                selected_ids: [],
+                stale_sections: [%{id: stale_id}]
+              }} = Experiments.get_section_participation(definition.id, authoring_scope)
+
+      assert stale_id == delivery_scope.section_id
+
+      assert {:error, %ExperimentError{type: :invalid_scope}} =
+               Experiments.update_section_participation(
+                 definition.id,
+                 authoring_scope,
+                 [delivery_scope.section_id, -1]
+               )
+
+      assert {:ok, %ExperimentSectionParticipation{stale_sections: [%{id: ^stale_id}]}} =
+               Experiments.get_section_participation(definition.id, authoring_scope)
+
+      assert {:ok, %ExperimentSectionParticipation{stale_sections: []}} =
+               Experiments.update_section_participation(definition.id, authoring_scope, [])
+    end
+
+    test "rejects completed and archived experiments" do
+      {scope, author} = authorized_project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      authoring_scope = %{scope | author_id: author.id}
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      {:ok, active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
+      {:ok, completed} = Experiments.complete_experiment(active.id, lifecycle(scope))
+
+      assert {:error, %ExperimentError{type: :invalid_state}} =
+               Experiments.update_section_participation(completed.id, authoring_scope, [])
+
+      {:ok, archived} = Experiments.archive_experiment(completed.id, lifecycle(scope))
+
+      assert {:error, %ExperimentError{type: :invalid_state}} =
+               Experiments.update_section_participation(archived.id, authoring_scope, [])
+    end
+
+    test "emits privacy-safe update and validation telemetry" do
+      attach_participation_telemetry()
+      {scope, author} = authorized_project_scope()
+      section_scope = runtime_scope(scope)
+      alternatives = alternatives_revision(scope.project_id)
+      authoring_scope = %{scope | author_id: author.id}
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      assert {:ok, _} =
+               Experiments.update_section_participation(
+                 definition.id,
+                 authoring_scope,
+                 [section_scope.section_id]
+               )
+
+      assert_receive {:participation_telemetry, :updated, metadata}
+      refute Map.has_key?(metadata, :section_titles)
+      refute Map.has_key?(metadata, :user_id)
+
+      assert {:error, _} =
+               Experiments.update_section_participation(definition.id, authoring_scope, [-1])
+
+      assert_receive {:participation_telemetry, :validation_failed, failed_metadata}
+      assert failed_metadata.requested_count == 1
+      refute Map.has_key?(failed_metadata, :section_ids)
+    end
+
+    test "serializes concurrent complete-set updates without duplicates" do
+      {scope, author} = authorized_project_scope()
+      first_section = runtime_scope(scope)
+      second_section = runtime_scope(scope)
+      alternatives = alternatives_revision(scope.project_id)
+      authoring_scope = %{scope | author_id: author.id}
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      results =
+        [[first_section.section_id], [second_section.section_id]]
+        |> Enum.map(fn section_ids ->
+          Task.async(fn ->
+            Experiments.update_section_participation(
+              definition.id,
+              authoring_scope,
+              section_ids
+            )
+          end)
+        end)
+        |> Enum.map(&Task.await(&1, 5_000))
+
+      assert Enum.all?(results, &match?({:ok, %ExperimentSectionParticipation{}}, &1))
+
+      assert {:ok, %ExperimentSectionParticipation{selected_ids: [selected_id]}} =
+               Experiments.get_section_participation(definition.id, authoring_scope)
+
+      assert selected_id in [first_section.section_id, second_section.section_id]
+    end
+  end
+
   describe "update_experiment/2" do
     test "updates draft experiment fields and returns a public domain struct" do
       scope = valid_scope()
@@ -480,6 +781,13 @@ defmodule Oli.Experiments.ContextTest do
     }
   end
 
+  defp authorized_project_scope do
+    scope = project_scope()
+    author = insert(:author)
+    insert(:author_project, author_id: author.id, project_id: scope.project_id)
+    {scope, author}
+  end
+
   defp runtime_scope(%Scope{} = project_scope) do
     project = Repo.get!(Project, project_scope.project_id)
     institution = Repo.get!(Institution, project_scope.institution_id)
@@ -619,6 +927,25 @@ defmodule Oli.Experiments.ContextTest do
   end
 
   defp lifecycle(scope), do: %LifecycleRequest{scope: scope}
+
+  defp attach_participation_telemetry do
+    parent = self()
+    handler_id = "participation-context-test-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach_many(
+      handler_id,
+      [
+        [:oli, :experiments, :participation, :updated],
+        [:oli, :experiments, :participation, :validation_failed]
+      ],
+      fn event, _measurements, metadata, _config ->
+        send(parent, {:participation_telemetry, List.last(event), metadata})
+      end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+  end
 
   defp private_schema?(struct) do
     struct.__struct__

@@ -76,7 +76,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           |> Enum.group_by(& &1.author_project_status),
         project_selected_activities:
           Activities.selected_activities_for_project(project.id, is_admin?),
-        can_enable_experiments: is_admin?,
         is_admin: is_admin?,
         changeset: Project.changeset(project),
         latest_published_publication: latest_published_publication,
@@ -254,18 +253,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           </div>
 
           <div class="form-label-group mb-3">
-            <div :if={@can_enable_experiments} class="form-label-group mb-3 form-check">
-              <.input
-                field={f[:has_experiments]}
-                label="Enable Experiments"
-                type="checkbox"
-                error_position={:bottom}
-                errors={f.errors}
-              />
-            </div>
-
             <.link
-              :if={@project.has_experiments}
               class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
               navigate={~p"/workspaces/course_author/#{@project.slug}/experiments"}
             >
