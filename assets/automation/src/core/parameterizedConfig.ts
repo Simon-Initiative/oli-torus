@@ -28,7 +28,7 @@ export async function loadParameterizedTestConfig<T>(
   if (!response.ok()) {
     throw new Error(
       `Unable to download Playwright parameter configuration from ${configUrlEnv} ` +
-        `(${response.status()} ${response.statusText()})`,
+        `(${configUrl}): ${response.status()} ${response.statusText()}`,
     );
   }
 

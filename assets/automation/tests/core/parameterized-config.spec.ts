@@ -85,7 +85,9 @@ test('reports configuration download failures', async () => {
 
   await expect(
     loadParameterizedTestConfig(request, 'dot_chatbot', {}, CONFIG_URL_ENV),
-  ).rejects.toThrow(`from ${CONFIG_URL_ENV} (503 Unavailable)`);
+  ).rejects.toThrow(
+    `from ${CONFIG_URL_ENV} (https://config.example.test/smoke.yaml): 503 Unavailable`,
+  );
 });
 
 test('rejects malformed YAML and missing test cases', async () => {
