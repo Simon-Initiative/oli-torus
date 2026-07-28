@@ -24,6 +24,7 @@ export type ScreenScan = {
   firstSelectOptions: string[];
   fibs: number;
   radios: number;
+  radioGroups: Array<{ group: string; labels: string }>;
   checkboxes: number;
   mcqLabels: string;
   textInputs: number;
@@ -195,12 +196,26 @@ export class AdaptiveDeckPO {
             .filter((el) => vis(el) && !inFeedback(el));
         const firstSelect = q('select.dropdown')[0] as HTMLSelectElement | undefined;
 
+        const radioInputs = q('.mcq-item input[type="radio"]');
+        const byGroup = new Map<string, string[]>();
+        radioInputs.forEach((input, i) => {
+          const item = input.closest('.mcq-item');
+          if (!item) return;
+          const name = (input as HTMLInputElement).name || `anon:${i}`;
+          const label = ((item as HTMLElement).innerText || '').trim();
+          byGroup.set(name, [...(byGroup.get(name) ?? []), label]);
+        });
+
         return {
           iframes: q('iframe').map((f) => (f as HTMLIFrameElement).src),
           selects: q('select.dropdown').length,
           firstSelectOptions: firstSelect ? Array.from(firstSelect.options).map((o) => o.text) : [],
           fibs: q('.fib-select-display').length,
-          radios: q('.mcq-item input[type="radio"]').length,
+          radios: radioInputs.length,
+          radioGroups: Array.from(byGroup, ([group, labels]) => ({
+            group,
+            labels: labels.join(' | '),
+          })),
           checkboxes: q('.mcq-item input[type="checkbox"]').length,
           mcqLabels: q('.mcq-item label')
             .map((l) => (l as HTMLElement).innerText)
@@ -214,6 +229,7 @@ export class AdaptiveDeckPO {
         firstSelectOptions: [],
         fibs: 0,
         radios: 0,
+        radioGroups: [],
         checkboxes: 0,
         mcqLabels: '',
         textInputs: 0,
@@ -223,19 +239,33 @@ export class AdaptiveDeckPO {
   // ------------------------------------------------------------ janus parts
 
   /** Select the MCQ item (radio or checkbox) whose text matches. */
-  async selectMcqByText(text: RegExp) {
-    await this.selectMcqItem(this.page.locator('.mcq-item').filter({ hasText: text }).first());
+  async selectMcqByText(text: RegExp): Promise<boolean> {
+    const item = this.page.locator('.mcq-item').filter({ hasText: text }).first();
+    if (!(await item.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
+    return this.selectMcqItem(item);
   }
 
-  async selectFirstMcqItem() {
-    await this.selectMcqItem(this.page.locator('.mcq-item').first());
+  /** Select the radio option matching pick within one group (input name). */
+  async selectMcqInGroup(group: string, pick: RegExp): Promise<boolean> {
+    const scope = group.startsWith('anon:')
+      ? this.page.locator('.mcq-item')
+      : this.page
+          .locator('.mcq-item')
+          .filter({ has: this.page.locator(`input[name=${JSON.stringify(group)}]`) });
+    const item = scope.filter({ hasText: pick }).first();
+    if (!(await item.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
+    return this.selectMcqItem(item);
+  }
+
+  async selectFirstMcqItem(): Promise<boolean> {
+    return this.selectMcqItem(this.page.locator('.mcq-item').first());
   }
 
   /**
    * Click the label (like a real user); verify the input registered and retry
    * through input.check — React-controlled inputs can lag right after mount.
    */
-  private async selectMcqItem(item: Locator) {
+  private async selectMcqItem(item: Locator): Promise<boolean> {
     await item
       .locator('label')
       .first()
@@ -244,9 +274,9 @@ export class AdaptiveDeckPO {
     await this.page.waitForTimeout(300);
 
     const input = item.locator('input').first();
-    if (!(await input.isChecked().catch(() => false))) {
-      await input.check({ force: true, ...ACTION_TIMEOUT }).catch(() => undefined);
-    }
+    if (await input.isChecked({ timeout: 2_000 }).catch(() => false)) return true;
+    await input.check({ force: true, ...ACTION_TIMEOUT }).catch(() => undefined);
+    return input.isChecked({ timeout: 1_000 }).catch(() => false);
   }
 
   /**
@@ -381,11 +411,11 @@ export class AdaptiveDeckPO {
    * does not trigger it). boundingBox() on frame elements is page-relative,
    * so page.mouse coordinates line up.
    */
-  async mouseDragInFrame(item: Locator, zone: Locator) {
-    await item.scrollIntoViewIfNeeded().catch(() => undefined);
-    const itemBox = await item.boundingBox();
-    const zoneBox = await zone.boundingBox();
-    if (!itemBox || !zoneBox) return;
+  async mouseDragInFrame(item: Locator, zone: Locator): Promise<boolean> {
+    await item.scrollIntoViewIfNeeded({ timeout: 5_000 }).catch(() => undefined);
+    const itemBox = await item.boundingBox({ timeout: 5_000 }).catch(() => null);
+    const zoneBox = await zone.boundingBox({ timeout: 5_000 }).catch(() => null);
+    if (!itemBox || !zoneBox) return false;
 
     const fromX = itemBox.x + itemBox.width / 2;
     const fromY = itemBox.y + itemBox.height / 2;
@@ -399,6 +429,75 @@ export class AdaptiveDeckPO {
     await this.page.mouse.move(toX, toY, { steps: 4 });
     await this.page.mouse.up();
     await this.page.waitForTimeout(500);
+    return true;
+  }
+
+  /** Swiper image carousels: click each carousel's next arrow until all its slides viewed. */
+  async clickThroughCarousels(): Promise<number> {
+    const carousels = this.page.locator('.janus-image-carousel');
+    const carouselCount = await carousels.count();
+
+    let clicked = 0;
+    for (let c = 0; c < carouselCount; c++) {
+      const carousel = carousels.nth(c);
+      const bullets = await carousel.locator('.swiper-pagination-bullet').count();
+      if (bullets <= 1) continue;
+
+      const nextBtn = carousel.locator('.swiper-button-next').first();
+      for (let i = 1; i < bullets; i++) {
+        const ok = await nextBtn.click({ timeout: 3_000 }).then(
+          () => true,
+          () => false,
+        );
+        if (!ok) break;
+        clicked++;
+        await this.page.waitForTimeout(500);
+      }
+    }
+    return clicked;
+  }
+
+  /** Play any video at 16x speed to its ended event, so CAPI registers a full watch. */
+  async playVideos(): Promise<number> {
+    const videos = this.page.locator('video');
+    const count = await videos.count();
+    if (count === 0) return 0;
+
+    let played = 0;
+    for (let i = 0; i < count; i++) {
+      const video = videos.nth(i);
+      const duration = await video
+        .evaluate(async (v: HTMLVideoElement) => {
+          v.muted = true;
+          v.playbackRate = 16;
+          await v.play();
+          return v.duration || 0;
+        })
+        .catch(() => 0);
+      if (!Number.isFinite(duration) || duration <= 0) continue;
+
+      const timeoutMs = Math.min(Math.ceil((duration / 16) * 1000) + 5_000, 120_000);
+      const ended = await video
+        .evaluate(
+          (v: HTMLVideoElement, timeout: number) =>
+            new Promise<boolean>((resolve) => {
+              if (v.ended) return resolve(true);
+              const onEnded = () => {
+                clearTimeout(timer);
+                resolve(true);
+              };
+              const timer = setTimeout(() => {
+                v.removeEventListener('ended', onEnded);
+                resolve(false);
+              }, timeout);
+              v.addEventListener('ended', onEnded, { once: true });
+            }),
+          timeoutMs,
+        )
+        .catch(() => false);
+      if (ended) played++;
+    }
+    return played;
   }
 
   /** spr-widget-grouping: drag each item (by aria-label) into its group. */
@@ -412,6 +511,33 @@ export class AdaptiveDeckPO {
         frame.locator(`.group-area[aria-label="${group}"]`).first(),
       );
     }
+  }
+
+  /** Custom drag-and-drop CAPI widget: detect disambiguates same-src variants. */
+  async dragCustomDnD(
+    srcFragment: string,
+    detect: string,
+    placements: Array<[string, string]>,
+  ): Promise<boolean> {
+    const frame = await this.widgetFrame(srcFragment, 'button[aria-roledescription="draggable"]');
+    if (!frame) return false;
+
+    const confirmed = await frame
+      .locator(detect)
+      .first()
+      .isVisible({ timeout: 2_000 })
+      .catch(() => false);
+    if (!confirmed) return false;
+
+    let dragged = 0;
+    for (const [itemSel, zoneSel] of placements) {
+      const ok = await this.mouseDragInFrame(
+        frame.locator(itemSel).first(),
+        frame.locator(zoneSel).first(),
+      );
+      if (ok) dragged++;
+    }
+    return dragged === placements.length;
   }
 
   /**
