@@ -2,7 +2,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   use OliWeb, :live_view
 
   alias Oli.Experiments, as: ABExperiments
-  alias Oli.Experiments.Scope
+  alias Oli.Experiments.{LifecycleRequest, Scope}
 
   @page_size 10
 
@@ -39,7 +39,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          page: 1,
          page_size: @page_size,
          participation_error: nil,
-         participation_success: nil
+         participation_success: nil,
+         experiment_action_error: nil,
+         experiment_action_success: nil,
+         pending_experiment_transition: nil
        )}
     else
       _error ->
@@ -79,9 +82,49 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           <h2 class="mb-1">{@experiment.name}</h2>
           <p class="text-muted mb-0">Configure this experiment and section participation.</p>
         </div>
-        <span class={["badge px-3 py-2", state_badge_class(@experiment.state)]}>
-          {format_state(@experiment.state)}
-        </span>
+        <div class="d-flex align-items-center gap-2">
+          <button
+            :if={@experiment.state in [:draft, :paused]}
+            type="button"
+            class="btn btn-primary"
+            phx-click="start_experiment"
+          >
+            Start
+          </button>
+          <button
+            :if={@experiment.state == :active}
+            type="button"
+            class="btn btn-secondary"
+            phx-click="pause_experiment"
+          >
+            Pause
+          </button>
+          <button
+            :if={@experiment.state in [:active, :paused]}
+            type="button"
+            class="btn btn-primary"
+            phx-click="request_experiment_transition"
+            phx-value-action="complete"
+          >
+            Complete
+          </button>
+          <button
+            :if={@experiment.state == :completed}
+            type="button"
+            class="btn btn-outline-danger"
+            phx-click="request_experiment_transition"
+            phx-value-action="archive"
+          >
+            Archive
+          </button>
+        </div>
+      </div>
+
+      <div :if={@experiment_action_error} class="alert alert-danger mt-3" role="alert">
+        {@experiment_action_error}
+      </div>
+      <div :if={@experiment_action_success} class="alert alert-success mt-3" role="status">
+        {@experiment_action_success}
       </div>
 
       <section class="card mt-4" aria-labelledby="experiment-details-heading">
@@ -104,7 +147,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               label="Assignment unit"
               value={display_value(@experiment.assignment_unit)}
             />
-            <.detail_item label="Status" value={format_state(@experiment.state)} />
+            <.detail_item
+              label="Status"
+              value={format_state(@experiment.state)}
+              badge
+              badge_class={status_badge_class(@experiment.state)}
+            />
             <.detail_item
               label="Decision point"
               value={decision_point_title(@authoring_view.decision_points)}
@@ -251,11 +299,82 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           </div>
         </div>
       </section>
+
+      <OliWeb.Components.Modal.modal
+        :if={@pending_experiment_transition}
+        id="confirm-experiment-transition-modal"
+        show={true}
+        header_level={2}
+        wrapper_class="w-full max-w-lg p-4"
+        on_cancel={Phoenix.LiveView.JS.push("cancel_experiment_transition")}
+      >
+        <:title>{transition_title(@pending_experiment_transition)}</:title>
+        <p>{transition_confirmation(@experiment, @pending_experiment_transition)}</p>
+        <:custom_footer>
+          <div class="d-flex justify-content-end gap-2 p-4 pt-0">
+            <button type="button" class="btn btn-link" phx-click="cancel_experiment_transition">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class={[
+                "btn",
+                if(@pending_experiment_transition == :archive,
+                  do: "btn-danger",
+                  else: "btn-primary"
+                )
+              ]}
+              phx-click="confirm_experiment_transition"
+            >
+              {transition_button_label(@pending_experiment_transition)}
+            </button>
+          </div>
+        </:custom_footer>
+      </OliWeb.Components.Modal.modal>
     </div>
     """
   end
 
   @impl Phoenix.LiveView
+  def handle_event("start_experiment", _params, socket) do
+    transition_experiment(socket, :start)
+  end
+
+  def handle_event("pause_experiment", _params, socket) do
+    transition_experiment(socket, :pause)
+  end
+
+  def handle_event("request_experiment_transition", %{"action" => action}, socket) do
+    with {:ok, action} <- parse_confirmation_action(action),
+         true <- transition_available?(socket.assigns.experiment.state, action) do
+      {:noreply,
+       assign(socket,
+         pending_experiment_transition: action,
+         experiment_action_error: nil
+       )}
+    else
+      _ ->
+        {:noreply,
+         assign(socket, experiment_action_error: "The requested action is not available.")}
+    end
+  end
+
+  def handle_event("cancel_experiment_transition", _params, socket) do
+    {:noreply, assign(socket, pending_experiment_transition: nil)}
+  end
+
+  def handle_event("confirm_experiment_transition", _params, socket) do
+    case socket.assigns.pending_experiment_transition do
+      action when action in [:complete, :archive] ->
+        socket
+        |> assign(pending_experiment_transition: nil)
+        |> transition_experiment(action)
+
+      nil ->
+        {:noreply, assign(socket, experiment_action_error: "No experiment action is pending.")}
+    end
+  end
+
   def handle_event("toggle_section", %{"id" => section_id}, socket) do
     with false <- socket.assigns.read_only,
          {:ok, section_id} <- parse_positive_integer(section_id),
@@ -286,16 +405,49 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     end
   end
 
+  defp transition_experiment(socket, action) do
+    request = %LifecycleRequest{scope: authoring_scope(socket)}
+
+    result =
+      case action do
+        :start -> ABExperiments.activate_experiment(socket.assigns.experiment.id, request)
+        :pause -> ABExperiments.pause_experiment(socket.assigns.experiment.id, request)
+        :complete -> ABExperiments.complete_experiment(socket.assigns.experiment.id, request)
+        :archive -> ABExperiments.archive_experiment(socket.assigns.experiment.id, request)
+      end
+
+    case result do
+      {:ok, experiment} ->
+        {:noreply,
+         assign(socket,
+           experiment: experiment,
+           read_only: experiment.state in [:completed, :archived],
+           experiment_action_success: "Experiment updated.",
+           experiment_action_error: nil
+         )}
+
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        {:noreply,
+         assign(socket,
+           experiment_action_error: error.message,
+           experiment_action_success: nil
+         )}
+    end
+  end
+
   attr :label, :string, required: true
   attr :value, :any, required: true
   attr :monospace, :boolean, default: false
+  attr :badge, :boolean, default: false
+  attr :badge_class, :string, default: "badge-secondary"
 
   defp detail_item(assigns) do
     ~H"""
     <div class="min-w-0">
       <div class="text-muted small text-uppercase font-weight-bold mb-1">{@label}</div>
       <div :if={@monospace} class="font-monospace">{@value}</div>
-      <div :if={not @monospace}>{@value}</div>
+      <span :if={@badge} class={["badge", @badge_class]}>{@value}</span>
+      <div :if={not @monospace and not @badge}>{@value}</div>
     </div>
     """
   end
@@ -371,11 +523,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp format_state(value), do: display_value(value)
 
-  defp state_badge_class(:draft), do: "badge-light border"
-  defp state_badge_class(:active), do: "badge-success"
-  defp state_badge_class(:completed), do: "badge-primary"
-  defp state_badge_class(:archived), do: "badge-secondary"
-  defp state_badge_class(_state), do: "badge-secondary"
+  defp status_badge_class(:active), do: "badge-primary"
+  defp status_badge_class(:completed), do: "badge-success"
+  defp status_badge_class(_state), do: "badge-secondary"
+
+  defp parse_confirmation_action("complete"), do: {:ok, :complete}
+  defp parse_confirmation_action("archive"), do: {:ok, :archive}
+  defp parse_confirmation_action(_action), do: {:error, :invalid_action}
+
+  defp transition_available?(state, :complete), do: state in [:active, :paused]
+  defp transition_available?(:completed, :archive), do: true
+  defp transition_available?(_state, _action), do: false
+
+  defp transition_title(:complete), do: "Complete Experiment"
+  defp transition_title(:archive), do: "Archive Experiment"
+
+  defp transition_button_label(:complete), do: "Complete"
+  defp transition_button_label(:archive), do: "Archive"
+
+  defp transition_confirmation(experiment, :complete) do
+    "Complete “#{experiment.name}”? Participation can no longer be changed after completion."
+  end
+
+  defp transition_confirmation(experiment, :archive) do
+    "Archive “#{experiment.name}”? The experiment will be removed from active use."
+  end
 
   defp decision_point_title([decision_point | _rest]),
     do: decision_point.title || decision_point.decision_point_key

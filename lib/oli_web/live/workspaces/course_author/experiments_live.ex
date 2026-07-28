@@ -10,7 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias Oli.Authoring.Experiments, as: LegacyExperiments
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Experiments, as: ABExperiments
-  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
+  alias Oli.Experiments.{CreateExperimentRequest, Scope}
   alias Oli.Utils.Slug
   alias OliWeb.Common.Modal.{DeleteModal, FormModal}
 
@@ -104,7 +104,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               <th scope="col">Slug</th>
               <th scope="col">Algorithm</th>
               <th scope="col">Status</th>
-              <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -122,46 +121,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               <td>{experiment.slug}</td>
               <td>{format_algorithm(experiment.algorithm)}</td>
               <td>{format_state(experiment.state)}</td>
-              <td>
-                <button
-                  :if={experiment.state in [:draft, :paused]}
-                  type="button"
-                  class="btn btn-sm btn-primary"
-                  phx-click="start_experiment"
-                  phx-value-id={experiment.id}
-                >
-                  Start
-                </button>
-                <button
-                  :if={experiment.state == :active}
-                  type="button"
-                  class="btn btn-sm btn-secondary"
-                  phx-click="pause_experiment"
-                  phx-value-id={experiment.id}
-                >
-                  Pause
-                </button>
-                <button
-                  :if={experiment.state in [:active, :paused]}
-                  type="button"
-                  class="btn btn-sm btn-secondary"
-                  phx-click="request_experiment_transition"
-                  phx-value-action="complete"
-                  phx-value-id={experiment.id}
-                >
-                  Complete
-                </button>
-                <button
-                  :if={experiment.state == :completed}
-                  type="button"
-                  class="btn btn-sm btn-outline-danger"
-                  phx-click="request_experiment_transition"
-                  phx-value-action="archive"
-                  phx-value-id={experiment.id}
-                >
-                  Archive
-                </button>
-              </td>
             </tr>
           </tbody>
         </table>
@@ -251,38 +210,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             Cancel
           </button>
         </.form>
-      </OliWeb.Components.Modal.modal>
-
-      <OliWeb.Components.Modal.modal
-        :if={@pending_experiment_transition}
-        id="confirm-experiment-transition-modal"
-        show={true}
-        header_level={2}
-        wrapper_class="w-full max-w-lg p-4"
-        on_cancel={Phoenix.LiveView.JS.push("cancel_experiment_transition")}
-      >
-        <:title>{transition_title(@pending_experiment_transition.action)}</:title>
-        <p>{transition_confirmation(@pending_experiment_transition)}</p>
-        <:custom_footer>
-          <div class="d-flex justify-content-end gap-2 p-4 pt-0">
-            <button type="button" class="btn btn-link" phx-click="cancel_experiment_transition">
-              Cancel
-            </button>
-            <button
-              type="button"
-              class={[
-                "btn",
-                if(@pending_experiment_transition.action == :archive,
-                  do: "btn-danger",
-                  else: "btn-primary"
-                )
-              ]}
-              phx-click="confirm_experiment_transition"
-            >
-              {transition_button_label(@pending_experiment_transition.action)}
-            </button>
-          </div>
-        </:custom_footer>
       </OliWeb.Components.Modal.modal>
 
       <OliWeb.Components.Modal.modal
@@ -530,47 +457,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
      assign(socket, show_archived_experiments: not socket.assigns.show_archived_experiments)}
   end
 
-  def handle_event(
-        "request_experiment_transition",
-        %{"id" => experiment_id, "action" => action},
-        socket
-      ) do
-    with {:ok, experiment_id} <- parse_positive_integer(experiment_id),
-         {:ok, action} <- parse_confirmation_action(action),
-         experiment when not is_nil(experiment) <-
-           Enum.find(socket.assigns.ab_experiments, &(&1.id == experiment_id)),
-         true <- transition_available?(experiment.state, action) do
-      {:noreply,
-       assign(socket,
-         pending_experiment_transition: %{
-           experiment_id: experiment.id,
-           experiment_name: experiment.name,
-           action: action
-         },
-         experiment_error: nil
-       )}
-    else
-      _ ->
-        {:noreply, assign(socket, experiment_error: "The requested action is not available.")}
-    end
-  end
-
-  def handle_event("cancel_experiment_transition", _params, socket) do
-    {:noreply, assign(socket, pending_experiment_transition: nil)}
-  end
-
-  def handle_event("confirm_experiment_transition", _params, socket) do
-    case socket.assigns.pending_experiment_transition do
-      %{experiment_id: experiment_id, action: action} ->
-        socket
-        |> assign(pending_experiment_transition: nil)
-        |> transition_experiment(experiment_id, action)
-
-      nil ->
-        {:noreply, assign(socket, experiment_error: "No experiment action is pending.")}
-    end
-  end
-
   def handle_event("create_experiment", %{"experiment" => params}, socket) do
     scope = authoring_scope(socket)
 
@@ -684,22 +570,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   def handle_event("close_section_participation", _params, socket) do
     {:noreply, assign(socket, section_participation: nil)}
-  end
-
-  def handle_event("start_experiment", %{"id" => experiment_id}, socket) do
-    transition_experiment(socket, experiment_id, :start)
-  end
-
-  def handle_event("pause_experiment", %{"id" => experiment_id}, socket) do
-    transition_experiment(socket, experiment_id, :pause)
-  end
-
-  def handle_event("complete_experiment", %{"id" => experiment_id}, socket) do
-    transition_experiment(socket, experiment_id, :complete)
-  end
-
-  def handle_event("archive_experiment", %{"id" => experiment_id}, socket) do
-    transition_experiment(socket, experiment_id, :archive)
   end
 
   def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
@@ -1048,37 +918,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       experiment_params: Map.get(socket.assigns, :experiment_params, %{}),
       experiment_slug_suggestion: Map.get(socket.assigns, :experiment_slug_suggestion),
       show_archived_experiments: Map.get(socket.assigns, :show_archived_experiments, false),
-      pending_experiment_transition: Map.get(socket.assigns, :pending_experiment_transition),
       eligible_sections: Map.get(socket.assigns, :eligible_sections, []),
       eligible_sections_status: Map.get(socket.assigns, :eligible_sections_status, :loading),
       section_participation: nil,
       section_participation_read_only: false
     )
-  end
-
-  defp transition_experiment(socket, experiment_id, action) do
-    experiment_id = ensure_integer(experiment_id)
-    request = %LifecycleRequest{scope: authoring_scope(socket)}
-
-    result =
-      case action do
-        :start -> ABExperiments.activate_experiment(experiment_id, request)
-        :pause -> ABExperiments.pause_experiment(experiment_id, request)
-        :complete -> ABExperiments.complete_experiment(experiment_id, request)
-        :archive -> ABExperiments.archive_experiment(experiment_id, request)
-      end
-
-    case result do
-      {:ok, _definition} ->
-        {:noreply,
-         socket
-         |> assign(experiment_success: "Experiment updated.")
-         |> assign(experiment_error: nil)
-         |> assign_authoring_experiments()}
-
-      {:error, %Oli.Experiments.ExperimentError{} = error} ->
-        {:noreply, assign(socket, experiment_error: error.message, experiment_success: nil)}
-    end
   end
 
   defp authoring_scope(socket) do
@@ -1288,28 +1132,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp format_algorithm(:weighted_random), do: "Weighted random"
   defp format_algorithm(:thompson_sampling), do: "Thompson Sampling"
-
-  defp parse_confirmation_action("complete"), do: {:ok, :complete}
-  defp parse_confirmation_action("archive"), do: {:ok, :archive}
-  defp parse_confirmation_action(_action), do: {:error, :invalid_action}
-
-  defp transition_available?(state, :complete), do: state in [:active, :paused]
-  defp transition_available?(:completed, :archive), do: true
-  defp transition_available?(_state, _action), do: false
-
-  defp transition_title(:complete), do: "Complete Experiment"
-  defp transition_title(:archive), do: "Archive Experiment"
-
-  defp transition_button_label(:complete), do: "Complete"
-  defp transition_button_label(:archive), do: "Archive"
-
-  defp transition_confirmation(%{action: :complete, experiment_name: name}) do
-    "Complete “#{name}”? Participation can no longer be changed after completion."
-  end
-
-  defp transition_confirmation(%{action: :archive, experiment_name: name}) do
-    "Archive “#{name}”? The experiment will be removed from active use."
-  end
 
   defp suggested_experiment_slug(name) when is_binary(name) do
     case String.trim(name) do

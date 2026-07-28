@@ -12,7 +12,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     do: ~p"/workspaces/course_author/#{project_slug}/experiments?#{params}"
 
   defp experiment_id(view) do
-    [_, id] = Regex.run(~r/phx-value-id="(\d+)"/, render(view))
+    [_, id] = Regex.run(~r{/experiments/(\d+)}, render(view))
 
     id
   end
@@ -277,26 +277,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(view, "#ab-experiments-table", "Homepage Study")
       assert has_element?(view, "#ab-experiments-table", "Weighted random")
       assert has_element?(view, "#ab-experiments-table", "Draft")
+      refute has_element?(view, "#ab-experiments-table th", "Actions")
+      refute has_element?(view, "#ab-experiments-table button")
 
-      refute has_element?(
-               view,
-               "button[phx-click='request_experiment_transition'][phx-value-action='archive']",
-               "Archive"
-             )
+      id = experiment_id(view)
+      details_path = ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}"
+      {:ok, details_view, _html} = live(conn, details_path)
 
-      view
+      details_view
       |> element("button[phx-click='start_experiment']", "Start")
       |> render_click()
 
-      assert has_element?(view, "#ab-experiments-table", "Active")
+      assert has_element?(details_view, "#experiment-configuration", "Active")
 
       refute has_element?(
-               view,
+               details_view,
                "button[phx-click='request_experiment_transition'][phx-value-action='archive']",
                "Archive"
              )
 
-      view
+      details_view
       |> element(
         "button[phx-click='request_experiment_transition'][phx-value-action='complete']",
         "Complete"
@@ -304,18 +304,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_click()
 
       assert has_element?(
-               view,
+               details_view,
                "#confirm-experiment-transition-modal [role='dialog']",
                "Complete “Homepage Study”?"
              )
 
-      view
+      details_view
       |> element("#confirm-experiment-transition-modal button", "Complete")
       |> render_click()
 
-      assert has_element?(view, "#ab-experiments-table", "Completed")
+      assert has_element?(details_view, "#experiment-configuration", "Completed")
 
-      view
+      details_view
       |> element(
         "button[phx-click='request_experiment_transition'][phx-value-action='archive']",
         "Archive"
@@ -323,24 +323,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_click()
 
       assert has_element?(
-               view,
+               details_view,
                "#confirm-experiment-transition-modal [role='dialog']",
                "Archive “Homepage Study”?"
              )
 
-      view
+      details_view
       |> element("#confirm-experiment-transition-modal button", "Archive")
       |> render_click()
 
-      refute has_element?(view, "#ab-experiments-table", "Homepage Study")
+      assert has_element?(details_view, "#experiment-configuration", "Archived")
 
-      view
+      {:ok, archived_index_view, _html} =
+        live(conn, live_view_experiments_route(project.slug))
+
+      refute has_element?(archived_index_view, "#ab-experiments-table", "Homepage Study")
+
+      archived_index_view
       |> element("#show-archived-experiments")
       |> render_click()
 
-      assert has_element?(view, "#show-archived-experiments[checked]")
-      assert has_element?(view, "#ab-experiments-table", "Homepage Study")
-      assert has_element?(view, "#ab-experiments-table", "Archived")
+      assert has_element?(archived_index_view, "#show-archived-experiments[checked]")
+      assert has_element?(archived_index_view, "#ab-experiments-table", "Homepage Study")
+      assert has_element?(archived_index_view, "#ab-experiments-table", "Archived")
     end
 
     test "configuration page shows details and paginates editable participating sections", %{
@@ -514,11 +519,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(view, "#ab-experiments-table", "Thompson Sampling")
       assert has_element?(view, "#ab-experiments-table", "Draft")
 
-      view
+      id = experiment_id(view)
+
+      {:ok, details_view, _html} =
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}")
+
+      details_view
       |> element("button[phx-click='start_experiment']", "Start")
       |> render_click()
 
-      assert has_element?(view, "#ab-experiments-table", "Active")
+      assert has_element?(details_view, "#experiment-configuration", "Active")
     end
 
     test "shows field error for malformed Thompson Sampling numeric input", %{
