@@ -4,9 +4,9 @@ import { expect, type Page } from '@playwright/test';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import { TYPE_USER, type TypeUser } from '@pom/types/type-user';
 
-export const baseUrl = 'http://localhost';
+export const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 export const defaultPassword = 'changeme123456';
-export const scenarioToken = 'my-token';
+export const scenarioToken = process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 
 export type StudentDeliveryScenarioOutputs = {
   sections?: Record<string, string>;
