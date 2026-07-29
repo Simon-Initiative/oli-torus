@@ -26,10 +26,10 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="scoped-feature-toggle-component space-y-4">
+    <div class="scoped-feature-toggle-component space-y-4 text-gray-900 dark:text-gray-100">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">{@title}</h3>
-        <label class="flex items-center gap-2 text-sm text-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{@title}</h3>
+        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
           <input
             type="checkbox"
             checked={@edits_enabled}
@@ -41,36 +41,38 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
       </div>
 
       <%= if Enum.empty?(@features) do %>
-        <div class="rounded border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center text-sm text-gray-600">
+        <div class="rounded border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center text-sm text-gray-600 dark:border-gray-600 dark:bg-neutral-800 dark:text-gray-300">
           <p class="font-medium">No scoped features available</p>
-          <p class="mt-1 text-xs text-gray-500">
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
             No features match the configured scopes for this resource.
           </p>
         </div>
       <% else %>
-        <div class="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div class="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:divide-gray-700 dark:border-gray-700 dark:bg-neutral-800">
           <div
             :for={feature <- @features}
             class="grid gap-4 px-6 py-4 md:grid-cols-12 md:items-center"
           >
             <div class="md:col-span-4">
-              <h4 class="text-sm font-semibold text-gray-900">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {feature_display_name(feature.name)}
               </h4>
-              <p class="mt-1 text-xs text-gray-600 leading-relaxed">{feature.description}</p>
+              <p class="mt-1 text-xs text-gray-600 leading-relaxed dark:text-gray-300">
+                {feature.description}
+              </p>
             </div>
 
             <div class="md:col-span-3">
               <div class="flex flex-wrap gap-2">
                 <span
                   :for={scope <- feature.scopes}
-                  class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700"
+                  class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-neutral-700 dark:text-gray-200"
                 >
                   {scope_label(scope)}
                 </span>
                 <span
                   :if={feature.metadata.rollout_mode == :canary}
-                  class="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700"
+                  class="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-200"
                 >
                   Canary
                 </span>
@@ -81,8 +83,8 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
               <span class={[
                 "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
                 if(feature.enabled?,
-                  do: "bg-green-100 text-green-800",
-                  else: "bg-gray-100 text-gray-700"
+                  do: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200",
+                  else: "bg-gray-100 text-gray-700 dark:bg-neutral-700 dark:text-gray-200"
                 )
               ]}>
                 {if feature.enabled?, do: "Enabled", else: "Disabled"}
@@ -96,8 +98,10 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
                   class={[
                     "rounded border px-3 py-1 text-xs font-medium transition",
                     if(feature.enabled?,
-                      do: "border-red-300 text-red-700 hover:bg-red-50",
-                      else: "border-green-300 text-green-700 hover:bg-green-50"
+                      do:
+                        "border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-950",
+                      else:
+                        "border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-950"
                     )
                   ]}
                   phx-click="toggle_feature"
@@ -108,7 +112,7 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
                   {if feature.enabled?, do: "Disable", else: "Enable"}
                 </button>
               <% else %>
-                <span class="text-xs text-gray-500">Enable edits to modify</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Enable edits to modify</span>
               <% end %>
             </div>
           </div>

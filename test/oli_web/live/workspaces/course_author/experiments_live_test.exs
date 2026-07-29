@@ -141,16 +141,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> step(:test_has_button_show_edit_option_2_modal)
       |> step(:test_has_button_show_delete_option_1_modal)
       |> step(:test_has_button_show_delete_option_2_modal)
-      |> step(:test_has_new_option_link)
+      |> step(:test_has_new_condition_input)
       |> step(:test_has_button_download_segment_json, :refute)
       |> step(:test_has_button_download_experiment_json, :refute)
     end
 
     test "creates decision points in the experiments view", %{view: view, project: project} do
-      assert has_element?(view, "button", "Create Decision Point")
+      assert has_element?(view, "button", "New Decision Point")
 
       view
-      |> element("button", "Create Decision Point")
+      |> element("button", "New Decision Point")
       |> render_click()
 
       view
@@ -167,6 +167,63 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       revision = Experiments.get_latest_experiment(project.slug)
       assert revision.title == "Homepage Decision"
       assert revision.content["strategy"] == "upgrade_decision_point"
+    end
+
+    test "creates and cancels a condition inline", %{
+      view: _view,
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: publication
+    } do
+      decision_point = insert_legacy_experiment(publication, admin)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+      form_id = "#new-condition-form-#{decision_point.resource_id}"
+      input_id = "#new-condition-input-#{decision_point.resource_id}"
+
+      assert has_element?(view, "#{input_id}[placeholder='Enter a new condition']")
+      refute has_element?(view, "#{form_id} button", "Create")
+
+      view
+      |> form(form_id, %{
+        "condition" => %{
+          "resource_id" => decision_point.resource_id,
+          "name" => "Condition 3"
+        }
+      })
+      |> render_change()
+
+      assert has_element?(view, "#{form_id} button", "Cancel")
+      assert has_element?(view, "#{form_id} button", "Create")
+
+      view
+      |> form(form_id, %{
+        "condition" => %{
+          "resource_id" => decision_point.resource_id,
+          "name" => "Condition 3"
+        }
+      })
+      |> render_submit()
+
+      assert has_element?(view, ".alternatives-group", "Condition 3")
+      refute has_element?(view, "#{form_id} button", "Create")
+
+      view
+      |> form(form_id, %{
+        "condition" => %{
+          "resource_id" => decision_point.resource_id,
+          "name" => "Cancelled condition"
+        }
+      })
+      |> render_change()
+
+      view
+      |> element(input_id)
+      |> render_keydown(%{"key" => "Escape"})
+
+      refute has_element?(view, "#{form_id} button", "Create")
+      assert has_element?(view, "#{input_id}[value='']")
+      refute render(view) =~ "Cancelled condition"
     end
 
     test "download buttons remain absent", %{view: view} do
@@ -631,12 +688,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     end
   end
 
-  defp insert_legacy_experiment(publication) do
+  defp insert_legacy_experiment(publication, author \\ nil) do
     resource = insert(:resource)
 
     revision =
       insert(:revision, %{
         resource: resource,
+        author: author,
         resource_type_id: ResourceType.id_for_alternatives(),
         title: "Decision Point",
         content: %{
@@ -835,46 +893,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     {view, ctx}
   end
 
-  defp step({view, ctx}, :test_has_new_option_link, assert_or_refute) do
+  defp step({view, ctx}, :test_has_new_condition_input, assert_or_refute) do
     resource_id = Map.get(ctx, :resource_id)
     assert resource_id
 
     to_evaluate =
       has_element?(
         view,
-        "button[phx-click='show_create_option_modal'][phx-value-resource_id='#{resource_id}']"
+        "#new-condition-input-#{resource_id}[placeholder='Enter a new condition']"
       )
 
     evaluate_assertion(to_evaluate, assert_or_refute)
-
-    {view, ctx}
-  end
-
-  defp step({view, ctx}, :click_on_create_option_button, _assert_or_refute) do
-    resource_id = Map.get(ctx, :resource_id)
-    assert resource_id
-
-    view
-    |> element(
-      "button[phx-click='show_create_option_modal'][phx-value-resource_id='#{resource_id}']"
-    )
-    |> render_click()
-
-    {view, ctx}
-  end
-
-  defp step({view, ctx}, :submit_create_option_form, _assert_or_refute) do
-    view
-    |> form("#create_modal > div > div > form", %{"params" => %{"name" => "Option 3"}})
-    |> render_submit()
-
-    {view, ctx}
-  end
-
-  defp step({view, ctx}, :submit_create_option_form_duplicate, _assert_or_refute) do
-    view
-    |> form("#create_modal > div > div > form", %{"params" => %{"name" => "Option 1"}})
-    |> render_submit()
 
     {view, ctx}
   end

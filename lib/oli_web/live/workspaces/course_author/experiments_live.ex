@@ -4,7 +4,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [uuid: 0]
-  import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
   alias Oli.Authoring.Broadcaster.Subscriber
@@ -13,7 +12,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias Oli.Experiments.{CreateExperimentRequest, Scope}
   alias Oli.Resources.ResourceType
   alias Oli.Utils.Slug
-  alias OliWeb.Common.Modal.{DeleteModal, FormModal}
+  alias OliWeb.Common.Modal.DeleteModal
+  alias Phoenix.LiveView.JS
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
   @alternatives_type_id ResourceType.id_for_alternatives()
@@ -128,11 +128,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         </table>
       <% end %>
 
-      <section class="mt-5" aria-labelledby="decision-points-heading">
+      <section class="mt-10" aria-labelledby="decision-points-heading">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h3 id="decision-points-heading" class="h4 mb-0">Decision Points</h3>
           <button class="btn btn-outline-primary" phx-click="show_create_decision_point">
-            <i class="fa fa-plus"></i> Create Decision Point
+            <i class="fa fa-plus"></i> New Decision Point
           </button>
         </div>
         <%= if Enum.empty?(@decision_points) do %>
@@ -143,9 +143,60 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
           <.decision_point_group
             :for={decision_point <- @decision_points}
             group={decision_point}
+            new_condition_name={Map.get(@new_condition_names, decision_point.resource_id, "")}
           />
         <% end %>
       </section>
+
+      <OliWeb.Components.Modal.modal
+        :if={@decision_point_modal}
+        id={@decision_point_modal.id}
+        show={true}
+        header_level={2}
+        wrapper_class="w-full max-w-lg p-4"
+        on_cancel={JS.push("close_decision_point_modal")}
+      >
+        <:title>{@decision_point_modal.title}</:title>
+        <.form
+          for={@decision_point_modal.form}
+          id={"#{@decision_point_modal.id}-form"}
+          phx-submit={@decision_point_modal.on_submit}
+        >
+          <input
+            :for={{name, value} <- @decision_point_modal.hidden_fields}
+            type="hidden"
+            name={"params[#{name}]"}
+            value={value}
+          />
+          <div class="form-group">
+            <label for={"#{@decision_point_modal.id}-name"}>
+              {@decision_point_modal.field_label}
+            </label>
+            <input
+              id={"#{@decision_point_modal.id}-name"}
+              type="text"
+              name={"params[#{@decision_point_modal.field_name}]"}
+              value={@decision_point_modal.field_value}
+              class="form-control"
+              placeholder={@decision_point_modal.placeholder}
+              phx-hook="InputAutoSelect"
+              required
+            />
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button
+              type="button"
+              class="btn btn-link"
+              phx-click="close_decision_point_modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              {@decision_point_modal.submit_label}
+            </button>
+          </div>
+        </.form>
+      </OliWeb.Components.Modal.modal>
 
       <OliWeb.Components.Modal.modal
         :if={@section_participation}
@@ -574,42 +625,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   def handle_event("show_create_decision_point", _params, socket) do
-    changeset =
-      {%{}, %{name: :string}}
-      |> Ecto.Changeset.cast(%{}, [:name])
-
-    form_body_fn = fn assigns ->
-      ~H"""
-      <div class="form-group">
-        {text_input(
-          @form,
-          :name,
-          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-          placeholder: "Enter a name for the decision point",
-          phx_hook: "InputAutoSelect",
-          required: true
-        )}
-      </div>
-      """
-    end
-
-    modal_assigns = %{
+    modal = %{
       id: "create_decision_point_modal",
       title: "Create Decision Point",
       submit_label: "Create",
-      changeset: changeset,
-      form_body_fn: form_body_fn,
-      on_validate: "validate_group",
-      on_submit: "create_decision_point"
+      on_submit: "create_decision_point",
+      form: to_form(%{}, as: :params),
+      field_name: "name",
+      field_label: "Name",
+      field_value: "",
+      placeholder: "Enter a name for the decision point",
+      hidden_fields: []
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <FormModal.modal {@modal_assigns} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+    {:noreply, assign(socket, decision_point_modal: modal)}
   end
 
   def handle_event("create_decision_point", %{"params" => %{"name" => name}}, socket) do
@@ -624,7 +653,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       {:ok, decision_point} ->
         {:noreply,
          socket
-         |> hide_modal()
+         |> assign(decision_point_modal: nil)
          |> assign(decision_points: [decision_point | decision_points])
          |> assign_authoring_experiments()}
 
@@ -636,78 +665,73 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     end
   end
 
-  def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
-    changeset =
-      {%{id: uuid(), resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
-      |> Ecto.Changeset.cast(%{}, [:id, :resource_id, :name])
+  def handle_event(
+        "change_new_condition",
+        %{"condition" => %{"name" => name, "resource_id" => resource_id}},
+        socket
+      ) do
+    resource_id = ensure_integer(resource_id)
 
-    form_body_fn = fn assigns ->
-      ~H"""
-      <div class="form-group">
-        {hidden_input(@form, :id)}
-        {hidden_input(@form, :resource_id)}
-
-        {text_input(
-          @form,
-          :name,
-          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-          placeholder: "Enter a name",
-          phx_hook: "InputAutoSelect",
-          required: true
-        )}
-      </div>
-      """
-    end
-
-    modal_assigns = %{
-      id: "create_modal",
-      title: "Create Condition",
-      submit_label: "Create",
-      changeset: changeset,
-      form_body_fn: form_body_fn,
-      on_validate: "validate_option",
-      on_submit: "create_option"
-    }
-
-    modal = fn assigns ->
-      ~H"""
-      <FormModal.modal {@modal_assigns} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+    {:noreply,
+     assign(
+       socket,
+       :new_condition_names,
+       Map.put(socket.assigns.new_condition_names, resource_id, name)
+     )}
   end
 
   def handle_event(
-        "create_option",
-        %{"params" => %{"id" => option_id, "name" => name, "resource_id" => resource_id}},
+        "create_new_condition",
+        %{"condition" => %{"name" => name, "resource_id" => resource_id}},
         socket
       ) do
     %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
     resource_id = ensure_integer(resource_id)
     %{content: %{"options" => options} = content} = find_group(decision_points, resource_id)
-    new_options = [%{"id" => option_id, "name" => name} | options]
 
-    case edit_group_options(
-           project.slug,
-           ctx.author,
-           decision_points,
-           resource_id,
-           content,
-           new_options
-         ) do
-      {:ok, decision_points, _group} ->
-        {:noreply,
-         hide_modal(socket)
-         |> assign(decision_points: decision_points)
-         |> assign_authoring_experiments()}
+    case String.trim(name) do
+      "" ->
+        {:noreply, socket}
 
-      {:error, message: error_message} ->
-        show_error(socket, error_message)
+      name ->
+        new_options = options ++ [%{"id" => uuid(), "name" => name}]
 
-      {:error, _} ->
-        show_error(socket)
+        case edit_group_options(
+               project.slug,
+               ctx.author,
+               decision_points,
+               resource_id,
+               content,
+               new_options
+             ) do
+          {:ok, decision_points, _group} ->
+            {:noreply,
+             socket
+             |> assign(decision_points: decision_points)
+             |> assign(
+               new_condition_names: Map.delete(socket.assigns.new_condition_names, resource_id)
+             )
+             |> assign_authoring_experiments()}
+
+          {:error, message: error_message} ->
+            show_error(socket, error_message)
+
+          {:error, _} ->
+            show_error(socket)
+        end
     end
+  end
+
+  def handle_event("cancel_new_condition", params, socket) do
+    resource_id = params["resource-id"] || params["resource_id"]
+    resource_id = ensure_integer(resource_id)
+
+    {:noreply,
+     assign(
+       socket,
+       :new_condition_names,
+       Map.delete(socket.assigns.new_condition_names, resource_id)
+     )}
   end
 
   def handle_event(
@@ -717,44 +741,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       ) do
     resource_id = ensure_integer(resource_id)
 
-    changeset =
-      Oli.Resources.Revision.changeset(find_group(socket.assigns.decision_points, resource_id))
+    decision_point = find_group(socket.assigns.decision_points, resource_id)
 
-    form_body_fn = fn assigns ->
-      ~H"""
-      <div class="form-group">
-        {hidden_input(@form, :id)}
-        {hidden_input(@form, :resource_id)}
-
-        {text_input(
-          @form,
-          :title,
-          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-          placeholder: "Enter a title",
-          phx_hook: "InputAutoSelect",
-          required: true
-        )}
-      </div>
-      """
-    end
-
-    modal_assigns = %{
+    modal = %{
       id: "edit_modal",
-      title: "Edit",
+      title: "Edit Decision Point",
       submit_label: "Save",
-      changeset: changeset,
-      form_body_fn: form_body_fn,
-      on_validate: "validate_group",
-      on_submit: "edit_group"
+      on_submit: "edit_group",
+      form: to_form(%{}, as: :params),
+      field_name: "title",
+      field_label: "Title",
+      field_value: decision_point.title,
+      placeholder: "Enter a title",
+      hidden_fields: [
+        {"id", decision_point.id},
+        {"resource_id", decision_point.resource_id}
+      ]
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <FormModal.modal {@modal_assigns} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+    {:noreply, assign(socket, decision_point_modal: modal)}
   end
 
   def handle_event(
@@ -778,7 +783,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          ) do
       {:ok, decision_points, _group} ->
         {:noreply,
-         hide_modal(socket)
+         assign(socket, decision_point_modal: nil)
          |> assign(decision_points: decision_points)
          |> assign_authoring_experiments()}
 
@@ -858,14 +863,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     end
   end
 
-  def handle_event("validate_group", %{"params" => %{"title" => _}}, socket) do
-    {:noreply, socket}
-  end
-
-  def handle_event("validate_group", %{"params" => %{"name" => _}}, socket) do
-    {:noreply, socket}
-  end
-
   def handle_event(
         "show_edit_option_modal",
         %{"resource-id" => resource_id, "option-id" => option_id},
@@ -874,49 +871,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     resource_id = ensure_integer(resource_id)
     option = find_group_option(socket.assigns.decision_points, resource_id, option_id)
 
-    changeset =
-      {%{resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
-      |> Ecto.Changeset.cast(option, [:id, :resource_id, :name])
-
-    form_body_fn = fn assigns ->
-      ~H"""
-      <div class="form-group">
-        {hidden_input(@form, :id)}
-        {hidden_input(@form, :resource_id)}
-
-        {text_input(
-          @form,
-          :name,
-          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-          placeholder: "Enter a name",
-          phx_hook: "InputAutoSelect",
-          required: true
-        )}
-      </div>
-      """
-    end
-
-    modal_assigns = %{
+    modal = %{
       id: "edit_modal",
       title: "Edit Condition",
       submit_label: "Save",
-      changeset: changeset,
-      form_body_fn: form_body_fn,
-      on_validate: "validate_option",
-      on_submit: "edit_option"
+      on_submit: "edit_option",
+      form: to_form(%{}, as: :params),
+      field_name: "name",
+      field_label: "Name",
+      field_value: option["name"],
+      placeholder: "Enter a name",
+      hidden_fields: [
+        {"id", option["id"]},
+        {"resource_id", resource_id}
+      ]
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <FormModal.modal {@modal_assigns} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+    {:noreply, assign(socket, decision_point_modal: modal)}
   end
 
-  def handle_event("validate_option", %{"params" => %{"name" => _}}, socket) do
-    {:noreply, socket}
+  def handle_event("close_decision_point_modal", _params, socket) do
+    {:noreply, assign(socket, decision_point_modal: nil)}
   end
 
   def handle_event("cancel_modal", _params, socket) do
@@ -954,7 +929,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          ) do
       {:ok, decision_points, _group} ->
         {:noreply,
-         hide_modal(socket)
+         assign(socket, decision_point_modal: nil)
          |> assign(decision_points: decision_points)
          |> assign_authoring_experiments()}
 
@@ -1038,6 +1013,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   attr :group, :any, required: true
+  attr :new_condition_name, :string, required: true
 
   defp decision_point_group(assigns) do
     ~H"""
@@ -1058,7 +1034,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             <em>There are no conditions in this decision point</em>
           </div>
         <% else %>
-          <ul class="list-group">
+          <ul class="list-group [&>li:last-child]:!border-b-0">
             <.group_option
               :for={condition <- @group.content["options"]}
               group={@group}
@@ -1067,13 +1043,39 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             />
           </ul>
         <% end %>
-        <button
-          class="btn btn-link btn-sm my-2"
-          phx-click="show_create_option_modal"
-          phx-value-resource_id={@group.resource_id}
+        <form
+          id={"new-condition-form-#{@group.resource_id}"}
+          class="mt-3"
+          phx-change="change_new_condition"
+          phx-submit="create_new_condition"
         >
-          <i class="fa fa-plus"></i> New Condition
-        </button>
+          <input type="hidden" name="condition[resource_id]" value={@group.resource_id} />
+          <input
+            id={"new-condition-input-#{@group.resource_id}"}
+            type="text"
+            name="condition[name]"
+            value={@new_condition_name}
+            class="form-control"
+            placeholder="Enter a new condition"
+            phx-keydown={JS.push("cancel_new_condition", value: %{resource_id: @group.resource_id})}
+            phx-key="Escape"
+            onkeydown="if (event.key === 'Escape') { this.value = ''; }"
+          />
+          <div
+            :if={String.trim(@new_condition_name) != ""}
+            class="d-flex justify-content-end gap-2 mt-2"
+          >
+            <button
+              type="button"
+              class="btn btn-link"
+              phx-click="cancel_new_condition"
+              phx-value-resource-id={@group.resource_id}
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Create</button>
+          </div>
+        </form>
       </div>
     </div>
     """
@@ -1093,7 +1095,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
           []
       end
 
-    assign(socket, decision_points: decision_points, decision_point_subscriptions: [])
+    assign(socket,
+      decision_points: decision_points,
+      decision_point_subscriptions: [],
+      new_condition_names: %{},
+      decision_point_modal: nil
+    )
   end
 
   defp subscribe_to_decision_points(socket) do
