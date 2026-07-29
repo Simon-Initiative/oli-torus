@@ -28,6 +28,9 @@ mix format
 
 # Reset database
 mix ecto.reset
+
+# Generate a database migration
+mix ecto.gen.migration add_posts_table
 ```
 
 ### Frontend (TypeScript/React)
@@ -130,6 +133,21 @@ PostgreSQL with Ecto ORM. Key tables:
 - `users` & `authors`: Account management
 - `enrollments`: Student-section relationships
 - `attempts`: Student activity attempts
+
+### Database Migration Policy
+
+- Always create new Ecto migrations with the standard generator command:
+
+  ```bash
+  mix ecto.gen.migration add_posts_table
+  ```
+
+- Replace `add_posts_table` with a descriptive snake_case migration name for the schema change.
+- Do not manually invent migration timestamps or filenames.
+- Every migration must define both `up/0` and `down/0` explicitly.
+- Do not use `change/0`, even when Ecto could infer the rollback.
+- `up/0` must contain the forward migration and `down/0` must explicitly reverse it in dependency-safe order.
+- Verify both migration and rollback behavior when the change is non-trivial.
 
 ## Activity Development
 

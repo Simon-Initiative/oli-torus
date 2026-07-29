@@ -6,6 +6,13 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
   @algorithms ~w(weighted_random thompson_sampling)
 
   def up do
+    alter table(:projects) do
+      add :experiments_enabled, :boolean, null: false, default: false
+      add :alternatives_enabled, :boolean, null: false, default: false
+    end
+
+    create index(:sections_projects_publications, [:project_id, :section_id])
+
     create table(:experiment_definitions) do
       add :uuid, :uuid, null: false
       add :project_id, references(:projects, on_delete: :nothing), null: false
@@ -182,5 +189,12 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
     drop table(:experiment_decision_points)
     drop table(:experiment_sections)
     drop table(:experiment_definitions)
+
+    drop index(:sections_projects_publications, [:project_id, :section_id])
+
+    alter table(:projects) do
+      remove :alternatives_enabled
+      remove :experiments_enabled
+    end
   end
 end
