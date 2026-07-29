@@ -10,7 +10,7 @@ import {
 } from '@tasks/AutomationSetupTask';
 import { fetchTestArchiveToTempFile, fetchTestAsset } from '@tasks/AutomationAssetsTask';
 import fs from 'node:fs/promises';
-import { waitForMainLiveView } from './support';
+import { waitForOptionalMainLiveView } from './support';
 
 /**
  * MER-5671: BioBeyond Unit 7 Designer Planet adaptive lesson.
@@ -262,12 +262,12 @@ async function clickLessonFromLearn(page: Page, section: string, lessonTitle: st
     await page.goto(outlinePath, { waitUntil: 'load' });
   }
 
-  await waitForMainLiveView(page).catch(() => undefined);
+  await waitForOptionalMainLiveView(page);
 
   if (await enterCourseIfNeeded(page)) {
     await page.goto(outlinePath, { waitUntil: 'load' });
     await acceptResearchConsentIfPresent(page);
-    await waitForMainLiveView(page).catch(() => undefined);
+    await waitForOptionalMainLiveView(page);
   }
 
   await closeProfileMenuIfOpen(page);
@@ -280,7 +280,7 @@ async function clickLessonFromLearn(page: Page, section: string, lessonTitle: st
   await expect(lessonButton).toBeVisible({ timeout: 15_000 });
   await lessonButton.click();
   await acceptResearchConsentIfPresent(page);
-  await waitForMainLiveView(page).catch(() => undefined);
+  await waitForOptionalMainLiveView(page);
 }
 
 async function acceptResearchConsentIfPresent(page: Page) {
@@ -307,7 +307,7 @@ async function enterCourseIfNeeded(page: Page) {
   if (await goToCourseButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
     await goToCourseButton.click();
     await expect(goToCourseButton).toBeHidden({ timeout: 10_000 });
-    await waitForMainLiveView(page).catch(() => undefined);
+    await waitForOptionalMainLiveView(page);
     return true;
   }
 
@@ -325,7 +325,7 @@ async function beginAttemptIfNeeded(page: Page) {
   await expect(beginAttemptButton).toBeEnabled({ timeout: 15_000 });
   await beginAttemptButton.click();
   await expect(page).toHaveURL(/\/(lesson|adaptive_lesson)\//, { timeout: 15_000 });
-  await waitForMainLiveView(page).catch(() => undefined);
+  await waitForOptionalMainLiveView(page);
 }
 
 async function closeProfileMenuIfOpen(page: Page) {

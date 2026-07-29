@@ -123,6 +123,26 @@ export async function waitForMainLiveView(page: Page) {
   );
 }
 
+export async function waitForOptionalMainLiveView(page: Page, timeout = 15_000) {
+  const deadline = Date.now() + timeout;
+
+  while (Date.now() < deadline) {
+    const connected = await page
+      .evaluate(() =>
+        document.querySelector('[data-phx-main]')?.classList.contains('phx-connected'),
+      )
+      .catch(() => false);
+
+    if (connected) {
+      return true;
+    }
+
+    await page.waitForTimeout(250);
+  }
+
+  return false;
+}
+
 function learnPath(sectionSlug: string) {
   return `/sections/${sectionSlug}/learn?sidebar_expanded=true&selected_view=outline`;
 }
