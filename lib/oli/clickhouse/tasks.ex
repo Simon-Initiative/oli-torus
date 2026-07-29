@@ -47,7 +47,6 @@ defmodule Oli.Clickhouse.Tasks do
   def setup(opts \\ []) do
     config = load_clickhouse_config()
     sink = event_sink(opts)
-    emit(sink, :info, "Setting up ClickHouse database...")
     setup_database(config, sink)
   end
 
@@ -117,6 +116,8 @@ defmodule Oli.Clickhouse.Tasks do
   defp normalize_confirmation(value), do: value |> String.trim() |> String.upcase()
 
   defp run_migrate_command(command, config, sink) do
+    database = configured_database!(config)
+
     case System.find_executable("goose") do
       nil ->
         error_message = """
@@ -132,12 +133,13 @@ defmodule Oli.Clickhouse.Tasks do
         raise error_message
 
       goose_path ->
-        database_url = build_database_url(config)
+        database_url = build_database_url(config, database)
         migrations_dir = get_migrations_directory()
 
+        emit(sink, :info, "Target database: #{database}")
         emit(sink, :info, "Migrations directory: #{migrations_dir}")
 
-        with :ok <- test_clickhouse_connection(config, sink) do
+        with :ok <- test_clickhouse_connection(config, sink, database: database) do
           goose_args = ["-dir", migrations_dir, "clickhouse", database_url, command]
 
           case System.cmd(goose_path, goose_args, stderr_to_stdout: true) do
@@ -157,7 +159,7 @@ defmodule Oli.Clickhouse.Tasks do
               #{output}
 
               Common issues:
-              1. ClickHouse not running: docker-compose up -d clickhouse
+              1. ClickHouse is not running or accepting connections
               2. Wrong connection details in config
               3. Migration files not in correct goose format (-- +goose Up/Down)
               4. Check if ClickHouse supports the specific SQL syntax used
@@ -172,7 +174,7 @@ defmodule Oli.Clickhouse.Tasks do
             ❌ Cannot connect to ClickHouse
 
             Please ensure:
-            1. ClickHouse is running: docker-compose up -d clickhouse
+            1. ClickHouse is running and accepting connections
             2. ClickHouse is accessible at #{config.host}:#{config.native_port}
             3. User '#{config.user}' has proper permissions
             """
@@ -231,7 +233,7 @@ defmodule Oli.Clickhouse.Tasks do
         ❌ Cannot connect to ClickHouse for setup
 
         Please ensure:
-        1. ClickHouse is running: docker-compose up -d clickhouse
+        1. ClickHouse is running and accepting connections
         2. ClickHouse is accessible at #{config.host}:#{config.http_port}
         3. User '#{config.user}' has proper permissions
         """
@@ -272,7 +274,7 @@ defmodule Oli.Clickhouse.Tasks do
         ❌ Cannot connect to ClickHouse for reset
 
         Please ensure:
-        1. ClickHouse is running: docker-compose up -d clickhouse
+        1. ClickHouse is running and accepting connections
         2. ClickHouse is accessible at #{config.host}:#{config.http_port}
         3. User '#{config.user}' has proper permissions
         """
@@ -322,7 +324,7 @@ defmodule Oli.Clickhouse.Tasks do
         ❌ Cannot connect to ClickHouse for drop operation
 
         Please ensure:
-        1. ClickHouse is running: docker-compose up -d clickhouse
+        1. ClickHouse is running and accepting connections
         2. ClickHouse is accessible at #{config.host}:#{config.http_port}
         3. User '#{config.user}' has proper permissions
         """
@@ -378,14 +380,15 @@ defmodule Oli.Clickhouse.Tasks do
 
   defp execute_clickhouse_query(config, query, sink) do
     try do
-      host = config[:host] || "localhost"
-      port = config[:http_port] || 8123
       user = config[:user]
       password = config[:password]
+      url = clickhouse_http_url(config)
 
-      url = "http://#{user}:#{password}@#{host}:#{port}/"
-
-      case HTTPoison.post(url, query, [], timeout: 10_000, recv_timeout: 10_000) do
+      case HTTPoison.post(url, query, [],
+             timeout: 10_000,
+             recv_timeout: 10_000,
+             hackney: [basic_auth: {user, password}]
+           ) do
         {:ok, %HTTPoison.Response{status_code: 200}} ->
           emit(sink, :success, "Query executed successfully")
           :ok
@@ -405,26 +408,72 @@ defmodule Oli.Clickhouse.Tasks do
     end
   end
 
-  defp build_database_url(config) do
+  defp build_database_url(config, database) do
     host = config[:host]
     port = config[:native_port]
     user = config[:user]
     password = config[:password]
-    database = config[:database]
 
     "tcp://#{user}:#{password}@#{host}:#{port}/#{database}"
   end
 
-  defp test_clickhouse_connection(config, sink) do
+  defp configured_database!(config) do
+    case config[:database] do
+      database when is_binary(database) ->
+        case String.trim(database) do
+          "" -> raise "ClickHouse database is not configured"
+          configured_database -> configured_database
+        end
+
+      _ ->
+        raise "ClickHouse database is not configured"
+    end
+  end
+
+  @doc false
+  def clickhouse_http_url(config, opts \\ []) do
+    host =
+      config
+      |> Map.get(:host, "localhost")
+      |> to_string()
+      |> String.trim()
+
+    base_url =
+      case URI.parse(host) do
+        %URI{scheme: scheme} when scheme in ["http", "https"] -> host
+        _ -> "http://" <> host
+      end
+
+    database = Keyword.get(opts, :database)
+
+    query =
+      case database do
+        nil -> nil
+        database -> URI.encode_query(%{"database" => database})
+      end
+
+    base_url
+    |> URI.parse()
+    |> Map.put(:userinfo, nil)
+    |> Map.put(:port, config[:http_port] || 8123)
+    |> Map.put(:path, "/")
+    |> Map.put(:query, query)
+    |> Map.put(:fragment, nil)
+    |> URI.to_string()
+  end
+
+  defp test_clickhouse_connection(config, sink, opts \\ []) do
     try do
-      host = config[:host]
-      port = config[:http_port]
       user = config[:user]
       password = config[:password]
+      database = Keyword.get(opts, :database)
+      url = clickhouse_http_url(config, database: database)
 
-      url = "http://#{user}:#{password}@#{host}:#{port}/"
-
-      case HTTPoison.post(url, "SELECT 1", [], timeout: 5_000, recv_timeout: 5_000) do
+      case HTTPoison.post(url, "SELECT 1", [],
+             timeout: 5_000,
+             recv_timeout: 5_000,
+             hackney: [basic_auth: {user, password}]
+           ) do
         {:ok, %HTTPoison.Response{status_code: 200}} ->
           emit(sink, :success, "ClickHouse connection successful")
           :ok

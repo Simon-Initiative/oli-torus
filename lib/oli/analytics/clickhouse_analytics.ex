@@ -55,7 +55,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     "#{config.database}.raw_events"
   end
 
-  defp fetch_health_metadata(database) do
+  defp fetch_health_metadata(database, database_exists?) do
     query = """
     SELECT
       version() AS version,
@@ -68,7 +68,10 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse health metadata", credential: :admin, database: false)
+    |> execute_query("clickhouse health metadata",
+      credential: :admin,
+      database: database_exists?
+    )
     |> extract_single_row()
   end
 
@@ -235,7 +238,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def health_summary do
     database = clickhouse_config(:admin).database
 
-    with {:ok, base} <- fetch_health_metadata(database),
+    with {:ok, database_exists} <- fetch_database_exists(database),
+         {:ok, base} <- fetch_health_metadata(database, database_exists),
          {:ok, table} <- fetch_table_metrics(database, "raw_events"),
          {:ok, parts} <- fetch_table_parts_metrics(database, "raw_events") do
       {:ok,
@@ -251,11 +255,11 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def admin_capabilities do
     database = clickhouse_config(:admin).database
 
-    with {:ok, _base} <- fetch_health_metadata(database),
-         {:ok, database_exists} <- fetch_database_exists(database),
+    with {:ok, database_exists} <- fetch_database_exists(database),
+         {:ok, _base} <- fetch_health_metadata(database, database_exists),
          {:ok, raw_events_exists} <- fetch_table_exists(database, "raw_events"),
          {:ok, pending_migration_count} <- fetch_pending_migration_count(database) do
-      initialized = database_exists and raw_events_exists
+      initialized = database_exists
 
       {:ok,
        %{
@@ -265,7 +269,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
          initialized: initialized,
          setup_enabled: not initialized,
          pending_migration_count: pending_migration_count,
-         migrate_up_enabled: pending_migration_count > 0,
+         migrate_up_enabled: initialized and pending_migration_count > 0,
+         migrate_down_enabled: initialized,
          allowed_operations: allowed_operations(initialized)
        }}
     end
@@ -588,7 +593,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   end
 
   defp allowed_operations(true), do: [:migrate_up, :migrate_down]
-  defp allowed_operations(false), do: [:setup, :migrate_up, :migrate_down]
+  defp allowed_operations(false), do: [:setup]
 
   defp parse_migration_version(value) when is_integer(value) and value > 0, do: value
   defp parse_migration_version(value) when is_integer(value), do: 0

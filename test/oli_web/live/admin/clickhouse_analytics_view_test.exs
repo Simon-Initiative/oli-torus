@@ -43,7 +43,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
     assert html =~ "✓ Reachable"
     assert html =~ "✗ Database exists"
-    assert html =~ "✗ Table exists"
+    assert html =~ "Current DB: default"
     assert html =~ "2 pending migrations"
     assert html =~ ">Setup Database<"
     assert html =~ ">Migrate Up<"
@@ -57,6 +57,13 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert setup_index < migrate_up_index
     [button_html] = Regex.run(~r/<button[^>]*phx-value-kind="setup"[^>]*>/, html)
     refute Regex.match?(~r/\sdisabled(?:=| |>)/, button_html)
+
+    for kind <- ["migrate_up", "migrate_down"] do
+      [migration_button_html] =
+        Regex.run(~r/<button[^>]*phx-value-kind="#{kind}"[^>]*>/, html)
+
+      assert Regex.match?(~r/\sdisabled(?:=| |>)/, migration_button_html)
+    end
   end
 
   test "shows setup card disabled when the database is already initialized", %{conn: conn} do
@@ -74,7 +81,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert html =~ "Required before torus analytics can use this ClickHouse database."
     assert html =~ "✓ Reachable"
     assert html =~ "✓ Database exists"
-    assert html =~ "✓ Table exists"
+    assert html =~ "Current DB: analytics"
     assert html =~ "No pending migrations"
     assert html =~ ">Setup Database<"
     assert html =~ ">Migrate Up<"
@@ -85,15 +92,42 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
     [migrate_button_html] = Regex.run(~r/<button[^>]*phx-value-kind="migrate_up"[^>]*>/, html)
     assert Regex.match?(~r/\sdisabled(?:=| |>)/, migrate_button_html)
+
+    [migrate_down_button_html] =
+      Regex.run(~r/<button[^>]*phx-value-kind="migrate_down"[^>]*>/, html)
+
+    refute Regex.match?(~r/\sdisabled(?:=| |>)/, migrate_down_button_html)
+  end
+
+  test "enables migrations when the database exists before raw_events is created", %{conn: conn} do
+    stub_clickhouse_http(%{
+      database_exists: true,
+      raw_events_exists: false,
+      pending_migrations: 2
+    })
+
+    {:ok, view, _html} = live(conn, @route)
+
+    html = render_async(view)
+
+    [setup_button_html] = Regex.run(~r/<button[^>]*phx-value-kind="setup"[^>]*>/, html)
+    assert Regex.match?(~r/\sdisabled(?:=| |>)/, setup_button_html)
+
+    for kind <- ["migrate_up", "migrate_down"] do
+      [migration_button_html] =
+        Regex.run(~r/<button[^>]*phx-value-kind="#{kind}"[^>]*>/, html)
+
+      refute Regex.match?(~r/\sdisabled(?:=| |>)/, migration_button_html)
+    end
   end
 
   test "shows current-operation progress and success messages for supported operations", %{
     conn: conn
   } do
     stub_clickhouse_http(%{
-      database_exists: false,
-      raw_events_exists: false,
-      pending_migrations: 2
+      database_exists: true,
+      raw_events_exists: true,
+      pending_migrations: 1
     })
 
     {:ok, view, _html} = live(conn, @route)
@@ -116,9 +150,9 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
   test "canceling migration confirmation modal does not start the operation", %{conn: conn} do
     stub_clickhouse_http(%{
-      database_exists: false,
-      raw_events_exists: false,
-      pending_migrations: 2
+      database_exists: true,
+      raw_events_exists: true,
+      pending_migrations: 0
     })
 
     {:ok, view, _html} = live(conn, @route)
@@ -218,7 +252,13 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
          pending_migrations: pending_migrations
        }) do
     stub(MockHTTP, :post, fn url, body, _headers, _opts ->
-      refute URI.parse(url).query |> URI.decode_query() |> Map.has_key?("database")
+      query_params = URI.parse(url).query |> URI.decode_query()
+
+      if database_exists and String.contains?(body, "version() AS version") do
+        assert query_params["database"] == "analytics"
+      else
+        refute Map.has_key?(query_params, "database")
+      end
 
       {:ok,
        %{
@@ -250,7 +290,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
               "timezone" => "UTC",
               "hostname" => "clickhouse.test",
               "server_time" => "2026-04-02 12:00:00",
-              "current_database" => "analytics",
+              "current_database" => if(database_exists, do: "analytics", else: "default"),
               "configured_database" => "analytics"
             }
           ]
