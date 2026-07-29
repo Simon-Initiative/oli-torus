@@ -38,7 +38,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def health_check() do
     query = "SELECT 1"
 
-    case execute_query(query, "health check", credential: :admin) do
+    case execute_query(query, "health check", credential: :admin, database: false) do
       {:ok, _} ->
         Logger.info("ClickHouse health check passed")
         {:ok, :healthy}
@@ -68,7 +68,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse health metadata", credential: :admin)
+    |> execute_query("clickhouse health metadata", credential: :admin, database: false)
     |> extract_single_row()
   end
 
@@ -86,7 +86,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse table metrics", credential: :admin)
+    |> execute_query("clickhouse table metrics", credential: :admin, database: false)
     |> case do
       {:ok, %{parsed_body: %{"data" => []}}} -> {:ok, %{"name" => table}}
       other -> extract_single_row(other)
@@ -107,7 +107,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse parts metrics", credential: :admin)
+    |> execute_query("clickhouse parts metrics", credential: :admin, database: false)
     |> case do
       {:ok, %{parsed_body: %{"data" => []}}} -> {:ok, %{}}
       other -> extract_single_row(other)
@@ -148,7 +148,10 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         """
 
         query
-        |> execute_query("clickhouse applied migration version", credential: :admin)
+        |> execute_query("clickhouse applied migration version",
+          credential: :admin,
+          database: false
+        )
         |> case do
           {:ok, %{parsed_body: %{"data" => [row | _]}}} when is_map(row) ->
             {:ok, parse_migration_version(Map.get(row, "version_id"))}
@@ -475,7 +478,13 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     config = clickhouse_config(credential)
 
     with :ok <- validate_config_credentials(config, credential) do
-      query_params = build_query_params(config, Keyword.get(opts, :query_params, %{}))
+      query_params =
+        build_query_params(
+          config,
+          Keyword.get(opts, :query_params, %{}),
+          Keyword.get(opts, :database, true)
+        )
+
       url = build_clickhouse_url(config, query_params)
 
       extra_headers = Keyword.get(opts, :headers, [])
@@ -551,7 +560,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse database exists", credential: :admin)
+    |> execute_query("clickhouse database exists", credential: :admin, database: false)
     |> extract_single_row()
     |> case do
       {:ok, %{"exists" => value}} -> {:ok, parse_truthy(value)}
@@ -569,7 +578,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse table exists", credential: :admin)
+    |> execute_query("clickhouse table exists", credential: :admin, database: false)
     |> extract_single_row()
     |> case do
       {:ok, %{"exists" => value}} -> {:ok, parse_truthy(value)}
@@ -637,10 +646,14 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     |> Keyword.merge(base, fn _key, _base_value, config_value -> config_value end)
   end
 
-  defp build_query_params(config, params) do
-    params
-    |> normalize_query_params()
-    |> Map.put_new("database", config.database)
+  defp build_query_params(config, params, include_database?) do
+    params = normalize_query_params(params)
+
+    if include_database? do
+      Map.put_new(params, "database", config.database)
+    else
+      Map.delete(params, "database")
+    end
   end
 
   defp build_clickhouse_url(config, params) do

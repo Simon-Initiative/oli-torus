@@ -27,7 +27,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     stub_clickhouse_http(%{
       database_exists: false,
       raw_events_exists: false,
-      pending_migrations: 1
+      pending_migrations: 2
     })
 
     {:ok, view, _html} = live(conn, @route)
@@ -44,7 +44,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert html =~ "✓ Reachable"
     assert html =~ "✗ Database exists"
     assert html =~ "✗ Table exists"
-    assert html =~ "1 pending migration"
+    assert html =~ "2 pending migrations"
     assert html =~ ">Setup Database<"
     assert html =~ ">Migrate Up<"
     assert html =~ ">Migrate Down<"
@@ -93,7 +93,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     stub_clickhouse_http(%{
       database_exists: false,
       raw_events_exists: false,
-      pending_migrations: 1
+      pending_migrations: 2
     })
 
     {:ok, view, _html} = live(conn, @route)
@@ -118,7 +118,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     stub_clickhouse_http(%{
       database_exists: false,
       raw_events_exists: false,
-      pending_migrations: 1
+      pending_migrations: 2
     })
 
     {:ok, view, _html} = live(conn, @route)
@@ -217,7 +217,9 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
          raw_events_exists: raw_events_exists,
          pending_migrations: pending_migrations
        }) do
-    stub(MockHTTP, :post, fn _url, body, _headers, _opts ->
+    stub(MockHTTP, :post, fn url, body, _headers, _opts ->
+      refute URI.parse(url).query |> URI.decode_query() |> Map.has_key?("database")
+
       {:ok,
        %{
          status_code: 200,
@@ -233,7 +235,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     stub_clickhouse_http(%{
       database_exists: database_exists,
       raw_events_exists: raw_events_exists,
-      pending_migrations: if(raw_events_exists, do: 0, else: 1)
+      pending_migrations: if(raw_events_exists, do: 0, else: 2)
     })
   end
 
@@ -301,7 +303,12 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
         Jason.encode!(%{
           "data" => [
             %{
-              "version_id" => if(pending_migrations == 0, do: "20260326213833", else: nil)
+              "version_id" =>
+                case pending_migrations do
+                  0 -> "20260714120000"
+                  1 -> "20260326213833"
+                  _ -> nil
+                end
             }
           ]
         })

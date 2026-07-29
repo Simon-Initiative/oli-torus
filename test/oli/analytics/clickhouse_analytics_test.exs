@@ -70,6 +70,19 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
                )
     end
 
+    test "can execute a server-level query without selecting the configured database" do
+      expect(MockHTTP, :post, fn url, _body, _headers, _opts ->
+        refute URI.parse(url).query |> URI.decode_query() |> Map.has_key?("database")
+        {:ok, %{status_code: 200, body: ~s({"data":[]})}}
+      end)
+
+      assert {:ok, _response} =
+               ClickhouseAnalytics.execute_query("SELECT 1", "test server query",
+                 credential: :admin,
+                 database: false
+               )
+    end
+
     test "returns an error when ClickHouse responds with a non-200 status" do
       expect(MockHTTP, :post, fn _url, _body, _headers, _opts ->
         {:ok, %{status_code: 500, body: "boom"}}
