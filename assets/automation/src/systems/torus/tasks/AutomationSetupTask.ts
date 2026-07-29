@@ -33,7 +33,55 @@ export async function importArchiveAndCreateSection(
   // The archive is downloaded outside Playwright's traced request context first;
   // this client only reads that file back for the multipart upload.
   const archiveBuffer = await fs.readFile(path.resolve(archivePath));
-  const response = await request.post(new URL('/api/v1/automation_setup', baseUrl).toString(), {
+  const response = await postAutomationSetupWithRetry(request, archivePath, archiveBuffer, {
+    baseUrl,
+    apiKey,
+  });
+
+  if (!response.ok()) {
+    throw new Error(
+      `automation_setup failed (${response.status()}): ${await truncatedBody(response)}`,
+    );
+  }
+
+  const payload = (await response.json()) as AutomationSetupResponse;
+
+  if (!payload.success) {
+    throw new Error(`automation_setup returned unsuccessful payload: ${JSON.stringify(payload)}`);
+  }
+
+  return payload;
+}
+
+async function postAutomationSetupWithRetry(
+  request: APIRequestContext,
+  archivePath: string,
+  archiveBuffer: Buffer,
+  options: AutomationOptions,
+) {
+  const maxAttempts = 2;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await postAutomationSetup(request, archivePath, archiveBuffer, options);
+    } catch (error) {
+      if (attempt === maxAttempts || !isTransientNetworkError(error)) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2_000));
+    }
+  }
+
+  throw new Error('automation_setup failed before receiving a response');
+}
+
+function postAutomationSetup(
+  request: APIRequestContext,
+  archivePath: string,
+  archiveBuffer: Buffer,
+  { baseUrl, apiKey }: AutomationOptions,
+) {
+  return request.post(new URL('/api/v1/automation_setup', baseUrl).toString(), {
     headers: {
       Authorization: buildAutomationAuthHeader(apiKey),
     },
@@ -50,20 +98,12 @@ export async function importArchiveAndCreateSection(
     },
     timeout: 180_000, // full course archives take a while to ingest
   });
+}
 
-  if (!response.ok()) {
-    throw new Error(
-      `automation_setup failed (${response.status()}): ${await truncatedBody(response)}`,
-    );
-  }
+function isTransientNetworkError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
 
-  const payload = (await response.json()) as AutomationSetupResponse;
-
-  if (!payload.success) {
-    throw new Error(`automation_setup returned unsuccessful payload: ${JSON.stringify(payload)}`);
-  }
-
-  return payload;
+  return /socket hang up|ECONNRESET|ECONNREFUSED|fetch failed/i.test(message);
 }
 
 export async function teardownAutomationCourse(

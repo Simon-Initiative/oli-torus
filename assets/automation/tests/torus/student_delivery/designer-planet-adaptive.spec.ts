@@ -1,12 +1,39 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
-import fs from 'node:fs';
-import path from 'node:path';
+import { setRuntimeConfig } from '@core/runtimeConfig';
+import { HomeTask } from '@tasks/HomeTask';
 import {
-  configureStudentDeliveryRuntimeConfig,
-  seedStudentDeliveryScenario,
-  waitForMainLiveView,
-} from './support';
+  AutomationSetupResponse,
+  buildAutomationLoginData,
+  importArchiveAndCreateSection,
+  teardownAutomationCourse,
+} from '@tasks/AutomationSetupTask';
+import { fetchTestArchiveToTempFile, fetchTestAsset } from '@tasks/AutomationAssetsTask';
+import fs from 'node:fs/promises';
+import { waitForMainLiveView } from './support';
+
+/**
+ * MER-5671: BioBeyond Unit 7 Designer Planet adaptive lesson.
+ *
+ * Imports the private BioBeyond course archive, creates an open-and-free
+ * section with a learner, and drives Designer Planet through the current
+ * happy path.
+ *
+ * The course zip and answers JSON contain course IP and correct answers. They
+ * live in the Playwright assets bucket and are fetched through the Torus
+ * server-side /test/assets/* proxy so credentials never leave the server.
+ *
+ * Requirements to run locally:
+ *   - Torus dev server running with PLAYWRIGHT_SCENARIO_TOKEN and
+ *     PLAYWRIGHT_ASSETS_BUCKET set. In dev this can point at MinIO.
+ *   - An automation API key with automation_setup_enabled exported as
+ *     PLAYWRIGHT_AUTOMATION_API_KEY.
+ *   - Private assets seeded in the bucket:
+ *     mer-5671/biobeyond-designer-planet-course.zip
+ *     mer-5671/answers.json
+ *
+ * Then: npx playwright test designer-planet-adaptive
+ */
 
 type DesignerPlanetAction =
   | {
@@ -122,82 +149,94 @@ type DesignerPlanetAnswerKey = {
   runtime: DesignerPlanetRuntime;
 };
 
-const runId = `-${Date.now()}`;
-const scenarioPath = path.resolve(__dirname, './designer-planet-adaptive.scenario.yaml');
-const answerKeyPath = path.resolve(__dirname, './designer-planet-answer-key.json');
-const projectZipPath = path.resolve(
-  __dirname,
-  '../../../../../export_biobeyond_accessible_version.zip',
-);
-const answerKey = readAnswerKey(answerKeyPath);
+const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
+const archiveKey = 'mer-5671/biobeyond-designer-planet-course.zip';
+const answersKey = 'mer-5671/answers.json';
+const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 // TODO(MER-5671): tighten this once the full Designer Planet happy path is stable end-to-end.
 const designerPlanetTestTimeout = 12 * 60_000;
 
-configureStudentDeliveryRuntimeConfig(runId, {
-  student: {
-    type: 'student',
-    role: 'Student',
-    emailPrefix: 'designer-planet-student',
-    welcomeTitle: 'Hi, Designer',
-    name: 'Designer',
-    lastName: 'Planet Student',
-  },
-  instructor: {
-    type: 'instructor',
-    role: 'Instructor',
-    emailPrefix: 'designer-planet-instructor',
-    welcomeTitle: 'Instructor Dashboard',
-    header: 'Instructor Dashboard',
-  },
-  author: {
-    type: 'author',
-    role: 'Course Author',
-    emailPrefix: 'designer-planet-author',
-    welcomeTitle: 'Course Author',
-    header: 'Course Author',
-  },
-  administrator: {
-    type: 'administrator',
-    role: 'Course Author',
-    emailPrefix: 'designer-planet-admin',
-    welcomeTitle: 'Course Author',
-    header: 'Course Author',
-  },
+let seededCourse: AutomationSetupResponse | null = null;
+let answerKey: DesignerPlanetAnswerKey | null = null;
+let archiveTempDir: string | null = null;
+
+setRuntimeConfig({
+  baseUrl,
+  scenarioToken: process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token',
+  loginData: buildAutomationLoginData('placeholder@example.com', 'placeholder'),
 });
 
-let sectionSlug = '';
+test.skip(
+  !automationApiKey,
+  'Set PLAYWRIGHT_AUTOMATION_API_KEY to run this test (see setup instructions above)',
+);
 
-test.beforeAll(async ({ seedScenario }) => {
-  test.skip(
-    !fs.existsSync(projectZipPath),
-    `BioBeyond Designer Planet export zip is required at ${projectZipPath}`,
-  );
+test.describe.serial('BioBeyond Designer Planet adaptive lesson', () => {
+  test.beforeAll(async ({ request }) => {
+    test.setTimeout(240_000);
 
-  const outputs = await seedStudentDeliveryScenario(seedScenario, scenarioPath, runId, {
-    PROJECT_ZIP_PATH: projectZipPath,
+    const answersPromise = fetchTestAsset(request, answersKey, baseUrl);
+    const archivePromise = fetchTestArchiveToTempFile(archiveKey, baseUrl);
+    answersPromise.catch(() => {});
+    archivePromise.catch(() => {});
+
+    const archive = await archivePromise;
+    archiveTempDir = archive.tempDir;
+
+    const answersBuffer = await answersPromise;
+    answerKey = JSON.parse(answersBuffer.toString('utf8')) as DesignerPlanetAnswerKey;
+
+    seededCourse = await importArchiveAndCreateSection(request, archive.filePath, {
+      baseUrl,
+      apiKey: automationApiKey!,
+    });
+    setRuntimeConfig({
+      loginData: buildAutomationLoginData(
+        seededCourse.learner.email,
+        seededCourse.learner.password,
+      ),
+    });
   });
 
-  sectionSlug = outputs.sections?.biobeyond_designer_planet_section ?? '';
-  expect(sectionSlug).toBeTruthy();
-});
+  test.afterAll(async ({ request }) => {
+    try {
+      if (seededCourse) {
+        await teardownAutomationCourse(request, seededCourse, {
+          baseUrl,
+          apiKey: automationApiKey!,
+        });
+      }
+    } finally {
+      if (archiveTempDir) {
+        await fs.rm(archiveTempDir, { recursive: true, force: true });
+        archiveTempDir = null;
+      }
+    }
+  });
 
-test.describe('BioBeyond Designer Planet adaptive lesson', () => {
-  test('student completes the Designer Planet happy path', async ({ homeTask, page }) => {
+  test('student completes the Designer Planet happy path', async ({ page }) => {
     test.setTimeout(designerPlanetTestTimeout);
 
-    await homeTask.login('student');
-    await openDesignerPlanetLesson(page, sectionSlug, answerKey.lesson.title);
+    if (!seededCourse || !answerKey) {
+      throw new Error('Automation setup did not produce seeded course data and answers');
+    }
+
+    const answers = answerKey;
+
+    await page.goto('/');
+    await new HomeTask(page).login('student');
+    await openDesignerPlanetLesson(page, seededCourse.section.slug, answers.lesson.title);
     await expectAdaptiveLessonLoaded(page);
 
-    for (const step of answerKey.steps) {
+    for (const step of answers.steps) {
       await test.step(`${step.id}: ${step.type}`, async () => {
         await waitForStep(page, step);
-        await performAction(page, answerKey, step);
+        await performAction(page, answers, step);
         await waitForAdaptiveSettled(page);
       });
     }
 
-    await expectLessonCompletion(page, answerKey.lesson.completionPatterns);
+    await expectLessonCompletion(page, answers.lesson.completionPatterns);
   });
 });
 
@@ -214,11 +253,20 @@ async function openDesignerPlanetLesson(page: Page, section: string, lessonTitle
 }
 
 async function clickLessonFromLearn(page: Page, section: string, lessonTitle: string) {
-  await page.goto(learnPath(section, lessonTitle), { waitUntil: 'load' });
+  const outlinePath = learnPath(section, lessonTitle);
+
+  await page.goto(outlinePath, { waitUntil: 'load' });
+  await acceptResearchConsentIfPresent(page);
+
+  if (!page.url().includes('/learn')) {
+    await page.goto(outlinePath, { waitUntil: 'load' });
+  }
+
   await waitForMainLiveView(page).catch(() => undefined);
 
   if (await enterCourseIfNeeded(page)) {
-    await page.goto(learnPath(section, lessonTitle), { waitUntil: 'load' });
+    await page.goto(outlinePath, { waitUntil: 'load' });
+    await acceptResearchConsentIfPresent(page);
     await waitForMainLiveView(page).catch(() => undefined);
   }
 
@@ -231,7 +279,26 @@ async function clickLessonFromLearn(page: Page, section: string, lessonTitle: st
 
   await expect(lessonButton).toBeVisible({ timeout: 15_000 });
   await lessonButton.click();
+  await acceptResearchConsentIfPresent(page);
   await waitForMainLiveView(page).catch(() => undefined);
+}
+
+async function acceptResearchConsentIfPresent(page: Page) {
+  const consentHeading = page.getByRole('heading', { name: /Online Consent Form/i });
+
+  if (!(await consentHeading.isVisible({ timeout: 1_500 }).catch(() => false))) {
+    return;
+  }
+
+  const agreeOption = page.getByRole('radio', { name: /I Agree/i });
+
+  if (await agreeOption.isVisible({ timeout: 1_000 }).catch(() => false)) {
+    await agreeOption.check();
+  }
+
+  await page.getByRole('button', { name: /^Submit$/i }).click();
+  await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+  await page.waitForTimeout(1_500);
 }
 
 async function enterCourseIfNeeded(page: Page) {
@@ -280,10 +347,6 @@ async function closeProfileMenuIfOpen(page: Page) {
   await expect(signOutButton)
     .toBeHidden({ timeout: 3_000 })
     .catch(() => undefined);
-}
-
-function readAnswerKey(filePath: string): DesignerPlanetAnswerKey {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as DesignerPlanetAnswerKey;
 }
 
 async function performAction(
@@ -1057,7 +1120,7 @@ async function applyEmbeddedClimateInterventionPreset(
   preset: ClimateInterventionPreset,
 ) {
   const frame = embeddedSimulationFrame(page);
-  const mechanismLabels = answerKey.runtime.simulationCategories.climate_intervention
+  const mechanismLabels = currentAnswerKey().runtime.simulationCategories.climate_intervention
     ?.mechanismLabels || {
     carbonDioxideRemoval: 'carbonDioxideRemoval',
     solarRadiationManagement: 'solarRadiationManagement',
@@ -1555,15 +1618,15 @@ function learnPath(section: string, searchTerm: string) {
 }
 
 function simulationCategoryName(category: string) {
-  return answerKey.runtime.simulationCategories[category]?.name || category;
+  return currentAnswerKey().runtime.simulationCategories[category]?.name || category;
 }
 
 function simulationCategoryClass(category: string) {
-  return answerKey.runtime.simulationCategories[category]?.className || category;
+  return currentAnswerKey().runtime.simulationCategories[category]?.className || category;
 }
 
 function simulationSwitchIndex(category: string, label: string) {
-  return answerKey.runtime.simulationCategories[category]?.switchIndexes[label] ?? null;
+  return currentAnswerKey().runtime.simulationCategories[category]?.switchIndexes[label] ?? null;
 }
 
 function optionNamePattern(label: string) {
@@ -1584,7 +1647,15 @@ function answerLocatorPattern(answer: string) {
 }
 
 function textMatchPattern(value: string) {
-  return new RegExp(escapeRegExp(answerKey.runtime.textMatches?.[value] || value), 'i');
+  return new RegExp(escapeRegExp(currentAnswerKey().runtime.textMatches?.[value] || value), 'i');
+}
+
+function currentAnswerKey() {
+  if (!answerKey) {
+    throw new Error('Designer Planet answers were not loaded');
+  }
+
+  return answerKey;
 }
 
 function cssAttributeValue(value: string) {
