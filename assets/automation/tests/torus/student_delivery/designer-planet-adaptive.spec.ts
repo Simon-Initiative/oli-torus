@@ -97,6 +97,19 @@ type SimulationPreset = Partial<
   climate_intervention?: ClimateInterventionPreset;
 };
 
+type DesignerPlanetRuntime = {
+  simulationCategories: Record<
+    string,
+    {
+      name: string;
+      className: string;
+      switchIndexes: Record<string, number>;
+      mechanismLabels?: Record<string, string>;
+    }
+  >;
+  textMatches?: Record<string, string>;
+};
+
 type DesignerPlanetAnswerKey = {
   lesson: {
     title: string;
@@ -106,6 +119,7 @@ type DesignerPlanetAnswerKey = {
   selections: Record<string, MultiSelectAnswer>;
   steps: DesignerPlanetAction[];
   simulationPresets: Record<string, SimulationPreset>;
+  runtime: DesignerPlanetRuntime;
 };
 
 const runId = `-${Date.now()}`;
@@ -1043,16 +1057,21 @@ async function applyEmbeddedClimateInterventionPreset(
   preset: ClimateInterventionPreset,
 ) {
   const frame = embeddedSimulationFrame(page);
+  const mechanismLabels = answerKey.runtime.simulationCategories.climate_intervention
+    ?.mechanismLabels || {
+    carbonDioxideRemoval: 'carbonDioxideRemoval',
+    solarRadiationManagement: 'solarRadiationManagement',
+  };
 
   await chooseEmbeddedSimulationCategory(frame, 'climate_intervention');
   await applyEmbeddedClimateInterventionMechanism(
     frame,
-    'Carbon dioxide removal',
+    mechanismLabels.carbonDioxideRemoval,
     preset.carbonDioxideRemoval,
   );
   await applyEmbeddedClimateInterventionMechanism(
     frame,
-    'Solar radiation management',
+    mechanismLabels.solarRadiationManagement,
     preset.solarRadiationManagement,
   );
   await backToEmbeddedCategories(frame);
@@ -1536,92 +1555,22 @@ function learnPath(section: string, searchTerm: string) {
 }
 
 function simulationCategoryName(category: string) {
-  const categoryNames: Record<string, string> = {
-    transportation: 'Transportation',
-    buildings: 'Buildings',
-    power_and_energy: 'Power and Energy',
-    land_use: 'Land Use',
-    climate_intervention: 'Climate Intervention',
-  };
-
-  return categoryNames[category] || category;
+  return answerKey.runtime.simulationCategories[category]?.name || category;
 }
 
 function simulationCategoryClass(category: string) {
-  const categoryClasses: Record<string, string> = {
-    transportation: 'transportation',
-    buildings: 'buildings',
-    power_and_energy: 'power-and-energy',
-    land_use: 'land-use',
-    climate_intervention: 'geoengineering',
-  };
-
-  return categoryClasses[category] || category;
+  return answerKey.runtime.simulationCategories[category]?.className || category;
 }
 
 function simulationSwitchIndex(category: string, label: string) {
-  const switchIndexes: Record<string, Record<string, number>> = {
-    transportation: {
-      'Efficient vehicles': 0,
-      'Reduced use': 1,
-      Biofuels: 2,
-      'Hydrogen fuels': 3,
-    },
-    buildings: {
-      'Efficient buildings': 0,
-    },
-    power_and_energy: {
-      'Efficient coal plants': 0,
-      'Natural gas': 1,
-      'Carbon capture': 2,
-      Nuclear: 3,
-      'Wind and solar': 4,
-    },
-    land_use: {
-      'Reduced deforestation': 0,
-      'Conservation Farming': 1,
-    },
-    climate_intervention: {
-      'Carbon dioxide removal': 0,
-      'Solar radiation management': 1,
-    },
-  };
-
-  return switchIndexes[category]?.[label] ?? null;
+  return answerKey.runtime.simulationCategories[category]?.switchIndexes[label] ?? null;
 }
 
 function optionNamePattern(label: string) {
-  const patterns: Record<string, RegExp> = {
-    'Efficient vehicles': /Efficient vehicles/i,
-    'Reduced use': /Reduced use/i,
-    Biofuels: /Biofuels/i,
-    'Hydrogen fuels': /Hydrogen fuels/i,
-    'Efficient buildings': /Efficient buildings/i,
-    'Efficient coal plants': /Efficient coal plants/i,
-    'Natural gas': /Natural gas/i,
-    'Carbon capture': /Carbon capture/i,
-    Nuclear: /Nuclear/i,
-    'Wind and solar': /Wind and solar/i,
-    'Reduced deforestation': /Reduced deforest/i,
-    'Conservation Farming': /Conservation Farming/i,
-    'Carbon dioxide removal': /Carbon dioxide removal/i,
-    'Solar radiation management': /Solar radiation management/i,
-  };
-
-  return patterns[label] || new RegExp(escapeRegExp(label), 'i');
+  return textMatchPattern(label);
 }
 
 function answerLocatorPattern(answer: string) {
-  const answerPatterns: Record<string, RegExp> = {
-    "Earth's albedo (ratio of reflected sunlight)": /Earth's albedo \(ratio of/i,
-    'Energy reaching Earth from the Sun': /Energy reaching Earth from/i,
-    "Composition of Earth's atmosphere": /Composition of Earth's/i,
-  };
-
-  if (answerPatterns[answer]) {
-    return answerPatterns[answer];
-  }
-
   const flexibleDegreeAnswer = answer.match(/^\+?(\d+)\s+degrees?\s+C\s+from\s+the\s+baseline$/i);
 
   if (flexibleDegreeAnswer) {
@@ -1631,7 +1580,11 @@ function answerLocatorPattern(answer: string) {
     );
   }
 
-  return new RegExp(escapeRegExp(answer), 'i');
+  return textMatchPattern(answer);
+}
+
+function textMatchPattern(value: string) {
+  return new RegExp(escapeRegExp(answerKey.runtime.textMatches?.[value] || value), 'i');
 }
 
 function cssAttributeValue(value: string) {
