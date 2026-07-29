@@ -338,9 +338,7 @@ defmodule Oli.Clickhouse.Tasks do
   end
 
   defp confirm_drop_database?(database) do
-    IO.puts(
-      "WARNING: This will permanently delete the database '#{database}' and all its data!"
-    )
+    IO.puts("WARNING: This will permanently delete the database '#{database}' and all its data!")
 
     IO.puts("Are you sure you want to continue? (y/N)")
 
