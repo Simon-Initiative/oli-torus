@@ -139,6 +139,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             :for={decision_point <- @decision_points}
             group={decision_point}
             new_condition_name={Map.get(@new_condition_names, decision_point.resource_id, "")}
+            new_condition_form_open={
+              MapSet.member?(@open_new_condition_forms, decision_point.resource_id)
+            }
           />
         <% end %>
         <div class="d-flex justify-content-start mt-3">
@@ -702,6 +705,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   def handle_event(
+        "show_new_condition_form",
+        %{"resource-id" => resource_id},
+        socket
+      ) do
+    resource_id = ensure_integer(resource_id)
+
+    {:noreply,
+     assign(
+       socket,
+       :open_new_condition_forms,
+       MapSet.put(socket.assigns.open_new_condition_forms, resource_id)
+     )}
+  end
+
+  def handle_event(
         "change_new_condition",
         %{"condition" => %{"name" => name, "resource_id" => resource_id}},
         socket
@@ -745,7 +763,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
              socket
              |> assign(decision_points: decision_points)
              |> assign(
-               new_condition_names: Map.delete(socket.assigns.new_condition_names, resource_id)
+               new_condition_names: Map.delete(socket.assigns.new_condition_names, resource_id),
+               open_new_condition_forms:
+                 MapSet.delete(socket.assigns.open_new_condition_forms, resource_id)
              )
              |> assign_authoring_experiments()}
 
@@ -765,8 +785,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply,
      assign(
        socket,
-       :new_condition_names,
-       Map.delete(socket.assigns.new_condition_names, resource_id)
+       new_condition_names: Map.delete(socket.assigns.new_condition_names, resource_id),
+       open_new_condition_forms:
+         MapSet.delete(socket.assigns.open_new_condition_forms, resource_id)
      )}
   end
 
@@ -1114,6 +1135,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   attr :group, :any, required: true
   attr :new_condition_name, :string, required: true
+  attr :new_condition_form_open, :boolean, required: true
 
   defp decision_point_group(assigns) do
     ~H"""
@@ -1149,7 +1171,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             />
           </ul>
         <% end %>
+        <button
+          :if={not @new_condition_form_open}
+          type="button"
+          class="btn btn-link px-0 mt-3"
+          phx-click="show_new_condition_form"
+          phx-value-resource-id={@group.resource_id}
+        >
+          <i class="fa fa-plus"></i> New Condition
+        </button>
         <form
+          :if={@new_condition_form_open}
           id={"new-condition-form-#{@group.resource_id}"}
           class="mt-3"
           phx-change="change_new_condition"
@@ -1163,14 +1195,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             value={@new_condition_name}
             class="form-control"
             placeholder="Enter a new condition"
+            phx-hook="InputAutoSelect"
             phx-keydown={JS.push("cancel_new_condition", value: %{resource_id: @group.resource_id})}
             phx-key="Escape"
             onkeydown="if (event.key === 'Escape') { this.value = ''; }"
           />
-          <div
-            :if={String.trim(@new_condition_name) != ""}
-            class="d-flex justify-content-end gap-2 mt-2"
-          >
+          <div class="d-flex justify-content-end gap-2 mt-2">
             <button
               type="button"
               class="btn btn-link"
@@ -1179,7 +1209,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             >
               Cancel
             </button>
-            <button type="submit" class="btn btn-primary">Create</button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              disabled={String.trim(@new_condition_name) == ""}
+            >
+              Create
+            </button>
           </div>
         </form>
       </div>
@@ -1205,6 +1241,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       decision_points: decision_points,
       decision_point_subscriptions: [],
       new_condition_names: %{},
+      open_new_condition_forms: MapSet.new(),
       decision_point_modal: nil,
       decision_point_delete_modal: nil
     )

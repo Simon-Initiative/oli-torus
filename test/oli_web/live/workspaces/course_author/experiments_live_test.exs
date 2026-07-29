@@ -142,7 +142,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> step(:test_has_button_show_edit_option_2_modal)
       |> step(:test_has_button_show_delete_option_1_modal)
       |> step(:test_has_button_show_delete_option_2_modal)
-      |> step(:test_has_new_condition_input)
+      |> step(:test_has_new_condition_action)
       |> step(:test_has_button_download_segment_json, :refute)
       |> step(:test_has_button_download_experiment_json, :refute)
     end
@@ -202,8 +202,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       form_id = "#new-condition-form-#{decision_point.resource_id}"
       input_id = "#new-condition-input-#{decision_point.resource_id}"
 
-      assert has_element?(view, "#{input_id}[placeholder='Enter a new condition']")
-      refute has_element?(view, "#{form_id} button", "Create")
+      refute has_element?(view, input_id)
+
+      view
+      |> element(
+        "button[phx-click='show_new_condition_form'][phx-value-resource-id='#{decision_point.resource_id}']",
+        "New Condition"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#{input_id}[placeholder='Enter a new condition'][phx-hook='InputAutoSelect']"
+             )
+
+      assert has_element?(view, "#{form_id} button", "Cancel")
+      assert has_element?(view, "#{form_id} button[type='submit'][disabled]", "Create")
 
       view
       |> form(form_id, %{
@@ -215,7 +229,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_change()
 
       assert has_element?(view, "#{form_id} button", "Cancel")
-      assert has_element?(view, "#{form_id} button", "Create")
+      assert has_element?(view, "#{form_id} button[type='submit']:not([disabled])", "Create")
 
       view
       |> form(form_id, %{
@@ -228,6 +242,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(view, ".alternatives-group", "Condition 3")
       refute has_element?(view, "#{form_id} button", "Create")
+      refute has_element?(view, input_id)
+
+      view
+      |> element(
+        "button[phx-click='show_new_condition_form'][phx-value-resource-id='#{decision_point.resource_id}']",
+        "New Condition"
+      )
+      |> render_click()
 
       view
       |> form(form_id, %{
@@ -243,7 +265,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_keydown(%{"key" => "Escape"})
 
       refute has_element?(view, "#{form_id} button", "Create")
-      assert has_element?(view, "#{input_id}[value='']")
+      refute has_element?(view, input_id)
+      assert has_element?(view, "button", "New Condition")
       refute render(view) =~ "Cancelled condition"
     end
 
@@ -1037,14 +1060,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     {view, ctx}
   end
 
-  defp step({view, ctx}, :test_has_new_condition_input, assert_or_refute) do
+  defp step({view, ctx}, :test_has_new_condition_action, assert_or_refute) do
     resource_id = Map.get(ctx, :resource_id)
     assert resource_id
 
     to_evaluate =
       has_element?(
         view,
-        "#new-condition-input-#{resource_id}[placeholder='Enter a new condition']"
+        "button[phx-click='show_new_condition_form'][phx-value-resource-id='#{resource_id}']",
+        "New Condition"
       )
 
     evaluate_assertion(to_evaluate, assert_or_refute)
