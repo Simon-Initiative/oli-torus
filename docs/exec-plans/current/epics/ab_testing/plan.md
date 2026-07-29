@@ -385,12 +385,16 @@ Deliver:
 - Clear timestamp and scope semantics for joining assignments, exposures, experiment rewards, policy updates, and activity attempts in OLAP queries.
 - Basic monitoring for missing exposures, missing outcomes, failed reward updates, ETL lag, ClickHouse query failures, and unexpected assignment imbalance.
 - Thompson Sampling monitoring for current PostgreSQL runtime policy state plus ClickHouse-backed reward counts, policy-update event history, assignment share over time, missing/delayed rewards, and guardrail-triggered pauses.
-- Project-level and section-level dashboards or reporting surfaces needed before native A/B testing is broadly available.
+- A dedicated Analytics tab on the existing experiment-specific details page, alongside Configuration; do not create a separate top-level analytics destination for this slice.
+- UpGrade-inspired, Torus-native views for participant enrollment over time by condition, participant totals, condition summaries, configured metric metadata, condition-level average reward/outcome with sample size, and adaptive policy state when applicable.
+- Experiment-scoped filters for participating section, condition, event/outcome type, and bounded time range, applied consistently to all relevant charts and summaries.
+- Accessible chart alternatives plus distinct loading, empty, delayed/partial, and ClickHouse-unavailable states that do not block experiment configuration.
 - Dataset/download coverage for experiment data using the existing dataset infrastructure.
 
 Defer:
 
 - Complex metric-query language parity with UpGrade.
+- Arbitrary author-defined metrics, statistical significance/inference, exact UpGrade visual parity, and a cross-experiment dashboard.
 - New warehouse or research-data product infrastructure beyond the existing xAPI/S3/ClickHouse path.
 - Advanced adaptive algorithm monitoring beyond the fields needed to validate Thompson Sampling reward flow and posterior state.
 
@@ -398,16 +402,17 @@ Dependencies:
 
 - Runtime telemetry reconciliation.
 - Experiment xAPI and OLAP foundation.
-- ClickHouse projections or query APIs for experiment assignment, exposure, reward/outcome, and policy-update events.
+- The implemented `experiment_attributions` ClickHouse projection and query APIs for experiment assignment, exposure, reward/outcome, and policy-update events.
+- The existing experiment-specific details LiveView and its project/experiment authorization boundary.
 - Current Thompson Sampling policy state for runtime inspection and OLAP event history for research/audit analytics.
 - Lifecycle states that define which experiments should appear in reporting.
 - Analytics-facing A/B testing queries or read models rather than direct PostgreSQL event-table access.
-- Removal or explicit pre-removal plan for temporary PostgreSQL exposure, outcome, reward, and policy-update tables.
+- Completed removal of temporary PostgreSQL exposure, outcome, reward, and policy-update event-history tables.
 
 Why this comes here:
 
 - Analytics should be built after experiment telemetry is flowing through xAPI and ClickHouse. Building dashboards earlier would report against a transitional PostgreSQL event-log model that does not meet the new scalability requirement.
-- Analytics cannot be considered MVP-complete while dashboards, reports, exports, or reward/policy evidence still depend on the temporary PostgreSQL event-history tables.
+- Analytics must extend the implemented attribution projection and must not reintroduce PostgreSQL event-history aggregates.
 
 Expected child artifacts:
 
@@ -639,9 +644,15 @@ Post-MVP follow-on candidates:
 
 ## Recommended Next Slice
 
-Document `docs/exec-plans/current/epics/ab_testing/section_participation/` next with `harness-architect`, then use `harness-requirements` and `harness-plan` before implementation. This feature must be integrated before release QA and any analytics assumptions that count section participation.
+Use the reconciled analytics PRD to regenerate `requirements.yml`, `fdd.md`, and `plan.md` before implementation. The section-participation and experiment OLAP foundation dependencies are implemented, so the new design can start from the existing ClickHouse attribution contracts and experiment-details surface.
 
 ## Decision Log
+### 2026-07-29 - Define Experiment-Specific Analytics Tab And UpGrade-Inspired Views
+- Change: Updated slice 9 to place analytics on the existing experiment details page and define enrollment, condition, configured metric, adaptive-policy, filtering, accessibility, and failure-state requirements.
+- Reason: Product selected the new experiment-specific details page as the analytics location and provided UpGrade's Data tab as the reference for useful research views.
+- Evidence: `docs/exec-plans/current/epics/ab_testing/analytics/prd.md`; `lib/oli_web/live/workspaces/course_author/experiment_details_live.ex`; `lib/oli/experiments/clickhouse_analytics.ex`.
+- Impact: The analytics surface is no longer an open product decision; requirements, functional design, and delivery planning should be regenerated from the updated epic and PRD before implementation.
+
 ### 2026-07-27 - Promote Explicit Experiment Section Participation Into MVP
 - Change: Replaced the post-MVP coarse section/source-project participation concept with an MVP feature that selects participating sections per experiment from active sections created from or currently remixing the experiment's project.
 - Reason: Researchers need deliberate control over which sections generate experiment data, and learners in nonparticipating sections must receive deterministic first-option fallback instead of an experimental assignment.

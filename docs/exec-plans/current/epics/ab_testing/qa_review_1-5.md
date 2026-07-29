@@ -27,25 +27,6 @@ The active experiment was also correctly started:
 
 ## Findings
 
-### [ ] Finding 5: Multiple active experiments can target the same decision point
-
-- Status: Open
-- Severity: High
-- Area: Experiment lifecycle validation / runtime matching
-- QA context: While preparing to validate Thompson Sampling, weighted-random QA had already confirmed that an active experiment against the same A/B decision point can receive assignments. If a second experiment is started against that same decision point, the older active experiment may continue to win runtime matching.
-- Expected: A project or section scope should not allow more than one active experiment targeting the same stable decision point identity at the same time.
-- Actual: Runtime matching orders matching active experiments by ascending experiment ID and uses the first row. This means the oldest active matching experiment wins silently, while the newer active experiment receives no assignments or exposures for that decision point.
-- Evidence:
-  - `Oli.Experiments.active_experiment_match/2` filters active experiments by project/section and stable decision point identity, then applies `order_by: [asc: experiment.id]` and `limit: 1`.
-  - Existing database constraints only prevent duplicate decision-point keys within the same experiment; they do not prevent two active experiments from targeting the same alternatives resource and decision point key in the same scope.
-- Impact:
-  - Thompson Sampling QA can be invalidated if a previous weighted-random experiment remains active for the same decision point.
-  - Authors can believe a newer experiment is active while delivery is still assigning learners through an older experiment.
-- Proposed change:
-  - Activation should reject starting an experiment when another active experiment already targets the same `project_id`, compatible `section_id` scope, `alternatives_resource_id`, and `decision_point_key`.
-  - Runtime matching should either fail loudly on multiple active matches or emit explicit diagnostic telemetry instead of silently choosing the oldest experiment.
-  - Add regression coverage for project-scoped and section-scoped conflicts, including the case where one project-scoped active experiment conflicts with a section-scoped active experiment for the same decision point.
-
 ### [x] Finding 6: Thompson reward handoff misses open/free section assignments
 
 - Status: Fixed
@@ -221,9 +202,9 @@ The active experiment was also correctly started:
   - Removed the old `/authoring/project/:project_id/alternatives` LiveView route.
   - Removed route-specific tests for the old alternatives LiveView.
 
-### [ ] Enhancement 3: Move A/B decision point creation into the experiments UI
+### [x] Enhancement 3: Move A/B decision point creation into the experiments UI
 
-- Status: Proposed
+- Status: Fixed
 - Area: Authoring UX / native experiment setup
 - Context: The immediate QA blocker was fixed by adding `New A/B Decision Point` under Manage Alternatives. That works, but it still splits experiment setup across Manage Alternatives and the A/B Testing experiments page.
 - Desired behavior: Authors should be able to reach and/or create the required A/B decision point directly from the experiments UI while creating or preparing an experiment.
@@ -232,24 +213,6 @@ The active experiment was also correctly started:
   - An A/B decision point must already exist.
   - The decision point must have at least two options.
 - Follow-up: Design the experiments-page flow for creating a decision point, adding options, linking to the alternatives configuration page, and then immediately using the configured decision point in a weighted random or Thompson Sampling experiment.
-
-### [ ] Enhancement 4: Remove option-management actions from page editor alternatives tabs
-
-- Status: Proposed
-- Area: Page editor / alternatives authoring UX
-- Context: The page editor currently exposes option-management affordances inside alternatives tabs. This adds complexity for both learner-preference alternatives and A/B Testing alternatives.
-- Desired behavior: The page editor should display all alternatives options as tabs for content editing only. Authors should manage alternative option creation, rename, and deletion from Manage Alternatives.
-- Rationale: Keeping option management centralized in Manage Alternatives would reduce duplicated workflows and make A/B decision points less error-prone while preserving the page editor as the place to edit branch content.
-- Follow-up: Review `assets/src/components/resource/editors/AlternativesEditor.tsx` and remove tab action-menu affordances while ensuring every option from the selected alternatives group remains visible as a tab.
-
-### [ ] Enhancement 5: Support reordering alternatives options with creation-order defaults
-
-- Status: Proposed
-- Area: Manage Alternatives / alternatives option ordering
-- Context: Alternative options need a predictable order in both Manage Alternatives and page editor tabs.
-- Desired behavior: Alternative options should be reorderable by authors. By default, options should appear in ascending order by creation order.
-- Rationale: Predictable default ordering makes QA and authoring easier, while explicit reordering gives authors control over tab/order presentation without requiring delete-and-recreate workflows.
-- Follow-up: Define where option order is stored, update Manage Alternatives to support reordering, and ensure page editor tabs and delivery rendering respect that order.
 
 ### [x] Enhancement 6: Support unscored activity rewards for Thompson Sampling
 
@@ -262,9 +225,9 @@ The active experiment was also correctly started:
   - Thompson reward handoff now records rewards with source `activity_attempt:full_credit`.
   - Added regression coverage for an unscored A/B branch with two evaluated activities, proving one full-credit attempt and one non-full-credit attempt create two rewards and two Thompson policy updates.
 
-### [ ] Enhancement 7: Generate experiment slugs from experiment names
+### [x] Enhancement 7: Generate experiment slugs from experiment names
 
-- Status: Proposed
+- Status: Fixed
 - Area: Experiment authoring UX / identifiers
 - Context: Manual QA raised that authors must currently provide both an experiment name and slug when creating an A/B Testing experiment.
 - Desired behavior: The experiment slug should be generated automatically from the experiment name to improve consistency and reduce authoring friction.
