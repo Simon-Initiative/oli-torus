@@ -69,7 +69,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       |> assign(:page_count, page_count(assigns.participation))
 
     ~H"""
-    <div id="experiment-configuration">
+    <div id="experiment-configuration" class="dark:text-gray-100">
       <.link
         navigate={~p"/workspaces/course_author/#{@project.slug}/experiments"}
         class="text-primary"
@@ -80,7 +80,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       <div class="d-flex justify-content-between align-items-center mt-3">
         <div>
           <h2 class="mb-1">{@experiment.name}</h2>
-          <p class="text-muted mb-0">Configure this experiment and section participation.</p>
+          <p class="text-muted mb-0 dark:text-gray-400">
+            Configure this experiment and section participation.
+          </p>
         </div>
         <div class="d-flex align-items-center gap-2">
           <button
@@ -127,8 +129,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         {@experiment_action_success}
       </div>
 
-      <section class="card mt-4" aria-labelledby="experiment-details-heading">
-        <div class="card-header bg-white px-4 py-3">
+      <section
+        class="card mt-4 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100"
+        aria-labelledby="experiment-details-heading"
+      >
+        <div class="card-header bg-white px-4 py-3 dark:border-gray-700 dark:bg-neutral-800">
           <h3 id="experiment-details-heading" class="h5 font-weight-bold mb-0">
             Experiment details
           </h3>
@@ -171,8 +176,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             >
               <h4 class="h6 font-weight-bold mb-3">Conditions</h4>
               <div class="table-responsive">
-                <table id="experiment-conditions-table" class="table table-sm table-hover mb-0">
-                  <thead class="thead-light">
+                <table
+                  id="experiment-conditions-table"
+                  class="table table-sm table-hover mb-0 dark:text-gray-100"
+                >
+                  <thead class="thead-light dark:bg-neutral-700 dark:text-gray-100">
                     <tr>
                       <th scope="col">Condition</th>
                       <th scope="col">Option ID</th>
@@ -180,11 +188,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                     </tr>
                   </thead>
                   <tbody>
-                    <tr :for={condition <- @authoring_view.conditions}>
+                    <tr
+                      :for={condition <- @authoring_view.conditions}
+                      class="dark:border-gray-700 dark:hover:bg-neutral-700"
+                    >
                       <td class="font-weight-bold">
                         {condition_label(condition, @option_labels)}
                       </td>
-                      <td><span class="font-monospace text-muted">{condition.option_id}</span></td>
+                      <td>
+                        <span class="font-monospace text-muted dark:text-gray-400">
+                          {condition.option_id}
+                        </span>
+                      </td>
                       <td>{condition.weight}</td>
                     </tr>
                   </tbody>
@@ -197,14 +212,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               class="col-12 col-xl-6 mt-2"
             >
               <h4 class="h6 font-weight-bold mb-3">Policy configuration</h4>
-              <pre class="bg-light border rounded p-3 mb-0"><%= Jason.encode!(@experiment.policy_config, pretty: true) %></pre>
+              <pre class="bg-light border rounded p-3 mb-0 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-100"><%= Jason.encode!(@experiment.policy_config, pretty: true) %></pre>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="card mt-4" aria-labelledby="participating-sections-heading">
-        <div class="card-header bg-white px-4 py-3">
+      <section
+        class="card mt-4 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100"
+        aria-labelledby="participating-sections-heading"
+      >
+        <div class="card-header bg-white px-4 py-3 dark:border-gray-700 dark:bg-neutral-800">
           <h3 id="participating-sections-heading" class="h5 font-weight-bold mb-0">
             Participating Sections
           </h3>
@@ -226,10 +244,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           <table
             :if={not Enum.empty?(@participation.eligible_sections)}
             id="participating-sections-table"
-            class="table table-sm"
+            class="table table-sm dark:text-gray-100"
           >
             <caption class="sr-only">Sections eligible to participate in this experiment</caption>
-            <thead>
+            <thead class="dark:border-gray-700 dark:bg-neutral-700 dark:text-gray-100">
               <tr>
                 <th scope="col"><span class="sr-only">Participation selection</span></th>
                 <th scope="col">Section</th>
@@ -239,7 +257,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               </tr>
             </thead>
             <tbody>
-              <tr :for={section <- @page_sections} id={"participating-section-#{section.id}"}>
+              <tr
+                :for={section <- @page_sections}
+                id={"participating-section-#{section.id}"}
+                class="dark:border-gray-700"
+              >
                 <td>
                   <input
                     type="checkbox"
@@ -252,7 +274,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                   />
                 </td>
                 <td>
-                  <a href={~p"/sections/#{section.slug}/manage"}>{section.title}</a>
+                  <a
+                    class="text-primary dark:text-blue-300"
+                    href={~p"/sections/#{section.slug}/manage"}
+                  >
+                    {section.title}
+                  </a>
                 </td>
                 <td>{section.slug}</td>
                 <td>{format_date(section.start_date)}</td>
@@ -266,7 +293,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               <li class={["page-item", @page == 1 && "disabled"]}>
                 <.link
                   patch={page_path(@project.slug, @experiment.id, @page - 1)}
-                  class="page-link"
+                  class="page-link dark:border-gray-700 dark:bg-neutral-800 dark:text-blue-300"
                   aria-disabled={@page == 1}
                 >
                   Previous
@@ -275,7 +302,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               <li :for={page <- 1..@page_count} class={["page-item", page == @page && "active"]}>
                 <.link
                   patch={page_path(@project.slug, @experiment.id, page)}
-                  class="page-link"
+                  class={[
+                    "page-link dark:border-gray-700 dark:bg-neutral-800 dark:text-blue-300",
+                    page == @page && "dark:!bg-primary dark:!text-white"
+                  ]}
                   aria-current={page == @page && "page"}
                 >
                   {page}
@@ -284,7 +314,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               <li class={["page-item", @page == @page_count && "disabled"]}>
                 <.link
                   patch={page_path(@project.slug, @experiment.id, @page + 1)}
-                  class="page-link"
+                  class="page-link dark:border-gray-700 dark:bg-neutral-800 dark:text-blue-300"
                   aria-disabled={@page == @page_count}
                 >
                   Next
@@ -444,7 +474,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp detail_item(assigns) do
     ~H"""
     <div class="min-w-0">
-      <div class="text-muted small text-uppercase font-weight-bold mb-1">{@label}</div>
+      <div class="text-muted small text-uppercase font-weight-bold mb-1 dark:text-gray-400">
+        {@label}
+      </div>
       <div :if={@monospace} class="font-monospace">{@value}</div>
       <span :if={@badge} class={["badge", @badge_class]}>{@value}</span>
       <div :if={not @monospace and not @badge}>{@value}</div>
