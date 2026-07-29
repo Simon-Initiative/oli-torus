@@ -42,4 +42,23 @@ defmodule Oli.Clickhouse.TasksTest do
       assert Tasks.clickhouse_http_url(config) == "https://clickhouse.example.com:8443/"
     end
   end
+
+  describe "clickhouse_native_endpoint/2" do
+    test "removes an HTTP scheme from the host and excludes credentials" do
+      config = %{
+        host: "http://clickhouse-staging.oli.cmu.edu",
+        native_port: 9000,
+        user: "admin",
+        password: "super-secret"
+      }
+
+      endpoint = Tasks.clickhouse_native_endpoint(config, "oli_analytics_ab_testing")
+
+      assert endpoint ==
+               "tcp://clickhouse-staging.oli.cmu.edu:9000/oli_analytics_ab_testing"
+
+      refute endpoint =~ "admin"
+      refute endpoint =~ "super-secret"
+    end
+  end
 end

@@ -121,7 +121,7 @@ defmodule Oli.Clickhouse.Tasks do
     case System.find_executable("goose") do
       nil ->
         error_message = """
-        ❌ goose executable not found in PATH
+        goose executable not found in PATH
 
         Please install goose:
           macOS: brew install goose
@@ -144,19 +144,22 @@ defmodule Oli.Clickhouse.Tasks do
 
           case System.cmd(goose_path, goose_args, stderr_to_stdout: true) do
             {output, 0} ->
-              maybe_emit_command_output(sink, output)
+              maybe_emit_command_output(sink, redact_credentials(output, config))
               emit(sink, :success, "ClickHouse migration #{command} completed successfully")
               :ok
 
             {output, exit_code} ->
-              error_message = """
-              ❌ ClickHouse migration #{command} failed with exit code #{exit_code}
+              safe_output = redact_credentials(output, config)
+              safe_endpoint = clickhouse_native_endpoint(config, database)
 
-              Database URL: #{database_url}
+              error_message = """
+              ClickHouse migration #{command} failed with exit code #{exit_code}
+
+              Target: #{safe_endpoint}
               Migrations Dir: #{migrations_dir}
 
               Output:
-              #{output}
+              #{safe_output}
 
               Common issues:
               1. ClickHouse is not running or accepting connections
@@ -171,7 +174,7 @@ defmodule Oli.Clickhouse.Tasks do
         else
           _ ->
             error_message = """
-            ❌ Cannot connect to ClickHouse
+            Cannot connect to ClickHouse
 
             Please ensure:
             1. ClickHouse is running and accepting connections
@@ -188,7 +191,7 @@ defmodule Oli.Clickhouse.Tasks do
   defp create_migration(name, sink) when is_binary(name) do
     case System.find_executable("goose") do
       nil ->
-        error_message = "❌ goose executable not found in PATH"
+        error_message = "goose executable not found in PATH"
         emit(sink, :error, error_message)
         raise error_message
 
@@ -203,7 +206,7 @@ defmodule Oli.Clickhouse.Tasks do
             :ok
 
           {output, _exit_code} ->
-            error_message = "❌ Failed to create migration: #{output}"
+            error_message = "Failed to create migration: #{output}"
             emit(sink, :error, error_message)
             raise error_message
         end
@@ -223,14 +226,14 @@ defmodule Oli.Clickhouse.Tasks do
           :ok
         else
           :error ->
-            error_message = "❌ Failed to create ClickHouse database before setup"
+            error_message = "Failed to create ClickHouse database before setup"
             emit(sink, :error, error_message)
             raise error_message
         end
 
       :error ->
         error_message = """
-        ❌ Cannot connect to ClickHouse for setup
+        Cannot connect to ClickHouse for setup
 
         Please ensure:
         1. ClickHouse is running and accepting connections
@@ -260,9 +263,9 @@ defmodule Oli.Clickhouse.Tasks do
           :error ->
             error_message =
               if force? do
-                "❌ Failed to force reset ClickHouse database because the drop or create step did not succeed"
+                "Failed to force reset ClickHouse database because the drop or create step did not succeed"
               else
-                "❌ Failed to reset ClickHouse database because the drop or create step did not succeed"
+                "Failed to reset ClickHouse database because the drop or create step did not succeed"
               end
 
             emit(sink, :error, error_message)
@@ -271,7 +274,7 @@ defmodule Oli.Clickhouse.Tasks do
 
       :error ->
         error_message = """
-        ❌ Cannot connect to ClickHouse for reset
+        Cannot connect to ClickHouse for reset
 
         Please ensure:
         1. ClickHouse is running and accepting connections
@@ -300,7 +303,7 @@ defmodule Oli.Clickhouse.Tasks do
                 :ok
 
               :error ->
-                error_message = "❌ Failed to drop database '#{database}'"
+                error_message = "Failed to drop database '#{database}'"
                 emit(sink, :error, error_message)
                 raise error_message
             end
@@ -313,7 +316,7 @@ defmodule Oli.Clickhouse.Tasks do
             emit(sink, :warning, "Cannot drop default database, skipping...")
             :ok
           else
-            error_message = "❌ Cannot drop the 'default' database - it's required by ClickHouse"
+            error_message = "Cannot drop the 'default' database - it's required by ClickHouse"
             emit(sink, :error, error_message)
             raise error_message
           end
@@ -321,7 +324,7 @@ defmodule Oli.Clickhouse.Tasks do
 
       :error ->
         error_message = """
-        ❌ Cannot connect to ClickHouse for drop operation
+        Cannot connect to ClickHouse for drop operation
 
         Please ensure:
         1. ClickHouse is running and accepting connections
@@ -336,7 +339,7 @@ defmodule Oli.Clickhouse.Tasks do
 
   defp confirm_drop_database?(database) do
     IO.puts(
-      "⚠️  WARNING: This will permanently delete the database '#{database}' and all its data!"
+      "WARNING: This will permanently delete the database '#{database}' and all its data!"
     )
 
     IO.puts("Are you sure you want to continue? (y/N)")
@@ -409,12 +412,17 @@ defmodule Oli.Clickhouse.Tasks do
   end
 
   defp build_database_url(config, database) do
-    host = config[:host]
+    host = clickhouse_host(config)
     port = config[:native_port]
     user = config[:user]
     password = config[:password]
 
     "tcp://#{user}:#{password}@#{host}:#{port}/#{database}"
+  end
+
+  @doc false
+  def clickhouse_native_endpoint(config, database) do
+    "tcp://#{clickhouse_host(config)}:#{config[:native_port]}/#{database}"
   end
 
   defp configured_database!(config) do
@@ -460,6 +468,30 @@ defmodule Oli.Clickhouse.Tasks do
     |> Map.put(:query, query)
     |> Map.put(:fragment, nil)
     |> URI.to_string()
+  end
+
+  defp clickhouse_host(config) do
+    host =
+      config
+      |> Map.fetch!(:host)
+      |> to_string()
+      |> String.trim()
+
+    uri =
+      case URI.parse(host) do
+        %URI{scheme: scheme} = uri when scheme in ["http", "https", "tcp"] -> uri
+        _ -> URI.parse("//" <> host)
+      end
+
+    uri.host || raise "ClickHouse host is not configured"
+  end
+
+  defp redact_credentials(output, config) when is_binary(output) do
+    [:admin_password, :query_password, :password]
+    |> Enum.map(&config[&1])
+    |> Enum.filter(&(is_binary(&1) and &1 != ""))
+    |> Enum.uniq()
+    |> Enum.reduce(output, &String.replace(&2, &1, "[REDACTED]"))
   end
 
   defp test_clickhouse_connection(config, sink, opts \\ []) do
