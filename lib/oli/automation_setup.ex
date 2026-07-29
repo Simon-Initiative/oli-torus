@@ -10,6 +10,7 @@ defmodule Oli.AutomationSetup do
   alias Oli.Analytics.Summary.StudentResponse
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectResource
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Resource
 
   alias Ecto.Multi
@@ -100,9 +101,19 @@ defmodule Oli.AutomationSetup do
          {:ok} <-
            has_no_authors(project.authors) do
       resource_ids = for r <- project.resources, do: r.id
+      publication_ids = for p <- project.publications, do: p.id
 
       result =
         Multi.new()
+        # Delete section/publication pins before deleting publications. Sections created by automation
+        # usually clear these via section deletion, but projects may still have pinned publications from
+        # additional or stale section mappings.
+        |> Multi.delete_all(
+          :section_project_publications,
+          from(spp in SectionsProjectsPublications,
+            where: spp.project_id == ^project.id or spp.publication_id in ^publication_ids
+          )
+        )
         # Delete all the publications for this project, this will also get the publication_resources
         |> Multi.run(:publications, fn _, _ ->
           {:ok, Enum.each(project.publications, &Oli.Publishing.delete_publication/1)}
