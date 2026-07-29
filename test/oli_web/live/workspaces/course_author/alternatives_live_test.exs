@@ -2,13 +2,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
-  import Ecto.Query
   import Oli.Factory
   import Phoenix.LiveViewTest
 
-  alias Oli.Authoring.Course.ProjectResource
-  alias Oli.Repo
-  alias Oli.Resources.{ResourceType, Revision}
+  alias Oli.Resources.ResourceType
 
   defp live_view_alternatives_route(project_slug),
     do: ~p"/workspaces/course_author/#{project_slug}/alternatives"
@@ -16,23 +13,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
   describe "alternatives view" do
     setup [:admin_conn, :create_project]
 
-    test "creates a native A/B Testing decision point", %{conn: conn, project: project} do
+    test "shows only learner preference alternatives", %{conn: conn, project: project} do
+      insert_alternatives_group(project, "Decision Point", "upgrade_decision_point")
+      insert_alternatives_group(project, "Learner Preference", "user_section_preference")
+      insert_alternatives_group(project, "Legacy Alternative", nil)
+
       {:ok, view, _html} = live(conn, live_view_alternatives_route(project.slug))
 
-      assert has_element?(view, "button", "New A/B Decision Point")
-
-      view
-      |> element("button", "New A/B Decision Point")
-      |> render_click()
-
-      view
-      |> form("#create_modal form", %{"params" => %{"name" => "Decision Point 1"}})
-      |> render_submit()
-
-      assert has_element?(view, ".alternatives-group", "Decision Point 1")
-
-      revision = latest_alternatives_revision(project.id, "Decision Point 1")
-      assert revision.content["strategy"] == "upgrade_decision_point"
+      refute has_element?(view, "button", "New A/B Decision Point")
+      refute has_element?(view, ".alternatives-group", "Decision Point")
+      assert has_element?(view, ".alternatives-group", "Learner Preference")
+      assert has_element?(view, ".alternatives-group", "Legacy Alternative")
     end
   end
 
@@ -71,17 +62,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
     [project: project]
   end
 
-  defp latest_alternatives_revision(project_id, title) do
-    Repo.one!(
-      from revision in Revision,
-        join: project_resource in ProjectResource,
-        on: project_resource.resource_id == revision.resource_id,
-        where:
-          project_resource.project_id == ^project_id and
-            revision.resource_type_id == ^ResourceType.id_for_alternatives() and
-            revision.title == ^title,
-        order_by: [desc: revision.id],
-        limit: 1
-    )
+  defp insert_alternatives_group(project, title, strategy) do
+    resource = insert(:resource)
+    insert(:project_resource, project_id: project.id, resource_id: resource.id)
+
+    revision =
+      insert(:revision, %{
+        resource: resource,
+        resource_type_id: ResourceType.id_for_alternatives(),
+        title: title,
+        deleted: false,
+        content:
+          case strategy do
+            nil -> %{"options" => []}
+            strategy -> %{"strategy" => strategy, "options" => []}
+          end
+      })
+
+    publication = Oli.Publishing.project_working_publication(project.slug)
+    insert(:published_resource, publication: publication, resource: resource, revision: revision)
   end
 end

@@ -34,6 +34,12 @@ section configuration with a dedicated experiment details route. That route pres
 decision point, conditions, policy configuration, and a ten-row paginated table whose checkboxes
 persist participation changes immediately. Experiment archiving is exposed only after completion.
 
+Decision-point and condition authoring now lives in the Experiments page alongside native
+experiments. The page lists every project decision point and supports creating and renaming decision
+points plus creating, renaming, and removing their conditions. Manage Alternatives filters this
+shared resource type to learner-preference alternatives only, so authors no longer need to understand
+the shared persistence model.
+
 Manual `has_experiments` toggles were removed from course-author experiment and overview screens.
 Native existence is now derived through `Oli.Experiments.project_has_experiments?/1`, which returns
 true for any draft, active, paused, or completed native experiment and false when none exist or all
@@ -76,3 +82,6 @@ project-author access and the current project relationship remain mandatory in t
 Verification: `mix format`, `mix compile --warnings-as-errors`, and the targeted 160-test suite pass
 with zero failures. Requirements FDD, plan, and implementation proof gates pass, as does the full
 work-item validator.
+
+Follow-up UI relocation verification: the focused Experiments and Manage Alternatives LiveView suite
+passes 18 tests with zero failures.

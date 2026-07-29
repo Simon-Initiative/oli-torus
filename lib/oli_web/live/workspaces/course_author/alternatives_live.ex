@@ -28,6 +28,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
         @alternatives_type_id
       )
 
+    alternatives =
+      Enum.filter(
+        alternatives,
+        &(Map.get(&1.content, "strategy", "user_section_preference") ==
+            "user_section_preference")
+      )
+
     subscriptions = subscribe(alternatives, project.slug)
 
     {:ok,
@@ -52,9 +59,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
       <h2>Alternatives</h2>
       <div class="d-flex flex-row">
         <div class="flex-grow-1"></div>
-        <button class="btn btn-outline-primary mr-2" phx-click="show_create_experiment">
-          <i class="fa fa-plus"></i> New A/B Decision Point
-        </button>
         <button class="btn btn-primary" phx-click="show_create_modal">
           <i class="fa fa-plus"></i> New Alternative
         </button>
@@ -73,7 +77,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   end
 
   attr(:editing_enabled, :boolean, default: true)
-  attr(:source, :atom, default: :alternatives)
   attr(:group, :any)
 
   def group(assigns) do
@@ -92,7 +95,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
           values={["phx-value-resource-id": @group.resource_id]}
         />
         <button
-          :if={@source == :alternatives}
           class="btn btn-danger btn-sm mr-2"
           phx-click="show_delete_group_modal"
           phx-value-resource_id={@group.resource_id}
@@ -123,45 +125,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
       </div>
     </div>
     """
-  end
-
-  def handle_event("show_create_experiment", _, socket) do
-    changeset =
-      {%{}, %{name: :string}}
-      |> Ecto.Changeset.cast(%{}, [:name])
-
-    form_body_fn = fn assigns ->
-      ~H"""
-      <div class="form-group">
-        {text_input(
-          @form,
-          :name,
-          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-          placeholder: "Enter a name for the A/B decision point",
-          phx_hook: "InputAutoSelect",
-          required: true
-        )}
-      </div>
-      """
-    end
-
-    modal_assigns = %{
-      id: "create_modal",
-      title: "Create A/B Decision Point",
-      submit_label: "Create",
-      changeset: changeset,
-      form_body_fn: form_body_fn,
-      on_validate: "validate_group",
-      on_submit: "create_experiment"
-    }
-
-    modal = fn assigns ->
-      ~H"""
-      <FormModal.modal {@modal_assigns} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("show_create_modal", _, socket) do
@@ -216,20 +179,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
         author,
         @alternatives_type_id,
         %{title: name, content: %{"options" => [], "strategy" => "user_section_preference"}}
-      )
-
-    {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
-  end
-
-  def handle_event("create_experiment", %{"params" => %{"name" => name}}, socket) do
-    %{project: project, author: author, alternatives: alternatives} = socket.assigns
-
-    {:ok, group} =
-      ResourceEditor.create(
-        project.slug,
-        author,
-        @alternatives_type_id,
-        %{title: name, content: %{"options" => [], "strategy" => "upgrade_decision_point"}}
       )
 
     {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}

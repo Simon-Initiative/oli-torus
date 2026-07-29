@@ -117,7 +117,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       refute has_element?(view, "#ab-experiments-toggle-form")
     end
 
-    test "legacy alternatives are rendered read-only without export controls", %{
+    test "decision points and conditions are editable without export controls", %{
       view: _view,
       conn: conn,
       project: project,
@@ -136,14 +136,37 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> step(:test_has_alternatives_group)
       |> step(:test_has_options)
       |> step(:put_options)
-      |> step(:test_has_button_show_edit_group_modal, :refute)
-      |> step(:test_has_button_show_edit_option_1_modal, :refute)
-      |> step(:test_has_button_show_edit_option_2_modal, :refute)
-      |> step(:test_has_button_show_delete_option_1_modal, :refute)
-      |> step(:test_has_button_show_delete_option_2_modal, :refute)
-      |> step(:test_has_new_option_link, :refute)
+      |> step(:test_has_button_show_edit_group_modal)
+      |> step(:test_has_button_show_edit_option_1_modal)
+      |> step(:test_has_button_show_edit_option_2_modal)
+      |> step(:test_has_button_show_delete_option_1_modal)
+      |> step(:test_has_button_show_delete_option_2_modal)
+      |> step(:test_has_new_option_link)
       |> step(:test_has_button_download_segment_json, :refute)
       |> step(:test_has_button_download_experiment_json, :refute)
+    end
+
+    test "creates decision points in the experiments view", %{view: view, project: project} do
+      assert has_element?(view, "button", "Create Decision Point")
+
+      view
+      |> element("button", "Create Decision Point")
+      |> render_click()
+
+      view
+      |> form("#create_decision_point_modal form", %{
+        "params" => %{"name" => "Homepage Decision"}
+      })
+      |> render_submit()
+
+      assert has_element?(view, ".alternatives-group", "Homepage Decision")
+
+      open_create_experiment(view)
+      assert has_element?(view, "#experiment_decision_point option", "Homepage Decision")
+
+      revision = Experiments.get_latest_experiment(project.slug)
+      assert revision.title == "Homepage Decision"
+      assert revision.content["strategy"] == "upgrade_decision_point"
     end
 
     test "download buttons remain absent", %{view: view} do

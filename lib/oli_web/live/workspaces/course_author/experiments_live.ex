@@ -7,23 +7,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
-  alias Oli.Authoring.Experiments, as: LegacyExperiments
+  alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{CreateExperimentRequest, Scope}
+  alias Oli.Resources.ResourceType
   alias Oli.Utils.Slug
   alias OliWeb.Common.Modal.{DeleteModal, FormModal}
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
+  @alternatives_type_id ResourceType.id_for_alternatives()
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     project = socket.assigns.project
-    experiment = LegacyExperiments.get_latest_experiment(project.slug)
     scope = authoring_scope(socket)
 
     socket =
       socket
+      |> assign_decision_points()
+      |> subscribe_to_decision_points()
       |> assign_authoring_experiments()
       |> start_async(:load_eligible_sections, fn ->
         ABExperiments.list_eligible_sections(scope)
@@ -31,7 +34,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     {:ok,
      assign(socket,
-       experiment: experiment,
        resource_slug: project.slug,
        resource_title: project.title
      )}
@@ -127,22 +129,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       <% end %>
 
       <section class="mt-5" aria-labelledby="decision-points-heading">
-        <h3 id="decision-points-heading" class="h4">Decision Points</h3>
-        <ul :if={not Enum.empty?(@decision_point_candidates)} class="list-group mb-3">
-          <li :for={candidate <- @decision_point_candidates} class="list-group-item">
-            {candidate.title}
-          </li>
-        </ul>
-        <%= if @experiment do %>
-          <OliWeb.Resources.AlternativesEditor.group
-            group={@experiment}
-            editing_enabled={false}
-            source={:experiments}
-          />
-        <% else %>
-          <div :if={Enum.empty?(@decision_point_candidates)}>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 id="decision-points-heading" class="h4 mb-0">Decision Points</h3>
+          <button class="btn btn-outline-primary" phx-click="show_create_decision_point">
+            <i class="fa fa-plus"></i> Create Decision Point
+          </button>
+        </div>
+        <%= if Enum.empty?(@decision_points) do %>
+          <div>
             No decision points have been created yet.
           </div>
+        <% else %>
+          <.decision_point_group
+            :for={decision_point <- @decision_points}
+            group={decision_point}
+          />
         <% end %>
       </section>
 
@@ -572,6 +573,69 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply, assign(socket, section_participation: nil)}
   end
 
+  def handle_event("show_create_decision_point", _params, socket) do
+    changeset =
+      {%{}, %{name: :string}}
+      |> Ecto.Changeset.cast(%{}, [:name])
+
+    form_body_fn = fn assigns ->
+      ~H"""
+      <div class="form-group">
+        {text_input(
+          @form,
+          :name,
+          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+          placeholder: "Enter a name for the decision point",
+          phx_hook: "InputAutoSelect",
+          required: true
+        )}
+      </div>
+      """
+    end
+
+    modal_assigns = %{
+      id: "create_decision_point_modal",
+      title: "Create Decision Point",
+      submit_label: "Create",
+      changeset: changeset,
+      form_body_fn: form_body_fn,
+      on_validate: "validate_group",
+      on_submit: "create_decision_point"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <FormModal.modal {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("create_decision_point", %{"params" => %{"name" => name}}, socket) do
+    %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
+
+    case ResourceEditor.create(
+           project.slug,
+           ctx.author,
+           @alternatives_type_id,
+           %{title: name, content: %{"options" => [], "strategy" => "upgrade_decision_point"}}
+         ) do
+      {:ok, decision_point} ->
+        {:noreply,
+         socket
+         |> hide_modal()
+         |> assign(decision_points: [decision_point | decision_points])
+         |> assign_authoring_experiments()}
+
+      {:error, message: error_message} ->
+        show_error(socket, error_message)
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
   def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
     changeset =
       {%{id: uuid(), resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
@@ -597,7 +661,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     modal_assigns = %{
       id: "create_modal",
-      title: "Create Option",
+      title: "Create Condition",
       submit_label: "Create",
       changeset: changeset,
       form_body_fn: form_body_fn,
@@ -619,20 +683,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         %{"params" => %{"id" => option_id, "name" => name, "resource_id" => resource_id}},
         socket
       ) do
-    %{project: project, ctx: ctx, experiment: experiment} = socket.assigns
-    %{content: %{"options" => options} = content} = experiment
+    %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+    %{content: %{"options" => options} = content} = find_group(decision_points, resource_id)
     new_options = [%{"id" => option_id, "name" => name} | options]
 
     case edit_group_options(
            project.slug,
            ctx.author,
-           [socket.assigns.experiment],
-           ensure_integer(resource_id),
+           decision_points,
+           resource_id,
            content,
            new_options
          ) do
-      {:ok, [experiment], _group} ->
-        {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+      {:ok, decision_points, _group} ->
+        {:noreply,
+         hide_modal(socket)
+         |> assign(decision_points: decision_points)
+         |> assign_authoring_experiments()}
 
       {:error, message: error_message} ->
         show_error(socket, error_message)
@@ -644,10 +712,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   def handle_event(
         "show_edit_group_modal",
-        %{"resource-id" => _resource_id},
+        %{"resource-id" => resource_id},
         socket
       ) do
-    changeset = Oli.Resources.Revision.changeset(socket.assigns.experiment)
+    resource_id = ensure_integer(resource_id)
+
+    changeset =
+      Oli.Resources.Revision.changeset(find_group(socket.assigns.decision_points, resource_id))
 
     form_body_fn = fn assigns ->
       ~H"""
@@ -691,21 +762,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         %{"resource-id" => resource_id, "option-id" => option_id},
         socket
       ) do
-    %{project: project, ctx: ctx, experiment: experiment} = socket.assigns
-    %{content: %{"options" => options} = content} = experiment
+    %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+    %{content: %{"options" => options} = content} = find_group(decision_points, resource_id)
 
     new_options = Enum.filter(options, fn o -> o["id"] != option_id end)
 
     case edit_group_options(
            project.slug,
            ctx.author,
-           [experiment],
-           ensure_integer(resource_id),
+           decision_points,
+           resource_id,
            content,
            new_options
          ) do
-      {:ok, [experiment], _group} ->
-        {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+      {:ok, decision_points, _group} ->
+        {:noreply,
+         hide_modal(socket)
+         |> assign(decision_points: decision_points)
+         |> assign_authoring_experiments()}
 
       {:error, message: error_message} ->
         show_error(socket, error_message)
@@ -720,8 +795,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         %{"resource-id" => resource_id, "option-id" => option_id},
         socket
       ) do
-    experiment = socket.assigns.experiment
-    option = Enum.find(experiment.content["options"], fn o -> o["id"] === option_id end)
+    resource_id = ensure_integer(resource_id)
+    decision_point = find_group(socket.assigns.decision_points, resource_id)
+    option = Enum.find(decision_point.content["options"], fn o -> o["id"] === option_id end)
 
     preview_fn = fn assigns ->
       ~H"""
@@ -733,14 +809,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     modal_assigns = %{
       id: "delete_modal",
-      title: "Delete Option",
-      message: "Are you sure you want to delete this option?",
+      title: "Delete Condition",
+      message: "Are you sure you want to delete this condition?",
       preview_fn: preview_fn,
-      group: experiment,
+      group: decision_point,
       option: option,
       on_delete: "delete_option",
       phx_values: [
-        "phx-value-resource-id": ensure_integer(resource_id),
+        "phx-value-resource-id": resource_id,
         "phx-value-option-id": option_id
       ]
     }
@@ -759,17 +835,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         %{"params" => %{"resource_id" => resource_id, "title" => title}},
         socket
       ) do
-    %{project: project, ctx: ctx, experiment: experiment} = socket.assigns
+    %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
 
     case edit_group_title(
            project.slug,
            ctx.author,
-           [experiment],
+           decision_points,
            ensure_integer(resource_id),
            title
          ) do
-      {:ok, [experiment], _group} ->
-        {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+      {:ok, decision_points, _group} ->
+        {:noreply,
+         hide_modal(socket)
+         |> assign(decision_points: decision_points)
+         |> assign_authoring_experiments()}
 
       {:error, message: error_message} ->
         show_error(socket, error_message)
@@ -783,14 +862,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply, socket}
   end
 
+  def handle_event("validate_group", %{"params" => %{"name" => _}}, socket) do
+    {:noreply, socket}
+  end
+
   def handle_event(
         "show_edit_option_modal",
         %{"resource-id" => resource_id, "option-id" => option_id},
         socket
       ) do
-    experiment = socket.assigns.experiment
-
-    option = Enum.find(experiment.content["options"], fn o -> o["id"] === option_id end)
+    resource_id = ensure_integer(resource_id)
+    option = find_group_option(socket.assigns.decision_points, resource_id, option_id)
 
     changeset =
       {%{resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
@@ -816,7 +898,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     modal_assigns = %{
       id: "edit_modal",
-      title: "Edit Option",
+      title: "Edit Condition",
       submit_label: "Save",
       changeset: changeset,
       form_body_fn: form_body_fn,
@@ -837,6 +919,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply, socket}
   end
 
+  def handle_event("cancel_modal", _params, socket) do
+    {:noreply, hide_modal(socket)}
+  end
+
   def handle_event(
         "edit_option",
         %{"params" => %{"resource_id" => resource_id, "id" => option_id, "name" => name}},
@@ -844,7 +930,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       ) do
     resource_id = ensure_integer(resource_id)
 
-    %{content: %{"options" => options} = content} = socket.assigns.experiment
+    %{content: %{"options" => options} = content} =
+      find_group(socket.assigns.decision_points, resource_id)
 
     updated_options =
       Enum.map(options, fn o ->
@@ -855,18 +942,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         end
       end)
 
-    %{project: project, ctx: ctx} = socket.assigns
+    %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
 
     case edit_group_options(
            project.slug,
            ctx.author,
-           [socket.assigns.experiment],
+           decision_points,
            resource_id,
            content,
            updated_options
          ) do
-      {:ok, [experiment], _group} ->
-        {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+      {:ok, decision_points, _group} ->
+        {:noreply,
+         hide_modal(socket)
+         |> assign(decision_points: decision_points)
+         |> assign_authoring_experiments()}
 
       {:error, message: error_message} ->
         show_error(socket, error_message)
@@ -883,6 +973,147 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   def handle_async(:load_eligible_sections, _result, socket) do
     {:noreply, assign(socket, eligible_sections: [], eligible_sections_status: :error)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:updated, revision, _project_slug}, socket) do
+    decision_points =
+      Enum.map(socket.assigns.decision_points, fn decision_point ->
+        if decision_point.resource_id == revision.resource_id,
+          do: revision,
+          else: decision_point
+      end)
+
+    {:noreply,
+     socket
+     |> assign(decision_points: decision_points)
+     |> assign_authoring_experiments()}
+  end
+
+  def handle_info({:new_resource, revision, project_slug}, socket) do
+    case revision.content["strategy"] do
+      "upgrade_decision_point" ->
+        unless revision.resource_id in socket.assigns.decision_point_subscriptions do
+          Subscriber.subscribe_to_new_revisions_in_project(revision.resource_id, project_slug)
+        end
+
+        decision_points =
+          case Enum.any?(
+                 socket.assigns.decision_points,
+                 &(&1.resource_id == revision.resource_id)
+               ) do
+            true -> socket.assigns.decision_points
+            false -> [revision | socket.assigns.decision_points]
+          end
+
+        {:noreply,
+         socket
+         |> assign(
+           decision_points: decision_points,
+           decision_point_subscriptions:
+             Enum.uniq([revision.resource_id | socket.assigns.decision_point_subscriptions])
+         )
+         |> assign_authoring_experiments()}
+
+      _other_strategy ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def terminate(_reason, socket) do
+    if connected?(socket) do
+      Subscriber.unsubscribe_to_new_resources_of_type(
+        @alternatives_type_id,
+        socket.assigns.project.slug
+      )
+
+      Enum.each(
+        socket.assigns.decision_point_subscriptions,
+        &Subscriber.unsubscribe_to_new_revisions_in_project(&1, socket.assigns.project.slug)
+      )
+    end
+
+    :ok
+  end
+
+  attr :group, :any, required: true
+
+  defp decision_point_group(assigns) do
+    ~H"""
+    <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
+      <div class="d-flex flex-row align-items-center">
+        <div><b>{@group.title}</b></div>
+        <div class="flex-grow-1"></div>
+        <OliWeb.Common.Components.icon_button
+          class="mr-1"
+          icon="fa-solid fa-pencil"
+          on_click="show_edit_group_modal"
+          values={["phx-value-resource-id": @group.resource_id]}
+        />
+      </div>
+      <div class="mt-3">
+        <%= if Enum.empty?(@group.content["options"]) do %>
+          <div class="my-2 text-center">
+            <em>There are no conditions in this decision point</em>
+          </div>
+        <% else %>
+          <ul class="list-group">
+            <.group_option
+              :for={condition <- @group.content["options"]}
+              group={@group}
+              option={condition}
+              show_actions={true}
+            />
+          </ul>
+        <% end %>
+        <button
+          class="btn btn-link btn-sm my-2"
+          phx-click="show_create_option_modal"
+          phx-value-resource_id={@group.resource_id}
+        >
+          <i class="fa fa-plus"></i> New Condition
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  defp assign_decision_points(socket) do
+    %{project: project, ctx: ctx} = socket.assigns
+
+    decision_points =
+      case ResourceEditor.list(project.slug, ctx.author, @alternatives_type_id) do
+        {:ok, alternatives} ->
+          alternatives
+          |> Enum.filter(&(&1.content["strategy"] == "upgrade_decision_point"))
+          |> Enum.reverse()
+
+        _error ->
+          []
+      end
+
+    assign(socket, decision_points: decision_points, decision_point_subscriptions: [])
+  end
+
+  defp subscribe_to_decision_points(socket) do
+    if connected?(socket) do
+      resource_ids = Enum.map(socket.assigns.decision_points, & &1.resource_id)
+
+      Enum.each(
+        resource_ids,
+        &Subscriber.subscribe_to_new_revisions_in_project(&1, socket.assigns.project.slug)
+      )
+
+      Subscriber.subscribe_to_new_resources_of_type(
+        @alternatives_type_id,
+        socket.assigns.project.slug
+      )
+
+      assign(socket, decision_point_subscriptions: resource_ids)
+    else
+      socket
+    end
   end
 
   defp assign_authoring_experiments(socket) do
@@ -1146,6 +1377,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp visible_experiments(experiments, false),
     do: Enum.reject(experiments, &(&1.state == :archived))
+
+  defp find_group(decision_points, resource_id) do
+    Enum.find(decision_points, &(&1.resource_id == resource_id))
+  end
+
+  defp find_group_option(decision_points, resource_id, option_id) do
+    decision_points
+    |> find_group(resource_id)
+    |> then(&Enum.find(&1.content["options"], fn option -> option["id"] == option_id end))
+  end
 
   defp edit_group_title(
          project_slug,
