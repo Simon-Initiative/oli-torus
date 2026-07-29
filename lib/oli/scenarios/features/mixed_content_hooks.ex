@@ -581,10 +581,14 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   """
   def assert_author_preview_dialog_workflow(%ExecutionState{} = state) do
     html = author_preview_html(state)
+    image = required_param!(state, "EXPECTED_IMAGE")
 
     assert html_has_text?(html, ".dialog", required_param!(state, "EXPECTED_TITLE"))
+    assert html_has_text?(html, ".dialog", required_param!(state, "EXPECTED_SPEAKER"))
     assert html_has_text?(html, ".dialog", required_param!(state, "EXPECTED_LINE"))
-    assert html_has_selector?(html, ".dialog .speaker-portrait")
+
+    assert html_has_selector?(html, ~s|.dialog img.speaker-portrait[src*="#{image}"]|),
+           "Expected author-preview dialog speaker portrait #{inspect(image)}"
 
     state
   end
@@ -610,6 +614,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that conjugation fields render in author preview.
+  """
   def assert_author_preview_conjugation_workflow(%ExecutionState{} = state) do
     html = author_preview_html(state)
     assert html_has_text?(html, ".conjugation", required_param!(state, "EXPECTED_TITLE"))
@@ -618,6 +625,9 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     state
   end
 
+  @doc """
+  Asserts that conjugation fields and audio persist to published delivery content.
+  """
   def assert_student_delivery_conjugation_workflow(%ExecutionState{} = state) do
     title = required_param!(state, "EXPECTED_TITLE")
     verb = required_param!(state, "EXPECTED_VERB")
@@ -730,9 +740,11 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   Asserts that an authored theorem title, statement, and proof persist to Delivery.
   """
   def assert_student_delivery_theorem_workflow(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+
     assert Enum.all?(
              theorem_values!(state),
-             &nested_contains?(delivered_revision_content(state), &1)
+             &nested_contains?(content, &1)
            ),
            "Expected published theorem title, statement, and proof"
 

@@ -193,6 +193,9 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     await youtube.locator('.captions-input').fill(caption);
     await selectVoidElement(youtube);
 
+    await hoverToolbarButton(page, 'Copy Video Link').click();
+    await expectClipboardText(page, `https://www.youtube.com/embed/${initialId}`);
+
     const [newTab] = await Promise.all([
       page.context().waitForEvent('page'),
       hoverToolbarButton(page, 'Open Video').click(),
@@ -225,6 +228,10 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
 
     const webpage = page.locator('.webpage-editor');
     await webpage.click();
+    await webpage.getByRole('button', { name: 'Copy Webpage Link', exact: true }).click();
+    await expectClipboardText(page, initialUrl);
+
+    await webpage.click();
     const [newTab] = await Promise.all([
       page.context().waitForEvent('page'),
       webpage.getByRole('button', { name: 'Open Webpage', exact: true }).click(),
@@ -256,12 +263,14 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     await curriculumTask.addDialogToolbar(title, 'DIALOG initial speaker', lineText, false);
 
     const dialog = page.locator('.dialog-editor');
+    const speakers = dialog.locator('.speaker-editor:not(.new-speaker)');
 
     await dialog.getByLabel('Title').fill(title);
     await dialog.locator('.new-speaker button').click();
-    const speakers = dialog.locator('.speaker-editor:not(.new-speaker)');
-    await speakers.nth(1).locator('input').fill('DIALOG-E removed speaker');
-    await speakers.nth(1).locator('.delete-btn').click();
+    await expect(speakers).toHaveCount(3);
+    await speakers.nth(2).locator('input').fill('DIALOG-E removed speaker');
+    await speakers.nth(2).locator('.delete-btn').click();
+    await expect(speakers).toHaveCount(2);
     await speakers.nth(0).locator('input').fill(speaker);
 
     await speakers.nth(0).locator('.browse-btn').click();
@@ -272,6 +281,7 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     const lines = dialog.locator('.dialog-row');
     await lines.nth(0).locator('[data-slate-editor="true"]').fill(lineText);
     await lines.nth(0).locator('.cycle-speaker-btn').click();
+    await lines.nth(0).locator('.cycle-speaker-btn').click();
     await lines.last().getByRole('button', { name: 'Add', exact: true }).click();
     await dialog
       .locator('.dialog-row')
@@ -280,6 +290,7 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
       .fill('DIALOG-K second line');
     await dialog.locator('.dialog-row').nth(1).getByRole('button').last().click();
 
+    await flushPendingPageChanges(page);
     await previewFlush(() => curriculumTask.openPreview());
     return { image, line_text: lineText, page_revision_slug: pageRevisionSlug, speaker, title };
   },
@@ -830,6 +841,29 @@ async function selectMediaFromPanel(page: Page, name: string) {
     .filter({ has: page.getByText(name, { exact: true }) });
   await panel.getByText(name, { exact: true }).click();
   await expect(panel).toBeHidden();
+}
+
+async function expectClipboardText(page: Page, expectedText: string) {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], {
+    origin: new URL(page.url()).origin,
+  });
+
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(expectedText);
+}
+
+async function flushPendingPageChanges(page: Page) {
+  await page.waitForTimeout(100);
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('phx:authoring_flush_page_editor_requested'));
+  });
+
+  const saving = page.getByText('Saving...');
+
+  if (await saving.isVisible().catch(() => false)) {
+    await saving.waitFor({ state: 'hidden', timeout: 15_000 });
+  }
+
+  await expect(page.getByText('All changes saved')).toBeVisible();
 }
 
 async function deleteAndUndo(page: Page, element: Locator) {

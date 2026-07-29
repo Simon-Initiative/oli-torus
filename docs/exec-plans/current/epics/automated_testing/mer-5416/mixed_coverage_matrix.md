@@ -134,7 +134,7 @@ These slices are coverage batches, not implementation phases.
 | `YOUTUBE-B` | Insert YouTube video using only the YouTube video id | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
 | `YOUTUBE-C` | Edit the caption of the YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
 | `YOUTUBE-D` | Click to open the YouTube video in full screen in new tab | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; verifies new tab plus preview and delivery persistence. |
-| `YOUTUBE-E` | Click to copy the YouTube video URL to the clipboard | `needs-triage` | `needs-triage` | `needs-triage` | `needs-triage` | `Follow-up Slice 5` | Clipboard assertions need a stable local strategy. |
+| `YOUTUBE-E` | Click to copy the YouTube video URL to the clipboard | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/E/F/G/H/I` Playwright workflow grants local clipboard permissions and asserts the copied embed URL. |
 | `YOUTUBE-F` | Using settings menu, change the video to a new id | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
 | `YOUTUBE-G` | Using settings menu, set the alternative text for YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
 | `YOUTUBE-H` | Delete a YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
@@ -166,7 +166,7 @@ These slices are coverage batches, not implementation phases.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `WEBPAGE-A` | Insert webpage (iframe) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; `WEBPAGE-A/B/D` Playwright workflow. |
 | `WEBPAGE-B` | Click to open in new tab | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; verifies new tab plus preview and delivery persistence. |
-| `WEBPAGE-C` | Click to copy URL | `needs-triage` | `needs-triage` | `needs-triage` | `needs-triage` | `Follow-up Slice 5` | Clipboard assertions need a stable local strategy. |
+| `WEBPAGE-C` | Click to copy URL | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; `WEBPAGE-A/B/C/D` Playwright workflow grants local clipboard permissions and asserts the copied URL. |
 | `WEBPAGE-D` | Using settings dialog, change the URL | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; `WEBPAGE-A/B/D` Playwright workflow. |
 
 ### `FORMULA`
