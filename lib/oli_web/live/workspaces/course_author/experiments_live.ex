@@ -1,7 +1,6 @@
 defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   use OliWeb, :live_view
   use Phoenix.HTML
-  use OliWeb.Common.Modal
 
   import Oli.Utils, only: [uuid: 0]
   import OliWeb.Resources.AlternativesEditor.GroupOption
@@ -10,9 +9,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{CreateExperimentRequest, Scope}
+  alias Oli.Publishing
   alias Oli.Resources.ResourceType
   alias Oli.Utils.Slug
-  alias OliWeb.Common.Modal.DeleteModal
   alias Phoenix.LiveView.JS
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
@@ -50,7 +49,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     ~H"""
     <h2 id="header_id" class="pb-2">Experiments</h2>
-    {render_modal(assigns)}
 
     <p>Create and manage A/B experiments in this project.</p>
     <section class="mt-4">
@@ -129,11 +127,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       <% end %>
 
       <section class="mt-10" aria-labelledby="decision-points-heading">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="mb-3">
           <h3 id="decision-points-heading" class="h4 mb-0">Decision Points</h3>
-          <button class="btn btn-outline-primary" phx-click="show_create_decision_point">
-            <i class="fa fa-plus"></i> New Decision Point
-          </button>
         </div>
         <%= if Enum.empty?(@decision_points) do %>
           <div>
@@ -146,6 +141,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             new_condition_name={Map.get(@new_condition_names, decision_point.resource_id, "")}
           />
         <% end %>
+        <div class="d-flex justify-content-start mt-3">
+          <button class="btn btn-outline-primary" phx-click="show_create_decision_point">
+            <i class="fa fa-plus"></i> New Decision Point
+          </button>
+        </div>
       </section>
 
       <OliWeb.Components.Modal.modal
@@ -196,6 +196,41 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             </button>
           </div>
         </.form>
+      </OliWeb.Components.Modal.modal>
+
+      <OliWeb.Components.Modal.modal
+        :if={@decision_point_delete_modal}
+        id={@decision_point_delete_modal.id}
+        show={true}
+        header_level={2}
+        wrapper_class="w-full max-w-lg p-4"
+        on_cancel={JS.push("close_decision_point_delete_modal")}
+      >
+        <:title>{@decision_point_delete_modal.title}</:title>
+        <p>{@decision_point_delete_modal.message}</p>
+        <div class="text-center my-3">
+          <strong>{@decision_point_delete_modal.item_name}</strong>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <button
+            type="button"
+            class="btn btn-link"
+            phx-click="close_decision_point_delete_modal"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            phx-click={
+              JS.push(@decision_point_delete_modal.on_delete,
+                value: @decision_point_delete_modal.values
+              )
+            }
+          >
+            Delete
+          </button>
+        </div>
       </OliWeb.Components.Modal.modal>
 
       <OliWeb.Components.Modal.modal
@@ -482,6 +517,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     """
   end
 
+  @impl Phoenix.LiveView
   def handle_event("open_create_experiment", _params, socket) do
     {:noreply,
      assign(socket,
@@ -654,7 +690,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         {:noreply,
          socket
          |> assign(decision_point_modal: nil)
-         |> assign(decision_points: [decision_point | decision_points])
+         |> assign(decision_points: sort_decision_points([decision_point | decision_points]))
          |> assign_authoring_experiments()}
 
       {:error, message: error_message} ->
@@ -735,6 +771,87 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   def handle_event(
+        "show_delete_decision_point_modal",
+        %{"resource-id" => resource_id},
+        socket
+      ) do
+    %{project: project, decision_points: decision_points} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+    publication_id = Publishing.get_unpublished_publication_id!(project.id)
+
+    with [] <- Publishing.find_alternatives_group_references_in_pages(resource_id, publication_id),
+         {:ok, false} <-
+           ABExperiments.decision_point_in_use?(resource_id, authoring_scope(socket)) do
+      decision_point = find_group(decision_points, resource_id)
+
+      modal = %{
+        id: "delete_decision_point_modal",
+        title: "Delete Decision Point",
+        message: "Are you sure you want to delete this decision point?",
+        item_name: decision_point.title,
+        on_delete: "delete_decision_point",
+        values: %{resource_id: resource_id}
+      }
+
+      {:noreply, assign(socket, decision_point_delete_modal: modal)}
+    else
+      [_ | _] ->
+        show_error(
+          socket,
+          "This decision point cannot be deleted because it is used by project content."
+        )
+
+      {:ok, true} ->
+        show_error(
+          socket,
+          "This decision point cannot be deleted because it is used by an active experiment"
+        )
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
+  def handle_event("delete_decision_point", params, socket) do
+    %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
+    resource_id = params["resource-id"] || params["resource_id"]
+    resource_id = ensure_integer(resource_id)
+    publication_id = Publishing.get_unpublished_publication_id!(project.id)
+
+    with [] <- Publishing.find_alternatives_group_references_in_pages(resource_id, publication_id),
+         {:ok, false} <-
+           ABExperiments.decision_point_in_use?(resource_id, authoring_scope(socket)),
+         {:ok, deleted} <- ResourceEditor.delete(project.slug, resource_id, ctx.author) do
+      Subscriber.unsubscribe_to_new_revisions_in_project(resource_id, project.slug)
+
+      {:noreply,
+       socket
+       |> assign(
+         decision_point_delete_modal: nil,
+         decision_points: Enum.reject(decision_points, &(&1.resource_id == deleted.resource_id)),
+         decision_point_subscriptions:
+           Enum.reject(socket.assigns.decision_point_subscriptions, &(&1 == resource_id))
+       )
+       |> assign_authoring_experiments()}
+    else
+      [_ | _] ->
+        show_error(
+          socket,
+          "This decision point cannot be deleted because it is used by project content."
+        )
+
+      {:ok, true} ->
+        show_error(
+          socket,
+          "This decision point cannot be deleted because it is used by an active experiment"
+        )
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
+  def handle_event(
         "show_edit_group_modal",
         %{"resource-id" => resource_id},
         socket
@@ -762,12 +879,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply, assign(socket, decision_point_modal: modal)}
   end
 
-  def handle_event(
-        "delete_option",
-        %{"resource-id" => resource_id, "option-id" => option_id},
-        socket
-      ) do
+  def handle_event("delete_option", params, socket) do
     %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
+    resource_id = params["resource-id"] || params["resource_id"]
+    option_id = params["option-id"] || params["option_id"]
     resource_id = ensure_integer(resource_id)
     %{content: %{"options" => options} = content} = find_group(decision_points, resource_id)
 
@@ -783,8 +898,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          ) do
       {:ok, decision_points, _group} ->
         {:noreply,
-         assign(socket, decision_point_modal: nil)
-         |> assign(decision_points: decision_points)
+         assign(socket,
+           decision_point_delete_modal: nil,
+           decision_points: decision_points
+         )
          |> assign_authoring_experiments()}
 
       {:error, message: error_message} ->
@@ -804,35 +921,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     decision_point = find_group(socket.assigns.decision_points, resource_id)
     option = Enum.find(decision_point.content["options"], fn o -> o["id"] === option_id end)
 
-    preview_fn = fn assigns ->
-      ~H"""
-      <ul class="list-group">
-        <.group_option group={@group} option={@option} show_actions={false} />
-      </ul>
-      """
-    end
-
-    modal_assigns = %{
-      id: "delete_modal",
+    modal = %{
+      id: "delete_condition_modal",
       title: "Delete Condition",
       message: "Are you sure you want to delete this condition?",
-      preview_fn: preview_fn,
-      group: decision_point,
-      option: option,
+      item_name: option["name"],
       on_delete: "delete_option",
-      phx_values: [
-        "phx-value-resource-id": resource_id,
-        "phx-value-option-id": option_id
-      ]
+      values: %{resource_id: resource_id, option_id: option_id}
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <DeleteModal.modal {@modal_assigns} />
-      """
-    end
+    {:noreply, assign(socket, decision_point_delete_modal: modal)}
+  end
 
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  def handle_event("close_decision_point_delete_modal", _params, socket) do
+    {:noreply, assign(socket, decision_point_delete_modal: nil)}
   end
 
   def handle_event(
@@ -851,8 +953,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          ) do
       {:ok, decision_points, _group} ->
         {:noreply,
-         hide_modal(socket)
-         |> assign(decision_points: decision_points)
+         assign(socket,
+           decision_point_modal: nil,
+           decision_points: decision_points
+         )
          |> assign_authoring_experiments()}
 
       {:error, message: error_message} ->
@@ -892,10 +996,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   def handle_event("close_decision_point_modal", _params, socket) do
     {:noreply, assign(socket, decision_point_modal: nil)}
-  end
-
-  def handle_event("cancel_modal", _params, socket) do
-    {:noreply, hide_modal(socket)}
   end
 
   def handle_event(
@@ -978,7 +1078,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                  &(&1.resource_id == revision.resource_id)
                ) do
             true -> socket.assigns.decision_points
-            false -> [revision | socket.assigns.decision_points]
+            false -> sort_decision_points([revision | socket.assigns.decision_points])
           end
 
         {:noreply,
@@ -1025,6 +1125,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
           class="mr-1"
           icon="fa-solid fa-pencil"
           on_click="show_edit_group_modal"
+          values={["phx-value-resource-id": @group.resource_id]}
+        />
+        <OliWeb.Common.Components.icon_button
+          class="danger-icon-button mr-1"
+          icon="fa-solid fa-trash"
+          on_click="show_delete_decision_point_modal"
           values={["phx-value-resource-id": @group.resource_id]}
         />
       </div>
@@ -1089,7 +1195,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         {:ok, alternatives} ->
           alternatives
           |> Enum.filter(&(&1.content["strategy"] == "upgrade_decision_point"))
-          |> Enum.reverse()
+          |> sort_decision_points()
 
         _error ->
           []
@@ -1099,7 +1205,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       decision_points: decision_points,
       decision_point_subscriptions: [],
       new_condition_names: %{},
-      decision_point_modal: nil
+      decision_point_modal: nil,
+      decision_point_delete_modal: nil
     )
   end
 
@@ -1389,6 +1496,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     Enum.find(decision_points, &(&1.resource_id == resource_id))
   end
 
+  defp sort_decision_points(decision_points), do: Enum.sort_by(decision_points, & &1.id, :asc)
+
   defp find_group_option(decision_points, resource_id, option_id) do
     decision_points
     |> find_group(resource_id)
@@ -1474,6 +1583,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   defp show_error(socket, message \\ @default_error_message) do
-    {:noreply, socket |> hide_modal() |> put_flash(:error, message)}
+    {:noreply,
+     socket
+     |> assign(decision_point_modal: nil, decision_point_delete_modal: nil)
+     |> put_flash(:error, message)}
   end
 end

@@ -327,6 +327,32 @@ defmodule Oli.Experiments do
   def list_available_decision_points(_scope), do: invalid_request("expected Scope")
 
   @doc """
+  Returns whether a project-scoped decision point is referenced by a non-archived experiment
+  definition.
+  """
+  def decision_point_in_use?(alternatives_resource_id, %Scope{} = scope)
+      when is_integer(alternatives_resource_id) and alternatives_resource_id > 0 do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope) do
+      in_use? =
+        Repo.exists?(
+          from decision_point in DecisionPoint,
+            join: experiment in ExperimentDefinitionSchema,
+            on: experiment.id == decision_point.experiment_id,
+            where:
+              experiment.project_id == ^scope.project_id and
+                experiment.state != :archived and
+                decision_point.alternatives_resource_id == ^alternatives_resource_id
+        )
+
+      {:ok, in_use?}
+    end
+  end
+
+  def decision_point_in_use?(_alternatives_resource_id, _scope),
+    do: invalid_request("expected a decision point resource id and Scope")
+
+  @doc """
   Delivery assignment API placeholder. Runtime assignment writes are implemented in Phase 3.
   """
   def assign_condition(%Oli.Experiments.AssignConditionRequest{} = request) do

@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Authoring.Experiments
+  alias Oli.Experiments.Schemas.ExperimentDefinition
   alias Oli.Resources.{ResourceType, Revision}
 
   defp live_view_experiments_route(project_slug, params \\ %{}),
@@ -169,6 +170,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert revision.content["strategy"] == "upgrade_decision_point"
     end
 
+    test "sorts decision points ascending and renders the create action below them", %{
+      view: _view,
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: publication
+    } do
+      insert_legacy_experiment(publication, admin, "First Decision Point")
+      insert_legacy_experiment(publication, admin, "Second Decision Point")
+      {:ok, view, html} = live(conn, live_view_experiments_route(project.slug))
+
+      {first_position, _} = :binary.match(html, "First Decision Point")
+      {second_position, _} = :binary.match(html, "Second Decision Point")
+      {button_position, _} = :binary.match(html, "New Decision Point")
+
+      assert first_position < second_position
+      assert second_position < button_position
+      assert has_element?(view, "button[phx-click='show_create_decision_point']")
+    end
+
     test "creates and cancels a condition inline", %{
       view: _view,
       conn: conn,
@@ -224,6 +245,127 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       refute has_element?(view, "#{form_id} button", "Create")
       assert has_element?(view, "#{input_id}[value='']")
       refute render(view) =~ "Cancelled condition"
+    end
+
+    test "deletes a decision point after confirmation", %{
+      view: _view,
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: publication
+    } do
+      decision_point = insert_legacy_experiment(publication, admin)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      view
+      |> element(
+        "button[phx-click='show_delete_decision_point_modal'][phx-value-resource-id='#{decision_point.resource_id}']"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#delete_decision_point_modal",
+               "Are you sure you want to delete this decision point?"
+             )
+
+      assert has_element?(
+               view,
+               "#delete_decision_point_modal [role='dialog'][aria-modal='true']"
+             )
+
+      view
+      |> element("#delete_decision_point_modal button", "Delete")
+      |> render_click()
+
+      refute has_element?(view, ".alternatives-group", decision_point.title)
+    end
+
+    test "uses the shared modal for deleting a condition", %{
+      view: _view,
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: publication
+    } do
+      decision_point = insert_legacy_experiment(publication, admin)
+      [condition | _] = decision_point.content["options"]
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      view
+      |> element(
+        "button[phx-click='show_delete_option_modal'][phx-value-option-id='#{condition["id"]}']"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#delete_condition_modal [role='dialog'][aria-modal='true']"
+             )
+
+      assert has_element?(view, "#delete_condition_modal", condition["name"])
+
+      view
+      |> element("#delete_condition_modal button", "Cancel")
+      |> render_click()
+
+      refute has_element?(view, "#delete_condition_modal")
+    end
+
+    test "blocks deletion for active experiments and allows it for archived experiments", %{
+      view: _view,
+      conn: conn,
+      admin: admin,
+      project: project
+    } do
+      decision_point = insert_alternatives_group(project, admin)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Protected Decision Point",
+          "slug" => "protected_decision_point",
+          "algorithm" => "weighted_random",
+          "decision_point" => decision_point.resource_id,
+          "weight_a" => "1",
+          "weight_b" => "1"
+        }
+      })
+
+      view
+      |> element(
+        "button[phx-click='show_delete_decision_point_modal'][phx-value-resource-id='#{decision_point.resource_id}']"
+      )
+      |> render_click()
+
+      refute has_element?(view, "#delete_decision_point_modal")
+
+      assert render(view) =~
+               "This decision point cannot be deleted because it is used by an active experiment"
+
+      assert has_element?(view, ".alternatives-group", decision_point.title)
+
+      ExperimentDefinition
+      |> Oli.Repo.get_by!(slug: "protected_decision_point")
+      |> Ecto.Changeset.change(state: :archived)
+      |> Oli.Repo.update!()
+
+      view
+      |> element(
+        "button[phx-click='show_delete_decision_point_modal'][phx-value-resource-id='#{decision_point.resource_id}']"
+      )
+      |> render_click()
+
+      assert has_element?(view, "#delete_decision_point_modal")
+
+      view
+      |> element("#delete_decision_point_modal button", "Delete")
+      |> render_click()
+
+      refute has_element?(view, ".alternatives-group", decision_point.title)
     end
 
     test "download buttons remain absent", %{view: view} do
@@ -688,15 +830,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     end
   end
 
-  defp insert_legacy_experiment(publication, author \\ nil) do
+  defp insert_legacy_experiment(publication, author \\ nil, title \\ "Decision Point") do
     resource = insert(:resource)
+    insert(:project_resource, project_id: publication.project_id, resource_id: resource.id)
 
     revision =
       insert(:revision, %{
         resource: resource,
         author: author,
         resource_type_id: ResourceType.id_for_alternatives(),
-        title: "Decision Point",
+        title: title,
         content: %{
           "strategy" => "upgrade_decision_point",
           "options" => [
@@ -711,13 +854,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     revision
   end
 
-  defp insert_alternatives_group(project) do
+  defp insert_alternatives_group(project, author \\ nil) do
     resource = insert(:resource)
     insert(:project_resource, project_id: project.id, resource_id: resource.id)
 
     revision =
       insert(:revision, %{
         resource: resource,
+        author: author,
         resource_type_id: ResourceType.id_for_alternatives(),
         title: "Decision Point",
         deleted: false,
