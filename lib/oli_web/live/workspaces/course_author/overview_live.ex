@@ -252,17 +252,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             />
           </div>
 
-          <div class="form-label-group mb-3">
-            <.link
-              class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
-              navigate={~p"/workspaces/course_author/#{@project.slug}/experiments"}
-            >
-              Manage Experiments
-            </.link>
-          </div>
-
           {submit("Save", class: "btn btn-md btn-primary mt-2")}
         </Overview.section>
+
         <Overview.section
           title="Project Attributes"
           description="Project wide configuration, not all options may be relevant for all subject areas."
@@ -303,19 +295,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           </div>
           <div>
             {submit("Save", class: "btn btn-md btn-primary mt-2")}
-          </div>
-          <div class="mt-5">
-            <div>
-              <.link
-                navigate={~p"/workspaces/course_author/#{@project.slug}/alternatives"}
-                class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
-              >
-                Manage Alternatives
-              </.link>
-            </div>
-            <small>
-              Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.
-            </small>
           </div>
         </Overview.section>
 
@@ -425,6 +404,38 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           project_id={@project.id}
           is_admin={@is_admin}
         />
+      </Overview.section>
+
+      <Overview.section
+        title="Experiments"
+        description="Create and manage experiments in this project."
+      >
+        <div class="inline-flex py-2 mb-2">
+          <span>Enable experiments</span>
+          <Common.toggle_switch
+            id="experiments-enabled"
+            class="ml-4"
+            name="experiments_enabled"
+            checked={@project.experiments_enabled}
+            on_toggle="toggle_experiments_enabled"
+          />
+        </div>
+      </Overview.section>
+
+      <Overview.section
+        title="Alternatives"
+        description="Create alternative versions of content that learners can choose between."
+      >
+        <div class="inline-flex py-2 mb-2">
+          <span>Enable content alternatives</span>
+          <Common.toggle_switch
+            id="alternatives-enabled"
+            class="ml-4"
+            name="alternatives_enabled"
+            checked={@project.alternatives_enabled}
+            on_toggle="toggle_alternatives_enabled"
+          />
+        </div>
       </Overview.section>
 
       <%= if ScopedFeatureFlags.enabled?(:mcp_authoring, @project) do %>
@@ -886,6 +897,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     {:noreply, assign(socket, changeset: changeset)}
   end
 
+  def handle_event("toggle_experiments_enabled", _params, socket) do
+    toggle_authoring_feature(socket, :experiments_enabled)
+  end
+
+  def handle_event("toggle_alternatives_enabled", _params, socket) do
+    toggle_authoring_feature(socket, :alternatives_enabled)
+  end
+
   def handle_event("generate_project_export", _params, socket) do
     project = socket.assigns.project
 
@@ -1046,6 +1065,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       </div>
     </div>
     """
+  end
+
+  defp toggle_authoring_feature(socket, field) do
+    project = socket.assigns.project
+
+    case Course.update_project(project, %{field => !Map.fetch!(project, field)}) do
+      {:ok, project} ->
+        {:noreply,
+         socket
+         |> assign(:project, project)
+         |> assign(:changeset, Project.changeset(project))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         socket
+         |> assign(:changeset, changeset)
+         |> put_flash(:error, "Project could not be updated.")}
+    end
   end
 
   defp add_custom_license_details(%{"license" => "custom"} = project_params), do: project_params

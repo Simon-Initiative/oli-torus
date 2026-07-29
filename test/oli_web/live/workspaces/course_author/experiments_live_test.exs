@@ -32,7 +32,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   end
 
   defp create_project_fixture do
-    project = insert(:project)
+    project = insert(:project, experiments_enabled: true)
     container_resource = insert(:resource)
 
     insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
