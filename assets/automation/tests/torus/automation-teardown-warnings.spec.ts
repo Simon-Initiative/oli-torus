@@ -31,6 +31,14 @@ function stubRequest(response: {
   } as unknown as APIRequestContext;
 }
 
+function stubFailingRequest(error: Error): APIRequestContext {
+  return {
+    post: async () => {
+      throw error;
+    },
+  } as unknown as APIRequestContext;
+}
+
 const allSuccess = {
   author_deleted: { success: true },
   educator_deleted: { success: true },
@@ -124,4 +132,13 @@ test('non-2xx response keeps existing warning path and skips payload parsing', a
   expect(warnings).toHaveLength(1);
   expect(warnings[0]).toContain('automation_teardown failed (500)');
   expect(warnings[0]).toContain('boom');
+});
+
+test('request errors warn without failing the test', async () => {
+  await teardownAutomationCourse(stubFailingRequest(new Error('socket hang up')), seeded, options);
+
+  expect(warnings).toHaveLength(1);
+  expect(warnings[0]).toContain('automation_teardown request failed');
+  expect(warnings[0]).toContain('project=proj-slug section=sect-slug');
+  expect(warnings[0]).toContain('socket hang up');
 });

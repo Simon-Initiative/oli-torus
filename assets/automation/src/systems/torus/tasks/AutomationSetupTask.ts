@@ -111,21 +111,30 @@ export async function teardownAutomationCourse(
   seeded: AutomationSetupResponse,
   { baseUrl, apiKey }: AutomationOptions,
 ) {
-  const response = await request.post(new URL('/api/v1/automation_teardown', baseUrl).toString(), {
-    headers: {
-      Authorization: buildAutomationAuthHeader(apiKey),
-    },
-    data: {
-      author_email: seeded.author.email,
-      author_password: seeded.author.password,
-      educator_email: seeded.educator.email,
-      educator_password: seeded.educator.password,
-      learner_email: seeded.learner.email,
-      learner_password: seeded.learner.password,
-      section_slug: seeded.section.slug,
-      project_slug: seeded.project.slug,
-    },
-  });
+  const context = `project=${seeded.project.slug} section=${seeded.section.slug}`;
+  let response;
+
+  try {
+    response = await request.post(new URL('/api/v1/automation_teardown', baseUrl).toString(), {
+      headers: {
+        Authorization: buildAutomationAuthHeader(apiKey),
+      },
+      data: {
+        author_email: seeded.author.email,
+        author_password: seeded.author.password,
+        educator_email: seeded.educator.email,
+        educator_password: seeded.educator.password,
+        learner_email: seeded.learner.email,
+        learner_password: seeded.learner.password,
+        section_slug: seeded.section.slug,
+        project_slug: seeded.project.slug,
+      },
+      timeout: 45_000,
+    });
+  } catch (error) {
+    console.warn(`automation_teardown request failed (${context}): ${(error as Error).message}`);
+    return;
+  }
 
   if (!response.ok()) {
     console.warn(
@@ -134,7 +143,6 @@ export async function teardownAutomationCourse(
     return;
   }
 
-  const context = `project=${seeded.project.slug} section=${seeded.section.slug}`;
   let payload: unknown;
   try {
     payload = await response.json();
