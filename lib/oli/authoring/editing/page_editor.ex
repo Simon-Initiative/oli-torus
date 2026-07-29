@@ -262,7 +262,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            triggers: publication.project.allow_triggers
          },
          appsignalKey: Application.get_env(:appsignal, :client_key),
-         hasExperiments: nil
+         experimentsEnabled: publication.project.experiments_enabled
        }}
     else
       _ -> {:error, :not_found}

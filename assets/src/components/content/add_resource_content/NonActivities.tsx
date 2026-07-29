@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import * as Immutable from 'immutable';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { SelectModal } from 'components/modal/SelectModal';
@@ -43,11 +43,7 @@ export const NonActivities: React.FC<Props> = ({
   featureFlags,
   resourceContext,
 }) => {
-  const [ABTestDisabled, setABTestDisabled] = useState(true);
-
-  useEffect(() => {
-    setABTestDisabled(!resourceContext.hasExperiments);
-  }, []);
+  const ABTestDisabled = !resourceContext.experimentsEnabled;
 
   return (
     <div className="d-flex flex-column">

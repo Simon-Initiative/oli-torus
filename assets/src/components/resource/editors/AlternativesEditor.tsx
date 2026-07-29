@@ -11,7 +11,6 @@ import {
   AlternativeContent,
   AlternativesContent,
   ResourceContent,
-  ResourceContext,
   createAlternative,
 } from 'data/content/resource';
 import * as Persistence from 'data/persistence/resource';
@@ -42,7 +41,6 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     index,
     parents,
     canRemove,
-    resourceContext,
     onEdit,
     onRemove,
     onPostUndoable,
@@ -137,8 +135,6 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     return (
       <AlternativesGroupBlock
         editMode={editMode}
-        projectSlug={projectSlug}
-        resourceContext={resourceContext}
         contentItem={contentItem}
         activeOption={activeOption}
         setActiveOption={setActiveOption}
@@ -227,8 +223,6 @@ const AlternativeEditor = (props: AlternativeEditorProps) => {
 
 interface AlternativesGroupBlockProps {
   editMode: boolean;
-  projectSlug: string;
-  resourceContext: ResourceContext;
   contentItem: AlternativesContent;
   activeOption: AlternativeContent;
   parents: ResourceContent[];
@@ -244,8 +238,6 @@ interface AlternativesGroupBlockProps {
 export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGroupBlockProps>) => {
   const {
     editMode,
-    projectSlug,
-    resourceContext,
     contentItem,
     activeOption,
     canRemove,
@@ -328,25 +320,8 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
     />
   ));
 
-  const maybeConnectUpgrade = !resourceContext.hasExperiments && (
-    <div className="mb-1">
-      <i className="fas fa-exclamation-triangle text-warning mx-1"></i>This experiment is not
-      integrated with UpGrade.
-      <a
-        className="btn btn-link"
-        href={`/authoring/project/${projectSlug}/experiments`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        Enable A/B testing with UpGrade
-      </a>
-      to collect experiment data.
-    </div>
-  );
-
   const maybeUpgradeAB = contentItem.strategy === 'upgrade_decision_point' && (
     <div className="mb-1">
-      {maybeConnectUpgrade}
       <h2>A/B Testing Decision Point</h2>
     </div>
   );

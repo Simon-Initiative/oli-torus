@@ -4,12 +4,13 @@ This document tracks unfinished findings and enhancements spanning the native A/
 
 ## Backlog Summary
 
-| ID | Work item | Area | Priority | Status |
-|---|---|---|---|---|
-| AB-TODO-001 | Prevent concurrent active experiments at one decision point | Experiment lifecycle | High | Open |
-| AB-TODO-002 | Configurable binary reward rules | Adaptive policy and analytics | Medium | Proposed |
-| AB-TODO-003 | Remove option-management actions from page-editor tabs | Authoring UX | Medium | Proposed |
-| AB-TODO-004 | Support reordering alternatives options | Authoring and delivery | Medium | Proposed |
+| ID          | Work item                                                   | Area                          | Priority | Status   |
+| ----------- | ----------------------------------------------------------- | ----------------------------- | -------- | -------- |
+| AB-TODO-001 | Prevent concurrent active experiments at one decision point | Experiment lifecycle          | High     | Open     |
+| AB-TODO-002 | Configurable binary reward rules                            | Adaptive policy and analytics | Medium   | Proposed |
+| AB-TODO-003 | Remove option-management actions from page-editor tabs      | Authoring UX                  | Medium   | Proposed |
+| AB-TODO-004 | Support reordering alternatives options                     | Authoring and delivery        | Medium   | Proposed |
+| AB-TODO-005 | Remove the legacy section experiment gate                   | Delivery runtime and schema   | High     | Proposed |
 
 ## AB-TODO-001: Prevent Concurrent Active Experiments At One Decision Point
 
@@ -273,3 +274,93 @@ Authors can control alternative option order while newly created options default
 - `lib/oli/experiments/schemas/condition.ex`
 - alternatives resource and revision content handling under `lib/oli/resources/`
 - page-editor alternatives tests under `assets/src/`
+
+## AB-TODO-005: Remove The Legacy Section Experiment Gate
+
+- **Status:** Proposed
+- **Priority:** High
+- **Area:** Delivery runtime, experiment attribution, section creation, and schema cleanup
+- **Target slice:** Focused native-runtime cleanup
+
+### Problem
+
+`sections.has_experiments` remains as a legacy coarse gate even though native experiment section participation is represented by `experiment_sections` and runtime assignment records.
+
+The project Overview `experiments_enabled` toggle is an authoring capability switch. It must not bulk-update live sections or implicitly enroll every section in experiments. Section participation is configured per experiment and must remain authoritative.
+
+The legacy section flag currently affects:
+
+- traditional page delivery, where it controls whether the base project slug and enrollment are added to the rendering context;
+- student onboarding delivery, where it controls the same rendering-context values;
+- evaluated-attempt attribution, where it short-circuits attribution processing before assignment records are inspected;
+- section creation and publication-update code that copies or synchronizes a project-level boolean into sections.
+
+These gates are redundant or too coarse for native experiments and can suppress valid behavior for a participating section when the boolean is stale.
+
+### Desired Outcome
+
+Native experiment behavior depends only on explicit experiment lifecycle, `experiment_sections` participation, enrollments, assignments, and durable attribution records. The project authoring toggle controls authoring UI availability only. Delivery sections are not mutated when that toggle changes, and `sections.has_experiments` is removed.
+
+### Requirements
+
+- Do not synchronize section state when `projects.experiments_enabled` changes.
+- Traditional page delivery and student onboarding must provide the project and enrollment context required by native decision handling without consulting `sections.has_experiments`.
+- Evaluated-attempt attribution must use actual assignments or native section participation rather than the legacy boolean.
+- Preserve the fast empty-result path when an attempt has no experiment assignments or attribution evidence.
+- Remove all section creation, blueprint creation, open-and-free creation, and publication-update logic that copies or synchronizes `has_experiments`.
+- Remove `has_experiments` from the section schema and changesets.
+- Generate a standard Ecto migration that:
+  - defines explicit `up/0` and `down/0`;
+  - removes `sections.has_experiments` in `up/0`;
+  - restores it with the compatible boolean default in `down/0`.
+- Update factories, fixtures, scenarios, and tests that set or assert the legacy field.
+- Do not replace the section field with `experiments_enabled`; authoring enablement and experiment participation are separate concepts.
+- Evaluate the now-unused `projects.has_experiments` column separately and remove it in the same migration only if no remaining compatibility contract requires it.
+
+### Acceptance Criteria
+
+- [ ] Changing the project Overview experiment toggle does not mutate existing sections.
+- [ ] A section selected through native experiment participation receives decisions and attribution without a legacy section boolean.
+- [ ] A section not selected for an experiment receives no assignment, exposure, outcome, or reward records.
+- [ ] Traditional page delivery and student onboarding continue rendering successfully with the required project and enrollment context.
+- [ ] Attempt attribution returns an empty result when no relevant assignments exist.
+- [ ] No production code reads, writes, copies, or synchronizes `sections.has_experiments`.
+- [ ] Migration up and down behavior is verified.
+- [ ] Targeted delivery, attribution, section creation/update, and native A/B runtime scenario tests pass.
+
+### Open Decisions
+
+- Confirm whether traditional controller-based page delivery and student onboarding still require both project slug and enrollment for non-experiment alternatives behavior; avoid adding unnecessary queries if a narrower native-participation lookup is appropriate.
+- Decide whether `projects.has_experiments` can be removed in the same schema migration or needs a short compatibility window.
+- Decide whether the attribution fast path should check assignments, experiment participation, or both based on the cheapest indexed query.
+
+### Dependencies
+
+- Native `experiment_sections` participation.
+- Native assignment and attribution persistence.
+- Delivery rendering context contracts.
+- Existing A/B delivery runtime scenario coverage.
+
+### Relevant Repository Areas
+
+- `lib/oli_web/controllers/page_delivery_controller.ex`
+- `lib/oli_web/live/delivery/student_onboarding/survey.ex`
+- `lib/oli/delivery/experiments/attempt_attributions.ex`
+- `lib/oli/delivery/experiments/page_decisions.ex`
+- `lib/oli/delivery.ex`
+- `lib/oli/delivery/sections.ex`
+- `lib/oli/delivery/sections/updates.ex`
+- `lib/oli/delivery/sections/section.ex`
+- `lib/oli_web/controllers/open_and_free_controller.ex`
+- `lib/oli/experiments.ex`
+- `lib/oli/experiments/schemas/experiment_section.ex`
+- `test/oli/delivery/experiments/attempt_attributions_test.exs`
+- `test/oli/resources/alternatives_test.exs`
+- `test/scenarios/delivery/ab_testing_delivery_runtime.scenario.yaml`
+
+---
+
+OTHER
+
+- [ ] Alternatives and A/B Test content elements should only be available to insert into a page when the features are enabled for a project. Otherwise these icons should not be visisble in the insert content menu.
+- [ ] When in the Manage Alternatives view, the Create > Alternatives sidebar link should be
