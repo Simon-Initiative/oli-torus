@@ -448,6 +448,7 @@ Dependencies:
 - Native delivery runtime replacement.
 - Native authoring lifecycle controls for creating and activating non-adaptive and Thompson Sampling experiments.
 - Experiment section-participation configuration and runtime gating.
+- Resolution of `docs/exec-plans/current/epics/ab_testing/enhancements/experiment_referenced_option_deletion.md`.
 - Thompson Sampling reward processing, policy state, and guardrails needed for MVP adaptive behavior.
 - Analytics or monitoring surfaces that show assignment, exposure, reward, and posterior-state evidence.
 - Confirmation that temporary PostgreSQL exposure, outcome, reward, and policy-update event-history tables have been dropped or have an approved blocking issue before release verification starts.
@@ -466,6 +467,47 @@ Expected child artifacts:
 ## Post-MVP Follow-On Candidates
 
 The following items are intentionally outside the MVP. They should remain visible as possible follow-on work, but they are not required for the initial native A/B testing cut-over, Thompson Sampling MVP, or release verification.
+
+### Configurable Binary Reward Rules
+
+Likely directory: `docs/exec-plans/current/epics/ab_testing/reward_rules/`
+
+Possible future scope:
+
+- Let an experiment author select how evaluated learner behavior maps to the binary reward consumed by the existing Beta-Bernoulli Thompson Sampling policy.
+- Continue emitting exactly `1.0` for success and `0.0` for failure.
+- Candidate rules include full credit, a configured passing threshold, completion, and positive score.
+- Store and validate a normalized, versioned reward-rule definition with experiment policy configuration.
+- Preserve the exact rule and version used in durable experiment attribution evidence so historical rewards remain interpretable if configuration later changes.
+- Expose reward-rule metadata through public `Oli.Experiments` contracts and ClickHouse-backed analytics and dataset exports.
+- Label analytics with a fixed explanation of the configured success rule, average reward as observed success proportion, and sample size without implying statistical significance.
+
+Open product decisions:
+
+- Which binary rules are available and which experiment types may configure them.
+- Threshold validation, author-facing explanation, and fixed analytics copy.
+- Whether reward configuration may change after activation and how edits affect existing assignments or previously recorded rewards.
+
+Explicitly defer:
+
+- Continuous, ordinal, multi-objective, or otherwise non-binary rewards. Those require a separate policy design, statistical review, policy versioning, migration strategy, and revised analytics semantics.
+
+Would depend on:
+
+- Thompson Sampling policy configuration and lifecycle validation.
+- Reward handoff and versioned experiment attribution contracts.
+- ClickHouse-backed reward summaries, filters, and dataset exports.
+
+Why this is post-MVP:
+
+- MVP Thompson Sampling has a deterministic full-credit binary reward contract. Configurable definitions broaden product behavior and historical provenance requirements but are not needed to validate the initial adaptive assignment loop.
+
+Possible child artifacts:
+
+- `docs/exec-plans/current/epics/ab_testing/reward_rules/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/reward_rules/fdd.md`
+- `docs/exec-plans/current/epics/ab_testing/reward_rules/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/reward_rules/plan.md`
 
 ### Additional Adaptive Assignment Policies
 
@@ -554,6 +596,7 @@ flowchart TD
   end
 
   subgraph FOLLOWON["Post-MVP Follow-On Candidates"]
+  REWARD_RULES["Configurable Binary Reward Rules"]
   ADAPTIVE["Additional Adaptive Policies"]
   PARITY["Advanced Parity"]
   end
@@ -583,8 +626,10 @@ flowchart TD
   AUTHORING --> QA
   PARTICIPATION --> QA
   ANALYTICS --> QA
+  QA --> REWARD_RULES
   QA --> ADAPTIVE
   QA --> PARITY
+  REWARD_RULES --> ADAPTIVE
   ADAPTIVE --> PARITY
 ```
 
@@ -599,7 +644,7 @@ flowchart TD
 - Reliability and performance: assignment should remain local and transactional, avoid repeated remote calls, and preserve fallback behavior when no active experiment applies. Heavy event creation and analytics queries should use the xAPI/ClickHouse path rather than high-volume PostgreSQL writes or dashboard aggregates.
 - Observability and auditability: assignment decisions, exposures, failed outcome joins, reward updates, Thompson Sampling posterior updates, lifecycle changes, and adaptive policy updates should be inspectable through xAPI/ClickHouse-backed evidence, with current runtime policy state inspectable from the A/B testing domain where needed.
 - Testing and verification: coverage should include assignment stickiness, weighted distribution behavior, Thompson Sampling posterior sampling and updates, first-option fallback for sections not selected into an experiment, eligible-section filtering across original and remixed project relationships, experiment xAPI emission, ClickHouse projection/query behavior, dataset export inclusion, project and section analytics scoping, native-only authoring gates, first-assignment behavior for participating learners, attempt outcome association, permission checks, lifecycle transitions, and an end-to-end manual QA script that verifies authoring through instructor and student delivery for both participating and nonparticipating sections.
-- MVP scope control: the MVP includes native cut-over, weighted deterministic random assignment, Thompson Sampling, authoring/lifecycle, explicit per-experiment section participation, analytics/monitoring needed for release confidence, and end-to-end manual QA. Additional adaptive policies and advanced UpGrade parity are post-MVP follow-on candidates, not necessary MVP deliverables.
+- MVP scope control: the MVP includes native cut-over, weighted deterministic random assignment, Thompson Sampling with its fixed full-credit reward rule, authoring/lifecycle, explicit per-experiment section participation, analytics/monitoring needed for release confidence, and end-to-end manual QA. Configurable reward rules, additional adaptive policies, and advanced UpGrade parity are post-MVP follow-on candidates, not necessary MVP deliverables.
 
 ## Initial Effort Estimate
 
@@ -619,6 +664,7 @@ Rough implementation shape:
 
 Post-MVP follow-on candidates:
 
+- Configurable binary reward rules with versioned attribution and analytics provenance: estimate after the supported rule set and edit lifecycle are selected.
 - Additional adaptive policies, richer native group assignment, segments, and audit logs: estimate after concrete product or research scope is selected.
 - Advanced parity such as factorial, stratified sampling, within-subjects, or feature flags: 2-4+ months depending on selected scope.
 
@@ -633,7 +679,7 @@ Post-MVP follow-on candidates:
 - Should outcome analytics join experiment xAPI events to existing attempt xAPI events in ClickHouse, emit explicit experiment outcome events, or do both for MVP?
 - What ClickHouse table/projection shape should support project-level dashboards, section-level dashboards, and dataset exports without expensive ad hoc joins?
 - Should MVP Thompson Sampling run fully inside the A/B testing domain, behind an external policy adapter, or inside Torus first with a future extraction boundary?
-- What binary reward signal should drive MVP Thompson Sampling: correctness, completion, configured attempt success, or another success/failure metric?
+- Which configurable binary reward rules should follow the MVP full-credit rule, and may the selected rule change after activation?
 - What guardrails are required before Thompson Sampling can run in production?
 - What minimum analytics do researchers, authors, instructors, and administrators need before native A/B testing is broadly available?
 - What operational alerts or dashboards are required for xAPI emission failures, ETL lag, ClickHouse ingest/query failures, and missing experiment event evidence?
@@ -644,9 +690,15 @@ Post-MVP follow-on candidates:
 
 ## Recommended Next Slice
 
-Use the reconciled analytics PRD to regenerate `requirements.yml`, `fdd.md`, and `plan.md` before implementation. The section-participation and experiment OLAP foundation dependencies are implemented, so the new design can start from the existing ClickHouse attribution contracts and experiment-details surface.
+Use the reconciled analytics PRD to regenerate `requirements.yml`, `fdd.md`, and `plan.md` before implementation. The section-participation and experiment OLAP foundation dependencies are implemented, so analytics can start from the existing ClickHouse attribution contracts and experiment-details surface.
 
 ## Decision Log
+### 2026-07-30 - Retire The Epic Todo Tracker
+- Change: Consolidated configurable binary reward-rule work into an explicit post-MVP candidate, captured experiment-referenced option deletion as a targeted pre-MVP enhancement, and retired the separate epic todo tracker.
+- Reason: Completed findings no longer need backlog duplication. Configurable rewards can follow MVP, but destructive option deletion can invalidate active mappings and historical evidence and must be resolved before release verification.
+- Evidence: `assets/src/components/resource/editors/AlternativesEditor.tsx`; `lib/oli_web/live/workspaces/course_author/alternatives_live.ex`; `lib/oli/experiments.ex`; `lib/oli/delivery/experiments/reward_handoff.ex`.
+- Impact: Future reward-rule work should begin under `reward_rules`; the deletion finding is tracked in `docs/exec-plans/current/epics/ab_testing/enhancements/experiment_referenced_option_deletion.md` and must be resolved before manual QA. Rename and stale-content behavior are treated as implemented baseline rather than open scope.
+
 ### 2026-07-29 - Define Experiment-Specific Analytics Tab And UpGrade-Inspired Views
 - Change: Updated slice 9 to place analytics on the existing experiment details page and define enrollment, condition, configured metric, adaptive-policy, filtering, accessibility, and failure-state requirements.
 - Reason: Product selected the new experiment-specific details page as the analytics location and provided UpGrade's Data tab as the reference for useful research views.
