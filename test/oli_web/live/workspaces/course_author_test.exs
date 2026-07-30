@@ -387,15 +387,16 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/experiments")
 
-      assert has_element?(view, "h3", "A/B Testing")
+      assert has_element?(view, "#header_id", "Experiments")
 
       assert has_element?(
                view,
                "p",
-               "A/B testing is a Torus feature for creating and managing experiments in this project."
+               "Create and manage A/B experiments in this project."
              )
 
-      assert has_element?(view, "label", "Enable A/B testing")
+      assert has_element?(view, "label", "Show archived experiments")
+      assert has_element?(view, "button", "Create Experiment")
     end
 
     test "review menu is shown correctly", %{

@@ -881,6 +881,7 @@ defmodule Oli.Experiments do
     query =
       from(policy_state in PolicyState,
         join: experiment in ExperimentDefinitionSchema,
+        as: :experiment,
         on: experiment.id == policy_state.experiment_id,
         where: experiment.project_id == ^scope.project_id
       )
