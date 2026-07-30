@@ -43,6 +43,7 @@ defmodule Oli.Scenarios.Engine do
     DiscussionModerationDirective,
     DiscussionDeleteDirective,
     ClassNoteDirective,
+    PostReactionDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
     StudentExceptionDirective,
@@ -91,6 +92,7 @@ defmodule Oli.Scenarios.Engine do
     DiscussionModerationHandler,
     DiscussionDeleteHandler,
     ClassNoteHandler,
+    PostReactionHandler,
     CompleteScoredPageHandler,
     FinalizeAttemptHandler,
     StudentExceptionHandler,
@@ -385,6 +387,10 @@ defmodule Oli.Scenarios.Engine do
     ClassNoteHandler.handle(directive, state)
   end
 
+  def execute_directive(%PostReactionDirective{} = directive, state) do
+    PostReactionHandler.handle(directive, state)
+  end
+
   def execute_directive(%CompleteScoredPageDirective{} = directive, state) do
     CompleteScoredPageHandler.handle(directive, state)
   end
@@ -504,7 +510,25 @@ defmodule Oli.Scenarios.Engine do
   Upserts a discussion post by name into the state.
   """
   def put_discussion_post(state, name, post) do
-    %{state | discussion_posts: Map.put(state.discussion_posts, name, post)}
+    %{
+      state
+      | discussion_posts: Map.put(state.discussion_posts, name, post),
+        collaboration_posts: Map.put(state.collaboration_posts, name, post)
+    }
+  end
+
+  @doc """
+  Gets a named collaboration post from the state.
+  """
+  def get_collaboration_post(state, name) do
+    Map.get(state.collaboration_posts, name)
+  end
+
+  @doc """
+  Upserts a collaboration post by name into the state.
+  """
+  def put_collaboration_post(state, name, post) do
+    %{state | collaboration_posts: Map.put(state.collaboration_posts, name, post)}
   end
 
   @doc """

@@ -44,6 +44,69 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     end
   end
 
+  test "schema and parser accept annotation workflows" do
+    yaml = """
+    - class_note:
+        name: "point_note"
+        student: "student"
+        section: "section"
+        page: "Lesson"
+        body: "Important point"
+        block_id: "block-1"
+
+    - class_note:
+        name: "reply"
+        student: "student"
+        section: "section"
+        page: "Lesson"
+        body: "A reply"
+        reply_to: "point_note"
+
+    - post_reaction:
+        post: "reply"
+        student: "student"
+        reaction: "like"
+        action: "add"
+
+    - assert:
+        annotation:
+          post: "reply"
+          section: "section"
+          page: "Lesson"
+          reply_to: "point_note"
+          reaction: "like"
+          reaction_count: 1
+          reacted_by: "student"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [point_note, reply, reaction, assertion] = DirectiveParser.parse_yaml!(yaml)
+
+    assert point_note.name == "point_note"
+    assert point_note.block_id == "block-1"
+    assert reply.reply_to == "point_note"
+    assert reaction.action == :add
+    assert reaction.reaction == :like
+    assert assertion.annotation.reaction_count == 1
+  end
+
+  test "schema and parser reject unsupported post reactions" do
+    yaml = """
+    - post_reaction:
+        post: "note"
+        student: "student"
+        reaction: "celebrate"
+        action: "toggle"
+    """
+
+    assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+    assert_raise RuntimeError, ~r/Invalid post reaction 'celebrate'/, fn ->
+      DirectiveParser.parse_yaml!(yaml)
+    end
+  end
+
   test "schema and parser accept learner hint and activity reset directives" do
     yaml = """
     - request_hint:

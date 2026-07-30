@@ -118,6 +118,23 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "anonymous_posting"
           ]
 
+        :annotation ->
+          [
+            "post",
+            "section",
+            "page",
+            "body",
+            "author",
+            "status",
+            "visibility",
+            "annotation_type",
+            "block_id",
+            "reply_to",
+            "reaction",
+            "reaction_count",
+            "reacted_by"
+          ]
+
         :gating ->
           [
             "gate",
