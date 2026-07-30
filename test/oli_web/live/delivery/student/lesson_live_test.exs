@@ -12,6 +12,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
+  alias Oli.Resources.Collaboration
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
@@ -2599,6 +2600,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # the post is stored in the DB
       assert post.content.message == "some new post content"
+      assert post.resource_id == page_1.resource_id
+      assert post.annotated_resource_id == page_1.resource_id
+      assert post.annotated_block_id == "158828742"
+      assert post.annotation_type == :point
+      assert post.visibility == :private
+      assert post.parent_post_id == nil
+      assert post.thread_root_id == nil
 
       # and is shown in the UI (inside the note content area with role="note")
       assert has_element?(view, "div[role='note'] div.font-semibold", "Me")
@@ -3152,6 +3160,26 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     end
   end
 
+  defp open_class_notes(view) do
+    view
+    |> element("button[role='toggle notes button'][data-view='desktop']")
+    |> render_click()
+
+    view
+    |> element("button[phx-click='select_tab'][phx-value-tab='class_notes']")
+    |> render_click()
+
+    wait_while(fn -> has_element?(view, "svg.loading") end)
+  end
+
+  defp expand_post_replies(view, post_id) do
+    view
+    |> element("button[phx-click='toggle_post_replies'][phx-value-post-id='#{post_id}']")
+    |> render_click()
+
+    wait_while(fn -> has_element?(view, "svg.loading") end)
+  end
+
   defp create_post(user, section, page, message, attrs \\ %{}) do
     default_attrs = %{
       status: :approved,
@@ -3347,21 +3375,33 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      # Create a parent post
-      {:ok, _parent_post} = create_post(user, section, page_1, "Parent post")
+      {:ok, parent_post} = create_post(user, section, page_1, "Parent post")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
+      open_class_notes(view)
 
-      # Open annotations panel
+      replies_button =
+        "button[phx-click='toggle_post_replies'][phx-value-post-id='#{parent_post.id}']"
+
+      assert has_element?(view, replies_button <> "[aria-label='Add reply']")
+
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element(replies_button)
       |> render_click()
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
 
-      # Verify the annotations panel is visible
-      assert has_element?(view, "#annotations_panel")
+      reply_form =
+        "form[phx-submit='create_reply'][phx-value-parent-post-id='#{parent_post.id}']"
+
+      assert has_element?(view, reply_form)
+
+      view
+      |> element(replies_button)
+      |> render_click()
+
+      refute has_element?(view, reply_form)
     end
 
     test "can toggle reactions on posts", %{
@@ -3373,18 +3413,35 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, _post} = create_post(user, section, page_1, "Test post")
+      {:ok, post} = create_post(user, section, page_1, "Test post")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
+      open_class_notes(view)
 
-      # Test that the page loads correctly with annotations sidebar
+      reaction_button =
+        "button[phx-click='toggle_reaction'][phx-value-reaction='like'][phx-value-post-id='#{post.id}']"
+
+      assert has_element?(view, reaction_button <> "[aria-pressed='false'][aria-label='Like']")
+
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element(reaction_button)
       |> render_click()
 
-      # Verify the annotations panel is visible
-      assert has_element?(view, "#annotations_panel")
+      assert %Collaboration.UserReactionPost{} =
+               Collaboration.get_reaction(post.id, user.id, :like)
+
+      assert has_element?(
+               view,
+               reaction_button <> "[aria-pressed='true'][aria-label='Unlike, 1 like']"
+             )
+
+      view
+      |> element(reaction_button)
+      |> render_click()
+
+      assert Collaboration.get_reaction(post.id, user.id, :like) == nil
+      assert has_element?(view, reaction_button <> "[aria-pressed='false'][aria-label='Like']")
     end
 
     test "can toggle reactions on reply posts", %{
@@ -3399,7 +3456,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Create a post with reply
       {:ok, parent_post} = create_post(user, section, page_1, "Parent post")
 
-      {:ok, _reply_post} =
+      {:ok, reply_post} =
         create_post(user, section, page_1, "Reply", %{
           parent_post_id: parent_post.id,
           thread_root_id: parent_post.id
@@ -3407,14 +3464,34 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
+      open_class_notes(view)
+      expand_post_replies(view, parent_post.id)
 
-      # Test that the page loads correctly with annotations sidebar
+      reaction_button =
+        "button[phx-click='toggle_reaction'][phx-value-reaction='like']" <>
+          "[phx-value-post-id='#{reply_post.id}']" <>
+          "[phx-value-parent-post-id='#{parent_post.id}']"
+
+      assert has_element?(view, reaction_button <> "[aria-pressed='false'][aria-label='Like']")
+
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
+      |> element(reaction_button)
       |> render_click()
 
-      # Verify the annotations panel is visible
-      assert has_element?(view, "#annotations_panel")
+      assert %Collaboration.UserReactionPost{} =
+               Collaboration.get_reaction(reply_post.id, user.id, :like)
+
+      assert has_element?(
+               view,
+               reaction_button <> "[aria-pressed='true'][aria-label='Unlike, 1 like']"
+             )
+
+      view
+      |> element(reaction_button)
+      |> render_click()
+
+      assert Collaboration.get_reaction(reply_post.id, user.id, :like) == nil
+      assert has_element?(view, reaction_button <> "[aria-pressed='false'][aria-label='Like']")
     end
 
     test "can create replies to posts", %{
@@ -3426,21 +3503,32 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      # Create a parent post
-      {:ok, _parent_post} = create_post(user, section, page_1, "Parent post")
+      {:ok, parent_post} = create_post(user, section, page_1, "Parent post")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
+      open_class_notes(view)
+      expand_post_replies(view, parent_post.id)
 
-      # Open annotations panel
+      reply_form =
+        "form[phx-submit='create_reply'][phx-value-parent-post-id='#{parent_post.id}']"
+
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
-      |> render_click()
+      |> form(reply_form, %{content: "A new reply"})
+      |> render_submit()
 
-      wait_while(fn -> has_element?(view, "svg.loading") end)
+      assert [reply] = Collaboration.list_replies_for_post(user.id, parent_post.id)
+      assert reply.content.message == "A new reply"
+      assert reply.parent_post_id == parent_post.id
+      assert reply.thread_root_id == parent_post.id
+      assert reply.resource_id == page_1.resource_id
+      assert reply.annotated_resource_id == page_1.resource_id
 
-      # Verify the annotations panel is visible
-      assert has_element?(view, "#annotations_panel")
+      assert has_element?(
+               view,
+               "div[role='note'][aria-label*='Reply by Me'] p",
+               "A new reply"
+             )
     end
 
     test "handles empty reply creation", %{
@@ -3452,21 +3540,22 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      # Create a parent post
-      {:ok, _parent_post} = create_post(user, section, page_1, "Parent post")
+      {:ok, parent_post} = create_post(user, section, page_1, "Parent post")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
+      open_class_notes(view)
+      expand_post_replies(view, parent_post.id)
 
-      # Open annotations panel
+      reply_form =
+        "form[phx-submit='create_reply'][phx-value-parent-post-id='#{parent_post.id}']"
+
       view
-      |> element("button[role='toggle notes button'][data-view='desktop']")
-      |> render_click()
+      |> form(reply_form, %{content: ""})
+      |> render_submit()
 
-      wait_while(fn -> has_element?(view, "svg.loading") end)
-
-      # Verify the annotations panel is visible
-      assert has_element?(view, "#annotations_panel")
+      assert render(view) =~ "Reply cannot be empty"
+      assert Collaboration.list_replies_for_post(user.id, parent_post.id) == []
     end
 
     test "can delete posts", %{
