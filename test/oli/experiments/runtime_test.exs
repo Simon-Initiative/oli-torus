@@ -83,7 +83,7 @@ defmodule Oli.Experiments.RuntimeTest do
       assert Repo.aggregate(Assignment, :count, :id) == 0
 
       assert_receive {:telemetry, [:oli, :experiments, :assignment, :fallback], %{count: 1},
-                      %{reason: :section_not_participating}}
+                      %{reason: :no_experiment}}
     end
 
     test "a selected section stops participating when inactive" do
@@ -102,7 +102,7 @@ defmodule Oli.Experiments.RuntimeTest do
       assert Repo.aggregate(Assignment, :count, :id) == 0
 
       assert_receive {:telemetry, [:oli, :experiments, :assignment, :fallback], %{count: 1},
-                      %{reason: :section_not_participating}}
+                      %{reason: :no_experiment}}
     end
 
     test "a selected current-remix section participates" do
@@ -319,6 +319,83 @@ defmodule Oli.Experiments.RuntimeTest do
 
       assert {:error, %{type: :invalid_condition}} =
                Experiments.assign_condition(assign_request(scope, revision, ["missing"]))
+    end
+
+    test "fails safely and emits diagnostics when multiple active experiments match" do
+      attach_telemetry([[:oli, :experiments, :assignment, :ambiguous_match]])
+
+      %{scope: scope, revision: revision} = active_experiment_with_conditions()
+
+      {:ok, second_definition} =
+        Experiments.create_experiment(%CreateExperimentRequest{
+          scope: scope,
+          slug: "ambiguous-runtime",
+          name: "Persisted ambiguous experiment",
+          algorithm: :weighted_random
+        })
+
+      {:ok, second_active} =
+        Experiments.activate_experiment(second_definition.id, %LifecycleRequest{scope: scope})
+
+      project = Repo.get!(Oli.Authoring.Course.Project, scope.project_id)
+      institution = Repo.get!(Oli.Institutions.Institution, scope.institution_id)
+      publication = Repo.get!(Oli.Publishing.Publications.Publication, scope.publication_id)
+      other_section = insert(:section, institution: institution, base_project: project)
+
+      insert(:section_project_publication,
+        section: other_section,
+        project: project,
+        publication: publication
+      )
+
+      from(experiment_section in ExperimentSection,
+        where: experiment_section.experiment_id == ^second_active.id
+      )
+      |> Repo.update_all(set: [section_id: other_section.id])
+
+      second_decision_point =
+        %DecisionPoint{}
+        |> DecisionPoint.changeset(%{
+          experiment_id: second_active.id,
+          alternatives_resource_id: revision.resource_id,
+          decision_point_key: decision_point_key(revision)
+        })
+        |> Repo.insert!()
+
+      for {code, position} <- [{"a", 0}, {"b", 1}] do
+        %Condition{}
+        |> Condition.changeset(%{
+          experiment_id: second_active.id,
+          decision_point_id: second_decision_point.id,
+          condition_code: code,
+          label: code,
+          weight: 1.0,
+          position: position
+        })
+        |> Repo.insert!()
+      end
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert Repo.aggregate(Assignment, :count, :id) == 0
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :ambiguous_match],
+                      %{count: 1, sampled_match_count: 2},
+                      %{
+                        experiment_ids: experiment_ids,
+                        truncated?: false,
+                        project_id: project_id,
+                        section_id: section_id,
+                        alternatives_resource_id: alternatives_resource_id,
+                        decision_point_key: decision_point_key
+                      }}
+
+      assert length(experiment_ids) == 2
+      assert project_id == scope.project_id
+      assert section_id == scope.section_id
+      assert alternatives_resource_id == revision.resource_id
+      assert decision_point_key == "alternatives:#{revision.resource_id}"
     end
   end
 

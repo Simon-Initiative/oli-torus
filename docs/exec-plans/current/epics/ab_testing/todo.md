@@ -6,7 +6,7 @@ This document tracks unfinished findings and enhancements spanning the native A/
 
 | ID          | Work item                                                   | Area                          | Priority | Status   |
 | ----------- | ----------------------------------------------------------- | ----------------------------- | -------- | -------- |
-| AB-TODO-001 | Prevent concurrent active experiments at one decision point | Experiment lifecycle          | High     | Open     |
+| AB-TODO-001 | Prevent concurrent active experiments at one decision point | Experiment lifecycle          | High     | Complete |
 | AB-TODO-002 | Configurable binary reward rules                            | Adaptive policy and analytics | Medium   | Proposed |
 | AB-TODO-003 | Remove option-management actions from page-editor tabs      | Authoring UX                  | Medium   | Proposed |
 | AB-TODO-004 | Support reordering alternatives options                     | Authoring and delivery        | Medium   | Proposed |
@@ -14,51 +14,49 @@ This document tracks unfinished findings and enhancements spanning the native A/
 
 ## AB-TODO-001: Prevent Concurrent Active Experiments At One Decision Point
 
-- **Status:** Open
+- **Status:** Complete
 - **Priority:** High
 - **Area:** Experiment lifecycle validation and runtime matching
 - **Target slice:** Unscheduled
 
 ### Problem
 
-Multiple active experiments can target the same stable A/B decision point within overlapping project and section scopes. Runtime matching currently orders matching experiments by ascending experiment ID and selects the first result. A newer experiment can therefore appear active to an author while an older experiment silently continues receiving assignments and exposures.
+Multiple active experiments can target the same stable A/B decision point. Runtime matching currently orders matching experiments by ascending experiment ID and selects the first result. A newer experiment can therefore appear active to an author while an older experiment silently continues receiving assignments and exposures.
 
 This can invalidate both weighted-random and Thompson Sampling experiments and make analytics appear empty or misleading for the newer experiment.
 
 ### Desired Outcome
 
-Only one active experiment can target a stable decision point within overlapping delivery scopes. Lifecycle validation prevents conflicts, and runtime matching fails safely if persisted data is unexpectedly ambiguous.
+Only one active experiment can target a stable decision point. Lifecycle validation prevents conflicts, and runtime matching fails safely if persisted data is unexpectedly ambiguous.
 
 ### Requirements
 
-- At most one active experiment may target a stable decision point in any overlapping delivery scope.
+- At most one active experiment may target a stable decision point.
 - Stable decision-point identity must use `alternatives_resource_id` plus `decision_point_key`.
 - Activation must reject a conflicting experiment before changing lifecycle state.
-- Conflict detection must account for:
-  - two project-scoped experiments;
-  - two experiments sharing one or more participating sections;
-  - a project-scoped experiment overlapping a section-participating experiment;
-  - compatible published revisions of the same stable decision point.
+- Conflict detection is independent of experiment section participation.
+- Compatible published revisions of the same stable decision point must resolve to the same identity.
 - Runtime matching must not silently choose the oldest experiment if conflicting active records exist.
 - Unexpected multiple matches must fail safely and emit diagnostic telemetry with non-sensitive experiment, project, section, and decision-point identifiers.
 
 ### Acceptance Criteria
 
-- [ ] Starting a second conflicting experiment returns an actionable lifecycle error.
-- [ ] Non-overlapping experiments may run concurrently.
-- [ ] Pausing, completing, or archiving the active experiment allows a previously conflicting experiment to start.
-- [ ] Runtime matching produces no experimental assignment when persisted state contains an unexpected ambiguity.
-- [ ] Regression coverage includes project-scoped, section-overlap, and project-to-section conflict cases.
+- [x] Starting a second conflicting experiment returns an actionable lifecycle error.
+- [x] Experiments targeting different stable decision points may run concurrently.
+- [x] Pausing, completing, or archiving the active experiment allows a previously conflicting experiment to start.
+- [x] Runtime matching produces no experimental assignment when persisted state contains an unexpected ambiguity.
+- [x] Regression coverage proves section participation does not affect conflict detection.
 
-### Open Decisions
+### Implementation Decisions
 
-- Determine whether conflict prevention requires a database-level constraint, transactional lifecycle locking, application validation, or a combination.
-- Define the exact overlap rule when participating sections change after activation.
+- Activation uses application validation inside a database transaction. The scoped experiment row is locked before lifecycle validation; after non-conflict activation prerequisites pass, the stable alternatives resource row is locked immediately before conflict detection and the lifecycle update. This serializes concurrent changes for the same stable decision point without holding the shared resource lock during unrelated validation or requiring a cross-table database constraint.
+- Stable identity is the exact pair of `alternatives_resource_id` and `decision_point_key`.
+- Section participation controls where an active experiment applies at delivery time, but it does not affect whether another experiment may be active at the same decision point.
+- Runtime lookup includes current section participation in the match query, reads up to two matches, and returns `:no_experiment` with `[:oli, :experiments, :assignment, :ambiguous_match]` telemetry when more than one active match is found.
 
 ### Dependencies
 
 - Stable decision-point identity.
-- Experiment section-participation semantics.
 - Existing lifecycle transition and runtime matching contracts.
 
 ### Relevant Repository Areas

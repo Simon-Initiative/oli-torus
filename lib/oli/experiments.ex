@@ -41,7 +41,7 @@ defmodule Oli.Experiments do
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
-  alias Oli.Resources.{ResourceType, Revision}
+  alias Oli.Resources.{Resource, ResourceType, Revision}
 
   @transition_targets %{
     activate_experiment: :active,
@@ -608,13 +608,41 @@ defmodule Oli.Experiments do
   defp transition(experiment_id, %Oli.Experiments.LifecycleRequest{} = request, action) do
     target_state = Map.fetch!(@transition_targets, action)
 
-    with {:ok, schema} <- get_scoped_definition(experiment_id, request.scope),
-         :ok <- validate_transition(schema.state, target_state),
-         :ok <- validate_transition_prerequisites(schema, target_state),
-         attrs <- transition_attrs(schema, target_state, request.transitioned_at),
-         {:ok, updated} <- update_definition(schema, attrs) do
+    result =
+      Repo.transaction(fn ->
+        with {:ok, scope} <- validate_scope(request.scope),
+             %ExperimentDefinitionSchema{} = schema <-
+               scope
+               |> scoped_experiment_query(experiment_id)
+               |> lock("FOR UPDATE")
+               |> preload(:sections)
+               |> Repo.one(),
+             :ok <- validate_transition(schema.state, target_state),
+             :ok <- validate_transition_prerequisites(schema, target_state),
+             attrs <- transition_attrs(schema, target_state, request.transitioned_at),
+             {:ok, updated} <-
+               schema
+               |> ExperimentDefinitionSchema.changeset(attrs)
+               |> Repo.update() do
+          {Repo.preload(updated, :sections, force: true), schema.state}
+        else
+          nil ->
+            Repo.rollback(
+              elem(not_found("experiment not found", %{experiment_id: experiment_id}), 1)
+            )
+
+          {:error, %ExperimentError{} = error} ->
+            Repo.rollback(error)
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            Repo.rollback(changeset)
+        end
+      end)
+      |> normalize_transaction_result()
+
+    with {:ok, {updated, previous_state}} <- result do
       emit_lifecycle_telemetry(:transition, updated, %{
-        previous_state: schema.state,
+        previous_state: previous_state,
         target_state: target_state
       })
 
@@ -935,11 +963,12 @@ defmodule Oli.Experiments do
             decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
             decision_point.decision_point_key == ^request.decision_point_key,
         order_by: [asc: experiment.id],
-        limit: 1,
-        select: {experiment, decision_point}
+        limit: 3,
+        select:
+          {experiment, decision_point, exists(participating_section_query(scope.section_id))}
 
-    case Repo.one(query) do
-      nil ->
+    case Repo.all(query) do
+      [] ->
         :telemetry.execute(
           [:oli, :experiments, :assignment, :fallback],
           %{count: 1},
@@ -948,46 +977,52 @@ defmodule Oli.Experiments do
 
         {:ok, %{status: :no_experiment}}
 
-      {experiment, decision_point} ->
-        if participating_section?(experiment.id, scope.section_id, scope.project_id) do
-          with {:ok, conditions} <-
-                 validate_runtime_condition_compatibility(
-                   experiment,
-                   decision_point,
-                   revision
-                 ) do
-            {:ok,
-             %{
-               experiment: experiment,
-               decision_point: decision_point,
-               conditions: conditions,
-               available_condition_codes: request.available_condition_codes
-             }}
-          end
-        else
-          :telemetry.execute(
-            [:oli, :experiments, :assignment, :fallback],
-            %{count: 1},
-            %{reason: :section_not_participating}
-          )
+      [{_experiment, _decision_point, false}] ->
+        :telemetry.execute(
+          [:oli, :experiments, :assignment, :fallback],
+          %{count: 1},
+          %{reason: :no_experiment}
+        )
 
-          {:ok, %{status: :no_experiment}}
+        {:ok, %{status: :no_experiment}}
+
+      [{experiment, decision_point, true}] ->
+        with {:ok, conditions} <-
+               validate_runtime_condition_compatibility(
+                 experiment,
+                 decision_point,
+                 revision
+               ) do
+          {:ok,
+           %{
+             experiment: experiment,
+             decision_point: decision_point,
+             conditions: conditions,
+             available_condition_codes: request.available_condition_codes
+           }}
         end
-    end
-  end
 
-  defp participating_section?(experiment_id, section_id, project_id) do
-    Repo.exists?(
-      from experiment_section in ExperimentSection,
-        join: section in Section,
-        on: section.id == experiment_section.section_id,
-        join: spp in SectionsProjectsPublications,
-        on: spp.section_id == section.id and spp.project_id == ^project_id,
-        where:
-          experiment_section.experiment_id == ^experiment_id and
-            experiment_section.section_id == ^section_id and
-            section.status == :active
-    )
+      matches ->
+        experiment_ids =
+          matches
+          |> Enum.take(2)
+          |> Enum.map(fn {experiment, _decision_point, _participating?} -> experiment.id end)
+
+        :telemetry.execute(
+          [:oli, :experiments, :assignment, :ambiguous_match],
+          %{count: 1, sampled_match_count: length(experiment_ids)},
+          %{
+            experiment_ids: experiment_ids,
+            truncated?: length(matches) > 2,
+            project_id: scope.project_id,
+            section_id: scope.section_id,
+            alternatives_resource_id: request.alternatives_resource_id,
+            decision_point_key: request.decision_point_key
+          }
+        )
+
+        {:ok, %{status: :no_experiment}}
+    end
   end
 
   defp resolve_delivery_revision(request, scope) do
@@ -1949,9 +1984,6 @@ defmodule Oli.Experiments do
     |> normalize_transaction_result()
   end
 
-  defp update_definition(schema, attrs),
-    do: update_definition(schema, attrs, nil, nil)
-
   defp update_definition(schema, attrs, requested_section_ids, section_ids) do
     Repo.transaction(fn ->
       updated =
@@ -2241,24 +2273,76 @@ defmodule Oli.Experiments do
 
   defp validate_transition_prerequisites(schema, :active) do
     with :ok <- validate_activation_algorithm(schema),
-         {:ok, decision_points} <- activation_decision_points(schema) do
-      case decision_points do
-        [] ->
-          :ok
-
-        [decision_point] ->
-          conditions = active_conditions(schema.id, decision_point.id)
-
-          with {:ok, revisions} <- activation_revisions(schema, decision_point),
-               :ok <- validate_decision_point_strategies(revisions),
-               :ok <- validate_minimum_active_conditions(conditions),
-               :ok <- validate_positive_active_weight(conditions),
-               :ok <- validate_condition_option_mappings(revisions, conditions),
-               :ok <- validate_adaptive_activation(schema, conditions) do
-            :ok
-          end
-      end
+         {:ok, decision_points} <- activation_decision_points(schema),
+         :ok <- validate_activation_configuration(schema, decision_points),
+         :ok <- validate_no_active_decision_point_conflict(schema, decision_points) do
+      :ok
     end
+  end
+
+  defp validate_activation_configuration(_schema, []), do: :ok
+
+  defp validate_activation_configuration(schema, [decision_point]) do
+    conditions = active_conditions(schema.id, decision_point.id)
+
+    with {:ok, revisions} <- activation_revisions(schema, decision_point),
+         :ok <- validate_decision_point_strategies(revisions),
+         :ok <- validate_minimum_active_conditions(conditions),
+         :ok <- validate_positive_active_weight(conditions),
+         :ok <- validate_condition_option_mappings(revisions, conditions),
+         :ok <- validate_adaptive_activation(schema, conditions) do
+      :ok
+    end
+  end
+
+  defp validate_no_active_decision_point_conflict(schema, decision_points) do
+    Enum.reduce_while(decision_points, :ok, fn decision_point, :ok ->
+      # Different experiments have different rows, so their individual lifecycle
+      # locks cannot serialize this check. Lock the shared alternatives resource
+      # to close the concurrent "no conflict" check followed by activation race.
+      lock_decision_point_resource!(decision_point.alternatives_resource_id)
+
+      conflict? =
+        from(experiment in ExperimentDefinitionSchema,
+          join: other_decision_point in DecisionPoint,
+          on: other_decision_point.experiment_id == experiment.id,
+          where:
+            experiment.id != ^schema.id and
+              experiment.state == :active and
+              other_decision_point.alternatives_resource_id ==
+                ^decision_point.alternatives_resource_id and
+              other_decision_point.decision_point_key == ^decision_point.decision_point_key
+        )
+        |> Repo.exists?()
+
+      case conflict? do
+        false ->
+          {:cont, :ok}
+
+        true ->
+          {:halt,
+           {:error,
+            %ExperimentError{
+              type: :conflict,
+              message: "another active experiment already targets this decision point",
+              details: %{
+                experiment_id: schema.id,
+                alternatives_resource_id: decision_point.alternatives_resource_id,
+                decision_point_key: decision_point.decision_point_key
+              }
+            }}}
+      end
+    end)
+  end
+
+  defp lock_decision_point_resource!(alternatives_resource_id) do
+    Repo.one!(
+      from(resource in Resource,
+        where: resource.id == ^alternatives_resource_id,
+        select: resource.id,
+        lock: "FOR UPDATE"
+      )
+    )
   end
 
   defp active_conditions(experiment_id, decision_point_id) do

@@ -726,6 +726,134 @@ defmodule Oli.Experiments.ContextTest do
 
       assert message == "experiment cannot transition from draft to paused"
     end
+
+    test "does not distinguish out-of-scope experiment IDs from missing IDs" do
+      scope = project_scope()
+      other_scope = project_scope()
+      alternatives = alternatives_revision(other_scope.project_id)
+
+      assert {:ok, foreign_experiment} =
+               Experiments.create_experiment(graph_request(other_scope, alternatives))
+
+      assert {:error, %ExperimentError{type: :not_found, message: foreign_message}} =
+               Experiments.activate_experiment(foreign_experiment.id, lifecycle(scope))
+
+      assert {:error, %ExperimentError{type: :not_found, message: missing_message}} =
+               Experiments.activate_experiment(-1, lifecycle(scope))
+
+      assert foreign_message == missing_message
+    end
+
+    test "allows only one active experiment per stable decision point" do
+      scope = project_scope()
+      first_section = runtime_scope(scope)
+      second_section = runtime_scope(scope)
+      alternatives = alternatives_revision(scope.project_id)
+      other_alternatives = alternatives_revision(scope.project_id)
+
+      create_experiment = fn decision_point, section_ids ->
+        scope
+        |> graph_request(decision_point)
+        |> Map.put(:section_ids, section_ids)
+        |> Experiments.create_experiment()
+        |> elem(1)
+      end
+
+      first = create_experiment.(alternatives, [first_section.section_id])
+      same_point_other_section = create_experiment.(alternatives, [second_section.section_id])
+      same_point_no_sections = create_experiment.(alternatives, [])
+      different_point = create_experiment.(other_alternatives, [second_section.section_id])
+
+      different_key =
+        scope
+        |> graph_request(alternatives)
+        |> Map.update!(:decision_point, fn decision_point ->
+          Map.put(
+            decision_point,
+            :decision_point_key,
+            "secondary:#{alternatives.resource_id}"
+          )
+        end)
+        |> Map.put(:section_ids, [second_section.section_id])
+        |> Experiments.create_experiment()
+        |> elem(1)
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(first.id, lifecycle(scope))
+
+      assert {:error,
+              %ExperimentError{
+                type: :conflict,
+                message: "another active experiment already targets this decision point",
+                details: %{
+                  alternatives_resource_id: alternatives_resource_id,
+                  decision_point_key: decision_point_key
+                }
+              }} =
+               Experiments.activate_experiment(same_point_other_section.id, lifecycle(scope))
+
+      assert alternatives_resource_id == alternatives.resource_id
+      assert decision_point_key == "alternatives:#{alternatives.resource_id}"
+
+      assert {:error, %ExperimentError{type: :conflict}} =
+               Experiments.activate_experiment(same_point_no_sections.id, lifecycle(scope))
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(different_point.id, lifecycle(scope))
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(different_key.id, lifecycle(scope))
+
+      assert {:ok, %{state: :paused}} =
+               Experiments.pause_experiment(first.id, lifecycle(scope))
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(same_point_other_section.id, lifecycle(scope))
+
+      assert {:error, %ExperimentError{type: :conflict}} =
+               Experiments.activate_experiment(same_point_no_sections.id, lifecycle(scope))
+
+      assert {:ok, %{state: :completed}} =
+               Experiments.complete_experiment(same_point_other_section.id, lifecycle(scope))
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(same_point_no_sections.id, lifecycle(scope))
+
+      assert {:ok, %{state: :archived}} =
+               Experiments.archive_experiment(same_point_no_sections.id, lifecycle(scope))
+
+      after_archive = create_experiment.(alternatives, [first_section.section_id])
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(after_archive.id, lifecycle(scope))
+    end
+
+    test "rejects competing activation requests for the same stable decision point" do
+      scope = project_scope()
+      section = runtime_scope(scope)
+      alternatives = alternatives_revision(scope.project_id)
+
+      experiments =
+        for _index <- 1..2 do
+          request =
+            scope
+            |> graph_request(alternatives)
+            |> Map.put(:section_ids, [section.section_id])
+
+          assert {:ok, experiment} = Experiments.create_experiment(request)
+          experiment
+        end
+
+      results =
+        experiments
+        |> Enum.map(fn experiment ->
+          Task.async(fn -> Experiments.activate_experiment(experiment.id, lifecycle(scope)) end)
+        end)
+        |> Enum.map(&Task.await(&1, 5_000))
+
+      assert Enum.count(results, &match?({:ok, %{state: :active}}, &1)) == 1
+      assert Enum.count(results, &match?({:error, %ExperimentError{type: :conflict}}, &1)) == 1
+    end
   end
 
   describe "public response shapes" do
