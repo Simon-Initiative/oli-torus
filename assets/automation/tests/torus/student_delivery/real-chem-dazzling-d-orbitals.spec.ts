@@ -14,11 +14,10 @@ import { fetchTestAsset, fetchTestArchiveToTempFile } from '@tasks/AutomationAss
 import { completeAdaptiveHappyPath, LessonAnswers } from '@tasks/AdaptiveHappyPathTask';
 
 /**
- * MER-5672: Adaptive Lesson — RC I Exploration: Decoding the Mystery of
- * Greenhouse Molecules.
+ * MER-5673: Adaptive Lesson — RC II Exploration: Dazzling d-Orbitals.
  *
- * Imports the full REAL CHEM I course archive, creates an open-and-free
- * section with a learner, and drives the 33-screen adaptive lesson through
+ * Imports the full REAL CHEM II course archive, creates an open-and-free
+ * section with a learner, and drives the 30-screen adaptive lesson through
  * its happy path (correct answers only).
  *
  * All course content — the lesson title and every correct answer — lives in a
@@ -41,17 +40,18 @@ import { completeAdaptiveHappyPath, LessonAnswers } from '@tasks/AdaptiveHappyPa
  *   - the private assets seeded ONCE in your own playwright assets bucket
  *     (MinIO in dev, console at :9001; name it whatever you like, e.g.
  *     torus-playwright-assets-dev — there's no default, export that name as
- *     PLAYWRIGHT_ASSETS_BUCKET server-side): mer-5672/real-chem-course.zip
- *     and mer-5672/answers.json. The test fetches them through
+ *     PLAYWRIGHT_ASSETS_BUCKET server-side): mer-5673/real-chem-ii-course.zip
+ *     and mer-5673/answers.json. The test fetches them through
  *     GET /test/assets/* on the server. The server must also be started with
  *     PLAYWRIGHT_SCENARIO_TOKEN.
  *
- * Then: npx playwright test real-chem-greenhouse-molecules
+ * Then: npx playwright test real-chem-dazzling-d-orbitals
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const archiveKey = 'mer-5672/real-chem-course.zip';
-const answersKey = 'mer-5672/answers.json';
+const archiveKey = 'mer-5673/real-chem-ii-course.zip';
+const answersKey = 'mer-5673/answers.json';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
+const EXPECTED_LESSON = /Dazzling d-Orbitals/i;
 
 let seededCourse: AutomationSetupResponse | null = null;
 let answers: LessonAnswers | null = null;
@@ -68,7 +68,7 @@ test.skip(
   'Set PLAYWRIGHT_AUTOMATION_API_KEY to run this test (see setup instructions above)',
 );
 
-test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
+test.describe.serial('Real Chem II dazzling d-orbitals adaptive lesson', () => {
   test.beforeAll(async ({ request }) => {
     test.setTimeout(240_000);
 
@@ -83,6 +83,12 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
     const answersBuffer = await answersPromise;
     answers = JSON.parse(answersBuffer.toString('utf8')) as LessonAnswers;
 
+    if (!EXPECTED_LESSON.test(answers.lesson.title)) {
+      throw new Error(
+        `Answer key targets "${answers.lesson.title}", expected ${EXPECTED_LESSON} (MER-5673)`,
+      );
+    }
+
     seededCourse = await importArchiveAndCreateSection(request, archive.filePath, {
       baseUrl,
       apiKey: automationApiKey!,
@@ -96,13 +102,27 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
   });
 
   test.afterAll(async ({ request }) => {
+    // Full-course project deletion was observed to exceed both cowboy's 60s
+    // idle_timeout and the 600s dev Repo timeout (see TRIAGE-2419: unindexed
+    // FKs referencing revisions), so cleanup is bounded and best-effort;
+    // leaked slugs are named in the warning below.
     try {
       if (seededCourse) {
-        await teardownAutomationCourse(request, seededCourse, {
-          baseUrl,
-          apiKey: automationApiKey!,
-        });
+        await Promise.race([
+          teardownAutomationCourse(request, seededCourse, {
+            baseUrl,
+            apiKey: automationApiKey!,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('teardown timeout')), 15_000),
+          ),
+        ]);
       }
+    } catch (e) {
+      const ids = seededCourse
+        ? `project=${seededCourse.project.slug}, section=${seededCourse.section.slug}`
+        : 'unknown';
+      console.warn(`[MER-5673] teardown failed (${ids}): ${(e as Error).message}`);
     } finally {
       if (archiveTempDir) {
         await fs.rm(archiveTempDir, { recursive: true, force: true });
@@ -111,8 +131,8 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
     }
   });
 
-  test('student completes the greenhouse molecules happy path', async ({ page }) => {
-    test.setTimeout(900_000); // 33 screens with server-side rule evaluation per check
+  test('student completes the dazzling d-orbitals happy path', async ({ page }) => {
+    test.setTimeout(900_000); // 30 screens with server-side rule evaluation per check
 
     if (!seededCourse || !answers) {
       throw new Error('Automation setup did not produce seeded course data and answers');
