@@ -3,6 +3,10 @@ defmodule OliWeb.Api.ResourceControllerTest do
 
   import Oli.Factory
 
+  alias Oli.Authoring.Course
+  alias Oli.Publishing
+  alias Oli.Utils.Time
+
   describe "GET /api/v1/project/:project/link" do
     setup [:author_conn, :create_project_with_pages]
 
@@ -48,6 +52,51 @@ defmodule OliWeb.Api.ResourceControllerTest do
         )
 
       assert response(conn, 404)
+    end
+  end
+
+  describe "PUT /api/v1/project/:project/resource/:resource" do
+    setup [:author_conn, :create_project_with_pages]
+
+    test "returns forbidden when adding a content element for a disabled project feature", %{
+      author: author,
+      conn: conn,
+      project: project,
+      page_1: page
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: false,
+          experiments_enabled: true
+        })
+
+      project.slug
+      |> Publishing.project_working_publication()
+      |> then(&Publishing.get_published_resource!(&1.id, page.resource_id))
+      |> Publishing.update_published_resource(%{
+        lock_updated_at: Time.now(),
+        locked_by_id: author.id
+      })
+
+      conn =
+        put(conn, "/api/v1/project/#{project.slug}/resource/#{page.slug}", %{
+          "update" => %{
+            "content" => %{
+              "version" => "0.1.0",
+              "model" => [
+                %{
+                  "type" => "alternatives",
+                  "id" => "new-alternatives",
+                  "strategy" => "user_section_preference",
+                  "alternatives_id" => 123,
+                  "children" => []
+                }
+              ]
+            }
+          }
+        })
+
+      assert response(conn, 403) == "alternatives authoring is not enabled for this project"
     end
   end
 

@@ -6,9 +6,9 @@ Scope and reference artifacts:
 - Requirements: `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/requirements.yml`
 
 ## Scope
-Implement project-level A/B Testing authoring and lifecycle management through `Oli.Experiments` and the existing course-author LiveView surface. The work covers creation and editing of one-decision-point MVP weighted random experiments, disabled "Coming soon" affordances for Thompson Sampling where the UI needs to acknowledge the future option, lifecycle transitions, assignment-aware edit protection, compatibility handling for existing provider-shaped authored experiments, telemetry, security and performance review evidence, and targeted automated tests.
+Implement project-level A/B Testing authoring and lifecycle management through `Oli.Experiments` and the existing course-author LiveView surface. The work covers creation and editing of one-decision-point MVP weighted random experiments, disabled "Coming soon" affordances for Thompson Sampling where the UI needs to acknowledge the future option, lifecycle transitions, assignment-aware edit protection, project-gated Alternatives and A/B Test insert elements, compatibility handling for existing provider-shaped authored experiments, telemetry, security and performance review evidence, and targeted automated tests.
 
-This plan covers FR-001, FR-002, FR-003, and FR-005 for implementation. FR-004 and AC-004 remain visible as deferred Thompson Sampling scope: this slice must not persist or activate Thompson Sampling experiments, and any UI affordance must be disabled with clear "Coming soon" copy until the Thompson Sampling policy slice is implemented. It satisfies AC-001 by replacing provider-specific authoring language and JSON workflow affordances in the new experiment management path, AC-002 by enforcing lifecycle and authorization rules for permitted collaborators and admins, AC-003 by validating weighted A/B/N configuration, and AC-005 by blocking unsafe condition changes after learner assignments exist.
+This plan covers FR-001, FR-002, FR-003, FR-005, and FR-006 for implementation. FR-004 and AC-004 remain visible as deferred Thompson Sampling scope: this slice must not persist or activate Thompson Sampling experiments, and any UI affordance must be disabled with clear "Coming soon" copy until the Thompson Sampling policy slice is implemented. It satisfies AC-001 by replacing provider-specific authoring language and JSON workflow affordances in the new experiment management path, AC-002 by enforcing lifecycle and authorization rules for permitted collaborators and admins, AC-003 by validating weighted A/B/N configuration, AC-005 by blocking unsafe condition changes after learner assignments exist, and AC-006 by independently gating the Alternatives and A/B Test insert elements with the current project's existing authoring feature settings.
 
 Guardrails:
 - Do not create a new broad React application shell for this slice; use existing LiveView or shared component patterns.
@@ -90,7 +90,7 @@ Guardrails:
   - Authorization tests and assignment-aware edit tests can be implemented independently once lifecycle command boundaries are stable.
 
 ## Phase 3: Course-Author LiveView Management Surface
-- Goal: Deliver the weighted random A/B Testing authoring UI for FR-001, FR-002, FR-003, FR-005, AC-001, AC-002, AC-003, and AC-005 inside the existing course-author workspace, with disabled deferred UI for FR-004/AC-004 where useful.
+- Goal: Deliver the weighted random A/B Testing authoring UI for FR-001 through FR-006 and AC-001 through AC-006 inside the existing course-author workspace, with disabled deferred UI for FR-004/AC-004 where useful.
 - Tasks:
   - [x] Update `OliWeb.Workspaces.CourseAuthor.ExperimentsLive` to list project experiments, lifecycle status, algorithm, active condition count, and archived visibility using `Oli.Experiments` read models.
   - [x] Add create/edit forms for selecting an existing alternatives group, naming the experiment, configuring slug, condition labels, active flags, weights, and algorithm choice.
@@ -100,6 +100,9 @@ Guardrails:
   - [x] Remove or hide prior-provider labels, provider-migration language, the term "native", and JSON import/export/download affordances from the new A/B Testing management path.
   - [x] Ensure `OliWeb.Live.Experiments.ExperimentsLive` delegates to shared A/B Testing behavior or is narrowed so it cannot reintroduce obsolete workflows.
   - [x] Keep ordinary alternatives authoring responsible for alternatives groups and stop using provider-specific alternatives revisions for new experiment creation.
+  - [x] Pass authoritative `alternatives_enabled` and `experiments_enabled` values for the current project into the page-editor configuration.
+  - [x] Filter the Alternatives and A/B Test insert-content entries independently so disabled features have no visible or actionable icon.
+  - [x] Enforce the corresponding project feature gate in the server/API creation path.
 - Testing Tasks:
   - [x] Add LiveView tests for listing experiments and lifecycle statuses.
   - [x] Add LiveView tests for successful weighted random creation and invalid-weight validation.
@@ -107,6 +110,7 @@ Guardrails:
   - [x] Add LiveView tests for lifecycle button visibility by state and role.
   - [x] Add LiveView tests proving the new creation and management path does not render prior-provider labels, provider-migration language, the term "native", or JSON import/export/download controls.
   - [x] Add accessibility-oriented assertions for labels, form errors, disabled controls, and status text where supported by existing test patterns.
+  - [x] Add frontend and server tests for all four project-feature combinations and crafted disabled-feature creation requests.
   - Command(s): `mix test <targeted course-author experiments LiveView test file>`
   - Command(s): `mix format`
 - Definition of Done:
@@ -200,7 +204,7 @@ Guardrails:
 ## Phase Gate Summary
 - Gate A: Authoring graph context APIs create and update project-scoped weighted random experiment records and explicitly reject Thompson Sampling creation until the policy slice is ready.
 - Gate B: Lifecycle transitions, role authorization, and assignment-aware edit protection pass targeted context tests.
-- Gate C: Course-author LiveView tests prove weighted random create/edit/lifecycle behavior, removal of obsolete terminology and JSON workflow controls, and disabled or absent Thompson Sampling controls.
+- Gate C: Course-author LiveView and page-editor tests prove weighted random create/edit/lifecycle behavior, removal of obsolete terminology and JSON workflow controls, disabled or absent Thompson Sampling controls, and independent project gating of Alternatives and A/B Test insert elements.
 - Gate D: Compatibility behavior preserves current provider-shaped authored experiments without creating new provider-shaped A/B Testing workflows.
 - Gate E: Scenario coverage where applicable, telemetry review, security and performance evidence, formatting, targeted tests, and harness validation pass.
 
@@ -210,3 +214,9 @@ Guardrails:
 - Reason: The parent epic now places Thompson Sampling after the weighted random authoring lifecycle slice.
 - Evidence: `docs/exec-plans/current/epics/ab_testing/plan.md`; `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/prd.md`; `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/fdd.md`.
 - Impact: Thompson Sampling UI enablement, priors, guardrails, and adaptive activation move to `docs/exec-plans/current/epics/ab_testing/thompson_sampling/`.
+
+### 2026-07-30 - Add Project-Gated Insert Menu Work
+- Change: Added implementation and verification tasks for independently gating Alternatives and A/B Test insert elements by project feature availability.
+- Reason: The page editor must not offer unavailable content types for the current project.
+- Evidence: `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/requirements.yml`; `assets/src/components/content/add_resource_content/NonActivities.tsx`.
+- Impact: Phase 3 and Gate C now include feature propagation, menu filtering, server enforcement, and combination tests.

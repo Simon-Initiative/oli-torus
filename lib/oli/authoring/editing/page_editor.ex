@@ -53,6 +53,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:lock_not_acquired, {String.t(), Calendar.naive_datetime()}}}
+          | {:error, {:feature_disabled, :alternatives | :experiments}}
           | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, author_email, update) do
     result =
@@ -67,18 +68,26 @@ defmodule Oli.Authoring.Editing.PageEditor do
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
             # If we acquired or updated the lock, we can proceed
             lock_result when lock_result in [{:acquired}, {:updated}] ->
-              get_latest_revision(publication, resource)
-              |> resurrect_or_delete_activity_references(converted_update, project.slug)
-              |> maybe_create_new_revision(
-                publication,
-                project,
-                resource,
-                author.id,
-                converted_update,
-                lock_result
-              )
-              |> update_revision(converted_update, project.slug)
-              |> possibly_release_lock(project, publication, resource, author, update)
+              latest_revision = get_latest_revision(publication, resource)
+
+              case validate_feature_gated_content(latest_revision, converted_update, project) do
+                :ok ->
+                  latest_revision
+                  |> resurrect_or_delete_activity_references(converted_update, project.slug)
+                  |> maybe_create_new_revision(
+                    publication,
+                    project,
+                    resource,
+                    author.id,
+                    converted_update,
+                    lock_result
+                  )
+                  |> update_revision(converted_update, project.slug)
+                  |> possibly_release_lock(project, publication, resource, author, update)
+
+                {:error, reason} ->
+                  Repo.rollback(reason)
+              end
 
             # error or not able to lock results in a failed edit
             result ->
@@ -101,6 +110,66 @@ defmodule Oli.Authoring.Editing.PageEditor do
         e
     end
   end
+
+  defp validate_feature_gated_content(
+         %Revision{content: previous_content},
+         update,
+         project
+       ) do
+    case Map.fetch(update, "content") do
+      :error ->
+        :ok
+
+      {:ok, updated_content} ->
+        previous_alternatives = alternatives_by_identity(previous_content)
+        updated_alternatives = alternatives_by_identity(updated_content)
+
+        updated_alternatives
+        |> Enum.reject(fn {identity, count} ->
+          Map.get(previous_alternatives, identity, 0) >= count
+        end)
+        |> Enum.reduce_while(:ok, fn {{_id, strategy}, _count}, :ok ->
+          case feature_enabled_for_strategy?(strategy, project) do
+            true -> {:cont, :ok}
+            false -> {:halt, {:error, feature_for_strategy(strategy)}}
+          end
+        end)
+    end
+  end
+
+  defp alternatives_by_identity(%{"model" => model}) when is_list(model) do
+    Enum.reduce(model, %{}, &collect_alternatives/2)
+  end
+
+  defp alternatives_by_identity(_content), do: %{}
+
+  defp collect_alternatives(%{"type" => "alternatives"} = content, counts) do
+    identity = {Map.get(content, "id"), Map.get(content, "strategy")}
+
+    content
+    |> resource_children()
+    |> Enum.reduce(Map.update(counts, identity, 1, &(&1 + 1)), &collect_alternatives/2)
+  end
+
+  defp collect_alternatives(%{"type" => type} = content, counts)
+       when type in ["group", "survey", "report", "alternative"] do
+    content
+    |> resource_children()
+    |> Enum.reduce(counts, &collect_alternatives/2)
+  end
+
+  defp collect_alternatives(_content, counts), do: counts
+
+  defp resource_children(%{"children" => children}) when is_list(children), do: children
+  defp resource_children(_content), do: []
+
+  defp feature_enabled_for_strategy?("upgrade_decision_point", project),
+    do: project.experiments_enabled
+
+  defp feature_enabled_for_strategy?(_strategy, project), do: project.alternatives_enabled
+
+  defp feature_for_strategy("upgrade_decision_point"), do: {:feature_disabled, :experiments}
+  defp feature_for_strategy(_strategy), do: {:feature_disabled, :alternatives}
 
   defp possibly_release_lock(previous, project, publication, resource, author, update) do
     if Map.get(update, "releaseLock", false) do
@@ -262,7 +331,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            triggers: publication.project.allow_triggers
          },
          appsignalKey: Application.get_env(:appsignal, :client_key),
-         experimentsEnabled: publication.project.experiments_enabled
+         experimentsEnabled: publication.project.experiments_enabled,
+         alternativesEnabled: publication.project.alternatives_enabled
        }}
     else
       _ -> {:error, :not_found}

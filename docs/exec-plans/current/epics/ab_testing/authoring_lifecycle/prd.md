@@ -30,6 +30,7 @@ The A/B testing authoring surface must let users manage experiment definitions a
 - Lifecycle controls must make active, paused, completed, and archived states clear.
 - Validation errors must explain why assigned conditions cannot be changed unsafely.
 - Thompson Sampling controls must be absent or disabled with "Coming soon" copy and must not be submittable from this slice.
+- The page editor insert-content menu must show the Alternatives content element only when Alternatives is enabled for the current project and the A/B Test content element only when A/B Testing is enabled for the current project. Disabled project features must not leave visible, disabled, or otherwise actionable insert icons.
 
 ## 6. Functional Requirements
 Requirements are found in requirements.yml
@@ -41,6 +42,7 @@ Requirements are found in requirements.yml
 - Permission checks must prevent unauthorized experiment creation, lifecycle changes, or destructive edits.
 - Authoring must respect published content immutability and not mutate published revisions.
 - UI flows must be accessible within existing Phoenix LiveView or focused React patterns.
+- Project feature availability must be passed to the page editor through an authoritative server-provided contract; hiding an icon must not be the only protection against creating disabled content types.
 
 ## 9. Data, Interfaces & Dependencies
 - Depends on A/B testing-owned persistence and lifecycle validation.
@@ -54,7 +56,7 @@ Requirements are found in requirements.yml
 - UI changes require relevant frontend/LiveView tests and review against UI, security, and performance guidance.
 
 ## 11. Feature Flagging, Rollout & Migration
-No feature flags present in this work item
+No new rollout feature flag is introduced by this work item. FR-006 consumes the project's existing `alternatives_enabled` and `experiments_enabled` authoring settings as product capability gates.
 
 ## 12. Telemetry & Success Metrics
 - Track lifecycle transition attempts, validation failures, and successful experiment creation.
@@ -79,6 +81,7 @@ No feature flags present in this work item
 ## 15. QA Plan
 - Automated validation:
   - LiveView, controller, or frontend tests for form behavior, lifecycle transitions, permissions, validation errors, and disabled or absent Thompson Sampling controls.
+  - Page-editor tests for all combinations of project Alternatives and A/B Testing enablement, including the absence of disabled-feature icons from the insert-content menu.
   - ExUnit tests for lifecycle validation and unsafe condition edits after assignments.
 - Manual validation:
   - Create non-adaptive weighted random experiments through the A/B testing authoring surface and verify lifecycle state changes.
@@ -95,3 +98,9 @@ No feature flags present in this work item
 - Reason: The epic sequence now places Thompson Sampling after the weighted random authoring lifecycle slice.
 - Evidence: `docs/exec-plans/current/epics/ab_testing/plan.md`; `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/plan.md`.
 - Impact: Adaptive selection, priors, guardrails, and Thompson Sampling activation move to `docs/exec-plans/current/epics/ab_testing/thompson_sampling/`.
+
+### 2026-07-30 - Gate Page-Editor Insert Elements By Project Features
+- Change: Required the Alternatives and A/B Test insert-content elements to be independently visible only when their corresponding project features are enabled.
+- Reason: Authors must not be offered content elements that are unavailable for the current project.
+- Evidence: `lib/oli/authoring/editing/page_context.ex`; `lib/oli/authoring/editing/page_editor.ex`; `lib/oli_web/controllers/api/resource_controller.ex`; `assets/src/components/content/add_resource_content/NonActivities.tsx`.
+- Impact: Adds project-feature propagation, menu filtering, creation-path enforcement, and flag-combination coverage to the authoring lifecycle requirements.

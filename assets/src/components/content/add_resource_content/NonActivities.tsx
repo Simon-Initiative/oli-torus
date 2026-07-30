@@ -43,8 +43,6 @@ export const NonActivities: React.FC<Props> = ({
   featureFlags,
   resourceContext,
 }) => {
-  const ABTestDisabled = !resourceContext.experimentsEnabled;
-
   return (
     <div className="d-flex flex-column">
       <div className="resource-choice-header">Content types</div>
@@ -111,28 +109,32 @@ export const NonActivities: React.FC<Props> = ({
           disabled={false}
           onClick={() => addReport(onAddItem, index, resourceContext.projectSlug)}
         />
-        <ResourceChoice
-          icon="window-restore"
-          label="Alt"
-          onHoverStart={() =>
-            onSetTip('Alternative materials which will be displayed based on student preference')
-          }
-          onHoverEnd={() => onResetTip()}
-          key={'alternatives'}
-          disabled={false}
-          onClick={() => addAlternatives(onAddItem, index, resourceContext.projectSlug)}
-        />
-        <ResourceChoice
-          icon="vial"
-          label="A/B Test"
-          onHoverStart={() =>
-            onSetTip('Insert your A/B testing decision point to assign options randomly')
-          }
-          onHoverEnd={() => onResetTip()}
-          key={'ab-test'}
-          disabled={ABTestDisabled}
-          onClick={() => addExperiment(onAddItem, index, resourceContext.projectSlug)}
-        />
+        {resourceContext.alternativesEnabled && (
+          <ResourceChoice
+            icon="window-restore"
+            label="Alt"
+            onHoverStart={() =>
+              onSetTip('Alternative materials which will be displayed based on student preference')
+            }
+            onHoverEnd={() => onResetTip()}
+            key={'alternatives'}
+            disabled={false}
+            onClick={() => addAlternatives(onAddItem, index, resourceContext.projectSlug)}
+          />
+        )}
+        {resourceContext.experimentsEnabled && (
+          <ResourceChoice
+            icon="vial"
+            label="A/B Test"
+            onHoverStart={() =>
+              onSetTip('A/B decision point to show materials according to an experiment policy')
+            }
+            onHoverEnd={() => onResetTip()}
+            key={'ab-test'}
+            disabled={false}
+            onClick={() => addExperiment(onAddItem, index, resourceContext.projectSlug)}
+          />
+        )}
       </div>
     </div>
   );
@@ -176,9 +178,9 @@ const addReport = (onAddItem: AddCallback, index: number[], projectSlug: string)
             }
           })
         }
-        onDone={(activityId: string) => {
+        onDone={(activityId: string | number) => {
           window.oliDispatch(modalActions.dismiss());
-          const ac = activitiesWithReport.find((a) => a.id === activityId);
+          const ac = activitiesWithReport.find((a) => String(a.id) === String(activityId));
           if (ac) onAddItem(createReport(ac), index);
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
@@ -215,7 +217,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
             }
           })
         }
-        onDone={(alternativesId: string) => {
+        onDone={(alternativesId: string | number) => {
           window.oliDispatch(modalActions.dismiss());
           onAddItem(
             createAlternatives(Number(alternativesId), 'user_section_preference', Immutable.List()),
@@ -255,7 +257,7 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
             }
           })
         }
-        onDone={(alternativesId: string) => {
+        onDone={(alternativesId: string | number) => {
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
               const experiment = result.alternatives.find(

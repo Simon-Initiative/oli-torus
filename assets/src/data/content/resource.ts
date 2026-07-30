@@ -170,6 +170,7 @@ export type ResourceContext = {
   resourceSlug: ResourceSlug; // The current resource
   resourceId: ResourceId; // The resource id
   experimentsEnabled: boolean; // Whether native A/B testing authoring is enabled
+  alternativesEnabled: boolean; // Whether learner-preference alternatives authoring is enabled
   title: string; // The title of the resource
   content: PageContent; // Content of the resource
   objectives: AttachedObjectives; // Attached objectives

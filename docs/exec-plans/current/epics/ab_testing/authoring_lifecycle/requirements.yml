@@ -23,6 +23,12 @@ requirements:
   title: Validate condition changes
   description: Authoring must prevent or constrain unsafe condition edits after learner
     assignments exist.
+- id: FR-006
+  title: Gate insertable content by project features
+  description: The page editor insert-content menu must show the Alternatives element
+    only when alternatives_enabled is true for the current project and the A/B Test
+    element only when experiments_enabled is true for the current project. Elements
+    for disabled features must not be visible or actionable.
 acceptance_criteria:
 - id: AC-001
   requirement: FR-001
@@ -47,3 +53,9 @@ acceptance_criteria:
   requirement: FR-005
   description: Attempts to edit assigned conditions after assignments exist produce
     safe validation behavior and clear user feedback.
+- id: AC-006
+  requirement: FR-006
+  description: Tests covering all combinations of alternatives_enabled and
+    experiments_enabled prove that each insert-content icon is present only when
+    its corresponding feature is enabled, and disabled-feature creation requests
+    are rejected even if initiated outside the menu.

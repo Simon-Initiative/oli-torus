@@ -4,7 +4,7 @@
 
 Provide A/B testing experiment management backed by `Oli.Experiments`. Authors and permitted administrators can create draft weighted random experiments from alternatives decision points, configure condition weights, transition experiments through `draft`, `active`, `paused`, `completed`, and `archived`, and receive clear validation errors when edits would destabilize learner assignments. Thompson Sampling authoring is intentionally deferred to the dedicated Thompson Sampling slice; this slice may show disabled "Coming soon" UI but must not persist or activate adaptive experiments.
 
-This design satisfies FR-001 through FR-005 by routing creation and lifecycle changes through the A/B testing domain context, avoiding provider-migration terminology and JSON export/import workflow affordances in experiment management, enforcing lifecycle and assignment-aware condition validation in backend code, blocking Thompson Sampling configuration until the follow-up slice, and keeping the UI inside the existing course-author LiveView surface.
+This design satisfies FR-001 through FR-006 by routing creation and lifecycle changes through the A/B testing domain context, avoiding provider-migration terminology and JSON export/import workflow affordances in experiment management, enforcing lifecycle and assignment-aware condition validation in backend code, blocking Thompson Sampling configuration until the follow-up slice, gating page-editor insert elements by project feature availability, and keeping the UI inside the existing course-author LiveView surface.
 
 ## 2. Requirements & Assumptions
 
@@ -14,12 +14,14 @@ This design satisfies FR-001 through FR-005 by routing creation and lifecycle ch
   - FR-003: Authorized users must configure condition weights for A/B/N weighted random experiments.
   - FR-004: Thompson Sampling must not be selectable, submittable, persisted, or activation-eligible in this slice; any visible affordance must be disabled with clear "Coming soon" copy until the Thompson Sampling slice enables adaptive authoring.
   - FR-005: Authoring must prevent unsafe condition edits after learner assignments exist.
+  - FR-006: The page editor must expose the Alternatives and A/B Test insert-content elements only when `alternatives_enabled` and `experiments_enabled`, respectively, are enabled for the current project.
 - Acceptance criteria mapping:
   - AC-001: Sections 4 and 5 define A/B Testing LiveView controls that avoid prior-provider labels, "native" terminology, and JSON export/import controls.
   - AC-002: Sections 4, 5, 7, and 13 define permission and state-transition validation with delivery eligibility tied to `:active`.
   - AC-003: Sections 4, 5, 6, and 13 define weighted condition configuration and invalid-weight rejection.
   - AC-004: Sections 4, 5, 6, 10, and 13 define disabled or absent Thompson Sampling controls and backend rejection of adaptive configuration until the follow-up slice.
   - AC-005: Sections 4, 7, 10, and 13 define assigned-condition edit protection and user-facing validation errors.
+  - AC-006: Sections 4, 5, 10, and 13 define independent project-feature propagation, insert-menu filtering, creation-path enforcement, and coverage for all enablement combinations.
 - Non-functional requirements:
   - Domain validation belongs in `Oli.Experiments`; LiveViews render forms, invoke commands, and display errors.
   - Authoring must respect published content immutability by referencing alternatives resources/revisions rather than mutating published revisions.
@@ -59,6 +61,7 @@ This design satisfies FR-001 through FR-005 by routing creation and lifecycle ch
 - `OliWeb.Live.Experiments.ExperimentsLive`: either delegates to the same shared A/B testing components or is reduced/removed if it is an older non-workspace duplicate.
 - `Oli.Authoring.Experiments`: should stop being the source of new A/B testing experiment definitions. It can be narrowed to compatibility detection or read support for current authored provider-specific experiment revisions.
 - Alternatives authoring remains responsible for creating ordinary alternatives groups. New A/B testing authoring references those groups as decision points instead of creating provider-specific alternatives revisions.
+- The page-editor bootstrap contract provides authoritative `alternatives_enabled` and `experiments_enabled` values for the current project. The insert-content menu filters the Alternatives and A/B Test entries independently from those values; it does not render disabled placeholders for unavailable content types.
 
 ### 4.2 State & Data Flow
 
@@ -122,6 +125,11 @@ The experiment definition graph belongs to `Oli.Experiments` and is authored at 
   - `new_experiment`, `validate_experiment`, `create_experiment`, `edit_experiment`, `update_experiment`, `start_experiment`, `pause_experiment`, `complete_experiment`, and `archive_experiment`.
   - Events must call context functions and translate `%ExperimentError{type, message, details}` into field or form errors.
   - If Thompson Sampling is visible, it must be disabled with "Coming soon" copy and must not submit adaptive params through LiveView events.
+- Page-editor feature contract:
+  - Expose `alternatives_enabled` and `experiments_enabled` from the current project in the server-generated page-editor configuration or props.
+  - Render the Alternatives insert entry only when `alternatives_enabled` is true.
+  - Render the A/B Test insert entry only when `experiments_enabled` is true.
+  - Enforce the same project gates in the server/API creation path so a stale client or crafted request cannot create a disabled content type.
 - Authorization boundary:
   - LiveViews must check existing project author/admin access before rendering.
   - Lifecycle commands for start, pause, complete, and archive must be allowed only for accepted collaborators of the experiment's project, content admins, account admins, and system admins.
@@ -224,6 +232,11 @@ The experiment definition graph belongs to `Oli.Experiments` and is authored at 
   - Thompson Sampling controls are absent or disabled with "Coming soon" copy and cannot submit adaptive configuration.
   - lifecycle buttons appear only for permitted roles and valid states.
   - current authored provider-specific experiments remain supported through the compatibility behavior and have no migration, new-experiment-from-legacy, or JSON import/export controls.
+- Frontend page-editor tests:
+  - cover all four combinations of `alternatives_enabled` and `experiments_enabled`.
+  - assert that each enabled feature has its insert icon and each disabled feature has no visible or actionable menu entry.
+- Server/API tests:
+  - reject creation of Alternatives or A/B Test content when its corresponding project feature is disabled.
 - Scenario tests:
   - Add `Oli.Scenarios` coverage if implementation spans authoring, publishing, section delivery, enrollment, and runtime assignment in one workflow.
   - A useful scenario would create alternatives, create an experiment, activate it, publish, deliver to a learner, and verify assignment stability after a blocked unsafe edit.
@@ -298,3 +311,9 @@ The experiment definition graph belongs to `Oli.Experiments` and is authored at 
 - Reason: The parent epic now sequences Thompson Sampling after weighted random authoring lifecycle.
 - Evidence: `docs/exec-plans/current/epics/ab_testing/plan.md`; `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/requirements.yml`.
 - Impact: Adaptive selection, prior/guardrail validation, and activation are owned by `docs/exec-plans/current/epics/ab_testing/thompson_sampling/`.
+
+### 2026-07-30 - Use Independent Project Gates For Insert Elements
+- Change: Added an authoritative page-editor feature contract and independent visibility and creation enforcement for Alternatives and A/B Test content.
+- Reason: The insert menu must reflect the current project's enabled authoring capabilities.
+- Evidence: `lib/oli_web/live/workspaces/utils.ex`; `lib/oli_web/live/workspaces/course_author/overview_live.ex`; `assets/src/components/content/add_resource_content/NonActivities.tsx`.
+- Impact: The page-editor bootstrap, insert menu, server creation path, and automated tests must account for both project feature flags.

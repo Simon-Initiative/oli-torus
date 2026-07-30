@@ -379,5 +379,4 @@ Native experiment behavior depends only on explicit experiment lifecycle, `exper
 
 OTHER
 
-- [ ] Alternatives and A/B Test content elements should only be available to insert into a page when the features are enabled for a project. Otherwise these icons should not be visisble in the insert content menu.
 - [ ] When in the Manage Alternatives view, the Create > Alternatives sidebar link should be
