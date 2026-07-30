@@ -25,6 +25,8 @@ type AutomationOptions = {
   apiKey: string;
 };
 
+const DEFAULT_TEARDOWN_TIMEOUT_MS = 10_000;
+
 export async function importArchiveAndCreateSection(
   request: APIRequestContext,
   archivePath: string,
@@ -129,7 +131,7 @@ export async function teardownAutomationCourse(
         section_slug: seeded.section.slug,
         project_slug: seeded.project.slug,
       },
-      timeout: 45_000,
+      timeout: automationTeardownTimeoutMs(),
     });
   } catch (error) {
     console.warn(`automation_teardown request failed (${context}): ${(error as Error).message}`);
@@ -186,6 +188,18 @@ async function truncatedBody(response: { text(): Promise<string> }): Promise<str
 
 function buildAutomationAuthHeader(rawKey: string) {
   return `Bearer ${Buffer.from(rawKey).toString('base64')}`;
+}
+
+function automationTeardownTimeoutMs() {
+  const rawTimeout = process.env.PLAYWRIGHT_AUTOMATION_TEARDOWN_TIMEOUT_MS;
+
+  if (!rawTimeout) {
+    return DEFAULT_TEARDOWN_TIMEOUT_MS;
+  }
+
+  const timeout = Number.parseInt(rawTimeout, 10);
+
+  return Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_TEARDOWN_TIMEOUT_MS;
 }
 
 export function buildAutomationLoginData(learnerEmail: string, learnerPassword: string) {
