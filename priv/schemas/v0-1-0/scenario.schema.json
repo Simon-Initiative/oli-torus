@@ -763,6 +763,19 @@
               "archived"
             ]
           },
+          "reaction": {
+            "type": "string",
+            "enum": [
+              "like"
+            ]
+          },
+          "reaction_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reacted_by": {
+            "type": "string"
+          },
           "contains_discussions": {
             "$ref": "#/definitions/booleanLike"
           },

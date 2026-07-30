@@ -446,6 +446,7 @@ Use `assert.discussion` to verify course discussion configuration, named post st
 - `anonymous_posting`
 - named post `status`: `submitted`, `approved`, `deleted`, or `archived`
 - named post `visible` for a specific student
+- named post `reaction`, `reaction_count`, and `reacted_by`
 
 ### Example
 ```yaml
@@ -456,6 +457,9 @@ Use `assert.discussion` to verify course discussion configuration, named post st
       student: "bob"
       status: "approved"
       visible: true
+      reaction: "like"
+      reaction_count: 1
+      reacted_by: "bob"
 ```
 
 ---
@@ -496,7 +500,7 @@ Creates a learner public class note on a page in a section and then evaluates ce
 
 ## post_reaction
 
-Deterministically adds or removes a reaction on any named collaboration post. Repeating the same action is idempotent.
+Deterministically adds or removes a reaction on a named class note or discussion post. Repeating the same action is idempotent.
 
 ### Parameters
 - `post`: Scenario-local name of a class note or discussion post (required)

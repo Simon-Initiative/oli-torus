@@ -72,6 +72,47 @@
       status: "approved"
       visible: true
 
+- post_reaction:
+    post: "auto_accepted_post"
+    student: "student_b"
+    reaction: "like"
+    action: "add"
+
+# Repeating an add is intentionally idempotent.
+- post_reaction:
+    post: "auto_accepted_post"
+    student: "student_b"
+    reaction: "like"
+    action: "add"
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "auto_accepted_post"
+      reaction: "like"
+      reaction_count: 1
+      reacted_by: "student_b"
+
+- post_reaction:
+    post: "auto_accepted_post"
+    student: "student_b"
+    reaction: "like"
+    action: "remove"
+
+# Repeating a remove is intentionally idempotent.
+- post_reaction:
+    post: "auto_accepted_post"
+    student: "student_b"
+    reaction: "like"
+    action: "remove"
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "auto_accepted_post"
+      reaction: "like"
+      reaction_count: 0
+
 - discussion_post:
     name: "auto_accepted_reply"
     student: "student_b"

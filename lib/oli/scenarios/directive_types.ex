@@ -490,8 +490,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activity_evaluations: %{},
               # name -> Discussion post
               discussion_posts: %{},
-              # name -> Any collaboration post
-              collaboration_posts: %{},
+              # name -> Class note or annotation reply
+              annotation_posts: %{},
               # gate name -> GatingCondition
               gates: %{},
               # scenario-local current time

@@ -113,6 +113,9 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "student",
             "visible",
             "status",
+            "reaction",
+            "reaction_count",
+            "reacted_by",
             "contains_discussions",
             "auto_accept",
             "anonymous_posting"

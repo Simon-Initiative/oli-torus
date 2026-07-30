@@ -67,7 +67,7 @@ defmodule Oli.Scenarios.Directives.ClassNoteHandler do
   defp fetch_parent_post(_state, nil), do: {:ok, nil}
 
   defp fetch_parent_post(state, name) do
-    case Engine.get_collaboration_post(state, name) do
+    case Engine.get_annotation_post(state, name) do
       nil ->
         {:error, "Collaboration post '#{name}' not found"}
 
@@ -123,5 +123,5 @@ defmodule Oli.Scenarios.Directives.ClassNoteHandler do
   end
 
   defp maybe_store_post(state, nil, _post), do: state
-  defp maybe_store_post(state, name, post), do: Engine.put_collaboration_post(state, name, post)
+  defp maybe_store_post(state, name, post), do: Engine.put_annotation_post(state, name, post)
 end

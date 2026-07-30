@@ -1504,6 +1504,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           student: data["student"],
           visible: parse_optional_boolean(data["visible"], "visible"),
           status: parse_optional_post_status(data["status"]),
+          reaction: parse_optional_post_reaction(data["reaction"]),
+          reaction_count: parse_optional_integer(data["reaction_count"]),
+          reacted_by: data["reacted_by"],
           contains_discussions:
             parse_optional_boolean(data["contains_discussions"], "contains_discussions"),
           auto_accept: parse_optional_boolean(data["auto_accept"], "auto_accept"),

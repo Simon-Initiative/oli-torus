@@ -1326,33 +1326,6 @@ defmodule Oli.Resources.CollaborationTest do
     end
   end
 
-  describe "reactions" do
-    test "add_reaction/3 adds a reaction idempotently" do
-      post = insert(:post)
-      user = insert(:user)
-
-      assert {:ok, 1} = Collaboration.add_reaction(post.id, user.id, :like)
-      assert {:ok, 0} = Collaboration.add_reaction(post.id, user.id, :like)
-
-      assert %{post_id: post_id, user_id: user_id, reaction: :like} =
-               Collaboration.get_reaction(post.id, user.id, :like)
-
-      assert post_id == post.id
-      assert user_id == user.id
-    end
-
-    test "remove_reaction/3 removes a reaction idempotently" do
-      post = insert(:post)
-      user = insert(:user)
-
-      assert {:ok, 1} = Collaboration.add_reaction(post.id, user.id, :like)
-      assert {:ok, -1} = Collaboration.remove_reaction(post.id, user.id, :like)
-      assert {:ok, 0} = Collaboration.remove_reaction(post.id, user.id, :like)
-
-      refute Collaboration.get_reaction(post.id, user.id, :like)
-    end
-  end
-
   defp create_post(user_id, section_id, resource_id, message, attrs \\ []) do
     attrs
     |> Enum.into(%{

@@ -40,7 +40,7 @@ defmodule Oli.Scenarios.Directives.Assert.AnnotationAssertion do
   def assert(%AssertDirective{annotation: nil}, state), do: {:ok, state, nil}
 
   defp fetch_post(state, name) do
-    case Engine.get_collaboration_post(state, name) do
+    case Engine.get_annotation_post(state, name) do
       nil ->
         {:error, "Collaboration post '#{name}' not found"}
 
@@ -83,7 +83,7 @@ defmodule Oli.Scenarios.Directives.Assert.AnnotationAssertion do
   defp expected_parent_post_id(_state, nil), do: {:ok, nil}
 
   defp expected_parent_post_id(state, parent_name) do
-    case Engine.get_collaboration_post(state, parent_name) do
+    case Engine.get_annotation_post(state, parent_name) do
       nil -> {:error, "Parent collaboration post '#{parent_name}' not found"}
       post -> {:ok, post.id}
     end

@@ -1,9 +1,16 @@
 defmodule Oli.Scenarios.Directives.PostReactionHandler do
   @moduledoc """
-  Deterministically adds or removes reactions on named collaboration posts.
+  Deterministically adds or removes reactions on named annotation or discussion posts.
+
+  This is scenario-only mutation support. The reacting user and target post are resolved from
+  trusted scenario execution state rather than from production request parameters.
   """
 
+  import Ecto.Query, warn: false
+
+  alias Oli.Repo
   alias Oli.Resources.Collaboration
+  alias Oli.Resources.Collaboration.UserReactionPost
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, PostReactionDirective}
   alias Oli.Scenarios.Engine
 
@@ -27,9 +34,9 @@ defmodule Oli.Scenarios.Directives.PostReactionHandler do
   end
 
   defp fetch_post(state, name) do
-    case Engine.get_collaboration_post(state, name) do
+    case Engine.get_named_post(state, name) do
       nil ->
-        {:error, "Collaboration post '#{name}' not found"}
+        {:error, "Annotation or discussion post '#{name}' not found"}
 
       post ->
         {:ok, Collaboration.get_post_by(%{id: post.id}) || post}
@@ -44,16 +51,34 @@ defmodule Oli.Scenarios.Directives.PostReactionHandler do
   end
 
   defp apply_action(post_id, user_id, reaction, :add) do
-    post_id
-    |> Collaboration.add_reaction(user_id, reaction)
-    |> normalize_result()
+    now = DateTime.utc_now(:second)
+
+    Repo.insert_all(
+      UserReactionPost,
+      [
+        %{
+          post_id: post_id,
+          user_id: user_id,
+          reaction: reaction,
+          inserted_at: now,
+          updated_at: now
+        }
+      ],
+      on_conflict: :nothing,
+      conflict_target: [:reaction, :post_id, :user_id]
+    )
+
+    :ok
   end
 
   defp apply_action(post_id, user_id, reaction, :remove) do
-    post_id
-    |> Collaboration.remove_reaction(user_id, reaction)
-    |> normalize_result()
-  end
+    UserReactionPost
+    |> where(
+      [r],
+      r.post_id == ^post_id and r.user_id == ^user_id and r.reaction == ^reaction
+    )
+    |> Repo.delete_all()
 
-  defp normalize_result({:ok, _change}), do: :ok
+    :ok
+  end
 end

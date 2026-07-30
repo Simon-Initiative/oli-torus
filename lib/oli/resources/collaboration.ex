@@ -1507,62 +1507,6 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Idempotently adds a reaction to a post by a user. Returns the number of reactions added.
-
-  ## Examples
-
-      iex> add_reaction(1, 1, "like")
-      {:ok, 1}
-
-      iex> add_reaction(1, 1, "like")
-      {:ok, 0}
-  """
-  def add_reaction(post_id, user_id, reaction) do
-    now = DateTime.utc_now(:second)
-
-    {count, _} =
-      Repo.insert_all(
-        UserReactionPost,
-        [
-          %{
-            post_id: post_id,
-            user_id: user_id,
-            reaction: reaction,
-            inserted_at: now,
-            updated_at: now
-          }
-        ],
-        on_conflict: :nothing,
-        conflict_target: [:reaction, :post_id, :user_id]
-      )
-
-    {:ok, count}
-  end
-
-  @doc """
-  Idempotently removes a reaction from a post by a user. Returns the reaction count offset.
-
-  ## Examples
-
-      iex> remove_reaction(1, 1, "like")
-      {:ok, -1}
-
-      iex> remove_reaction(1, 1, "like")
-      {:ok, 0}
-  """
-  def remove_reaction(post_id, user_id, reaction) do
-    {count, _} =
-      UserReactionPost
-      |> where(
-        [r],
-        r.post_id == ^post_id and r.user_id == ^user_id and r.reaction == ^reaction
-      )
-      |> Repo.delete_all()
-
-    {:ok, -count}
-  end
-
-  @doc """
   Returns the reaction to a post by a user.
 
   ## Examples

@@ -177,6 +177,7 @@ defmodule Oli.Scenarios.Engine do
           finalized_attempts: %{},
           activity_evaluations: %{},
           discussion_posts: %{},
+          annotation_posts: %{},
           gates: %{},
           scenario_time: nil,
           current_author: author,
@@ -510,25 +511,28 @@ defmodule Oli.Scenarios.Engine do
   Upserts a discussion post by name into the state.
   """
   def put_discussion_post(state, name, post) do
-    %{
-      state
-      | discussion_posts: Map.put(state.discussion_posts, name, post),
-        collaboration_posts: Map.put(state.collaboration_posts, name, post)
-    }
+    %{state | discussion_posts: Map.put(state.discussion_posts, name, post)}
   end
 
   @doc """
-  Gets a named collaboration post from the state.
+  Gets a named annotation post from the state.
   """
-  def get_collaboration_post(state, name) do
-    Map.get(state.collaboration_posts, name)
+  def get_annotation_post(state, name) do
+    Map.get(state.annotation_posts, name)
   end
 
   @doc """
-  Upserts a collaboration post by name into the state.
+  Upserts an annotation post by name into the state.
   """
-  def put_collaboration_post(state, name, post) do
-    %{state | collaboration_posts: Map.put(state.collaboration_posts, name, post)}
+  def put_annotation_post(state, name, post) do
+    %{state | annotation_posts: Map.put(state.annotation_posts, name, post)}
+  end
+
+  @doc """
+  Gets a named annotation or discussion post from the state.
+  """
+  def get_named_post(state, name) do
+    Map.get(state.annotation_posts, name) || Map.get(state.discussion_posts, name)
   end
 
   @doc """
