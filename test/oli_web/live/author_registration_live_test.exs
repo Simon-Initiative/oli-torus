@@ -48,4 +48,37 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
       assert html_response(conn, 200) =~ "Sign in"
     end
   end
+
+  describe "register author" do
+    test "confirms and redirects the author when email verification is disabled", %{conn: conn} do
+      stub_recaptcha()
+      previous = Application.get_env(:oli, :author_email_verification_required)
+      Application.put_env(:oli, :author_email_verification_required, false)
+
+      on_exit(fn ->
+        Application.put_env(:oli, :author_email_verification_required, previous)
+      end)
+
+      {:ok, lv, _html} = live(conn, ~p"/authors/register")
+      email = unique_author_email()
+
+      form =
+        form(lv, "#registration_form",
+          author: %{
+            "email" => email,
+            "given_name" => "Ada",
+            "family_name" => "Lovelace",
+            "password" => "valid_password",
+            "password_confirmation" => "valid_password"
+          }
+        )
+
+      render_submit(form)
+      conn = follow_trigger_action(form, conn)
+
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+      assert Oli.Accounts.get_author_by_email(email).email_confirmed_at
+      Swoosh.TestAssertions.assert_no_email_sent()
+    end
+  end
 end

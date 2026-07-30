@@ -5,7 +5,7 @@ defmodule OliWeb.AuthorRegistrationLive do
 
   alias Oli.Accounts
   alias Oli.Accounts.Author
-  alias Oli.Utils.Recaptcha
+  alias Oli.Recaptcha
 
   def render(assigns) do
     ~H"""
@@ -58,11 +58,13 @@ defmodule OliWeb.AuthorRegistrationLive do
       ) do
     with {:success, true} <- Recaptcha.verify(params["g-recaptcha-response"]),
          {:ok, author} <- Accounts.register_author(author_params) do
-      {:ok, _} =
-        Accounts.deliver_author_confirmation_instructions(
-          author,
-          &url(~p"/authors/confirm/#{&1}")
-        )
+      if Accounts.author_email_verification_required?() do
+        {:ok, _} =
+          Accounts.deliver_author_confirmation_instructions(
+            author,
+            &url(~p"/authors/confirm/#{&1}")
+          )
+      end
 
       changeset = Accounts.change_author_registration(author)
       {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
