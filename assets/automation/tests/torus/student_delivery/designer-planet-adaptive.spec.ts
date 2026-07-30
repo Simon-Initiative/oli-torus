@@ -549,7 +549,7 @@ async function waitForAdaptiveSettled(page: Page) {
   }
 
   await page.waitForLoadState('domcontentloaded').catch(() => undefined);
-  await page.waitForTimeout(800).catch(() => undefined);
+  await page.waitForTimeout(500).catch(() => undefined);
 }
 
 async function clickPrimaryAdaptiveButton(
