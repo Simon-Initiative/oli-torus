@@ -8,7 +8,7 @@ This document tracks unfinished findings and enhancements spanning the native A/
 | ----------- | ----------------------------------------------------------- | ----------------------------- | -------- | -------- |
 | AB-TODO-001 | Prevent concurrent active experiments at one decision point | Experiment lifecycle          | High     | Complete |
 | AB-TODO-002 | Configurable binary reward rules                            | Adaptive policy and analytics | Medium   | Proposed |
-| AB-TODO-003 | Remove option-management actions from page-editor tabs      | Authoring UX                  | Medium   | Proposed |
+| AB-TODO-003 | Remove option-management actions from page-editor tabs      | Authoring UX                  | Medium   | In Progress |
 | AB-TODO-004 | Support reordering alternatives options                     | Authoring and delivery        | Medium   | Proposed |
 | AB-TODO-005 | Remove the legacy section experiment gate                   | Delivery runtime and schema   | High     | Proposed |
 
@@ -161,10 +161,10 @@ Continuous, ordinal, or otherwise non-binary rewards require a different Thompso
 
 ## AB-TODO-003: Remove Option-Management Actions From Page-Editor Tabs
 
-- **Status:** Proposed
+- **Status:** In Progress
 - **Priority:** Medium
 - **Area:** Page editor and alternatives authoring UX
-- **Target slice:** Unscheduled
+- **Target slice:** Page-editor tabs complete; option deletion lifecycle pending
 
 ### Problem
 
@@ -187,11 +187,19 @@ The page editor is responsible for editing branch content, while Manage Alternat
 
 ### Acceptance Criteria
 
-- [ ] Page-editor alternatives tabs contain content-editing controls but no option-management actions.
-- [ ] Every current option remains visible as a tab for branch-content editing.
+- [x] Page-editor alternatives tabs contain content-editing controls but no option-management actions.
+- [x] Every current option remains visible as a tab for branch-content editing.
 - [ ] Renaming an option does not invalidate an existing experiment condition or learner assignment.
 - [ ] Deleting an option used by an active or historical experiment is blocked or handled by an explicitly approved lifecycle rule.
-- [ ] Frontend coverage verifies content editing, tab selection, stale-option handling, and the absence of option-management actions.
+- [x] Frontend coverage verifies content editing, tab selection, stale-option handling, and the absence of option-management actions.
+
+### Implementation Notes
+
+- Page-editor tabs are reconciled to Manage Alternatives by stable option ID and displayed in managed order.
+- Newly managed options receive a new empty content branch; renamed options retain their existing branch because their stable ID is unchanged.
+- Content for deleted option IDs remains visible as a flagged stale tab and is never reassigned to another option.
+- Creating, renaming, deleting, and reassigning options are no longer available from the page-editor tab strip.
+- Completing this work item still requires an approved deletion rule for options referenced by experiments or learner assignments.
 
 ### Open Decisions
 
