@@ -13,7 +13,9 @@ defmodule Oli.MixProject do
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
-      compilers: [:phoenix_live_view, :gleam, :gleam_runtime] ++ Mix.compilers(),
+      # Gleam is built from the standalone project under gleam/. The custom
+      # runtime compiler stages its generated Erlang artifacts for Mix.
+      compilers: [:phoenix_live_view, :gleam_runtime] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
       archives: [mix_gleam: "~> 0.6"],
       erlc_paths: [
@@ -303,6 +305,8 @@ defmodule Mix.Tasks.Compile.GleamRuntime do
 
   @impl true
   def run(_args) do
+    build_gleam!()
+
     case stage_runtime_sources!() do
       :changed -> {:ok, []}
       :noop -> {:noop, []}
@@ -312,6 +316,19 @@ defmodule Mix.Tasks.Compile.GleamRuntime do
   @impl true
   def clean do
     File.rm_rf!(@runtime_erl_path)
+  end
+
+  defp build_gleam! do
+    case System.cmd("gleam", ["build", "--target", "erlang"],
+           cd: "gleam",
+           stderr_to_stdout: true
+         ) do
+      {_output, 0} ->
+        :ok
+
+      {output, _status} ->
+        Mix.raise("Gleam build failed:\n#{output}")
+    end
   end
 
   defp stage_runtime_sources! do
@@ -325,12 +342,7 @@ defmodule Mix.Tasks.Compile.GleamRuntime do
         missing_sources
         |> Enum.map_join("\n", fn {source, _target} -> "  #{source}" end)
 
-      Mix.raise("""
-      Gleam Erlang runtime sources were not found:
-      #{missing}
-
-      Run `cd gleam && gleam build --target erlang` before compiling the Mix project.
-      """)
+      Mix.raise("Gleam Erlang runtime sources were not found after build:\n#{missing}")
     end
 
     File.mkdir_p!(@runtime_erl_path)
