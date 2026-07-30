@@ -574,20 +574,11 @@ defmodule OliWeb.PageDeliveryController do
         }
       end)
 
-    base_project_slug =
-      case section.has_experiments do
-        true ->
-          Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
-
-        _ ->
-          nil
-      end
-
-    enrollment =
-      case section.has_experiments do
-        true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
-        _ -> nil
-      end
+    {base_project_slug, enrollment} =
+      Oli.Delivery.Sections.get_alternatives_render_context(
+        section.id,
+        user && user.id
+      )
 
     render_context = %Context{
       # Allow admin authors to review student work

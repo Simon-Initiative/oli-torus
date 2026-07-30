@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
   alias Oli.Authoring.Course
   alias Oli.Lti.PlatformExternalTools
+  alias Oli.Repo
   alias Oli.Tags
 
   defp live_view_route(project_slug, params \\ %{}),
@@ -55,6 +56,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       author: author
     } do
       project = create_project_with_author(author)
+      section = insert(:section, base_project: project)
+      original_section_updated_at = DateTime.add(section.updated_at, -60, :second)
+
+      section
+      |> Ecto.Changeset.change(updated_at: original_section_updated_at)
+      |> Repo.update!()
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -85,6 +92,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       updated_project = Course.get_project!(project.id)
       assert updated_project.experiments_enabled
       assert updated_project.alternatives_enabled
+      assert Repo.reload!(section).updated_at == original_section_updated_at
     end
 
     test "renders collaborator invite reCAPTCHA with the LiveView hook", %{

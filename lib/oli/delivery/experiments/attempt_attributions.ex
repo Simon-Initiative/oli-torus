@@ -17,7 +17,6 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
 
   alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
   alias Oli.Experiments.XAPI.Attributions
-  alias Oli.Delivery.Sections.Section
   alias Oli.Repo
 
   def for_attempt_group(%AttemptGroup{} = attempt_group) do
@@ -28,36 +27,33 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
         {activity_attempt_id, Enum.min_by(part_attempts, & &1.id)}
       end)
 
-    if map_size(host_part_attempts) == 0 or
-         not experiment_section?(attempt_group.context.section_id) do
+    if map_size(host_part_attempts) == 0 do
       empty_attributions()
     else
       activity_attempt_ids = Map.keys(host_part_attempts)
       assignments = reward_assignments(attempt_group, activity_attempt_ids)
-      part_attempts = part_attempt_attributions(host_part_attempts, assignments, attempt_group)
 
-      %{
-        part_attempts: part_attempts,
-        activity_attempts: activity_attempt_rollups(attempt_group.part_attempts, part_attempts),
-        page_attempt: page_attempt_rollups(part_attempts)
-      }
+      case assignments do
+        [] ->
+          empty_attributions()
+
+        _ ->
+          part_attempts =
+            part_attempt_attributions(host_part_attempts, assignments, attempt_group)
+
+          %{
+            part_attempts: part_attempts,
+            activity_attempts:
+              activity_attempt_rollups(attempt_group.part_attempts, part_attempts),
+            page_attempt: page_attempt_rollups(part_attempts)
+          }
+      end
     end
   end
 
   def for_attempt_group(_attempt_group), do: empty_attributions()
 
   defp empty_attributions, do: %{part_attempts: %{}, activity_attempts: %{}, page_attempt: []}
-
-  defp experiment_section?(nil), do: false
-
-  defp experiment_section?(section_id) do
-    Repo.one(
-      from(section in Section,
-        where: section.id == ^section_id,
-        select: section.has_experiments
-      )
-    ) == true
-  end
 
   defp activity_attempt_rollups(part_attempts, part_attempt_attributions) do
     part_attempts

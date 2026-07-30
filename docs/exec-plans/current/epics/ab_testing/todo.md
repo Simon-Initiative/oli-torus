@@ -4,13 +4,13 @@ This document tracks unfinished findings and enhancements spanning the native A/
 
 ## Backlog Summary
 
-| ID          | Work item                                                   | Area                          | Priority | Status   |
-| ----------- | ----------------------------------------------------------- | ----------------------------- | -------- | -------- |
-| AB-TODO-001 | Prevent concurrent active experiments at one decision point | Experiment lifecycle          | High     | Complete |
-| AB-TODO-002 | Configurable binary reward rules                            | Adaptive policy and analytics | Medium   | Proposed |
+| ID          | Work item                                                   | Area                          | Priority | Status      |
+| ----------- | ----------------------------------------------------------- | ----------------------------- | -------- | ----------- |
+| AB-TODO-001 | Prevent concurrent active experiments at one decision point | Experiment lifecycle          | High     | Complete    |
+| AB-TODO-002 | Configurable binary reward rules                            | Adaptive policy and analytics | Medium   | Proposed    |
 | AB-TODO-003 | Remove option-management actions from page-editor tabs      | Authoring UX                  | Medium   | In Progress |
-| AB-TODO-004 | Support reordering alternatives options                     | Authoring and delivery        | Medium   | Complete |
-| AB-TODO-005 | Remove the legacy section experiment gate                   | Delivery runtime and schema   | High     | Proposed |
+| AB-TODO-004 | Support reordering alternatives options                     | Authoring and delivery        | Medium   | Complete    |
+| AB-TODO-005 | Remove the legacy section experiment gate                   | Delivery runtime and schema   | High     | Complete    |
 
 ## AB-TODO-001: Prevent Concurrent Active Experiments At One Decision Point
 
@@ -222,7 +222,7 @@ The page editor is responsible for editing branch content, while Manage Alternat
 
 ## AB-TODO-004: Support Reordering Alternatives Options
 
-- **Status:** Proposed
+- **Status:** Complete
 - **Priority:** Medium
 - **Area:** Manage Alternatives, page editor, delivery, and analytics
 - **Target slice:** Unscheduled
@@ -336,14 +336,20 @@ Native experiment behavior depends only on explicit experiment lifecycle, `exper
 
 ### Acceptance Criteria
 
-- [ ] Changing the project Overview experiment toggle does not mutate existing sections.
-- [ ] A section selected through native experiment participation receives decisions and attribution without a legacy section boolean.
-- [ ] A section not selected for an experiment receives no assignment, exposure, outcome, or reward records.
-- [ ] Traditional page delivery and student onboarding continue rendering successfully with the required project and enrollment context.
-- [ ] Attempt attribution returns an empty result when no relevant assignments exist.
-- [ ] No production code reads, writes, copies, or synchronizes `sections.has_experiments`.
-- [ ] Migration up and down behavior is verified.
-- [ ] Targeted delivery, attribution, section creation/update, and native A/B runtime scenario tests pass.
+- [x] Changing the project Overview experiment toggle does not mutate existing sections.
+- [x] A section selected through native experiment participation receives decisions and attribution without a legacy section boolean.
+- [x] A section not selected for an experiment receives no assignment, exposure, outcome, or reward records.
+- [x] Traditional page delivery and student onboarding continue rendering successfully with the required project and enrollment context.
+- [x] Attempt attribution returns an empty result when no relevant assignments exist.
+- [x] No production code reads, writes, copies, or synchronizes `sections.has_experiments`.
+- [x] Migration up and down behavior is verified.
+- [x] Targeted delivery, attribution, section creation/update, and native A/B runtime scenario tests pass.
+
+### Implementation Decisions
+
+- Removed both `sections.has_experiments` and the now-unused `projects.has_experiments` column; project authoring availability remains represented only by `projects.experiments_enabled`.
+- Traditional delivery and onboarding obtain the base project slug and current enrollment through one targeted section-scoped query.
+- Evaluated-attempt attribution queries assignment evidence directly and returns immediately when no relevant assignments exist.
 
 ### Open Decisions
 
@@ -374,9 +380,3 @@ Native experiment behavior depends only on explicit experiment lifecycle, `exper
 - `test/oli/delivery/experiments/attempt_attributions_test.exs`
 - `test/oli/resources/alternatives_test.exs`
 - `test/scenarios/delivery/ab_testing_delivery_runtime.scenario.yaml`
-
----
-
-OTHER
-
-- [ ] When in the Manage Alternatives view, the Create > Alternatives sidebar link should be

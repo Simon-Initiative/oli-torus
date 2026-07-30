@@ -152,8 +152,7 @@ defmodule Oli.Experiments do
   @doc """
   Returns whether a project has at least one native experiment that is not archived.
 
-  Experiment lifecycle state is authoritative; the legacy project and section
-  `has_experiments` fields are not consulted.
+  Experiment lifecycle state is authoritative.
   """
   def project_has_experiments?(project_id) when is_integer(project_id) and project_id > 0 do
     Repo.exists?(

@@ -141,8 +141,7 @@ defmodule Oli.Analytics.XAPITest do
     project = insert(:project)
     publication = insert(:publication, project: project)
 
-    section =
-      insert(:section, institution: institution, base_project: project, has_experiments: true)
+    section = insert(:section, institution: institution, base_project: project)
 
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)

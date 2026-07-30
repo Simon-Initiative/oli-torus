@@ -239,9 +239,9 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
 
     section =
       if open_and_free? do
-        insert(:section, institution: nil, base_project: project, has_experiments: true)
+        insert(:section, institution: nil, base_project: project)
       else
-        insert(:section, institution: institution, base_project: project, has_experiments: true)
+        insert(:section, institution: institution, base_project: project)
       end
 
     user = insert(:user)

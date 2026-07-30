@@ -563,12 +563,11 @@ defmodule Oli.Resources.AlternativesTest do
 
     section =
       if section_institution? do
-        insert(:section, institution: institution, base_project: project, has_experiments: true)
+        insert(:section, institution: institution, base_project: project)
       else
         insert(:section,
           institution: nil,
           base_project: project,
-          has_experiments: true,
           open_and_free: true
         )
       end
