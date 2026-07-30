@@ -83,8 +83,10 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
       ? reconciledChildren.findIndex((option) => option.id === activeOption.id)
       : -1;
 
-    const onEditAlternative = (updatedOption: AlternativeContent) => {
-      onEdit(updateAlternativeContent(reconciledContent, updatedOption));
+    const onEditAlternative = (updatedContent: ResourceContent) => {
+      if (updatedContent.type === 'alternative') {
+        onEdit(updateAlternativeContent(reconciledContent, updatedContent));
+      }
     };
 
     return (
