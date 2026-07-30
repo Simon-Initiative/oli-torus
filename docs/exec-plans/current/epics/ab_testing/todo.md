@@ -9,7 +9,7 @@ This document tracks unfinished findings and enhancements spanning the native A/
 | AB-TODO-001 | Prevent concurrent active experiments at one decision point | Experiment lifecycle          | High     | Complete |
 | AB-TODO-002 | Configurable binary reward rules                            | Adaptive policy and analytics | Medium   | Proposed |
 | AB-TODO-003 | Remove option-management actions from page-editor tabs      | Authoring UX                  | Medium   | In Progress |
-| AB-TODO-004 | Support reordering alternatives options                     | Authoring and delivery        | Medium   | Proposed |
+| AB-TODO-004 | Support reordering alternatives options                     | Authoring and delivery        | Medium   | Complete |
 | AB-TODO-005 | Remove the legacy section experiment gate                   | Delivery runtime and schema   | High     | Proposed |
 
 ## AB-TODO-001: Prevent Concurrent Active Experiments At One Decision Point
@@ -70,7 +70,7 @@ Only one active experiment can target a stable decision point. Lifecycle validat
 
 ## AB-TODO-002: Configurable Binary Reward Rules
 
-- **Status:** Proposed
+- **Status:** Complete
 - **Priority:** Medium
 - **Area:** Adaptive policy, reward handoff, and analytics
 - **Target slice:** Future enhancement; excluded from the current Outcome Analytics MVP
@@ -255,11 +255,22 @@ Authors can control alternative option order while newly created options default
 
 ### Acceptance Criteria
 
-- [ ] Newly created options appear after existing options by default.
-- [ ] Authors can reorder options without deleting and recreating them.
-- [ ] Reordered options render consistently across authoring, delivery, and analytics.
-- [ ] Reordering does not invalidate an existing experiment condition or learner assignment.
-- [ ] Frontend and backend coverage verify stable IDs and ordering across save, publish, section update, and delivery.
+- [x] Newly created options appear after existing options by default.
+- [x] Authors can reorder options without deleting and recreating them.
+- [x] Reordered options render consistently across authoring, delivery, and analytics.
+- [x] Reordering does not invalidate an existing experiment condition or learner assignment.
+- [x] Frontend and backend coverage verify stable IDs and ordering across save, publish, section update, and delivery.
+
+### Implementation Decisions
+
+- The ordered `content["options"]` list on each alternatives revision is the source of truth; no label-derived or transient position field is introduced.
+- Reordering swaps complete option maps in that list, preserving stable option IDs and any additional option metadata.
+- Both learner-preference alternatives and experiment decision points use the same option-row component and `Oli.Resources.Alternatives.OptionOrder` helper.
+- Authors can drag the full option row to a resource-scoped drop target using the curriculum drag/drop hooks; a subtle leading grip indicates that the row is draggable.
+- New options and decision-point conditions append to the existing list.
+- Reordering is presentation-only and remains available regardless of experiment lifecycle state because it does not change condition codes, option mappings, or sticky assignments.
+- Published revisions retain their historical order. The reordered working revision reaches sections through the existing publish and section-update workflow.
+- Existing page-editor reconciliation, delivery selection, and analytics presentation consume options in persisted list order.
 
 ### Open Decisions
 

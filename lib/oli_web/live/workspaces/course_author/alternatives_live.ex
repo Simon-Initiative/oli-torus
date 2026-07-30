@@ -9,7 +9,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
   alias Oli.Publishing
   alias Oli.Resources.{ResourceType, Revision}
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
@@ -104,11 +104,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
       </div>
       <div class="mt-3">
         <%= if Enum.count(@group.content["options"]) > 0 do %>
-          <ul class="list-group">
-            <%= for option <- @group.content["options"] do %>
-              <.group_option group={@group} option={option} show_actions={@editing_enabled} />
-            <% end %>
-          </ul>
+          <.option_list group={@group} show_actions={@editing_enabled} />
         <% else %>
           <div class="my-2">
             <div class="text-center"><em>There are no options in this group</em></div>
@@ -241,7 +237,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
     %{content: %{"options" => options} = content} =
       Enum.find(alternatives, fn g -> g.resource_id == resource_id end)
 
-    new_options = [%{"id" => option_id, "name" => name} | options]
+    new_options = options ++ [%{"id" => option_id, "name" => name}]
 
     case edit_group_options(
            project.slug,
@@ -256,6 +252,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
 
       _ ->
         show_error(socket)
+    end
+  end
+
+  def handle_event(
+        "reorder_option",
+        %{"resourceId" => resource_id, "optionId" => option_id, "dropIndex" => drop_index},
+        socket
+      ) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+
+    case AlternativesOptionEditor.move_to(
+           project.slug,
+           author,
+           alternatives,
+           resource_id,
+           option_id,
+           drop_index
+         ) do
+      {:ok, alternatives, _group} -> {:noreply, assign(socket, alternatives: alternatives)}
+      {:ok, :unchanged} -> {:noreply, socket}
+      {:error, _} -> show_error(socket)
     end
   end
 
@@ -504,7 +521,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
     preview_fn = fn assigns ->
       ~H"""
       <ul class="list-group">
-        <.group_option group={@group} option={@option} show_actions={false} />
+        <.group_option
+          group={@group}
+          option={@option}
+          position={0}
+          show_actions={false}
+        />
       </ul>
       """
     end

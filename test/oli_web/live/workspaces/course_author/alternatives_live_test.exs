@@ -25,6 +25,71 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
       assert has_element?(view, ".alternatives-group", "Learner Preference")
       assert has_element?(view, ".alternatives-group", "Legacy Alternative")
     end
+
+    test "reorders options, preserves their ids, and keeps the order after reload", %{
+      conn: conn,
+      project: project,
+      admin: admin
+    } do
+      first = %{"id" => "stable-first", "name" => "First"}
+      second = %{"id" => "stable-second", "name" => "Second"}
+
+      group =
+        insert_alternatives_group(project, "Ordered Alternatives", nil, [first, second], admin)
+
+      {:ok, view, html} = live(conn, live_view_alternatives_route(project.slug))
+      assert_before(html, "First", "Second")
+
+      assert has_element?(
+               view,
+               "#alternatives-option-#{group.resource_id}-stable-first[phx-hook='DragSource'][draggable='true']"
+             )
+
+      refute has_element?(view, "button[phx-click='move_option']")
+
+      assert has_element?(
+               view,
+               "#option-drop-target-#{group.resource_id}-2[phx-hook='DropTarget'][data-reorder-event='reorder_option']"
+             )
+
+      render_hook(view, "reorder_option", %{
+        "resourceId" => group.resource_id,
+        "optionId" => "stable-second",
+        "dropIndex" => 0
+      })
+
+      assert_before(render(view), "Second", "First")
+
+      {:ok, _reloaded_view, reloaded_html} =
+        live(conn, live_view_alternatives_route(project.slug))
+
+      assert_before(reloaded_html, "Second", "First")
+      assert reloaded_html =~ "phx-value-option-id=\"stable-first\""
+      assert reloaded_html =~ "phx-value-option-id=\"stable-second\""
+
+      view
+      |> render_hook("reorder_option", %{
+        "resourceId" => group.resource_id,
+        "optionId" => "stable-second",
+        "dropIndex" => 2
+      })
+
+      assert_before(render(view), "First", "Second")
+
+      render_hook(view, "reorder_option", %{
+        "resourceId" => group.resource_id + 99_999,
+        "optionId" => "stable-first",
+        "dropIndex" => 0
+      })
+
+      render_hook(view, "reorder_option", %{
+        "resourceId" => "not-an-integer",
+        "optionId" => "stable-first",
+        "dropIndex" => "also-invalid"
+      })
+
+      assert render(view) =~ "Something went wrong. Please refresh the page and try again."
+    end
   end
 
   defp create_project(_conn) do
@@ -62,24 +127,32 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
     [project: project]
   end
 
-  defp insert_alternatives_group(project, title, strategy) do
+  defp insert_alternatives_group(project, title, strategy, options \\ [], author \\ nil) do
     resource = insert(:resource)
     insert(:project_resource, project_id: project.id, resource_id: resource.id)
 
     revision =
       insert(:revision, %{
         resource: resource,
+        author: author,
         resource_type_id: ResourceType.id_for_alternatives(),
         title: title,
         deleted: false,
         content:
           case strategy do
-            nil -> %{"options" => []}
-            strategy -> %{"strategy" => strategy, "options" => []}
+            nil -> %{"options" => options}
+            strategy -> %{"strategy" => strategy, "options" => options}
           end
       })
 
     publication = Oli.Publishing.project_working_publication(project.slug)
     insert(:published_resource, publication: publication, resource: resource, revision: revision)
+    revision
+  end
+
+  defp assert_before(html, first, second) do
+    {first_position, _} = :binary.match(html, first)
+    {second_position, _} = :binary.match(html, second)
+    assert first_position < second_position
   end
 end

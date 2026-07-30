@@ -6,7 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{CreateExperimentRequest, Scope}
   alias Oli.Publishing
@@ -792,6 +792,38 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   def handle_event(
+        "reorder_option",
+        %{"resourceId" => resource_id, "optionId" => option_id, "dropIndex" => drop_index},
+        socket
+      ) do
+    %{project: project, ctx: ctx, decision_points: decision_points} = socket.assigns
+
+    case AlternativesOptionEditor.move_to(
+           project.slug,
+           ctx.author,
+           decision_points,
+           resource_id,
+           option_id,
+           drop_index
+         ) do
+      {:ok, decision_points, _group} ->
+        {:noreply,
+         socket
+         |> assign(decision_points: decision_points)
+         |> assign_authoring_experiments()}
+
+      {:ok, :unchanged} ->
+        {:noreply, socket}
+
+      {:error, message: error_message} ->
+        show_error(socket, error_message)
+
+      {:error, _} ->
+        show_error(socket)
+    end
+  end
+
+  def handle_event(
         "show_delete_decision_point_modal",
         %{"resource-id" => resource_id},
         socket
@@ -1149,12 +1181,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
           on_click="show_edit_group_modal"
           values={["phx-value-resource-id": @group.resource_id]}
         />
-        <OliWeb.Common.Components.icon_button
-          class="danger-icon-button mr-1"
-          icon="fa-solid fa-trash"
-          on_click="show_delete_decision_point_modal"
-          values={["phx-value-resource-id": @group.resource_id]}
-        />
+        <button
+          class="btn btn-danger btn-sm mr-2"
+          phx-click="show_delete_decision_point_modal"
+          phx-value-resource-id={@group.resource_id}
+        >
+          Delete
+        </button>
       </div>
       <div class="mt-3">
         <%= if Enum.empty?(@group.content["options"]) do %>
@@ -1162,14 +1195,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             <em>There are no conditions in this decision point</em>
           </div>
         <% else %>
-          <ul class="list-group [&>li:last-child]:!border-b-0">
-            <.group_option
-              :for={condition <- @group.content["options"]}
-              group={@group}
-              option={condition}
-              show_actions={true}
-            />
-          </ul>
+          <.option_list
+            group={@group}
+            show_actions={true}
+            list_class="list-group [&>li:last-child]:!border-b-0"
+          />
         <% end %>
         <button
           :if={not @new_condition_form_open}

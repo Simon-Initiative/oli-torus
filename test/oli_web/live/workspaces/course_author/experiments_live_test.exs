@@ -147,6 +147,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> step(:test_has_button_download_experiment_json, :refute)
     end
 
+    test "reorders decision point conditions and uses the alternatives delete button style", %{
+      view: _view,
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: publication
+    } do
+      decision_point = insert_legacy_experiment(publication, admin)
+      {:ok, view, html} = live(conn, live_view_experiments_route(project.slug))
+
+      assert has_element?(
+               view,
+               "button.btn.btn-danger[phx-click='show_delete_decision_point_modal'][phx-value-resource-id='#{decision_point.resource_id}']",
+               "Delete"
+             )
+
+      assert_before(html, "Option 1", "Option 2")
+
+      assert has_element?(
+               view,
+               "#alternatives-option-#{decision_point.resource_id}-option_1[phx-hook='DragSource'][draggable='true']"
+             )
+
+      refute has_element?(view, "button[phx-click='move_option']")
+
+      render_hook(view, "reorder_option", %{
+        "resourceId" => decision_point.resource_id,
+        "optionId" => "option_2",
+        "dropIndex" => 0
+      })
+
+      assert_before(render(view), "Option 2", "Option 1")
+
+      reordered = Experiments.get_latest_experiment(project.slug).content["options"]
+      assert Enum.map(reordered, & &1["id"]) == ["option_2", "option_1"]
+
+      view
+      |> render_hook("reorder_option", %{
+        "resourceId" => decision_point.resource_id,
+        "optionId" => "option_2",
+        "dropIndex" => 2
+      })
+
+      assert_before(render(view), "Option 1", "Option 2")
+    end
+
     test "creates decision points in the experiments view", %{view: view, project: project} do
       assert has_element?(view, "button", "New Decision Point")
 
@@ -1093,7 +1139,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
     content = Experiments.get_latest_experiment(ctx.project.slug).content
     option_names = get_in(content, ["options", Access.all(), "name"])
-    assert option_names == ["Option 3", "Option 1", "Option 2"]
+    assert option_names == ["Option 1", "Option 2", "Option 3"]
 
     {view, ctx}
   end
@@ -1132,5 +1178,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     view
     |> element("button[phx-click='open_create_experiment']", "Create Experiment")
     |> render_click()
+  end
+
+  defp assert_before(html, first, second) do
+    {first_position, _} = :binary.match(html, first)
+    {second_position, _} = :binary.match(html, second)
+    assert first_position < second_position
   end
 end
