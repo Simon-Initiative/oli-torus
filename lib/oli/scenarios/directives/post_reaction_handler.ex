@@ -44,24 +44,16 @@ defmodule Oli.Scenarios.Directives.PostReactionHandler do
   end
 
   defp apply_action(post_id, user_id, reaction, :add) do
-    case Collaboration.get_reaction(post_id, user_id, reaction) do
-      nil -> toggle(post_id, user_id, reaction, 1)
-      _existing -> :ok
-    end
+    post_id
+    |> Collaboration.add_reaction(user_id, reaction)
+    |> normalize_result()
   end
 
   defp apply_action(post_id, user_id, reaction, :remove) do
-    case Collaboration.get_reaction(post_id, user_id, reaction) do
-      nil -> :ok
-      _existing -> toggle(post_id, user_id, reaction, -1)
-    end
+    post_id
+    |> Collaboration.remove_reaction(user_id, reaction)
+    |> normalize_result()
   end
 
-  defp toggle(post_id, user_id, reaction, expected_change) do
-    case Collaboration.toggle_reaction(post_id, user_id, reaction) do
-      {:ok, ^expected_change} -> :ok
-      {:ok, change} -> {:error, "Expected reaction change #{expected_change}, got #{change}"}
-      {:error, reason} -> {:error, reason}
-    end
-  end
+  defp normalize_result({:ok, _change}), do: :ok
 end
