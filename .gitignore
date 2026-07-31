@@ -132,3 +132,7 @@ devops/.env
 test/support/dataset/python/dataset/__pycache__
 
 /oli_project_exports
+
+# Private Playwright adaptive lesson assets
+/assets/automation/tests/torus/student_delivery/designer-planet-answer-key.json
+/export_biobeyond_accessible_version.zip
