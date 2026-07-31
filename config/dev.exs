@@ -288,14 +288,13 @@ config :oli, Oli.Vault,
   ]
 
 # Configure xAPI upload pipeline for development
-# Default: Use ClickHouse uploader for local development
-# Set XAPI_ETL_MODE=lambda to test production ETL pipeline with AWS Lambda
-xapi_etl_mode = System.get_env("XAPI_ETL_MODE", "direct")
+# Default: Use S3 uploader for local development
+xapi_etl_mode = System.get_env("XAPI_ETL_MODE", "s3")
 
 uploader_module =
   case xapi_etl_mode do
-    "s3" -> Oli.Analytics.XAPI.S3Uploader
-    _ -> Oli.Analytics.XAPI.ClickHouseUploader
+    "clickhouse" -> Oli.Analytics.XAPI.ClickHouseUploader
+    _ -> Oli.Analytics.XAPI.S3Uploader
   end
 
 config :oli, :xapi_upload_pipeline,
@@ -306,7 +305,6 @@ config :oli, :xapi_upload_pipeline,
   batch_timeout: 2000,
   processor_concurrency: 1
 
-# Configure Lambda ETL when XAPI_ETL_MODE=lambda
 config :oli, :xapi_lambda_etl,
   function_name: System.get_env("XAPI_LAMBDA_FUNCTION_NAME", "xapi-etl-processor-dev"),
   aws_region: System.get_env("AWS_REGION", "us-east-1")

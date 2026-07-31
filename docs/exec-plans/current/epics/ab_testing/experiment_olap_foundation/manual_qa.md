@@ -61,11 +61,11 @@ This plan validates the local direct-uploader path only. Production S3/SQS/Lambd
    CLICKHOUSE_QUERY_USER=default
    CLICKHOUSE_QUERY_PASSWORD=clickhouse
    CLICKHOUSE_OLAP_ENABLED=true
-   XAPI_ETL_MODE=direct
+   XAPI_ETL_MODE=clickhouse
    SUPPRESS_DEV_EVENT_EMITTING=false
    ```
 
-   Note: `config/dev.exs` defaults `XAPI_ETL_MODE` to the direct uploader when unset, but setting it explicitly makes the QA run self-documenting.
+   Note: `config/dev.exs` defaults `XAPI_ETL_MODE` to `s3` when unset. Set it explicitly to `clickhouse` for this QA run so xAPI statements are sent directly to ClickHouse.
 
 6. Create or refresh the ClickHouse schema:
 
@@ -342,7 +342,7 @@ This verifies that every attribution references an ingested host event. Because 
 - If `docker compose up -d clickhouse` fails with a mount error, confirm `clickhouse/users.xml` exists locally.
 - If `mix clickhouse.migrate setup` fails because `goose` is missing, install `goose` and rerun setup.
 - If `/admin/clickhouse` reports missing credentials, confirm the `CLICKHOUSE_*` settings are present in `oli.env` before starting `mix phx.server`.
-- If no rows appear in ClickHouse, confirm `XAPI_ETL_MODE=direct` and `SUPPRESS_DEV_EVENT_EMITTING=false` are present in `oli.env`, restart `mix phx.server`, and check the app logs for `Oli.Analytics.XAPI.ClickHouseUploader` errors.
+- If no rows appear in ClickHouse, confirm `XAPI_ETL_MODE=clickhouse` and `SUPPRESS_DEV_EVENT_EMITTING=false` are present in `oli.env`, restart `mix phx.server`, and check the app logs for `Oli.Analytics.XAPI.ClickHouseUploader` errors.
 - If `raw_events` rows appear but `experiment_attributions` is empty, inspect the host statement JSON in the app logs or local xAPI output to confirm the `experiment_attributions` extension is present and is an array.
 
 ## Cleanup
