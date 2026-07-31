@@ -214,7 +214,7 @@ test.describe.serial('BioBeyond Designer Planet adaptive lesson', () => {
     }
   });
 
-  test('student completes the Designer Planet happy path', async ({ page }) => {
+  test('student completes the Designer Planet happy path @nightly', async ({ page }) => {
     test.setTimeout(designerPlanetTestTimeout);
 
     if (!seededCourse || !answerKey) {
