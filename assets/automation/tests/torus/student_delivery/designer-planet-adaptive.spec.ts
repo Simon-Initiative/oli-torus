@@ -29,8 +29,8 @@ import { waitForOptionalMainLiveView } from './support';
  *   - An automation API key with automation_setup_enabled exported as
  *     PLAYWRIGHT_AUTOMATION_API_KEY.
  *   - Private assets seeded in the bucket:
- *     mer-5671/biobeyond-designer-planet-course.zip
- *     mer-5671/answers.json
+ *     bio_beyond-designer_planet/course.zip
+ *     bio_beyond-designer_planet/answers.json
  *
  * Then: npx playwright test designer-planet-adaptive
  */
@@ -150,8 +150,8 @@ type DesignerPlanetAnswerKey = {
 };
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const archiveKey = 'mer-5671/biobeyond-designer-planet-course.zip';
-const answersKey = 'mer-5671/answers.json';
+const archiveKey = 'bio_beyond-designer_planet/course.zip';
+const answersKey = 'bio_beyond-designer_planet/answers.json';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 // TODO(MER-5671): tighten this once the full Designer Planet happy path is stable end-to-end.
 const designerPlanetTestTimeout = 12 * 60_000;
