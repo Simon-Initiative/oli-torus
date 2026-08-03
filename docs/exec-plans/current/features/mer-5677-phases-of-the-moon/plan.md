@@ -11,8 +11,8 @@ Deliver one additive, archive-backed Playwright student-delivery spec for the do
 
 ## Clarifications & Default Assumptions
 
-- The private bucket prefix is `mer-5677/`; the seeded objects are `phases-of-the-moon-course.zip` and `answers.json`.
-- `mer-5677/answers.json` conforms to `LessonAnswers` and includes the initial Easy Mission selection plus the Mission Update switch to Difficult Mission.
+- The private bucket prefix is `phases-of-the-moon_phases-of-the-moon/`; the seeded objects are `course.zip` and `answers.json`.
+- `phases-of-the-moon_phases-of-the-moon/answers.json` conforms to `LessonAnswers` and includes the initial Easy Mission selection plus the Mission Update switch to Difficult Mission.
 - The ticket's linked private happy-path document is authoritative when JSON and observed UI behavior differ.
 - Existing generic driver support is presumed adequate; a new generic interaction is added only if an actual test run demonstrates a gap.
 
@@ -22,7 +22,7 @@ Deliver one additive, archive-backed Playwright student-delivery spec for the do
 - Tasks:
   - [x] Read the updated ticket's linked happy-path document and identify its Easy Mission start, “Switch to difficult Mission” transition, stable lesson title/search/completion text, and unusual interactions.
   - [x] Obtain the course ZIP and answers JSON through the approved private channel; do not add either file to the repository.
-  - [x] Agree the exact object keys under `mer-5677/` and seed the configured Playwright assets bucket.
+  - [x] Agree the exact object keys under `phases-of-the-moon_phases-of-the-moon/` and seed the configured Playwright assets bucket.
   - [x] Validate the JSON against `LessonAnswers`; encode semantic rules rather than screen-number assumptions.
 - Testing Tasks:
   - [ ] Verify authenticated retrieval of both keys from `/test/assets/*` in the configured environment.

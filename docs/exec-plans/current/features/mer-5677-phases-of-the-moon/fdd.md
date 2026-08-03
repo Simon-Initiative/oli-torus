@@ -40,7 +40,7 @@ Add one self-contained student-delivery Playwright spec that follows the MER-567
 
 ### 4.2 State & Data Flow
 
-1. The spec fetches `mer-5677/answers.json` and the ZIP concurrently through `/test/assets/*` using the scenario token.
+1. The spec fetches `phases-of-the-moon_phases-of-the-moon/answers.json` and the ZIP concurrently through `/test/assets/*` using the scenario token.
 2. It parses and validates the answer key's lesson identity, then imports the archive and sets the runtime learner credentials.
 3. The learner logs in, locates the lesson by private JSON title/search term, selects Easy Mission, and progresses through Levels 1 and 2.
 4. At Mission Update, answer rules select “Switch to difficult Mission”; `completeAdaptiveHappyPath` then repeatedly scans, answers, and advances through the difficult levels until the lesson ends.
@@ -62,7 +62,7 @@ Add one self-contained student-delivery Playwright spec that follows the MER-567
 ## 5. Interfaces
 
 - Asset read contract:
-  - `GET /test/assets/mer-5677/<asset>` with `x-playwright-scenario-token`.
+  - `GET /test/assets/phases-of-the-moon_phases-of-the-moon/<asset>` with `x-playwright-scenario-token`.
 - Private JSON contract:
   - `LessonAnswers`, with lesson metadata and answer rules that select Easy Mission first and Difficult Mission at Mission Update.
 - Course setup contract:
@@ -74,7 +74,7 @@ Add one self-contained student-delivery Playwright spec that follows the MER-567
 
 - No application database schema, migration, or production storage change.
 - The test creates imported project/section/learner records through the existing automation endpoint and removes them best-effort.
-- Private object storage contains the ZIP and answer JSON under the MER-5677 prefix.
+- Private object storage contains the ZIP and answer JSON under the `phases-of-the-moon_phases-of-the-moon/` prefix.
 
 ## 7. Consistency & Transactions
 
@@ -126,7 +126,7 @@ N/A. The test reads each private asset once and exercises current delivery behav
 
 ## 15. Risks & Mitigations
 
-- Asset naming mismatch: agree and document the exact `mer-5677/` key names before coding.
+- Asset naming mismatch: agree and document the exact `phases-of-the-moon_phases-of-the-moon/` key names before coding.
 - JSON schema mismatch: validate the key in a targeted test run and extend the shared type only when a new generic rule is necessary.
 - Adaptive randomness: use semantic matching/rules rather than fixed screen positions and encode the explicit Easy-to-Difficult transition.
 - Cleanup leak: retain bounded best-effort cleanup and warning output.

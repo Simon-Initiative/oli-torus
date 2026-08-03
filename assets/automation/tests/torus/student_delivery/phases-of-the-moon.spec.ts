@@ -24,14 +24,15 @@ import { completeAdaptiveHappyPath, LessonAnswers } from '@tasks/AdaptiveHappyPa
  * The course archive and answer key are instructional IP. They are fetched
  * from the private Playwright assets bucket and must never be committed.
  * Seed these keys before running:
- *   - mer-5677/phases-of-the-moon-course.zip
- *   - mer-5677/answers.json
+ *   - phases-of-the-moon_phases-of-the-moon/course.zip
+ *   - phases-of-the-moon_phases-of-the-moon/answers.json
  *
  * Then: npx playwright test phases-of-the-moon
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const archiveKey = 'mer-5677/phases-of-the-moon-course.zip';
-const answersKey = 'mer-5677/answers.json';
+const assetPrefix = 'phases-of-the-moon_phases-of-the-moon';
+const archiveKey = `${assetPrefix}/course.zip`;
+const answersKey = `${assetPrefix}/answers.json`;
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 const EXPECTED_LESSON = /Phases of the Moon - Infiniscope MASTER/i;
 

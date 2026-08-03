@@ -53,7 +53,7 @@ Requirements are found in requirements.yml
 
 ## 9. Data, Interfaces & Dependencies
 
-- Private object storage must contain the MER-5677 course archive and `answers.json` under an agreed `mer-5677/` key prefix.
+- Private object storage must contain the MER-5677 course archive and `answers.json` under an agreed `phases-of-the-moon_phases-of-the-moon/` key prefix.
 - `answers.json` must conform to `LessonAnswers` and include rules for the initial Easy Mission selection and later switch to Difficult Mission.
 - The test depends on `/test/assets/*`, `PLAYWRIGHT_SCENARIO_TOKEN`, `PLAYWRIGHT_ASSETS_BUCKET`, and `PLAYWRIGHT_AUTOMATION_API_KEY`.
 - The ticket's private happy-path document is the authoritative source for the archive, answer key, expected lesson text, completion text, and hard-path rules.
@@ -95,7 +95,7 @@ The test is additive coverage and deploys with the normal repository test suite.
 
 ### Assumptions
 
-- Assets will be stored under `mer-5677/` and will remain private.
+- Assets will be stored under `phases-of-the-moon_phases-of-the-moon/` and will remain private.
 - The current `LessonAnswers` schema can encode the hard-path choice through its MCQ, dropdown, or iframe rules.
 - MER-5672 and MER-5673 are the canonical implementation references.
 
