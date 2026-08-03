@@ -15,6 +15,27 @@ import { FrameLocator, Locator, Page } from '@playwright/test';
  *   the screen's own interaction;
  * - jQuery-UI drag widgets need raw mouse events (HTML5 dragTo is inert);
  * - the matching widget ignores synthetic mouse clicks (keyboard only).
+ *
+ * ## Usage: keep this PO lesson-agnostic
+ *
+ * Every method here is meant to be reused by ANY adaptive lesson spec under
+ * tests/torus/student_delivery/ (see AdaptiveHappyPathTask.ts, which drives
+ * them generically from a per-lesson answers.json). Before adding a method:
+ *
+ * - Does it encode knowledge specific to ONE course/lesson (a hardcoded
+ *   phase name, iframe title, CSS class, widget id, or literal UI copy)?
+ *   If yes, it does NOT belong here — put it in
+ *   `assets/automation/src/systems/torus/tasks/lessons/<lesson-name>.ts`
+ *   instead.
+ * - Is it a genuinely generic capability that some future lesson could
+ *   also need? Add it here, but keep any lesson-specific variation behind
+ *   an OPTIONAL parameter whose default preserves today's behavior for
+ *   every existing caller (see `scanScreen`'s `extraTextInputSelectors`
+ *   for the pattern) — never gate new behavior on a specific lesson
+ *   name/flag baked into shared code.
+ * - Changed a method's signature? Update every existing call site across
+ *   all specs under student_delivery/ that use this PO, not just the one
+ *   that prompted the change.
  */
 
 /** One-roundtrip summary of the current screen's interactive content. */
@@ -32,7 +53,7 @@ export type ScreenScan = {
 
 const FOOTER_BUTTON = '.checkBtn:not([disabled]), .closeFeedbackBtn:not([disabled])';
 const CANVAS_NAV_BUTTON = 'button[data-janus-type="janus-navigation-button"]:not([disabled])';
-const ACTION_TIMEOUT = { timeout: 8_000 };
+export const ACTION_TIMEOUT = { timeout: 8_000 };
 
 export class AdaptiveDeckPO {
   constructor(private readonly page: Page) {}
@@ -167,9 +188,23 @@ export class AdaptiveDeckPO {
 
   // ------------------------------------------------------------ inspection
 
-  async scanScreen(): Promise<ScreenScan> {
+  /**
+   * extraTextInputSelectors: additional CSS selectors to count/fill as text
+   * inputs, on top of the two generic ones every lesson gets. Default `[]`
+   * preserves existing callers' behavior — a lesson opts in via its own
+   * `LessonAnswers` field (see `extra_text_input_selectors` in
+   * AdaptiveHappyPathTask.ts) instead of this method assuming a shape only
+   * one lesson needs.
+   */
+  async scanScreen(extraTextInputSelectors: string[] = []): Promise<ScreenScan> {
+    const textInputSelector = [
+      '.short-text-input input',
+      '.text-input-blot input',
+      ...extraTextInputSelectors,
+    ].join(', ');
+
     return this.page
-      .evaluate(() => {
+      .evaluate((selector) => {
         // janus parts are custom elements: some render their content inside
         // shadow roots, which plain querySelectorAll does not reach
         const roots: Array<Document | ShadowRoot> = [document];
@@ -220,9 +255,9 @@ export class AdaptiveDeckPO {
           mcqLabels: q('.mcq-item label')
             .map((l) => (l as HTMLElement).innerText)
             .join(' | '),
-          textInputs: q('.short-text-input input, .text-input-blot input, textarea').length,
+          textInputs: q(selector).length,
         };
-      })
+      }, textInputSelector)
       .catch(() => ({
         iframes: [],
         selects: 0,
@@ -266,152 +301,6 @@ export class AdaptiveDeckPO {
     const input = this.page.locator(`.mcq-item input[type="radio"][value="${value}"]`).first();
     if (!(await input.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
     return this.selectMcqItem(input.locator('xpath=ancestor::div[contains(@class, "mcq-item")]'));
-  }
-
-  /** Returns the visible Moon-phase prompt alt text, if the screen has one. */
-  async moonPhasePrompt(): Promise<string | null> {
-    return this.page
-      .locator('img[data-testid="janus-image"][alt]')
-      .evaluateAll((images) => {
-        const phases = new Set([
-          'new moon',
-          'waxing crescent',
-          'first quarter',
-          'waxing gibbous',
-          'full moon',
-          'waning gibbous',
-          'third quarter',
-          'waning crescent',
-        ]);
-        const image = images.find((candidate) => {
-          const element = candidate as HTMLElement;
-          const style = getComputedStyle(element);
-          return (
-            element.getBoundingClientRect().width > 0 &&
-            element.getBoundingClientRect().height > 0 &&
-            style.display !== 'none' &&
-            phases.has((candidate.getAttribute('alt') || '').trim().toLowerCase())
-          );
-        });
-        return image?.getAttribute('alt') || null;
-      })
-      .catch(() => null);
-  }
-
-  async hasVisibleJanusImageIdPrefix(prefix: string): Promise<boolean> {
-    return this.page
-      .locator(`janus-image[id^=${JSON.stringify(prefix)}]`)
-      .first()
-      .isVisible({ timeout: 1_000 })
-      .catch(() => false);
-  }
-
-  /** The first Moon screen requires enabling its controls before selecting Yes. */
-  async activateMoonControls(): Promise<boolean> {
-    const frame = await this.widgetFrameByTitle('EMS model sim', '#advance-moon');
-    if (!frame) return false;
-    const panel = frame.locator('#controls').first();
-    const advance = frame.locator('#advance-moon').first();
-    if (!(await advance.isVisible({ timeout: 1_000 }).catch(() => false))) return false;
-
-    // The simulator exposes the controls during its fade-in. Visibility alone
-    // is insufficient: wait until the panel is fully interactive.
-    const deadline = Date.now() + 8_000;
-    while (Date.now() < deadline) {
-      const opacity = await panel
-        .evaluate((element) => Number.parseFloat(getComputedStyle(element).opacity))
-        .catch(() => 0);
-      if (opacity >= 0.99) break;
-      await this.page.waitForTimeout(200);
-    }
-
-    if (!(await this.holdMoonAdvanceButton(frame))) {
-      throw new Error('Move Moon did not change the lunar-cycle day');
-    }
-    return true;
-  }
-
-  async hasMoonSimulator(): Promise<boolean> {
-    return this.page
-      .locator('iframe[title="EMS model sim"]')
-      .first()
-      .isVisible({ timeout: 1_000 })
-      .catch(() => false);
-  }
-
-  /** Advance the Moon simulator until its cycle label reaches the target day. */
-  async setMoonCycleDay(day: number): Promise<boolean> {
-    const frame = await this.widgetFrameByTitle('EMS model sim', '#advance-moon');
-    if (!frame) return false;
-
-    for (let attempt = 0; attempt < 30; attempt += 1) {
-      const text = await frame
-        .locator('body')
-        .innerText()
-        .catch(() => '');
-      const match = text.match(/Lunar Cycle:\s*Day\s*(\d+)/i);
-      if (match && Number(match[1]) === day) {
-        await this.page.getByRole('button', { name: /^Upload$/i }).click(ACTION_TIMEOUT);
-        return true;
-      }
-      if (!(await this.holdMoonAdvanceButton(frame))) {
-        throw new Error('Move Moon did not change the lunar-cycle day');
-      }
-    }
-    throw new Error(`Moon simulator did not reach Lunar Cycle: Day ${day}`);
-  }
-
-  /** Sort Moon cards into the canonical New→Waxing→Full→Waning sequence. */
-  async sortMoonPhases(srcFragment: string): Promise<boolean> {
-    const frame = await this.widgetFrame(srcFragment, '#options .draggable');
-    if (!frame) return false;
-
-    const classes = ['Wax-C', 'FQ', 'Wax-G', 'full', 'Wan-G', 'TQ', 'wan-C'];
-    const slots = frame.locator('#slots .slot');
-    const targets = (await slots.count()) >= classes.length ? slots : frame.locator('.slot-label');
-    const slotOffset = targets === slots ? 0 : 1; // labels include the pre-filled New Moon slot
-    if ((await targets.count()) < classes.length + slotOffset) return false;
-
-    for (let index = 0; index < classes.length; index += 1) {
-      const item = frame.locator(`#options .draggable.${classes[index]}`).first();
-      if (!(await this.mouseDragInFrame(item, targets.nth(index + slotOffset)))) {
-        throw new Error(`Could not place Moon sorting card ${classes[index]}`);
-      }
-    }
-
-    await this.page.getByRole('button', { name: /^Upload$/i }).click(ACTION_TIMEOUT);
-    return true;
-  }
-
-  /** Fill the reflector Fill In The Blanks widget's visible dropdowns in order. */
-  async fillReflectorFitb(container: string | null, picks: string[]): Promise<boolean> {
-    if (!container) {
-      const fitb2 = this.page.locator('#FITB2 iframe[title="Fill In The Blanks"]').first();
-      if (await fitb2.isVisible({ timeout: 500 }).catch(() => false)) return false;
-    }
-    const selector = container
-      ? `${container} iframe[title="Fill In The Blanks"]`
-      : 'iframe[title="Fill In The Blanks"]';
-    const iframe = this.page.locator(selector).first();
-    if (!(await iframe.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
-    const frame = this.page.frameLocator(selector).first();
-    const fields = frame.getByRole('textbox');
-    const count = await fields.count();
-    if (count === 0) return false;
-
-    for (let index = 0; index < Math.min(count, picks.length); index += 1) {
-      await fields.nth(index).click(ACTION_TIMEOUT);
-      const option = frame.getByRole('option', { name: picks[index], exact: true }).first();
-      if (await option.isVisible({ timeout: 1_500 }).catch(() => false)) {
-        await option.click(ACTION_TIMEOUT);
-      } else if (index === 0) {
-        await frame.locator('#option1').first().click(ACTION_TIMEOUT);
-      } else {
-        throw new Error(`FITB option "${picks[index]}" was not available`);
-      }
-      await this.page.waitForTimeout(200);
-    }
-    return true;
   }
 
   /** Click an in-canvas Navigation Button, optionally scoped to its Janus id. */
@@ -523,10 +412,12 @@ export class AdaptiveDeckPO {
     }
   }
 
-  async fillTextInputs(value: string, usernameValue?: string) {
-    const inputs = await this.interactableParts(
-      '.short-text-input input, .text-input-blot input, textarea',
+  /** extraSelectors: see scanScreen's extraTextInputSelectors — same opt-in contract. */
+  async fillTextInputs(value: string, usernameValue?: string, extraSelectors: string[] = []) {
+    const selector = ['.short-text-input input', '.text-input-blot input', ...extraSelectors].join(
+      ', ',
     );
+    const inputs = await this.interactableParts(selector);
     for (const input of inputs) {
       const isUsername = await input
         .evaluate((element) => element.id === 'username')
@@ -595,10 +486,8 @@ export class AdaptiveDeckPO {
     return frame;
   }
 
-  private async widgetFrameByTitle(
-    title: string,
-    readySelector: string,
-  ): Promise<FrameLocator | null> {
+  /** Generic counterpart to widgetFrame, keyed by iframe title instead of src. */
+  async widgetFrameByTitle(title: string, readySelector: string): Promise<FrameLocator | null> {
     const iframe = this.page.locator(`iframe[title="${title}"]`).first();
     if (!(await iframe.isVisible({ timeout: 2_000 }).catch(() => false))) return null;
 
@@ -613,37 +502,6 @@ export class AdaptiveDeckPO {
       return null;
     }
     return frame;
-  }
-
-  /**
-   * The Orbitron's DOM click handler is empty. Its animation loop advances
-   * the Moon only while the pointer remains down over this control.
-   */
-  private async holdMoonAdvanceButton(frame: FrameLocator): Promise<boolean> {
-    const advance = frame.locator('#advance-moon').first();
-    const before = await frame
-      .locator('#current-day')
-      .innerText()
-      .catch(() => '');
-    const box = await advance.boundingBox({ timeout: 5_000 }).catch(() => null);
-    if (!box) return false;
-
-    await this.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await this.page.mouse.down();
-
-    let after = before;
-    const deadline = Date.now() + 500;
-    while (Date.now() < deadline) {
-      await this.page.waitForTimeout(20);
-      after = await frame
-        .locator('#current-day')
-        .innerText()
-        .catch(() => before);
-      if (after !== before) break;
-    }
-
-    await this.page.mouse.up();
-    return after !== before;
   }
 
   /**

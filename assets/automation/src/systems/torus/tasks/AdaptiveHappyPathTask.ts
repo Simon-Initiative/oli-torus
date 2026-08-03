@@ -1,5 +1,44 @@
 import { Page } from '@playwright/test';
 import { AdaptiveDeckPO } from '@pom/delivery/AdaptiveDeckPO';
+import {
+  answerMoonScreen,
+  ClarityMcq,
+  MoonAnswers,
+  ReflectorFitb,
+} from '@tasks/lessons/PhasesOfTheMoonTask';
+
+/**
+ * Shared "happy path" driver for adaptive lesson delivery specs.
+ *
+ * `completeAdaptiveHappyPath` loops over the deck's screens and answers each
+ * one generically, using only the per-lesson `LessonAnswers` config and the
+ * reusable `AdaptiveDeckPO` methods (widgets, MCQs, dropdowns, FITB, text
+ * inputs, carousels, videos...). Every spec under
+ * tests/torus/student_delivery/ that covers an adaptive lesson (e.g.
+ * real-chem-greenhouse-molecules, real-chem-dazzling-d-orbitals,
+ * phases-of-the-moon) drives its course through this SAME function.
+ *
+ * ## Usage: extend generically, isolate what can't be generic
+ *
+ * - New interaction shape needed by a lesson? First try to express it as an
+ *   optional `LessonAnswers` field + a generic, parameterized addition to
+ *   this file or AdaptiveDeckPO.ts, with a default that preserves existing
+ *   lessons' behavior unchanged. This is how `native_dropdowns`,
+ *   `mcq.radios`, `page_buttons`, and `navigation_actions` already work:
+ *   generic engine, per-lesson config.
+ * - Truly one-off logic (hardcoded UI copy, a specific widget's DOM
+ *   structure, a specific simulator's controls) that no other lesson would
+ *   plausibly reuse? Do not inline it here behind an `if (key.<lesson>)`.
+ *   Put it in its own module under
+ *   `assets/automation/src/systems/torus/tasks/lessons/<lesson-name>.ts`,
+ *   exporting a single `answer<Lesson>Screen(page, deck, key, scan)`-shaped
+ *   function that `answerCurrentScreen` calls once, early, when that
+ *   lesson's optional config key is present (see `key.moon` ->
+ *   `answerMoonScreen` as the reference example).
+ * - Changing an existing generic method's signature or `LessonAnswers`
+ *   field? Update every spec that already uses it — don't leave other
+ *   lessons silently relying on the old shape.
+ */
 
 type GroupingWidget = { src_fragment: string; placements: Array<{ item: string; group: string }> };
 type CustomDnDWidget = {
@@ -7,14 +46,7 @@ type CustomDnDWidget = {
   detect: string;
   placements: Array<{ item: string; zone: string }>;
 };
-type MoonAnswers = {
-  day_by_phase: Record<string, number>;
-  image_mcq_option_by_phase: Record<string, string>;
-  sorting_src_fragment: string;
-};
-type ReflectorFitb = { container: string | null; picks: string[] };
 type NavigationAction = { container: string | null; name: string };
-type ClarityMcq = { yes_image_id_prefixes: string[] };
 
 export type LessonAnswers = {
   lesson: {
@@ -45,10 +77,13 @@ export type LessonAnswers = {
   };
   text_input_value: string;
   username_value?: string;
-  moon?: MoonAnswers;
-  reflector_fitb?: ReflectorFitb[];
+  /** Extra CSS selectors scanScreen/fillTextInputs should also treat as text inputs. */
+  extra_text_input_selectors?: string[];
   navigation_actions?: NavigationAction[];
   page_buttons?: string[];
+  // Phases of the Moon extension fields — see tasks/lessons/PhasesOfTheMoonTask.ts.
+  moon?: MoonAnswers;
+  reflector_fitb?: ReflectorFitb[];
   clarity_mcq?: ClarityMcq;
 };
 
@@ -67,10 +102,10 @@ export async function completeAdaptiveHappyPath(
 
     let label: string;
     try {
-      label = await answerCurrentScreen(deck, key);
+      label = await answerCurrentScreen(page, deck, key);
       for (let poll = 0; poll < 3 && label.startsWith('content screen'); poll += 1) {
         await page.waitForTimeout(1_200);
-        label = await answerCurrentScreen(deck, key);
+        label = await answerCurrentScreen(page, deck, key);
       }
     } catch (e) {
       label = `answer error: ${(e as Error).message.split('\n')[0].slice(0, 100)}`;
@@ -97,9 +132,17 @@ export async function completeAdaptiveHappyPath(
   throw new Error('Exceeded max steps without reaching the lesson end');
 }
 
-async function answerCurrentScreen(deck: AdaptiveDeckPO, key: LessonAnswers): Promise<string> {
-  await deck.closeModalIfPresent();
-  const scan = await deck.scanScreen();
+async function answerCurrentScreen(
+  page: Page,
+  deck: AdaptiveDeckPO,
+  key: LessonAnswers,
+): Promise<string> {
+  // Only lessons that declare one of these fields opt into the Moon
+  // extension — everything else here stays generic for every other lesson.
+  const usesMoonExtension = !!(key.moon || key.reflector_fitb || key.clarity_mcq);
+  if (usesMoonExtension) await deck.closeModalIfPresent();
+
+  const scan = await deck.scanScreen(key.extra_text_input_selectors ?? []);
   const hasIframe = (fragment: string) => scan.iframes.some((src) => src.includes(fragment));
   const re = (source: string) => new RegExp(source, 'i');
 
@@ -111,40 +154,11 @@ async function answerCurrentScreen(deck: AdaptiveDeckPO, key: LessonAnswers): Pr
     if (await deck.clickPageButton(button)) return `page button (${button})`;
   }
 
-  const phase = (await deck.moonPhasePrompt())?.trim().toLowerCase();
-  const moonControlsActivated =
-    scan.radios > 0 && scan.radios < 8 && (await deck.activateMoonControls());
-  if (key.moon && phase && scan.radios === 8) {
-    const option = key.moon.image_mcq_option_by_phase[phase];
-    if (option && (await deck.selectMcqByValue(option))) {
-      return `Moon image MCQ (${phase})`;
-    }
-  }
-  if (scan.radios > 0 && /New Image/i.test(scan.mcqLabels)) {
-    let imagePrefix: string | undefined;
-    for (const prefix of key.clarity_mcq?.yes_image_id_prefixes ?? []) {
-      if (await deck.hasVisibleJanusImageIdPrefix(prefix)) {
-        imagePrefix = prefix;
-        break;
-      }
-    }
-    const answer = imagePrefix
-      ? /^Yes, the New Image is no longer washed out\./i
-      : /^No, the New Image is still/i;
-    if (await deck.selectMcqByText(answer)) {
-      return `image clarity MCQ (${imagePrefix ? 'clear' : 'washed out'})`;
-    }
-  }
-  if (key.moon && hasIframe('Moonphases-Sorting-Widget')) {
-    if (await deck.sortMoonPhases(key.moon.sorting_src_fragment)) return 'Moon phase sorting';
-  }
-  if (key.moon && phase && (await deck.hasMoonSimulator())) {
-    const day = key.moon.day_by_phase[phase];
-    if (day && (await deck.setMoonCycleDay(day))) return `Moon simulator (day ${day})`;
-  }
-
-  for (const fitb of key.reflector_fitb ?? []) {
-    if (await deck.fillReflectorFitb(fitb.container, fitb.picks)) return 'reflector FITB';
+  let moonControlsActivated = false;
+  if (usesMoonExtension) {
+    const moonResult = await answerMoonScreen(page, deck, key, scan);
+    if (moonResult.label) return moonResult.label;
+    moonControlsActivated = moonResult.controlsActivated;
   }
 
   for (const dnd of customDnd) {
@@ -235,7 +249,11 @@ async function answerCurrentScreen(deck: AdaptiveDeckPO, key: LessonAnswers): Pr
   }
 
   if (scan.textInputs > 0) {
-    await deck.fillTextInputs(key.text_input_value, key.username_value);
+    await deck.fillTextInputs(
+      key.text_input_value,
+      key.username_value,
+      key.extra_text_input_selectors ?? [],
+    );
     parts.push('text input');
   }
 
