@@ -20848,6 +20848,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(16 185 129 / var(--tw-bg-opacity));
 }
 
+.bg-fuchsia-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(250 232 255 / var(--tw-bg-opacity));
+}
+
 .bg-fuchsia-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(134 25 143 / var(--tw-bg-opacity));
@@ -23412,6 +23417,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-exploration {
   --tw-text-opacity: 1;
   color: rgb(162 28 175 / var(--tw-text-opacity));
+}
+
+.text-fuchsia-800 {
+  --tw-text-opacity: 1;
+  color: rgb(134 25 143 / var(--tw-text-opacity));
 }
 
 .text-google-text-gray {
@@ -34935,6 +34945,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .md\:ml-4 {
     margin-left: 1rem;
+  }
+
+  .md\:ml-6 {
+    margin-left: 1.5rem;
   }
 
   .md\:ml-7 {
