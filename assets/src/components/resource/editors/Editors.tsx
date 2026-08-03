@@ -6,7 +6,7 @@ import { FeatureFlags } from 'apps/page-editor/types';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Objective, ResourceId } from 'data/content/objective';
-import { ResourceContent, ResourceContext } from 'data/content/resource';
+import { ResolvedLearningObjective, ResourceContent, ResourceContext } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
 import { ProjectSlug, ResourceSlug } from 'data/types';
@@ -34,6 +34,10 @@ export type EditorsProps = {
   onEdit: (content: PageEditorContent) => void;
   onRemove: (id: string) => void;
   onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
+  onRefreshLearningObjectives: (
+    contentId: string,
+    learningObjectives: ResolvedLearningObjective[],
+  ) => void;
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
   onEditActivity: (id: string, update: EditorUpdate) => void;
@@ -61,6 +65,7 @@ export const Editors = (props: EditorsProps) => {
     featureFlags,
     editorsRef,
     onAddItem,
+    onRefreshLearningObjectives,
     onEditActivity,
     onPostUndoable,
     onRegisterNewObjective,
@@ -103,6 +108,7 @@ export const Editors = (props: EditorsProps) => {
       onRegisterNewObjective,
       onRegisterNewTag,
       onAddItem,
+      onRefreshLearningObjectives,
       onRemove,
       onDuplicate,
     });
@@ -120,6 +126,7 @@ export const Editors = (props: EditorsProps) => {
           resourceContext={props.resourceContext}
           featureFlags={featureFlags}
           onAddItem={onAddItem}
+          onRefreshLearningObjectives={onRefreshLearningObjectives}
           onRegisterNewObjective={props.onRegisterNewObjective}
         />
 
@@ -151,6 +158,7 @@ export const Editors = (props: EditorsProps) => {
         resourceContext={props.resourceContext}
         featureFlags={featureFlags}
         onAddItem={onAddItem}
+        onRefreshLearningObjectives={onRefreshLearningObjectives}
         onRegisterNewObjective={props.onRegisterNewObjective}
       />
     </div>

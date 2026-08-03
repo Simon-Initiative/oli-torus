@@ -8,6 +8,7 @@ defmodule Oli.Rendering.Content.Markdown do
   import Oli.Rendering.Utils
 
   alias Oli.Rendering.Context
+  alias Oli.Rendering.Content.LearningObjectives
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias Oli.Rendering.Content.UrlHelpers
@@ -530,6 +531,10 @@ defmodule Oli.Rendering.Content.Markdown do
 
   def selection(%Context{} = _context, _, _selection) do
     []
+  end
+
+  def learning_objectives(%Context{} = context, _next, element) do
+    LearningObjectives.markdown(context, element)
   end
 
   defp revision_slug_from_course_link(href) do

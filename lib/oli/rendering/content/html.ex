@@ -15,6 +15,7 @@ defmodule Oli.Rendering.Content.Html do
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
+  alias Oli.Rendering.Content.LearningObjectives
   alias HtmlSanitizeEx.Scrubber
   alias Oli.Utils.Purposes
   alias Oli.Rendering.Content.ResourceSummary
@@ -961,6 +962,10 @@ defmodule Oli.Rendering.Content.Html do
       _ ->
         Oli.Rendering.Content.Selection.render(context, selection, true)
     end
+  end
+
+  def learning_objectives(%Context{} = context, _next, element) do
+    LearningObjectives.render(context, element)
   end
 
   defp revision_slug_from_course_link(href) do

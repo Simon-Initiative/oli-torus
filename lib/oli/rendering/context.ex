@@ -37,6 +37,7 @@ defmodule Oli.Rendering.Context do
             alternatives_selector_fn: nil,
             extrinsic_read_section_fn: nil,
             learning_language: nil,
+            learning_objectives: nil,
             effective_settings: nil,
             is_liveview: false,
             is_annotation_level: true,

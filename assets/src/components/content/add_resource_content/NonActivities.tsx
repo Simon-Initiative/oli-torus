@@ -7,9 +7,12 @@ import { modalActions } from 'actions/modal';
 import { FeatureFlags } from 'apps/page-editor/types';
 import {
   AlternativeContent,
+  ResolvedLearningObjective,
   ResourceContext,
+  canInsert,
   createAlternative,
   createAlternatives,
+  createDefaultLearningObjectivesContent,
   createDefaultStructuredContent,
   createGroup,
   createReport,
@@ -30,6 +33,10 @@ interface Props {
   parents: ResourceContent[];
   featureFlags: FeatureFlags;
   resourceContext: ResourceContext;
+  onRefreshLearningObjectives: (
+    contentId: string,
+    learningObjectives: ResolvedLearningObjective[],
+  ) => void;
   onSetTip: (tip: string) => void;
   onResetTip: () => void;
 }
@@ -42,6 +49,7 @@ export const NonActivities: React.FC<Props> = ({
   parents,
   featureFlags,
   resourceContext,
+  onRefreshLearningObjectives,
 }) => {
   const [ABTestDisabled, setABTestDisabled] = useState(true);
 
@@ -88,6 +96,19 @@ export const NonActivities: React.FC<Props> = ({
             document.body.click();
           }}
         />
+        {canInsert(createDefaultLearningObjectivesContent(), parents) && (
+          <ResourceChoice
+            icon="bullseye"
+            label="Objectives"
+            onHoverStart={() => onSetTip('Render a learning objective introduction or summary')}
+            onHoverEnd={() => onResetTip()}
+            key={'learning_objectives'}
+            disabled={false}
+            onClick={() =>
+              addLearningObjectives(onAddItem, index, resourceContext, onRefreshLearningObjectives)
+            }
+          />
+        )}
         <ResourceChoice
           icon="columns"
           label="Break"
@@ -155,6 +176,50 @@ const addGroup = (onAddItem: AddCallback, index: number[]) => {
 const addPageBreak = (onAddItem: AddCallback, index: number[]) => {
   onAddItem(createBreak(), index);
   document.body.click();
+};
+
+const addLearningObjectives = async (
+  onAddItem: AddCallback,
+  index: number[],
+  resourceContext: ResourceContext,
+  onRefreshLearningObjectives: (
+    contentId: string,
+    learningObjectives: ResolvedLearningObjective[],
+  ) => void,
+) => {
+  document.body.click();
+
+  const content = createDefaultLearningObjectivesContent();
+  onAddItem(content, index);
+
+  const resolved = await resolveLearningObjectives(resourceContext);
+
+  if (resolved !== undefined) {
+    onRefreshLearningObjectives(content.id, resolved);
+  }
+};
+
+const resolveLearningObjectives = async (
+  resourceContext: ResourceContext,
+): Promise<ResolvedLearningObjective[] | undefined> => {
+  if (resourceContext.learningObjectives && resourceContext.learningObjectives.length > 0) {
+    return resourceContext.learningObjectives;
+  }
+
+  try {
+    const result = await Persistence.learningObjectives(
+      resourceContext.projectSlug,
+      resourceContext.resourceSlug,
+    );
+
+    if (result.type === 'success') {
+      return result.learningObjectives;
+    }
+  } catch (_e) {
+    return undefined;
+  }
+
+  return undefined;
 };
 
 const addSurvey = (onAddItem: AddCallback, index: number[]) => {
