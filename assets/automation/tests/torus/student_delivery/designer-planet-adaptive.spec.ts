@@ -1083,7 +1083,7 @@ async function applySectorSimulationPreset(
   category: string,
   preset: SectorSimulationPreset,
 ) {
-  if (await isEmbeddedSimulationVisible(page)) {
+  if (await waitForEmbeddedSimulationVisible(page)) {
     await applyEmbeddedSectorSimulationPreset(page, category, preset);
     return;
   }
@@ -1097,7 +1097,7 @@ async function applySectorSimulationPreset(
 }
 
 async function applyClimateInterventionPreset(page: Page, preset: ClimateInterventionPreset) {
-  if (await isEmbeddedSimulationVisible(page)) {
+  if (await waitForEmbeddedSimulationVisible(page)) {
     await applyEmbeddedClimateInterventionPreset(page, preset);
     return;
   }
@@ -1193,10 +1193,27 @@ async function chooseEmbeddedSimulationCategory(scope: AdaptiveScope, category: 
   await waitForEmbeddedSimulationControlsReady(scope);
 }
 
-async function isEmbeddedSimulationVisible(page: Page) {
-  return embeddedSimulationFrame(page)
-    .getByRole('application', { name: /Bio Emissions Simulation/i })
-    .isVisible({ timeout: 5_000 })
+async function isEmbeddedSimulationVisible(page: Page, timeout = 500) {
+  const frame = embeddedSimulationFrame(page);
+  const application = frame.getByRole('application', { name: /Bio Emissions Simulation/i });
+  const categoryButton = frame
+    .getByRole('button', { name: /Transportation|Buildings|Power and Energy|Land Use/i })
+    .first();
+
+  return (
+    (await application.isVisible({ timeout }).catch(() => false)) ||
+    (await categoryButton.isVisible({ timeout }).catch(() => false))
+  );
+}
+
+async function waitForEmbeddedSimulationVisible(page: Page, timeout = 12_000) {
+  return expect
+    .poll(async () => isEmbeddedSimulationVisible(page), {
+      message: 'Expected embedded simulation to be visible',
+      timeout,
+    })
+    .toBe(true)
+    .then(() => true)
     .catch(() => false);
 }
 
