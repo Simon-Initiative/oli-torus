@@ -303,7 +303,7 @@ The automated reviewers updated their existing GitHub issue comments in place af
 - [x] 10.7 Enqueue reward handoff only after a successful activity-attempt update.
 - [x] 10.8 Handle an empty resource-attempt list without crashing page preparation.
 - [x] 10.9 Announce asynchronous `SelectModal` errors to assistive technology.
-- [ ] 10.10 Expose an accessible busy/progress state while `SelectModal` submits.
+- [x] 10.10 Expose an accessible busy/progress state while `SelectModal` submits.
 - [ ] 10.11 Render and focus experiment-creation errors inside the open modal.
 - [ ] 10.12 Add a persistent label to the new-condition name input.
 

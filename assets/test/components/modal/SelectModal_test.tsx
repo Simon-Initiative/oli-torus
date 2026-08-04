@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SelectModal } from 'components/modal/SelectModal';
 
 const jqueryModal = {
@@ -62,4 +62,36 @@ test('announces submission errors', async () => {
       alert.id,
     ),
   );
+});
+
+test('communicates progress while submitting', async () => {
+  let resolveSelection: () => void = () => {};
+  const pendingSelection = new Promise<void>((resolve) => {
+    resolveSelection = resolve;
+  });
+
+  render(
+    <SelectModal
+      title="Choose an option"
+      description="Options"
+      onFetchOptions={() => Promise.resolve(options)}
+      onDone={() => pendingSelection}
+      onCancel={jest.fn()}
+    />,
+  );
+
+  fireEvent.change(await screen.findByRole('combobox'), { target: { value: 'one' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Select' }));
+
+  const submittingButton = screen.getByRole('button', { name: 'Selecting…' });
+  expect(submittingButton).toBeDisabled();
+  expect(submittingButton).toHaveAttribute('aria-busy', 'true');
+
+  await act(async () => resolveSelection());
+
+  await waitFor(() => {
+    const selectButton = screen.getByRole('button', { name: 'Select' });
+    expect(selectButton).not.toBeDisabled();
+    expect(selectButton).toHaveAttribute('aria-busy', 'false');
+  });
 });

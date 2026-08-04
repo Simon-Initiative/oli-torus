@@ -225,10 +225,11 @@ export const SelectModal = function <T extends Option>({
               disabled={
                 submitting || selectedOption.caseOf({ just: () => false, nothing: () => true })
               }
+              aria-busy={submitting}
               aria-describedby={error.caseOf({ just: () => errorId, nothing: () => undefined })}
               className={`btn btn-primary`}
             >
-              Select
+              {submitting ? 'Selecting…' : 'Select'}
             </button>
           </div>
         </div>
