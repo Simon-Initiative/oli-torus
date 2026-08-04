@@ -42,3 +42,20 @@ export const isimageOnlyNodes = (nodes: MarkupTree[]): boolean => {
   const text = JSON.stringify(nodes).replace(/<[^>]+>/g, '');
   return hasImg && !/\btext":"[^"]{2,}/.test(text);
 };
+
+export const stripFlashcardImageDimensions = (nodes: MarkupTree[]): MarkupTree[] =>
+  nodes.map((node) => {
+    const children = node.children ? stripFlashcardImageDimensions(node.children) : node.children;
+
+    if (node.tag !== 'img' || !node.style) {
+      return children === node.children ? node : { ...node, children };
+    }
+
+    const { width: _width, height: _height, ...style } = node.style;
+
+    return {
+      ...node,
+      style,
+      children,
+    };
+  });

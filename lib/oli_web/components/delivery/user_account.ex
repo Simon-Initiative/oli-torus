@@ -284,6 +284,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       label="Cookies"
       onclick={"OLI.handleCookiePreferences(#{Jason.encode!(privacy_policies_url())})"}
     />
+    <.menu_item_profile_math_previews ctx={@ctx} />
     <.menu_item_profile_timezone id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_item_linked_authoring_account
       :if={Accounts.can_manage_linked_account?(@ctx.user)}

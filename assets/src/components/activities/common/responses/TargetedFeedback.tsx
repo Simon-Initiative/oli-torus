@@ -107,7 +107,6 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
           removeResponse={hook.removeFeedback}
           updateFeedbackTextDirection={hook.updateFeedbackTextDirection}
           customScoring={customScoring}
-          editMode={responseEditMode}
         >
           <ChoicesDelivery
             unselectedIcon={props.unselectedIcon}
@@ -117,7 +116,7 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
             onSelect={(id) => props.toggleChoice(id, mapping)}
             isEvaluated={false}
             context={writerContext}
-            disabled={props.disabled}
+            disabled={props.disabled || !responseEditMode}
             multiSelect={props.multiSelect}
           />
 

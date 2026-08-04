@@ -13,7 +13,9 @@ interface Props {
 }
 
 export const VlabConfigTab: React.FC<Props> = (props) => {
-  const { model, dispatch, editMode } = useAuthoringElementContext<VlabSchema>();
+  const { model, dispatch, editMode, mode } = useAuthoringElementContext<VlabSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
   const assignmentList = [
     'default',
     'chemvlab/IV/IV_dilute_saline/',
@@ -82,6 +84,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 name={'assignmentSource_' + model.stem.id}
                 value="builtIn"
                 checked={model.assignmentSource === 'builtIn'}
+                disabled={readOnly}
                 onChange={() => dispatch(VlabActions.setAssignmentSource('builtIn'))}
               />
               Choose Assignment from Built-in List
@@ -95,6 +98,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 name={'assignmentSource_' + model.stem.id}
                 value="fromJSON"
                 checked={model.assignmentSource === 'fromJSON'}
+                disabled={readOnly}
                 onChange={() => dispatch(VlabActions.setAssignmentSource('fromJSON'))}
               />
               Create Assignment from Custom JSON
@@ -106,6 +110,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 <select
                   className="custom-select mr-2 form-control form-control-sm"
                   value={model.assignmentPath}
+                  disabled={readOnly}
                   onChange={(e) => dispatch(VlabActions.setAssignmentPath(e.target.value))}
                 >
                   {assignmentList.map((assignment, i) => (
@@ -124,7 +129,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 </div>
                 <WrappedMonaco
                   model={model.configuration}
-                  editMode={editMode}
+                  editMode={!readOnly}
                   language="javascript"
                   onEdit={(s) => dispatch(VlabActions.editConfiguration(s))}
                 />
@@ -135,7 +140,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 </div>
                 <WrappedMonaco
                   model={model.assignment}
-                  editMode={editMode}
+                  editMode={!readOnly}
                   language="javascript"
                   onEdit={(s) => dispatch(VlabActions.editAssignment(s))}
                 />
@@ -146,7 +151,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 </div>
                 <WrappedMonaco
                   model={model.reactions}
-                  editMode={editMode}
+                  editMode={!readOnly}
                   language="javascript"
                   onEdit={(s) => dispatch(VlabActions.editReactions(s))}
                 />
@@ -157,7 +162,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 </div>
                 <WrappedMonaco
                   model={model.solutions}
-                  editMode={editMode}
+                  editMode={!readOnly}
                   language="javascript"
                   onEdit={(s) => dispatch(VlabActions.editSolutions(s))}
                 />
@@ -168,7 +173,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 </div>
                 <WrappedMonaco
                   model={model.species}
-                  editMode={editMode}
+                  editMode={!readOnly}
                   language="javascript"
                   onEdit={(s) => dispatch(VlabActions.editSpecies(s))}
                 />
@@ -179,7 +184,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 </div>
                 <WrappedMonaco
                   model={model.spectra}
-                  editMode={editMode}
+                  editMode={!readOnly}
                   language="javascript"
                   onEdit={(s) => dispatch(VlabActions.editSpectra(s))}
                 />

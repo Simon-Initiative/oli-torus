@@ -1,0 +1,309 @@
+# Scenario: Seed a minimal published course for image coding delivery automation.
+
+- project:
+    name: 'image_coding_delivery_project'
+    title: 'Image Coding Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Image Coding Practice'
+        - page: 'Image Coding Image Practice'
+        - page: 'Image Coding Table Practice'
+
+- create_activity:
+    project: 'image_coding_delivery_project'
+    title: 'Image Coding Question'
+    virtual_id: 'image_coding'
+    type: 'oli_image_coding'
+    content_format: 'json'
+    content:
+      activityType: 'oli_image_coding'
+      stem:
+        id: 'image_coding_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Run the code and submit the correct output.'
+      isExample: false
+      starterCode: 'print("wrong")'
+      solutionCode: 'print("correct")'
+      resourceURLs: []
+      tolerance: 1.0
+      regex: 'correct'
+      feedback:
+        - id: 'image_coding_feedback_incorrect'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Incorrect. Try again.'
+        - id: 'image_coding_feedback_correct'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Correct. You produced the expected output.'
+      authoring:
+        previewText: ''
+        transformations: []
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'image_coding_correct'
+                rule: 'input like {print("correct")}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'image_coding_response_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct. You produced the expected output.'
+              - id: 'image_coding_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'image_coding_response_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect. Try again.'
+            hints: []
+
+- create_activity:
+    project: 'image_coding_delivery_project'
+    title: 'Image Coding Image Question'
+    virtual_id: 'image_coding_image'
+    type: 'oli_image_coding'
+    content_format: 'json'
+    content:
+      activityType: 'oli_image_coding'
+      stem:
+        id: 'image_coding_image_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Load the image resource and submit the expected rendered result.'
+      isExample: false
+      starterCode: 'image = new SimpleImage("image_coding_sample.png"); print(image)'
+      solutionCode: 'image = new SimpleImage("image_coding_sample.png"); print(image)'
+      resourceURLs:
+        - '/test/support/image_coding_sample.png'
+      tolerance: 0.1
+      regex: ''
+      feedback:
+        - id: 'image_coding_image_feedback_incorrect'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Incorrect. Try again.'
+        - id: 'image_coding_image_feedback_correct'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Congratulations! you found the GOAT 🐐'
+      authoring:
+        previewText: ''
+        transformations: []
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'image_coding_image_correct'
+                rule: 'input like {print(image)}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'image_coding_image_response_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Congratulations! you found the GOAT 🐐'
+              - id: 'image_coding_image_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'image_coding_image_response_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect. Try again.'
+            hints: []
+
+- create_activity:
+    project: 'image_coding_delivery_project'
+    title: 'Image Coding Table Question'
+    virtual_id: 'image_coding_table'
+    type: 'oli_image_coding'
+    content_format: 'json'
+    content:
+      activityType: 'oli_image_coding'
+      stem:
+        id: 'image_coding_table_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Load the table resource and submit the expected value.'
+      isExample: false
+      starterCode: 'var table = new SimpleTable("image_coding_table.csv"); print(table.getRow(0).getField("name"))'
+      solutionCode: 'var table = new SimpleTable("image_coding_table.csv"); print(table.getRow(1).getField("value"))'
+      resourceURLs:
+        - '/test/support/image_coding_table.csv'
+      tolerance: 1.0
+      regex: '7'
+      feedback:
+        - id: 'image_coding_table_feedback_incorrect'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Incorrect. Try again.'
+        - id: 'image_coding_table_feedback_correct'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Correct. You produced the expected output.'
+      authoring:
+        previewText: ''
+        transformations: []
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'image_coding_table_correct'
+                rule: 'input like {print(table.getRow(1).getField("value"))}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'image_coding_table_response_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct. You produced the expected output.'
+              - id: 'image_coding_table_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'image_coding_table_response_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect. Try again.'
+            hints: []
+
+- edit_page:
+    project: 'image_coding_delivery_project'
+    page: 'Image Coding Practice'
+    content: |
+      title: "Image Coding Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "image_coding"
+
+- edit_page:
+    project: 'image_coding_delivery_project'
+    page: 'Image Coding Image Practice'
+    content: |
+      title: "Image Coding Image Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "image_coding_image"
+
+- edit_page:
+    project: 'image_coding_delivery_project'
+    page: 'Image Coding Table Practice'
+    content: |
+      title: "Image Coding Table Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "image_coding_table"
+
+- publish:
+    to: 'image_coding_delivery_project'
+    description: 'Initial image coding delivery publication'
+
+- section:
+    name: 'image_coding_delivery_section_correct'
+    title: 'Image Coding Delivery Course ${RUN_ID} - Correct'
+    from: 'image_coding_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'image_coding_delivery_section_incorrect'
+    title: 'Image Coding Delivery Course ${RUN_ID} - Incorrect'
+    from: 'image_coding_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'image_coding_delivery_section_error'
+    title: 'Image Coding Delivery Course ${RUN_ID} - Error'
+    from: 'image_coding_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'image_coding_delivery_section_reset'
+    title: 'Image Coding Delivery Course ${RUN_ID} - Reset'
+    from: 'image_coding_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'image_coding_delivery_section_restore'
+    title: 'Image Coding Delivery Course ${RUN_ID} - Restore'
+    from: 'image_coding_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'image_coding_delivery_section_saved_code'
+    title: 'Image Coding Delivery Course ${RUN_ID} - Saved Code'
+    from: 'image_coding_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'image_coding_delivery_student'
+    type: 'student'
+    email: 'image-coding-delivery-student${RUN_ID}@example.com'
+    given_name: 'Image Coding'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'image_coding_delivery_student'
+    section: 'image_coding_delivery_section_correct'
+    role: 'student'
+
+- enroll:
+    user: 'image_coding_delivery_student'
+    section: 'image_coding_delivery_section_incorrect'
+    role: 'student'
+
+- enroll:
+    user: 'image_coding_delivery_student'
+    section: 'image_coding_delivery_section_error'
+    role: 'student'
+
+- enroll:
+    user: 'image_coding_delivery_student'
+    section: 'image_coding_delivery_section_reset'
+    role: 'student'
+
+- enroll:
+    user: 'image_coding_delivery_student'
+    section: 'image_coding_delivery_section_restore'
+    role: 'student'
+
+- enroll:
+    user: 'image_coding_delivery_student'
+    section: 'image_coding_delivery_section_saved_code'
+    role: 'student'

@@ -1,6 +1,7 @@
 import React from 'react';
+import { useSlate } from 'slate-react';
 import { EditorProps } from 'components/editing/elements/interfaces';
-import { useEditModelCallback } from 'components/editing/elements/utils';
+import { getEditMode, useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { modalActions } from '../../../../actions/modal';
 import { Formula } from '../../../common/Formula';
@@ -8,6 +9,8 @@ import { FormulaModal } from './FormulaModal';
 
 interface Props extends EditorProps<ContentModel.FormulaBlock | ContentModel.FormulaInline> {}
 export const FormulaEditor = (props: Props) => {
+  const editor = useSlate();
+  const editMode = getEditMode(editor);
   const onEdit = useEditModelCallback(props.model);
 
   if (props.model.src === undefined)
@@ -23,7 +26,7 @@ export const FormulaEditor = (props: Props) => {
   }
 
   const onFormulaClick = () => {
-    console.log('onFormulaClick');
+    if (!editMode) return;
 
     window.oliDispatch(
       modalActions.display(
@@ -45,8 +48,8 @@ export const FormulaEditor = (props: Props) => {
 
       <Formula
         id={props.model.id}
-        onClick={onFormulaClick}
-        style={{ cursor: 'pointer' }}
+        onClick={editMode ? onFormulaClick : undefined}
+        style={editMode ? { cursor: 'pointer' } : undefined}
         type={props.model.legacyBlockRendered ? 'formula' : props.model.type}
         subtype={props.model.subtype}
         src={props.model.src}

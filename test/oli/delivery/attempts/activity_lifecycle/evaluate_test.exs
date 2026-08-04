@@ -957,6 +957,141 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_essay.out_of == nil
     end
 
+    test "does not submit manual adaptive attempts when the rules engine result is incorrect" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"],
+                "correctFeedback" => "Auto correct",
+                "incorrectFeedback" => "Auto incorrect"
+              }
+            },
+            %{
+              "id" => "essay_1",
+              "type" => "janus-multi-line-text",
+              "custom" => %{
+                "correctFeedback" => "Manual correct",
+                "incorrectFeedback" => "Manual incorrect"
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => [
+              "stage.dropdown_1.selectedIndex",
+              "stage.essay_1.text"
+            ],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              },
+              %{
+                "id" => "essay_1",
+                "type" => "janus-multi-line-text",
+                "gradingApproach" => "manual"
+              }
+            ],
+            # Only a default "wrong" rule fires, so the screen evaluates as incorrect.
+            "rules" => [
+              %{
+                "id" => "r.wrong",
+                "name" => "wrong",
+                "disabled" => false,
+                "default" => true,
+                "correct" => false,
+                "conditions" => %{"all" => []},
+                "event" => %{
+                  "type" => "r.wrong",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1",
+          "essay_1"
+        ])
+
+      [dropdown_attempt, essay_attempt] =
+        setup.part_attempts
+        |> Enum.sort_by(& &1.part_id)
+
+      assert {:ok, essay_attempt} =
+               Core.update_part_attempt(essay_attempt, %{grading_approach: :manual})
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 1},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 1"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 1"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        },
+        %{
+          attempt_guid: essay_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "text" => %{"path" => "stage.essay_1.text", "value" => "Work in progress"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, _result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      # The activity is not finalized so the student can retry.
+      assert updated_attempt.lifecycle_state == :active
+
+      updated_part_attempts =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+        |> Enum.sort_by(& &1.part_id)
+
+      [updated_dropdown, updated_essay] = updated_part_attempts
+
+      # On an incorrect result ALL part attempts remain active so the student can retry with a
+      # clean slate. Persisting the automatic parts early would mark them :evaluated and they could
+      # never be re-scored on a later correct retry, leaving stale automatic scores.
+      assert updated_dropdown.grading_approach == :automatic
+      assert updated_dropdown.lifecycle_state == :active
+
+      # The manual part remains active and is not submitted for grading.
+      assert updated_essay.grading_approach == :manual
+      assert updated_essay.lifecycle_state == :active
+      assert updated_essay.score == nil
+      assert updated_essay.out_of == nil
+    end
+
     test "uses a single-input scorable rule to set part score, out_of, and feedback" do
       user = insert(:user)
       section = insert(:section)

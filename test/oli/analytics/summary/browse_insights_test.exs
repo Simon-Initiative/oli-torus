@@ -85,6 +85,43 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert Enum.at(results, 0).total_count == 6
     end
 
+    test "filters activities by resource and part", %{project: project, a1: a1} do
+      activity_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+      paging = %Oli.Repo.Paging{limit: 10, offset: 0}
+      sorting = %Oli.Repo.Sorting{direction: :asc, field: :title}
+
+      results =
+        BrowseInsights.browse_insights(
+          paging,
+          sorting,
+          %Oli.Analytics.Summary.BrowseInsightsOptions{
+            project_id: project.id,
+            section_ids: [],
+            resource_type_id: activity_type_id,
+            resource_id: a1.resource.id
+          }
+        )
+
+      assert Enum.map(results, & &1.part_id) == ["part1", "part2"]
+      assert Enum.all?(results, &(&1.resource_id == a1.resource.id))
+
+      [part] =
+        BrowseInsights.browse_insights(
+          paging,
+          sorting,
+          %Oli.Analytics.Summary.BrowseInsightsOptions{
+            project_id: project.id,
+            section_ids: [],
+            resource_type_id: activity_type_id,
+            resource_id: a1.resource.id,
+            part_id: "part2"
+          }
+        )
+
+      assert part.resource_id == a1.resource.id
+      assert part.part_id == "part2"
+    end
+
     test "sorting", %{
       project: project
     } do

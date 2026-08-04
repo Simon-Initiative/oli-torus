@@ -19,19 +19,24 @@ defmodule Oli.Scenarios.Engine do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
+    InstitutionDiscountDirective,
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
     ActivityBankDirective,
     InstructorCustomizationDirective,
     EditPageDirective,
+    EditAdaptivePageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
     StartAttemptDirective,
     GateDirective,
     TimeDirective,
     WaitDirective,
+    DashboardAnalyticsReadyDirective,
     AnswerQuestionDirective,
+    RequestHintDirective,
+    ResetActivityDirective,
     CertificateDirective,
     DiscussionPostDirective,
     DiscussionConfigDirective,
@@ -62,19 +67,24 @@ defmodule Oli.Scenarios.Engine do
     UserHandler,
     EnrollmentHandler,
     InstitutionHandler,
+    InstitutionDiscountHandler,
     UpdateHandler,
     CustomizeHandler,
     ActivityHandler,
     ActivityBankHandler,
     InstructorCustomizationHandler,
     EditPageHandler,
+    EditAdaptivePageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
     StartAttemptHandler,
     GateHandler,
     TimeHandler,
     WaitHandler,
+    DashboardAnalyticsReadyHandler,
     AnswerQuestionHandler,
+    RequestHintHandler,
+    ResetActivityHandler,
     CertificateHandler,
     DiscussionPostHandler,
     DiscussionConfigHandler,
@@ -279,6 +289,10 @@ defmodule Oli.Scenarios.Engine do
     InstitutionHandler.handle(directive, state)
   end
 
+  def execute_directive(%InstitutionDiscountDirective{} = directive, state) do
+    InstitutionDiscountHandler.handle(directive, state)
+  end
+
   def execute_directive(%UpdateDirective{} = directive, state) do
     UpdateHandler.handle(directive, state)
   end
@@ -301,6 +315,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%EditPageDirective{} = directive, state) do
     EditPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%EditAdaptivePageDirective{} = directive, state) do
+    EditAdaptivePageHandler.handle(directive, state)
   end
 
   def execute_directive(%ViewPracticePageDirective{} = directive, state) do
@@ -327,8 +345,20 @@ defmodule Oli.Scenarios.Engine do
     WaitHandler.handle(directive, state)
   end
 
+  def execute_directive(%DashboardAnalyticsReadyDirective{} = directive, state) do
+    DashboardAnalyticsReadyHandler.handle(directive, state)
+  end
+
   def execute_directive(%AnswerQuestionDirective{} = directive, state) do
     AnswerQuestionHandler.handle(directive, state)
+  end
+
+  def execute_directive(%RequestHintDirective{} = directive, state) do
+    RequestHintHandler.handle(directive, state)
+  end
+
+  def execute_directive(%ResetActivityDirective{} = directive, state) do
+    ResetActivityHandler.handle(directive, state)
   end
 
   def execute_directive(%CertificateDirective{} = directive, state) do

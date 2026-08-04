@@ -11,7 +11,9 @@ interface Props {
 const paramList = ['volume', 'temp', 'pH', 'moles', 'mass', 'molarity', 'concentration'];
 
 export const VlabParameterSelector: React.FC<Props> = (props) => {
-  const { model, dispatch } = useAuthoringElementContext<VlabSchema>();
+  const { model, dispatch, editMode, mode } = useAuthoringElementContext<VlabSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
   return (
     <>
       <div>
@@ -30,6 +32,7 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
                 name={'vlparam_' + model.stem.id}
                 value={param}
                 checked={param === props.input.parameter}
+                disabled={readOnly}
                 onChange={() => dispatch(VlabActions.setVlabParameter(props.input.id, param))}
               />
               {friendlyVlabParameter(param as any)}
@@ -44,6 +47,7 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
             name="speciesID"
             value={props.input.species}
             disabled={
+              readOnly ||
               props.input.parameter === 'volume' ||
               props.input.parameter === 'temp' ||
               props.input.parameter === 'pH'

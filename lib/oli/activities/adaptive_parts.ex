@@ -276,10 +276,19 @@ defmodule Oli.Activities.AdaptiveParts do
   end
 
   def persisted_part_grading_approach(content, part) when is_map(content) and is_map(part) do
-    if rule_scored_part?(content, part) and not scorable_part?(part) do
-      :automatic
-    else
-      grading_approach(part)
+    cond do
+      # An explicit manual-grading flag always wins, even when the part is referenced by a
+      # scoring rule (e.g. an iframe whose value is checked in a trap-state condition).
+      # Otherwise authors could never manually grade a part that also drives adaptive rule
+      # logic, since being rule-referenced would silently force it back to automatic.
+      grading_approach(part) == :manual ->
+        :manual
+
+      rule_scored_part?(content, part) and not scorable_part?(part) ->
+        :automatic
+
+      true ->
+        grading_approach(part)
     end
   end
 
