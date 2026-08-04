@@ -322,8 +322,8 @@ defmodule Oli.Delivery.Paywall do
   {:error, {:not_enrolled}} if the student is not enrolled in the section
   {:error, {:unknown_section}} when the section slug does not pertain to a valid section
   {:error, {:unknown_code}} when no deferred payment record is found for `code`
-  {:error, {:invalid_code}} when the code is invalid, whether it has already been redeemed or
-    if it doesn't pertain to this section or blueprint product
+  {:error, {:invalid_code}} when the code is invalid or has already been redeemed
+  {:error, {:insufficient_value}} when the code amount does not cover the section cost
 
   """
   def redeem_code(human_readable_code, %User{} = user, section_slug) do
@@ -333,35 +333,58 @@ defmodule Oli.Delivery.Paywall do
           nil ->
             {:error, {:unknown_section}}
 
-          %Section{blueprint_id: blueprint_id, id: id} = section ->
+          %Section{} = section ->
             case get_payment_by(code: code) do
               nil ->
                 {:error, {:unknown_code}}
 
-              %Payment{
-                type: :deferred,
-                application_date: nil,
-                section_id: ^id,
-                enrollment_id: nil
-              } = payment ->
-                apply_payment(payment, user, section)
+              %Payment{} = payment ->
+                cond do
+                  not unused_deferred_code?(payment) ->
+                    {:error, {:invalid_code}}
 
-              %Payment{
-                type: :deferred,
-                application_date: nil,
-                section_id: ^blueprint_id,
-                enrollment_id: nil
-              } = payment ->
-                apply_payment(payment, user, section)
+                  not payment_covers_section_cost?(payment, section) ->
+                    {:error, {:insufficient_value}}
 
-              _ ->
-                {:error, {:invalid_code}}
+                  true ->
+                    apply_payment(payment, user, section)
+                end
             end
         end
 
       _ ->
         {:error, {:invalid_code}}
     end
+  end
+
+  defp unused_deferred_code?(%Payment{
+         type: :deferred,
+         application_date: nil,
+         enrollment_id: nil
+       }),
+       do: true
+
+  defp unused_deferred_code?(_), do: false
+
+  defp payment_covers_section_cost?(
+         %Payment{amount: %Money{currency: currency} = payment_amount},
+         %Section{
+           requires_payment: true,
+           amount: %Money{currency: currency} = section_amount
+         }
+       ) do
+    try do
+      section_has_positive_cost?(section_amount) and
+        Money.compare(payment_amount, section_amount) in [:eq, :gt]
+    rescue
+      _ -> false
+    end
+  end
+
+  defp payment_covers_section_cost?(_, _), do: false
+
+  defp section_has_positive_cost?(%Money{currency: currency} = amount) do
+    Money.compare(amount, Money.new(0, currency)) == :gt
   end
 
   defp apply_payment(payment, user, section) do
@@ -718,7 +741,7 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
-  Gets the active payment for a given enrollment and section (or its associated blueprint).
+  Gets the active payment for a given enrollment.
   By active we mean a payment that has not been invalidated by an admin.
 
   Example:
@@ -727,26 +750,12 @@ defmodule Oli.Delivery.Paywall do
   iex> get_active_payment_for(1, %Section{id: 3})
   {:error, :no_active_payment_found}
   """
-  def get_active_payment_for(enrollment_id, section) do
-    # Build the complete where condition dynamically to handle nil blueprint_id
-    where_condition =
-      if is_nil(section.blueprint_id) do
-        dynamic(
-          [p],
-          p.enrollment_id == ^enrollment_id and
-            p.section_id == ^section.id and
-            p.type != :invalidated
-        )
-      else
-        dynamic(
-          [p],
-          p.enrollment_id == ^enrollment_id and
-            (p.section_id == ^section.id or p.section_id == ^section.blueprint_id) and
-            p.type != :invalidated
-        )
-      end
-
-    from(p in Payment, where: ^where_condition)
+  def get_active_payment_for(enrollment_id, _section) do
+    from(p in Payment,
+      where: p.enrollment_id == ^enrollment_id and p.type != :invalidated,
+      order_by: [desc: p.id],
+      limit: 1
+    )
     |> Repo.one()
     |> case do
       nil -> {:error, :no_active_payment_found}
