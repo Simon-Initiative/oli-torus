@@ -128,7 +128,7 @@ test.describe.serial('Phases of the Moon adaptive lesson', () => {
     );
     await completeAdaptiveHappyPath(page, adaptiveLesson.deck, answers);
 
-    await expect(page.locator('#lessonFinishedDialogContent')).toBeVisible({
+    await expect(page.getByText(new RegExp(answers.lesson.completion_text, 'i'))).toBeVisible({
       timeout: 30_000,
     });
   });

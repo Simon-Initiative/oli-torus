@@ -238,6 +238,11 @@ async function fillReflectorFitb(
   const fields = frame.getByRole('textbox');
   const count = await fields.count();
   if (count === 0) return false;
+  if (picks.length < count) {
+    throw new Error(
+      `Reflector FITB has ${count} visible fields but only ${picks.length} picks configured`,
+    );
+  }
 
   for (let index = 0; index < Math.min(count, picks.length); index += 1) {
     await fields.nth(index).click(ACTION_TIMEOUT);
