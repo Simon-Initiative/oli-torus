@@ -22,6 +22,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   ]
 
   @experiment_attributions_extension "http://oli.cmu.edu/extensions/experiment_attributions"
+  @attribution_insert_chunk_size 500
 
   @doc """
   Upload a statement bundle directly to ClickHouse.
@@ -113,20 +114,16 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   defp insert_experiment_attributions(attributions, config) do
     query = build_experiment_attributions_insert_query()
 
-    values =
-      attributions
-      |> Enum.map(&build_experiment_attribution_values/1)
-      |> Enum.join(",\n")
+    attributions
+    |> Enum.chunk_every(@attribution_insert_chunk_size)
+    |> Enum.reduce_while({:ok, 0}, fn chunk, {:ok, inserted_count} ->
+      values = chunk |> Enum.map(&build_experiment_attribution_values/1) |> Enum.join(",\n")
 
-    insert_statement = query <> values
-
-    case execute_clickhouse_query(insert_statement, config) do
-      {:ok, _response} ->
-        {:ok, length(attributions)}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+      case execute_clickhouse_query(query <> values, config) do
+        {:ok, _response} -> {:cont, {:ok, inserted_count + length(chunk)}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
   end
 
   defp is_video_event?(event) do

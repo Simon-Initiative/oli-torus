@@ -319,6 +319,44 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     assert {:ok, 1} = ClickHouseUploader.upload(bundle)
   end
 
+  test "inserts experiment attributions in bounded chunks" do
+    bundle = attributed_bundle(501, "bundle-chunks")
+    {:ok, attribution_queries} = Agent.start_link(fn -> [] end)
+
+    expect(MockHTTP, :post, 3, fn _url, query, _headers ->
+      if query =~ "INSERT INTO analytics.experiment_attributions" do
+        Agent.update(attribution_queries, &[query | &1])
+      end
+
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+
+    assert attribution_queries
+           |> Agent.get(& &1)
+           |> Enum.map(&length(Regex.scan(~r/\),\n\(/, &1)))
+           |> Enum.sort() == [0, 499]
+  end
+
+  @tag capture_log: true
+  test "stops attribution insertion after a failed chunk" do
+    bundle = attributed_bundle(1_001, "bundle-chunk-failure")
+    {:ok, request_count} = Agent.start_link(fn -> 0 end)
+
+    expect(MockHTTP, :post, 3, fn _url, _query, _headers ->
+      request_number = Agent.get_and_update(request_count, &{&1 + 1, &1 + 1})
+
+      case request_number do
+        3 -> {:ok, %{status_code: 500, body: "forced failure"}}
+        _ -> {:ok, %{status_code: 200, body: ""}}
+      end
+    end)
+
+    assert {:error, "Query failed with status 500: forced failure"} =
+             ClickHouseUploader.upload(bundle)
+  end
+
   defp video_statement(verb_id, result_extensions) do
     %{
       "actor" => %{
@@ -412,6 +450,37 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     |> File.stream!()
     |> Enum.find(&(String.trim(&1) != ""))
     |> String.trim_trailing("\n")
+  end
+
+  defp attributed_bundle(attribution_count, bundle_id) do
+    statement = attributed_part_attempt_statement()
+
+    [attribution] =
+      get_in(statement, [
+        "context",
+        "extensions",
+        "http://oli.cmu.edu/extensions/experiment_attributions"
+      ])
+
+    attributions =
+      Enum.map(1..attribution_count, fn index ->
+        attribution
+        |> Map.put("assignment_id", index)
+        |> Map.put("key", "reward-key-#{index}")
+      end)
+
+    statement =
+      put_in(
+        statement,
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ],
+        attributions
+      )
+
+    %StatementBundle{body: Jason.encode!(statement), category: :attempt, bundle_id: bundle_id}
   end
 
   defp sha256(value) do
