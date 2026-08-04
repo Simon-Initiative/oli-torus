@@ -10,6 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{CreateExperimentRequest, Scope}
   alias Oli.Publishing
+  alias Oli.Repo
   alias Oli.Resources.ResourceType
   alias Oli.Utils.Slug
   alias Phoenix.LiveView.JS
@@ -1580,7 +1581,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     Enum.find(decision_points, &(&1.resource_id == resource_id))
   end
 
-  defp sort_decision_points(decision_points), do: Enum.sort_by(decision_points, & &1.id, :asc)
+  defp sort_decision_points(decision_points) do
+    decision_points
+    |> Repo.preload(:resource)
+    |> Enum.sort_by(
+      fn decision_point ->
+        {DateTime.to_unix(decision_point.resource.inserted_at, :microsecond),
+         decision_point.resource_id}
+      end,
+      :asc
+    )
+  end
 
   defp find_group_option(decision_points, resource_id, option_id) do
     decision_points

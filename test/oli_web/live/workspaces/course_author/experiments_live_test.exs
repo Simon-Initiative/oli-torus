@@ -7,7 +7,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
   alias Oli.Authoring.Experiments
   alias Oli.Experiments.Schemas.ExperimentDefinition
-  alias Oli.Resources.{ResourceType, Revision}
+  alias Oli.Resources.{Resource, ResourceType, Revision}
+  alias Oli.Repo
 
   defp live_view_experiments_route(project_slug, params \\ %{}),
     do: ~p"/workspaces/course_author/#{project_slug}/experiments?#{params}"
@@ -226,19 +227,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert revision.content["strategy"] == "upgrade_decision_point"
     end
 
-    test "sorts decision points ascending and renders the create action below them", %{
-      view: _view,
-      conn: conn,
-      admin: admin,
-      project: project,
-      publication: publication
-    } do
-      insert_legacy_experiment(publication, admin, "First Decision Point")
-      insert_legacy_experiment(publication, admin, "Second Decision Point")
+    test "sorts decision points by creation date ascending and renders the create action below them",
+         %{
+           view: _view,
+           conn: conn,
+           admin: admin,
+           project: project,
+           publication: publication
+         } do
+      first = insert_legacy_experiment(publication, admin, "Created Later")
+      second = insert_legacy_experiment(publication, admin, "Created Earlier")
+
+      first.resource_id
+      |> then(&Repo.get!(Resource, &1))
+      |> Ecto.Changeset.change(inserted_at: ~U[2026-01-02 00:00:00Z])
+      |> Repo.update!()
+
+      second.resource_id
+      |> then(&Repo.get!(Resource, &1))
+      |> Ecto.Changeset.change(inserted_at: ~U[2026-01-01 00:00:00Z])
+      |> Repo.update!()
+
       {:ok, view, html} = live(conn, live_view_experiments_route(project.slug))
 
-      {first_position, _} = :binary.match(html, "First Decision Point")
-      {second_position, _} = :binary.match(html, "Second Decision Point")
+      {first_position, _} = :binary.match(html, "Created Earlier")
+      {second_position, _} = :binary.match(html, "Created Later")
       {button_position, _} = :binary.match(html, "New Decision Point")
 
       assert first_position < second_position
