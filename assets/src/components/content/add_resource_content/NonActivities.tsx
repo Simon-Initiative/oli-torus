@@ -6,7 +6,6 @@ import { ManageAlternativesLink } from 'components/resource/editors/Alternatives
 import { modalActions } from 'actions/modal';
 import { FeatureFlags } from 'apps/page-editor/types';
 import {
-  AlternativeContent,
   ResourceContext,
   createAlternative,
   createAlternatives,
@@ -257,29 +256,31 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
             }
           })
         }
-        onDone={(alternativesId: string | number) => {
-          Persistence.alternatives(projectSlug).then((result) => {
-            if (result.type === 'success') {
-              const experiment = result.alternatives.find(
-                (a) => a.id === Number(alternativesId) && a.strategy === 'upgrade_decision_point',
-              );
+        onDone={async (alternativesId: string | number) => {
+          const result = await Persistence.alternatives(projectSlug);
 
-              if (experiment) {
-                const children: AlternativeContent[] = [];
-                experiment.options.forEach((o) => children.push(createAlternative(o.id)));
-                onAddItem(
-                  createAlternatives(
-                    Number(experiment.id),
-                    'upgrade_decision_point',
-                    Immutable.List(children),
-                  ),
-                  index,
-                );
-              }
-            }
+          if (result.type !== 'success') {
+            throw new Error(result.message);
+          }
 
-            window.oliDispatch(modalActions.dismiss());
-          });
+          const experiment = result.alternatives.find(
+            (a) => a.id === Number(alternativesId) && a.strategy === 'upgrade_decision_point',
+          );
+
+          if (!experiment) {
+            throw new Error('The selected A/B decision point is no longer available.');
+          }
+
+          const children = experiment.options.map((option) => createAlternative(option.id));
+          onAddItem(
+            createAlternatives(
+              Number(experiment.id),
+              'upgrade_decision_point',
+              Immutable.List(children),
+            ),
+            index,
+          );
+          window.oliDispatch(modalActions.dismiss());
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,

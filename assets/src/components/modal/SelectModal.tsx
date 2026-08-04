@@ -15,7 +15,7 @@ interface SelectModalProps<T extends Option> {
   title: string;
   description: string;
   onFetchOptions: () => Promise<Options<T> | OptionsWithSelection<T>>;
-  onDone: (x: string | number) => void;
+  onDone: (x: string | number) => void | Promise<void>;
   onCancel: () => void;
   additionalControls?: React.ReactNode;
 }
@@ -38,6 +38,7 @@ export const SelectModal = function <T extends Option>({
   const [options, setOptions] = useState<Maybe<T[]>>(Maybe.nothing());
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedOption, setSelectedOption] = useState<Maybe<T>>(Maybe.nothing());
+  const [submitting, setSubmitting] = useState(false);
 
   // Focus trap handler
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -123,9 +124,22 @@ export const SelectModal = function <T extends Option>({
   const renderFailed = (errorMsg: string) => (
     <div>
       <div>Failed to load options. Close this window and try again.</div>
-      <div>Error: ${errorMsg}</div>
+      <div>Error: {errorMsg}</div>
     </div>
   );
+
+  const handleDone = async (selectedValue: string | number) => {
+    setSubmitting(true);
+    setError(Maybe.nothing());
+
+    try {
+      await onDone(selectedValue);
+    } catch (error) {
+      setError(Maybe.just(error instanceof Error ? error.message : String(error)));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const renderSuccess = (options: T[]) => {
     const renderOption = (o: T) => (
@@ -201,11 +215,13 @@ export const SelectModal = function <T extends Option>({
               type="button"
               onClick={() =>
                 selectedOption.caseOf({
-                  just: (s) => onDone(s.value),
+                  just: (s) => handleDone(s.value),
                   nothing: () => {},
                 })
               }
-              disabled={selectedOption.caseOf({ just: () => false, nothing: () => true })}
+              disabled={
+                submitting || selectedOption.caseOf({ just: () => false, nothing: () => true })
+              }
               className={`btn btn-primary`}
             >
               Select
