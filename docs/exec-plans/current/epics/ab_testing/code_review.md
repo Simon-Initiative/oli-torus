@@ -40,7 +40,7 @@ The highest-priority fixes are:
 - [x] 4.4 Transform direct-uploader events only once.
 - [x] 4.5 Insert direct-uploader attributions in bounded chunks.
 - [x] 4.7 Filter reward assignments by relevant attempts in PostgreSQL.
-- [ ] 4.8 Use one deterministic attribution hash across all ingestion paths.
+- [x] 4.8 Use one deterministic attribution hash across all ingestion paths.
 - [ ] 4.9 Normalize `tcp://` ClickHouse hosts when building HTTP URLs.
 - [ ] 4.10 Make alternatives option reordering keyboard accessible.
 - [ ] 4.11 Make disabled pagination controls non-actionable.
@@ -168,7 +168,7 @@ The highest-priority fixes are:
 - **Issue:** The direct uploader and Lambda canonicalize attribution objects before hashing, while ClickHouse backfill hashes the raw JSON substring returned for the array element. Semantically equal objects with different key order or insignificant formatting can therefore receive different attribution hashes.
 - **Determination:** Fix; release blocker for deterministic replay/backfill.
 - **Why:** MER-5795 explicitly requires deterministic backfill/replay. Cross-path hash parity is part of that contract, not merely an optimization.
-- **Proposed resolution:** Define one documented hash contract: `sha256(raw_event_hash <> ":" <> canonical_attribution_json)`, with recursively sorted object keys, preserved array order, compact separators, and consistent Unicode/number encoding. Implement the equivalent canonicalization in ClickHouse backfill or change all producers to a representation ClickHouse can reproduce exactly. Add shared fixtures that assert identical hashes for reordered/nested attribution JSON across Elixir, Python, and backfill SQL.
+- **Proposed resolution:** Use the attribution's event-level idempotency key as the shared identity contract: `sha256(raw_event_hash <> ":" <> attribution_key)`. The key is already stable across host-role projections and can be reproduced directly by Elixir, Python, and ClickHouse SQL without depending on JSON object order or formatting. Add shared fixtures that assert identical hashes across all three paths.
 
 ### 4.9 `tcp://` ClickHouse hosts produce malformed HTTP URLs
 
@@ -274,6 +274,6 @@ These changes need one design pass because job payloads, transaction boundaries,
 Before implementation, agree on:
 
 1. whether the reward handoff uses one batch job API for both single-attempt and page-finalization callers;
-2. the canonical attribution JSON contract that ClickHouse SQL can reproduce;
+2. the attribution-key hash contract shared by ClickHouse SQL, Elixir, and Python;
 3. whether item 4.6 should receive telemetry in this PR or only a follow-up ticket;
 4. the exact GitGuardian incident classification after inspecting the linked occurrence.

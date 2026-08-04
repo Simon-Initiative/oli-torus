@@ -123,9 +123,14 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
     assert sql =~ "JSON_VALUE(attribution, '$.attribution_type')"
     assert sql =~ "throwIf"
     assert sql =~ "Invalid experiment attribution role/type pair"
+    assert sql =~ "Experiment attribution key must be a non-empty string"
+
+    assert sql =~
+             "SHA256(concat(lower(hex(SHA256(json))), ':', JSON_VALUE(attribution, '$.key')))"
+
     assert sql =~ "AS experiment_uuid"
     refute sql =~ "key_hash"
-    refute sql =~ "JSON_VALUE(attribution, '$.key')"
+    assert sql =~ "JSON_VALUE(attribution, '$.key')"
     refute sql =~ "outcome_id"
     refute sql =~ "reward_id"
     refute sql =~ "previous_policy_state_hash"

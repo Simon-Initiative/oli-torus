@@ -392,14 +392,19 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     parsed_events
     |> Enum.flat_map(fn {_raw_line, event} -> experiment_attributions(event) end)
     |> Enum.reduce_while(:ok, fn attribution, :ok ->
-      if valid_attribution_type?(attribution) do
-        {:cont, :ok}
-      else
-        role = attribution_value(attribution, "role")
-        attribution_type = attribution_value(attribution, "attribution_type")
+      case {valid_attribution_type?(attribution), attribution_value(attribution, "key")} do
+        {true, key} when is_binary(key) and key != "" ->
+          {:cont, :ok}
 
-        {:halt,
-         {:error, {:invalid_experiment_attribution, %{role: role, type: attribution_type}}}}
+        {false, _key} ->
+          role = attribution_value(attribution, "role")
+          attribution_type = attribution_value(attribution, "attribution_type")
+
+          {:halt,
+           {:error, {:invalid_experiment_attribution, %{role: role, type: attribution_type}}}}
+
+        {true, key} ->
+          {:halt, {:error, {:invalid_experiment_attribution_key, key}}}
       end
     end)
   end
@@ -447,31 +452,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   defp event_hash(raw_line) when is_binary(raw_line), do: hash_key(raw_line)
 
   defp attribution_hash(event_hash, attribution) do
-    hash_key("#{event_hash}:#{canonical_json(attribution)}")
+    hash_key("#{event_hash}:#{attribution_value(attribution, "key")}")
   end
-
-  defp canonical_json(value) when is_map(value) do
-    entries =
-      value
-      |> Enum.sort_by(fn {key, _value} -> to_string(key) end)
-      |> Enum.map(fn {key, value} ->
-        "#{encode_canonical_json_value(to_string(key))}:#{canonical_json(value)}"
-      end)
-      |> Enum.join(",")
-
-    "{#{entries}}"
-  end
-
-  defp canonical_json(value) when is_list(value) do
-    value
-    |> Enum.map(&canonical_json/1)
-    |> Enum.join(",")
-    |> then(fn entries -> "[#{entries}]" end)
-  end
-
-  defp canonical_json(value), do: encode_canonical_json_value(value)
-
-  defp encode_canonical_json_value(value), do: Jason.encode!(value, escape: :unicode_safe)
 
   defp insert_raw_events(events, config) do
     # Prepare the INSERT query

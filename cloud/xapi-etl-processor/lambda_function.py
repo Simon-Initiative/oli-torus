@@ -1155,13 +1155,13 @@ def transform_experiment_attributions(
 
     for attribution in _experiment_attributions(statement):
         _validate_attribution_type(attribution)
-        encoded_attribution = json.dumps(attribution, sort_keys=True, separators=(",", ":"))
+        attribution_key = _safe_str(attribution.get("key")) or ""
 
         rows.append(
             {
                 "raw_event_hash": raw_hash,
                 "attribution_hash": hashlib.sha256(
-                    f"{raw_hash}:{encoded_attribution}".encode("utf-8")
+                    f"{raw_hash}:{attribution_key}".encode("utf-8")
                 ).hexdigest(),
                 "host_event_type": host_event_type,
                 "timestamp": statement.get("timestamp"),
@@ -1219,6 +1219,10 @@ def _validate_attribution_type(attribution: Mapping[str, Any]) -> None:
         raise ValueError(
             f"invalid experiment attribution role/type pair: {role!r}/{attribution_type!r}"
         )
+
+    key = attribution.get("key")
+    if not isinstance(key, str) or not key:
+        raise ValueError("experiment attribution key must be a non-empty string")
 
 
 def _safe_int(value: Any) -> Optional[int]:

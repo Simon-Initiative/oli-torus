@@ -166,7 +166,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     )
     SELECT
         lower(hex(SHA256(json))) AS raw_event_hash,
-        lower(hex(SHA256(concat(lower(hex(SHA256(json))), ':', #{attribution})))) AS attribution_hash,
+        lower(hex(SHA256(concat(lower(hex(SHA256(json))), ':', JSON_VALUE(#{attribution}, '$.key'))))) AS attribution_hash,
         now64(3) AS event_version,
         _path AS source_file,
         _file AS source_etag,
@@ -210,6 +210,10 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           AND attribution_type = 'assignment'
       ),
       'Invalid experiment attribution role/type pair'
+    ) = 0
+    AND throwIf(
+      empty(JSON_VALUE(#{attribution}, '$.key')),
+      'Experiment attribution key must be a non-empty string'
     ) = 0
     #{settings_clause}
     """

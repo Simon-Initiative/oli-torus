@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 MODULE_PATH = Path(__file__).resolve().parents[1] / "lambda_function.py"
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "experiment_attributed_part_attempt.jsonl"
 FIXTURE_EVENT_HASH = "1324eea1ad081cb5cbd2f7e8859bd5ba339b5b2bb9a28ced3c70d5f08bee062a"
-FIXTURE_ATTRIBUTION_HASH = "6eb54278105ce6e90e20fa1052acf22951e74275e7c4ec76a98759c927472eba"
+FIXTURE_ATTRIBUTION_HASH = "4ab96ee53f4775c80d5bc1471f4e6c1d2ee514d5a12e0b6c1df56c5a81bcb257"
 spec = importlib.util.spec_from_file_location("lambda_function", MODULE_PATH)
 lambda_function = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = lambda_function
@@ -335,6 +335,18 @@ class LambdaFunctionTests(TestCase):
 
         attribution.pop("attribution_type")
         with self.assertRaisesRegex(ValueError, "invalid experiment attribution role/type pair"):
+            lambda_function.transform_experiment_attributions(
+                statement,
+                raw_bytes=raw_line,
+                bucket="bucket",
+                key="events/file.jsonl",
+                etag='"etag"',
+                line_number=1,
+            )
+
+        attribution["attribution_type"] = "assignment"
+        attribution.pop("key")
+        with self.assertRaisesRegex(ValueError, "key must be a non-empty string"):
             lambda_function.transform_experiment_attributions(
                 statement,
                 raw_bytes=raw_line,

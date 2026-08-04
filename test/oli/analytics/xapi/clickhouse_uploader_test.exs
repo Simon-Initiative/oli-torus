@@ -12,7 +12,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
                   __DIR__
                 )
   @fixture_event_hash "1324eea1ad081cb5cbd2f7e8859bd5ba339b5b2bb9a28ced3c70d5f08bee062a"
-  @fixture_attribution_hash "6eb54278105ce6e90e20fa1052acf22951e74275e7c4ec76a98759c927472eba"
+  @fixture_attribution_hash "4ab96ee53f4775c80d5bc1471f4e6c1d2ee514d5a12e0b6c1df56c5a81bcb257"
 
   setup :verify_on_exit!
 
@@ -287,6 +287,30 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     }
 
     assert {:error, {:invalid_experiment_attribution, %{role: "reward", type: nil}}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload fails for a missing attribution idempotency key" do
+    statement =
+      update_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0)
+        ],
+        &Map.delete(&1, "key")
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-missing-key"
+    }
+
+    assert {:error, {:invalid_experiment_attribution_key, nil}} =
              ClickHouseUploader.upload(bundle)
   end
 
