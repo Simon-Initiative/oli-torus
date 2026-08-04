@@ -6,6 +6,16 @@ interface ScopedReorderPayload {
 }
 
 const keyboardReorderState = new WeakMap<HTMLElement, boolean>();
+let activeKeyboardReorderKey: string | null = null;
+let activeKeyboardReorderElement: HTMLElement | null = null;
+let activeKeyboardReorderCleanupTimer: ReturnType<typeof setTimeout> | null = null;
+
+const keyboardReorderKey = (element: HTMLElement) => {
+  const resourceId = element.getAttribute('data-reorder-resource-id');
+  const itemId = element.getAttribute('data-reorder-item-id');
+
+  return resourceId && itemId ? `${resourceId}:${itemId}` : null;
+};
 
 const announceKeyboardReorder = (element: HTMLElement, message: string) => {
   const liveRegionId = element.getAttribute('data-reorder-live-region-id');
@@ -25,6 +35,36 @@ const keyboardReorderDetails = (element: HTMLElement) => {
 };
 
 const setKeyboardReorderActive = (element: HTMLElement, active: boolean) => {
+  const key = keyboardReorderKey(element);
+
+  if (active) {
+    if (activeKeyboardReorderCleanupTimer) {
+      clearTimeout(activeKeyboardReorderCleanupTimer);
+      activeKeyboardReorderCleanupTimer = null;
+    }
+
+    if (activeKeyboardReorderElement && activeKeyboardReorderElement !== element) {
+      keyboardReorderState.set(activeKeyboardReorderElement, false);
+      activeKeyboardReorderElement.setAttribute('aria-pressed', 'false');
+      activeKeyboardReorderElement.classList.remove(
+        'keyboard-reorder-active',
+        'ring-2',
+        'ring-blue-500',
+      );
+    }
+
+    activeKeyboardReorderKey = key;
+    activeKeyboardReorderElement = element;
+  } else if (key === activeKeyboardReorderKey) {
+    if (activeKeyboardReorderCleanupTimer) {
+      clearTimeout(activeKeyboardReorderCleanupTimer);
+      activeKeyboardReorderCleanupTimer = null;
+    }
+
+    activeKeyboardReorderKey = null;
+    activeKeyboardReorderElement = null;
+  }
+
   keyboardReorderState.set(element, active);
   element.setAttribute('aria-pressed', String(active));
   element.classList.toggle('keyboard-reorder-active', active);
@@ -202,7 +242,12 @@ export const DragSource = {
 
 export const KeyboardReorder = {
   mounted() {
-    setKeyboardReorderActive(this.el, false);
+    const remainsActive = keyboardReorderKey(this.el) === activeKeyboardReorderKey;
+    setKeyboardReorderActive(this.el, remainsActive);
+
+    if (remainsActive) {
+      this.el.focus();
+    }
 
     const toggleActive = () => {
       const active = !keyboardReorderState.get(this.el);
@@ -279,6 +324,24 @@ export const KeyboardReorder = {
   },
 
   updated() {
-    this.el.setAttribute('aria-pressed', String(keyboardReorderState.get(this.el) ?? false));
+    setKeyboardReorderActive(this.el, keyboardReorderState.get(this.el) ?? false);
+  },
+
+  destroyed() {
+    const key = keyboardReorderKey(this.el);
+
+    if (key !== activeKeyboardReorderKey) {
+      return;
+    }
+
+    activeKeyboardReorderCleanupTimer = setTimeout(() => {
+      if (key === activeKeyboardReorderKey && this.el === activeKeyboardReorderElement) {
+        keyboardReorderState.set(this.el, false);
+        activeKeyboardReorderKey = null;
+        activeKeyboardReorderElement = null;
+      }
+
+      activeKeyboardReorderCleanupTimer = null;
+    }, 0);
   },
 };
