@@ -159,7 +159,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     INSERT INTO #{target_table} (
         raw_event_hash, attribution_hash, event_version, source_file, source_etag, source_line,
         inserted_at, host_event_type, timestamp, section_id,
-        project_id, publication_id, enrollment_id, experiment_role, experiment_id, experiment_uuid, decision_point_id,
+        project_id, publication_id, enrollment_id, experiment_role, attribution_type, experiment_id, experiment_uuid, decision_point_id,
         decision_point_key, condition_id, condition_code, assignment_id, assignment_key,
         algorithm, policy_version,
         content_revision_id, reward_value, reward_source
@@ -180,7 +180,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.project_id'), '')) AS project_id,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.publication_id'), '')) AS publication_id,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.enrollment_id'), '')) AS enrollment_id,
-        nullIf(JSON_VALUE(#{attribution}, '$.role'), '') AS experiment_role,
+        JSON_VALUE(#{attribution}, '$.role') AS experiment_role,
+        JSON_VALUE(#{attribution}, '$.attribution_type') AS attribution_type,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.experiment_id'), '')) AS experiment_id,
         nullIf(JSON_VALUE(#{attribution}, '$.experiment_uuid'), '') AS experiment_uuid,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.decision_point_id'), '')) AS decision_point_id,
@@ -199,6 +200,17 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         nullIf(JSON_VALUE(#{attribution}, '$.reward_source'), '') AS reward_source
     FROM #{s3_source}
     ARRAY JOIN JSONExtractArrayRaw(json, 'context.extensions."http://oli.cmu.edu/extensions/experiment_attributions"') AS #{attribution}
+    WHERE throwIf(
+      NOT (
+        experiment_role = attribution_type
+          AND experiment_role IN ('assignment', 'exposure', 'outcome', 'reward', 'policy_update')
+        OR experiment_role = 'rollup'
+          AND attribution_type IN ('outcome', 'reward')
+        OR experiment_role = 'media_interaction'
+          AND attribution_type = 'assignment'
+      ),
+      'Invalid experiment attribution role/type pair'
+    ) = 0
     #{settings_clause}
     """
   end

@@ -80,6 +80,9 @@ except Exception as exc:  # pylint: disable=broad-except
     NUMPY_IMPORT_ERROR = exc
 
 logger = logging.getLogger(__name__)
+EXPERIMENT_DIRECT_ATTRIBUTION_TYPES = frozenset(
+    {"assignment", "exposure", "outcome", "reward", "policy_update"}
+)
 
 _LOG_LEVEL_NAME = os.getenv("LOG_LEVEL", "INFO").upper()
 logger.setLevel(getattr(logging, _LOG_LEVEL_NAME, logging.INFO))
@@ -1151,6 +1154,7 @@ def transform_experiment_attributions(
     rows: List[Dict[str, Any]] = []
 
     for attribution in _experiment_attributions(statement):
+        _validate_attribution_type(attribution)
         encoded_attribution = json.dumps(attribution, sort_keys=True, separators=(",", ":"))
 
         rows.append(
@@ -1166,6 +1170,7 @@ def transform_experiment_attributions(
                 "publication_id": _safe_int(attribution.get("publication_id")),
                 "enrollment_id": _safe_int(attribution.get("enrollment_id")),
                 "experiment_role": _safe_str(attribution.get("role")),
+                "attribution_type": _safe_str(attribution.get("attribution_type")),
                 "experiment_id": _safe_int(attribution.get("experiment_id")),
                 "experiment_uuid": _safe_str(attribution.get("experiment_uuid")),
                 "decision_point_id": _safe_int(attribution.get("decision_point_id")),
@@ -1200,6 +1205,20 @@ def _experiment_attributions(statement: Mapping[str, Any]) -> List[Mapping[str, 
         return []
 
     return [attribution for attribution in attributions if isinstance(attribution, Mapping)]
+
+
+def _validate_attribution_type(attribution: Mapping[str, Any]) -> None:
+    role = attribution.get("role")
+    attribution_type = attribution.get("attribution_type")
+    valid = (
+        (role == attribution_type and role in EXPERIMENT_DIRECT_ATTRIBUTION_TYPES)
+        or (role == "rollup" and attribution_type in {"outcome", "reward"})
+        or (role == "media_interaction" and attribution_type == "assignment")
+    )
+    if not valid:
+        raise ValueError(
+            f"invalid experiment attribution role/type pair: {role!r}/{attribution_type!r}"
+        )
 
 
 def _safe_int(value: Any) -> Optional[int]:

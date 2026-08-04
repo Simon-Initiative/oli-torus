@@ -103,6 +103,8 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert Enum.map(part_attributions, & &1["role"]) == ["outcome", "reward"]
       assert Enum.map(activity_attributions, & &1["role"]) == ["rollup", "rollup"]
       assert Enum.map(page_attributions, & &1["role"]) == ["rollup", "rollup"]
+      assert Enum.map(activity_attributions, & &1["attribution_type"]) == ["outcome", "reward"]
+      assert Enum.map(page_attributions, & &1["attribution_type"]) == ["outcome", "reward"]
 
       assignment = Repo.one!(Assignment)
 

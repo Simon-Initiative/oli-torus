@@ -16,11 +16,12 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
         condition_id,
         condition_code,
         experiment_role,
+        attribution_type,
         countDistinct(attribution_hash) AS count
       FROM #{experiment_attributions_table()}
       WHERE #{where_clause(scope, filters)}
-      GROUP BY experiment_id, experiment_uuid, decision_point_id, condition_id, condition_code, experiment_role
-      ORDER BY experiment_id, experiment_uuid, decision_point_id, condition_id, experiment_role
+      GROUP BY experiment_id, experiment_uuid, decision_point_id, condition_id, condition_code, experiment_role, attribution_type
+      ORDER BY experiment_id, experiment_uuid, decision_point_id, condition_id, experiment_role, attribution_type
       """
 
     execute(query, "experiment event counts", scope, filters)
@@ -128,6 +129,7 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
         "experiment_role",
         Map.get(filters, :experiment_role) || Map.get(filters, :role)
       ),
+      string_clause("attribution_type", Map.get(filters, :attribution_type)),
       string_clause("host_event_type", Map.get(filters, :host_event_type))
     ]
     |> Enum.reject(&is_nil/1)

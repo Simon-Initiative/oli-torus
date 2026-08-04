@@ -85,7 +85,7 @@ Outcome and reward:
 
 1. `Oli.Delivery.Experiments.RewardHandoff` derives deterministic outcome and reward `key` values from activity attempt ID and assignment ID.
 2. `record_outcome/1` validates assignment scope and returns a deterministic outcome receipt without inserting `experiment_outcomes` or mutating `experiment_assignments.runtime_event_state`.
-3. Evaluated `part_attempt` xAPI statements carry canonical `role: "outcome"` and `role: "reward"` attributions when the outcome/reward is derived from that part attempt. `activity_attempt` and `page_attempt` may carry `role: "rollup"` attribution only when the rolled-up attempt has an unambiguous experiment assignment or can safely include an attribution array.
+3. Evaluated `part_attempt` xAPI statements carry canonical `role: "outcome"` and `role: "reward"` attributions when the outcome/reward is derived from that part attempt. `activity_attempt` and `page_attempt` may carry `role: "rollup"` attribution only when the rolled-up attempt has an unambiguous experiment assignment or can safely include an attribution array. Every attribution also carries `attribution_type`; rollup transformations change `role` but retain the source `outcome` or `reward` type.
 4. `record_reward/1` validates assignment scope, applies a reward idempotency guard, and mutates `experiment_policy_states` when appropriate. If Thompson Sampling state changes, policy-update evidence is emitted as operational telemetry rather than learner activity xAPI; no `experiment_policy_updates` row is inserted.
 
 Media:
@@ -147,7 +147,8 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
 - Required xAPI extension:
   - `context.extensions["http://oli.cmu.edu/extensions/experiment_attributions"]` is an array. It may be empty or omitted when no experiment applies.
 - Required attribution object fields:
-  - `role`: `exposure`, `outcome`, `reward`, `rollup`, or `media_interaction`.
+  - `role`: `assignment`, `exposure`, `outcome`, `reward`, `rollup`, `media_interaction`, or `policy_update`; this describes the attribution's relationship to its host statement.
+  - `attribution_type`: `assignment`, `exposure`, `outcome`, `reward`, or `policy_update`; this preserves the semantic evidence type when `role` is changed to `rollup` or `media_interaction` and must never be inferred by parsing `key`. Current media attribution derives from assignment evidence and therefore uses `attribution_type: "assignment"` with `role: "media_interaction"`.
   - `experiment_id` and stable `experiment_uuid`.
   - `decision_point_id`, `decision_point_key`, `condition_id`, `condition_code`, `assignment_id`, `assignment_key`.
   - `algorithm` and `policy_version` when available.
@@ -173,7 +174,7 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
   - Preserve `raw_events` as one row per xAPI statement. Do not duplicate raw rows for each experiment decision point.
   - Add a raw JSON/string column or equivalent extraction path for the `experiment_attributions` extension if the existing raw statement JSON is not sufficient for replay.
   - Keep `raw_events` independent of experiment analytics. Do not add experiment presence, cardinality, or identity columns to the raw-event schema because those concerns are owned by the attribution projection and one raw event may carry multiple attributions.
-  - Add an attribution-level ClickHouse projection/table that contains one row per attribution with a compact set of stable query dimensions. The attribution row should include `raw_event_hash` as the logical parent reference to `raw_events.event_hash`, `attribution_hash`, `host_event_type`, `experiment_role`, `experiment_id`, `experiment_uuid`, `decision_point_id`, `decision_point_key`, `condition_id`, `condition_code`, `assignment_id`, `assignment_key`, `algorithm`, `policy_version`, `reward_value`, `reward_source`, `section_id`, `project_id`, `publication_id`, `enrollment_id`, `content_revision_id`, source provenance, and `timestamp`. It should not store raw key values, hashed key values, outcome/reward receipt ids, or policy-update hashes unless later query pressure justifies adding them.
+  - Add an attribution-level ClickHouse projection/table that contains one row per attribution with a compact set of stable query dimensions. The attribution row should include `raw_event_hash` as the logical parent reference to `raw_events.event_hash`, `attribution_hash`, `host_event_type`, `experiment_role`, `attribution_type`, `experiment_id`, `experiment_uuid`, `decision_point_id`, `decision_point_key`, `condition_id`, `condition_code`, `assignment_id`, `assignment_key`, `algorithm`, `policy_version`, `reward_value`, `reward_source`, `section_id`, `project_id`, `publication_id`, `enrollment_id`, `content_revision_id`, source provenance, and `timestamp`. It should not store raw key values, hashed key values, outcome/reward receipt ids, or policy-update hashes unless later query pressure justifies adding them.
   - Do not duplicate detailed host/media/attempt fields such as attempt GUIDs, video URLs, content element IDs, activity revision IDs, page IDs, activity IDs, or part IDs in the attribution projection unless a later query-pressure review justifies the denormalization. Query those details by joining `experiment_attributions.raw_event_hash` back to `raw_events.event_hash`.
   - Add indexes for attribution query dimensions where ClickHouse supports the selected index types.
 - ETL mapping:
@@ -266,6 +267,7 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
 - Historical rows in `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, and `experiment_policy_updates` are not migrated into new PostgreSQL tables. Durable history after this slice is xAPI/S3/ClickHouse.
 - Because this branch has not shipped the native A/B testing migration, existing environments are not expected to require a separate PostgreSQL migration for these temporary event-history tables.
 - Existing xAPI attempt/video/page event behavior remains unchanged.
+- The v0.1.0 xAPI schema requires `attribution_type` on every experiment attribution and constrains its relationship with `role`. This epic has not shipped, so no compatibility path for earlier experiment-attributed xAPI statements is required.
 - Existing PostgreSQL-backed experiment analytics functions that read exposure/reward tables must be removed, rewritten to ClickHouse, or restricted to retained operational tables before the final version of `20260625120000_create_experiment_tables.exs` is accepted.
 - Downstream `analytics` FDD/plan work must consume this foundation and should treat earlier PostgreSQL-heavy analytics planning as superseded.
 
@@ -274,7 +276,7 @@ xAPI/S3 owns durable event history. ClickHouse owns analytics serving, data-qual
 - Risk: ClickHouse counts are inflated by replayed JSONL. Mitigation: use `raw_event_hash` plus attribution identity and query/count distinct attribution identities for experiment analytics.
 - Risk: ETL and local upload diverge. Mitigation: define shared extraction fixtures and test production Lambda, direct uploader, and backfill against the same statements. Known drift points to resolve later include event-type detection differences, page-view verb handling, timestamp coercion, raw/attribution hash canonicalization, source-file metadata defaults, and type coercion for IDs, booleans, arrays, responses, feedback, and hints.
 - Risk: Learner privacy leaks through xAPI or exports. Mitigation: maintain privacy exclusions in statement tests and dataset tests; use hashes for policy state.
-- Risk: ClickHouse schema changes are hard to roll back. Mitigation: additive nullable columns and standalone goose statements with reversible `Down` where feasible.
+- Risk: ClickHouse schema changes are hard to roll back. Mitigation: additive columns and standalone goose statements with reversible `Down` where feasible.
 - Risk: This slice grows into final dashboard UX. Mitigation: stop at query contracts, data-quality checks, and dataset inclusion; dashboard UX belongs to the downstream analytics slice.
 
 ## 16. Open Questions & Follow-ups

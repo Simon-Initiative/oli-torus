@@ -5,7 +5,10 @@ requirements:
     for existing xAPI statements, including page views, evaluated attempts, activity
     or page attempt rollups, and media events rendered inside decision point alternatives,
     with stable identifiers, scope fields, timestamps, algorithm metadata, attribution
-    roles, and privacy-safe payloads.
+    roles, underlying attribution types, and privacy-safe payloads. Transformed
+    rollup and media attributions must preserve whether the source evidence is an
+    assignment, exposure, outcome, or reward without requiring consumers to parse
+    an idempotency key.
   id: FR-001
 - title: Emit experiment-attributed xAPI from runtime paths
   description: Experiment runtime paths must attach canonical experiment attribution
@@ -16,7 +19,8 @@ requirements:
   description: Production ETL, local direct upload, and backfill or replay behavior
     must ingest experiment attribution arrays from xAPI host statements into ClickHouse
     with queryable attribution-level columns, projections, or materialized views suitable
-    for project-level and section-level analytics.
+    for project-level and section-level analytics, including both the host relationship
+    role and the underlying attribution type.
   id: FR-003
 - title: Provide analytics query contracts
   description: The work item must provide approved ClickHouse-backed query contracts
@@ -42,7 +46,8 @@ requirements:
 acceptance_criteria:
 - requirement: FR-001
   description: Documentation or tests identify required fields and privacy exclusions
-    for canonical experiment attribution on each supported host statement type.
+    for canonical experiment attribution on each supported host statement type, and
+    prove rollup and media transformations retain the underlying attribution type.
   id: AC-001
 - requirement: FR-002
   description: A controlled runtime flow emits page-view exposure attribution, evaluated
@@ -54,7 +59,7 @@ acceptance_criteria:
   description: Experiment attributions from production-style ETL, local direct upload,
     and backfill or replay paths can be queried in ClickHouse by experiment, project,
     section, decision point, condition, host event type, attribution role, timestamp,
-    algorithm, and policy version.
+    algorithm, policy version, and underlying attribution type.
   id: AC-003
 - requirement: FR-004
   description: Downstream analytics, reports, monitoring, and export code have an

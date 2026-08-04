@@ -76,6 +76,29 @@ This plan validates the local direct-uploader path only. Production S3/SQS/Lambd
 
    Expected result: `oli_analytics_dev.raw_events` and `oli_analytics_dev.experiment_attributions` exist, and the experiment attribution migration has run.
 
+### Upgrade an existing dev or QA database
+
+If the database already applied `20260714120000_add_experiment_columns_to_raw_events.sql`
+before `attribution_type` was added to that pre-production migration, do not reset it. Run the
+one-time remediation script against the existing database during an off-peak window:
+
+```bash
+clickhouse-client \
+  --host <host> \
+  --user <user> \
+  --password <password> \
+  --database <database> \
+  --multiquery \
+  < priv/clickhouse/scripts/20260804_backfill_experiment_attribution_type.sql
+```
+
+The script waits for its mutations, rejects any attribution rows that cannot be mapped to a valid
+role/type pair, makes `attribution_type` non-nullable, materializes its skip index, and prints the
+final counts grouped by role and attribution type. Historical reward rollups are identified by a
+non-null `reward_source`; confirm that the target data follows that producer invariant first. The
+script is safe to resume after a partial failure, but do not rerun it after success because index
+materialization scans the existing table again.
+
 7. Start Torus after `oli.env` has been updated:
 
    ```bash
@@ -134,6 +157,7 @@ docker compose exec clickhouse clickhouse-client \
     SELECT
       r.event_type,
       e.experiment_role,
+      e.attribution_type,
       e.experiment_id,
       e.experiment_uuid,
       e.decision_point_id,
@@ -151,6 +175,7 @@ docker compose exec clickhouse clickhouse-client \
 Pass criteria:
 
 - At least one `experiment_attributions` row exists with `experiment_role = 'exposure'`.
+- Exposure rows have `attribution_type = 'exposure'`.
 - Joined `raw_events.event_type` is `page_viewed`.
 - `joins_parent` is `1`.
 - Experiment presence is represented exclusively by the joined `experiment_attributions` row; `raw_events` contains no experiment-specific summary columns.
@@ -180,6 +205,7 @@ docker compose exec clickhouse clickhouse-client \
       r.out_of,
       r.scaled_score,
       e.experiment_role,
+      e.attribution_type,
       e.experiment_uuid,
       e.reward_value,
       e.reward_source,
@@ -187,7 +213,7 @@ docker compose exec clickhouse clickhouse-client \
     FROM experiment_attributions e
     INNER JOIN raw_events r ON r.event_hash = e.raw_event_hash
     WHERE e.experiment_id = <experiment_id>
-      AND e.experiment_role IN ('outcome', 'reward')
+      AND e.experiment_role IN ('outcome', 'reward', 'rollup')
     ORDER BY e.timestamp DESC
     LIMIT 20
   "
@@ -196,6 +222,7 @@ docker compose exec clickhouse clickhouse-client \
 Pass criteria:
 
 - Outcome and reward evidence appears on host `part_attempt` rows.
+- Direct rows have matching roles/types, while activity/page rollups retain `experiment_role = 'rollup'` with `attribution_type = 'outcome'` or `'reward'`.
 - `reward_value` reflects the scored attempt outcome.
 - `reward_source` is populated for reward rows.
 - Every attribution row joins to exactly one parent raw event.
@@ -282,6 +309,7 @@ Use this flow if a selected alternative contains video/media content that emits 
          r.event_type,
          r.video_url,
          e.experiment_role,
+         e.attribution_type,
          e.experiment_id,
          e.condition_id,
          e.raw_event_hash = r.event_hash AS joins_parent
@@ -298,6 +326,7 @@ Pass criteria:
 
 - Video/media host rows remain in `raw_events`.
 - Experiment dimensions live in `experiment_attributions`.
+- Media rows have `experiment_role = 'media_interaction'` and preserve their source `attribution_type` (`assignment` for the current media attribution path).
 - Detailed media context is read from `raw_events` through `raw_event_hash`.
 
 ## Negative Checks

@@ -66,15 +66,15 @@ defmodule Oli.Experiments.XAPI.Attributions do
   end
 
   def attributions_for_activity_attempt(attributions) when is_list(attributions) do
-    Enum.map(attributions, &Map.put(normalize_attribution(&1), "role", "rollup"))
+    Enum.map(attributions, &with_host_role(&1, "rollup", ["outcome", "reward"]))
   end
 
   def attributions_for_page_attempt(attributions) when is_list(attributions) do
-    Enum.map(attributions, &Map.put(normalize_attribution(&1), "role", "rollup"))
+    Enum.map(attributions, &with_host_role(&1, "rollup", ["outcome", "reward"]))
   end
 
   def attributions_for_media_event(attributions) when is_list(attributions) do
-    Enum.map(attributions, &Map.put(normalize_attribution(&1), "role", "media_interaction"))
+    Enum.map(attributions, &with_host_role(&1, "media_interaction", ["assignment"]))
   end
 
   def assignment_attribution(
@@ -87,6 +87,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
 
     %{
       role: "assignment",
+      attribution_type: "assignment",
       experiment_id: decision.experiment_id,
       experiment_uuid: experiment_uuid(assignment, experiment),
       decision_point_id: decision.decision_point_id,
@@ -116,6 +117,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
     assignment_attrs(assignment)
     |> Map.merge(%{
       role: "exposure",
+      attribution_type: "exposure",
       content_revision_id: request.content_revision_id,
       key: receipt.key,
       recorded_at: format_timestamp(receipt.recorded_at)
@@ -131,6 +133,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
     assignment_attrs(assignment)
     |> Map.merge(%{
       role: "outcome",
+      attribution_type: "outcome",
       activity_attempt_id: request.activity_attempt_id,
       resource_attempt_id: request.resource_attempt_id,
       activity_resource_id: request.activity_resource_id,
@@ -150,6 +153,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
     assignment_attrs(assignment)
     |> Map.merge(%{
       role: "reward",
+      attribution_type: "reward",
       outcome_key: receipt.outcome_key || request.outcome_key,
       reward_value: decimal_to_number(request.reward_value),
       reward_source: request.reward_source,
@@ -171,6 +175,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
     assignment_attrs(assignment)
     |> Map.merge(%{
       role: "policy_update",
+      attribution_type: "policy_update",
       experiment_id: map_value(reward, :experiment_id),
       decision_point_id: map_value(reward, :decision_point_id),
       condition_id: map_value(reward, :condition_id),
@@ -211,6 +216,18 @@ defmodule Oli.Experiments.XAPI.Attributions do
       algorithm: assignment.assigned_by_policy,
       policy_version: assignment.policy_version
     }
+  end
+
+  defp with_host_role(attribution, role, allowed_types) do
+    attribution = normalize_attribution(attribution)
+    attribution_type = Map.fetch!(attribution, "attribution_type")
+
+    if attribution_type in allowed_types do
+      Map.put(attribution, "role", role)
+    else
+      raise ArgumentError,
+            "attribution type #{inspect(attribution_type)} cannot use role #{inspect(role)}"
+    end
   end
 
   defp attribution_with_scope(attrs, %Scope{} = scope) do

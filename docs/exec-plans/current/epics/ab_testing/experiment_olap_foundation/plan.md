@@ -14,6 +14,7 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 - No feature flag is planned for this work item; rollout is controlled by dependency order, migration safety, tests, and review gates.
 - Existing xAPI host events carry optional `experiment_attributions` arrays. `raw_events` remains one row per xAPI statement; attribution-level analytics use a compact `experiment_attributions` projection/table keyed by `raw_event_hash`, with detailed page/activity/part/attempt/media context read by joining back to `raw_events.event_hash`.
 - `Oli.Experiments` remains the synchronous runtime source for definitions, decision points, conditions, sticky assignments, and current policy state.
+- `role` describes the attribution's relationship to its host statement. Required `attribution_type` independently preserves the semantic evidence type through rollup and media transformations; consumers must not parse `key` for this information. This epic is pre-deployment, so ingestion does not support experiment attributions that omit the field.
 - ClickHouse lag must never block learner-facing assignment, exposure, outcome, reward, or policy-update flows.
 - Reward duplicate protection must be replaced before `priv/repo/migrations/20260625120000_create_experiment_tables.exs` is updated to omit the event-history tables; recreating a broad PostgreSQL event-history table is outside scope.
 - Code review must include security and performance lenses, with backend and requirements review also expected because this work changes Elixir/Ecto, Python ETL, ClickHouse schema, and planning artifacts.
@@ -191,6 +192,33 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 - Phase 5 dataset export can be developed in parallel with late Phase 4 work if the dataset code consumes the same query module rather than duplicating SQL.
 - Phase 6 is intentionally serialized because it updates the existing PostgreSQL migration to remove temporary tables from the final branch schema.
 
+## Phase 7: Preserve Attribution Type Through Host Transformations
+- Goal: Make rollup and media attribution semantics explicit and queryable without parsing idempotency keys or inferring from optional value fields.
+- Tasks:
+  - [x] Add required `attribution_type` to canonical xAPI attribution payloads while preserving the established `role` meanings.
+  - [x] Ensure activity/page rollups and media transformations change only `role` and retain the source `attribution_type`.
+  - [x] Add `attribution_type` to the compact ClickHouse attribution schema and to production Lambda, local direct uploader, and backfill extraction paths.
+  - [x] Update PRD, FDD, requirements, schema, fixtures, and queryable-column documentation to define the orthogonal fields.
+  - [x] Add a one-time, partial-failure-safe SQL script for upgrading dev/QA ClickHouse databases that applied the original pre-deployment migration before `attribution_type` was added.
+- Testing Tasks:
+  - [x] Add builder and schema-validation assertions for direct, rollup, and media attribution types.
+  - [x] Add direct uploader, Python Lambda, and backfill SQL-generation assertions proving equivalent `attribution_type` projection, plus schema/builder rejection tests for missing or invalid type relationships.
+  - [ ] Execute the generated backfill SQL against a running ClickHouse service for rollup/outcome and media/assignment fixtures.
+  - [x] Run focused Elixir tests, Python syntax validation, formatting, and work-item validation; the full Python suite requires `pyarrow` in CI or a Python 3.11 environment.
+  - Command(s): `mix test test/oli/experiments/xapi_attributions_test.exs test/oli/analytics/xapi/schema_validator_test.exs test/oli/analytics/xapi/clickhouse_uploader_test.exs test/oli/analytics/backfill/query_builder_test.exs test/mix/tasks/clickhouse_migrate_test.exs`
+  - Command(s): `cd cloud/xapi-etl-processor && python3 -m unittest tests.lambda_function_test`
+  - Command(s): `mix format`
+- Definition of Done:
+  - AC-001 and AC-003 explicitly cover semantic attribution type preservation.
+  - All new xAPI attributions include `attribution_type`, and every ingest path projects it into ClickHouse.
+  - Outcome and reward rollups are distinguishable without `key`, `reward_value`, or `reward_source` inference.
+- Gate:
+  - Do not consider the attribution contract stable until xAPI schema validation and all three ingest-path tests agree on `attribution_type`.
+- Dependencies:
+  - Completed Phases 1 and 2 attribution contracts and ingest paths.
+- Parallelizable Work:
+  - Documentation/schema work and ingestion test updates are mechanically separable, but the canonical field semantics must be fixed before implementation verification.
+
 ## Phase Gate Summary
 - Gate A: Canonical experiment attribution extensions and privacy tests pass before downstream ingest/query work depends on fields.
 - Gate B: Production ETL, direct ClickHouse upload, and backfill all ingest experiment attributions from host statements before query contracts are considered stable.
@@ -198,6 +226,7 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 - Gate D: ClickHouse-backed query contracts and coupling checks pass before dataset exports or downstream analytics consume experiment data.
 - Gate E: Dataset exports include experiment evidence without PostgreSQL event-history queries before final release verification.
 - Gate F: `priv/repo/migrations/20260625120000_create_experiment_tables.exs` is updated in this slice and schema assertions prove `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, and `experiment_policy_updates` are not part of the final schema.
+- Gate G: Direct, rollup, and media attributions retain an explicit semantic `attribution_type` through xAPI validation and every ClickHouse ingest path.
 
 ## Decision Log
 ### 2026-07-16 - Plan Against Attribution Arrays On Existing xAPI Events
@@ -223,3 +252,9 @@ This plan explicitly includes the final removal of `experiment_exposures`, `expe
 - Reason: `raw_events` is the experiment-independent host-event fact, while attribution presence and cardinality are properties of the experiment-owned projection.
 - Evidence: Amended ClickHouse migration, direct-uploader transform, Lambda transform, backfill SQL, and focused tests.
 - Impact: Phase 2 verification and manual QA derive attribution counts from `experiment_attributions` and use `raw_event_hash` only to join host context.
+
+### 2026-08-03 - Separate Host Role From Attribution Type
+- Change: Added required `attribution_type` alongside the existing `role` field and ClickHouse `experiment_role` projection.
+- Reason: Activity/page rollups and media transformations overwrite `role`, while the compact ClickHouse projection intentionally omits `key`; downstream consumers otherwise cannot reliably distinguish underlying outcome, reward, or exposure evidence.
+- Evidence: `Oli.Experiments.XAPI.Attributions` rollup/media helpers and the direct uploader, Lambda ETL, and backfill projection contracts.
+- Impact: All attribution builders and ingest paths must preserve and project semantic type independently from host relationship role.

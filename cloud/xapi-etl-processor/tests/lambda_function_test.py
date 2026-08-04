@@ -24,8 +24,8 @@ except ModuleNotFoundError:
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "lambda_function.py"
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "experiment_attributed_part_attempt.jsonl"
-FIXTURE_EVENT_HASH = "ea851925371d2b82f27849aa3e0afa0d2236260acec50f6db6907fc6f8aca409"
-FIXTURE_ATTRIBUTION_HASH = "f6427e22046b7e779c8d7cdf805b94623a7b9be54cd0a9e6e0b81a325e6062d1"
+FIXTURE_EVENT_HASH = "1324eea1ad081cb5cbd2f7e8859bd5ba339b5b2bb9a28ced3c70d5f08bee062a"
+FIXTURE_ATTRIBUTION_HASH = "6eb54278105ce6e90e20fa1052acf22951e74275e7c4ec76a98759c927472eba"
 spec = importlib.util.spec_from_file_location("lambda_function", MODULE_PATH)
 lambda_function = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = lambda_function
@@ -284,6 +284,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(rows[0]["attribution_hash"], FIXTURE_ATTRIBUTION_HASH)
         self.assertEqual(rows[0]["host_event_type"], "part_attempt")
         self.assertEqual(rows[0]["experiment_role"], "reward")
+        self.assertEqual(rows[0]["attribution_type"], "reward")
         self.assertEqual(rows[0]["experiment_id"], 101)
         self.assertEqual(rows[0]["experiment_uuid"], "11111111-2222-3333-4444-555555555555")
         self.assertEqual(rows[0]["condition_code"], "condition-a")
@@ -300,6 +301,48 @@ class LambdaFunctionTests(TestCase):
         self.assertNotIn("reward_id", rows[0])
         self.assertNotIn("previous_policy_state_hash", rows[0])
         self.assertNotIn("next_policy_state_hash", rows[0])
+
+        statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ][0].update({"role": "rollup", "attribution_type": "outcome"})
+
+        rollup_rows = lambda_function.transform_experiment_attributions(
+            statement,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertEqual(rollup_rows[0]["experiment_role"], "rollup")
+        self.assertEqual(rollup_rows[0]["attribution_type"], "outcome")
+
+        attribution = statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ][0]
+        attribution.update({"role": "media_interaction", "attribution_type": "assignment"})
+        media_rows = lambda_function.transform_experiment_attributions(
+            statement,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+        self.assertEqual(media_rows[0]["experiment_role"], "media_interaction")
+        self.assertEqual(media_rows[0]["attribution_type"], "assignment")
+
+        attribution.pop("attribution_type")
+        with self.assertRaisesRegex(ValueError, "invalid experiment attribution role/type pair"):
+            lambda_function.transform_experiment_attributions(
+                statement,
+                raw_bytes=raw_line,
+                bucket="bucket",
+                key="events/file.jsonl",
+                etag='"etag"',
+                line_number=1,
+            )
 
     def test_lambda_handler_sends_failed_prepare_to_dlq(self):
         body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})

@@ -33,6 +33,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       )
 
     assert attribution["role"] == "assignment"
+    assert attribution["attribution_type"] == "assignment"
     assert attribution["experiment_id"] == 10
     assert attribution["experiment_uuid"] == @experiment_uuid
     assert attribution["project_id"] == 100
@@ -76,6 +77,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       )
 
     assert exposure["role"] == "exposure"
+    assert exposure["attribution_type"] == "exposure"
     refute Map.has_key?(exposure, "exposure_id")
     assert exposure["experiment_uuid"] == @experiment_uuid
     assert exposure["decision_point_key"] == "alternatives:700"
@@ -83,6 +85,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert exposure["content_revision_id"] == 701
 
     assert outcome["role"] == "outcome"
+    assert outcome["attribution_type"] == "outcome"
     refute Map.has_key?(outcome, "outcome_id")
     assert outcome["experiment_uuid"] == @experiment_uuid
     assert outcome["decision_point_key"] == "alternatives:700"
@@ -94,6 +97,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert outcome["out_of"] == 1.0
 
     assert reward["role"] == "reward"
+    assert reward["attribution_type"] == "reward"
     refute Map.has_key?(reward, "reward_id")
     refute Map.has_key?(reward, "outcome_id")
     assert reward["outcome_key"] == "outcome:40"
@@ -104,6 +108,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert reward["reward_value"] == 1.0
 
     assert policy_update["role"] == "policy_update"
+    assert policy_update["attribution_type"] == "policy_update"
     assert policy_update["policy_update_key"] == "policy_update:reward:40"
     assert policy_update["reward_key"] == "reward:40"
     assert policy_update["policy_state_id"] == 91
@@ -131,17 +136,38 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert attached["experiment_id"] == 10
   end
 
-  test "rollup and media helpers rewrite roles on existing attribution payloads" do
+  test "rollup and media helpers rewrite roles while preserving attribution type" do
     attribution =
+      Attributions.outcome_attribution(outcome_receipt(), outcome_request(),
+        assignment: assignment()
+      )
+
+    assert [%{"role" => "rollup", "attribution_type" => "outcome"}] =
+             Attributions.attributions_for_activity_attempt([attribution])
+
+    assert [%{"role" => "rollup", "attribution_type" => "outcome"}] =
+             Attributions.attributions_for_page_attempt([attribution])
+
+    assignment_attribution =
+      Attributions.assignment_attribution(assignment_decision(false), assign_request(),
+        assignment: assignment()
+      )
+
+    assert [%{"role" => "media_interaction", "attribution_type" => "assignment"}] =
+             Attributions.attributions_for_media_event([assignment_attribution])
+
+    assert_raise KeyError, fn ->
+      Attributions.attributions_for_activity_attempt([%{"role" => "outcome"}])
+    end
+
+    exposure =
       Attributions.exposure_attribution(exposure_receipt(), exposure_request(),
         assignment: assignment()
       )
 
-    assert [%{"role" => "rollup"}] = Attributions.attributions_for_activity_attempt([attribution])
-    assert [%{"role" => "rollup"}] = Attributions.attributions_for_page_attempt([attribution])
-
-    assert [%{"role" => "media_interaction"}] =
-             Attributions.attributions_for_media_event([attribution])
+    assert_raise ArgumentError, fn ->
+      Attributions.attributions_for_activity_attempt([exposure])
+    end
   end
 
   test "attribution payloads exclude learner names, raw responses, and full policy state" do

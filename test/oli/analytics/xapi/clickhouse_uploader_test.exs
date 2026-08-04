@@ -11,8 +11,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
                   "../../../../cloud/xapi-etl-processor/tests/fixtures/experiment_attributed_part_attempt.jsonl",
                   __DIR__
                 )
-  @fixture_event_hash "ea851925371d2b82f27849aa3e0afa0d2236260acec50f6db6907fc6f8aca409"
-  @fixture_attribution_hash "f6427e22046b7e779c8d7cdf805b94623a7b9be54cd0a9e6e0b81a325e6062d1"
+  @fixture_event_hash "1324eea1ad081cb5cbd2f7e8859bd5ba339b5b2bb9a28ced3c70d5f08bee062a"
+  @fixture_attribution_hash "6eb54278105ce6e90e20fa1052acf22951e74275e7c4ec76a98759c927472eba"
 
   setup :verify_on_exit!
 
@@ -196,6 +196,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       assert query =~ "INSERT INTO analytics.experiment_attributions"
       assert query =~ "raw_event_hash"
       assert query =~ "experiment_role"
+      assert query =~ "attribution_type"
       assert query =~ "'reward'"
       assert query =~ "101"
       assert query =~ "'11111111-2222-3333-4444-555555555555'"
@@ -218,6 +219,75 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     end)
 
     assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload preserves outcome type independently from rollup role" do
+    statement =
+      attributed_part_attempt_statement()
+      |> put_in(
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0),
+          "role"
+        ],
+        "rollup"
+      )
+      |> put_in(
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0),
+          "attribution_type"
+        ],
+        "outcome"
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-rollup"
+    }
+
+    expect(MockHTTP, :post, fn _url, _query, _headers ->
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "experiment_role"
+      assert query =~ "attribution_type"
+      assert query =~ "'rollup'"
+      assert query =~ "'outcome'"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload fails for a missing required attribution type" do
+    statement =
+      update_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0)
+        ],
+        &Map.delete(&1, "attribution_type")
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-missing-type"
+    }
+
+    assert {:error, {:invalid_experiment_attribution, %{role: "reward", type: nil}}} =
+             ClickHouseUploader.upload(bundle)
   end
 
   test "raw event and attribution hashes match lambda raw-line hashing contract" do
@@ -310,6 +380,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
           "http://oli.cmu.edu/extensions/experiment_attributions" => [
             %{
               "role" => "reward",
+              "attribution_type" => "reward",
               "experiment_id" => 101,
               "experiment_uuid" => "11111111-2222-3333-4444-555555555555",
               "decision_point_id" => 202,

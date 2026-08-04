@@ -87,6 +87,15 @@
             "policy_update"
           ]
         },
+        "attribution_type": {
+          "enum": [
+            "assignment",
+            "exposure",
+            "outcome",
+            "reward",
+            "policy_update"
+          ]
+        },
         "experiment_id": {
           "type": "integer"
         },
@@ -132,6 +141,7 @@
       },
       "required": [
         "role",
+        "attribution_type",
         "decision_point_id",
         "condition_id",
         "condition_code",
@@ -147,6 +157,123 @@
           "required": [
             "experiment_uuid"
           ]
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "assignment"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attribution_type": {
+                "const": "assignment"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "exposure"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attribution_type": {
+                "const": "exposure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "outcome"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attribution_type": {
+                "const": "outcome"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "reward"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attribution_type": {
+                "const": "reward"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "policy_update"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attribution_type": {
+                "const": "policy_update"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "rollup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attribution_type": {
+                "enum": [
+                  "outcome",
+                  "reward"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "const": "media_interaction"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attribution_type": {
+                "const": "assignment"
+              }
+            }
+          }
         }
       ],
       "additionalProperties": true

@@ -58,19 +58,16 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       |> String.split("\n", trim: true)
       |> Enum.map(fn raw_line -> {raw_line, Jason.decode!(raw_line)} end)
 
-    # Transform all events to the unified raw_events format and fan out experiment
-    # attribution arrays into attribution-level rows.
-    unified_events =
-      parsed_events
-      |> Enum.map(&transform_to_raw_event/1)
-      |> Enum.reject(&is_nil/1)
-
-    experiment_attributions =
-      parsed_events
-      |> Enum.flat_map(&transform_experiment_attributions/1)
-
-    # Insert all events into the unified table
-    with {:ok, count} <- insert_raw_events(unified_events, config),
+    # Validate and transform all events before either table is written.
+    with :ok <- validate_experiment_attributions(parsed_events),
+         unified_events =
+           parsed_events
+           |> Enum.map(&transform_to_raw_event/1)
+           |> Enum.reject(&is_nil/1),
+         experiment_attributions =
+           parsed_events
+           |> Enum.flat_map(&transform_experiment_attributions/1),
+         {:ok, count} <- insert_raw_events(unified_events, config),
          {:ok, _attribution_count} <-
            insert_experiment_attributions(experiment_attributions, config) do
       Logger.debug("Successfully processed #{count} events into raw_events table")
@@ -351,6 +348,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         publication_id: attribution_value(attribution, "publication_id"),
         enrollment_id: attribution_value(attribution, "enrollment_id"),
         experiment_role: attribution_value(attribution, "role"),
+        attribution_type: attribution_value(attribution, "attribution_type"),
         experiment_id: attribution_value(attribution, "experiment_id"),
         experiment_uuid: attribution_value(attribution, "experiment_uuid"),
         decision_point_id: attribution_value(attribution, "decision_point_id"),
@@ -383,6 +381,32 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   defp attribution_value(attribution, key), do: Map.get(attribution, key)
+
+  defp validate_experiment_attributions(parsed_events) do
+    parsed_events
+    |> Enum.flat_map(fn {_raw_line, event} -> experiment_attributions(event) end)
+    |> Enum.reduce_while(:ok, fn attribution, :ok ->
+      if valid_attribution_type?(attribution) do
+        {:cont, :ok}
+      else
+        role = attribution_value(attribution, "role")
+        attribution_type = attribution_value(attribution, "attribution_type")
+
+        {:halt,
+         {:error, {:invalid_experiment_attribution, %{role: role, type: attribution_type}}}}
+      end
+    end)
+  end
+
+  defp valid_attribution_type?(attribution) do
+    role = attribution_value(attribution, "role")
+    attribution_type = attribution_value(attribution, "attribution_type")
+
+    (role == attribution_type and
+       role in ["assignment", "exposure", "outcome", "reward", "policy_update"]) or
+      (role == "rollup" and attribution_type in ["outcome", "reward"]) or
+      (role == "media_interaction" and attribution_type == "assignment")
+  end
 
   defp context_extensions(event), do: get_in(event, ["context", "extensions"]) || %{}
 
@@ -566,6 +590,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       publication_id,
       enrollment_id,
       experiment_role,
+      attribution_type,
       experiment_id,
       experiment_uuid,
       decision_point_id,
@@ -594,6 +619,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(attribution[:publication_id]),
       escape_value(attribution[:enrollment_id]),
       escape_value(attribution[:experiment_role]),
+      escape_value(attribution[:attribution_type]),
       escape_value(attribution[:experiment_id]),
       escape_value(attribution[:experiment_uuid]),
       escape_value(attribution[:decision_point_id]),

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS experiment_attributions (
     enrollment_id Nullable(UInt64),
 
     experiment_role LowCardinality(String),
+    attribution_type LowCardinality(String),
     experiment_id Nullable(UInt64),
     experiment_uuid Nullable(String),
     decision_point_id Nullable(UInt64),
@@ -39,6 +40,7 @@ SETTINGS allow_nullable_key = 0, index_granularity = 8192, insert_deduplicate = 
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_experiment_id experiment_id TYPE minmax GRANULARITY 1;
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_experiment_uuid experiment_uuid TYPE bloom_filter() GRANULARITY 1;
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_experiment_role experiment_role TYPE set(0) GRANULARITY 1;
+ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_attribution_type attribution_type TYPE set(0) GRANULARITY 1;
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_condition_id condition_id TYPE minmax GRANULARITY 1;
 ALTER TABLE experiment_attributions ADD INDEX IF NOT EXISTS idx_assignment_id assignment_id TYPE minmax GRANULARITY 1;
 

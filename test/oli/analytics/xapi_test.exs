@@ -43,6 +43,7 @@ defmodule Oli.Analytics.XAPITest do
         |> get_in(["context", "extensions", @experiment_attributions_key])
 
       assert [%{"role" => "media_interaction"} = attribution] = attributions
+      assert attribution["attribution_type"] == "assignment"
       assert attribution["experiment_id"] == experiment.id
       assert attribution["assignment_id"] == assignment.id
     end
@@ -99,7 +100,13 @@ defmodule Oli.Analytics.XAPITest do
           user.id
         )
 
-      assert [%{"role" => "media_interaction", "assignment_id" => assignment_id}] =
+      assert [
+               %{
+                 "role" => "media_interaction",
+                 "attribution_type" => "assignment",
+                 "assignment_id" => assignment_id
+               }
+             ] =
                bundle
                |> statement_from_bundle()
                |> get_in(["context", "extensions", @experiment_attributions_key])
@@ -127,7 +134,13 @@ defmodule Oli.Analytics.XAPITest do
           user.id
         )
 
-      assert [%{"role" => "media_interaction", "assignment_id" => assignment_id}] =
+      assert [
+               %{
+                 "role" => "media_interaction",
+                 "attribution_type" => "assignment",
+                 "assignment_id" => assignment_id
+               }
+             ] =
                bundle
                |> statement_from_bundle()
                |> get_in(["context", "extensions", @experiment_attributions_key])

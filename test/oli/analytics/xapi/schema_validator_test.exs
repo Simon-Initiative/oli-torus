@@ -123,6 +123,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
           "http://oli.cmu.edu/extensions/experiment_attributions" => [
             %{
               "role" => "rollup",
+              "attribution_type" => "outcome",
               "experiment_id" => 101,
               "decision_point_id" => 202,
               "condition_id" => 303,
@@ -147,6 +148,43 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
     assert {:ok, summary} = SchemaValidator.validate_paths([file_path])
     assert summary.valid_lines == 1
     assert summary.error_count == 0
+
+    invalid_statement =
+      put_in(
+        statement,
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0),
+          "attribution_type"
+        ],
+        "assignment"
+      )
+
+    File.write!(file_path, Jason.encode!(invalid_statement))
+
+    assert {:ok, invalid_summary} = SchemaValidator.validate_paths([file_path])
+    assert invalid_summary.valid_lines == 0
+    assert invalid_summary.schema_mismatch_lines == 1
+
+    missing_type_statement =
+      update_in(
+        statement,
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0)
+        ],
+        &Map.delete(&1, "attribution_type")
+      )
+
+    File.write!(file_path, Jason.encode!(missing_type_statement))
+
+    assert {:ok, missing_type_summary} = SchemaValidator.validate_paths([file_path])
+    assert missing_type_summary.valid_lines == 0
+    assert missing_type_summary.schema_mismatch_lines == 1
   end
 
   test "rejects retired dedicated experiment event statements", %{tmp_dir: tmp_dir} do

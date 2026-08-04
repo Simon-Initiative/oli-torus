@@ -162,6 +162,8 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
         assert query =~ "experiment_id = 40"
         assert query =~ "experiment_uuid"
         assert query =~ "experiment_uuid = '11111111-2222-3333-4444-555555555555'"
+        assert query =~ "attribution_type"
+        assert query =~ "attribution_type = 'outcome'"
         assert query =~ "countDistinct(attribution_hash)"
         {:ok, %{status_code: 200, body: ~s({"data":[]})}}
       end)
@@ -169,7 +171,11 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
       assert {:ok, _response} =
                ExperimentClickHouseAnalytics.experiment_event_counts(
                  %Scope{project_id: 10, section_id: 20, publication_id: 30},
-                 %{experiment_id: 40, experiment_uuid: "11111111-2222-3333-4444-555555555555"}
+                 %{
+                   experiment_id: 40,
+                   experiment_uuid: "11111111-2222-3333-4444-555555555555",
+                   attribution_type: "outcome"
+                 }
                )
     end
   end
