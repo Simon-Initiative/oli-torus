@@ -266,6 +266,25 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns deployed alternatives groups for the requested resource ids from the
+  section resource depot.
+  """
+  def get_alternatives_groups(_section_id, []), do: []
+
+  def get_alternatives_groups(section_id, resource_ids) do
+    alternatives_type_id = Oli.Resources.ResourceType.id_for_alternatives()
+
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    Depot.query(@depot_desc, section_id,
+      resource_type_id: alternatives_type_id,
+      resource_id: {:in, Enum.uniq(resource_ids)}
+    )
+    |> Enum.map(& &1.alternatives_group)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  @doc """
   Returns a SectionResource record for a given section and resource id.
   """
 

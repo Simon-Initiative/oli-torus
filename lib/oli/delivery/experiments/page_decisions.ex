@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
   """
 
   alias Oli.Delivery.Sections
-  alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Resources.PageContent
   alias Oli.Repo
@@ -17,9 +17,11 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
 
   def prepare(section, page_context) do
     content = attempt_content(page_context)
+    alternatives_resource_ids = alternatives_resource_ids(content)
 
-    with true <- has_alternatives?(content),
-         {:ok, groups} <- Oli.Resources.alternatives_groups(section.slug, Resolver) do
+    with true <- alternatives_resource_ids != [],
+         groups <-
+           SectionResourceDepot.get_alternatives_groups(section.id, alternatives_resource_ids) do
       by_id = Map.new(groups, fn group -> {group.id, group} end)
       enrollment = Sections.get_enrollment(section.slug, page_context.user.id)
 
@@ -52,13 +54,15 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
   defp activity_resource_ids(activity_map) when is_map(activity_map), do: Map.keys(activity_map)
   defp activity_resource_ids(_activity_map), do: []
 
-  defp has_alternatives?(%{"model" => _model} = content) do
+  defp alternatives_resource_ids(%{"model" => _model} = content) do
     content
     |> PageContent.flat_filter(&(Map.get(&1, "type") == "alternatives"))
-    |> Enum.any?()
+    |> Enum.map(&Map.get(&1, "alternatives_id"))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
   end
 
-  defp has_alternatives?(_content), do: false
+  defp alternatives_resource_ids(_content), do: []
 
   defp attempt_content(page_context) do
     this_attempt = page_context.resource_attempts |> hd

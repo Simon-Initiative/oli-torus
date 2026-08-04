@@ -15,6 +15,54 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
 
   @depot_desc SectionResourceDepot.depot_desc()
 
+  describe "get_alternatives_groups/2" do
+    test "returns only requested deployed alternatives groups" do
+      section = insert(:section)
+      project = insert(:project)
+
+      requested =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_alternatives(),
+          title: "Requested group",
+          content: %{
+            "strategy" => "upgrade_decision_point",
+            "options" => [%{"id" => "a", "name" => "A"}]
+          }
+        )
+
+      unrelated =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_alternatives(),
+          title: "Unrelated group",
+          content: %{"options" => []}
+        )
+
+      for revision <- [requested, unrelated] do
+        insert(:section_resource,
+          section: section,
+          project: project,
+          revision: revision,
+          resource_id: revision.resource_id,
+          resource_type_id: ResourceType.id_for_alternatives(),
+          title: revision.title
+        )
+      end
+
+      SectionResourceDepot.process_table_creation(section.id)
+
+      assert [group] =
+               SectionResourceDepot.get_alternatives_groups(section.id, [requested.resource_id])
+
+      assert group.id == requested.resource_id
+      assert group.revision_id == requested.id
+      assert group.title == "Requested group"
+      assert group.strategy == "upgrade_decision_point"
+      assert group.options == [%{"id" => "a", "name" => "A"}]
+
+      assert [] = SectionResourceDepot.get_alternatives_groups(section.id, [])
+    end
+  end
+
   describe "get_full_hierarchy/2" do
     setup [:create_project]
 
