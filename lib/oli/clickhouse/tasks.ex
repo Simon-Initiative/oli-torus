@@ -444,10 +444,11 @@ defmodule Oli.Clickhouse.Tasks do
       |> to_string()
       |> String.trim()
 
-    base_url =
+    uri =
       case URI.parse(host) do
-        %URI{scheme: scheme} when scheme in ["http", "https"] -> host
-        _ -> "http://" <> host
+        %URI{scheme: scheme} = uri when scheme in ["http", "https"] -> uri
+        %URI{scheme: "tcp"} = uri -> %{uri | scheme: "http"}
+        _ -> URI.parse("http://" <> host)
       end
 
     database = Keyword.get(opts, :database)
@@ -458,8 +459,7 @@ defmodule Oli.Clickhouse.Tasks do
         database -> URI.encode_query(%{"database" => database})
       end
 
-    base_url
-    |> URI.parse()
+    uri
     |> Map.put(:userinfo, nil)
     |> Map.put(:port, config[:http_port] || 8123)
     |> Map.put(:path, "/")

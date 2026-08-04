@@ -41,6 +41,16 @@ defmodule Oli.Clickhouse.TasksTest do
 
       assert Tasks.clickhouse_http_url(config) == "https://clickhouse.example.com:8443/"
     end
+
+    test "converts a TCP endpoint to an HTTP URL without retaining its native port or path" do
+      config = %{
+        host: "tcp://old:secret@clickhouse.example.com:9000/analytics",
+        http_port: 8123
+      }
+
+      assert Tasks.clickhouse_http_url(config, database: "analytics") ==
+               "http://clickhouse.example.com:8123/?database=analytics"
+    end
   end
 
   describe "clickhouse_native_endpoint/2" do
