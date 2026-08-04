@@ -35,6 +35,7 @@ export const SelectModal = function <T extends Option>({
   const modal = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const modalId = useRef(`select-modal-${Math.random().toString(36).substr(2, 9)}`);
+  const errorId = `${modalId.current}-error`;
   const [options, setOptions] = useState<Maybe<T[]>>(Maybe.nothing());
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedOption, setSelectedOption] = useState<Maybe<T>>(Maybe.nothing());
@@ -114,7 +115,9 @@ export const SelectModal = function <T extends Option>({
           );
         }
       })
-      .catch((message) => setError(Maybe.just(message)));
+      .catch((error) =>
+        setError(Maybe.just(error instanceof Error ? error.message : String(error))),
+      );
   }, []);
 
   const renderLoading = () => (
@@ -122,8 +125,8 @@ export const SelectModal = function <T extends Option>({
   );
 
   const renderFailed = (errorMsg: string) => (
-    <div>
-      <div>Failed to load options. Close this window and try again.</div>
+    <div id={errorId} role="alert">
+      <div>Unable to complete the selection. Close this window and try again.</div>
       <div>Error: {errorMsg}</div>
     </div>
   );
@@ -222,6 +225,7 @@ export const SelectModal = function <T extends Option>({
               disabled={
                 submitting || selectedOption.caseOf({ just: () => false, nothing: () => true })
               }
+              aria-describedby={error.caseOf({ just: () => errorId, nothing: () => undefined })}
               className={`btn btn-primary`}
             >
               Select
