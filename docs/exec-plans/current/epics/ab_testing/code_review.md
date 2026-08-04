@@ -277,3 +277,141 @@ Before implementation, agree on:
 2. the attribution-key hash contract shared by ClickHouse SQL, Elixir, and Python;
 3. whether item 4.6 should receive telemetry in this PR or only a follow-up ticket;
 4. the exact GitGuardian incident classification after inspecting the linked occurrence.
+
+## 10. Second Review Round — August 4, 2026
+
+### 10.1 Round inventory and conclusion
+
+The automated reviewers updated their existing GitHub issue comments in place after the first-round fixes reached commit `88102c1568edac1bd3b2b274cbde464b57fd6245`. Consequently, the GitHub comment IDs are unchanged even though their bodies now contain a new set of findings. This section records the replacement feedback separately so the first-round audit trail remains intact.
+
+| Source | New issues | Determination |
+| --- | ---: | --- |
+| GitHub AI performance review | 4 | Fix all four |
+| GitHub AI Elixir review | 2 | Fix both |
+| GitHub AI UI review | 4 | Fix all four |
+| GitHub AI TypeScript review | 0 | No action; the previous TypeScript finding is cleared |
+| GitHub AI security review | 0 | No new security finding |
+
+**Conclusion:** all 10 new findings are valid and should be fixed in this PR. None requires a scope deferral. The two delivery-cache findings, 10.2 and 10.5, should share one coherent `SectionResourceDepot` extension rather than adding separate caches or direct resolver queries.
+
+### 10.2 Second-round implementation checklist
+
+- [x] 10.3 Resolve media-event page data through the delivery depot without loading unnecessary revision data.
+- [ ] 10.4 Bound ClickHouse direct-upload parsing, transformation, and insertion memory.
+- [ ] 10.5 Index reward assignments by activity-attempt ID before constructing part-attempt attributions.
+- [ ] 10.6 Resolve alternatives groups through `SectionResourceDepot` during delivery page preparation.
+- [ ] 10.7 Enqueue reward handoff only after a successful activity-attempt update.
+- [ ] 10.8 Handle an empty resource-attempt list without crashing page preparation.
+- [ ] 10.9 Announce asynchronous `SelectModal` errors to assistive technology.
+- [ ] 10.10 Expose an accessible busy/progress state while `SelectModal` submits.
+- [ ] 10.11 Render and focus experiment-creation errors inside the open modal.
+- [ ] 10.12 Add a persistent label to the new-condition name input.
+
+### 10.3 Media events load full page content through a direct resolver query
+
+- **Source:** GitHub AI performance review.
+- **Current location:** `lib/oli/analytics/xapi.ex`, the resource-only video-event `construct_bundle/2` clause.
+- **Issue:** The query joins section deployments, published resources, and revisions and selects `revision.content` for every media event. This is a delivery hot path, bypasses `SectionResourceDepot`, and transfers the full page content when attribution only needs to locate one content element inside an alternatives branch.
+- **Determination:** Fix.
+- **Evidence:** The current query directly joins `SectionsProjectsPublications`, `SectionResource`, `PublishedResource`, and `Revision`; its projection is `{project_id, publication_id, revision.content}`. The repository performance standard explicitly requires delivery paths to use `SectionResourceDepot`. The attempt-guid video path already reuses attempt content, but resource-only video events take this direct-query path.
+- **Recommended resolution:** Introduce a depot-backed lookup that returns the deployed page identity plus only the alternatives/content-element metadata required by `MediaAttributions`. Reuse the same cached representation described in 10.6 if practical. Preserve authorization by section and expected user enrollment, and preserve publication identity when constructing the xAPI context. Do not replace this with another unbounded cross-request cache without an invalidation contract.
+- **Tests:** Retain the existing resource-only media-attribution tests; add coverage for an unknown page, a user not enrolled in the section, a page with no alternatives, and cache invalidation after a section deployment update. Add a query-count assertion or telemetry-based check showing the repeated media path does not repeat the publication/revision join.
+
+### 10.4 Direct upload retains multiple complete event representations
+
+- **Source:** GitHub AI performance review.
+- **Current location:** `lib/oli/analytics/xapi/clickhouse_uploader.ex`, `parse_and_insert_events/3`.
+- **Issue:** The uploader splits the full JSONL body into a list of raw lines, retains each line beside its decoded statement, then materializes prepared events, raw rows, and attribution rows. The existing 500-row attribution insert chunks bound only the final SQL values; they do not bound parsing and transformation memory.
+- **Determination:** Fix.
+- **Evidence:** `parsed_events`, `prepared_events`, `unified_events`, and `experiment_attributions` coexist until both table inserts finish. Peak memory therefore scales with several representations of the complete bundle.
+- **Recommended resolution:** Enumerate JSONL lazily and process it in a configured bounded chunk size. Within each chunk, decode and validate once, prepare once, insert raw rows and attribution rows, then release the chunk before continuing. Preserve explicit bundle-level error reporting and document partial-write semantics; deterministic hashes and ClickHouse idempotency must make retry safe if a later chunk fails. Avoid `String.split/3` if it still materializes every line.
+- **Tests:** Prove that a bundle larger than the chunk size produces multiple bounded inserts with the correct total row counts; cover malformed JSON, invalid attribution data, and a failed middle chunk followed by a safe retry. Retain raw/attribution hash-parity tests.
+
+### 10.5 Part-attempt attribution construction performs a nested assignment scan
+
+- **Source:** GitHub AI performance review.
+- **Current location:** `lib/oli/delivery/experiments/attempt_attributions.ex`, `part_attempt_attributions/3`.
+- **Issue:** Although the first-round fix now limits the database result to assignments relevant to the supplied activity attempts, every host part attempt still scans every returned assignment and reads its reward map. This is `O(activity attempts × assignments)` work during xAPI statement generation.
+- **Determination:** Fix.
+- **Evidence:** `Enum.reduce(host_part_attempts, ...)` contains `Enum.flat_map(assignments, ...)`. Reward keys already encode both activity-attempt ID and assignment ID, so the results can be indexed once.
+- **Recommended resolution:** Convert the fetched assignments into an `%{activity_attempt_id => [assignment]}` index before reducing host part attempts, then pass only the matching assignments to `attributions_for_assignment/3`. Prefer returning the matched attempt identity from the database query if doing so avoids reparsing reward keys; otherwise parse only the known, validated reward-key format once per assignment.
+- **Tests:** Cover several activity attempts with disjoint assignments, multiple assignments for one attempt, unrelated reward keys, and no matching assignments. Add a focused unit test for the index to prevent reintroduction of the nested scan.
+
+### 10.6 Delivery page preparation bypasses the section resource depot
+
+- **Source:** GitHub AI performance review.
+- **Current location:** `lib/oli/delivery/experiments/page_decisions.ex`, `prepare/2`.
+- **Issue:** Every page preparation calls `Oli.Resources.alternatives_groups(section.slug, DeliveryResolver)`, resolving all alternatives groups directly instead of using the delivery cache and regardless of which group IDs appear in the page.
+- **Determination:** Fix.
+- **Evidence:** The call occurs on every page containing an alternatives element. `SectionResourceDepot` currently documents that alternatives resources are not included because no prior caller required them; this feature creates that requirement. The repository performance policy says delivery resolution must use the depot.
+- **Recommended resolution:** Extend `SectionResourceDepot` support for deployed alternatives resources and add a lookup restricted to the alternatives resource IDs found in the current page content. Build `alternative_groups_by_id` from that bounded result. Ensure the existing depot coordinator invalidates the new cached representation on section publication/deployment changes. Share the lookup or representation with 10.3 where that reduces duplicate content traversal.
+- **Tests:** Add focused `PageDecisions` coverage proving only referenced groups are returned, empty/no-alternatives pages perform no group lookup, and a deployment update invalidates stale group content. Verify repeated page preparation uses the depot rather than `DeliveryResolver` queries.
+
+### 10.7 Failed activity-attempt updates still reserve the reward job uniqueness key
+
+- **Source:** GitHub AI Elixir review.
+- **Current location:** `lib/oli/delivery/attempts/activity_lifecycle/apply_client_evaluation.ex`, `evaluate_with_rule_engine_score/3`.
+- **Issue:** `RewardHandoffWorker.enqueue(activity_attempt.id)` runs regardless of whether `update_activity_attempt/2` succeeds. A worker observing the still-unevaluated attempt completes as a no-op, while the worker's infinite uniqueness period can prevent the later successful evaluation from scheduling the same attempt.
+- **Determination:** Fix; correctness and eventual-reward blocker.
+- **Evidence:** The update result is stored in `result`, enqueue is unconditional, and only then is `result` returned. This defeats the intended idempotent, post-success handoff contract.
+- **Recommended resolution:** Pattern-match on `{:ok, updated_attempt}` and enqueue using `updated_attempt.id` only on success; return `{:error, reason}` unchanged and do not insert a job. Keep the Oban insert transactionally coupled to the surrounding evaluation transaction so a rollback also rolls back the job.
+- **Tests:** Add an update-failure test asserting no job is enqueued, a success test asserting exactly one job, and a transaction-rollback test asserting no visible job remains. Retain duplicate-enqueue uniqueness coverage.
+
+### 10.8 Page decisions crash when no resource attempt exists
+
+- **Source:** GitHub AI Elixir review.
+- **Current location:** `lib/oli/delivery/experiments/page_decisions.ex`, `attempt_content/1`.
+- **Issue:** `page_context.resource_attempts |> hd` raises `ArgumentError` for an empty list, converting an expected missing-state case into a delivery page-render failure.
+- **Determination:** Fix.
+- **Evidence:** There is no empty-list clause or prior guard. `prepare/2` already has an `@empty` result suitable for this case.
+- **Recommended resolution:** Pattern-match `resource_attempts` in `attempt_content/1`; return an empty page model for `[]` and retain the existing selection-error handling for `[attempt | _]`. Avoid exception rescue as control flow.
+- **Tests:** Add direct coverage for no attempts, one normal attempt, and the existing student selection-failure case. Assert `prepare/2` returns the exact `@empty` shape without querying alternatives.
+
+### 10.9 Asynchronous modal errors are not announced
+
+- **Source:** GitHub AI UI review.
+- **Current location:** `assets/src/components/modal/SelectModal.tsx`, `renderFailed/1`.
+- **Issue:** Fetch and submit errors replace the modal body in an unmarked `<div>`. Screen readers are not guaranteed to announce this asynchronous DOM update.
+- **Determination:** Fix.
+- **Evidence:** `handleDone` stores rejected errors in component state, and `renderFailed` renders plain divs with no live-region semantics or association to the select/control.
+- **Recommended resolution:** Give the error container `role="alert"` (or an assertive live region), a stable ID, and associate it with the relevant select and submit control through `aria-describedby` when present. Keep the error copy actionable and avoid announcing the same message repeatedly.
+- **Tests:** Add React tests asserting the alert appears for option-fetch and submit rejection, has the expected accessible role/name or description, and clears on retry.
+
+### 10.10 Modal submission has no accessible progress feedback
+
+- **Source:** GitHub AI UI review.
+- **Current location:** `assets/src/components/modal/SelectModal.tsx`, the Select button and `submitting` state.
+- **Issue:** Submission disables the button but leaves its label as `Select`, so users receive no explanation that work is in progress.
+- **Determination:** Fix.
+- **Evidence:** `submitting` participates only in the `disabled` expression. It is not exposed through `aria-busy`, visible copy, a status region, or an accessible spinner.
+- **Recommended resolution:** Set `aria-busy={submitting}` on the operation's containing region or submit button and change the button label to `Selecting…` while pending. If a spinner is used, mark decorative animation hidden and keep textual status available. Continue preventing duplicate submission.
+- **Tests:** Use a controllable promise to assert the pending label/busy/disabled state, then assert restoration on both resolve and reject.
+
+### 10.11 Experiment creation errors render outside the active modal
+
+- **Source:** GitHub AI UI review.
+- **Current location:** `lib/oli_web/live/workspaces/course_author/experiments_live.ex`, the page-level `@experiment_error` alert and create-experiment modal.
+- **Issue:** A failed create leaves `@show_create_experiment` true but renders the error above the page table, behind the modal overlay and outside the dialog's focus boundary. The user may neither see nor reach the explanation.
+- **Determination:** Fix.
+- **Evidence:** Both error branches preserve the modal and assign `experiment_error`, while the only alert is rendered before the table outside `<OliWeb.Components.Modal.modal>`.
+- **Recommended resolution:** Render the create-specific error at the top of the modal form with `role="alert"`, a stable focusable target, and focus it after a failed submit. Keep page-level errors for operations performed outside the create modal, or split the assign by operation so unrelated errors are not duplicated. Preserve entered form values and current field-level errors.
+- **Tests:** Extend LiveView tests to force a create failure and assert the message is inside `#create-experiment-modal`, the modal remains open, entered values persist, and the focus command targets the alert. Confirm successful creation closes the modal and clears the error.
+
+### 10.12 New-condition input relies on placeholder text as its label
+
+- **Source:** GitHub AI UI review.
+- **Current location:** `lib/oli_web/live/workspaces/course_author/experiments_live.ex`, `new-condition-form-*`.
+- **Issue:** The condition name input has a placeholder but no persistent visible or programmatic label. The placeholder disappears during entry and does not satisfy the form-label requirement.
+- **Determination:** Fix.
+- **Evidence:** The input has a generated ID and `name="condition[name]"`, but there is no `<label for=...>` or `aria-label`/`aria-labelledby`.
+- **Recommended resolution:** Add a visible `Condition name` label whose `for` exactly matches `new-condition-input-#{@group.resource_id}`. The placeholder may remain as optional guidance. A visible label is preferred over adding ARIA-only text.
+- **Tests:** Update the inline-condition LiveView test to assert the label/input association and retain the existing create, cancel, Escape, and enabled-state behavior.
+
+### 10.13 Second-round verification gate
+
+- Run focused `mix test` files for activity evaluation, reward handoff, page decisions, xAPI media attribution, attempt attribution, and the experiments LiveView.
+- Run the focused Jest suite for `SelectModal` and any callers whose async behavior changes.
+- Add depot invalidation tests before relying on cached alternatives metadata.
+- Exercise ClickHouse upload with more than one processing chunk and retry after a failed middle chunk.
+- Run `mix format` and the appropriate frontend formatter on touched files, followed by `git diff --check`.
+- Re-read the edited GitHub review bodies before implementation begins; automated comments are mutable and may be replaced again on the next head revision.

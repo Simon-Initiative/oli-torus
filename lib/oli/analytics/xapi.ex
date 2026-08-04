@@ -19,8 +19,6 @@ defmodule Oli.Analytics.XAPI do
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Delivery.Experiments.MediaAttributions
   alias Oli.Experiments.XAPI.Attributions
-  alias Oli.Publishing.PublishedResource
-  alias Oli.Resources.Revision
 
   def emit(%StatementBundle{} = bundle) do
     config = Application.fetch_env!(:oli, :xapi_upload_pipeline)
@@ -170,33 +168,55 @@ defmodule Oli.Analytics.XAPI do
         expected_user_id
       )
       when event_type in ["played", "paused", "completed", "seeked"] do
+    section_resource =
+      Oli.Delivery.Sections.SectionResourceDepot.get_section_resource(section_id, resource_id)
+
+    case section_resource do
+      nil ->
+        {:error, "section resource not found"}
+
+      section_resource ->
+        construct_resource_video_bundle(
+          event,
+          event_type,
+          host_name,
+          section_resource,
+          section_id,
+          expected_user_id
+        )
+    end
+  end
+
+  def construct_bundle(_, _), do: {:error, "Unsupported XAPI statement build request"}
+
+  defp construct_resource_video_bundle(
+         event,
+         event_type,
+         host_name,
+         section_resource,
+         section_id,
+         expected_user_id
+       ) do
     query =
-      from s in Oli.Delivery.Sections.Section,
+      from e in Oli.Delivery.Sections.Enrollment,
         join: spp in Oli.Delivery.Sections.SectionsProjectsPublications,
-        on: s.id == spp.section_id,
-        join: sr in Oli.Delivery.Sections.SectionResource,
-        on: s.id == sr.section_id,
-        join: e in Oli.Delivery.Sections.Enrollment,
-        on: s.id == e.section_id,
-        left_join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id and pr.resource_id == sr.resource_id,
-        left_join: revision in Revision,
-        on: revision.id == pr.revision_id,
+        on: spp.section_id == e.section_id,
         where:
-          sr.resource_id == ^resource_id and e.user_id == ^expected_user_id and
-            s.id == ^section_id,
-        select: {sr.project_id, spp.publication_id, revision.content}
+          e.section_id == ^section_id and e.user_id == ^expected_user_id and
+            spp.project_id == ^section_resource.project_id,
+        select: spp.publication_id,
+        limit: 1
 
     case Oli.Repo.one(query) do
       nil ->
         {:error, "section resource not found"}
 
-      {project_id, publication_id, page_content} ->
+      publication_id ->
         context = %Context{
           user_id: expected_user_id,
           host_name: host_name,
           section_id: section_id,
-          project_id: project_id,
+          project_id: section_resource.project_id,
           publication_id: publication_id
         }
 
@@ -211,7 +231,7 @@ defmodule Oli.Analytics.XAPI do
           |> Map.merge(%{
             attempt_guid: nil,
             attempt_number: nil,
-            resource_id: resource_id,
+            resource_id: section_resource.resource_id,
             timestamp: DateTime.utc_now()
           })
 
@@ -226,7 +246,11 @@ defmodule Oli.Analytics.XAPI do
         content_element_id = Map.get(details, :content_element_id, "unknown")
 
         experiment_attributions =
-          MediaAttributions.for_media_event(context, page_content, content_element_id)
+          MediaAttributions.for_media_event_from_index(
+            context,
+            section_resource.experiment_attribution_index,
+            content_element_id
+          )
 
         event = Attributions.attach_attributions(event, experiment_attributions)
 
@@ -234,15 +258,18 @@ defmodule Oli.Analytics.XAPI do
          %StatementBundle{
            body: [event] |> Oli.Analytics.Common.to_jsonlines(),
            bundle_id:
-             create_bundle_id([resource_id, section_id, content_element_id, random_string(10)]),
+             create_bundle_id([
+               section_resource.resource_id,
+               section_id,
+               content_element_id,
+               random_string(10)
+             ]),
            partition_id: context.section_id,
            category: :video,
            partition: :section
          }}
     end
   end
-
-  def construct_bundle(_, _), do: {:error, "Unsupported XAPI statement build request"}
 
   defp random_string(length) do
     Enum.reduce(1..length, [], fn _i, acc ->

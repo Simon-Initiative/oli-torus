@@ -40,6 +40,27 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
   def for_media_event(_context, _page_content, _content_element_id), do: []
 
+  def for_media_event_from_index(%Context{} = context, index, content_element_id)
+      when is_map(index) and is_binary(content_element_id) do
+    index
+    |> Map.get(content_element_id, [])
+    |> attributions_for_matching_branches(context)
+  end
+
+  def for_media_event_from_index(_context, _index, _content_element_id), do: []
+
+  defp attributions_for_matching_branches([], _context), do: []
+
+  defp attributions_for_matching_branches(matching_branches, context) do
+    assignments =
+      context
+      |> assignment_query()
+      |> Repo.all()
+      |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
+
+    media_attributions(assignments, context)
+  end
+
   defp assignment_query(%Context{} = context) do
     from(assignment in Assignment,
       join: experiment in ExperimentDefinition,

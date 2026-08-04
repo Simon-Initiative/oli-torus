@@ -76,7 +76,9 @@ defmodule Oli.Delivery.Depot.Serializer do
 
   defp decode_by_type(value, _), do: value
 
-  defp fields(%DepotDesc{schema: schema}), do: apply(schema, :__schema__, [:fields])
+  defp fields(%DepotDesc{schema: schema}) do
+    apply(schema, :__schema__, [:fields]) ++ apply(schema, :__schema__, [:virtual_fields])
+  end
 
   defp type(%DepotDesc{schema: schema}, field), do: apply(schema, :__schema__, [:type, field])
 

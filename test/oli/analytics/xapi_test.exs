@@ -118,6 +118,23 @@ defmodule Oli.Analytics.XAPITest do
       %{user: user, section: section, page_revision: page_revision, assignment: assignment} =
         setup_video_experiment_context()
 
+      section_resource =
+        Oli.Delivery.Sections.SectionResourceDepot.get_section_resource(
+          section.id,
+          page_revision.resource_id
+        )
+
+      assert section_resource.resource_type_id == ResourceType.id_for_page()
+      assert section_resource.revision_id == page_revision.id
+
+      assert Map.has_key?(
+               Oli.Resources.PageContent.experiment_attribution_index(page_revision.content),
+               "video-in-selected-branch"
+             )
+
+      assert [%{option_id: "alt-a"}] =
+               section_resource.experiment_attribution_index["video-in-selected-branch"]
+
       {:ok, %StatementBundle{} = bundle} =
         XAPI.construct_bundle(
           %{
@@ -184,13 +201,17 @@ defmodule Oli.Analytics.XAPITest do
     insert(:section_resource,
       section: section,
       project: project,
-      resource_id: page_revision.resource_id
+      resource_id: page_revision.resource_id,
+      revision: page_revision,
+      resource_type_id: ResourceType.id_for_page()
     )
 
     insert(:section_resource,
       section: section,
       project: project,
-      resource_id: alternatives_revision.resource_id
+      resource_id: alternatives_revision.resource_id,
+      revision: alternatives_revision,
+      resource_type_id: ResourceType.id_for_alternatives()
     )
 
     insert(:section_project_publication,
@@ -235,6 +256,8 @@ defmodule Oli.Analytics.XAPITest do
     }
 
     assignment = create_assignment(scope, alternatives_revision)
+
+    Oli.Delivery.Sections.SectionResourceDepot.process_table_creation(section.id)
 
     %{
       user: user,

@@ -106,6 +106,15 @@ defmodule Oli.Delivery.Sections.SectionResource do
     belongs_to :revision, Oli.Resources.Revision
     belongs_to :activity_type, Oli.Activities.ActivityRegistration
 
+    # Compact delivery-only data derived from the deployed revision while the
+    # SectionResourceDepot is populated. Keeping this virtual avoids retaining
+    # full page content in the depot for media attribution lookups.
+    field :experiment_attribution_index, :map, virtual: true, default: %{}
+
+    # Alternatives revisions are small and are cached with their section
+    # resource so delivery decision preparation does not bypass the depot.
+    field :alternatives_group, :map, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 

@@ -296,17 +296,46 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
     objective = Oli.Resources.ResourceType.id_for_objective()
+    alternatives = Oli.Resources.ResourceType.id_for_alternatives()
 
     query =
       from sr in SectionResource,
+        left_join: revision in Oli.Resources.Revision,
+        on: revision.id == sr.revision_id,
         where: sr.section_id == ^section_id,
-        where: sr.resource_type_id in [^page, ^container, ^objective],
-        select: sr
+        where: sr.resource_type_id in [^page, ^container, ^objective, ^alternatives],
+        select: {sr, revision.content}
 
-    results = Repo.all(query)
+    results =
+      query
+      |> Repo.all()
+      |> Enum.map(fn
+        {%SectionResource{resource_type_id: ^page} = sr, content} ->
+          %{
+            sr
+            | experiment_attribution_index:
+                Oli.Resources.PageContent.experiment_attribution_index(content)
+          }
+
+        {%SectionResource{resource_type_id: ^alternatives} = sr, content} ->
+          %{sr | alternatives_group: alternatives_group(sr, content)}
+
+        {sr, _content} ->
+          sr
+      end)
 
     create_table_unless_exists(section_id)
     Depot.clear_and_set(@depot_desc, section_id, results)
+  end
+
+  defp alternatives_group(sr, content) do
+    %{
+      id: sr.resource_id,
+      revision_id: sr.revision_id,
+      title: sr.title,
+      options: Map.get(content || %{}, "options", []),
+      strategy: Map.get(content || %{}, "strategy", "user_section_preference")
+    }
   end
 
   defp create_table_unless_exists(section_id) do
