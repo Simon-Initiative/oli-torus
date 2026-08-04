@@ -114,7 +114,12 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
           experiment.project_id == ^attempt_group.context.project_id and
             assignment.section_id == ^attempt_group.context.section_id and
             assignment.user_id == ^attempt_group.context.user_id and
-            fragment("? \\? 'rewards'", assignment.runtime_event_state),
+            fragment(
+              "EXISTS (SELECT 1 FROM unnest(?::bigint[]) AS attempt_id WHERE (?->'rewards') \\? ('reward:activity_attempt:' || attempt_id::text || ':assignment:' || ?::text))",
+              ^activity_attempt_ids,
+              assignment.runtime_event_state,
+              assignment.id
+            ),
         preload: [
           experiment: experiment,
           condition: condition,
@@ -122,16 +127,7 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
         ]
       )
       |> Repo.all()
-      |> Enum.filter(&has_reward_for_any_activity?(&1, activity_attempt_ids))
     end
-  end
-
-  defp has_reward_for_any_activity?(%Assignment{} = assignment, activity_attempt_ids) do
-    rewards = get_in(assignment.runtime_event_state || %{}, ["rewards"]) || %{}
-
-    Enum.any?(activity_attempt_ids, fn activity_attempt_id ->
-      Map.has_key?(rewards, reward_key(activity_attempt_id, assignment.id))
-    end)
   end
 
   defp attributions_for_assignment(

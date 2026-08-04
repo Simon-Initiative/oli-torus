@@ -39,7 +39,7 @@ The highest-priority fixes are:
 - [x] 4.3 Batch reward processing during page grading.
 - [x] 4.4 Transform direct-uploader events only once.
 - [x] 4.5 Insert direct-uploader attributions in bounded chunks.
-- [ ] 4.7 Filter reward assignments by relevant attempts in PostgreSQL.
+- [x] 4.7 Filter reward assignments by relevant attempts in PostgreSQL.
 - [ ] 4.8 Use one deterministic attribution hash across all ingestion paths.
 - [ ] 4.9 Normalize `tcp://` ClickHouse hosts when building HTTP URLs.
 - [ ] 4.10 Make alternatives option reordering keyboard accessible.
