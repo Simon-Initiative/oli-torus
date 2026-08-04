@@ -363,6 +363,44 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
            |> Enum.sort() == [0, 499]
   end
 
+  test "processes raw events in bounded chunks" do
+    body =
+      1..501
+      |> Enum.map_join("\n", fn second ->
+        video_statement("https://w3id.org/xapi/video/verbs/played", %{
+          "https://w3id.org/xapi/video/extensions/time" => second
+        })
+        |> Jason.encode!()
+      end)
+
+    bundle = %StatementBundle{body: body, category: :video, bundle_id: "bundle-event-chunks"}
+    {:ok, raw_queries} = Agent.start_link(fn -> [] end)
+
+    expect(MockHTTP, :post, 2, fn _url, query, _headers ->
+      Agent.update(raw_queries, &[query | &1])
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 501} = ClickHouseUploader.upload(bundle)
+
+    assert raw_queries
+           |> Agent.get(& &1)
+           |> Enum.map(&length(Regex.scan(~r/\),\n\(/, &1)))
+           |> Enum.sort() == [0, 499]
+  end
+
+  @tag capture_log: true
+  test "returns an error for malformed JSON without issuing an insert" do
+    bundle = %StatementBundle{
+      body: "{not-json}",
+      category: :video,
+      bundle_id: "bundle-invalid-json"
+    }
+
+    assert {:error, {:invalid_json_event, message}} = ClickHouseUploader.upload(bundle)
+    assert message =~ "unexpected byte"
+  end
+
   @tag capture_log: true
   test "stops attribution insertion after a failed chunk" do
     bundle = attributed_bundle(1_001, "bundle-chunk-failure")

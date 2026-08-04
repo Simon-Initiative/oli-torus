@@ -22,6 +22,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   ]
 
   @experiment_attributions_extension "http://oli.cmu.edu/extensions/experiment_attributions"
+  @event_processing_chunk_size 500
   @attribution_insert_chunk_size 500
 
   @doc """
@@ -53,14 +54,29 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   defp parse_and_insert_events(body, _category, config) do
-    # Parse all events from the bundle
-    parsed_events =
-      body
-      |> String.split("\n", trim: true)
-      |> Enum.map(fn raw_line -> {raw_line, Jason.decode!(raw_line)} end)
+    body
+    |> String.splitter("\n", trim: true)
+    |> Stream.chunk_every(@event_processing_chunk_size)
+    |> Enum.reduce_while({:ok, 0}, fn raw_lines, {:ok, total_count} ->
+      case parse_and_insert_chunk(raw_lines, config) do
+        {:ok, count} -> {:cont, {:ok, total_count + count}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, count} = result ->
+        Logger.debug("Successfully processed #{count} events into raw_events table")
+        result
 
-    # Validate and transform all events before either table is written.
-    with :ok <- validate_experiment_attributions(parsed_events),
+      {:error, reason} = error ->
+        Logger.error("Failed to insert events: #{inspect(reason)}")
+        error
+    end
+  end
+
+  defp parse_and_insert_chunk(raw_lines, config) do
+    with {:ok, parsed_events} <- decode_events(raw_lines),
+         :ok <- validate_experiment_attributions(parsed_events),
          prepared_events = Enum.map(parsed_events, &prepare_event/1),
          unified_events =
            prepared_events
@@ -72,12 +88,20 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
          {:ok, count} <- insert_raw_events(unified_events, config),
          {:ok, _attribution_count} <-
            insert_experiment_attributions(experiment_attributions, config) do
-      Logger.debug("Successfully processed #{count} events into raw_events table")
       {:ok, count}
-    else
-      {:error, reason} ->
-        Logger.error("Failed to insert events: #{inspect(reason)}")
-        {:error, reason}
+    end
+  end
+
+  defp decode_events(raw_lines) do
+    Enum.reduce_while(raw_lines, {:ok, []}, fn raw_line, {:ok, parsed_events} ->
+      case Jason.decode(raw_line) do
+        {:ok, event} -> {:cont, {:ok, [{raw_line, event} | parsed_events]}}
+        {:error, error} -> {:halt, {:error, {:invalid_json_event, Exception.message(error)}}}
+      end
+    end)
+    |> case do
+      {:ok, parsed_events} -> {:ok, Enum.reverse(parsed_events)}
+      error -> error
     end
   end
 
@@ -454,6 +478,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   defp attribution_hash(event_hash, attribution) do
     hash_key("#{event_hash}:#{attribution_value(attribution, "key")}")
   end
+
+  defp insert_raw_events([], _config), do: {:ok, 0}
 
   defp insert_raw_events(events, config) do
     # Prepare the INSERT query

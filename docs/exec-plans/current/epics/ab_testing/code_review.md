@@ -297,7 +297,7 @@ The automated reviewers updated their existing GitHub issue comments in place af
 ### 10.2 Second-round implementation checklist
 
 - [x] 10.3 Resolve media-event page data through the delivery depot without loading unnecessary revision data.
-- [ ] 10.4 Bound ClickHouse direct-upload parsing, transformation, and insertion memory.
+- [x] 10.4 Bound ClickHouse direct-upload parsing, transformation, and insertion memory.
 - [ ] 10.5 Index reward assignments by activity-attempt ID before constructing part-attempt attributions.
 - [ ] 10.6 Resolve alternatives groups through `SectionResourceDepot` during delivery page preparation.
 - [ ] 10.7 Enqueue reward handoff only after a successful activity-attempt update.
