@@ -263,9 +263,108 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       # because it can never go lower
       ra = Oli.Repo.get(ResourceAccess, map.attempt2.resource_access_id)
       assert_in_delta 0.75, ra.progress, 0.0001
+    end
 
-      # TODO: test the case where we submit all the 4 scorable activities
-      # and assert the progress is 1.0
+    test "page level progress uses reset activity attempts to reach completion", map do
+      [p1, _, _] = map.mod1_pages
+
+      map =
+        map
+        |> Map.put(:our_page, %{revision: p1.revision, resource: p1.resource})
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          :this_user,
+          :our_page,
+          :attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :evaluated, scoreable: true},
+          :activity_a,
+          :attempt1,
+          :activity_a_attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, scoreable: true},
+          :activity_b,
+          :attempt1,
+          :activity_b_attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, scoreable: true},
+          :activity_c,
+          :attempt1,
+          :activity_c_attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, scoreable: true},
+          :activity_d,
+          :attempt1,
+          :activity_d_attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 2, lifecycle_state: :evaluated, scoreable: true},
+          :activity_b,
+          :attempt1,
+          :activity_b_attempt2
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 2, lifecycle_state: :evaluated, scoreable: true},
+          :activity_c,
+          :attempt1,
+          :activity_c_attempt2
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 2, lifecycle_state: :evaluated, scoreable: true},
+          :activity_d,
+          :attempt1,
+          :activity_d_attempt2
+        )
+
+      {:ok, _resource_access} =
+        ResourceAccess
+        |> Oli.Repo.get!(map.attempt1.resource_access_id)
+        |> Core.update_resource_access(%{progress: 0.25})
+
+      assert {:ok, :updated} = Metrics.update_page_progress(map.activity_d_attempt2.attempt_guid)
+
+      ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
+      assert_in_delta 1.0, ra.progress, 0.0001
+    end
+
+    test "page level progress selects latest activity attempts by attempt number", map do
+      [p1, _, _] = map.mod1_pages
+
+      map =
+        map
+        |> Map.put(:our_page, %{revision: p1.revision, resource: p1.resource})
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1, lifecycle_state: :active},
+          :this_user,
+          :our_page,
+          :attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 2, lifecycle_state: :evaluated, scoreable: true},
+          :activity_a,
+          :attempt1,
+          :activity_a_attempt2
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, scoreable: true},
+          :activity_a,
+          :attempt1,
+          :activity_a_attempt1
+        )
+
+      {:ok, _resource_access} =
+        ResourceAccess
+        |> Oli.Repo.get!(map.attempt1.resource_access_id)
+        |> Core.update_resource_access(%{progress: 0.0})
+
+      assert {:ok, :updated} = Metrics.update_page_progress(map.activity_a_attempt2.attempt_guid)
+
+      ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
+      assert_in_delta 1.0, ra.progress, 0.0001
     end
 
     test "progress_for_page/3 calculates correctly", %{
@@ -296,6 +395,21 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       this_user_progress = Metrics.progress_for_page(section.id, this_user.id, p1.resource.id)
 
       assert this_user_progress == 0.5
+    end
+
+    test "mark_progress_completed/1 updates progress when given a resource_access_id" do
+      resource_access = insert(:resource_access, progress: 0.25)
+
+      assert {:ok, _resource_access} = Metrics.mark_progress_completed(resource_access.id)
+
+      updated_resource_access = Oli.Repo.get!(ResourceAccess, resource_access.id)
+
+      assert updated_resource_access.progress == 1.0
+    end
+
+    test "mark_progress_completed/1 returns an error for an unknown resource_access_id" do
+      assert {:error, :resource_access_not_found} =
+               Metrics.mark_progress_completed(-1)
     end
 
     test "progress_across_for_pages/3 calculates correctly", %{

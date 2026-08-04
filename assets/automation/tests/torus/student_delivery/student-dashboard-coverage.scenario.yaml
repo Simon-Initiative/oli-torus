@@ -1,0 +1,66 @@
+# Scenario: Seed a minimal published course for student dashboard, assignments, and schedule coverage.
+
+- project:
+    name: 'student_dashboard_coverage_project'
+    title: 'MER-5489 Student Dashboard Coverage ${RUN_ID}'
+    root:
+      children:
+        - page: 'Coverage Page'
+
+- edit_page:
+    project: 'student_dashboard_coverage_project'
+    page: 'Coverage Page'
+    content: |
+      title: "Coverage Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Coverage content"
+
+- publish:
+    to: 'student_dashboard_coverage_project'
+    description: 'Initial student dashboard coverage publication'
+
+- section:
+    name: 'student_dashboard_coverage_section'
+    title: 'MER-5489 Student Dashboard Coverage ${RUN_ID}'
+    from: 'student_dashboard_coverage_project'
+    type: 'enrollable'
+    open_and_free: true
+    registration_open: true
+    start_date: '2026-04-16T00:00:00Z'
+
+- user:
+    name: 'student_dashboard_coverage_student'
+    type: 'student'
+    email: 'student-dashboard-coverage-student${RUN_ID}@example.com'
+    given_name: 'Coverage'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- user:
+    name: 'student_dashboard_coverage_instructor'
+    type: 'instructor'
+    email: 'student-dashboard-coverage-instructor${RUN_ID}@example.com'
+    given_name: 'Coverage'
+    family_name: 'Instructor'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'student_dashboard_coverage_student'
+    section: 'student_dashboard_coverage_section'
+    role: 'student'
+
+- enroll:
+    user: 'student_dashboard_coverage_instructor'
+    section: 'student_dashboard_coverage_section'
+    role: 'instructor'
+
+- manipulate:
+    to: 'student_dashboard_coverage_section'
+    ops:
+      - revise:
+          target: 'Coverage Page'
+          set:
+            scheduling_type: '@atom(due_by)'
+            end_date: '2026-11-11T23:59:59Z'

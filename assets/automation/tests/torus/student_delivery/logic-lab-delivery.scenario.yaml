@@ -1,0 +1,106 @@
+# Scenario: Seed a minimal published course for logic lab delivery automation.
+
+- project:
+    name: 'logic_lab_delivery_project'
+    title: 'Logic Lab Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Logic Lab Practice'
+
+- create_activity:
+    project: 'logic_lab_delivery_project'
+    title: 'Logic Lab Activity'
+    virtual_id: 'logic_lab'
+    type: 'oli_logic_lab'
+    content_format: 'json'
+    content:
+      activityType: 'oli_logic_lab'
+      activity: 'logic_lab_demo_activity'
+      context:
+        title: 'Logic Lab Activity'
+      stem:
+        id: 'logic_lab_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Solve the logic exercise.'
+      feedback:
+        - id: 'logic_lab_feedback_incomplete'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Incomplete. Keep working.'
+        - id: 'logic_lab_feedback_complete'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Complete. Well done.'
+      authoring:
+        version: 1
+        transformations: []
+        previewText: ''
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses: []
+            hints: []
+            targets: []
+
+- edit_page:
+    project: 'logic_lab_delivery_project'
+    page: 'Logic Lab Practice'
+    content: |
+      title: "Logic Lab Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "logic_lab"
+
+- publish:
+    to: 'logic_lab_delivery_project'
+    description: 'Initial logic lab delivery publication'
+
+- section:
+    name: 'logic_lab_delivery_section_save_restore'
+    title: 'Logic Lab Delivery Course ${RUN_ID} - Save Restore'
+    from: 'logic_lab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'logic_lab_delivery_section_complete_score'
+    title: 'Logic Lab Delivery Course ${RUN_ID} - Complete Score'
+    from: 'logic_lab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'logic_lab_delivery_section_incomplete_score'
+    title: 'Logic Lab Delivery Course ${RUN_ID} - Incomplete Score'
+    from: 'logic_lab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'logic_lab_delivery_student'
+    type: 'student'
+    email: 'logic-lab-delivery-student${RUN_ID}@example.com'
+    given_name: 'Logic'
+    family_name: 'Lab Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'logic_lab_delivery_student'
+    section: 'logic_lab_delivery_section_save_restore'
+    role: 'student'
+
+- enroll:
+    user: 'logic_lab_delivery_student'
+    section: 'logic_lab_delivery_section_complete_score'
+    role: 'student'
+
+- enroll:
+    user: 'logic_lab_delivery_student'
+    section: 'logic_lab_delivery_section_incomplete_score'
+    role: 'student'

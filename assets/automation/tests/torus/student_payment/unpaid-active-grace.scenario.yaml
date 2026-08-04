@@ -1,0 +1,54 @@
+# Scenario: unpaid learner remains within an active grace-period window.
+
+- project:
+    name: 'student_payment_unpaid_active_grace_project'
+    title: 'Student Payment Unpaid Active Grace ${RUN_ID}'
+    root:
+      children:
+        - page: 'Paid Course Page'
+
+- edit_page:
+    project: 'student_payment_unpaid_active_grace_project'
+    page: 'Paid Course Page'
+    content: |
+      title: "Paid Course Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Paid course content for the active-grace paywall case."
+
+- publish:
+    to: 'student_payment_unpaid_active_grace_project'
+    description: 'Initial publication for unpaid active-grace paywall coverage'
+
+- product:
+    name: 'student_payment_unpaid_active_grace_product'
+    title: 'Student Payment Unpaid Active Grace Product ${RUN_ID}'
+    from: 'student_payment_unpaid_active_grace_project'
+    requires_payment: true
+    payment_options: 'direct_and_deferred'
+    amount:
+      amount: 25
+      currency: 'USD'
+    has_grace_period: false
+
+- section:
+    name: 'student_payment_unpaid_active_grace_section'
+    title: 'Student Payment Unpaid Active Grace Section ${RUN_ID}'
+    from: 'student_payment_unpaid_active_grace_product'
+    has_grace_period: true
+    grace_period_days: 14
+    grace_period_strategy: 'relative_to_student'
+
+- user:
+    name: 'student_payment_unpaid_active_grace_student'
+    type: 'student'
+    email: 'student-payment-unpaid-active-grace${RUN_ID}@example.com'
+    given_name: 'Unpaid'
+    family_name: 'ActiveGrace'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'student_payment_unpaid_active_grace_student'
+    section: 'student_payment_unpaid_active_grace_section'
+    role: 'student'

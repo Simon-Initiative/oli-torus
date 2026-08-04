@@ -7,6 +7,10 @@ export function updatePaginationState(
   forId: string,
   index: number[],
 ) {
+  if (!attemptGuid) {
+    return Promise.resolve({});
+  }
+
   // At the moment adding an entry to a list that is a value of a key is a multi step operation,
   // that involves two server requests:
   //

@@ -480,9 +480,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
 
       resource_attempt = Core.get_resource_attempt_by(attempt_guid: ungraded_attempt.attempt_guid)
 
+      resource_access =
+        Repo.get!(Oli.Delivery.Attempts.Core.ResourceAccess, resource_attempt.resource_access_id)
+
       assert resource_attempt.lifecycle_state == :evaluated
       assert resource_attempt.score == 2.0
       assert resource_attempt.out_of == 4.0
+      assert resource_access.progress == 1.0
     end
 
     test "ungraded adaptive finalization stays submitted when manual grading is still pending",
@@ -502,11 +506,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       resource_attempt =
         Core.get_resource_attempt_by(attempt_guid: ungraded_pending_attempt.attempt_guid)
 
+      resource_access =
+        Repo.get!(Oli.Delivery.Attempts.Core.ResourceAccess, resource_attempt.resource_access_id)
+
       assert resource_attempt.lifecycle_state == :submitted
       assert is_nil(resource_attempt.date_evaluated)
       refute is_nil(resource_attempt.date_submitted)
       assert is_nil(resource_attempt.score)
       assert is_nil(resource_attempt.out_of)
+      assert resource_access.progress == 1.0
     end
   end
 end

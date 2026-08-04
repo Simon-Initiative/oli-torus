@@ -1,5 +1,5 @@
 import { Verifier } from '@core/verify/Verifier';
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 
 export class StudentCoursePO {
   private readonly courseHomeMarkers: Locator[];
@@ -33,6 +33,97 @@ export class StudentCoursePO {
     await Verifier.expectIsVisible(l);
   }
 
+  courseContentReady(pageName: string): Locator {
+    return this.galleryTitle(pageName)
+      .or(this.outlineTitle(pageName))
+      .or(this.expandToggles().first());
+  }
+
+  async openPage(pageName: string) {
+    const galleryTitle = this.galleryTitle(pageName);
+    const galleryCard = this.page
+      .locator('div[phx-click="navigate_to_resource"]')
+      .filter({ has: galleryTitle })
+      .first();
+
+    const outlineTitle = this.outlineTitle(pageName);
+    const groupedOutlineLink = this.page
+      .locator('a')
+      .filter({
+        has: this.page.locator('div[role="group_item"]').filter({
+          hasText: pageName,
+        }),
+      })
+      .first();
+
+    await expect(this.courseContentReady(pageName).first()).toBeVisible();
+
+    if (await galleryTitle.isVisible()) {
+      await Promise.all([
+        this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+          timeout: 15000,
+        }),
+        galleryCard.click({ force: true }),
+      ]);
+    } else {
+      await this.expandCollapsedPageGroups();
+
+      // The course outline can render pages either as direct buttons or as links
+      // nested inside an expanded grouped schedule item.
+      if (await outlineTitle.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await Promise.all([
+          this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+            timeout: 15000,
+          }),
+          outlineTitle.click({ force: true }),
+        ]);
+      } else {
+        await Verifier.expectIsVisible(groupedOutlineLink);
+        await Promise.all([
+          this.page.waitForURL((url) => isStudentLessonPath(url.pathname), {
+            timeout: 15000,
+          }),
+          groupedOutlineLink.click({ force: true }),
+        ]);
+      }
+    }
+
+    await Verifier.expectIsVisible(this.page.getByRole('heading', { name: pageName, exact: true }));
+  }
+
+  private galleryTitle(pageName: string) {
+    return this.page.getByRole('heading', {
+      name: pageName,
+      exact: true,
+      level: 5,
+    });
+  }
+
+  private outlineTitle(pageName: string) {
+    return this.page
+      .locator('button')
+      .filter({ has: this.page.getByText(pageName, { exact: true }) })
+      .first();
+  }
+
+  private expandToggles() {
+    return this.page.locator('button[phx-click="expand_item"]');
+  }
+
+  private async expandCollapsedPageGroups() {
+    const groupToggles = this.expandToggles();
+    const count = await groupToggles.count();
+
+    for (let index = 0; index < count; index += 1) {
+      const toggle = groupToggles.nth(index);
+
+      if (!(await toggle.isVisible({ timeout: 250 }).catch(() => false))) continue;
+
+      await toggle.scrollIntoViewIfNeeded().catch(() => undefined);
+      await toggle.click({ force: true }).catch(() => undefined);
+    }
+  }
+
   async goToCourseIfPrompted() {
     const wizard = this.onboardingWizard;
 
@@ -53,8 +144,7 @@ export class StudentCoursePO {
 
     const courseUrl = this.courseUrlFromWelcome();
     if (courseUrl) {
-      await this.page.goto(courseUrl);
-      await this.page.waitForLoadState('domcontentloaded');
+      await this.page.goto(courseUrl, { waitUntil: 'domcontentloaded' });
       await this.waitForCourseHome(15000);
     }
   }
@@ -159,4 +249,8 @@ export class StudentCoursePO {
       form.appendChild(response);
     });
   }
+}
+
+function isStudentLessonPath(pathname: string) {
+  return pathname.includes('/lesson/') || pathname.includes('/adaptive_lesson/');
 }

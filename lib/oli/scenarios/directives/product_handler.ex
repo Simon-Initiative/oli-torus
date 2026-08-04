@@ -6,10 +6,18 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
 
   alias Oli.Scenarios.DirectiveTypes.{ProductDirective, ExecutionState}
   alias Oli.Scenarios.Engine
+  alias Oli.Scenarios.Directives.DirectiveAttrs
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
 
-  def handle(%ProductDirective{name: name, title: title, from: from}, %ExecutionState{} = state) do
+  def handle(
+        %ProductDirective{
+          name: name,
+          title: title,
+          from: from
+        } = directive,
+        %ExecutionState{} = state
+      ) do
     with source_project when not is_nil(source_project) <- Engine.get_project(state, from),
          _publication <- ensure_publication(source_project, state),
          customizations <- extract_customizations(source_project),
@@ -17,7 +25,9 @@ defmodule Oli.Scenarios.Directives.ProductHandler do
            Blueprint.create_blueprint(
              source_project.project.slug,
              title || name,
-             customizations
+             customizations,
+             nil,
+             DirectiveAttrs.blueprint_attrs(Map.from_struct(directive))
            ) do
       # Store the product in state
       updated_state = Engine.put_product(state, name, blueprint)

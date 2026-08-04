@@ -28,11 +28,11 @@
 </style>
 
 <div
-  :if={OliWeb.Delivery.Instructor.PreviewMode.instructor_preview?(assigns)}
+  :if={assigns[:instructor_preview_shell?] == true}
   class="fixed inset-x-0 top-0 z-[1060]"
 >
   <OliWeb.Components.Delivery.Layouts.instructor_preview_header return_context={
-    Map.get(assigns, :instructor_preview_return)
+    OliWeb.Components.Delivery.Layouts.preview_return_context(assigns)
   } />
 </div>
 
@@ -58,7 +58,7 @@
 <div
   id="delivery_container"
   class={
-    if OliWeb.Delivery.Instructor.PreviewMode.instructor_preview?(assigns),
+    if assigns[:instructor_preview_shell?] == true,
       do: "adaptive-preview-shell pt-20",
       else: ""
   }

@@ -355,6 +355,23 @@ defmodule OliWeb.Router do
 
       post "/scenario-yaml", PlaywrightScenarioController, :run
     end
+
+    scope "/test", OliWeb do
+      pipe_through [:browser]
+
+      get "/log_in_user", PlaywrightSessionController, :log_in_user
+    end
+
+    scope "/test", OliWeb do
+      get "/support/:filename", PlaywrightSupportAssetController, :support_asset
+      get "/assets/*path", PlaywrightSupportAssetController, :private_asset
+    end
+
+    scope "/superactivity", OliWeb do
+      pipe_through [:browser]
+
+      get "/embedded/index.html", PlaywrightSupportAssetController, :embedded_runtime
+    end
   end
 
   scope "/", OliWeb do
@@ -693,6 +710,13 @@ defmodule OliWeb.Router do
     pipe_through([:api, :authoring_protected])
 
     put("/:project/resource/:resource", Api.ResourceController, :update)
+
+    get(
+      "/:project/resource/:resource/learning_objectives",
+      Api.ResourceController,
+      :learning_objectives
+    )
+
     get("/:project/link", Api.ResourceController, :index)
 
     post("/:project/activity/:activity_type", Api.ActivityController, :create)
@@ -1025,6 +1049,31 @@ defmodule OliWeb.Router do
   end
 
   ### Workspaces
+  scope "/workspaces", OliWeb.Workspaces do
+    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin])
+
+    # The repair tool is intentionally split from the ordinary project-author
+    # LiveSession. Standard project assignment/authorization hooks still run, but
+    # the plug pipeline rejects non-system-admin authors before the LiveView can
+    # mount or invoke the domain repair context.
+    live_session :system_admin_authoring_workspaces,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.AuthorAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.AssignActiveMenu,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProjectOrSection,
+        OliWeb.LiveSessionPlugs.AuthorizeProject
+      ] do
+      scope "/course_author", CourseAuthor do
+        live("/:project_id/repair_tool", ProjectRepairLive)
+      end
+    end
+  end
+
   scope "/workspaces", OliWeb.Workspaces do
     pipe_through([:browser, :authoring_protected])
 
@@ -1578,7 +1627,6 @@ defmodule OliWeb.Router do
       )
 
       get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
-      get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
     end
   end
 

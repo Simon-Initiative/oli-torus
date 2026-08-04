@@ -1,0 +1,181 @@
+# Course discussion participation and moderation workflows.
+
+- project:
+    name: "discussion_course"
+    title: "Discussion Course"
+    root:
+      children:
+        - page: "Welcome"
+
+- product:
+    name: "discussion_product"
+    title: "Discussion Product"
+    from: "discussion_course"
+
+- discussion_config:
+    section: "discussion_product"
+    enabled: true
+    auto_accept: true
+    anonymous_posting: false
+
+- section:
+    name: "discussion_section"
+    title: "Discussion Section"
+    from: "discussion_product"
+
+- user:
+    name: "discussion_instructor"
+    type: "instructor"
+    email: "discussion_instructor@test.edu"
+
+- user:
+    name: "student_a"
+    type: "student"
+    email: "student_a@test.edu"
+
+- user:
+    name: "student_b"
+    type: "student"
+    email: "student_b@test.edu"
+
+- enroll:
+    user: "discussion_instructor"
+    section: "discussion_section"
+    role: "instructor"
+
+- enroll:
+    user: "student_a"
+    section: "discussion_section"
+
+- enroll:
+    user: "student_b"
+    section: "discussion_section"
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      contains_discussions: true
+      auto_accept: true
+      anonymous_posting: false
+
+- discussion_post:
+    name: "auto_accepted_post"
+    student: "student_a"
+    section: "discussion_section"
+    body: "This post is visible immediately."
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "auto_accepted_post"
+      student: "student_b"
+      status: "approved"
+      visible: true
+
+- discussion_post:
+    name: "auto_accepted_reply"
+    student: "student_b"
+    section: "discussion_section"
+    reply_to: "auto_accepted_post"
+    body: "This reply is visible immediately."
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "auto_accepted_reply"
+      student: "student_a"
+      status: "approved"
+      visible: true
+
+- discussion_delete:
+    post: "auto_accepted_post"
+    actor: "student_a"
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "auto_accepted_post"
+      status: "deleted"
+
+- discussion_config:
+    section: "discussion_section"
+    enabled: true
+    auto_accept: false
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      contains_discussions: true
+      auto_accept: false
+
+- discussion_post:
+    name: "pending_post"
+    student: "student_a"
+    section: "discussion_section"
+    body: "This post needs approval."
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "pending_post"
+      student: "student_a"
+      status: "submitted"
+      visible: true
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "pending_post"
+      student: "student_b"
+      visible: false
+
+- discussion_moderation:
+    post: "pending_post"
+    instructor: "discussion_instructor"
+    action: "approve"
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "pending_post"
+      student: "student_b"
+      status: "approved"
+      visible: true
+
+- discussion_post:
+    name: "rejected_post"
+    student: "student_a"
+    section: "discussion_section"
+    body: "This post will be rejected."
+
+- discussion_moderation:
+    post: "rejected_post"
+    instructor: "discussion_instructor"
+    action: "reject"
+
+- assert:
+    discussion:
+      section: "discussion_section"
+      post: "rejected_post"
+      student: "student_b"
+      status: "deleted"
+      visible: true
+
+- product:
+    name: "discussion_disabled_product"
+    title: "Discussion Disabled Product"
+    from: "discussion_course"
+
+- discussion_config:
+    section: "discussion_disabled_product"
+    enabled: false
+
+- section:
+    name: "discussion_disabled_section"
+    title: "Discussion Disabled Section"
+    from: "discussion_disabled_product"
+
+- assert:
+    discussion:
+      section: "discussion_disabled_section"
+      contains_discussions: false

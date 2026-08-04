@@ -10,7 +10,11 @@ import { adaptivitySchema, createSchema, getCapabilities, schema, uiSchema } fro
 /* eslint-disable @typescript-eslint/no-var-requires */
 const manifest = require('./manifest.json');
 
-const observedAttributes: string[] = [...apiObservedAttributes, ...authoringObservedAttributes];
+const observedAttributes: string[] = [
+  ...apiObservedAttributes,
+  ...authoringObservedAttributes,
+  'layoutchanging',
+];
 const customEvents: any = {
   ...apiCustomEvents,
   onConfigure: 'configure',

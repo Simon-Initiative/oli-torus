@@ -1,0 +1,54 @@
+# Scenario: learner unlocks a paid section with a payment code.
+
+- project:
+    name: 'student_payment_code_unlock_project'
+    title: 'Student Payment Code Unlock ${RUN_ID}'
+    root:
+      children:
+        - page: 'Paid Course Page'
+
+- edit_page:
+    project: 'student_payment_code_unlock_project'
+    page: 'Paid Course Page'
+    content: |
+      title: "Paid Course Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Paid course content for the payment-code unlock case."
+
+- publish:
+    to: 'student_payment_code_unlock_project'
+    description: 'Initial publication for payment-code unlock coverage'
+
+- product:
+    name: 'student_payment_code_unlock_product'
+    title: 'Student Payment Code Unlock Product ${RUN_ID}'
+    from: 'student_payment_code_unlock_project'
+    requires_payment: true
+    payment_options: 'deferred'
+    amount:
+      amount: 25
+      currency: 'USD'
+    has_grace_period: false
+
+- section:
+    name: 'student_payment_code_unlock_section'
+    title: 'Student Payment Code Unlock Section ${RUN_ID}'
+    from: 'student_payment_code_unlock_product'
+
+- user:
+    name: 'student_payment_code_unlock_student'
+    type: 'student'
+    email: 'student-payment-code-unlock${RUN_ID}@example.com'
+    given_name: 'Payment'
+    family_name: 'Code'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'student_payment_code_unlock_student'
+    section: 'student_payment_code_unlock_section'
+    role: 'student'
+
+- hook:
+    function: "Oli.Scenarios.StudentPayment.Hooks.create_payment_code/1"

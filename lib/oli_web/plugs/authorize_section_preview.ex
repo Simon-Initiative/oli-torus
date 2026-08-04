@@ -31,6 +31,13 @@ defmodule Oli.Plugs.AuthorizeSectionPreview do
         |> redirect(to: redirect_path)
         |> halt()
 
+      is_nil(user) ->
+        request_path = current_path(conn) |> URI.encode_www_form()
+
+        conn
+        |> redirect(to: "/users/log_in?request_path=#{request_path}")
+        |> halt()
+
       true ->
         conn
         |> put_view(OliWeb.PageDeliveryView)

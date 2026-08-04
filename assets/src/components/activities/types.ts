@@ -171,6 +171,7 @@ export interface PreviewCustomizationTarget {
 export interface PreviewAction {
   kind: 'remove' | 'restore';
   label: string;
+  disabled?: boolean;
 }
 
 export type PreviewVisualState = 'default' | 'removed';

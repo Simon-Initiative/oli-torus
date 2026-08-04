@@ -1,8 +1,6 @@
 defmodule OliWeb.Admin.IngestV2 do
   use OliWeb, :live_view
 
-  alias Oli.Repo
-  alias Oli.Accounts.Author
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Breadcrumb
   alias Oli.Interop.Ingest.ScalableIngest, as: Ingest
@@ -35,9 +33,8 @@ defmodule OliWeb.Admin.IngestV2 do
   end
 
   @impl true
-  def mount(_, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
-
+  def mount(_, _session, socket) do
+    author = socket.assigns.current_author
     state = Oli.Interop.Ingest.State.new()
     ingest_file = ingest_file(author)
 

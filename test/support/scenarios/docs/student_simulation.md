@@ -7,7 +7,10 @@ This document covers directives for simulating student interactions and tracking
 - [view_practice_page](#view_practice_page) - Simulate viewing pages
 - [visit_page](#visit_page) - Simulate visiting any page
 - [answer_question](#answer_question) - Simulate answering activities
+- [request_hint](#request_hint) - Request an activity hint
+- [reset_activity](#reset_activity) - Start another activity attempt
 - [finalize_attempt](#finalize_attempt) - Finalize a learner's active page attempt
+- [dashboard_analytics_ready](#dashboard_analytics_ready) - Deterministically prepare dashboard analytics
 - [student_exception](#student_exception) - Set or remove assessment setting overrides
 - [wait](#wait) - Pause for real elapsed time
 - [discussion_post](#discussion_post) - Create learner discussion contributions
@@ -29,6 +32,7 @@ This document covers directives for simulating student interactions and tracking
 These directives simulate the student experience in a course section:
 - Viewing pages (creates attempts)
 - Answering questions (submits responses)
+- Requesting hints and retrying activities
 - Tracking progress (verifies completion metrics)
 
 This enables testing of:
@@ -160,6 +164,61 @@ or part id:
 
 ---
 
+## request_hint
+
+Requests the next available hint for an activity on a page the student has already visited.
+The directive uses `Oli.Delivery.Attempts.ActivityLifecycle.request_hint/2`, matching the
+learner delivery path.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page containing the activity (required)
+- `activity_virtual_id`: Virtual ID of the activity (required)
+- `part_id`: Part ID to request a hint for (optional for single-part activities; required for multi-part activities)
+
+```yaml
+- request_hint:
+    student: "student"
+    section: "section"
+    page: "Practice"
+    activity_virtual_id: "mcq"
+```
+
+---
+
+## reset_activity
+
+Creates the learner's next attempt for an activity and refreshes the scenario's active page
+attempt state. A subsequent `answer_question` therefore submits against the new attempt.
+The directive uses `Oli.Delivery.Attempts.ActivityLifecycle.reset_activity/4`.
+
+Requested hint IDs are carried into the new part attempts by the delivery lifecycle, matching
+the behavior of learner-triggered activity resets.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page containing the activity (required)
+- `activity_virtual_id`: Virtual ID of the activity to retry (required)
+
+```yaml
+- reset_activity:
+    student: "student"
+    section: "section"
+    page: "Practice"
+    activity_virtual_id: "mcq"
+
+- answer_question:
+    student: "student"
+    section: "section"
+    page: "Practice"
+    activity_virtual_id: "mcq"
+    response: "b"
+```
+
+---
+
 ## finalize_attempt
 
 Finalizes a learner's active page attempt through the same `PageLifecycle.finalize/3`
@@ -182,6 +241,43 @@ boundary used by student lesson delivery.
 - Requires a started attempt, typically created via `visit_page`
 - Uses the real page finalization lifecycle
 - Persists the resulting grade and late state through normal grading rollup
+
+---
+
+## dashboard_analytics_ready
+
+Deterministically prepares analytics-backed dashboard data after learner activity.
+
+Use this directive after student actions that change analytics, such as
+`answer_question` or `finalize_attempt`, and before assertions that read instructor
+dashboard data.
+
+### Parameters
+- `section`: Name of the section whose dashboard analytics should be ready (required)
+
+### Example
+```yaml
+- answer_question:
+    student: "alice"
+    section: "my_section"
+    page: "Practice 1"
+    activity_virtual_id: "mcq_1"
+    response: "a"
+
+- dashboard_analytics_ready:
+    section: "my_section"
+```
+
+### Notes
+- Validates that the named section exists in scenario state
+- Rebuilds derived section relationships used by dashboard analytics, including
+  contained pages and contained objectives
+- Drains pending snapshot analytics work when scenarios run with Oban manual testing
+- Does not sleep or wait on wall-clock time
+- This is intended as an explicit readiness checkpoint between learner simulation
+  and instructor dashboard assertions, not as a general wait directive
+- See [Instructor Dashboard](instructor_dashboard.md) for dashboard-specific
+  assertion patterns
 
 ---
 
@@ -261,19 +357,103 @@ directives:
 
 ## discussion_post
 
-Creates a learner discussion post in a section and then evaluates certificate qualification synchronously.
+Creates a learner course discussion post in a section. Scenario execution also processes certificate eligibility synchronously, preserving the deterministic side effect that production normally enqueues when certificate checks are required.
 
 ### Parameters
+- `name`: Scenario-local post name for later moderation, deletion, or assertions
 - `student`: Name of the student user (required)
 - `section`: Name of the section (required)
 - `body`: Post body text (required)
+- `reply_to`: Scenario-local parent post name when creating a reply
+- `anonymous`: Whether to create the post anonymously
 
 ### Example
 ```yaml
 - discussion_post:
+    name: "alice_intro"
     student: "alice"
     section: "my_section"
     body: "My discussion contribution"
+```
+
+---
+
+## discussion_config
+
+Configures course discussions on a section or product blueprint by updating the root section resource collaboration config and the section `contains_discussions` flag.
+
+### Parameters
+- `section`: Scenario name of the section or product (required)
+- `enabled`: Whether Course Discussions are enabled
+- `auto_accept`: Whether posts are visible without instructor approval
+- `anonymous_posting`: Whether anonymous posting is enabled
+
+### Example
+```yaml
+- discussion_config:
+    section: "my_product"
+    enabled: true
+    auto_accept: false
+```
+
+---
+
+## discussion_moderation
+
+Applies instructor moderation to a named discussion post.
+
+### Parameters
+- `post`: Scenario-local post name (required)
+- `instructor`: Scenario user name for the instructor (required)
+- `action`: `approve` or `reject` (required)
+
+### Example
+```yaml
+- discussion_moderation:
+    post: "alice_intro"
+    instructor: "instructor_1"
+    action: "approve"
+```
+
+---
+
+## discussion_delete
+
+Deletes a named discussion post through the collaboration authorization path.
+
+### Parameters
+- `post`: Scenario-local post name (required)
+- `actor`: Scenario user name for the deleting user (required)
+
+### Example
+```yaml
+- discussion_delete:
+    post: "alice_intro"
+    actor: "alice"
+```
+
+---
+
+## discussion assertions
+
+Use `assert.discussion` to verify course discussion configuration, named post status, and student-visible discussion listings.
+
+### Supported checks
+- `contains_discussions`
+- `auto_accept`
+- `anonymous_posting`
+- named post `status`: `submitted`, `approved`, `deleted`, or `archived`
+- named post `visible` for a specific student
+
+### Example
+```yaml
+- assert:
+    discussion:
+      section: "my_section"
+      post: "alice_intro"
+      student: "bob"
+      status: "approved"
+      visible: true
 ```
 
 ---

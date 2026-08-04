@@ -31,8 +31,10 @@ interface Props {
 }
 export const ResponseTab: React.FC<Props> = (props) => {
   const { response } = props;
-  const { model, dispatch, authoringContext, editMode } =
+  const { model, dispatch, authoringContext, editMode, mode } =
     useAuthoringElementContext<ResponseMultiInputSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
+  const responseEditMode = editMode && !isInstructorPreview;
   const [matchStyle, setMatchStyle] = useState<MatchStyle>(
     response.matchStyle ? response.matchStyle : 'all',
   );
@@ -142,6 +144,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
           name={'matchStyleOptions' + response.id}
           id={'matchStyleRadio1' + response.id}
           value="all"
+          disabled={!responseEditMode}
         />
         <label className="form-check-label" htmlFor={'matchStyleRadio1' + response.id}>
           all
@@ -156,6 +159,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
           name={'matchStyleOptions' + response.id}
           id={'matchStyleRadio2' + response.id}
           value="any"
+          disabled={!responseEditMode}
         />
         <label className="form-check-label" htmlFor={'matchStyleRadio2' + response.id}>
           any
@@ -170,6 +174,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
           name={'matchStyleOptions' + response.id}
           id={'matchStyleRadio3' + response.id}
           value="none"
+          disabled={!responseEditMode}
         />
         <label className="form-check-label" htmlFor={'matchStyleRadio3' + response.id}>
           none
@@ -192,7 +197,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
       >
         {authoringContext.contentBreaksExist ? (
           <ShowPage
-            editMode={editMode}
+            editMode={responseEditMode}
             index={response.showPage}
             onChange={(v) => updateShowPage(response.id, v)}
           />
@@ -216,7 +221,11 @@ export const ResponseTab: React.FC<Props> = (props) => {
           />
         ) : (
           /* We are using custom scoring, so prompt for a score instead of correct/incorrect */
-          <ScoreInput score={props.response.score} onChange={onScoreChange} editMode={true}>
+          <ScoreInput
+            score={props.response.score}
+            onChange={onScoreChange}
+            editMode={responseEditMode}
+          >
             Score:
           </ScoreInput>
         )}
@@ -246,7 +255,7 @@ export const ResponseTab: React.FC<Props> = (props) => {
         >
           {authoringContext.contentBreaksExist ? (
             <ShowPage
-              editMode={editMode}
+              editMode={responseEditMode}
               index={response.showPage}
               onChange={(v) => updateShowPage(response.id, v)}
             />
@@ -262,9 +271,16 @@ interface AddRuleProps {
   response: Response;
 }
 const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
-  const { model, dispatch } = useAuthoringElementContext<ResponseMultiInputSchema>();
+  const { model, dispatch, editMode, mode } =
+    useAuthoringElementContext<ResponseMultiInputSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   const addRule = (inputId: string) => {
+    if (readOnly) {
+      return;
+    }
+
     const input: MultiInput | undefined = inputs.find((i) => i.id === inputId);
     if (input) {
       let choiceId: string | undefined;
@@ -297,6 +313,7 @@ const AddRule: React.FC<AddRuleProps> = ({ inputs, response }) => {
       <select
         className="flex-shrink-0 border py-1 px-1.5 border-neutral-300 rounded w-full disabled:bg-neutral-100 disabled:text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white ml-2"
         value={undefined}
+        disabled={readOnly}
         onChange={({ target: { value } }) => {
           addRule(value);
         }}

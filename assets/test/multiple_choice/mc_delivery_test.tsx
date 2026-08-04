@@ -70,7 +70,7 @@ describe('multiple choice delivery', () => {
     expect(await screen.findAllByLabelText(/hint [0-9]/)).toHaveLength(1);
 
     // expect 2 choices
-    const choices = screen.queryAllByLabelText(/choice [0-9]/);
+    const choices = screen.getAllByRole('radio', { name: /Choice [AB]/ });
     expect(choices).toHaveLength(2);
 
     // expect clicking a choice to save but not submit the activity

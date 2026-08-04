@@ -1,0 +1,64 @@
+# Scenario: learner sees the discounted paid-section price for a qualifying institution.
+
+- institution:
+    name: 'student_payment_discount_qualifying_institution'
+    country_code: 'US'
+    institution_email: 'discount-qualifying${RUN_ID}@example.edu'
+    institution_url: 'https://discount-qualifying.example.edu'
+
+- project:
+    name: 'student_payment_discount_qualifying_project'
+    title: 'Student Payment Discount Qualifying ${RUN_ID}'
+    root:
+      children:
+        - page: 'Paid Course Page'
+
+- edit_page:
+    project: 'student_payment_discount_qualifying_project'
+    page: 'Paid Course Page'
+    content: |
+      title: "Paid Course Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Paid course content for the qualifying discount case."
+
+- publish:
+    to: 'student_payment_discount_qualifying_project'
+    description: 'Initial publication for qualifying discount coverage'
+
+- product:
+    name: 'student_payment_discount_qualifying_product'
+    title: 'Student Payment Discount Qualifying Product ${RUN_ID}'
+    from: 'student_payment_discount_qualifying_project'
+    requires_payment: true
+    payment_options: 'direct_and_deferred'
+    amount:
+      amount: 25
+      currency: 'USD'
+    has_grace_period: false
+
+- institution_discount:
+    institution: 'student_payment_discount_qualifying_institution'
+    product: 'student_payment_discount_qualifying_product'
+    type: 'percentage'
+    percentage: 20
+
+- section:
+    name: 'student_payment_discount_qualifying_section'
+    title: 'Student Payment Discount Qualifying Section ${RUN_ID}'
+    from: 'student_payment_discount_qualifying_product'
+    institution: 'student_payment_discount_qualifying_institution'
+
+- user:
+    name: 'student_payment_discount_qualifying_student'
+    type: 'student'
+    email: 'student-payment-discount-qualifying${RUN_ID}@example.com'
+    given_name: 'Discount'
+    family_name: 'Qualifying'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'student_payment_discount_qualifying_student'
+    section: 'student_payment_discount_qualifying_section'
+    role: 'student'

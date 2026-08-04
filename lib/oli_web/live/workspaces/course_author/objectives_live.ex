@@ -6,7 +6,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   use OliWeb.Common.SortableTable.TableHandlers
   use OliWeb.Common.Modal
 
+  require Logger
+
   alias Oli.Accounts
+  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
@@ -22,6 +25,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     Listing,
     SelectExistingSubModal,
     SelectionsModal,
+    SubObjectiveDeleteModal,
     TableModel
   }
 
@@ -49,6 +53,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        all_objectives: all_objectives,
        all_children: all_children,
        objective_attachments: [],
+       pending_sub_objective_delete_slugs: MapSet.new(),
        query: "",
        selected: "",
        offset: 0,
@@ -102,6 +107,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           }
           rows={@table_model.rows}
           selected={@selected}
+          pending_delete_slugs={@pending_sub_objective_delete_slugs}
           project_slug={@project.slug}
         />
       </Table.render>
@@ -410,59 +416,71 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     end
   end
 
+  def handle_event(
+        "display_sub_objective_delete_modal",
+        %{"slug" => slug, "parent_slug" => parent_slug} = params,
+        socket
+      ) do
+    socket = clear_flash(socket)
+    title = Map.get(params, "title", "this sub-objective")
+
+    modal_assigns = %{
+      id: "delete_sub_objective_modal",
+      slug: slug,
+      parent_slug: parent_slug,
+      title: title
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <SubObjectiveDeleteModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
   def handle_event("delete", %{"slug" => slug} = params, socket) do
     socket = clear_flash(socket)
 
     parent_slug = Map.get(params, "parent_slug", "")
-    %{project: project, author: author, objectives: objectives} = socket.assigns
-    %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
+    %{project: project, author: author} = socket.assigns
 
-    ObjectiveEditor.detach_objective(resource_id, project, author)
-
-    {parents, parent_to_detach_slug} =
-      Enum.reduce(objectives, {[], ""}, fn objective, {parents, parent_to_detach_slug} ->
-        case Enum.find(objective.children, fn child -> !is_nil(child) && child.slug == slug end) do
-          nil ->
-            {parents, parent_to_detach_slug}
-
-          _ ->
-            if objective.slug == parent_slug,
-              do: {[objective | parents], objective.slug},
-              else: {[objective | parents], parent_to_detach_slug}
-        end
-      end)
-
-    delete_fn =
-      if length(parents) <= 1 do
-        fn ->
-          ObjectiveEditor.delete(
-            slug,
-            author,
-            project,
-            AuthoringResolver.from_revision_slug(project.slug, parent_to_detach_slug)
-          )
-        end
-      else
-        fn ->
-          ObjectiveEditor.remove_sub_objective_from_parent(
-            slug,
-            author,
-            project,
-            AuthoringResolver.from_revision_slug(project.slug, parent_to_detach_slug)
-          )
-        end
-      end
-
-    flash_fn =
-      case delete_fn.() do
-        {:ok, _} ->
-          fn socket -> put_flash(socket, :info, "Objective successfully removed") end
-
-        {:error, _error} ->
-          fn socket -> put_flash(socket, :error, "Could not remove objective") end
-      end
+    flash_fn = delete_objective(slug, parent_slug, project, author)
 
     return_updated_data(project, flash_fn, socket)
+  end
+
+  def handle_event(
+        "delete_sub_objective",
+        %{"slug" => slug, "parent_slug" => parent_slug},
+        socket
+      ) do
+    socket = clear_flash(socket)
+    %{project: %{slug: project_slug}, author: %{email: author_email}} = socket.assigns
+
+    if MapSet.member?(socket.assigns.pending_sub_objective_delete_slugs, slug) do
+      {:noreply,
+       socket
+       |> hide_modal(modal_assigns: nil)
+       |> put_flash(:error, "That sub-objective is already being deleted")}
+    else
+      socket =
+        socket
+        |> assign(
+          pending_sub_objective_delete_slugs:
+            MapSet.put(socket.assigns.pending_sub_objective_delete_slugs, slug)
+        )
+        |> hide_modal(modal_assigns: nil)
+        |> start_async({:delete_sub_objective, slug}, fn ->
+          project = Course.get_project_by_slug(project_slug)
+          author = Accounts.get_author_by_email(author_email)
+
+          delete_objective_result(slug, parent_slug, project, author)
+        end)
+
+      {:noreply, socket}
+    end
   end
 
   def handle_event(
@@ -490,6 +508,105 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
     return_updated_data(project, flash_fn, socket)
   end
+
+  defp delete_objective(slug, parent_slug, project, author) do
+    case delete_objective_result(slug, parent_slug, project, author) do
+      :ok -> fn socket -> put_flash(socket, :info, "Objective successfully removed") end
+      :error -> fn socket -> put_flash(socket, :error, "Could not remove objective") end
+    end
+  end
+
+  defp delete_objective_result(slug, parent_slug, project, author) do
+    %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
+
+    ObjectiveEditor.detach_objective(resource_id, project, author)
+
+    objectives =
+      project
+      |> ObjectiveEditor.fetch_objective_mappings()
+      |> Enum.map(& &1.revision)
+
+    {parents, parent_to_detach_slug} =
+      Enum.reduce(objectives, {[], ""}, fn objective, {parents, parent_to_detach_slug} ->
+        case Enum.member?(objective.children, resource_id) do
+          false ->
+            {parents, parent_to_detach_slug}
+
+          true ->
+            if objective.slug == parent_slug,
+              do: {[objective | parents], objective.slug},
+              else: {[objective | parents], parent_to_detach_slug}
+        end
+      end)
+
+    delete_fn =
+      if length(parents) <= 1 do
+        fn ->
+          ObjectiveEditor.delete(
+            slug,
+            author,
+            project,
+            parent_objective(project, parent_to_detach_slug)
+          )
+        end
+      else
+        fn ->
+          case parent_objective(project, parent_to_detach_slug) do
+            nil ->
+              {:error, :not_found}
+
+            parent_objective ->
+              ObjectiveEditor.remove_sub_objective_from_parent(
+                slug,
+                author,
+                project,
+                parent_objective
+              )
+          end
+        end
+      end
+
+    case delete_fn.() do
+      {:ok, _} -> :ok
+      {:error, _error} -> :error
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_async({:delete_sub_objective, slug}, result, socket) do
+    if MapSet.member?(socket.assigns.pending_sub_objective_delete_slugs, slug) do
+      flash_type =
+        case result do
+          {:ok, flash_type} ->
+            flash_type
+
+          {:exit, reason} ->
+            Logger.error("Sub-objective deletion failed: #{inspect(reason)}")
+            :error
+        end
+
+      flash_fn =
+        case flash_type do
+          :ok -> fn socket -> put_flash(socket, :info, "Objective successfully removed") end
+          :error -> fn socket -> put_flash(socket, :error, "Could not remove objective") end
+        end
+
+      socket =
+        assign(socket,
+          pending_sub_objective_delete_slugs:
+            MapSet.delete(socket.assigns.pending_sub_objective_delete_slugs, slug)
+        )
+
+      return_updated_data(socket.assigns.project, flash_fn, socket)
+    else
+      {:noreply, socket}
+    end
+  end
+
+  defp parent_objective(_project, ""), do: nil
+
+  defp parent_objective(project, slug),
+    do: AuthoringResolver.from_revision_slug(project.slug, slug)
 
   @impl Phoenix.LiveView
   def handle_info({:finish_attachments, {objectives_attachments, flash_fn}}, socket) do

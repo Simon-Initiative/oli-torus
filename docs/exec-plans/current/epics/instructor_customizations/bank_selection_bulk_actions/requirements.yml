@@ -1,0 +1,95 @@
+work_item: bank_selection_bulk_actions
+requirements:
+- title: Support same-state multi-select for currently shown bank-selection candidate
+    rows
+  status: proposed
+  id: FR-001
+- title: Show contextual bulk remove or bulk restore actions based on the selected
+    row state
+  status: proposed
+  id: FR-002
+- title: Limit the master checkbox to the rows currently shown by the active manager
+    query
+  status: proposed
+  id: FR-003
+- title: Disable competing single-question preview actions while bulk selection is
+    active
+  status: proposed
+  id: FR-004
+- title: Validate bulk candidate removals atomically before persisting any exclusion
+    rows
+  status: proposed
+  id: FR-005
+- title: Keep the manager state model compatible with future URL-param-backed server-side
+    filters
+  status: proposed
+  id: FR-006
+acceptance_criteria:
+- title: The manager initially renders all row checkboxes and the master checkbox
+    unchecked
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-001
+- title: Selecting an available question enables multi-select for other shown available
+    rows while disabling shown removed-row checkboxes
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-002
+- title: Selecting a removed question enables multi-select for other shown removed
+    rows while disabling shown available-row checkboxes
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-003
+- title: The master checkbox selects or deselects only the rows currently shown for
+    the active query and only within the active selection state
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-004
+- title: Selecting available rows shows Remove Selected with the live count and hides
+    Restore Selected, while selecting removed rows does the inverse
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-005
+- title: The right-hand preview disables its single-question remove or restore action
+    while a bulk selection is active
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-006
+- title: A successful bulk remove persists all selected available questions for the
+    current selection and refreshes the active count and row states together
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-007
+- title: A successful bulk restore re-enables all selected removed questions for the
+    current selection and refreshes the active count and row states together
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-008
+- title: If a bulk removal would leave fewer active questions than the required selection
+    count, no candidate exclusion rows are persisted and the invalid-removal modal
+    opens with pluralized copy
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-009
+- title: Refreshing the list after a bulk action normalizes checked rows against the
+    refreshed active query result instead of preserving stale ids
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-010
+- title: The documented state model keeps checked-row state separate from future URL-param-backed
+    query state so later filters can replace the query result without redefining bulk
+    semantics
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-011

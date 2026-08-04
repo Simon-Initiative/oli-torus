@@ -944,6 +944,12 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 
+.modal-dialog.config-modal.flashcards-config-modal {
+  .modal-content {
+    min-height: min(560px, calc(100vh - 3.5rem));
+  }
+}
+
 .modal-dialog.diagnostic-modal {
   &.advanced-authoring {
     opacity: 1;

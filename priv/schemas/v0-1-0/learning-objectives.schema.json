@@ -1,0 +1,75 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/learning-objectives.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Learning Objectives",
+  "description": "A terminal page element for displaying Learning Objective introduction or summary content",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "learning_objectives"
+    },
+    "id": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "introduction",
+        "summary"
+      ]
+    },
+    "include_sub_objectives": {
+      "type": "boolean"
+    },
+    "learning_objectives": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/learning_objective_config"
+      }
+    }
+  },
+  "required": [
+    "type",
+    "id",
+    "mode",
+    "include_sub_objectives",
+    "learning_objectives"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "learning_objective_config": {
+      "type": "object",
+      "properties": {
+        "resource_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "revisit_pages": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "practice_pages": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "required": [
+        "resource_id",
+        "enabled",
+        "revisit_pages",
+        "practice_pages"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

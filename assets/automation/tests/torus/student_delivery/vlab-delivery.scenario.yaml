@@ -1,0 +1,347 @@
+# Scenario: Seed a minimal published course for vlab delivery automation.
+
+- project:
+    name: 'vlab_delivery_project'
+    title: 'Vlab Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Vlab Practice'
+
+- create_activity:
+    project: 'vlab_delivery_project'
+    title: 'Vlab Numeric Question'
+    virtual_id: 'vlab_numeric'
+    type: 'oli_vlab'
+    content_format: 'json'
+    content:
+      activityType: 'oli_vlab'
+      submitPerPart: false
+      multInputsPerPart: false
+      choices: []
+      inputs:
+        - id: 'vlab_value'
+          inputType: 'numeric'
+          partId: 'vlab_part'
+      stem:
+        id: 'vlab_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Provide the numeric virtual lab value: '
+              - type: 'input_ref'
+                id: 'vlab_value'
+                children:
+                  - text: ''
+      assignmentSource: 'builtIn'
+      assignmentPath: 'default'
+      assignment: '{ "assignmentText": "Assignment name" }'
+      configuration: '{}'
+      reactions: '{}'
+      solutions: '{}'
+      species: '{}'
+      spectra: '{}'
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ''
+        parts:
+          - id: 'vlab_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'vlab_numeric_correct'
+                rule: 'input = {42}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'vlab_numeric_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct. You entered the expected numeric value.'
+              - id: 'vlab_numeric_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'vlab_numeric_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect. Try again.'
+            hints: []
+
+- create_activity:
+    project: 'vlab_delivery_project'
+    title: 'Vlab Dropdown Question'
+    virtual_id: 'vlab_dropdown'
+    type: 'oli_vlab'
+    content_format: 'json'
+    content:
+      activityType: 'oli_vlab'
+      submitPerPart: false
+      multInputsPerPart: false
+      choices:
+        - id: 'vlab_dropdown_a'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Choice A'
+        - id: 'vlab_dropdown_b'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Choice B'
+      inputs:
+        - id: 'vlab_dropdown_input'
+          inputType: 'dropdown'
+          partId: 'vlab_dropdown_part'
+          choiceIds: ['vlab_dropdown_a', 'vlab_dropdown_b']
+      stem:
+        id: 'vlab_dropdown_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Select the dropdown virtual lab value: '
+              - type: 'input_ref'
+                id: 'vlab_dropdown_input'
+                children:
+                  - text: ''
+      assignmentSource: 'builtIn'
+      assignmentPath: 'default'
+      assignment: '{ "assignmentText": "Assignment name" }'
+      configuration: '{}'
+      reactions: '{}'
+      solutions: '{}'
+      species: '{}'
+      spectra: '{}'
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ''
+        parts:
+          - id: 'vlab_dropdown_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'vlab_dropdown_correct'
+                rule: 'input like {vlab_dropdown_a}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'vlab_dropdown_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct. You selected the expected dropdown value.'
+              - id: 'vlab_dropdown_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'vlab_dropdown_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect. Try again.'
+            hints: []
+
+- create_activity:
+    project: 'vlab_delivery_project'
+    title: 'Vlab Message Question'
+    virtual_id: 'vlab_message'
+    type: 'oli_vlab'
+    content_format: 'json'
+    content:
+      activityType: 'oli_vlab'
+      submitPerPart: false
+      multInputsPerPart: false
+      choices: []
+      inputs:
+        - id: 'vlab_message_input'
+          inputType: 'vlabvalue'
+          partId: 'vlab_message_part'
+          parameter: 'volume'
+          species: ''
+      stem:
+        id: 'vlab_message_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Capture the selected flask volume from the virtual lab. '
+              - type: 'input_ref'
+                id: 'vlab_message_input'
+                children:
+                  - text: ''
+      assignmentSource: 'builtIn'
+      assignmentPath: 'default'
+      assignment: '{ "assignmentText": "Assignment name" }'
+      configuration: '{}'
+      reactions: '{}'
+      solutions: '{}'
+      species: '{}'
+      spectra: '{}'
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ''
+        parts:
+          - id: 'vlab_message_part'
+            scoringStrategy: 'best'
+            gradingApproach: 'automatic'
+            responses:
+              - id: 'vlab_message_correct'
+                rule: 'input = {42}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'vlab_message_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct. The virtual lab value was captured.'
+              - id: 'vlab_message_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'vlab_message_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect. Try again.'
+            hints: []
+
+- edit_page:
+    project: 'vlab_delivery_project'
+    page: 'Vlab Practice'
+    content: |
+      title: "Vlab Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "vlab_numeric"
+        - type: activity_reference
+          virtual_id: "vlab_dropdown"
+        - type: activity_reference
+          virtual_id: "vlab_message"
+
+- publish:
+    to: 'vlab_delivery_project'
+    description: 'Initial vlab delivery publication'
+
+- section:
+    name: 'vlab_delivery_section_numeric_correct'
+    title: 'Vlab Delivery Course ${RUN_ID} - Numeric Correct'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'vlab_delivery_section_numeric_incorrect'
+    title: 'Vlab Delivery Course ${RUN_ID} - Numeric Incorrect'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'vlab_delivery_section_numeric_reset'
+    title: 'Vlab Delivery Course ${RUN_ID} - Numeric Reset'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'vlab_delivery_section_numeric_saved'
+    title: 'Vlab Delivery Course ${RUN_ID} - Numeric Saved'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'vlab_delivery_section_dropdown_correct'
+    title: 'Vlab Delivery Course ${RUN_ID} - Dropdown Correct'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'vlab_delivery_section_dropdown_incorrect'
+    title: 'Vlab Delivery Course ${RUN_ID} - Dropdown Incorrect'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'vlab_delivery_section_message_correct'
+    title: 'Vlab Delivery Course ${RUN_ID} - Message Correct'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'vlab_delivery_section_message_incorrect'
+    title: 'Vlab Delivery Course ${RUN_ID} - Message Incorrect'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'vlab_delivery_section_message_restore'
+    title: 'Vlab Delivery Course ${RUN_ID} - Message Restore'
+    from: 'vlab_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'vlab_delivery_student'
+    type: 'student'
+    email: 'vlab-delivery-student${RUN_ID}@example.com'
+    given_name: 'Vlab'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_numeric_correct'
+    role: 'student'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_numeric_incorrect'
+    role: 'student'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_numeric_reset'
+    role: 'student'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_numeric_saved'
+    role: 'student'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_dropdown_correct'
+    role: 'student'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_dropdown_incorrect'
+    role: 'student'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_message_correct'
+    role: 'student'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_message_incorrect'
+    role: 'student'
+
+- enroll:
+    user: 'vlab_delivery_student'
+    section: 'vlab_delivery_section_message_restore'
+    role: 'student'

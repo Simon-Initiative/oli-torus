@@ -1,5 +1,9 @@
 import React from 'react';
 import { PreviewContext } from 'components/activities/types';
+import {
+  getPreviewCustomizationCopy,
+  usePreviewCustomizationState,
+} from 'components/instructor_preview/preview_customization_store';
 import { LearningObjectiveList } from './LearningObjectiveList';
 import { PreviewDetailsToggle } from './PreviewDetailsToggle';
 import { PreviewHeader } from './PreviewHeader';
@@ -13,35 +17,6 @@ interface Props {
   detailsHeader?: React.ReactNode;
   defaultExpanded?: boolean;
 }
-
-const matchesCustomizationTarget = (
-  expectedTarget: PreviewContext['customizationTarget'],
-  replyTarget?: Partial<PreviewContext['customizationTarget']>,
-) => {
-  if (!replyTarget || replyTarget.kind !== expectedTarget.kind) {
-    return false;
-  }
-
-  if (replyTarget.pageResourceId !== expectedTarget.pageResourceId) {
-    return false;
-  }
-
-  if (
-    Object.prototype.hasOwnProperty.call(expectedTarget, 'selectionId') &&
-    expectedTarget.selectionId !== replyTarget.selectionId
-  ) {
-    return false;
-  }
-
-  if (
-    Object.prototype.hasOwnProperty.call(expectedTarget, 'activityResourceId') &&
-    expectedTarget.activityResourceId !== replyTarget.activityResourceId
-  ) {
-    return false;
-  }
-
-  return true;
-};
 
 const TrashActionIcon: React.FC<{ className?: string }> = ({ className = 'h-4 w-4' }) => (
   <svg
@@ -107,9 +82,13 @@ const RestoreActionIcon: React.FC<{ className?: string }> = ({ className = 'h-4 
   </svg>
 );
 
-const actionButtonClasses = (kind: 'remove' | 'restore') => {
+const actionButtonClasses = (kind: 'remove' | 'restore', disabled = false) => {
   const shared =
-    'inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-70';
+    'inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none';
+
+  if (disabled) {
+    return `${shared} border-Fill-Accent-fill-accent-muted text-Text-text-low-alpha`;
+  }
 
   if (kind === 'remove') {
     return `${shared} border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted hover:bg-[rgba(255,64,64,0.08)] dark:border-Border-border-danger dark:text-[#FFB5B7] dark:hover:bg-[rgba(255,64,64,0.18)] focus-visible:outline-Border-border-danger`;
@@ -127,10 +106,25 @@ export const ActivityPreviewCard: React.FC<Props> = ({
 }) => {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
   const [activeTabId, setActiveTabId] = React.useState(detailTabs[0]?.id ?? '');
-  const [actions, setActions] = React.useState(previewContext.actions ?? []);
-  const [visualState, setVisualState] = React.useState(previewContext.visualState ?? 'default');
-  const [statusPill, setStatusPill] = React.useState(previewContext.statusPill);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { state, begin } = usePreviewCustomizationState(previewContext.customizationTarget, {
+    disposition:
+      previewContext.actions?.[0]?.kind === 'restore' || previewContext.visualState === 'removed'
+        ? 'removed'
+        : 'included',
+    canToggle: !previewContext.actions?.[0]?.disabled,
+  });
+  const action = state.disposition === 'removed' ? 'restore' : 'remove';
+  const showRemovedTreatment =
+    state.disposition === 'removed' && previewContext.customizationTarget.kind !== 'bank_candidate';
+  const visualState = showRemovedTreatment ? 'removed' : 'default';
+  const actionCopy =
+    previewContext.canCustomize && (previewContext.actions?.length ?? 0) > 0
+      ? getPreviewCustomizationCopy()
+      : null;
+  const statusPill = showRemovedTreatment
+    ? { kind: 'removed' as const, label: (actionCopy ?? getPreviewCustomizationCopy()).removed }
+    : undefined;
+  const isSubmitting = state.pendingAction !== null;
   const detailsRegionId = React.useMemo(
     () => `${previewContext.activityHtmlId}-preview-details`,
     [previewContext.activityHtmlId],
@@ -139,18 +133,6 @@ export const ActivityPreviewCard: React.FC<Props> = ({
     visualState === 'removed'
       ? 'relative h-full bg-Surface-surface-secondary-muted before:absolute before:inset-y-0 before:left-0 before:w-[6px] before:bg-Border-border-danger'
       : '';
-
-  React.useEffect(() => {
-    setActions(previewContext.actions ?? []);
-    setVisualState(previewContext.visualState ?? 'default');
-    setStatusPill(previewContext.statusPill);
-    setIsSubmitting(false);
-  }, [
-    previewContext.activityResourceId,
-    previewContext.actions,
-    previewContext.visualState,
-    previewContext.statusPill,
-  ]);
 
   React.useEffect(() => {
     if (detailTabs.length === 0) {
@@ -164,79 +146,34 @@ export const ActivityPreviewCard: React.FC<Props> = ({
     }
   }, [activeTabId, detailTabs]);
 
-  React.useEffect(() => {
-    const handleCustomizationReply = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
+  const headerActions = actionCopy ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        disabled={!state.canToggle || isSubmitting}
+        aria-busy={isSubmitting}
+        className={actionButtonClasses(action, !state.canToggle || isSubmitting)}
+        onClick={() => {
+          if (!state.canToggle || isSubmitting) {
+            return;
+          }
 
-      const replyTarget =
-        detail?.target ??
-        (detail
-          ? {
-              kind: previewContext.customizationTarget.kind,
-              pageResourceId:
-                detail.pageResourceId ?? previewContext.customizationTarget.pageResourceId,
-              activityResourceId: detail.activityResourceId,
-              selectionId: detail.selectionId,
-            }
-          : undefined);
-
-      if (!matchesCustomizationTarget(previewContext.customizationTarget, replyTarget)) {
-        return;
-      }
-
-      setIsSubmitting(false);
-
-      if (detail.ok && Array.isArray(detail.actions)) {
-        setActions(detail.actions);
-      }
-
-      if (detail.ok && Object.prototype.hasOwnProperty.call(detail, 'visualState')) {
-        setVisualState(detail.visualState ?? 'default');
-      }
-
-      if (detail.ok && Object.prototype.hasOwnProperty.call(detail, 'statusPill')) {
-        setStatusPill(detail.statusPill ?? undefined);
-      }
-    };
-
-    window.addEventListener('oli:preview-customization:reply', handleCustomizationReply);
-
-    return () => {
-      window.removeEventListener('oli:preview-customization:reply', handleCustomizationReply);
-    };
-  }, [previewContext.customizationTarget]);
-
-  const headerActions =
-    previewContext.canCustomize && actions.length > 0 ? (
-      <div className="flex flex-wrap items-center gap-2">
-        {actions.map((action) => (
-          <button
-            key={action.kind}
-            type="button"
-            disabled={isSubmitting}
-            className={actionButtonClasses(action.kind)}
-            onClick={() => {
-              // Keep preview components presentational: emit a typed intent and let the enclosing
-              // LiveView decide how "remove" or "restore" maps to section/page mutations. The
-              // reply updates only local customization state, avoiding a remount so existing
-              // component UI state remains intact.
-              setIsSubmitting(true);
-              window.dispatchEvent(
-                new CustomEvent('oli:preview-customization', {
-                  detail: {
-                    action: action.kind,
-                    target: previewContext.customizationTarget,
-                  },
-                }),
-              );
-            }}
-          >
-            {action.kind === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
-            {isSubmitting ? 'Updating...' : action.label}
-          </button>
-        ))}
-      </div>
-    ) : null;
+          begin(action);
+          window.dispatchEvent(
+            new CustomEvent('oli:preview-customization', {
+              detail: {
+                action,
+                target: previewContext.customizationTarget,
+              },
+            }),
+          );
+        }}
+      >
+        {action === 'remove' ? <TrashActionIcon /> : <RestoreActionIcon />}
+        {isSubmitting ? actionCopy.pending : actionCopy[action]}
+      </button>
+    </div>
+  ) : null;
 
   return (
     <article className={`p-6 ${cardClasses}`}>

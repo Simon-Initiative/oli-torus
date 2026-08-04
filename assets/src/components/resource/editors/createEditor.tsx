@@ -7,12 +7,13 @@ import { FeatureFlags } from 'apps/page-editor/types';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Objective } from 'data/content/objective';
-import { ResourceContent, ResourceContext } from 'data/content/resource';
+import { ResolvedLearningObjective, ResourceContent, ResourceContext } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
 import { ActivityEditor } from './ActivityEditor';
 import { AlternativesEditor } from './AlternativesEditor';
 import { ContentBreakEditor } from './ContentBreak';
 import { ContentEditor } from './ContentEditor';
+import { LearningObjectivesEditor } from './LearningObjectivesEditor';
 import { PurposeGroupEditor } from './PurposeGroupEditor';
 import { ReportEditor } from './ReportEditor';
 import { SelectionEditor } from './SelectionEditor';
@@ -42,6 +43,10 @@ export type EditorProps = {
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
   onAddItem: AddCallback;
+  onRefreshLearningObjectives: (
+    contentId: string,
+    learningObjectives: ResolvedLearningObjective[],
+  ) => void;
   onDuplicate: (context: ActivityEditContext) => void;
 };
 
@@ -56,6 +61,8 @@ export const createEditor = (editorProps: EditorProps): JSX.Element => {
       return <ActivityEditor {...editorProps} contentItem={contentItem} />;
     case 'selection':
       return <SelectionEditor {...editorProps} contentItem={contentItem} />;
+    case 'learning_objectives':
+      return <LearningObjectivesEditor {...editorProps} contentItem={contentItem} />;
     case 'group':
       return <PurposeGroupEditor {...editorProps} contentItem={contentItem} />;
     case 'survey':

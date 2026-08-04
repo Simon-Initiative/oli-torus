@@ -1,0 +1,141 @@
+# Scenario: Seed a minimal published course for Likert delivery automation.
+# Likert is authored with scoreable responses, so submit is server-evaluated
+# (allowClientEvaluation:false gates only client self-eval). Three sections
+# isolate learner attempt state across the happy, gating, and restore tests.
+
+- project:
+    name: 'likert_delivery_project'
+    title: 'Likert Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Likert Practice'
+
+- create_activity:
+    project: 'likert_delivery_project'
+    title: 'Likert Question'
+    virtual_id: 'likert'
+    type: 'oli_likert'
+    content_format: 'json'
+    content:
+      activityType: 'oli_likert'
+      stem:
+        id: 'likert_stem'
+        content:
+          - type: 'p'
+            id: 'likert_stem_p'
+            children:
+              - text: 'How much do you agree?'
+      orderDescending: false
+      choices:
+        - id: 'agree'
+          frequency: 0
+          content:
+            - type: 'p'
+              id: 'likert_choice_agree_p'
+              children:
+                - text: 'Agree'
+        - id: 'disagree'
+          frequency: 0
+          content:
+            - type: 'p'
+              id: 'likert_choice_disagree_p'
+              children:
+                - text: 'Disagree'
+      items:
+        - id: 'likert_item_1'
+          content:
+            - type: 'p'
+              id: 'likert_item_1_p'
+              children:
+                - text: 'I enjoyed this lesson.'
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ''
+        parts:
+          # partId must match the associated item id (see likert defaultModel).
+          - id: 'likert_item_1'
+            scoringStrategy: 'best'
+            responses:
+              - id: 'likert_selected'
+                rule: 'input like {agree}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'likert_feedback_selected'
+                  content:
+                    - type: 'p'
+                      id: 'likert_feedback_selected_p'
+                      children:
+                        - text: 'Thanks for your response.'
+              - id: 'likert_other'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'likert_feedback_other'
+                  content:
+                    - type: 'p'
+                      id: 'likert_feedback_other_p'
+                      children:
+                        - text: 'Thanks for your response.'
+            hints: []
+
+- edit_page:
+    project: 'likert_delivery_project'
+    page: 'Likert Practice'
+    content: |
+      title: "Likert Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "likert"
+
+- publish:
+    to: 'likert_delivery_project'
+    description: 'Initial Likert delivery publication'
+
+- section:
+    name: 'likert_delivery_section'
+    title: 'Likert Delivery Course ${RUN_ID}'
+    from: 'likert_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'likert_delivery_section_gating'
+    title: 'Likert Delivery Course ${RUN_ID} - Gating'
+    from: 'likert_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'likert_delivery_section_restore'
+    title: 'Likert Delivery Course ${RUN_ID} - Restore'
+    from: 'likert_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'likert_delivery_student'
+    type: 'student'
+    email: 'likert-delivery-student${RUN_ID}@example.com'
+    given_name: 'Likert'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'likert_delivery_student'
+    section: 'likert_delivery_section'
+    role: 'student'
+
+- enroll:
+    user: 'likert_delivery_student'
+    section: 'likert_delivery_section_gating'
+    role: 'student'
+
+- enroll:
+    user: 'likert_delivery_student'
+    section: 'likert_delivery_section_restore'
+    role: 'student'

@@ -974,6 +974,36 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "stroke-black dark:stroke-white"
+
+  def restore(assigns) do
+    ~H"""
+    <svg
+      class={@class}
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M3.33301 9.16667C3.33301 12.3883 5.94468 15 9.16634 15C12.388 15 14.9997 12.3883 14.9997 9.16667C14.9997 5.94501 12.388 3.33334 9.16634 3.33334C7.24384 3.33334 5.53848 4.2628 4.47595 5.69884"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M5.00033 1.66666L5.00033 5.83332L9.16699 5.83332"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   attr :is_active, :boolean, default: false
 
   def home(%{is_active: true} = assigns) do

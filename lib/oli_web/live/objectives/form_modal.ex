@@ -39,12 +39,12 @@ defmodule OliWeb.ObjectivesLive.FormModal do
                   />
                 </div>
 
-                <button
-                  class="form-button btn btn-md btn-primary btn-block w-auto float-right mt-4"
-                  type="submit"
-                >
-                  {button_text(@action)}
-                </button>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                  <button type="button" class="btn btn-link" phx-click="hide_modal">Cancel</button>
+                  <button class="form-button btn btn-md btn-primary btn-block w-auto" type="submit">
+                    {button_text(@action)}
+                  </button>
+                </div>
               </.form>
             </div>
           </div>

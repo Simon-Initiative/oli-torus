@@ -39,7 +39,7 @@ export function getLoginData(role: TypeUser): LoginRecord {
 }
 
 export function getBaseUrl(): string {
-  return runtimeConfig.baseUrl || 'http://localhost';
+  return runtimeConfig.baseUrl || process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 }
 
 export function getScenarioToken(): string {

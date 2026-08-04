@@ -120,6 +120,51 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "h6", "There are no objectives to show")
     end
 
+    test "does not show objectives that are not root-contained", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      project: project,
+      obj_revision_1: obj_revision_1
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.update_section(section, %{v25_migration: :not_started})
+
+      stale_objective_resource = insert(:resource)
+
+      stale_objective_revision =
+        insert(:revision, %{
+          resource: stale_objective_resource,
+          objectives: %{},
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          children: [],
+          content: %{},
+          deleted: false,
+          slug: "old_dnu_objective",
+          title: "OLD DNU Objective"
+        })
+
+      stale_section_resource =
+        insert(:section_resource, %{
+          section: section,
+          project: project,
+          resource_id: stale_objective_resource.id,
+          revision_id: stale_objective_revision.id,
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          title: stale_objective_revision.title,
+          slug: stale_objective_revision.slug,
+          children: []
+        })
+
+      Oli.Delivery.Sections.SectionResourceDepot.update_section_resource(stale_section_resource)
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      assert has_element?(view, "#objectives-table")
+      assert has_element?(view, "span", obj_revision_1.title)
+      refute has_element?(view, "span", stale_objective_revision.title)
+    end
+
     test "applies searching", %{
       conn: conn,
       instructor: instructor,

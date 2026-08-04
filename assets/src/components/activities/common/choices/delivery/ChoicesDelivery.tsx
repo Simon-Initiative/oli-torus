@@ -3,6 +3,7 @@ import { Choice, ChoiceId } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 import styles from './ChoicesDelivery.modules.scss';
 
 const INTERACTIVE_SELECTOR = [
@@ -38,8 +39,13 @@ export const ChoicesDelivery: React.FC<Props> = ({
   disabled = false,
   multiSelect = false,
 }) => {
+  const [idPrefix] = useState(() => `choices-delivery-${guid()}`);
   const choiceRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
+  const renderIcon = (icon: React.ReactNode) =>
+    React.isValidElement<{ disabled?: boolean }>(icon)
+      ? React.cloneElement(icon, { disabled: disabled || icon.props.disabled })
+      : icon;
 
   // Track which choice is currently focusable (roving tabindex)
   // Initialize to selected index, or 0 if nothing selected
@@ -144,40 +150,47 @@ export const ChoicesDelivery: React.FC<Props> = ({
 
   return (
     <div className={styles.choicesContainer} role={containerRole} aria-label="answer choices">
-      {choices.map((choice, index) => (
-        <div
-          key={choice.id}
-          ref={(el) => (choiceRefs.current[index] = el)}
-          role={itemRole}
-          aria-checked={isSelected(choice.id)}
-          aria-disabled={disabled}
-          aria-label={`choice ${index + 1}`}
-          tabIndex={getTabIndex(index)}
-          onClick={disabled ? undefined : onClicked(choice.id, index)}
-          onKeyDown={disabled ? undefined : onKeyDown(choice.id, index)}
-          className={classNames(
-            'rounded outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary',
-            isSelected(choice.id) ? 'selected' : '',
-            disabled ? 'disabled' : '',
-          )}
-          style={{ cursor: disabled ? 'default' : 'pointer' }}
-        >
-          <div className={styles.choicesChoiceWrapper} dir={choice.textDirection}>
-            <div className={styles.choicesChoiceLabel}>
-              <div className="d-flex align-items-center col">
-                {isSelected(choice.id) ? selectedIcon : unselectedIcon}
-                <div className={classNames('content', styles.choicesChoiceContent)}>
-                  <HtmlContentModelRenderer
-                    content={choice.content}
-                    context={context}
-                    direction={choice.textDirection}
-                  />
+      {choices.map((choice, index) => {
+        const choiceContentId = `${idPrefix}-choice-${choice.id}`;
+
+        return (
+          <div
+            key={choice.id}
+            ref={(el) => (choiceRefs.current[index] = el)}
+            role={itemRole}
+            aria-checked={isSelected(choice.id)}
+            aria-disabled={disabled}
+            aria-labelledby={choiceContentId}
+            tabIndex={getTabIndex(index)}
+            onClick={disabled ? undefined : onClicked(choice.id, index)}
+            onKeyDown={disabled ? undefined : onKeyDown(choice.id, index)}
+            className={classNames(
+              'rounded outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary',
+              isSelected(choice.id) ? 'selected' : '',
+              disabled ? 'disabled' : '',
+            )}
+            style={{ cursor: disabled ? 'default' : 'pointer' }}
+          >
+            <div className={styles.choicesChoiceWrapper} dir={choice.textDirection}>
+              <div className={styles.choicesChoiceLabel}>
+                <div className="d-flex align-items-center col">
+                  {renderIcon(isSelected(choice.id) ? selectedIcon : unselectedIcon)}
+                  <div
+                    id={choiceContentId}
+                    className={classNames('content', styles.choicesChoiceContent)}
+                  >
+                    <HtmlContentModelRenderer
+                      content={choice.content}
+                      context={context}
+                      direction={choice.textDirection}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

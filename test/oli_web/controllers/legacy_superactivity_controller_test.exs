@@ -497,6 +497,48 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       assert response(conn, 413) == "file too large"
     end
 
+    test "preview context follows the configured endpoint scheme", %{
+      conn: conn,
+      content: content,
+      activity_id: activity_id,
+      project: project
+    } do
+      endpoint_config = Application.fetch_env!(:oli, OliWeb.Endpoint)
+      endpoint_url = Keyword.fetch!(endpoint_config, :url)
+
+      on_exit(fn ->
+        Application.put_env(:oli, OliWeb.Endpoint, endpoint_config)
+      end)
+
+      Application.put_env(
+        :oli,
+        OliWeb.Endpoint,
+        Keyword.put(endpoint_config, :url, Keyword.put(endpoint_url, :scheme, "http"))
+      )
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(conn, :preview_context),
+          %{
+            "attemptGuid" => Ecto.UUID.generate(),
+            "model" => content,
+            "context" => %{
+              "projectSlug" => project.slug,
+              "pageTitle" => "Preview page",
+              "resourceId" => activity_id,
+              "graded" => false
+            }
+          }
+        )
+
+      assert conn.resp_body =~
+               ~s("src_url":"http://www.example.com/superactivity/embedded/index.html")
+
+      assert conn.resp_body =~
+               ~s("server_url":"http://www.example.com/jcourse/superactivity/server")
+    end
+
     test "rejects oversized preview models before caching them", %{
       conn: conn,
       content: content,

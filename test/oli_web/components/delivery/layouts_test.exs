@@ -53,10 +53,41 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       assert html =~ ~s(alt="OLI Torus logo")
     end
 
-    test "offsets the header below the instructor preview banner in preview mode" do
+    test "does not offset the header in normal delivery mode" do
+      assigns = %{
+        include_logo: true,
+        preview_mode: false,
+        section: %Section{
+          id: 1,
+          slug: "test-section",
+          title: "Test Section",
+          brand: nil,
+          lti_1p3_deployment: nil
+        },
+        ctx: %SessionContext{
+          user: %User{id: 1},
+          browser_timezone: "America/Montevideo",
+          is_liveview: true,
+          author: nil,
+          local_tz: "America/Montevideo"
+        },
+        sidebar_expanded: true,
+        is_admin: true
+      }
+
+      html = render_component(&Layouts.header/1, assigns)
+
+      assert html =~ "top-0"
+      assert html =~ "z-50"
+      refute html =~ "top-20"
+      refute html =~ "z-[60]"
+    end
+
+    test "offsets the header below the instructor preview banner in instructor preview mode" do
       assigns = %{
         include_logo: true,
         preview_mode: true,
+        instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"},
         section: %Section{
           id: 1,
           slug: "test-section",

@@ -1,0 +1,70 @@
+- project:
+    name: 'lti_external_tool_project'
+    title: 'LTI External Tool Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'External Tool Launch'
+
+- hook:
+    function: 'Oli.Scenarios.LtiExternalTool.Hooks.ensure_dummy_lti_tool/1'
+
+- create_activity:
+    project: 'lti_external_tool_project'
+    title: 'LTI Example Tool Activity'
+    type: 'lti_example_tool'
+    virtual_id: 'dummy_lti_tool'
+    content_format: 'json'
+    content:
+      openInNewTab: true
+      authoring:
+        parts: []
+
+- edit_page:
+    project: 'lti_external_tool_project'
+    page: 'External Tool Launch'
+    content: |
+      title: "External Tool Launch"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Launch the external LTI tool."
+        - type: activity_reference
+          virtual_id: "dummy_lti_tool"
+
+- publish:
+    to: 'lti_external_tool_project'
+    description: 'Initial LTI external tool validation course'
+
+- section:
+    name: 'lti_external_tool_section'
+    title: 'LTI External Tool Section ${RUN_ID}'
+    from: 'lti_external_tool_project'
+    type: 'enrollable'
+    registration_open: true
+    start_date: '2026-04-16T00:00:00Z'
+
+- user:
+    name: 'lti_external_tool_student'
+    type: 'student'
+    email: 'lti-external-tool-student${RUN_ID}@example.com'
+    given_name: 'LTI'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- user:
+    name: 'lti_external_tool_instructor'
+    type: 'instructor'
+    email: 'lti-external-tool-instructor${RUN_ID}@example.com'
+    given_name: 'LTI'
+    family_name: 'Instructor'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'lti_external_tool_student'
+    section: 'lti_external_tool_section'
+    role: 'student'
+
+- enroll:
+    user: 'lti_external_tool_instructor'
+    section: 'lti_external_tool_section'
+    role: 'instructor'

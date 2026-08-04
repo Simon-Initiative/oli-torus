@@ -122,13 +122,20 @@
             - type: "p"
               children:
                 - text: "Disagree"
+      items:
+        - id: "likert_item_1"
+          content:
+            - type: "p"
+              children:
+                - text: "Rate your agreement."
       authoring:
         version: 2
         targeted: []
         transformations: []
         previewText: ""
         parts:
-          - id: "1"
+          # partId must match the associated item id so Likert delivery can render.
+          - id: "likert_item_1"
             scoringStrategy: "best"
             responses:
               - id: "likert_selected"

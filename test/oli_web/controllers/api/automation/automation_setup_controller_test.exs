@@ -73,10 +73,14 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       {:ok, user} = validate_user(educator_email, educator_pass, :user)
       assert user.name == "Test Educator"
       assert user.id == educator_id
+      assert user.email_verified
+      assert user.email_confirmed_at
 
       {:ok, user} = validate_user(learner_email, learner_pass, :user)
       assert user.name == "Test Learner"
       assert user.id == learner_id
+      assert user.email_verified
+      assert user.email_confirmed_at
 
       {:ok, project} =
         Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil("Project not found")

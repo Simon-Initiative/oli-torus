@@ -824,6 +824,160 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_dropdown_2.lifecycle_state == :evaluated
     end
 
+    test "infers required adaptive activity attempts from deck sequence ids when stored resource ids are stale" do
+      user = insert(:user)
+      section = insert(:section)
+
+      required_activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "authoring" => %{"rules" => [], "parts" => []},
+          "partsLayout" => []
+        })
+
+      current_activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 1, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "targetFeasible",
+              "type" => "janus-mcq",
+              "custom" => %{}
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [715_804],
+            "parts" => [
+              %{
+                "id" => "targetFeasible",
+                "type" => "janus-mcq",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.targetFeasible.selectedChoice",
+                      "operator" => "equal",
+                      "value" => 1
+                    },
+                    %{
+                      "fact" => "q:1461939992574:666|stage.maxWarmingTarget.selectedChoice",
+                      "operator" => "equal",
+                      "value" => 3
+                    }
+                  ]
+                },
+                "event" => %{"params" => %{"actions" => []}}
+              },
+              %{
+                "id" => "defaultWrong",
+                "name" => "defaultWrong",
+                "disabled" => false,
+                "default" => true,
+                "correct" => false,
+                "conditions" => %{"all" => []},
+                "event" => %{"params" => %{"actions" => []}}
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, current_activity_revision, [
+          "targetFeasible"
+        ])
+
+      page_content = %{
+        "model" => [
+          %{
+            "type" => "group",
+            "layout" => "deck",
+            "children" => [
+              %{
+                "type" => "activity-reference",
+                "activity_id" => required_activity_revision.resource_id,
+                "custom" => %{"sequenceId" => "q:1461939992574:666"}
+              },
+              %{
+                "type" => "activity-reference",
+                "activity_id" => current_activity_revision.resource_id,
+                "custom" => %{"sequenceId" => "q:1461940707229:780"}
+              }
+            ]
+          }
+        ]
+      }
+
+      setup.page_revision
+      |> Ecto.Changeset.change(content: page_content)
+      |> Oli.Repo.update!()
+
+      setup.resource_attempt
+      |> Ecto.Changeset.change(content: page_content)
+      |> Oli.Repo.update!()
+
+      required_activity_attempt =
+        %Core.ActivityAttempt{
+          attempt_guid: Ecto.UUID.generate(),
+          attempt_number: 1,
+          resource_id: required_activity_revision.resource_id,
+          revision_id: required_activity_revision.id,
+          resource_attempt_id: setup.resource_attempt.id,
+          lifecycle_state: :evaluated,
+          score: 1.0,
+          out_of: 1.0,
+          scoreable: true
+        }
+        |> Oli.Repo.insert!()
+
+      insert(:part_attempt,
+        activity_attempt: required_activity_attempt,
+        part_id: "maxWarmingTarget",
+        lifecycle_state: :evaluated,
+        response: %{
+          "selectedChoice" => %{
+            "path" => "q:1461939992574:666|stage.maxWarmingTarget.selectedChoice",
+            "value" => 3
+          }
+        }
+      )
+
+      [target_feasible_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: target_feasible_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedChoice" => %{
+                "path" => "q:1461940707229:780|stage.targetFeasible.selectedChoice",
+                "value" => 1
+              }
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 1.0
+      assert result["out_of"] == 1.0
+    end
+
     test "finalizes automatic adaptive inputs even when the screen also contains manual inputs" do
       user = insert(:user)
       section = insert(:section)
@@ -953,6 +1107,141 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
 
       assert updated_essay.grading_approach == :manual
       assert updated_essay.lifecycle_state == :submitted
+      assert updated_essay.score == nil
+      assert updated_essay.out_of == nil
+    end
+
+    test "does not submit manual adaptive attempts when the rules engine result is incorrect" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"],
+                "correctFeedback" => "Auto correct",
+                "incorrectFeedback" => "Auto incorrect"
+              }
+            },
+            %{
+              "id" => "essay_1",
+              "type" => "janus-multi-line-text",
+              "custom" => %{
+                "correctFeedback" => "Manual correct",
+                "incorrectFeedback" => "Manual incorrect"
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => [
+              "stage.dropdown_1.selectedIndex",
+              "stage.essay_1.text"
+            ],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              },
+              %{
+                "id" => "essay_1",
+                "type" => "janus-multi-line-text",
+                "gradingApproach" => "manual"
+              }
+            ],
+            # Only a default "wrong" rule fires, so the screen evaluates as incorrect.
+            "rules" => [
+              %{
+                "id" => "r.wrong",
+                "name" => "wrong",
+                "disabled" => false,
+                "default" => true,
+                "correct" => false,
+                "conditions" => %{"all" => []},
+                "event" => %{
+                  "type" => "r.wrong",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1",
+          "essay_1"
+        ])
+
+      [dropdown_attempt, essay_attempt] =
+        setup.part_attempts
+        |> Enum.sort_by(& &1.part_id)
+
+      assert {:ok, essay_attempt} =
+               Core.update_part_attempt(essay_attempt, %{grading_approach: :manual})
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 1},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 1"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 1"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        },
+        %{
+          attempt_guid: essay_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "text" => %{"path" => "stage.essay_1.text", "value" => "Work in progress"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, _result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      # The activity is not finalized so the student can retry.
+      assert updated_attempt.lifecycle_state == :active
+
+      updated_part_attempts =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+        |> Enum.sort_by(& &1.part_id)
+
+      [updated_dropdown, updated_essay] = updated_part_attempts
+
+      # On an incorrect result ALL part attempts remain active so the student can retry with a
+      # clean slate. Persisting the automatic parts early would mark them :evaluated and they could
+      # never be re-scored on a later correct retry, leaving stale automatic scores.
+      assert updated_dropdown.grading_approach == :automatic
+      assert updated_dropdown.lifecycle_state == :active
+
+      # The manual part remains active and is not submitted for grading.
+      assert updated_essay.grading_approach == :manual
+      assert updated_essay.lifecycle_state == :active
       assert updated_essay.score == nil
       assert updated_essay.out_of == nil
     end

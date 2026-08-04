@@ -192,9 +192,12 @@ defmodule Oli.Activities.Realizer.Query.Builder do
   end
 
   defp build_where(%Expression{fact: :text, operator: _, value: value}, peripherals) do
+    param_index = length(peripherals.params) + 1
     peripherals = Map.put(peripherals, :params, peripherals.params ++ [value])
 
-    {["(to_tsvector(content) @@ to_tsquery($1))"], peripherals}
+    {[
+       "((to_tsvector(coalesce(title, '')) || to_tsvector(content)) @@ to_tsquery($#{param_index}))"
+     ], peripherals}
   end
 
   defp build_where(%Expression{fact: :type, operator: operator, value: value}, peripherals) do
