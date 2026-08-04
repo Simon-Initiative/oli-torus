@@ -300,7 +300,7 @@ The automated reviewers updated their existing GitHub issue comments in place af
 - [x] 10.4 Bound ClickHouse direct-upload parsing, transformation, and insertion memory.
 - [x] 10.5 Index reward assignments by activity-attempt ID before constructing part-attempt attributions.
 - [x] 10.6 Resolve alternatives groups through `SectionResourceDepot` during delivery page preparation.
-- [ ] 10.7 Enqueue reward handoff only after a successful activity-attempt update.
+- [x] 10.7 Enqueue reward handoff only after a successful activity-attempt update.
 - [ ] 10.8 Handle an empty resource-attempt list without crashing page preparation.
 - [ ] 10.9 Announce asynchronous `SelectModal` errors to assistive technology.
 - [ ] 10.10 Expose an accessible busy/progress state while `SelectModal` submits.

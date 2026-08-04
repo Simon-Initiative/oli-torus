@@ -165,17 +165,29 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
 
     now = DateTime.utc_now()
 
-    result =
-      update_activity_attempt(activity_attempt, %{
-        score: score,
-        out_of: out_of,
-        lifecycle_state: :evaluated,
-        date_evaluated: now,
-        date_submitted: now
-      })
+    activity_attempt
+    |> update_activity_attempt(%{
+      score: score,
+      out_of: out_of,
+      lifecycle_state: :evaluated,
+      date_evaluated: now,
+      date_submitted: now
+    })
+    |> enqueue_reward_after_update()
+  end
 
-    Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt.id)
+  @doc false
+  def enqueue_reward_after_update(
+        result,
+        enqueue_fn \\ fn activity_attempt_id ->
+          Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt_id)
+        end
+      )
 
+  def enqueue_reward_after_update({:ok, %{id: activity_attempt_id}} = result, enqueue_fn) do
+    :ok = enqueue_fn.(activity_attempt_id)
     result
   end
+
+  def enqueue_reward_after_update(error, _enqueue_fn), do: error
 end

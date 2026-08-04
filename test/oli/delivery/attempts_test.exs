@@ -15,6 +15,32 @@ defmodule Oli.Delivery.AttemptsTest do
 
   import Oli.Factory
 
+  describe "reward handoff after client evaluation" do
+    test "enqueues only successful activity-attempt updates" do
+      parent = self()
+
+      enqueue = fn id ->
+        send(parent, {:enqueued, id})
+        :ok
+      end
+
+      assert {:error, :invalid_update} =
+               ApplyClientEvaluation.enqueue_reward_after_update(
+                 {:error, :invalid_update},
+                 enqueue
+               )
+
+      refute_received {:enqueued, _}
+
+      updated_attempt = %{id: 42}
+
+      assert {:ok, ^updated_attempt} =
+               ApplyClientEvaluation.enqueue_reward_after_update({:ok, updated_attempt}, enqueue)
+
+      assert_received {:enqueued, 42}
+    end
+  end
+
   defp setup_create_attempt_records(_) do
     content1 = %{
       "stem" => "1",
