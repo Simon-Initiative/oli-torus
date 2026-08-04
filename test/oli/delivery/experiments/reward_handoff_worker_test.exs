@@ -9,10 +9,17 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
     assert :ok = RewardHandoffWorker.enqueue(123)
 
     assert [%Oban.Job{}] =
-             all_enqueued(worker: RewardHandoffWorker, args: %{"activity_attempt_id" => 123})
+             all_enqueued(worker: RewardHandoffWorker, args: %{"activity_attempt_ids" => [123]})
   end
 
-  test "treats a missing activity attempt as a completed no-op" do
-    assert :ok = perform_job(RewardHandoffWorker, %{"activity_attempt_id" => -1})
+  test "normalizes a batch and treats missing activity attempts as a completed no-op" do
+    assert :ok = RewardHandoffWorker.enqueue([3, 1, 3, "invalid"])
+
+    assert_enqueued(
+      worker: RewardHandoffWorker,
+      args: %{"activity_attempt_ids" => [1, 3]}
+    )
+
+    assert :ok = perform_job(RewardHandoffWorker, %{"activity_attempt_ids" => [-2, -1]})
   end
 end

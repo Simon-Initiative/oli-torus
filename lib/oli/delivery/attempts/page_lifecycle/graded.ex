@@ -261,7 +261,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                ) do
           activity_attempt_params
           |> Enum.take_every(6)
-          |> Enum.each(&Oli.Delivery.Experiments.RewardHandoff.record_evaluated_activity/1)
+          |> Oli.Delivery.Experiments.RewardHandoffWorker.enqueue()
 
           {:ok, part_attempt_guids}
         else

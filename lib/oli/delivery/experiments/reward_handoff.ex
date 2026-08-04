@@ -22,6 +22,27 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
 
   @reward_source "activity_attempt:full_credit"
 
+  def record_evaluated_activities(activity_attempt_ids) when is_list(activity_attempt_ids) do
+    activity_attempt_ids = Enum.filter(activity_attempt_ids, &is_integer/1)
+
+    errors =
+      activity_attempt_ids
+      |> load_evaluated_attempt_contexts()
+      |> Enum.reduce([], fn context, errors ->
+        metadata = %{activity_attempt_id: context.activity_attempt.id}
+
+        case safely_record(metadata, fn -> record_loaded_context(context, metadata) end) do
+          :ok -> errors
+          {:error, reason} -> [{context.activity_attempt.id, reason} | errors]
+        end
+      end)
+
+    case errors do
+      [] -> :ok
+      errors -> {:error, {:reward_handoff_failures, Enum.reverse(errors)}}
+    end
+  end
+
   def record_evaluated_activity(%ActivityAttempt{id: id}), do: record_evaluated_activity(id)
 
   def record_evaluated_activity(activity_attempt_id) when is_integer(activity_attempt_id) do
@@ -200,6 +221,13 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   end
 
   defp load_evaluated_attempt_context(activity_attempt_id) do
+    activity_attempt_id
+    |> List.wrap()
+    |> load_evaluated_attempt_contexts()
+    |> List.first()
+  end
+
+  defp load_evaluated_attempt_contexts(activity_attempt_ids) do
     from(activity_attempt in ActivityAttempt,
       join: resource_attempt in ResourceAttempt,
       on: resource_attempt.id == activity_attempt.resource_attempt_id,
@@ -213,7 +241,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
       on:
         published_resource.publication_id == spp.publication_id and
           published_resource.resource_id == resource_access.resource_id,
-      where: activity_attempt.id == ^activity_attempt_id,
+      where: activity_attempt.id in ^activity_attempt_ids,
       select: %{
         activity_attempt: activity_attempt,
         page_content: resource_attempt.content,
@@ -231,10 +259,9 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
             )
         },
         published_revision_id: published_resource.revision_id
-      },
-      limit: 1
+      }
     )
-    |> Repo.one()
+    |> Repo.all()
   end
 
   defp load_evaluated_attempt_context_by_guid(activity_attempt_guid) do

@@ -178,8 +178,11 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
           activity_scores: [{1.0, 1.0}, {0.0, 1.0}]
         )
 
-      assert :ok = RewardHandoff.record_evaluated_activity(correct_attempt.id)
-      assert :ok = RewardHandoff.record_evaluated_activity(incorrect_attempt.id)
+      assert :ok =
+               RewardHandoff.record_evaluated_activities([
+                 correct_attempt.id,
+                 incorrect_attempt.id
+               ])
 
       assert event_count("outcomes") == 0
       assert event_count("rewards") == 2
