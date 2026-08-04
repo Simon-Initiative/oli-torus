@@ -60,12 +60,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
     # Validate and transform all events before either table is written.
     with :ok <- validate_experiment_attributions(parsed_events),
+         prepared_events = Enum.map(parsed_events, &prepare_event/1),
          unified_events =
-           parsed_events
-           |> Enum.map(&transform_to_raw_event/1)
+           prepared_events
+           |> Enum.map(& &1.raw_event)
            |> Enum.reject(&is_nil/1),
          experiment_attributions =
-           parsed_events
+           prepared_events
            |> Enum.flat_map(&transform_experiment_attributions/1),
          {:ok, count} <- insert_raw_events(unified_events, config),
          {:ok, _attribution_count} <-
@@ -77,6 +78,18 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         Logger.error("Failed to insert events: #{inspect(reason)}")
         {:error, reason}
     end
+  end
+
+  defp prepare_event({raw_line, event} = parsed_event) do
+    raw_event = transform_to_raw_event(parsed_event)
+
+    %{
+      event: event,
+      event_hash: event_hash(raw_line),
+      host_event_type: if(raw_event, do: raw_event.event_type, else: "unknown"),
+      raw_event: raw_event,
+      timestamp: parse_timestamp(event["timestamp"])
+    }
   end
 
   defp raw_event_base({raw_line, event}, event_type) do
@@ -323,17 +336,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_experiment_attributions({raw_line, event}) do
+  defp transform_experiment_attributions(%{
+         event: event,
+         event_hash: raw_hash,
+         host_event_type: host_event_type,
+         timestamp: timestamp
+       }) do
     result = event["result"] || %{}
-    raw_hash = event_hash(raw_line)
-
-    host_event_type =
-      event
-      |> then(&transform_to_raw_event({raw_line, &1}))
-      |> case do
-        nil -> "unknown"
-        raw_event -> Map.get(raw_event, :event_type)
-      end
 
     event
     |> experiment_attributions()
@@ -342,7 +351,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         raw_event_hash: raw_hash,
         attribution_hash: attribution_hash(raw_hash, attribution),
         host_event_type: host_event_type,
-        timestamp: parse_timestamp(event["timestamp"]),
+        timestamp: timestamp,
         section_id: attribution_value(attribution, "section_id"),
         project_id: attribution_value(attribution, "project_id"),
         publication_id: attribution_value(attribution, "publication_id"),
