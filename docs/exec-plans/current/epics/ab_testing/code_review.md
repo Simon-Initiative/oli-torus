@@ -35,7 +35,7 @@ The highest-priority fixes are:
 ## Implementation Checklist
 
 - [x] 4.1 Handle failures while loading a selected decision point.
-- [ ] 4.2 Move reward handoff out of synchronous activity evaluation.
+- [x] 4.2 Move reward handoff out of synchronous activity evaluation.
 - [ ] 4.3 Batch reward processing during page grading.
 - [ ] 4.4 Transform direct-uploader events only once.
 - [ ] 4.5 Insert direct-uploader attributions in bounded chunks.

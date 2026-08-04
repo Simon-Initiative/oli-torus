@@ -174,7 +174,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
         date_submitted: now
       })
 
-    Oli.Delivery.Experiments.RewardHandoff.record_evaluated_activity(activity_attempt.id)
+    Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt.id)
 
     result
   end
