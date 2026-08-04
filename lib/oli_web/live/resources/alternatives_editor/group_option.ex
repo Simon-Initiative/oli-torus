@@ -18,6 +18,7 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
           group={@group}
           option={option}
           position={position}
+          option_count={@option_count}
           show_actions={@show_actions}
         />
       <% end %>
@@ -30,6 +31,7 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
   attr :option, :map, required: true
   attr :show_actions, :boolean, default: true
   attr :position, :integer, default: 0
+  attr :option_count, :integer, default: 1
 
   def group_option(assigns) do
     ~H"""
@@ -52,6 +54,14 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
           <i class="fa-solid fa-grip-vertical"></i>
         </div>
         <div>{@option["name"]}</div>
+        <span
+          :if={@show_actions}
+          id={"option-position-#{@group.resource_id}-#{@option["id"]}"}
+          class="sr-only"
+          aria-live="polite"
+        >
+          {@option["name"]} position {@position + 1} of {@option_count}
+        </span>
         <div class="flex-grow-1"></div>
         <%= if @show_actions do %>
           <div
@@ -59,6 +69,40 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
             class="d-flex flex-row align-items-center"
             ondragstart="event.preventDefault(); event.stopPropagation();"
           >
+            <button
+              type="button"
+              class="btn icon-button mr-1"
+              aria-label={"Move #{@option["name"]} up"}
+              disabled={@position == 0}
+              phx-click={
+                Phoenix.LiveView.JS.push("reorder_option",
+                  value: %{
+                    resourceId: @group.resource_id,
+                    optionId: @option["id"],
+                    dropIndex: @position - 1
+                  }
+                )
+              }
+            >
+              <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              class="btn icon-button mr-1"
+              aria-label={"Move #{@option["name"]} down"}
+              disabled={@position == @option_count - 1}
+              phx-click={
+                Phoenix.LiveView.JS.push("reorder_option",
+                  value: %{
+                    resourceId: @group.resource_id,
+                    optionId: @option["id"],
+                    dropIndex: @position + 2
+                  }
+                )
+              }
+            >
+              <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+            </button>
             <.icon_button
               class="mr-1"
               icon="fa-solid fa-pencil"

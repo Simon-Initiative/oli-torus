@@ -170,25 +170,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
                "#alternatives-option-#{decision_point.resource_id}-option_1[phx-hook='DragSource'][draggable='true']"
              )
 
-      refute has_element?(view, "button[phx-click='move_option']")
+      assert has_element?(
+               view,
+               "button[aria-label='Move Option 1 up'][disabled]"
+             )
 
-      render_hook(view, "reorder_option", %{
-        "resourceId" => decision_point.resource_id,
-        "optionId" => "option_2",
-        "dropIndex" => 0
-      })
+      assert has_element?(
+               view,
+               "button[aria-label='Move Option 2 down'][disabled]"
+             )
+
+      view
+      |> element("button[aria-label='Move Option 2 up']")
+      |> render_click()
 
       assert_before(render(view), "Option 2", "Option 1")
+
+      assert has_element?(
+               view,
+               "#option-position-#{decision_point.resource_id}-option_2",
+               "Option 2 position 1 of 2"
+             )
 
       reordered = Experiments.get_latest_experiment(project.slug).content["options"]
       assert Enum.map(reordered, & &1["id"]) == ["option_2", "option_1"]
 
       view
-      |> render_hook("reorder_option", %{
-        "resourceId" => decision_point.resource_id,
-        "optionId" => "option_2",
-        "dropIndex" => 2
-      })
+      |> element("button[aria-label='Move Option 2 down']")
+      |> render_click()
 
       assert_before(render(view), "Option 1", "Option 2")
     end
