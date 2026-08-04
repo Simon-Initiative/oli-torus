@@ -2371,6 +2371,13 @@
                   "requires_enrollment": {
                     "$ref": "#/definitions/booleanLike"
                   },
+                  "assistant_enabled": {
+                    "$ref": "#/definitions/booleanLike"
+                  },
+                  "assistant_service_config": {
+                    "type": "string",
+                    "minLength": 1
+                  },
                   "requires_payment": {
                     "$ref": "#/definitions/booleanLike"
                   },
