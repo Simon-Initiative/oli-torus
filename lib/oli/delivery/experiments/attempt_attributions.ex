@@ -38,8 +38,14 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
           empty_attributions()
 
         _ ->
+          assignments_by_activity_attempt = assignments_by_activity_attempt(assignments)
+
           part_attempts =
-            part_attempt_attributions(host_part_attempts, assignments, attempt_group)
+            part_attempt_attributions(
+              host_part_attempts,
+              assignments_by_activity_attempt,
+              attempt_group
+            )
 
           %{
             part_attempts: part_attempts,
@@ -79,12 +85,17 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
     |> Attributions.attributions_for_page_attempt()
   end
 
-  defp part_attempt_attributions(host_part_attempts, assignments, attempt_group) do
-    Enum.reduce(host_part_attempts, %{}, fn {_activity_attempt_id, part_attempt}, acc ->
+  defp part_attempt_attributions(
+         host_part_attempts,
+         assignments_by_activity_attempt,
+         attempt_group
+       ) do
+    Enum.reduce(host_part_attempts, %{}, fn {activity_attempt_id, part_attempt}, acc ->
       activity_attempt = part_attempt.activity_attempt
 
       attributions =
-        assignments
+        assignments_by_activity_attempt
+        |> Map.get(activity_attempt_id, [])
         |> Enum.flat_map(&attributions_for_assignment(attempt_group, activity_attempt, &1))
 
       if attributions == [] do
@@ -94,6 +105,45 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
       end
     end)
   end
+
+  defp assignments_by_activity_attempt(assignments) do
+    Enum.reduce(assignments, %{}, fn assignment, index ->
+      rewards = get_in(assignment.runtime_event_state || %{}, ["rewards"]) || %{}
+
+      rewards
+      |> Map.keys()
+      |> Enum.reduce(index, fn reward_key, index ->
+        case reward_key_attempt_id(reward_key, assignment.id) do
+          {:ok, activity_attempt_id} ->
+            Map.update(index, activity_attempt_id, [assignment], &[assignment | &1])
+
+          :error ->
+            index
+        end
+      end)
+    end)
+  end
+
+  defp reward_key_attempt_id(reward_key, assignment_id) when is_binary(reward_key) do
+    case Regex.run(
+           ~r/^reward:activity_attempt:(\d+):assignment:(\d+)$/,
+           reward_key,
+           capture: :all_but_first
+         ) do
+      [activity_attempt_id, encoded_assignment_id] ->
+        with {activity_attempt_id, ""} <- Integer.parse(activity_attempt_id),
+             {^assignment_id, ""} <- Integer.parse(encoded_assignment_id) do
+          {:ok, activity_attempt_id}
+        else
+          _ -> :error
+        end
+
+      _ ->
+        :error
+    end
+  end
+
+  defp reward_key_attempt_id(_reward_key, _assignment_id), do: :error
 
   defp reward_assignments(%AttemptGroup{} = attempt_group, activity_attempt_ids) do
     if activity_attempt_ids == [] do
