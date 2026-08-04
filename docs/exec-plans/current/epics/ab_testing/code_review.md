@@ -44,7 +44,7 @@ The highest-priority fixes are:
 - [x] 4.9 Normalize `tcp://` ClickHouse hosts when building HTTP URLs.
 - [x] 4.10 Make alternatives option reordering keyboard accessible.
 - [x] 4.11 Make disabled pagination controls non-actionable.
-- [ ] 4.12 Use button semantics for the suggested-slug action.
+- [x] 4.12 Use button semantics for the suggested-slug action.
 
 ## 1. Review Inventory
 

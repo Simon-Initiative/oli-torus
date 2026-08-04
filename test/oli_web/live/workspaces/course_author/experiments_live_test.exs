@@ -486,6 +486,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert suggestion == "suggested_study"
 
+      assert has_element?(
+               view,
+               "button#use-suggested-experiment-slug[type='button'][phx-click='use_suggested_experiment_slug']"
+             )
+
       view
       |> element("#use-suggested-experiment-slug")
       |> render_click()

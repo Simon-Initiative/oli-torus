@@ -358,13 +358,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               />
               <div :if={@experiment_slug_suggestion} class="form-text">
                 Suggested slug:
-                <a
-                  href="#"
+                <button
+                  type="button"
                   id="use-suggested-experiment-slug"
+                  class="btn btn-link p-0 align-baseline"
                   phx-click="use_suggested_experiment_slug"
                 >
                   {@experiment_slug_suggestion}
-                </a>
+                </button>
               </div>
             </div>
             <div class="form-group">
