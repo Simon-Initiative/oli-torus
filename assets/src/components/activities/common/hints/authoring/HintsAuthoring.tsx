@@ -20,6 +20,7 @@ interface HintsAuthoringProps {
   deerInHeadlightsHint: Hint;
   cognitiveHints: Hint[];
   bottomOutHint: Hint;
+  editMode: boolean;
 }
 export const HintsAuthoring: React.FC<HintsAuthoringProps> = ({
   deerInHeadlightsHint,
@@ -30,6 +31,7 @@ export const HintsAuthoring: React.FC<HintsAuthoringProps> = ({
   removeOne,
   updateOneEditor,
   updateOneTextDirection,
+  editMode,
 }) => {
   const { projectSlug } = useAuthoringElementContext();
   return (
@@ -40,6 +42,7 @@ export const HintsAuthoring: React.FC<HintsAuthoringProps> = ({
         updateOneEditor={updateOneEditor}
         updateOneTextDirection={updateOneTextDirection}
         projectSlug={projectSlug}
+        editMode={editMode}
       />
       <CognitiveHints
         hints={cognitiveHints}
@@ -49,6 +52,7 @@ export const HintsAuthoring: React.FC<HintsAuthoringProps> = ({
         updateOneTextDirection={updateOneTextDirection}
         updateOneEditor={updateOneEditor}
         projectSlug={projectSlug}
+        editMode={editMode}
       />
       <BottomOutHint
         hint={bottomOutHint}
@@ -56,6 +60,7 @@ export const HintsAuthoring: React.FC<HintsAuthoringProps> = ({
         updateOneEditor={updateOneEditor}
         updateOneTextDirection={updateOneTextDirection}
         projectSlug={projectSlug}
+        editMode={editMode}
       />
     </>
   );
@@ -67,6 +72,7 @@ interface HintProps {
   updateOne: (id: ID, content: RichText) => void;
   updateOneEditor: (id: ID, editor: EditorType) => void;
   updateOneTextDirection: (id: ID, textDirection: TextDirection) => void;
+  editMode: boolean;
 }
 const DeerInHeadlightsHint: React.FC<HintProps> = ({
   hint,
@@ -74,6 +80,7 @@ const DeerInHeadlightsHint: React.FC<HintProps> = ({
   updateOneEditor,
   updateOneTextDirection,
   projectSlug,
+  editMode,
 }) => (
   <HintCard
     title={<>{'"Deer in headlights" hint'}</>}
@@ -83,6 +90,7 @@ const DeerInHeadlightsHint: React.FC<HintProps> = ({
     updateOneEditor={updateOneEditor}
     updateOneTextDirection={updateOneTextDirection}
     projectSlug={projectSlug}
+    editMode={editMode}
   />
 );
 
@@ -96,6 +104,7 @@ interface CognitiveProps {
   title?: React.ReactNode;
   placeholder?: string;
   projectSlug: string;
+  editMode: boolean;
 }
 export const CognitiveHints: React.FC<CognitiveProps> = ({
   hints,
@@ -107,6 +116,7 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
   placeholder,
   projectSlug,
   updateOneEditor,
+  editMode,
 }) => (
   <Card.Card>
     <Card.Title>{title || '"Cognitive" hints'}</Card.Title>
@@ -120,7 +130,7 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
             content={hint.content}
             onEdit={(content) => updateOne(hint.id, content)}
             onEditorTypeChange={(editor) => updateOneEditor(hint.id, editor)}
-            editMode={true}
+            editMode={editMode}
             editorType={hint.editor || DEFAULT_EDITOR}
             allowBlockElements={true}
             projectSlug={projectSlug}
@@ -149,6 +159,7 @@ const BottomOutHint: React.FC<HintProps> = ({
   projectSlug,
   updateOneEditor,
   updateOneTextDirection,
+  editMode,
 }) => (
   <HintCard
     title={<>{'"Bottom out" hint'}</>}
@@ -158,5 +169,6 @@ const BottomOutHint: React.FC<HintProps> = ({
     updateOneTextDirection={updateOneTextDirection}
     projectSlug={projectSlug}
     updateOneEditor={updateOneEditor}
+    editMode={editMode}
   />
 );

@@ -145,7 +145,11 @@ config :logger, level: :warning
 
 config :oli,
   enable_playwright_scenarios: true,
-  playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN")
+  playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN"),
+  # never hits real S3 in :test (Oli.Test.MockAws intercepts the request), so
+  # a fixed name here carries none of the bucket-squatting risk that a
+  # hardcoded default would in dev/prod
+  playwright_assets_bucket: "torus-playwright-assets-test"
 
 truncate =
   System.get_env("LOGGER_TRUNCATE", "8192")

@@ -1,0 +1,349 @@
+# Cross-section authoring analytics workflow.
+#
+# Learner outcomes for the analyzed activity:
+# - Alice (section one): correct on her first attempt
+# - Bob (section one): incorrect, resets the activity, then answers correctly
+# - Carol (section two): requests a hint, then answers incorrectly
+# - Dave (section two): enrolled but does not attempt either activity
+- project:
+    name: "authoring_insights_course"
+    title: "Authoring Insights Course"
+    objectives:
+      - "Interpret analytics evidence"
+      - "Apply unattempted concepts"
+    root:
+      children:
+        - page: "Analyzed Practice"
+        - page: "Unattempted Practice"
+
+- create_activity:
+    project: "authoring_insights_course"
+    title: "Analyzed Question"
+    virtual_id: "analyzed_question"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Interpret analytics evidence"
+    content_format: "json"
+    content:
+      activityType: "oli_multiple_choice"
+      stem:
+        id: "analyzed_question_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Which option is correct?"
+      choices:
+        - id: "a"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+        - id: "b"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "correct_response"
+                rule: "input like {b}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "correct_feedback"
+                  content: []
+              - id: "incorrect_response"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "incorrect_feedback"
+                  content: []
+            hints:
+              - id: "analyzed_hint"
+                content:
+                  - type: "p"
+                    children:
+                      - text: "Compare both options before answering."
+
+- create_activity:
+    project: "authoring_insights_course"
+    title: "Unattempted Question"
+    virtual_id: "unattempted_question"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Apply unattempted concepts"
+    content: |
+      stem_md: "Which option would be correct?"
+      choices:
+        - id: "a"
+          body_md: "Incorrect"
+        - id: "b"
+          body_md: "Correct"
+          correct: true
+
+- edit_page:
+    project: "authoring_insights_course"
+    page: "Analyzed Practice"
+    objectives:
+      - "Interpret analytics evidence"
+    content: |
+      title: "Analyzed Practice"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Practice interpreting evidence."
+        - type: activity_reference
+          virtual_id: "analyzed_question"
+
+- edit_page:
+    project: "authoring_insights_course"
+    page: "Unattempted Practice"
+    objectives:
+      - "Apply unattempted concepts"
+    content: |
+      title: "Unattempted Practice"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "This page intentionally receives no learner attempts."
+        - type: activity_reference
+          virtual_id: "unattempted_question"
+
+- publish:
+    to: "authoring_insights_course"
+    description: "Publish cross-section analytics coverage"
+
+- section:
+    name: "analytics_section_one"
+    title: "Analytics Section One"
+    from: "authoring_insights_course"
+
+- section:
+    name: "analytics_section_two"
+    title: "Analytics Section Two"
+    from: "authoring_insights_course"
+
+- user:
+    name: "alice"
+    type: "student"
+
+- user:
+    name: "bob"
+    type: "student"
+
+- user:
+    name: "carol"
+    type: "student"
+
+- user:
+    name: "dave"
+    type: "student"
+
+- enroll:
+    user: "alice"
+    section: "analytics_section_one"
+    role: "student"
+
+- enroll:
+    user: "bob"
+    section: "analytics_section_one"
+    role: "student"
+
+- enroll:
+    user: "carol"
+    section: "analytics_section_two"
+    role: "student"
+
+- enroll:
+    user: "dave"
+    section: "analytics_section_two"
+    role: "student"
+
+- visit_page:
+    student: "alice"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+
+- answer_question:
+    student: "alice"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+    activity_virtual_id: "analyzed_question"
+    response: "b"
+
+- visit_page:
+    student: "bob"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+
+- answer_question:
+    student: "bob"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+    activity_virtual_id: "analyzed_question"
+    response: "a"
+
+- reset_activity:
+    student: "bob"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+    activity_virtual_id: "analyzed_question"
+
+- answer_question:
+    student: "bob"
+    section: "analytics_section_one"
+    page: "Analyzed Practice"
+    activity_virtual_id: "analyzed_question"
+    response: "b"
+
+- visit_page:
+    student: "carol"
+    section: "analytics_section_two"
+    page: "Analyzed Practice"
+
+- request_hint:
+    student: "carol"
+    section: "analytics_section_two"
+    page: "Analyzed Practice"
+    activity_virtual_id: "analyzed_question"
+
+- answer_question:
+    student: "carol"
+    section: "analytics_section_two"
+    page: "Analyzed Practice"
+    activity_virtual_id: "analyzed_question"
+    response: "a"
+
+# Across both sections: 2 correct responses from 4 attempts, one hint,
+# and one correct first attempt from three learners who attempted the activity.
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+        - "analytics_section_two"
+      resource_type: "activity"
+      activity_virtual_id: "analyzed_question"
+      expected:
+        num_correct: 2
+        num_attempts: 4
+        num_hints: 1
+        num_first_attempts: 3
+        num_first_attempts_correct: 1
+        eventually_correct: 0.5
+        first_attempt_correct: 0.3333333333333333
+        relative_difficulty: 0.6833333333333333
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+        - "analytics_section_two"
+      resource_type: "page"
+      page: "Analyzed Practice"
+      expected:
+        num_correct: 2
+        num_attempts: 4
+        num_hints: 1
+        num_first_attempts: 3
+        num_first_attempts_correct: 1
+        eventually_correct: 0.5
+        first_attempt_correct: 0.3333333333333333
+        relative_difficulty: 0.6833333333333333
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+        - "analytics_section_two"
+      resource_type: "objective"
+      objective: "Interpret analytics evidence"
+      expected:
+        num_correct: 2
+        num_attempts: 4
+        num_hints: 1
+        num_first_attempts: 3
+        num_first_attempts_correct: 1
+        eventually_correct: 0.5
+        first_attempt_correct: 0.3333333333333333
+        relative_difficulty: 0.6833333333333333
+
+# Section-specific checks prove that the cross-section result is an aggregation,
+# rather than one section's result being returned for every filter.
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+      resource_type: "activity"
+      activity_virtual_id: "analyzed_question"
+      expected:
+        num_correct: 2
+        num_attempts: 3
+        num_hints: 0
+        num_first_attempts: 2
+        num_first_attempts_correct: 1
+        eventually_correct: 0.6666666666666666
+        first_attempt_correct: 0.5
+        relative_difficulty: 0.35
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_two"
+      resource_type: "activity"
+      activity_virtual_id: "analyzed_question"
+      expected:
+        num_correct: 0
+        num_attempts: 1
+        num_hints: 1
+        num_first_attempts: 1
+        num_first_attempts_correct: 0
+        eventually_correct: 0.0
+        first_attempt_correct: 0.0
+        relative_difficulty: 1.0
+
+# The second page, activity, and objective intentionally have no analytics rows.
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+        - "analytics_section_two"
+      resource_type: "activity"
+      activity_virtual_id: "unattempted_question"
+      exists: false
+      expected: {}
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+        - "analytics_section_two"
+      resource_type: "page"
+      page: "Unattempted Practice"
+      exists: false
+      expected: {}
+
+- assert:
+    insights:
+      project: "authoring_insights_course"
+      sections:
+        - "analytics_section_one"
+        - "analytics_section_two"
+      resource_type: "objective"
+      objective: "Apply unattempted concepts"
+      exists: false
+      expected: {}

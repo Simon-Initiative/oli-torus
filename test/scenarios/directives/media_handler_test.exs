@@ -62,4 +62,19 @@ defmodule Oli.Scenarios.Directives.MediaHandlerTest do
 
     assert msg =~ "{:persistence}"
   end
+
+  test "handles relative path without current_dir without crashing on state access" do
+    project = insert(:project)
+
+    state = %ExecutionState{projects: %{"proj" => built_project(project)}}
+
+    assert {:error, msg} =
+             MediaHandler.handle(
+               %MediaDirective{project: "proj", path: "x.txt", mime: "text/plain"},
+               state
+             )
+
+    refute msg =~ "key :current_dir not found"
+    assert msg =~ "no such file or directory"
+  end
 end

@@ -1,4 +1,4 @@
-import { previewMathExpressionSyntax } from 'gleam/torusExpression';
+import { previewMathExpressionSyntax, quantityValueSource } from 'gleam/torusExpression';
 import type { MathExpressionSyntaxKind } from 'gleam/torusExpression';
 import { parsed_quantity_to_latex, parsed_to_latex } from 'gleam_build/oli/math/latex.mjs';
 import { parse } from 'gleam_build/oli/math/parser.mjs';
@@ -128,5 +128,26 @@ describe('torusExpression preview adapter', () => {
 
     expect(quantity.parse_quantity_or_expression).toHaveBeenCalledWith('9.8 m/s^2');
     expect(parser.parse).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['9.8 m/s^2', 3, '9.8'],
+    ['(12 + 3) J/(mol*K)', 8, '(12 + 3)'],
+  ])('returns only the value source for quantity %s', (source, end, expected) => {
+    quantity.parse_quantity_or_expression.mockReturnValue(
+      ok({ value: { span: { end } }, unit: 'parsed-unit' }),
+    );
+
+    expect(quantityValueSource(source)).toBe(expected);
+    expect(quantity.parse_quantity_or_expression).toHaveBeenCalledWith(source);
+  });
+
+  it.each([
+    [ok({ value: { span: { end: 3 } } }), '9.8'],
+    [error('invalid quantity'), '9.8m/s^2'],
+  ])('preserves the source when the parser result is not a quantity', (result, source) => {
+    quantity.parse_quantity_or_expression.mockReturnValue(result);
+
+    expect(quantityValueSource(source)).toBe(source);
   });
 });

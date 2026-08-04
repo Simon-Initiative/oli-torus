@@ -62,6 +62,41 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
           misses("9 cm/s", out_of: 2)
         ]
       ),
+      single("single number with units targets non-reference authored magnitudes",
+        subtype: "number_with_units",
+        unit_policy: convertible_units(["m/s", "km/hr"]),
+        responses: [
+          correct("1 m/s", 2, feedback: "correct"),
+          targeted("3.6 km/hr", 1.5,
+            subtype: "number_with_units",
+            operator: "equal",
+            wrong_units: true,
+            feedback: "non-reference-wrong-units"
+          ),
+          targeted("3.6 km/hr", 1,
+            subtype: "number_with_units",
+            operator: "equal",
+            missing_unit: true,
+            feedback: "non-reference-missing-unit"
+          ),
+          incorrect()
+        ],
+        cases: [
+          solves("1 m/s", score: 2, out_of: 2, feedback: "correct"),
+          solves("3.6 cm/s",
+            score: 1.5,
+            out_of: 2,
+            feedback: "non-reference-wrong-units"
+          ),
+          solves("3.6",
+            score: 1,
+            out_of: 2,
+            feedback: "non-reference-missing-unit"
+          ),
+          misses("1 cm/s", out_of: 2),
+          misses("1", out_of: 2)
+        ]
+      ),
       single("single number with units numeric tolerance",
         subtype: "number_with_units",
         unit_policy: convertible_units(["m/s", "km/hr"]),
@@ -77,6 +112,23 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
         cases: [
           solves("36.72 km/hr", score: 2, out_of: 2, feedback: "unit-tolerance-absolute"),
           misses("37.08 km/hr", out_of: 2)
+        ]
+      ),
+      single("single number with units quantity-authored equality",
+        subtype: "number_with_units",
+        unit_policy: convertible_units(["m/s", "km/hr"]),
+        responses: [
+          correct("1 m/s", 2,
+            subtype: "number_with_units",
+            operator: "equal",
+            feedback: "unit-quantity-equality"
+          ),
+          incorrect()
+        ],
+        cases: [
+          solves("1 m/s", score: 2, out_of: 2, feedback: "unit-quantity-equality"),
+          solves("3.6 km/hr", score: 2, out_of: 2, feedback: "unit-quantity-equality"),
+          misses("1 km/hr", out_of: 2)
         ]
       ),
       single("single number with units numeric greater-than and unit targets",
@@ -148,6 +200,11 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
             tolerance: absolute_tolerance(0.5),
             feedback: "single-tolerance-absolute"
           ),
+          correct("1.5", 2,
+            subtype: "numeric",
+            tolerance: absolute_tolerance(0.1),
+            feedback: "single-tolerance-boundary"
+          ),
           correct("100", 2,
             subtype: "numeric",
             tolerance: relative_tolerance(0.1),
@@ -163,6 +220,8 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
         cases: [
           solves("10", score: 2, out_of: 2, feedback: "single-tolerance-none"),
           solves("20.4", score: 2, out_of: 2, feedback: "single-tolerance-absolute"),
+          solves("1.4", score: 2, out_of: 2, feedback: "single-tolerance-boundary"),
+          solves("1.6", score: 2, out_of: 2, feedback: "single-tolerance-boundary"),
           solves("109", score: 2, out_of: 2, feedback: "single-tolerance-relative"),
           solves("1000.8",
             score: 2,
@@ -306,6 +365,13 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
             score: 2,
             feedback: "multi-tolerance-absolute"
           ),
+          input("tol_boundary",
+            subtype: "numeric",
+            answer: "1.5",
+            tolerance: absolute_tolerance(0.1),
+            score: 2,
+            feedback: "multi-tolerance-boundary"
+          ),
           input("tol_relative",
             subtype: "numeric",
             answer: "100",
@@ -326,14 +392,34 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
             %{
               "tol_none" => "10",
               "tol_absolute" => "20.4",
+              "tol_boundary" => "1.4",
               "tol_relative" => "109",
               "tol_absolute_or_relative" => "1000.8"
             },
-            score: 8,
-            out_of: 8,
+            score: 10,
+            out_of: 10,
             parts: [
               part("tol_none", 2, "multi-tolerance-none"),
               part("tol_absolute", 2, "multi-tolerance-absolute"),
+              part("tol_boundary", 2, "multi-tolerance-boundary"),
+              part("tol_relative", 2, "multi-tolerance-relative"),
+              part("tol_absolute_or_relative", 2, "multi-tolerance-absolute-or-relative")
+            ]
+          ),
+          solves(
+            %{
+              "tol_none" => "10",
+              "tol_absolute" => "20.4",
+              "tol_boundary" => "1.6",
+              "tol_relative" => "109",
+              "tol_absolute_or_relative" => "1000.8"
+            },
+            score: 10,
+            out_of: 10,
+            parts: [
+              part("tol_none", 2, "multi-tolerance-none"),
+              part("tol_absolute", 2, "multi-tolerance-absolute"),
+              part("tol_boundary", 2, "multi-tolerance-boundary"),
               part("tol_relative", 2, "multi-tolerance-relative"),
               part("tol_absolute_or_relative", 2, "multi-tolerance-absolute-or-relative")
             ]
@@ -342,14 +428,16 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
             %{
               "tol_none" => "10.1",
               "tol_absolute" => "20.6",
+              "tol_boundary" => "1.399",
               "tol_relative" => "112",
               "tol_absolute_or_relative" => "1001.1"
             },
             score: 0,
-            out_of: 8,
+            out_of: 10,
             parts: [
               part("tol_none", 0, "incorrect", 2),
               part("tol_absolute", 0, "incorrect", 2),
+              part("tol_boundary", 0, "incorrect", 2),
               part("tol_relative", 0, "incorrect", 2),
               part("tol_absolute_or_relative", 0, "incorrect", 2)
             ]

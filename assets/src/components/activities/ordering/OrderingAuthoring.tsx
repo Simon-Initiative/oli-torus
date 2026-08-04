@@ -115,6 +115,7 @@ export const Ordering: React.FC = () => {
     useAuthoringElementContext<OrderingSchema>();
   const writerContext = defaultWriterContext({ projectSlug: projectSlug });
   const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   const choices = model.choices.reduce((m: any, c) => {
     m[c.id] = c;
@@ -146,6 +147,7 @@ export const Ordering: React.FC = () => {
           choices={getCorrectChoiceIds(model).map((id) => choices[id])}
           colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
+          disabled={readOnly}
         />
         <SimpleFeedback partId={model.authoring.parts[0].id} />
         <ActivityScoring partId={model.authoring.parts[0].id} />

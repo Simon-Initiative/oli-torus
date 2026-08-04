@@ -44,6 +44,93 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     end
   end
 
+  test "schema and parser accept learner hint and activity reset directives" do
+    yaml = """
+    - request_hint:
+        student: "student"
+        section: "section"
+        page: "Practice"
+        activity_virtual_id: "question"
+        part_id: "1"
+
+    - reset_activity:
+        student: "student"
+        section: "section"
+        page: "Practice"
+        activity_virtual_id: "question"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [request_hint, reset_activity] = DirectiveParser.parse_yaml!(yaml)
+    assert request_hint.part_id == "1"
+    assert reset_activity.activity_virtual_id == "question"
+  end
+
+  test "schema and parser accept insights assertions" do
+    yaml = """
+    - assert:
+        insights:
+          project: "demo"
+          sections:
+            - "section_one"
+            - "section_two"
+          resource_type: "activity"
+          activity_virtual_id: "question"
+          part_id: "1"
+          tolerance: 0.0001
+          expected:
+            num_attempts: 3
+            eventually_correct: 0.666667
+            relative_difficulty: 0.35
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [directive] = DirectiveParser.parse_yaml!(yaml)
+    assert directive.insights.resource_type == :activity
+    assert directive.insights.sections == ["section_one", "section_two"]
+    assert directive.insights.expected.num_attempts == 3
+    assert directive.insights.expected.eventually_correct == 0.666667
+    assert directive.insights.tolerance == 0.0001
+  end
+
+  test "schema and parser reject insights assertions without an expected metric" do
+    yaml = """
+    - assert:
+        insights:
+          project: "demo"
+          resource_type: "page"
+          page: "Practice"
+          expected: {}
+    """
+
+    assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+    assert_raise RuntimeError, ~r/requires at least one expected metric/, fn ->
+      DirectiveParser.parse_yaml!(yaml)
+    end
+  end
+
+  test "schema and parser reject insights assertions with multiple targets" do
+    yaml = """
+    - assert:
+        insights:
+          project: "demo"
+          resource_type: "page"
+          page: "Practice"
+          objective: "Understand practice"
+          expected:
+            num_attempts: 1
+    """
+
+    assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+    assert_raise RuntimeError, ~r/must specify exactly one resource target/, fn ->
+      DirectiveParser.parse_yaml!(yaml)
+    end
+  end
+
   test "schema and parser accept section scheduling dates" do
     yaml = """
     - section:
@@ -57,6 +144,72 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     [section] = DirectiveParser.parse_yaml!(yaml)
     assert section.start_date == ~U[2026-01-01 00:00:00Z]
     assert section.end_date == ~U[2026-12-31 23:59:59Z]
+  end
+
+  test "schema and parser accept paywall fields on product and section plus institution discounts" do
+    yaml = """
+    - institution:
+        name: "demo_institution"
+        country_code: "US"
+        institution_email: "admin@example.edu"
+        institution_url: "https://example.edu"
+
+    - product:
+        name: "paid_product"
+        from: "demo_project"
+        requires_payment: true
+        payment_options: "direct_and_deferred"
+        pay_by_institution: false
+        amount:
+          amount: 25
+          currency: "USD"
+        has_grace_period: true
+        grace_period_days: 5
+        grace_period_strategy: "relative_to_student"
+
+    - institution_discount:
+        institution: "demo_institution"
+        product: "paid_product"
+        type: "percentage"
+        percentage: 20
+
+    - section:
+        name: "paid_section"
+        from: "paid_product"
+        institution: "demo_institution"
+        requires_payment: true
+        payment_options: "deferred"
+        amount:
+          amount: 25
+          currency: "USD"
+        has_grace_period: false
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [institution, product, discount, section] = DirectiveParser.parse_yaml!(yaml)
+
+    assert institution.name == "demo_institution"
+    assert product.payment_options == :direct_and_deferred
+    assert product.grace_period_strategy == :relative_to_student
+    assert product.amount == %{"amount" => 25, "currency" => "USD"}
+    assert discount.type == :percentage
+    assert discount.percentage == 20.0
+    assert section.institution == "demo_institution"
+    assert section.payment_options == :deferred
+    assert section.has_grace_period == false
+  end
+
+  test "schema and parser accept dashboard analytics readiness directive" do
+    yaml = """
+    - dashboard_analytics_ready:
+        section: "demo_section"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [directive] = DirectiveParser.parse_yaml!(yaml)
+    assert directive.section == "demo_section"
   end
 
   test "schema accepts phase 2 gating directives" do
@@ -423,5 +576,77 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert length(directives) == 1
     assert metadata.tags == ["nightly", "slow", "real_time"]
     assert metadata.timeout_ms == 300_000
+  end
+
+  test "schema and parser accept instructor dashboard assertions" do
+    yaml = """
+    - assert:
+        instructor_dashboard_summary:
+          section: "dashboard_section"
+          scope: "course"
+          tolerance: 0.1
+          total_students: 5
+          metrics:
+            average_student_progress: 62.5
+            average_class_proficiency: 70.0
+
+    - assert:
+        instructor_dashboard_progress:
+          section: "dashboard_section"
+          scope:
+            container: "Foundations Unit"
+          class_size: 5
+          axis_label: "Course Pages"
+          items:
+            Lesson 1:
+              completed_count: 3
+
+    - assert:
+        instructor_dashboard_student_support:
+          section: "dashboard_section"
+          buckets:
+            struggling:
+              count: 2
+              student_names: ["Cleo Student", "Diego Student"]
+
+    - assert:
+        instructor_dashboard_challenging_objectives:
+          section: "dashboard_section"
+          state: "populated"
+          row_count: 1
+          rows_by_title:
+            Master foundations:
+              proficiency_label: "Low"
+
+    - assert:
+        instructor_dashboard_assessments:
+          section: "dashboard_section"
+          total_rows: 1
+          rows_by_title:
+            Checkpoint Quiz:
+              completion:
+                completed_count: 3
+                total_students: 5
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [
+      summary,
+      progress,
+      student_support,
+      challenging_objectives,
+      assessments
+    ] = DirectiveParser.parse_yaml!(yaml)
+
+    assert summary.instructor_dashboard_summary.section == "dashboard_section"
+    assert summary.instructor_dashboard_summary.tolerance == 0.1
+    assert progress.instructor_dashboard_progress.scope == %{"container" => "Foundations Unit"}
+    assert student_support.instructor_dashboard_student_support.section == "dashboard_section"
+
+    assert challenging_objectives.instructor_dashboard_challenging_objectives.state ==
+             "populated"
+
+    assert assessments.instructor_dashboard_assessments.total_rows == 1
   end
 end

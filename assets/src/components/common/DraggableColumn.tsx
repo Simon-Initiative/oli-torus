@@ -68,7 +68,9 @@ const Item: React.FC<ItemProps> = ({
           )}
           style={{ ...getStyle(provided.draggableProps.style, snapshot), backgroundColor: color }}
           aria-label={itemAriaLabel || 'Item ' + index}
-          onKeyDown={(e: any) => reorderByKey(e, index, items, item, setItems)}
+          onKeyDown={(e: any) => {
+            if (!isDragDisabled) reorderByKey(e, index, items, item, setItems);
+          }}
         >
           {children(item, index)}
         </div>

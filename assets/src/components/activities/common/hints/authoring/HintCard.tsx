@@ -14,6 +14,7 @@ export const HintCard: React.FC<{
   updateOneEditor: (id: ID, editor: EditorType) => void;
   updateOneTextDirection: (id: ID, textDirection: string) => void;
   projectSlug: string;
+  editMode: boolean;
 }> = ({
   title,
   placeholder,
@@ -22,6 +23,7 @@ export const HintCard: React.FC<{
   updateOneEditor,
   updateOneTextDirection,
   projectSlug,
+  editMode,
 }) => {
   return (
     <Card.Card>
@@ -31,7 +33,7 @@ export const HintCard: React.FC<{
           placeholder={placeholder}
           content={hint?.content || []}
           onEdit={(content) => updateOne(hint.id, content)}
-          editMode={true}
+          editMode={editMode}
           editorType={hint.editor || DEFAULT_EDITOR}
           onEditorTypeChange={(editor) => updateOneEditor(hint.id, editor)}
           allowBlockElements={true}

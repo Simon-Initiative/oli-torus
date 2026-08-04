@@ -29,6 +29,13 @@ type SubmittedUnitStatus {
   SubmittedMissingUnit
 }
 
+type NormalizedAuthoredNumericInput {
+  NormalizedAuthoredNumericInput(
+    raw: equality_types.NumericInput,
+    canonical: equality_types.NumericInput,
+  )
+}
+
 /// Validate only the root contract invariant owned by the match-config layer.
 pub fn validate_config(
   config: types.MatchConfig,
@@ -465,12 +472,11 @@ fn evaluate_unit_numeric_aware(
   case reference_unit(config) {
     Error(error) -> types.MatchInvalidConfig(error: error)
     Ok(reference_unit) -> {
-      case
-        numeric.scale_comparison_values(spec, reference_unit.scale_to_canonical)
-      {
-        Error(error) -> types.MatchInvalidConfig(error: equality_error(error))
-        Ok(canonical_spec) ->
+      case normalize_authored_unit_numeric_spec(spec, config, reference_unit) {
+        Error(error) -> types.MatchInvalidConfig(error: error)
+        Ok(#(raw_spec, canonical_spec)) ->
           evaluate_unit_numeric_submission(
+            raw_spec,
             canonical_spec,
             submitted,
             config,
@@ -483,7 +489,275 @@ fn evaluate_unit_numeric_aware(
   }
 }
 
+/// Scalarize each authored operand twice: once at its authored magnitude for
+/// targeted unit-error responses, and once in canonical units for normal
+/// unit-aware comparisons.
+fn normalize_authored_unit_numeric_spec(
+  spec: equality_types.NumericSpec,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(
+  #(equality_types.NumericSpec, equality_types.NumericSpec),
+  types.MatchConfigError,
+) {
+  case
+    normalize_authored_unit_numeric_comparison(
+      spec.comparison,
+      config,
+      reference_unit,
+    )
+  {
+    Error(error) -> Error(error)
+    Ok(#(raw_comparison, canonical_comparison)) ->
+      Ok(#(
+        equality_types.NumericSpec(
+          comparison: raw_comparison,
+          tolerance: spec.tolerance,
+          representation: spec.representation,
+          precision: spec.precision,
+        ),
+        equality_types.NumericSpec(
+          comparison: canonical_comparison,
+          tolerance: spec.tolerance,
+          representation: spec.representation,
+          precision: spec.precision,
+        ),
+      ))
+  }
+}
+
+fn normalize_authored_unit_numeric_comparison(
+  comparison: equality_types.NumericComparison,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(
+  #(equality_types.NumericComparison, equality_types.NumericComparison),
+  types.MatchConfigError,
+) {
+  case comparison {
+    equality_types.Equal(expected) ->
+      normalize_authored_unit_numeric_operand(
+        expected,
+        "expected",
+        equality_types.Equal,
+        config,
+        reference_unit,
+      )
+
+    equality_types.NotEqual(expected) ->
+      normalize_authored_unit_numeric_operand(
+        expected,
+        "expected",
+        equality_types.NotEqual,
+        config,
+        reference_unit,
+      )
+
+    equality_types.GreaterThan(threshold) ->
+      normalize_authored_unit_numeric_operand(
+        threshold,
+        "threshold",
+        equality_types.GreaterThan,
+        config,
+        reference_unit,
+      )
+
+    equality_types.GreaterThanOrEqual(threshold) ->
+      normalize_authored_unit_numeric_operand(
+        threshold,
+        "threshold",
+        equality_types.GreaterThanOrEqual,
+        config,
+        reference_unit,
+      )
+
+    equality_types.LessThan(threshold) ->
+      normalize_authored_unit_numeric_operand(
+        threshold,
+        "threshold",
+        equality_types.LessThan,
+        config,
+        reference_unit,
+      )
+
+    equality_types.LessThanOrEqual(threshold) ->
+      normalize_authored_unit_numeric_operand(
+        threshold,
+        "threshold",
+        equality_types.LessThanOrEqual,
+        config,
+        reference_unit,
+      )
+
+    equality_types.Between(lower, upper, bounds) ->
+      normalize_authored_unit_numeric_range(
+        lower,
+        upper,
+        bounds,
+        equality_types.Between,
+        config,
+        reference_unit,
+      )
+
+    equality_types.NotBetween(lower, upper, bounds) ->
+      normalize_authored_unit_numeric_range(
+        lower,
+        upper,
+        bounds,
+        equality_types.NotBetween,
+        config,
+        reference_unit,
+      )
+  }
+}
+
+fn normalize_authored_unit_numeric_operand(
+  input: equality_types.NumericInput,
+  field: String,
+  constructor: fn(equality_types.NumericInput) ->
+    equality_types.NumericComparison,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(
+  #(equality_types.NumericComparison, equality_types.NumericComparison),
+  types.MatchConfigError,
+) {
+  normalize_authored_unit_numeric_input(input, field, config, reference_unit)
+  |> result.map(fn(normalized) {
+    let NormalizedAuthoredNumericInput(raw, canonical) = normalized
+    #(constructor(raw), constructor(canonical))
+  })
+}
+
+fn normalize_authored_unit_numeric_range(
+  lower: equality_types.NumericInput,
+  upper: equality_types.NumericInput,
+  bounds: equality_types.RangeBounds,
+  constructor: fn(
+    equality_types.NumericInput,
+    equality_types.NumericInput,
+    equality_types.RangeBounds,
+  ) -> equality_types.NumericComparison,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(
+  #(equality_types.NumericComparison, equality_types.NumericComparison),
+  types.MatchConfigError,
+) {
+  case
+    normalize_authored_unit_numeric_input(
+      lower,
+      "lower",
+      config,
+      reference_unit,
+    ),
+    normalize_authored_unit_numeric_input(
+      upper,
+      "upper",
+      config,
+      reference_unit,
+    )
+  {
+    Ok(NormalizedAuthoredNumericInput(raw_lower, canonical_lower)),
+      Ok(NormalizedAuthoredNumericInput(raw_upper, canonical_upper))
+    ->
+      Ok(#(
+        constructor(raw_lower, raw_upper, bounds),
+        constructor(canonical_lower, canonical_upper, bounds),
+      ))
+    Error(error), _ | _, Error(error) -> Error(error)
+  }
+}
+
+fn normalize_authored_unit_numeric_input(
+  input: equality_types.NumericInput,
+  field: String,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(NormalizedAuthoredNumericInput, types.MatchConfigError) {
+  let equality_types.NumericInput(raw: raw) = input
+
+  case quantity.parse_quantity_or_expression(raw) {
+    Ok(unit_types.ParsedExpression(_)) ->
+      normalize_authored_scalar(raw, field, reference_unit.scale_to_canonical)
+
+    Ok(unit_types.ParsedQuantity(_, unit)) ->
+      normalize_authored_quantity(raw, unit, field, config, reference_unit)
+
+    Error(_) ->
+      Error(types.InvalidField(
+        field: "math." <> field,
+        reason: "expected a scalar number or quantity",
+      ))
+  }
+}
+
+fn normalize_authored_scalar(
+  raw: String,
+  field: String,
+  scale: Float,
+) -> Result(NormalizedAuthoredNumericInput, types.MatchConfigError) {
+  case numeric.parse_scalar(raw) {
+    Ok(value) ->
+      Ok(NormalizedAuthoredNumericInput(
+        raw: equality_types.NumericInput(raw: float.to_string(value)),
+        canonical: equality_types.NumericInput(raw: float.to_string(
+          value *. scale,
+        )),
+      ))
+    Error(Nil) ->
+      Error(types.InvalidField(
+        field: "math." <> field,
+        reason: "expected a scalar number or quantity",
+      ))
+  }
+}
+
+fn normalize_authored_quantity(
+  raw: String,
+  unit: unit_types.UnitExpr,
+  field: String,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(NormalizedAuthoredNumericInput, types.MatchConfigError) {
+  case
+    numeric.parse_scalar(submitted_numeric_value_source(raw)),
+    unit_normalize.normalize_unit(unit)
+  {
+    Ok(value), Ok(normalized_unit) ->
+      case config.mode {
+        unit_types.IgnoreUnits ->
+          Ok(NormalizedAuthoredNumericInput(
+            raw: equality_types.NumericInput(raw: float.to_string(value)),
+            canonical: equality_types.NumericInput(raw: float.to_string(value)),
+          ))
+        unit_types.RequireUnits ->
+          case same_dimensions(normalized_unit, reference_unit) {
+            True ->
+              Ok(NormalizedAuthoredNumericInput(
+                raw: equality_types.NumericInput(raw: float.to_string(value)),
+                canonical: equality_types.NumericInput(raw: float.to_string(
+                  value *. normalized_unit.scale_to_canonical,
+                )),
+              ))
+            False ->
+              Error(types.InvalidField(
+                field: "math." <> field,
+                reason: "quantity unit is incompatible with the configured reference unit",
+              ))
+          }
+      }
+
+    _, _ ->
+      Error(types.InvalidField(
+        field: "math." <> field,
+        reason: "expected a scalar quantity with a supported unit",
+      ))
+  }
+}
+
 fn evaluate_unit_numeric_submission(
+  raw_spec: equality_types.NumericSpec,
   canonical_spec: equality_types.NumericSpec,
   submitted: String,
   config: unit_types.UnitConfig,
@@ -497,9 +771,9 @@ fn evaluate_unit_numeric_submission(
       case match_missing_unit, match_wrong_units, status {
         True, _, SubmittedMissingUnit ->
           evaluate_unit_numeric_value_target(
-            canonical_spec,
+            raw_spec,
             raw_value,
-            value *. reference_unit.scale_to_canonical,
+            value,
             types.UnitMissingMatched,
             types.UnitMissingNotMatched,
           )
@@ -512,9 +786,9 @@ fn evaluate_unit_numeric_submission(
 
         False, True, SubmittedWrongUnit ->
           evaluate_unit_numeric_value_target(
-            canonical_spec,
+            raw_spec,
             raw_value,
-            value *. reference_unit.scale_to_canonical,
+            value,
             types.UnitWrongMatched,
             types.UnitWrongNotMatched,
           )
@@ -544,16 +818,16 @@ fn evaluate_unit_numeric_submission(
 }
 
 fn evaluate_unit_numeric_value_target(
-  canonical_spec: equality_types.NumericSpec,
+  raw_spec: equality_types.NumericSpec,
   raw_value: String,
-  canonical_value: Float,
+  value: Float,
   matched_diagnostic: types.MatchDiagnostic,
   not_matched_diagnostic: types.MatchDiagnostic,
 ) -> types.MatchResult {
   evaluate_unit_numeric_value(
-    canonical_spec,
+    raw_spec,
     raw_value,
-    canonical_value,
+    value,
     matched_diagnostic,
     not_matched_diagnostic,
   )

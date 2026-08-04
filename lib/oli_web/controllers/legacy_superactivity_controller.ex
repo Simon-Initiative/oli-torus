@@ -28,6 +28,7 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Activities.Model.Feedback
   alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Utils
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Repo
   alias Lti_1p3.Roles.ContextRoles
@@ -617,7 +618,7 @@ defmodule OliWeb.LegacySuperactivityController do
       instructors: instructors,
       enrollment: enrollment,
       web_content_url: web_content_url(host, resource_base),
-      host_url: "https://#{host}",
+      host_url: base_url(host),
       base: base,
       src: src
     }
@@ -804,20 +805,20 @@ defmodule OliWeb.LegacySuperactivityController do
       instructors: session.instructors,
       enrollment: session.enrollment,
       web_content_url: web_content_url(host, resource_base),
-      host_url: "https://#{host}",
+      host_url: base_url(host),
       base: base,
       src: src
     }
   end
 
-  defp context_response(host, %LegacySuperactivityContext{} = context) do
+  defp context_response(_host, %LegacySuperactivityContext{} = context) do
     auto_finalize_page = auto_finalize_single_embedded_page?(context)
 
     %{
       attempt_guid: context.activity_attempt.attempt_guid,
-      src_url: "https://#{host}/superactivity/#{context.base}/#{context.src}",
+      src_url: "#{context.host_url}/superactivity/#{context.base}/#{context.src}",
       activity_type: context.activity_attempt.revision.activity_type.slug,
-      server_url: "https://#{host}/jcourse/superactivity/server",
+      server_url: "#{context.host_url}/jcourse/superactivity/server",
       user_guid: context.user.id,
       mode: "delivery",
       part_ids: Enum.map(context.activity_attempt.part_attempts, & &1.part_id),
@@ -905,7 +906,27 @@ defmodule OliWeb.LegacySuperactivityController do
         "super_media"
       end
 
-    "https://#{host}/#{path}/"
+    "#{base_url(host)}/#{path}/"
+  end
+
+  defp base_url(host) do
+    endpoint_url = Utils.get_base_url()
+    actual_host = if is_binary(host) and host != "", do: host, else: "localhost"
+
+    case URI.parse(endpoint_url) do
+      %URI{scheme: scheme, port: port} when is_binary(scheme) ->
+        port_part =
+          cond do
+            is_nil(port) -> ""
+            port in [80, 443] -> ""
+            true -> ":#{port}"
+          end
+
+        "#{scheme}://#{actual_host}#{port_part}"
+
+      _ ->
+        "https://#{actual_host}"
+    end
   end
 
   defp process_command("loadClientConfig", %LegacySuperactivityContext{} = context, _params) do

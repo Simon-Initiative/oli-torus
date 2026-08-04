@@ -12,10 +12,9 @@ import ConfigurationModal from 'apps/authoring/components/EditingCanvas/Configur
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import partSchema, {
-  isAdaptiveScorablePartType,
+  applyScoringSchemaVisibility,
+  applyScoringUiSchemaVisibility,
   partUiSchema,
-  removeScoringFromSchema,
-  removeScoringFromUiSchema,
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from 'apps/authoring/components/PropertyEditor/schemas/part';
@@ -236,9 +235,8 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
         const PartClass = customElements.get(part.type);
         if (PartClass) {
           const partInstance = new PartClass() as any;
-          const showScoring = isAdaptiveScorablePartType(part.type);
-          const baseSchema = showScoring ? partSchema : removeScoringFromSchema(partSchema);
-          const baseUiSchema = showScoring ? partUiSchema : removeScoringFromUiSchema(partUiSchema);
+          const baseSchema = applyScoringSchemaVisibility(partSchema, part.type);
+          const baseUiSchema = applyScoringUiSchemaVisibility(partUiSchema, part.type);
 
           if (partInstance.getSchema) {
             const customPartSchema = partInstance.getSchema(undefined, {
