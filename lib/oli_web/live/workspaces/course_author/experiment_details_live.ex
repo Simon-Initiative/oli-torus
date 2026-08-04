@@ -291,10 +291,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           <nav :if={@page_count > 1} aria-label="Participating sections pages">
             <ul class="pagination justify-content-end mb-0">
               <li class={["page-item", @page == 1 && "disabled"]}>
+                <span
+                  :if={@page == 1}
+                  id="participating-sections-previous"
+                  class="page-link dark:border-gray-700 dark:bg-neutral-800 dark:text-blue-300"
+                  aria-disabled="true"
+                >
+                  Previous
+                </span>
                 <.link
+                  :if={@page > 1}
+                  id="participating-sections-previous"
                   patch={page_path(@project.slug, @experiment.id, @page - 1)}
                   class="page-link dark:border-gray-700 dark:bg-neutral-800 dark:text-blue-300"
-                  aria-disabled={@page == 1}
                 >
                   Previous
                 </.link>
@@ -312,10 +321,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                 </.link>
               </li>
               <li class={["page-item", @page == @page_count && "disabled"]}>
+                <span
+                  :if={@page == @page_count}
+                  id="participating-sections-next"
+                  class="page-link dark:border-gray-700 dark:bg-neutral-800 dark:text-blue-300"
+                  aria-disabled="true"
+                >
+                  Next
+                </span>
                 <.link
+                  :if={@page < @page_count}
+                  id="participating-sections-next"
                   patch={page_path(@project.slug, @experiment.id, @page + 1)}
                   class="page-link dark:border-gray-700 dark:bg-neutral-800 dark:text-blue-300"
-                  aria-disabled={@page == @page_count}
                 >
                   Next
                 </.link>

@@ -721,6 +721,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(details_view, "nav[aria-label='Participating sections pages']")
 
+      assert has_element?(
+               details_view,
+               "span#participating-sections-previous[aria-disabled='true']"
+             )
+
+      refute has_element?(details_view, "a#participating-sections-previous")
+      assert has_element?(details_view, "a#participating-sections-next[href*='page=2']")
+
       first_section = hd(sections)
 
       details_view
@@ -736,6 +744,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(page_two_view, "#participating-section-#{Enum.at(sections, 10).id}")
       refute has_element?(page_two_view, "#participating-section-#{Enum.at(sections, 0).id}")
+      assert has_element?(page_two_view, "a#participating-sections-previous[href*='page=1']")
+      assert has_element?(page_two_view, "span#participating-sections-next[aria-disabled='true']")
+      refute has_element?(page_two_view, "a#participating-sections-next")
     end
 
     test "configures accessible empty section participation and preserves explicit fallback copy",
