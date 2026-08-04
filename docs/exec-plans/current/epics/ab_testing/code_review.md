@@ -304,7 +304,7 @@ The automated reviewers updated their existing GitHub issue comments in place af
 - [x] 10.8 Handle an empty resource-attempt list without crashing page preparation.
 - [x] 10.9 Announce asynchronous `SelectModal` errors to assistive technology.
 - [x] 10.10 Expose an accessible busy/progress state while `SelectModal` submits.
-- [ ] 10.11 Render and focus experiment-creation errors inside the open modal.
+- [x] 10.11 Render and focus experiment-creation errors inside the open modal.
 - [ ] 10.12 Add a persistent label to the new-condition name input.
 
 ### 10.3 Media events load full page content through a direct resolver query

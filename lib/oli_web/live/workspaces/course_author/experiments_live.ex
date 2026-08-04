@@ -79,7 +79,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         Create an A/B decision point before adding an A/B Testing experiment.
       </div>
 
-      <%= if @experiment_error do %>
+      <%= if @experiment_error && !@show_create_experiment do %>
         <div class="alert alert-danger" role="alert">{@experiment_error}</div>
       <% end %>
 
@@ -311,6 +311,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         on_cancel={Phoenix.LiveView.JS.push("close_create_experiment")}
       >
         <:title>Create Experiment</:title>
+        <div
+          :if={@experiment_error}
+          id="create-experiment-error"
+          class="alert alert-danger"
+          role="alert"
+          tabindex="-1"
+          phx-mounted={JS.focus()}
+        >
+          {@experiment_error}
+        </div>
         <%= unless Enum.empty?(@decision_point_candidates) do %>
           <.form
             for={@experiment_form}

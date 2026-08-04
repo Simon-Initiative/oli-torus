@@ -880,6 +880,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
              )
 
       assert has_element?(view, "#experiment_prior_alpha.is-invalid")
+
+      assert has_element?(
+               view,
+               "#create-experiment-modal #create-experiment-error[role='alert'][tabindex='-1'][phx-mounted]",
+               "Prior alpha must be between 0.0001 and 1000."
+             )
+
+      refute has_element?(view, "section > .alert.alert-danger")
+
+      assert has_element?(view, "#experiment_name[value='Adaptive Study']")
     end
 
     test "does not offer learner preference alternatives as A/B Testing decision points", %{
