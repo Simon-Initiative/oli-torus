@@ -1229,6 +1229,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
           phx-submit="create_new_condition"
         >
           <input type="hidden" name="condition[resource_id]" value={@group.resource_id} />
+          <label
+            class="form-label"
+            for={"new-condition-input-#{@group.resource_id}"}
+          >
+            Condition name
+          </label>
           <input
             id={"new-condition-input-#{@group.resource_id}"}
             type="text"

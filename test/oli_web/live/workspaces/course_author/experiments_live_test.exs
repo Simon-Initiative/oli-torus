@@ -271,6 +271,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
                "#{input_id}[placeholder='Enter a new condition'][phx-hook='InputAutoSelect']"
              )
 
+      assert has_element?(
+               view,
+               "#{form_id} label[for='new-condition-input-#{decision_point.resource_id}']",
+               "Condition name"
+             )
+
       assert has_element?(view, "#{form_id} button", "Cancel")
       assert has_element?(view, "#{form_id} button[type='submit'][disabled]", "Create")
 
