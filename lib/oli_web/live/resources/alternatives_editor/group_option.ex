@@ -46,13 +46,36 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
       data-reorder-scope={"alternatives-#{@group.resource_id}"}
     >
       <div class="d-flex flex-row align-items-center">
-        <div
+        <button
           :if={@show_actions}
-          class="mr-3 text-xs text-gray-300 dark:text-gray-600"
-          aria-hidden="true"
+          id={"keyboard-reorder-#{@group.resource_id}-#{@option["id"]}"}
+          type="button"
+          class="btn btn-link border-0 p-0 mr-3 text-xs text-gray-300 dark:text-gray-600 focus:ring-2 focus:ring-blue-500"
+          phx-hook="KeyboardReorder"
+          aria-label={"Reorder #{@option["name"]}"}
+          aria-pressed="false"
+          aria-keyshortcuts="Space Enter ArrowUp ArrowDown Escape"
+          aria-describedby={"reorder-instructions-#{@group.resource_id}-#{@option["id"]}"}
+          data-reorder-event="reorder_option"
+          data-reorder-resource-id={@group.resource_id}
+          data-reorder-item-id={@option["id"]}
+          data-reorder-position={@position}
+          data-reorder-count={@option_count}
+          data-reorder-label={@option["name"]}
+          data-reorder-live-region-id={"option-position-#{@group.resource_id}-#{@option["id"]}"}
+          draggable="false"
+          ondragstart="event.preventDefault(); event.stopPropagation();"
         >
-          <i class="fa-solid fa-grip-vertical"></i>
-        </div>
+          <i class="fa-solid fa-grip-vertical" aria-hidden="true"></i>
+        </button>
+        <span
+          :if={@show_actions}
+          id={"reorder-instructions-#{@group.resource_id}-#{@option["id"]}"}
+          class="sr-only"
+        >
+          Press Space or Enter to pick up this option, use Up and Down Arrow keys to move it, then
+          press Space or Enter to drop it. Press Escape to cancel.
+        </span>
         <div>{@option["name"]}</div>
         <span
           :if={@show_actions}
@@ -69,40 +92,6 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
             class="d-flex flex-row align-items-center"
             ondragstart="event.preventDefault(); event.stopPropagation();"
           >
-            <button
-              type="button"
-              class="btn icon-button mr-1"
-              aria-label={"Move #{@option["name"]} up"}
-              disabled={@position == 0}
-              phx-click={
-                Phoenix.LiveView.JS.push("reorder_option",
-                  value: %{
-                    resourceId: @group.resource_id,
-                    optionId: @option["id"],
-                    dropIndex: @position - 1
-                  }
-                )
-              }
-            >
-              <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
-            </button>
-            <button
-              type="button"
-              class="btn icon-button mr-1"
-              aria-label={"Move #{@option["name"]} down"}
-              disabled={@position == @option_count - 1}
-              phx-click={
-                Phoenix.LiveView.JS.push("reorder_option",
-                  value: %{
-                    resourceId: @group.resource_id,
-                    optionId: @option["id"],
-                    dropIndex: @position + 2
-                  }
-                )
-              }
-            >
-              <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
-            </button>
             <.icon_button
               class="mr-1"
               icon="fa-solid fa-pencil"

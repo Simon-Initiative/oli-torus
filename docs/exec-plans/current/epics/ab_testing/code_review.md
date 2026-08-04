@@ -186,7 +186,7 @@ The highest-priority fixes are:
 - **Issue:** The option row is draggable but provides no keyboard operation for changing its position.
 - **Determination:** Fix.
 - **Why:** This is a direct keyboard-accessibility failure under `.review/ui.md`. The edit and delete actions being keyboard accessible does not make the reorder action accessible.
-- **Proposed resolution:** Add labeled Move up and Move down buttons, disabling the impossible direction at the boundaries. Route them through the same validated reorder event/domain function as drag-and-drop. Announce the new position using an `aria-live` status region and return focus predictably. Add LiveView tests for first/middle/last items and persisted order.
+- **Implemented resolution:** Make the existing grip a keyboard-accessible reorder handle without adding visible arrow controls. Space or Enter picks up and drops an option, Up and Down Arrow move it through the list, and Escape cancels. The handle reuses the validated drag-and-drop reorder event/domain function, exposes its picked-up state, retains focus, and announces position changes through an `aria-live` region. Hook tests cover pickup, movement, boundaries, drop, and cancellation; LiveView tests cover the markup and persisted order.
 
 ### 4.11 Disabled pagination links remain actionable
 

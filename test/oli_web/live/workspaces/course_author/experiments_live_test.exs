@@ -172,17 +172,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(
                view,
-               "button[aria-label='Move Option 1 up'][disabled]"
+               "#keyboard-reorder-#{decision_point.resource_id}-option_1[phx-hook='KeyboardReorder'][aria-label='Reorder Option 1'][aria-pressed='false'][aria-keyshortcuts*='ArrowUp']"
              )
 
-      assert has_element?(
-               view,
-               "button[aria-label='Move Option 2 down'][disabled]"
-             )
+      refute has_element?(view, "button[aria-label^='Move Option']")
 
-      view
-      |> element("button[aria-label='Move Option 2 up']")
-      |> render_click()
+      render_hook(view, "reorder_option", %{
+        "resourceId" => decision_point.resource_id,
+        "optionId" => "option_2",
+        "dropIndex" => 0
+      })
 
       assert_before(render(view), "Option 2", "Option 1")
 
@@ -195,9 +194,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       reordered = Experiments.get_latest_experiment(project.slug).content["options"]
       assert Enum.map(reordered, & &1["id"]) == ["option_2", "option_1"]
 
-      view
-      |> element("button[aria-label='Move Option 2 down']")
-      |> render_click()
+      render_hook(view, "reorder_option", %{
+        "resourceId" => decision_point.resource_id,
+        "optionId" => "option_2",
+        "dropIndex" => 2
+      })
 
       assert_before(render(view), "Option 1", "Option 2")
     end

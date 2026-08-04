@@ -1,4 +1,4 @@
-import { DragSource, DropTarget, parseScopedReorderPayload } from 'hooks/dragdrop';
+import { DragSource, DropTarget, KeyboardReorder, parseScopedReorderPayload } from 'hooks/dragdrop';
 
 const dataTransfer = (values: Record<string, string> = {}) => ({
   effectAllowed: '',
@@ -17,6 +17,25 @@ const dispatchDragEvent = (
   Object.defineProperty(event, 'dataTransfer', { value: transfer });
   element.dispatchEvent(event);
 };
+
+const keyboardReorderHandle = (position = 1, count = 3) => {
+  const handle = document.createElement('button');
+  const liveRegion = document.createElement('span');
+  liveRegion.id = 'option-position';
+  handle.dataset.reorderEvent = 'reorder_option';
+  handle.dataset.reorderResourceId = '123';
+  handle.dataset.reorderItemId = 'option-a';
+  handle.dataset.reorderPosition = String(position);
+  handle.dataset.reorderCount = String(count);
+  handle.dataset.reorderLabel = 'Option A';
+  handle.dataset.reorderLiveRegionId = liveRegion.id;
+  document.body.append(handle, liveRegion);
+
+  return { handle, liveRegion };
+};
+
+const pressKey = (element: HTMLElement, key: string) =>
+  element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 
 describe('parseScopedReorderPayload', () => {
   it('accepts a stable item id and reorder scope', () => {
@@ -193,5 +212,60 @@ describe('shared drag and drop hooks', () => {
 
     list.remove();
     jest.useRealTimers();
+  });
+});
+
+describe('KeyboardReorder', () => {
+  afterEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it('picks up, moves, and drops an option while announcing each state', () => {
+    const { handle, liveRegion } = keyboardReorderHandle();
+    const pushEvent = jest.fn();
+    KeyboardReorder.mounted.call({ el: handle, pushEvent });
+
+    pressKey(handle, ' ');
+    expect(handle).toHaveAttribute('aria-pressed', 'true');
+    expect(liveRegion).toHaveTextContent('Option A picked up. Position 2 of 3.');
+
+    pressKey(handle, 'ArrowUp');
+    expect(pushEvent).toHaveBeenCalledWith('reorder_option', {
+      resourceId: '123',
+      optionId: 'option-a',
+      dropIndex: 0,
+    });
+    expect(handle.dataset.reorderPosition).toBe('0');
+    expect(liveRegion).toHaveTextContent('Option A moved to position 1 of 3.');
+
+    pressKey(handle, 'Enter');
+    expect(handle).toHaveAttribute('aria-pressed', 'false');
+    expect(liveRegion).toHaveTextContent('Option A dropped at position 1 of 3.');
+  });
+
+  it('does not move beyond a list boundary', () => {
+    const { handle, liveRegion } = keyboardReorderHandle(0, 2);
+    const pushEvent = jest.fn();
+    KeyboardReorder.mounted.call({ el: handle, pushEvent });
+
+    pressKey(handle, ' ');
+    pressKey(handle, 'ArrowUp');
+
+    expect(pushEvent).not.toHaveBeenCalled();
+    expect(liveRegion).toHaveTextContent('Option A is already at position 1 of 2.');
+  });
+
+  it('cancels keyboard reordering with Escape', () => {
+    const { handle, liveRegion } = keyboardReorderHandle();
+    const pushEvent = jest.fn();
+    KeyboardReorder.mounted.call({ el: handle, pushEvent });
+
+    pressKey(handle, ' ');
+    pressKey(handle, 'Escape');
+    pressKey(handle, 'ArrowDown');
+
+    expect(handle).toHaveAttribute('aria-pressed', 'false');
+    expect(liveRegion).toHaveTextContent('Option A reorder cancelled. Position 2 of 3.');
+    expect(pushEvent).not.toHaveBeenCalled();
   });
 });

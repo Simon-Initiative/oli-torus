@@ -24,7 +24,7 @@ import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DebouncedTextInputListener } from './debounced_text_input_listener';
 import { DelayedSubmit } from './delayed_submit';
 import { DisableSubmitted } from './disable_submitted';
-import { DragSource, DropTarget } from './dragdrop';
+import { DragSource, DropTarget, KeyboardReorder } from './dragdrop';
 import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
@@ -109,6 +109,7 @@ export const Hooks = {
   GraphNavigation,
   DropTarget,
   DragSource,
+  KeyboardReorder,
   HomeMobileTabs,
   InstructorPreviewCustomization,
   ModalLaunch,

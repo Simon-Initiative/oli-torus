@@ -5,6 +5,33 @@ interface ScopedReorderPayload {
   scope: string;
 }
 
+const keyboardReorderState = new WeakMap<HTMLElement, boolean>();
+
+const announceKeyboardReorder = (element: HTMLElement, message: string) => {
+  const liveRegionId = element.getAttribute('data-reorder-live-region-id');
+  const liveRegion = liveRegionId ? document.getElementById(liveRegionId) : null;
+
+  if (liveRegion) {
+    liveRegion.textContent = message;
+  }
+};
+
+const keyboardReorderDetails = (element: HTMLElement) => {
+  const position = Number.parseInt(element.getAttribute('data-reorder-position') ?? '', 10);
+  const count = Number.parseInt(element.getAttribute('data-reorder-count') ?? '', 10);
+  const label = element.getAttribute('data-reorder-label') || 'Option';
+
+  return { position, count, label };
+};
+
+const setKeyboardReorderActive = (element: HTMLElement, active: boolean) => {
+  keyboardReorderState.set(element, active);
+  element.setAttribute('aria-pressed', String(active));
+  element.classList.toggle('keyboard-reorder-active', active);
+  element.classList.toggle('ring-2', active);
+  element.classList.toggle('ring-blue-500', active);
+};
+
 let activeReorderScope: string | null = null;
 let scopedDragVisibilityTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -170,5 +197,88 @@ export const DragSource = {
         this.pushEvent('dragend');
       }
     });
+  },
+};
+
+export const KeyboardReorder = {
+  mounted() {
+    setKeyboardReorderActive(this.el, false);
+
+    const toggleActive = () => {
+      const active = !keyboardReorderState.get(this.el);
+      const { position, count, label } = keyboardReorderDetails(this.el);
+      setKeyboardReorderActive(this.el, active);
+
+      announceKeyboardReorder(
+        this.el,
+        active
+          ? `${label} picked up. Position ${
+              position + 1
+            } of ${count}. Use Up and Down Arrow keys to move; Space or Enter to drop; Escape to cancel.`
+          : `${label} dropped at position ${position + 1} of ${count}.`,
+      );
+    };
+
+    this.el.addEventListener('click', toggleActive);
+
+    this.el.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === ' ' || event.key === 'Enter') {
+        event.preventDefault();
+        toggleActive();
+        return;
+      }
+
+      if (event.key === 'Escape' && keyboardReorderState.get(this.el)) {
+        event.preventDefault();
+        const { position, count, label } = keyboardReorderDetails(this.el);
+        setKeyboardReorderActive(this.el, false);
+        announceKeyboardReorder(
+          this.el,
+          `${label} reorder cancelled. Position ${position + 1} of ${count}.`,
+        );
+        return;
+      }
+
+      if (
+        !keyboardReorderState.get(this.el) ||
+        (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const { position, count, label } = keyboardReorderDetails(this.el);
+      const nextPosition = event.key === 'ArrowUp' ? position - 1 : position + 1;
+
+      if (nextPosition < 0 || nextPosition >= count) {
+        announceKeyboardReorder(
+          this.el,
+          `${label} is already at position ${position + 1} of ${count}.`,
+        );
+        return;
+      }
+
+      const eventName = this.el.getAttribute('data-reorder-event');
+      const resourceId = this.el.getAttribute('data-reorder-resource-id');
+      const optionId = this.el.getAttribute('data-reorder-item-id');
+
+      if (eventName && resourceId && optionId) {
+        this.el.setAttribute('data-reorder-position', String(nextPosition));
+        this.pushEvent(eventName, {
+          resourceId,
+          optionId,
+          dropIndex: event.key === 'ArrowUp' ? position - 1 : position + 2,
+        });
+        announceKeyboardReorder(
+          this.el,
+          `${label} moved to position ${nextPosition + 1} of ${count}.`,
+        );
+      }
+    });
+  },
+
+  updated() {
+    this.el.setAttribute('aria-pressed', String(keyboardReorderState.get(this.el) ?? false));
   },
 };
