@@ -68,9 +68,8 @@ export async function seedStudentDeliveryScenario(
   ) => Promise<SeedScenarioResponse>,
   scenarioPath: string,
   runId: string,
-  params: Record<string, unknown> = {},
 ): Promise<StudentDeliveryScenarioOutputs> {
-  const response = await seedScenario(scenarioPath, { ...params, RUN_ID: runId });
+  const response = await seedScenario(scenarioPath, { RUN_ID: runId });
   const outputs = response.outputs as StudentDeliveryScenarioOutputs | undefined;
 
   if (!outputs) {
