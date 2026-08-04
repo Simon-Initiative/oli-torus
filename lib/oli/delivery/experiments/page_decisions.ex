@@ -64,9 +64,7 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
 
   defp alternatives_resource_ids(_content), do: []
 
-  defp attempt_content(page_context) do
-    this_attempt = page_context.resource_attempts |> hd
-
+  defp attempt_content(%{resource_attempts: [this_attempt | _]} = page_context) do
     if Enum.any?(this_attempt.errors, fn e ->
          e == "Selection failed to fulfill: no values provided for expression"
        end) and page_context.is_student do
@@ -75,4 +73,6 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
       this_attempt.content
     end
   end
+
+  defp attempt_content(_page_context), do: %{"model" => []}
 end
