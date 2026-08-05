@@ -36,11 +36,14 @@ const keyboardReorderDetails = (element: HTMLElement) => {
 };
 
 const renderKeyboardReorderActive = (element: HTMLElement, active: boolean) => {
+  const activeTarget = element.closest<HTMLElement>('.list-group-item') ?? element;
+
   keyboardReorderState.set(element, active);
   element.setAttribute('aria-pressed', String(active));
-  element.classList.toggle('keyboard-reorder-active', active);
-  element.classList.toggle('ring-2', active);
-  element.classList.toggle('ring-blue-500', active);
+  activeTarget.classList.toggle('keyboard-reorder-active', active);
+  activeTarget.classList.toggle('ring-2', active);
+  activeTarget.classList.toggle('ring-blue-500', active);
+  activeTarget.classList.toggle('ring-inset', active);
 };
 
 const setKeyboardReorderActive = (element: HTMLElement, active: boolean) => {
@@ -53,13 +56,7 @@ const setKeyboardReorderActive = (element: HTMLElement, active: boolean) => {
     }
 
     if (activeKeyboardReorderElement && activeKeyboardReorderElement !== element) {
-      keyboardReorderState.set(activeKeyboardReorderElement, false);
-      activeKeyboardReorderElement.setAttribute('aria-pressed', 'false');
-      activeKeyboardReorderElement.classList.remove(
-        'keyboard-reorder-active',
-        'ring-2',
-        'ring-blue-500',
-      );
+      renderKeyboardReorderActive(activeKeyboardReorderElement, false);
     }
 
     activeKeyboardReorderKey = key;

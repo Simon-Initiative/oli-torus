@@ -24,6 +24,8 @@ const keyboardReorderHandle = (
   resourceId = '123',
   optionId = 'option-a',
 ) => {
+  const item = document.createElement('li');
+  item.classList.add('list-group-item');
   const handle = document.createElement('button');
   const liveRegion = document.createElement('span');
   liveRegion.id = `option-position-${resourceId}-${optionId}`;
@@ -34,9 +36,10 @@ const keyboardReorderHandle = (
   handle.dataset.reorderCount = String(count);
   handle.dataset.reorderLabel = 'Option A';
   handle.dataset.reorderLiveRegionId = liveRegion.id;
-  document.body.append(handle, liveRegion);
+  item.append(handle, liveRegion);
+  document.body.append(item);
 
-  return { handle, liveRegion };
+  return { handle, item, liveRegion };
 };
 
 const pressKey = (element: HTMLElement, key: string) =>
@@ -290,15 +293,21 @@ describe('KeyboardReorder', () => {
   });
 
   it('restores the active styling after LiveView updates the handle', () => {
-    const { handle } = keyboardReorderHandle();
+    const { handle, item } = keyboardReorderHandle();
     const pushEvent = jest.fn();
     KeyboardReorder.mounted.call({ el: handle, pushEvent });
 
     pressKey(handle, ' ');
-    handle.classList.remove('keyboard-reorder-active', 'ring-2', 'ring-blue-500');
+    item.classList.remove('keyboard-reorder-active', 'ring-2', 'ring-blue-500', 'ring-inset');
     KeyboardReorder.updated.call({ el: handle });
 
-    expect(handle).toHaveClass('keyboard-reorder-active', 'ring-2', 'ring-blue-500');
+    expect(item).toHaveClass('keyboard-reorder-active', 'ring-2', 'ring-blue-500', 'ring-inset');
+    expect(handle).not.toHaveClass(
+      'keyboard-reorder-active',
+      'ring-2',
+      'ring-blue-500',
+      'ring-inset',
+    );
   });
 
   it('restores focus when LiveView updates an active handle in a later decision point', () => {
@@ -339,7 +348,7 @@ describe('KeyboardReorder', () => {
 
   it('drops the active option when focus intentionally moves away', () => {
     jest.useFakeTimers();
-    const { handle } = keyboardReorderHandle();
+    const { handle, item } = keyboardReorderHandle();
     const nextControl = document.createElement('button');
     document.body.appendChild(nextControl);
     const pushEvent = jest.fn();
@@ -354,7 +363,12 @@ describe('KeyboardReorder', () => {
 
     expect(nextControl).toHaveFocus();
     expect(handle).toHaveAttribute('aria-pressed', 'false');
-    expect(handle).not.toHaveClass('keyboard-reorder-active', 'ring-2', 'ring-blue-500');
+    expect(item).not.toHaveClass(
+      'keyboard-reorder-active',
+      'ring-2',
+      'ring-blue-500',
+      'ring-inset',
+    );
     jest.useRealTimers();
   });
 
