@@ -13,6 +13,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   alias Oli.Publishing
   alias Oli.Resources.{ResourceType, Revision}
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
+  alias OliWeb.Components.ReorderableList
   alias OliWeb.Resources.AlternativesEditor.PreventDeletionModal
 
   @alternatives_type_id ResourceType.id_for_alternatives()
@@ -252,6 +253,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
 
       _ ->
         show_error(socket)
+    end
+  end
+
+  def handle_event(
+        "keyboard_reorder_option",
+        params,
+        socket
+      ) do
+    case ReorderableList.keyboard_move(params) do
+      {:move, _source_index, drop_index} ->
+        handle_event(
+          "reorder_option",
+          %{
+            "resourceId" => params["resource-id"] || params["resource_id"],
+            "optionId" => params["option-id"] || params["option_id"],
+            "dropIndex" => drop_index
+          },
+          socket
+        )
+
+      :noop ->
+        {:noreply, socket}
     end
   end
 

@@ -1,104 +1,54 @@
 // Phoenix LiveView hooks that implements drag and drop
 
+type ElementHook = {
+  el: HTMLElement;
+};
+
+type DragDropHook = ElementHook & {
+  pushEvent: (event: string, payload?: unknown) => void;
+};
+
 interface ScopedReorderPayload {
   itemId: string;
   scope: string;
 }
 
-const keyboardReorderState = new WeakMap<HTMLElement, boolean>();
-let activeKeyboardReorderKey: string | null = null;
-let activeKeyboardReorderElement: HTMLElement | null = null;
-let activeKeyboardReorderCleanupTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingKeyboardReorderFocusKey: string | null = null;
+let pendingKeyboardReorderCleanupTimer: ReturnType<typeof setTimeout> | null = null;
 
 const keyboardReorderKey = (element: HTMLElement) => {
-  const resourceId = element.getAttribute('data-reorder-resource-id');
-  const itemId = element.getAttribute('data-reorder-item-id');
-
-  return resourceId && itemId ? `${resourceId}:${itemId}` : null;
-};
-
-const announceKeyboardReorder = (element: HTMLElement, message: string) => {
-  const liveRegionId = element.getAttribute('data-reorder-live-region-id');
-  const liveRegion = liveRegionId ? document.getElementById(liveRegionId) : null;
-
-  if (liveRegion) {
-    liveRegion.textContent = message;
-  }
+  return element.getAttribute('data-keyboard-reorder-key');
 };
 
 const keyboardReorderDetails = (element: HTMLElement) => {
   const position = Number.parseInt(element.getAttribute('data-reorder-position') ?? '', 10);
   const count = Number.parseInt(element.getAttribute('data-reorder-count') ?? '', 10);
-  const label = element.getAttribute('data-reorder-label') || 'Option';
-
-  return { position, count, label };
+  return { position, count };
 };
 
-const renderKeyboardReorderActive = (element: HTMLElement, active: boolean) => {
-  const activeTarget = element.closest<HTMLElement>('.list-group-item') ?? element;
-
-  keyboardReorderState.set(element, active);
-  element.setAttribute('aria-pressed', String(active));
-  element.classList.toggle('focus:ring-2', !active);
-  element.classList.toggle('focus:ring-blue-500', !active);
-  activeTarget.classList.toggle('keyboard-reorder-active', active);
-  activeTarget.classList.toggle('ring-2', active);
-  activeTarget.classList.toggle('ring-blue-500', active);
-  activeTarget.classList.toggle('ring-inset', active);
-};
-
-const setKeyboardReorderActive = (element: HTMLElement, active: boolean) => {
+const restoreKeyboardReorderFocus = (element: HTMLElement) => {
   const key = keyboardReorderKey(element);
 
-  if (active) {
-    if (activeKeyboardReorderCleanupTimer) {
-      clearTimeout(activeKeyboardReorderCleanupTimer);
-      activeKeyboardReorderCleanupTimer = null;
-    }
-
-    if (activeKeyboardReorderElement && activeKeyboardReorderElement !== element) {
-      renderKeyboardReorderActive(activeKeyboardReorderElement, false);
-    }
-
-    activeKeyboardReorderKey = key;
-    activeKeyboardReorderElement = element;
-  } else if (key === activeKeyboardReorderKey) {
-    if (activeKeyboardReorderCleanupTimer) {
-      clearTimeout(activeKeyboardReorderCleanupTimer);
-      activeKeyboardReorderCleanupTimer = null;
-    }
-
-    activeKeyboardReorderKey = null;
-    activeKeyboardReorderElement = null;
-    pendingKeyboardReorderFocusKey = null;
-  }
-
-  renderKeyboardReorderActive(element, active);
-};
-
-const scheduleKeyboardReorderDeactivation = (element: HTMLElement) => {
-  const key = keyboardReorderKey(element);
-
-  if (key !== activeKeyboardReorderKey) {
+  if (!key || key !== pendingKeyboardReorderFocusKey) {
     return;
   }
 
-  if (activeKeyboardReorderCleanupTimer) {
-    clearTimeout(activeKeyboardReorderCleanupTimer);
+  if (pendingKeyboardReorderCleanupTimer) {
+    clearTimeout(pendingKeyboardReorderCleanupTimer);
+    pendingKeyboardReorderCleanupTimer = null;
   }
 
-  activeKeyboardReorderCleanupTimer = setTimeout(() => {
-    activeKeyboardReorderCleanupTimer = null;
+  const { position, count } = keyboardReorderDetails(element);
+  const statusId = element.getAttribute('data-keyboard-reorder-status-id');
+  const status = statusId ? document.getElementById(statusId) : null;
+  const label = element.getAttribute('data-keyboard-reorder-label') || 'Item';
 
-    if (
-      key === activeKeyboardReorderKey &&
-      element === activeKeyboardReorderElement &&
-      document.activeElement !== element
-    ) {
-      setKeyboardReorderActive(element, false);
-    }
-  }, 0);
+  if (status) {
+    status.textContent = `${label} moved to position ${position + 1} of ${count}.`;
+  }
+
+  pendingKeyboardReorderFocusKey = null;
+  element.focus();
 };
 
 let activeReorderScope: string | null = null;
@@ -164,7 +114,7 @@ const acceptsDrop = (element: HTMLElement): boolean => {
 };
 
 export const DropTarget = {
-  mounted() {
+  mounted(this: DragDropHook) {
     this.el.addEventListener('dragenter', (e: any) => {
       if (acceptsDrop(this.el)) {
         this.el.classList.add('hovered');
@@ -215,7 +165,49 @@ export const DropTarget = {
 };
 
 export const DragSource = {
-  mounted() {
+  mounted(this: DragDropHook) {
+    restoreKeyboardReorderFocus(this.el);
+
+    this.el.addEventListener('keydown', (event: KeyboardEvent) => {
+      const isMoveKey = event.shiftKey && ['ArrowUp', 'ArrowDown'].includes(event.key);
+
+      if (!isMoveKey) {
+        return;
+      }
+
+      if (event.target !== this.el) {
+        event.stopPropagation();
+        return;
+      }
+
+      event.preventDefault();
+
+      const { position, count } = keyboardReorderDetails(this.el);
+      const nextPosition = event.key === 'ArrowUp' ? position - 1 : position + 1;
+
+      if (nextPosition >= 0 && nextPosition < count) {
+        pendingKeyboardReorderFocusKey = keyboardReorderKey(this.el);
+      } else {
+        const statusId = this.el.getAttribute('data-keyboard-reorder-status-id');
+        const status = statusId ? document.getElementById(statusId) : null;
+        const label = this.el.getAttribute('data-keyboard-reorder-label') || 'Item';
+
+        if (status) {
+          status.textContent = `${label} is already ${event.key === 'ArrowUp' ? 'first' : 'last'}.`;
+        }
+      }
+    });
+
+    this.el.addEventListener('blur', (event: FocusEvent) => {
+      if (
+        event.relatedTarget instanceof HTMLElement &&
+        event.relatedTarget !== document.body &&
+        keyboardReorderKey(this.el) === pendingKeyboardReorderFocusKey
+      ) {
+        pendingKeyboardReorderFocusKey = null;
+      }
+    });
+
     this.el.addEventListener('dragstart', (e: any) => {
       const dt = e.dataTransfer;
       dt.setData('text/plain', this.el.getAttribute('data-drag-index'));
@@ -267,123 +259,24 @@ export const DragSource = {
       }
     });
   },
-};
 
-export const KeyboardReorder = {
-  mounted() {
+  updated(this: ElementHook) {
+    restoreKeyboardReorderFocus(this.el);
+  },
+
+  destroyed(this: ElementHook) {
     const key = keyboardReorderKey(this.el);
-    const remainsActive = key === activeKeyboardReorderKey;
-    const restoreFocus = remainsActive && key === pendingKeyboardReorderFocusKey;
-    setKeyboardReorderActive(this.el, remainsActive);
 
-    if (restoreFocus) {
-      pendingKeyboardReorderFocusKey = null;
-      this.el.focus();
+    if (!key || key !== pendingKeyboardReorderFocusKey) {
+      return;
     }
 
-    const toggleActive = () => {
-      const active = !keyboardReorderState.get(this.el);
-      const { position, count, label } = keyboardReorderDetails(this.el);
-      setKeyboardReorderActive(this.el, active);
-
-      announceKeyboardReorder(
-        this.el,
-        active
-          ? `${label} picked up. Position ${
-              position + 1
-            } of ${count}. Use Up and Down Arrow keys to move; Space or Enter to drop; Escape to cancel.`
-          : `${label} dropped at position ${position + 1} of ${count}.`,
-      );
-    };
-
-    this.el.addEventListener('click', toggleActive);
-
-    this.el.addEventListener('blur', (event: FocusEvent) => {
-      if (
-        event.relatedTarget instanceof HTMLElement &&
-        event.relatedTarget !== document.body &&
-        keyboardReorderKey(this.el) === pendingKeyboardReorderFocusKey
-      ) {
+    pendingKeyboardReorderCleanupTimer = setTimeout(() => {
+      if (key === pendingKeyboardReorderFocusKey) {
         pendingKeyboardReorderFocusKey = null;
       }
 
-      if (keyboardReorderState.get(this.el)) {
-        scheduleKeyboardReorderDeactivation(this.el);
-      }
-    });
-
-    this.el.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (event.key === ' ' || event.key === 'Enter') {
-        event.preventDefault();
-        toggleActive();
-        return;
-      }
-
-      if (event.key === 'Escape' && keyboardReorderState.get(this.el)) {
-        event.preventDefault();
-        const { position, count, label } = keyboardReorderDetails(this.el);
-        setKeyboardReorderActive(this.el, false);
-        announceKeyboardReorder(
-          this.el,
-          `${label} reorder cancelled. Position ${position + 1} of ${count}.`,
-        );
-        return;
-      }
-
-      if (
-        !keyboardReorderState.get(this.el) ||
-        (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-
-      const { position, count, label } = keyboardReorderDetails(this.el);
-      const nextPosition = event.key === 'ArrowUp' ? position - 1 : position + 1;
-
-      if (nextPosition < 0 || nextPosition >= count) {
-        announceKeyboardReorder(
-          this.el,
-          `${label} is already at position ${position + 1} of ${count}.`,
-        );
-        return;
-      }
-
-      const eventName = this.el.getAttribute('data-reorder-event');
-      const resourceId = this.el.getAttribute('data-reorder-resource-id');
-      const optionId = this.el.getAttribute('data-reorder-item-id');
-
-      if (eventName && resourceId && optionId) {
-        this.el.setAttribute('data-reorder-position', String(nextPosition));
-        pendingKeyboardReorderFocusKey = keyboardReorderKey(this.el);
-        this.pushEvent(eventName, {
-          resourceId,
-          optionId,
-          dropIndex: event.key === 'ArrowUp' ? position - 1 : position + 2,
-        });
-        announceKeyboardReorder(
-          this.el,
-          `${label} moved to position ${nextPosition + 1} of ${count}.`,
-        );
-      }
-    });
-  },
-
-  updated() {
-    const active = keyboardReorderState.get(this.el) ?? false;
-    const restoreFocus = active && keyboardReorderKey(this.el) === pendingKeyboardReorderFocusKey;
-
-    if (restoreFocus) {
-      setKeyboardReorderActive(this.el, true);
-      pendingKeyboardReorderFocusKey = null;
-      this.el.focus();
-    } else {
-      renderKeyboardReorderActive(this.el, active);
-    }
-  },
-
-  destroyed() {
-    scheduleKeyboardReorderDeactivation(this.el);
+      pendingKeyboardReorderCleanupTimer = null;
+    }, 0);
   },
 };

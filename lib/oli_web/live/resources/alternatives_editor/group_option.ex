@@ -1,7 +1,9 @@
 defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
   use Phoenix.Component
 
-  import OliWeb.Common.Components
+  alias OliWeb.Components.ReorderableList
+  alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   attr :group, :any, required: true
   attr :show_actions, :boolean, default: true
@@ -11,6 +13,7 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
     assigns = assign(assigns, :option_count, length(assigns.group.content["options"]))
 
     ~H"""
+    <ReorderableList.status id={"alternatives-reorder-status-#{@group.resource_id}"} />
     <ul class={@list_class}>
       <%= for {option, position} <- Enum.with_index(@group.content["options"]) do %>
         <.option_drop_target :if={@show_actions} group={@group} position={position} />
@@ -35,85 +38,87 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
 
   def group_option(assigns) do
     ~H"""
-    <li
+    <ReorderableList.item
+      tag="li"
       id={"alternatives-option-#{@group.resource_id}-#{@option["id"]}"}
-      class={["list-group-item", @show_actions && "cursor-grab active:cursor-grabbing"]}
-      draggable={if @show_actions, do: "true", else: "false"}
-      phx-hook={@show_actions && "DragSource"}
-      data-drag-index={@position}
+      position={@position}
+      count={@option_count}
+      item_key={"alternatives:#{@group.resource_id}:#{@option["id"]}"}
+      label={@option["name"]}
+      status_id={"alternatives-reorder-status-#{@group.resource_id}"}
+      keydown="keyboard_reorder_option"
+      enabled={@show_actions}
+      class={[
+        "list-group-item p-3 d-flex curriculum-entry",
+        @show_actions && "cursor-grab active:cursor-grabbing"
+      ]}
+      phx-value-resource-id={@group.resource_id}
+      phx-value-option-id={@option["id"]}
       data-reorder-item-id={@option["id"]}
       data-reorder-resource-id={@group.resource_id}
       data-reorder-scope={"alternatives-#{@group.resource_id}"}
+      aria-label={@option["name"]}
     >
-      <div class="d-flex flex-row align-items-center">
-        <button
+      <div class="d-flex flex-row align-items-center flex-grow-1">
+        <i
           :if={@show_actions}
-          id={"keyboard-reorder-#{@group.resource_id}-#{@option["id"]}"}
-          type="button"
-          class="btn btn-link border-0 p-0 mr-3 text-xs text-gray-300 dark:text-gray-600 focus:ring-2 focus:ring-blue-500"
-          phx-hook="KeyboardReorder"
-          aria-label={"Reorder #{@option["name"]}"}
-          aria-pressed="false"
-          aria-keyshortcuts="Space Enter ArrowUp ArrowDown Escape"
-          aria-describedby={"reorder-instructions-#{@group.resource_id}-#{@option["id"]}"}
-          data-reorder-event="reorder_option"
-          data-reorder-resource-id={@group.resource_id}
-          data-reorder-item-id={@option["id"]}
-          data-reorder-position={@position}
-          data-reorder-count={@option_count}
-          data-reorder-label={@option["name"]}
-          data-reorder-live-region-id={"option-position-#{@group.resource_id}-#{@option["id"]}"}
-          draggable="false"
-          ondragstart="event.preventDefault(); event.stopPropagation();"
+          class="fa-solid fa-grip-vertical mr-3 text-xs text-gray-300 dark:text-gray-600"
+          aria-hidden="true"
         >
-          <i class="fa-solid fa-grip-vertical" aria-hidden="true"></i>
-        </button>
-        <span
-          :if={@show_actions}
-          id={"reorder-instructions-#{@group.resource_id}-#{@option["id"]}"}
-          class="sr-only"
-        >
-          Press Space or Enter to pick up this option, use Up and Down Arrow keys to move it, then
-          press Space or Enter to drop it. Press Escape to cancel.
-        </span>
+        </i>
         <div>{@option["name"]}</div>
-        <span
-          :if={@show_actions}
-          id={"option-position-#{@group.resource_id}-#{@option["id"]}"}
-          class="sr-only"
-          aria-live="polite"
-        >
-          {@option["name"]} position {@position + 1} of {@option_count}
-        </span>
         <div class="flex-grow-1"></div>
         <%= if @show_actions do %>
           <div
+            id={"alternatives-option-actions-#{@group.resource_id}-#{@option["id"]}"}
             draggable="true"
-            class="d-flex flex-row align-items-center"
+            class="entry-actions dropdown"
             ondragstart="event.preventDefault(); event.stopPropagation();"
+            phx-keydown={close_actions(@group.resource_id, @option["id"], true)}
+            phx-key="Escape"
           >
-            <.icon_button
-              class="mr-1"
-              icon="fa-solid fa-pencil"
-              on_click="show_edit_option_modal"
-              values={[
-                "phx-value-resource-id": @group.resource_id,
-                "phx-value-option-id": @option["id"]
-              ]}
-            />
-            <.icon_button
-              class="danger-icon-button mr-1"
-              icon="fa-solid fa-trash"
-              on_click="show_delete_option_modal"
-              values={[
-                "phx-value-resource-id": @group.resource_id,
-                "phx-value-option-id": @option["id"]
-              ]}
-            />
+            <button
+              id={"dropdownMenuButton_#{@group.resource_id}_#{@option["id"]}"}
+              class="btn dropdown-toggle"
+              type="button"
+              aria-label="Options"
+              title="Options"
+              aria-expanded="false"
+              aria-controls={"dropdownMenu_#{@group.resource_id}_#{@option["id"]}"}
+              phx-click={toggle_actions(@group.resource_id, @option["id"])}
+            >
+              <Icons.vertical_dots class="text-gray-700 dark:text-gray-100" />
+            </button>
+            <div
+              class="hidden dropdown-menu right-0"
+              id={"dropdownMenu_#{@group.resource_id}_#{@option["id"]}"}
+              phx-click-away={close_actions(@group.resource_id, @option["id"], false)}
+              aria-labelledby={"dropdownMenuButton_#{@group.resource_id}_#{@option["id"]}"}
+            >
+              <button
+                type="button"
+                class="dropdown-item"
+                phx-click="show_edit_option_modal"
+                phx-value-resource-id={@group.resource_id}
+                phx-value-option-id={@option["id"]}
+              >
+                <i class="fa-solid fa-pencil mr-1"></i> Edit
+              </button>
+              <div class="dropdown-divider"></div>
+              <button
+                type="button"
+                class="dropdown-item text-danger"
+                phx-click="show_delete_option_modal"
+                phx-value-resource-id={@group.resource_id}
+                phx-value-option-id={@option["id"]}
+              >
+                <i class="fa-solid fa-trash mr-1"></i> Delete
+              </button>
+            </div>
           </div>
         <% end %>
       </div>
-    </li>
+    </ReorderableList.item>
     """
   end
 
@@ -133,5 +138,22 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
       aria-hidden="true"
     />
     """
+  end
+
+  defp toggle_actions(resource_id, option_id) do
+    menu = "#dropdownMenu_#{resource_id}_#{option_id}"
+    button = "#dropdownMenuButton_#{resource_id}_#{option_id}"
+
+    JS.toggle(to: menu)
+    |> JS.toggle_attribute({"aria-expanded", "true", "false"}, to: button)
+  end
+
+  defp close_actions(resource_id, option_id, restore_focus?) do
+    menu = "#dropdownMenu_#{resource_id}_#{option_id}"
+    button = "#dropdownMenuButton_#{resource_id}_#{option_id}"
+
+    js = JS.hide(to: menu) |> JS.set_attribute({"aria-expanded", "false"}, to: button)
+
+    if restore_focus?, do: JS.focus(js, to: button), else: js
   end
 end

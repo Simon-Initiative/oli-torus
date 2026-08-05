@@ -42,7 +42,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
 
       assert has_element?(
                view,
-               "#alternatives-option-#{group.resource_id}-stable-first[phx-hook='DragSource'][draggable='true']"
+               "#alternatives-option-#{group.resource_id}-stable-first[phx-hook='DragSource'][draggable='true'][tabindex='0'][phx-keydown='keyboard_reorder_option']"
              )
 
       refute has_element?(view, "button[phx-click='move_option']")
@@ -51,6 +51,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
                view,
                "#option-drop-target-#{group.resource_id}-2[phx-hook='DropTarget'][data-reorder-event='reorder_option']"
              )
+
+      view
+      |> element("#alternatives-option-#{group.resource_id}-stable-first")
+      |> render_keydown(%{"key" => "ArrowDown", "shiftKey" => true})
+
+      assert_before(render(view), "Second", "First")
 
       render_hook(view, "reorder_option", %{
         "resourceId" => group.resource_id,

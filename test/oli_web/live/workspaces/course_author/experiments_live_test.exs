@@ -168,15 +168,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(
                view,
-               "#alternatives-option-#{decision_point.resource_id}-option_1[phx-hook='DragSource'][draggable='true']"
+               "#alternatives-option-#{decision_point.resource_id}-option_1[phx-hook='DragSource'][draggable='true'][tabindex='0'][phx-keydown='keyboard_reorder_option'][aria-keyshortcuts*='Shift+ArrowUp']"
+             )
+
+      refute has_element?(view, "#keyboard-reorder-#{decision_point.resource_id}-option_1")
+
+      refute has_element?(view, "button[aria-label^='Move Option']")
+
+      assert has_element?(
+               view,
+               "#alternatives-option-actions-#{decision_point.resource_id}-option_1 button[aria-label='Options'][aria-expanded='false'][aria-controls='dropdownMenu_#{decision_point.resource_id}_option_1']"
              )
 
       assert has_element?(
                view,
-               "#keyboard-reorder-#{decision_point.resource_id}-option_1[phx-hook='KeyboardReorder'][aria-label='Reorder Option 1'][aria-pressed='false'][aria-keyshortcuts*='ArrowUp']"
+               "#alternatives-option-#{decision_point.resource_id}-option_1-reorder-position:not([aria-live])",
+               "Item position 1 of 2."
              )
 
-      refute has_element?(view, "button[aria-label^='Move Option']")
+      assert has_element?(
+               view,
+               "#alternatives-reorder-status-#{decision_point.resource_id}[aria-live='polite'][aria-atomic='true']"
+             )
+
+      view
+      |> element("#alternatives-option-#{decision_point.resource_id}-option_1")
+      |> render_keydown(%{"key" => "ArrowDown", "shiftKey" => true})
+
+      assert_before(render(view), "Option 2", "Option 1")
 
       render_hook(view, "reorder_option", %{
         "resourceId" => decision_point.resource_id,
@@ -185,12 +204,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       })
 
       assert_before(render(view), "Option 2", "Option 1")
-
-      assert has_element?(
-               view,
-               "#option-position-#{decision_point.resource_id}-option_2",
-               "Option 2 position 1 of 2"
-             )
 
       reordered = Experiments.get_latest_experiment(project.slug).content["options"]
       assert Enum.map(reordered, & &1["id"]) == ["option_2", "option_1"]

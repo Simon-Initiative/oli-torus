@@ -13,6 +13,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias Oli.Repo
   alias Oli.Resources.ResourceType
   alias Oli.Utils.Slug
+  alias OliWeb.Components.ReorderableList
   alias Phoenix.LiveView.JS
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
@@ -801,6 +802,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
        open_new_condition_forms:
          MapSet.delete(socket.assigns.open_new_condition_forms, resource_id)
      )}
+  end
+
+  def handle_event(
+        "keyboard_reorder_option",
+        params,
+        socket
+      ) do
+    case ReorderableList.keyboard_move(params) do
+      {:move, _source_index, drop_index} ->
+        handle_event(
+          "reorder_option",
+          %{
+            "resourceId" => params["resource-id"] || params["resource_id"],
+            "optionId" => params["option-id"] || params["option_id"],
+            "dropIndex" => drop_index
+          },
+          socket
+        )
+
+      :noop ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event(

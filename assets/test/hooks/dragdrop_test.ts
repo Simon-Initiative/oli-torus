@@ -1,4 +1,4 @@
-import { DragSource, DropTarget, KeyboardReorder, parseScopedReorderPayload } from 'hooks/dragdrop';
+import { DragSource, DropTarget, parseScopedReorderPayload } from 'hooks/dragdrop';
 
 const dataTransfer = (values: Record<string, string> = {}) => ({
   effectAllowed: '',
@@ -18,33 +18,31 @@ const dispatchDragEvent = (
   element.dispatchEvent(event);
 };
 
-const keyboardReorderHandle = (
-  position = 1,
-  count = 3,
-  resourceId = '123',
-  optionId = 'option-a',
-) => {
+const keyboardReorderItem = (position = 1, count = 3, key = 'alternatives:123:option-a') => {
   const item = document.createElement('li');
-  item.classList.add('list-group-item');
-  const handle = document.createElement('button');
-  handle.classList.add('focus:ring-2', 'focus:ring-blue-500');
-  const liveRegion = document.createElement('span');
-  liveRegion.id = `option-position-${resourceId}-${optionId}`;
-  handle.dataset.reorderEvent = 'reorder_option';
-  handle.dataset.reorderResourceId = resourceId;
-  handle.dataset.reorderItemId = optionId;
-  handle.dataset.reorderPosition = String(position);
-  handle.dataset.reorderCount = String(count);
-  handle.dataset.reorderLabel = 'Option A';
-  handle.dataset.reorderLiveRegionId = liveRegion.id;
-  item.append(handle, liveRegion);
-  document.body.append(item);
+  const status = document.createElement('span');
+  status.id = `${key.replace(/:/g, '-')}-status`;
+  item.tabIndex = 0;
+  item.dataset.keyboardReorderKey = key;
+  item.dataset.keyboardReorderStatusId = status.id;
+  item.dataset.keyboardReorderLabel = 'Item';
+  item.dataset.reorderPosition = String(position);
+  item.dataset.reorderCount = String(count);
+  document.body.append(item, status);
 
-  return { handle, item, liveRegion };
+  return item;
 };
 
-const pressKey = (element: HTMLElement, key: string) =>
-  element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+const pressKey = (element: HTMLElement, key: string, shiftKey = false) => {
+  const event = new KeyboardEvent('keydown', {
+    key,
+    shiftKey,
+    bubbles: true,
+    cancelable: true,
+  });
+  element.dispatchEvent(event);
+  return event;
+};
 
 describe('parseScopedReorderPayload', () => {
   it('accepts a stable item id and reorder scope', () => {
@@ -224,202 +222,110 @@ describe('shared drag and drop hooks', () => {
   });
 });
 
-describe('KeyboardReorder', () => {
+describe('DragSource keyboard reordering', () => {
   afterEach(() => {
-    document
-      .querySelectorAll<HTMLElement>("[aria-pressed='true']")
-      .forEach((element) => pressKey(element, 'Escape'));
     document.body.replaceChildren();
   });
 
-  it('picks up, moves, and drops an option while announcing each state', () => {
-    const { handle, liveRegion } = keyboardReorderHandle();
+  it('leaves movement server-side while marking Shift+Arrow for focus restoration', () => {
+    const item = keyboardReorderItem();
     const pushEvent = jest.fn();
-    KeyboardReorder.mounted.call({ el: handle, pushEvent });
+    DragSource.mounted.call({ el: item, pushEvent });
 
-    pressKey(handle, ' ');
-    expect(handle).toHaveAttribute('aria-pressed', 'true');
-    expect(liveRegion).toHaveTextContent('Option A picked up. Position 2 of 3.');
+    const event = pressKey(item, 'ArrowDown', true);
 
-    pressKey(handle, 'ArrowUp');
-    expect(pushEvent).toHaveBeenCalledWith('reorder_option', {
-      resourceId: '123',
-      optionId: 'option-a',
-      dropIndex: 0,
-    });
-    expect(handle.dataset.reorderPosition).toBe('0');
-    expect(liveRegion).toHaveTextContent('Option A moved to position 1 of 3.');
-
-    pressKey(handle, 'Enter');
-    expect(handle).toHaveAttribute('aria-pressed', 'false');
-    expect(liveRegion).toHaveTextContent('Option A dropped at position 1 of 3.');
+    expect(event.defaultPrevented).toBe(true);
+    expect(pushEvent).not.toHaveBeenCalled();
   });
 
-  it('keeps an option in a later decision point active and focused after a reorder patch', () => {
-    jest.useFakeTimers();
-    const first = keyboardReorderHandle(0, 2, '123', 'option-a');
-    const second = keyboardReorderHandle(0, 3, '456', 'option-b');
+  it('restores focus to a later list item after an in-place server patch', () => {
+    const first = keyboardReorderItem(0, 2, 'alternatives:123:option-a');
+    const second = keyboardReorderItem(0, 3, 'alternatives:456:option-b');
     const pushEvent = jest.fn();
-    KeyboardReorder.mounted.call({ el: first.handle, pushEvent });
-    KeyboardReorder.mounted.call({ el: second.handle, pushEvent });
+    DragSource.mounted.call({ el: first, pushEvent });
+    DragSource.mounted.call({ el: second, pushEvent });
 
-    pressKey(second.handle, ' ');
-    pressKey(second.handle, 'ArrowDown');
+    second.focus();
+    pressKey(second, 'ArrowDown', true);
+    second.blur();
+    second.dataset.reorderPosition = '1';
+    DragSource.updated.call({ el: second });
 
-    const patchedSecond = keyboardReorderHandle(1, 3, '456', 'option-b');
-    KeyboardReorder.destroyed.call({ el: second.handle });
-    second.handle.remove();
-    KeyboardReorder.mounted.call({ el: patchedSecond.handle, pushEvent });
-    jest.runOnlyPendingTimers();
-
-    expect(patchedSecond.handle).toHaveAttribute('aria-pressed', 'true');
-    expect(patchedSecond.handle).toHaveFocus();
-
-    const nextArrow = new KeyboardEvent('keydown', {
-      key: 'ArrowDown',
-      bubbles: true,
-      cancelable: true,
-    });
-    patchedSecond.handle.dispatchEvent(nextArrow);
-
-    expect(nextArrow.defaultPrevented).toBe(true);
-    expect(pushEvent).toHaveBeenLastCalledWith('reorder_option', {
-      resourceId: '456',
-      optionId: 'option-b',
-      dropIndex: 3,
-    });
-
-    pressKey(patchedSecond.handle, ' ');
-    jest.useRealTimers();
-  });
-
-  it('restores the active styling after LiveView updates the handle', () => {
-    const { handle, item } = keyboardReorderHandle();
-    const pushEvent = jest.fn();
-    KeyboardReorder.mounted.call({ el: handle, pushEvent });
-
-    pressKey(handle, ' ');
-    item.classList.remove('keyboard-reorder-active', 'ring-2', 'ring-blue-500', 'ring-inset');
-    KeyboardReorder.updated.call({ el: handle });
-
-    expect(item).toHaveClass('keyboard-reorder-active', 'ring-2', 'ring-blue-500', 'ring-inset');
-    expect(handle).not.toHaveClass(
-      'keyboard-reorder-active',
-      'ring-2',
-      'ring-blue-500',
-      'ring-inset',
+    expect(second).toHaveFocus();
+    expect(document.getElementById(second.dataset.keyboardReorderStatusId!)).toHaveTextContent(
+      'Item moved to position 2 of 3.',
     );
-    expect(handle).not.toHaveClass('focus:ring-2', 'focus:ring-blue-500');
 
-    pressKey(handle, ' ');
+    pressKey(second, 'ArrowDown', true);
+    second.blur();
+    second.dataset.reorderPosition = '2';
+    DragSource.updated.call({ el: second });
 
-    expect(handle).toHaveClass('focus:ring-2', 'focus:ring-blue-500');
+    expect(second).toHaveFocus();
   });
 
-  it('restores focus when LiveView updates an active handle in a later decision point', () => {
+  it('restores focus when LiveView replaces the moved item', () => {
     jest.useFakeTimers();
-    const first = keyboardReorderHandle(0, 2, '123', 'option-a');
-    const second = keyboardReorderHandle(0, 3, '456', 'option-b');
+    const original = keyboardReorderItem(0, 2, 'curriculum:page-1');
     const pushEvent = jest.fn();
-    KeyboardReorder.mounted.call({ el: first.handle, pushEvent });
-    KeyboardReorder.mounted.call({ el: second.handle, pushEvent });
+    DragSource.mounted.call({ el: original, pushEvent });
+    original.focus();
+    pressKey(original, 'ArrowDown', true);
+    DragSource.destroyed.call({ el: original });
+    original.remove();
 
-    second.handle.focus();
-    pressKey(second.handle, ' ');
-    pressKey(second.handle, 'ArrowDown');
-    second.handle.blur();
-    KeyboardReorder.updated.call({ el: second.handle });
+    const replacement = keyboardReorderItem(1, 2, 'curriculum:page-1');
+    DragSource.mounted.call({ el: replacement, pushEvent });
     jest.runOnlyPendingTimers();
 
-    expect(second.handle).toHaveFocus();
-    expect(second.handle).toHaveAttribute('aria-pressed', 'true');
-
-    const nextArrow = new KeyboardEvent('keydown', {
-      key: 'ArrowUp',
-      bubbles: true,
-      cancelable: true,
-    });
-    second.handle.dispatchEvent(nextArrow);
-
-    expect(nextArrow.defaultPrevented).toBe(true);
-    expect(pushEvent).toHaveBeenLastCalledWith('reorder_option', {
-      resourceId: '456',
-      optionId: 'option-b',
-      dropIndex: 0,
-    });
-
-    pressKey(second.handle, ' ');
+    expect(replacement).toHaveFocus();
     jest.useRealTimers();
   });
 
-  it('drops the active option when focus intentionally moves away', () => {
-    jest.useFakeTimers();
-    const { handle, item } = keyboardReorderHandle();
+  it('does not mark an out-of-bounds move for focus restoration', () => {
+    const item = keyboardReorderItem(0, 2);
+    const nextControl = document.createElement('button');
+    document.body.append(nextControl);
+    const pushEvent = jest.fn();
+    DragSource.mounted.call({ el: item, pushEvent });
+
+    item.focus();
+    pressKey(item, 'ArrowUp', true);
+    nextControl.focus();
+    DragSource.updated.call({ el: item });
+
+    expect(nextControl).toHaveFocus();
+    expect(document.getElementById(item.dataset.keyboardReorderStatusId!)).toHaveTextContent(
+      'Item is already first.',
+    );
+  });
+
+  it('does not restore focus after the user intentionally moves to another control', () => {
+    const item = keyboardReorderItem();
     const nextControl = document.createElement('button');
     document.body.appendChild(nextControl);
     const pushEvent = jest.fn();
-    KeyboardReorder.mounted.call({ el: handle, pushEvent });
+    DragSource.mounted.call({ el: item, pushEvent });
 
-    handle.focus();
-    pressKey(handle, ' ');
-    pressKey(handle, 'ArrowDown');
+    item.focus();
+    pressKey(item, 'ArrowDown', true);
     nextControl.focus();
-    KeyboardReorder.updated.call({ el: handle });
-    jest.runOnlyPendingTimers();
+    DragSource.updated.call({ el: item });
 
     expect(nextControl).toHaveFocus();
-    expect(handle).toHaveAttribute('aria-pressed', 'false');
-    expect(item).not.toHaveClass(
-      'keyboard-reorder-active',
-      'ring-2',
-      'ring-blue-500',
-      'ring-inset',
-    );
-    jest.useRealTimers();
   });
 
-  it('clears active state when a handle is removed without a replacement', () => {
-    jest.useFakeTimers();
-    const original = keyboardReorderHandle(0, 2, '456', 'option-b');
+  it('stops Shift+Arrow events from nested action controls', () => {
+    const item = keyboardReorderItem();
+    const action = document.createElement('button');
+    item.append(action);
     const pushEvent = jest.fn();
-    KeyboardReorder.mounted.call({ el: original.handle, pushEvent });
+    DragSource.mounted.call({ el: item, pushEvent });
+    const parentListener = jest.fn();
+    document.body.addEventListener('keydown', parentListener);
 
-    pressKey(original.handle, ' ');
-    KeyboardReorder.destroyed.call({ el: original.handle });
-    original.handle.remove();
-    jest.runOnlyPendingTimers();
+    pressKey(action, 'ArrowDown', true);
 
-    const later = keyboardReorderHandle(0, 2, '456', 'option-b');
-    KeyboardReorder.mounted.call({ el: later.handle, pushEvent });
-
-    expect(later.handle).toHaveAttribute('aria-pressed', 'false');
-    expect(later.handle).not.toHaveFocus();
-    jest.useRealTimers();
-  });
-
-  it('does not move beyond a list boundary', () => {
-    const { handle, liveRegion } = keyboardReorderHandle(0, 2);
-    const pushEvent = jest.fn();
-    KeyboardReorder.mounted.call({ el: handle, pushEvent });
-
-    pressKey(handle, ' ');
-    pressKey(handle, 'ArrowUp');
-
-    expect(pushEvent).not.toHaveBeenCalled();
-    expect(liveRegion).toHaveTextContent('Option A is already at position 1 of 2.');
-  });
-
-  it('cancels keyboard reordering with Escape', () => {
-    const { handle, liveRegion } = keyboardReorderHandle();
-    const pushEvent = jest.fn();
-    KeyboardReorder.mounted.call({ el: handle, pushEvent });
-
-    pressKey(handle, ' ');
-    pressKey(handle, 'Escape');
-    pressKey(handle, 'ArrowDown');
-
-    expect(handle).toHaveAttribute('aria-pressed', 'false');
-    expect(liveRegion).toHaveTextContent('Option A reorder cancelled. Position 2 of 3.');
-    expect(pushEvent).not.toHaveBeenCalled();
+    expect(parentListener).not.toHaveBeenCalled();
   });
 });
