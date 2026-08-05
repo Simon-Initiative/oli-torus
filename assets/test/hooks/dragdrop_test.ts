@@ -27,6 +27,7 @@ const keyboardReorderHandle = (
   const item = document.createElement('li');
   item.classList.add('list-group-item');
   const handle = document.createElement('button');
+  handle.classList.add('focus:ring-2', 'focus:ring-blue-500');
   const liveRegion = document.createElement('span');
   liveRegion.id = `option-position-${resourceId}-${optionId}`;
   handle.dataset.reorderEvent = 'reorder_option';
@@ -308,6 +309,11 @@ describe('KeyboardReorder', () => {
       'ring-blue-500',
       'ring-inset',
     );
+    expect(handle).not.toHaveClass('focus:ring-2', 'focus:ring-blue-500');
+
+    pressKey(handle, ' ');
+
+    expect(handle).toHaveClass('focus:ring-2', 'focus:ring-blue-500');
   });
 
   it('restores focus when LiveView updates an active handle in a later decision point', () => {

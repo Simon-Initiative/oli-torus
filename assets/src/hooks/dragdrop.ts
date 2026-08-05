@@ -40,6 +40,8 @@ const renderKeyboardReorderActive = (element: HTMLElement, active: boolean) => {
 
   keyboardReorderState.set(element, active);
   element.setAttribute('aria-pressed', String(active));
+  element.classList.toggle('focus:ring-2', !active);
+  element.classList.toggle('focus:ring-blue-500', !active);
   activeTarget.classList.toggle('keyboard-reorder-active', active);
   activeTarget.classList.toggle('ring-2', active);
   activeTarget.classList.toggle('ring-blue-500', active);
