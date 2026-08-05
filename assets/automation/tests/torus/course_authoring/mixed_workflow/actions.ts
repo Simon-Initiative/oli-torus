@@ -360,7 +360,7 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
       await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
 
       await editor.click();
-      await page.keyboard.press('Meta+A');
+      await page.keyboard.press('ControlOrMeta+A');
       await page.keyboard.type(`${BASE_CONTENT_TEXT} ${typedText}`);
       await expect(editor).toContainText(`${BASE_CONTENT_TEXT} ${typedText}`);
       await previewFlush(() => curriculumTask.openPreview());
