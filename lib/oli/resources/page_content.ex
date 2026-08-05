@@ -118,65 +118,6 @@ defmodule Oli.Resources.PageContent do
   end
 
   @doc """
-  Builds the compact lookup used to attribute media interactions to alternatives
-  branches without retaining the full page revision in the delivery depot.
-  """
-  def experiment_attribution_index(%{"model" => _model} = content) do
-    content
-    |> flat_filter(&(Map.get(&1, "type") == "alternatives"))
-    |> Enum.reduce(%{}, fn alternatives, index ->
-      alternatives_resource_id = Map.get(alternatives, "alternatives_id")
-
-      alternatives
-      |> Map.get("children", [])
-      |> Enum.reduce(index, fn branch, index ->
-        option_id = Map.get(branch, "value")
-
-        case {alternatives_resource_id, option_id} do
-          {nil, _} ->
-            index
-
-          {_, nil} ->
-            index
-
-          _ ->
-            branch
-            |> content_element_ids()
-            |> Enum.reduce(index, fn content_element_id, index ->
-              Map.update(
-                index,
-                content_element_id,
-                [%{alternatives_resource_id: alternatives_resource_id, option_id: option_id}],
-                &[
-                  %{alternatives_resource_id: alternatives_resource_id, option_id: option_id}
-                  | &1
-                ]
-              )
-            end)
-        end
-      end)
-    end)
-  end
-
-  def experiment_attribution_index(_content), do: %{}
-
-  defp content_element_ids(%{"children" => children}) do
-    %{"model" => children}
-    |> flat_filter(fn
-      %{} = element -> Enum.any?(["id", "guid", "content_element_id"], &Map.has_key?(element, &1))
-      _ -> false
-    end)
-    |> Enum.flat_map(fn element ->
-      ["id", "guid", "content_element_id"]
-      |> Enum.map(&Map.get(element, &1))
-      |> Enum.reject(&is_nil/1)
-    end)
-    |> Enum.uniq()
-  end
-
-  defp content_element_ids(_branch), do: []
-
-  @doc """
   Maps the content elements of page content, preserving the as-is structure. Implemented as a
   convenience function, over top of map_reduce.
   """

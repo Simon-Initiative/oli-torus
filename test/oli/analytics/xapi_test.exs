@@ -127,14 +127,6 @@ defmodule Oli.Analytics.XAPITest do
       assert section_resource.resource_type_id == ResourceType.id_for_page()
       assert section_resource.revision_id == page_revision.id
 
-      assert Map.has_key?(
-               Oli.Resources.PageContent.experiment_attribution_index(page_revision.content),
-               "video-in-selected-branch"
-             )
-
-      assert [%{option_id: "alt-a"}] =
-               section_resource.experiment_attribution_index["video-in-selected-branch"]
-
       {:ok, %StatementBundle{} = bundle} =
         XAPI.construct_bundle(
           %{
@@ -163,6 +155,54 @@ defmodule Oli.Analytics.XAPITest do
                |> get_in(["context", "extensions", @experiment_attributions_key])
 
       assert assignment_id == assignment.id
+    end
+
+    test "does not load page revision content for resource-only events without assignments" do
+      %{user: user, section: section, page_revision: page_revision, assignment: assignment} =
+        setup_video_experiment_context()
+
+      Repo.delete!(assignment)
+
+      handler_id = "resource-video-revision-query-#{System.unique_integer([:positive])}"
+      parent = self()
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _, _, metadata, _ ->
+          if metadata.source == "revisions" do
+            send(parent, :revision_query)
+          end
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, %StatementBundle{} = bundle} =
+               XAPI.construct_bundle(
+                 %{
+                   "category" => "video",
+                   "event_type" => "played",
+                   "host_name" => "http://example.edu",
+                   "key" => %{
+                     "resource_id" => page_revision.resource_id,
+                     "section_id" => section.id
+                   },
+                   "video_url" => "https://example.edu/video.mp4",
+                   "video_title" => "Example video",
+                   "video_length" => 60,
+                   "video_play_time" => 0,
+                   "content_element_id" => "video-in-selected-branch"
+                 },
+                 user.id
+               )
+
+      refute_receive :revision_query
+
+      refute bundle
+             |> statement_from_bundle()
+             |> get_in(["context", "extensions", @experiment_attributions_key])
     end
   end
 

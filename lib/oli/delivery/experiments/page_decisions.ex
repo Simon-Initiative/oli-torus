@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
   """
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Resources.PageContent
   alias Oli.Repo
@@ -20,8 +20,7 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
     alternatives_resource_ids = alternatives_resource_ids(content)
 
     with true <- alternatives_resource_ids != [],
-         groups <-
-           SectionResourceDepot.get_alternatives_groups(section.id, alternatives_resource_ids) do
+         groups <- alternatives_groups(section.slug, alternatives_resource_ids) do
       by_id = Map.new(groups, fn group -> {group.id, group} end)
       enrollment = Sections.get_enrollment(section.slug, page_context.user.id)
 
@@ -63,6 +62,21 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
   end
 
   defp alternatives_resource_ids(_content), do: []
+
+  defp alternatives_groups(section_slug, resource_ids) do
+    section_slug
+    |> DeliveryResolver.from_resource_id(resource_ids)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(fn revision ->
+      %{
+        id: revision.resource_id,
+        revision_id: revision.id,
+        title: revision.title,
+        options: Map.get(revision.content || %{}, "options", []),
+        strategy: Map.get(revision.content || %{}, "strategy", "user_section_preference")
+      }
+    end)
+  end
 
   defp attempt_content(%{resource_attempts: [this_attempt | _]} = page_context) do
     if Enum.any?(this_attempt.errors, fn e ->

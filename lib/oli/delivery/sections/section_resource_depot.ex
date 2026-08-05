@@ -266,25 +266,6 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
-  Returns deployed alternatives groups for the requested resource ids from the
-  section resource depot.
-  """
-  def get_alternatives_groups(_section_id, []), do: []
-
-  def get_alternatives_groups(section_id, resource_ids) do
-    alternatives_type_id = Oli.Resources.ResourceType.id_for_alternatives()
-
-    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
-
-    Depot.query(@depot_desc, section_id,
-      resource_type_id: alternatives_type_id,
-      resource_id: {:in, Enum.uniq(resource_ids)}
-    )
-    |> Enum.map(& &1.alternatives_group)
-    |> Enum.reject(&is_nil/1)
-  end
-
-  @doc """
   Returns a SectionResource record for a given section and resource id.
   """
 
@@ -315,46 +296,17 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
     objective = Oli.Resources.ResourceType.id_for_objective()
-    alternatives = Oli.Resources.ResourceType.id_for_alternatives()
 
     query =
       from sr in SectionResource,
-        left_join: revision in Oli.Resources.Revision,
-        on: revision.id == sr.revision_id,
         where: sr.section_id == ^section_id,
-        where: sr.resource_type_id in [^page, ^container, ^objective, ^alternatives],
-        select: {sr, revision.content}
+        where: sr.resource_type_id in [^page, ^container, ^objective],
+        select: sr
 
-    results =
-      query
-      |> Repo.all()
-      |> Enum.map(fn
-        {%SectionResource{resource_type_id: ^page} = sr, content} ->
-          %{
-            sr
-            | experiment_attribution_index:
-                Oli.Resources.PageContent.experiment_attribution_index(content)
-          }
-
-        {%SectionResource{resource_type_id: ^alternatives} = sr, content} ->
-          %{sr | alternatives_group: alternatives_group(sr, content)}
-
-        {sr, _content} ->
-          sr
-      end)
+    results = Repo.all(query)
 
     create_table_unless_exists(section_id)
     Depot.clear_and_set(@depot_desc, section_id, results)
-  end
-
-  defp alternatives_group(sr, content) do
-    %{
-      id: sr.resource_id,
-      revision_id: sr.revision_id,
-      title: sr.title,
-      options: Map.get(content || %{}, "options", []),
-      strategy: Map.get(content || %{}, "strategy", "user_section_preference")
-    }
   end
 
   defp create_table_unless_exists(section_id) do

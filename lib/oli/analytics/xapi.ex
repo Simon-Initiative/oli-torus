@@ -246,9 +246,9 @@ defmodule Oli.Analytics.XAPI do
         content_element_id = Map.get(details, :content_element_id, "unknown")
 
         experiment_attributions =
-          MediaAttributions.for_media_event_from_index(
+          MediaAttributions.for_media_event_from_revision(
             context,
-            section_resource.experiment_attribution_index,
+            section_resource.revision_id,
             content_element_id
           )
 

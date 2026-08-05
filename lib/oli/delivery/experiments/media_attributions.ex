@@ -40,25 +40,34 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
   def for_media_event(_context, _page_content, _content_element_id), do: []
 
-  def for_media_event_from_index(%Context{} = context, index, content_element_id)
-      when is_map(index) and is_binary(content_element_id) do
-    index
-    |> Map.get(content_element_id, [])
-    |> attributions_for_matching_branches(context)
+  def for_media_event_from_revision(%Context{} = context, revision_id, content_element_id)
+      when is_integer(revision_id) and is_binary(content_element_id) do
+    assignments = context |> assignment_query() |> Repo.all()
+
+    case assignments do
+      [] ->
+        []
+
+      assignments ->
+        page_content =
+          from(revision in Oli.Resources.Revision,
+            where: revision.id == ^revision_id,
+            select: revision.content
+          )
+          |> Repo.one()
+
+        matching_branches = matching_alternatives_branches(page_content, content_element_id)
+
+        assignments
+        |> matching_assignments(matching_branches)
+        |> media_attributions(context)
+    end
   end
 
-  def for_media_event_from_index(_context, _index, _content_element_id), do: []
+  def for_media_event_from_revision(_context, _revision_id, _content_element_id), do: []
 
-  defp attributions_for_matching_branches([], _context), do: []
-
-  defp attributions_for_matching_branches(matching_branches, context) do
-    assignments =
-      context
-      |> assignment_query()
-      |> Repo.all()
-      |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
-
-    media_attributions(assignments, context)
+  defp matching_assignments(assignments, matching_branches) do
+    Enum.filter(assignments, &assignment_matches_branch?(&1, matching_branches))
   end
 
   defp assignment_query(%Context{} = context) do

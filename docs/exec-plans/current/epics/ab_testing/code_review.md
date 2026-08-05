@@ -444,7 +444,7 @@ should be added only if assignment and experiment-lifecycle invalidation can be 
 ### 11.2 Third-round implementation checklist
 
 - [x] 11.3 Prevent cancellation while `SelectModal` selection submission is pending.
-- [ ] 11.4 Avoid loading revision content for depot entries that discard it.
+- [x] 11.4 Avoid loading revision content for depot entries that discard it.
 - [ ] 11.5 Query only media-event assignments matching the relevant alternatives branches.
 - [ ] 11.6 Reuse the direct-uploader event hash instead of calculating it twice.
 - [ ] 11.7 Make batched reward handoff load eligible assignments set-wise.
@@ -475,25 +475,31 @@ should be added only if assignment and experiment-lifecycle invalidation can be 
   not invoke `onCancel` while pending; verify normal cancellation is restored after rejection and
   that successful completion applies the selection exactly once.
 
-### 11.4 Depot initialization loads revision content that it discards
+### 11.4 Experiment metadata unnecessarily expands the section resource depot
 
 - **Source:** GitHub AI performance review.
 - **Current location:** `lib/oli/delivery/sections/section_resource_depot.ex`, `load/1`.
-- **Issue:** The depot query left-joins revisions and selects `revision.content` for page,
-  alternatives, container, and objective entries, although only page and alternatives entries use
-  the content. PostgreSQL still transfers and Ecto decodes discarded container/objective content.
+- **Issue:** The epic expanded the depot to include alternatives resources and added full revision
+  content loading for every deployed page, container, objective, and alternatives resource. It then
+  derived experiment-only virtual fields that were retained by a generic serializer change.
 - **Determination:** Fix.
-- **Evidence:** The query projects `{sr, revision.content}` for all four resource types, while the
-  mapping clauses return container and objective `SectionResource` records unchanged. This adds
-  avoidable initialization latency and memory proportional to discarded revision content.
-- **Recommended resolution:** Load base section resources without revision content, then enrich only
-  page and alternatives resource IDs through one targeted content query. Merge the derived page
-  attribution indexes and alternatives groups back into the base records before populating the
-  depot. Keep query count fixed rather than issuing one query per resource.
-- **Tests:** Assert all four supported resource types still populate the depot, page and alternatives
-  metadata remain correct, and the content query is restricted to the two enriched resource types.
-  Add a query-shape or SQL assertion if practical so later changes do not restore the broad content
-  projection.
+- **Evidence:** Before this epic, depot population selected only page, container, and objective
+  `SectionResource` records and did not join revisions. The new query transfers and decodes all page
+  content whenever a section depot initializes, including pages with no alternatives. Full content
+  is discarded, but the derived index increases ETS size and the serializer now retains virtual
+  fields for every depot schema.
+- **Approved resolution:** Restore the section resource schema, serializer, depot implementation,
+  and depot tests to their pre-epic behavior. During page preparation, extract the unique
+  alternatives resource IDs from the current attempt and resolve only those deployed revisions in
+  one `DeliveryResolver` query. For resource-only media events, first check for learner experiment
+  assignments and load only the one deployed page revision when attribution may be required. Do not
+  add an asynchronous job; bundle construction remains synchronous and upload remains on the
+  existing asynchronous xAPI pipeline. This supersedes the depot-based implementations recorded in
+  10.3 and 10.6.
+- **Tests:** Assert pages without alternatives perform no alternatives lookup, pages with multiple
+  references resolve only their unique deployed groups, resource-only media attribution still uses
+  the deployed page revision, and media events for learners without assignments do not load page
+  content. Retain the existing depot test suite to verify its pre-epic behavior.
 
 ### 11.5 Media attribution queries all learner assignments for every matching event
 
