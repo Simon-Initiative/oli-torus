@@ -221,10 +221,21 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
     do: assert_preview_text(state, "EXPECTED_TEXT")
 
   @doc """
-  Asserts that inline foreign text persists in delivery content.
+  Asserts that inline foreign text and its selected language persist in delivery content.
   """
-  def assert_student_delivery_inline_foreign(%ExecutionState{} = state),
-    do: assert_delivery_element_text(state, "foreign", "EXPECTED_TEXT")
+  def assert_student_delivery_inline_foreign(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    text = required_param!(state, "EXPECTED_TEXT")
+    lang = required_param!(state, "EXPECTED_LANG")
+
+    assert nested_map?(
+             content,
+             &(&1["type"] == "foreign" and &1["lang"] == lang and nested_contains?(&1, text))
+           ),
+           "Expected published foreign element containing #{inspect(text)} with lang #{inspect(lang)}"
+
+    state
+  end
 
   @doc """
   Asserts that inline popup content persists in delivery content.

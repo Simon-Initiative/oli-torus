@@ -17,3 +17,4 @@ workflow:
         SECTION_SLUG: '${seed.outputs.sections.workflow_delivery_section}'
         PAGE_REVISION_SLUG: '${author.outputs.page_revision_slug}'
         EXPECTED_TEXT: '${author.outputs.text}'
+        EXPECTED_LANG: '${author.outputs.lang}'

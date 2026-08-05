@@ -22,17 +22,18 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
     const text = 'INLINE-N foreign text';
+    const lang = 'ar';
 
     await homeTask.login('author');
     await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
     await insertInlineElement(page, curriculumTask, 'Foreign', text);
     await page.getByRole('button', { name: 'Change Language' }).click();
     const dialog = page.getByRole('dialog', { name: 'Foreign Language Settings' });
-    await dialog.getByRole('combobox').selectOption('ar');
+    await dialog.getByRole('combobox').selectOption(lang);
     await dialog.getByRole('button', { name: 'Save' }).click();
     await previewFlush(() => curriculumTask.openPreview());
 
-    return { page_revision_slug: pageRevisionSlug, text };
+    return { page_revision_slug: pageRevisionSlug, text, lang };
   },
 
   async author_inline_popup({ curriculumTask, homeTask, page }, params) {
