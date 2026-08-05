@@ -408,33 +408,67 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     event
     |> context_extensions()
     |> Map.get(@experiment_attributions_extension, [])
-    |> case do
-      attributions when is_list(attributions) -> Enum.filter(attributions, &is_map/1)
-      _ -> []
-    end
   end
 
   defp attribution_value(attribution, key), do: Map.get(attribution, key)
 
   defp validate_experiment_attributions(parsed_events) do
     parsed_events
-    |> Enum.flat_map(fn {_raw_line, event} -> experiment_attributions(event) end)
-    |> Enum.reduce_while(:ok, fn attribution, :ok ->
-      case {valid_attribution_type?(attribution), attribution_value(attribution, "key")} do
-        {true, key} when is_binary(key) and key != "" ->
-          {:cont, :ok}
-
-        {false, _key} ->
-          role = attribution_value(attribution, "role")
-          attribution_type = attribution_value(attribution, "attribution_type")
-
-          {:halt,
-           {:error, {:invalid_experiment_attribution, %{role: role, type: attribution_type}}}}
-
-        {true, key} ->
-          {:halt, {:error, {:invalid_experiment_attribution_key, key}}}
+    |> Enum.with_index()
+    |> Enum.reduce_while(:ok, fn {{_raw_line, event}, event_index}, :ok ->
+      case validate_event_attributions(event, event_index) do
+        :ok -> {:cont, :ok}
+        {:error, _reason} = error -> {:halt, error}
       end
     end)
+  end
+
+  defp validate_event_attributions(event, event_index) do
+    case Map.fetch(context_extensions(event), @experiment_attributions_extension) do
+      :error ->
+        :ok
+
+      {:ok, attributions} when is_list(attributions) ->
+        attributions
+        |> Enum.with_index()
+        |> Enum.reduce_while(:ok, fn {attribution, attribution_index}, :ok ->
+          case validate_experiment_attribution(attribution, event_index, attribution_index) do
+            :ok -> {:cont, :ok}
+            {:error, _reason} = error -> {:halt, error}
+          end
+        end)
+
+      {:ok, _attributions} ->
+        {:error,
+         {:invalid_experiment_attributions, %{event_index: event_index, reason: :expected_list}}}
+    end
+  end
+
+  defp validate_experiment_attribution(attribution, event_index, attribution_index)
+       when not is_map(attribution) do
+    {:error,
+     {:invalid_experiment_attribution,
+      %{
+        event_index: event_index,
+        attribution_index: attribution_index,
+        reason: :expected_map
+      }}}
+  end
+
+  defp validate_experiment_attribution(attribution, _event_index, _attribution_index) do
+    case {valid_attribution_type?(attribution), attribution_value(attribution, "key")} do
+      {true, key} when is_binary(key) and key != "" ->
+        :ok
+
+      {false, _key} ->
+        role = attribution_value(attribution, "role")
+        attribution_type = attribution_value(attribution, "attribution_type")
+
+        {:error, {:invalid_experiment_attribution, %{role: role, type: attribution_type}}}
+
+      {true, key} ->
+        {:error, {:invalid_experiment_attribution_key, key}}
+    end
   end
 
   defp valid_attribution_type?(attribution) do

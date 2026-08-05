@@ -314,6 +314,102 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
              ClickHouseUploader.upload(bundle)
   end
 
+  @tag capture_log: true
+  test "upload rejects a non-map attribution without inserting any chunk rows" do
+    statement =
+      update_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ],
+        fn [attribution] -> [attribution, "malformed"] end
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-non-map-attribution"
+    }
+
+    assert {:error,
+            {:invalid_experiment_attribution,
+             %{event_index: 0, attribution_index: 1, reason: :expected_map}}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload rejects an attribution array containing only non-map values" do
+    statement =
+      put_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ],
+        [nil, 42]
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-non-map-attributions"
+    }
+
+    assert {:error,
+            {:invalid_experiment_attribution,
+             %{event_index: 0, attribution_index: 0, reason: :expected_map}}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload rejects a present attribution extension that is not an array" do
+    statement =
+      put_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ],
+        nil
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-invalid-attribution-container"
+    }
+
+    assert {:error, {:invalid_experiment_attributions, %{event_index: 0, reason: :expected_list}}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload accepts a host event without the attribution extension" do
+    statement =
+      update_in(
+        attributed_part_attempt_statement(),
+        ["context", "extensions"],
+        &Map.delete(&1, "http://oli.cmu.edu/extensions/experiment_attributions")
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-without-attributions"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "INSERT INTO analytics.raw_events"
+      refute query =~ "INSERT INTO analytics.experiment_attributions"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
   test "raw event and attribution hashes match lambda raw-line hashing contract" do
     raw_line = attributed_part_attempt_json_line()
     reencoded_hash = raw_line |> Jason.decode!() |> Jason.encode!() |> sha256()
