@@ -13,6 +13,7 @@ import ImageAltTextWidget from './custom/ImageAltTextWidget';
 import { ItemBankManageEditor } from './custom/ItemBankManageEditor';
 import { JanusSubtitlesManager } from './custom/JanusSubtitlesManager';
 import { ListSortItemsEditor } from './custom/ListSortItemsEditor';
+import { MatchingManageEditor } from './custom/MatchingManageEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
 import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
@@ -72,6 +73,7 @@ const widgets: any = {
   IframeSourceEditor: IframeSourceEditor,
   RichLabelWidget: RichLabelWidget,
   ItemBankManageEditor: ItemBankManageEditor,
+  MatchingManageEditor: MatchingManageEditor,
 };
 
 /**
