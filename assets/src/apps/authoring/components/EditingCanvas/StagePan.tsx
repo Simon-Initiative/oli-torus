@@ -45,6 +45,8 @@ export const StagePan: React.FC = ({ children }) => {
         if (
           (clickTarget as HTMLElement).classList.contains('aa-stage-pan') ||
           (clickTarget as HTMLElement).classList.contains('activity-content') ||
+          (clickTarget as HTMLElement).classList.contains('activity-no-part-content') ||
+          (clickTarget as HTMLElement).classList.contains('activity-stack-container') ||
           (clickTarget as HTMLElement).classList.contains('advance-authoring-responsive-layout')
         ) {
           setMoving(true);
