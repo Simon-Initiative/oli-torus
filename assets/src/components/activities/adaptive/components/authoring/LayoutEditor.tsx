@@ -578,10 +578,13 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   };
 
   const handleShortcutActionNotifications = (payload: any) => {
-    const { type } = payload;
+    const { type, id } = payload;
     if (type === 'Delete') {
+      if (!selectedPartAndCapabilities) return;
+      if (id && id !== selectedPartAndCapabilities.id) return;
       setShowConfirmDelete(true);
     } else if (type === 'Copy') {
+      if (!selectedPartAndCapabilities) return;
       handleCopyComponent();
     }
   };
