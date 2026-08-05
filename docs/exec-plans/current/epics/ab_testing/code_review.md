@@ -446,7 +446,7 @@ should be added only if assignment and experiment-lifecycle invalidation can be 
 - [x] 11.3 Prevent cancellation while `SelectModal` selection submission is pending.
 - [x] 11.4 Avoid loading revision content for depot entries that discard it.
 - [x] 11.5 Query only media-event assignments matching the relevant alternatives branches.
-- [ ] 11.6 Reuse the direct-uploader event hash instead of calculating it twice.
+- [x] 11.6 Reuse the direct-uploader event hash instead of calculating it twice.
 - [ ] 11.7 Make batched reward handoff load eligible assignments set-wise.
 - [ ] 11.8 Enqueue page-finalization rewards using activity-attempt IDs, not SQL parameter values.
 - [ ] 11.9 Reject non-map experiment attribution array entries instead of silently dropping them.
@@ -535,9 +535,10 @@ should be added only if assignment and experiment-lifecycle invalidation can be 
 - **Determination:** Fix.
 - **Evidence:** Both calls operate on the identical raw JSONL line in the same preparation pass. The
   duplicate work occurs for every recognized event and is unnecessary even with bounded chunks.
-- **Recommended resolution:** Compute the digest once in `prepare_event/1` and pass it through the
-  raw-event transformation/base builders. Keep the hash based on the original raw line so direct
-  upload remains identical to the existing idempotency contract.
+- **Approved resolution:** Compute the digest once in `prepare_event/1` and pass the decoded event
+  and precomputed hash explicitly through the raw-event transformation/base builders. Keep the hash
+  based on the original raw line so direct upload remains identical to the existing idempotency
+  contract.
 - **Tests:** Retain hash-parity fixtures and add a focused test or injected hash helper proving one
   digest is reused by both the raw row and all attribution rows.
 

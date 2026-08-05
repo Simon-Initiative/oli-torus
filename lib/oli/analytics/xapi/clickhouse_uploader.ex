@@ -105,23 +105,27 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     end
   end
 
-  defp prepare_event({raw_line, event} = parsed_event) do
-    raw_event = transform_to_raw_event(parsed_event)
+  # Hash the original JSONL representation once and pass that identity through every downstream
+  # projection. Re-encoding the decoded event would change hashes when JSON formatting or key order
+  # differs, and recalculating from the same raw line adds unnecessary work.
+  defp prepare_event({raw_line, event}) do
+    event_hash = event_hash(raw_line)
+    raw_event = transform_to_raw_event(event, event_hash)
 
     %{
       event: event,
-      event_hash: event_hash(raw_line),
+      event_hash: event_hash,
       host_event_type: if(raw_event, do: raw_event.event_type, else: "unknown"),
       raw_event: raw_event,
       timestamp: parse_timestamp(event["timestamp"])
     }
   end
 
-  defp raw_event_base({raw_line, event}, event_type) do
+  defp raw_event_base(event, event_hash, event_type) do
     context_extensions = context_extensions(event)
 
     %{
-      event_hash: event_hash(raw_line),
+      event_hash: event_hash,
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       home_page: get_in(event, ["actor", "account", "homePage"]),
       section_id: oli_extension(context_extensions, "section_id"),
@@ -228,24 +232,24 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   # Transform an xAPI event to the unified raw_events table format
-  defp transform_to_raw_event({raw_line, event}) do
+  defp transform_to_raw_event(event, event_hash) do
     cond do
-      is_video_event?(event) -> transform_video_event({raw_line, event})
-      is_activity_attempt_event?(event) -> transform_activity_attempt_event({raw_line, event})
-      is_page_attempt_event?(event) -> transform_page_attempt_event({raw_line, event})
-      is_page_viewed_event?(event) -> transform_page_viewed_event({raw_line, event})
-      is_part_attempt_event?(event) -> transform_part_attempt_event({raw_line, event})
+      is_video_event?(event) -> transform_video_event(event, event_hash)
+      is_activity_attempt_event?(event) -> transform_activity_attempt_event(event, event_hash)
+      is_page_attempt_event?(event) -> transform_page_attempt_event(event, event_hash)
+      is_page_viewed_event?(event) -> transform_page_viewed_event(event, event_hash)
+      is_part_attempt_event?(event) -> transform_part_attempt_event(event, event_hash)
       true -> nil
     end
   end
 
-  defp transform_video_event({raw_line, event}) do
+  defp transform_video_event(event, event_hash) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
     object_extensions = get_in(event, ["object", "definition", "extensions"]) || %{}
 
     event
-    |> then(&raw_event_base({raw_line, &1}, "video"))
+    |> raw_event_base(event_hash, "video")
     |> Map.merge(%{
       page_id: oli_extension(context_extensions, "page_id"),
       content_element_id:
@@ -274,13 +278,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_activity_attempt_event({raw_line, event}) do
+  defp transform_activity_attempt_event(event, event_hash) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     event
-    |> then(&raw_event_base({raw_line, &1}, "activity_attempt"))
+    |> raw_event_base(event_hash, "activity_attempt")
     |> Map.merge(%{
       activity_attempt_guid: oli_extension(context_extensions, "activity_attempt_guid"),
       activity_attempt_number: oli_extension(context_extensions, "activity_attempt_number"),
@@ -298,13 +302,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_page_attempt_event({raw_line, event}) do
+  defp transform_page_attempt_event(event, event_hash) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     event
-    |> then(&raw_event_base({raw_line, &1}, "page_attempt"))
+    |> raw_event_base(event_hash, "page_attempt")
     |> Map.merge(%{
       page_attempt_guid: oli_extension(context_extensions, "page_attempt_guid"),
       page_attempt_number: oli_extension(context_extensions, "page_attempt_number"),
@@ -319,12 +323,12 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_page_viewed_event({raw_line, event}) do
+  defp transform_page_viewed_event(event, event_hash) do
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     event
-    |> then(&raw_event_base({raw_line, &1}, "page_viewed"))
+    |> raw_event_base(event_hash, "page_viewed")
     |> Map.merge(%{
       page_id: oli_extension(context_extensions, "page_id"),
       page_sub_type: get_in(event, ["object", "definition", "subType"]),
@@ -332,13 +336,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     })
   end
 
-  defp transform_part_attempt_event({raw_line, event}) do
+  defp transform_part_attempt_event(event, event_hash) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     event
-    |> then(&raw_event_base({raw_line, &1}, "part_attempt"))
+    |> raw_event_base(event_hash, "part_attempt")
     |> Map.merge(%{
       part_attempt_guid: oli_extension(context_extensions, "part_attempt_guid"),
       part_attempt_number: oli_extension(context_extensions, "part_attempt_number"),
