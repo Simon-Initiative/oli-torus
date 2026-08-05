@@ -13,9 +13,12 @@ This is a disposition document only. It does not approve or implement the fixes.
 
 ## Summary
 
-The PR contains 17 review issues plus one informational security review with no finding.
+The initial recorded review round contained 17 review issues plus one informational security review
+with no finding. Later rounds are recorded separately because the automated reviewers replace their
+top-level comment bodies in place. The latest round, recorded in section 11, contains 10 new
+actionable findings; all 10 should be fixed.
 
-| Disposition | Count | Items |
+| Initial-round disposition | Count | Items |
 | --- | ---: | --- |
 | Fix | 11 | 4.1–4.5 and 4.7–4.12 |
 | Do not fix in this PR; defer with explanation | 1 | 4.6 |
@@ -415,3 +418,250 @@ The automated reviewers updated their existing GitHub issue comments in place af
 - Exercise ClickHouse upload with more than one processing chunk and retry after a failed middle chunk.
 - Run `mix format` and the appropriate frontend formatter on touched files, followed by `git diff --check`.
 - Re-read the edited GitHub review bodies before implementation begins; automated comments are mutable and may be replaced again on the next head revision.
+
+## 11. Third Review Round — August 5, 2026
+
+### 11.1 Round inventory and conclusion
+
+The automated reviewers replaced their top-level GitHub comment bodies again after the
+second-round fixes. The three original human review threads remain resolved, and there are no new
+inline human threads. The unchanged Danger and GitGuardian comments remain covered by sections 5.1
+and 5.2.
+
+| Source | New issues | Determination |
+| --- | ---: | --- |
+| GitHub AI TypeScript review | 1 | Fix |
+| GitHub AI performance review | 4 | Fix all four, with a narrower caching decision for 11.5 |
+| GitHub AI Elixir review | 2 | Fix both |
+| GitHub AI UI review | 3 | Fix all three |
+| GitHub AI security review | 0 | Auto-ignore; no issues found |
+
+**Conclusion:** all 10 new findings reproduce against the current branch and should be fixed in
+this PR. Item 11.5 identifies a real high-frequency query path, but its suggested cross-event cache
+is not automatically accepted: the first fix should be a branch-constrained query, and caching
+should be added only if assignment and experiment-lifecycle invalidation can be made explicit.
+
+### 11.2 Third-round implementation checklist
+
+- [x] 11.3 Prevent cancellation while `SelectModal` selection submission is pending.
+- [ ] 11.4 Avoid loading revision content for depot entries that discard it.
+- [ ] 11.5 Query only media-event assignments matching the relevant alternatives branches.
+- [ ] 11.6 Reuse the direct-uploader event hash instead of calculating it twice.
+- [ ] 11.7 Make batched reward handoff load eligible assignments set-wise.
+- [ ] 11.8 Enqueue page-finalization rewards using activity-attempt IDs, not SQL parameter values.
+- [ ] 11.9 Reject non-map experiment attribution array entries instead of silently dropping them.
+- [ ] 11.10 Preserve entered numeric experiment parameters after validation errors.
+- [ ] 11.11 Add responsive overflow to the participation table.
+- [ ] 11.12 Add a caption to the conditions table.
+
+### 11.3 Cancellation can complete a pending selection
+
+- **Source:** GitHub AI TypeScript review.
+- **Current location:** `assets/src/components/modal/SelectModal.tsx`, `handleDone/1` and the modal
+  dismissal controls.
+- **Issue:** The Select button becomes disabled while `onDone` is pending, but the close button,
+  Cancel button, Escape handling, and backdrop dismissal remain available. The modal can therefore
+  call `onCancel` and unmount while `onDone` later resolves and applies the selection.
+- **Determination:** Fix.
+- **Evidence:** `submitting` is used only by the Select button. The close button retains
+  `data-bs-dismiss="modal"`, Cancel remains enabled, and the Bootstrap modal is initialized without
+  a submission-aware dismissal guard.
+- **Recommended resolution:** Prevent every cancellation path while submission is pending. Disable
+  the visible close and Cancel controls, guard the hidden-modal callback, and configure or intercept
+  Escape/backdrop dismissal for the pending interval. Also guard state updates after unmount so a
+  rejected promise cannot update an unmounted component. Preserve the existing busy label and error
+  behavior when the modal remains mounted.
+- **Tests:** Use a controllable promise to verify close, Cancel, Escape, and backdrop dismissal do
+  not invoke `onCancel` while pending; verify normal cancellation is restored after rejection and
+  that successful completion applies the selection exactly once.
+
+### 11.4 Depot initialization loads revision content that it discards
+
+- **Source:** GitHub AI performance review.
+- **Current location:** `lib/oli/delivery/sections/section_resource_depot.ex`, `load/1`.
+- **Issue:** The depot query left-joins revisions and selects `revision.content` for page,
+  alternatives, container, and objective entries, although only page and alternatives entries use
+  the content. PostgreSQL still transfers and Ecto decodes discarded container/objective content.
+- **Determination:** Fix.
+- **Evidence:** The query projects `{sr, revision.content}` for all four resource types, while the
+  mapping clauses return container and objective `SectionResource` records unchanged. This adds
+  avoidable initialization latency and memory proportional to discarded revision content.
+- **Recommended resolution:** Load base section resources without revision content, then enrich only
+  page and alternatives resource IDs through one targeted content query. Merge the derived page
+  attribution indexes and alternatives groups back into the base records before populating the
+  depot. Keep query count fixed rather than issuing one query per resource.
+- **Tests:** Assert all four supported resource types still populate the depot, page and alternatives
+  metadata remain correct, and the content query is restricted to the two enriched resource types.
+  Add a query-shape or SQL assertion if practical so later changes do not restore the broad content
+  projection.
+
+### 11.5 Media attribution queries all learner assignments for every matching event
+
+- **Source:** GitHub AI performance review.
+- **Current location:** `lib/oli/delivery/experiments/media_attributions.ex`,
+  `attributions_for_matching_branches/2` and `assignment_query/1`.
+- **Issue:** Each matching play, pause, or seek event loads all experiment assignments for the
+  section/user/project and filters branch matches in Elixir. Media events can be frequent, so query,
+  decoding, and resolver work grows with the learner's complete assignment history rather than the
+  branches relevant to the event.
+- **Determination:** Fix, but do not commit to a cross-event cache without a safe invalidation
+  contract.
+- **Evidence:** `assignment_query/1 |> Repo.all()` runs for every non-empty branch match, and
+  `assignment_matches_branch?/2` applies alternatives-resource and option matching only after the
+  rows are loaded. Matching rows then trigger additional revision resolution.
+- **Recommended resolution:** Pass the compact branch pairs into a tailored, parameterized query and
+  constrain assignments by alternatives resource plus condition option/code in PostgreSQL. Return
+  only the fields required to construct media attributions and reuse depot-backed revision metadata
+  where available. Consider caching only after the bounded query is implemented and only with
+  explicit invalidation for new assignments, condition/lifecycle changes, and section deployment
+  changes; a stale attribution cache would be a correctness defect.
+- **Tests:** Cover multiple unrelated assignments, several matching nested branches, no match, and
+  condition-code fallback. Assert only matching assignments are returned and use query-count or
+  telemetry coverage to prevent a query per candidate assignment. If caching is added, test every
+  invalidation path.
+
+### 11.6 Direct upload hashes each recognized event twice
+
+- **Source:** GitHub AI performance review.
+- **Current location:** `lib/oli/analytics/xapi/clickhouse_uploader.ex`, `prepare_event/1` and
+  `raw_event_base/2`.
+- **Issue:** `prepare_event/1` calculates `event_hash(raw_line)` for attribution identity, while
+  `transform_to_raw_event/1` reaches `raw_event_base/2`, which calculates the same SHA-256 digest
+  again for the raw row.
+- **Determination:** Fix.
+- **Evidence:** Both calls operate on the identical raw JSONL line in the same preparation pass. The
+  duplicate work occurs for every recognized event and is unnecessary even with bounded chunks.
+- **Recommended resolution:** Compute the digest once in `prepare_event/1` and pass it through the
+  raw-event transformation/base builders. Keep the hash based on the original raw line so direct
+  upload remains identical to the existing idempotency contract.
+- **Tests:** Retain hash-parity fixtures and add a focused test or injected hash helper proving one
+  digest is reused by both the raw row and all attribution rows.
+
+### 11.7 Batched reward handoff still performs assignment work per activity attempt
+
+- **Source:** GitHub AI performance review.
+- **Current location:** `lib/oli/delivery/experiments/reward_handoff.ex`,
+  `record_evaluated_activities/1` and `do_record/1`.
+- **Issue:** Attempt contexts are loaded in one query, but the batch is then reduced one context at a
+  time and each `do_record/1` independently calls `reward_eligible_assignments/3`. Large page-finalize
+  jobs therefore amplify eligible-assignment queries and persistence operations.
+- **Determination:** Fix.
+- **Evidence:** The set-oriented context loader is followed by a per-attempt context call to the
+  experiment boundary. This leaves the principal database amplification identified in the previous
+  performance round.
+- **Recommended resolution:** Add a batch experiment-context API that accepts all evaluated attempt
+  contexts, fetches eligible assignments in one set-oriented query, and groups them by activity
+  attempt. Preserve per-attempt outcome/reward idempotency keys and failure reporting. Batch inserts
+  or transactions only where doing so preserves Thompson Sampling serialization and the existing
+  retry semantics; do not weaken correctness merely to combine writes.
+- **Tests:** Measure query count for a multi-attempt batch, cover attempts spanning multiple pages or
+  experiments, no eligible assignments, one failed attempt among successes, duplicate execution,
+  and concurrent Thompson Sampling rewards.
+
+### 11.8 Page finalization enqueues SQL parameters instead of activity-attempt IDs
+
+- **Source:** GitHub AI Elixir review.
+- **Current location:** `lib/oli/delivery/attempts/page_lifecycle/graded.ex`,
+  `finalize_activity_and_part_attempts/3`.
+- **Issue:** `Enum.take_every(activity_attempt_params, 6)` extracts the first SQL parameter for each
+  update row, which is an activity-attempt GUID string. `RewardHandoffWorker.enqueue/1` filters its
+  list to integers, so it removes every GUID and silently inserts no reward job.
+- **Determination:** Fix; reward correctness blocker.
+- **Evidence:** `RollUp.rollup_all/3` constructs each six-value group as attempt GUID, score, out-of,
+  state, evaluated timestamp, and submitted timestamp. The worker explicitly retains only integer
+  activity-attempt IDs.
+- **Recommended resolution:** Change the bulk-update boundary to return the IDs of rows actually
+  updated, preferably with PostgreSQL `RETURNING activity_attempts.id`, and enqueue that returned ID
+  list only after a successful update. Do not perform an unrelated second lookup if the update can
+  return authoritative IDs directly.
+- **Tests:** Finalize multiple activities and assert one normalized job contains every updated ID;
+  cover no updates, failed bulk update, and duplicate IDs. Assert the worker processes the resulting
+  outcomes/rewards rather than only asserting job insertion.
+
+### 11.9 Malformed attribution entries are silently discarded before validation
+
+- **Source:** GitHub AI Elixir review.
+- **Current location:** `lib/oli/analytics/xapi/clickhouse_uploader.ex`,
+  `experiment_attributions/1` and `validate_experiment_attributions/1`.
+- **Issue:** `experiment_attributions/1` filters the extension array with `is_map/1` before the
+  validator sees it. Non-map entries disappear and the host event is accepted with incomplete
+  attribution evidence.
+- **Determination:** Fix; ingestion-integrity issue.
+- **Evidence:** Validation flat-maps the already-filtered helper output, so its map-specific field
+  checks can never reject a string, number, list, or null entry. A non-list extension is also treated
+  as if no attributions were supplied.
+- **Recommended resolution:** Separate extraction from transformation. Preserve the raw extension
+  value through validation, require an array when the extension is present, and reject every
+  non-map element with an indexed, non-sensitive error. Transform only after the entire chunk's
+  attribution shape and required fields pass validation.
+- **Tests:** Cover mixed valid/non-map arrays, a wholly non-map array, a non-list extension, an absent
+  extension, and valid multiple attributions. Assert invalid chunks insert neither raw nor
+  attribution rows.
+
+### 11.10 Validation resets numeric experiment inputs
+
+- **Source:** GitHub AI UI review.
+- **Current location:** `lib/oli_web/live/workspaces/course_author/experiments_live.ex`, the
+  create-experiment form's weight and Thompson Sampling inputs.
+- **Issue:** Numeric inputs use hard-coded default values. After server validation preserves
+  `@experiment_params` and rerenders the modal, these fields reset to defaults instead of showing
+  the submitted values that produced the errors.
+- **Determination:** Fix.
+- **Evidence:** Name and slug read from `@experiment_params`, but `weight_a`, `weight_b`,
+  `prior_alpha`, `prior_beta`, `warm_up_assignments`, and `max_condition_share` use literal values.
+  Existing field errors can therefore describe a value no longer visible in the form.
+- **Recommended resolution:** Read each numeric value from `@experiment_params`, using its current
+  literal only when the key is absent. Centralize the fallback helper to distinguish absent values
+  from submitted empty or invalid strings. Preserve algorithm-specific values when validation keeps
+  the modal open.
+- **Tests:** Submit invalid and empty values for every numeric field and assert the exact entered
+  strings remain rendered with their errors; verify a newly opened form still receives the defaults
+  and changing algorithms does not unexpectedly erase relevant values.
+
+### 11.11 Participation table can overflow the viewport
+
+- **Source:** GitHub AI UI review.
+- **Current location:** `lib/oli_web/live/workspaces/course_author/experiment_details_live.ex`,
+  `#participating-sections-table`.
+- **Issue:** The five-column table has no responsive overflow boundary and can extend outside the
+  viewport on narrow screens or at 200% zoom.
+- **Determination:** Fix.
+- **Evidence:** Unlike the conditions table, the participation table is rendered directly in the
+  card body. Long section titles/slugs and five fixed semantic columns have no reflow or scroll
+  affordance.
+- **Recommended resolution:** Wrap the table in a Tailwind `overflow-x-auto` container and retain
+  the table's semantic structure. Give the wrapper an accessible keyboard-scroll strategy only if
+  testing shows the browser requires it; avoid adding the deprecated Bootstrap
+  `table-responsive` class suggested by the review bot.
+- **Tests:** Assert the overflow wrapper contains the table and manually verify narrow viewport and
+  200% zoom behavior without clipping surrounding controls or losing visible focus.
+
+### 11.12 Conditions table lacks a caption
+
+- **Source:** GitHub AI UI review.
+- **Current location:** `lib/oli_web/live/workspaces/course_author/experiment_details_live.ex`,
+  `#experiment-conditions-table`.
+- **Issue:** The conditions table has a nearby visual heading but no table caption, reducing context
+  for screen-reader users navigating directly among tables.
+- **Determination:** Fix.
+- **Evidence:** The participation table has a visually hidden caption, while the conditions table
+  begins directly with `<thead>`.
+- **Recommended resolution:** Add a visually hidden `<caption>` such as `Experiment conditions`.
+  Use the repository's Tailwind screen-reader utility rather than introducing new CSS.
+- **Tests:** Assert the table exposes the caption and that the existing visible Conditions heading
+  remains unchanged.
+
+### 11.13 Third-round fix order and verification gate
+
+Recommended implementation order:
+
+1. Fix 11.8 first because page-finalization rewards are currently skipped entirely.
+2. Fix ingestion integrity and identity work in 11.6 and 11.9 together.
+3. Implement the related set-oriented delivery work in 11.4, 11.5, and 11.7.
+4. Apply the isolated modal and LiveView fixes in 11.3 and 11.10–11.12.
+
+Verification should include focused ExUnit coverage for graded page finalization, reward handoff,
+section-resource depot population, media attributions, ClickHouse direct upload, and both experiment
+LiveViews. Run the focused `SelectModal` Jest suite with controllable pending promises. Format only
+touched Elixir/TypeScript files, run the relevant TypeScript checks, and finish with
+`git diff --check`. Re-read the mutable GitHub bot comments immediately before implementation.

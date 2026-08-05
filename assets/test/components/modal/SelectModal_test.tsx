@@ -7,9 +7,16 @@ const jqueryModal = {
   on: jest.fn(),
 };
 
+const modalHandlers = new Map<string, (event: Partial<JQuery.Event>) => void>();
+
 beforeEach(() => {
   jqueryModal.modal.mockClear();
   jqueryModal.on.mockClear();
+  modalHandlers.clear();
+  jqueryModal.on.mockImplementation((eventName, handler) => {
+    modalHandlers.set(eventName, handler);
+    return jqueryModal;
+  });
 
   const jquery = jest.fn(() => jqueryModal);
   (window as any).$ = jquery;
@@ -86,6 +93,9 @@ test('communicates progress while submitting', async () => {
   const submittingButton = screen.getByRole('button', { name: 'Selecting…' });
   expect(submittingButton).toBeDisabled();
   expect(submittingButton).toHaveAttribute('aria-busy', 'true');
+  expect(screen.getByRole('button', { name: 'Close' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Close' })).not.toHaveAttribute('data-bs-dismiss');
+  expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
 
   await act(async () => resolveSelection());
 
@@ -93,5 +103,44 @@ test('communicates progress while submitting', async () => {
     const selectButton = screen.getByRole('button', { name: 'Select' });
     expect(selectButton).not.toBeDisabled();
     expect(selectButton).toHaveAttribute('aria-busy', 'false');
+  });
+});
+
+test('prevents modal dismissal while submitting', async () => {
+  let rejectSelection: (error: Error) => void = () => {};
+  const pendingSelection = new Promise<void>((_resolve, reject) => {
+    rejectSelection = reject;
+  });
+  const onCancel = jest.fn();
+
+  render(
+    <SelectModal
+      title="Choose an option"
+      description="Options"
+      onFetchOptions={() => Promise.resolve(options)}
+      onDone={() => pendingSelection}
+      onCancel={onCancel}
+    />,
+  );
+
+  fireEvent.change(await screen.findByRole('combobox'), { target: { value: 'one' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Select' }));
+
+  const preventDefault = jest.fn();
+  act(() => modalHandlers.get('hide.bs.modal')?.({ preventDefault }));
+  act(() => modalHandlers.get('hidden.bs.modal')?.({}));
+
+  expect(preventDefault).toHaveBeenCalledTimes(1);
+  expect(onCancel).not.toHaveBeenCalled();
+
+  await act(async () => rejectSelection(new Error('selection failed')));
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Close' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveAttribute(
+      'data-bs-dismiss',
+      'modal',
+    );
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();
   });
 });

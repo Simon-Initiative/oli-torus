@@ -34,12 +34,17 @@ export const SelectModal = function <T extends Option>({
 }: SelectModalProps<T>) {
   const modal = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const mounted = useRef(true);
+  const submittingRef = useRef(false);
+  const onCancelRef = useRef(onCancel);
   const modalId = useRef(`select-modal-${Math.random().toString(36).substr(2, 9)}`);
   const errorId = `${modalId.current}-error`;
   const [options, setOptions] = useState<Maybe<T[]>>(Maybe.nothing());
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedOption, setSelectedOption] = useState<Maybe<T>>(Maybe.nothing());
   const [submitting, setSubmitting] = useState(false);
+
+  onCancelRef.current = onCancel;
 
   // Focus trap handler
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -66,6 +71,7 @@ export const SelectModal = function <T extends Option>({
 
   useEffect(() => {
     if (modal.current) {
+      mounted.current = true;
       const currentModal = modal.current;
 
       // Save the currently focused element to restore later
@@ -82,8 +88,14 @@ export const SelectModal = function <T extends Option>({
         }
       });
 
+      $(currentModal).on('hide.bs.modal', (event: JQuery.Event) => {
+        if (submittingRef.current) event.preventDefault();
+      });
+
       $(currentModal).on('hidden.bs.modal', () => {
-        onCancel();
+        if (submittingRef.current) return;
+
+        onCancelRef.current();
         // Return focus to the element that triggered the modal
         if (previousActiveElement.current) {
           previousActiveElement.current.focus();
@@ -94,6 +106,7 @@ export const SelectModal = function <T extends Option>({
       document.addEventListener('keydown', handleKeyDown);
 
       return () => {
+        mounted.current = false;
         document.removeEventListener('keydown', handleKeyDown);
         (window as any).$(currentModal).modal('hide');
         unlockScroll(scrollPosition);
@@ -132,15 +145,19 @@ export const SelectModal = function <T extends Option>({
   );
 
   const handleDone = async (selectedValue: string | number) => {
+    submittingRef.current = true;
     setSubmitting(true);
     setError(Maybe.nothing());
 
     try {
       await onDone(selectedValue);
     } catch (error) {
-      setError(Maybe.just(error instanceof Error ? error.message : String(error)));
+      if (mounted.current) {
+        setError(Maybe.just(error instanceof Error ? error.message : String(error)));
+      }
     } finally {
-      setSubmitting(false);
+      submittingRef.current = false;
+      if (mounted.current) setSubmitting(false);
     }
   };
 
@@ -194,8 +211,9 @@ export const SelectModal = function <T extends Option>({
             <button
               type="button"
               className="btn-close focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              data-bs-dismiss="modal"
+              data-bs-dismiss={submitting ? undefined : 'modal'}
               aria-label="Close"
+              disabled={submitting}
             ></button>
           </div>
           <div className="modal-body">
@@ -211,7 +229,7 @@ export const SelectModal = function <T extends Option>({
           <div className="modal-footer d-flex flex-row">
             {additionalControls}
             <div className="flex-grow-1"></div>
-            <button type="button" className="btn btn-link" onClick={onCancel}>
+            <button type="button" className="btn btn-link" onClick={onCancel} disabled={submitting}>
               Cancel
             </button>
             <button
