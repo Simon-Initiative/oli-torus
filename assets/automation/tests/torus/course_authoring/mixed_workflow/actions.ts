@@ -208,11 +208,25 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
       await selectTableMenuItem(page, alternatingTable, 0, 0, 'Row after');
       await selectTableMenuItem(page, alternatingTable, 2, 0, 'Row after');
       await fillTableCell(alternatingTable, 3, 0, alternatingText);
-      await selectTableMenuItem(page, alternatingTable, 0, 0, 'Alternating Stripes');
+      await applyTableStyle(
+        page,
+        alternatingTable,
+        0,
+        0,
+        'Alternating Stripes',
+        alternatingTable.locator('table.table-striped'),
+      );
 
       const hiddenBorderTable = await insertTable(page);
       await fillTableCell(hiddenBorderTable, 0, 0, hiddenBorderText);
-      await selectTableMenuItem(page, hiddenBorderTable, 0, 0, 'Hidden');
+      await applyTableStyle(
+        page,
+        hiddenBorderTable,
+        0,
+        0,
+        'Hidden',
+        hiddenBorderTable.locator('table.table-borderless'),
+      );
 
       await previewFlush(() => curriculumTask.openPreview());
     });
@@ -463,7 +477,21 @@ async function uploadImage(page: Page, filePath: string, fileName: string) {
   const fileChooser = page.waitForEvent('filechooser');
   await upload.click();
   await (await fileChooser).setFiles(filePath);
-  await expect(page.locator('.name').getByText(fileName, { exact: true })).toBeVisible();
+
+  const uploadedFile = page.locator('.name').getByText(fileName, { exact: true });
+  const uploadError = page.locator('.alert-danger', { hasText: 'Could not upload file' });
+
+  // Give the upload (and any thumbnail processing) real time to complete, but
+  // fail fast with the server's own error detail instead of a bare timeout if
+  // the media backend (e.g. local S3/minio) rejects it.
+  await expect(uploadedFile.or(uploadError)).toBeVisible({ timeout: 20000 });
+
+  if (await uploadError.isVisible()) {
+    const detail = await uploadError.locator('i').textContent();
+    throw new Error(
+      `Image upload failed - confirm local media storage (e.g. minio) is running. Server detail: ${detail}`,
+    );
+  }
 }
 
 async function selectImageSettings(page: Page, setting: 'Select Image' | 'Settings') {
@@ -478,7 +506,6 @@ async function insertTable(page: Page) {
   const countBefore = await tables.count();
 
   await focusTableInsertionPoint(page);
-  await expect(page.getByRole('button', { name: 'Insert...' })).toBeVisible();
   await page.getByRole('button', { name: 'Insert...' }).click();
   await page.getByRole('button', { name: 'Insert Table' }).click();
   await expect(tables).toHaveCount(countBefore + 1);
@@ -493,8 +520,17 @@ async function focusTableInsertionPoint(page: Page) {
   const editor = page.locator('[id^="resource-editor-"] [data-slate-editor="true"]').first();
   const firstParagraph = editor.locator('> p').first();
 
-  await firstParagraph.click();
-  await page.keyboard.press('Home');
+  // The Slate hover toolbar only opens once the editor registers focus and a
+  // selection client-side, which can lag just after navigation. Repeating the
+  // same click/Home on a retry can be a no-op if the cursor is already there
+  // (no native selectionchange fires), so force the selection to actually
+  // move on every attempt before checking the toolbar again.
+  await expect(async () => {
+    await firstParagraph.click();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Home');
+    await expect(page.getByRole('button', { name: 'Insert...' })).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 12000 });
 }
 
 function tableCell(table: Locator, row: number, column: number) {
@@ -503,6 +539,24 @@ function tableCell(table: Locator, row: number, column: number) {
 
 async function fillTableCell(table: Locator, row: number, column: number, text: string) {
   await tableCell(table, row, column).fill(text);
+}
+
+async function applyTableStyle(
+  page: Page,
+  table: Locator,
+  row: number,
+  column: number,
+  item: string,
+  resultLocator: Locator,
+) {
+  // The dropdown click can occasionally race with an in-flight editor
+  // transform (e.g. a just-typed cell edit) and silently fail to land. Retry
+  // the full click sequence, not just the wait, since a passive wait can
+  // never recover from a click that never reached the editor.
+  await expect(async () => {
+    await selectTableMenuItem(page, table, row, column, item);
+    await expect(resultLocator).toBeVisible({ timeout: 3000 });
+  }).toPass({ timeout: 15000 });
 }
 
 async function selectTableMenuItem(
