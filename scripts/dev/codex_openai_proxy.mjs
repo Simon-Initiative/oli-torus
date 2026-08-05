@@ -25,7 +25,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { promises as fs } from 'node:fs';
+import { existsSync, promises as fs } from 'node:fs';
 
 const PORT = Number(process.env.PORT || 4001);
 const CODEX_BIN = process.env.CODEX_BIN || 'codex';

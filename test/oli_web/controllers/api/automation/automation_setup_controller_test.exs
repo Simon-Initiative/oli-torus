@@ -3,6 +3,8 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   alias OliWeb.Api.AutomationSetupController
   alias Oli.Resources.Revision
   alias Oli.Accounts
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Resources.Resource
   import Oli.Utils
@@ -89,6 +91,14 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       assert section.id == section_id
       assert section.title == "Automation test section"
 
+      publication = Repo.one!(from p in Publication, where: p.project_id == ^project.id, limit: 1)
+
+      insert(:section_project_publication,
+        section: insert(:section),
+        project: project,
+        publication: publication
+      )
+
       assert project_title == "Unit Test Project"
       assert project.title == "Unit Test Project"
       assert project_id == project.id
@@ -129,6 +139,11 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       refute Oli.Authoring.Course.get_project_by_slug(project_slug)
 
       refute Oli.Delivery.Sections.get_section_by(slug: section_slug)
+
+      refute Repo.exists?(
+               from spp in SectionsProjectsPublications,
+                 where: spp.project_id == ^project_id or spp.publication_id == ^publication.id
+             )
 
       # Make sure we cleaned up all the records
       assert revision_count_before == Repo.one(from r in Revision, select: count(r.id))
