@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   use Oli.DataCase
+  use Oban.Testing, repo: Oli.Repo
 
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
@@ -8,6 +9,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
+  alias Oli.Delivery.Experiments.RewardHandoffWorker
   alias Oli.Activities.Model.{Part}
   alias Oli.Repo
 
@@ -247,12 +249,19 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     test "finalization results in correct end state for resource attempts", %{
       section: section,
       attempt1: attempt1,
-      attempt2: attempt2
+      attempt2: attempt2,
+      attempt_1a: attempt_1a,
+      attempt_1b: attempt_1b
     } do
       datashop_session_id_user1 = UUID.uuid4()
 
       {:ok, %FinalizationSummary{resource_access: resource_access1}} =
         PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
+
+      assert_enqueued(
+        worker: RewardHandoffWorker,
+        args: %{"activity_attempt_ids" => Enum.sort([attempt_1a.id, attempt_1b.id])}
+      )
 
       {:ok, %FinalizationSummary{resource_access: resource_access2}} =
         PageLifecycle.finalize(section.slug, attempt2.attempt_guid, datashop_session_id_user1)

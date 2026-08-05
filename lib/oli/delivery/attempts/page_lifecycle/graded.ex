@@ -254,14 +254,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  datashop_session_id,
                  effective_settings
                ),
-             {:ok, _} <-
+             {:ok, activity_attempt_ids} <-
                Persistence.bulk_update_activity_attempts(
                  Enum.join(activity_attempt_values, ", "),
                  activity_attempt_params
                ) do
-          activity_attempt_params
-          |> Enum.take_every(6)
-          |> Oli.Delivery.Experiments.RewardHandoffWorker.enqueue()
+          Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt_ids)
 
           {:ok, part_attempt_guids}
         else

@@ -448,7 +448,7 @@ size, duration, failures, and eligibility-query amplification observable in prod
 - [x] 11.5 Query only media-event assignments matching the relevant alternatives branches.
 - [x] 11.6 Reuse the direct-uploader event hash instead of calculating it twice.
 - [x] 11.7 Add AppSignal telemetry and defer set-oriented reward eligibility loading.
-- [ ] 11.8 Enqueue page-finalization rewards using activity-attempt IDs, not SQL parameter values.
+- [x] 11.8 Enqueue page-finalization rewards using activity-attempt IDs, not SQL parameter values.
 - [ ] 11.9 Reject non-map experiment attribution array entries instead of silently dropping them.
 - [ ] 11.10 Preserve entered numeric experiment parameters after validation errors.
 - [ ] 11.11 Add responsive overflow to the participation table.
