@@ -349,6 +349,15 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
            ),
            "Expected published centered table cell"
 
+    assert nested_map?(content, fn
+             %{"type" => "table", "children" => [%{"children" => first_row_cells} | _]} ->
+               length(first_row_cells) >= 3
+
+             _ ->
+               false
+           end),
+           "Expected published table to contain the added column"
+
     state
   end
 
