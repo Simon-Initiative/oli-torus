@@ -301,6 +301,63 @@ describe('KeyboardReorder', () => {
     expect(handle).toHaveClass('keyboard-reorder-active', 'ring-2', 'ring-blue-500');
   });
 
+  it('restores focus when LiveView updates an active handle in a later decision point', () => {
+    jest.useFakeTimers();
+    const first = keyboardReorderHandle(0, 2, '123', 'option-a');
+    const second = keyboardReorderHandle(0, 3, '456', 'option-b');
+    const pushEvent = jest.fn();
+    KeyboardReorder.mounted.call({ el: first.handle, pushEvent });
+    KeyboardReorder.mounted.call({ el: second.handle, pushEvent });
+
+    second.handle.focus();
+    pressKey(second.handle, ' ');
+    pressKey(second.handle, 'ArrowDown');
+    second.handle.blur();
+    KeyboardReorder.updated.call({ el: second.handle });
+    jest.runOnlyPendingTimers();
+
+    expect(second.handle).toHaveFocus();
+    expect(second.handle).toHaveAttribute('aria-pressed', 'true');
+
+    const nextArrow = new KeyboardEvent('keydown', {
+      key: 'ArrowUp',
+      bubbles: true,
+      cancelable: true,
+    });
+    second.handle.dispatchEvent(nextArrow);
+
+    expect(nextArrow.defaultPrevented).toBe(true);
+    expect(pushEvent).toHaveBeenLastCalledWith('reorder_option', {
+      resourceId: '456',
+      optionId: 'option-b',
+      dropIndex: 0,
+    });
+
+    pressKey(second.handle, ' ');
+    jest.useRealTimers();
+  });
+
+  it('drops the active option when focus intentionally moves away', () => {
+    jest.useFakeTimers();
+    const { handle } = keyboardReorderHandle();
+    const nextControl = document.createElement('button');
+    document.body.appendChild(nextControl);
+    const pushEvent = jest.fn();
+    KeyboardReorder.mounted.call({ el: handle, pushEvent });
+
+    handle.focus();
+    pressKey(handle, ' ');
+    pressKey(handle, 'ArrowDown');
+    nextControl.focus();
+    KeyboardReorder.updated.call({ el: handle });
+    jest.runOnlyPendingTimers();
+
+    expect(nextControl).toHaveFocus();
+    expect(handle).toHaveAttribute('aria-pressed', 'false');
+    expect(handle).not.toHaveClass('keyboard-reorder-active', 'ring-2', 'ring-blue-500');
+    jest.useRealTimers();
+  });
+
   it('clears active state when a handle is removed without a replacement', () => {
     jest.useFakeTimers();
     const original = keyboardReorderHandle(0, 2, '456', 'option-b');
