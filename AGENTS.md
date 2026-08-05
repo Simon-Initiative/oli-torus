@@ -254,6 +254,9 @@ The review process should first assess the scope of the PR, then load the approp
 - Follow Elixir formatting standards (use `mix format`)
 - Follow Gleam formatting standards (use `gleam format`)
 - Always put alias and import statements at the top of a file
+- Add documentation for all new or modified public API functions.
+- Document private functions only when the documentation materially improves clarity, especially
+  for complex behavior, non-obvious constraints, or important implementation decisions.
 - TypeScript code uses ESLint configuration
 - React components should be functional with hooks
 - Prefer composition over inheritance

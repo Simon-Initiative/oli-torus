@@ -19,6 +19,13 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   alias Oli.Repo
   alias Oli.Resources.PageContent
 
+  @doc """
+  Builds media attributions when the caller already has the page content, as it does for
+  attempt-based media events.
+
+  The content is inspected first so events outside alternatives do not query experiment
+  assignments. When matching branches exist, assignment filtering is performed in PostgreSQL.
+  """
   def for_media_event(%Context{} = context, page_content, content_element_id)
       when is_binary(content_element_id) do
     matching_branches = matching_alternatives_branches(page_content, content_element_id)
@@ -28,11 +35,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
         []
 
       _ ->
-        assignments =
-          context
-          |> assignment_query()
-          |> Repo.all()
-          |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
+        assignments = context |> assignment_query(matching_branches) |> Repo.all()
 
         media_attributions(assignments, context)
     end
@@ -40,50 +43,92 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
   def for_media_event(_context, _page_content, _content_element_id), do: []
 
+  @doc """
+  Builds media attributions for resource-only events using the deployed page revision.
+
+  These events do not carry attempt content. The revision lookup is guarded by the existence of a
+  learner assignment so page content is not returned for learners who cannot have experiment
+  attribution. Assignment rows are loaded only after the content element is matched to an
+  alternatives branch.
+  """
   def for_media_event_from_revision(%Context{} = context, revision_id, content_element_id)
       when is_integer(revision_id) and is_binary(content_element_id) do
-    assignments = context |> assignment_query() |> Repo.all()
+    page_content = page_content_for_assigned_learner(context, revision_id)
+    matching_branches = matching_alternatives_branches(page_content, content_element_id)
 
-    case assignments do
+    case matching_branches do
       [] ->
         []
 
-      assignments ->
-        page_content =
-          from(revision in Oli.Resources.Revision,
-            where: revision.id == ^revision_id,
-            select: revision.content
-          )
-          |> Repo.one()
-
-        matching_branches = matching_alternatives_branches(page_content, content_element_id)
-
-        assignments
-        |> matching_assignments(matching_branches)
+      matching_branches ->
+        context
+        |> assignment_query(matching_branches)
+        |> Repo.all()
         |> media_attributions(context)
     end
   end
 
   def for_media_event_from_revision(_context, _revision_id, _content_element_id), do: []
 
-  defp matching_assignments(assignments, matching_branches) do
-    Enum.filter(assignments, &assignment_matches_branch?(&1, matching_branches))
+  # Combines the assignment-existence check and revision lookup into one query. PostgreSQL returns
+  # no revision row when the learner has no assignments, avoiding transfer and decoding of page
+  # content that cannot produce attribution.
+  defp page_content_for_assigned_learner(%Context{} = context, revision_id) do
+    assignments_exist =
+      from(assignment in Assignment,
+        join: experiment in ExperimentDefinition,
+        on: experiment.id == assignment.experiment_id,
+        where:
+          experiment.project_id == ^context.project_id and
+            assignment.section_id == ^context.section_id and
+            assignment.user_id == ^context.user_id,
+        select: 1
+      )
+
+    from(revision in Oli.Resources.Revision,
+      where: revision.id == ^revision_id,
+      where: exists(subquery(assignments_exist)),
+      select: revision.content
+    )
+    |> Repo.one()
   end
 
-  defp assignment_query(%Context{} = context) do
+  # Restricts assignment loading to the alternatives-resource/option pairs containing the media
+  # element. The dynamic predicate remains parameterized by Ecto and supports legacy data where the
+  # branch value matches the condition code instead of option_id.
+  defp assignment_query(%Context{} = context, matching_branches) do
+    branch_filter =
+      Enum.reduce(matching_branches, dynamic(false), fn branch, branch_filter ->
+        alternatives_resource_id = branch.alternatives_resource_id
+        option_id = branch.option_id
+
+        dynamic(
+          [decision_point: decision_point, condition: condition],
+          ^branch_filter or
+            (decision_point.alternatives_resource_id == ^alternatives_resource_id and
+               (condition.option_id == ^option_id or condition.condition_code == ^option_id))
+        )
+      end)
+
     from(assignment in Assignment,
+      as: :assignment,
       join: experiment in ExperimentDefinition,
+      as: :experiment,
       on: experiment.id == assignment.experiment_id,
       join: decision_point in DecisionPoint,
+      as: :decision_point,
       on: decision_point.id == assignment.decision_point_id,
       join: condition in Condition,
+      as: :condition,
       on: condition.id == assignment.condition_id,
       join: section in Oli.Delivery.Sections.Section,
+      as: :section,
       on: section.id == assignment.section_id,
       where:
         experiment.project_id == ^context.project_id and
           assignment.section_id == ^context.section_id and
           assignment.user_id == ^context.user_id,
+      where: ^branch_filter,
       preload: [experiment: experiment],
       select: %{
         assignment: assignment,
@@ -185,21 +230,6 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   end
 
   defp content_element?(_element, _content_element_id), do: false
-
-  defp assignment_matches_branch?(
-         %{
-           decision_point: %DecisionPoint{} = decision_point,
-           condition: %Condition{} = condition
-         },
-         matching_branches
-       ) do
-    option_ids = [condition.option_id, condition.condition_code] |> Enum.reject(&is_nil/1)
-
-    Enum.any?(matching_branches, fn branch ->
-      branch.alternatives_resource_id == decision_point.alternatives_resource_id and
-        branch.option_id in option_ids
-    end)
-  end
 
   defp scope(%Context{} = context, %Assignment{} = assignment) do
     %Scope{

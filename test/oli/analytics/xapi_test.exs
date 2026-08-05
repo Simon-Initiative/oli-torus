@@ -7,7 +7,7 @@ defmodule Oli.Analytics.XAPITest do
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Experiments
   alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Experiments.Schemas.{Condition, DecisionPoint}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint}
   alias Oli.Resources.ResourceType
 
   @experiment_attributions_key "http://oli.cmu.edu/extensions/experiment_attributions"
@@ -70,6 +70,155 @@ defmodule Oli.Analytics.XAPITest do
       refute bundle
              |> statement_from_bundle()
              |> get_in(["context", "extensions", @experiment_attributions_key])
+    end
+
+    test "does not query assignments when the media element is outside alternatives" do
+      %{user: user, resource_attempt: resource_attempt} = setup_video_experiment_context()
+      handler_id = "media-assignment-query-#{System.unique_integer([:positive])}"
+      parent = self()
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _, _, metadata, _ ->
+          if is_binary(metadata.query) and
+               String.contains?(metadata.query, ~s["experiment_assignments"]) do
+            send(parent, :assignment_query)
+          end
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:ok, %StatementBundle{}} =
+               XAPI.construct_bundle(
+                 %{
+                   "category" => "video",
+                   "event_type" => "played",
+                   "host_name" => "http://example.edu",
+                   "key" => %{"page_attempt_guid" => resource_attempt.attempt_guid},
+                   "video_url" => "https://example.edu/video.mp4",
+                   "video_title" => "Example video",
+                   "video_length" => 60,
+                   "video_play_time" => 0,
+                   "content_element_id" => "not-in-alternatives"
+                 },
+                 user.id
+               )
+
+      refute_receive :assignment_query
+    end
+
+    test "matches media branches by condition code when the option id is absent" do
+      %{user: user, resource_attempt: resource_attempt, assignment: assignment} =
+        setup_video_experiment_context()
+
+      Condition
+      |> Repo.get!(assignment.condition_id)
+      |> Condition.changeset(%{option_id: nil, condition_code: "alt-a"})
+      |> Repo.update!()
+
+      assert {:ok, %StatementBundle{} = bundle} =
+               XAPI.construct_bundle(
+                 %{
+                   "category" => "video",
+                   "event_type" => "played",
+                   "host_name" => "http://example.edu",
+                   "key" => %{"page_attempt_guid" => resource_attempt.attempt_guid},
+                   "video_url" => "https://example.edu/video.mp4",
+                   "video_title" => "Example video",
+                   "video_length" => 60,
+                   "video_play_time" => 0,
+                   "content_element_id" => "video-in-selected-branch"
+                 },
+                 user.id
+               )
+
+      assert [%{"assignment_id" => assignment_id}] =
+               bundle
+               |> statement_from_bundle()
+               |> get_in(["context", "extensions", @experiment_attributions_key])
+
+      assert assignment_id == assignment.id
+    end
+
+    test "returns only the assignment matching the media branch" do
+      %{
+        user: user,
+        section: section,
+        resource_attempt: resource_attempt,
+        experiment: experiment,
+        assignment: matching_assignment,
+        scope: scope
+      } = setup_video_experiment_context()
+
+      unrelated_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_alternatives(),
+          content: %{"options" => [%{"id" => "other", "name" => "Other"}]}
+        )
+
+      unrelated_decision_point =
+        %DecisionPoint{}
+        |> DecisionPoint.changeset(%{
+          experiment_id: experiment.id,
+          alternatives_resource_id: unrelated_revision.resource_id,
+          decision_point_key: "alternatives:#{unrelated_revision.resource_id}",
+          position: 1
+        })
+        |> Repo.insert!()
+
+      unrelated_condition =
+        %Condition{}
+        |> Condition.changeset(%{
+          experiment_id: experiment.id,
+          decision_point_id: unrelated_decision_point.id,
+          condition_code: "other",
+          option_id: "other",
+          weight: 1.0,
+          position: 0
+        })
+        |> Repo.insert!()
+
+      %Assignment{}
+      |> Assignment.changeset(%{
+        experiment_id: experiment.id,
+        decision_point_id: unrelated_decision_point.id,
+        condition_id: unrelated_condition.id,
+        section_id: section.id,
+        enrollment_id: scope.enrollment_id,
+        user_id: user.id,
+        assigned_by_policy: "weighted_random",
+        policy_version: "weighted_random:v1",
+        assignment_key: "#{experiment.id}:#{unrelated_decision_point.id}:#{scope.enrollment_id}",
+        assigned_at: DateTime.utc_now(),
+        runtime_event_state: %{}
+      })
+      |> Repo.insert!()
+
+      assert {:ok, %StatementBundle{} = bundle} =
+               XAPI.construct_bundle(
+                 %{
+                   "category" => "video",
+                   "event_type" => "played",
+                   "host_name" => "http://example.edu",
+                   "key" => %{"page_attempt_guid" => resource_attempt.attempt_guid},
+                   "video_url" => "https://example.edu/video.mp4",
+                   "video_title" => "Example video",
+                   "video_length" => 60,
+                   "video_play_time" => 0,
+                   "content_element_id" => "video-in-selected-branch"
+                 },
+                 user.id
+               )
+
+      assert [%{"assignment_id" => assignment_id}] =
+               bundle
+               |> statement_from_bundle()
+               |> get_in(["context", "extensions", @experiment_attributions_key])
+
+      assert assignment_id == matching_assignment.id
     end
 
     test "keeps media interaction attribution after experiment is no longer active" do
@@ -157,7 +306,7 @@ defmodule Oli.Analytics.XAPITest do
       assert assignment_id == assignment.id
     end
 
-    test "does not load page revision content for resource-only events without assignments" do
+    test "does not return page revision content for resource-only events without assignments" do
       %{user: user, section: section, page_revision: page_revision, assignment: assignment} =
         setup_video_experiment_context()
 
@@ -170,8 +319,12 @@ defmodule Oli.Analytics.XAPITest do
         handler_id,
         [:oli, :repo, :query],
         fn _, _, metadata, _ ->
-          if metadata.source == "revisions" do
-            send(parent, :revision_query)
+          case {metadata.source, metadata.result} do
+            {"revisions", {:ok, %Postgrex.Result{num_rows: num_rows}}} ->
+              send(parent, {:revision_rows, num_rows})
+
+            _ ->
+              :ok
           end
         end,
         %{}
@@ -198,7 +351,8 @@ defmodule Oli.Analytics.XAPITest do
                  user.id
                )
 
-      refute_receive :revision_query
+      assert_receive {:revision_rows, 0}
+      refute_receive {:revision_rows, _}
 
       refute bundle
              |> statement_from_bundle()

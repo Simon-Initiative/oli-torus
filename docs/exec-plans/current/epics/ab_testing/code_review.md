@@ -445,7 +445,7 @@ should be added only if assignment and experiment-lifecycle invalidation can be 
 
 - [x] 11.3 Prevent cancellation while `SelectModal` selection submission is pending.
 - [x] 11.4 Avoid loading revision content for depot entries that discard it.
-- [ ] 11.5 Query only media-event assignments matching the relevant alternatives branches.
+- [x] 11.5 Query only media-event assignments matching the relevant alternatives branches.
 - [ ] 11.6 Reuse the direct-uploader event hash instead of calculating it twice.
 - [ ] 11.7 Make batched reward handoff load eligible assignments set-wise.
 - [ ] 11.8 Enqueue page-finalization rewards using activity-attempt IDs, not SQL parameter values.
@@ -515,16 +515,14 @@ should be added only if assignment and experiment-lifecycle invalidation can be 
 - **Evidence:** `assignment_query/1 |> Repo.all()` runs for every non-empty branch match, and
   `assignment_matches_branch?/2` applies alternatives-resource and option matching only after the
   rows are loaded. Matching rows then trigger additional revision resolution.
-- **Recommended resolution:** Pass the compact branch pairs into a tailored, parameterized query and
-  constrain assignments by alternatives resource plus condition option/code in PostgreSQL. Return
-  only the fields required to construct media attributions and reuse depot-backed revision metadata
-  where available. Consider caching only after the bounded query is implemented and only with
-  explicit invalidation for new assignments, condition/lifecycle changes, and section deployment
-  changes; a stale attribution cache would be a correctness defect.
+- **Approved resolution:** Pass the compact branch pairs into a tailored, parameterized Ecto query
+  and constrain assignments by alternatives resource plus condition option/code in PostgreSQL. For
+  resource-only events, guard the deployed revision-content query with an assignment `EXISTS`
+  subquery so no page content is returned for learners without assignments. Skip assignment loading
+  entirely when the media element is outside alternatives. Do not add a cache or asynchronous job.
 - **Tests:** Cover multiple unrelated assignments, several matching nested branches, no match, and
   condition-code fallback. Assert only matching assignments are returned and use query-count or
-  telemetry coverage to prevent a query per candidate assignment. If caching is added, test every
-  invalidation path.
+  telemetry coverage to prevent a query per candidate assignment.
 
 ### 11.6 Direct upload hashes each recognized event twice
 
