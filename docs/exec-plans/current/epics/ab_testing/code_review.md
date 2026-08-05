@@ -431,15 +431,15 @@ and 5.2.
 | Source | New issues | Determination |
 | --- | ---: | --- |
 | GitHub AI TypeScript review | 1 | Fix |
-| GitHub AI performance review | 4 | Fix all four, with a narrower caching decision for 11.5 |
+| GitHub AI performance review | 4 | Fix three; defer 11.7 with AppSignal telemetry |
 | GitHub AI Elixir review | 2 | Fix both |
 | GitHub AI UI review | 3 | Fix all three |
 | GitHub AI security review | 0 | Auto-ignore; no issues found |
 
-**Conclusion:** all 10 new findings reproduce against the current branch and should be fixed in
-this PR. Item 11.5 identifies a real high-frequency query path, but its suggested cross-event cache
-is not automatically accepted: the first fix should be a branch-constrained query, and caching
-should be added only if assignment and experiment-lifecycle invalidation can be made explicit.
+**Conclusion:** all 10 new findings reproduce against the current branch. Nine should be fixed in
+this PR. Item 11.7 is a valid asynchronous-worker scalability concern rather than a correctness or
+learner-latency blocker; defer its batch-query refactor and add AppSignal metrics that make batch
+size, duration, failures, and eligibility-query amplification observable in production.
 
 ### 11.2 Third-round implementation checklist
 
@@ -447,7 +447,7 @@ should be added only if assignment and experiment-lifecycle invalidation can be 
 - [x] 11.4 Avoid loading revision content for depot entries that discard it.
 - [x] 11.5 Query only media-event assignments matching the relevant alternatives branches.
 - [x] 11.6 Reuse the direct-uploader event hash instead of calculating it twice.
-- [ ] 11.7 Make batched reward handoff load eligible assignments set-wise.
+- [x] 11.7 Add AppSignal telemetry and defer set-oriented reward eligibility loading.
 - [ ] 11.8 Enqueue page-finalization rewards using activity-attempt IDs, not SQL parameter values.
 - [ ] 11.9 Reject non-map experiment attribution array entries instead of silently dropping them.
 - [ ] 11.10 Preserve entered numeric experiment parameters after validation errors.
@@ -550,18 +550,20 @@ should be added only if assignment and experiment-lifecycle invalidation can be 
 - **Issue:** Attempt contexts are loaded in one query, but the batch is then reduced one context at a
   time and each `do_record/1` independently calls `reward_eligible_assignments/3`. Large page-finalize
   jobs therefore amplify eligible-assignment queries and persistence operations.
-- **Determination:** Fix.
+- **Determination:** Defer the query refactor; add production telemetry in this PR.
 - **Evidence:** The set-oriented context loader is followed by a per-attempt context call to the
   experiment boundary. This leaves the principal database amplification identified in the previous
   performance round.
-- **Recommended resolution:** Add a batch experiment-context API that accepts all evaluated attempt
-  contexts, fetches eligible assignments in one set-oriented query, and groups them by activity
-  attempt. Preserve per-attempt outcome/reward idempotency keys and failure reporting. Batch inserts
-  or transactions only where doing so preserves Thompson Sampling serialization and the existing
-  retry semantics; do not weaken correctness merely to combine writes.
-- **Tests:** Measure query count for a multi-attempt batch, cover attempts spanning multiple pages or
-  experiments, no eligible assignments, one failed attempt among successes, duplicate execution,
-  and concurrent Thompson Sampling rewards.
+- **Approved resolution:** Preserve the current idempotent, per-attempt processing path. Emit reward
+  batch duration, requested-attempt count, loaded-context count, failure count, eligibility duration,
+  returned-assignment count, and whether the assignment query ran. Attach a supervised telemetry
+  handler that publishes low-cardinality distributions and counters to AppSignal without tagging
+  user, section, experiment, or attempt identifiers. Use these metrics to decide whether a
+  set-oriented batch API is justified after item 11.8 activates page-finalization jobs. Document
+  the required dashboard, initial alerts, investigation workflow, and optimization criteria in
+  `docs/runbooks/appsignal/experiment-reward-handoff.md`.
+- **Tests:** Assert batch and eligibility event shapes, AppSignal-handler attachment, bounded status
+  handling, and successful mapping of all measurements while AppSignal is disabled in tests.
 
 ### 11.8 Page finalization enqueues SQL parameters instead of activity-attempt IDs
 

@@ -441,31 +441,64 @@ defmodule Oli.Experiments do
 
   @doc """
   Returns native assignments whose selected alternatives branch contains the evaluated
-  activity resource.
+  activity resource. Emits lookup duration, assignment count, and assignment-query count telemetry
+  for AppSignal monitoring of reward handoff query amplification.
   """
   def reward_eligible_assignments(%Scope{} = scope, activity_resource_id, page_content) do
-    with {:ok, scope} <- validate_delivery_participation_scope(scope) do
-      matching_branches = matching_alternatives_branches(page_content, activity_resource_id)
+    start_time = System.monotonic_time()
 
-      case matching_branches do
-        [] ->
-          {:ok, []}
+    {result, assignment_query_count} =
+      case validate_delivery_participation_scope(scope) do
+        {:ok, scope} ->
+          matching_branches = matching_alternatives_branches(page_content, activity_resource_id)
 
-        _ ->
-          assignments =
-            scope
-            |> reward_eligible_assignment_query()
-            |> Repo.all()
-            |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
-            |> Enum.map(&to_reward_eligible_assignment/1)
+          case matching_branches do
+            [] ->
+              {{:ok, []}, 0}
 
-          {:ok, assignments}
+            _ ->
+              assignments =
+                scope
+                |> reward_eligible_assignment_query()
+                |> Repo.all()
+                |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
+                |> Enum.map(&to_reward_eligible_assignment/1)
+
+              {{:ok, assignments}, 1}
+          end
+
+        {:error, _error} = error ->
+          {error, 0}
       end
-    end
+
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :eligibility, :completed],
+      %{
+        duration_ms: elapsed_milliseconds(start_time),
+        assignment_count: eligible_assignment_count(result),
+        assignment_query_count: assignment_query_count
+      },
+      %{status: eligibility_status(result)}
+    )
+
+    result
   end
 
   def reward_eligible_assignments(_scope, _activity_resource_id, _page_content),
     do: invalid_request("expected Scope")
+
+  defp eligible_assignment_count({:ok, assignments}), do: length(assignments)
+  defp eligible_assignment_count({:error, _error}), do: 0
+
+  defp eligibility_status({:ok, []}), do: :empty
+  defp eligibility_status({:ok, _assignments}), do: :matched
+  defp eligibility_status({:error, _error}), do: :error
+
+  defp elapsed_milliseconds(start_time) do
+    start_time
+    |> then(&(System.monotonic_time() - &1))
+    |> System.convert_time_unit(:native, :millisecond)
+  end
 
   @doc """
   Returns operational runtime counts from PostgreSQL for product surfaces that still need

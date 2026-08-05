@@ -22,13 +22,19 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
 
   @reward_source "activity_attempt:full_credit"
 
+  @doc """
+  Records rewards for a batch of evaluated activity-attempt IDs.
+
+  Emits batch-size, duration, context-count, and failure-count telemetry so the current per-attempt
+  eligibility lookup behavior can be monitored in AppSignal.
+  """
   def record_evaluated_activities(activity_attempt_ids) when is_list(activity_attempt_ids) do
+    start_time = System.monotonic_time()
     activity_attempt_ids = Enum.filter(activity_attempt_ids, &is_integer/1)
+    contexts = load_evaluated_attempt_contexts(activity_attempt_ids)
 
     errors =
-      activity_attempt_ids
-      |> load_evaluated_attempt_contexts()
-      |> Enum.reduce([], fn context, errors ->
+      Enum.reduce(contexts, [], fn context, errors ->
         metadata = %{activity_attempt_id: context.activity_attempt.id}
 
         case safely_record(metadata, fn -> record_loaded_context(context, metadata) end) do
@@ -37,12 +43,27 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
         end
       end)
 
-    case errors do
-      [] -> :ok
-      errors -> {:error, {:reward_handoff_failures, Enum.reverse(errors)}}
-    end
+    result =
+      case errors do
+        [] -> :ok
+        errors -> {:error, {:reward_handoff_failures, Enum.reverse(errors)}}
+      end
+
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :batch, :completed],
+      %{
+        duration_ms: elapsed_milliseconds(start_time),
+        attempt_count: length(activity_attempt_ids),
+        context_count: length(contexts),
+        failure_count: length(errors)
+      },
+      %{status: result_tag(result)}
+    )
+
+    result
   end
 
+  @doc "Records rewards for one evaluated activity attempt or attempt ID."
   def record_evaluated_activity(%ActivityAttempt{id: id}), do: record_evaluated_activity(id)
 
   def record_evaluated_activity(activity_attempt_id) when is_integer(activity_attempt_id) do
@@ -282,6 +303,12 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
 
   defp result_tag(:ok), do: :ok
   defp result_tag({:error, _error}), do: :error
+
+  defp elapsed_milliseconds(start_time) do
+    start_time
+    |> then(&(System.monotonic_time() - &1))
+    |> System.convert_time_unit(:native, :millisecond)
+  end
 
   defp safe_log_metadata(%{activity_attempt_id: activity_attempt_id})
        when is_integer(activity_attempt_id),

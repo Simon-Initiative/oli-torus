@@ -196,6 +196,51 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert policy_state.state["condition-a"]["posterior_beta"] == 2.0
     end
 
+    test "emits observable batch and eligibility measurements" do
+      %{activity_attempts: activity_attempts} =
+        setup_reward_context(activity_scores: [{1.0, 1.0}, {0.0, 1.0}])
+
+      parent = self()
+      handler_id = "reward-handoff-observability-#{System.unique_integer([:positive])}"
+      batch_event = [:oli, :experiments, :delivery_reward, :batch, :completed]
+      eligibility_event = [:oli, :experiments, :delivery_reward, :eligibility, :completed]
+
+      :telemetry.attach_many(
+        handler_id,
+        [batch_event, eligibility_event],
+        fn event, measurements, metadata, _config ->
+          send(parent, {:reward_telemetry, event, measurements, metadata})
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert :ok =
+               RewardHandoff.record_evaluated_activities(Enum.map(activity_attempts, & &1.id))
+
+      for _activity_attempt <- activity_attempts do
+        assert_receive {:reward_telemetry, ^eligibility_event,
+                        %{
+                          duration_ms: duration_ms,
+                          assignment_count: 1,
+                          assignment_query_count: 1
+                        }, %{status: :matched}}
+
+        assert duration_ms >= 0
+      end
+
+      assert_receive {:reward_telemetry, ^batch_event,
+                      %{
+                        duration_ms: duration_ms,
+                        attempt_count: 2,
+                        context_count: 2,
+                        failure_count: 0
+                      }, %{status: :ok}}
+
+      assert duration_ms >= 0
+    end
+
     test "returns ok without records when no experiment assignment is eligible" do
       %{activity_attempt: activity_attempt} = setup_reward_context(assign?: false)
 
