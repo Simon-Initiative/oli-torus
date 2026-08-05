@@ -229,9 +229,7 @@ const EditingCanvas: React.FC = () => {
           onCancelConfigurePart={handlePartCancelConfigure}
           onSaveConfigurePart={handlePartSaveConfigure}
           onPartChangePosition={handlePositionChanged}
-          notificationStream={
-            activity.id === currentActivityId ? notificationStream : null
-          }
+          notificationStream={activity.id === currentActivityId ? notificationStream : null}
         />
       );
     });
