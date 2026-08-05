@@ -1230,11 +1230,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
             <em>There are no conditions in this decision point</em>
           </div>
         <% else %>
-          <.option_list
-            group={@group}
-            show_actions={true}
-            list_class="list-group [&>li:last-child]:!border-b-0"
-          />
+          <.option_list group={@group} show_actions={true} />
         <% end %>
         <button
           :if={not @new_condition_form_open}

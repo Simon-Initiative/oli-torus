@@ -258,6 +258,14 @@ The review process should first assess the scope of the PR, then load the approp
 - React components should be functional with hooks
 - Prefer composition over inheritance
 - Keep contexts focused and cohesive
+- Bootstrap-style classes and dedicated Sass/CSS stylesheets are deprecated for new UI work.
+- Prefer Tailwind utility classes and established component-framework patterns for new UI and
+  reusable styling.
+- When modifying UI that already makes extensive use of Bootstrap classes or dedicated Sass/CSS,
+  preserve the existing approach when replacing it would introduce unnecessary risk or expand the
+  task substantially.
+- When the risk is low, migrate the modified UI surface away from deprecated Bootstrap or
+  stylesheet-based styling instead of adding more of it.
 - Rarely use "if", prefer "case" statements
 - Use the "with" construct to avoid nested "case" statements
 

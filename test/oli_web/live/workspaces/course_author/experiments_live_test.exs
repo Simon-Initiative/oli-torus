@@ -1107,11 +1107,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   end
 
   defp step({view, ctx}, :test_has_options, assert_or_refute) do
-    to_evaluate = has_element?(view, ".list-group", "Option 1")
+    to_evaluate = has_element?(view, "[id^='alternatives-options-']", "Option 1")
     evaluate_assertion(to_evaluate, assert_or_refute)
-    to_evaluate = has_element?(view, ".list-group", "Option 2")
+    to_evaluate = has_element?(view, "[id^='alternatives-options-']", "Option 2")
     evaluate_assertion(to_evaluate, assert_or_refute)
-    to_evaluate = has_element?(view, ".list-group", "Option 3")
+    to_evaluate = has_element?(view, "[id^='alternatives-options-']", "Option 3")
     evaluate_assertion(to_evaluate, :refute)
 
     {view, ctx}

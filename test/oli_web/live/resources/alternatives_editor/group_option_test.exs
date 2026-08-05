@@ -30,11 +30,17 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOptionTest do
 
     html = render_component(&GroupOption.option_list/1, group: group)
 
-    assert html =~
-             ~s(id="alternatives-option-123-option-a" class="list-group-item cursor-grab active:cursor-grabbing" draggable="true" phx-hook="DragSource")
+    assert html =~ ~s(id="alternatives-options-123" class="flex flex-col gap-0")
+    assert html =~ ~s(id="alternatives-option-123-option-a")
+    assert html =~ ~s(draggable="true")
+    assert html =~ ~s(phx-hook="DragSource")
+    assert html =~ "border-gray-200 bg-white"
+    refute html =~ "list-group"
+    refute html =~ "curriculum-entry"
+    refute html =~ "dropdown-toggle"
 
     {handle_position, _} = :binary.match(html, "fa-grip-vertical")
-    {name_position, _} = :binary.match(html, "Option A")
+    {name_position, _} = :binary.match(html, ">Option A</div>")
 
     assert handle_position < name_position
     assert html =~ "text-gray-300 dark:text-gray-600"
