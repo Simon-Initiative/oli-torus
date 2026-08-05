@@ -1568,6 +1568,14 @@
                   "from": {
                     "type": "string"
                   },
+                  "from_product": {
+                    "type": "string"
+                  },
+                  "user": {
+                    "type": "string"
+                  },
+                  "from_product": {"type": "string"},
+                  "user": {"type": "string"},
                   "to": {
                     "type": "string"
                   }
@@ -2531,6 +2539,12 @@
                 "additionalProperties": false,
                 "properties": {
                   "from": {
+                    "type": "string"
+                  },
+                  "from_product": {
+                    "type": "string"
+                  },
+                  "user": {
                     "type": "string"
                   },
                   "resource": {
@@ -3905,6 +3919,41 @@
                   "entry": {
                     "type": "string"
                   }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["assert_sources"],
+            "additionalProperties": false,
+            "properties": {
+              "assert_sources": {
+                "type": "object",
+                "required": ["user", "section", "products"],
+                "additionalProperties": false,
+                "properties": {
+                  "user": {"type": "string"},
+                  "section": {"type": "string"},
+                  "products": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["community"],
+            "additionalProperties": false,
+            "properties": {
+              "community": {
+                "type": "object",
+                "required": ["name"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {"type": "string"},
+                  "institution": {"type": "string"},
+                  "users": {"type": "array", "items": {"type": "string"}},
+                  "products": {"type": "array", "items": {"type": "string"}}
                 }
               }
             }

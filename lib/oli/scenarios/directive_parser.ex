@@ -19,6 +19,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     EnrollDirective,
     InstitutionDirective,
     InstitutionDiscountDirective,
+    CommunityDirective,
+    AssertSourcesDirective,
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
@@ -71,6 +73,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     "enroll",
     "institution",
     "institution_discount",
+    "community",
+    "assert_sources",
     "update",
     "customize",
     "create_activity",
@@ -328,14 +332,49 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"community" => data}) do
+    allowed_attrs = ["name", "institution", "users", "products"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, data, "community") do
+      :ok ->
+        %CommunityDirective{
+          name: data["name"],
+          institution: data["institution"],
+          users: data["users"] || [],
+          products: data["products"] || []
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"assert_sources" => data}) do
+    allowed_attrs = ["user", "section", "products"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, data, "assert_sources") do
+      :ok ->
+        %AssertSourcesDirective{
+          user: data["user"],
+          section: data["section"],
+          products: data["products"] || []
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"remix" => remix_data}) do
     # Validate attributes
-    allowed_attrs = ["from", "resource", "section", "to"]
+    allowed_attrs = ["from", "from_product", "user", "resource", "section", "to"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, remix_data, "remix") do
       :ok ->
         %RemixDirective{
           from: remix_data["from"],
+          from_product: remix_data["from_product"],
+          user: remix_data["user"],
           resource: remix_data["resource"],
           section: remix_data["section"],
           to: remix_data["to"]

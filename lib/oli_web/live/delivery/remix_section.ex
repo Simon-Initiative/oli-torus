@@ -11,7 +11,6 @@ defmodule OliWeb.Delivery.RemixSection do
 
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections
   alias Oli.Resources
   alias Oli.Resources.Revision
   alias OliWeb.Router.Helpers, as: Routes
@@ -27,7 +26,9 @@ defmodule OliWeb.Delivery.RemixSection do
     Entry
   }
 
-  alias Oli.Publishing.AuthoringResolver
+  @max_page_limit 100
+  @max_page_offset 10_000
+
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Common.Hierarchy.HierarchyPicker.TableModel, as: PagesTableModel
@@ -47,11 +48,10 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
 
   alias OliWeb.Common.Hierarchy.MoveModal
-  alias Oli.Publishing
-  alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Remix
+  alias Oli.Delivery.Remix.Telemetry, as: RemixTelemetry
   alias OliWeb.Common.Cancel
   alias Oli.Delivery.Gating
 
@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.RemixSection do
         _session,
         socket
       ) do
-    case Mount.for(section_slug, socket) do
+    case remix_mount_for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
@@ -123,6 +123,9 @@ defmodule OliWeb.Delivery.RemixSection do
           section.type == :blueprint ->
             mount_as_product_creator(socket, section, current_author)
 
+          section.type == :enrollable ->
+            mount_as_admin_instructor(socket, section, current_author)
+
           true ->
             mount_as_instructor(socket, section, current_author)
         end
@@ -132,6 +135,26 @@ defmodule OliWeb.Delivery.RemixSection do
 
       {:author, current_author, section} ->
         mount_as_product_creator(socket, section, current_author)
+    end
+  end
+
+  defp remix_mount_for(section_slug, socket) do
+    case Oli.Delivery.Sections.get_section_by_slug(section_slug) do
+      %Section{type: :enrollable} = section ->
+        case {socket.assigns[:current_user], socket.assigns[:current_author]} do
+          {%User{hidden: true} = current_user, _current_author} ->
+            if OliWeb.ViewHelpers.is_section_instructor_or_admin?(section.slug, current_user) do
+              {:user, current_user, section}
+            else
+              Mount.for(section_slug, socket)
+            end
+
+          _ ->
+            Mount.for(section_slug, socket)
+        end
+
+      _ ->
+        Mount.for(section_slug, socket)
     end
   end
 
@@ -151,6 +174,19 @@ defmodule OliWeb.Delivery.RemixSection do
       breadcrumbs: set_breadcrumbs(:user, state.section),
       redirect_after_save: redirect_after_save(:instructor, state.section, socket)
     )
+  end
+
+  def mount_as_admin_instructor(socket, section, %Author{} = current_author) do
+    case Remix.init_admin_instructor(section, current_author) do
+      {:ok, state} ->
+        init_state_from_remix(socket, state,
+          breadcrumbs: set_breadcrumbs(:user, state.section),
+          redirect_after_save: redirect_after_save(:instructor, state.section, socket)
+        )
+
+      {:error, reason} ->
+        Mount.handle_error(socket, {:error, reason})
+    end
   end
 
   def mount_as_open_and_free(
@@ -225,13 +261,13 @@ defmodule OliWeb.Delivery.RemixSection do
 
     redirect_after_save = Keyword.fetch!(opts, :redirect_after_save)
     breadcrumbs = Keyword.get(opts, :breadcrumbs, [])
-    available_publications = state.available_publications
+    available_sources = state.available_sources
     pinned_project_publications = state.pinned_project_publications
 
     {:ok, publications_table_model} =
-      PublicationsTableModel.new(available_publications |> Enum.take(5))
+      PublicationsTableModel.new(available_sources |> Enum.take(5))
 
-    publications_table_model_total_count = length(available_publications)
+    publications_table_model_total_count = length(available_sources)
     publications_table_model_params = params
 
     # Get source page resource IDs for gating conditions
@@ -255,7 +291,7 @@ defmodule OliWeb.Delivery.RemixSection do
        has_unsaved_changes: false,
        breadcrumbs: breadcrumbs,
        redirect_after_save: redirect_after_save,
-       available_publications: available_publications,
+       available_sources: available_sources,
        publications_table_model: publications_table_model,
        publications_table_model_total_count: publications_table_model_total_count,
        publications_table_model_params: publications_table_model_params,
@@ -638,7 +674,7 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("show_add_materials_modal", _, socket) do
     %{
       hierarchy: hierarchy,
-      available_publications: available_publications,
+      available_sources: available_sources,
       pinned_project_publications: pinned_project_publications
     } = socket.assigns
 
@@ -655,8 +691,10 @@ defmodule OliWeb.Delivery.RemixSection do
       hierarchy: nil,
       active: nil,
       selection: [],
+      selection_source_types: %{},
       preselected: preselected,
-      publications: available_publications,
+      publications: available_sources,
+      selected_source: nil,
       selected_publication: nil,
       active_tab: :curriculum,
       pages_table_model_total_count: socket.assigns.pages_table_model_total_count,
@@ -671,11 +709,22 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, assign(socket, modal_assigns: modal_assigns, show_add_materials_modal: true)}
   end
 
+  def handle_event("AddMaterialsModal.add", _, %{assigns: %{modal_assigns: nil}} = socket) do
+    {:noreply, socket}
+  end
+
   def handle_event("AddMaterialsModal.add", _, socket) do
-    %{remix_state: state, modal_assigns: %{selection: selection}} = socket.assigns
+    %{
+      remix_state: state,
+      modal_assigns: %{selection: selection, selection_source_types: selection_source_types}
+    } = socket.assigns
+
+    source_types = selection_source_types |> Map.values() |> Enum.uniq()
 
     case Remix.add_materials(state, selection) do
       {:ok, state} ->
+        RemixTelemetry.add_materials(length(selection), source_types, :ok)
+
         {:noreply,
          assign(socket,
            hierarchy: state.hierarchy,
@@ -688,6 +737,8 @@ defmodule OliWeb.Delivery.RemixSection do
          )}
 
       {:error, :shared_project_resources} ->
+        RemixTelemetry.add_materials(length(selection), source_types, :shared_project_resources)
+
         {:noreply,
          put_add_materials_error(
            socket,
@@ -695,6 +746,12 @@ defmodule OliWeb.Delivery.RemixSection do
          )}
 
       {:error, :selected_projects_share_resources} ->
+        RemixTelemetry.add_materials(
+          length(selection),
+          source_types,
+          :selected_projects_share_resources
+        )
+
         {:noreply,
          put_add_materials_error(
            socket,
@@ -702,6 +759,8 @@ defmodule OliWeb.Delivery.RemixSection do
          )}
 
       {:error, :unavailable_publication} ->
+        RemixTelemetry.add_materials(length(selection), source_types, :unavailable_publication)
+
         {:noreply,
          put_add_materials_error(
            socket,
@@ -719,38 +778,37 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, assign(socket, show_add_materials_modal: false, modal_assigns: nil)}
   end
 
-  def handle_event("HierarchyPicker.select_publication", %{"id" => publication_id}, socket) do
+  def handle_event("HierarchyPicker.select_publication", %{"key" => source_key}, socket) do
     %{modal_assigns: modal_assigns} = socket.assigns
+    state = socket.assigns.remix_state
 
-    publication =
-      Publishing.get_publication!(publication_id)
-      |> Repo.preload([:project])
+    with {:ok, source, hierarchy} <- Remix.source_hierarchy(source_key, state),
+         {:ok, {total_count, pages}} <-
+           Remix.source_pages(source_key, state, source_page_params(modal_assigns)) do
+      modal_assigns =
+        modal_assigns
+        |> Map.merge(%{
+          hierarchy: hierarchy,
+          active: hierarchy,
+          selected_source: source,
+          selected_publication: Remix.publication_by_id(state, source.publication_id),
+          pages_table_model:
+            Map.put(modal_assigns.pages_table_model, :rows, transform_section_pages(pages)),
+          pages_table_model_total_count: total_count,
+          error_message: nil
+        })
+        |> Map.put(:exclude_resource_ids, preselected_resource_ids(modal_assigns.preselected))
 
-    hierarchy = published_publication_hierarchy(publication)
-
-    exclude_ids = preselected_resource_ids(modal_assigns.preselected, publication)
-
-    {total_count, section_pages} =
-      Publishing.get_published_pages_by_publication(
-        publication.id,
-        Map.put(socket.assigns.pages_table_model_params, :exclude_resource_ids, exclude_ids)
-      )
-
-    section_pages = transform_section_pages(section_pages)
-
-    modal_assigns = %{
-      modal_assigns
-      | hierarchy: hierarchy,
-        active: hierarchy,
-        selected_publication: publication,
-        pages_table_model: Map.put(modal_assigns.pages_table_model, :rows, section_pages),
-        pages_table_model_total_count: total_count,
-        error_message: nil
-    }
-
-    modal_assigns = Map.put(modal_assigns, :exclude_resource_ids, exclude_ids)
-
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+      RemixTelemetry.source_selected(source.type)
+      {:noreply, assign(socket, modal_assigns: modal_assigns)}
+    else
+      {:error, _} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "This source is no longer available. Close this dialog, reopen Add Materials, and try again."
+         )}
+    end
   end
 
   def handle_event("HierarchyPicker.clear_publication", _, socket) do
@@ -760,6 +818,8 @@ defmodule OliWeb.Delivery.RemixSection do
       modal_assigns
       | hierarchy: nil,
         active: nil,
+        selected_source: nil,
+        selected_publication: nil,
         error_message: nil
     }
 
@@ -789,23 +849,13 @@ defmodule OliWeb.Delivery.RemixSection do
         %{
           selection: selection,
           pages_table_model: pages_table_model,
-          selected_publication: publication
+          selected_source: source
         } = modal_assigns
     } = socket.assigns
 
     item = Enum.find(pages_table_model.rows, &(&1.uuid == uuid))
 
-    modal_assigns = %{
-      modal_assigns
-      | selection:
-          xor(
-            selection,
-            {publication.id, item.revision.resource_id}
-          ),
-        error_message: nil
-    }
-
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+    update_selection(socket, modal_assigns, selection, source, item)
   end
 
   def handle_event(
@@ -818,23 +868,13 @@ defmodule OliWeb.Delivery.RemixSection do
         %{
           selection: selection,
           hierarchy: hierarchy,
-          selected_publication: publication
+          selected_source: source
         } = modal_assigns
     } = socket.assigns
 
     item = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
-    modal_assigns = %{
-      modal_assigns
-      | selection:
-          xor(
-            selection,
-            {publication.id, item.revision.resource_id}
-          ),
-        error_message: nil
-    }
-
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+    update_selection(socket, modal_assigns, selection, source, item)
   end
 
   def handle_event("HierarchyPicker.update_hierarchy_tab", %{"tab_name" => tab_name}, socket) do
@@ -856,32 +896,13 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event("HierarchyPicker.pages_text_search", %{"text_search" => text_search}, socket) do
     %{modal_assigns: modal_assigns} = socket.assigns
-    selected_publication_id = modal_assigns.selected_publication.id
 
     params =
       modal_assigns.pages_table_model_params
       |> Map.put(:text_search, text_search)
       |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
-    {total_count, section_pages} =
-      Publishing.get_published_pages_by_publication(
-        selected_publication_id,
-        params
-      )
-
-    section_pages = transform_section_pages(section_pages)
-
-    modal_assigns =
-      Map.merge(
-        modal_assigns,
-        %{
-          pages_table_model: Map.put(modal_assigns.pages_table_model, :rows, section_pages),
-          pages_table_model_total_count: total_count,
-          pages_table_model_params: params
-        }
-      )
-
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+    refresh_source_pages(socket, modal_assigns, params)
   end
 
   def handle_event(
@@ -912,40 +933,25 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event("HierarchyPicker.pages_sort", %{"sort_by" => sort_by}, socket) do
     %{modal_assigns: modal_assigns} = socket.assigns
-    selected_publication_id = modal_assigns.selected_publication.id
-    sort_by = String.to_existing_atom(sort_by)
 
-    pages_table_model =
-      SortableTableModel.update_sort_params(modal_assigns.pages_table_model, sort_by)
+    case page_sort_by(sort_by) do
+      {:ok, sort_by} ->
+        pages_table_model =
+          SortableTableModel.update_sort_params(modal_assigns.pages_table_model, sort_by)
 
-    params =
-      modal_assigns.pages_table_model_params
-      |> Map.put(:sort_order, pages_table_model.sort_order)
-      |> Map.put(:sort_by, sort_by)
-      |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
+        params =
+          modal_assigns.pages_table_model_params
+          |> Map.put(:sort_order, pages_table_model.sort_order)
+          |> Map.put(:sort_by, sort_by)
+          |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
-    {total_count, section_pages} =
-      Publishing.get_published_pages_by_publication(
-        selected_publication_id,
-        params
-      )
+        modal_assigns = %{modal_assigns | pages_table_model: pages_table_model}
 
-    section_pages = transform_section_pages(section_pages)
+        refresh_source_pages(socket, modal_assigns, params)
 
-    modal_assigns =
-      Map.merge(
-        modal_assigns,
-        %{
-          pages_table_model:
-            modal_assigns.pages_table_model
-            |> SortableTableModel.update_sort_params(sort_by)
-            |> Map.put(:rows, section_pages),
-          pages_table_model_total_count: total_count,
-          pages_table_model_params: params
-        }
-      )
-
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+      :error ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event(
@@ -954,32 +960,25 @@ defmodule OliWeb.Delivery.RemixSection do
         socket
       ) do
     %{modal_assigns: modal_assigns} = socket.assigns
-    selected_publication_id = modal_assigns.selected_publication.id
 
-    params =
-      modal_assigns.pages_table_model_params
-      |> Map.put(:limit, String.to_integer(limit))
-      |> Map.put(:offset, String.to_integer(offset))
-      |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
+    with {:ok, limit} <- parse_page_param(limit, @max_page_limit),
+         {:ok, offset} <- parse_page_param(offset, @max_page_offset) do
+      params =
+        modal_assigns.pages_table_model_params
+        |> Map.put(:limit, limit)
+        |> Map.put(:offset, offset)
+        |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
-    {total_count, section_pages} =
-      Publishing.get_published_pages_by_publication(
-        selected_publication_id,
-        params
-      )
+      modal_assigns = %{
+        modal_assigns
+        | pages_table_model:
+            SortableTableModel.update_from_params(modal_assigns.pages_table_model, params)
+      }
 
-    section_pages = transform_section_pages(section_pages)
-
-    modal_assigns =
-      Map.merge(modal_assigns, %{
-        pages_table_model_params: params,
-        pages_table_model_total_count: total_count,
-        pages_table_model:
-          SortableTableModel.update_from_params(modal_assigns.pages_table_model, params)
-          |> Map.put(:rows, section_pages)
-      })
-
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+      refresh_source_pages(socket, modal_assigns, params)
+    else
+      :error -> {:noreply, socket}
+    end
   end
 
   def handle_event(
@@ -990,24 +989,29 @@ defmodule OliWeb.Delivery.RemixSection do
     %{modal_assigns: modal_assigns} = socket.assigns
     publications = modal_assigns.publications
 
-    params =
-      modal_assigns.publications_table_model_params
-      |> Map.put(:limit, String.to_integer(limit))
-      |> Map.put(:offset, String.to_integer(offset))
+    with {:ok, limit} <- parse_page_param(limit, @max_page_limit),
+         {:ok, offset} <- parse_page_param(offset, @max_page_offset) do
+      params =
+        modal_assigns.publications_table_model_params
+        |> Map.put(:limit, limit)
+        |> Map.put(:offset, offset)
 
-    {total_count, publications} = maybe_filter_publications(publications, params)
+      {total_count, publications} = maybe_filter_publications(publications, params)
 
-    modal_assigns =
-      Map.merge(modal_assigns, %{
-        publications_table_model_params: params,
-        publications_table_model_total_count: total_count,
-        publications_table_model:
-          modal_assigns.publications_table_model
-          |> SortableTableModel.update_from_params(params)
-          |> Map.put(:rows, publications)
-      })
+      modal_assigns =
+        Map.merge(modal_assigns, %{
+          publications_table_model_params: params,
+          publications_table_model_total_count: total_count,
+          publications_table_model:
+            modal_assigns.publications_table_model
+            |> SortableTableModel.update_from_params(params)
+            |> Map.put(:rows, publications)
+        })
 
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+      {:noreply, assign(socket, modal_assigns: modal_assigns)}
+    else
+      :error -> {:noreply, socket}
+    end
   end
 
   def handle_event(
@@ -1139,7 +1143,7 @@ defmodule OliWeb.Delivery.RemixSection do
         text_filter ->
           Enum.filter(
             publications,
-            &(&1.project.title
+            &(&1.title
               |> String.downcase()
               |> String.contains?(String.downcase(text_filter)))
           )
@@ -1157,33 +1161,6 @@ defmodule OliWeb.Delivery.RemixSection do
     else
       [item | list]
     end
-  end
-
-  # publication_hierarchy now encapsulated in Oli.Delivery.Remix; no longer used here
-
-  defp published_publication_hierarchy(publication) do
-    published_resources_by_resource_id = Sections.published_resources_map(publication.id)
-
-    published_revisions_by_resource_id =
-      published_resources_by_resource_id
-      |> Enum.map(fn {resource_id, published_resource} ->
-        {resource_id, published_resource.revision}
-      end)
-      |> Enum.into(%{})
-
-    %PublishedResource{revision: root_revision} =
-      published_resources_by_resource_id[publication.root_resource_id]
-
-    {root_node, _numbering_tracker} =
-      AuthoringResolver.hierarchy_node_with_children(
-        root_revision,
-        publication.project,
-        published_revisions_by_resource_id,
-        Oli.Resources.Numbering.init_numbering_tracker(),
-        0
-      )
-
-    root_node
   end
 
   ## used by add container button, disabled for now
@@ -1264,14 +1241,70 @@ defmodule OliWeb.Delivery.RemixSection do
   defp transform_section_pages(section_pages) do
     section_pages
     |> Enum.map(fn rev ->
-      %HierarchyNode{uuid: UUID.uuid4(), revision: rev}
+      %HierarchyNode{
+        uuid: UUID.uuid4(),
+        resource_id: rev.resource_id,
+        project_id: Map.get(rev, :project_id),
+        revision: rev
+      }
     end)
   end
 
-  defp preselected_resource_ids(preselected, pub) do
-    preselected
-    |> Enum.filter(fn {pub_id, _rid} -> pub_id == pub.id end)
-    |> Enum.map(fn {_pub_id, rid} -> rid end)
+  defp preselected_resource_ids(preselected), do: Enum.map(preselected, &elem(&1, 1))
+
+  defp source_page_params(modal_assigns) do
+    modal_assigns.pages_table_model_params
+    |> Map.put(:exclude_resource_ids, preselected_resource_ids(modal_assigns.preselected))
+  end
+
+  defp update_selection(socket, modal_assigns, selection, source, item) do
+    case Remix.selection_tuple(source, item) do
+      {:ok, tuple} ->
+        selection_source_types =
+          if tuple in selection do
+            Map.delete(modal_assigns.selection_source_types, tuple)
+          else
+            Map.put(modal_assigns.selection_source_types, tuple, source.type)
+          end
+
+        modal_assigns = %{
+          modal_assigns
+          | selection: xor(selection, tuple),
+            selection_source_types: selection_source_types,
+            error_message: nil
+        }
+
+        {:noreply, assign(socket, modal_assigns: modal_assigns)}
+
+      {:error, :unavailable_publication} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "Selected materials are no longer available. Close this dialog, reopen Add Materials, and try again."
+         )}
+    end
+  end
+
+  defp refresh_source_pages(socket, modal_assigns, params) do
+    case Remix.source_pages(modal_assigns.selected_source.key, socket.assigns.remix_state, params) do
+      {:ok, {total_count, pages}} ->
+        modal_assigns =
+          Map.merge(modal_assigns, %{
+            pages_table_model:
+              Map.put(modal_assigns.pages_table_model, :rows, transform_section_pages(pages)),
+            pages_table_model_total_count: total_count,
+            pages_table_model_params: params
+          })
+
+        {:noreply, assign(socket, modal_assigns: modal_assigns)}
+
+      {:error, :unavailable_source} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "This source is no longer available. Close this dialog, reopen Add Materials, and try again."
+         )}
+    end
   end
 
   defp put_add_materials_error(socket, message) do
@@ -1291,6 +1324,21 @@ defmodule OliWeb.Delivery.RemixSection do
   defp hierarchy_tab("curriculum"), do: {:ok, :curriculum}
   defp hierarchy_tab("all_pages"), do: {:ok, :all_pages}
   defp hierarchy_tab(_), do: :error
+
+  defp page_sort_by("title"), do: {:ok, :title}
+  defp page_sort_by("graded"), do: {:ok, :graded}
+  defp page_sort_by("updated_at"), do: {:ok, :updated_at}
+  defp page_sort_by("publication_date"), do: {:ok, :publication_date}
+  defp page_sort_by(_), do: :error
+
+  defp parse_page_param(value, max) when is_binary(value) and byte_size(value) <= 5 do
+    case Integer.parse(value) do
+      {parsed, ""} when parsed >= 0 and parsed <= max -> {:ok, parsed}
+      _ -> :error
+    end
+  end
+
+  defp parse_page_param(_, _), do: :error
 
   defp valid_internal_path?(target) when is_binary(target) do
     uri = URI.parse(target)
