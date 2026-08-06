@@ -134,6 +134,8 @@ export const DropTarget = {
         const targetScope = this.el.getAttribute('data-reorder-scope');
 
         if (parsedPayload && parsedPayload.scope === targetScope) {
+          e.stopPropagation();
+
           const eventName = this.el.getAttribute('data-reorder-event');
           const resourceId = this.el.getAttribute('data-reorder-resource-id');
           const dropIndex = this.el.getAttribute('data-drop-index');

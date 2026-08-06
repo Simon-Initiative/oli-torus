@@ -16,6 +16,7 @@ const dispatchDragEvent = (
   const event = new Event(eventName, { bubbles: true, cancelable: true });
   Object.defineProperty(event, 'dataTransfer', { value: transfer });
   element.dispatchEvent(event);
+  return event;
 };
 
 const keyboardReorderItem = (position = 1, count = 3, key = 'alternatives:123:option-a') => {
@@ -62,12 +63,16 @@ describe('parseScopedReorderPayload', () => {
 
 describe('shared drag and drop hooks', () => {
   it('routes a scoped drop to its configured event', () => {
+    const parent = document.createElement('div');
     const element = document.createElement('div');
+    parent.appendChild(element);
     element.dataset.reorderScope = 'alternatives-123';
     element.dataset.reorderEvent = 'reorder_option';
     element.dataset.reorderResourceId = '123';
     element.dataset.dropIndex = '2';
     const pushEvent = jest.fn();
+    const parentDrop = jest.fn();
+    parent.addEventListener('drop', parentDrop);
     DropTarget.mounted.call({ el: element, pushEvent });
 
     const transfer = dataTransfer({
@@ -76,13 +81,16 @@ describe('shared drag and drop hooks', () => {
         scope: 'alternatives-123',
       }),
     });
-    dispatchDragEvent(element, 'drop', transfer);
+    const event = dispatchDragEvent(element, 'drop', transfer);
 
     expect(pushEvent).toHaveBeenCalledWith('reorder_option', {
       resourceId: '123',
       optionId: 'option-a',
       dropIndex: '2',
     });
+    expect(pushEvent).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(true);
+    expect(parentDrop).not.toHaveBeenCalled();
   });
 
   it('ignores a scoped drop from another alternatives group', () => {
