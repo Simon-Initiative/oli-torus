@@ -241,52 +241,54 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             No active eligible sections are available.
           </div>
 
-          <table
+          <div
             :if={not Enum.empty?(@participation.eligible_sections)}
-            id="participating-sections-table"
-            class="table table-sm dark:text-gray-100"
+            id="participating-sections-table-scroll"
+            class="overflow-x-auto"
           >
-            <caption class="sr-only">Sections eligible to participate in this experiment</caption>
-            <thead class="dark:border-gray-700 dark:bg-neutral-700 dark:text-gray-100">
-              <tr>
-                <th scope="col"><span class="sr-only">Participation selection</span></th>
-                <th scope="col">Section</th>
-                <th scope="col">Slug</th>
-                <th scope="col">Start date</th>
-                <th scope="col">End date</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                :for={section <- @page_sections}
-                id={"participating-section-#{section.id}"}
-                class="dark:border-gray-700"
-              >
-                <td>
-                  <input
-                    type="checkbox"
-                    class="form-check-input"
-                    aria-label={"Set participation for #{section.title}"}
-                    checked={section.id in @participation.selected_ids}
-                    disabled={@read_only}
-                    phx-click="toggle_section"
-                    phx-value-id={section.id}
-                  />
-                </td>
-                <td>
-                  <a
-                    class="text-primary dark:text-blue-300"
-                    href={~p"/sections/#{section.slug}/manage"}
-                  >
-                    {section.title}
-                  </a>
-                </td>
-                <td>{section.slug}</td>
-                <td>{format_date(section.start_date)}</td>
-                <td>{format_date(section.end_date)}</td>
-              </tr>
-            </tbody>
-          </table>
+            <table id="participating-sections-table" class="table table-sm dark:text-gray-100">
+              <caption class="sr-only">Sections eligible to participate in this experiment</caption>
+              <thead class="dark:border-gray-700 dark:bg-neutral-700 dark:text-gray-100">
+                <tr>
+                  <th scope="col"><span class="sr-only">Participation selection</span></th>
+                  <th scope="col">Section</th>
+                  <th scope="col">Slug</th>
+                  <th scope="col">Start date</th>
+                  <th scope="col">End date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  :for={section <- @page_sections}
+                  id={"participating-section-#{section.id}"}
+                  class="dark:border-gray-700"
+                >
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      aria-label={"Set participation for #{section.title}"}
+                      checked={section.id in @participation.selected_ids}
+                      disabled={@read_only}
+                      phx-click="toggle_section"
+                      phx-value-id={section.id}
+                    />
+                  </td>
+                  <td>
+                    <a
+                      class="text-primary dark:text-blue-300"
+                      href={~p"/sections/#{section.slug}/manage"}
+                    >
+                      {section.title}
+                    </a>
+                  </td>
+                  <td>{section.slug}</td>
+                  <td>{format_date(section.start_date)}</td>
+                  <td>{format_date(section.end_date)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           <nav :if={@page_count > 1} aria-label="Participating sections pages">
             <ul class="pagination justify-content-end mb-0">

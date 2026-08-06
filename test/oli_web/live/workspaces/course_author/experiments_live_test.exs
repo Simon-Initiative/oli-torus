@@ -742,6 +742,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(
                details_view,
+               "#participating-sections-table-scroll.overflow-x-auto > #participating-sections-table"
+             )
+
+      assert has_element?(
+               details_view,
                "a[href^='/workspaces/course_author/#{project.slug}/experiments?'] [class*='font-semibold']",
                "Experiments"
              )
@@ -820,6 +825,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         view,
         ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}"
       )
+
+      {:ok, details_view, _html} =
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}")
+
+      assert has_element?(
+               details_view,
+               "[role='status']",
+               "No active eligible sections are available."
+             )
+
+      refute has_element?(details_view, "#participating-sections-table-scroll")
+      refute has_element?(details_view, "#participating-sections-table")
     end
 
     test "creates and starts a Thompson Sampling A/B Testing experiment", %{
