@@ -145,23 +145,22 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   defp collect_alternatives(%{"type" => "alternatives"} = content, counts) do
     identity = {Map.get(content, "id"), Map.get(content, "strategy")}
+    counts = Map.update(counts, identity, 1, &(&1 + 1))
 
-    content
-    |> resource_children()
-    |> Enum.reduce(Map.update(counts, identity, 1, &(&1 + 1)), &collect_alternatives/2)
+    collect_child_alternatives(content, counts)
   end
 
-  defp collect_alternatives(%{"type" => type} = content, counts)
-       when type in ["group", "survey", "report", "alternative"] do
-    content
-    |> resource_children()
-    |> Enum.reduce(counts, &collect_alternatives/2)
+  defp collect_alternatives(content, counts) when is_map(content) do
+    collect_child_alternatives(content, counts)
   end
 
   defp collect_alternatives(_content, counts), do: counts
 
-  defp resource_children(%{"children" => children}) when is_list(children), do: children
-  defp resource_children(_content), do: []
+  defp collect_child_alternatives(%{"children" => children}, counts) when is_list(children) do
+    Enum.reduce(children, counts, &collect_alternatives/2)
+  end
+
+  defp collect_child_alternatives(_content, counts), do: counts
 
   defp feature_enabled_for_strategy?("upgrade_decision_point", project),
     do: project.experiments_enabled

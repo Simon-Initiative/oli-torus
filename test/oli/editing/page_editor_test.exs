@@ -117,6 +117,45 @@ defmodule Oli.EditingTest do
       end
     end
 
+    test "edit/4 rejects newly inserted alternatives nested in child-bearing content", %{
+      author: author,
+      revision1: revision1,
+      project: project
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: false,
+          experiments_enabled: true
+        })
+
+      content = %{
+        "version" => "0.1.0",
+        "model" => [
+          %{
+            "type" => "content",
+            "id" => "content-container",
+            "children" => [
+              %{
+                "type" => "alternatives",
+                "id" => "nested-alternatives",
+                "strategy" => "user_section_preference",
+                "alternatives_id" => 123,
+                "children" => []
+              }
+            ]
+          }
+        ]
+      }
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      assert {:error, {:feature_disabled, :alternatives}} =
+               PageEditor.edit(project.slug, revision1.slug, author.email, %{
+                 "content" => content
+               })
+    end
+
     test "edit/4 allows unchanged gated content after its project feature is disabled", %{
       author: author,
       revision1: revision1,
