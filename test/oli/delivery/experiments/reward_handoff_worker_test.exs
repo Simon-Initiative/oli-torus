@@ -39,24 +39,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
     refute_enqueued(worker: RewardHandoffWorker)
   end
 
-  test "enqueue/1 resolves the section and applies the experiment guard" do
-    participating_attempt = participating_section() |> activity_attempt()
-    ordinary_attempt = insert(:section) |> activity_attempt()
-
-    assert :ok =
-             RewardHandoffWorker.enqueue([participating_attempt.id, ordinary_attempt.id])
-
-    assert_enqueued(
-      worker: RewardHandoffWorker,
-      args: %{"activity_attempt_ids" => [participating_attempt.id]}
-    )
-
-    refute_enqueued(
-      worker: RewardHandoffWorker,
-      args: %{"activity_attempt_ids" => [ordinary_attempt.id]}
-    )
-  end
-
   defp participating_section do
     project = insert(:project)
     section = insert(:section, base_project: project)
@@ -79,32 +61,5 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
     |> Repo.insert!()
 
     section
-  end
-
-  defp activity_attempt(section) do
-    user = insert(:user)
-    page_revision = insert(:revision)
-
-    resource_access =
-      insert(:resource_access,
-        section: section,
-        user: user,
-        resource: page_revision.resource
-      )
-
-    resource_attempt =
-      insert(:resource_attempt,
-        resource_access: resource_access,
-        revision: page_revision,
-        content: %{"model" => []}
-      )
-
-    activity_revision = insert(:revision)
-
-    insert(:activity_attempt,
-      resource_attempt: resource_attempt,
-      revision: activity_revision,
-      resource: activity_revision.resource
-    )
   end
 end

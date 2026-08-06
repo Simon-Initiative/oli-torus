@@ -52,9 +52,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
     no_roll_up = Keyword.get(opts, :no_roll_up, false)
     enforce_client_side_eval = Keyword.get(opts, :enforce_client_side_eval, true)
 
-    activity_attempt =
-      get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-      |> Repo.preload(revision: [:activity_type])
+    {activity_attempt, section_id} =
+      get_activity_attempt_with_section_by_guid(activity_attempt_guid)
 
     activity_registration_slug = activity_attempt.revision.activity_type.slug
 
@@ -88,7 +87,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
 
             {score, out_of} ->
               fn result ->
-                evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of)
+                evaluate_with_rule_engine_score(activity_attempt, section_id, score, out_of)
                 result
               end
           end
@@ -158,10 +157,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
     end
   end
 
-  defp evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of) do
+  defp evaluate_with_rule_engine_score(activity_attempt, section_id, score, out_of) do
     Logger.debug("evaluate_with_rule_engine_score: score: #{score}, out_of: #{out_of}")
-
-    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
     now = DateTime.utc_now()
 
@@ -173,21 +170,26 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
       date_evaluated: now,
       date_submitted: now
     })
-    |> enqueue_reward_after_update()
+    |> enqueue_reward_after_update(section_id)
   end
 
   @doc false
   def enqueue_reward_after_update(
         result,
-        enqueue_fn \\ fn activity_attempt_id ->
-          Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt_id)
+        section_id,
+        enqueue_fn \\ fn activity_attempt_id, section_id ->
+          Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt_id, section_id)
         end
       )
 
-  def enqueue_reward_after_update({:ok, %{id: activity_attempt_id}} = result, enqueue_fn) do
-    :ok = enqueue_fn.(activity_attempt_id)
+  def enqueue_reward_after_update(
+        {:ok, %{id: activity_attempt_id}} = result,
+        section_id,
+        enqueue_fn
+      ) do
+    :ok = enqueue_fn.(activity_attempt_id, section_id)
     result
   end
 
-  def enqueue_reward_after_update(error, _enqueue_fn), do: error
+  def enqueue_reward_after_update(error, _section_id, _enqueue_fn), do: error
 end

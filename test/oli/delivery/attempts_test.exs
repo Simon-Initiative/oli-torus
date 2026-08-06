@@ -19,25 +19,88 @@ defmodule Oli.Delivery.AttemptsTest do
     test "enqueues only successful activity-attempt updates" do
       parent = self()
 
-      enqueue = fn id ->
-        send(parent, {:enqueued, id})
+      enqueue = fn id, section_id ->
+        send(parent, {:enqueued, id, section_id})
         :ok
       end
 
       assert {:error, :invalid_update} =
                ApplyClientEvaluation.enqueue_reward_after_update(
                  {:error, :invalid_update},
+                 7,
                  enqueue
                )
 
-      refute_received {:enqueued, _}
+      refute_received {:enqueued, _, _}
 
       updated_attempt = %{id: 42}
 
       assert {:ok, ^updated_attempt} =
-               ApplyClientEvaluation.enqueue_reward_after_update({:ok, updated_attempt}, enqueue)
+               ApplyClientEvaluation.enqueue_reward_after_update(
+                 {:ok, updated_attempt},
+                 7,
+                 enqueue
+               )
 
-      assert_received {:enqueued, 42}
+      assert_received {:enqueued, 42, 7}
+    end
+
+    test "loads the activity attempt, section, parts, revision, and activity type in one query" do
+      section = insert(:section)
+      user = insert(:user)
+      page_revision = insert(:revision)
+
+      resource_access =
+        insert(:resource_access,
+          section: section,
+          user: user,
+          resource: page_revision.resource
+        )
+
+      resource_attempt =
+        insert(:resource_attempt,
+          resource_access: resource_access,
+          revision: page_revision,
+          content: %{"model" => []}
+        )
+
+      activity_type = insert(:activity_registration)
+      activity_revision = insert(:revision, activity_type: activity_type)
+
+      activity_attempt =
+        insert(:activity_attempt,
+          resource_attempt: resource_attempt,
+          revision: activity_revision,
+          resource: activity_revision.resource
+        )
+
+      insert_list(2, :part_attempt, activity_attempt: activity_attempt)
+
+      parent = self()
+      handler_id = "activity-attempt-context-query-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _, _, metadata, _ ->
+          case metadata.query do
+            "SELECT" <> _ -> send(parent, :activity_attempt_context_query)
+            _ -> :ok
+          end
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {loaded_attempt, section_id} =
+               Attempts.get_activity_attempt_with_section_by_guid(activity_attempt.attempt_guid)
+
+      assert section_id == section.id
+      assert length(loaded_attempt.part_attempts) == 2
+      assert loaded_attempt.revision.activity_type.id == activity_type.id
+      assert_receive :activity_attempt_context_query
+      refute_receive :activity_attempt_context_query
     end
   end
 
