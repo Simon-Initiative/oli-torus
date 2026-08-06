@@ -357,7 +357,6 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                   onKeyDown={(e) => handleCol1KeyDown(e, item, index)}
                   onFocus={() => setFocusZone('col1')}
                 >
-                  <span className="matching-item-index">{index + 1}</span>
                   <div className="matching-item-body">
                     <MatchingItemContent item={item} />
                   </div>
@@ -413,7 +412,6 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                   }}
                   onKeyDown={(e) => handleCol2KeyDown(e, item, index)}
                 >
-                  <span className="matching-item-index">{index + 1}</span>
                   <div className="matching-item-body">
                     <MatchingItemContent item={item} />
                   </div>

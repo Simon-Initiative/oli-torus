@@ -97,7 +97,7 @@ const MatchingAuthor: React.FC<AuthorPartComponentProps<MatchingModel>> = (props
                   Use Manage Matching in the property panel to add items
                 </div>
               )}
-              {column1Items.map((item, index) => (
+              {column1Items.map((item) => (
                 <div
                   key={item.id}
                   className="matching-item"
@@ -105,7 +105,6 @@ const MatchingAuthor: React.FC<AuthorPartComponentProps<MatchingModel>> = (props
                     itemRefs.current[item.id] = el;
                   }}
                 >
-                  <span className="matching-item-index">{index + 1}</span>
                   <div className="matching-item-body">
                     <MatchingItemContent item={item} />
                   </div>
@@ -122,7 +121,7 @@ const MatchingAuthor: React.FC<AuthorPartComponentProps<MatchingModel>> = (props
               </header>
             )}
             <div className="matching-items">
-              {column2Items.map((item, index) => (
+              {column2Items.map((item) => (
                 <div
                   key={item.id}
                   className="matching-item"
@@ -130,7 +129,6 @@ const MatchingAuthor: React.FC<AuthorPartComponentProps<MatchingModel>> = (props
                     itemRefs.current[item.id] = el;
                   }}
                 >
-                  <span className="matching-item-index">{index + 1}</span>
                   <div className="matching-item-body">
                     <MatchingItemContent item={item} />
                   </div>

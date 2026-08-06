@@ -239,7 +239,7 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
       ? 'Add and configure items in both columns. Switch to Edit Correct State to draw matches.'
       : 'Drag from a Column 1 item to a Column 2 item to draw a match. Click a line (or redraw the same pair) to remove it.';
 
-  const renderItem = (col: 1 | 2, item: MatchingItem, index: number) => {
+  const renderItem = (col: 1 | 2, item: MatchingItem) => {
     const isDragging = mode === 'answer' && draggingFromId === item.id;
     const classes = [
       'mam-item',
@@ -272,7 +272,6 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
             : undefined
         }
       >
-        <span className="mam-item-index">{index + 1}</span>
         <div className="mam-item-body">
           <MatchingItemContent item={item} />
         </div>
@@ -368,7 +367,7 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
               <span className="mam-col-badge">Col 1</span>
             </div>
             <div className="mam-items">
-              {column1Items.map((item, index) => renderItem(1, item, index))}
+              {column1Items.map((item) => renderItem(1, item))}
             </div>
             {mode === 'manage' && (
               <button type="button" className="mam-add-btn" onClick={() => addItem(1)}>
@@ -389,7 +388,7 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
               <span className="mam-col-badge">Col 2</span>
             </div>
             <div className="mam-items">
-              {column2Items.map((item, index) => renderItem(2, item, index))}
+              {column2Items.map((item) => renderItem(2, item))}
             </div>
             {mode === 'manage' && (
               <button type="button" className="mam-add-btn" onClick={() => addItem(2)}>

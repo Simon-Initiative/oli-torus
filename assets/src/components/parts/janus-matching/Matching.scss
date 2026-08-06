@@ -205,20 +205,6 @@
     }
   }
 
-  .matching-item-index {
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.22);
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
   .matching-item-body {
     flex: 1 1 auto;
     min-width: 0;
