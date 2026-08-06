@@ -84,8 +84,8 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
               size={:sm}
               class="!h-8 !w-8 !min-w-0 !p-0"
               type="button"
-              aria-label="Options"
-              title="Options"
+              aria-label={"Options for #{@option["name"]}"}
+              title={"Options for #{@option["name"]}"}
               aria-expanded="false"
               aria-controls={"dropdownMenu_#{@group.resource_id}_#{@option["id"]}"}
               phx-click={toggle_actions(@group.resource_id, @option["id"])}

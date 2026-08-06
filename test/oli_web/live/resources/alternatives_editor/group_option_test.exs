@@ -45,6 +45,8 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOptionTest do
     assert handle_position < name_position
     assert html =~ "text-gray-300 dark:text-gray-600"
     assert html =~ "drop-target alternatives-option-drop-target"
+    assert html =~ ~s(aria-label="Options for Option A")
+    assert html =~ ~s(title="Options for Option A")
     refute html =~ "fa-arrow-up"
     refute html =~ "fa-arrow-down"
   end

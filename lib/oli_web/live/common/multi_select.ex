@@ -80,6 +80,7 @@ defmodule OliWeb.Common.MultiSelectInput do
         </div>
         <button
           type="button"
+          class="flex min-h-11 min-w-11 items-center justify-center p-2"
           aria-label={@placeholder}
           aria-expanded="false"
           aria-controls={"#{@id}-options-container"}
