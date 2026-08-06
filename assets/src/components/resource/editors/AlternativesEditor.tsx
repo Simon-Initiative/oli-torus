@@ -1,6 +1,5 @@
 import React, { PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import * as Immutable from 'immutable';
-import { Maybe } from 'tsmonad';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { Tooltip } from 'components/common/Tooltip';
 import { AlternativesTypes, useAlternatives } from 'components/hooks/useAlternatives';
@@ -82,6 +81,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     const activeOptionIndex = activeOption
       ? reconciledChildren.findIndex((option) => option.id === activeOption.id)
       : -1;
+    const reconciledActiveOption = reconciledChildren.get(activeOptionIndex);
 
     const onEditAlternative = (updatedContent: ResourceContent) => {
       if (updatedContent.type === 'alternative') {
@@ -102,23 +102,22 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
         onRemove={() => onRemove(contentItem.id)}
       >
         <div className={styles.alternativesEditor}>
-          {Maybe.maybe(reconciledChildren.get(activeOptionIndex)).caseOf({
-            just: (activeOption) => (
-              <>
-                {!alternativeOptionsTitles[activeOption.value] && (
-                  <StaleOptionNotice projectSlug={props.projectSlug} />
-                )}
-                <AlternativeEditor
-                  {...props}
-                  contentItem={activeOption}
-                  index={[...index, activeOptionIndex]}
-                  parents={[...parents, activeOption]}
-                  onEdit={onEditAlternative}
-                />
-              </>
-            ),
-            nothing: () => <EmptyOptionsNotice projectSlug={props.projectSlug} />,
-          })}
+          {reconciledActiveOption ? (
+            <>
+              {!alternativeOptionsTitles[reconciledActiveOption.value] && (
+                <StaleOptionNotice projectSlug={props.projectSlug} />
+              )}
+              <AlternativeEditor
+                {...props}
+                contentItem={reconciledActiveOption}
+                index={[...index, activeOptionIndex]}
+                parents={[...parents, reconciledActiveOption]}
+                onEdit={onEditAlternative}
+              />
+            </>
+          ) : (
+            <EmptyOptionsNotice projectSlug={props.projectSlug} />
+          )}
         </div>
       </AlternativesGroupBlock>
     );
