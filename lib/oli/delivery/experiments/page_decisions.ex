@@ -7,7 +7,6 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Resources.PageContent
-  alias Oli.Repo
 
   @empty %{
     alternative_groups_by_id: %{},
@@ -22,7 +21,9 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
     with true <- alternatives_resource_ids != [],
          groups <- alternatives_groups(section.slug, alternatives_resource_ids) do
       by_id = Map.new(groups, fn group -> {group.id, group} end)
-      enrollment = Sections.get_enrollment(section.slug, page_context.user.id)
+
+      {project_slug, enrollment} =
+        Sections.get_alternatives_render_context(section.id, page_context.user.id)
 
       context = %AlternativesStrategyContext{
         enrollment_id: enrollment && enrollment.id,
@@ -32,7 +33,7 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
         section_id: section.id,
         section_slug: section.slug,
         mode: :delivery,
-        project_slug: Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug,
+        project_slug: project_slug,
         activity_resource_ids: activity_resource_ids(page_context.activities),
         alternative_groups_by_id: by_id
       }

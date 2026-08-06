@@ -33,6 +33,12 @@ mix ecto.reset
 mix ecto.gen.migration add_posts_table
 ```
 
+#### Codex Mix Commands
+
+Mix 1.19+ opens a loopback TCP socket for `Mix.PubSub`, which is blocked by the default Codex
+sandbox. Run `mix format`, `mix test`, `mix compile`, and other Mix commands with escalated
+sandbox permissions on the first attempt. Keep escalation scoped to the specific Mix command.
+
 ### Frontend (TypeScript/React)
 
 ```bash
