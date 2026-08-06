@@ -474,6 +474,308 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
   end
 
   @doc """
+  Asserts that the edited YouTube player is passed to the author-preview renderer.
+  """
+  def assert_author_preview_youtube_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    assert_react_preview_props!(html, "Components.YoutubePlayer", [
+      required_param!(state, "EXPECTED_YOUTUBE_ID"),
+      required_param!(state, "EXPECTED_CAPTION"),
+      required_param!(state, "EXPECTED_ALT")
+    ])
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited YouTube player persists to published delivery content.
+  """
+  def assert_student_delivery_youtube_workflow(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    youtube_id = required_param!(state, "EXPECTED_YOUTUBE_ID")
+    caption = required_param!(state, "EXPECTED_CAPTION")
+    alt = required_param!(state, "EXPECTED_ALT")
+
+    assert nested_map?(content, fn node ->
+             node["type"] == "youtube" and node["src"] == youtube_id and node["alt"] == alt and
+               nested_contains?(node["caption"], caption)
+           end),
+           "Expected published YouTube video with edited id, caption, and alternative text"
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited webpage URL renders in author preview.
+  """
+  def assert_author_preview_webpage_workflow(%ExecutionState{} = state) do
+    url = required_param!(state, "EXPECTED_WEBPAGE_URL")
+
+    assert html_has_selector?(author_preview_html(state), ~s|iframe[src="#{url}"]|),
+           "Expected author-preview webpage iframe #{inspect(url)}"
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited webpage URL persists to published delivery content.
+  """
+  def assert_student_delivery_webpage_workflow(%ExecutionState{} = state) do
+    url = required_param!(state, "EXPECTED_WEBPAGE_URL")
+
+    assert nested_map?(
+             delivered_revision_content(state),
+             &(&1["type"] == "iframe" and &1["src"] == url)
+           ),
+           "Expected published webpage iframe #{inspect(url)}"
+
+    state
+  end
+
+  @doc """
+  Asserts that video sources, captions, poster, and size are passed to author preview.
+  """
+  def assert_author_preview_video_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    assert_react_preview_props!(html, "Components.VideoPlayer", [
+      required_param!(state, "EXPECTED_VIDEO_NAME"),
+      required_param!(state, "EXPECTED_POSTER"),
+      required_param!(state, "EXPECTED_CAPTION_TRACK"),
+      required_param!(state, "EXPECTED_WIDTH"),
+      required_param!(state, "EXPECTED_HEIGHT")
+    ])
+
+    state
+  end
+
+  @doc """
+  Asserts that video sources, captions, poster, and size persist to published delivery content.
+  """
+  def assert_student_delivery_video_workflow(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+    video_name = required_param!(state, "EXPECTED_VIDEO_NAME")
+    poster = required_param!(state, "EXPECTED_POSTER")
+    caption_track = required_param!(state, "EXPECTED_CAPTION_TRACK")
+    width = String.to_integer(required_param!(state, "EXPECTED_WIDTH"))
+    height = String.to_integer(required_param!(state, "EXPECTED_HEIGHT"))
+
+    assert nested_map?(content, fn node ->
+             node["type"] == "video" and node["width"] == width and node["height"] == height and
+               String.contains?(node["poster"] || "", poster) and
+               Enum.count(node["src"] || []) >= 2 and
+               Enum.all?(node["src"] || [], &String.contains?(&1["url"] || "", video_name)) and
+               Enum.any?(
+                 node["captions"] || [],
+                 &String.contains?(&1["src"] || "", caption_track)
+               )
+           end),
+           "Expected published video with multiple sources, caption track, poster image, and size"
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited dialog renders with its final title, speaker, line, and portrait in author preview.
+  """
+  def assert_author_preview_dialog_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    image = required_param!(state, "EXPECTED_IMAGE")
+
+    assert html_has_text?(html, ".dialog", required_param!(state, "EXPECTED_TITLE"))
+    assert html_has_text?(html, ".dialog", required_param!(state, "EXPECTED_SPEAKER"))
+    assert html_has_text?(html, ".dialog", required_param!(state, "EXPECTED_LINE"))
+
+    assert html_has_selector?(html, ~s|.dialog img.speaker-portrait[src*="#{image}"]|),
+           "Expected author-preview dialog speaker portrait #{inspect(image)}"
+
+    state
+  end
+
+  @doc """
+  Asserts that dialog edits persist to published delivery content.
+  """
+  def assert_student_delivery_dialog_workflow(%ExecutionState{} = state) do
+    title = required_param!(state, "EXPECTED_TITLE")
+    speaker = required_param!(state, "EXPECTED_SPEAKER")
+    line = required_param!(state, "EXPECTED_LINE")
+    image = required_param!(state, "EXPECTED_IMAGE")
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "dialog" and node["title"] == title and
+               Enum.any?(node["speakers"] || [], fn dialog_speaker ->
+                 dialog_speaker["name"] == speaker and
+                   String.contains?(dialog_speaker["image"] || "", image)
+               end) and nested_contains?(node["lines"] || [], line)
+           end),
+           "Expected published dialog with edited title, speaker portrait, and line"
+
+    state
+  end
+
+  @doc """
+  Asserts that conjugation fields render in author preview.
+  """
+  def assert_author_preview_conjugation_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    assert html_has_text?(html, ".conjugation", required_param!(state, "EXPECTED_TITLE"))
+    assert html_has_text?(html, ".conjugation", required_param!(state, "EXPECTED_VERB"))
+    assert html_has_text?(html, ".conjugation", required_param!(state, "EXPECTED_PRONUNCIATION"))
+    state
+  end
+
+  @doc """
+  Asserts that conjugation fields and audio persist to published delivery content.
+  """
+  def assert_student_delivery_conjugation_workflow(%ExecutionState{} = state) do
+    title = required_param!(state, "EXPECTED_TITLE")
+    verb = required_param!(state, "EXPECTED_VERB")
+    pronunciation = required_param!(state, "EXPECTED_PRONUNCIATION")
+    audio = required_param!(state, "EXPECTED_AUDIO")
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "conjugation" and node["title"] == title and node["verb"] == verb and
+               nested_contains?(node["pronunciation"] || %{}, pronunciation) and
+               nested_contains?(node["table"] || %{}, "CONJUGATION-F conjugate") and
+               nested_contains?(node["table"] || %{}, "CONJUGATION-G pronoun") and
+               nested_contains?(node["pronunciation"] || %{}, audio)
+           end),
+           "Expected published conjugation with edited fields, table content, and audio"
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited definition renders its term, meanings, translation, and pronunciation.
+  """
+  def assert_author_preview_definition_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    [
+      "EXPECTED_TERM",
+      "EXPECTED_FIRST_MEANING",
+      "EXPECTED_SECOND_MEANING",
+      "EXPECTED_TRANSLATION",
+      "EXPECTED_PRONUNCIATION"
+    ]
+    |> Enum.each(fn key ->
+      assert html_has_text?(html, ".definition", required_param!(state, key)),
+             "Expected author-preview definition to contain #{key}"
+    end)
+
+    state
+  end
+
+  @doc """
+  Asserts that the edited definition persists to published delivery content.
+  """
+  def assert_student_delivery_definition_workflow(%ExecutionState{} = state) do
+    expected = [
+      required_param!(state, "EXPECTED_TERM"),
+      required_param!(state, "EXPECTED_FIRST_MEANING"),
+      required_param!(state, "EXPECTED_SECOND_MEANING"),
+      required_param!(state, "EXPECTED_TRANSLATION"),
+      required_param!(state, "EXPECTED_PRONUNCIATION")
+    ]
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "definition" and Enum.all?(expected, &nested_contains?(node, &1))
+           end),
+           "Expected published definition with term, meanings, translation, and pronunciation"
+
+    state
+  end
+
+  @doc """
+  Asserts that the description-list title, terms, and definitions render in author preview.
+  """
+  def assert_author_preview_description_list_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+    title = required_param!(state, "EXPECTED_TITLE")
+
+    assert html_has_text?(html, "h4", title),
+           "Expected author-preview description-list title #{inspect(title)}"
+
+    description_list_values!(state)
+    |> Enum.drop(1)
+    |> Enum.each(fn value ->
+      assert html_has_text?(html, "dl", value),
+             "Expected author-preview description list to contain #{inspect(value)}"
+    end)
+
+    state
+  end
+
+  @doc """
+  Asserts that the description-list title, terms, and definitions persist to delivery.
+  """
+  def assert_student_delivery_description_list_workflow(%ExecutionState{} = state) do
+    expected = description_list_values!(state)
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "dl" and Enum.all?(expected, &nested_contains?(node, &1))
+           end),
+           "Expected published description list with authored title, terms, and definitions"
+
+    state
+  end
+
+  @doc """
+  Asserts that an authored theorem title, statement, and proof render in Preview.
+  """
+  def assert_author_preview_theorem_workflow(%ExecutionState{} = state) do
+    html = author_preview_html(state)
+
+    theorem_values!(state)
+    |> Enum.each(fn value ->
+      assert html_text(html) =~ value,
+             "Expected author-preview theorem to contain #{inspect(value)}"
+    end)
+
+    state
+  end
+
+  @doc """
+  Asserts that an authored theorem title, statement, and proof persist to Delivery.
+  """
+  def assert_student_delivery_theorem_workflow(%ExecutionState{} = state) do
+    content = delivered_revision_content(state)
+
+    assert Enum.all?(
+             theorem_values!(state),
+             &nested_contains?(content, &1)
+           ),
+           "Expected published theorem title, statement, and proof"
+
+    state
+  end
+
+  @doc """
+  Asserts that the authored LaTeX formula is provided to author Preview.
+  """
+  def assert_author_preview_formula_workflow(%ExecutionState{} = state) do
+    assert String.contains?(author_preview_html(state), required_param!(state, "EXPECTED_LATEX")),
+           "Expected author-preview formula to contain the authored LaTeX"
+
+    state
+  end
+
+  @doc """
+  Asserts that the authored LaTeX formula persists as a formula node in Delivery.
+  """
+  def assert_student_delivery_formula_workflow(%ExecutionState{} = state) do
+    latex = required_param!(state, "EXPECTED_LATEX")
+
+    assert nested_map?(delivered_revision_content(state), fn node ->
+             node["type"] == "formula" and node["subtype"] == "latex" and node["src"] == latex
+           end),
+           "Expected published LaTeX formula"
+
+    state
+  end
+
+  @doc """
   Asserts that the author preview renders the expected callout content.
   """
   def assert_author_preview_callout(%ExecutionState{} = state) do
@@ -524,6 +826,25 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
       nil -> raise "Project #{@project_name} not found in scenario state"
       built_project -> built_project
     end
+  end
+
+  defp description_list_values!(state) do
+    [
+      required_param!(state, "EXPECTED_TITLE"),
+      required_param!(state, "EXPECTED_INITIAL_TERM"),
+      required_param!(state, "EXPECTED_INITIAL_DEFINITION"),
+      required_param!(state, "EXPECTED_ADDED_TERM"),
+      required_param!(state, "EXPECTED_ADDED_DEFINITION"),
+      required_param!(state, "EXPECTED_SECOND_DEFINITION")
+    ]
+  end
+
+  defp theorem_values!(state) do
+    [
+      required_param!(state, "EXPECTED_TITLE"),
+      required_param!(state, "EXPECTED_STATEMENT"),
+      required_param!(state, "EXPECTED_PROOF")
+    ]
   end
 
   defp fetch_section!(%ExecutionState{} = state) do
@@ -707,6 +1028,19 @@ defmodule Oli.Scenarios.Features.MixedContentHooks do
       |> Floki.attribute(attribute)
       |> Enum.any?(&String.contains?(&1, text))
     end)
+  end
+
+  defp assert_react_preview_props!(html, component, expected_values) do
+    props =
+      html
+      |> Floki.parse_document!()
+      |> Floki.find(~s|[data-react-class="#{component}"]|)
+      |> Enum.map(&(Floki.attribute(&1, "data-react-props") |> List.first() || ""))
+
+    assert Enum.any?(props, fn props ->
+             Enum.all?(expected_values, &String.contains?(props, &1))
+           end),
+           "Expected author-preview #{component} props to contain #{inspect(expected_values)}"
   end
 
   defp assert_preview_text(state, key) do

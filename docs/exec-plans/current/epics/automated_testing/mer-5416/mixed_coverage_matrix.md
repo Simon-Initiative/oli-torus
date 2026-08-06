@@ -131,49 +131,49 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `YOUTUBE-B` | Insert YouTube video using only the YouTube video id | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed insertion workflow family. |
-| `YOUTUBE-C` | Edit the caption of the YouTube video | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed caption workflow family. |
-| `YOUTUBE-D` | Click to open the YouTube video in full screen in new tab | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | New-tab behavior may remain browser-only within the workflow. |
-| `YOUTUBE-E` | Click to copy the YouTube video URL to the clipboard | `needs-triage` | `needs-triage` | `needs-triage` | `needs-triage` | `Follow-up Slice 5` | Clipboard assertions need a stable local strategy. |
-| `YOUTUBE-F` | Using settings menu, change the video to a new id | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed settings workflow family. |
-| `YOUTUBE-G` | Using settings menu, set the alternative text for YouTube video | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Accessibility workflow family. |
-| `YOUTUBE-H` | Delete a YouTube video | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed lifecycle workflow family. |
-| `YOUTUBE-I` | Undo the deletion (Ctrl-z) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed lifecycle workflow family. |
+| `YOUTUBE-B` | Insert YouTube video using only the YouTube video id | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-C` | Edit the caption of the YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-D` | Click to open the YouTube video in full screen in new tab | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; verifies new tab plus preview and delivery persistence. |
+| `YOUTUBE-E` | Click to copy the YouTube video URL to the clipboard | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/E/F/G/H/I` Playwright workflow grants local clipboard permissions and asserts the copied embed URL. |
+| `YOUTUBE-F` | Using settings menu, change the video to a new id | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-G` | Using settings menu, set the alternative text for YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-H` | Delete a YouTube video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
+| `YOUTUBE-I` | Undo the deletion (Ctrl-z) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `youtube.workflow.yaml`; `YOUTUBE-B/C/D/F/G/H/I` Playwright workflow. |
 
 ### `CODEBLOCK`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `CODEBLOCK-B` | Change language to Python | `covered` | `covered` | `covered` | `covered` | `Initial Slice` | `mixed-workflow.spec.ts > MIXED workflow > CODEBLOCK > CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery`; `codeblock.workflow.yaml` selects Python and the assertion scenario verifies the published result. |
-| `CODEBLOCK-C` | Edit source of CodeBlock to insert a few lines of actual, formatted Python code | `covered` | `covered` | `covered` | `covered` | `Initial Slice` | `mixed-workflow.spec.ts > MIXED workflow > CODEBLOCK > CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery`; `codeblock.workflow.yaml` writes `print("mixed workflow code block")` and the assertion scenario verifies it in author preview and published delivery. |
-| `CODEBLOCK-D` | Delete the CodeBlock | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 8` | Lifecycle row, separate from insertion coverage. |
-| `CODEBLOCK-E` | Undo the deletion (ctrl-z) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 8` | Lifecycle row, separate from insertion coverage. |
+| `CODEBLOCK-B` | Change language to Python | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 8` | `mixed-workflow.spec.ts > MIXED workflow > CODEBLOCK > CODEBLOCK-B/C/D/E`; `codeblock.workflow.yaml` selects Python and verifies the restored, published result. |
+| `CODEBLOCK-C` | Edit source of CodeBlock to insert a few lines of actual, formatted Python code | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 8` | `mixed-workflow.spec.ts > MIXED workflow > CODEBLOCK > CODEBLOCK-B/C/D/E`; `codeblock.workflow.yaml` writes `print("mixed workflow code block")` and verifies it after restoration in author preview and published delivery. |
+| `CODEBLOCK-D` | Delete the CodeBlock | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 8` | `author_add_code_block` deletes the authored CodeBlock and asserts its editor textbox is absent before Undo restores it. |
+| `CODEBLOCK-E` | Undo the deletion (ctrl-z) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 8` | `author_add_code_block` uses the available `Undo` action, asserts the CodeBlock returns, and verifies its restored state in author preview and published delivery. |
 
 ### `VIDEO`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `VIDEO-B` | Add additional video track via Settings dialog | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Video settings workflow family. |
-| `VIDEO-C` | Add caption track via Settings dialog | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Accessibility workflow family. |
-| `VIDEO-D` | Set poster image via Settings dialog | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Video settings workflow family. |
-| `VIDEO-E` | Set size of the video via Settings dialog | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Video settings workflow family. |
-| `VIDEO-F` | Delete the video | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Media lifecycle workflow family. |
-| `VIDEO-G` | Undo the deletion (ctrl-z) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Media lifecycle workflow family. |
+| `VIDEO-B` | Add additional video track via Settings dialog | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-C` | Add caption track via Settings dialog | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-D` | Set poster image via Settings dialog | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-E` | Set size of the video via Settings dialog | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-F` | Delete the video | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
+| `VIDEO-G` | Undo the deletion (ctrl-z) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `video.workflow.yaml`; `VIDEO-B/C/D/E/F/G` Playwright workflow. |
 
 ### `WEBPAGE`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `WEBPAGE-A` | Insert webpage (iframe) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed insertion workflow family. |
-| `WEBPAGE-B` | Click to open in new tab | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | New-tab browser behavior plus persist/delivery validation. |
-| `WEBPAGE-C` | Click to copy URL | `needs-triage` | `needs-triage` | `needs-triage` | `needs-triage` | `Follow-up Slice 5` | Clipboard assertions need a stable local strategy. |
-| `WEBPAGE-D` | Using settings dialog, change the URL | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 5` | Embed settings workflow family. |
+| `WEBPAGE-A` | Insert webpage (iframe) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; `WEBPAGE-A/B/D` Playwright workflow. |
+| `WEBPAGE-B` | Click to open in new tab | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; verifies new tab plus preview and delivery persistence. |
+| `WEBPAGE-C` | Click to copy URL | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; `WEBPAGE-A/B/C/D` Playwright workflow grants local clipboard permissions and asserts the copied URL. |
+| `WEBPAGE-D` | Using settings dialog, change the URL | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 5` | `webpage.workflow.yaml`; `WEBPAGE-A/B/D` Playwright workflow. |
 
 ### `FORMULA`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `FORMULA-B` | Insert block formula, change type to Latex, and enter valid Latex | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Block math workflow family. |
+| `FORMULA-B` | Insert block formula, change type to Latex, and enter valid Latex | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `FORMULA-B` in `formula.workflow.yaml`; inserts the block formula, selects LaTeX, replaces its source in Monaco, and asserts Preview plus published `formula` subtype/source. Verified in Playwright. |
 
 ### `CALLOUT`
 
@@ -185,7 +185,7 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `DEFINITION-B` | Click edit and change the term, add multiple definitions, a translation and a pronunciation | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Definition editing workflow family. |
+| `DEFINITION-B` | Click edit and change the term, add multiple definitions, a translation and a pronunciation | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DEFINITION-B` in `definition.workflow.yaml`; edits the term, creates a second meaning, translation, and pronunciation, then asserts Preview and Delivery. Verified in Playwright. |
 
 ### `FIGURE`
 
@@ -198,41 +198,41 @@ These slices are coverage batches, not implementation phases.
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `DIALOG-B` | Edit dialog title | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog editing workflow family. |
-| `DIALOG-C` | Add a speaker | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog speaker workflow family. |
-| `DIALOG-D` | Associate an image with a speaker | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog media workflow family. |
-| `DIALOG-E` | Delete a speaker | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog speaker workflow family. |
-| `DIALOG-F` | Edit a speaker label | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog speaker workflow family. |
-| `DIALOG-G` | Add a dialog line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
-| `DIALOG-H` | Edit the text within speaker line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
-| `DIALOG-I` | Add content element within speaker line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog nested-content workflow family. |
-| `DIALOG-J` | Toggle the speaker associated with a line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
-| `DIALOG-K` | Add a second line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
-| `DIALOG-L` | Delete line | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Dialog line workflow family. |
+| `DIALOG-B` | Edit dialog title | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; edits title and asserts Preview and Delivery. Verified in Playwright. |
+| `DIALOG-C` | Add a speaker | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; adds a temporary speaker before finalizing the dialog. Verified in Playwright. |
+| `DIALOG-D` | Associate an image with a speaker | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; selects speaker portrait and asserts Preview and Delivery. Verified in Playwright. |
+| `DIALOG-E` | Delete a speaker | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; deletes the temporary speaker. Verified in Playwright. |
+| `DIALOG-F` | Edit a speaker label | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; edits the surviving speaker and asserts Delivery. Verified in Playwright. |
+| `DIALOG-G` | Add a dialog line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; creates the initial and temporary second line. Verified in Playwright. |
+| `DIALOG-H` | Edit the text within speaker line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; edits the retained line and asserts Preview and Delivery. Verified in Playwright. |
+| `DIALOG-I` | Add content element within speaker line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; authors line content in the nested Slate editor and asserts Preview and Delivery. Verified in Playwright. |
+| `DIALOG-J` | Toggle the speaker associated with a line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; cycles the speaker associated with the retained line. Verified in Playwright. |
+| `DIALOG-K` | Add a second line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; adds a second line before lifecycle cleanup. Verified in Playwright. |
+| `DIALOG-L` | Delete line | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `DIALOG-B/C/D/E/F/G/H/I/J/K/L` in `dialog.workflow.yaml`; deletes the temporary second line and asserts retained delivery state. Verified in Playwright. |
 
 ### `CONJUGATION`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `CONJUGATION-B` | Edit title | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation editing workflow family. |
-| `CONJUGATION-C` | Edit verb | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation editing workflow family. |
-| `CONJUGATION-D` | Edit pronunciation | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation editing workflow family. |
-| `CONJUGATION-E` | Edit conjugation table headers (singular, plural) | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation table workflow family. |
-| `CONJUGATION-F` | Edit conjugate content | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation table workflow family. |
-| `CONJUGATION-G` | Edit conjugate pronouns | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation table workflow family. |
-| `CONJUGATION-H` | Associate audio clip with conjugate | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 6` | Conjugation media workflow family. |
+| `CONJUGATION-B` | Edit title | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; asserts Preview and Delivery. Verified in Playwright. |
+| `CONJUGATION-C` | Edit verb | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; asserts Preview and Delivery. Verified in Playwright. |
+| `CONJUGATION-D` | Edit pronunciation | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; asserts Preview and Delivery. Verified in Playwright. |
+| `CONJUGATION-E` | Edit conjugation table headers (singular, plural) | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; edits both headers and asserts Delivery. Verified in Playwright. |
+| `CONJUGATION-F` | Edit conjugate content | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; edits cell content and asserts Delivery. Verified in Playwright. |
+| `CONJUGATION-G` | Edit conjugate pronouns | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; edits the row label and pronoun field, then asserts Delivery. Verified in Playwright. |
+| `CONJUGATION-H` | Associate audio clip with conjugate | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 6` | `CONJUGATION-B/C/D/E/F/G/H` in `conjugation.workflow.yaml`; selects the pronunciation audio asset and asserts Delivery. Verified in Playwright. |
 
 ### `DESCRIPTIONLIST`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `DESCRIPTIONLIST-B` | Edit Description List title | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Description-list editing workflow family. |
-| `DESCRIPTIONLIST-C` | Edit default term and description | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Description-list editing workflow family. |
-| `DESCRIPTIONLIST-D` | Add term | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Description-list structure workflow family. |
-| `DESCRIPTIONLIST-E` | Add multiple definitions | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Description-list structure workflow family. |
+| `DESCRIPTIONLIST-B` | Edit Description List title | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DESCRIPTIONLIST-B/C/D/E` in `description-list.workflow.yaml`; edits and asserts the title in Preview and Delivery. Verified in Playwright. |
+| `DESCRIPTIONLIST-C` | Edit default term and description | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DESCRIPTIONLIST-B/C/D/E` in `description-list.workflow.yaml`; authors and asserts the initial term and definition. Verified in Playwright. |
+| `DESCRIPTIONLIST-D` | Add term | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DESCRIPTIONLIST-B/C/D/E` in `description-list.workflow.yaml`; adds and asserts a second term. Verified in Playwright. |
+| `DESCRIPTIONLIST-E` | Add multiple definitions | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `DESCRIPTIONLIST-B/C/D/E` in `description-list.workflow.yaml`; adds and asserts two further definitions. Verified in Playwright. |
 
 ### `THEOREM`
 
 | Row | Spreadsheet Behavior | A: Editing | B: Persisted | C: Preview | D: Delivery | Target Slice | Workflow Test / Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `THEOREM-B` | Edit title, statement, proof | `planned` | `planned` | `planned` | `planned` | `Follow-up Slice 7` | Theorem editing workflow family. |
+| `THEOREM-B` | Edit title, statement, proof | `covered` | `covered` | `covered` | `covered` | `Follow-up Slice 7` | `THEOREM-B` in `theorem.workflow.yaml`; edits the blueprint title, statement, and proof, then asserts Preview and Delivery. Verified in Playwright. |

@@ -182,8 +182,105 @@ test.describe('MIXED workflow', () => {
     });
   });
 
+  test.describe('YOUTUBE', () => {
+    test('YOUTUBE-B/C/D/E/F/G/H/I: YouTube editing and lifecycle persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/youtube.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('VIDEO', () => {
+    test('VIDEO-B/C/D/E/F/G: video settings and lifecycle persist to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/video.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('WEBPAGE', () => {
+    test('WEBPAGE-A/B/C/D: webpage editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/webpage.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('DIALOG', () => {
+    test('DIALOG-B/C/D/E/F/G/H/I/J/K/L: dialog editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/dialog.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('CONJUGATION', () => {
+    test('CONJUGATION-B/C/D/E/F/G/H: conjugation editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/conjugation.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('DEFINITION', () => {
+    test('DEFINITION-B: definition editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/definition.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('DESCRIPTIONLIST', () => {
+    test('DESCRIPTIONLIST-B/C/D/E: description list editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/description-list.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('THEOREM', () => {
+    test('THEOREM-B: theorem editing persists to author preview and delivery', async ({
+      runWorkflow,
+    }) => {
+      await runWorkflow('./mixed_workflow/theorem.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
+  test.describe('FORMULA', () => {
+    test('FORMULA-B: LaTeX formula persists to author preview and delivery', async ({ runWorkflow }) => {
+      await runWorkflow('./mixed_workflow/formula.workflow.yaml', {
+        actions: mixedWorkflowActions,
+        params: workflowParams(),
+      });
+    });
+  });
+
   test.describe('CODEBLOCK', () => {
-    test('CODEBLOCK-B/C: Python language and formatted source persist to author preview and delivery', async ({
+    test('CODEBLOCK-B/C/D/E: Python language and formatted source survive delete/undo and persist to author preview and delivery', async ({
       runWorkflow,
     }) => {
       await runWorkflow('./mixed_workflow/codeblock.workflow.yaml', {
