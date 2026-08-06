@@ -7,6 +7,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
   import Phoenix.LiveViewTest
 
   alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Conversation.Trigger
   alias Oli.Conversation.ConversationMessage
   alias Oli.Repo
   alias Oli.Resources.ResourceType
@@ -446,6 +447,64 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
       assert assistant_message.llm_model == "gpt-4.1-mini"
       assert assistant_message.content =~ "assistant reply"
     end
+
+    test "persists system messages for immediate and queued triggers", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
+        )
+
+      first_trigger = trigger(section, user, "First system instruction")
+      queued_trigger = trigger(section, user, "Queued system instruction")
+
+      send(view.pid, {:trigger, first_trigger})
+      send(view.pid, {:trigger, queued_trigger})
+      send(view.pid, {:dialogue_server, {:tokens_received, "assistant reply"}})
+      send(view.pid, {:dialogue_server, {:tokens_finished}})
+
+      render(view)
+
+      persisted_system_messages =
+        from(cm in ConversationMessage,
+          where:
+            cm.user_id == ^user.id and cm.section_id == ^section.id and cm.role == :system,
+          order_by: [asc: cm.inserted_at]
+        )
+        |> Repo.all()
+
+      assert Enum.map(persisted_system_messages, & &1.content) == [
+               Oli.Conversation.Triggers.assemble_trigger_prompt(first_trigger),
+               Oli.Conversation.Triggers.assemble_trigger_prompt(queued_trigger)
+             ]
+
+      assert Enum.all?(persisted_system_messages, fn message ->
+               message.user_id == user.id and message.section_id == section.id and
+                 is_nil(message.resource_id)
+             end)
+    end
+  end
+
+  defp trigger(section, user, prompt) do
+    %Trigger{
+      trigger_type: :page,
+      section_id: section.id,
+      user_id: user.id,
+      resource_id: nil,
+      data: %{},
+      prompt: prompt
+    }
   end
 
   defp function_names(view) do
