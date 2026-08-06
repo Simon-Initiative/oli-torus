@@ -613,6 +613,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       })
 
       assert has_element?(view, "#ab-experiments-table", "Homepage Study")
+      assert has_element?(view, "#ab-experiments-table-scroll.overflow-x-auto > table")
       assert has_element?(view, "#ab-experiments-table", "Weighted random")
       assert has_element?(view, "#ab-experiments-table", "Draft")
       refute has_element?(view, "#ab-experiments-table th", "Actions")
@@ -717,7 +718,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
             insert(:section,
               institution: institution,
               base_project: project,
-              title: "Eligible Section #{ordinal}"
+              title: "Eligible Section #{ordinal}",
+              start_date: ~U[2026-08-06 00:00:00Z],
+              end_date: ~U[2026-09-07 00:00:00Z]
             )
 
           insert(:section_project_publication,
@@ -760,6 +763,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
              )
 
       assert has_element?(details_view, "#participating-section-#{Enum.at(sections, 0).id}")
+      assert has_element?(details_view, "#participating-sections-table td", "Aug 6, 2026")
+      assert has_element?(details_view, "#participating-sections-table td", "Sep 7, 2026")
       assert has_element?(details_view, "#participating-section-#{Enum.at(sections, 9).id}")
       refute has_element?(details_view, "#participating-section-#{Enum.at(sections, 10).id}")
       refute has_element?(details_view, "#participating-sections-table th", "Participating")
@@ -873,6 +878,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       refute has_element?(view, "#thompson-sampling-config")
       assert has_element?(view, "#experiment_prior_alpha[value='1']")
+
+      assert has_element?(
+               view,
+               "#experiment_prior_alpha[aria-describedby='experiment_prior_alpha_help']"
+             )
+
       assert has_element?(view, "#experiment_prior_beta[value='1']")
       assert has_element?(view, "#experiment_warm_up_assignments[value='0']")
       assert has_element?(view, "#experiment_max_condition_share[value='1']")
@@ -943,6 +954,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
              )
 
       assert has_element?(view, "#experiment_prior_alpha.is-invalid")
+
+      assert has_element?(
+               view,
+               "#experiment_prior_alpha[aria-describedby='experiment_prior_alpha_help experiment_prior_alpha_error']"
+             )
 
       assert has_element?(
                view,

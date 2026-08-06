@@ -613,7 +613,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     do: value |> to_string() |> String.replace("_", " ") |> String.capitalize()
 
   defp format_date(nil), do: "—"
-  defp format_date(%DateTime{} = value), do: Calendar.strftime(value, "%b %-d, %Y")
-  defp format_date(%NaiveDateTime{} = value), do: Calendar.strftime(value, "%b %-d, %Y")
-  defp format_date(%Date{} = value), do: Calendar.strftime(value, "%b %-d, %Y")
+  defp format_date(%DateTime{} = value), do: value |> DateTime.to_date() |> format_date()
+
+  defp format_date(%NaiveDateTime{} = value),
+    do: value |> NaiveDateTime.to_date() |> format_date()
+
+  defp format_date(%Date{} = value), do: Oli.Cldr.Date.to_string!(value, format: :medium)
 end

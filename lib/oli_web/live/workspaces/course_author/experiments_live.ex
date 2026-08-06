@@ -106,34 +106,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
           <% end %>
         </div>
       <% else %>
-        <table class="table table-sm" id="ab-experiments-table">
-          <caption class="sr-only">A/B Testing experiments</caption>
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Slug</th>
-              <th scope="col">Algorithm</th>
-              <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              :for={experiment <- @visible_ab_experiments}
-              id={"ab-experiment-#{experiment.id}"}
-            >
-              <td>
-                <.link navigate={
-                  ~p"/workspaces/course_author/#{@project.slug}/experiments/#{experiment.id}"
-                }>
-                  {experiment.name}
-                </.link>
-              </td>
-              <td>{experiment.slug}</td>
-              <td>{format_algorithm(experiment.algorithm)}</td>
-              <td>{format_state(experiment.state)}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div id="ab-experiments-table-scroll" class="overflow-x-auto">
+          <table class="table table-sm" id="ab-experiments-table">
+            <caption class="sr-only">A/B Testing experiments</caption>
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Slug</th>
+                <th scope="col">Algorithm</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                :for={experiment <- @visible_ab_experiments}
+                id={"ab-experiment-#{experiment.id}"}
+              >
+                <td>
+                  <.link navigate={
+                    ~p"/workspaces/course_author/#{@project.slug}/experiments/#{experiment.id}"
+                  }>
+                    {experiment.name}
+                  </.link>
+                </td>
+                <td>{experiment.slug}</td>
+                <td>{format_algorithm(experiment.algorithm)}</td>
+                <td>{format_state(experiment.state)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       <% end %>
 
       <section class="mt-10" aria-labelledby="decision-points-heading">
@@ -446,7 +448,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   name="experiment[prior_alpha]"
                   value={experiment_numeric_value(@experiment_params, "prior_alpha")}
                   aria-invalid={field_invalid?(@experiment_field_errors, :prior_alpha)}
-                  aria-describedby="experiment_prior_alpha_help experiment_prior_alpha_error"
+                  aria-describedby={field_described_by(@experiment_field_errors, :prior_alpha)}
                 />
                 <small id="experiment_prior_alpha_help" class="form-text text-muted">
                   Initial success evidence for each condition, from 0.0001 to 1000.
@@ -469,7 +471,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   name="experiment[prior_beta]"
                   value={experiment_numeric_value(@experiment_params, "prior_beta")}
                   aria-invalid={field_invalid?(@experiment_field_errors, :prior_beta)}
-                  aria-describedby="experiment_prior_beta_help experiment_prior_beta_error"
+                  aria-describedby={field_described_by(@experiment_field_errors, :prior_beta)}
                 />
                 <small id="experiment_prior_beta_help" class="form-text text-muted">
                   Initial failure evidence for each condition, from 0.0001 to 1000.
@@ -491,7 +493,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   name="experiment[warm_up_assignments]"
                   value={experiment_numeric_value(@experiment_params, "warm_up_assignments")}
                   aria-invalid={field_invalid?(@experiment_field_errors, :warm_up_assignments)}
-                  aria-describedby="experiment_warm_up_assignments_help experiment_warm_up_assignments_error"
+                  aria-describedby={
+                    field_described_by(@experiment_field_errors, :warm_up_assignments)
+                  }
                 />
                 <small id="experiment_warm_up_assignments_help" class="form-text text-muted">
                   Number of initial assignments served evenly before adaptive sampling.
@@ -516,7 +520,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   name="experiment[max_condition_share]"
                   value={experiment_numeric_value(@experiment_params, "max_condition_share")}
                   aria-invalid={field_invalid?(@experiment_field_errors, :max_condition_share)}
-                  aria-describedby="experiment_max_condition_share_help experiment_max_condition_share_error"
+                  aria-describedby={
+                    field_described_by(@experiment_field_errors, :max_condition_share)
+                  }
                 />
                 <small id="experiment_max_condition_share_help" class="form-text text-muted">
                   Highest allowed assignment share for one condition, from 0.01 to 1.0.
@@ -1588,6 +1594,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp field_error_class(errors, field),
     do: if(field_invalid?(errors, field), do: "is-invalid", else: "")
+
+  defp field_described_by(errors, field) do
+    field_id = "experiment_#{field}"
+
+    case field_invalid?(errors, field) do
+      true -> "#{field_id}_help #{field_id}_error"
+      false -> "#{field_id}_help"
+    end
+  end
 
   defp format_state(state) do
     state
