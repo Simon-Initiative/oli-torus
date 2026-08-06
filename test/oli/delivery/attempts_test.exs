@@ -1,6 +1,8 @@
 defmodule Oli.Delivery.AttemptsTest do
   use Oli.DataCase
 
+  import ExUnit.CaptureLog
+
   alias Oli.Delivery.Attempts.Core, as: Attempts
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -43,6 +45,25 @@ defmodule Oli.Delivery.AttemptsTest do
                )
 
       assert_received {:enqueued, 42, 7}
+    end
+
+    test "preserves a successful update when reward enqueueing fails" do
+      updated_attempt = %{id: 42}
+
+      log =
+        capture_log(fn ->
+          assert {:ok, ^updated_attempt} =
+                   ApplyClientEvaluation.enqueue_reward_after_update(
+                     {:ok, updated_attempt},
+                     7,
+                     fn _activity_attempt_id, _section_id -> {:error, :forced_failure} end
+                   )
+        end)
+
+      assert log =~ "A/B testing reward handoff failed after client evaluation"
+      assert log =~ "activity_attempt_id: 42"
+      assert log =~ "section_id: 7"
+      assert log =~ "reason: :forced_failure"
     end
 
     test "loads the activity attempt, section, parts, revision, and activity type in one query" do

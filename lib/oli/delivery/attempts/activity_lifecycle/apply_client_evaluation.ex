@@ -187,8 +187,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
         section_id,
         enqueue_fn
       ) do
-    :ok = enqueue_fn.(activity_attempt_id, section_id)
-    result
+    case enqueue_fn.(activity_attempt_id, section_id) do
+      :ok ->
+        result
+
+      {:error, reason} ->
+        Logger.warning(
+          "A/B testing reward handoff failed after client evaluation: #{inspect(%{activity_attempt_id: activity_attempt_id, section_id: section_id, reason: reason})}"
+        )
+
+        result
+    end
   end
 
   def enqueue_reward_after_update(error, _section_id, _enqueue_fn), do: error
