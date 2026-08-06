@@ -735,6 +735,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "#experiment-configuration h2", "Configuration Study")
       assert has_element?(details_view, "#experiment-details-heading", "Experiment details")
       assert has_element?(details_view, "#experiment-configuration", "Weighted random")
+      assert has_element?(details_view, "h4", "Conditions")
+
+      assert has_element?(
+               details_view,
+               "#experiment-conditions-table > caption.sr-only",
+               "Experiment conditions"
+             )
+
       assert has_element?(details_view, "#experiment-conditions-table th", "Option ID")
       assert has_element?(details_view, "#experiment-conditions-table td", "A")
       assert has_element?(details_view, "#experiment-conditions-table td", "B")

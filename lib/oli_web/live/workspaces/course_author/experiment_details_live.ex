@@ -180,6 +180,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                   id="experiment-conditions-table"
                   class="table table-sm table-hover mb-0 dark:text-gray-100"
                 >
+                  <caption class="sr-only">Experiment conditions</caption>
                   <thead class="thead-light dark:bg-neutral-700 dark:text-gray-100">
                     <tr>
                       <th scope="col">Condition</th>
