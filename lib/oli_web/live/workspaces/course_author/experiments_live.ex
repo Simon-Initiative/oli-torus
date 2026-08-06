@@ -18,6 +18,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
   @alternatives_type_id ResourceType.id_for_alternatives()
+  @experiment_numeric_defaults %{
+    "weight_a" => "1",
+    "weight_b" => "1",
+    "prior_alpha" => "1",
+    "prior_beta" => "1",
+    "warm_up_assignments" => "0",
+    "max_condition_share" => "1"
+  }
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -405,7 +413,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                 min="0"
                 step="0.01"
                 name="experiment[weight_a]"
-                value="1"
+                value={experiment_numeric_value(@experiment_params, "weight_a")}
                 required
               />
             </div>
@@ -418,7 +426,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                 min="0"
                 step="0.01"
                 name="experiment[weight_b]"
-                value="1"
+                value={experiment_numeric_value(@experiment_params, "weight_b")}
                 required
               />
             </div>
@@ -436,7 +444,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   max="1000"
                   step="0.0001"
                   name="experiment[prior_alpha]"
-                  value="1"
+                  value={experiment_numeric_value(@experiment_params, "prior_alpha")}
                   aria-invalid={field_invalid?(@experiment_field_errors, :prior_alpha)}
                   aria-describedby="experiment_prior_alpha_help experiment_prior_alpha_error"
                 />
@@ -459,7 +467,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   max="1000"
                   step="0.0001"
                   name="experiment[prior_beta]"
-                  value="1"
+                  value={experiment_numeric_value(@experiment_params, "prior_beta")}
                   aria-invalid={field_invalid?(@experiment_field_errors, :prior_beta)}
                   aria-describedby="experiment_prior_beta_help experiment_prior_beta_error"
                 />
@@ -481,7 +489,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   min="0"
                   step="1"
                   name="experiment[warm_up_assignments]"
-                  value="0"
+                  value={experiment_numeric_value(@experiment_params, "warm_up_assignments")}
                   aria-invalid={field_invalid?(@experiment_field_errors, :warm_up_assignments)}
                   aria-describedby="experiment_warm_up_assignments_help experiment_warm_up_assignments_error"
                 />
@@ -506,7 +514,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   max="1"
                   step="0.01"
                   name="experiment[max_condition_share]"
-                  value="1"
+                  value={experiment_numeric_value(@experiment_params, "max_condition_share")}
                   aria-invalid={field_invalid?(@experiment_field_errors, :max_condition_share)}
                   aria-describedby="experiment_max_condition_share_help experiment_max_condition_share_error"
                 />
@@ -599,11 +607,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   def handle_event("change_experiment_form", %{"experiment" => params}, socket) do
+    previous_params = socket.assigns.experiment_params
+
     slug_suggestion =
-      case params["name"] == socket.assigns.experiment_params["name"] do
+      case params["name"] == previous_params["name"] do
         true -> socket.assigns.experiment_slug_suggestion
         false -> suggested_experiment_slug(params["name"])
       end
+
+    params = Map.merge(previous_params, params)
 
     {:noreply,
      assign(socket,
@@ -1566,6 +1578,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     do: %{max_condition_share: message}
 
   defp field_errors_for_message(_message), do: %{}
+
+  defp experiment_numeric_value(params, key) do
+    Map.get(params, key, Map.fetch!(@experiment_numeric_defaults, key))
+  end
 
   defp field_error(errors, field), do: Map.get(errors, field)
   defp field_invalid?(errors, field), do: Map.has_key?(errors, field)
