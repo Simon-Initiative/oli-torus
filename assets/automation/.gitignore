@@ -8,3 +8,4 @@ node_modules/
 
 # resources
 tests/resources/login.env
+local-assets/
