@@ -249,19 +249,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     test "finalization results in correct end state for resource attempts", %{
       section: section,
       attempt1: attempt1,
-      attempt2: attempt2,
-      attempt_1a: attempt_1a,
-      attempt_1b: attempt_1b
+      attempt2: attempt2
     } do
       datashop_session_id_user1 = UUID.uuid4()
 
       {:ok, %FinalizationSummary{resource_access: resource_access1}} =
         PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
 
-      assert_enqueued(
-        worker: RewardHandoffWorker,
-        args: %{"activity_attempt_ids" => Enum.sort([attempt_1a.id, attempt_1b.id])}
-      )
+      refute_enqueued(worker: RewardHandoffWorker)
 
       {:ok, %FinalizationSummary{resource_access: resource_access2}} =
         PageLifecycle.finalize(section.slug, attempt2.attempt_guid, datashop_session_id_user1)

@@ -129,13 +129,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     reward_handoff =
       Keyword.get_lazy(opts, :reward_handoff, fn ->
         fn activity_attempt_id ->
-          case Oli.Delivery.Sections.has_experiment?(section_id) do
-            true ->
-              Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt_id)
-
-            false ->
-              :ok
-          end
+          Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(
+            activity_attempt_id,
+            section_id
+          )
         end
       end)
 

@@ -16,9 +16,14 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorker do
       period: :infinity
     ]
 
+  import Ecto.Query, warn: false
+
   require Logger
 
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Experiments.RewardHandoff
+  alias Oli.Delivery.Sections
+  alias Oli.Repo
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"activity_attempt_ids" => [activity_attempt_id]}}) do
@@ -34,17 +39,34 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorker do
   end
 
   def enqueue(activity_attempt_ids) when is_list(activity_attempt_ids) do
-    activity_attempt_ids =
-      activity_attempt_ids
-      |> Enum.filter(&is_integer/1)
-      |> Enum.uniq()
-      |> Enum.sort()
+    activity_attempt_ids
+    |> normalize_activity_attempt_ids()
+    |> activity_attempt_ids_by_section()
+    |> Enum.reduce_while(:ok, fn {section_id, section_activity_attempt_ids}, :ok ->
+      case enqueue(section_activity_attempt_ids, section_id) do
+        :ok -> {:cont, :ok}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
 
-    case activity_attempt_ids do
-      [] ->
+  def enqueue(activity_attempt_id, section_id) when is_integer(activity_attempt_id) do
+    enqueue([activity_attempt_id], section_id)
+  end
+
+  def enqueue(activity_attempt_ids, section_id)
+      when is_list(activity_attempt_ids) and is_integer(section_id) do
+    activity_attempt_ids =
+      normalize_activity_attempt_ids(activity_attempt_ids)
+
+    case {activity_attempt_ids, Sections.has_experiment?(section_id)} do
+      {[], _has_experiment?} ->
         :ok
 
-      activity_attempt_ids ->
+      {_activity_attempt_ids, false} ->
+        :ok
+
+      {activity_attempt_ids, true} ->
         activity_attempt_ids
         |> then(&new(%{activity_attempt_ids: &1}))
         |> Oban.insert()
@@ -60,5 +82,32 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorker do
             error
         end
     end
+  end
+
+  defp normalize_activity_attempt_ids(activity_attempt_ids) do
+    activity_attempt_ids
+    |> Enum.filter(&is_integer/1)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  defp activity_attempt_ids_by_section([]), do: []
+
+  defp activity_attempt_ids_by_section(activity_attempt_ids) do
+    from(activity_attempt in ActivityAttempt,
+      join: resource_attempt in ResourceAttempt,
+      on: resource_attempt.id == activity_attempt.resource_attempt_id,
+      join: resource_access in ResourceAccess,
+      on: resource_access.id == resource_attempt.resource_access_id,
+      where: activity_attempt.id in ^activity_attempt_ids,
+      select: {resource_access.section_id, activity_attempt.id}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {section_id, _activity_attempt_id} -> section_id end, fn {
+                                                                                   _section_id,
+                                                                                   activity_attempt_id
+                                                                                 } ->
+      activity_attempt_id
+    end)
   end
 end
