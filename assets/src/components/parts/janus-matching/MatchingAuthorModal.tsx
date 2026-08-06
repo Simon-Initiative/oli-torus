@@ -272,38 +272,41 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
             : undefined
         }
       >
-        {col === 2 && mode === 'answer' && (
-          <span className={`mam-connector${isDragging ? ' is-active' : ''}`} />
-        )}
         <span className="mam-item-index">{index + 1}</span>
         <div className="mam-item-body">
-          <div className="mam-item-meta">
-            {item.label}
-            {mode === 'manage' ? ` · Max ${item.maxLinks}` : ''}
-          </div>
           <MatchingItemContent item={item} />
         </div>
-        {mode === 'manage' ? (
+        {mode === 'manage' && (
           <div className="mam-item-actions">
             <button
               type="button"
               className="mam-iab del"
               title="Delete"
+              aria-label="Delete item"
               onClick={() => setConfirmDelete({ col, itemId: item.id })}
             >
-              ✕
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+                <path
+                  fill="currentColor"
+                  d="M6 2h4l.5 1H14v1.5H2V3h3.5L6 2zm1 3.5V12h1.5V5.5H7zm2.5 0V12H11V5.5H9.5zM4.5 5.5V13c0 .8.7 1.5 1.5 1.5h4c.8 0 1.5-.7 1.5-1.5V5.5H4.5z"
+                />
+              </svg>
             </button>
             <button
               type="button"
               className="mam-iab"
               title="Edit item"
+              aria-label="Edit item"
               onClick={() => setItemEditor({ open: true, col, item })}
             >
-              ✎
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+                <path
+                  fill="currentColor"
+                  d="M11.7 2.3a1 1 0 0 1 1.4 1.4l-8 8L3 13l1.3-2.1 7.4-8.6z"
+                />
+              </svg>
             </button>
           </div>
-        ) : (
-          col === 1 && <span className={`mam-connector${isDragging ? ' is-active' : ''}`} />
         )}
       </div>
     );

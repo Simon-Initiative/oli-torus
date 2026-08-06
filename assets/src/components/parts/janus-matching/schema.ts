@@ -2,8 +2,8 @@ import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
-export const DEFAULT_MATCHING_MIN_HEIGHT = 400;
-export const RESPONSIVE_MATCHING_MIN_HEIGHT = 400;
+export const DEFAULT_MATCHING_MIN_HEIGHT = 280;
+export const RESPONSIVE_MATCHING_MIN_HEIGHT = 280;
 export const DEFAULT_MATCHING_THEME = '#0070F3';
 
 export type MatchingItemType = 'text' | 'image';
@@ -183,22 +183,22 @@ export const createSchema = (): Partial<MatchingModel> => {
     {
       id: 'match-c1-1',
       type: 'text',
-      label: 'Term A',
-      text: 'Photosynthesis',
+      label: 'Item 1',
+      text: 'Item 1',
       maxLinks: 1,
     },
     {
       id: 'match-c1-2',
       type: 'text',
-      label: 'Term B',
-      text: 'Mitochondria',
+      label: 'Item 2',
+      text: 'Item 2',
       maxLinks: 1,
     },
     {
       id: 'match-c1-3',
       type: 'text',
-      label: 'Term C',
-      text: 'Ribosome',
+      label: 'Item 3',
+      text: 'Item 3',
       maxLinks: 1,
     },
   ];
@@ -207,22 +207,22 @@ export const createSchema = (): Partial<MatchingModel> => {
     {
       id: 'match-c2-1',
       type: 'text',
-      label: 'Definition 1',
-      text: 'Powerhouse of the cell',
+      label: 'Match 1',
+      text: 'Match 1',
       maxLinks: 1,
     },
     {
       id: 'match-c2-2',
       type: 'text',
-      label: 'Definition 2',
-      text: 'Conversion of light into energy',
+      label: 'Match 2',
+      text: 'Match 2',
       maxLinks: 1,
     },
     {
       id: 'match-c2-3',
       type: 'text',
-      label: 'Definition 3',
-      text: 'Protein synthesis machine',
+      label: 'Match 3',
+      text: 'Match 3',
       maxLinks: 1,
     },
   ];
@@ -241,8 +241,8 @@ export const createSchema = (): Partial<MatchingModel> => {
     column1Items,
     column2Items,
     correctMatches: {
-      'match-c1-1': ['match-c2-2'],
-      'match-c1-2': ['match-c2-1'],
+      'match-c1-1': ['match-c2-1'],
+      'match-c1-2': ['match-c2-2'],
       'match-c1-3': ['match-c2-3'],
     },
   };

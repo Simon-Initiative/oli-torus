@@ -127,7 +127,11 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
                 <button
                   type="button"
                   className={`mie-type-btn${type === 'text' ? ' active' : ''}`}
+                  disabled={isEdit}
                   onClick={() => {
+                    if (isEdit) {
+                      return;
+                    }
                     setType('text');
                     setError('');
                   }}
@@ -137,7 +141,11 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
                 <button
                   type="button"
                   className={`mie-type-btn${type === 'image' ? ' active' : ''}`}
+                  disabled={isEdit}
                   onClick={() => {
+                    if (isEdit) {
+                      return;
+                    }
                     setType('image');
                     setError('');
                   }}
@@ -145,6 +153,9 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
                   Image
                 </button>
               </div>
+              {isEdit && (
+                <span className="mie-hint">Content type can’t be changed after the item is created</span>
+              )}
             </div>
 
             <div className="mie-field">

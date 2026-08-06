@@ -107,10 +107,8 @@ const MatchingAuthor: React.FC<AuthorPartComponentProps<MatchingModel>> = (props
                 >
                   <span className="matching-item-index">{index + 1}</span>
                   <div className="matching-item-body">
-                    <div className="matching-item-meta">{item.label}</div>
                     <MatchingItemContent item={item} />
                   </div>
-                  <span className="matching-connector" />
                 </div>
               ))}
             </div>
@@ -134,10 +132,8 @@ const MatchingAuthor: React.FC<AuthorPartComponentProps<MatchingModel>> = (props
                 >
                   <span className="matching-item-index">{index + 1}</span>
                   <div className="matching-item-body">
-                    <div className="matching-item-meta">{item.label}</div>
                     <MatchingItemContent item={item} />
                   </div>
-                  <span className="matching-connector" />
                 </div>
               ))}
             </div>

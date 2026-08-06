@@ -300,6 +300,17 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
         draft={draft}
         themeColor={themeColor}
         getLineClassName={lineClassName}
+        onLineClick={
+          enabled
+            ? (line) => {
+                const col1Item = column1Items.find((i) => i.id === line.col1Id);
+                const col2Item = column2Items.find((i) => i.id === line.col2Id);
+                if (col1Item && col2Item) {
+                  applyToggle(col1Item, col2Item);
+                }
+              }
+            : undefined
+        }
       />
       <div className="matching-columns">
         <section className="matching-column" aria-label={columnTitle(model.column1Title, 'Column 1')}>
@@ -348,10 +359,8 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                 >
                   <span className="matching-item-index">{index + 1}</span>
                   <div className="matching-item-body">
-                    <div className="matching-item-meta">{item.label}</div>
                     <MatchingItemContent item={item} />
                   </div>
-                  <span className={`matching-connector${selected ? ' is-active' : ''}`} />
                 </button>
               );
             })}
@@ -404,10 +413,8 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                   }}
                   onKeyDown={(e) => handleCol2KeyDown(e, item, index)}
                 >
-                  <span className={`matching-connector${itemHasMatch(item.id, 2) ? ' is-active' : ''}`} />
                   <span className="matching-item-index">{index + 1}</span>
                   <div className="matching-item-body">
-                    <div className="matching-item-meta">{item.label}</div>
                     <MatchingItemContent item={item} />
                   </div>
                 </button>
