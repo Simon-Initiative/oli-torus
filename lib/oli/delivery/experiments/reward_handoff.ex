@@ -17,7 +17,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
     Scope
   }
 
-  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
 
   @reward_source "activity_attempt:full_credit"
@@ -67,22 +66,17 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   def record_evaluated_activity(%ActivityAttempt{id: id}), do: record_evaluated_activity(id)
 
   def record_evaluated_activity(activity_attempt_id) when is_integer(activity_attempt_id) do
-    metadata = %{activity_attempt_id: activity_attempt_id}
-
-    safely_record(metadata, fn ->
-      activity_attempt_id
-      |> load_evaluated_attempt_context()
-      |> record_loaded_context(metadata)
-    end)
+    record_evaluated_activities([activity_attempt_id])
   end
 
   def record_evaluated_activity(activity_attempt_guid) when is_binary(activity_attempt_guid) do
     metadata = %{activity_attempt_guid: activity_attempt_guid}
 
     safely_record(metadata, fn ->
-      activity_attempt_guid
-      |> load_evaluated_attempt_context_by_guid()
-      |> record_loaded_context(metadata)
+      case Repo.get_by(ActivityAttempt, attempt_guid: activity_attempt_guid) do
+        nil -> record_loaded_context(nil, metadata)
+        %ActivityAttempt{id: id} -> record_evaluated_activity(id)
+      end
     end)
   end
 
@@ -155,13 +149,13 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
     end
   end
 
-  defp do_record(%{scope: scope, activity_attempt: activity_attempt, page_content: page_content}) do
-    case Oli.Experiments.reward_eligible_assignments(
-           scope,
-           activity_attempt.resource_id,
-           page_content
-         ) do
-      {:ok, []} ->
+  defp do_record(%{
+         scope: scope,
+         activity_attempt: activity_attempt,
+         eligible_assignments: assignments
+       }) do
+    case assignments do
+      [] ->
         emit_skipped(:no_reward_eligible_assignment, %{
           activity_attempt_id: activity_attempt.id,
           activity_resource_id: activity_attempt.resource_id,
@@ -171,7 +165,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
 
         :ok
 
-      {:ok, assignments} ->
+      assignments ->
         assignments
         |> Enum.reduce_while(:ok, fn assignment, :ok ->
           case record_assignment_reward(scope, activity_attempt, assignment) do
@@ -179,9 +173,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
             {:error, error} -> {:halt, {:error, error}}
           end
         end)
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 
@@ -241,55 +232,48 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
     }
   end
 
-  defp load_evaluated_attempt_context(activity_attempt_id) do
-    activity_attempt_id
-    |> List.wrap()
-    |> load_evaluated_attempt_contexts()
-    |> List.first()
-  end
+  @doc false
+  def load_evaluated_attempt_contexts(activity_attempt_ids) do
+    contexts =
+      from(activity_attempt in ActivityAttempt,
+        join: resource_attempt in ResourceAttempt,
+        on: resource_attempt.id == activity_attempt.resource_attempt_id,
+        join: resource_access in ResourceAccess,
+        on: resource_access.id == resource_attempt.resource_access_id,
+        join: section in Section,
+        on: section.id == resource_access.section_id,
+        left_join: spp in SectionsProjectsPublications,
+        on: spp.section_id == section.id and spp.project_id == section.base_project_id,
+        where: activity_attempt.id in ^activity_attempt_ids,
+        select: %{
+          activity_attempt: activity_attempt,
+          page_content: resource_attempt.content,
+          scope: %Scope{
+            institution_id: section.institution_id,
+            project_id: section.base_project_id,
+            publication_id: spp.publication_id,
+            section_id: section.id,
+            user_id: resource_access.user_id,
+            enrollment_id:
+              fragment(
+                "(SELECT e.id FROM enrollments e WHERE e.section_id = ? AND e.user_id = ? LIMIT 1)",
+                section.id,
+                resource_access.user_id
+              )
+          }
+        }
+      )
+      |> Repo.all()
 
-  defp load_evaluated_attempt_contexts(activity_attempt_ids) do
-    from(activity_attempt in ActivityAttempt,
-      join: resource_attempt in ResourceAttempt,
-      on: resource_attempt.id == activity_attempt.resource_attempt_id,
-      join: resource_access in ResourceAccess,
-      on: resource_access.id == resource_attempt.resource_access_id,
-      join: section in Section,
-      on: section.id == resource_access.section_id,
-      left_join: spp in SectionsProjectsPublications,
-      on: spp.section_id == section.id and spp.project_id == section.base_project_id,
-      left_join: published_resource in PublishedResource,
-      on:
-        published_resource.publication_id == spp.publication_id and
-          published_resource.resource_id == resource_access.resource_id,
-      where: activity_attempt.id in ^activity_attempt_ids,
-      select: %{
-        activity_attempt: activity_attempt,
-        page_content: resource_attempt.content,
-        scope: %Scope{
-          institution_id: section.institution_id,
-          project_id: section.base_project_id,
-          publication_id: spp.publication_id,
-          section_id: section.id,
-          user_id: resource_access.user_id,
-          enrollment_id:
-            fragment(
-              "(SELECT e.id FROM enrollments e WHERE e.section_id = ? AND e.user_id = ? LIMIT 1)",
-              section.id,
-              resource_access.user_id
-            )
-        },
-        published_revision_id: published_resource.revision_id
-      }
-    )
-    |> Repo.all()
-  end
+    eligible_assignments = Oli.Experiments.reward_eligible_assignments(contexts)
 
-  defp load_evaluated_attempt_context_by_guid(activity_attempt_guid) do
-    case Repo.get_by(ActivityAttempt, attempt_guid: activity_attempt_guid) do
-      nil -> nil
-      %ActivityAttempt{id: id} -> load_evaluated_attempt_context(id)
-    end
+    Enum.map(contexts, fn context ->
+      Map.put(
+        context,
+        :eligible_assignments,
+        Map.get(eligible_assignments, context.activity_attempt.id, [])
+      )
+    end)
   end
 
   defp telemetry_metadata(%{activity_attempt: activity_attempt, scope: scope}, metadata) do

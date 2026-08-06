@@ -73,6 +73,21 @@ defmodule Oli.Delivery.Sections do
 
   @instructor_role_ids Enum.map(@instructor_roles, & &1.id)
   @context_administrator_role_id ContextRoles.get_role(:context_administrator).id
+
+  @doc """
+  Returns whether a section participates in at least one native experiment.
+
+  This is intended as a cheap delivery-path guard before scheduling experiment work.
+  """
+  def has_experiment?(section_id) when is_integer(section_id) do
+    Repo.exists?(
+      from experiment_section in "experiment_sections",
+        where: experiment_section.section_id == ^section_id
+    )
+  end
+
+  def has_experiment?(_section_id), do: false
+
   @doc """
   Fetches the hidden instructor for a given section. If no hidden instructor exists,
   it creates one.  The "hidden" instructor is a special user account that is used to

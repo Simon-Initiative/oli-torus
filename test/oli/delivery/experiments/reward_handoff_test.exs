@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Experiments.RewardHandoffTest do
   use Oli.DataCase
+  use Oban.Testing, repo: Oli.Repo
 
   import Oli.Factory
 
@@ -219,16 +220,14 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert :ok =
                RewardHandoff.record_evaluated_activities(Enum.map(activity_attempts, & &1.id))
 
-      for _activity_attempt <- activity_attempts do
-        assert_receive {:reward_telemetry, ^eligibility_event,
-                        %{
-                          duration_ms: duration_ms,
-                          assignment_count: 1,
-                          assignment_query_count: 1
-                        }, %{status: :matched}}
+      assert_receive {:reward_telemetry, ^eligibility_event,
+                      %{
+                        duration_ms: eligibility_duration_ms,
+                        assignment_count: 2,
+                        assignment_query_count: 1
+                      }, %{status: :matched}}
 
-        assert duration_ms >= 0
-      end
+      assert eligibility_duration_ms >= 0
 
       assert_receive {:reward_telemetry, ^batch_event,
                       %{
@@ -239,6 +238,44 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
                       }, %{status: :ok}}
 
       assert duration_ms >= 0
+    end
+
+    test "loads single and bulk handoff contexts with exactly two read queries" do
+      %{activity_attempts: activity_attempts} =
+        setup_reward_context(activity_scores: [{1.0, 1.0}, {0.0, 1.0}])
+
+      parent = self()
+      handler_id = "reward-handoff-query-count-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _, _, metadata, _ ->
+          case metadata.query do
+            "SELECT" <> _ -> send(parent, :reward_handoff_read_query)
+            _ -> :ok
+          end
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert [_context] =
+               RewardHandoff.load_evaluated_attempt_contexts([
+                 hd(activity_attempts).id
+               ])
+
+      assert_receive :reward_handoff_read_query
+      assert_receive :reward_handoff_read_query
+      refute_receive :reward_handoff_read_query
+
+      assert [_, _] =
+               RewardHandoff.load_evaluated_attempt_contexts(Enum.map(activity_attempts, & &1.id))
+
+      assert_receive :reward_handoff_read_query
+      assert_receive :reward_handoff_read_query
+      refute_receive :reward_handoff_read_query
     end
 
     test "returns ok without records when no experiment assignment is eligible" do
@@ -272,6 +309,45 @@ defmodule Oli.Delivery.Experiments.RewardHandoffTest do
       assert updated_attempt.score == 1.0
       assert updated_attempt.out_of == 1.0
     end
+
+    test "rollup asynchronously enqueues reward handoff for an experiment section" do
+      activity_attempt = setup_rollup_attempt(assign?: true)
+
+      assert :ok = RollUp.rollup_evaluated(activity_attempt.attempt_guid)
+
+      assert_enqueued(
+        worker: Oli.Delivery.Experiments.RewardHandoffWorker,
+        args: %{"activity_attempt_ids" => [activity_attempt.id]}
+      )
+    end
+
+    test "rollup skips reward handoff for a section without experiments" do
+      activity_attempt = setup_rollup_attempt(assign?: false)
+
+      assert :ok = RollUp.rollup_evaluated(activity_attempt.attempt_guid)
+
+      refute_enqueued(worker: Oli.Delivery.Experiments.RewardHandoffWorker)
+    end
+  end
+
+  defp setup_rollup_attempt(opts) do
+    %{activity_attempt: activity_attempt} =
+      setup_reward_context(
+        assign?: Keyword.fetch!(opts, :assign?),
+        lifecycle_state: :active,
+        score: nil,
+        out_of: nil
+      )
+
+    insert(:part_attempt,
+      activity_attempt: activity_attempt,
+      lifecycle_state: :evaluated,
+      score: 1.0,
+      out_of: 1.0,
+      date_evaluated: DateTime.utc_now() |> DateTime.truncate(:second)
+    )
+
+    activity_attempt
   end
 
   defp setup_reward_context(opts) do

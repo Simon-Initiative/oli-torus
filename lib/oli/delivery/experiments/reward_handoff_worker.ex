@@ -21,6 +21,10 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorker do
   alias Oli.Delivery.Experiments.RewardHandoff
 
   @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"activity_attempt_ids" => [activity_attempt_id]}}) do
+    RewardHandoff.record_evaluated_activity(activity_attempt_id)
+  end
+
   def perform(%Oban.Job{args: %{"activity_attempt_ids" => activity_attempt_ids}}) do
     RewardHandoff.record_evaluated_activities(activity_attempt_ids)
   end

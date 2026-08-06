@@ -487,6 +487,110 @@ defmodule Oli.Experiments do
   def reward_eligible_assignments(_scope, _activity_resource_id, _page_content),
     do: invalid_request("expected Scope")
 
+  @doc """
+  Returns reward-eligible assignments for evaluated-attempt contexts in one set-based query.
+
+  The result is keyed by activity-attempt ID. Contexts are expected to contain `:activity_attempt`,
+  `:scope`, and `:page_content`, as produced by the delivery reward handoff.
+  """
+  def reward_eligible_assignments(contexts) when is_list(contexts) do
+    start_time = System.monotonic_time()
+
+    contexts_by_scope =
+      Enum.group_by(contexts, fn context ->
+        scope = context.scope
+
+        {scope.project_id, scope.section_id, scope.enrollment_id, scope.user_id}
+      end)
+
+    section_ids = contexts |> Enum.map(& &1.scope.section_id) |> Enum.uniq()
+    enrollment_ids = contexts |> Enum.map(& &1.scope.enrollment_id) |> Enum.uniq()
+
+    assignments =
+      case contexts do
+        [] ->
+          []
+
+        _ ->
+          from(assignment in Assignment,
+            join: experiment in ExperimentDefinitionSchema,
+            on: experiment.id == assignment.experiment_id,
+            join: experiment_section in ExperimentSection,
+            on:
+              experiment_section.experiment_id == experiment.id and
+                experiment_section.section_id == assignment.section_id,
+            join: section in Section,
+            on: section.id == assignment.section_id and section.status == :active,
+            join: spp in SectionsProjectsPublications,
+            on: spp.section_id == section.id and spp.project_id == experiment.project_id,
+            join: decision_point in DecisionPoint,
+            on: decision_point.id == assignment.decision_point_id,
+            join: condition in Condition,
+            on: condition.id == assignment.condition_id,
+            where:
+              experiment.state == :active and assignment.section_id in ^section_ids and
+                assignment.enrollment_id in ^enrollment_ids,
+            distinct: true,
+            select: %{
+              assignment: assignment,
+              experiment_project_id: experiment.project_id,
+              decision_point: decision_point,
+              condition: condition
+            }
+          )
+          |> Repo.all()
+      end
+
+    result =
+      Enum.reduce(assignments, %{}, fn candidate, eligible_by_attempt ->
+        assignment = candidate.assignment
+
+        contexts_by_scope
+        |> Map.get(
+          {candidate.experiment_project_id, assignment.section_id, assignment.enrollment_id,
+           assignment.user_id},
+          []
+        )
+        |> Enum.reduce(eligible_by_attempt, fn context, acc ->
+          matching_branches =
+            matching_alternatives_branches(
+              context.page_content,
+              context.activity_attempt.resource_id
+            )
+
+          case assignment_matches_branch?(candidate, matching_branches) do
+            true ->
+              Map.update(
+                acc,
+                context.activity_attempt.id,
+                [to_reward_eligible_assignment(candidate)],
+                &[to_reward_eligible_assignment(candidate) | &1]
+              )
+
+            false ->
+              acc
+          end
+        end)
+      end)
+      |> Map.new(fn {activity_attempt_id, assignments} ->
+        {activity_attempt_id, Enum.reverse(assignments)}
+      end)
+
+    assignment_count = result |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
+
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :eligibility, :completed],
+      %{
+        duration_ms: elapsed_milliseconds(start_time),
+        assignment_count: assignment_count,
+        assignment_query_count: 1
+      },
+      %{status: if(assignment_count == 0, do: :empty, else: :matched)}
+    )
+
+    result
+  end
+
   defp eligible_assignment_count({:ok, assignments}), do: length(assignments)
   defp eligible_assignment_count({:error, _error}), do: 0
 
@@ -3136,6 +3240,76 @@ defmodule Oli.Experiments do
   end
 
   defp validate_scope(_scope), do: invalid_scope("scope is required")
+
+  defp validate_delivery_participation_scope(
+         %Scope{
+           project_id: project_id,
+           section_id: section_id,
+           user_id: user_id,
+           enrollment_id: enrollment_id
+         } = scope
+       )
+       when is_integer(project_id) and is_integer(section_id) and is_integer(user_id) and
+              is_integer(enrollment_id) do
+    query =
+      from(section in Section,
+        as: :section,
+        join: project in Project,
+        on: project.id == ^project_id,
+        join: user in User,
+        on: user.id == ^user_id,
+        join: enrollment in Enrollment,
+        on:
+          enrollment.id == ^enrollment_id and enrollment.section_id == section.id and
+            enrollment.user_id == user.id,
+        where: section.id == ^section_id,
+        select:
+          {section, project, user, enrollment,
+           exists(
+             from(spp in SectionsProjectsPublications,
+               where: spp.section_id == parent_as(:section).id and spp.project_id == ^project_id
+             )
+           )}
+      )
+
+    case Repo.one(query) do
+      {section, project, _user, _enrollment, project_relationship?} ->
+        cond do
+          not is_nil(scope.institution_id) and section.institution_id != scope.institution_id ->
+            invalid_scope("section does not belong to institution", %{
+              section_id: section.id,
+              institution_id: scope.institution_id,
+              actual_institution_id: section.institution_id
+            })
+
+          not is_nil(scope.project_slug) and project.slug != scope.project_slug ->
+            invalid_scope("project slug does not match project_id", %{
+              project_id: project.id,
+              project_slug: scope.project_slug,
+              actual_slug: project.slug
+            })
+
+          not is_nil(scope.section_slug) and section.slug != scope.section_slug ->
+            invalid_scope("section slug does not match section_id", %{
+              section_id: section.id,
+              section_slug: scope.section_slug,
+              actual_slug: section.slug
+            })
+
+          true ->
+            {:ok,
+             %{
+               scope
+               | project_slug: scope.project_slug || project.slug,
+                 section_slug: scope.section_slug || section.slug,
+                 project_relationship?: project_relationship?
+             }}
+        end
+
+      nil ->
+        invalid_scope("delivery participation scope is invalid")
+    end
+  end
 
   defp validate_delivery_participation_scope(%Scope{} = scope) do
     with {:ok, scope} <- validate_institution(scope),

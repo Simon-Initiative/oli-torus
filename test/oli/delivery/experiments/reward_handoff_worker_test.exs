@@ -20,6 +20,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
       args: %{"activity_attempt_ids" => [1, 3]}
     )
 
+    assert :ok = perform_job(RewardHandoffWorker, %{"activity_attempt_ids" => [-1]})
     assert :ok = perform_job(RewardHandoffWorker, %{"activity_attempt_ids" => [-2, -1]})
   end
 end
