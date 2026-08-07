@@ -177,7 +177,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(
                view,
-               "#alternatives-option-actions-#{decision_point.resource_id}-option_1 button[aria-label='Options'][aria-expanded='false'][aria-controls='dropdownMenu_#{decision_point.resource_id}_option_1']"
+               "#alternatives-option-actions-#{decision_point.resource_id}-option_1 button[aria-label='Options for Option 1'][aria-expanded='false'][aria-controls='dropdownMenu_#{decision_point.resource_id}_option_1']"
              )
 
       assert has_element?(
