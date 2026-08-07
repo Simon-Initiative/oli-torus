@@ -43,6 +43,7 @@ defmodule Oli.Scenarios.Engine do
     DiscussionModerationDirective,
     DiscussionDeleteDirective,
     ClassNoteDirective,
+    PostReactionDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
     StudentExceptionDirective,
@@ -91,6 +92,7 @@ defmodule Oli.Scenarios.Engine do
     DiscussionModerationHandler,
     DiscussionDeleteHandler,
     ClassNoteHandler,
+    PostReactionHandler,
     CompleteScoredPageHandler,
     FinalizeAttemptHandler,
     StudentExceptionHandler,
@@ -175,6 +177,7 @@ defmodule Oli.Scenarios.Engine do
           finalized_attempts: %{},
           activity_evaluations: %{},
           discussion_posts: %{},
+          annotation_posts: %{},
           gates: %{},
           scenario_time: nil,
           current_author: author,
@@ -385,6 +388,10 @@ defmodule Oli.Scenarios.Engine do
     ClassNoteHandler.handle(directive, state)
   end
 
+  def execute_directive(%PostReactionDirective{} = directive, state) do
+    PostReactionHandler.handle(directive, state)
+  end
+
   def execute_directive(%CompleteScoredPageDirective{} = directive, state) do
     CompleteScoredPageHandler.handle(directive, state)
   end
@@ -505,6 +512,27 @@ defmodule Oli.Scenarios.Engine do
   """
   def put_discussion_post(state, name, post) do
     %{state | discussion_posts: Map.put(state.discussion_posts, name, post)}
+  end
+
+  @doc """
+  Gets a named annotation post from the state.
+  """
+  def get_annotation_post(state, name) do
+    Map.get(state.annotation_posts, name)
+  end
+
+  @doc """
+  Upserts an annotation post by name into the state.
+  """
+  def put_annotation_post(state, name, post) do
+    %{state | annotation_posts: Map.put(state.annotation_posts, name, post)}
+  end
+
+  @doc """
+  Gets a named annotation or discussion post from the state.
+  """
+  def get_named_post(state, name) do
+    Map.get(state.annotation_posts, name) || Map.get(state.discussion_posts, name)
   end
 
   @doc """

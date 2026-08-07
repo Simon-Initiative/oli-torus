@@ -114,6 +114,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :activity_objectives,
       :insights,
       :discussion,
+      :annotation,
       :instructor_dashboard_summary,
       :instructor_dashboard_progress,
       :instructor_dashboard_student_support,
@@ -395,12 +396,26 @@ defmodule Oli.Scenarios.DirectiveTypes do
   defmodule ClassNoteDirective do
     @moduledoc """
     Creates a public class note for a student on a page in a section.
+    name: optional scenario-local name for referencing the note later
     student: scenario user name
     section: scenario section name
     page: title of the page being annotated
     body: note body
+    reply_to: optional scenario-local parent note name
+    block_id: optional content block id for a point annotation
     """
-    defstruct [:student, :section, :page, :body]
+    defstruct [:name, :student, :section, :page, :body, :reply_to, :block_id]
+  end
+
+  defmodule PostReactionDirective do
+    @moduledoc """
+    Adds or removes a reaction for a scenario user on a named collaboration post.
+    post: scenario-local collaboration post name
+    student: scenario user name
+    reaction: reaction type
+    action: add or remove
+    """
+    defstruct [:post, :student, :reaction, :action]
   end
 
   defmodule CompleteScoredPageDirective do
@@ -477,6 +492,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activity_evaluations: %{},
               # name -> Discussion post
               discussion_posts: %{},
+              # name -> Class note or annotation reply
+              annotation_posts: %{},
               # gate name -> GatingCondition
               gates: %{},
               # scenario-local current time

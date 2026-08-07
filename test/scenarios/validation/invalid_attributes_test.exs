@@ -4,6 +4,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
   alias Oli.Scenarios.DirectiveParser
 
   describe "directive attribute validation" do
+    test "post_reaction directive with unknown attribute fails" do
+      yaml = """
+      - post_reaction:
+          post: "note"
+          student: "student"
+          reaction: "like"
+          action: "add"
+          emoji: "thumbs_up"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'post_reaction' directive: \["emoji"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "project directive with unknown attribute fails" do
       yaml = """
       - project:
