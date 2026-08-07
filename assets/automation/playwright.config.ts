@@ -21,6 +21,10 @@ export default defineConfig({
   reporter: [['html', { open: 'always' }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    /* An unbounded locator action can silently eat the whole test timeout
+       (a flaky CAPI iframe held getAttribute for 732s, MER-5674); every
+       longer wait in the POs passes its own explicit timeout. */
+    actionTimeout: 15_000,
     ignoreHTTPSErrors: true,
     launchOptions: {
       args: ['--start-maximized', '--ignore-certificate-errors'],
