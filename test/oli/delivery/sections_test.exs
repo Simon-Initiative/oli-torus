@@ -2680,6 +2680,39 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_alternatives_render_context/2" do
+    test "loads the project slug and active enrollment with one query" do
+      project = insert(:project)
+      section = insert(:section, base_project: project, status: :active)
+      user = insert(:user)
+      enrollment = insert(:enrollment, section: section, user: user, status: :enrolled)
+      parent = self()
+      handler_id = "alternatives-render-context-query-count-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _, _, metadata, _ ->
+          case metadata.query do
+            "SELECT" <> _ -> send(parent, :alternatives_render_context_query)
+            _ -> :ok
+          end
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {project_slug, loaded_enrollment} =
+               Sections.get_alternatives_render_context(section.id, user.id)
+
+      assert project_slug == project.slug
+      assert loaded_enrollment.id == enrollment.id
+      assert_receive :alternatives_render_context_query
+      refute_receive :alternatives_render_context_query
+    end
+  end
+
   describe "enroll/3" do
     test "enrolls a list of users to a section with the specified roles and status :enrolled by default" do
       user_1 = insert(:user)

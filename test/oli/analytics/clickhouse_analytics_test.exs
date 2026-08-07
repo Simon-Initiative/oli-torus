@@ -4,6 +4,8 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
   import Mox
 
   alias Oli.Analytics.ClickhouseAnalytics
+  alias Oli.Experiments.ClickHouseAnalytics, as: ExperimentClickHouseAnalytics
+  alias Oli.Experiments.Scope
   alias Oli.Test.MockHTTP
 
   setup :verify_on_exit!
@@ -65,6 +67,19 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
       assert {:ok, _response} =
                ClickhouseAnalytics.execute_query("SELECT 1", "test admin creds",
                  credential: :admin
+               )
+    end
+
+    test "can execute a server-level query without selecting the configured database" do
+      expect(MockHTTP, :post, fn url, _body, _headers, _opts ->
+        refute URI.parse(url).query |> URI.decode_query() |> Map.has_key?("database")
+        {:ok, %{status_code: 200, body: ~s({"data":[]})}}
+      end)
+
+      assert {:ok, _response} =
+               ClickhouseAnalytics.execute_query("SELECT 1", "test server query",
+                 credential: :admin,
+                 database: false
                )
     end
 
@@ -134,6 +149,34 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
 
       assert message =~ "ClickHouse admin credentials are not configured"
       assert message =~ "CLICKHOUSE_ADMIN_USER"
+    end
+  end
+
+  describe "experiment query contracts" do
+    test "event counts use scoped attribution columns and distinct attribution identities" do
+      expect(MockHTTP, :post, fn _url, query, _headers, _opts ->
+        assert query =~ "experiment_attributions"
+        assert query =~ "project_id = 10"
+        assert query =~ "section_id = 20"
+        assert query =~ "publication_id = 30"
+        assert query =~ "experiment_id = 40"
+        assert query =~ "experiment_uuid"
+        assert query =~ "experiment_uuid = '11111111-2222-3333-4444-555555555555'"
+        assert query =~ "attribution_type"
+        assert query =~ "attribution_type = 'outcome'"
+        assert query =~ "countDistinct(attribution_hash)"
+        {:ok, %{status_code: 200, body: ~s({"data":[]})}}
+      end)
+
+      assert {:ok, _response} =
+               ExperimentClickHouseAnalytics.experiment_event_counts(
+                 %Scope{project_id: 10, section_id: 20, publication_id: 30},
+                 %{
+                   experiment_id: 40,
+                   experiment_uuid: "11111111-2222-3333-4444-555555555555",
+                   attribution_type: "outcome"
+                 }
+               )
     end
   end
 end

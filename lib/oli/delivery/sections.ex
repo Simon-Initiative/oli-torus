@@ -73,6 +73,21 @@ defmodule Oli.Delivery.Sections do
 
   @instructor_role_ids Enum.map(@instructor_roles, & &1.id)
   @context_administrator_role_id ContextRoles.get_role(:context_administrator).id
+
+  @doc """
+  Returns whether a section participates in at least one native experiment.
+
+  This is intended as a cheap delivery-path guard before scheduling experiment work.
+  """
+  def has_experiment?(section_id) when is_integer(section_id) do
+    Repo.exists?(
+      from experiment_section in "experiment_sections",
+        where: experiment_section.section_id == ^section_id
+    )
+  end
+
+  def has_experiment?(_section_id), do: false
+
   @doc """
   Fetches the hidden instructor for a given section. If no hidden instructor exists,
   it creates one.  The "hidden" instructor is a special user account that is used to
@@ -996,6 +1011,41 @@ defmodule Oli.Delivery.Sections do
       )
 
     Repo.one(query)
+  end
+
+  @doc """
+  Returns the base project slug and active enrollment needed to render alternatives
+  in a section.
+  """
+  def get_alternatives_render_context(section_id, nil) do
+    from(
+      section in Section,
+      join: project in Project,
+      on: project.id == section.base_project_id,
+      where: section.id == ^section_id,
+      select: {project.slug, nil}
+    )
+    |> Repo.one()
+  end
+
+  def get_alternatives_render_context(section_id, user_id) do
+    enrollment_join =
+      dynamic(
+        [section, _project, enrollment],
+        enrollment.section_id == section.id and enrollment.user_id == ^user_id and
+          enrollment.status == :enrolled and section.status == :active
+      )
+
+    from(
+      section in Section,
+      join: project in Project,
+      on: project.id == section.base_project_id,
+      left_join: enrollment in Enrollment,
+      on: ^enrollment_join,
+      where: section.id == ^section_id,
+      select: {project.slug, enrollment}
+    )
+    |> Repo.one()
   end
 
   def update_enrollment(%Enrollment{} = e, attrs) do
@@ -4410,7 +4460,6 @@ defmodule Oli.Delivery.Sections do
 
     new_publication = Publishing.get_publication!(publication_id)
     project_id = new_publication.project_id
-    project = Oli.Repo.get(Oli.Authoring.Course.Project, project_id)
     current_publication = get_current_publication(section_id, project_id)
 
     # fetch diff from cache if one is available. If not, compute one on the fly
@@ -4455,13 +4504,6 @@ defmodule Oli.Delivery.Sections do
               perform_update(:minor, section, project_id, new_publication, current_hierarchy)
           end
       end
-
-    # For a section based on this project, update the has_experiments in the section to match that
-    # setting in the project.
-    if section.base_project_id == project_id and
-         project.has_experiments != section.has_experiments do
-      Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
-    end
 
     Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
 

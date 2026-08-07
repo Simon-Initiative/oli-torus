@@ -17,6 +17,14 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     s3_source = s3_source_clause(run, aws_creds)
     settings_clause = settings_clause(run.clickhouse_settings, aws_creds)
 
+    if String.ends_with?(target_table, ".experiment_attributions") do
+      experiment_attributions_insert_sql(target_table, s3_source, settings_clause)
+    else
+      raw_events_insert_sql(target_table, s3_source, settings_clause)
+    end
+  end
+
+  defp raw_events_insert_sql(target_table, s3_source, settings_clause) do
     """
     INSERT INTO #{target_table} (
         event_hash, event_version, source_file, source_etag, source_line, inserted_at,
@@ -141,6 +149,100 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/session_id\"")} AS session_id
     FROM #{s3_source}
     #{settings_clause}
+    """
+  end
+
+  defp experiment_attributions_insert_sql(target_table, s3_source, settings_clause) do
+    attribution = "attribution"
+
+    """
+    INSERT INTO #{target_table} (
+        raw_event_hash, attribution_hash, event_version, source_file, source_etag, source_line,
+        inserted_at, host_event_type, timestamp, section_id,
+        project_id, publication_id, enrollment_id, experiment_role, attribution_type, experiment_id, experiment_uuid, decision_point_id,
+        decision_point_key, condition_id, condition_code, assignment_id, assignment_key,
+        algorithm, policy_version,
+        content_revision_id, reward_value, reward_source
+    )
+    SELECT
+        lower(hex(SHA256(json))) AS raw_event_hash,
+        lower(hex(SHA256(concat(lower(hex(SHA256(json))), ':', JSON_VALUE(#{attribution}, '$.key'))))) AS attribution_hash,
+        now64(3) AS event_version,
+        _path AS source_file,
+        _file AS source_etag,
+        rowNumberInAllBlocks()
+          - min(rowNumberInAllBlocks()) OVER (PARTITION BY _path)
+          + 1 AS source_line,
+        now() AS inserted_at,
+        #{host_event_type_sql()} AS host_event_type,
+        parseDateTime64BestEffortOrNull(#{json_value_or_null("$.timestamp")}, 3) AS timestamp,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.section_id'), '')) AS section_id,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.project_id'), '')) AS project_id,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.publication_id'), '')) AS publication_id,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.enrollment_id'), '')) AS enrollment_id,
+        JSON_VALUE(#{attribution}, '$.role') AS experiment_role,
+        JSON_VALUE(#{attribution}, '$.attribution_type') AS attribution_type,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.experiment_id'), '')) AS experiment_id,
+        nullIf(JSON_VALUE(#{attribution}, '$.experiment_uuid'), '') AS experiment_uuid,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.decision_point_id'), '')) AS decision_point_id,
+        nullIf(JSON_VALUE(#{attribution}, '$.decision_point_key'), '') AS decision_point_key,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.condition_id'), '')) AS condition_id,
+        nullIf(JSON_VALUE(#{attribution}, '$.condition_code'), '') AS condition_code,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.assignment_id'), '')) AS assignment_id,
+        nullIf(JSON_VALUE(#{attribution}, '$.assignment_key'), '') AS assignment_key,
+        coalesce(nullIf(JSON_VALUE(#{attribution}, '$.algorithm'), ''), nullIf(JSON_VALUE(#{attribution}, '$.assigned_by_policy'), '')) AS algorithm,
+        nullIf(JSON_VALUE(#{attribution}, '$.policy_version'), '') AS policy_version,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.content_revision_id'), '')) AS content_revision_id,
+        coalesce(
+          toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_value'), '')),
+          toFloat64OrNull(#{json_value_or_null("$.result.score.raw")})
+        ) AS reward_value,
+        nullIf(JSON_VALUE(#{attribution}, '$.reward_source'), '') AS reward_source
+    FROM #{s3_source}
+    ARRAY JOIN JSONExtractArrayRaw(json, 'context.extensions."http://oli.cmu.edu/extensions/experiment_attributions"') AS #{attribution}
+    WHERE throwIf(
+      NOT (
+        experiment_role = attribution_type
+          AND experiment_role IN ('assignment', 'exposure', 'outcome', 'reward', 'policy_update')
+        OR experiment_role = 'rollup'
+          AND attribution_type IN ('outcome', 'reward')
+        OR experiment_role = 'media_interaction'
+          AND attribution_type = 'assignment'
+      ),
+      'Invalid experiment attribution role/type pair'
+    ) = 0
+    AND throwIf(
+      empty(JSON_VALUE(#{attribution}, '$.key')),
+      'Experiment attribution key must be a non-empty string'
+    ) = 0
+    #{settings_clause}
+    """
+  end
+
+  defp host_event_type_sql do
+    """
+    multiIf(
+      #{json_value_or_null("$.verb.id")} IN (
+        'https://w3id.org/xapi/video/verbs/played',
+        'https://w3id.org/xapi/video/verbs/paused',
+        'https://w3id.org/xapi/video/verbs/seeked',
+        'https://w3id.org/xapi/video/verbs/completed',
+        'http://adlnet.gov/expapi/verbs/experienced'
+      ), 'video',
+      (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
+        AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/activity_attempt'),
+      'activity_attempt',
+      (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
+        AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/page_attempt'),
+      'page_attempt',
+      (#{json_value_or_null("$.verb.id")} = 'http://id.tincanapi.com/verb/viewed')
+        AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/types/page'),
+      'page_viewed',
+      (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
+        AND (#{json_value_or_null("$.object.definition.type")} = 'http://adlnet.gov/expapi/activities/question'),
+      'part_attempt',
+      'unknown'
+    )
     """
   end
 

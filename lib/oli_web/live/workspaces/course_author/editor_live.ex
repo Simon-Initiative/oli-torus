@@ -759,7 +759,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   defp live_edit(socket, project, context, project_slug, revision_slug, is_admin?, params) do
-    context = Map.put(context, :hasExperiments, project.has_experiments)
     activity_types = Activities.activities_for_project(project)
     part_component_types = PartComponents.part_components_for_project(project)
     hierarchy = AuthoringResolver.full_hierarchy(project_slug)

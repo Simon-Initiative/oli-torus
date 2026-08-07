@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
   alias Oli.Authoring.Course
   alias Oli.Lti.PlatformExternalTools
+  alias Oli.Repo
   alias Oli.Tags
 
   defp live_view_route(project_slug, params \\ %{}),
@@ -31,6 +32,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, "h4", "Details")
+      assert has_element?(view, "h4", "Experiments")
+      assert has_element?(view, "h4", "Alternatives")
       assert has_element?(view, "h4", "Project Attributes")
       assert has_element?(view, "h4", "Project Labels")
       assert has_element?(view, "h4", "Collaborators")
@@ -44,6 +47,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       refute has_element?(view, "button", "Bulk Resource Attribute Edit")
       refute has_element?(view, "label", "Calculate embeddings on publish")
+      refute has_element?(view, "a", "Manage Experiments")
+      refute has_element?(view, "a", "Manage Alternatives")
+    end
+
+    test "feature toggles control experiment and alternatives navigation", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      section = insert(:section, base_project: project)
+      original_section_updated_at = DateTime.add(section.updated_at, -60, :second)
+
+      section
+      |> Ecto.Changeset.change(updated_at: original_section_updated_at)
+      |> Repo.update!()
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(
+               view,
+               "#experiments-enabled_checkbox[name='experiments_enabled'].peer"
+             )
+
+      assert has_element?(
+               view,
+               "#alternatives-enabled_checkbox[name='alternatives_enabled'].peer"
+             )
+
+      refute has_element?(view, "#create_children a", "Experiments")
+      refute has_element?(view, "#create_children a", "Alternatives")
+
+      view
+      |> form("#experiments-enabled", %{"experiments_enabled" => "true"})
+      |> render_change()
+
+      view
+      |> form("#alternatives-enabled", %{"alternatives_enabled" => "true"})
+      |> render_change()
+
+      assert has_element?(view, "#create_children a", "Experiments")
+      assert has_element?(view, "#create_children a", "Alternatives")
+
+      updated_project = Course.get_project!(project.id)
+      assert updated_project.experiments_enabled
+      assert updated_project.alternatives_enabled
+      assert Repo.reload!(section).updated_at == original_section_updated_at
     end
 
     test "renders collaborator invite reCAPTCHA with the LiveView hook", %{

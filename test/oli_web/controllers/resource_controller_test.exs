@@ -2,6 +2,7 @@ defmodule OliWeb.ResourceControllerTest do
   use OliWeb.ConnCase
 
   alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Repo
 
   setup [:project_seed]
 
@@ -11,6 +12,24 @@ defmodule OliWeb.ResourceControllerTest do
 
       assert html_response(conn, 200) =~
                "<div data-react-class=\"Components.PageEditor\" data-react-props=\""
+    end
+
+    test "enables A/B Test content when experiments are enabled for the project", %{
+      conn: conn,
+      project: project,
+      revision1: revision
+    } do
+      assert project.experiments_enabled == false
+
+      project
+      |> Ecto.Changeset.change(experiments_enabled: true)
+      |> Repo.update!()
+
+      conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
+
+      html = html_response(conn, 200)
+
+      assert html =~ "&quot;experimentsEnabled&quot;:true"
     end
 
     test "renders truncate title when page title is too long", %{

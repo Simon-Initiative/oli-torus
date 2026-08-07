@@ -54,6 +54,33 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
   describe "curriculum live test" do
     setup [:setup_session]
 
+    test "uses the shared server-side keyboard reorder contract", %{
+      conn: conn,
+      project: project,
+      revision1: first,
+      revision2: second
+    } do
+      {:ok, view, html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(
+               view,
+               "##{first.resource_id}[phx-hook='DragSource'][phx-keydown='keydown'][tabindex='0'][aria-keyshortcuts*='Shift+ArrowDown'][data-keyboard-reorder-key='curriculum:#{first.slug}']"
+             )
+
+      {first_position, _} = :binary.match(html, first.title)
+      {second_position, _} = :binary.match(html, second.title)
+      assert first_position < second_position
+
+      view
+      |> element("##{first.resource_id}")
+      |> render_keydown(%{"key" => "ArrowDown", "shiftKey" => true})
+
+      reordered_html = render(view)
+      {first_position, _} = :binary.match(reordered_html, first.title)
+      {second_position, _} = :binary.match(reordered_html, second.title)
+      assert second_position < first_position
+    end
+
     test "shows the author name editing the page correctly", %{
       conn: conn,
       project: project,

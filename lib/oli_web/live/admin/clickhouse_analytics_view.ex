@@ -91,6 +91,13 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
           gettext("ClickHouse must be reachable before running migrations.")
         )
 
+      {:error, :database_not_setup} ->
+        put_flash(
+          socket,
+          :error,
+          gettext("Set up the ClickHouse database before running migrations.")
+        )
+
       {:error, :migrate_up_not_available} ->
         put_flash(socket, :error, gettext("There are no pending ClickHouse migrations."))
 
@@ -264,9 +271,6 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   <span class={status_indicator_class(capabilities.database_exists)}>
                     {status_indicator_icon(capabilities.database_exists)} {gettext("Database exists")}
                   </span>
-                  <span class={status_indicator_class(capabilities.table_exists)}>
-                    {status_indicator_icon(capabilities.table_exists)} {gettext("Table exists")}
-                  </span>
                 </div>
                 <button
                   type="button"
@@ -308,7 +312,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="migrate_down"
                   class="mt-auto self-start inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!capabilities.reachable}
+                  disabled={!capabilities.migrate_down_enabled}
                 >
                   {gettext("Migrate Down")}
                 </button>

@@ -107,7 +107,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
   This function makes at most three read queries to the database.
   """
-  def rollup_evaluated(activity_attempt_guid) do
+  def rollup_evaluated(activity_attempt_guid, opts \\ []) do
     # First query: retrieve the latest part attempts
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -125,6 +125,16 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
       grade_passback_enabled: grade_passback_enabled,
       section_id: section_id
     } = get_attempts_and_page_details(activity_attempt_guid)
+
+    reward_handoff =
+      Keyword.get_lazy(opts, :reward_handoff, fn ->
+        fn activity_attempt_id ->
+          Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(
+            activity_attempt_id,
+            section_id
+          )
+        end
+      end)
 
     score_as_you_go? = graded and !batch_scoring
 
@@ -225,6 +235,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
                  },
                  now
                ) do
+          reward_handoff.(activity_attempt_id)
+
           if grade_passback_enabled and graded do
             initiate_grade_passback(section_id, resource_access_id)
           end
@@ -244,8 +256,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
       false ->
         case update_activity_attempt(activity_attempt_id, %{score: score, out_of: out_of}, now) do
-          {1, _} -> :ok
-          _ -> :error
+          {1, _} ->
+            reward_handoff.(activity_attempt_id)
+            :ok
+
+          _ ->
+            :error
         end
     end
   end

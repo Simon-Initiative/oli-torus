@@ -23,17 +23,23 @@ defmodule Oli.Rendering.Alternatives do
         %Context{
           enrollment: enrollment,
           user: user,
+          institution_id: institution_id,
+          project_id: project_id,
+          publication_id: publication_id,
+          section_id: section_id,
           section_slug: section_slug,
           project_slug: project_slug,
+          activity_map: activity_map,
           mode: mode,
           alternatives_selector_fn: alternatives_selector_fn,
-          alternatives_groups_fn: groups_fn
+          alternatives_groups_fn: groups_fn,
+          alternative_groups_by_id: alternative_groups_by_id,
+          experiment_decisions: experiment_decisions
         } = context,
         %{"type" => "alternatives"} = element,
         writer
       ) do
-    {:ok, groups} = groups_fn.()
-    by_id = Enum.reduce(groups, %{}, fn r, m -> Map.put(m, r.id, r) end)
+    by_id = alternative_groups_by_id || load_alternative_groups_by_id(groups_fn)
 
     enrollment_id =
       case enrollment do
@@ -45,10 +51,16 @@ defmodule Oli.Rendering.Alternatives do
       %AlternativesStrategyContext{
         enrollment_id: enrollment_id,
         user: user,
+        institution_id: institution_id,
+        project_id: project_id,
+        publication_id: publication_id,
+        section_id: section_id,
         section_slug: section_slug,
         mode: mode,
         project_slug: project_slug,
-        alternative_groups_by_id: by_id
+        activity_resource_ids: activity_resource_ids(activity_map),
+        alternative_groups_by_id: by_id,
+        experiment_decisions: experiment_decisions
       },
       element
     )
@@ -94,5 +106,14 @@ defmodule Oli.Rendering.Alternatives do
       _ ->
         rendered
     end
+  end
+
+  defp activity_resource_ids(activity_map) when is_map(activity_map), do: Map.keys(activity_map)
+  defp activity_resource_ids(_activity_map), do: []
+
+  defp load_alternative_groups_by_id(groups_fn) do
+    {:ok, groups} = groups_fn.()
+
+    Map.new(groups, fn group -> {group.id, group} end)
   end
 end

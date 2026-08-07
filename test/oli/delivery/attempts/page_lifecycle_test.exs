@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   use Oli.DataCase
+  use Oban.Testing, repo: Oli.Repo
 
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
@@ -8,6 +9,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
+  alias Oli.Delivery.Experiments.RewardHandoffWorker
   alias Oli.Activities.Model.{Part}
   alias Oli.Repo
 
@@ -253,6 +255,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
 
       {:ok, %FinalizationSummary{resource_access: resource_access1}} =
         PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
+
+      refute_enqueued(worker: RewardHandoffWorker)
 
       {:ok, %FinalizationSummary{resource_access: resource_access2}} =
         PageLifecycle.finalize(section.slug, attempt2.attempt_guid, datashop_session_id_user1)

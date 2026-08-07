@@ -16,6 +16,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Experiments.PageDecisions
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -80,6 +81,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       socket =
         socket
+        |> assign_experiment_decisions()
         |> emit_page_viewed_event()
         |> assign_html_and_scripts()
         |> annotations_assigns(page_context.collab_space_config, is_instructor)
@@ -164,6 +166,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       socket =
         socket
+        |> assign_experiment_decisions()
         |> emit_page_viewed_event()
         |> assign_html_and_scripts()
         |> assign_objectives()
@@ -220,6 +223,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       socket =
         socket
+        |> assign_experiment_decisions()
         |> emit_page_viewed_event()
         |> assign_scripts()
         |> slim_assigns()
@@ -264,6 +268,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       socket =
         socket
+        |> assign_experiment_decisions()
         |> emit_page_viewed_event()
         |> assign_scripts()
         |> assign(is_graded: is_graded)
@@ -1634,6 +1639,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     |> assign_html()
   end
 
+  defp assign_experiment_decisions(socket) do
+    %{section: section, page_context: page_context} = socket.assigns
+
+    assign(socket, PageDecisions.prepare(section, page_context))
+  end
+
   @decorate transaction_event()
   defp assign_scripts(socket) do
     assign(socket,
@@ -1643,9 +1654,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   @decorate transaction_event()
   defp assign_html(socket) do
-    assign(socket,
-      html: Utils.build_html(socket.assigns, :delivery, is_liveview: true)
-    )
+    assign(socket, html: Utils.build_html(socket.assigns, :delivery, is_liveview: true))
   end
 
   @decorate transaction_event()

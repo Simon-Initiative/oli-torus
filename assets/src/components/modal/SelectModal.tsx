@@ -15,7 +15,7 @@ interface SelectModalProps<T extends Option> {
   title: string;
   description: string;
   onFetchOptions: () => Promise<Options<T> | OptionsWithSelection<T>>;
-  onDone: (x: string | number) => void;
+  onDone: (x: string | number) => void | Promise<void>;
   onCancel: () => void;
   additionalControls?: React.ReactNode;
 }
@@ -34,10 +34,17 @@ export const SelectModal = function <T extends Option>({
 }: SelectModalProps<T>) {
   const modal = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const mounted = useRef(true);
+  const submittingRef = useRef(false);
+  const onCancelRef = useRef(onCancel);
   const modalId = useRef(`select-modal-${Math.random().toString(36).substr(2, 9)}`);
+  const errorId = `${modalId.current}-error`;
   const [options, setOptions] = useState<Maybe<T[]>>(Maybe.nothing());
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedOption, setSelectedOption] = useState<Maybe<T>>(Maybe.nothing());
+  const [submitting, setSubmitting] = useState(false);
+
+  onCancelRef.current = onCancel;
 
   // Focus trap handler
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -64,6 +71,7 @@ export const SelectModal = function <T extends Option>({
 
   useEffect(() => {
     if (modal.current) {
+      mounted.current = true;
       const currentModal = modal.current;
 
       // Save the currently focused element to restore later
@@ -80,8 +88,14 @@ export const SelectModal = function <T extends Option>({
         }
       });
 
+      $(currentModal).on('hide.bs.modal', (event: JQuery.Event) => {
+        if (submittingRef.current) event.preventDefault();
+      });
+
       $(currentModal).on('hidden.bs.modal', () => {
-        onCancel();
+        if (submittingRef.current) return;
+
+        onCancelRef.current();
         // Return focus to the element that triggered the modal
         if (previousActiveElement.current) {
           previousActiveElement.current.focus();
@@ -92,6 +106,7 @@ export const SelectModal = function <T extends Option>({
       document.addEventListener('keydown', handleKeyDown);
 
       return () => {
+        mounted.current = false;
         document.removeEventListener('keydown', handleKeyDown);
         (window as any).$(currentModal).modal('hide');
         unlockScroll(scrollPosition);
@@ -113,7 +128,9 @@ export const SelectModal = function <T extends Option>({
           );
         }
       })
-      .catch((message) => setError(Maybe.just(message)));
+      .catch((error) =>
+        setError(Maybe.just(error instanceof Error ? error.message : String(error))),
+      );
   }, []);
 
   const renderLoading = () => (
@@ -121,11 +138,28 @@ export const SelectModal = function <T extends Option>({
   );
 
   const renderFailed = (errorMsg: string) => (
-    <div>
-      <div>Failed to load options. Close this window and try again.</div>
-      <div>Error: ${errorMsg}</div>
+    <div id={errorId} role="alert">
+      <div>Unable to complete the selection. Close this window and try again.</div>
+      <div>Error: {errorMsg}</div>
     </div>
   );
+
+  const handleDone = async (selectedValue: string | number) => {
+    submittingRef.current = true;
+    setSubmitting(true);
+    setError(Maybe.nothing());
+
+    try {
+      await onDone(selectedValue);
+    } catch (error) {
+      if (mounted.current) {
+        setError(Maybe.just(error instanceof Error ? error.message : String(error)));
+      }
+    } finally {
+      submittingRef.current = false;
+      if (mounted.current) setSubmitting(false);
+    }
+  };
 
   const renderSuccess = (options: T[]) => {
     const renderOption = (o: T) => (
@@ -177,8 +211,9 @@ export const SelectModal = function <T extends Option>({
             <button
               type="button"
               className="btn-close focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              data-bs-dismiss="modal"
+              data-bs-dismiss={submitting ? undefined : 'modal'}
               aria-label="Close"
+              disabled={submitting}
             ></button>
           </div>
           <div className="modal-body">
@@ -194,21 +229,25 @@ export const SelectModal = function <T extends Option>({
           <div className="modal-footer d-flex flex-row">
             {additionalControls}
             <div className="flex-grow-1"></div>
-            <button type="button" className="btn btn-link" onClick={onCancel}>
+            <button type="button" className="btn btn-link" onClick={onCancel} disabled={submitting}>
               Cancel
             </button>
             <button
               type="button"
               onClick={() =>
                 selectedOption.caseOf({
-                  just: (s) => onDone(s.value),
+                  just: (s) => handleDone(s.value),
                   nothing: () => {},
                 })
               }
-              disabled={selectedOption.caseOf({ just: () => false, nothing: () => true })}
+              disabled={
+                submitting || selectedOption.caseOf({ just: () => false, nothing: () => true })
+              }
+              aria-busy={submitting}
+              aria-describedby={error.caseOf({ just: () => errorId, nothing: () => undefined })}
               className={`btn btn-primary`}
             >
-              Select
+              {submitting ? 'Selecting…' : 'Select'}
             </button>
           </div>
         </div>

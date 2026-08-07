@@ -17,7 +17,8 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     :resourceId,
     :featureFlags,
     :appsignalKey,
-    :hasExperiments,
+    :experimentsEnabled,
+    :alternativesEnabled,
     # these fields are not JSON encoded
     :project,
     :previous_page,

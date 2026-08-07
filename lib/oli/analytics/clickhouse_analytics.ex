@@ -38,7 +38,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def health_check() do
     query = "SELECT 1"
 
-    case execute_query(query, "health check", credential: :admin) do
+    case execute_query(query, "health check", credential: :admin, database: false) do
       {:ok, _} ->
         Logger.info("ClickHouse health check passed")
         {:ok, :healthy}
@@ -55,7 +55,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     "#{config.database}.raw_events"
   end
 
-  defp fetch_health_metadata(database) do
+  defp fetch_health_metadata(database, database_exists?) do
     query = """
     SELECT
       version() AS version,
@@ -68,7 +68,10 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse health metadata", credential: :admin)
+    |> execute_query("clickhouse health metadata",
+      credential: :admin,
+      database: database_exists?
+    )
     |> extract_single_row()
   end
 
@@ -86,7 +89,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse table metrics", credential: :admin)
+    |> execute_query("clickhouse table metrics", credential: :admin, database: false)
     |> case do
       {:ok, %{parsed_body: %{"data" => []}}} -> {:ok, %{"name" => table}}
       other -> extract_single_row(other)
@@ -107,7 +110,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse parts metrics", credential: :admin)
+    |> execute_query("clickhouse parts metrics", credential: :admin, database: false)
     |> case do
       {:ok, %{parsed_body: %{"data" => []}}} -> {:ok, %{}}
       other -> extract_single_row(other)
@@ -148,7 +151,10 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         """
 
         query
-        |> execute_query("clickhouse applied migration version", credential: :admin)
+        |> execute_query("clickhouse applied migration version",
+          credential: :admin,
+          database: false
+        )
         |> case do
           {:ok, %{parsed_body: %{"data" => [row | _]}}} when is_map(row) ->
             {:ok, parse_migration_version(Map.get(row, "version_id"))}
@@ -232,7 +238,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def health_summary do
     database = clickhouse_config(:admin).database
 
-    with {:ok, base} <- fetch_health_metadata(database),
+    with {:ok, database_exists} <- fetch_database_exists(database),
+         {:ok, base} <- fetch_health_metadata(database, database_exists),
          {:ok, table} <- fetch_table_metrics(database, "raw_events"),
          {:ok, parts} <- fetch_table_parts_metrics(database, "raw_events") do
       {:ok,
@@ -248,11 +255,11 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def admin_capabilities do
     database = clickhouse_config(:admin).database
 
-    with {:ok, _base} <- fetch_health_metadata(database),
-         {:ok, database_exists} <- fetch_database_exists(database),
+    with {:ok, database_exists} <- fetch_database_exists(database),
+         {:ok, _base} <- fetch_health_metadata(database, database_exists),
          {:ok, raw_events_exists} <- fetch_table_exists(database, "raw_events"),
          {:ok, pending_migration_count} <- fetch_pending_migration_count(database) do
-      initialized = database_exists and raw_events_exists
+      initialized = database_exists
 
       {:ok,
        %{
@@ -262,7 +269,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
          initialized: initialized,
          setup_enabled: not initialized,
          pending_migration_count: pending_migration_count,
-         migrate_up_enabled: pending_migration_count > 0,
+         migrate_up_enabled: initialized and pending_migration_count > 0,
+         migrate_down_enabled: initialized,
          allowed_operations: allowed_operations(initialized)
        }}
     end
@@ -475,7 +483,13 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     config = clickhouse_config(credential)
 
     with :ok <- validate_config_credentials(config, credential) do
-      query_params = build_query_params(config, Keyword.get(opts, :query_params, %{}))
+      query_params =
+        build_query_params(
+          config,
+          Keyword.get(opts, :query_params, %{}),
+          Keyword.get(opts, :database, true)
+        )
+
       url = build_clickhouse_url(config, query_params)
 
       extra_headers = Keyword.get(opts, :headers, [])
@@ -551,7 +565,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse database exists", credential: :admin)
+    |> execute_query("clickhouse database exists", credential: :admin, database: false)
     |> extract_single_row()
     |> case do
       {:ok, %{"exists" => value}} -> {:ok, parse_truthy(value)}
@@ -569,7 +583,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse table exists", credential: :admin)
+    |> execute_query("clickhouse table exists", credential: :admin, database: false)
     |> extract_single_row()
     |> case do
       {:ok, %{"exists" => value}} -> {:ok, parse_truthy(value)}
@@ -579,7 +593,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   end
 
   defp allowed_operations(true), do: [:migrate_up, :migrate_down]
-  defp allowed_operations(false), do: [:setup, :migrate_up, :migrate_down]
+  defp allowed_operations(false), do: [:setup]
 
   defp parse_migration_version(value) when is_integer(value) and value > 0, do: value
   defp parse_migration_version(value) when is_integer(value), do: 0
@@ -637,10 +651,14 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     |> Keyword.merge(base, fn _key, _base_value, config_value -> config_value end)
   end
 
-  defp build_query_params(config, params) do
-    params
-    |> normalize_query_params()
-    |> Map.put_new("database", config.database)
+  defp build_query_params(config, params, include_database?) do
+    params = normalize_query_params(params)
+
+    if include_database? do
+      Map.put_new(params, "database", config.database)
+    else
+      Map.delete(params, "database")
+    end
   end
 
   defp build_clickhouse_url(config, params) do

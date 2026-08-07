@@ -15,7 +15,8 @@ defmodule Oli.Authoring.Course.Project do
     field(:visibility, Ecto.Enum, values: [:authors, :selected, :global], default: :authors)
     field(:status, Ecto.Enum, values: [:active, :deleted], default: :active)
     field(:allow_duplication, :boolean, default: false)
-    field(:has_experiments, :boolean, default: false)
+    field(:experiments_enabled, :boolean, default: false)
+    field(:alternatives_enabled, :boolean, default: false)
     field(:legacy_svn_root, :string)
     field(:allow_ecl_content_type, :boolean, default: false)
     field(:allow_triggers, :boolean, default: false)
@@ -81,7 +82,8 @@ defmodule Oli.Authoring.Course.Project do
       :visibility,
       :status,
       :allow_duplication,
-      :has_experiments,
+      :experiments_enabled,
+      :alternatives_enabled,
       :legacy_svn_root,
       :allow_ecl_content_type,
       :allow_triggers,
@@ -118,7 +120,8 @@ defmodule Oli.Authoring.Course.Project do
       :visibility,
       :status,
       :allow_duplication,
-      :has_experiments,
+      :experiments_enabled,
+      :alternatives_enabled,
       :legacy_svn_root,
       :allow_ecl_content_type,
       :allow_triggers,
