@@ -134,6 +134,9 @@ export async function teardownAutomationCourse(
       timeout: automationTeardownTimeoutMs(),
     });
   } catch (error) {
+    // No response at all: connection refused, socket hang up, or the request
+    // timeout. This runs in afterAll, where throwing would fail a test that
+    // passed, so report it and let the run keep its result.
     console.warn(`automation_teardown request failed (${context}): ${(error as Error).message}`);
     return;
   }
