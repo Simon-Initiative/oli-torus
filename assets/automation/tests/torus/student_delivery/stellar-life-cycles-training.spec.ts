@@ -30,14 +30,15 @@ import { fetchTestArchiveToTempFile, fetchTestAsset } from '@tasks/AutomationAss
  * simulator or through the authored alternate path; see the "tutorial" rule.
  *
  * Private assets expected in the Playwright assets bucket:
- *   - mer-5676/HW_stellar_life_cycle.zip
- *   - mer-5676/answers.json
+ *   - habitable-worlds_stellar-life-cycles-training/course.zip
+ *   - habitable-worlds_stellar-life-cycles-training/answers.json
  *
  * Then: npx playwright test stellar-life-cycles-training
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const archiveKey = 'mer-5676/HW_stellar_life_cycle.zip';
-const answersKey = 'mer-5676/answers.json';
+const assetPrefix = 'habitable-worlds_stellar-life-cycles-training';
+const archiveKey = `${assetPrefix}/course.zip`;
+const answersKey = `${assetPrefix}/answers.json`;
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 
 let seededCourse: AutomationSetupResponse | null = null;
