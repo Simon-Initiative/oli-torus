@@ -320,6 +320,14 @@ end
 force_ssl_default = if runtime_env == :prod, do: "true", else: "false"
 config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
 
+config :oli,
+       :author_email_verification_required,
+       get_env_as_boolean.("AUTHOR_EMAIL_VERIFICATION_REQUIRED", "true")
+
+config :oli,
+       :user_email_verification_required,
+       get_env_as_boolean.("USER_EMAIL_VERIFICATION_REQUIRED", "true")
+
 config :oli, :vendor_property,
   billing_descriptor: System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
 
@@ -533,11 +541,6 @@ if runtime_env == :prod do
     cashnet_checkout_url: System.get_env("CASHNET_CHECKOUT_URL"),
     cashnet_client: System.get_env("CASHNET_CLIENT"),
     cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
-
-  config :oli, :upgrade_experiment_provider,
-    url: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_URL"),
-    user_url: System.get_env("UPGRADE_EXPERIMENT_USER_URL"),
-    api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
 
   # Configure reCAPTCHA
   config :oli, :recaptcha,

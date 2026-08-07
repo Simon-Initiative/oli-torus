@@ -88,4 +88,57 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
 
     refute sql =~ "video_play_time"
   end
+
+  test "keeps experiment attribution concerns out of raw events insert sql" do
+    run = %BackfillRun{
+      target_table: "analytics.raw_events",
+      s3_pattern: "s3://bucket/section/**/*.jsonl",
+      format: "JSONAsString"
+    }
+
+    sql = QueryBuilder.insert_sql(run, @creds)
+
+    refute sql =~ "has_experiment_attribution"
+    refute sql =~ "experiment_attribution_count"
+    refute sql =~ "experiment_attributions"
+    refute sql =~ "experiment_event_type"
+    refute sql =~ "'experiment'"
+  end
+
+  test "extracts attribution-level rows when target table is experiment_attributions" do
+    run = %BackfillRun{
+      target_table: "analytics.experiment_attributions",
+      s3_pattern: "s3://bucket/section/**/*.jsonl",
+      format: "JSONAsString"
+    }
+
+    sql = QueryBuilder.insert_sql(run, @creds)
+
+    assert sql =~ "INSERT INTO analytics.experiment_attributions"
+    assert sql =~ "raw_event_hash"
+    assert sql =~ "ARRAY JOIN JSONExtractArrayRaw"
+    assert sql =~ "http://oli.cmu.edu/extensions/experiment_attributions"
+    assert sql =~ "AS experiment_role"
+    assert sql =~ "AS attribution_type"
+    assert sql =~ "JSON_VALUE(attribution, '$.attribution_type')"
+    assert sql =~ "throwIf"
+    assert sql =~ "Invalid experiment attribution role/type pair"
+    assert sql =~ "Experiment attribution key must be a non-empty string"
+
+    assert sql =~
+             "SHA256(concat(lower(hex(SHA256(json))), ':', JSON_VALUE(attribution, '$.key')))"
+
+    assert sql =~ "AS experiment_uuid"
+    refute sql =~ "key_hash"
+    assert sql =~ "JSON_VALUE(attribution, '$.key')"
+    refute sql =~ "outcome_id"
+    refute sql =~ "reward_id"
+    refute sql =~ "previous_policy_state_hash"
+    refute sql =~ "next_policy_state_hash"
+    refute sql =~ "algorithm_version"
+    refute sql =~ "policy_update_reason"
+    refute sql =~ "video_url"
+    refute sql =~ "activity_attempt_guid"
+    refute sql =~ "content_element_id"
+  end
 end

@@ -59,6 +59,9 @@ defmodule OliWeb.Api.ResourceController do
       {:error, {:not_authorized}} ->
         error(conn, 403, "unauthorized")
 
+      {:error, {:feature_disabled, feature}} ->
+        error(conn, 403, "#{feature} authoring is not enabled for this project")
+
       e ->
         {_, msg} = Oli.Utils.log_error("Could not update resource", e)
         error(conn, 500, msg)

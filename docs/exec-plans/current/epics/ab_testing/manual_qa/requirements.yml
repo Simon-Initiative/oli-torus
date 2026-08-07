@@ -1,0 +1,45 @@
+work_item: manual_qa
+requirements:
+- id: FR-001
+  title: Document QA setup
+  description: The manual QA script must document project, section, instructor, and
+    multiple student setup needed for repeatable verification.
+- id: FR-002
+  title: Verify non-adaptive workflow
+  description: The script must verify weighted deterministic assignment, stickiness,
+    fallback, exposure recording, reward handoff, and visibility for a non-adaptive
+    A/B/N experiment.
+- id: FR-003
+  title: Verify Thompson Sampling workflow
+  description: The script must verify binary reward processing, posterior state changes,
+    sticky assignment after policy updates, guardrail behavior where visible, and
+    monitoring evidence for a Thompson Sampling experiment.
+- id: FR-004
+  title: Cover role-based workflows
+  description: The script must cover authoring, instructor-facing, and student-facing
+    workflows with clear expected results.
+- id: FR-005
+  title: Capture execution evidence
+  description: The first completed QA run must capture pass/fail status, environment,
+    evidence, defects, and cleanup status.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: Another reviewer can prepare the required project, section, instructor,
+    and student users from the script.
+- id: AC-002
+  requirement: FR-002
+  description: The non-adaptive QA path records expected assignment, stickiness, fallback,
+    exposure, reward, and visibility results.
+- id: AC-003
+  requirement: FR-003
+  description: The Thompson Sampling QA path records reward and posterior-state evidence
+    after controlled student attempts.
+- id: AC-004
+  requirement: FR-004
+  description: The script includes explicit author, instructor, and student role steps
+    with expected outcomes.
+- id: AC-005
+  requirement: FR-005
+  description: The first run produces a completed evidence record with failures or
+    follow-up defects documented.

@@ -19,7 +19,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   describe "duplicate/2" do
     @page_type_id ResourceType.get_id_by_type("page")
     @container_type_id ResourceType.get_id_by_type("container")
-    @keys_to_take [:title, :blueprint_id, :required_survey_resource_id, :has_experiments]
+    @keys_to_take [:title, :blueprint_id, :required_survey_resource_id]
     @one_week_ago DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
     @a_day_later DateTime.utc_now() |> DateTime.add(-6, :day) |> DateTime.truncate(:second)
 

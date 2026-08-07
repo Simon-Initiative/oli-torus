@@ -55,7 +55,7 @@ import time
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 from urllib.parse import unquote_plus, urlparse
 
 import boto3
@@ -80,6 +80,9 @@ except Exception as exc:  # pylint: disable=broad-except
     NUMPY_IMPORT_ERROR = exc
 
 logger = logging.getLogger(__name__)
+EXPERIMENT_DIRECT_ATTRIBUTION_TYPES = frozenset(
+    {"assignment", "exposure", "outcome", "reward", "policy_update"}
+)
 
 _LOG_LEVEL_NAME = os.getenv("LOG_LEVEL", "INFO").upper()
 logger.setLevel(getattr(logging, _LOG_LEVEL_NAME, logging.INFO))
@@ -1132,6 +1135,96 @@ def _determine_event_type(verb_id: str, object_type: str) -> str:
     return "unknown"
 
 
+def transform_experiment_attributions(
+    statement: Mapping[str, Any],
+    *,
+    raw_bytes: bytes,
+    bucket: str,
+    key: str,
+    etag: Optional[str],
+    line_number: int,
+) -> List[Dict[str, Any]]:
+    result = statement.get("result") or {}
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    host_event_type = _determine_event_type(
+        _safe_str(_get_nested(statement, ["verb", "id"])),
+        _safe_str(_get_nested(statement, ["object", "definition", "type"])),
+    )
+
+    rows: List[Dict[str, Any]] = []
+
+    for attribution in _experiment_attributions(statement):
+        _validate_attribution_type(attribution)
+        attribution_key = _safe_str(attribution.get("key")) or ""
+
+        rows.append(
+            {
+                "raw_event_hash": raw_hash,
+                "attribution_hash": hashlib.sha256(
+                    f"{raw_hash}:{attribution_key}".encode("utf-8")
+                ).hexdigest(),
+                "host_event_type": host_event_type,
+                "timestamp": statement.get("timestamp"),
+                "section_id": _safe_int(attribution.get("section_id")),
+                "project_id": _safe_int(attribution.get("project_id")),
+                "publication_id": _safe_int(attribution.get("publication_id")),
+                "enrollment_id": _safe_int(attribution.get("enrollment_id")),
+                "experiment_role": _safe_str(attribution.get("role")),
+                "attribution_type": _safe_str(attribution.get("attribution_type")),
+                "experiment_id": _safe_int(attribution.get("experiment_id")),
+                "experiment_uuid": _safe_str(attribution.get("experiment_uuid")),
+                "decision_point_id": _safe_int(attribution.get("decision_point_id")),
+                "decision_point_key": _safe_str(attribution.get("decision_point_key")),
+                "condition_id": _safe_int(attribution.get("condition_id")),
+                "condition_code": _safe_str(attribution.get("condition_code")),
+                "assignment_id": _safe_int(attribution.get("assignment_id")),
+                "assignment_key": _safe_str(attribution.get("assignment_key")),
+                "algorithm": _safe_str(
+                    attribution.get("algorithm") or attribution.get("assigned_by_policy")
+                ),
+                "policy_version": _safe_str(attribution.get("policy_version")),
+                "content_revision_id": _safe_int(attribution.get("content_revision_id")),
+                "reward_value": _safe_float(
+                    attribution.get("reward_value") or _get_nested(result, ["score", "raw"])
+                ),
+                "reward_source": _safe_str(attribution.get("reward_source")),
+                "source_file": f"s3://{bucket}/{key}",
+                "source_etag": etag.strip('"') if isinstance(etag, str) else etag,
+                "source_line": line_number,
+            }
+        )
+
+    return rows
+
+
+def _experiment_attributions(statement: Mapping[str, Any]) -> List[Mapping[str, Any]]:
+    extensions = _get_nested(statement, ["context", "extensions"]) or {}
+    attributions = extensions.get("http://oli.cmu.edu/extensions/experiment_attributions")
+
+    if not isinstance(attributions, list):
+        return []
+
+    return [attribution for attribution in attributions if isinstance(attribution, Mapping)]
+
+
+def _validate_attribution_type(attribution: Mapping[str, Any]) -> None:
+    role = attribution.get("role")
+    attribution_type = attribution.get("attribution_type")
+    valid = (
+        (role == attribution_type and role in EXPERIMENT_DIRECT_ATTRIBUTION_TYPES)
+        or (role == "rollup" and attribution_type in {"outcome", "reward"})
+        or (role == "media_interaction" and attribution_type == "assignment")
+    )
+    if not valid:
+        raise ValueError(
+            f"invalid experiment attribution role/type pair: {role!r}/{attribution_type!r}"
+        )
+
+    key = attribution.get("key")
+    if not isinstance(key, str) or not key:
+        raise ValueError("experiment attribution key must be a non-empty string")
+
+
 def _safe_int(value: Any) -> Optional[int]:
     if value is None or value == "":
         return None
@@ -1174,6 +1267,15 @@ def _safe_float(value: Any) -> Optional[float]:
         return float(value)  # type: ignore[arg-type]
     except Exception:  # pylint: disable=broad-except
         return None
+
+
+def _safe_str(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped or None
+    return str(value)
 
 
 def _coerce_bool(value: Any) -> Optional[bool]:
@@ -1577,4 +1679,5 @@ __all__ = [
     "env_flag",
     "ensure_pyarrow_available",
     "transform_xapi_statement",
+    "transform_experiment_attributions",
 ]

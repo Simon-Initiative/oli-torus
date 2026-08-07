@@ -27,3 +27,27 @@
     height: 200px;
   }
 }
+
+.alternatives-option-drop-target {
+  height: 8px;
+
+  &.drag-active {
+    height: 28px;
+    opacity: 1;
+
+    &.hovered {
+      height: 28px;
+
+      &::after {
+        content: '';
+        align-self: center;
+        height: 2px;
+        margin: 0;
+        padding: 0;
+        border-radius: 1px;
+        background: var(--color-primary);
+        background-image: none;
+      }
+    }
+  }
+}

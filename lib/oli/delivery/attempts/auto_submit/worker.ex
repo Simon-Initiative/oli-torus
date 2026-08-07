@@ -33,6 +33,7 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
           context = %FinalizationContext{
             resource_attempt: resource_attempt,
             section_slug: section_slug,
+            section_id: resource_access.section_id,
             datashop_session_id: datashop_session_id,
             effective_settings:
               Oli.Delivery.Settings.get_combined_settings(

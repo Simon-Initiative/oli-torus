@@ -9,10 +9,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
   alias Oli.Publishing
   alias Oli.Resources.{ResourceType, Revision}
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
+  alias OliWeb.Components.ReorderableList
   alias OliWeb.Resources.AlternativesEditor.PreventDeletionModal
 
   @alternatives_type_id ResourceType.id_for_alternatives()
@@ -29,7 +30,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
       )
 
     alternatives =
-      Enum.filter(alternatives, fn a -> a.content["strategy"] != "upgrade_decision_point" end)
+      Enum.filter(
+        alternatives,
+        &(Map.get(&1.content, "strategy", "user_section_preference") ==
+            "user_section_preference")
+      )
 
     subscriptions = subscribe(alternatives, project.slug)
 
@@ -73,7 +78,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   end
 
   attr(:editing_enabled, :boolean, default: true)
-  attr(:source, :atom, default: :alternatives)
   attr(:group, :any)
 
   def group(assigns) do
@@ -92,7 +96,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
           values={["phx-value-resource-id": @group.resource_id]}
         />
         <button
-          :if={@source == :alternatives}
           class="btn btn-danger btn-sm mr-2"
           phx-click="show_delete_group_modal"
           phx-value-resource_id={@group.resource_id}
@@ -102,11 +105,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
       </div>
       <div class="mt-3">
         <%= if Enum.count(@group.content["options"]) > 0 do %>
-          <ul class="list-group">
-            <%= for option <- @group.content["options"] do %>
-              <.group_option group={@group} option={option} show_actions={@editing_enabled} />
-            <% end %>
-          </ul>
+          <.option_list group={@group} show_actions={@editing_enabled} />
         <% else %>
           <div class="my-2">
             <div class="text-center"><em>There are no options in this group</em></div>
@@ -123,45 +122,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
       </div>
     </div>
     """
-  end
-
-  def handle_event("show_create_experiment", _, socket) do
-    changeset =
-      {%{}, %{name: :string}}
-      |> Ecto.Changeset.cast(%{}, [:name])
-
-    form_body_fn = fn assigns ->
-      ~H"""
-      <div class="form-group">
-        {text_input(
-          @form,
-          :name,
-          class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-          placeholder: "Enter the name of the experiment decision point from Upgrade",
-          phx_hook: "InputAutoSelect",
-          required: true
-        )}
-      </div>
-      """
-    end
-
-    modal_assigns = %{
-      id: "create_modal",
-      title: "Create Experiment Decision Point",
-      submit_label: "Create",
-      changeset: changeset,
-      form_body_fn: form_body_fn,
-      on_validate: "validate_group",
-      on_submit: "create_experiment"
-    }
-
-    modal = fn assigns ->
-      ~H"""
-      <FormModal.modal {@modal_assigns} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("show_create_modal", _, socket) do
@@ -278,7 +238,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
     %{content: %{"options" => options} = content} =
       Enum.find(alternatives, fn g -> g.resource_id == resource_id end)
 
-    new_options = [%{"id" => option_id, "name" => name} | options]
+    new_options = options ++ [%{"id" => option_id, "name" => name}]
 
     case edit_group_options(
            project.slug,
@@ -293,6 +253,49 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
 
       _ ->
         show_error(socket)
+    end
+  end
+
+  def handle_event(
+        "keyboard_reorder_option",
+        params,
+        socket
+      ) do
+    case ReorderableList.keyboard_move(params) do
+      {:move, _source_index, drop_index} ->
+        handle_event(
+          "reorder_option",
+          %{
+            "resourceId" => params["resource-id"] || params["resource_id"],
+            "optionId" => params["option-id"] || params["option_id"],
+            "dropIndex" => drop_index
+          },
+          socket
+        )
+
+      :noop ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event(
+        "reorder_option",
+        %{"resourceId" => resource_id, "optionId" => option_id, "dropIndex" => drop_index},
+        socket
+      ) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+
+    case AlternativesOptionEditor.move_to(
+           project.slug,
+           author,
+           alternatives,
+           resource_id,
+           option_id,
+           drop_index
+         ) do
+      {:ok, alternatives, _group} -> {:noreply, assign(socket, alternatives: alternatives)}
+      {:ok, :unchanged} -> {:noreply, socket}
+      {:error, _} -> show_error(socket)
     end
   end
 
@@ -541,7 +544,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
     preview_fn = fn assigns ->
       ~H"""
       <ul class="list-group">
-        <.group_option group={@group} option={@option} show_actions={false} />
+        <.group_option
+          group={@group}
+          option={@option}
+          position={0}
+          show_actions={false}
+        />
       </ul>
       """
     end

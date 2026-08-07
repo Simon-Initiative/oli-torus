@@ -56,8 +56,7 @@ defmodule Oli.Delivery do
   defp create_new_section(changeset, source, user, section_spec) do
     case from_source_identifier(source) do
       {:project, project} ->
-        %{id: project_id, has_experiments: has_experiments} =
-          Oli.Authoring.Course.get_project_by_slug(project.slug)
+        %{id: project_id} = Oli.Authoring.Course.get_project_by_slug(project.slug)
 
         publication =
           Oli.Publishing.get_latest_published_publication_by_slug(project.slug)
@@ -78,7 +77,6 @@ defmodule Oli.Delivery do
             base_project_id: project_id,
             context_id: UUID.uuid4(),
             customizations: customizations,
-            has_experiments: has_experiments,
             analytics_version: :v2,
             welcome_title: project.welcome_title,
             encouraging_subtitle: project.encouraging_subtitle,
@@ -128,7 +126,6 @@ defmodule Oli.Delivery do
             blueprint_id: blueprint.id,
             required_survey_resource_id: project.required_survey_resource_id,
             type: :enrollable,
-            has_experiments: project.has_experiments,
             context_id: UUID.uuid4(),
             analytics_version: :v2,
             welcome_title: blueprint.welcome_title,

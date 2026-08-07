@@ -87,6 +87,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
     end
   end
 
+  @doc """
+  Bulk updates activity attempts by attempt GUID and returns the database IDs of the updated rows.
+
+  Returns `{:ok, []}` when there are no parameters to update.
+  """
   def bulk_update_activity_attempts(_, []), do: {:ok, []}
 
   def bulk_update_activity_attempts(values, params) do
@@ -100,9 +105,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
         date_submitted = batch_values.date_submitted
       FROM (VALUES #{values}) AS batch_values (activity_attempt_guid, score, out_of, lifecycle_state, date_evaluated, date_submitted)
       WHERE activity_attempts.attempt_guid = batch_values.activity_attempt_guid
+      RETURNING activity_attempts.id
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+    case Ecto.Adapters.SQL.query(Oli.Repo, sql, params) do
+      {:ok, %{rows: rows}} -> {:ok, Enum.map(rows, fn [id] -> id end)}
+      error -> error
+    end
   end
 
   defp attrs_for(

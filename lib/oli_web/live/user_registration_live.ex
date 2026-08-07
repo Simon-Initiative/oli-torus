@@ -83,11 +83,13 @@ defmodule OliWeb.UserRegistrationLive do
       ) do
     with {:success, true} <- Recaptcha.verify(params["g-recaptcha-response"]),
          {:ok, user} <- Accounts.register_independent_user(user_params) do
-      {:ok, _} =
-        Accounts.deliver_user_confirmation_instructions(
-          user,
-          &url(~p"/users/confirm/#{&1}?#{maybe_section_param(user_params["section"])}")
-        )
+      if Accounts.user_email_verification_required?() do
+        {:ok, _} =
+          Accounts.deliver_user_confirmation_instructions(
+            user,
+            &url(~p"/users/confirm/#{&1}?#{maybe_section_param(user_params["section"])}")
+          )
+      end
 
       changeset = Accounts.change_user_registration(user)
       {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}

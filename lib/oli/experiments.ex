@@ -1,0 +1,3774 @@
+defmodule Oli.Experiments do
+  @moduledoc """
+  Public context boundary for native A/B testing experiments.
+  """
+
+  import Ecto.Changeset
+  import Ecto.Query
+
+  alias Oli.Accounts.User
+  alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications}
+
+  alias Oli.Experiments.{
+    AssignmentDecision,
+    DecisionPointCandidate,
+    EligibleExperimentSection,
+    ExperimentDefinition,
+    ExperimentAuthoringView,
+    ExperimentError,
+    ExperimentSectionParticipation,
+    ExposureReceipt,
+    OutcomeReceipt,
+    RewardEligibleAssignment,
+    RewardReceipt,
+    Scope,
+    Telemetry
+  }
+
+  alias Oli.Experiments.Schemas.{
+    Assignment,
+    Condition,
+    DecisionPoint,
+    ExperimentSection,
+    PolicyState
+  }
+
+  alias Oli.Experiments.Policies.{ThompsonSampling, WeightedRandom}
+
+  alias Oli.Experiments.Schemas.ExperimentDefinition, as: ExperimentDefinitionSchema
+  alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
+  alias Oli.Publishing.Publications.Publication
+  alias Oli.Repo
+  alias Oli.Resources.{Resource, ResourceType, Revision}
+
+  @transition_targets %{
+    activate_experiment: :active,
+    pause_experiment: :paused,
+    complete_experiment: :completed,
+    archive_experiment: :archived
+  }
+
+  @allowed_transitions %{
+    draft: [:active, :archived],
+    active: [:paused, :completed, :archived],
+    paused: [:active, :completed, :archived],
+    completed: [:archived],
+    archived: []
+  }
+
+  @thompson_reward_source "activity_attempt:full_credit"
+  @thompson_default_guardrails %{
+    "manual_pause_enabled" => true,
+    "warm_up_assignments" => 0,
+    "max_condition_share" => 1.0,
+    "fixed_control_allocation" => nil,
+    "imbalance_threshold" => 1.0
+  }
+
+  @doc """
+  Creates a native experiment definition.
+  """
+  def create_experiment(%Oli.Experiments.CreateExperimentRequest{} = request) do
+    with {:ok, scope} <- validate_scope(request.scope),
+         :ok <- maybe_require_authoring_scope(scope, graph_request?(request)),
+         :ok <- validate_authoring_algorithm(request.algorithm, graph_request?(request)),
+         :ok <- validate_policy_config(request.algorithm, request.policy_config || %{}),
+         :ok <- validate_graph_request(request, scope),
+         {:ok, section_ids} <- validate_experiment_sections(request.section_ids, scope),
+         attrs <- create_attrs(request, scope),
+         {:ok, schema} <- insert_definition_graph(attrs, request, section_ids) do
+      emit_authoring_telemetry(:create, schema, %{algorithm: schema.algorithm})
+      {:ok, to_definition(schema)}
+    else
+      {:error, %ExperimentError{} = error} = result ->
+        emit_authoring_validation_failed(:create, request.scope, error)
+        result
+    end
+  end
+
+  def create_experiment(_request), do: invalid_request("expected CreateExperimentRequest")
+
+  @doc """
+  Updates mutable fields on a draft experiment definition.
+  """
+  def update_experiment(experiment_id, %Oli.Experiments.UpdateExperimentRequest{} = request) do
+    with {:ok, schema} <- get_scoped_definition(experiment_id, request.scope),
+         :ok <- validate_update_state(schema, request),
+         :ok <-
+           validate_authoring_algorithm(
+             request.algorithm || schema.algorithm,
+             graph_request?(request)
+           ),
+         :ok <-
+           validate_policy_config(
+             request.algorithm || schema.algorithm,
+             request.policy_config || %{}
+           ),
+         :ok <- validate_assignment_safe_update(schema, request),
+         :ok <- validate_graph_request(request, request.scope),
+         {:ok, section_ids} <- validate_experiment_sections(request.section_ids, request.scope),
+         {:ok, updated} <- update_definition_graph(schema, request, section_ids) do
+      emit_authoring_telemetry(:update, updated, %{algorithm: updated.algorithm})
+      {:ok, to_definition(updated)}
+    else
+      {:error, %ExperimentError{} = error} = result ->
+        emit_authoring_validation_failed(:update, request.scope, error, %{
+          experiment_id: experiment_id
+        })
+
+        result
+    end
+  end
+
+  def update_experiment(_experiment_id, _request),
+    do: invalid_request("expected UpdateExperimentRequest")
+
+  @doc """
+  Activates a draft or paused experiment.
+  """
+  def activate_experiment(experiment_id, request),
+    do: transition(experiment_id, request, :activate_experiment)
+
+  @doc """
+  Pauses an active experiment.
+  """
+  def pause_experiment(experiment_id, request),
+    do: transition(experiment_id, request, :pause_experiment)
+
+  @doc """
+  Completes an active or paused experiment.
+  """
+  def complete_experiment(experiment_id, request),
+    do: transition(experiment_id, request, :complete_experiment)
+
+  @doc """
+  Archives an experiment when the current lifecycle state allows it.
+  """
+  def archive_experiment(experiment_id, request),
+    do: transition(experiment_id, request, :archive_experiment)
+
+  @doc """
+  Returns whether a project has at least one native experiment that is not archived.
+
+  Experiment lifecycle state is authoritative.
+  """
+  def project_has_experiments?(project_id) when is_integer(project_id) and project_id > 0 do
+    Repo.exists?(
+      from experiment in ExperimentDefinitionSchema,
+        where: experiment.project_id == ^project_id and experiment.state != :archived
+    )
+  end
+
+  def project_has_experiments?(_project_id), do: false
+
+  @doc """
+  Lists project-scoped experiment definitions for authoring.
+  """
+  def list_project_experiments(%Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope) do
+      experiments =
+        scope
+        |> scoped_project_experiments_query()
+        |> order_by([experiment], desc: experiment.id)
+        |> preload(:sections)
+        |> Repo.all()
+        |> Enum.map(&to_definition/1)
+
+      {:ok, experiments}
+    end
+  end
+
+  def list_project_experiments(_scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Lists authoring-safe summaries for active sections currently related to the scoped project.
+  """
+  def list_eligible_sections(%Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope),
+         :ok <- require_eligible_section_reader(scope) do
+      sections =
+        scope
+        |> eligible_sections_query()
+        |> order_by([section], asc: section.title, asc: section.id)
+        |> select([section], %EligibleExperimentSection{
+          id: section.id,
+          slug: section.slug,
+          title: section.title,
+          status: section.status,
+          start_date: section.start_date,
+          end_date: section.end_date
+        })
+        |> Repo.all()
+
+      {:ok, sections}
+    end
+  end
+
+  def list_eligible_sections(_scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Returns eligible, selected, and stale section participation for an experiment.
+  """
+  def get_section_participation(experiment_id, %Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope),
+         :ok <- require_eligible_section_reader(scope),
+         {:ok, schema} <- get_scoped_definition(experiment_id, scope) do
+      {:ok, section_participation(schema, scope)}
+    end
+  end
+
+  def get_section_participation(_experiment_id, _scope),
+    do: invalid_request("expected Scope")
+
+  @doc """
+  Atomically replaces the selected section set for a mutable experiment.
+  """
+  def update_section_participation(experiment_id, %Scope{} = scope, section_ids)
+      when is_list(section_ids) do
+    normalized_ids = section_ids |> Enum.uniq() |> Enum.sort()
+
+    result =
+      Repo.transaction(fn ->
+        with {:ok, scope} <- validate_scope(scope),
+             :ok <- require_authoring_scope(scope),
+             :ok <- require_eligible_section_reader(scope),
+             %ExperimentDefinitionSchema{} = schema <-
+               Repo.one(
+                 from(experiment in ExperimentDefinitionSchema,
+                   where: experiment.id == ^experiment_id,
+                   lock: "FOR UPDATE",
+                   preload: :sections
+                 )
+               ),
+             :ok <- ensure_definition_in_scope(schema, scope),
+             :ok <- validate_participation_update_state(schema),
+             :ok <- validate_eligible_section_ids(normalized_ids, scope) do
+          previous_ids = Enum.map(schema.sections, & &1.id)
+          replace_experiment_sections!(schema.id, normalized_ids)
+          updated = Repo.preload(schema, :sections, force: true)
+          participation = section_participation(updated, scope)
+
+          emit_participation_updated(schema, previous_ids, normalized_ids, participation)
+          participation
+        else
+          nil -> Repo.rollback(not_found("experiment not found", %{experiment_id: experiment_id}))
+          {:error, %ExperimentError{} = error} -> Repo.rollback(error)
+        end
+      end)
+
+    case result do
+      {:ok, %ExperimentSectionParticipation{} = participation} ->
+        {:ok, participation}
+
+      {:error, %ExperimentError{} = error} ->
+        emit_participation_validation_failed(experiment_id, scope, normalized_ids, error)
+        {:error, error}
+    end
+  end
+
+  def update_section_participation(_experiment_id, _scope, _section_ids),
+    do: invalid_request("section_ids must be a list")
+
+  @doc """
+  Returns a public experiment graph view for authoring.
+  """
+  def get_experiment_authoring_view(experiment_id, %Scope{} = scope) do
+    with {:ok, schema} <- get_scoped_definition(experiment_id, scope) do
+      decision_points =
+        from(decision_point in DecisionPoint,
+          where: decision_point.experiment_id == ^schema.id,
+          order_by: [asc: decision_point.position, asc: decision_point.id]
+        )
+        |> Repo.all()
+
+      conditions =
+        from(condition in Condition,
+          where: condition.experiment_id == ^schema.id,
+          order_by: [asc: condition.position, asc: condition.id]
+        )
+        |> Repo.all()
+        |> Enum.map(&public_condition/1)
+
+      {:ok,
+       %ExperimentAuthoringView{
+         definition: to_definition(schema),
+         decision_points: Enum.map(decision_points, &public_decision_point/1),
+         conditions: conditions,
+         assignment_counts: assignment_counts_by_condition(schema.id)
+       }}
+    end
+  end
+
+  def get_experiment_authoring_view(_experiment_id, _scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Lists alternatives revisions in the project that can be used as one-decision-point candidates.
+  """
+  def list_available_decision_points(%Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope) do
+      candidates =
+        scope.project_slug
+        |> AuthoringResolver.revisions_of_type(ResourceType.id_for_alternatives())
+        |> Enum.filter(&experiment_decision_point_revision?/1)
+        |> Enum.sort_by(&{&1.title, &1.id})
+        |> Enum.map(&to_decision_point_candidate/1)
+
+      {:ok, candidates}
+    end
+  end
+
+  def list_available_decision_points(_scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Returns whether a project-scoped decision point is referenced by a non-archived experiment
+  definition.
+  """
+  def decision_point_in_use?(alternatives_resource_id, %Scope{} = scope)
+      when is_integer(alternatives_resource_id) and alternatives_resource_id > 0 do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope) do
+      in_use? =
+        Repo.exists?(
+          from decision_point in DecisionPoint,
+            join: experiment in ExperimentDefinitionSchema,
+            on: experiment.id == decision_point.experiment_id,
+            where:
+              experiment.project_id == ^scope.project_id and
+                experiment.state != :archived and
+                decision_point.alternatives_resource_id == ^alternatives_resource_id
+        )
+
+      {:ok, in_use?}
+    end
+  end
+
+  def decision_point_in_use?(_alternatives_resource_id, _scope),
+    do: invalid_request("expected a decision point resource id and Scope")
+
+  @doc """
+  Delivery assignment API placeholder. Runtime assignment writes are implemented in Phase 3.
+  """
+  def assign_condition(%Oli.Experiments.AssignConditionRequest{} = request) do
+    metadata = assignment_metadata(request)
+    start_time = System.monotonic_time()
+
+    :telemetry.execute(
+      [:oli, :experiments, :assignment, :start],
+      %{system_time: System.system_time()},
+      metadata
+    )
+
+    try do
+      result = do_assign_condition(request)
+      duration = System.monotonic_time() - start_time
+
+      :telemetry.execute(
+        [:oli, :experiments, :assignment, :stop],
+        %{duration: duration},
+        metadata
+      )
+
+      result
+    rescue
+      exception ->
+        duration = System.monotonic_time() - start_time
+
+        :telemetry.execute(
+          [:oli, :experiments, :assignment, :exception],
+          %{duration: duration},
+          Map.merge(metadata, %{kind: :error, reason: exception.__struct__})
+        )
+
+        reraise exception, __STACKTRACE__
+    end
+  end
+
+  def assign_condition(_request), do: invalid_request("expected AssignConditionRequest")
+
+  @doc """
+  Returns an existing assignment decision for a delivery/review decision point without
+  creating an assignment or recording exposure.
+  """
+  def assigned_condition(%Oli.Experiments.AssignConditionRequest{} = request) do
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope),
+         :ok <- require_delivery_scope(scope),
+         {:ok, _revision} <- resolve_delivery_revision(request, scope),
+         {:ok, decision} <- existing_assignment_decision(request, scope) do
+      {:ok, decision}
+    end
+  end
+
+  def assigned_condition(_request), do: invalid_request("expected AssignConditionRequest")
+
+  @doc """
+  Records operational exposure evidence and emits the durable xAPI exposure event.
+  """
+  def record_exposure(%Oli.Experiments.RecordExposureRequest{} = request) do
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope) do
+      create_exposure(%{request | scope: scope})
+    end
+  end
+
+  def record_exposure(_request), do: invalid_request("expected RecordExposureRequest")
+
+  @doc """
+  Records operational outcome evidence and emits the durable xAPI outcome event.
+  """
+  def record_outcome(%Oli.Experiments.RecordOutcomeRequest{} = request) do
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope) do
+      create_outcome(%{request | scope: scope})
+    end
+  end
+
+  def record_outcome(_request), do: invalid_request("expected RecordOutcomeRequest")
+
+  @doc """
+  Records operational reward evidence, mutates policy state, and emits durable xAPI events.
+  """
+  def record_reward(%Oli.Experiments.RecordRewardRequest{} = request) do
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope) do
+      create_reward(%{request | scope: scope})
+    end
+  end
+
+  def record_reward(_request), do: invalid_request("expected RecordRewardRequest")
+
+  @doc """
+  Returns native assignments whose selected alternatives branch contains the evaluated
+  activity resource. Emits lookup duration, assignment count, and assignment-query count telemetry
+  for AppSignal monitoring of reward handoff query amplification.
+  """
+  def reward_eligible_assignments(%Scope{} = scope, activity_resource_id, page_content) do
+    start_time = System.monotonic_time()
+
+    {result, assignment_query_count} =
+      case validate_delivery_participation_scope(scope) do
+        {:ok, scope} ->
+          matching_branches = matching_alternatives_branches(page_content, activity_resource_id)
+
+          case matching_branches do
+            [] ->
+              {{:ok, []}, 0}
+
+            _ ->
+              assignments =
+                scope
+                |> reward_eligible_assignment_query()
+                |> Repo.all()
+                |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
+                |> Enum.map(&to_reward_eligible_assignment/1)
+
+              {{:ok, assignments}, 1}
+          end
+
+        {:error, _error} = error ->
+          {error, 0}
+      end
+
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :eligibility, :completed],
+      %{
+        duration_ms: elapsed_milliseconds(start_time),
+        assignment_count: eligible_assignment_count(result),
+        assignment_query_count: assignment_query_count
+      },
+      %{status: eligibility_status(result)}
+    )
+
+    result
+  end
+
+  def reward_eligible_assignments(_scope, _activity_resource_id, _page_content),
+    do: invalid_request("expected Scope")
+
+  @doc """
+  Returns reward-eligible assignments for evaluated-attempt contexts in one set-based query.
+
+  The result is keyed by activity-attempt ID. Contexts are expected to contain `:activity_attempt`,
+  `:scope`, and `:page_content`, as produced by the delivery reward handoff.
+  """
+  def reward_eligible_assignments(contexts) when is_list(contexts) do
+    start_time = System.monotonic_time()
+
+    contexts_by_scope =
+      Enum.group_by(contexts, fn context ->
+        scope = context.scope
+
+        {scope.project_id, scope.section_id, scope.enrollment_id, scope.user_id}
+      end)
+
+    section_ids = contexts |> Enum.map(& &1.scope.section_id) |> Enum.uniq()
+    enrollment_ids = contexts |> Enum.map(& &1.scope.enrollment_id) |> Enum.uniq()
+
+    assignments =
+      case contexts do
+        [] ->
+          []
+
+        _ ->
+          from(assignment in Assignment,
+            join: experiment in ExperimentDefinitionSchema,
+            on: experiment.id == assignment.experiment_id,
+            join: experiment_section in ExperimentSection,
+            on:
+              experiment_section.experiment_id == experiment.id and
+                experiment_section.section_id == assignment.section_id,
+            join: section in Section,
+            on: section.id == assignment.section_id and section.status == :active,
+            join: spp in SectionsProjectsPublications,
+            on: spp.section_id == section.id and spp.project_id == experiment.project_id,
+            join: decision_point in DecisionPoint,
+            on: decision_point.id == assignment.decision_point_id,
+            join: condition in Condition,
+            on: condition.id == assignment.condition_id,
+            where:
+              experiment.state == :active and assignment.section_id in ^section_ids and
+                assignment.enrollment_id in ^enrollment_ids,
+            distinct: true,
+            select: %{
+              assignment: assignment,
+              experiment_project_id: experiment.project_id,
+              decision_point: decision_point,
+              condition: condition
+            }
+          )
+          |> Repo.all()
+      end
+
+    result =
+      Enum.reduce(assignments, %{}, fn candidate, eligible_by_attempt ->
+        assignment = candidate.assignment
+
+        contexts_by_scope
+        |> Map.get(
+          {candidate.experiment_project_id, assignment.section_id, assignment.enrollment_id,
+           assignment.user_id},
+          []
+        )
+        |> Enum.reduce(eligible_by_attempt, fn context, acc ->
+          matching_branches =
+            matching_alternatives_branches(
+              context.page_content,
+              context.activity_attempt.resource_id
+            )
+
+          case assignment_matches_branch?(candidate, matching_branches) do
+            true ->
+              Map.update(
+                acc,
+                context.activity_attempt.id,
+                [to_reward_eligible_assignment(candidate)],
+                &[to_reward_eligible_assignment(candidate) | &1]
+              )
+
+            false ->
+              acc
+          end
+        end)
+      end)
+      |> Map.new(fn {activity_attempt_id, assignments} ->
+        {activity_attempt_id, Enum.reverse(assignments)}
+      end)
+
+    assignment_count = result |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
+
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :eligibility, :completed],
+      %{
+        duration_ms: elapsed_milliseconds(start_time),
+        assignment_count: assignment_count,
+        assignment_query_count: 1
+      },
+      %{status: if(assignment_count == 0, do: :empty, else: :matched)}
+    )
+
+    result
+  end
+
+  defp eligible_assignment_count({:ok, assignments}), do: length(assignments)
+  defp eligible_assignment_count({:error, _error}), do: 0
+
+  defp eligibility_status({:ok, []}), do: :empty
+  defp eligibility_status({:ok, _assignments}), do: :matched
+  defp eligibility_status({:error, _error}), do: :error
+
+  defp elapsed_milliseconds(start_time) do
+    start_time
+    |> then(&(System.monotonic_time() - &1))
+    |> System.convert_time_unit(:native, :millisecond)
+  end
+
+  @doc """
+  Returns operational runtime counts from PostgreSQL for product surfaces that still need
+  synchronous experiment state. Durable analytics must read xAPI-derived projections.
+  """
+  def experiment_summary(%Oli.Experiments.AnalyticsQuery{} = query) do
+    with {:ok, scope} <- validate_scope(query.scope),
+         :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
+      experiment_query = scoped_experiment_query(scope, query.experiment_id)
+
+      {:ok,
+       %{
+         experiments: Repo.aggregate(experiment_query, :count, :id),
+         assignments:
+           Repo.aggregate(scoped_assignment_query(scope, query.experiment_id), :count, :id),
+         exposures: 0,
+         rewards: runtime_event_count(scope, query.experiment_id, "rewards")
+       }}
+    end
+  end
+
+  def experiment_summary(_query), do: invalid_request("expected AnalyticsQuery")
+
+  @doc """
+  Returns operational assignment counts. Durable analytics must read xAPI-derived projections.
+  """
+  def assignment_counts(%Oli.Experiments.AnalyticsQuery{} = query) do
+    with {:ok, scope} <- validate_scope(query.scope),
+         :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
+      counts =
+        scope
+        |> scoped_assignment_query(query.experiment_id)
+        |> join(:inner, [assignment, _experiment], condition in Condition,
+          on: condition.id == assignment.condition_id
+        )
+        |> group_by([assignment, _experiment, condition], [
+          assignment.experiment_id,
+          assignment.decision_point_id,
+          assignment.condition_id,
+          condition.condition_code
+        ])
+        |> select([assignment, _experiment, condition], %{
+          experiment_id: assignment.experiment_id,
+          decision_point_id: assignment.decision_point_id,
+          condition_id: assignment.condition_id,
+          condition_code: condition.condition_code,
+          count: count(assignment.id)
+        })
+        |> Repo.all()
+
+      {:ok, counts}
+    end
+  end
+
+  def assignment_counts(_query), do: invalid_request("expected AnalyticsQuery")
+
+  @doc """
+  Exposure evidence is emitted through xAPI host statements and served from ClickHouse.
+  PostgreSQL no longer retains exposure event state.
+  """
+  def exposure_counts(%Oli.Experiments.AnalyticsQuery{} = query) do
+    with {:ok, scope} <- validate_scope(query.scope),
+         :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
+      {:ok, []}
+    end
+  end
+
+  def exposure_counts(_query), do: invalid_request("expected AnalyticsQuery")
+
+  @doc """
+  Returns operational reward counts. Durable analytics must read xAPI-derived projections.
+  """
+  def reward_counts(%Oli.Experiments.AnalyticsQuery{} = query) do
+    with {:ok, scope} <- validate_scope(query.scope),
+         :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
+      counts =
+        scope
+        |> scoped_assignment_query(query.experiment_id)
+        |> join(:inner, [reward, _experiment], condition in Condition,
+          on: condition.id == reward.condition_id
+        )
+        |> group_by([reward, _experiment, condition], [
+          reward.experiment_id,
+          reward.decision_point_id,
+          reward.condition_id,
+          condition.condition_code
+        ])
+        |> select([reward, _experiment, condition], %{
+          experiment_id: reward.experiment_id,
+          decision_point_id: reward.decision_point_id,
+          condition_id: reward.condition_id,
+          condition_code: condition.condition_code,
+          count: count(reward.id)
+        })
+        |> where(
+          [reward, _experiment, _condition],
+          fragment("? \\? 'rewards'", reward.runtime_event_state)
+        )
+        |> Repo.all()
+
+      {:ok, counts}
+    end
+  end
+
+  def reward_counts(_query), do: invalid_request("expected AnalyticsQuery")
+
+  @doc """
+  Returns operational policy state for runtime inspection. Durable analytics must read
+  xAPI-derived projections.
+  """
+  def policy_state_snapshot(%Oli.Experiments.AnalyticsQuery{} = query) do
+    with {:ok, scope} <- validate_scope(query.scope),
+         :ok <- ensure_analytics_experiment_scope(scope, query.experiment_id) do
+      snapshots =
+        scope
+        |> scoped_policy_state_query(query.experiment_id)
+        |> select([policy_state, experiment], %{
+          experiment_id: policy_state.experiment_id,
+          decision_point_id: policy_state.decision_point_id,
+          algorithm: policy_state.algorithm,
+          algorithm_version: policy_state.algorithm_version,
+          policy_config: experiment.policy_config,
+          prior_config: policy_state.prior_config,
+          state: policy_state.state,
+          reward_success_count: policy_state.reward_success_count,
+          reward_failure_count: policy_state.reward_failure_count,
+          assignment_count: policy_state.assignment_count,
+          updated_at: policy_state.updated_at
+        })
+        |> Repo.all()
+        |> Enum.map(&add_policy_inspection_metadata/1)
+
+      {:ok, snapshots}
+    end
+  end
+
+  def policy_state_snapshot(_query), do: invalid_request("expected AnalyticsQuery")
+
+  defp transition(experiment_id, %Oli.Experiments.LifecycleRequest{} = request, action) do
+    target_state = Map.fetch!(@transition_targets, action)
+
+    result =
+      Repo.transaction(fn ->
+        with {:ok, scope} <- validate_scope(request.scope),
+             %ExperimentDefinitionSchema{} = schema <-
+               scope
+               |> scoped_experiment_query(experiment_id)
+               |> lock("FOR UPDATE")
+               |> preload(:sections)
+               |> Repo.one(),
+             :ok <- validate_transition(schema.state, target_state),
+             :ok <- validate_transition_prerequisites(schema, target_state),
+             attrs <- transition_attrs(schema, target_state, request.transitioned_at),
+             {:ok, updated} <-
+               schema
+               |> ExperimentDefinitionSchema.changeset(attrs)
+               |> Repo.update() do
+          {Repo.preload(updated, :sections, force: true), schema.state}
+        else
+          nil ->
+            Repo.rollback(
+              elem(not_found("experiment not found", %{experiment_id: experiment_id}), 1)
+            )
+
+          {:error, %ExperimentError{} = error} ->
+            Repo.rollback(error)
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            Repo.rollback(changeset)
+        end
+      end)
+      |> normalize_transaction_result()
+
+    with {:ok, {updated, previous_state}} <- result do
+      emit_lifecycle_telemetry(:transition, updated, %{
+        previous_state: previous_state,
+        target_state: target_state
+      })
+
+      {:ok, to_definition(updated)}
+    else
+      {:error, %ExperimentError{} = error} = result ->
+        emit_lifecycle_failed(request.scope, error, %{
+          experiment_id: experiment_id,
+          target_state: target_state
+        })
+
+        result
+    end
+  end
+
+  defp transition(_experiment_id, _request, _action),
+    do: invalid_request("expected LifecycleRequest")
+
+  defp scoped_experiment_query(scope, experiment_id) do
+    query =
+      from(experiment in ExperimentDefinitionSchema,
+        as: :experiment,
+        where: experiment.project_id == ^scope.project_id
+      )
+
+    query
+    |> maybe_filter_experiment_id(experiment_id)
+    |> maybe_filter_experiment_section(scope.section_id)
+  end
+
+  defp scoped_project_experiments_query(scope) do
+    from(experiment in ExperimentDefinitionSchema,
+      where: experiment.project_id == ^scope.project_id
+    )
+  end
+
+  defp ensure_analytics_experiment_scope(_scope, nil), do: :ok
+
+  defp ensure_analytics_experiment_scope(scope, experiment_id) do
+    case Repo.exists?(scoped_experiment_query(scope, experiment_id)) do
+      true ->
+        :ok
+
+      false ->
+        invalid_scope("experiment is outside analytics scope", %{experiment_id: experiment_id})
+    end
+  end
+
+  defp scoped_assignment_query(scope, experiment_id) do
+    query =
+      from(assignment in Assignment,
+        join: experiment in ExperimentDefinitionSchema,
+        as: :experiment,
+        on: experiment.id == assignment.experiment_id,
+        where: experiment.project_id == ^scope.project_id
+      )
+
+    query
+    |> maybe_filter_joined_experiment_id(experiment_id)
+    |> maybe_filter_assignment_section(scope.section_id)
+    |> maybe_filter_assignment_institution(scope)
+  end
+
+  defp reward_eligible_assignment_query(scope) do
+    from(assignment in Assignment,
+      join: experiment in ExperimentDefinitionSchema,
+      as: :experiment,
+      on: experiment.id == assignment.experiment_id,
+      join: decision_point in DecisionPoint,
+      on: decision_point.id == assignment.decision_point_id,
+      join: condition in Condition,
+      on: condition.id == assignment.condition_id,
+      where:
+        experiment.project_id == ^scope.project_id and
+          experiment.state == :active and
+          exists(participating_section_query(scope.section_id)) and
+          assignment.section_id == ^scope.section_id and
+          assignment.enrollment_id == ^scope.enrollment_id and
+          assignment.user_id == ^scope.user_id,
+      select: %{
+        assignment: assignment,
+        decision_point: decision_point,
+        condition: condition
+      },
+      distinct: assignment.id
+    )
+  end
+
+  defp maybe_filter_experiment_id(query, nil), do: query
+
+  defp maybe_filter_experiment_id(query, experiment_id) do
+    where(query, [experiment], experiment.id == ^experiment_id)
+  end
+
+  defp maybe_filter_joined_experiment_id(query, nil), do: query
+
+  defp maybe_filter_joined_experiment_id(query, experiment_id) do
+    where(query, [_record, experiment], experiment.id == ^experiment_id)
+  end
+
+  defp maybe_filter_experiment_section(query, nil), do: query
+
+  defp maybe_filter_experiment_section(query, section_id) do
+    where(query, [experiment: _experiment], exists(participating_section_query(section_id)))
+  end
+
+  defp maybe_filter_joined_experiment_section(query, nil), do: query
+
+  defp maybe_filter_joined_experiment_section(query, section_id) do
+    where(query, [experiment: _experiment], exists(participating_section_query(section_id)))
+  end
+
+  defp participating_section_query(section_id) do
+    from(experiment_section in ExperimentSection,
+      join: section in Section,
+      on: section.id == experiment_section.section_id,
+      join: spp in SectionsProjectsPublications,
+      on:
+        spp.section_id == section.id and
+          spp.project_id == parent_as(:experiment).project_id,
+      where:
+        experiment_section.experiment_id == parent_as(:experiment).id and
+          experiment_section.section_id == ^section_id and
+          section.status == :active,
+      select: 1
+    )
+  end
+
+  defp maybe_filter_assignment_section(query, nil), do: query
+
+  defp maybe_filter_assignment_section(query, section_id) do
+    where(query, [assignment, _experiment], assignment.section_id == ^section_id)
+  end
+
+  defp maybe_filter_assignment_institution(query, %{institution_id: nil}), do: query
+
+  defp maybe_filter_assignment_institution(query, %{section_id: section_id})
+       when not is_nil(section_id), do: query
+
+  defp maybe_filter_assignment_institution(query, %{institution_id: institution_id}) do
+    where(
+      query,
+      [assignment, _experiment],
+      fragment(
+        "EXISTS (SELECT 1 FROM sections s WHERE s.id = ? AND s.institution_id = ?)",
+        assignment.section_id,
+        ^institution_id
+      )
+    )
+  end
+
+  defp maybe_filter_section_institution(query, nil), do: query
+
+  defp maybe_filter_section_institution(query, institution_id) do
+    where(
+      query,
+      [section],
+      is_nil(section.institution_id) or section.institution_id == ^institution_id
+    )
+  end
+
+  defp runtime_event_count(scope, experiment_id, event_group) do
+    scope
+    |> scoped_assignment_query(experiment_id)
+    |> where(
+      [assignment, _experiment],
+      fragment("? \\? ?", assignment.runtime_event_state, ^event_group)
+    )
+    |> Repo.aggregate(:count, :id)
+  end
+
+  defp matching_alternatives_branches(%{"model" => _model} = page_content, activity_resource_id) do
+    page_content
+    |> Oli.Resources.PageContent.flat_filter(&(Map.get(&1, "type") == "alternatives"))
+    |> Enum.flat_map(fn alternatives ->
+      alternatives
+      |> Map.get("children", [])
+      |> Enum.filter(&branch_contains_activity?(&1, activity_resource_id))
+      |> Enum.map(fn branch ->
+        %{
+          alternatives_resource_id: Map.get(alternatives, "alternatives_id"),
+          option_id: Map.get(branch, "value")
+        }
+      end)
+    end)
+    |> Enum.reject(fn branch ->
+      is_nil(branch.alternatives_resource_id) or is_nil(branch.option_id)
+    end)
+  end
+
+  defp matching_alternatives_branches(_page_content, _activity_resource_id), do: []
+
+  defp branch_contains_activity?(%{"children" => children}, activity_resource_id) do
+    %{"model" => children}
+    |> Oli.Resources.PageContent.flat_filter(fn
+      %{"type" => "activity-reference", "activity_id" => ^activity_resource_id} -> true
+      %{"type" => "activity-reference", "resourceId" => ^activity_resource_id} -> true
+      _ -> false
+    end)
+    |> Enum.any?()
+  end
+
+  defp branch_contains_activity?(_branch, _activity_resource_id), do: false
+
+  defp assignment_matches_branch?(
+         %{
+           decision_point: %DecisionPoint{} = decision_point,
+           condition: %Condition{} = condition
+         },
+         matching_branches
+       ) do
+    option_ids = [condition.option_id, condition.condition_code] |> Enum.reject(&is_nil/1)
+
+    Enum.any?(matching_branches, fn branch ->
+      branch.alternatives_resource_id == decision_point.alternatives_resource_id and
+        branch.option_id in option_ids
+    end)
+  end
+
+  defp to_reward_eligible_assignment(%{
+         assignment: %Assignment{} = assignment,
+         decision_point: %DecisionPoint{} = decision_point,
+         condition: %Condition{} = condition
+       }) do
+    %RewardEligibleAssignment{
+      assignment_id: assignment.id,
+      experiment_id: assignment.experiment_id,
+      decision_point_id: assignment.decision_point_id,
+      condition_id: assignment.condition_id,
+      condition_code: condition.condition_code,
+      alternatives_resource_id: decision_point.alternatives_resource_id
+    }
+  end
+
+  defp scoped_policy_state_query(scope, experiment_id) do
+    query =
+      from(policy_state in PolicyState,
+        join: experiment in ExperimentDefinitionSchema,
+        as: :experiment,
+        on: experiment.id == policy_state.experiment_id,
+        where: experiment.project_id == ^scope.project_id
+      )
+
+    query
+    |> maybe_filter_joined_experiment_id(experiment_id)
+    |> maybe_filter_joined_experiment_section(scope.section_id)
+  end
+
+  defp add_policy_inspection_metadata(%{algorithm: :thompson_sampling} = snapshot) do
+    guardrails =
+      snapshot
+      |> Map.get(:policy_config, %{})
+      |> thompson_guardrails()
+
+    snapshot
+    |> Map.delete(:policy_config)
+    |> Map.put(:guardrail_state, %{
+      "manual_pause_enabled" => guardrails["manual_pause_enabled"],
+      "warm_up_assignments" => guardrails["warm_up_assignments"],
+      "max_condition_share" => guardrails["max_condition_share"],
+      "fixed_control_allocation" => guardrails["fixed_control_allocation"],
+      "imbalance_threshold" => guardrails["imbalance_threshold"],
+      "assignment_count" => snapshot.assignment_count,
+      "reward_count" => snapshot.reward_success_count + snapshot.reward_failure_count
+    })
+  end
+
+  defp add_policy_inspection_metadata(snapshot), do: Map.delete(snapshot, :policy_config)
+
+  defp do_assign_condition(request) do
+    with {:ok, scope} <- validate_delivery_participation_scope(request.scope),
+         :ok <- require_delivery_scope(scope) do
+      case scope.project_relationship? do
+        true -> do_assign_condition_for_current_project(request, scope)
+        false -> nonparticipating_assignment_fallback(:section_no_longer_eligible)
+      end
+    end
+  end
+
+  defp do_assign_condition_for_current_project(request, scope) do
+    with {:ok, scope} <- validate_publication(scope),
+         {:ok, revision} <- resolve_delivery_revision(request, scope),
+         {:ok, match} <- active_experiment_match(request, scope, revision),
+         {:ok, decision} <- assign_or_reuse(match, scope, request) do
+      {:ok, decision}
+    end
+  end
+
+  defp nonparticipating_assignment_fallback(reason) do
+    :telemetry.execute(
+      [:oli, :experiments, :assignment, :fallback],
+      %{count: 1},
+      %{reason: reason}
+    )
+
+    {:ok, %AssignmentDecision{status: :no_experiment}}
+  end
+
+  defp require_delivery_scope(scope) do
+    missing =
+      [:section_id, :user_id, :enrollment_id]
+      |> Enum.filter(fn field -> is_nil(Map.fetch!(scope, field)) end)
+
+    case missing do
+      [] -> :ok
+      fields -> invalid_scope("delivery assignment scope is incomplete", %{missing: fields})
+    end
+  end
+
+  defp active_experiment_match(request, scope, revision) do
+    query =
+      from experiment in ExperimentDefinitionSchema,
+        as: :experiment,
+        join: decision_point in DecisionPoint,
+        on: decision_point.experiment_id == experiment.id,
+        where:
+          experiment.state == :active and
+            experiment.project_id == ^scope.project_id and
+            decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
+            decision_point.decision_point_key == ^request.decision_point_key,
+        order_by: [asc: experiment.id],
+        limit: 3,
+        select:
+          {experiment, decision_point, exists(participating_section_query(scope.section_id))}
+
+    case Repo.all(query) do
+      [] ->
+        :telemetry.execute(
+          [:oli, :experiments, :assignment, :fallback],
+          %{count: 1},
+          %{reason: :no_experiment}
+        )
+
+        {:ok, %{status: :no_experiment}}
+
+      [{_experiment, _decision_point, false}] ->
+        :telemetry.execute(
+          [:oli, :experiments, :assignment, :fallback],
+          %{count: 1},
+          %{reason: :no_experiment}
+        )
+
+        {:ok, %{status: :no_experiment}}
+
+      [{experiment, decision_point, true}] ->
+        with {:ok, conditions} <-
+               validate_runtime_condition_compatibility(
+                 experiment,
+                 decision_point,
+                 revision
+               ) do
+          {:ok,
+           %{
+             experiment: experiment,
+             decision_point: decision_point,
+             conditions: conditions,
+             available_condition_codes: request.available_condition_codes
+           }}
+        end
+
+      matches ->
+        experiment_ids =
+          matches
+          |> Enum.take(2)
+          |> Enum.map(fn {experiment, _decision_point, _participating?} -> experiment.id end)
+
+        :telemetry.execute(
+          [:oli, :experiments, :assignment, :ambiguous_match],
+          %{count: 1, sampled_match_count: length(experiment_ids)},
+          %{
+            experiment_ids: experiment_ids,
+            truncated?: length(matches) > 2,
+            project_id: scope.project_id,
+            section_id: scope.section_id,
+            alternatives_resource_id: request.alternatives_resource_id,
+            decision_point_key: request.decision_point_key
+          }
+        )
+
+        {:ok, %{status: :no_experiment}}
+    end
+  end
+
+  defp resolve_delivery_revision(request, scope) do
+    case DeliveryResolver.from_resource_id(
+           scope.section_slug,
+           request.alternatives_resource_id
+         ) do
+      %Revision{} = revision ->
+        with true <- revision.id == request.alternatives_revision_id,
+             true <- revision.resource_type_id == ResourceType.id_for_alternatives(),
+             :ok <- validate_experiment_decision_point_revision(revision) do
+          {:ok, revision}
+        else
+          false ->
+            invalid_condition(
+              "delivery alternatives revision or options do not match the deployed publication",
+              %{
+                alternatives_resource_id: request.alternatives_resource_id,
+                requested_revision_id: request.alternatives_revision_id,
+                resolved_revision_id: revision.id
+              }
+            )
+
+          {:error, %ExperimentError{}} = error ->
+            error
+        end
+
+      nil ->
+        invalid_condition("alternatives resource is not deployed to section", %{
+          alternatives_resource_id: request.alternatives_resource_id,
+          section_id: scope.section_id
+        })
+    end
+  end
+
+  defp validate_runtime_condition_compatibility(experiment, decision_point, revision) do
+    conditions = active_conditions(experiment.id, decision_point.id)
+
+    with :ok <- validate_condition_option_mapping(revision, conditions) do
+      {:ok, conditions}
+    end
+  end
+
+  defp select_condition(_experiment, _decision_point, _conditions, [], _scope),
+    do: invalid_condition("no condition codes supplied")
+
+  defp select_condition(
+         experiment,
+         decision_point,
+         active_conditions,
+         available_condition_codes,
+         scope
+       ) do
+    conditions =
+      Enum.filter(active_conditions, &(&1.condition_code in available_condition_codes))
+
+    case conditions do
+      [] ->
+        :telemetry.execute(
+          [:oli, :experiments, :assignment, :fallback],
+          %{count: 1},
+          %{
+            reason: :invalid_condition,
+            experiment_id: experiment.id,
+            decision_point_id: decision_point.id
+          }
+        )
+
+        invalid_condition("no active experiment condition matches the available condition codes")
+
+      conditions ->
+        policy_state = get_policy_state(experiment.id, decision_point.id, experiment.algorithm)
+
+        {policy_module, policy_conditions, guardrail_action} =
+          assignment_policy_for(
+            experiment,
+            decision_point,
+            conditions,
+            policy_state
+          )
+
+        policy_context = %{
+          conditions: conditions,
+          assignment_key: assignment_key(experiment.id, decision_point.id, scope.enrollment_id)
+        }
+
+        policy_module
+        |> apply(:assign, [
+          experiment.policy_config,
+          policy_state && policy_state.state,
+          %{policy_context | conditions: policy_conditions}
+        ])
+        |> case do
+          {:ok, policy_assignment} ->
+            condition = Enum.find(conditions, &(&1.id == policy_assignment.condition_id))
+
+            emit_assignment_guardrail_telemetry(
+              experiment,
+              decision_point,
+              condition,
+              policy_assignment,
+              guardrail_action,
+              assignment_counts_for_guardrails(experiment)
+            )
+
+            {:ok,
+             %{
+               condition: condition,
+               policy_assignment: policy_assignment,
+               guardrail_action: guardrail_action
+             }}
+
+          {:error, reason} ->
+            invalid_condition("policy could not assign a condition", %{reason: reason})
+        end
+    end
+  end
+
+  defp assignment_policy_for(
+         %ExperimentDefinitionSchema{algorithm: :thompson_sampling} = experiment,
+         _decision_point,
+         conditions,
+         policy_state
+       ) do
+    assignment_counts = assignment_counts_by_condition(experiment.id)
+    guardrails = thompson_guardrails(experiment.policy_config)
+    assignment_count = (policy_state && policy_state.assignment_count) || 0
+
+    cond do
+      assignment_count < guardrails["warm_up_assignments"] ->
+        {WeightedRandom, conditions, :warm_up}
+
+      fixed_control_condition =
+          fixed_control_condition(
+            conditions,
+            assignment_counts,
+            guardrails["fixed_control_allocation"]
+          ) ->
+        {WeightedRandom, [fixed_control_condition], :fixed_control}
+
+      capped_conditions =
+          cap_eligible_conditions(
+            conditions,
+            assignment_counts,
+            guardrails["max_condition_share"]
+          ) ->
+        {policy_module(experiment.algorithm), capped_conditions,
+         cap_guardrail_action(capped_conditions, conditions)}
+    end
+  end
+
+  defp assignment_policy_for(
+         experiment,
+         _decision_point,
+         conditions,
+         _policy_state
+       ) do
+    {policy_module(experiment.algorithm), conditions, :none}
+  end
+
+  defp assignment_counts_for_guardrails(
+         %ExperimentDefinitionSchema{algorithm: :thompson_sampling} = experiment
+       ),
+       do: assignment_counts_by_condition(experiment.id)
+
+  defp assignment_counts_for_guardrails(_experiment), do: %{}
+
+  defp thompson_guardrails(policy_config) do
+    policy_config
+    |> Map.get("guardrails", %{})
+    |> Map.merge(@thompson_default_guardrails, fn _key, configured, _default -> configured end)
+  end
+
+  defp fixed_control_condition(_conditions, _assignment_counts, nil), do: nil
+
+  defp fixed_control_condition(conditions, assignment_counts, fixed_control_allocation) do
+    total =
+      Enum.reduce(assignment_counts, 0, fn {_condition_id, count}, total -> total + count end)
+
+    control = List.first(conditions)
+    control_count = Map.get(assignment_counts, control.id, 0)
+
+    cond do
+      total == 0 -> control
+      control_count / total < fixed_control_allocation -> control
+      true -> nil
+    end
+  end
+
+  defp cap_eligible_conditions(conditions, assignment_counts, max_condition_share) do
+    total =
+      Enum.reduce(assignment_counts, 0, fn {_condition_id, count}, total -> total + count end)
+
+    eligible =
+      Enum.filter(conditions, fn condition ->
+        total == 0 or Map.get(assignment_counts, condition.id, 0) / total < max_condition_share
+      end)
+
+    case eligible do
+      [] -> conditions
+      _ -> eligible
+    end
+  end
+
+  defp cap_guardrail_action(capped_conditions, conditions) do
+    if length(capped_conditions) == length(conditions), do: :none, else: :traffic_cap
+  end
+
+  defp emit_assignment_guardrail_telemetry(
+         experiment,
+         decision_point,
+         condition,
+         policy_assignment,
+         guardrail_action,
+         assignment_counts
+       ) do
+    :telemetry.execute([:oli, :experiments, :assignment, :guardrail], %{count: 1}, %{
+      experiment_id: experiment.id,
+      decision_point_id: decision_point.id,
+      algorithm: experiment.algorithm,
+      algorithm_version: policy_assignment.policy_version,
+      selected_condition_id: condition && condition.id,
+      selected_condition_code: condition && condition.condition_code,
+      guardrail_action: guardrail_action,
+      imbalance_flag?: imbalance_flag?(experiment.policy_config, condition, assignment_counts)
+    })
+  end
+
+  defp imbalance_flag?(policy_config, condition, assignment_counts) do
+    guardrails = thompson_guardrails(policy_config)
+
+    total =
+      Enum.reduce(assignment_counts, 0, fn {_condition_id, count}, total -> total + count end)
+
+    (total > 0 and condition) &&
+      Map.get(assignment_counts, condition.id, 0) / total > guardrails["imbalance_threshold"]
+  end
+
+  defp existing_assignment_decision(request, scope) do
+    query =
+      from assignment in Assignment,
+        join: experiment in ExperimentDefinitionSchema,
+        as: :experiment,
+        on: experiment.id == assignment.experiment_id,
+        join: decision_point in DecisionPoint,
+        on: decision_point.id == assignment.decision_point_id,
+        join: condition in Condition,
+        on: condition.id == assignment.condition_id,
+        where:
+          experiment.project_id == ^scope.project_id and
+            exists(participating_section_query(scope.section_id)) and
+            assignment.section_id == ^scope.section_id and
+            assignment.enrollment_id == ^scope.enrollment_id and
+            assignment.user_id == ^scope.user_id and
+            decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
+            decision_point.decision_point_key == ^request.decision_point_key and
+            condition.active == true and
+            condition.condition_code in ^request.available_condition_codes,
+        order_by: [desc: assignment.id],
+        limit: 1,
+        select: {assignment, condition}
+
+    case Repo.one(query) do
+      {%Assignment{} = assignment, %Condition{} = condition} ->
+        {:ok, to_assignment_decision(assignment, condition, true)}
+
+      nil ->
+        {:ok, %AssignmentDecision{status: :no_experiment}}
+    end
+  end
+
+  defp assign_or_reuse(%{status: :no_experiment}, _scope, _request),
+    do: {:ok, %AssignmentDecision{status: :no_experiment}}
+
+  defp assign_or_reuse(match, scope, request) do
+    case find_assignment(match.experiment.id, match.decision_point.id, scope.enrollment_id) do
+      %Assignment{} = assignment ->
+        condition = Repo.get!(Condition, assignment.condition_id)
+        decision = to_assignment_decision(assignment, condition, true)
+
+        :telemetry.execute([:oli, :experiments, :assignment, :reuse], %{count: 1}, %{
+          experiment_id: match.experiment.id,
+          decision_point_id: match.decision_point.id,
+          algorithm: match.experiment.algorithm,
+          algorithm_version: assignment.policy_version,
+          selected_condition_id: assignment.condition_id,
+          selected_condition_code: condition.condition_code,
+          guardrail_action: :sticky_reuse
+        })
+
+        Telemetry.emit(:assignment_decided, {decision, request}, assignment: assignment)
+        {:ok, decision}
+
+      nil ->
+        with {:ok, selection} <-
+               select_condition(
+                 match.experiment,
+                 match.decision_point,
+                 match.conditions,
+                 match.available_condition_codes,
+                 scope
+               ) do
+          create_assignment(Map.merge(match, selection), scope, request)
+        end
+    end
+  end
+
+  defp find_assignment(experiment_id, decision_point_id, enrollment_id) do
+    Repo.one(
+      from assignment in Assignment,
+        where:
+          assignment.experiment_id == ^experiment_id and
+            assignment.decision_point_id == ^decision_point_id and
+            assignment.enrollment_id == ^enrollment_id
+    )
+  end
+
+  defp create_assignment(match, scope, request) do
+    attrs = %{
+      experiment_id: match.experiment.id,
+      decision_point_id: match.decision_point.id,
+      condition_id: match.condition.id,
+      section_id: scope.section_id,
+      enrollment_id: scope.enrollment_id,
+      user_id: scope.user_id,
+      assigned_by_policy: Atom.to_string(match.experiment.algorithm),
+      policy_version: match.policy_assignment.policy_version,
+      assignment_key:
+        assignment_key(match.experiment.id, match.decision_point.id, scope.enrollment_id),
+      assigned_at: now()
+    }
+
+    %Assignment{}
+    |> Assignment.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, assignment} ->
+        increment_assignment_count(match.experiment, match.decision_point.id)
+        decision = to_assignment_decision(assignment, match.condition, false)
+
+        Telemetry.emit(:assignment_decided, {decision, request},
+          assignment: assignment,
+          experiment: match.experiment
+        )
+
+        {:ok, decision}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        if conflict?(changeset) do
+          assignment =
+            find_assignment(match.experiment.id, match.decision_point.id, scope.enrollment_id)
+
+          condition = Repo.get!(Condition, assignment.condition_id)
+          decision = to_assignment_decision(assignment, condition, true)
+
+          Telemetry.emit(:assignment_decided, {decision, request},
+            assignment: assignment,
+            experiment: match.experiment
+          )
+
+          {:ok, decision}
+        else
+          normalize_result({:error, changeset})
+        end
+    end
+  end
+
+  defp assignment_key(experiment_id, decision_point_id, enrollment_id) do
+    "#{experiment_id}:#{decision_point_id}:#{enrollment_id}"
+  end
+
+  defp increment_assignment_count(experiment, decision_point_id) do
+    policy_state = get_or_create_policy_state(experiment, decision_point_id)
+
+    from(policy_state in PolicyState, where: policy_state.id == ^policy_state.id)
+    |> Repo.update_all(inc: [assignment_count: 1])
+  end
+
+  defp create_exposure(request) do
+    Repo.transaction(fn ->
+      {assignment, alternatives_resource_id} =
+        get_scoped_assignment_with_decision_point!(
+          request.assignment_id,
+          request.scope
+        )
+
+      case validate_exposure_revision(alternatives_resource_id, request) do
+        :ok ->
+          {assignment, Map.put(runtime_event(request), "reused", false)}
+
+        {:error, %ExperimentError{} = error} ->
+          Repo.rollback(error)
+      end
+    end)
+    |> normalize_transaction_result()
+    |> case do
+      {:ok, {assignment, event}} ->
+        receipt = exposure_receipt(assignment, event)
+
+        :telemetry.execute([:oli, :experiments, :exposure, :recorded], %{count: 1}, %{
+          experiment_id: assignment.experiment_id,
+          decision_point_id: assignment.decision_point_id
+        })
+
+        Telemetry.emit(:exposure_recorded, {receipt, request}, assignment: assignment)
+        {:ok, receipt}
+
+      {:error, %ExperimentError{}} = error ->
+        error
+    end
+  end
+
+  defp validate_exposure_revision(alternatives_resource_id, request) do
+    case DeliveryResolver.from_resource_id(
+           request.scope.section_slug,
+           alternatives_resource_id
+         ) do
+      %Revision{id: revision_id} when revision_id == request.content_revision_id ->
+        :ok
+
+      %Revision{id: revision_id} ->
+        invalid_condition(
+          "exposure revision does not match the alternatives revision deployed to section",
+          %{
+            alternatives_resource_id: alternatives_resource_id,
+            content_revision_id: request.content_revision_id,
+            resolved_revision_id: revision_id
+          }
+        )
+
+      nil ->
+        invalid_condition("exposure alternatives resource is not deployed to section", %{
+          alternatives_resource_id: alternatives_resource_id,
+          section_id: request.scope.section_id
+        })
+    end
+  end
+
+  defp create_outcome(request) do
+    Repo.transaction(fn ->
+      assignment = get_scoped_assignment!(request.assignment_id, request.scope, lock: false)
+      {assignment, Map.put(runtime_event(request), "reused", false)}
+    end)
+    |> normalize_transaction_result()
+    |> case do
+      {:ok, {assignment, event}} ->
+        receipt = outcome_receipt(assignment, event)
+        Telemetry.emit(:outcome_recorded, {receipt, request}, assignment: assignment)
+        {:ok, receipt}
+
+      {:error, %ExperimentError{}} = error ->
+        error
+    end
+  end
+
+  defp create_reward(request) do
+    Repo.transaction(fn ->
+      assignment = get_scoped_assignment!(request.assignment_id, request.scope, lock: true)
+      state = assignment.runtime_event_state || %{}
+      reward_events = Map.get(state, "rewards", %{})
+
+      case Map.get(reward_events, request.key) do
+        nil ->
+          event = reward_event(request, assignment)
+          update_assignment_event_state!(assignment, "rewards", request.key, event)
+
+          case record_policy_reward(assignment, request, event) do
+            :ok ->
+              {assignment, Map.put(event, "reused", false), nil}
+
+            {:ok, policy_update_emit} ->
+              {assignment, Map.put(event, "reused", false), policy_update_emit}
+
+            {:error, error} ->
+              Repo.rollback(error)
+          end
+
+        event ->
+          {assignment, Map.put(event, "reused", true), nil}
+      end
+    end)
+    |> normalize_transaction_result()
+    |> case do
+      {:ok, {assignment, event, policy_update_emit}} ->
+        receipt = reward_receipt(assignment, event)
+
+        if receipt.reused? == false do
+          :telemetry.execute([:oli, :experiments, :reward, :recorded], %{count: 1}, %{
+            experiment_id: assignment.experiment_id,
+            decision_point_id: assignment.decision_point_id,
+            condition_id: assignment.condition_id,
+            reward_class: reward_class(request.reward_value)
+          })
+        end
+
+        Telemetry.emit(:reward_recorded, {receipt, request}, assignment: assignment)
+        emit_policy_update(policy_update_emit)
+        {:ok, receipt}
+
+      {:error, %ExperimentError{}} = error ->
+        error
+    end
+  end
+
+  defp update_assignment_event_state!(assignment, event_group, key, event) do
+    state = assignment.runtime_event_state || %{}
+    events = Map.get(state, event_group, %{})
+    updated_state = Map.put(state, event_group, Map.put(events, key, event))
+
+    assignment
+    |> Assignment.changeset(%{runtime_event_state: updated_state})
+    |> Repo.update!()
+  end
+
+  defp runtime_event(%Oli.Experiments.RecordExposureRequest{} = request) do
+    %{
+      "assignment_id" => request.assignment_id,
+      "key" => request.key,
+      "content_revision_id" => request.content_revision_id,
+      "publication_id" => request.scope && request.scope.publication_id,
+      "recorded_at" => request.exposed_at || now()
+    }
+  end
+
+  defp runtime_event(%Oli.Experiments.RecordOutcomeRequest{} = request) do
+    %{
+      "assignment_id" => request.assignment_id,
+      "key" => request.key,
+      "activity_attempt_id" => request.activity_attempt_id,
+      "resource_attempt_id" => request.resource_attempt_id,
+      "activity_resource_id" => request.activity_resource_id,
+      "score" => request.score,
+      "out_of" => request.out_of,
+      "recorded_at" => request.observed_at || now()
+    }
+  end
+
+  defp reward_event(%Oli.Experiments.RecordRewardRequest{} = request, %Assignment{} = assignment) do
+    %{
+      "assignment_id" => request.assignment_id,
+      "experiment_id" => assignment.experiment_id,
+      "decision_point_id" => assignment.decision_point_id,
+      "condition_id" => assignment.condition_id,
+      "outcome_key" => request.outcome_key,
+      "key" => request.key,
+      "reward_value" => request.reward_value,
+      "reward_source" => request.reward_source,
+      "recorded_at" => now()
+    }
+  end
+
+  defp insert_definition_graph(attrs, request, section_ids) do
+    case graph_request?(request) do
+      false ->
+        insert_definition(attrs, section_ids)
+
+      true ->
+        Repo.transaction(fn ->
+          definition =
+            %ExperimentDefinitionSchema{}
+            |> ExperimentDefinitionSchema.changeset(attrs)
+            |> Repo.insert!()
+
+          replace_experiment_sections!(definition.id, section_ids)
+
+          decision_point =
+            %DecisionPoint{}
+            |> DecisionPoint.changeset(
+              decision_point_attrs(request.decision_point, definition.id)
+            )
+            |> Repo.insert!()
+
+          request.conditions
+          |> Enum.with_index()
+          |> Enum.each(fn {condition, index} ->
+            %Condition{}
+            |> Condition.changeset(
+              condition_attrs(condition, definition.id, decision_point.id, index)
+            )
+            |> Repo.insert!()
+          end)
+
+          get_or_create_policy_state(definition, decision_point.id)
+          Repo.preload(definition, :sections)
+        end)
+        |> normalize_transaction_result()
+    end
+  end
+
+  defp update_definition_graph(schema, request, section_ids) do
+    case graph_request?(request) do
+      false ->
+        update_definition(
+          schema,
+          update_attrs(request, schema.algorithm),
+          request.section_ids,
+          section_ids
+        )
+
+      true ->
+        Repo.transaction(fn ->
+          updated =
+            schema
+            |> ExperimentDefinitionSchema.changeset(update_attrs(request, schema.algorithm))
+            |> Repo.update!()
+
+          maybe_replace_experiment_sections!(updated.id, request.section_ids, section_ids)
+          replace_definition_graph!(updated, request)
+          Repo.preload(updated, :sections, force: true)
+        end)
+        |> normalize_transaction_result()
+    end
+  end
+
+  defp replace_definition_graph!(schema, request) do
+    from(condition in Condition, where: condition.experiment_id == ^schema.id)
+    |> Repo.delete_all()
+
+    from(policy_state in PolicyState, where: policy_state.experiment_id == ^schema.id)
+    |> Repo.delete_all()
+
+    from(decision_point in DecisionPoint, where: decision_point.experiment_id == ^schema.id)
+    |> Repo.delete_all()
+
+    decision_point =
+      %DecisionPoint{}
+      |> DecisionPoint.changeset(decision_point_attrs(request.decision_point, schema.id))
+      |> Repo.insert!()
+
+    request.conditions
+    |> Enum.with_index()
+    |> Enum.each(fn {condition, index} ->
+      %Condition{}
+      |> Condition.changeset(condition_attrs(condition, schema.id, decision_point.id, index))
+      |> Repo.insert!()
+    end)
+
+    get_or_create_policy_state(schema, decision_point.id)
+  end
+
+  defp decision_point_attrs(decision_point, experiment_id) do
+    decision_point
+    |> atomize_keys()
+    |> Map.take([
+      :alternatives_resource_id,
+      :decision_point_key,
+      :title,
+      :position
+    ])
+    |> Map.put(:experiment_id, experiment_id)
+    |> Map.update(:position, 0, &(&1 || 0))
+  end
+
+  defp condition_attrs(condition, experiment_id, decision_point_id, fallback_position) do
+    condition
+    |> atomize_keys()
+    |> Map.take([:condition_code, :option_id, :label, :weight, :active, :position])
+    |> Map.put(:experiment_id, experiment_id)
+    |> Map.put(:decision_point_id, decision_point_id)
+    |> Map.update(:active, true, &(&1 != false))
+    |> Map.update(:position, fallback_position, &(&1 || fallback_position))
+  end
+
+  defp record_policy_reward(assignment, request, reward_event) do
+    experiment = Repo.get!(ExperimentDefinitionSchema, assignment.experiment_id)
+
+    case experiment.algorithm do
+      :weighted_random -> :ok
+      _algorithm -> record_mutating_policy_reward(experiment, assignment, request, reward_event)
+    end
+  end
+
+  defp record_mutating_policy_reward(experiment, assignment, request, reward_event) do
+    condition = Repo.get!(Condition, assignment.condition_id)
+
+    policy_state =
+      experiment
+      |> get_or_create_policy_state(assignment.decision_point_id)
+      |> lock_policy_state()
+
+    experiment.algorithm
+    |> policy_module()
+    |> apply(:record_reward, [
+      experiment.policy_config,
+      policy_state.state,
+      %{condition_code: condition.condition_code, reward_value: request.reward_value}
+    ])
+    |> case do
+      {:ok, policy_update} ->
+        persist_policy_update(
+          policy_state,
+          request,
+          reward_event,
+          condition,
+          policy_update,
+          assignment,
+          experiment
+        )
+
+      {:error, reason} ->
+        :telemetry.execute([:oli, :experiments, :policy, :update_failed], %{count: 1}, %{
+          policy_state_id: policy_state.id,
+          reward_key_hash: hash_key(request.key),
+          algorithm: experiment.algorithm,
+          algorithm_version: policy_state.algorithm_version,
+          reward_class: reward_class(request.reward_value),
+          error_type: reason
+        })
+
+        {:error,
+         %ExperimentError{
+           type: :persistence_error,
+           message: "policy reward update failed",
+           details: %{reason: reason}
+         }}
+    end
+  end
+
+  defp lock_policy_state(policy_state) do
+    Repo.one!(
+      from(policy_state in PolicyState,
+        where: policy_state.id == ^policy_state.id,
+        lock: "FOR UPDATE"
+      )
+    )
+  end
+
+  defp get_policy_state(experiment_id, decision_point_id, algorithm) do
+    Repo.get_by(PolicyState,
+      experiment_id: experiment_id,
+      decision_point_id: decision_point_id,
+      algorithm: algorithm
+    )
+  end
+
+  defp get_or_create_policy_state(experiment, decision_point_id) do
+    case get_policy_state(experiment.id, decision_point_id, experiment.algorithm) do
+      nil ->
+        {algorithm_version, state, prior_config} =
+          initial_policy_state_attrs(experiment, decision_point_id)
+
+        %PolicyState{}
+        |> PolicyState.changeset(%{
+          experiment_id: experiment.id,
+          decision_point_id: decision_point_id,
+          algorithm: experiment.algorithm,
+          algorithm_version: algorithm_version,
+          state: state,
+          prior_config: prior_config,
+          reward_success_count: 0,
+          reward_failure_count: 0,
+          assignment_count: 0
+        })
+        |> Repo.insert!()
+
+      policy_state ->
+        policy_state
+    end
+  end
+
+  defp initial_policy_state_attrs(
+         %ExperimentDefinitionSchema{algorithm: :thompson_sampling} = experiment,
+         decision_point_id
+       ) do
+    conditions = active_conditions(experiment.id, decision_point_id)
+    policy_config = normalize_policy_config!(:thompson_sampling, experiment.policy_config || %{})
+    {:ok, state} = ThompsonSampling.initial_state(policy_config, conditions)
+
+    {ThompsonSampling.version(), state, policy_config["priors"]}
+  end
+
+  defp initial_policy_state_attrs(
+         %ExperimentDefinitionSchema{algorithm: algorithm},
+         _decision_point_id
+       ) do
+    {Atom.to_string(algorithm), %{}, %{}}
+  end
+
+  defp persist_policy_update(
+         policy_state,
+         request,
+         reward_event,
+         condition,
+         policy_update,
+         assignment,
+         experiment
+       ) do
+    policy_update_key = "policy_update:#{request.key}"
+
+    updated_policy_state =
+      policy_state
+      |> PolicyState.changeset(%{
+        algorithm_version: policy_update.algorithm_version,
+        state: policy_update.next_state,
+        reward_success_count:
+          policy_state.reward_success_count +
+            Map.get(policy_update.counters, :reward_success_count, 0),
+        reward_failure_count:
+          policy_state.reward_failure_count +
+            Map.get(policy_update.counters, :reward_failure_count, 0)
+      })
+      |> Repo.update!()
+
+    :telemetry.execute([:oli, :experiments, :policy, :updated], %{count: 1}, %{
+      policy_state_id: policy_state.id,
+      reward_key_hash: hash_key(request.key),
+      condition_id: condition.id,
+      condition_code: condition.condition_code,
+      algorithm: policy_state.algorithm,
+      algorithm_version: policy_update.algorithm_version,
+      reward_class: reward_class(request.reward_value)
+    })
+
+    {:ok,
+     {%{
+        policy_state_id: updated_policy_state.id,
+        reward_key: reward_event["key"],
+        condition_id: condition.id,
+        previous_state: policy_update.previous_state,
+        next_state: policy_update.next_state,
+        algorithm_version: policy_update.algorithm_version,
+        update_reason: policy_update.update_reason,
+        key: policy_update_key,
+        inserted_at: now()
+      },
+      %{
+        experiment_id: assignment.experiment_id,
+        decision_point_id: assignment.decision_point_id,
+        condition_id: assignment.condition_id,
+        reward_value: request.reward_value,
+        key: request.key
+      },
+      [
+        assignment: assignment,
+        condition: condition,
+        experiment: experiment,
+        policy_state: updated_policy_state
+      ]}}
+  end
+
+  defp emit_policy_update(nil), do: :ok
+
+  defp emit_policy_update({policy_update, reward, opts}) do
+    Telemetry.emit(:policy_updated, {policy_update, reward}, opts)
+  end
+
+  defp reward_class(reward_value) when reward_value in [1, 1.0], do: :success
+  defp reward_class(reward_value) when reward_value in [0, 0.0], do: :failure
+  defp reward_class(_reward_value), do: :unknown
+
+  defp policy_module(:weighted_random), do: WeightedRandom
+  defp policy_module(:thompson_sampling), do: ThompsonSampling
+
+  defp get_scoped_assignment!(assignment_id, scope, opts) do
+    lock? = Keyword.get(opts, :lock, false)
+
+    case get_scoped_assignment_query(assignment_id, scope, lock?) do
+      {:ok, query} ->
+        case Repo.one(query) do
+          %Assignment{} = assignment ->
+            assignment
+
+          nil ->
+            Repo.rollback(
+              if Repo.exists?(
+                   from assignment in Assignment, where: assignment.id == ^assignment_id
+                 ) do
+                elem(
+                  invalid_scope("assignment is outside scope", %{assignment_id: assignment_id}),
+                  1
+                )
+              else
+                elem(not_found("assignment not found", %{assignment_id: assignment_id}), 1)
+              end
+            )
+        end
+
+      {:error, %ExperimentError{} = error} ->
+        Repo.rollback(error)
+    end
+  end
+
+  defp get_scoped_assignment_with_decision_point!(assignment_id, scope) do
+    case get_scoped_assignment_query(assignment_id, scope, false) do
+      {:ok, query} ->
+        case Repo.one(query) do
+          %Assignment{decision_point: %DecisionPoint{} = decision_point} = assignment ->
+            {assignment, decision_point.alternatives_resource_id}
+
+          nil ->
+            scoped_assignment_not_found!(assignment_id)
+        end
+
+      {:error, %ExperimentError{} = error} ->
+        Repo.rollback(error)
+    end
+  end
+
+  defp scoped_assignment_not_found!(assignment_id) do
+    Repo.rollback(
+      if Repo.exists?(from assignment in Assignment, where: assignment.id == ^assignment_id) do
+        elem(
+          invalid_scope("assignment is outside scope", %{assignment_id: assignment_id}),
+          1
+        )
+      else
+        elem(not_found("assignment not found", %{assignment_id: assignment_id}), 1)
+      end
+    )
+  end
+
+  defp get_scoped_assignment_query(assignment_id, scope, lock?) do
+    with {:ok, scope} <- validate_delivery_participation_scope(scope) do
+      query =
+        from assignment in Assignment,
+          join: experiment in ExperimentDefinitionSchema,
+          as: :experiment,
+          on: experiment.id == assignment.experiment_id,
+          join: condition in Condition,
+          on:
+            condition.id == assignment.condition_id and
+              condition.experiment_id == experiment.id,
+          join: decision_point in DecisionPoint,
+          on:
+            decision_point.id == assignment.decision_point_id and
+              decision_point.experiment_id == experiment.id,
+          where:
+            assignment.id == ^assignment_id and
+              experiment.project_id == ^scope.project_id and
+              exists(participating_section_query(scope.section_id)) and
+              assignment.section_id == ^scope.section_id and
+              assignment.enrollment_id == ^scope.enrollment_id and
+              assignment.user_id == ^scope.user_id,
+          preload: [
+            experiment: experiment,
+            condition: condition,
+            decision_point: decision_point
+          ]
+
+      {:ok, if(lock?, do: lock(query, "FOR UPDATE"), else: query)}
+    end
+  end
+
+  defp insert_definition(attrs, section_ids) do
+    Repo.transaction(fn ->
+      changeset =
+        %ExperimentDefinitionSchema{}
+        |> ExperimentDefinitionSchema.changeset(attrs)
+
+      case Repo.insert(changeset) do
+        {:ok, definition} ->
+          replace_experiment_sections!(definition.id, section_ids)
+          Repo.preload(definition, :sections)
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+    |> normalize_transaction_result()
+  end
+
+  defp update_definition(schema, attrs, requested_section_ids, section_ids) do
+    Repo.transaction(fn ->
+      updated =
+        schema
+        |> ExperimentDefinitionSchema.changeset(attrs)
+        |> Repo.update!()
+
+      maybe_replace_experiment_sections!(updated.id, requested_section_ids, section_ids)
+      Repo.preload(updated, :sections, force: true)
+    end)
+    |> normalize_transaction_result()
+  end
+
+  defp maybe_replace_experiment_sections!(_experiment_id, nil, _section_ids), do: :ok
+
+  defp maybe_replace_experiment_sections!(experiment_id, _requested_section_ids, section_ids),
+    do: replace_experiment_sections!(experiment_id, section_ids)
+
+  defp replace_experiment_sections!(experiment_id, section_ids) do
+    from(experiment_section in ExperimentSection,
+      where: experiment_section.experiment_id == ^experiment_id
+    )
+    |> Repo.delete_all()
+
+    timestamp = now()
+
+    section_ids
+    |> Enum.map(fn section_id ->
+      %{
+        experiment_id: experiment_id,
+        section_id: section_id,
+        inserted_at: timestamp,
+        updated_at: timestamp
+      }
+    end)
+    |> case do
+      [] -> :ok
+      rows -> Repo.insert_all(ExperimentSection, rows)
+    end
+  end
+
+  defp validate_participation_update_state(%ExperimentDefinitionSchema{
+         state: state
+       })
+       when state in [:draft, :active, :paused],
+       do: :ok
+
+  defp validate_participation_update_state(%ExperimentDefinitionSchema{state: state}) do
+    invalid_state("section participation is read-only", %{state: state})
+  end
+
+  defp validate_eligible_section_ids(section_ids, scope) do
+    if section_ids == [] do
+      :ok
+    else
+      validate_nonempty_eligible_section_ids(section_ids, scope)
+    end
+  end
+
+  defp validate_nonempty_eligible_section_ids(section_ids, scope) do
+    eligible_ids =
+      scope
+      |> eligible_sections_query()
+      |> where([section], section.id in ^section_ids)
+      |> select([section], section.id)
+      |> Repo.all()
+      |> MapSet.new()
+
+    invalid_ids = Enum.reject(section_ids, &MapSet.member?(eligible_ids, &1))
+
+    case invalid_ids do
+      [] -> :ok
+      _ -> invalid_scope("one or more sections are not eligible", %{section_ids: invalid_ids})
+    end
+  end
+
+  defp eligible_sections_query(scope) do
+    Section
+    |> join(:inner, [section], spp in SectionsProjectsPublications,
+      on: spp.section_id == section.id
+    )
+    |> where(
+      [section, spp],
+      spp.project_id == ^scope.project_id and section.status == :active
+    )
+    |> maybe_filter_section_institution(scope.institution_id)
+    |> distinct([section], section.id)
+  end
+
+  defp section_participation(schema, scope) do
+    eligible_sections =
+      scope
+      |> eligible_sections_query()
+      |> order_by([section], asc: section.title, asc: section.id)
+      |> select([section], %EligibleExperimentSection{
+        id: section.id,
+        slug: section.slug,
+        title: section.title,
+        status: section.status,
+        start_date: section.start_date,
+        end_date: section.end_date
+      })
+      |> Repo.all()
+
+    eligible_ids = MapSet.new(eligible_sections, & &1.id)
+
+    selected_ids =
+      schema.sections |> Enum.map(& &1.id) |> Enum.filter(&MapSet.member?(eligible_ids, &1))
+
+    stale_sections =
+      schema.sections
+      |> Enum.reject(&MapSet.member?(eligible_ids, &1.id))
+      |> Enum.sort_by(&{&1.title, &1.id})
+      |> Enum.map(&to_eligible_section/1)
+
+    %ExperimentSectionParticipation{
+      experiment_id: schema.id,
+      eligible_sections: eligible_sections,
+      selected_ids: Enum.sort(selected_ids),
+      stale_sections: stale_sections
+    }
+  end
+
+  defp to_eligible_section(%Section{} = section) do
+    %EligibleExperimentSection{
+      id: section.id,
+      slug: section.slug,
+      title: section.title,
+      status: section.status,
+      start_date: section.start_date,
+      end_date: section.end_date
+    }
+  end
+
+  defp emit_participation_updated(schema, previous_ids, new_ids, participation) do
+    previous = MapSet.new(previous_ids)
+    current = MapSet.new(new_ids)
+
+    :telemetry.execute([:oli, :experiments, :participation, :updated], %{count: 1}, %{
+      experiment_id: schema.id,
+      project_id: schema.project_id,
+      previous_selected_count: MapSet.size(previous),
+      selected_count: MapSet.size(current),
+      added_count: MapSet.difference(current, previous) |> MapSet.size(),
+      removed_count: MapSet.difference(previous, current) |> MapSet.size(),
+      stale_count: length(participation.stale_sections),
+      state: schema.state
+    })
+  end
+
+  defp emit_participation_validation_failed(experiment_id, scope, section_ids, error) do
+    :telemetry.execute(
+      [:oli, :experiments, :participation, :validation_failed],
+      %{count: 1},
+      %{
+        experiment_id: experiment_id,
+        project_id: scope && scope.project_id,
+        requested_count: length(section_ids),
+        error_type: error.type
+      }
+    )
+  end
+
+  defp get_scoped_definition(experiment_id, scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         %ExperimentDefinitionSchema{} = schema <-
+           Repo.one(
+             from(experiment in ExperimentDefinitionSchema,
+               where: experiment.id == ^experiment_id,
+               preload: :sections
+             )
+           ),
+         :ok <- ensure_definition_in_scope(schema, scope) do
+      {:ok, schema}
+    else
+      nil -> not_found("experiment not found", %{experiment_id: experiment_id})
+      {:error, %ExperimentError{}} = error -> error
+    end
+  end
+
+  defp validate_experiment_sections(nil, scope) do
+    {:ok, Enum.reject([scope.section_id], &is_nil/1)}
+  end
+
+  defp validate_experiment_sections(section_ids, scope) when is_list(section_ids) do
+    section_ids
+    |> Enum.uniq()
+    |> Enum.reduce_while({:ok, []}, fn section_id, {:ok, valid_ids} ->
+      case validate_eligible_section_ids([section_id], scope) do
+        :ok -> {:cont, {:ok, [section_id | valid_ids]}}
+        {:error, %ExperimentError{}} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, valid_ids} -> {:ok, Enum.reverse(valid_ids)}
+      error -> error
+    end
+  end
+
+  defp validate_experiment_sections(_section_ids, _scope),
+    do: invalid_request("section_ids must be a list")
+
+  defp create_attrs(request, scope) do
+    policy_config = normalize_policy_config!(request.algorithm, request.policy_config || %{})
+
+    %{
+      project_id: scope.project_id,
+      slug: request.slug,
+      name: request.name,
+      description: request.description,
+      algorithm: request.algorithm,
+      assignment_unit: request.assignment_unit,
+      policy_config: policy_config
+    }
+  end
+
+  defp update_attrs(request, existing_algorithm) do
+    attrs =
+      request
+      |> Map.from_struct()
+      |> Map.take([:slug, :name, :description, :algorithm, :assignment_unit, :policy_config])
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
+    case {Map.get(attrs, :algorithm, existing_algorithm), Map.get(attrs, :policy_config)} do
+      {nil, nil} ->
+        attrs
+
+      {nil, _policy_config} ->
+        attrs
+
+      {algorithm, policy_config} ->
+        Map.put(attrs, :policy_config, normalize_policy_config!(algorithm, policy_config || %{}))
+    end
+  end
+
+  defp transition_attrs(schema, target_state, transitioned_at) do
+    now = transitioned_at || DateTime.utc_now() |> DateTime.truncate(:second)
+
+    attrs = %{state: target_state}
+
+    case {schema.state, target_state} do
+      {_state, :active} when is_nil(schema.started_at) -> Map.put(attrs, :started_at, now)
+      {_state, :completed} -> Map.put(attrs, :ended_at, now)
+      _transition -> attrs
+    end
+  end
+
+  defp validate_transition(current_state, target_state) do
+    allowed_targets = Map.fetch!(@allowed_transitions, current_state)
+
+    if target_state in allowed_targets do
+      :ok
+    else
+      {:error,
+       %ExperimentError{
+         type: :invalid_state,
+         message: "experiment cannot transition from #{current_state} to #{target_state}",
+         details: %{current_state: current_state, target_state: target_state}
+       }}
+    end
+  end
+
+  defp validate_activation_algorithm(%ExperimentDefinitionSchema{algorithm: :weighted_random}),
+    do: :ok
+
+  defp validate_activation_algorithm(%ExperimentDefinitionSchema{algorithm: :thompson_sampling}),
+    do: :ok
+
+  defp activation_decision_points(schema) do
+    decision_points =
+      from(decision_point in DecisionPoint,
+        where: decision_point.experiment_id == ^schema.id,
+        order_by: [asc: decision_point.position, asc: decision_point.id]
+      )
+      |> Repo.all()
+
+    case decision_points do
+      [_decision_point] -> {:ok, decision_points}
+      [] -> {:ok, []}
+      _ -> invalid_condition("MVP experiments support exactly one decision point")
+    end
+  end
+
+  defp validate_transition_prerequisites(_schema, target_state) when target_state != :active,
+    do: :ok
+
+  defp validate_transition_prerequisites(schema, :active) do
+    with :ok <- validate_activation_algorithm(schema),
+         {:ok, decision_points} <- activation_decision_points(schema),
+         :ok <- validate_activation_configuration(schema, decision_points),
+         :ok <- validate_no_active_decision_point_conflict(schema, decision_points) do
+      :ok
+    end
+  end
+
+  defp validate_activation_configuration(_schema, []), do: :ok
+
+  defp validate_activation_configuration(schema, [decision_point]) do
+    conditions = active_conditions(schema.id, decision_point.id)
+
+    with {:ok, revisions} <- activation_revisions(schema, decision_point),
+         :ok <- validate_decision_point_strategies(revisions),
+         :ok <- validate_minimum_active_conditions(conditions),
+         :ok <- validate_positive_active_weight(conditions),
+         :ok <- validate_condition_option_mappings(revisions, conditions),
+         :ok <- validate_adaptive_activation(schema, conditions) do
+      :ok
+    end
+  end
+
+  defp validate_no_active_decision_point_conflict(schema, decision_points) do
+    Enum.reduce_while(decision_points, :ok, fn decision_point, :ok ->
+      # Different experiments have different rows, so their individual lifecycle
+      # locks cannot serialize this check. Lock the shared alternatives resource
+      # to close the concurrent "no conflict" check followed by activation race.
+      lock_decision_point_resource!(decision_point.alternatives_resource_id)
+
+      conflict? =
+        from(experiment in ExperimentDefinitionSchema,
+          join: other_decision_point in DecisionPoint,
+          on: other_decision_point.experiment_id == experiment.id,
+          where:
+            experiment.id != ^schema.id and
+              experiment.state == :active and
+              other_decision_point.alternatives_resource_id ==
+                ^decision_point.alternatives_resource_id and
+              other_decision_point.decision_point_key == ^decision_point.decision_point_key
+        )
+        |> Repo.exists?()
+
+      case conflict? do
+        false ->
+          {:cont, :ok}
+
+        true ->
+          {:halt,
+           {:error,
+            %ExperimentError{
+              type: :conflict,
+              message: "another active experiment already targets this decision point",
+              details: %{
+                experiment_id: schema.id,
+                alternatives_resource_id: decision_point.alternatives_resource_id,
+                decision_point_key: decision_point.decision_point_key
+              }
+            }}}
+      end
+    end)
+  end
+
+  defp lock_decision_point_resource!(alternatives_resource_id) do
+    Repo.one!(
+      from(resource in Resource,
+        where: resource.id == ^alternatives_resource_id,
+        select: resource.id,
+        lock: "FOR UPDATE"
+      )
+    )
+  end
+
+  defp active_conditions(experiment_id, decision_point_id) do
+    from(condition in Condition,
+      where:
+        condition.experiment_id == ^experiment_id and
+          condition.decision_point_id == ^decision_point_id and
+          condition.active == true,
+      order_by: [asc: condition.position, asc: condition.id]
+    )
+    |> Repo.all()
+  end
+
+  defp validate_minimum_active_conditions(conditions) do
+    if length(conditions) >= 2 do
+      :ok
+    else
+      invalid_condition("weighted random experiments require at least two active conditions")
+    end
+  end
+
+  defp validate_positive_active_weight(conditions) do
+    active_total =
+      conditions
+      |> Enum.filter(& &1.active)
+      |> Enum.reduce(0.0, fn condition, total -> total + (condition.weight || 0.0) end)
+
+    if active_total > 0.0 do
+      :ok
+    else
+      invalid_condition("active condition weights must have a positive total")
+    end
+  end
+
+  defp validate_condition_option_mappings(revisions, conditions) do
+    Enum.reduce_while(revisions, :ok, fn revision, :ok ->
+      case validate_condition_option_mapping(revision, conditions) do
+        :ok -> {:cont, :ok}
+        {:error, %ExperimentError{}} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp validate_condition_option_mapping(revision, conditions) do
+    option_ids = revision_option_ids(revision)
+    missing = Enum.reject(conditions, &((&1.option_id || &1.condition_code) in option_ids))
+
+    case missing do
+      [] ->
+        :ok
+
+      _ ->
+        invalid_condition(
+          "experiment conditions must match the currently resolved alternatives options",
+          %{
+            alternatives_revision_id: revision.id,
+            missing_option_ids: Enum.map(missing, &(&1.option_id || &1.condition_code))
+          }
+        )
+    end
+  end
+
+  defp activation_revisions(schema, decision_point) do
+    case schema.sections do
+      [] ->
+        project = Repo.get!(Project, schema.project_id)
+
+        with {:ok, revision} <-
+               resolve_authoring_revision(project.slug, decision_point.alternatives_resource_id) do
+          {:ok, [revision]}
+        end
+
+      sections ->
+        resolved =
+          Enum.map(sections, fn section ->
+            {section.id,
+             DeliveryResolver.from_resource_id(
+               section.slug,
+               decision_point.alternatives_resource_id
+             )}
+          end)
+
+        missing_section_ids =
+          for {section_id, nil} <- resolved, do: section_id
+
+        case missing_section_ids do
+          [] ->
+            {:ok, Enum.map(resolved, &elem(&1, 1))}
+
+          _ ->
+            invalid_condition(
+              "alternatives content is not deployed to every experiment section",
+              %{missing_section_ids: missing_section_ids}
+            )
+        end
+    end
+  end
+
+  defp validate_decision_point_strategies(revisions) do
+    Enum.reduce_while(revisions, :ok, fn revision, :ok ->
+      case validate_experiment_decision_point_revision(revision) do
+        :ok -> {:cont, :ok}
+        {:error, %ExperimentError{}} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp validate_update_state(schema, request) do
+    cond do
+      schema.state == :draft ->
+        :ok
+
+      schema.state == :paused and (safe_paused_update?(request) or graph_request?(request)) ->
+        :ok
+
+      schema.state in [:completed, :archived] ->
+        {:error,
+         %ExperimentError{
+           type: :invalid_state,
+           message: "completed or archived experiments are read-only",
+           details: %{state: schema.state}
+         }}
+
+      true ->
+        {:error,
+         %ExperimentError{
+           type: :invalid_state,
+           message: "experiment state does not allow this edit",
+           details: %{state: schema.state}
+         }}
+    end
+  end
+
+  defp metadata_only_update?(request) do
+    request
+    |> Map.from_struct()
+    |> Map.drop([:__struct__, :scope, :name, :description])
+    |> Enum.all?(fn {_key, value} -> is_nil(value) end)
+  end
+
+  defp safe_paused_update?(request) do
+    metadata_only_update?(request) or
+      (not is_nil(request.conditions) and
+         is_nil(request.algorithm) and
+         is_nil(request.assignment_unit) and
+         is_nil(request.decision_point))
+  end
+
+  defp validate_assignment_safe_update(_schema, %Oli.Experiments.UpdateExperimentRequest{
+         conditions: nil
+       }),
+       do: :ok
+
+  defp validate_assignment_safe_update(schema, request) do
+    case assignment_counts_by_condition(schema.id) do
+      counts when counts == %{} ->
+        :ok
+
+      counts ->
+        validate_assigned_conditions_unchanged(schema, request, counts)
+    end
+  end
+
+  defp validate_assigned_conditions_unchanged(schema, request, counts) do
+    existing =
+      from(condition in Condition,
+        where: condition.experiment_id == ^schema.id,
+        select: {condition.condition_code, condition}
+      )
+      |> Repo.all()
+      |> Map.new()
+
+    incoming =
+      request.conditions
+      |> Enum.map(&atomize_keys/1)
+      |> Map.new(&{Map.get(&1, :condition_code), &1})
+
+    assigned_codes =
+      existing
+      |> Enum.filter(fn {_code, condition} -> Map.get(counts, condition.id, 0) > 0 end)
+      |> Enum.map(fn {code, _condition} -> code end)
+
+    changed =
+      Enum.find(assigned_codes, fn code ->
+        existing_condition = Map.fetch!(existing, code)
+        incoming_condition = Map.get(incoming, code)
+
+        is_nil(incoming_condition) or
+          incoming_condition.option_id != existing_condition.option_id or
+          incoming_condition.active == false
+      end)
+
+    case changed do
+      nil ->
+        :ok
+
+      code ->
+        invalid_condition(
+          "learner assignments already exist for condition #{code}; condition identity, option mapping, and active state cannot be changed",
+          %{condition_code: code}
+        )
+    end
+  end
+
+  defp validate_authoring_algorithm(_algorithm, _graph_request?), do: :ok
+
+  defp validate_graph_request(request, scope) do
+    case graph_request?(request) do
+      false ->
+        :ok
+
+      true ->
+        with :ok <- validate_one_decision_point(request.decision_point),
+             :ok <- validate_authoring_conditions(request.conditions),
+             :ok <- validate_alternatives_reference(request.decision_point, scope),
+             :ok <-
+               validate_condition_options(request.decision_point, request.conditions, scope),
+             :ok <- validate_policy_config(request.algorithm, request.policy_config || %{}) do
+          :ok
+        end
+    end
+  end
+
+  defp validate_policy_config(:weighted_random, _policy_config), do: :ok
+
+  defp validate_policy_config(:thompson_sampling, policy_config) when is_map(policy_config) do
+    with {:ok, normalized} <- normalize_thompson_policy_config(policy_config),
+         :ok <- validate_thompson_priors(normalized),
+         :ok <- validate_thompson_guardrails(normalized) do
+      :ok
+    end
+  end
+
+  defp validate_policy_config(:thompson_sampling, _policy_config),
+    do: invalid_condition("Thompson Sampling policy config must be a map")
+
+  defp validate_policy_config(_algorithm, _policy_config), do: :ok
+
+  defp validate_adaptive_activation(
+         %ExperimentDefinitionSchema{algorithm: :weighted_random},
+         _conditions
+       ),
+       do: :ok
+
+  defp validate_adaptive_activation(
+         %ExperimentDefinitionSchema{algorithm: :thompson_sampling, policy_config: policy_config},
+         conditions
+       ) do
+    with :ok <- validate_policy_config(:thompson_sampling, policy_config || %{}),
+         true <- Map.get(policy_config || %{}, "reward_source") == @thompson_reward_source,
+         {:ok, _state} <- ThompsonSampling.initial_state(policy_config || %{}, conditions) do
+      :ok
+    else
+      false ->
+        invalid_condition("Thompson Sampling requires full-credit binary reward readiness")
+
+      {:error, reason} ->
+        invalid_condition("Thompson Sampling policy state could not be initialized", %{
+          reason: reason
+        })
+    end
+  end
+
+  defp normalize_policy_config!(:thompson_sampling, policy_config) do
+    {:ok, normalized} = normalize_thompson_policy_config(policy_config)
+    normalized
+  end
+
+  defp normalize_policy_config!(_algorithm, policy_config), do: policy_config || %{}
+
+  defp normalize_thompson_policy_config(policy_config) when is_map(policy_config) do
+    defaults = ThompsonSampling.default_policy_config()
+
+    with {:ok, priors} <- nested_map(policy_config, "priors"),
+         {:ok, default_prior} <- nested_map(priors, "default"),
+         {:ok, condition_priors} <- nested_map(priors, "conditions"),
+         {:ok, guardrails} <- nested_map(policy_config, "guardrails"),
+         {:ok, normalized_condition_priors} <- normalize_condition_priors(condition_priors) do
+      normalized = %{
+        "reward_source" => Map.get(policy_config, "reward_source", @thompson_reward_source),
+        "priors" => %{
+          "default" => %{
+            "alpha" => Map.get(default_prior, "alpha", defaults["priors"]["default"]["alpha"]),
+            "beta" => Map.get(default_prior, "beta", defaults["priors"]["default"]["beta"])
+          },
+          "conditions" => normalized_condition_priors
+        },
+        "guardrails" => %{
+          "manual_pause_enabled" =>
+            Map.get(
+              guardrails,
+              "manual_pause_enabled",
+              @thompson_default_guardrails["manual_pause_enabled"]
+            ),
+          "warm_up_assignments" =>
+            Map.get(
+              guardrails,
+              "warm_up_assignments",
+              @thompson_default_guardrails["warm_up_assignments"]
+            ),
+          "max_condition_share" =>
+            Map.get(
+              guardrails,
+              "max_condition_share",
+              @thompson_default_guardrails["max_condition_share"]
+            ),
+          "fixed_control_allocation" =>
+            Map.get(
+              guardrails,
+              "fixed_control_allocation",
+              @thompson_default_guardrails["fixed_control_allocation"]
+            ),
+          "imbalance_threshold" =>
+            Map.get(
+              guardrails,
+              "imbalance_threshold",
+              @thompson_default_guardrails["imbalance_threshold"]
+            )
+        }
+      }
+
+      {:ok, normalized}
+    end
+  end
+
+  defp normalize_thompson_policy_config(_policy_config),
+    do: invalid_condition("Thompson Sampling policy config must be a map")
+
+  defp nested_map(map, key) do
+    case Map.get(map, key, %{}) do
+      value when is_map(value) ->
+        {:ok, value}
+
+      _value ->
+        invalid_condition("Thompson Sampling #{key} config must be a map")
+    end
+  end
+
+  defp normalize_condition_priors(condition_priors) when is_map(condition_priors) do
+    Enum.reduce_while(condition_priors, {:ok, %{}}, fn {condition_code, prior},
+                                                       {:ok, normalized} ->
+      case prior do
+        prior when is_map(prior) ->
+          condition_prior =
+            %{
+              "alpha" => Map.get(prior, "alpha"),
+              "beta" => Map.get(prior, "beta")
+            }
+            |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+            |> Map.new()
+
+          {:cont, {:ok, Map.put(normalized, condition_code, condition_prior)}}
+
+        _value ->
+          {:halt,
+           invalid_condition("Thompson Sampling per-condition prior config must be a map", %{
+             condition_code: condition_code
+           })}
+      end
+    end)
+  end
+
+  defp normalize_condition_priors(_condition_priors),
+    do: invalid_condition("Thompson Sampling condition priors config must be a map")
+
+  defp validate_thompson_priors(policy_config) do
+    priors = policy_config["priors"]
+
+    [priors["default"] | Map.values(priors["conditions"])]
+    |> Enum.reduce_while(:ok, fn prior, :ok ->
+      with :ok <- validate_positive_prior(prior, "alpha"),
+           :ok <- validate_positive_prior(prior, "beta") do
+        {:cont, :ok}
+      else
+        {:error, %ExperimentError{}} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp validate_positive_prior(prior, key) do
+    case Map.get(prior, key) do
+      value when is_number(value) and value >= 0.0001 and value <= 1_000.0 ->
+        :ok
+
+      _value ->
+        invalid_condition("Thompson Sampling prior #{key} must be between 0.0001 and 1000")
+    end
+  end
+
+  defp validate_thompson_guardrails(policy_config) do
+    guardrails = policy_config["guardrails"]
+
+    cond do
+      not is_boolean(guardrails["manual_pause_enabled"]) ->
+        invalid_condition("Thompson Sampling manual pause guardrail must be enabled or disabled")
+
+      not non_negative_integer?(guardrails["warm_up_assignments"]) ->
+        invalid_condition("Thompson Sampling warm-up assignments must be a non-negative integer")
+
+      not share?(guardrails["max_condition_share"]) ->
+        invalid_condition(
+          "Thompson Sampling max condition share must be greater than 0 and at most 1"
+        )
+
+      not is_nil(guardrails["fixed_control_allocation"]) and
+          not share?(guardrails["fixed_control_allocation"]) ->
+        invalid_condition(
+          "Thompson Sampling fixed control allocation must be greater than 0 and at most 1"
+        )
+
+      not share?(guardrails["imbalance_threshold"]) ->
+        invalid_condition(
+          "Thompson Sampling imbalance threshold must be greater than 0 and at most 1"
+        )
+
+      true ->
+        :ok
+    end
+  end
+
+  defp non_negative_integer?(value), do: is_integer(value) and value >= 0
+  defp share?(value), do: is_number(value) and value > 0.0 and value <= 1.0
+
+  defp validate_one_decision_point(nil), do: invalid_condition("decision point is required")
+  defp validate_one_decision_point(_decision_point), do: :ok
+
+  defp validate_authoring_conditions(conditions) when is_list(conditions) do
+    normalized = Enum.map(conditions, &atomize_keys/1)
+    codes = Enum.map(normalized, &Map.get(&1, :condition_code))
+
+    cond do
+      length(normalized) < 2 ->
+        invalid_condition("weighted random experiments require at least two conditions")
+
+      Enum.any?(codes, &is_nil/1) ->
+        invalid_condition("condition_code is required")
+
+      length(codes) != length(Enum.uniq(codes)) ->
+        invalid_condition("condition codes must be unique")
+
+      Enum.any?(normalized, fn condition -> (condition.weight || 0) < 0 end) ->
+        invalid_condition("condition weights must be non-negative")
+
+      normalized
+      |> Enum.filter(&Map.get(&1, :active, true))
+      |> Enum.reduce(0.0, fn condition, total -> total + (condition.weight || 0.0) end)
+      |> Kernel.<=(0.0) ->
+        invalid_condition("active condition weights must have a positive total")
+
+      normalized |> Enum.count(&Map.get(&1, :active, true)) < 2 ->
+        invalid_condition("weighted random experiments require at least two active conditions")
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_authoring_conditions(_conditions),
+    do: invalid_condition("conditions are required")
+
+  defp validate_alternatives_reference(decision_point, scope) do
+    attrs = atomize_keys(decision_point)
+    alternatives_resource_id = Map.get(attrs, :alternatives_resource_id)
+
+    with true <- is_integer(alternatives_resource_id),
+         {:ok, revision} <-
+           resolve_authoring_revision(scope.project_slug, alternatives_resource_id),
+         :ok <- validate_experiment_decision_point_revision(revision) do
+      :ok
+    else
+      false -> invalid_condition("alternatives_resource_id is required")
+      {:error, %ExperimentError{}} = error -> error
+    end
+  end
+
+  defp validate_condition_options(decision_point, conditions, scope) do
+    attrs = atomize_keys(decision_point)
+
+    with {:ok, revision} <-
+           resolve_authoring_revision(
+             scope.project_slug,
+             Map.get(attrs, :alternatives_resource_id)
+           ) do
+      option_ids = revision_option_ids(revision)
+
+      missing =
+        conditions
+        |> Enum.map(&atomize_keys/1)
+        |> Enum.reject(fn condition ->
+          (condition.option_id || condition.condition_code) in option_ids
+        end)
+
+      case missing do
+        [] ->
+          :ok
+
+        _ ->
+          invalid_condition("condition options must match the selected alternatives options", %{
+            missing_option_ids: Enum.map(missing, &(&1.option_id || &1.condition_code))
+          })
+      end
+    end
+  end
+
+  defp resolve_authoring_revision(project_slug, resource_id) do
+    case AuthoringResolver.from_resource_id(project_slug, resource_id) do
+      %Revision{} = revision ->
+        case revision.resource_type_id == ResourceType.id_for_alternatives() do
+          true -> {:ok, revision}
+          false -> invalid_condition("selected resource is not an alternatives group")
+        end
+
+      nil ->
+        not_found("alternatives resource is not in the project working publication", %{
+          alternatives_resource_id: resource_id
+        })
+    end
+  end
+
+  defp to_decision_point_candidate(%Revision{} = revision) do
+    %DecisionPointCandidate{
+      alternatives_resource_id: revision.resource_id,
+      alternatives_revision_id: revision.id,
+      decision_point_key: "alternatives:#{revision.resource_id}",
+      title: revision.title,
+      options: revision_option_ids(revision),
+      option_labels: revision_option_labels(revision)
+    }
+  end
+
+  defp experiment_decision_point_revision?(%Revision{} = revision) do
+    get_in(revision.content || %{}, ["strategy"]) == "upgrade_decision_point"
+  end
+
+  defp validate_experiment_decision_point_revision(%Revision{} = revision) do
+    if experiment_decision_point_revision?(revision) do
+      :ok
+    else
+      invalid_condition("selected alternatives group is not an A/B Testing decision point")
+    end
+  end
+
+  defp public_decision_point(%DecisionPoint{} = decision_point) do
+    %{
+      id: decision_point.id,
+      alternatives_resource_id: decision_point.alternatives_resource_id,
+      decision_point_key: decision_point.decision_point_key,
+      title: decision_point.title,
+      position: decision_point.position
+    }
+  end
+
+  defp public_condition(%Condition{} = condition) do
+    %{
+      id: condition.id,
+      decision_point_id: condition.decision_point_id,
+      condition_code: condition.condition_code,
+      option_id: condition.option_id,
+      label: condition.label,
+      weight: condition.weight,
+      active: condition.active,
+      position: condition.position
+    }
+  end
+
+  defp assignment_counts_by_condition(experiment_id) do
+    from(assignment in Assignment,
+      where: assignment.experiment_id == ^experiment_id,
+      group_by: assignment.condition_id,
+      select: {assignment.condition_id, count(assignment.id)}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  defp atomize_keys(nil), do: %{}
+
+  defp atomize_keys(map) when is_map(map) do
+    Map.new(map, fn
+      {key, value} when is_binary(key) -> {authoring_payload_key(key), value}
+      {key, value} -> {key, value}
+    end)
+    |> Enum.reject(fn {key, _value} -> is_nil(key) end)
+    |> Map.new()
+  end
+
+  defp authoring_payload_key("alternatives_resource_id"), do: :alternatives_resource_id
+  defp authoring_payload_key("decision_point_key"), do: :decision_point_key
+  defp authoring_payload_key("title"), do: :title
+  defp authoring_payload_key("position"), do: :position
+  defp authoring_payload_key("condition_code"), do: :condition_code
+  defp authoring_payload_key("option_id"), do: :option_id
+  defp authoring_payload_key("label"), do: :label
+  defp authoring_payload_key("weight"), do: :weight
+  defp authoring_payload_key("active"), do: :active
+  defp authoring_payload_key(_key), do: nil
+
+  defp emit_authoring_telemetry(action, schema, extra_metadata) do
+    :telemetry.execute(
+      [:oli, :experiments, :authoring, action],
+      %{count: 1},
+      Map.merge(
+        %{
+          experiment_id: schema.id,
+          project_id: schema.project_id,
+          section_ids: Enum.map(schema.sections, & &1.id)
+        },
+        extra_metadata
+      )
+    )
+  end
+
+  defp emit_authoring_validation_failed(action, scope, error, extra_metadata \\ %{}) do
+    scope = scope || %Scope{}
+
+    :telemetry.execute(
+      [:oli, :experiments, :authoring, :validation_failed],
+      %{count: 1},
+      Map.merge(
+        %{
+          action: action,
+          project_id: scope.project_id,
+          section_id: scope.section_id,
+          error_type: error.type
+        },
+        extra_metadata
+      )
+    )
+  end
+
+  defp emit_lifecycle_telemetry(action, schema, extra_metadata) do
+    :telemetry.execute(
+      [:oli, :experiments, :lifecycle, action],
+      %{count: 1},
+      Map.merge(
+        %{
+          experiment_id: schema.id,
+          project_id: schema.project_id,
+          section_ids: Enum.map(schema.sections, & &1.id),
+          algorithm: schema.algorithm
+        },
+        extra_metadata
+      )
+    )
+  end
+
+  defp emit_lifecycle_failed(scope, error, extra_metadata) do
+    scope = scope || %Scope{}
+
+    :telemetry.execute(
+      [:oli, :experiments, :lifecycle, :transition_failed],
+      %{count: 1},
+      Map.merge(
+        %{
+          project_id: scope.project_id,
+          section_id: scope.section_id,
+          error_type: error.type
+        },
+        extra_metadata
+      )
+    )
+  end
+
+  defp normalize_transaction_result({:ok, schema}), do: {:ok, schema}
+
+  defp normalize_transaction_result({:error, %Ecto.Changeset{} = changeset}),
+    do: normalize_result({:error, changeset})
+
+  defp normalize_transaction_result({:error, %ExperimentError{} = error}), do: {:error, error}
+
+  defp normalize_transaction_result({:error, reason}) do
+    {:error,
+     %ExperimentError{
+       type: :persistence_error,
+       message: "experiment graph could not be persisted",
+       details: %{reason: inspect(reason)}
+     }}
+  end
+
+  defp normalize_transaction_result(
+         {:error, _operation, %Ecto.Changeset{} = changeset, _changes}
+       ),
+       do: normalize_result({:error, changeset})
+
+  defp normalize_transaction_result({:error, _operation, reason, _changes}),
+    do: normalize_transaction_result({:error, reason})
+
+  defp normalize_transaction_result(result), do: result
+
+  defp revision_option_ids(%Revision{content: %{"options" => options}}) when is_list(options) do
+    Enum.map(options, &(Map.get(&1, "id") || Map.get(&1, :id) || Map.get(&1, "name")))
+  end
+
+  defp revision_option_ids(_revision), do: []
+
+  defp revision_option_labels(%Revision{content: %{"options" => options}})
+       when is_list(options) do
+    Map.new(options, fn option ->
+      id = Map.get(option, "id") || Map.get(option, :id) || Map.get(option, "name")
+      label = Map.get(option, "name") || Map.get(option, :name) || id
+      {id, label}
+    end)
+  end
+
+  defp revision_option_labels(_revision), do: %{}
+
+  defp graph_request?(%{decision_point: nil, conditions: conditions})
+       when conditions in [nil, []],
+       do: false
+
+  defp graph_request?(_request), do: true
+
+  defp maybe_require_authoring_scope(_scope, false), do: :ok
+  defp maybe_require_authoring_scope(scope, true), do: require_authoring_scope(scope)
+
+  defp require_authoring_scope(%Scope{enrollment_id: nil}), do: :ok
+
+  defp require_authoring_scope(_scope) do
+    invalid_scope("authoring experiments must be project- or section-scoped")
+  end
+
+  defp require_eligible_section_reader(%Scope{
+         author_id: author_id,
+         project_id: project_id
+       })
+       when not is_nil(author_id) do
+    author = Repo.get(Oli.Accounts.Author, author_id)
+
+    accepted_collaborator? =
+      Repo.exists?(
+        from(author_project in AuthorProject,
+          where:
+            author_project.author_id == ^author_id and
+              author_project.project_id == ^project_id and
+              author_project.status == :accepted
+        )
+      )
+
+    case accepted_collaborator? or Oli.Accounts.is_admin?(author) do
+      true -> :ok
+      false -> invalid_scope("author cannot access project sections")
+    end
+  end
+
+  defp require_eligible_section_reader(_scope) do
+    invalid_scope("author scope is required")
+  end
+
+  defp validate_scope(%Scope{} = scope) do
+    with {:ok, scope} <- validate_institution(scope),
+         {:ok, scope} <- validate_project(scope),
+         {:ok, scope} <- validate_section(scope),
+         {:ok, scope} <- validate_publication(scope),
+         {:ok, scope} <- validate_user(scope),
+         {:ok, scope} <- validate_enrollment(scope) do
+      {:ok, scope}
+    end
+  end
+
+  defp validate_scope(_scope), do: invalid_scope("scope is required")
+
+  defp validate_delivery_participation_scope(
+         %Scope{
+           project_id: project_id,
+           section_id: section_id,
+           user_id: user_id,
+           enrollment_id: enrollment_id
+         } = scope
+       )
+       when is_integer(project_id) and is_integer(section_id) and is_integer(user_id) and
+              is_integer(enrollment_id) do
+    query =
+      from(section in Section,
+        as: :section,
+        join: project in Project,
+        on: project.id == ^project_id,
+        join: user in User,
+        on: user.id == ^user_id,
+        join: enrollment in Enrollment,
+        on:
+          enrollment.id == ^enrollment_id and enrollment.section_id == section.id and
+            enrollment.user_id == user.id,
+        where: section.id == ^section_id,
+        select:
+          {section, project, user, enrollment,
+           exists(
+             from(spp in SectionsProjectsPublications,
+               where: spp.section_id == parent_as(:section).id and spp.project_id == ^project_id
+             )
+           )}
+      )
+
+    case Repo.one(query) do
+      {section, project, _user, _enrollment, project_relationship?} ->
+        cond do
+          not is_nil(scope.institution_id) and section.institution_id != scope.institution_id ->
+            invalid_scope("section does not belong to institution", %{
+              section_id: section.id,
+              institution_id: scope.institution_id,
+              actual_institution_id: section.institution_id
+            })
+
+          not is_nil(scope.project_slug) and project.slug != scope.project_slug ->
+            invalid_scope("project slug does not match project_id", %{
+              project_id: project.id,
+              project_slug: scope.project_slug,
+              actual_slug: project.slug
+            })
+
+          not is_nil(scope.section_slug) and section.slug != scope.section_slug ->
+            invalid_scope("section slug does not match section_id", %{
+              section_id: section.id,
+              section_slug: scope.section_slug,
+              actual_slug: section.slug
+            })
+
+          true ->
+            {:ok,
+             %{
+               scope
+               | project_slug: scope.project_slug || project.slug,
+                 section_slug: scope.section_slug || section.slug,
+                 project_relationship?: project_relationship?
+             }}
+        end
+
+      nil ->
+        invalid_scope("delivery participation scope is invalid")
+    end
+  end
+
+  defp validate_delivery_participation_scope(%Scope{} = scope) do
+    with {:ok, scope} <- validate_institution(scope),
+         {:ok, scope} <- validate_project(scope),
+         {:ok, scope} <- validate_participation_section(scope),
+         {:ok, scope} <- validate_user(scope),
+         {:ok, scope} <- validate_enrollment(scope) do
+      {:ok, scope}
+    end
+  end
+
+  defp validate_delivery_participation_scope(_scope), do: invalid_scope("scope is required")
+
+  defp validate_institution(%Scope{institution_id: nil} = scope), do: {:ok, scope}
+
+  defp validate_institution(%Scope{institution_id: institution_id} = scope) do
+    case Repo.get(Oli.Institutions.Institution, institution_id) do
+      nil -> invalid_scope("institution not found", %{institution_id: institution_id})
+      _institution -> {:ok, scope}
+    end
+  end
+
+  defp validate_project(%Scope{project_id: nil, project_slug: nil}) do
+    invalid_scope("project_id or project_slug is required")
+  end
+
+  defp validate_project(%Scope{project_id: project_id} = scope) when not is_nil(project_id) do
+    case Repo.get(Project, project_id) do
+      nil ->
+        invalid_scope("project not found", %{project_id: project_id})
+
+      project ->
+        validate_project_slug(
+          %{scope | project_id: project.id, project_slug: scope.project_slug || project.slug},
+          project
+        )
+    end
+  end
+
+  defp validate_project(%Scope{project_slug: project_slug} = scope) do
+    case Repo.get_by(Project, slug: project_slug) do
+      nil -> invalid_scope("project not found", %{project_slug: project_slug})
+      project -> {:ok, %{scope | project_id: project.id, project_slug: project.slug}}
+    end
+  end
+
+  defp validate_project_slug(%Scope{project_slug: nil} = scope, _project), do: {:ok, scope}
+
+  defp validate_project_slug(%Scope{project_slug: project_slug} = scope, %Project{
+         slug: project_slug
+       }) do
+    {:ok, scope}
+  end
+
+  defp validate_project_slug(%Scope{} = scope, %Project{} = project) do
+    invalid_scope("project slug does not match project_id", %{
+      project_id: scope.project_id,
+      project_slug: scope.project_slug,
+      actual_slug: project.slug
+    })
+  end
+
+  defp validate_publication(%Scope{publication_id: nil} = scope), do: {:ok, scope}
+
+  defp validate_publication(
+         %Scope{publication_id: publication_id, project_id: project_id} = scope
+       ) do
+    case Repo.get(Publication, publication_id) do
+      nil ->
+        invalid_scope("publication not found", %{publication_id: publication_id})
+
+      %Publication{project_id: ^project_id} ->
+        validate_section_publication(scope)
+
+      %Publication{project_id: actual_project_id} ->
+        invalid_scope("publication does not belong to project", %{
+          publication_id: publication_id,
+          project_id: project_id,
+          actual_project_id: actual_project_id
+        })
+    end
+  end
+
+  defp validate_section_publication(%Scope{section_id: nil} = scope), do: {:ok, scope}
+
+  defp validate_section_publication(%Scope{} = scope) do
+    case Repo.exists?(
+           from(spp in SectionsProjectsPublications,
+             where:
+               spp.section_id == ^scope.section_id and
+                 spp.project_id == ^scope.project_id and
+                 spp.publication_id == ^scope.publication_id
+           )
+         ) do
+      true ->
+        {:ok, scope}
+
+      false ->
+        invalid_scope("publication is not deployed to section", %{
+          publication_id: scope.publication_id,
+          project_id: scope.project_id,
+          section_id: scope.section_id
+        })
+    end
+  end
+
+  defp validate_section(%Scope{section_id: nil, section_slug: nil} = scope), do: {:ok, scope}
+
+  defp validate_section(%Scope{section_id: section_id} = scope) when not is_nil(section_id) do
+    case Repo.get(Section, section_id) do
+      nil ->
+        invalid_scope("section not found", %{section_id: section_id})
+
+      section ->
+        validate_section_scope(
+          %{scope | section_id: section.id, section_slug: scope.section_slug || section.slug},
+          section
+        )
+    end
+  end
+
+  defp validate_section(%Scope{section_slug: section_slug} = scope) do
+    case Repo.get_by(Section, slug: section_slug) do
+      nil ->
+        invalid_scope("section not found", %{section_slug: section_slug})
+
+      section ->
+        validate_section_scope(
+          %{scope | section_id: section.id, section_slug: section.slug},
+          section
+        )
+    end
+  end
+
+  defp validate_participation_section(%Scope{section_id: nil, section_slug: nil} = scope),
+    do: {:ok, scope}
+
+  defp validate_participation_section(%Scope{section_id: section_id} = scope)
+       when not is_nil(section_id) do
+    case participation_section(section_id, scope.project_id) do
+      nil ->
+        invalid_scope("section not found", %{section_id: section_id})
+
+      {section, project_relationship?} ->
+        validate_participation_section_scope(
+          %{
+            scope
+            | section_id: section.id,
+              section_slug: scope.section_slug || section.slug,
+              project_relationship?: project_relationship?
+          },
+          section
+        )
+    end
+  end
+
+  defp validate_participation_section(%Scope{section_slug: section_slug} = scope) do
+    case participation_section_by_slug(section_slug, scope.project_id) do
+      nil ->
+        invalid_scope("section not found", %{section_slug: section_slug})
+
+      {section, project_relationship?} ->
+        validate_participation_section_scope(
+          %{
+            scope
+            | section_id: section.id,
+              section_slug: section.slug,
+              project_relationship?: project_relationship?
+          },
+          section
+        )
+    end
+  end
+
+  defp participation_section(section_id, project_id) do
+    from(section in Section,
+      as: :section,
+      where: section.id == ^section_id,
+      select:
+        {section,
+         exists(
+           from(spp in SectionsProjectsPublications,
+             where:
+               spp.section_id == parent_as(:section).id and
+                 spp.project_id == ^project_id
+           )
+         )}
+    )
+    |> Repo.one()
+  end
+
+  defp participation_section_by_slug(section_slug, project_id) do
+    from(section in Section,
+      as: :section,
+      where: section.slug == ^section_slug,
+      select:
+        {section,
+         exists(
+           from(spp in SectionsProjectsPublications,
+             where:
+               spp.section_id == parent_as(:section).id and
+                 spp.project_id == ^project_id
+           )
+         )}
+    )
+    |> Repo.one()
+  end
+
+  defp validate_participation_section_scope(scope, section) do
+    cond do
+      section.slug != scope.section_slug ->
+        invalid_scope("section slug does not match section_id", %{
+          section_id: scope.section_id,
+          section_slug: scope.section_slug,
+          actual_slug: section.slug
+        })
+
+      not is_nil(scope.institution_id) and not is_nil(section.institution_id) and
+          section.institution_id != scope.institution_id ->
+        invalid_scope("section does not belong to institution", %{
+          section_id: section.id,
+          institution_id: scope.institution_id,
+          actual_institution_id: section.institution_id
+        })
+
+      true ->
+        {:ok, scope}
+    end
+  end
+
+  defp validate_section_scope(scope, section) do
+    cond do
+      not is_nil(scope.section_slug) and section.slug != scope.section_slug ->
+        invalid_scope("section slug does not match section_id", %{
+          section_id: scope.section_id,
+          section_slug: scope.section_slug,
+          actual_slug: section.slug
+        })
+
+      not is_nil(scope.institution_id) and not is_nil(section.institution_id) and
+          section.institution_id != scope.institution_id ->
+        invalid_scope("section does not belong to institution", %{
+          section_id: section.id,
+          institution_id: scope.institution_id,
+          actual_institution_id: section.institution_id
+        })
+
+      section.base_project_id != scope.project_id ->
+        invalid_scope("section does not belong to project", %{
+          section_id: section.id,
+          project_id: scope.project_id,
+          actual_project_id: section.base_project_id
+        })
+
+      true ->
+        {:ok, scope}
+    end
+  end
+
+  defp validate_user(%Scope{user_id: nil} = scope), do: {:ok, scope}
+
+  defp validate_user(%Scope{user_id: user_id} = scope) do
+    case Repo.get(User, user_id) do
+      nil -> invalid_scope("user not found", %{user_id: user_id})
+      _user -> {:ok, scope}
+    end
+  end
+
+  defp validate_enrollment(%Scope{enrollment_id: nil} = scope), do: {:ok, scope}
+
+  defp validate_enrollment(%Scope{enrollment_id: enrollment_id} = scope) do
+    case Repo.get(Enrollment, enrollment_id) do
+      nil ->
+        invalid_scope("enrollment not found", %{enrollment_id: enrollment_id})
+
+      enrollment ->
+        validate_enrollment_scope(scope, enrollment)
+    end
+  end
+
+  defp validate_enrollment_scope(scope, enrollment) do
+    cond do
+      not is_nil(scope.section_id) and enrollment.section_id != scope.section_id ->
+        invalid_scope("enrollment does not belong to section", %{
+          enrollment_id: enrollment.id,
+          section_id: scope.section_id,
+          actual_section_id: enrollment.section_id
+        })
+
+      not is_nil(scope.user_id) and enrollment.user_id != scope.user_id ->
+        invalid_scope("enrollment does not belong to user", %{
+          enrollment_id: enrollment.id,
+          user_id: scope.user_id,
+          actual_user_id: enrollment.user_id
+        })
+
+      true ->
+        {:ok, %{scope | section_id: enrollment.section_id, user_id: enrollment.user_id}}
+    end
+  end
+
+  defp ensure_definition_in_scope(schema, scope) do
+    cond do
+      schema.project_id != scope.project_id ->
+        invalid_scope("experiment does not belong to project")
+
+      not is_nil(scope.section_id) and
+          not Repo.exists?(
+            from(experiment in ExperimentDefinitionSchema,
+              as: :experiment,
+              where:
+                experiment.id == ^schema.id and
+                    exists(participating_section_query(scope.section_id))
+            )
+          ) ->
+        invalid_scope("experiment does not belong to section")
+
+      true ->
+        :ok
+    end
+  end
+
+  defp to_definition(%ExperimentDefinitionSchema{} = schema) do
+    %ExperimentDefinition{
+      id: schema.id,
+      uuid: schema.uuid,
+      project_id: schema.project_id,
+      section_ids: Enum.map(schema.sections, & &1.id),
+      slug: schema.slug,
+      name: schema.name,
+      description: schema.description,
+      state: schema.state,
+      assignment_unit: schema.assignment_unit,
+      algorithm: schema.algorithm,
+      policy_config: schema.policy_config,
+      started_at: schema.started_at,
+      ended_at: schema.ended_at
+    }
+  end
+
+  defp to_assignment_decision(nil, _condition, _reused?),
+    do: %AssignmentDecision{status: :no_experiment}
+
+  defp to_assignment_decision(%Assignment{} = assignment, %Condition{} = condition, reused?) do
+    %AssignmentDecision{
+      status: :assigned,
+      experiment_id: assignment.experiment_id,
+      decision_point_id: assignment.decision_point_id,
+      condition_id: assignment.condition_id,
+      condition_code: condition.condition_code,
+      assignment_id: assignment.id,
+      reused?: reused?
+    }
+  end
+
+  defp exposure_receipt(%Assignment{} = assignment, event) do
+    %ExposureReceipt{
+      key: event["key"],
+      assignment_id: assignment.id,
+      recorded_at: event["recorded_at"],
+      reused?: Map.get(event, "reused", false)
+    }
+  end
+
+  defp outcome_receipt(%Assignment{} = assignment, event) do
+    %OutcomeReceipt{
+      key: event["key"],
+      assignment_id: assignment.id,
+      recorded_at: event["recorded_at"],
+      reused?: Map.get(event, "reused", false)
+    }
+  end
+
+  defp reward_receipt(%Assignment{} = assignment, event) do
+    %RewardReceipt{
+      key: event["key"],
+      assignment_id: assignment.id,
+      outcome_key: event["outcome_key"],
+      recorded_at: event["recorded_at"],
+      reused?: Map.get(event, "reused", false)
+    }
+  end
+
+  defp assignment_metadata(%Oli.Experiments.AssignConditionRequest{} = request) do
+    scope = request.scope || %Scope{}
+
+    %{
+      institution_id: scope.institution_id,
+      project_id: scope.project_id,
+      publication_id: scope.publication_id,
+      section_id: scope.section_id,
+      user_id: scope.user_id,
+      enrollment_id: scope.enrollment_id,
+      alternatives_resource_id: request.alternatives_resource_id,
+      alternatives_revision_id: request.alternatives_revision_id,
+      decision_point_key: request.decision_point_key
+    }
+  end
+
+  defp now, do: DateTime.utc_now() |> DateTime.truncate(:second)
+
+  defp hash_key(nil), do: nil
+
+  defp hash_key(value) do
+    :crypto.hash(:sha256, to_string(value))
+    |> Base.encode16(case: :lower)
+  end
+
+  defp normalize_result({:error, %Ecto.Changeset{} = changeset}) do
+    {:error,
+     %ExperimentError{
+       type: error_type(changeset),
+       message: "experiment could not be persisted",
+       details: %{errors: changeset_errors(changeset)}
+     }}
+  end
+
+  defp error_type(%Ecto.Changeset{errors: errors}) do
+    cond do
+      Keyword.has_key?(errors, :state) ->
+        :invalid_state
+
+      Enum.any?(errors, fn {_field, {_message, opts}} -> opts[:constraint] == :unique end) ->
+        :conflict
+
+      true ->
+        :persistence_error
+    end
+  end
+
+  defp conflict?(%Ecto.Changeset{errors: errors}) do
+    Enum.any?(errors, fn {_field, {_message, opts}} -> opts[:constraint] == :unique end)
+  end
+
+  defp changeset_errors(changeset) do
+    traverse_errors(changeset, fn {message, opts} ->
+      Regex.replace(~r"%{(\w+)}", message, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
+  end
+
+  defp invalid_request(message) do
+    {:error, %ExperimentError{type: :persistence_error, message: message}}
+  end
+
+  defp invalid_scope(message, details \\ %{}) do
+    {:error, %ExperimentError{type: :invalid_scope, message: message, details: details}}
+  end
+
+  defp not_found(message, details) do
+    {:error, %ExperimentError{type: :not_found, message: message, details: details}}
+  end
+
+  defp invalid_condition(message, details \\ %{}) do
+    {:error, %ExperimentError{type: :invalid_condition, message: message, details: details}}
+  end
+
+  defp invalid_state(message, details) do
+    {:error, %ExperimentError{type: :invalid_state, message: message, details: details}}
+  end
+end

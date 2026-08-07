@@ -1,0 +1,310 @@
+defmodule Oli.Delivery.Experiments.RewardHandoff do
+  @moduledoc """
+  Translates evaluated activity attempts into native experiment outcomes and rewards.
+  """
+
+  import Ecto.Query, warn: false
+
+  require Logger
+
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess, ResourceAttempt}
+  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
+
+  alias Oli.Experiments.{
+    RecordOutcomeRequest,
+    RecordRewardRequest,
+    RewardEligibleAssignment,
+    Scope
+  }
+
+  alias Oli.Repo
+
+  @reward_source "activity_attempt:full_credit"
+
+  @doc """
+  Records rewards for a batch of evaluated activity-attempt IDs.
+
+  Emits batch-size, duration, context-count, and failure-count telemetry so the current per-attempt
+  eligibility lookup behavior can be monitored in AppSignal.
+  """
+  def record_evaluated_activities(activity_attempt_ids) when is_list(activity_attempt_ids) do
+    start_time = System.monotonic_time()
+    activity_attempt_ids = Enum.filter(activity_attempt_ids, &is_integer/1)
+    contexts = load_evaluated_attempt_contexts(activity_attempt_ids)
+
+    errors =
+      Enum.reduce(contexts, [], fn context, errors ->
+        metadata = %{activity_attempt_id: context.activity_attempt.id}
+
+        case safely_record(metadata, fn -> record_loaded_context(context, metadata) end) do
+          :ok -> errors
+          {:error, reason} -> [{context.activity_attempt.id, reason} | errors]
+        end
+      end)
+
+    result =
+      case errors do
+        [] -> :ok
+        errors -> {:error, {:reward_handoff_failures, Enum.reverse(errors)}}
+      end
+
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :batch, :completed],
+      %{
+        duration_ms: elapsed_milliseconds(start_time),
+        attempt_count: length(activity_attempt_ids),
+        context_count: length(contexts),
+        failure_count: length(errors)
+      },
+      %{status: result_tag(result)}
+    )
+
+    result
+  end
+
+  @doc "Records rewards for one evaluated activity attempt or attempt ID."
+  def record_evaluated_activity(%ActivityAttempt{id: id}), do: record_evaluated_activity(id)
+
+  def record_evaluated_activity(activity_attempt_id) when is_integer(activity_attempt_id) do
+    record_evaluated_activities([activity_attempt_id])
+  end
+
+  def record_evaluated_activity(activity_attempt_guid) when is_binary(activity_attempt_guid) do
+    metadata = %{activity_attempt_guid: activity_attempt_guid}
+
+    safely_record(metadata, fn ->
+      case Repo.get_by(ActivityAttempt, attempt_guid: activity_attempt_guid) do
+        nil -> record_loaded_context(nil, metadata)
+        %ActivityAttempt{id: id} -> record_evaluated_activity(id)
+      end
+    end)
+  end
+
+  def record_evaluated_activity(_activity_attempt), do: {:error, :invalid_activity_attempt}
+
+  defp safely_record(metadata, fun) do
+    fun.()
+  rescue
+    exception ->
+      :telemetry.execute(
+        [:oli, :experiments, :delivery_reward, :exception],
+        %{count: 1},
+        Map.merge(safe_log_metadata(metadata), %{kind: :error, reason: exception.__struct__})
+      )
+
+      Logger.warning(
+        "A/B testing reward handoff failed: #{inspect(Map.merge(safe_log_metadata(metadata), %{error: exception.__struct__}))}"
+      )
+
+      {:error, exception}
+  end
+
+  defp record_loaded_context(nil, metadata) do
+    emit_skipped(:activity_attempt_not_found, metadata)
+    :ok
+  end
+
+  defp record_loaded_context(%{activity_attempt: %{lifecycle_state: state}}, metadata)
+       when state != :evaluated do
+    emit_skipped(:activity_attempt_not_evaluated, Map.put(metadata, :lifecycle_state, state))
+    :ok
+  end
+
+  defp record_loaded_context(%{} = context, metadata) do
+    telemetry_metadata = telemetry_metadata(context, metadata)
+    start_time = System.monotonic_time()
+
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :start],
+      %{system_time: System.system_time()},
+      telemetry_metadata
+    )
+
+    try do
+      result = do_record(context)
+      duration = System.monotonic_time() - start_time
+
+      :telemetry.execute(
+        [:oli, :experiments, :delivery_reward, :stop],
+        %{duration: duration},
+        Map.put(telemetry_metadata, :result, result_tag(result))
+      )
+
+      result
+    rescue
+      exception ->
+        duration = System.monotonic_time() - start_time
+
+        :telemetry.execute(
+          [:oli, :experiments, :delivery_reward, :exception],
+          %{duration: duration},
+          Map.merge(telemetry_metadata, %{kind: :error, reason: exception.__struct__})
+        )
+
+        Logger.warning(
+          "A/B testing reward handoff failed: #{inspect(%{activity_attempt_id: context.activity_attempt.id, error: exception.__struct__})}"
+        )
+
+        {:error, exception}
+    end
+  end
+
+  defp do_record(%{
+         scope: scope,
+         activity_attempt: activity_attempt,
+         eligible_assignments: assignments
+       }) do
+    case assignments do
+      [] ->
+        emit_skipped(:no_reward_eligible_assignment, %{
+          activity_attempt_id: activity_attempt.id,
+          activity_resource_id: activity_attempt.resource_id,
+          section_id: scope.section_id,
+          publication_id: scope.publication_id
+        })
+
+        :ok
+
+      assignments ->
+        assignments
+        |> Enum.reduce_while(:ok, fn assignment, :ok ->
+          case record_assignment_reward(scope, activity_attempt, assignment) do
+            :ok -> {:cont, :ok}
+            {:error, error} -> {:halt, {:error, error}}
+          end
+        end)
+    end
+  end
+
+  defp record_assignment_reward(
+         %Scope{} = scope,
+         %ActivityAttempt{} = activity_attempt,
+         %RewardEligibleAssignment{} = assignment
+       ) do
+    outcome_key =
+      "outcome:activity_attempt:#{activity_attempt.id}:assignment:#{assignment.assignment_id}"
+
+    with {:ok, outcome} <-
+           Oli.Experiments.record_outcome(%RecordOutcomeRequest{
+             key: outcome_key,
+             scope: scope,
+             assignment_id: assignment.assignment_id,
+             activity_attempt_id: activity_attempt.id,
+             resource_attempt_id: activity_attempt.resource_attempt_id,
+             activity_resource_id: activity_attempt.resource_id,
+             score: activity_attempt.score,
+             out_of: activity_attempt.out_of,
+             observed_at: activity_attempt.date_evaluated,
+             metadata: outcome_metadata(activity_attempt)
+           }),
+         {:ok, _reward} <-
+           Oli.Experiments.record_reward(%RecordRewardRequest{
+             key:
+               "reward:activity_attempt:#{activity_attempt.id}:assignment:#{assignment.assignment_id}",
+             scope: scope,
+             assignment_id: assignment.assignment_id,
+             outcome_key: outcome.key,
+             reward_value: reward_value(activity_attempt),
+             reward_source: @reward_source,
+             metadata: reward_metadata(activity_attempt)
+           }) do
+      :ok
+    end
+  end
+
+  defp reward_value(%ActivityAttempt{score: score, out_of: out_of})
+       when is_number(score) and is_number(out_of) and out_of > 0 and score >= out_of,
+       do: 1.0
+
+  defp reward_value(_activity_attempt), do: 0.0
+
+  defp outcome_metadata(%ActivityAttempt{} = activity_attempt) do
+    %{
+      "attempt_number" => activity_attempt.attempt_number,
+      "source" => @reward_source
+    }
+  end
+
+  defp reward_metadata(%ActivityAttempt{} = activity_attempt) do
+    %{
+      "attempt_number" => activity_attempt.attempt_number,
+      "binary_rule" => "full_credit"
+    }
+  end
+
+  @doc false
+  def load_evaluated_attempt_contexts(activity_attempt_ids) do
+    contexts =
+      from(activity_attempt in ActivityAttempt,
+        join: resource_attempt in ResourceAttempt,
+        on: resource_attempt.id == activity_attempt.resource_attempt_id,
+        join: resource_access in ResourceAccess,
+        on: resource_access.id == resource_attempt.resource_access_id,
+        join: section in Section,
+        on: section.id == resource_access.section_id,
+        left_join: spp in SectionsProjectsPublications,
+        on: spp.section_id == section.id and spp.project_id == section.base_project_id,
+        where: activity_attempt.id in ^activity_attempt_ids,
+        select: %{
+          activity_attempt: activity_attempt,
+          page_content: resource_attempt.content,
+          scope: %Scope{
+            institution_id: section.institution_id,
+            project_id: section.base_project_id,
+            publication_id: spp.publication_id,
+            section_id: section.id,
+            user_id: resource_access.user_id,
+            enrollment_id:
+              fragment(
+                "(SELECT e.id FROM enrollments e WHERE e.section_id = ? AND e.user_id = ? LIMIT 1)",
+                section.id,
+                resource_access.user_id
+              )
+          }
+        }
+      )
+      |> Repo.all()
+
+    eligible_assignments = Oli.Experiments.reward_eligible_assignments(contexts)
+
+    Enum.map(contexts, fn context ->
+      Map.put(
+        context,
+        :eligible_assignments,
+        Map.get(eligible_assignments, context.activity_attempt.id, [])
+      )
+    end)
+  end
+
+  defp telemetry_metadata(%{activity_attempt: activity_attempt, scope: scope}, metadata) do
+    Map.merge(metadata, %{
+      activity_attempt_id: activity_attempt.id,
+      activity_resource_id: activity_attempt.resource_id,
+      section_id: scope.section_id,
+      publication_id: scope.publication_id
+    })
+  end
+
+  defp result_tag(:ok), do: :ok
+  defp result_tag({:error, _error}), do: :error
+
+  defp elapsed_milliseconds(start_time) do
+    start_time
+    |> then(&(System.monotonic_time() - &1))
+    |> System.convert_time_unit(:native, :millisecond)
+  end
+
+  defp safe_log_metadata(%{activity_attempt_id: activity_attempt_id})
+       when is_integer(activity_attempt_id),
+       do: %{activity_attempt_id: activity_attempt_id}
+
+  defp safe_log_metadata(_metadata), do: %{}
+
+  defp emit_skipped(reason, metadata) do
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :skipped],
+      %{count: 1},
+      Map.put(metadata, :reason, reason)
+    )
+  end
+end

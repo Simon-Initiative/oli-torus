@@ -1,0 +1,263 @@
+defmodule Oli.Delivery.Experiments.AttemptAttributions do
+  @moduledoc """
+  Builds experiment attribution payloads for evaluated attempt xAPI host statements.
+  """
+
+  import Ecto.Query, warn: false
+
+  alias Oli.Analytics.Summary.AttemptGroup
+
+  alias Oli.Experiments.{
+    OutcomeReceipt,
+    RecordOutcomeRequest,
+    RecordRewardRequest,
+    RewardReceipt,
+    Scope
+  }
+
+  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
+  alias Oli.Experiments.XAPI.Attributions
+  alias Oli.Repo
+
+  def for_attempt_group(%AttemptGroup{} = attempt_group) do
+    host_part_attempts =
+      attempt_group.part_attempts
+      |> Enum.group_by(& &1.activity_attempt.id)
+      |> Map.new(fn {activity_attempt_id, part_attempts} ->
+        {activity_attempt_id, Enum.min_by(part_attempts, & &1.id)}
+      end)
+
+    if map_size(host_part_attempts) == 0 do
+      empty_attributions()
+    else
+      activity_attempt_ids = Map.keys(host_part_attempts)
+      assignments = reward_assignments(attempt_group, activity_attempt_ids)
+
+      case assignments do
+        [] ->
+          empty_attributions()
+
+        _ ->
+          assignments_by_activity_attempt = assignments_by_activity_attempt(assignments)
+
+          part_attempts =
+            part_attempt_attributions(
+              host_part_attempts,
+              assignments_by_activity_attempt,
+              attempt_group
+            )
+
+          %{
+            part_attempts: part_attempts,
+            activity_attempts:
+              activity_attempt_rollups(attempt_group.part_attempts, part_attempts),
+            page_attempt: page_attempt_rollups(part_attempts)
+          }
+      end
+    end
+  end
+
+  def for_attempt_group(_attempt_group), do: empty_attributions()
+
+  defp empty_attributions, do: %{part_attempts: %{}, activity_attempts: %{}, page_attempt: []}
+
+  defp activity_attempt_rollups(part_attempts, part_attempt_attributions) do
+    part_attempts
+    |> Enum.group_by(& &1.activity_attempt.attempt_guid)
+    |> Map.new(fn {activity_attempt_guid, part_attempts} ->
+      attributions =
+        part_attempts
+        |> Enum.flat_map(fn part_attempt ->
+          Map.get(part_attempt_attributions, part_attempt.attempt_guid, [])
+        end)
+        |> Attributions.attributions_for_activity_attempt()
+
+      {activity_attempt_guid, attributions}
+    end)
+    |> Enum.reject(fn {_activity_attempt_guid, attributions} -> attributions == [] end)
+    |> Map.new()
+  end
+
+  defp page_attempt_rollups(part_attempt_attributions) do
+    part_attempt_attributions
+    |> Map.values()
+    |> List.flatten()
+    |> Attributions.attributions_for_page_attempt()
+  end
+
+  defp part_attempt_attributions(
+         host_part_attempts,
+         assignments_by_activity_attempt,
+         attempt_group
+       ) do
+    Enum.reduce(host_part_attempts, %{}, fn {activity_attempt_id, part_attempt}, acc ->
+      activity_attempt = part_attempt.activity_attempt
+
+      attributions =
+        assignments_by_activity_attempt
+        |> Map.get(activity_attempt_id, [])
+        |> Enum.flat_map(&attributions_for_assignment(attempt_group, activity_attempt, &1))
+
+      if attributions == [] do
+        acc
+      else
+        Map.put(acc, part_attempt.attempt_guid, attributions)
+      end
+    end)
+  end
+
+  defp assignments_by_activity_attempt(assignments) do
+    Enum.reduce(assignments, %{}, fn assignment, index ->
+      rewards = get_in(assignment.runtime_event_state || %{}, ["rewards"]) || %{}
+
+      rewards
+      |> Map.keys()
+      |> Enum.reduce(index, fn reward_key, index ->
+        case reward_key_attempt_id(reward_key, assignment.id) do
+          {:ok, activity_attempt_id} ->
+            Map.update(index, activity_attempt_id, [assignment], &[assignment | &1])
+
+          :error ->
+            index
+        end
+      end)
+    end)
+  end
+
+  defp reward_key_attempt_id(reward_key, assignment_id) when is_binary(reward_key) do
+    case Regex.run(
+           ~r/^reward:activity_attempt:(\d+):assignment:(\d+)$/,
+           reward_key,
+           capture: :all_but_first
+         ) do
+      [activity_attempt_id, encoded_assignment_id] ->
+        with {activity_attempt_id, ""} <- Integer.parse(activity_attempt_id),
+             {^assignment_id, ""} <- Integer.parse(encoded_assignment_id) do
+          {:ok, activity_attempt_id}
+        else
+          _ -> :error
+        end
+
+      _ ->
+        :error
+    end
+  end
+
+  defp reward_key_attempt_id(_reward_key, _assignment_id), do: :error
+
+  defp reward_assignments(%AttemptGroup{} = attempt_group, activity_attempt_ids) do
+    if activity_attempt_ids == [] do
+      []
+    else
+      from(assignment in Assignment,
+        join: experiment in ExperimentDefinition,
+        on: experiment.id == assignment.experiment_id,
+        join: condition in Condition,
+        on:
+          condition.id == assignment.condition_id and
+            condition.experiment_id == experiment.id,
+        join: decision_point in DecisionPoint,
+        on:
+          decision_point.id == assignment.decision_point_id and
+            decision_point.experiment_id == experiment.id,
+        where:
+          experiment.project_id == ^attempt_group.context.project_id and
+            assignment.section_id == ^attempt_group.context.section_id and
+            assignment.user_id == ^attempt_group.context.user_id and
+            fragment(
+              "EXISTS (SELECT 1 FROM unnest(?::bigint[]) AS attempt_id WHERE (?->'rewards') \\? ('reward:activity_attempt:' || attempt_id::text || ':assignment:' || ?::text))",
+              ^activity_attempt_ids,
+              assignment.runtime_event_state,
+              assignment.id
+            ),
+        preload: [
+          experiment: experiment,
+          condition: condition,
+          decision_point: decision_point
+        ]
+      )
+      |> Repo.all()
+    end
+  end
+
+  defp attributions_for_assignment(
+         %AttemptGroup{} = attempt_group,
+         activity_attempt,
+         %Assignment{} = assignment
+       ) do
+    rewards = get_in(assignment.runtime_event_state || %{}, ["rewards"]) || %{}
+
+    case Map.get(rewards, reward_key(activity_attempt.id, assignment.id)) do
+      nil ->
+        []
+
+      reward_event ->
+        scope = scope(attempt_group, assignment)
+        outcome_key = outcome_key(activity_attempt.id, assignment.id)
+
+        outcome_request = %RecordOutcomeRequest{
+          key: outcome_key,
+          scope: scope,
+          assignment_id: assignment.id,
+          activity_attempt_id: activity_attempt.id,
+          resource_attempt_id: activity_attempt.resource_attempt_id,
+          activity_resource_id: activity_attempt.resource_id,
+          score: activity_attempt.score,
+          out_of: activity_attempt.out_of,
+          observed_at: activity_attempt.date_evaluated,
+          metadata: %{
+            "attempt_number" => activity_attempt.attempt_number,
+            "source" => Map.get(reward_event, "reward_source")
+          }
+        }
+
+        outcome_receipt = %OutcomeReceipt{
+          key: outcome_key,
+          assignment_id: assignment.id,
+          recorded_at: activity_attempt.date_evaluated,
+          reused?: true
+        }
+
+        reward_request = %RecordRewardRequest{
+          key: Map.get(reward_event, "key"),
+          scope: scope,
+          assignment_id: assignment.id,
+          outcome_key: Map.get(reward_event, "outcome_key") || outcome_key,
+          reward_value: Map.get(reward_event, "reward_value"),
+          reward_source: Map.get(reward_event, "reward_source"),
+          metadata: %{"attempt_number" => activity_attempt.attempt_number}
+        }
+
+        reward_receipt = %RewardReceipt{
+          key: Map.get(reward_event, "key"),
+          assignment_id: assignment.id,
+          outcome_key: Map.get(reward_event, "outcome_key") || outcome_key,
+          recorded_at: Map.get(reward_event, "recorded_at"),
+          reused?: true
+        }
+
+        Attributions.attributions_for_part_attempt(outcome_receipt, outcome_request,
+          assignment: assignment
+        ) ++
+          Attributions.attributions_for_part_attempt(reward_receipt, reward_request,
+            assignment: assignment
+          )
+    end
+  end
+
+  defp scope(%AttemptGroup{} = attempt_group, %Assignment{} = assignment) do
+    %Scope{
+      project_id: attempt_group.context.project_id,
+      publication_id: attempt_group.context.publication_id,
+      section_id: attempt_group.context.section_id,
+      user_id: attempt_group.context.user_id,
+      enrollment_id: assignment.enrollment_id
+    }
+  end
+
+  defp outcome_key(activity_attempt_id, assignment_id),
+    do: "outcome:activity_attempt:#{activity_attempt_id}:assignment:#{assignment_id}"
+
+  defp reward_key(activity_attempt_id, assignment_id),
+    do: "reward:activity_attempt:#{activity_attempt_id}:assignment:#{assignment_id}"
+end

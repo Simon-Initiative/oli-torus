@@ -169,7 +169,8 @@ export type ResourceContext = {
   projectSlug: ProjectSlug; // The current project
   resourceSlug: ResourceSlug; // The current resource
   resourceId: ResourceId; // The resource id
-  hasExperiments: boolean; // Whether the project has experiments
+  experimentsEnabled: boolean; // Whether native A/B testing authoring is enabled
+  alternativesEnabled: boolean; // Whether learner-preference alternatives authoring is enabled
   title: string; // The title of the resource
   content: PageContent; // Content of the resource
   objectives: AttachedObjectives; // Attached objectives
