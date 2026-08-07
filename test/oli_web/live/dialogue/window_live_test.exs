@@ -478,8 +478,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
 
       persisted_system_messages =
         from(cm in ConversationMessage,
-          where:
-            cm.user_id == ^user.id and cm.section_id == ^section.id and cm.role == :system,
+          where: cm.user_id == ^user.id and cm.section_id == ^section.id and cm.role == :system,
           order_by: [asc: cm.inserted_at]
         )
         |> Repo.all()
