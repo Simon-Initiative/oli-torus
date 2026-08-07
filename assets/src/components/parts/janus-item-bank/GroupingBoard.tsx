@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Announcements,
   DndContext,
+  DragCancelEvent,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   KeyboardSensor,
@@ -15,7 +17,14 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import GroupingItemContent from './GroupingItemContent';
-import { groupingPointerCollision, snapCenterToCursor } from './grouping-dnd';
+import {
+  GROUPING_KEYBOARD_CODES,
+  GroupingKeyboardTarget,
+  confirmGroupingKeyboardTarget,
+  createGroupingKeyboardCoordinates,
+  groupingPointerCollision,
+  snapCenterToCursor,
+} from './grouping-dnd';
 import {
   BANK_ID,
   BANK_LABEL,
@@ -23,9 +32,13 @@ import {
   categoryTitle,
   groupingThemeStyles,
   isItemCorrect,
+  itemAccessibleText,
   itemsInZone,
 } from './grouping-util';
 import { GroupingItem, GroupingModel } from './schema';
+
+const GROUPING_KEYBOARD_INSTRUCTIONS =
+  'Move items from the Item Bank into categories. Tab to an item, then press Space or Enter to pick it up. While moving, use Tab, Right Arrow, or Down Arrow for the next location, and Shift plus Tab, Left Arrow, or Up Arrow for the previous location. Press Space or Enter to drop the item, or Escape to cancel.';
 
 const HintBadge: React.FC<{ type: 'correct' | 'incorrect' }> = ({ type }) => (
   <span className={`grouping-hint-badge is-${type}`} aria-hidden="true">
@@ -90,6 +103,9 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
   if (isDragging) {
     classes.push('is-dragging');
   }
+  if (!enabled) {
+    classes.push('is-disabled');
+  }
   if (hint === 'correct') {
     classes.push('is-correct');
   }
@@ -97,9 +113,7 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
     classes.push('is-incorrect');
   }
 
-  const describedText = `${item.label}, currently in ${zoneLabel}.${
-    enabled ? ' Press space or enter to pick up.' : ''
-  }`;
+  const describedText = `${itemAccessibleText(item)}, currently in ${zoneLabel}.`;
 
   return (
     <div
@@ -110,26 +124,37 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
       {...attributes}
       tabIndex={enabled ? 0 : -1}
       aria-label={describedText}
+      aria-describedby={undefined}
+      aria-roledescription={enabled ? attributes['aria-roledescription'] : undefined}
       aria-disabled={!enabled}
-      aria-hidden={isDragging}
     >
       {hint === 'correct' && <HintBadge type="correct" />}
       {hint === 'incorrect' && <HintBadge type="incorrect" />}
-      <GroupingItemContent item={item} />
+      <GroupingItemContent item={item} imageDecorative />
     </div>
   );
 };
 
 interface DropZoneProps {
+  domId: string;
   zoneId: string;
   title: string;
   isBank: boolean;
+  enabled: boolean;
   children: React.ReactNode;
   itemCount: number;
 }
 
-const DropZone: React.FC<DropZoneProps> = ({ zoneId, title, isBank, children, itemCount }) => {
-  const { setNodeRef, isOver } = useDroppable({ id: zoneId });
+const DropZone: React.FC<DropZoneProps> = ({
+  domId,
+  zoneId,
+  title,
+  isBank,
+  enabled,
+  children,
+  itemCount,
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: zoneId, disabled: !enabled });
   const columnClasses = ['grouping-column'];
   if (isBank) {
     columnClasses.push('grouping-column-bank');
@@ -147,11 +172,11 @@ const DropZone: React.FC<DropZoneProps> = ({ zoneId, title, isBank, children, it
       aria-label={`${title}, ${itemCount} item${itemCount === 1 ? '' : 's'}`}
     >
       <header className="grouping-column-header">{title}</header>
-      <div ref={setNodeRef} className={dropzoneClasses.join(' ')} aria-dropeffect="move">
+      <div id={domId} ref={setNodeRef} className={dropzoneClasses.join(' ')}>
         {children}
         {itemCount === 0 && (
           <div className="grouping-empty-hint" aria-hidden="true">
-            <span>{isBank ? 'No items' : 'Drop items here'}</span>
+            <span>{isBank || !enabled ? 'No items' : 'Drop items here'}</span>
           </div>
         )}
       </div>
@@ -160,6 +185,7 @@ const DropZone: React.FC<DropZoneProps> = ({ zoneId, title, isBank, children, it
 };
 
 export interface GroupingBoardProps {
+  id: string;
   model: GroupingModel;
   placements: Placements;
   onMove: (itemId: string, zoneId: string) => void;
@@ -169,11 +195,11 @@ export interface GroupingBoardProps {
 }
 
 /**
- * Shared accessible drag-and-drop board used by both the delivery component and
- * the authoring "Set Answer" view. Supports mouse, touch and keyboard via
- * dnd-kit sensors and announces moves to screen readers.
+ * Learner-facing drag-and-drop board used by delivery and live preview. Supports
+ * mouse, touch and keyboard via dnd-kit sensors and announces moves to screen readers.
  */
 const GroupingBoard: React.FC<GroupingBoardProps> = ({
+  id,
   model,
   placements,
   onMove,
@@ -182,11 +208,26 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
 }) => {
   const [activeItem, setActiveItem] = useState<GroupingItem | null>(null);
   const [activeOverlayWidth, setActiveOverlayWidth] = useState<number | undefined>(undefined);
+  const keyboardTarget = useRef<GroupingKeyboardTarget>({ current: null, pending: null });
+  const instructionsId = `${id}-grouping-instructions`;
+  const zoneDomId = (zoneId: string) => `${id}-grouping-zone-${zoneId}`;
+  const keyboardCoordinates = useMemo(
+    () =>
+      createGroupingKeyboardCoordinates(
+        [BANK_ID, ...(model.categories || []).map((category) => category.id)],
+        keyboardTarget.current,
+      ),
+    [model.categories],
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor, {
+      keyboardCodes: GROUPING_KEYBOARD_CODES,
+      coordinateGetter: keyboardCoordinates,
+      scrollBehavior: 'auto',
+    }),
   );
 
   const zoneLabel = (zoneId: string): string => {
@@ -203,51 +244,83 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
   const clearDragState = () => {
     setActiveItem(null);
     setActiveOverlayWidth(undefined);
+    keyboardTarget.current.current = null;
+    keyboardTarget.current.pending = null;
+  };
+
+  const scrollZoneIntoView = (zoneId: string) => {
+    document
+      .getElementById(zoneDomId(zoneId))
+      ?.scrollIntoView?.({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
   };
 
   const handleDragStart = (event: DragStartEvent) => {
     const item = findItem(`${event.active.id}`);
+    keyboardTarget.current.current = `${event.active.data.current?.zoneId || BANK_ID}`;
+    keyboardTarget.current.pending = null;
     setActiveItem(item || null);
     const rect = event.active.rect.current.initial;
     setActiveOverlayWidth(rect ? Math.round(rect.width) : undefined);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    clearDragState();
     const { active, over } = event;
+    const itemId = `${active.id}`;
+    const currentZone = placements[itemId] || BANK_ID;
+    clearDragState();
     if (!over) {
+      scrollZoneIntoView(currentZone);
       return;
     }
-    const itemId = `${active.id}`;
     const targetZone = `${over.id}`;
-    const currentZone = placements[itemId] || BANK_ID;
     if (targetZone !== currentZone) {
       onMove(itemId, targetZone);
+    } else {
+      scrollZoneIntoView(currentZone);
+    }
+  };
+
+  const handleDragCancel = (event: DragCancelEvent) => {
+    const sourceZone = `${event.active.data.current?.zoneId || BANK_ID}`;
+    clearDragState();
+    scrollZoneIntoView(sourceZone);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const overId = event.over ? `${event.over.id}` : null;
+    if (overId && confirmGroupingKeyboardTarget(keyboardTarget.current, overId)) {
+      scrollZoneIntoView(overId);
     }
   };
 
   const announcements: Announcements = {
     onDragStart({ active }) {
       const item = findItem(`${active.id}`);
-      return `Picked up item ${item?.label ?? active.id}.`;
+      const itemText = item ? itemAccessibleText(item) : `${active.id}`;
+      const currentZone = `${active.data.current?.zoneId || BANK_ID}`;
+      return `Picked up ${itemText}. Current location: ${zoneLabel(currentZone)}.`;
     },
     onDragOver({ active, over }) {
       const item = findItem(`${active.id}`);
+      const itemText = item ? itemAccessibleText(item) : `${active.id}`;
       if (over) {
-        return `Item ${item?.label ?? active.id} is over ${zoneLabel(`${over.id}`)}.`;
+        return `${itemText}. Current location: ${zoneLabel(`${over.id}`)}.`;
       }
-      return `Item ${item?.label ?? active.id} is no longer over a drop area.`;
+      return `${itemText}. Not over a valid location.`;
     },
     onDragEnd({ active, over }) {
       const item = findItem(`${active.id}`);
+      const itemText = item ? itemAccessibleText(item) : `${active.id}`;
       if (over) {
-        return `Item ${item?.label ?? active.id} was dropped into ${zoneLabel(`${over.id}`)}.`;
+        return `${itemText} dropped in ${zoneLabel(`${over.id}`)}.`;
       }
-      return `Item ${item?.label ?? active.id} was dropped.`;
+      return `${itemText} was not moved.`;
     },
     onDragCancel({ active }) {
       const item = findItem(`${active.id}`);
-      return `Dragging item ${item?.label ?? active.id} was cancelled.`;
+      const itemText = item ? itemAccessibleText(item) : `${active.id}`;
+      const currentZone = `${active.data.current?.zoneId || BANK_ID}`;
+      return `Move cancelled. ${itemText} remains in ${zoneLabel(currentZone)}.`;
     },
   };
 
@@ -263,9 +336,11 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
     return (
       <DropZone
         key={zoneId}
+        domId={zoneDomId(zoneId)}
         zoneId={zoneId}
         title={title}
         isBank={isBank}
+        enabled={enabled}
         itemCount={zoneItems.length}
       >
         {zoneItems.map((item) => (
@@ -286,12 +361,27 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
     <DndContext
       sensors={sensors}
       collisionDetection={groupingPointerCollision}
-      accessibility={{ announcements }}
+      accessibility={{
+        announcements,
+        screenReaderInstructions: { draggable: '' },
+      }}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
-      onDragCancel={clearDragState}
+      onDragCancel={handleDragCancel}
     >
-      <div className="grouping-columns">
+      {enabled ? (
+        <span id={instructionsId} className="grouping-visually-hidden">
+          {GROUPING_KEYBOARD_INSTRUCTIONS}
+        </span>
+      ) : null}
+      <div
+        className="grouping-columns grouping-board-introduction"
+        role="group"
+        aria-label="Grouping activity"
+        aria-describedby={enabled ? instructionsId : undefined}
+        tabIndex={enabled ? 0 : -1}
+      >
         {renderZone(BANK_ID, BANK_LABEL, true)}
         {(model.categories || []).map((category, index) =>
           renderZone(category.id, categoryTitle(category, index), false),
@@ -307,8 +397,9 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
           <div
             className={`grouping-item grouping-item-${activeItem.type} is-overlay`}
             style={activeOverlayWidth ? { width: activeOverlayWidth } : undefined}
+            aria-hidden="true"
           >
-            <GroupingItemContent item={activeItem} />
+            <GroupingItemContent item={activeItem} imageDecorative />
           </div>
         ) : null}
       </DragOverlay>

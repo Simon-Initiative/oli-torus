@@ -101,13 +101,10 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
       if (!label.trim()) {
         setLabel(basenameFromUrl(url));
       }
-      if (!alt.trim()) {
-        setAlt(basenameFromUrl(url));
-      }
     }
     setImagePickerOpen(false);
     setPendingImageUrl('');
-  }, [alt, label, pendingImageUrl]);
+  }, [label, pendingImageUrl]);
 
   return (
     <>
@@ -185,7 +182,11 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                   <label className="iem-label">Image</label>
                   <div className="iem-image-row">
                     {imageSrc ? (
-                      <img className="iem-image-preview" src={imageSrc} alt={alt || label} />
+                      <img
+                        className="iem-image-preview"
+                        src={imageSrc}
+                        alt={alt.trim() || text.trim() || label.trim()}
+                      />
                     ) : (
                       <div className="iem-image-placeholder">No image selected</div>
                     )}
