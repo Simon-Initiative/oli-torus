@@ -103,11 +103,8 @@ export const cloneMatches = (matches: MatchingMatches): MatchingMatches => {
 export const countMatches = (matches: MatchingMatches): number =>
   Object.values(matches || {}).reduce((sum, targets) => sum + (targets?.length || 0), 0);
 
-export const isPairMatched = (
-  matches: MatchingMatches,
-  col1Id: string,
-  col2Id: string,
-): boolean => (matches[col1Id] || []).includes(col2Id);
+export const isPairMatched = (matches: MatchingMatches, col1Id: string, col2Id: string): boolean =>
+  (matches[col1Id] || []).includes(col2Id);
 
 export const incomingMatchCount = (matches: MatchingMatches, col2Id: string): number =>
   Object.values(matches || {}).reduce(
@@ -139,7 +136,7 @@ export const toggleMatch = (
   // Remove this col2 from any other col1 that already links to it if col2 is at capacity
   // after we would add (handled below with FIFO on col2 side by pruning others first when needed).
 
-  let updated = [...existing];
+  const updated = [...existing];
   const max1 = Math.max(1, col1Item.maxLinks || 1);
   if (updated.length >= max1) {
     updated.shift();

@@ -140,8 +140,7 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
   }, [ready]);
 
   const { width, height } = model;
-  const isResponsive =
-    width === '100%' || (typeof width === 'string' && width.includes('%'));
+  const isResponsive = width === '100%' || (typeof width === 'string' && width.includes('%'));
   const minHeight = matchingMinHeight(width, height);
 
   useEffect(() => {
@@ -175,7 +174,16 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
     const observer = new ResizeObserver(reportHeight);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [ready, isResponsive, minHeight, id, model.column1Items, model.column2Items, matches, showHints]);
+  }, [
+    ready,
+    isResponsive,
+    minHeight,
+    id,
+    model.column1Items,
+    model.column2Items,
+    matches,
+    showHints,
+  ]);
 
   const saveState = useCallback(
     (

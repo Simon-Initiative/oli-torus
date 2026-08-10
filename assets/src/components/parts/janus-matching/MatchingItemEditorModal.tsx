@@ -154,7 +154,9 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
                 </button>
               </div>
               {isEdit && (
-                <span className="mie-hint">Content type can’t be changed after the item is created</span>
+                <span className="mie-hint">
+                  Content type can’t be changed after the item is created
+                </span>
               )}
             </div>
 

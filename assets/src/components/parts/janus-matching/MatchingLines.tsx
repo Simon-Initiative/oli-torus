@@ -1,5 +1,5 @@
 import React from 'react';
-import { bezierPath, DrawnLine } from './matching-util';
+import { DrawnLine, bezierPath } from './matching-util';
 
 interface MatchingLinesProps {
   lines: DrawnLine[];

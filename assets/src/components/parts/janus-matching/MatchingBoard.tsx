@@ -1,17 +1,11 @@
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import MatchingItemContent from './MatchingItemContent';
 import MatchingLines from './MatchingLines';
 import {
+  DrawnLine,
   areDrawnLinesEqual,
   buildDrawnLines,
   columnTitle,
-  DrawnLine,
   isLinkCorrect,
   isPairMatched,
   itemDisplayText,
@@ -278,9 +272,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       if (targets.length === 0) {
         return '';
       }
-      const allCorrect = targets.every((col2Id) =>
-        isLinkCorrect(model, matches, itemId, col2Id),
-      );
+      const allCorrect = targets.every((col2Id) => isLinkCorrect(model, matches, itemId, col2Id));
       return allCorrect ? 'is-correct' : 'is-incorrect';
     }
     const owners = Object.keys(matches).filter((c1) => (matches[c1] || []).includes(itemId));
@@ -320,7 +312,10 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
         }
       />
       <div className="matching-columns">
-        <section className="matching-column" aria-label={columnTitle(model.column1Title, 'Column 1')}>
+        <section
+          className="matching-column"
+          aria-label={columnTitle(model.column1Title, 'Column 1')}
+        >
           {showTitles && (
             <header className="matching-column-header">
               <span>{columnTitle(model.column1Title, 'Column 1')}</span>
@@ -353,7 +348,9 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     .join(' ')}
                   tabIndex={enabled ? tabIndex : -1}
                   disabled={!enabled}
-                  aria-label={`${itemLabel(item, index)}. ${itemDisplayText(item)}. Press Enter to select and choose a match.`}
+                  aria-label={`${itemLabel(item, index)}. ${itemDisplayText(
+                    item,
+                  )}. Press Enter to select and choose a match.`}
                   aria-pressed={selected}
                   onPointerDown={(e) => {
                     if (!enabled || e.button !== 0) {
@@ -380,7 +377,10 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
           </div>
         </section>
 
-        <section className="matching-column" aria-label={columnTitle(model.column2Title, 'Column 2')}>
+        <section
+          className="matching-column"
+          aria-label={columnTitle(model.column2Title, 'Column 2')}
+        >
           {showTitles && (
             <header className="matching-column-header">
               <span>{columnTitle(model.column2Title, 'Column 2')}</span>
@@ -411,7 +411,9 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     .join(' ')}
                   tabIndex={enabled ? tabIndex : -1}
                   disabled={!enabled}
-                  aria-label={`${itemLabel(item, index)}. ${itemDisplayText(item)}. Press Enter to match with the selected item.`}
+                  aria-label={`${itemLabel(item, index)}. ${itemDisplayText(
+                    item,
+                  )}. Press Enter to match with the selected item.`}
                   onClick={() => {
                     if (!enabled || !selectedCol1Id) {
                       return;

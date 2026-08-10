@@ -1,13 +1,20 @@
-import React, { CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, {
+  CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import './Matching.scss';
 import MatchingItemContent from './MatchingItemContent';
 import MatchingLines from './MatchingLines';
 import {
+  DrawnLine,
   areDrawnLinesEqual,
   buildDrawnLines,
   columnTitle,
-  DrawnLine,
   matchingLayoutClass,
   matchingMinHeight,
   matchingThemeStyles,

@@ -7,10 +7,10 @@ import MatchingItemContent from './MatchingItemContent';
 import MatchingItemEditorModal from './MatchingItemEditorModal';
 import MatchingLines from './MatchingLines';
 import {
+  DrawnLine,
   areDrawnLinesEqual,
   buildDrawnLines,
   countMatches,
-  DrawnLine,
   matchingThemeStyles,
   normalizeMatchingItemForSave,
   normalizeMatchingItemsForSave,
@@ -178,14 +178,17 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
     };
   }, [column1Items, column2Items, draggingFromId]);
 
-  const handleLineClick = useCallback((line: DrawnLine) => {
-    const col1Item = column1Items.find((i) => i.id === line.col1Id);
-    const col2Item = column2Items.find((i) => i.id === line.col2Id);
-    if (!col1Item || !col2Item) {
-      return;
-    }
-    setCorrectMatches((prev) => toggleMatch(prev, col1Item, col2Item));
-  }, [column1Items, column2Items]);
+  const handleLineClick = useCallback(
+    (line: DrawnLine) => {
+      const col1Item = column1Items.find((i) => i.id === line.col1Id);
+      const col2Item = column2Items.find((i) => i.id === line.col2Id);
+      if (!col1Item || !col2Item) {
+        return;
+      }
+      setCorrectMatches((prev) => toggleMatch(prev, col1Item, col2Item));
+    },
+    [column1Items, column2Items],
+  );
 
   const allLabelsExcept = (excludeId?: string) =>
     [...column1Items, ...column2Items]
@@ -366,9 +369,7 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
               />
               <span className="mam-col-badge">Col 1</span>
             </div>
-            <div className="mam-items">
-              {column1Items.map((item) => renderItem(1, item))}
-            </div>
+            <div className="mam-items">{column1Items.map((item) => renderItem(1, item))}</div>
             {mode === 'manage' && (
               <button type="button" className="mam-add-btn" onClick={() => addItem(1)}>
                 + Add Item
@@ -387,9 +388,7 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
               />
               <span className="mam-col-badge">Col 2</span>
             </div>
-            <div className="mam-items">
-              {column2Items.map((item) => renderItem(2, item))}
-            </div>
+            <div className="mam-items">{column2Items.map((item) => renderItem(2, item))}</div>
             {mode === 'manage' && (
               <button type="button" className="mam-add-btn" onClick={() => addItem(2)}>
                 + Add Item
