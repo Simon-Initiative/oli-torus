@@ -23,6 +23,7 @@ export type AutomationSetupResponse = {
 type AutomationOptions = {
   baseUrl: string;
   apiKey: string;
+  teardownTimeoutMs?: number;
 };
 
 const DEFAULT_TEARDOWN_TIMEOUT_MS = 10_000;
@@ -111,7 +112,7 @@ function isTransientNetworkError(error: unknown) {
 export async function teardownAutomationCourse(
   request: APIRequestContext,
   seeded: AutomationSetupResponse,
-  { baseUrl, apiKey }: AutomationOptions,
+  { baseUrl, apiKey, teardownTimeoutMs }: AutomationOptions,
 ) {
   const context = `project=${seeded.project.slug} section=${seeded.section.slug}`;
   let response;
@@ -131,7 +132,7 @@ export async function teardownAutomationCourse(
         section_slug: seeded.section.slug,
         project_slug: seeded.project.slug,
       },
-      timeout: automationTeardownTimeoutMs(),
+      timeout: automationTeardownTimeoutMs(teardownTimeoutMs),
     });
   } catch (error) {
     // No response at all: connection refused, socket hang up, or the request
@@ -193,7 +194,11 @@ function buildAutomationAuthHeader(rawKey: string) {
   return `Bearer ${Buffer.from(rawKey).toString('base64')}`;
 }
 
-function automationTeardownTimeoutMs() {
+function automationTeardownTimeoutMs(timeoutOverride?: number) {
+  if (timeoutOverride && Number.isFinite(timeoutOverride) && timeoutOverride > 0) {
+    return timeoutOverride;
+  }
+
   const rawTimeout = process.env.PLAYWRIGHT_AUTOMATION_TEARDOWN_TIMEOUT_MS;
 
   if (!rawTimeout) {

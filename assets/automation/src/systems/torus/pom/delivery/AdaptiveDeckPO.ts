@@ -15,6 +15,27 @@ import { FrameLocator, Locator, Page } from '@playwright/test';
  *   the screen's own interaction;
  * - jQuery-UI drag widgets need raw mouse events (HTML5 dragTo is inert);
  * - the matching widget ignores synthetic mouse clicks (keyboard only).
+ *
+ * ## Usage: keep this PO lesson-agnostic
+ *
+ * Every method here is meant to be reused by ANY adaptive lesson spec under
+ * tests/torus/student_delivery/ (see AdaptiveHappyPathTask.ts, which drives
+ * them generically from a per-lesson answers.json). Before adding a method:
+ *
+ * - Does it encode knowledge specific to ONE course/lesson (a hardcoded
+ *   phase name, iframe title, CSS class, widget id, or literal UI copy)?
+ *   If yes, it does NOT belong here — put it in
+ *   `assets/automation/src/systems/torus/tasks/lessons/<lesson-name>.ts`
+ *   instead.
+ * - Is it a genuinely generic capability that some future lesson could
+ *   also need? Add it here, but keep any lesson-specific variation behind
+ *   an OPTIONAL parameter whose default preserves today's behavior for
+ *   every existing caller (see `scanScreen`'s `extraTextInputSelectors`
+ *   for the pattern) — never gate new behavior on a specific lesson
+ *   name/flag baked into shared code.
+ * - Changed a method's signature? Update every existing call site across
+ *   all specs under student_delivery/ that use this PO, not just the one
+ *   that prompted the change.
  */
 
 /** One-roundtrip summary of the current screen's interactive content. */
@@ -32,7 +53,7 @@ export type ScreenScan = {
 
 const FOOTER_BUTTON = '.checkBtn:not([disabled]), .closeFeedbackBtn:not([disabled])';
 const CANVAS_NAV_BUTTON = 'button[data-janus-type="janus-navigation-button"]:not([disabled])';
-const ACTION_TIMEOUT = { timeout: 8_000 };
+export const ACTION_TIMEOUT = { timeout: 8_000 };
 
 export class AdaptiveDeckPO {
   constructor(private readonly page: Page) {}
@@ -167,9 +188,23 @@ export class AdaptiveDeckPO {
 
   // ------------------------------------------------------------ inspection
 
-  async scanScreen(): Promise<ScreenScan> {
+  /**
+   * extraTextInputSelectors: additional CSS selectors to count/fill as text
+   * inputs, on top of the two generic ones every lesson gets. Default `[]`
+   * preserves existing callers' behavior — a lesson opts in via its own
+   * `LessonAnswers` field (see `extra_text_input_selectors` in
+   * AdaptiveHappyPathTask.ts) instead of this method assuming a shape only
+   * one lesson needs.
+   */
+  async scanScreen(extraTextInputSelectors: string[] = []): Promise<ScreenScan> {
+    const textInputSelector = [
+      '.short-text-input input',
+      '.text-input-blot input',
+      ...extraTextInputSelectors,
+    ].join(', ');
+
     return this.page
-      .evaluate(() => {
+      .evaluate((selector) => {
         // janus parts are custom elements: some render their content inside
         // shadow roots, which plain querySelectorAll does not reach
         const roots: Array<Document | ShadowRoot> = [document];
@@ -220,9 +255,9 @@ export class AdaptiveDeckPO {
           mcqLabels: q('.mcq-item label')
             .map((l) => (l as HTMLElement).innerText)
             .join(' | '),
-          textInputs: q('.short-text-input input, .text-input-blot input').length,
+          textInputs: q(selector).length,
         };
-      })
+      }, textInputSelector)
       .catch(() => ({
         iframes: [],
         selects: 0,
@@ -259,6 +294,42 @@ export class AdaptiveDeckPO {
 
   async selectFirstMcqItem(): Promise<boolean> {
     return this.selectMcqItem(this.page.locator('.mcq-item').first());
+  }
+
+  /** Select an image-only MCQ option by its stable radio value. */
+  async selectMcqByValue(value: string): Promise<boolean> {
+    const input = this.page.locator(`.mcq-item input[type="radio"][value="${value}"]`).first();
+    if (!(await input.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
+    return this.selectMcqItem(input.locator('xpath=ancestor::div[contains(@class, "mcq-item")]'));
+  }
+
+  /** Click an in-canvas Navigation Button, optionally scoped to its Janus id. */
+  async clickNavigationButton(container: string | null, name: string): Promise<boolean> {
+    const selector = container
+      ? `${container} iframe[title="Navigation Button"]`
+      : 'iframe[title="Navigation Button"]';
+    const iframe = this.page.locator(selector).first();
+    if (!(await iframe.isVisible({ timeout: 1_000 }).catch(() => false))) return false;
+    const button = this.page
+      .frameLocator(selector)
+      .first()
+      .getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}$`, 'i') });
+    if (!(await button.isVisible({ timeout: 1_000 }).catch(() => false))) return false;
+    await button.click(ACTION_TIMEOUT);
+    return true;
+  }
+
+  async clickPageButton(name: string): Promise<boolean> {
+    const button = this.page.getByRole('button', {
+      name: new RegExp(`^${escapeRegExp(name)}$`, 'i'),
+    });
+    if (!(await button.isVisible({ timeout: 1_000 }).catch(() => false))) return false;
+    await button.click(ACTION_TIMEOUT);
+    return true;
+  }
+
+  async closeModalIfPresent(): Promise<boolean> {
+    return this.clickPageButton('Close');
   }
 
   /**
@@ -341,10 +412,19 @@ export class AdaptiveDeckPO {
     }
   }
 
-  async fillTextInputs(value: string) {
-    const inputs = await this.interactableParts('.short-text-input input, .text-input-blot input');
+  /** extraSelectors: see scanScreen's extraTextInputSelectors — same opt-in contract. */
+  async fillTextInputs(value: string, usernameValue?: string, extraSelectors: string[] = []) {
+    const selector = ['.short-text-input input', '.text-input-blot input', ...extraSelectors].join(
+      ', ',
+    );
+    const inputs = await this.interactableParts(selector);
     for (const input of inputs) {
-      await input.fill(value, ACTION_TIMEOUT).catch(() => undefined);
+      const isUsername = await input
+        .evaluate((element) => element.id === 'username')
+        .catch(() => false);
+      await input
+        .fill(isUsername ? (usernameValue ?? value) : value, ACTION_TIMEOUT)
+        .catch(() => undefined);
     }
   }
 
@@ -403,6 +483,24 @@ export class AdaptiveDeckPO {
       .waitFor({ state: 'visible', timeout: 15_000 })
       .catch(() => undefined);
     await this.page.waitForTimeout(500); // let the CAPI handshake settle after first paint
+    return frame;
+  }
+
+  /** Generic counterpart to widgetFrame, keyed by iframe title instead of src. */
+  async widgetFrameByTitle(title: string, readySelector: string): Promise<FrameLocator | null> {
+    const iframe = this.page.locator(`iframe[title="${title}"]`).first();
+    if (!(await iframe.isVisible({ timeout: 2_000 }).catch(() => false))) return null;
+
+    const frame = this.page.frameLocator(`iframe[title="${title}"]`).first();
+    if (
+      !(await frame
+        .locator(readySelector)
+        .first()
+        .isVisible({ timeout: 2_000 })
+        .catch(() => false))
+    ) {
+      return null;
+    }
     return frame;
   }
 
