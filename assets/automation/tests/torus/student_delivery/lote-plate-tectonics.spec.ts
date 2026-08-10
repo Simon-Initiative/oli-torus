@@ -12,6 +12,7 @@ import {
 } from '@tasks/AutomationSetupTask';
 import { fetchTestAsset, fetchTestArchiveToTempFile } from '@tasks/AutomationAssetsTask';
 import { completeAdaptiveHappyPathStrict, StrictLessonAnswers } from '@tasks/AdaptiveHappyPathTask';
+import { armPoison, armShadowCapture } from '@tasks/AdaptiveShadowCapture';
 import { formatLedger, validateManifest } from '@tasks/AdaptiveStrictContract';
 
 /**
@@ -153,21 +154,67 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
       throw new Error('Automation setup did not produce seeded course data and answers');
     }
 
-    const adaptiveLesson = new AdaptiveLessonTask(page);
+    // MER-5865 step 3: PASSIVE shadow capture — journal armed beside the
+    // shipped walker, zero behavior change; raw dumps are PRIVATE (answer
+    // values), written only to the dir named by the env var
+    const shadowDir = process.env.MER5865_SHADOW_DIR;
+    const shadow = shadowDir ? await armShadowCapture(page) : null;
 
-    await page.goto('/');
-    await new HomeTask(page).login('student');
-    await adaptiveLesson.openFromOutline(
-      seededCourse.section.slug,
-      answers.lesson.title,
-      answers.lesson.search_term,
-    );
+    let poison: { fired(): boolean } | null = null;
+    let ledger: Awaited<ReturnType<typeof completeAdaptiveHappyPathStrict>> | null = null;
+    // ONE failure boundary owns EVERYTHING after arming (gate-B0 r4 N1,
+    // r5 N1, r6 N1): any failure — poison arming, navigation, login,
+    // correlation, the walk, or the completion assertion — seals and dumps
+    // the bail capture exactly once before rethrowing, so no armed run ends
+    // without a terminal snapshot
+    try {
+      // step-3 bail run: poison one graded screen's submission in flight —
+      // the shipped walker must bail there; only legal with the shadow armed
+      if (shadow && process.env.MER5865_POISON_SCREEN) {
+        poison = await armPoison(page, process.env.MER5865_POISON_SCREEN);
+      }
+      const adaptiveLesson = new AdaptiveLessonTask(page);
 
-    const ledger = await completeAdaptiveHappyPathStrict(page, adaptiveLesson.deck, answers);
-    console.log(`[MER-5674] strict ledger:\n${formatLedger(ledger)}`);
+      await page.goto('/');
+      await new HomeTask(page).login('student');
+      await adaptiveLesson.openFromOutline(
+        seededCourse.section.slug,
+        answers.lesson.title,
+        answers.lesson.search_term,
+      );
+      if (shadow) {
+        const correlated = await shadow.correlate();
+        console.log(`[MER-5865 shadow] correlated=${correlated}`);
+      }
 
-    await expect(page.getByText(new RegExp(answers.lesson.completion_text, 'i'))).toBeVisible({
-      timeout: 30_000,
-    });
+      ledger = await completeAdaptiveHappyPathStrict(page, adaptiveLesson.deck, answers);
+      console.log(`[MER-5674] strict ledger:\n${formatLedger(ledger)}`);
+
+      await expect(page.getByText(new RegExp(answers.lesson.completion_text, 'i'))).toBeVisible({
+        timeout: 30_000,
+      });
+    } catch (walkError) {
+      if (shadow && shadowDir) {
+        const flavor = await shadow.finish('bail');
+        const file = await shadow.dump(shadowDir, 'lote-bail', {
+          outcome: 'bail',
+          flavor,
+          walkError: (walkError as Error).message,
+          poisonFired: poison?.fired() ? process.env.MER5865_POISON_SCREEN : null,
+        });
+        console.log(`[MER-5865 shadow] bail capture (${flavor}): ${file}`);
+      }
+      throw walkError;
+    }
+
+    if (shadow && shadowDir) {
+      const flavor = await shadow.finish('green');
+      const file = await shadow.dump(shadowDir, 'lote-green', {
+        outcome: 'green',
+        flavor,
+        ledger,
+      });
+      console.log(`[MER-5865 shadow] green capture (${flavor}): ${file}`);
+    }
   });
 });
