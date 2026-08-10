@@ -18,6 +18,8 @@ import { fetchTestArchiveToTempFile } from '@tasks/AutomationAssetsTask';
  * Imports the private Habitable Worlds course archive, creates an open-and-free
  * section with a learner, and completes the 5-screen scored assessment by
  * reading the randomized star values rendered in the deck.
+ * The assessment is solved from visible randomized values and standard
+ * formulas, so there is no stable private answer key to load.
  *
  * The course zip lives in the Playwright assets bucket and is fetched through
  * the Torus server-side /test/assets/* proxy so credentials never leave the
@@ -302,16 +304,22 @@ async function readStarValues(page: Page, star: StarName): Promise<StarValues> {
 }
 
 async function readStarCardText(page: Page, star: StarName): Promise<string> {
-  for (const scope of adaptiveScopes(page)) {
-    const visibleText = await scope
-      .locator('body')
-      .innerText({ timeout: 2_000 })
-      .catch(() => '');
-    const text = starTextSegment(visibleText, star);
+  const deadline = Date.now() + 20_000;
 
-    if (text && /Parallax:/i.test(text) && /Flux:/i.test(text)) {
-      return text;
+  while (Date.now() < deadline) {
+    for (const scope of adaptiveScopes(page)) {
+      const visibleText = await scope
+        .locator('body')
+        .innerText({ timeout: 2_000 })
+        .catch(() => '');
+      const text = starTextSegment(visibleText, star);
+
+      if (text && /Parallax:/i.test(text) && /Flux:/i.test(text)) {
+        return text;
+      }
     }
+
+    await waitForAdaptiveSettled(page);
   }
 
   throw new Error(`Could not find the ${star} star card with parallax and flux values`);
