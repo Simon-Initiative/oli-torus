@@ -85,6 +85,7 @@ export async function teardownAutomationCourse(
       section_slug: seeded.section.slug,
       project_slug: seeded.project.slug,
     },
+    timeout: 180_000,
   });
 
   if (!response.ok()) {

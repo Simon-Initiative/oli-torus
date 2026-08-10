@@ -85,6 +85,8 @@ test.describe.serial('Phases of the Moon adaptive lesson', () => {
   });
 
   test.afterAll(async ({ request }) => {
+    test.setTimeout(180_000);
+
     try {
       if (seededCourse) {
         await Promise.race([
@@ -93,7 +95,7 @@ test.describe.serial('Phases of the Moon adaptive lesson', () => {
             apiKey: automationApiKey!,
           }),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('teardown timeout')), 15_000),
+            setTimeout(() => reject(new Error('teardown timeout')), 180_000),
           ),
         ]);
       }
