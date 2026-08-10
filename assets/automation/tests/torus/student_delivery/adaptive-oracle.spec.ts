@@ -42,12 +42,14 @@ const MANIFEST: AdaptiveManifest = {
       id: 'n:1',
       resource_id: 101,
       role: 'navigation',
+      correct_plan: 'navigation',
       action: { kind: 'in_widget_button', src_fragment: 'nav-widget.html' },
     },
     {
       id: 'q:1',
       resource_id: 102,
       role: 'graded',
+      correct_plan: 'navigation',
       operations: [
         { id: 'a1', kind: 'answer', family: 'native_dropdowns', directive: { picks: ['Basalt'] } },
       ],
@@ -55,7 +57,7 @@ const MANIFEST: AdaptiveManifest = {
         { part_path: 'stage.dropdown.selectedItem', predicate: { op: 'equal', value: 'Basalt' } },
       ],
     },
-    { id: 'c:1', resource_id: 103, role: 'content' },
+    { id: 'c:1', resource_id: 103, role: 'content', correct_plan: 'navigation' },
   ],
   scenario: [
     { screen_ref: 'n:1', expected_verdict: 'correct' },
@@ -78,6 +80,13 @@ const ARCHIVE_FACTS = (over: Partial<Parameters<typeof validateRouteCoverage>[0]
   resource_ids: { 'n:1': 101, 'q:1': 102, 'c:1': 103 },
   effective_dependencies: { 'n:1': [], 'q:1': [], 'c:1': [] },
   rule_prior_state_refs: { 'n:1': [], 'q:1': [], 'c:1': [] },
+  combine_feedback: { 'n:1': false, 'q:1': false, 'c:1': false },
+  correct_plan_kinds: {
+    'n:1': 'navigation' as const,
+    'q:1': 'navigation' as const,
+    'c:1': 'navigation' as const,
+  },
+  llm_feedback_capable: { 'n:1': false, 'q:1': false, 'c:1': false },
   ...over,
 });
 
@@ -439,6 +448,74 @@ test.describe('manifest v2 validation', () => {
     expect(() => validateRouteCoverage(extraKey, m)).toThrow(
       /effective_dependencies names "ghost:9", which is not in the inventory/,
     );
+  });
+
+  test('combine_feedback is pinned by the archive facts — totality and exact equality (gate-B0 r5 M2)', () => {
+    const m = manifest();
+    const missingKey = ARCHIVE_FACTS();
+    delete (missingKey.combine_feedback as Record<string, boolean>)['q:1'];
+    expect(() => validateRouteCoverage(missingKey, m)).toThrow(
+      /no combine_feedback entry for screen "q:1" — missing evidence/,
+    );
+
+    // a manifest that LOSES the flag on a combining screen fails instead of
+    // feeding false into both replay consumers
+    expect(() =>
+      validateRouteCoverage(
+        ARCHIVE_FACTS({ combine_feedback: { 'n:1': false, 'q:1': true, 'c:1': false } }),
+        m,
+      ),
+    ).toThrow(/screen "q:1" declares combine_feedback false, the archive proves true/);
+
+    const combining = manifest();
+    combining.screens[1].combine_feedback = true;
+    expect(() =>
+      validateRouteCoverage(
+        ARCHIVE_FACTS({ combine_feedback: { 'n:1': false, 'q:1': true, 'c:1': false } }),
+        combining,
+      ),
+    ).not.toThrow();
+  });
+
+  test('correct_plan is pinned by the archive facts — totality and exact equality (gate-B0 r7 M3)', () => {
+    const m = manifest();
+    const missingKey = ARCHIVE_FACTS();
+    delete (missingKey.correct_plan_kinds as Record<string, string>)['q:1'];
+    expect(() => validateRouteCoverage(missingKey, m)).toThrow(
+      /no correct_plan_kinds entry for screen "q:1" — missing evidence/,
+    );
+
+    // a manifest that loses or drifts the plan kind fails instead of
+    // shrinking the plan-dependent expected-evidence classes
+    const dropped = manifest();
+    delete dropped.screens[1].correct_plan;
+    expect(() => validateRouteCoverage(ARCHIVE_FACTS(), dropped)).toThrow(
+      /screen "q:1" declares correct_plan undefined, the archive proves navigation/,
+    );
+
+    expect(() =>
+      validateRouteCoverage(
+        ARCHIVE_FACTS({
+          correct_plan_kinds: { 'n:1': 'navigation', 'q:1': 'feedback', 'c:1': 'navigation' },
+        }),
+        m,
+      ),
+    ).toThrow(/screen "q:1" declares correct_plan navigation, the archive proves feedback/);
+  });
+
+  test('LLM-capable screens fail the build closed — their plan kind is not archive-determined (gate-B0 r8 M2)', () => {
+    const m = manifest();
+    const missingKey = ARCHIVE_FACTS();
+    delete (missingKey.llm_feedback_capable as Record<string, boolean>)['q:1'];
+    expect(() => validateRouteCoverage(missingKey, m)).toThrow(
+      /no llm_feedback_capable entry for screen "q:1" — missing evidence/,
+    );
+    expect(() =>
+      validateRouteCoverage(
+        ARCHIVE_FACTS({ llm_feedback_capable: { 'n:1': false, 'q:1': true, 'c:1': false } }),
+        m,
+      ),
+    ).toThrow(/screen "q:1" carries an LLM feedback activation point/);
   });
 
   test('archive rule references demand a declared dependency even when none is declared (§3.6b)', () => {
@@ -2070,7 +2147,7 @@ test.describe('round-3: settlement, domain sweep and remaining §8 rows', () => 
 // ---------------------------------------------------------------------------
 
 test.describe('round-4: rotation plan legality, receipt inventory, operator ports', () => {
-  test('a rotation whose first plan is `none` is illegal — feedback is the only legal first half (§3.4)', () => {
+  test('a rotation whose first plan is `none` is LEGAL — shadow-measured: the deck returns an empty-actions result (§3.4)', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
@@ -2091,8 +2168,11 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
       scenario: [{ screen_ref: 'n:1', expected_verdict: 'correct' }],
     });
     const found = auditRun(m, runRecord, c.snapshot());
-    expect(codes(found)).toContain('navigation-sequence');
-    expect(codes(found)).toContain('plan-illegal');
+    // live LotE capture 2026-08-09: the incorrect nav check's response carries
+    // ONE result with an empty actions array — plan `none` IS the measured
+    // first half; a NAVIGATING first plan remains illegal
+    expect(codes(found)).not.toContain('navigation-sequence');
+    expect(codes(found)).not.toContain('plan-illegal');
   });
 
   test('receipt inventory: duplicates on a graded step and receipts on non-graded steps (§3.5)', () => {
@@ -2710,9 +2790,7 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
 
     const extra = ARCHIVE_FACTS();
     (extra.resource_ids as Record<string, number>)['ghost:9'] = 900;
-    expect(() => validateRouteCoverage(extra, manifest())).toThrow(
-      /resource_ids names "ghost:9"/,
-    );
+    expect(() => validateRouteCoverage(extra, manifest())).toThrow(/resource_ids names "ghost:9"/);
   });
 
   test('a sealed snapshot with NO failure evidence carries the §3.2 sentinel', () => {
@@ -2734,9 +2812,7 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
     // ...and any real positive evidence suppresses the sentinel
     const stamped: RunRecord = {
       ...runRecord,
-      operationFailures: [
-        { kind: 'readiness-timeout', screenId: 'n:1', expectedStepIndex: 0 },
-      ],
+      operationFailures: [{ kind: 'readiness-timeout', screenId: 'n:1', expectedStepIndex: 0 }],
     };
     expect(codes(auditRun(manifest(), stamped, c.snapshot()))).toEqual(['operation-failure']);
   });
@@ -2775,9 +2851,7 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
       snap.records[checking],
     );
     expect(
-      found.some(
-        (v) => v.code === 'payload-mismatch' && v.facts.detail === 'unstable-dependency',
-      ),
+      found.some((v) => v.code === 'payload-mismatch' && v.facts.detail === 'unstable-dependency'),
     ).toBe(true);
   });
 
@@ -2787,9 +2861,7 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
       method: 'PATCH',
       url: `${ORIGIN}/state/course/s1/activity_attempt/a-dep/active`,
       postData: JSON.stringify({
-        partInputs: [
-          { attemptGuid: 'part-a-dep', response: { k0: { path: 'q:1|stage.sim.A' } } },
-        ],
+        partInputs: [{ attemptGuid: 'part-a-dep', response: { k0: { path: 'q:1|stage.sim.A' } } }],
       }),
     }) as number;
     c.ingestResponse(save, 200);
@@ -2803,7 +2875,9 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
   test('answer operations with non-string version/mode fail the build (§3.6 registry keys)', () => {
     const badVersion = manifest();
     (badVersion.screens[1].operations![0] as { version?: unknown }).version = 3;
-    expect(() => validateAdaptiveManifest(badVersion)).toThrow(/version must be a non-empty string/);
+    expect(() => validateAdaptiveManifest(badVersion)).toThrow(
+      /version must be a non-empty string/,
+    );
 
     const badMode = manifest();
     (badMode.screens[1].operations![0] as { mode?: unknown }).mode = '';

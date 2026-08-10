@@ -880,12 +880,14 @@ function auditNavigationSequence(
         r.requestSeq > first.responseSeq &&
         second.requestSeq > r.responseSeq,
     );
-    // the first half must derive a FEEDBACK plan — `none` is illegal after
-    // every check (§3.5) and "any non-navigating plan" would smuggle it in
+    // the first half derives FEEDBACK or NONE — shadow-measured 2026-08-09:
+    // the deck's incorrect nav check returns one result with an EMPTY actions
+    // array (plan 'none'); the widget handles feedback internally. Navigating
+    // first plans stay illegal. (§3.4 amendment pending B0.)
     const measuredRotation =
       first.attemptGuid !== second.attemptGuid &&
       first.correct === false &&
-      firstPlan.kind === 'feedback' &&
+      (firstPlan.kind === 'feedback' || firstPlan.kind === 'none') &&
       !transitionNavigates(firstPlan) &&
       second.correct === true &&
       transitionNavigates(secondPlan) &&
@@ -1354,15 +1356,11 @@ function auditNavObligations(
       e.record.llmFeedback,
       !!screen.combine_feedback,
     );
-    // `none` is not a legal post-check plan on ANY role (§3.5)
-    if (replayed.kind === 'none') {
-      violations.push(
-        violation('plan-illegal', visit.screenId, stepIndex, {
-          seq: e.record.requestSeq,
-          planKind: 'none',
-        }),
-      );
-    }
+    // `none` on a NAVIGATION evaluation is measured-legal (the rotation's
+    // first check, empty actions result — shadow capture 2026-08-09); the
+    // sequence rule bounds what such a plan may be part of. §3.5's
+    // none-is-illegal rule applies to non-navigation roles, in
+    // auditTransitions. (§3.5 amendment pending B0.)
     const recorded = recordedPlans.find(
       (p) => p.stepIndex === stepIndex && p.evaluationSeq === e.record.requestSeq,
     );

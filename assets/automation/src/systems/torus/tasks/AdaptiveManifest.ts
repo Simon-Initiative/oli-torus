@@ -71,11 +71,18 @@ export type GradingExpectation =
   | { part_path: string; predicate: Predicate }
   | { part_path_prefix: string; predicate?: Predicate; min_count?: number };
 
+export type CorrectPlanKind = 'navigation' | 'feedback' | 'none';
+
 export type ScreenDefinition = {
   id: string;
   resource_id: number;
   role: ScreenRole;
   combine_feedback?: boolean;
+  /** archive-derived plan kind of the enabled correct rules' actions —
+   * `feedback` when any correct action shows feedback (planTransition
+   * precedence), else `navigation`, else `none`. Pins the plan-dependent
+   * driver-evidence classes to the ARCHIVE (gate-B0 r7 M3). */
+  correct_plan?: CorrectPlanKind;
   /** ancestor chain for provenance, nearest first — non-manifest layer parents */
   layer_parents?: string[];
   operations?: LocalOperation[];
@@ -222,6 +229,12 @@ export function validateAdaptiveManifest(raw: unknown): AdaptiveManifest {
     if (typeof s.resource_id !== 'number') fail(`${at} ("${id}").resource_id must be a number`);
     if (!['graded', 'content', 'navigation'].includes(s.role as string)) {
       fail(`${at} ("${id}").role must be graded|content|navigation`);
+    }
+    if (
+      s.correct_plan !== undefined &&
+      !['navigation', 'feedback', 'none'].includes(s.correct_plan as string)
+    ) {
+      fail(`${at} ("${id}").correct_plan must be navigation, feedback or none`);
     }
     // combine_feedback flips the footer's event-selection branch (§3.5) — a
     // truthy non-boolean must never coerce its way into planning
@@ -399,6 +412,34 @@ export type ArchiveFacts = {
    * expectation (§3.6(b), bidirectional). Same fail-closed totality rule.
    */
   rule_prior_state_refs: Record<string, string[]>;
+  /**
+   * per screen — TOTAL over the inventory, explicit false included: the
+   * archive's combineFeedback flag. The flag flips the footer-normative
+   * planner branch on BOTH replay consumers (projection + expected driver
+   * evidence), so a manifest that loses it must fail the build, not feed a
+   * common-mode default into the comparison (gate-B0 r5 M2).
+   */
+  combine_feedback: Record<string, boolean>;
+  /**
+   * per screen — TOTAL over the inventory: the plan kind the enabled correct
+   * rules' authored actions produce (`feedback` outranks `navigation`,
+   * planTransition precedence). The expected driver-evidence inventory's
+   * plan-dependent classes derive from THIS map, never from the captured
+   * response — a common-mode journal/ledger plan substitution cannot shrink
+   * the multiset (gate-B0 r7 M3).
+   */
+  correct_plan_kinds: Record<string, CorrectPlanKind>;
+  /**
+   * per screen — TOTAL over the inventory: any ENABLED rule carries an
+   * `activationPoint` action of kind `feedback` — the server's LLM-feedback
+   * trigger (`llm_feedback.ex` find_llm_feedback_prompt;
+   * `attempt_controller.ex:753-768` attaches `llm_feedback` to the
+   * response). Runtime llmFeedback OUTRANKS authored actions in
+   * planTransition, so an LLM-capable screen's plan kind is NOT
+   * archive-determined: the coverage gate fails closed on any true value
+   * until an independent runtime reference pins the outcome (gate-B0 r8 M2).
+   */
+  llm_feedback_capable: Record<string, boolean>;
 };
 
 const coveredByExpectation = (ref: string, expectations: GradingExpectation[]): boolean =>
@@ -479,21 +520,28 @@ export function validateRouteCoverage(facts: ArchiveFacts, manifest: AdaptiveMan
   // per-screen fact maps are TOTAL over the inventory — an absent key is
   // missing evidence (fail closed), an extra key is a facts/inventory
   // mismatch; an explicit [] is the extractor's proof of "none"
-  (['effective_dependencies', 'rule_prior_state_refs', 'resource_ids'] as const).forEach(
-    (mapName) => {
-      const map = facts[mapName];
-      Array.from(archive).forEach((id) => {
-        if (map[id] === undefined) {
-          fail(`archive facts carry no ${mapName} entry for screen "${id}" — missing evidence`);
-        }
-      });
-      Object.keys(map).forEach((id) => {
-        if (!archive.has(id)) {
-          fail(`archive facts ${mapName} names "${id}", which is not in the inventory`);
-        }
-      });
-    },
-  );
+  (
+    [
+      'effective_dependencies',
+      'rule_prior_state_refs',
+      'resource_ids',
+      'combine_feedback',
+      'correct_plan_kinds',
+      'llm_feedback_capable',
+    ] as const
+  ).forEach((mapName) => {
+    const map = facts[mapName];
+    Array.from(archive).forEach((id) => {
+      if (map[id] === undefined) {
+        fail(`archive facts carry no ${mapName} entry for screen "${id}" — missing evidence`);
+      }
+    });
+    Object.keys(map).forEach((id) => {
+      if (!archive.has(id)) {
+        fail(`archive facts ${mapName} names "${id}", which is not in the inventory`);
+      }
+    });
+  });
 
   // identity's second half: every screen definition's resource_id must equal
   // the archive's — live imports remap ids, so only this gate can prove it
@@ -502,6 +550,43 @@ export function validateRouteCoverage(facts: ArchiveFacts, manifest: AdaptiveMan
       fail(
         `screen "${screen.id}" declares resource_id ${screen.resource_id}, the archive ` +
           `proves ${facts.resource_ids[screen.id]}`,
+      );
+    }
+  }
+
+  // combine_feedback is EXACT per screen — an absent manifest flag means
+  // false and must match the archive's explicit false, so a dropped flag on
+  // a combining screen fails here instead of defaulting both replay
+  // consumers to the same wrong branch (gate-B0 r5 M2)
+  for (const screen of manifest.screens) {
+    if (!!screen.combine_feedback !== facts.combine_feedback[screen.id]) {
+      fail(
+        `screen "${screen.id}" declares combine_feedback ${!!screen.combine_feedback}, ` +
+          `the archive proves ${facts.combine_feedback[screen.id]}`,
+      );
+    }
+  }
+
+  // correct_plan is EXACT per screen and REQUIRED once the facts carry it —
+  // the plan-dependent driver-evidence classes derive from this manifest
+  // field, so a missing or drifted value must fail the build (gate-B0 r7 M3)
+  for (const screen of manifest.screens) {
+    if (screen.correct_plan !== facts.correct_plan_kinds[screen.id]) {
+      fail(
+        `screen "${screen.id}" declares correct_plan ${String(screen.correct_plan)}, ` +
+          `the archive proves ${facts.correct_plan_kinds[screen.id]}`,
+      );
+    }
+  }
+
+  // an LLM-capable screen's runtime plan kind is not archive-determined
+  // (llmFeedback outranks authored actions in planTransition) — fail closed
+  // until an independent runtime reference exists (gate-B0 r8 M2)
+  for (const id of Object.keys(facts.llm_feedback_capable)) {
+    if (facts.llm_feedback_capable[id]) {
+      fail(
+        `screen "${id}" carries an LLM feedback activation point — its plan kind is not ` +
+          'archive-determined; the strict framework has no runtime reference for it yet',
       );
     }
   }
