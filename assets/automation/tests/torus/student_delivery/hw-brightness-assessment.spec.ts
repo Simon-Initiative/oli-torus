@@ -1,5 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'node:fs/promises';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '@fixture/my-fixture';
 import { setRuntimeConfig } from '@core/runtimeConfig';
@@ -11,19 +10,28 @@ import {
   importArchiveAndCreateSection,
   teardownAutomationCourse,
 } from '@tasks/AutomationSetupTask';
+import { fetchTestArchiveToTempFile } from '@tasks/AutomationAssetsTask';
 
 /**
  * MER-5675: Habitable Worlds Brightness - Assessment adaptive lesson.
  *
- * Imports the temporary local Habitable Worlds course archive, creates an
- * open-and-free section with a learner, and completes the 5-screen scored
- * assessment by reading the randomized star values rendered in the deck.
+ * Imports the private Habitable Worlds course archive, creates an open-and-free
+ * section with a learner, and completes the 5-screen scored assessment by
+ * reading the randomized star values rendered in the deck.
  *
- * Temporary local archive usage:
- *   MER_5675_ARCHIVE_PATH=/path/to/course.zip npx playwright test hw-brightness-assessment
+ * The course zip lives in the Playwright assets bucket and is fetched through
+ * the Torus server-side /test/assets/* proxy so credentials never leave the
+ * server.
  *
- * After this happy path is stable, the archive should move to the private
- * Playwright assets bucket and this spec can switch to fetchTestArchiveToTempFile.
+ * Requirements to run locally:
+ *   - Torus dev server running with PLAYWRIGHT_SCENARIO_TOKEN and
+ *     PLAYWRIGHT_ASSETS_BUCKET set. In dev this can point at MinIO.
+ *   - An automation API key with automation_setup_enabled exported as
+ *     PLAYWRIGHT_AUTOMATION_API_KEY.
+ *   - Private asset seeded in the bucket:
+ *     habitable_worlds-brightness_assessment/course.zip
+ *
+ * Then: npx playwright test hw-brightness-assessment
  */
 
 type StarName = 'Dargo' | 'Aeryn' | 'Crichton';
@@ -40,10 +48,8 @@ const starNames = {
 } as const satisfies Record<StarName, readonly string[]>;
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
+const archiveKey = 'habitable_worlds-brightness_assessment/course.zip';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
-const archivePath = path.resolve(
-  process.env.MER_5675_ARCHIVE_PATH || '../../export_habworlds_accessible_version_w.zip',
-);
 const lessonTitle = 'Brightness - Assessment';
 const lessonSearchTerm = 'Brightness - Assessment';
 const lightYearsPerParsec = 3.26;
@@ -51,6 +57,7 @@ const metersPerLightYear = 9.4605e15;
 const solarLuminosityWatts = 3.827226e26;
 
 let seededCourse: AutomationSetupResponse | null = null;
+let archiveTempDir: string | null = null;
 
 setRuntimeConfig({
   baseUrl,
@@ -62,16 +69,15 @@ test.skip(
   !automationApiKey,
   'Set PLAYWRIGHT_AUTOMATION_API_KEY to run this test (see setup instructions above)',
 );
-test.skip(
-  !fs.existsSync(archivePath),
-  `Set MER_5675_ARCHIVE_PATH or place the temporary archive at ${archivePath}`,
-);
 
 test.describe.serial('Habitable Worlds Brightness assessment adaptive lesson', () => {
   test.beforeAll(async ({ request }) => {
     test.setTimeout(240_000);
 
-    seededCourse = await importArchiveAndCreateSection(request, archivePath, {
+    const archive = await fetchTestArchiveToTempFile(archiveKey, baseUrl);
+    archiveTempDir = archive.tempDir;
+
+    seededCourse = await importArchiveAndCreateSection(request, archive.filePath, {
       baseUrl,
       apiKey: automationApiKey!,
     });
@@ -84,14 +90,19 @@ test.describe.serial('Habitable Worlds Brightness assessment adaptive lesson', (
   });
 
   test.afterAll(async ({ request }) => {
-    if (!seededCourse) {
-      return;
+    try {
+      if (seededCourse) {
+        await teardownAutomationCourse(request, seededCourse, {
+          baseUrl,
+          apiKey: automationApiKey!,
+        });
+      }
+    } finally {
+      if (archiveTempDir) {
+        await fs.rm(archiveTempDir, { recursive: true, force: true });
+        archiveTempDir = null;
+      }
     }
-
-    await teardownAutomationCourse(request, seededCourse, {
-      baseUrl,
-      apiKey: automationApiKey!,
-    });
   });
 
   test('student completes the Brightness assessment happy path', async ({ page }) => {
@@ -146,7 +157,14 @@ test.describe.serial('Habitable Worlds Brightness assessment adaptive lesson', (
 });
 
 async function beginTesting(page: Page) {
-  await clickAdaptiveButton(page, /^Begin Testing$/i);
+  const beginTestingButton = await findAdaptiveLocator(
+    page,
+    (scope) => scope.getByRole('button', { name: /^Begin Testing$/i }).last(),
+    60_000,
+  );
+
+  await expect(beginTestingButton).toBeEnabled({ timeout: 15_000 });
+  await beginTestingButton.click();
   await expectAdaptiveSpinbutton(page, /Distance in light years/i);
 }
 
@@ -208,19 +226,15 @@ async function waitForExpectedAdaptiveStep(
 async function finishAdaptiveLesson(page: Page) {
   await clickAdaptiveButton(page, /^Finish$/i);
 
-  const finishedDialog = page.locator('.finishedDialog.modal.in').first();
   const finishedContent = page.locator('#lessonFinishedDialogContent').first();
 
   await expect(finishedContent).toContainText(/done|congratulations|finished/i, {
     timeout: 20_000,
   });
 
-  const closeButton = finishedDialog
-    .getByRole('button', { name: /Close feedback window/i })
-    .or(
-      page.locator(
-        'button.close[title="Close feedback window"], button.close[aria-label="Close feedback window"]',
-      ),
+  const closeButton = page
+    .locator(
+      '#delivery_container .finishedDialog.modal.in .modal-header button[aria-label="Close feedback window"], button.close[title="Close feedback window"]',
     )
     .first();
 
@@ -232,17 +246,7 @@ async function finishAdaptiveLesson(page: Page) {
     await dialog.accept();
   });
   await closeButton.click({ force: true });
-
-  await expect
-    .poll(
-      async () => {
-        const dialogStillVisible = await finishedDialog.isVisible().catch(() => false);
-
-        return !dialogStillVisible || !page.url().includes('/adaptive_lesson/');
-      },
-      { message: 'Expected finished lesson dialog to close', timeout: 10_000 },
-    )
-    .toBe(true);
+  await waitForAdaptiveSettled(page);
 }
 
 async function fillSpinbutton(page: Page, name: RegExp, value: string) {
