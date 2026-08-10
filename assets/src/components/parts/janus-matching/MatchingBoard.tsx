@@ -46,6 +46,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
     null,
   );
   const [selectedCol1Id, setSelectedCol1Id] = useState<string | null>(null);
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
   const [focusZone, setFocusZone] = useState<FocusZone>('col1');
   const [draggingFromId, setDraggingFromId] = useState<string | null>(null);
 
@@ -68,9 +69,15 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
 
   const focusItem = useCallback((itemId: string) => {
     const el = itemRefs.current[itemId];
-    if (el) {
+    if (!el) {
+      return;
+    }
+    try {
+      el.focus({ preventScroll: true, focusVisible: true } as FocusOptions);
+    } catch (_err) {
       el.focus();
     }
+    setFocusedItemId(itemId);
   }, []);
 
   const redrawLines = useCallback(() => {
@@ -338,6 +345,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     'matching-item',
                     enabled ? 'is-interactive' : '',
                     selected ? 'is-selected' : '',
+                    focusedItemId === item.id ? 'is-focused' : '',
                     itemHasMatch(item.id, 1) ? 'is-matched' : '',
                     itemHintClass(item.id, 1),
                   ]
@@ -355,7 +363,13 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     startDrag(item.id, e.clientX, e.clientY);
                   }}
                   onKeyDown={(e) => handleCol1KeyDown(e, item, index)}
-                  onFocus={() => setFocusZone('col1')}
+                  onFocus={() => {
+                    setFocusZone('col1');
+                    setFocusedItemId(item.id);
+                  }}
+                  onBlur={() => {
+                    setFocusedItemId((prev) => (prev === item.id ? null : prev));
+                  }}
                 >
                   <div className="matching-item-body">
                     <MatchingItemContent item={item} />
@@ -389,6 +403,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                   className={[
                     'matching-item',
                     enabled && selectedCol1Id ? 'is-interactive' : '',
+                    focusedItemId === item.id ? 'is-focused' : '',
                     itemHasMatch(item.id, 2) ? 'is-matched' : '',
                     itemHintClass(item.id, 2),
                   ]
@@ -411,6 +426,12 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     requestAnimationFrame(() => focusItem(col1Item.id));
                   }}
                   onKeyDown={(e) => handleCol2KeyDown(e, item, index)}
+                  onFocus={() => {
+                    setFocusedItemId(item.id);
+                  }}
+                  onBlur={() => {
+                    setFocusedItemId((prev) => (prev === item.id ? null : prev));
+                  }}
                 >
                   <div className="matching-item-body">
                     <MatchingItemContent item={item} />

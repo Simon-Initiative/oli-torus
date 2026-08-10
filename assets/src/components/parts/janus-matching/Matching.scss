@@ -10,7 +10,7 @@
   color: #1e293b;
   background: #f8fafc;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
 
   &.matching--responsive {
     width: 100%;
@@ -171,27 +171,35 @@
       outline: none;
     }
 
-    &:focus-visible {
-      outline: 2px solid #fff;
-      outline-offset: 2px;
+    &:focus-visible,
+    &.is-focused {
+      outline: none;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0f172a;
+      z-index: 1;
     }
 
     &.is-selected {
       border-color: #fff;
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--matching-theme) 40%, #000000);
-      filter: brightness(1.05);
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(15, 23, 42, 0.55);
+      filter: brightness(1.12);
+      z-index: 1;
     }
 
-    &.is-matched {
+    &.is-selected.is-focused {
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0f172a;
+      filter: brightness(1.12);
+    }
+
+    &.is-matched:not(.is-focused):not(.is-selected) {
       box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
     }
 
-    &.is-correct {
+    &.is-correct:not(.is-focused) {
       border-color: #22c55e;
       box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35);
     }
 
-    &.is-incorrect {
+    &.is-incorrect:not(.is-focused) {
       border-color: #ef4444;
       box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.35);
     }
