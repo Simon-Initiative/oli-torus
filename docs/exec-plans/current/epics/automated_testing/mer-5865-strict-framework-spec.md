@@ -4,42 +4,136 @@
 > decision (`mer-5674-driver-decision.md` §4); the checkpoint-A review history cites the
 > old file name. The work's name is the strict adaptive verification framework.
 
-## ⇥ HANDOFF — updated 2026-08-09 (read this first)
+## ⇥ HANDOFF — updated 2026-08-10 (read this first)
 
-Steps 1+2 of §7 are BUILT, and **Checkpoint A is CLOSED** (10 Codex rounds, ~60 findings
-fixed, final state 257/257) → next is the **human commit gate**, then §7 step 0 (etx spike)
-and step 3 (shadow gate, blocked on run budget). Ticket: MER-5865. Branch:
+**Checkpoint A CLOSED + COMMITTED** (3 commits: `2c843a8ecf` docs, `b05ac917cf` step 1,
+`5fb5bfee1c` step 2 — every commit of this ticket carries `[ENHANCEMENT] [MER-5865] subject`,
+single line, no Co-Authored-By). **Step 0 (etx spike) DONE + committed** with a Codex consult
+(`reviews/mer-5865-etx-spike-consult.md`; gate statement narrowed, SHA-256 registry pinning).
+**Step 3 (shadow differential gate) BUILT; B0 CLOSED 2026-08-10 (closure consult
+ENDORSE-WITH-AMENDMENTS, amendments folded as step-4 contract obligations B4-* — evidence
+doc). AT THE STEP-3 COMMIT GATE (human "go" pending). REVIEW REGIME (human decision
+2026-08-10, option C): gates B/C1/C2 are SINGLE-PASS — one contract-before-build read
+(carrying the B4-* IDs) + one implementation pass + fix + human call; no re-review loops
+unless the human asks. Rationale: 18 rounds across A+B0 were consumed by an unbounded
+artifact-corruption threat model against evidence that is capture-internal BY DESIGN until
+step 4. Step 4's protection is mechanical (the strict test subset, the shadow differential
+harness built exactly for the swap, live acceptance runs), not review rounds.** Nothing pushed; human gates every commit with an explicit "go".
+Ticket: MER-5865. Branch:
 `MER-5865-adaptive-lessons-share-strict-verification-and-migrate-real-chem-specs` on
-`b8042f0cf8` (the MER-5674 strict commit; PR #6761 merged-state unknown to this doc — check).
+`b8042f0cf8`.
 
-### SHIPPED (all UNCOMMITTED — zero commits exist for this work; ✅ = verified 2026-08-05)
+### COMMITTED
 
-- ✅ Step 1: `assets/automation/src/systems/torus/tasks/AdaptiveJournal.ts` (pure core +
-  Playwright recorder; two-phase response stamping, both freeze flavors, persistent
-  terminalization, derived seal_incomplete, freeze-timeout record) and
-  `AdaptiveAttribution.ts` (half-open windows, causal attempt lineage, provenance precedence).
-  Survived Codex rounds 1+2 — findings + writer responses: `reviews/mer-5865-step1-round-{1,2}.md`.
-- ✅ Step 2: `AdaptiveManifest.ts` (map/scenario split, closed 15-operator predicate AST,
-  archive bijection), `AdaptiveTransitionPlanner.ts` (combineFeedback selection mirrors
-  `DeckLayoutFooter.tsx:420-444` verbatim), `AdaptiveOracle.ts` (`auditRun` — §3.4 permits +
-  navigation sequence rule, §3.5 inventory, §3.6 committed-prior-state matcher, §3.2
-  restricted-audit matrix, redacted reporter).
-- ✅ Tests: `assets/automation/tests/torus/student_delivery/adaptive-{journal,attribution,oracle}.spec.ts`
-  — **257/257 green** after the checkpoint-A loop (10 rounds of witnesses added), tsc/eslint/
-  prettier clean (2 pre-existing liveSocket tsc errors excluded, present on master).
-- ✅ Spec amendments folded: ticket number (was TBD), §3.2 freeze-timeout record (round-2
-  blocker B2, Codex-endorsed, human approved 2026-08-05 via "proceed").
+- Steps 1+2 pure core: `AdaptiveJournal.ts`, `AdaptiveAttribution.ts`, `AdaptiveManifest.ts`,
+  `AdaptiveTransitionPlanner.ts`, `AdaptiveOracle.ts` + suites (257/257 after the 10-round
+  checkpoint-A loop; history `reviews/mer-5865-checkpoint-a-round-{1..10}.md` + closure consult).
+- Step 0 spike: `etx-scripts-spike.md` (sims mechanically drivable; Greenhouse not blocked).
+
+### UNCOMMITTED (step 3 — held for the human gate AFTER B0 passes)
+
+- `AdaptiveShadowCapture.ts` (passive journal arming beside the shipped walker: MutationObserver
+  fences, correlation from delivery props, poison hook with fired-stamp, finally-detach) and
+  `AdaptiveShadowProjector.ts` (archive-contract inputs, closed driver-evidence list,
+  step/screen/seq-pinned inventory, projection + intentional-delta comparison).
+- `mer5865-shadow-gate.spec.ts` (offline replayable gate, env-gated) + `lote-plate-tectonics.spec.ts`
+  shadow/poison hooks (default path byte-identical).
+- `AdaptiveOracle.ts` amendment: navigation rotation accepts first plan `feedback` OR
+  non-navigating `none` (live wire measured 2026-08-09 — empty actions array on incorrect nav
+  check); §3.4/§3.5 amendments drafted "pending B0". Witness flipped citing the capture.
+- Evidence doc: `mer-5865-shadow-gate-evidence.md` (runs, round dispositions, deltas, questions).
+
+### GATE B0 STATE (rounds in `reviews/mer-5865-gate-b0*.md`, writer responses inline)
+
+- r1 BLOCKED (ledger-copied contract, synthesized permits/plans) → projector rebuilt: archive
+  manifest, zero synthesis, closed driver-evidence classification.
+- r2 BLOCKED (roles common-mode, missing completeness gate, receipt-missing misclassified) →
+  extractor v3 archive-derived roles (zero v1 mismatches), both build gates run in replay,
+  receipt-missing IN-SCOPE, multiset pinned.
+- r3 BLOCKED (empty local rule refs = vacuous coverage proof; pin erases screen identity) →
+  extractor v4 records local `stage.*` refs for all 19 graded screens (24 refs), pin rekeyed
+  `stepIndex|screenId|code|detail|requestSeq`; BOTH closures mutation-witnessed (fabricated
+  ref KILLED, dropped expectation KILLED, moved violation BREAKS, cross-screen swap BREAKS).
+- r4 BLOCKED (replay not fail-closed over its evidence: green with NO shipped ledger passed
+  vacuously; recorder omissions shrank expected+actual inventories in lockstep, 65→64 with
+  the mandatory delta gone) → `validateGreenEnvelope` pins the capture envelope against the
+  ARCHIVE scenario (visits+ledger length and per-index screenId, freeze flavor, exactly one
+  mint + finalization, rotation = 2 owned evals, ≥1 save per graded screen bound by
+  renderedAttemptGuid), `runIdentity` distinctness, union-length comparison, intentional
+  deltas asserted EXACTLY; reviewer guardrail ADOPTED — standing gate test with 8 deletion
+  witnesses; all 4 round-4 negative replays now FAIL. N1 (single failure boundary dumps the
+  bail capture on any post-arm failure) + N2 (`dump()` refuses git-repo destinations) fixed.
+- r5 BLOCKED (HOLLOWING: record shells survive with evidence removed — saves without
+  payloads, finalization without acceptance fields, combine_feedback unpinned by the facts,
+  bail artifact relabelable) → §3.2 acceptance RECOMPUTED from the finalization record +
+  wire-slug cross-source; saves must carry own-screen state paths (NOT 2xx — measured: the
+  live deck 403s the same 16/29 saves on both greens); ArchiveFacts gains a TOTAL
+  `combine_feedback` map with exact manifest equality; fail-closed BAIL envelope; hollowing
+  witnesses adopted (10, standing test). All 8 negative replays (r4+r5) fail. CLAIMS TABLE
+  introduced in the r5 writer response. N1 (boundary from arming) + N2 (realpath) fixed.
+- r6 BLOCKED (finalization correlation not independent — wire-slug check was internal
+  consistency, common-mode substitution survived; 403 saves licensed as barrier evidence)
+  → `ShadowDump.correlation` (DOM delivery props) REQUIRED, all three finalization
+  identities exact + per-identity and common-mode witnesses; 403 EXPLAINED from server code
+  (`attempt_controller.ex:448-469` only_active — every 2xx save pre-eval, every 403
+  post-eval, both greens) and the envelope enforces that contract bidirectionally; witness
+  renamed SAVE-TRAFFIC (saved-barrier stays the oracle's step-4 receipt+permit rule);
+  claims table v2 with reference-class column. PRE-R6 CAPTURES RETIRED — fresh 2 green +
+  1 bail runs REQUIRED before baseline can pass. N1 (boundary from arming, incl. poison)
+  + N2 (mkdir-then-realpath validation) fixed.
+- RECAPTURE DONE 2026-08-10 (2 green + 1 bail, r6 harness; counts stable across sets).
+- r7 BLOCKED (acceptance predicate not coextensive with §3.2 — result/parseError/
+  categorical reason unchecked; completed saves skippable via identity hollowing; C10's
+  "65 multiset" self-referential — common-mode journal/ledger plan substitution passed
+  64/65) → envelope recomputes EVERY §3.2 term; unclassifiable completed saves RED; new
+  archive fact `correct_plan_kinds` pins the plan-dependent classes (archive says 20
+  feedback + 2 navigation = the 20 measured no-acks) + cross-green class-count equality;
+  claims table v3.1 (Spec-source/Positive-witness columns, atomic C4a/C4b + C13a/C13b,
+  rows C14-C18). All 5 r7 mutations replayed pre-fix and KILLED post-fix. Fresh captures
+  judged CREDIBLE by the reviewer. Suite count 263 (+1 correct_plan contract test).
+- r8 BLOCKED (unbound save identity laundered 403→2xx via the never-evaluated branch;
+  correct_plan classifier omitted planTransition's higher-precedence llmFeedback input) →
+  save classification LINEAGE-BOUND (identity ∈ visits/evaluated/mint, else red); new TOTAL
+  archive fact `llm_feedback_capable` (server trigger: activationPoint kind=feedback,
+  `llm_feedback.ex`), coverage FAILS CLOSED on any capable screen, envelope rejects
+  captured llmFeedback as impossible traffic (LotE: 0/22 capable — classifier coextensive
+  for this archive). All 5 r8 mutations replayed pre-fix, KILLED post-fix. Claims table
+  v3.2 (C8 rewritten, C19 added). Extractor v7 reproducible (r8 N1); saved-barrier wording
+  retired (r8 N2). Suite 264.
+- r9 as an adversarial round CANCELLED (human decision 2026-08-10): converted to the B0
+  CLOSURE CONSULT.
+- **B0 CLOSED 2026-08-10** — consult ENDORSE-WITH-AMENDMENTS
+  (`reviews/mer-5865-gate-b0-closure-consult.md`): equivalence endorsed, loop stays closed;
+  five missing residuals + four discharge corrections folded as STABLE STEP-4 CONTRACT
+  OBLIGATIONS (B4-C3/C4A/C5/C8/C12/C15/C16/STAMP/PRED — evidence doc carries the list;
+  B4-STAMP and B4-C3/C15 flagged MATERIAL for gate B). The step-4 contract-before-build
+  page MUST carry these IDs. Next: step-3 commit gate (human "go").
+
+### PRIVATE ARTIFACTS (scratchpad — answer values, never in repo)
+
+`/private/tmp/claude-501/-Users-franciscocastro-code-oli-torus/17b893f6-258e-4945-ba2d-bfe0e7b81b49/scratchpad/mer5865/`:
+`extract_lote_facts.py` (v7: combine map, correct_plan_kinds, llm_feedback_capable,
+reproducible draft), `extract_lote_manifest_v2.py`,
+`lote-archive-facts.json`, `lote-manifest-v2.json`. CURRENT captures (2026-08-10, r6
+harness, correlation recorded): `shadow/lote-green-{1786378384523,1786378649848}.json`,
+`shadow/lote-bail-1786378973158.json` (poison-stamped). The 2026-08-09 dumps are RETIRED
+(r6 M1), forensics only. Replay:
+`cd assets/automation && MER5865_MANIFEST=... MER5865_ARCHIVE_FACTS=... MER5865_GREEN_DUMPS=g1,g2
+MER5865_BAIL_DUMP=... npx playwright test mer5865-shadow-gate` → 7/7. Both greens: in-scope
+0, unexplained 0, 1 classified delta, 65=65 pinned. Bail: `verdict-not-correct` at
+`q:1516177456571:380`. Server start (background OK):
+`PLAYWRIGHT_ASSETS_BUCKET=torus-playwright-assets-dev PLAYWRIGHT_SCENARIO_TOKEN=my-token mix phx.server`;
+capture env: `MER5865_SHADOW_DIR=<scratchpad>/mer5865/shadow PLAYWRIGHT_BASE_URL=http://127.0.0.1
+PLAYWRIGHT_AUTOMATION_API_KEY=<admin api key with automation_setup_enabled>`.
 
 ### NEXT
 
-1. Human commit gate: three suggested commits (docs+reviews / step-1 modules / step-2
-   modules) — format `[TYPE] [MER-5865] subject`, single line, **no Co-Authored-By**. The
-   demo files (`mer5865-demo-oracle-contrast.spec.ts`, `mer5865-demo-presentation.html`) are
-   NEVER committed.
-2. Then §7 step 0 (etx spike, gates greenhouse only) and step 3 (shadow differential gate —
-   blocked on live-run budget, open question 4), then gate B0 per the review model below.
-3. Checkpoint A history: `reviews/mer-5865-checkpoint-a-round-{1..10}.md` + the closure
-   consult; every round carries the writer response inline.
+1. Dispose B0 round 4 (Codex verdict pending). Loop until GATE-PASSED or human calls it.
+2. Human commit gate for the step-3 chunk (shadow machinery + oracle nav-`none` amendment +
+   docs) — suggest split, wait for "go".
+3. Then §7 step 4 (driver swap behind the gate), gate B after it.
+4. Demo files (`mer5865-demo-oracle-contrast.spec.ts`, `mer5865-demo-presentation.html`,
+   `branch-map-tsunami-mechanics.*`) NEVER committed.
 
 Review model (human-agreed 2026-08-05; amended 2026-08-09, round-1 SF3 approved):
 **checkpoints, not per-step loops** — **A CLOSED 2026-08-09** after 10 rounds (human call,
@@ -67,17 +161,42 @@ in the current gate, and any deferral has a named owner that closes before first
   `AdaptiveStrictContract.ts`) untouched until step 4 replaces them behind the shadow gate.
 - Keys/archives never in repo; violations/reporter redacted by construction — no answer values.
 - Verify per change: `cd assets/automation && npx playwright test adaptive- --reporter=line`
-  + tsc/eslint/prettier scoped to touched files.
+  (262 expected as of 2026-08-10) + tsc/eslint/prettier scoped to touched files.
+- **GATE PROOF PROTOCOL (human-adopted 2026-08-10; full spec =
+  `reviews/mer-5865-process-consult.md`, ADOPT-WITH-AMENDMENTS):**
+  (1) Every gate submission carries a CLAIMS TABLE v3 — ATOMIC rows (no `mixed` class), one
+  per claimed guarantee, columns: ID | claim | spec source | subject | reference +
+  provenance | reference class (`independent-artifact` / `independent-source` /
+  `capture-internal` — only the first two are independent checks) | shared
+  producer/failure domain | positive witness | red witnesses | expected rejection locus.
+  Coverage is BIDIRECTIONAL: every spec/gate obligation maps to a row and vice versa.
+  (2) Witness minima per mandatory evidence source: positive + DELETION + HOLLOWING, plus
+  the semantic mutations the claim implies (common-mode substitution, ownership swap,
+  status corruption, ordering, duplication, cardinality-preserving replacement). Each
+  witness names its expected rejection locus and records its latest replay.
+  (3) Reviewer order: fresh-eyes pass FIRST (own claim inventory + mutations), claims
+  table audited LAST, then conformance replay through the real gate entry point.
+  (4) CONTRACT-BEFORE-BUILD for gates B, C1, C2: before machinery is built, a 1-page
+  proof-design contract (decision + green predicate, threat list, atomic proof table,
+  witness plan, composition/fail-closed rules, allowlist discipline, stable claim IDs that
+  implementation tests reuse) gets ONE Codex pass. Its verdict means "reviewable design",
+  never pre-approval; material predicate/reference/class changes reopen it.
+  (5) No capture-internal row can independently license a green; the final decision
+  formula is stated and mutated across row boundaries.
 
 ### DEBT / OWED
 
-- Passive shadow capture (journal armed on live LotE runs) — deferred from step 1, needs
-  live-run budget (open question 4; each seeded run leaks a project, TRIAGE-2419).
+- Passive shadow capture (journal armed on live LotE runs) — deferred from step 1.
+  **UNBLOCKED 2026-08-09: open question 4 resolved by the human — run budget unconstrained
+  ("I don't care about polluting my local DB, we can reset it when needed"). Leaked slugs
+  noted per run for later batch cleanup.**
 - Journal permit-stamp API (permits currently carry caller-supplied seqs; driver gets real
   journal-domain stamps in step 4). ⚠️ oracle assumes permit seqs share the journal domain.
   **Escalation (closure consult, 2026-08-09): becomes MATERIAL at the first gate admitting
   live driver evidence (B0) if step 4 has not closed it.**
-- Open questions 2 (Santi/greenhouse), 3 (bucket key policy), 4 (run budget) — all human.
+- Open questions 2 (Santi/greenhouse), 3 (bucket key policy) — human.
+  ~~Open question 4 (run budget)~~ RESOLVED 2026-08-09: unconstrained, local dev DB reset
+  accepted.
 - `mer-5674-followups.md` FU-2 (evaluate.ex 500 on rules-worker error) still open, unrelated ticket.
 
 ### GOTCHAS
@@ -406,9 +525,11 @@ evaluation**, so no evaluation ever has two possible owners:
   target and navigates on ack, `DeckLayoutFooter.tsx:565-571`); an
   incorrect non-navigating singleton is a violation even if the deck somehow advanced, because
   it is precisely the first half of a rotation whose completion was never proven; or the
-  measured rotation (incorrect check whose plan is FEEDBACK and does not navigate — `none` is
-  never a legal post-check plan, on this role like every other → 2xx POST mint observed
-  between → correct navigating check under the minted guid). Every record usable (2xx, parsed,
+  measured rotation (incorrect check whose plan is FEEDBACK **or NONE** and does not navigate —
+  **shadow-measured 2026-08-09, writer-proposed pending B0:** the live deck's incorrect nav
+  check returns one result with an EMPTY actions array, deriving `none`; the widget handles
+  its feedback internally, so `none` is the measured first half on THIS role → 2xx POST mint
+  observed between → correct navigating check under the minted guid). Every record usable (2xx, parsed,
   boolean `correct`). Judging the whole sequence at once means a rotation chain can never be
   split into a "legal pre-entry singleton" plus a "widget-permitted check" that individually
   pass while the causal mint audit is bypassed.
@@ -435,7 +556,9 @@ archive↔map↔scenario completeness bijection is a build-time obligation (§3.
 navigation screen's sequence rule (§3.4); **every
 counted evaluation of any role must be usable** — response received, 2xx, parsed, boolean
 `actions.correct` (today: nav via `assertNavigationEvaluations`, graded/content via
-`waitForUsableEvaluation`); `none` is not a legal post-check plan; a re-check must end in
+`waitForUsableEvaluation`); `none` is not a legal post-check plan **on non-navigation
+screens — on navigation screens the rotation's first check measurably derives `none`
+(shadow capture 2026-08-09; §3.4 amendment pending B0)**; a re-check must end in
 navigation or terminal.
 
 **Per graded step:** receipt present; **every licensed evaluation — including the feedback
