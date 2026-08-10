@@ -39,18 +39,20 @@ defmodule Oli.GenAI.Execution do
       notify_plan(Keyword.get(opts, :on_plan), plan)
 
       try do
-        execute_with_fallback(
-          :generate,
-          completer,
-          messages,
-          functions,
-          plan,
-          service_config,
-          request_ctx,
-          request_type,
-          true,
-          provider_opts
-        )
+        with :ok <- Completions.validate_registered_model(plan.selected_model) do
+          execute_with_fallback(
+            :generate,
+            completer,
+            messages,
+            functions,
+            plan,
+            service_config,
+            request_ctx,
+            request_type,
+            true,
+            provider_opts
+          )
+        end
       after
         release_admission!(plan)
       end
@@ -74,18 +76,20 @@ defmodule Oli.GenAI.Execution do
       notify_plan(Keyword.get(opts, :on_plan), plan)
 
       try do
-        execute_with_fallback(
-          :stream,
-          completer,
-          messages,
-          functions,
-          plan,
-          service_config,
-          request_ctx,
-          request_type,
-          false,
-          response_handler_fn
-        )
+        with :ok <- Completions.validate_registered_model(plan.selected_model) do
+          execute_with_fallback(
+            :stream,
+            completer,
+            messages,
+            functions,
+            plan,
+            service_config,
+            request_ctx,
+            request_type,
+            false,
+            response_handler_fn
+          )
+        end
       after
         release_admission!(plan)
       end

@@ -25,4 +25,64 @@ defmodule Oli.GenAI.Dialogue.ServerTest do
 
     assert state.adaptive_runtime_message.name == "adaptive_runtime_update"
   end
+
+  @tag capture_log: true
+  test "notifies the client when an engagement task crashes" do
+    config = %Configuration{
+      service_config: %ServiceConfig{id: 1, primary_model: %{id: 1}},
+      functions: [],
+      reply_to_pid: self(),
+      messages: [Message.new(:system, "base system prompt")],
+      execution_fn: fn _, _, _, _, _, _ -> raise "provider initialization failed" end
+    }
+
+    {:ok, server} = Server.new(config)
+
+    Server.engage(server, Message.new(:user, "hello"))
+
+    assert_receive {:dialogue_server, {:error, "An error occurred while processing the request"}},
+                   1_000
+  end
+
+  @tag capture_log: true
+  test "notifies the client when tool arguments are invalid JSON" do
+    config = %Configuration{
+      service_config: %ServiceConfig{id: 1, primary_model: %{id: 1}},
+      functions: [],
+      reply_to_pid: self(),
+      messages: [Message.new(:system, "base system prompt")]
+    }
+
+    {:ok, server} = Server.new(config)
+
+    send(
+      server,
+      {:stream_chunk, {:function_call, %{"name" => "lookup", "arguments" => "{", "id" => "1"}}}
+    )
+
+    send(server, {:stream_chunk, {:function_call_finished}})
+
+    assert_receive {:dialogue_server, {:error, "An error occurred while processing the request"}}
+  end
+
+  @tag capture_log: true
+  test "notifies the client when tool execution fails" do
+    config = %Configuration{
+      service_config: %ServiceConfig{id: 1, primary_model: %{id: 1}},
+      functions: [],
+      reply_to_pid: self(),
+      messages: [Message.new(:system, "base system prompt")]
+    }
+
+    {:ok, server} = Server.new(config)
+
+    send(
+      server,
+      {:stream_chunk, {:function_call, %{"name" => "lookup", "arguments" => "{}", "id" => "1"}}}
+    )
+
+    send(server, {:stream_chunk, {:function_call_finished}})
+
+    assert_receive {:dialogue_server, {:error, "An error occurred while processing the request"}}
+  end
 end

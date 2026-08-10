@@ -217,7 +217,8 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     |> add_beta_header(config)
   end
 
-  def bearer(config), do: {"Authorization", "Bearer #{config.api_key || Config.api_key()}"}
+  def bearer(%{api_key: api_key}) when is_binary(api_key) and byte_size(api_key) > 0,
+    do: {"Authorization", "Bearer #{api_key}"}
 
   def request_options(config), do: config.http_options || Config.http_options()
 
