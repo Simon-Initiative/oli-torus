@@ -11,23 +11,39 @@ const seeded: AutomationSetupResponse = {
 };
 
 const options = { baseUrl: 'http://localhost', apiKey: 'key' };
+const originalTeardownTimeout = process.env.PLAYWRIGHT_AUTOMATION_TEARDOWN_TIMEOUT_MS;
 
 function stubRequest(response: {
   ok: boolean;
   status?: number;
   json?: unknown;
   text?: string;
-}): APIRequestContext {
+}): APIRequestContext & { postOptions: unknown[] } {
+  const postOptions: unknown[] = [];
+
   return {
-    post: async () => ({
-      ok: () => response.ok,
-      status: () => response.status ?? (response.ok ? 200 : 500),
-      json: async () => {
-        if (response.json === undefined) throw new Error('invalid JSON');
-        return response.json;
-      },
-      text: async () => response.text ?? '',
-    }),
+    postOptions,
+    post: async (_url: string, options: unknown) => {
+      postOptions.push(options);
+
+      return {
+        ok: () => response.ok,
+        status: () => response.status ?? (response.ok ? 200 : 500),
+        json: async () => {
+          if (response.json === undefined) throw new Error('invalid JSON');
+          return response.json;
+        },
+        text: async () => response.text ?? '',
+      };
+    },
+  } as unknown as APIRequestContext & { postOptions: unknown[] };
+}
+
+function stubFailingRequest(error: Error): APIRequestContext {
+  return {
+    post: async () => {
+      throw error;
+    },
   } as unknown as APIRequestContext;
 }
 
@@ -43,6 +59,7 @@ let warnings: string[];
 const originalWarn = console.warn;
 
 test.beforeEach(() => {
+  delete process.env.PLAYWRIGHT_AUTOMATION_TEARDOWN_TIMEOUT_MS;
   warnings = [];
   console.warn = (...args: unknown[]) => {
     warnings.push(args.map(String).join(' '));
@@ -50,12 +67,30 @@ test.beforeEach(() => {
 });
 
 test.afterEach(() => {
+  if (originalTeardownTimeout === undefined) {
+    delete process.env.PLAYWRIGHT_AUTOMATION_TEARDOWN_TIMEOUT_MS;
+  } else {
+    process.env.PLAYWRIGHT_AUTOMATION_TEARDOWN_TIMEOUT_MS = originalTeardownTimeout;
+  }
   console.warn = originalWarn;
 });
 
 test('all-success payload emits no warnings', async () => {
-  await teardownAutomationCourse(stubRequest({ ok: true, json: allSuccess }), seeded, options);
+  const request = stubRequest({ ok: true, json: allSuccess });
+
+  await teardownAutomationCourse(request, seeded, options);
+
   expect(warnings).toEqual([]);
+  expect(request.postOptions[0]).toMatchObject({ timeout: 10_000 });
+});
+
+test('teardown timeout can be overridden by environment variable', async () => {
+  process.env.PLAYWRIGHT_AUTOMATION_TEARDOWN_TIMEOUT_MS = '2500';
+  const request = stubRequest({ ok: true, json: allSuccess });
+
+  await teardownAutomationCourse(request, seeded, options);
+
+  expect(request.postOptions[0]).toMatchObject({ timeout: 2500 });
 });
 
 test('partial failure warns once naming failed entities, messages, and slugs', async () => {
@@ -124,4 +159,13 @@ test('non-2xx response keeps existing warning path and skips payload parsing', a
   expect(warnings).toHaveLength(1);
   expect(warnings[0]).toContain('automation_teardown failed (500)');
   expect(warnings[0]).toContain('boom');
+});
+
+test('request errors warn without failing the test', async () => {
+  await teardownAutomationCourse(stubFailingRequest(new Error('socket hang up')), seeded, options);
+
+  expect(warnings).toHaveLength(1);
+  expect(warnings[0]).toContain('automation_teardown request failed');
+  expect(warnings[0]).toContain('project=proj-slug section=sect-slug');
+  expect(warnings[0]).toContain('socket hang up');
 });

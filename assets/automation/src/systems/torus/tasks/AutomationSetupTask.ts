@@ -23,7 +23,10 @@ export type AutomationSetupResponse = {
 type AutomationOptions = {
   baseUrl: string;
   apiKey: string;
+  teardownTimeoutMs?: number;
 };
+
+const DEFAULT_TEARDOWN_TIMEOUT_MS = 10_000;
 
 export async function importArchiveAndCreateSection(
   request: APIRequestContext,
@@ -33,22 +36,9 @@ export async function importArchiveAndCreateSection(
   // The archive is downloaded outside Playwright's traced request context first;
   // this client only reads that file back for the multipart upload.
   const archiveBuffer = await fs.readFile(path.resolve(archivePath));
-  const response = await request.post(new URL('/api/v1/automation_setup', baseUrl).toString(), {
-    headers: {
-      Authorization: buildAutomationAuthHeader(apiKey),
-    },
-    multipart: {
-      create_author: 'true',
-      create_educator: 'true',
-      create_learner: 'true',
-      create_section: 'true',
-      project_archive: {
-        name: path.basename(archivePath),
-        mimeType: 'application/zip',
-        buffer: archiveBuffer,
-      },
-    },
-    timeout: 180_000, // full course archives take a while to ingest
+  const response = await postAutomationSetupWithRetry(request, archivePath, archiveBuffer, {
+    baseUrl,
+    apiKey,
   });
 
   if (!response.ok()) {
@@ -66,27 +56,88 @@ export async function importArchiveAndCreateSection(
   return payload;
 }
 
-export async function teardownAutomationCourse(
+async function postAutomationSetupWithRetry(
   request: APIRequestContext,
-  seeded: AutomationSetupResponse,
+  archivePath: string,
+  archiveBuffer: Buffer,
+  options: AutomationOptions,
+) {
+  const maxAttempts = 2;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await postAutomationSetup(request, archivePath, archiveBuffer, options);
+    } catch (error) {
+      if (attempt === maxAttempts || !isTransientNetworkError(error)) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2_000));
+    }
+  }
+
+  throw new Error('automation_setup failed before receiving a response');
+}
+
+function postAutomationSetup(
+  request: APIRequestContext,
+  archivePath: string,
+  archiveBuffer: Buffer,
   { baseUrl, apiKey }: AutomationOptions,
 ) {
-  const response = await request.post(new URL('/api/v1/automation_teardown', baseUrl).toString(), {
+  return request.post(new URL('/api/v1/automation_setup', baseUrl).toString(), {
     headers: {
       Authorization: buildAutomationAuthHeader(apiKey),
     },
-    data: {
-      author_email: seeded.author.email,
-      author_password: seeded.author.password,
-      educator_email: seeded.educator.email,
-      educator_password: seeded.educator.password,
-      learner_email: seeded.learner.email,
-      learner_password: seeded.learner.password,
-      section_slug: seeded.section.slug,
-      project_slug: seeded.project.slug,
+    multipart: {
+      create_author: 'true',
+      create_educator: 'true',
+      create_learner: 'true',
+      create_section: 'true',
+      project_archive: {
+        name: path.basename(archivePath),
+        mimeType: 'application/zip',
+        buffer: archiveBuffer,
+      },
     },
-    timeout: 180_000,
+    timeout: 180_000, // full course archives take a while to ingest
   });
+}
+
+function isTransientNetworkError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /socket hang up|ECONNRESET|ECONNREFUSED|fetch failed/i.test(message);
+}
+
+export async function teardownAutomationCourse(
+  request: APIRequestContext,
+  seeded: AutomationSetupResponse,
+  { baseUrl, apiKey, teardownTimeoutMs }: AutomationOptions,
+) {
+  const context = `project=${seeded.project.slug} section=${seeded.section.slug}`;
+  let response;
+
+  try {
+    response = await request.post(new URL('/api/v1/automation_teardown', baseUrl).toString(), {
+      headers: {
+        Authorization: buildAutomationAuthHeader(apiKey),
+      },
+      data: {
+        author_email: seeded.author.email,
+        author_password: seeded.author.password,
+        educator_email: seeded.educator.email,
+        educator_password: seeded.educator.password,
+        learner_email: seeded.learner.email,
+        learner_password: seeded.learner.password,
+        section_slug: seeded.section.slug,
+        project_slug: seeded.project.slug,
+      },
+      timeout: automationTeardownTimeoutMs(teardownTimeoutMs),
+    });
+  } catch (error) {
+    console.warn(`automation_teardown request failed (${context}): ${(error as Error).message}`);
+    return;
+  }
 
   if (!response.ok()) {
     console.warn(
@@ -95,7 +146,6 @@ export async function teardownAutomationCourse(
     return;
   }
 
-  const context = `project=${seeded.project.slug} section=${seeded.section.slug}`;
   let payload: unknown;
   try {
     payload = await response.json();
@@ -139,6 +189,22 @@ async function truncatedBody(response: { text(): Promise<string> }): Promise<str
 
 function buildAutomationAuthHeader(rawKey: string) {
   return `Bearer ${Buffer.from(rawKey).toString('base64')}`;
+}
+
+function automationTeardownTimeoutMs(timeoutOverride?: number) {
+  if (timeoutOverride && Number.isFinite(timeoutOverride) && timeoutOverride > 0) {
+    return timeoutOverride;
+  }
+
+  const rawTimeout = process.env.PLAYWRIGHT_AUTOMATION_TEARDOWN_TIMEOUT_MS;
+
+  if (!rawTimeout) {
+    return DEFAULT_TEARDOWN_TIMEOUT_MS;
+  }
+
+  const timeout = Number.parseInt(rawTimeout, 10);
+
+  return Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_TEARDOWN_TIMEOUT_MS;
 }
 
 export function buildAutomationLoginData(learnerEmail: string, learnerPassword: string) {

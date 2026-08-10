@@ -21,11 +21,15 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Activities.State.ActivityState
   alias Oli.Authoring.Broadcaster
   alias Oli.Delivery.Page.ActivityContext
+  alias Oli.Authoring.LearningObjectives.PageElement, as: LearningObjectivesPageElement
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Resources.ContentMigrator
+  alias Oli.Resources.ResourceType
   alias Oli.Features
+
+  @page_id ResourceType.id_for_page()
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -62,7 +66,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-           {:ok, converted_update} <- convert_to_activity_ids(update) do
+           {:ok, converted_update} <- convert_to_activity_ids(update),
+           {:ok, normalized_update} <-
+             normalize_learning_objectives_recommendations(project_slug, converted_update) do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
             # If we acquired or updated the lock, we can proceed
@@ -74,11 +80,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
                 project,
                 resource,
                 author.id,
-                converted_update,
+                normalized_update,
                 lock_result
               )
-              |> update_revision(converted_update, project.slug)
-              |> possibly_release_lock(project, publication, resource, author, update)
+              |> update_revision(normalized_update, project.slug)
+              |> possibly_release_lock(project, publication, resource, author, normalized_update)
 
             # error or not able to lock results in a failed edit
             result ->
@@ -213,6 +219,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
       # Create the resource editing context that we will supply to the client side editor
       hierarchy = AuthoringResolver.full_hierarchy(project_slug)
 
+      learning_objectives =
+        learning_objectives_for_page(project_slug, revision, hierarchy, objectives)
+
       {:ok, {previous, next, _}, _} =
         Oli.Delivery.Hierarchy.build_navigation_link_map(hierarchy)
         |> Oli.Delivery.PreviousNextIndex.retrieve(revision.resource_id)
@@ -232,6 +241,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          editorMap: editor_map,
          objectives: revision.objectives,
          allObjectives: objectives_with_parent_reference,
+         learningObjectives: learning_objectives,
          allTags: Enum.map(tags, fn t -> %{id: t.resource_id, title: t.title} end),
          title: revision.title,
          graded: revision.graded,
@@ -271,6 +281,49 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   defp maybe_migrate_revision_content(%Revision{content: content} = revision) do
     {:ok, %Revision{revision | content: ContentMigrator.migrate(content, :page, to: :latest)}}
+  end
+
+  defp learning_objectives_for_page(project_slug, revision, hierarchy, objectives) do
+    # The page element stores only advisory author configuration. Each authoring
+    # page load refreshes membership from the current container hierarchy so new
+    # or removed activity objective tags are reflected before the next normal save.
+    if LearningObjectivesPageElement.has_learning_objectives_element?(revision.content) do
+      resolve_learning_objectives_for_revision(project_slug, revision, hierarchy, objectives)
+    else
+      []
+    end
+  end
+
+  @doc """
+  Resolves the current container-scoped Learning Objectives for a page on demand.
+
+  This supports the authoring insertion flow, where the page editor was loaded
+  before a Learning Objectives element existed in the page content. The returned
+  payload is the same snapshot used during normal page-editor load.
+  """
+  def resolve_learning_objectives(project_slug, revision_slug) do
+    with {:ok, publication} <-
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         {:ok, %{deleted: false} = revision} <-
+           AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
+         {:ok, objectives} <-
+           Publishing.get_published_objective_details(publication.id) |> trap_nil() do
+      hierarchy = AuthoringResolver.full_hierarchy(project_slug)
+
+      {:ok,
+       resolve_learning_objectives_for_revision(project_slug, revision, hierarchy, objectives)}
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp resolve_learning_objectives_for_revision(project_slug, revision, hierarchy, objectives) do
+    LearningObjectivesPageElement.resolve(
+      project_slug,
+      revision.resource_id,
+      hierarchy,
+      objectives
+    )
   end
 
   def render_page_html(project_slug, content, author, options \\ []) do
@@ -538,6 +591,131 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # present in the update
   defp convert_to_activity_ids(update) do
     {:ok, update}
+  end
+
+  defp normalize_learning_objectives_recommendations(
+         project_slug,
+         %{"content" => content} = update
+       ) do
+    {has_learning_objectives?, recommendation_ids} =
+      learning_objectives_recommendation_ids(content)
+
+    if has_learning_objectives? do
+      valid_page_ids =
+        case recommendation_ids do
+          [] ->
+            MapSet.new()
+
+          _ ->
+            project_slug
+            |> valid_recommendation_page_ids(recommendation_ids)
+            |> MapSet.new()
+        end
+
+      # Recommendation IDs come from advisory element state, but they are still
+      # persisted page JSON. Filter them server-side so crafted editor payloads
+      # cannot stash out-of-project or non-page resource ids for later rendering.
+      content =
+        Oli.Resources.PageContent.map(content, fn
+          %{"type" => "learning_objectives", "learning_objectives" => configs} = element
+          when is_list(configs) ->
+            Map.put(
+              element,
+              "learning_objectives",
+              Enum.map(configs, &normalize_learning_objective_config(&1, valid_page_ids))
+            )
+
+          %{"type" => "learning_objectives"} = element ->
+            Map.put(element, "learning_objectives", [])
+
+          element ->
+            element
+        end)
+
+      {:ok, Map.put(update, "content", content)}
+    else
+      {:ok, update}
+    end
+  end
+
+  defp normalize_learning_objectives_recommendations(_project_slug, update), do: {:ok, update}
+
+  defp learning_objectives_recommendation_ids(content) do
+    {_, {has_learning_objectives?, ids}} =
+      Oli.Resources.PageContent.map_reduce(
+        content,
+        {false, []},
+        fn
+          %{"type" => "learning_objectives"} = element, {_found?, ids}, _tr_context ->
+            element_ids =
+              element
+              |> learning_objective_configs()
+              |> Enum.flat_map(&learning_objective_recommendation_ids/1)
+
+            {element, {true, element_ids ++ ids}}
+
+          element, acc, _tr_context ->
+            {element, acc}
+        end
+      )
+
+    {has_learning_objectives?, ids |> Enum.filter(&is_integer/1) |> Enum.uniq()}
+  end
+
+  defp learning_objective_configs(%{"learning_objectives" => configs}) when is_list(configs),
+    do: configs
+
+  defp learning_objective_configs(_element), do: []
+
+  defp learning_objective_recommendation_ids(config) when is_map(config) do
+    recommendation_id_list(Map.get(config, "revisit_pages", [])) ++
+      recommendation_id_list(Map.get(config, "practice_pages", []))
+  end
+
+  defp learning_objective_recommendation_ids(_config), do: []
+
+  defp recommendation_id_list(ids) when is_list(ids), do: ids
+  defp recommendation_id_list(_ids), do: []
+
+  defp normalize_learning_objective_config(config, valid_page_ids) when is_map(config) do
+    config
+    |> Map.put(
+      "revisit_pages",
+      normalize_learning_objective_page_ids(Map.get(config, "revisit_pages", []), valid_page_ids)
+    )
+    |> Map.put(
+      "practice_pages",
+      normalize_learning_objective_page_ids(Map.get(config, "practice_pages", []), valid_page_ids)
+    )
+  end
+
+  defp normalize_learning_objective_config(config, _valid_page_ids), do: config
+
+  defp normalize_learning_objective_page_ids(ids, valid_page_ids) when is_list(ids) do
+    ids
+    |> Enum.filter(fn id -> is_integer(id) and MapSet.member?(valid_page_ids, id) end)
+    |> Enum.uniq()
+  end
+
+  defp normalize_learning_objective_page_ids(_ids, _valid_page_ids), do: []
+
+  defp valid_recommendation_page_ids(project_slug, resource_ids) do
+    Repo.all(
+      from mapping in Oli.Publishing.PublishedResource,
+        join: rev in Revision,
+        on:
+          rev.id == mapping.revision_id and
+            rev.resource_id == mapping.resource_id,
+        where:
+          mapping.publication_id in subquery(
+            AuthoringResolver.project_working_publication(project_slug)
+          ) and
+            mapping.resource_id in ^resource_ids and
+            rev.resource_type_id == @page_id and
+            rev.deleted == false and
+            rev.resource_scope == :project,
+        select: mapping.resource_id
+    )
   end
 
   # For the activity ids found in content, convert them to activity revision slugs

@@ -1,6 +1,7 @@
 defmodule OliWeb.Api.ResourceController do
   use OliWeb, :controller
 
+  alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.PageEditor
@@ -14,32 +15,56 @@ defmodule OliWeb.Api.ResourceController do
         error(conn, 404, "not found")
 
       project ->
-        pages = AuthoringResolver.all_pages(project.slug)
+        if Accounts.can_access?(conn.assigns[:current_author], project) do
+          pages = AuthoringResolver.all_pages(project.slug)
 
-        # Note: We need to compute numbering separately because:
-        # 1. `all_pages` returns a flat list of page revisions without hierarchy context or ordering
-        # 2. In authoring context, numbering is computed JIT (Just In Time) rather than stored,
-        #    because the course hierarchy can change frequently during active development
-        numberings =
-          Numbering.number_full_tree(
-            AuthoringResolver,
-            project.slug,
-            project.customizations
-          )
+          # Note: We need to compute numbering separately because:
+          # 1. `all_pages` returns a flat list of page revisions without hierarchy context or ordering
+          # 2. In authoring context, numbering is computed JIT (Just In Time) rather than stored,
+          #    because the course hierarchy can change frequently during active development
+          numberings =
+            Numbering.number_full_tree(
+              AuthoringResolver,
+              project.slug,
+              project.customizations
+            )
 
-        pages =
-          Enum.map(pages, fn r ->
-            numbering = Map.get(numberings, r.id)
+          pages =
+            Enum.map(pages, fn r ->
+              numbering = Map.get(numberings, r.id)
 
-            %{
-              id: r.resource_id,
-              slug: r.slug,
-              title: r.title,
-              numbering_index: numbering && numbering.index
-            }
-          end)
+              %{
+                id: r.resource_id,
+                slug: r.slug,
+                title: r.title,
+                numbering_index: numbering && numbering.index
+              }
+            end)
 
-        json(conn, %{"type" => "success", "pages" => pages})
+          json(conn, %{"type" => "success", "pages" => pages})
+        else
+          error(conn, 403, "unauthorized")
+        end
+    end
+  end
+
+  def learning_objectives(conn, %{"project" => project_slug, "resource" => resource_slug}) do
+    case Course.get_project_by_slug(project_slug) do
+      nil ->
+        error(conn, 404, "not found")
+
+      project ->
+        if Accounts.can_access?(conn.assigns[:current_author], project) do
+          case PageEditor.resolve_learning_objectives(project.slug, resource_slug) do
+            {:ok, learning_objectives} ->
+              json(conn, %{"type" => "success", "learningObjectives" => learning_objectives})
+
+            {:error, :not_found} ->
+              error(conn, 404, "not found")
+          end
+        else
+          error(conn, 403, "unauthorized")
+        end
     end
   end
 

@@ -16,6 +16,7 @@ defmodule Oli.Utils.SchemaResolver do
     "content-group.schema.json" => "0.1.0",
     "content-survey.schema.json" => "0.1.0",
     "elements.schema.json" => "0.1.0",
+    "learning-objectives.schema.json" => "0.1.0",
     "page-content-adaptive.schema.json" => "0.1.0",
     "page-content-basic.schema.json" => "0.1.0",
     "page-content.schema.json" => "0.1.0",

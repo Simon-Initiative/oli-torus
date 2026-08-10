@@ -93,6 +93,7 @@ test.describe.serial('Phases of the Moon adaptive lesson', () => {
           teardownAutomationCourse(request, seededCourse, {
             baseUrl,
             apiKey: automationApiKey!,
+            teardownTimeoutMs: 180_000,
           }),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('teardown timeout')), 180_000),

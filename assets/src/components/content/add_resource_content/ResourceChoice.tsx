@@ -20,6 +20,8 @@ export const ResourceChoice: React.FC<Props> = ({
     <button
       onMouseOver={() => onHoverStart()}
       onMouseOut={() => onHoverEnd()}
+      onFocus={() => onHoverStart()}
+      onBlur={() => onHoverEnd()}
       className="resource-choice"
       disabled={disabled}
       onClick={(_e) => onClick()}

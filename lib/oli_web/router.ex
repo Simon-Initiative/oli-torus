@@ -710,6 +710,13 @@ defmodule OliWeb.Router do
     pipe_through([:api, :authoring_protected])
 
     put("/:project/resource/:resource", Api.ResourceController, :update)
+
+    get(
+      "/:project/resource/:resource/learning_objectives",
+      Api.ResourceController,
+      :learning_objectives
+    )
+
     get("/:project/link", Api.ResourceController, :index)
 
     post("/:project/activity/:activity_type", Api.ActivityController, :create)

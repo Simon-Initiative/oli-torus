@@ -4,6 +4,7 @@ defmodule Oli.Content.Page.HtmlTest do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Delivery.LearningObjectives.IncludedObjective
 
   import ExUnit.CaptureLog
 
@@ -57,6 +58,80 @@ defmodule Oli.Content.Page.HtmlTest do
 
       assert rendered_html_string =~
                "The American Revolution was a colonial revolt which occurred between 1765 and 1783"
+    end
+
+    test "renders top-level learning objectives content through the content renderer", %{
+      author: author
+    } do
+      page_content = %{
+        "version" => "0.1.0",
+        "model" => [
+          %{
+            "children" => [
+              %{
+                "children" => [%{"text" => ""}],
+                "id" => "3553286579",
+                "type" => "p"
+              }
+            ],
+            "editor" => "slate",
+            "id" => "811371277",
+            "textDirection" => "ltr",
+            "type" => "content"
+          },
+          %{
+            "id" => "1927607179",
+            "include_sub_objectives" => true,
+            "learning_objectives" => [
+              %{
+                "enabled" => true,
+                "practice_pages" => [],
+                "resource_id" => 4,
+                "revisit_pages" => []
+              }
+            ],
+            "mode" => "summary",
+            "type" => "learning_objectives"
+          }
+        ]
+      }
+
+      context = %Context{
+        user: author,
+        section_id: 42,
+        section_slug: "section-a",
+        learning_objectives: %{
+          container_resource_id: 1,
+          objectives: [
+            %IncludedObjective{
+              resource_id: 4,
+              title: "Understand linear equations",
+              parent_resource_id: nil,
+              children: []
+            }
+          ],
+          objectives_by_id: %{
+            4 => %IncludedObjective{
+              resource_id: 4,
+              title: "Understand linear equations",
+              parent_resource_id: nil,
+              children: []
+            }
+          },
+          performance_by_objective_id: %{4 => "Medium"}
+        }
+      }
+
+      rendered_html =
+        context
+        |> Page.render(page_content, Page.Html)
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      refute rendered_html =~ "Element type 'learning_objectives' is not supported"
+      assert rendered_html =~ "Learning Objective Summary"
+      assert rendered_html =~ "Understand linear equations"
+      assert rendered_html =~ "Growing Proficiency"
     end
 
     test "renders malformed page gracefully", %{author: author} do

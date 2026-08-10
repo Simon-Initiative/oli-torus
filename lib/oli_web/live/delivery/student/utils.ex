@@ -9,6 +9,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   import Ecto.Query, warn: false
 
   alias Oli.Rendering.Context
+  alias Oli.Delivery.LearningObjectives.PageElement, as: LearningObjectivesPageElement
   alias Oli.Delivery.Sections
   alias Oli.Rendering.Page
   alias OliWeb.Common.FormatDateTime
@@ -683,6 +684,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         ),
       user: page_context.user,
       page_id: page_context.page.resource_id,
+      section_id: section.id,
       section_slug: section.slug,
       project_slug: Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug,
       mode: mode,
@@ -708,6 +710,17 @@ defmodule OliWeb.Delivery.Student.Utils do
     }
 
     attempt_content = get_attempt_content(page_context)
+
+    render_context = %Context{
+      render_context
+      | learning_objectives:
+          LearningObjectivesPageElement.prepare_render_payload(
+            section,
+            page_context.page.resource_id,
+            attempt_content,
+            render_context.user
+          )
+    }
 
     # Cache the page as text to allow the AI agent LV to access it.
     cache_page_as_text(render_context, attempt_content, page_context.page.id)

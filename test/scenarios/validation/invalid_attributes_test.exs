@@ -4,6 +4,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
   alias Oli.Scenarios.DirectiveParser
 
   describe "directive attribute validation" do
+    test "post_reaction directive with unknown attribute fails" do
+      yaml = """
+      - post_reaction:
+          post: "note"
+          student: "student"
+          reaction: "like"
+          action: "add"
+          emoji: "thumbs_up"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'post_reaction' directive: \["emoji"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "project directive with unknown attribute fails" do
       yaml = """
       - project:
@@ -35,6 +52,31 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    fn ->
                      DirectiveParser.parse_yaml!(yaml)
                    end
+    end
+
+    test "section directive rejects an invalid assistant_enabled value" do
+      yaml = """
+      - section:
+          name: "test_section"
+          assistant_enabled: "enabled"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid boolean for assistant_enabled: enabled/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "section directive rejects an empty assistant service config name" do
+      yaml = """
+      - section:
+          name: "test_section"
+          assistant_enabled: true
+          assistant_service_config: "  "
+      """
+
+      assert_raise RuntimeError, ~r/Invalid non-empty string for assistant_service_config/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
     end
 
     test "clone directive with extra attributes fails" do
@@ -561,6 +603,7 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           from: "test"
           type: "enrollable"
           registration_open: true
+          assistant_enabled: true
 
       - user:
           name: "testuser"

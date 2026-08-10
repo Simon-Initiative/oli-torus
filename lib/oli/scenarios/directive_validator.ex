@@ -113,9 +113,29 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "student",
             "visible",
             "status",
+            "reaction",
+            "reaction_count",
+            "reacted_by",
             "contains_discussions",
             "auto_accept",
             "anonymous_posting"
+          ]
+
+        :annotation ->
+          [
+            "post",
+            "section",
+            "page",
+            "body",
+            "author",
+            "status",
+            "visibility",
+            "annotation_type",
+            "block_id",
+            "reply_to",
+            "reaction",
+            "reaction_count",
+            "reacted_by"
           ]
 
         :gating ->
