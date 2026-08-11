@@ -13,7 +13,7 @@ Add and document `Oli.Resources.Alternatives.normalize_strategy/1` as the only r
 - supported non-experiment strategies remain unchanged;
 - unsupported identifiers fail closed.
 
-New group creation, successor revisions, export, and ingest persist only `experiment_controlled`. Historical revisions and deployed publications are never rewritten. Placement-local `strategy` is ignored regardless of whether it is absent, matching, conflicting, or unknown; group revision strategy is authoritative.
+New A/B Test group creation and canonical ingest persist `experiment_controlled`. Editing an existing `upgrade_decision_point` group preserves that strategy in its successor revisions. Historical revisions and deployed publications are never rewritten. Placement-local `strategy` is ignored regardless of whether it is absent, matching, conflicting, or unknown; group revision strategy is authoritative.
 
 ## Placement and Schema Contract
 
@@ -38,7 +38,7 @@ The imported page receives imported group resource IDs. Repeated placements of o
 ## Existing Content and Experiment Compatibility
 
 - Existing `upgrade_decision_point` revisions remain discoverable, renderable, publishable, and usable by experiments through read-time normalization.
-- Editing a legacy group writes canonical strategy only to the successor revision.
+- Editing a legacy group preserves `upgrade_decision_point`; generic resource editing performs no strategy normalization.
 - Existing single-decision-point experiment records remain readable during the indivisible implementation, but the old request/report API shape and any temporary adapter must be removed before Gate I.
 - Legacy assignments without intervention IDs remain readable as historical decision-point assignments; new runtime writes require intervention identity.
 - No feature-specific content backfill, forced author save, republication, or experiment conversion job is introduced.

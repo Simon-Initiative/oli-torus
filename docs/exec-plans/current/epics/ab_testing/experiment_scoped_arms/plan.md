@@ -62,16 +62,16 @@ Guardrails:
 
 - Goal: Add backward-compatible storage and normalization for experiment-owned conditions, decision-point mappings, interventions, bindings, assignments, rewards, and policy state (FR-001, FR-002, FR-003, FR-006, FR-007, FR-010, FR-011, FR-015, FR-025, FR-026, FR-033).
 - Tasks:
-  - [ ] Generate dependency-ordered Ecto migrations for experiment-owned conditions with preserved IDs and experiment-scoped unique codes, `experiment_decision_point_conditions`, `experiment_interventions`, `experiment_assessment_bindings`, intervention-scoped assignment keys, accepted-reward identity, and decision-point policy configuration/state.
-  - [ ] Implement explicit `up/0` and `down/0` functions, ID/code-preserving condition normalization without implicit merging, non-cascading foreign keys, bijection/identity uniqueness, delivery/reward indexes, and legacy-row compatibility.
-  - [ ] Add schemas, changesets, associations, validated policy-state encoding/decoding, and canonical `experiment_controlled` strategy persistence.
-  - [ ] Implement and document `Oli.Resources.Alternatives.normalize_strategy/1` and the canonical write boundary; normalize `upgrade_decision_point` only at reads and ingest, and fail closed for unsupported strategies.
-  - [ ] Keep historical revisions untouched and ensure editing a legacy group writes the canonical strategy only to its successor revision.
-  - [ ] Add an ordinary reversible ClickHouse migration or documented map-extension change for the selected evidence fields, keeping old rows compatible.
+  - [x] Generate dependency-ordered Ecto migrations for experiment-owned conditions with preserved IDs and experiment-scoped unique codes, `experiment_decision_point_conditions`, `experiment_interventions`, `experiment_assessment_bindings`, intervention-scoped assignment keys, accepted-reward identity, and decision-point policy configuration/state.
+  - [x] Implement explicit `up/0` and `down/0` functions, ID/code-preserving condition normalization without implicit merging, non-cascading foreign keys, bijection/identity uniqueness, delivery/reward indexes, and legacy-row compatibility.
+  - [x] Add schemas, changesets, associations, validated policy-state encoding/decoding, and canonical `experiment_controlled` strategy persistence.
+  - [x] Implement and document `Oli.Resources.Alternatives.normalize_strategy/1` and the canonical write boundary; normalize `upgrade_decision_point` only at reads and ingest, and fail closed for unsupported strategies.
+  - [x] Keep historical and successor revisions of legacy groups untouched while ensuring newly created A/B Test groups write the canonical strategy.
+  - [x] Add an ordinary reversible ClickHouse migration or documented map-extension change for the selected evidence fields, keeping old rows compatible.
 - Testing Tasks:
-  - [ ] Test migration forward/rollback with representative legacy decision points, duplicate/conflicting condition codes, preserved condition IDs/codes, assignments, rewards, code-keyed policy JSON, and group revisions; assert row-count and relationship preservation.
-  - [ ] Test database and changeset constraints for experiment condition uniqueness, mapping bijection, intervention identity, binding identity, assignment uniqueness, reward claims, and `on_delete: :nothing`.
-  - [ ] Test canonical/legacy/unsupported group strategy reads and canonical-only new/revision writes without historical mutation or republication.
+  - [x] Test migration forward/rollback with representative legacy decision points, duplicate/conflicting condition codes, preserved condition IDs/codes, assignments, rewards, code-keyed policy JSON, and group revisions; assert row-count and relationship preservation.
+  - [x] Test database and changeset constraints for experiment condition uniqueness, mapping bijection, intervention identity, binding identity, assignment uniqueness, reward claims, and `on_delete: :nothing`.
+  - [x] Test canonical/legacy/unsupported group strategy reads and canonical-only new A/B Test group writes without legacy mutation or republication.
   - Command(s): `mix test <migration, schema, changeset, alternatives strategy tests>`; `mix ecto.migrate`; `mix ecto.rollback --step <phase migration count>`
 - Definition of Done:
   - The additive persistence model supports new intervention-scoped writes and legacy reads; all constraints and indexes match the FDD; PostgreSQL and ClickHouse changes apply and roll back safely.

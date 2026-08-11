@@ -3011,7 +3011,10 @@ defmodule Oli.Experiments do
   end
 
   defp experiment_decision_point_revision?(%Revision{} = revision) do
-    get_in(revision.content || %{}, ["strategy"]) == "upgrade_decision_point"
+    get_in(revision.content || %{}, ["strategy"]) in [
+      "experiment_controlled",
+      "upgrade_decision_point"
+    ]
   end
 
   defp validate_experiment_decision_point_revision(%Revision{} = revision) do

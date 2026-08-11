@@ -5,7 +5,7 @@ defmodule Oli.Experiments.Schemas.Condition do
 
   import Ecto.Changeset
 
-  alias Oli.Experiments.Schemas.{DecisionPoint, ExperimentDefinition}
+  alias Oli.Experiments.Schemas.{DecisionPoint, DecisionPointCondition, ExperimentDefinition}
 
   schema "experiment_conditions" do
     field :condition_code, :string
@@ -17,6 +17,7 @@ defmodule Oli.Experiments.Schemas.Condition do
 
     belongs_to :experiment, ExperimentDefinition
     belongs_to :decision_point, DecisionPoint
+    has_many :decision_point_conditions, DecisionPointCondition
 
     timestamps(type: :utc_datetime)
   end
@@ -46,8 +47,8 @@ defmodule Oli.Experiments.Schemas.Condition do
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:experiment_id)
     |> foreign_key_constraint(:decision_point_id)
-    |> unique_constraint([:decision_point_id, :condition_code],
-      name: :experiment_conditions_code_idx
+    |> unique_constraint([:experiment_id, :condition_code],
+      name: :experiment_conditions_experiment_code_idx
     )
   end
 end

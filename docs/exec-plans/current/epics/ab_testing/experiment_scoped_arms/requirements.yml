@@ -196,7 +196,8 @@ requirements:
   id: FR-032
 - title: Replace the UpGrade-specific strategy identifier compatibly
   description: experiment_controlled must be the canonical persisted identifier for
-    all newly created or revised Experiment-Controlled Alternatives Groups, while
+    all newly created Experiment-Controlled Alternatives Groups, while editing an
+    existing upgrade_decision_point group preserves its legacy strategy and
     upgrade_decision_point remains a supported read alias normalized to the same internal
     strategy for immutable historical revisions and existing publications; the transition
     must not rewrite historical revisions, require a backfill, or force republication.
@@ -391,7 +392,7 @@ acceptance_criteria:
   description: Tests prove all new Experiment-Controlled group writes use experiment_controlled;
     authoring discovery, experiment binding, delivery, rendering, preview, feature
     checks, export, and analytics paths treat legacy upgrade_decision_point revisions
-    identically; editing a legacy group writes the canonical value only in its successor
-    revision; historical and deployed revisions remain unchanged and functional without
+    identically; editing a legacy group preserves upgrade_decision_point in its successor
+    revisions; historical and deployed revisions remain unchanged and functional without
     republication; and unsupported strategy identifiers still fail safely.
   id: AC-033

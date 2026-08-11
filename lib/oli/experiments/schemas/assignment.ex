@@ -7,7 +7,7 @@ defmodule Oli.Experiments.Schemas.Assignment do
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Enrollment, Section}
-  alias Oli.Experiments.Schemas.{Condition, DecisionPoint, ExperimentDefinition}
+  alias Oli.Experiments.Schemas.{Condition, DecisionPoint, ExperimentDefinition, Intervention}
 
   schema "experiment_assignments" do
     field :assigned_by_policy, :string
@@ -19,6 +19,7 @@ defmodule Oli.Experiments.Schemas.Assignment do
     belongs_to :experiment, ExperimentDefinition
     belongs_to :decision_point, DecisionPoint
     belongs_to :condition, Condition
+    belongs_to :intervention, Intervention
     belongs_to :section, Section
     belongs_to :enrollment, Enrollment
     belongs_to :user, User
@@ -32,6 +33,7 @@ defmodule Oli.Experiments.Schemas.Assignment do
       :experiment_id,
       :decision_point_id,
       :condition_id,
+      :intervention_id,
       :section_id,
       :enrollment_id,
       :user_id,
@@ -58,11 +60,15 @@ defmodule Oli.Experiments.Schemas.Assignment do
     |> foreign_key_constraint(:experiment_id)
     |> foreign_key_constraint(:decision_point_id)
     |> foreign_key_constraint(:condition_id)
+    |> foreign_key_constraint(:intervention_id)
     |> foreign_key_constraint(:section_id)
     |> foreign_key_constraint(:enrollment_id)
     |> foreign_key_constraint(:user_id)
+    |> unique_constraint([:intervention_id, :enrollment_id],
+      name: :experiment_assignments_intervention_sticky_idx
+    )
     |> unique_constraint([:experiment_id, :decision_point_id, :enrollment_id],
-      name: :experiment_assignments_sticky_idx
+      name: :experiment_assignments_legacy_sticky_idx
     )
     |> unique_constraint(:assignment_key, name: :experiment_assignments_key_idx)
   end

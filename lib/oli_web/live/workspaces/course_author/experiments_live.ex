@@ -718,7 +718,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            project.slug,
            ctx.author,
            @alternatives_type_id,
-           %{title: name, content: %{"options" => [], "strategy" => "upgrade_decision_point"}}
+           %{title: name, content: %{"options" => [], "strategy" => "experiment_controlled"}}
          ) do
       {:ok, decision_point} ->
         {:noreply,
@@ -1173,7 +1173,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   def handle_info({:new_resource, revision, project_slug}, socket) do
     case revision.content["strategy"] do
-      "upgrade_decision_point" ->
+      strategy when strategy in ["experiment_controlled", "upgrade_decision_point"] ->
         unless revision.resource_id in socket.assigns.decision_point_subscriptions do
           Subscriber.subscribe_to_new_revisions_in_project(revision.resource_id, project_slug)
         end
@@ -1315,7 +1315,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       case ResourceEditor.list(project.slug, ctx.author, @alternatives_type_id) do
         {:ok, alternatives} ->
           alternatives
-          |> Enum.filter(&(&1.content["strategy"] == "upgrade_decision_point"))
+          |> Enum.filter(
+            &(&1.content["strategy"] in ["experiment_controlled", "upgrade_decision_point"])
+          )
           |> sort_decision_points()
 
         _error ->

@@ -37,7 +37,7 @@ Duplicate work returns the existing disposition. Distinct concurrent rewards ser
 
 `assignment.runtime_event_state` is compact idempotency state, not a durable outbox. The current xAPI pipeline begins with an in-memory cast and can lose an event between commit and durable queue persistence. Add a PostgreSQL transactional outbox (or equivalent durable evidence row tied to assignment/accepted reward), then dispatch through an Oban worker after commit with idempotent delivery markers and independent retry.
 
-Extend `priv/clickhouse/migrations/` with a new ordinary goose migration that alters `experiment_attributions`, not `raw_events`. Add nullable typed fields for intervention ID/key, assessment binding ID, assessment page resource ID, resource attempt ID, disposition, threshold, normalized score, and page revision ID. Retain publication ID. Store before/after policy context as bounded JSON strings or explicit hashes; do not overload `content_revision_id`, which currently identifies the Alternatives revision for exposure.
+Extend `priv/clickhouse/migrations/` with a new ordinary goose migration that alters `experiment_attributions`, not `raw_events`. Add nullable typed fields for intervention ID/key, assessment binding ID, assessment page resource ID, resource attempt ID, disposition, threshold, normalized score, and page revision ID. Retain publication ID. Keep bounded before/after policy context in the xAPI JSON evidence, but do not project or process it into dedicated ClickHouse columns until a concrete OLAP query requirement justifies the additional storage and ingestion contract. Do not overload `content_revision_id`, which currently identifies the Alternatives revision for exposure.
 
 Update together:
 

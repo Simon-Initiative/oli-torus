@@ -109,6 +109,20 @@ defmodule Oli.Resources.AlternativesTest do
     ]
   }
 
+  describe "normalize_strategy/1" do
+    test "normalizes the legacy experiment alias and accepts the canonical strategy" do
+      assert {:ok, "experiment_controlled"} =
+               Alternatives.normalize_strategy("upgrade_decision_point")
+
+      assert {:ok, "experiment_controlled"} =
+               Alternatives.normalize_strategy("experiment_controlled")
+    end
+
+    test "fails closed for unsupported strategies" do
+      assert {:error, :unsupported_strategy} = Alternatives.normalize_strategy("unknown")
+    end
+  end
+
   describe "alternatives" do
     setup do
       %{}

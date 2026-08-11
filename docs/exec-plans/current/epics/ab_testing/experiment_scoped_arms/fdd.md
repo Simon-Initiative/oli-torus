@@ -161,7 +161,7 @@ Content storage:
 
 Analytics storage:
 
-- Add intervention ID/key, assessment binding ID, assessment page resource ID, resource attempt ID, disposition, threshold, normalized score, publication ID, page revision ID, and before/after policy context to the existing experiment attribution/raw-event path. Assignment creation evidence records the initial delivered snapshot, and exposure evidence records the snapshot for each rendered revisit without changing the sticky assignment.
+- Add intervention ID/key, assessment binding ID, assessment page resource ID, resource attempt ID, disposition, threshold, normalized score, publication ID, page revision ID, and before/after policy context to the existing xAPI attribution evidence. Project the typed identity, disposition, score, and revision fields into ClickHouse, but retain before/after policy context only in xAPI JSON until a concrete OLAP query requirement is established. Assignment creation evidence records the initial delivered snapshot, and exposure evidence records the snapshot for each rendered revisit without changing the sticky assignment.
 - Preserve event-only publication and page-revision context in the existing compact runtime event/outbox state only as needed for reliable retry, then rely on xAPI/ClickHouse as the durable detailed evidence store; do not promote these values to permanent assignment columns.
 - ClickHouse migration and rollback preserve existing rows and make new fields nullable/defaulted for old evidence.
 
@@ -241,7 +241,7 @@ Analytics storage:
 - Read boundaries normalize group `upgrade_decision_point` and `experiment_controlled` identically. New group/revision/export/ingest writes use only `experiment_controlled`.
 - Existing content element strategy is ignored regardless of missing, matching, conflicting, or unknown value; new placements omit it. The schema remains permissive for the legacy property.
 - Legacy imported groups without strategy default to `user_section_preference`. Legacy imported `upgrade_decision_point` groups are persisted canonically.
-- Historical and deployed revisions remain untouched. Editing a legacy group creates a normal successor revision with the canonical value.
+- Historical and deployed revisions remain untouched. Editing a legacy group preserves its `upgrade_decision_point` strategy; only newly created A/B Test Alternatives Groups use `experiment_controlled`.
 - Existing experiment records remain readable. Compatibility adapters support the old single-decision-point request/report shape until callers move to lists; new configuration uses the normalized multi-point model.
 - New columns needed only by new intervention assignments remain nullable for legacy rows, with constraints enforcing completeness for new writes through changesets and, where feasible, database checks.
 - Completed/archived state is never recomputed; its final stored state and evidence remain frozen.

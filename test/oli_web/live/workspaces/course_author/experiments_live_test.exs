@@ -237,7 +237,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       revision = Experiments.get_latest_experiment(project.slug)
       assert revision.title == "Homepage Decision"
-      assert revision.content["strategy"] == "upgrade_decision_point"
+      assert revision.content["strategy"] == "experiment_controlled"
     end
 
     test "sorts decision points by creation date ascending and renders the create action below them",

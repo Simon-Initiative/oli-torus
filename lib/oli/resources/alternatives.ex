@@ -1,4 +1,10 @@
 defmodule Oli.Resources.Alternatives do
+  @moduledoc """
+  Resolves and selects versioned Alternatives groups.
+
+  New experiment-controlled revisions persist `experiment_controlled`; the historical
+  `upgrade_decision_point` value remains a read/ingest alias.
+  """
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Resources.Alternatives.SelectAllStrategy
   alias Oli.Resources.Alternatives.UserSectionPreferenceStrategy
@@ -13,7 +19,8 @@ defmodule Oli.Resources.Alternatives do
         %AlternativesStrategyContext{alternative_groups_by_id: by_id} = context,
         %{"alternatives_id" => alternatives_id} = alternatives_element
       ) do
-    strategy_name = Map.get(by_id, alternatives_id).strategy
+    strategy_name =
+      by_id |> Map.get(alternatives_id) |> Map.fetch!(:strategy) |> normalize_strategy!()
 
     strategy(strategy_name).select(context, alternatives_element)
   end
@@ -29,9 +36,29 @@ defmodule Oli.Resources.Alternatives do
     DecisionPointStrategy.prepare_delivery_decisions(context, content)
   end
 
+  @doc """
+  Normalizes a persisted Alternatives strategy.
+
+  Returns `{:ok, strategy}` for supported values and `{:error, :unsupported_strategy}`
+  for unknown input so callers fail closed.
+  """
+  def normalize_strategy("upgrade_decision_point"), do: {:ok, "experiment_controlled"}
+  def normalize_strategy("experiment_controlled"), do: {:ok, "experiment_controlled"}
+  def normalize_strategy("select_all"), do: {:ok, "select_all"}
+  def normalize_strategy("user_section_preference"), do: {:ok, "user_section_preference"}
+  def normalize_strategy(_strategy), do: {:error, :unsupported_strategy}
+
+  defp normalize_strategy!(strategy) do
+    case normalize_strategy(strategy) do
+      {:ok, normalized} -> normalized
+      {:error, :unsupported_strategy} -> raise ArgumentError, "unsupported Alternatives strategy"
+    end
+  end
+
   defp strategy("select_all"), do: SelectAllStrategy
 
   defp strategy("user_section_preference"), do: UserSectionPreferenceStrategy
 
   defp strategy("upgrade_decision_point"), do: DecisionPointStrategy
+  defp strategy("experiment_controlled"), do: DecisionPointStrategy
 end

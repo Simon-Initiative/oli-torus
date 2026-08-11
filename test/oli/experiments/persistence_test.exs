@@ -4,10 +4,14 @@ defmodule Oli.Experiments.PersistenceTest do
   import Oli.Factory
 
   alias Oli.Experiments.Schemas.{
+    AcceptedReward,
     Assignment,
+    AssessmentBinding,
     Condition,
     DecisionPoint,
+    DecisionPointCondition,
     ExperimentDefinition,
+    Intervention,
     PolicyState
   }
 
@@ -81,6 +85,79 @@ defmodule Oli.Experiments.PersistenceTest do
                |> Repo.insert()
 
       assert %{project_id: ["has already been taken"]} = errors_on(changeset)
+    end
+  end
+
+  describe "experiment-scoped arm changesets" do
+    test "enforces mapping bijection and intervention identity constraint names" do
+      mapping =
+        DecisionPointCondition.changeset(%DecisionPointCondition{}, %{
+          decision_point_id: 1,
+          condition_id: 2,
+          option_id: "control",
+          weight: 1.0,
+          position: 0
+        })
+
+      intervention =
+        Intervention.changeset(%Intervention{}, %{
+          decision_point_id: 1,
+          page_resource_id: 2,
+          content_element_id: "placement-1"
+        })
+
+      assert mapping.valid?
+      assert intervention.valid?
+
+      assert Enum.any?(
+               mapping.constraints,
+               &(&1.constraint == "experiment_decision_point_conditions_condition_idx")
+             )
+
+      assert Enum.any?(
+               mapping.constraints,
+               &(&1.constraint == "experiment_decision_point_conditions_option_idx")
+             )
+
+      assert Enum.any?(
+               intervention.constraints,
+               &(&1.constraint == "experiment_interventions_identity_idx")
+             )
+    end
+
+    test "validates assessment thresholds and accepted reward values" do
+      binding =
+        AssessmentBinding.changeset(%AssessmentBinding{}, %{
+          intervention_id: 1,
+          assessment_page_resource_id: 2,
+          reward_threshold: Decimal.new("1.01")
+        })
+
+      reward =
+        AcceptedReward.changeset(%AcceptedReward{}, %{
+          assessment_binding_id: 1,
+          assignment_id: 2,
+          enrollment_id: 3,
+          resource_attempt_id: 4,
+          reward: 2,
+          normalized_score: Decimal.new("0.5")
+        })
+
+      assert %{reward_threshold: ["must be less than or equal to 1"]} = errors_on(binding)
+      assert %{reward: ["is invalid"]} = errors_on(reward)
+
+      above_range =
+        AcceptedReward.changeset(%AcceptedReward{}, %{
+          assessment_binding_id: 1,
+          assignment_id: 2,
+          enrollment_id: 3,
+          resource_attempt_id: 4,
+          reward: 1,
+          normalized_score: Decimal.new("1.01")
+        })
+
+      assert %{normalized_score: ["must be less than or equal to 1"]} =
+               errors_on(above_range)
     end
   end
 

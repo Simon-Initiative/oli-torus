@@ -5,7 +5,7 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
 
   import Ecto.Changeset
 
-  alias Oli.Experiments.Schemas.ExperimentDefinition
+  alias Oli.Experiments.Schemas.{DecisionPointCondition, ExperimentDefinition, Intervention}
   alias Oli.Resources.Resource
 
   schema "experiment_decision_points" do
@@ -13,8 +13,16 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
     field :title, :string
     field :position, :integer, default: 0
 
+    field :algorithm, Ecto.Enum,
+      values: ExperimentDefinition.algorithms(),
+      default: :weighted_random
+
+    field :policy_config, :map, default: %{}
+
     belongs_to :experiment, ExperimentDefinition
     belongs_to :alternatives_resource, Resource
+    has_many :condition_mappings, DecisionPointCondition
+    has_many :interventions, Intervention
 
     timestamps(type: :utc_datetime)
   end
@@ -26,13 +34,17 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
       :alternatives_resource_id,
       :decision_point_key,
       :title,
-      :position
+      :position,
+      :algorithm,
+      :policy_config
     ])
     |> validate_required([
       :experiment_id,
       :alternatives_resource_id,
       :decision_point_key,
-      :position
+      :position,
+      :algorithm,
+      :policy_config
     ])
     |> validate_length(:decision_point_key, min: 1, max: 255)
     |> validate_number(:position, greater_than_or_equal_to: 0)

@@ -127,7 +127,7 @@ The same generic construct supports the existing selection strategies:
 - canonical `experiment_controlled` for experiment-controlled selection.
 
 Historical Alternatives Group revisions using `upgrade_decision_point` remain supported as a read
-alias for `experiment_controlled`. New and successor revisions write only the canonical identifier.
+alias for `experiment_controlled`. New A/B Test groups write the canonical identifier; editing an existing legacy group preserves `upgrade_decision_point` in its successor revisions.
 
 ### Alternatives Content-Element Instance
 

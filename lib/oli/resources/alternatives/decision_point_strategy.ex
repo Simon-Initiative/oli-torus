@@ -190,9 +190,10 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
 
   defp prepare_delivery_decision(
          %AlternativesStrategyContext{} = context,
-         %{strategy: "upgrade_decision_point"} = decision_point,
+         %{strategy: strategy} = decision_point,
          %{"children" => children}
-       ) do
+       )
+       when strategy in ["experiment_controlled", "upgrade_decision_point"] do
     with {%Scope{} = scope, decision_point} <- scoped_decision_point(context, decision_point),
          {:ok, %AssignmentDecision{status: :assigned} = decision} <-
            assign_condition(scope, decision_point),
@@ -239,7 +240,8 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     decision_point = Map.get(by_id, alternatives_id)
 
     case {Map.get(decisions, alternatives_id), decision_point} do
-      {nil, %{strategy: "upgrade_decision_point"}} ->
+      {nil, %{strategy: strategy}}
+      when strategy in ["experiment_controlled", "upgrade_decision_point"] ->
         case prepare_delivery_decision(context, decision_point, element) do
           {:ok, decision, attributions} ->
             next_acc = {Map.put(decisions, alternatives_id, decision), attrs ++ attributions}
