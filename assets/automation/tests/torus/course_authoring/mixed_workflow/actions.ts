@@ -176,6 +176,337 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
     return { alt, caption, final_image: pngName, page_revision_slug: pageRevisionSlug, width };
   },
 
+  async author_youtube_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const initialId = 'zHIIzcWqsP0';
+    const youtubeId = '2QAMzupR_C4';
+    const caption = 'YOUTUBE-C authored caption';
+    const alt = 'YOUTUBE-G alternative text';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addYoutubeToolbar(initialId, initialId, false);
+
+    const youtube = page.locator('.youtube-editor');
+    await youtube.click();
+    await youtube.locator('.captions-input').fill(caption);
+    await selectVoidElement(youtube);
+
+    await hoverToolbarButton(page, 'Copy Video Link').click();
+    await expectClipboardText(page, `https://www.youtube.com/embed/${initialId}`);
+
+    const [newTab] = await Promise.all([
+      page.context().waitForEvent('page'),
+      hoverToolbarButton(page, 'Open Video').click(),
+    ]);
+    await newTab.waitForLoadState('domcontentloaded');
+    await expect(newTab).toHaveURL(new RegExp(initialId));
+    await newTab.close();
+
+    await hoverToolbarSettingsButton(page).click();
+    const settings = page.getByRole('dialog', { name: 'YouTube Video Settings' });
+    await settings.getByPlaceholder('Video ID or URL').fill(youtubeId);
+    await settings.getByPlaceholder('Enter a short description of this video').fill(alt);
+    await settings.getByRole('button', { name: 'Save', exact: true }).click();
+
+    await deleteAndUndo(page, youtube);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { alt, caption, page_revision_slug: pageRevisionSlug, youtube_id: youtubeId };
+  },
+
+  async author_webpage_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const initialUrl = 'https://example.com/mixed-workflow-initial';
+    const webpageUrl = 'https://example.com/mixed-workflow-final';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addWebPageToolbar(initialUrl, false);
+
+    const webpage = page.locator('.webpage-editor');
+    await webpage.click();
+    await webpage.getByRole('button', { name: 'Copy Webpage Link', exact: true }).click();
+    await expectClipboardText(page, initialUrl);
+
+    await webpage.click();
+    const [newTab] = await Promise.all([
+      page.context().waitForEvent('page'),
+      webpage.getByRole('button', { name: 'Open Webpage', exact: true }).click(),
+    ]);
+    await newTab.waitForLoadState('domcontentloaded');
+    await expect(newTab).toHaveURL(initialUrl);
+    await newTab.close();
+
+    await webpage.click();
+    await webpage.getByRole('button', { name: /Settings$/ }).click();
+    const settings = page.getByRole('dialog').filter({ hasText: 'Change Webpage Embed URL' });
+    await settings.getByPlaceholder('Webpage Embed URL').fill(webpageUrl);
+    await settings.getByRole('button', { name: 'Save', exact: true }).click();
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { page_revision_slug: pageRevisionSlug, webpage_url: webpageUrl };
+  },
+
+  async author_dialog_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const title = 'DIALOG-B authored title';
+    const speaker = 'DIALOG-F final speaker';
+    const lineText = 'DIALOG-H authored line';
+    const image = 'img-mock-05-16-2025.jpg';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addDialogToolbar(title, 'DIALOG initial speaker', lineText, false);
+
+    const dialog = page.locator('.dialog-editor');
+    const speakers = dialog.locator('.speaker-editor:not(.new-speaker)');
+
+    await dialog.getByLabel('Title').fill(title);
+    await dialog.locator('.new-speaker button').click();
+    await expect(speakers).toHaveCount(3);
+    await speakers.nth(2).locator('input').fill('DIALOG-E removed speaker');
+    await speakers.nth(2).locator('.delete-btn').click();
+    await expect(speakers).toHaveCount(2);
+    await speakers.nth(0).locator('input').fill(speaker);
+
+    await speakers.nth(0).locator('.browse-btn').click();
+    const mediaPicker = page.getByRole('dialog', { name: 'Select Image' });
+    await mediaPicker.getByText(image, { exact: true }).click();
+    await mediaPicker.getByRole('button', { name: 'Select', exact: true }).click();
+
+    const lines = dialog.locator('.dialog-row');
+    await lines.nth(0).locator('[data-slate-editor="true"]').fill(lineText);
+    await lines.nth(0).locator('.cycle-speaker-btn').click();
+    await lines.nth(0).locator('.cycle-speaker-btn').click();
+    await lines.last().getByRole('button', { name: 'Add', exact: true }).click();
+    await dialog
+      .locator('.dialog-row')
+      .nth(1)
+      .locator('[data-slate-editor="true"]')
+      .fill('DIALOG-K second line');
+    await dialog.locator('.dialog-row').nth(1).getByRole('button').last().click();
+
+    await flushPendingPageChanges(page);
+    await previewFlush(() => curriculumTask.openPreview());
+    return { image, line_text: lineText, page_revision_slug: pageRevisionSlug, speaker, title };
+  },
+
+  async author_conjugation_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addConjugationToolbar('', '', '', '', '', false);
+
+    const conjugationPreview = page.locator('.conjugation');
+    await conjugationPreview.click({ position: { x: 1, y: 1 } });
+    await page.locator('.hover-container button', { hasText: 'Edit' }).last().click();
+
+    const conjugation = page.locator('.conjugation-editor');
+
+    await conjugation.locator('input').nth(0).fill('CONJUGATION-B title');
+    await conjugation.locator('input').nth(1).fill('CONJUGATION-C verb');
+
+    const pronunciation = 'CONJUGATION-D pronunciation';
+    await conjugation.locator('.pronunciation-editor [data-slate-editor="true"]').fill(pronunciation);
+
+    const headers = conjugation.locator('.table-editor th p');
+    await replaceSlateText(page, headers.nth(1), 'CONJUGATION-E singular');
+    await replaceSlateText(page, headers.nth(2), 'CONJUGATION-E plural');
+    await replaceSlateText(page, headers.nth(3), 'CONJUGATION-G first person');
+
+    await conjugation.getByPlaceholder('Pronouns (optional)').nth(0).fill('CONJUGATION-G pronoun');
+    await replaceSlateText(page, conjugation.locator('.tc-content p').first(), 'CONJUGATION-F conjugate');
+
+    await conjugation.locator('.pronunciation-editor .audio-picker button').click();
+    const audioPicker = page.getByRole('dialog', { name: 'Select Audio' });
+    await audioPicker.getByText('audio-test-01.mp3', { exact: true }).click();
+    await audioPicker.getByRole('button', { name: 'Select', exact: true }).click();
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return {
+      audio: 'audio-test-01.mp3',
+      page_revision_slug: pageRevisionSlug,
+      pronunciation,
+      title: 'CONJUGATION-B title',
+      verb: 'CONJUGATION-C verb',
+    };
+  },
+
+  async author_definition_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const term = 'DEFINITION-B authored term';
+    const firstMeaning = 'DEFINITION-B first meaning';
+    const secondMeaning = 'DEFINITION-B second meaning';
+    const translation = 'DEFINITION-B translation';
+    const pronunciation = 'DEFINITION-B pronunciation';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await page.locator('[data-slate-editor="true"]').first().waitFor({ state: 'visible' });
+    await curriculumTask.addDefinitionToolbar(term, firstMeaning, false);
+
+    const definition = page.locator('.definition-editor').last();
+    await definition.getByRole('button', { name: 'Add', exact: true }).first().click();
+    await definition.locator('.definition-row .definition-input [data-slate-editor="true"]').nth(1).fill(secondMeaning);
+    await definition.getByRole('button', { name: 'Add', exact: true }).last().click();
+    await definition.locator('.definition-row .definition-input [data-slate-editor="true"]').nth(2).fill(translation);
+    await definition.locator('.pronunciation-editor [data-slate-editor="true"]').fill(pronunciation);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return {
+      first_meaning: firstMeaning,
+      page_revision_slug: pageRevisionSlug,
+      pronunciation,
+      second_meaning: secondMeaning,
+      term,
+      translation,
+    };
+  },
+
+  async author_description_list_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const title = 'DESCRIPTIONLIST-B authored title';
+    const initialTerm = 'DESCRIPTIONLIST-C initial term';
+    const initialDefinition = 'DESCRIPTIONLIST-C initial definition';
+    const addedTerm = 'DESCRIPTIONLIST-D added term';
+    const addedDefinition = 'DESCRIPTIONLIST-E added definition';
+    const secondDefinition = 'DESCRIPTIONLIST-E second definition';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await page.locator('[data-slate-editor="true"]').first().waitFor({ state: 'visible' });
+    await page.locator('[data-slate-editor="true"] p').first().click();
+    const toolbar = page
+      .locator('.hover-container')
+      .filter({ has: page.getByRole('button', { name: 'Insert...' }) });
+    await toolbar.getByRole('button', { name: 'Insert...' }).click();
+    await page.getByText('Description List', { exact: true }).last().click();
+
+    const descriptionList = page.locator('.description-list-editor').last();
+    await descriptionList.locator('h4 p').fill(title);
+    await descriptionList.locator('dt [data-slate-editor="true"]').first().fill(initialTerm);
+    await descriptionList.locator('dd [data-slate-editor="true"]').first().fill(initialDefinition);
+    await descriptionList.getByRole('button', { name: 'Add Term', exact: true }).click();
+    await descriptionList.locator('dt [data-slate-editor="true"]').last().fill(addedTerm);
+    await descriptionList.getByRole('button', { name: 'Add Definition', exact: true }).click();
+    await descriptionList.locator('dd [data-slate-editor="true"]').last().fill(addedDefinition);
+    await descriptionList.getByRole('button', { name: 'Add Definition', exact: true }).click();
+    await descriptionList.locator('dd [data-slate-editor="true"]').last().fill(secondDefinition);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return {
+      added_definition: addedDefinition,
+      added_term: addedTerm,
+      initial_definition: initialDefinition,
+      initial_term: initialTerm,
+      page_revision_slug: pageRevisionSlug,
+      second_definition: secondDefinition,
+      title,
+    };
+  },
+
+  async author_theorem_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const title = 'THEOREM-B authored title';
+    const statement = 'THEOREM-B authored statement';
+    const proof = 'THEOREM-B authored proof';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await page.locator('[data-slate-editor="true"]').first().waitFor({ state: 'visible' });
+    await curriculumTask.addTheoremToolbar('', false);
+
+    await replaceSlateText(page, page.getByRole('heading', { name: 'Theorem Title' }).last(), title);
+    await replaceSlateText(page, page.locator('p').filter({ hasText: 'Enter a statement here' }), statement);
+    await replaceSlateText(page, page.locator('p').filter({ hasText: 'Enter the proof here' }), proof);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { page_revision_slug: pageRevisionSlug, proof, statement, title };
+  },
+
+  async author_formula_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const latex = '\\frac{a}{b} = c';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await page.locator('[data-slate-editor="true"]').first().waitFor({ state: 'visible' });
+    await page.locator('[data-slate-editor="true"] p').first().click();
+    const toolbar = page.locator('.hover-container').filter({ has: page.getByRole('button', { name: 'Insert...' }) });
+    await toolbar.getByRole('button', { name: 'Insert...' }).click();
+    await page.getByText('Formula', { exact: true }).last().click();
+    await page.locator('span.formula').last().click();
+
+    const settings = page.getByRole('dialog', { name: 'Edit Formula' });
+    await settings.getByRole('button', { name: 'Latex', exact: true }).click();
+    const monacoInput = settings.locator('.monaco-editor textarea');
+    await monacoInput.click();
+    await monacoInput.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+    await monacoInput.pressSequentially(latex);
+    await settings.getByRole('button', { name: 'Save', exact: true }).click();
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return { latex, page_revision_slug: pageRevisionSlug };
+  },
+
+  async author_video_workflow({ curriculumTask, homeTask, page }, params) {
+    const projectSlug = asString(params.project_slug, 'project_slug');
+    const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
+    const videoName = 'video-test-01.mp4';
+    const poster = 'img-mock-05-16-2025.jpg';
+    const captionTrack = 'video-test-captions.vtt';
+    const width = '640';
+    const height = '360';
+
+    await homeTask.login('author');
+    await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
+    await curriculumTask.addVideoToolbar(videoName, false);
+
+    const video = page.locator('.video-react').first();
+    await video.hover();
+    await page.getByRole('button', { name: 'Settings' }).last().click();
+    const settings = page.getByRole('dialog', { name: 'Video Settings' });
+
+    await settings.getByRole('button', { name: 'Add New' }).click();
+    await selectMediaFromPanel(page, videoName);
+
+    await settings.getByRole('tab', { name: 'Accessibility' }).click();
+    await settings.getByRole('button', { name: 'Add New' }).click();
+    await selectMediaFromPanel(page, captionTrack);
+
+    await settings.getByRole('tab', { name: 'Poster Image' }).click();
+    await settings.getByRole('button', { name: 'Choose Poster Image' }).click();
+    await selectMediaFromPanel(page, poster);
+
+    await settings.getByRole('tab', { name: 'Size' }).click();
+    const dimensions = settings.locator('input[type="number"]');
+    await dimensions.nth(0).fill(width);
+    await dimensions.nth(1).fill(height);
+    await settings.getByRole('button', { name: 'Save', exact: true }).click();
+
+    await deleteAndUndo(page, video);
+    await previewFlush(() => curriculumTask.openPreview());
+
+    return {
+      caption_track: captionTrack,
+      height,
+      page_revision_slug: pageRevisionSlug,
+      poster,
+      video_name: videoName,
+      width,
+    };
+  },
+
   async author_figure_workflow({ curriculumTask, homeTask, page }, params) {
     const projectSlug = asString(params.project_slug, 'project_slug');
     const pageRevisionSlug = asString(params.page_revision_slug, 'page_revision_slug');
@@ -382,8 +713,10 @@ export const mixedWorkflowActions: WorkflowActionRegistry = {
       await page.goto(editorPath(projectSlug, pageRevisionSlug), { waitUntil: 'load' });
     });
 
-    await test.step('insert a code block and open preview to flush the draft change', async () => {
+    await test.step('insert a code block, delete and undo it, then open preview to flush the draft change', async () => {
       await curriculumTask.addCodeBlockToolbar(language, code, caption, false);
+
+      await deleteAndUndo(page, page.getByRole('textbox', { name: /Editor content/i }).first());
       await previewFlush(() => curriculumTask.openPreview());
       await expect(page).toHaveURL(
         new RegExp(`/curriculum/${escapeRegExp(pageRevisionSlug)}/edit$`),
@@ -500,6 +833,74 @@ async function selectImageSettings(page: Page, setting: 'Select Image' | 'Settin
   await image.scrollIntoViewIfNeeded();
   await image.click();
   await page.getByRole('button', { name: setting }).last().click({ force: true });
+}
+
+async function selectMediaFromPanel(page: Page, name: string) {
+  const panel = page
+    .locator('.picker-panel')
+    .filter({ has: page.getByText(name, { exact: true }) });
+  await panel.getByText(name, { exact: true }).click();
+  await expect(panel).toBeHidden();
+}
+
+async function expectClipboardText(page: Page, expectedText: string) {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], {
+    origin: new URL(page.url()).origin,
+  });
+
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(expectedText);
+}
+
+async function flushPendingPageChanges(page: Page) {
+  await page.waitForTimeout(100);
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('phx:authoring_flush_page_editor_requested'));
+  });
+
+  const saving = page.getByText('Saving...');
+
+  if (await saving.isVisible().catch(() => false)) {
+    await saving.waitFor({ state: 'hidden', timeout: 15_000 });
+  }
+
+  await expect(page.getByText('All changes saved')).toBeVisible();
+}
+
+async function deleteAndUndo(page: Page, element: Locator) {
+  await element.click();
+  const deleteButton = element
+    .locator('xpath=ancestor::*[@role="option"]')
+    .getByRole('button', { name: 'delete', exact: true });
+
+  if ((await deleteButton.count()) > 0) {
+    await deleteButton.click();
+  } else {
+    await page.keyboard.press('Backspace');
+  }
+
+  await expect(element).toHaveCount(0);
+  const toastUndo = page.getByRole('button', { name: 'Undo', exact: true });
+
+  if ((await toastUndo.count()) > 0) {
+    await toastUndo.click();
+  } else {
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+  }
+
+  await expect(element).toHaveCount(1);
+}
+
+async function selectVoidElement(element: Locator) {
+  await element.click({ position: { x: 1, y: 1 } });
+  await expect(element).toHaveCSS('border-top-color', 'rgb(173, 216, 230)');
+}
+
+function hoverToolbarButton(page: Page, name: string) {
+  return page.locator(`.hover-container button:has([aria-label="${name}"])`).last();
+}
+
+function hoverToolbarSettingsButton(page: Page) {
+  return page.locator('.hover-container button', { hasText: 'Settings' }).last();
 }
 
 async function insertTable(page: Page) {
@@ -677,6 +1078,18 @@ async function selectSlateText(page: Page, text: string) {
   // The link text is typed into a new paragraph. This fallback avoids a
   // transient Slate render from consuming the full test timeout.
   await page.keyboard.press('Shift+Home');
+}
+
+async function replaceSlateText(page: Page, locator: Locator, text: string) {
+  await locator.click();
+  await locator.evaluate((node) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  });
+  await page.keyboard.type(text);
 }
 
 function toolbarButton(page: Page, toolbar: TypeToolbar) {

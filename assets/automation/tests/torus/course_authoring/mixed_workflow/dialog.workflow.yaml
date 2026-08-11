@@ -1,0 +1,22 @@
+workflow:
+  - id: seed
+    scenario: { file: 'mixed-video.setup.scenario.yaml', params: { RUN_ID: '${RUN_ID}' } }
+  - id: author
+    playwright_action:
+      action: 'author_dialog_workflow'
+      params:
+        project_slug: '${seed.outputs.projects.workflow_authoring_project}'
+        page_revision_slug: '${seed.outputs.params.workflow_page_revision_slug}'
+  - id: assert
+    scenario:
+      file: 'assert-dialog-workflow.scenario.yaml'
+      params:
+        AUTHOR_EMAIL: '${seed.outputs.users.workflow_author}'
+        STUDENT_EMAIL: '${seed.outputs.users.workflow_student}'
+        PROJECT_SLUG: '${seed.outputs.projects.workflow_authoring_project}'
+        SECTION_SLUG: '${seed.outputs.sections.workflow_delivery_section}'
+        PAGE_REVISION_SLUG: '${author.outputs.page_revision_slug}'
+        EXPECTED_TITLE: '${author.outputs.title}'
+        EXPECTED_SPEAKER: '${author.outputs.speaker}'
+        EXPECTED_LINE: '${author.outputs.line_text}'
+        EXPECTED_IMAGE: '${author.outputs.image}'
