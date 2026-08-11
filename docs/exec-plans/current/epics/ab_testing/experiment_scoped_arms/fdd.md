@@ -128,6 +128,7 @@ Reporting flow:
 ## 5. Interfaces
 
 - `Oli.Experiments.create_experiment/1` and `update_experiment/2`: accept `conditions: [...]` plus `decision_points: [%{alternatives_resource_id, algorithm_config, mappings, interventions}]`; the singular legacy request shape may be accepted temporarily only as an internal compatibility adapter.
+- New conditions in an atomic graph-create request use a non-persisted request-local `client_ref`; mappings in that payload refer to it until the context generates the stable condition code, inserts the condition, and replaces references with generated `condition_id` values. Persisted graph updates use `condition_id` directly. The reference is unique only within its request and is never stored or emitted as evidence.
 - `Oli.Experiments.validate_for_activation/2`: returns `:ok` or structured errors keyed by decision point, mapping, intervention, or assessment binding. Activation and mutation APIs require an authorized project `Scope`.
 - `Oli.Experiments.assign_condition/1`: request adds `page_resource_id` and `content_element_id` for logical identity plus `page_revision_id` and `publication_id` as event-only snapshot context. The latter two values are validated from the delivery scope, forwarded to assignment/exposure evidence, and never participate in assignment lookup, uniqueness, or permanent assignment columns. The response retains condition and option identity plus assignment/evidence identifiers.
 - `Oli.Experiments.assigned_condition/1`: same identity fields, read-only, and never samples or creates state.
@@ -143,7 +144,7 @@ Reporting flow:
 
 PostgreSQL changes:
 
-- `experiment_conditions`: make conditions experiment-owned. Enforce unique `(experiment_id, condition_code)`; remove decision-point ownership after copying existing rows into stable experiment condition identities. Preserve existing IDs where a condition is already unique; where old decision points duplicate a code, migration creates/reuses one canonical condition and rewires dependent rows without changing historical meaning.
+- `experiment_conditions`: make conditions experiment-owned while preserving every existing row ID and code. The row ID remains the relational identity; immutable `condition_code` remains the readable policy/API/evidence key. New codes are generated from the initial label with `Oli.Utils.Slug.slugify/1` under the experiment row lock and receive the smallest available numeric suffix on collision. Enforce unique `(experiment_id, condition_code)`. Never merge legacy rows solely because their codes match; policy-state JSON remains keyed by condition code.
 - `experiment_decision_point_conditions`: `decision_point_id`, `condition_id`, `option_id`, `weight`, `position`, timestamps. Unique on `(decision_point_id, condition_id)` and `(decision_point_id, option_id)` provides the bijection; foreign keys use `on_delete: :nothing`.
 - `experiment_interventions`: `decision_point_id`, `page_resource_id`, `content_element_id`, timestamps. Unique `(decision_point_id, page_resource_id, content_element_id)`; indexed `(page_resource_id, content_element_id)` for delivery and dependency checks. Intervention identity and persistence do not encode placement order: configuration displays derive ordering from the current course hierarchy and page content tree, with stable IDs used only as tie-breakers.
 - `experiment_assessment_bindings`: `intervention_id`, `assessment_page_resource_id`, `threshold` as decimal/numeric, timestamps. Unique `intervention_id` and unique assessment page within a current experiment are reinforced in activation under an experiment lock because lifecycle-sensitive reuse cannot be expressed by a simple partial foreign-table index.
@@ -247,7 +248,7 @@ Analytics storage:
 
 ## 15. Risks & Mitigations
 
-- Experiment-scoped condition migration could mis-map historical rows: use deterministic `(experiment_id, condition_code)` reconciliation, preserve option mappings in the new join table, validate counts before dropping old constraints, and test rollback with representative QA data.
+- Experiment-scoped condition migration could mis-map historical rows: preserve every legacy condition ID and code, create one mapping row from each legacy decision-point relationship, and never infer shared identity from matching codes. Validate row and relationship counts before replacing decision-point-scoped uniqueness with experiment-scoped uniqueness; fail safely on unreconcilable conflicts and test rollback with representative QA data and code-keyed policy state.
 - JSON policy state permits malformed data: centralize encode/decode validation, lock on update, fail closed, and test corrupt-state behavior.
 - Element copy behavior may retain IDs: audit every copy/duplicate entry point and add identity contract tests before binding activation is enabled.
 - Page-level assessment rewards touch broader attempt lifecycle code: enqueue only after commit and keep eligibility/scoring resolution in a narrow experiment adapter.
@@ -262,7 +263,7 @@ Analytics storage:
 - Confirm the canonical resource-attempt ordering and finalized lifecycle predicate during slice design; this is an implementation fact, not a product decision.
 - Confirm whether the existing ClickHouse attribution map can carry all new fields without physical columns; prefer additive typed columns only where query/reporting requirements justify them.
 - Decide during implementation planning whether condition normalization and new binding tables should ship in one migration or dependency-ordered migrations. The required outcome and rollback behavior are fixed; batching is operational.
-- Produce Figma/design guidance before implementing the expanded multi-decision-point and posterior UI if no approved design source is attached to the implementation ticket.
+- No feature-level Figma is expected. Use the approved repo-local UI brief, established Torus authoring patterns, Tailwind light/dark semantics, and LiveView/LiveComponents by default; run the application and refine usability, accessibility, responsiveness, and visual consistency during implementation.
 
 ## 17. References
 
@@ -291,3 +292,12 @@ Analytics storage:
 - `lib/oli/interop/export.ex`
 - `lib/oli/interop/ingest/processor/alternatives.ex`
 - `priv/schemas/v0-1-0/content-alternatives.schema.json`
+
+## Decision Log
+
+### 2026-08-11 - Retain readable condition codes
+
+- Change: Keep condition codes as immutable experiment-scoped policy/API/evidence keys, generated from labels with deterministic collision suffixes under the experiment lock.
+- Reason: Removing the existing code contract would materially broaden the feature, while readable codes remain valuable operationally.
+- Evidence: Current policy state, delivery decisions, rewards, xAPI, and ClickHouse attribution already carry `condition_code`.
+- Impact: PostgreSQL enforces `(experiment_id, condition_code)` uniqueness, codes do not change with labels, and migration preserves existing codes without implicit merging.

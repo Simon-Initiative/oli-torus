@@ -411,6 +411,34 @@ defmodule Oli.Resources.AlternativesTest do
       assert length(first_attributions ++ repeat_attributions) == 2
     end
 
+    test "characterizes current query growth for repeated decision-point placements" do
+      %{context: inactive_context, element: inactive_element} =
+        native_decision_point_setup(active?: false)
+
+      inactive_selects =
+        for placement_count <- [2, 10] do
+          count_select_queries(fn ->
+            Alternatives.prepare_delivery_decisions(inactive_context, %{
+              "model" => List.duplicate(inactive_element, placement_count)
+            })
+          end)
+        end
+
+      active_selects =
+        for placement_count <- [2, 10] do
+          %{context: active_context, element: active_element} = native_decision_point_setup()
+
+          count_select_queries(fn ->
+            Alternatives.prepare_delivery_decisions(active_context, %{
+              "model" => List.duplicate(active_element, placement_count)
+            })
+          end)
+        end
+
+      assert inactive_selects == [5, 5]
+      assert active_selects == [14, 14]
+    end
+
     test "does not expose nested native decision point in an unselected branch" do
       %{context: context, element: parent_element} = native_decision_point_setup()
 
@@ -550,6 +578,38 @@ defmodule Oli.Resources.AlternativesTest do
   end
 
   defp page_content_with(element), do: %{"model" => [element]}
+
+  defp count_select_queries(fun) do
+    parent = self()
+    handler_id = "alternatives-query-count-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler_id,
+      [:oli, :repo, :query],
+      fn _, _, metadata, _ ->
+        case metadata.query do
+          "SELECT" <> _ -> send(parent, :alternatives_select_query)
+          _ -> :ok
+        end
+      end,
+      %{}
+    )
+
+    try do
+      fun.()
+      count_messages(:alternatives_select_query, 0)
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp count_messages(message, count) do
+    receive do
+      ^message -> count_messages(message, count + 1)
+    after
+      0 -> count
+    end
+  end
 
   defp native_decision_point_setup(opts \\ []) do
     active? = Keyword.get(opts, :active?, true)

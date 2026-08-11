@@ -38,21 +38,21 @@ Guardrails:
 
 - Goal: Resolve the implementation facts that affect schema and workflow design, record executable slice boundaries, and establish baseline behavior before migrations or runtime changes.
 - Tasks:
-  - [ ] Audit current experiment schemas, lifecycle APIs, policy-state encoding, assignment/reward uniqueness, and compatibility callers in `lib/oli/experiments.ex` and `lib/oli/experiments/`.
-  - [ ] Trace resource-attempt scoring through finalization and post-commit hooks; document the authoritative final-state predicate and persisted attempt ordering used by reward eligibility (FR-013, FR-016).
-  - [ ] Trace Alternatives insertion, reorder, copy, page duplication, and course movement; confirm which operations retain or regenerate page resource and nested element IDs (FR-005, FR-006, FR-019).
-  - [ ] Measure the current delivery query path and identify the indexed section relevance query plus positive-path batching boundary (FR-027).
-  - [ ] Inspect the existing xAPI/ClickHouse attribution schema and outbox/retry path; choose additive evidence fields and migration placement (FR-023, FR-024, FR-026).
-  - [ ] Produce slice-level designs for persistence/configuration, assignment/rendering/completion, reward/evidence, authoring/reporting UI, and compatibility/interop, including public API inputs, transaction ownership, indexes, and rollback order.
-  - [ ] Obtain governed design guidance for expanded multi-decision-point configuration and posterior reporting before UI implementation begins.
+  - [x] Audit current experiment schemas, lifecycle APIs, policy-state encoding, assignment/reward uniqueness, and compatibility callers in `lib/oli/experiments.ex` and `lib/oli/experiments/`.
+  - [x] Trace resource-attempt scoring through finalization and post-commit hooks; document the authoritative final-state predicate and persisted attempt ordering used by reward eligibility (FR-013, FR-016).
+  - [x] Trace Alternatives insertion, reorder, copy, page duplication, and course movement; confirm which operations retain or regenerate page resource and nested element IDs (FR-005, FR-006, FR-019).
+  - [x] Measure the current delivery query path and identify the indexed section relevance query plus positive-path batching boundary (FR-027).
+  - [x] Inspect the existing xAPI/ClickHouse attribution schema and outbox/retry path; choose additive evidence fields and migration placement (FR-023, FR-024, FR-026).
+  - [x] Produce slice-level designs for persistence/configuration, assignment/rendering/completion, reward/evidence, authoring/reporting UI, and compatibility/interop, including public API inputs, transaction ownership, indexes, and rollback order.
+  - [x] Record governed, best-effort design guidance for expanded multi-decision-point configuration and posterior reporting. No feature-level Figma exists or is required; implementation will use minimal conventional Torus patterns and runtime UX refinement.
 - Testing Tasks:
-  - [ ] Add or identify characterization tests for legacy experiment reads, group-strategy resolution, element identity across edits, attempt ordering, and the negative delivery path before changing behavior.
-  - [ ] Record a representative query-count baseline for delivery with no active experiment and with repeated Alternatives placements.
+  - [x] Add or identify characterization tests for legacy experiment reads, group-strategy resolution, element identity across edits, attempt ordering, and the negative delivery path before changing behavior.
+  - [x] Record a representative query-count baseline for delivery with no active experiment and with repeated Alternatives placements.
   - Command(s): `mix test <targeted existing experiment, attempt, editor, and delivery test files>`
 - Definition of Done:
   - Implementation facts are recorded in detailed designs; every later phase has concrete code/test targets; baseline tests protect legacy behavior; no unresolved product decision is hidden in implementation work.
 - Gate:
-  - Gate A — detailed slice designs are reviewed, identity and attempt-order contracts are confirmed, query baselines are captured, and UI design guidance is available or the UI slice is explicitly held behind that dependency. This is an internal review checkpoint, not a release boundary.
+  - Gate A — detailed slice designs are reviewed, identity and attempt-order contracts are confirmed, query baselines are captured, and the best-effort Torus-native UI approach is recorded. This is an internal review checkpoint, not a release boundary.
 - Dependencies:
   - Approved PRD, FDD, and `requirements.yml`.
 - Parallelizable Work:
@@ -62,14 +62,14 @@ Guardrails:
 
 - Goal: Add backward-compatible storage and normalization for experiment-owned conditions, decision-point mappings, interventions, bindings, assignments, rewards, and policy state (FR-001, FR-002, FR-003, FR-006, FR-007, FR-010, FR-011, FR-015, FR-025, FR-026, FR-033).
 - Tasks:
-  - [ ] Generate dependency-ordered Ecto migrations for experiment-owned conditions, `experiment_decision_point_conditions`, `experiment_interventions`, `experiment_assessment_bindings`, intervention-scoped assignment keys, accepted-reward identity, and decision-point policy configuration/state.
-  - [ ] Implement explicit `up/0` and `down/0` functions, deterministic condition reconciliation, non-cascading foreign keys, bijection/identity uniqueness, delivery/reward indexes, and legacy-row compatibility.
+  - [ ] Generate dependency-ordered Ecto migrations for experiment-owned conditions with preserved IDs and experiment-scoped unique codes, `experiment_decision_point_conditions`, `experiment_interventions`, `experiment_assessment_bindings`, intervention-scoped assignment keys, accepted-reward identity, and decision-point policy configuration/state.
+  - [ ] Implement explicit `up/0` and `down/0` functions, ID/code-preserving condition normalization without implicit merging, non-cascading foreign keys, bijection/identity uniqueness, delivery/reward indexes, and legacy-row compatibility.
   - [ ] Add schemas, changesets, associations, validated policy-state encoding/decoding, and canonical `experiment_controlled` strategy persistence.
   - [ ] Implement and document `Oli.Resources.Alternatives.normalize_strategy/1` and the canonical write boundary; normalize `upgrade_decision_point` only at reads and ingest, and fail closed for unsupported strategies.
   - [ ] Keep historical revisions untouched and ensure editing a legacy group writes the canonical strategy only to its successor revision.
   - [ ] Add an ordinary reversible ClickHouse migration or documented map-extension change for the selected evidence fields, keeping old rows compatible.
 - Testing Tasks:
-  - [ ] Test migration forward/rollback with representative legacy decision points, duplicated condition codes, assignments, rewards, policy JSON, and group revisions; assert row-count and relationship preservation.
+  - [ ] Test migration forward/rollback with representative legacy decision points, duplicate/conflicting condition codes, preserved condition IDs/codes, assignments, rewards, code-keyed policy JSON, and group revisions; assert row-count and relationship preservation.
   - [ ] Test database and changeset constraints for experiment condition uniqueness, mapping bijection, intervention identity, binding identity, assignment uniqueness, reward claims, and `on_delete: :nothing`.
   - [ ] Test canonical/legacy/unsupported group strategy reads and canonical-only new/revision writes without historical mutation or republication.
   - Command(s): `mix test <migration, schema, changeset, alternatives strategy tests>`; `mix ecto.migrate`; `mix ecto.rollback --step <phase migration count>`
@@ -88,12 +88,14 @@ Guardrails:
 - Tasks:
   - [ ] Refactor `Oli.Experiments` internals around focused configuration operations while preserving it as the public boundary; migrate all in-repository callers to the multi-point request/report contracts and delete the legacy single-point shape without adding an adapter.
   - [ ] Add experiment-owned condition and per-decision-point configuration APIs for group binding, algorithm/guardrails, bijective mappings, interventions, distinct scored-page bindings, and inclusive decimal thresholds defaulting to `1.0`.
+  - [ ] Resolve request-local condition `client_ref` values during atomic graph creation, generate immutable readable codes from labels under the experiment lock with deterministic collision suffixes, and persist mappings by `condition_id`.
   - [ ] Enforce `Scope` authorization, compatible project lineage, experiment-controlled group strategy, stable group/option identities, current-binding exclusivity, mapping cardinality, scored-page eligibility, and assessment exclusivity.
   - [ ] Lock the experiment and sorted group resources for save/activation; reject invalid transitions and all prohibited non-draft structural mutations.
   - [ ] Implement explicit dependency discovery/reconciliation for bound groups, interventions, and assessment pages; never silently cascade or retarget active history.
   - [ ] Preserve completed/archived history and allow sequential group reuse only through a new draft decision point with independent state.
 - Testing Tasks:
   - [ ] Add context and changeset tests for valid multi-point configuration and every structured activation error, including duplicate/missing mappings and incompatible or simultaneously bound groups.
+  - [ ] Test duplicate, missing, and unknown request-local condition references, slug normalization, deterministic collision suffixes, label edits preserving codes, and experiment-scoped database uniqueness.
   - [ ] Add authorization, transaction-lock, lifecycle-transition, immutable-history, sequential-reuse, and dependency-deletion tests.
   - [ ] Test threshold defaults and boundary validation at `0.0` and `1.0`, plus weighted-random configurations without assessment bindings.
   - Command(s): `mix test <experiment configuration, authorization, lifecycle, and dependency tests>`
@@ -281,7 +283,7 @@ Guardrails:
 
 ## Phase Gate Summary
 
-- Gate A: Runtime identity, attempt lifecycle, query baseline, analytics schema, detailed slice boundaries, and UI design dependency are confirmed.
+- Gate A: Runtime identity, attempt lifecycle, query baseline, analytics schema, detailed slice boundaries, and the best-effort Torus-native UI approach are confirmed.
 - Gate B: Backward-compatible PostgreSQL/ClickHouse persistence and canonical strategy normalization apply and roll back safely.
 - Gate C: Authorized draft configuration, activation validation, lifecycle immutability, dependency protection, and sequential reuse are proven.
 - Gate D: Intervention-scoped assignment, bounded delivery, rendering, preview, edit identity, and visible-only completion are proven.
@@ -290,3 +292,12 @@ Guardrails:
 - Gate G: Export/ingest, evidence, telemetry, privacy, legacy compatibility, and analytics migration behavior are proven.
 - Gate H: Real multi-learner authoring-to-delivery scenarios prove completion and posterior reuse across repeated interventions.
 - Gate I: Full traceability, formatting, compile/tests, per-phase and integrated reviews, legacy adapter removal, migration rollback, performance, security, and rollout readiness pass for the single complete release unit.
+
+## Decision Log
+
+### 2026-08-11 - Retain readable condition codes
+
+- Change: Phase 2 retains condition codes and adds locked, deterministic generation plus experiment-scoped uniqueness.
+- Reason: Full removal would expand the work across established policy, delivery, reward, analytics, and test contracts.
+- Evidence: The persistence design documents the current code usage and the bounded generation algorithm.
+- Impact: Phase 2 preserves legacy IDs/codes, tests collision handling and immutability, and keeps policy/evidence keyed by code while mappings continue to use condition IDs.
