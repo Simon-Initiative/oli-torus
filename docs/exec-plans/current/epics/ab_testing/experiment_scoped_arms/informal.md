@@ -124,7 +124,10 @@ alternative identities that can be referenced by a decision point and by multipl
 The same generic construct supports the existing selection strategies:
 
 - `user_section_preference`; and
-- `upgrade_decision_point` for experiment-controlled selection.
+- canonical `experiment_controlled` for experiment-controlled selection.
+
+Historical Alternatives Group revisions using `upgrade_decision_point` remain supported as a read
+alias for `experiment_controlled`. New and successor revisions write only the canonical identifier.
 
 ### Alternatives Content-Element Instance
 
@@ -291,8 +294,9 @@ accepted reward updates the same decision-point posterior.
 
 ### Author Workflow
 
-1. Create or insert one experiment-controlled Alternatives Group with two stable alternative
-   identities using the current `Alt` or `A/B Test` workflow.
+1. Create one group with two stable alternative identities from the `Experiment-Controlled
+   Alternatives` section on the project Experiments page, then insert it through the current `A/B
+   Test` page-editor workflow.
 2. Use the page content editor to author the Page 1 content for both alternatives on the first placed instance.
 3. Create one experiment with `Control: Text only` and `Treatment: Text and video`.
 4. Create one decision point that binds the Alternatives Group to the experiment.
@@ -305,9 +309,8 @@ accepted reward updates the same decision-point posterior.
 10. Bind each assessment to its corresponding intervention instance and, for Thompson Sampling,
     configure reward conversion before starting the experiment.
 
-The exact UI for creating a reusable group versus inserting another instance remains an authoring
-design detail, but it must preserve the distinction between group-owned alternative identities and
-instance-owned option content.
+Group creation and placement remain distinct operations and must preserve the distinction between
+group-owned strategy and alternative identities and instance-owned option content.
 
 ### Learner And Adaptive Workflow
 
@@ -473,9 +476,21 @@ Thompson Sampling:
 
 ### Strategy And Insert Workflow
 
-The existing page-editor Insert menu retains its current `Alt` or `A/B Test` terminology. The selected
-insert path sets the Alternatives Group's strategy at creation. Changing strategy after insertion is
-not supported.
+The existing page-editor Insert menu retains its current `Alt` or `A/B Test` terminology. These paths
+select eligible existing groups for placement and do not create a group or write a strategy into the
+content element. The referenced Alternatives Group is the sole strategy authority.
+
+Group creation remains contextual and does not present a strategy selector:
+
+- The Alternatives page lists and creates only Learner Choice groups with
+  `user_section_preference`.
+- The project Experiments page retains a co-located group-management section, renamed from
+  `Decision Points` to `Experiment-Controlled Alternatives`, which lists and creates only groups
+  with canonical `experiment_controlled`.
+
+The two surfaces should share group-management components and domain operations where practical,
+but they do not combine both group types into one author-facing list. Group strategy is immutable
+after creation.
 
 The authoring interface does not support editing an Alternatives Group's stable alternative
 identities. Those identities are established when the group is created and may be affected only by
@@ -486,17 +501,17 @@ The page content editor is the only mechanism for editing alternative content. A
 only to the targeted placed Alternatives content-element instance and does not change the group,
 alternative identities, mappings, or content at any other instance.
 
-### Consolidated Page Content Authoring
+### Page Content Authoring And Contextual Group Management
 
-Alternatives content authoring belongs in the standard page content editor. Experiment configuration
-references existing experiment-controlled groups and owns decision-point bindings, condition
-mappings, policy configuration, and assessment bindings. It does not edit alternative identities or
-page content inline.
+Placement-local Alternatives content authoring belongs in the standard page content editor.
+Experiment configuration references existing experiment-controlled groups and owns decision-point
+bindings, condition mappings, policy configuration, and assessment bindings. It does not edit page
+content inline.
 
-The current experiment Decision Points editor does not provide content-authoring capability, and no
-such capability should be added. Experiment and decision-point surfaces remain configuration-only;
-all local alternative content editing stays in the standard page content editor. Removing the
-experiment-specific editor and route therefore requires no content-authoring UX migration.
+The project Experiments route and its co-located Experiment-Controlled Alternatives management
+section remain. That section manages reusable group identities and options, while actual decision
+points remain the experiment bindings of groups to conditions and policies. Local alternative
+content editing stays in the standard page content editor for both group types.
 
 ## Structural Integrity And Lifecycle
 
@@ -505,7 +520,8 @@ rediscovered through a just-in-time scan at experiment activation or learner del
 
 Required constraints include:
 
-- A decision point binds one existing project-compatible `upgrade_decision_point` Alternatives Group.
+- A decision point binds one existing project-compatible `experiment_controlled` Alternatives Group;
+  historical `upgrade_decision_point` revisions are accepted through the compatibility alias.
 - An Alternatives Group may have at most one current binding to a decision point whose experiment is
   `draft`, active, or paused. This exclusivity applies across experiments in the project so that one
   intervention instance can never be governed by competing policies.
