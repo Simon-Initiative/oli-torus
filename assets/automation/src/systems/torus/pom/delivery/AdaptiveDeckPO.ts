@@ -541,6 +541,47 @@ export class AdaptiveDeckPO {
     }
   }
 
+  // -------------------------------------------- part-scoped registry surface
+
+  /** All interaction and readback for a registry family is scoped to its owning part (§3.6). */
+  private partScope(partId: string): Locator {
+    return this.page.locator(`#${partId}, [id="${partId}"]`).first();
+  }
+
+  /** Checked MCQ inputs inside one part — the radio/checkbox readback. */
+  async mcqSelectionCount(partId: string): Promise<number> {
+    const inputs = this.partScope(partId).locator('.mcq-item input');
+    const total = await inputs.count();
+    let checked = 0;
+    for (let i = 0; i < total; i += 1) {
+      if (
+        await inputs
+          .nth(i)
+          .isChecked({ timeout: 1_000 })
+          .catch(() => false)
+      )
+        checked += 1;
+    }
+    return checked;
+  }
+
+  /** Fill the text control inside one part; false when the part offers none. */
+  async fillTextInputInPart(partId: string, value: string): Promise<boolean> {
+    const control = this.partScope(partId).locator('input, textarea').first();
+    if (!(await control.isVisible({ timeout: 5_000 }).catch(() => false))) return false;
+    await control.fill(value, ACTION_TIMEOUT);
+    // the text parts save through a 250ms debounce with no observable signal
+    await this.page.waitForTimeout(400);
+    return true;
+  }
+
+  /** Does the part's text control read back exactly this value? */
+  async textInputMatches(partId: string, value: string): Promise<boolean> {
+    const control = this.partScope(partId).locator('input, textarea').first();
+    const readback = await control.inputValue().catch(() => '');
+    return readback === value;
+  }
+
   /** Fill short-text and multi-line (textarea) janus inputs; verify by readback. */
   async fillTextInputs(value: string) {
     const inputs = await this.interactableParts(

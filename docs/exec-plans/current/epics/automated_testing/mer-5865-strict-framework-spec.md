@@ -7,8 +7,8 @@
 ## ⇥ HANDOFF — session boundary 2026-08-10 (read this first)
 
 **Where we are → what's next:** steps 0–3 SHIPPED; gate B0 CLOSED by human call after 8
-rounds; review regime is now SINGLE-PASS. Next unit: the step-4 (driver swap)
-contract-before-build page carrying the B4-* obligations.
+rounds; the gate-B **contract-before-build page is CLOSED SOUND-AS-DRAFTED** and committed
+(`8a634180c2`). Next unit: **BUILD step 4** against that contract's IDs.
 
 ### SHIPPED (all ✅ verified this session; nothing pushed — human gates every commit)
 
@@ -24,6 +24,8 @@ contract-before-build page carrying the B4-* obligations.
   equality), `mer5865-shadow-gate.spec.ts` (5 witness tests, 25+ standing witnesses),
   lote spec hooks.
 - `f9f9982874` — evidence doc + B0 rounds 1–8 + closure consult + process consult.
+- `8a634180c2` — **gate-B proof contract v6** (`mer-5865-step4-driver-swap-contract.md`) +
+  six Codex design reads (`reviews/mer-5865-step4-contract-read{,-2..-6}.md`).
 
 Every commit: `[ENHANCEMENT] [MER-5865] subject`, single line, no trailers.
 Branch: `MER-5865-adaptive-lessons-share-strict-verification-and-migrate-real-chem-specs`
@@ -68,14 +70,47 @@ MER5865_BAIL_DUMP=... npx playwright test mer5865-shadow-gate` → 7/7. Both gre
 capture env: `MER5865_SHADOW_DIR=<scratchpad>/mer5865/shadow PLAYWRIGHT_BASE_URL=http://127.0.0.1
 PLAYWRIGHT_AUTOMATION_API_KEY=<admin api key with automation_setup_enabled>`.
 
+### GATE-B CONTRACT — CLOSED 2026-08-11 (SOUND-AS-DRAFTED, committed `8a634180c2`)
+
+`mer-5865-step4-driver-swap-contract.md` **v6 is normative for the step-4 build**: 26 atomic
+proof rows, 75 witness subcases, two-stage predicate `SWAP-GREEN → GATE-B-CLOSE`, closed
+delta list. Six Codex reads (8B/2SF → 7B/3SF → 3B/2SF → 3B/2SF → 4B/1SF → 0/0); rounds 1–2
+killed two vacuous conjuncts and a reference that did not exist. Row/witness IDs are STABLE —
+implementation tests, the CONFORMANCE-MAP, and the gate-B claims table reuse them verbatim.
+Four derivations are deferred to the gate-B reviewer (contract §7, each with a RED condition
+and UNEXECUTED = RED): EXIT-SCOPE source universe, EXIT-INV site list, VERDICT-S data-flow
+inventory, CONFORMANCE-MAP semantic conformance.
+⚠️ **Open human decision (contract §6.6):** adopt "at most one ACCEPTED finalization per run"
+as a §3.2 amendment (writer recommendation) or keep B4-FIN1 narrowed to `already_submitted`.
+Blocks the oracle finalization edit, not the registry/driver/manifest units.
+
+### STEP-4 BUILD — unit 4a DONE (uncommitted, awaiting human gate)
+
+`AdaptiveFamilyRegistry.ts` (new) + `adaptive-family-registry.spec.ts` (24 contract-matrix
+tests) + 3 part-scoped readback primitives added to `AdaptiveDeckPO.ts` (additive only:
+`partScope`, `mcqSelectionCount`, `fillTextInputInPart`, `textInputMatches`). Six LotE
+families registered, keyed family+version(+mode), resolution fail-closed by name:
+`janus-mcq@1:radio`, `janus-mcq@1:checkboxes`, `janus-input-text@1`,
+`spr-widget-fill-in-the-blanks@2`, `spr-widget-matching@2`,
+`spr-widget-general-drag-drop@6`. CAPI ownership is by `/family/` segment in the iframe src
+PLUS declared major — a wrong-family resolution fails at detect (B4-REG-L's live half).
+Readback is now REAL evidence per family (the shipped walker's `readback` was a cosmetic
+string, `AdaptiveHappyPathTask.ts:484`). Verified: tsc (only the 2 known `liveSocket`
+errors), eslint clean, prettier applied, 285/288 adaptive tests pass — the only failure is
+the documented `adaptive-authoring:133` flake (see below). **Contract §6.8 added:** registry
+version precision is MAJOR-only because the archive pins widget srcs at a major wildcard.
+Remaining units: 4b manifest v2 + build gates, 4c driver + journal fences/permits, 4d spec
+switch + verdict boundary.
+
+**`adaptive-authoring:133` flake — new data (2026-08-11):** 1 pass in 5 runs this session
+(recorded prior rate ~50%). Always fails at `BasicPracticePagePO.ts:399` waiting for
+`.flowchart-node` toHaveCount(3), received 2 — the "-- Create new screen --" rule does not
+add its node. NOT cross-test pollution: it fails with `:79` excluded too. Unrelated to the
+registry (no import path; the deck-PO diff is additive). Still owed a real ticket + owner.
+
 ### NEXT
 
-1. **Draft the step-4 contract-before-build page** (1 page, per the GATE PROOF PROTOCOL
-   template): decision + green predicate, threat list, atomic proof table CARRYING
-   B4-C3/C4A/C5/C8/C12/C15/C16/STAMP/PRED as rows, witness plan, composition rules. First
-   step: read the B4-* list in `mer-5865-shadow-gate-evidence.md` + §7 step-4 + §3.2-§3.5,
-   then write the page as a new section of the evidence doc or a sibling file.
-2. ONE Codex read of the contract → fold → build step 4 (swap the shipped walker internals:
+1. **BUILD step 4** against the contract IDs (swap the shipped walker internals:
    `AdaptiveHappyPathTask.ts`, `AdaptiveEvaluationObserver.ts`, `AdaptiveStrictContract.ts`
    become consumers of the committed core; driver-stamped fences; journal-domain permit +
    readback stamps per B4-STAMP).

@@ -285,6 +285,17 @@ data-flow inventory (W-W7a) and instantiate one W-W7d subcase per discovered dep
 (4) CONFORMANCE-MAP — verify semantic conformance of every mapped subcase (W-U8). A
 reviewer derivation that is not performed leaves its conjunct UNEXECUTED = RED (§5).
 
+8. **Registry version precision is MAJOR-only (build finding, 2026-08-11, unit 4a).** The
+   authored archive pins CAPI widget srcs at a major wildcard
+   (`/spr-widget-matching/prod/2.*`, `/spr-widget-general-drag-drop/6.*`), so
+   family+version resolution and the live `detect` check can only compare MAJOR. A minor or
+   patch change published upstream by the widget host is invisible to B4-REG-S/B4-MAN.
+   Independent bound: the archive is the reference for what is DECLARABLE, and manifest
+   major must equal archive major exactly (B4-MAN unchanged); the residue is upstream
+   mutation within one major, which no repo-side artifact can observe. Owner: this gate —
+   named here, cited in gate evidence. Expiry: none (a product-side property, not a
+   deferral); revisit only if widget srcs gain exact versions.
+
 ## Appendix A — fold history
 
 - r1 (8B/2SF): two-stage predicate + sweep; EXIT concept; WIRE rows; SUITE pinning; C4A
