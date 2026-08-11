@@ -1,6 +1,8 @@
 defmodule Oli.GenAI.ExecutionTest do
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureLog
+
   alias Oli.GenAI.{AdmissionControl, BreakerSupervisor, Execution, HackneyPool}
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
 
@@ -216,6 +218,28 @@ defmodule Oli.GenAI.ExecutionTest do
            end)
   end
 
+  test "logs safe status and category for streaming provider failures" do
+    service_config = build_service_config(61, secondary_model: nil, backup_model: nil)
+
+    log =
+      capture_log(fn ->
+        assert {:error, %{http_status: 429, error_category: :insufficient_quota}} =
+                 Execution.stream(
+                   %{request_type: :stream},
+                   [],
+                   [],
+                   service_config,
+                   fn _ -> :ok end,
+                   completions_mod: __MODULE__.StreamingQuotaCompletions
+                 )
+      end)
+
+    assert log =~ "service_config_id=61"
+    assert log =~ "registered_model_id=#{service_config.primary_model.id}"
+    assert log =~ "http_status=429"
+    assert log =~ "error_category=insufficient_quota"
+  end
+
   test "kill switch always uses primary and bypasses admission controls" do
     Process.put(:execution_test_pid, self())
 
@@ -361,6 +385,15 @@ defmodule Oli.GenAI.ExecutionTest do
     end
 
     def stream(_messages, _functions, _registered_model, _response_handler_fn) do
+      :ok
+    end
+  end
+
+  defmodule StreamingQuotaCompletions do
+    def generate(_messages, _functions, _registered_model, _opts \\ []), do: :ok
+
+    def stream(_messages, _functions, _registered_model, response_handler_fn) do
+      response_handler_fn.({:error, %{http_status: 429, error_category: :insufficient_quota}})
       :ok
     end
   end

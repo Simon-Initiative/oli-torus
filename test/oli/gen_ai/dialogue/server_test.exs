@@ -1,6 +1,8 @@
 defmodule Oli.GenAI.Dialogue.ServerTest do
   use ExUnit.Case, async: true
 
+  import ExUnit.CaptureLog
+
   alias Oli.GenAI.Completions.{Message, ServiceConfig}
   alias Oli.GenAI.Dialogue.{Configuration, Server}
 
@@ -44,6 +46,29 @@ defmodule Oli.GenAI.Dialogue.ServerTest do
                    1_000
   end
 
+  test "logs a safe execution failure with service configuration context" do
+    config = %Configuration{
+      service_config: %ServiceConfig{id: 42, primary_model: %{id: 1}},
+      functions: [],
+      reply_to_pid: self(),
+      messages: [Message.new(:system, "base system prompt")],
+      execution_fn: fn _, _, _, _, _, _ -> {:error, %{body: "secret response body"}} end
+    }
+
+    log =
+      capture_log(fn ->
+        {:ok, server} = Server.new(config)
+        Server.engage(server, Message.new(:user, "hello"))
+
+        assert_receive {:dialogue_server,
+                        {:error, "An error occurred while processing the request"}}
+      end)
+
+    assert log =~ "event=execution_failed"
+    assert log =~ "service_config_id=42"
+    refute log =~ "secret response body"
+  end
+
   @tag capture_log: true
   test "notifies the client when tool arguments are invalid JSON" do
     config = %Configuration{
@@ -63,6 +88,35 @@ defmodule Oli.GenAI.Dialogue.ServerTest do
     send(server, {:stream_chunk, {:function_call_finished}})
 
     assert_receive {:dialogue_server, {:error, "An error occurred while processing the request"}}
+  end
+
+  test "logs invalid tool arguments without exposing their contents" do
+    config = %Configuration{
+      service_config: %ServiceConfig{id: 7, primary_model: %{id: 1}},
+      functions: [],
+      reply_to_pid: self(),
+      messages: [Message.new(:system, "base system prompt")]
+    }
+
+    log =
+      capture_log(fn ->
+        {:ok, server} = Server.new(config)
+
+        send(
+          server,
+          {:stream_chunk,
+           {:function_call,
+            %{"name" => "lookup", "arguments" => "secret-invalid-json", "id" => "1"}}}
+        )
+
+        send(server, {:stream_chunk, {:function_call_finished}})
+
+        assert_receive {:dialogue_server,
+                        {:error, "An error occurred while processing the request"}}
+      end)
+
+    assert log =~ "event=tool_arguments_invalid_json"
+    refute log =~ "secret-invalid-json"
   end
 
   @tag capture_log: true

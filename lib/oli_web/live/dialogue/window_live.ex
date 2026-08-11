@@ -759,7 +759,8 @@ defmodule OliWeb.Dialogue.WindowLive do
         {:dialogue_timeout, engagement_id},
         %{assigns: %{engagement_id: engagement_id}} = socket
       ) do
-    Logger.error("Dialogue engagement timed out")
+    Logger.error("Dialogue engagement timed out section_id=#{socket.assigns.section.id}")
+
     {:noreply, fail_dialogue(socket)}
   end
 

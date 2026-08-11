@@ -159,6 +159,9 @@ defmodule Oli.GenAI.Dialogue.Server do
         {:error} ->
           notify_server_fn.({:stream_chunk, {:error}})
 
+        {:error, _details} ->
+          notify_server_fn.({:stream_chunk, {:error}})
+
         {:function_call, function_call} ->
           notify_server_fn.({:stream_chunk, {:function_call, function_call}})
 
@@ -208,11 +211,7 @@ defmodule Oli.GenAI.Dialogue.Server do
         {:noreply, state}
 
       {:error, error} ->
-        Logger.info(
-          "Encountered completions http error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}"
-        )
-
-        Logger.warning("Failed without backup for client #{inspect(configuration.reply_to_pid)}")
+        log_dialogue_failure(state, :execution_failed, error)
 
         notify_client_fn.(
           {:dialogue_server, {:error, "An error occurred while processing the request"}}
@@ -242,7 +241,6 @@ defmodule Oli.GenAI.Dialogue.Server do
   def handle_info({:stream_chunk, _stale_engagement_id, _chunk}, state), do: {:noreply, state}
 
   def handle_info({:stream_chunk, {:error}}, state) do
-    Logger.warning("Streaming error for client #{inspect(state.configuration.reply_to_pid)}")
     notify_error(state)
 
     {:noreply, %{state | messages: discard_last_assistant_message(state.messages)}}
@@ -297,13 +295,18 @@ defmodule Oli.GenAI.Dialogue.Server do
             {:noreply, state, {:continue, :execute_function}}
 
           {:error, reason} ->
-            Logger.error("Failed to execute function #{name}: #{reason}")
+            log_dialogue_failure(
+              state,
+              :tool_execution_failed,
+              safe_function_error_category(reason)
+            )
+
             notify_error(state)
             {:noreply, state}
         end
 
       {:error, _} ->
-        Logger.error("Failed to decode function arguments: #{args}")
+        log_dialogue_failure(state, :tool_arguments_invalid_json, :invalid_json)
         notify_error(state)
         {:noreply, state}
     end
@@ -330,9 +333,7 @@ defmodule Oli.GenAI.Dialogue.Server do
         {:DOWN, ref, :process, _pid, reason},
         %{engagement_task: %Task{ref: ref}} = state
       ) do
-    Logger.error(
-      "Dialogue engagement task terminated unexpectedly: #{task_exit_category(reason)}"
-    )
+    log_dialogue_failure(state, :engagement_task_terminated, task_exit_category(reason))
 
     notify_error(state)
     {:noreply, %{state | engagement_task: nil}}
@@ -408,6 +409,35 @@ defmodule Oli.GenAI.Dialogue.Server do
       {:dialogue_server, {:error, "An error occurred while processing the request"}}
     )
   end
+
+  defp log_dialogue_failure(state, event, error_category) do
+    %Configuration{service_config: service_config} = state.configuration
+
+    Logger.warning(
+      "Dialogue engagement failed event=#{event} error_category=#{safe_error_category(error_category)} " <>
+        "service_config_id=#{service_config.id}"
+    )
+  end
+
+  defp safe_error_category(reason)
+       when reason in [
+              :all_breakers_open,
+              :exception,
+              :invalid_json,
+              :missing_api_key,
+              :stream_error
+            ],
+       do: reason
+
+  defp safe_error_category({:invalid_model_configuration, :missing_api_key}), do: :missing_api_key
+  defp safe_error_category({:http_error, status}) when is_integer(status), do: :http_error
+  defp safe_error_category(_), do: :unknown
+
+  defp safe_function_error_category(reason)
+       when reason in [:invalid_arguments, :invalid_function_name],
+       do: reason
+
+  defp safe_function_error_category(_), do: :unknown
 
   defp discard_last_assistant_message(messages) do
     case messages do
