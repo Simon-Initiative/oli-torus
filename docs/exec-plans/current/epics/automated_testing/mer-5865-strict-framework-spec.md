@@ -35,7 +35,33 @@ from the file the reader parses would make B4-MAN tautological): `mcq_radio` →
 so B4-MAN corroborates `partsLayout` ids against fact paths taken from `authoring.rules` —
 two independent archive locations. CAPI directives declare none (`ownCapiPart` never reads it).
 
-### NEXT UNIT — 4c, the new driver (start here)
+### 4c PIECE 1 — DONE 2026-08-11: the B4-SUITE pre-build artifact
+
+`assets/automation/gate-evidence/mer-5865-expected-inv.json` (committed). **Finding: this was
+a PRE-BUILD contract obligation that 4a and 4b landed without** — B4-SUITE requires the
+pre-step-4 `adaptive-` discovery "committed as an artifact BEFORE build", and it existed
+nowhere. Recoverable only because `f9f9982874` is immutable: the frozen half is read from a
+git worktree at that revision, never from the working tree, and step-4 additions enter only
+through `additive_step_4`. **The deviation is written into the artifact for the gate-B
+reviewer, not hidden.** Arithmetic closes exactly: frozen 271 (`adaptive-` 264 + `mer5865-`
+7) + additive 72 (4a 24 + 4b 48) + 2 classified never-committed demo entries = 345 discovered.
+Identity is **file+title**, not file:line — step-4 edits move lines without changing test
+identity. Still owed inside 4c (recorded in the artifact): W-U7/W-U9 runtime case inventory
+for cardinality-bearing inner loops (`adaptive-oracle.spec.ts:1799`), whose cases are ONE
+discovery identity each and so are invisible to `--list`.
+
+**Read the gate contract's PRE-BUILD clauses at the START of every remaining unit** — that is
+how this was missed for three units.
+
+### NEXT — 4c pieces 2–4, then Codex, then 4d
+
+**Human call 2026-08-11: build pieces 2–4 in one pass, then CODEX REVIEWS 4c BEFORE 4d** — no
+longer "first code read at gate B". Rationale recorded: the driver plus the spec switch is
+thousands of lines unreviewed, and a `B4-STAMP` API objection raised at gate B would cost two
+rewrites instead of one. Gate B keeps what needs the switched spec running live (CORE-L,
+ENTRY-L, REG-L, VERDICT-L, exit-site injection) plus the four reviewer-derived obligations.
+
+### NEXT UNIT — 4c, the new driver (detail)
 
 `AdaptiveHappyPathTask.ts`, `AdaptiveEvaluationObserver.ts`, `AdaptiveStrictContract.ts`
 become consumers of the committed core: registry-driven answers, driver-stamped fences,
@@ -183,8 +209,18 @@ Blocks the oracle finalization edit, not the registry/driver/manifest units.
    differential harness on the swapped driver + canary and 3 fresh-seed live runs.
 5. **Gate B** — ONE Codex implementation pass over assembled step 4 → fixes → human gate.
 6. Then 5–6 → C1, 7–8 → C2, 9–10 (no Codex).
-7. Open human actions: `adaptive-authoring.spec.ts:133` flake needs a ticket + owner; leaked
-   automation section/project slugs owed a batch cleanup; Santi coordination before step 8.
+7. Open human actions (✅ all three re-checked 2026-08-11, two were overstated):
+   (a) `adaptive-authoring.spec.ts:133` flake — still needs a ticket + owner, cause UNKNOWN
+   (see DEBT; do not restate it as a product defect);
+   (b) leaked automation slugs — the ROOT CAUSE IS ALREADY TICKETED as **TRIAGE-2419** (Bug,
+   Selected for Development, Medium, reporter Francisco, **assignee null**, measured root
+   causes for both failure modes). Outstanding: an assignee, plus a one-off cleanup of the
+   already-leaked dev-DB rows (~28 RC II + 2 RC I per the ticket, plus this epic's runs);
+   (c) greenhouse/Santi — **NOT a blocker and never an authorization.** PR #6731 is MERGED
+   (`f1be066a59`, Santiago Simoncelli, 2026-07-17) and the spec is in the tree, so the
+   in-flight collision risk behind §10 Q2 is gone. Residue is a NOTIFICATION: MER-5672's Jira
+   is still `QA` (unassigned, updated 2026-07-28), so if QA verifies by running that spec,
+   tell them before step 8 rewrites it.
 8. Demo files (`mer5865-demo-oracle-contrast.spec.ts`, `mer5865-demo-presentation.html`,
    `branch-map-tsunami-mechanics.*`) and `lib/oli_web/live/dev/mer5865_tracker_live.ex`
    NEVER committed.
@@ -287,7 +323,8 @@ loop until Codex flags nothing material or the human calls it.
 - Passive shadow capture (journal armed on live LotE runs) — deferred from step 1.
   **UNBLOCKED 2026-08-09: open question 4 resolved by the human — run budget unconstrained
   ("I don't care about polluting my local DB, we can reset it when needed"). Leaked slugs
-  noted per run for later batch cleanup.**
+  noted per run — the teardown failure that causes them is **TRIAGE-2419** (unassigned); the
+  only untracked part is deleting the already-leaked dev-DB rows.**
 - Journal permit/readback-stamp API — SUPERSEDED by **B4-STAMP** (a normative step-4
   contract row, flagged MATERIAL for gate B: one journal-owned sequence domain for entry
   fences, readback-completed fences, check/ack permits; caller-supplied seqs forbidden;
@@ -295,10 +332,18 @@ loop until Codex flags nothing material or the human calls it.
 - Destination-guard ancestor-swap race (capture harness, r7 N1): close with a handle-based
   no-follow write before any capture on a shared machine.
 - `adaptive-authoring.spec.ts:133` flake: needs a real suite-health ticket + owner (human).
-  **New data ✅ 2026-08-11: 1 pass in 5 runs** (recorded prior rate ~50%). Always fails at
-  `BasicPracticePagePO.ts:399` waiting for `.flowchart-node` `toHaveCount(3)`, received 2 —
-  the "-- Create new screen --" rule does not add its node. NOT cross-test pollution: it
-  fails with `:79` excluded too. Unrelated to the registry (no import path).
+  **New data ✅ 2026-08-11: 1 pass in 5 runs** (recorded prior rate ~50%).
+  **OBSERVED (all that is measured):** `BasicPracticePagePO.ts:399` waits 30s for
+  `.flowchart-node` `toHaveCount(existing + 1)` after `completeFlowchartRule(…, '-- Create new
+  screen --')` and sees 2 where 3 are expected. The serial group takes its 2 dependents down
+  with it, so one failure reads as three. NOT cross-test pollution: it fails with `:79`
+  excluded too. Unrelated to the registry (no import path).
+  **CAUSE UNKNOWN — do not repeat the earlier wording "the rule does not add its node",
+  which asserted a product behaviour nobody measured.** A node created after the 30s window,
+  created but not rendered, or rendered under another class all produce this same red. Two
+  candidate causes, neither ruled out: (a) the editor really does not create the screen —
+  settle by driving the flowchart editor by hand; (b) the test races the UI — settle from a
+  failing run's trace (does the node appear after the assertion gave up?).
 - **4b-2 dropped the v1 `labels_match` field** from every mcq directive — no registry entry
   reads it, and a directive field nothing consumes reads as a guarantee that is not there.
   It WAS the v1 walker's per-screen readiness wait on a specific option label; the registry's
@@ -318,7 +363,9 @@ loop until Codex flags nothing material or the human calls it.
 - **`assets/automation/tsconfig.json` now aliases into `assets/src`** (`@product/*`,
   `utils/*`, `data/*`, `components/*`). Load-bearing but fail-loudly: a product refactor of
   those paths breaks automation type-check rather than silently changing semantics.
-- Open questions 2 (Santi/greenhouse), 3 (bucket key policy) — human.
+- ~~Open question 2 (Santi/greenhouse)~~ RESOLVED 2026-08-11 by the writer: MER-5672's PR is
+  merged, so there is no in-flight collision and no authorization to obtain — only a QA-stage
+  notification (roadmap item 7c). Open question 3 (bucket key policy) — human.
   ~~Open question 4 (run budget)~~ RESOLVED 2026-08-09: unconstrained, local dev DB reset
   accepted.
 - `mer-5674-followups.md` FU-2 (evaluate.ex 500 on rules-worker error) still open, unrelated ticket.
@@ -340,8 +387,11 @@ loop until Codex flags nothing material or the human calls it.
 - Playwright line-reporter output carries ANSI escapes — `grep -c "^\s+1 failed"` silently
   matches nothing; strip with `sed 's/\x1b\[[0-9;]*[A-Za-z]//g'` or judge by the LAST line
   ("N passed" = pass; a failed-test listing = fail).
-- `npx playwright test --list` boots the dev webServer and can hang for minutes — don't use
-  it for quick counts.
+- ~~`npx playwright test --list` boots the dev webServer and can hang for minutes~~ **WRONG,
+  corrected 2026-08-11: `webServer` is COMMENTED OUT (`playwright.config.ts:79-83`), so
+  `--list` boots nothing. Measured: `npx playwright test adaptive- mer5865- --list
+  --reporter=json` = 345 entries in 0.94s.** It is the right tool for suite inventories, and
+  believing otherwise made the B4-SUITE artifact look expensive.
 - NEVER `git stash` around a timeout-prone command: a timeout kills the compound command
   before `stash pop` and strands uncommitted work in the stash (cost a scare 2026-08-10;
   recovery: `git stash list` → `pop`). Back up files to the scratchpad instead.
@@ -1121,6 +1171,6 @@ evidence. Two consecutive successes before the family's map entries are trusted.
 | # | Question | For |
 |---|---|---|
 | 1 | ~~MER ticket number for this work~~ **Resolved 2026-08-05: MER-5865** | human, before commit 1 |
-| 2 | Santi coordination for the greenhouse switch — who raises it, does his QA-stage ticket constrain timing? | human |
+| 2 | ~~Santi coordination for the greenhouse switch~~ **Resolved 2026-08-11 (writer): MER-5672's PR #6731 is merged (`f1be066a59`), so no authorization and no collision — only a QA-stage notification, since its Jira is still `QA`** | ~~human~~ |
 | 3 | Bucket key policy: overwrite `answers.json` or side-by-side `answers-strict.json` until each switch commit (side-by-side proposed — keeps every commit runnable) | human (cheap) |
 | 4 | Spike + shadow-run budget (each seeded run leaks a project, TRIAGE-2419) | human |
