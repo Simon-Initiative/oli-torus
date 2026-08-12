@@ -83,6 +83,12 @@ defmodule Oli.Utils.SchemaResolverTest do
                  "model" => [Map.put(alternatives, "alternatives_id", "42")]
                })
 
+      assert {:error, _errors} =
+               ExJsonSchema.Validator.validate(schema, %{
+                 "version" => "0.1.0",
+                 "model" => [Map.put(alternatives, "alternatives_id", 0)]
+               })
+
       assert :ok ==
                ExJsonSchema.Validator.validate(schema, %{
                  "version" => "0.1.0",

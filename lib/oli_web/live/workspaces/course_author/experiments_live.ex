@@ -3,7 +3,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   use Phoenix.HTML
 
   import Oli.Utils, only: [uuid: 0]
-  import OliWeb.Resources.AlternativesEditor.GroupOption
+  alias OliWeb.Workspaces.CourseAuthor.AlternativesGroupManager
 
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
@@ -140,21 +140,32 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
       <section class="mt-10" aria-labelledby="decision-points-heading">
         <div class="mb-3">
-          <h3 id="decision-points-heading" class="h4 mb-0">Decision Points</h3>
+          <h3 id="decision-points-heading" class="h4 mb-0">
+            Experiment-Controlled Alternatives
+          </h3>
         </div>
         <%= if Enum.empty?(@decision_points) do %>
           <div>
-            No decision points have been created yet.
+            No experiment-controlled alternatives groups have been created yet.
           </div>
         <% else %>
-          <.decision_point_group
+          <AlternativesGroupManager.group_card
             :for={decision_point <- @decision_points}
             group={decision_point}
-            new_condition_name={Map.get(@new_condition_names, decision_point.resource_id, "")}
-            new_condition_form_open={
+            item_label="Condition"
+            empty_item_label="There are no conditions in this group"
+            create_item_event="show_new_condition_form"
+            delete_group_event="show_delete_decision_point_modal"
+          >
+            <:new_item_form :if={
               MapSet.member?(@open_new_condition_forms, decision_point.resource_id)
-            }
-          />
+            }>
+              <.new_condition_form
+                group={decision_point}
+                name={Map.get(@new_condition_names, decision_point.resource_id, "")}
+              />
+            </:new_item_form>
+          </AlternativesGroupManager.group_card>
         <% end %>
         <div class="d-flex justify-content-start mt-3">
           <button class="btn btn-outline-primary" phx-click="show_create_decision_point">
@@ -373,11 +384,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               <label for="experiment_slug">Slug</label>
               <input
                 id="experiment_slug"
-                class="form-control"
+                class={"form-control #{field_error_class(@experiment_field_errors, :slug)}"}
                 name="experiment[slug]"
                 value={@experiment_params["slug"]}
+                aria-invalid={field_invalid?(@experiment_field_errors, :slug)}
+                aria-describedby={field_error_id(@experiment_field_errors, :slug)}
                 required
               />
+              <%= if error = field_error(@experiment_field_errors, :slug) do %>
+                <div id="experiment_slug_error" class="mb-2 block text-sm text-red-600">
+                  {error}
+                </div>
+              <% end %>
               <div :if={@experiment_slug_suggestion} class="form-text">
                 Suggested slug:
                 <button
@@ -454,7 +472,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   Initial success evidence for each condition, from 0.0001 to 1000.
                 </small>
                 <%= if error = field_error(@experiment_field_errors, :prior_alpha) do %>
-                  <div id="experiment_prior_alpha_error" class="invalid-feedback d-block">
+                  <div id="experiment_prior_alpha_error" class="mb-2 block text-sm text-red-600">
                     {error}
                   </div>
                 <% end %>
@@ -477,7 +495,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   Initial failure evidence for each condition, from 0.0001 to 1000.
                 </small>
                 <%= if error = field_error(@experiment_field_errors, :prior_beta) do %>
-                  <div id="experiment_prior_beta_error" class="invalid-feedback d-block">
+                  <div id="experiment_prior_beta_error" class="mb-2 block text-sm text-red-600">
                     {error}
                   </div>
                 <% end %>
@@ -501,7 +519,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   Number of initial assignments served evenly before adaptive sampling.
                 </small>
                 <%= if error = field_error(@experiment_field_errors, :warm_up_assignments) do %>
-                  <div id="experiment_warm_up_assignments_error" class="invalid-feedback d-block">
+                  <div
+                    id="experiment_warm_up_assignments_error"
+                    class="mb-2 block text-sm text-red-600"
+                  >
                     {error}
                   </div>
                 <% end %>
@@ -528,7 +549,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                   Highest allowed assignment share for one condition, from 0.01 to 1.0.
                 </small>
                 <%= if error = field_error(@experiment_field_errors, :max_condition_share) do %>
-                  <div id="experiment_max_condition_share_error" class="invalid-feedback d-block">
+                  <div
+                    id="experiment_max_condition_share_error"
+                    class="mb-2 block text-sm text-red-600"
+                  >
                     {error}
                   </div>
                 <% end %>
@@ -600,12 +624,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          )}
 
       {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        field_errors = field_errors_for_experiment_error(error)
+
         {:noreply,
          assign(socket,
-           experiment_error: error.message,
+           experiment_error: experiment_error_message(error, field_errors),
            experiment_success: nil,
            experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
-           experiment_field_errors: field_errors_for_message(error.message),
+           experiment_field_errors: field_errors,
            experiment_params: params,
            experiment_slug_suggestion: suggested_experiment_slug(params["name"])
          )}
@@ -626,6 +652,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply,
      assign(socket,
        experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
+       experiment_error: nil,
        experiment_field_errors: %{},
        experiment_params: params,
        experiment_slug_suggestion: slug_suggestion
@@ -640,6 +667,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       suggestion ->
         {:noreply,
          assign(socket,
+           experiment_error: nil,
+           experiment_field_errors: %{},
            experiment_params: Map.put(socket.assigns.experiment_params, "slug", suggestion)
          )}
     end
@@ -1219,92 +1248,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   attr :group, :any, required: true
-  attr :new_condition_name, :string, required: true
-  attr :new_condition_form_open, :boolean, required: true
+  attr :name, :string, required: true
 
-  defp decision_point_group(assigns) do
+  defp new_condition_form(assigns) do
     ~H"""
-    <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
-      <div class="d-flex flex-row align-items-center">
-        <div><b>{@group.title}</b></div>
-        <div class="flex-grow-1"></div>
-        <OliWeb.Common.Components.icon_button
-          class="mr-1"
-          icon="fa-solid fa-pencil"
-          on_click="show_edit_group_modal"
-          values={["phx-value-resource-id": @group.resource_id]}
-        />
+    <form
+      id={"new-condition-form-#{@group.resource_id}"}
+      class="mt-3"
+      phx-change="change_new_condition"
+      phx-submit="create_new_condition"
+    >
+      <input type="hidden" name="condition[resource_id]" value={@group.resource_id} />
+      <label
+        class="form-label"
+        for={"new-condition-input-#{@group.resource_id}"}
+      >
+        Condition name
+      </label>
+      <input
+        id={"new-condition-input-#{@group.resource_id}"}
+        type="text"
+        name="condition[name]"
+        value={@name}
+        class="form-control"
+        placeholder="Enter a new condition"
+        phx-hook="InputAutoSelect"
+        phx-keydown={JS.push("cancel_new_condition", value: %{resource_id: @group.resource_id})}
+        phx-key="Escape"
+      />
+      <div class="d-flex justify-content-end gap-2 mt-2">
         <button
-          class="btn btn-danger btn-sm mr-2"
-          phx-click="show_delete_decision_point_modal"
-          phx-value-resource-id={@group.resource_id}
-        >
-          Delete
-        </button>
-      </div>
-      <div class="mt-3">
-        <%= if Enum.empty?(@group.content["options"]) do %>
-          <div class="my-2 text-center">
-            <em>There are no conditions in this decision point</em>
-          </div>
-        <% else %>
-          <.option_list group={@group} show_actions={true} />
-        <% end %>
-        <button
-          :if={not @new_condition_form_open}
           type="button"
-          class="btn btn-link px-0 mt-3"
-          phx-click="show_new_condition_form"
+          class="btn btn-link"
+          phx-click="cancel_new_condition"
           phx-value-resource-id={@group.resource_id}
         >
-          <i class="fa fa-plus"></i> New Condition
+          Cancel
         </button>
-        <form
-          :if={@new_condition_form_open}
-          id={"new-condition-form-#{@group.resource_id}"}
-          class="mt-3"
-          phx-change="change_new_condition"
-          phx-submit="create_new_condition"
+        <button
+          type="submit"
+          class="btn btn-primary"
+          disabled={String.trim(@name) == ""}
         >
-          <input type="hidden" name="condition[resource_id]" value={@group.resource_id} />
-          <label
-            class="form-label"
-            for={"new-condition-input-#{@group.resource_id}"}
-          >
-            Condition name
-          </label>
-          <input
-            id={"new-condition-input-#{@group.resource_id}"}
-            type="text"
-            name="condition[name]"
-            value={@new_condition_name}
-            class="form-control"
-            placeholder="Enter a new condition"
-            phx-hook="InputAutoSelect"
-            phx-keydown={JS.push("cancel_new_condition", value: %{resource_id: @group.resource_id})}
-            phx-key="Escape"
-            onkeydown="if (event.key === 'Escape') { this.value = ''; }"
-          />
-          <div class="d-flex justify-content-end gap-2 mt-2">
-            <button
-              type="button"
-              class="btn btn-link"
-              phx-click="cancel_new_condition"
-              phx-value-resource-id={@group.resource_id}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              disabled={String.trim(@new_condition_name) == ""}
-            >
-              Create
-            </button>
-          </div>
-        </form>
+          Create
+        </button>
       </div>
-    </div>
+    </form>
     """
   end
 
@@ -1599,6 +1588,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp field_errors_for_message(_message), do: %{}
 
+  defp field_errors_for_experiment_error(%{type: type, details: %{errors: errors}} = error) do
+    case {type, Map.get(errors, :slug)} do
+      {:conflict, messages} when is_list(messages) ->
+        %{slug: "An experiment with this slug already exists in this project."}
+
+      {_type, [message | _rest]} ->
+        %{slug: "Slug #{message}."}
+
+      _ ->
+        field_errors_for_message(error.message)
+    end
+  end
+
+  defp field_errors_for_experiment_error(error), do: field_errors_for_message(error.message)
+
+  defp experiment_error_message(_error, %{slug: _message}), do: nil
+  defp experiment_error_message(error, _field_errors), do: error.message
+
   defp experiment_numeric_value(params, key) do
     Map.get(params, key, Map.fetch!(@experiment_numeric_defaults, key))
   end
@@ -1608,6 +1615,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp field_error_class(errors, field),
     do: if(field_invalid?(errors, field), do: "is-invalid", else: "")
+
+  defp field_error_id(errors, field) do
+    case field_invalid?(errors, field) do
+      true -> "experiment_#{field}_error"
+      false -> nil
+    end
+  end
 
   defp field_described_by(errors, field) do
     field_id = "experiment_#{field}"

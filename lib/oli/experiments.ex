@@ -1004,6 +1004,142 @@ defmodule Oli.Experiments do
 
   def policy_state_snapshot(_query), do: invalid_request("expected AnalyticsQuery")
 
+  @doc """
+  Returns the bounded PostgreSQL policy report used by experiment authoring.
+
+  Draft experiments and weighted-random decision points intentionally return no
+  posterior rows. The report is derived only from the persisted policy snapshot,
+  mappings, and aggregate assignment counts; it never reads reward history or an
+  analytics store.
+  """
+  def policy_snapshot(experiment_id, %Scope{} = scope) when is_integer(experiment_id) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_access(scope),
+         {:ok, authoring_view} <- get_experiment_authoring_view(experiment_id, scope) do
+      policy_snapshot(authoring_view, scope)
+    end
+  end
+
+  def policy_snapshot(%ExperimentAuthoringView{} = authoring_view, %Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_access(scope) do
+      case authoring_view.definition.state do
+        :draft -> {:ok, []}
+        _state -> build_policy_snapshot(authoring_view, scope)
+      end
+    end
+  end
+
+  def policy_snapshot(_experiment_or_view, _scope),
+    do: invalid_request("expected experiment id or authoring view and Scope")
+
+  defp build_policy_snapshot(authoring_view, scope) do
+    query = %Oli.Experiments.AnalyticsQuery{
+      scope: scope,
+      experiment_id: authoring_view.definition.id
+    }
+
+    with {:ok, snapshots} <- policy_state_snapshot(query) do
+      conditions = Map.new(authoring_view.conditions, &{&1.id, &1})
+      mappings = Enum.group_by(authoring_view.mappings, & &1.decision_point_id)
+
+      assignment_counts =
+        assignment_counts_by_decision_point_condition(authoring_view.definition.id)
+
+      rows =
+        snapshots
+        |> Enum.filter(&(&1.algorithm == :thompson_sampling))
+        |> Enum.flat_map(fn snapshot ->
+          decision_point_mappings = Map.get(mappings, snapshot.decision_point_id, [])
+          total_assignments = max(snapshot.assignment_count, 0)
+
+          Enum.map(decision_point_mappings, fn mapping ->
+            condition = Map.fetch!(conditions, mapping.condition_id)
+            condition_state = Map.get(snapshot.state, condition.condition_code, %{})
+            alpha = numeric_value(condition_state["posterior_alpha"])
+            beta = numeric_value(condition_state["posterior_beta"])
+
+            assignment_count =
+              Map.get(assignment_counts, {snapshot.decision_point_id, condition.id}, 0)
+
+            %{
+              decision_point_id: snapshot.decision_point_id,
+              condition_id: condition.id,
+              condition_code: condition.condition_code,
+              condition_label: condition.label || condition.condition_code,
+              option_id: mapping.option_id,
+              posterior_alpha: alpha,
+              posterior_beta: beta,
+              estimated_success_probability: posterior_mean(alpha, beta),
+              accepted_success_count: non_negative_integer(condition_state["successes"]),
+              accepted_failure_count: non_negative_integer(condition_state["failures"]),
+              assignment_count: assignment_count,
+              assignment_share: assignment_share(assignment_count, total_assignments),
+              updated_at: snapshot.updated_at,
+              effective_mode:
+                effective_policy_mode(
+                  snapshot,
+                  decision_point_mappings,
+                  assignment_counts
+                ),
+              guardrail_state: snapshot.guardrail_state,
+              imbalance_warning?:
+                imbalance_warning?(snapshot, assignment_count, total_assignments),
+              lifecycle_state: authoring_view.definition.state
+            }
+          end)
+        end)
+
+      {:ok, rows}
+    end
+  end
+
+  defp numeric_value(value) when is_integer(value), do: value / 1
+  defp numeric_value(value) when is_float(value), do: value
+  defp numeric_value(_value), do: 0.0
+
+  defp non_negative_integer(value) when is_integer(value) and value >= 0, do: value
+  defp non_negative_integer(_value), do: 0
+
+  defp posterior_mean(alpha, beta) when alpha + beta > 0, do: alpha / (alpha + beta)
+  defp posterior_mean(_alpha, _beta), do: 0.0
+
+  defp assignment_share(_count, 0), do: 0.0
+  defp assignment_share(count, total), do: count / total
+
+  defp effective_policy_mode(snapshot, mappings, assignment_counts) do
+    guardrails = snapshot.guardrail_state
+    assignment_count = guardrails["assignment_count"] || 0
+
+    counts =
+      Map.new(
+        mappings,
+        &{&1.condition_id,
+         Map.get(assignment_counts, {snapshot.decision_point_id, &1.condition_id}, 0)}
+      )
+
+    conditions = Enum.map(mappings, &%{id: &1.condition_id})
+
+    cond do
+      assignment_count < (guardrails["warm_up_assignments"] || 0) ->
+        :warm_up_weighted_random
+
+      fixed_control_condition(conditions, counts, guardrails["fixed_control_allocation"]) ->
+        :fixed_control
+
+      cap_eligible_conditions(conditions, counts, guardrails["max_condition_share"]) != conditions ->
+        :traffic_cap
+
+      true ->
+        :thompson_sampling
+    end
+  end
+
+  defp imbalance_warning?(snapshot, count, total) do
+    threshold = snapshot.guardrail_state["imbalance_threshold"]
+    is_number(threshold) and total > 0 and count / total > threshold
+  end
+
   defp transition(experiment_id, %Oli.Experiments.LifecycleRequest{} = request, action) do
     target_state = Map.fetch!(@transition_targets, action)
 
@@ -1017,7 +1153,7 @@ defmodule Oli.Experiments do
                |> preload(:sections)
                |> Repo.one(),
              :ok <- validate_transition(schema.state, target_state),
-             :ok <- validate_transition_prerequisites(schema, target_state),
+             :ok <- validate_transition_prerequisites(schema, schema.state, target_state),
              attrs <- transition_attrs(schema, target_state, request.transitioned_at),
              {:ok, updated} <-
                schema
@@ -2575,24 +2711,29 @@ defmodule Oli.Experiments do
 
       true ->
         Repo.transaction(fn ->
-          definition =
+          changeset =
             %ExperimentDefinitionSchema{}
             |> ExperimentDefinitionSchema.changeset(attrs)
-            |> Repo.insert!()
 
-          replace_experiment_sections!(definition.id, section_ids)
+          case Repo.insert(changeset) do
+            {:ok, definition} ->
+              replace_experiment_sections!(definition.id, section_ids)
 
-          lock_experiment!(definition.id)
+              lock_experiment!(definition.id)
 
-          lock_and_validate_current_bindings!(
-            request.decision_points,
-            scope_from_definition(definition),
-            definition.id
-          )
+              lock_and_validate_current_bindings!(
+                request.decision_points,
+                scope_from_definition(definition),
+                definition.id
+              )
 
-          conditions = insert_conditions!(definition.id, request.conditions)
-          insert_decision_points!(definition, request.decision_points, conditions)
-          Repo.preload(definition, :sections)
+              conditions = insert_conditions!(definition.id, request.conditions)
+              insert_decision_points!(definition, request.decision_points, conditions)
+              Repo.preload(definition, :sections)
+
+            {:error, changeset} ->
+              Repo.rollback(changeset)
+          end
         end)
         |> normalize_transaction_result()
     end
@@ -3484,13 +3625,21 @@ defmodule Oli.Experiments do
     {:ok, decision_points}
   end
 
-  defp validate_transition_prerequisites(_schema, target_state) when target_state != :active,
-    do: :ok
+  defp validate_transition_prerequisites(_schema, _current_state, target_state)
+       when target_state != :active,
+       do: :ok
 
-  defp validate_transition_prerequisites(schema, :active) do
+  defp validate_transition_prerequisites(schema, :draft, :active) do
     with :ok <- validate_activation_algorithm(schema),
          {:ok, decision_points} <- activation_decision_points(schema),
          :ok <- validate_activation_configuration(schema, decision_points),
+         :ok <- validate_no_active_decision_point_conflict(schema, decision_points) do
+      :ok
+    end
+  end
+
+  defp validate_transition_prerequisites(schema, :paused, :active) do
+    with {:ok, decision_points} <- activation_decision_points(schema),
          :ok <- validate_no_active_decision_point_conflict(schema, decision_points) do
       :ok
     end
@@ -4434,6 +4583,16 @@ defmodule Oli.Experiments do
           assignment.decision_point_id == ^decision_point_id,
       group_by: assignment.condition_id,
       select: {assignment.condition_id, count(assignment.id)}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  defp assignment_counts_by_decision_point_condition(experiment_id) do
+    from(assignment in Assignment,
+      where: assignment.experiment_id == ^experiment_id,
+      group_by: [assignment.decision_point_id, assignment.condition_id],
+      select: {{assignment.decision_point_id, assignment.condition_id}, count(assignment.id)}
     )
     |> Repo.all()
     |> Map.new()

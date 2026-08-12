@@ -67,7 +67,7 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     |> validate_length(:name, min: 1, max: 255)
     |> foreign_key_constraint(:project_id)
     |> unique_constraint(:uuid, name: :experiment_definitions_uuid_idx)
-    |> unique_constraint([:project_id, :slug], name: :experiment_definitions_project_slug_idx)
+    |> unique_constraint(:slug, name: :experiment_definitions_project_slug_idx)
   end
 
   defp put_uuid(changeset) do

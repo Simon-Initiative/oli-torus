@@ -165,19 +165,19 @@ Guardrails:
 
 - Goal: Deliver consistent strategy-specific group management, full draft configuration, bounded non-draft policy reporting, and the final Alternatives placement schema (FR-004, FR-017, FR-021, FR-028 through FR-030, FR-032, FR-033).
 - Tasks:
-  - [ ] Extract the existing Experiments group editor into a shared LiveComponent retaining cards, option management, reorder behavior, validation, deletion safeguards, permissions, and accessible controls.
-  - [ ] Configure `AlternativesLive` for `user_section_preference` with Learner Choice labels and filtering; configure `ExperimentsLive` for canonical `experiment_controlled`, rename the section to `Experiment-Controlled Alternatives`, and retain experiment listing/configuration.
-  - [ ] Make each creation surface assign strategy implicitly, remove type selectors and inline placement-content editing, and prohibit strategy/option-identity mutation.
-  - [ ] Implement multi-decision-point draft forms for mappings, policies, priors/weights, guardrails, interventions, scored pages, thresholds, validation errors, and lifecycle read-only states using approved design guidance.
-  - [ ] Implement `policy_snapshot/2` as bounded PostgreSQL reads and render non-draft Thompson metrics: estimated success probability, accepted success/failure counts, observed assignment count/share, update time, expandable alpha/beta, effective guardrail mode/progress/affected conditions, imbalance warning, and lifecycle pause/end state.
-  - [ ] Omit posterior metrics for draft and weighted-random experiments, never calculate next-assignment probability, and preserve frozen completed/archived snapshots.
-  - [ ] Update `priv/schemas/v0-1-0/content-alternatives.schema.json` to require valid `alternatives_id`, stop requiring or trusting element strategy, and remain permissive for ignored legacy strategy strings; ensure new insertion omits strategy.
+  - [x] Extract the existing Experiments group editor into a shared LiveComponent retaining cards, option management, reorder behavior, validation, deletion safeguards, permissions, and accessible controls.
+  - [x] Configure `AlternativesLive` for `user_section_preference` with Learner Choice labels and filtering; configure `ExperimentsLive` for canonical `experiment_controlled`, rename the section to `Experiment-Controlled Alternatives`, and retain experiment listing/configuration.
+  - [x] Make each creation surface assign strategy implicitly, remove type selectors and inline placement-content editing, and prohibit strategy/option-identity mutation.
+  - [x] Implement multi-decision-point draft forms for mappings, policies, priors/weights, guardrails, interventions, scored pages, thresholds, validation errors, and lifecycle read-only states using approved design guidance.
+  - [x] Implement `policy_snapshot/2` as bounded PostgreSQL reads and render non-draft Thompson metrics: estimated success probability, accepted success/failure counts, observed assignment count/share, update time, expandable alpha/beta, effective guardrail mode/progress/affected conditions, imbalance warning, and lifecycle pause/end state.
+  - [x] Omit posterior metrics for draft and weighted-random experiments, never calculate next-assignment probability, and preserve frozen completed/archived snapshots.
+  - [x] Update `priv/schemas/v0-1-0/content-alternatives.schema.json` to require valid `alternatives_id`, stop requiring or trusting element strategy, and remain permissive for ignored legacy strategy strings; ensure new insertion omits strategy.
 - Testing Tasks:
-  - [ ] Add LiveView/component tests for both retained routes, strict list/create filtering, implicit strategy writes, shared behavior, permissions, lifecycle restrictions, validation, no selector, and no inline content editing.
-  - [ ] Add keyboard interaction tests for shared group controls and preview tabs.
-  - [ ] Add reporting context/LiveView tests for every lifecycle, algorithm, posterior formula/count/share, refresh, effective mode, thresholds/progress, affected conditions, imbalance warning, expandable details, and omission rules; assert no reward-history or analytics reads.
-  - [ ] Add JSON Schema fixtures for new placements, legacy matching/conflicting/unknown strategy, invalid/missing `alternatives_id`, and the parent schema reference.
-  - [ ] Run targeted Jest tests if shared frontend components are touched; otherwise keep interaction coverage in LiveView tests.
+  - [x] Add LiveView/component tests for both retained routes, strict list/create filtering, implicit strategy writes, shared behavior, permissions, lifecycle restrictions, validation, no selector, and no inline content editing.
+  - [x] Add keyboard interaction tests for shared group controls and preview tabs.
+  - [x] Add reporting context/LiveView tests for every lifecycle, algorithm, posterior formula/count/share, refresh, effective mode, thresholds/progress, affected conditions, imbalance warning, expandable details, and omission rules; assert no reward-history or analytics reads.
+  - [x] Add JSON Schema fixtures for new placements, legacy matching/conflicting/unknown strategy, invalid/missing `alternatives_id`, and the parent schema reference.
+  - [x] Run targeted Jest tests if shared frontend components are touched; otherwise keep interaction coverage in LiveView tests.
   - Command(s): `mix test <ExperimentsLive, ExperimentDetailsLive, AlternativesLive, component, and schema tests>`; `cd assets && yarn test <targeted tests>`; `cd assets && yarn lint`; `cd assets && yarn format`
 - Definition of Done:
   - Authors see two consistent but strategy-isolated management surfaces, can configure valid draft experiments, and can inspect accurate bounded policy snapshots; new and legacy placement JSON validates under the intended contract.

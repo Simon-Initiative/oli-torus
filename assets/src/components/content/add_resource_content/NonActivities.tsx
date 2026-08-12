@@ -24,6 +24,14 @@ import * as Persistence from 'data/persistence/resource';
 import { ActivityWithReportOption } from 'data/persistence/resource';
 import { ResourceChoice } from './ResourceChoice';
 
+const EXPERIMENT_STRATEGIES: ReadonlySet<Persistence.AlternativesGroup['strategy']> = new Set([
+  'experiment_controlled',
+  'upgrade_decision_point',
+]);
+
+export const isExperimentStrategy = (strategy: Persistence.AlternativesGroup['strategy']) =>
+  EXPERIMENT_STRATEGIES.has(strategy);
+
 interface Props {
   index: number[];
   onAddItem: AddCallback;
@@ -210,9 +218,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
               return result.alternatives
-                .filter(
-                  (a: Persistence.AlternativesGroup) => a.strategy !== 'upgrade_decision_point',
-                )
+                .filter((a: Persistence.AlternativesGroup) => !isExperimentStrategy(a.strategy))
                 .map((a) => ({ value: a.id, title: a.title }));
             } else {
               throw result.message;
@@ -239,17 +245,15 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
         description="Select an A/B decision point"
         additionalControls={
           <ManageAlternativesLink
-            linkHref={`/workspaces/course_author/${projectSlug}/alternatives`}
-            linkText="Manage A/B Decision Points"
+            linkHref={`/workspaces/course_author/${projectSlug}/experiments`}
+            linkText="Manage Experiment-Controlled Alternatives"
           />
         }
         onFetchOptions={() =>
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
               return result.alternatives
-                .filter(
-                  (a: Persistence.AlternativesGroup) => a.strategy === 'upgrade_decision_point',
-                )
+                .filter((a: Persistence.AlternativesGroup) => isExperimentStrategy(a.strategy))
                 .map((a) => ({ value: a.id, title: a.title }));
             } else {
               throw result.message;
@@ -264,7 +268,7 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
           }
 
           const experiment = result.alternatives.find(
-            (a) => a.id === Number(alternativesId) && a.strategy === 'upgrade_decision_point',
+            (a) => a.id === Number(alternativesId) && isExperimentStrategy(a.strategy),
           );
 
           if (!experiment) {

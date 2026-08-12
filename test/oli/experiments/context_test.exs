@@ -17,7 +17,7 @@ defmodule Oli.Experiments.ContextTest do
     UpdateExperimentRequest
   }
 
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, PolicyState}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, Intervention, PolicyState}
   alias Oli.Authoring.Course.Project
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -311,8 +311,16 @@ defmodule Oli.Experiments.ContextTest do
       assert policy_state.state["a"]["posterior_alpha"] == 1.0
       assert policy_state.state["b"]["posterior_beta"] == 1.0
 
+      assert {:ok, []} = Experiments.policy_snapshot(definition.id, scope)
+
       assert {:ok, %ExperimentDefinition{state: :active}} =
                Experiments.activate_experiment(definition.id, lifecycle(scope))
+
+      assert {:ok, snapshot} = Experiments.policy_snapshot(definition.id, scope)
+      assert Enum.map(snapshot, & &1.condition_code) == ["a", "b"]
+      assert Enum.all?(snapshot, &(&1.estimated_success_probability == 0.5))
+      assert Enum.all?(snapshot, &(&1.assignment_count == 0 and &1.assignment_share == 0.0))
+      assert Enum.all?(snapshot, &(&1.effective_mode == :thompson_sampling))
     end
 
     test "rejects invalid Thompson Sampling priors and guardrails" do
@@ -726,6 +734,20 @@ defmodule Oli.Experiments.ContextTest do
 
       assert {:ok, %ExperimentDefinition{state: :archived}} =
                Experiments.archive_experiment(completed.id, lifecycle(scope))
+    end
+
+    test "resumes a paused legacy experiment without revalidating immutable interventions" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+      {:ok, active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
+      {:ok, paused} = Experiments.pause_experiment(active.id, lifecycle(scope))
+
+      decision_point = Repo.get_by!(DecisionPoint, experiment_id: definition.id)
+      Repo.delete_all(Ecto.Query.where(Intervention, decision_point_id: ^decision_point.id))
+
+      assert {:ok, %ExperimentDefinition{state: :active}} =
+               Experiments.activate_experiment(paused.id, lifecycle(scope))
     end
 
     test "rejects invalid lifecycle transitions" do

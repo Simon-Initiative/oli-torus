@@ -21,7 +21,12 @@
       }
     },
     "alternatives_id": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1
+    },
+    "strategy": {
+      "description": "Legacy non-authoritative placement metadata retained for compatibility",
+      "type": "string"
     }
   },
   "required": [

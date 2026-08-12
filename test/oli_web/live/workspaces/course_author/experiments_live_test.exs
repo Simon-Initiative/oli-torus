@@ -566,11 +566,100 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert String.starts_with?(unique_suggestion, "suggested_study_")
     end
 
-    test "creates and starts a weighted random A/B Testing experiment", %{
+    test "keeps the create modal open and renders an inline error for a duplicate slug", %{
       conn: conn,
       project: project
     } do
       insert_alternatives_group(project)
+
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: project.id,
+        slug: "duplicate-experiment",
+        name: "Original Experiment",
+        state: :archived,
+        assignment_unit: :enrollment,
+        algorithm: :weighted_random,
+        policy_config: %{}
+      })
+      |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Duplicate Experiment",
+          "slug" => "duplicate-experiment",
+          "algorithm" => "weighted_random",
+          "decision_point" => selected_decision_point_value(view),
+          "weight_a" => "1",
+          "weight_b" => "1"
+        }
+      })
+
+      assert has_element?(view, "#create-experiment-modal")
+      assert has_element?(view, "#experiment_name[value='Duplicate Experiment']")
+      assert has_element?(view, "#experiment_slug[value='duplicate-experiment'].is-invalid")
+
+      assert has_element?(
+               view,
+               "#experiment_slug_error.text-sm.text-red-600.mb-2",
+               "An experiment with this slug already exists in this project."
+             )
+
+      refute has_element?(view, "#create-experiment-error")
+      assert has_element?(view, "#experiment_slug[aria-describedby='experiment_slug_error']")
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_change(%{"experiment" => %{"slug" => "available-experiment"}})
+
+      refute has_element?(view, "#experiment_slug_error")
+      refute has_element?(view, "#create-experiment-error")
+    end
+
+    test "renders an inline length error without mislabeling a long slug as a duplicate", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+      open_create_experiment(view)
+      slug = String.duplicate("a", 256)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Long Slug Experiment",
+          "slug" => slug,
+          "algorithm" => "weighted_random",
+          "decision_point" => selected_decision_point_value(view),
+          "weight_a" => "1",
+          "weight_b" => "1"
+        }
+      })
+
+      assert has_element?(view, "#create-experiment-modal")
+
+      assert has_element?(
+               view,
+               "#experiment_slug_error",
+               "Slug should be at most 255 character(s)."
+             )
+
+      refute render(view) =~ "already exists"
+    end
+
+    test "creates and starts a weighted random A/B Testing experiment", %{
+      conn: conn,
+      project: project
+    } do
+      group = insert_alternatives_group(project)
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
       refute render(view) =~ "Coming soon"
@@ -623,8 +712,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       details_path = ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}"
       {:ok, details_view, _html} = live(conn, details_path)
 
+      configure_intervention(details_view, project, group.resource_id, :weighted_random)
+
       details_view
       |> element("button[phx-click='start_experiment']", "Start")
+      |> render_click()
+
+      assert has_element?(details_view, "#experiment-configuration", "Active")
+      refute has_element?(details_view, "#experiment-policy-report")
+      assert has_element?(details_view, "#experiment-graph-form fieldset[disabled]")
+
+      details_view
+      |> element("button[phx-click='pause_experiment']", "Pause")
+      |> render_click()
+
+      assert has_element?(details_view, "#experiment-configuration", "Paused")
+      assert has_element?(details_view, "button[phx-click='start_experiment']", "Resume")
+
+      details_view
+      |> element("button[phx-click='start_experiment']", "Resume")
       |> render_click()
 
       assert has_element?(details_view, "#experiment-configuration", "Active")
@@ -739,6 +845,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "#experiment-details-heading", "Experiment details")
       assert has_element?(details_view, "#experiment-configuration", "Weighted random")
       assert has_element?(details_view, "h4", "Conditions")
+      assert has_element?(details_view, "input[id^='condition-'][id$='-code'][disabled]")
+      refute has_element?(details_view, "input[id^='condition-'][id$='-code'][readonly]")
 
       assert has_element?(
                details_view,
@@ -803,6 +911,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(page_two_view, "a#participating-sections-previous[href*='page=1']")
       assert has_element?(page_two_view, "span#participating-sections-next[aria-disabled='true']")
       refute has_element?(page_two_view, "a#participating-sections-next")
+
+      experiment = Repo.get!(ExperimentDefinition, String.to_integer(id))
+
+      experiment
+      |> Ecto.Changeset.change(state: :completed)
+      |> Repo.update!()
+
+      {:ok, completed_view, _html} = live(conn, path)
+
+      assert has_element?(
+               completed_view,
+               "#participating-sections-table input[type='checkbox'][disabled][aria-disabled='true']"
+             )
+
+      experiment
+      |> Ecto.Changeset.change(state: :archived)
+      |> Repo.update!()
+
+      {:ok, archived_view, _html} = live(conn, path)
+
+      assert has_element?(
+               archived_view,
+               "#participating-sections-table input[type='checkbox'][disabled][aria-disabled='true']"
+             )
     end
 
     test "configures accessible empty section participation and preserves explicit fallback copy",
@@ -856,7 +988,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       conn: conn,
       project: project
     } do
-      insert_alternatives_group(project)
+      group = insert_alternatives_group(project)
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
       open_create_experiment(view)
@@ -914,11 +1046,175 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       {:ok, details_view, _html} =
         live(conn, ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}")
 
+      configure_intervention(details_view, project, group.resource_id, :thompson_sampling)
+
       details_view
       |> element("button[phx-click='start_experiment']", "Start")
       |> render_click()
 
       assert has_element?(details_view, "#experiment-configuration", "Active")
+
+      assert has_element?(
+               details_view,
+               "#experiment-policy-report",
+               "Estimated success probability"
+             )
+
+      assert has_element?(details_view, "#policy-snapshot-table", "50.0%")
+
+      assert has_element?(
+               details_view,
+               "button.btn-link[phx-click='refresh_policy_snapshot'] .fa-rotate-right"
+             )
+
+      assert has_element?(details_view, "details[id^='policy-technical-details-']", "Posterior α")
+      refute render(details_view) =~ "next-assignment probability"
+      assert has_element?(details_view, "#experiment-graph-form fieldset[disabled]")
+
+      assert has_element?(
+               details_view,
+               "#experiment-graph-configuration p.text-gray-500",
+               "Experiment structure is read-only after leaving draft."
+             )
+
+      refute has_element?(details_view, "button", "Remove decision point")
+      refute has_element?(details_view, "button", "Remove intervention")
+      refute has_element?(details_view, "button", "Add intervention")
+      refute has_element?(details_view, "button", "Save configuration")
+
+      assert has_element?(
+               details_view,
+               "[phx-hook='GlobalTooltip'][data-tooltip-style='body'][aria-label^='About Posterior α:']"
+             )
+
+      assert has_element?(
+               details_view,
+               "[phx-hook='GlobalTooltip'][data-tooltip-style='body'][aria-label^='About Policy status:']"
+             )
+    end
+
+    test "selects, adds, and removes a second decision point in a draft graph", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+      second = insert_alternatives_group(project, nil, "Second Decision Point")
+      third = insert_alternatives_group(project, nil, "Third Decision Point")
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Multi-point Study",
+          "slug" => "multi-point-study",
+          "algorithm" => "weighted_random",
+          "decision_point" =>
+            project_experiments(view)
+            |> hd()
+            |> Map.fetch!(:alternatives_resource_id)
+            |> to_string(),
+          "weight_a" => "1",
+          "weight_b" => "1"
+        }
+      })
+
+      {:ok, details_view, _html} =
+        live(
+          conn,
+          ~p"/workspaces/course_author/#{project.slug}/experiments/#{experiment_id(view)}"
+        )
+
+      assert has_element?(details_view, "#decision-point-config-0")
+
+      assert has_element?(
+               details_view,
+               "div.mt-4.flex.justify-end > button[type='submit']",
+               "Save configuration"
+             )
+
+      assert has_element?(
+               details_view,
+               "#decision-point-config-0 h5.font-weight-bold.mt-4.mb-3",
+               "Policy and guardrails"
+             )
+
+      assert has_element?(
+               details_view,
+               "#decision-point-config-0 h5.font-weight-bold.mt-4.mb-3",
+               "Interventions and assessments"
+             )
+
+      assert has_element?(
+               details_view,
+               "button[phx-click='open_add_decision_point']",
+               "Add decision point"
+             )
+
+      refute render(details_view) =~ "Add Second Decision Point"
+
+      details_view
+      |> element("button[phx-click='open_add_decision_point']")
+      |> render_click()
+
+      assert has_element?(details_view, "#add-decision-point-modal", "Second Decision Point")
+      assert has_element?(details_view, "#add-decision-point-modal", "Third Decision Point")
+      assert has_element?(details_view, "#decision-point-candidate-select[required]")
+
+      assert has_element?(
+               details_view,
+               "#decision-point-candidate-select option",
+               "Select a group"
+             )
+
+      details_view
+      |> element("#add-decision-point-modal button", "Cancel")
+      |> render_click()
+
+      refute has_element?(details_view, "#add-decision-point-modal")
+      assert has_element?(details_view, "#decision-point-config-0")
+
+      details_view
+      |> element("button[phx-click='open_add_decision_point']")
+      |> render_click()
+
+      details_view
+      |> form("#add-decision-point-form", %{
+        "decision_point" => %{"resource_id" => to_string(second.resource_id)}
+      })
+      |> render_submit()
+
+      assert has_element?(details_view, "#decision-point-config-1", "Second Decision Point")
+      refute has_element?(details_view, "#add-decision-point-modal")
+      assert has_element?(details_view, "button[phx-click='open_add_decision_point']")
+
+      details_view
+      |> element("button[phx-click='open_add_decision_point']")
+      |> render_click()
+
+      assert has_element?(
+               details_view,
+               "#decision-point-candidate-select option[value='#{third.resource_id}']"
+             )
+
+      refute has_element?(
+               details_view,
+               "#decision-point-candidate-select option[value='#{second.resource_id}']"
+             )
+
+      details_view
+      |> element("#add-decision-point-modal button", "Cancel")
+      |> render_click()
+
+      assert has_element?(details_view, "#mapping-1-0-option")
+      assert has_element?(details_view, "#mapping-1-1-option")
+
+      details_view
+      |> element("#decision-point-config-1 button[phx-click='remove_draft_decision_point']")
+      |> render_click()
+
+      refute has_element?(details_view, "#decision-point-config-1")
     end
 
     test "shows field error for malformed Thompson Sampling numeric input", %{
@@ -1111,7 +1407,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     revision
   end
 
-  defp insert_alternatives_group(project, author \\ nil) do
+  defp insert_alternatives_group(project, author \\ nil, title \\ "Decision Point") do
     resource = insert(:resource)
     insert(:project_resource, project_id: project.id, resource_id: resource.id)
 
@@ -1120,7 +1416,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         resource: resource,
         author: author,
         resource_type_id: ResourceType.id_for_alternatives(),
-        title: "Decision Point",
+        title: title,
         deleted: false,
         content: %{
           "strategy" => "upgrade_decision_point",
@@ -1153,6 +1449,70 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         ]
       }
     })
+  end
+
+  defp configure_intervention(view, project, alternatives_resource_id, algorithm) do
+    intervention =
+      insert_project_page(project, "Intervention", false, %{
+        "model" => [
+          %{
+            "type" => "alternatives",
+            "id" => "placement-a",
+            "alternatives_id" => alternatives_resource_id,
+            "children" => []
+          }
+        ]
+      })
+
+    assessment = insert_project_page(project, "Assessment", true, %{"model" => []})
+
+    view
+    |> element("button[phx-click='add_draft_intervention'][phx-value-index='0']")
+    |> render_click()
+
+    params = %{
+      "decision_points" => %{
+        "0" => %{
+          "algorithm" => Atom.to_string(algorithm),
+          "interventions" => %{
+            "0" => %{
+              "page_resource_id" => to_string(intervention.resource_id),
+              "content_element_id" => "placement-a",
+              "assessment_page_resource_id" =>
+                if(algorithm == :thompson_sampling,
+                  do: to_string(assessment.resource_id),
+                  else: ""
+                ),
+              "reward_threshold" => "0.7"
+            }
+          }
+        }
+      }
+    }
+
+    view
+    |> form("#experiment-graph-form", %{"configuration" => params})
+    |> render_submit()
+
+    assert has_element?(view, "[role='status']", "Experiment configuration saved.")
+  end
+
+  defp insert_project_page(project, title, graded, content) do
+    resource = insert(:resource)
+    insert(:project_resource, project_id: project.id, resource_id: resource.id)
+
+    revision =
+      insert(:revision,
+        resource: resource,
+        resource_type_id: ResourceType.id_for_page(),
+        title: title,
+        graded: graded,
+        content: content
+      )
+
+    publication = Oli.Publishing.project_working_publication(project.slug)
+    insert(:published_resource, publication: publication, resource: resource, revision: revision)
+    revision
   end
 
   defp selected_decision_point_value(view) do
