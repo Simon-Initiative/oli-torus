@@ -82,7 +82,6 @@ defmodule Oli.Experiments do
              request.algorithm,
              structural_configuration_change?(request)
            ),
-         :ok <- validate_policy_config(request.algorithm, request.policy_config || %{}),
          :ok <- validate_graph_request(request, scope),
          :ok <- validate_current_bindings(request.decision_points, scope, nil),
          {:ok, section_ids} <- validate_experiment_sections(request.section_ids, scope),
@@ -115,11 +114,6 @@ defmodule Oli.Experiments do
            validate_authoring_algorithm(
              request.algorithm || schema.algorithm,
              structural_configuration_change?(request)
-           ),
-         :ok <-
-           validate_policy_config(
-             request.algorithm || schema.algorithm,
-             request.policy_config || %{}
            ),
          :ok <- validate_assignment_safe_update(schema, request),
          :ok <- validate_graph_request(request, scope),
@@ -1053,8 +1047,10 @@ defmodule Oli.Experiments do
           decision_point_id: policy_state.decision_point_id,
           algorithm: policy_state.algorithm,
           algorithm_version: policy_state.algorithm_version,
-          policy_config: decision_point.policy_config,
-          prior_config: policy_state.prior_config,
+          warm_up_assignments: decision_point.warm_up_assignments,
+          max_condition_share: decision_point.max_condition_share,
+          fixed_control_allocation: decision_point.fixed_control_allocation,
+          imbalance_threshold: decision_point.imbalance_threshold,
           state: policy_state.state,
           reward_success_count: policy_state.reward_success_count,
           reward_failure_count: policy_state.reward_failure_count,
@@ -1495,24 +1491,24 @@ defmodule Oli.Experiments do
   end
 
   defp add_policy_inspection_metadata(%{algorithm: :thompson_sampling} = snapshot) do
-    guardrails =
-      snapshot
-      |> Map.get(:policy_config, %{})
-      |> thompson_guardrails()
-
     snapshot
-    |> Map.delete(:policy_config)
     |> Map.put(:guardrail_state, %{
-      "warm_up_assignments" => guardrails["warm_up_assignments"],
-      "max_condition_share" => guardrails["max_condition_share"],
-      "fixed_control_allocation" => guardrails["fixed_control_allocation"],
-      "imbalance_threshold" => guardrails["imbalance_threshold"],
+      "warm_up_assignments" => snapshot.warm_up_assignments,
+      "max_condition_share" => snapshot.max_condition_share,
+      "fixed_control_allocation" => snapshot.fixed_control_allocation,
+      "imbalance_threshold" => snapshot.imbalance_threshold,
       "assignment_count" => snapshot.assignment_count,
       "reward_count" => snapshot.reward_success_count + snapshot.reward_failure_count
     })
+    |> Map.drop([
+      :warm_up_assignments,
+      :max_condition_share,
+      :fixed_control_allocation,
+      :imbalance_threshold
+    ])
   end
 
-  defp add_policy_inspection_metadata(snapshot), do: Map.delete(snapshot, :policy_config)
+  defp add_policy_inspection_metadata(snapshot), do: snapshot
 
   defp do_assign_condition(request) do
     with {:ok, scope} <- validate_delivery_participation_scope(request.scope),
@@ -1819,7 +1815,7 @@ defmodule Oli.Experiments do
     }
 
     case policy_module.assign(
-           decision_point.policy_config,
+           decision_point_policy_config(decision_point),
            first.policy_state && first.policy_state.state,
            context
          ) do
@@ -2154,11 +2150,7 @@ defmodule Oli.Experiments do
   defp runtime_decision_point(experiment, decision_point, conditions) do
     case Enum.all?(conditions, &is_nil(&1.option_id)) do
       true ->
-        %{
-          decision_point
-          | algorithm: experiment.algorithm,
-            policy_config: experiment.policy_config
-        }
+        %{decision_point | algorithm: experiment.algorithm}
 
       false ->
         decision_point
@@ -2220,7 +2212,7 @@ defmodule Oli.Experiments do
 
         policy_module
         |> apply(:assign, [
-          decision_point.policy_config,
+          decision_point_policy_config(decision_point),
           policy_state && policy_state.state,
           %{policy_context | conditions: policy_conditions}
         ])
@@ -2257,7 +2249,7 @@ defmodule Oli.Experiments do
          _policy_state
        ) do
     assignment_counts = assignment_counts_by_condition(experiment.id, decision_point.id)
-    guardrails = thompson_guardrails(decision_point.policy_config)
+    guardrails = thompson_guardrails(decision_point_policy_config(decision_point))
 
     assignment_count =
       Enum.reduce(assignment_counts, 0, fn {_id, count}, total -> total + count end)
@@ -2301,7 +2293,7 @@ defmodule Oli.Experiments do
          _policy_state,
          assignment_counts
        ) do
-    guardrails = thompson_guardrails(decision_point.policy_config)
+    guardrails = thompson_guardrails(decision_point_policy_config(decision_point))
 
     assignment_count =
       Enum.reduce(assignment_counts, 0, fn {_id, count}, total -> total + count end)
@@ -2345,6 +2337,24 @@ defmodule Oli.Experiments do
     policy_config
     |> Map.get("guardrails", %{})
     |> Map.merge(@thompson_default_guardrails, fn _key, configured, _default -> configured end)
+  end
+
+  defp decision_point_policy_config(%DecisionPoint{} = decision_point) do
+    %{
+      "reward_source" => decision_point.reward_source,
+      "priors" => %{
+        "default" => %{
+          "alpha" => decision_point.prior_alpha,
+          "beta" => decision_point.prior_beta
+        }
+      },
+      "guardrails" => %{
+        "warm_up_assignments" => decision_point.warm_up_assignments,
+        "max_condition_share" => decision_point.max_condition_share,
+        "fixed_control_allocation" => decision_point.fixed_control_allocation,
+        "imbalance_threshold" => decision_point.imbalance_threshold
+      }
+    }
   end
 
   defp fixed_control_condition(_conditions, _assignment_counts, nil), do: nil
@@ -2398,7 +2408,12 @@ defmodule Oli.Experiments do
       selected_condition_id: condition && condition.id,
       selected_condition_code: condition && condition.condition_code,
       guardrail_action: guardrail_action,
-      imbalance_flag?: imbalance_flag?(decision_point.policy_config, condition, assignment_counts)
+      imbalance_flag?:
+        imbalance_flag?(
+          decision_point_policy_config(decision_point),
+          condition,
+          assignment_counts
+        )
     })
   end
 
@@ -3077,15 +3092,22 @@ defmodule Oli.Experiments do
   end
 
   defp decision_point_attrs(decision_point, experiment_id, fallback_position) do
-    decision_point
-    |> atomize_keys()
+    attrs = atomize_keys(decision_point)
+
+    attrs
     |> Map.take([
       :alternatives_resource_id,
       :decision_point_key,
       :title,
       :position,
       :algorithm,
-      :policy_config
+      :prior_alpha,
+      :prior_beta,
+      :warm_up_assignments,
+      :max_condition_share,
+      :fixed_control_allocation,
+      :imbalance_threshold,
+      :reward_source
     ])
     |> Map.put(:experiment_id, experiment_id)
     |> Map.update(:position, fallback_position, &(&1 || fallback_position))
@@ -3127,7 +3149,7 @@ defmodule Oli.Experiments do
     decision_point.algorithm
     |> policy_module()
     |> apply(:record_reward, [
-      decision_point.policy_config,
+      decision_point_policy_config(decision_point),
       policy_state.state,
       %{condition_code: condition.condition_code, reward_value: request.reward_value}
     ])
@@ -3184,7 +3206,7 @@ defmodule Oli.Experiments do
 
     case get_policy_state(experiment.id, decision_point_id, decision_point.algorithm) do
       nil ->
-        {algorithm_version, state, prior_config} =
+        {algorithm_version, state} =
           initial_policy_state_attrs(experiment, decision_point)
 
         %PolicyState{}
@@ -3194,7 +3216,6 @@ defmodule Oli.Experiments do
           algorithm: decision_point.algorithm,
           algorithm_version: algorithm_version,
           state: state,
-          prior_config: prior_config,
           reward_success_count: 0,
           reward_failure_count: 0,
           assignment_count: 0
@@ -3213,18 +3234,18 @@ defmodule Oli.Experiments do
     conditions = active_conditions(experiment.id, decision_point.id)
 
     policy_config =
-      normalize_policy_config!(:thompson_sampling, decision_point.policy_config || %{})
+      decision_point_policy_config(decision_point)
 
     {:ok, state} = ThompsonSampling.initial_state(policy_config, conditions)
 
-    {ThompsonSampling.version(), state, policy_config["priors"]}
+    {ThompsonSampling.version(), state}
   end
 
   defp initial_policy_state_attrs(
          %ExperimentDefinitionSchema{},
          %DecisionPoint{algorithm: algorithm}
        ) do
-    {Atom.to_string(algorithm), %{}, %{}}
+    {Atom.to_string(algorithm), %{}}
   end
 
   defp persist_policy_update(
@@ -3613,37 +3634,22 @@ defmodule Oli.Experiments do
     do: invalid_request("section_ids must be a list")
 
   defp create_attrs(request, scope) do
-    policy_config = normalize_policy_config!(request.algorithm, request.policy_config || %{})
-
     %{
       project_id: scope.project_id,
       slug: request.slug,
       name: request.name,
       description: request.description,
       algorithm: request.algorithm,
-      assignment_unit: request.assignment_unit,
-      policy_config: policy_config
+      assignment_unit: request.assignment_unit
     }
   end
 
-  defp update_attrs(request, existing_algorithm) do
-    attrs =
-      request
-      |> Map.from_struct()
-      |> Map.take([:slug, :name, :description, :algorithm, :assignment_unit, :policy_config])
-      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-      |> Map.new()
-
-    case {Map.get(attrs, :algorithm, existing_algorithm), Map.get(attrs, :policy_config)} do
-      {nil, nil} ->
-        attrs
-
-      {nil, _policy_config} ->
-        attrs
-
-      {algorithm, policy_config} ->
-        Map.put(attrs, :policy_config, normalize_policy_config!(algorithm, policy_config || %{}))
-    end
+  defp update_attrs(request, _existing_algorithm) do
+    request
+    |> Map.from_struct()
+    |> Map.take([:slug, :name, :description, :algorithm, :assignment_unit])
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
   end
 
   defp transition_attrs(schema, target_state, transitioned_at) do
@@ -3883,9 +3889,11 @@ defmodule Oli.Experiments do
        do: :ok
 
   defp validate_adaptive_activation_for_point(
-         %DecisionPoint{algorithm: :thompson_sampling, policy_config: policy_config},
+         %DecisionPoint{algorithm: :thompson_sampling} = decision_point,
          conditions
        ) do
+    policy_config = decision_point_policy_config(decision_point)
+
     with :ok <- validate_policy_config(:thompson_sampling, policy_config || %{}),
          {:ok, _state} <- ThompsonSampling.initial_state(policy_config || %{}, conditions) do
       :ok
@@ -4078,8 +4086,7 @@ defmodule Oli.Experiments do
 
       true ->
         with :ok <- validate_authoring_conditions(request.conditions),
-             :ok <- validate_decision_points(request.decision_points, request.conditions, scope),
-             :ok <- validate_policy_config(request.algorithm, request.policy_config || %{}) do
+             :ok <- validate_decision_points(request.decision_points, request.conditions, scope) do
           :ok
         end
     end
@@ -4100,29 +4107,38 @@ defmodule Oli.Experiments do
 
   defp validate_policy_config(_algorithm, _policy_config), do: :ok
 
-  defp normalize_policy_config!(:thompson_sampling, policy_config) do
-    {:ok, normalized} = normalize_thompson_policy_config(policy_config)
-    normalized
+  defp policy_config_from_attrs(attrs) do
+    %{
+      "reward_source" => Map.get(attrs, :reward_source, @thompson_reward_source),
+      "priors" => %{
+        "default" => %{
+          "alpha" => Map.get(attrs, :prior_alpha, 1.0),
+          "beta" => Map.get(attrs, :prior_beta, 1.0)
+        }
+      },
+      "guardrails" => %{
+        "warm_up_assignments" => Map.get(attrs, :warm_up_assignments, 0),
+        "max_condition_share" => Map.get(attrs, :max_condition_share, 1.0),
+        "fixed_control_allocation" => Map.get(attrs, :fixed_control_allocation),
+        "imbalance_threshold" => Map.get(attrs, :imbalance_threshold, 1.0)
+      }
+    }
   end
-
-  defp normalize_policy_config!(_algorithm, policy_config), do: policy_config || %{}
 
   defp normalize_thompson_policy_config(policy_config) when is_map(policy_config) do
     defaults = ThompsonSampling.default_policy_config()
 
     with {:ok, priors} <- nested_map(policy_config, "priors"),
          {:ok, default_prior} <- nested_map(priors, "default"),
-         {:ok, condition_priors} <- nested_map(priors, "conditions"),
-         {:ok, guardrails} <- nested_map(policy_config, "guardrails"),
-         {:ok, normalized_condition_priors} <- normalize_condition_priors(condition_priors) do
+         :ok <- reject_condition_priors(priors),
+         {:ok, guardrails} <- nested_map(policy_config, "guardrails") do
       normalized = %{
         "reward_source" => Map.get(policy_config, "reward_source", @thompson_reward_source),
         "priors" => %{
           "default" => %{
             "alpha" => Map.get(default_prior, "alpha", defaults["priors"]["default"]["alpha"]),
             "beta" => Map.get(default_prior, "beta", defaults["priors"]["default"]["beta"])
-          },
-          "conditions" => normalized_condition_priors
+          }
         },
         "guardrails" => %{
           "warm_up_assignments" =>
@@ -4169,37 +4185,17 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp normalize_condition_priors(condition_priors) when is_map(condition_priors) do
-    Enum.reduce_while(condition_priors, {:ok, %{}}, fn {condition_code, prior},
-                                                       {:ok, normalized} ->
-      case prior do
-        prior when is_map(prior) ->
-          condition_prior =
-            %{
-              "alpha" => Map.get(prior, "alpha"),
-              "beta" => Map.get(prior, "beta")
-            }
-            |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-            |> Map.new()
-
-          {:cont, {:ok, Map.put(normalized, condition_code, condition_prior)}}
-
-        _value ->
-          {:halt,
-           invalid_condition("Thompson Sampling per-condition prior config must be a map", %{
-             condition_code: condition_code
-           })}
-      end
-    end)
+  defp reject_condition_priors(priors) do
+    case Map.get(priors, "conditions", %{}) do
+      conditions when conditions == %{} -> :ok
+      _ -> invalid_condition("Thompson Sampling per-condition priors are not supported")
+    end
   end
-
-  defp normalize_condition_priors(_condition_priors),
-    do: invalid_condition("Thompson Sampling condition priors config must be a map")
 
   defp validate_thompson_priors(policy_config) do
     priors = policy_config["priors"]
 
-    [priors["default"] | Map.values(priors["conditions"])]
+    [priors["default"]]
     |> Enum.reduce_while(:ok, fn prior, :ok ->
       with :ok <- validate_positive_prior(prior, "alpha"),
            :ok <- validate_positive_prior(prior, "beta") do
@@ -4373,7 +4369,7 @@ defmodule Oli.Experiments do
          :ok <-
            validate_policy_config(
              Map.get(attrs, :algorithm, :weighted_random),
-             Map.get(attrs, :policy_config, %{})
+             policy_config_from_attrs(attrs)
            ) do
       :ok
     else
@@ -4605,7 +4601,13 @@ defmodule Oli.Experiments do
       title: decision_point.title,
       position: decision_point.position,
       algorithm: decision_point.algorithm,
-      policy_config: decision_point.policy_config
+      prior_alpha: decision_point.prior_alpha,
+      prior_beta: decision_point.prior_beta,
+      warm_up_assignments: decision_point.warm_up_assignments,
+      max_condition_share: decision_point.max_condition_share,
+      fixed_control_allocation: decision_point.fixed_control_allocation,
+      imbalance_threshold: decision_point.imbalance_threshold,
+      reward_source: decision_point.reward_source
     }
   end
 
@@ -4670,7 +4672,13 @@ defmodule Oli.Experiments do
   defp authoring_payload_key("title"), do: :title
   defp authoring_payload_key("position"), do: :position
   defp authoring_payload_key("algorithm"), do: :algorithm
-  defp authoring_payload_key("policy_config"), do: :policy_config
+  defp authoring_payload_key("prior_alpha"), do: :prior_alpha
+  defp authoring_payload_key("prior_beta"), do: :prior_beta
+  defp authoring_payload_key("warm_up_assignments"), do: :warm_up_assignments
+  defp authoring_payload_key("max_condition_share"), do: :max_condition_share
+  defp authoring_payload_key("fixed_control_allocation"), do: :fixed_control_allocation
+  defp authoring_payload_key("imbalance_threshold"), do: :imbalance_threshold
+  defp authoring_payload_key("reward_source"), do: :reward_source
   defp authoring_payload_key("client_ref"), do: :client_ref
   defp authoring_payload_key("id"), do: :id
   defp authoring_payload_key("condition_ref"), do: :condition_ref
@@ -5266,7 +5274,6 @@ defmodule Oli.Experiments do
       state: schema.state,
       assignment_unit: schema.assignment_unit,
       algorithm: schema.algorithm,
-      policy_config: schema.policy_config,
       started_at: schema.started_at,
       ended_at: schema.ended_at
     }

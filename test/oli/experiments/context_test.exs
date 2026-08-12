@@ -33,8 +33,7 @@ defmodule Oli.Experiments.ContextTest do
                  slug: "ab-test",
                  name: "A/B Test",
                  description: "An A/B test",
-                 algorithm: :weighted_random,
-                 policy_config: %{"salt" => "stable"}
+                 algorithm: :weighted_random
                })
 
       assert definition.id
@@ -109,28 +108,6 @@ defmodule Oli.Experiments.ContextTest do
                name: ["can't be blank"]
              } =
                errors
-    end
-
-    test "rejects malformed Thompson Sampling policy config without raising" do
-      scope = valid_scope()
-
-      for {policy_config, expected_message} <- [
-            {%{"priors" => "bad"}, "Thompson Sampling priors config must be a map"},
-            {%{"guardrails" => "bad"}, "Thompson Sampling guardrails config must be a map"},
-            {%{"priors" => %{"default" => "bad"}},
-             "Thompson Sampling default config must be a map"},
-            {%{"priors" => %{"conditions" => %{"a" => "bad"}}},
-             "Thompson Sampling per-condition prior config must be a map"}
-          ] do
-        assert {:error, %ExperimentError{type: :invalid_condition, message: ^expected_message}} =
-                 Experiments.create_experiment(%CreateExperimentRequest{
-                   scope: scope,
-                   slug: "bad-ts-#{System.unique_integer([:positive])}",
-                   name: "Bad Thompson Sampling",
-                   algorithm: :thompson_sampling,
-                   policy_config: policy_config
-                 })
-      end
     end
   end
 
@@ -300,14 +277,17 @@ defmodule Oli.Experiments.ContextTest do
       assert {:ok, %ExperimentDefinition{} = definition} = Experiments.create_experiment(request)
 
       assert definition.algorithm == :thompson_sampling
-      assert definition.policy_config["reward_source"] == "assessment_page:normalized_score"
-      assert definition.policy_config["priors"]["default"] == %{"alpha" => 1.0, "beta" => 1.0}
-      refute Map.has_key?(definition.policy_config["guardrails"], "manual_pause_enabled")
+
+      {:ok, authoring_view} = Experiments.get_experiment_authoring_view(definition.id, scope)
+      [decision_point] = authoring_view.decision_points
+      assert decision_point.reward_source == "assessment_page:normalized_score"
+      assert decision_point.prior_alpha == 1.0
+      assert decision_point.prior_beta == 1.0
 
       policy_state = Repo.get_by!(PolicyState, experiment_id: definition.id)
       assert policy_state.algorithm == :thompson_sampling
       assert policy_state.algorithm_version == "thompson_sampling:v2"
-      assert policy_state.prior_config == definition.policy_config["priors"]
+
       assert policy_state.state["a"]["posterior_alpha"] == 1.0
       assert policy_state.state["b"]["posterior_beta"] == 1.0
 
@@ -326,10 +306,22 @@ defmodule Oli.Experiments.ContextTest do
     test "rejects invalid Thompson Sampling priors and guardrails" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
+      assessment = graded_page_revision(scope.project_id)
+
+      thompson_point = fn point ->
+        point
+        |> Map.put(:algorithm, :thompson_sampling)
+        |> put_in([:interventions, Access.at(0), :assessment_binding], %{
+          assessment_page_resource_id: assessment.resource_id,
+          reward_threshold: Decimal.new(1)
+        })
+      end
 
       invalid_prior =
         %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
-        |> Map.put(:policy_config, %{"priors" => %{"default" => %{"alpha" => 0.0, "beta" => 1.0}}})
+        |> Map.update!(:decision_points, fn [point] ->
+          [point |> thompson_point.() |> Map.put(:prior_alpha, 0.0)]
+        end)
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
                Experiments.create_experiment(invalid_prior)
@@ -338,7 +330,9 @@ defmodule Oli.Experiments.ContextTest do
 
       invalid_guardrail =
         %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
-        |> Map.put(:policy_config, %{"guardrails" => %{"max_condition_share" => 2.0}})
+        |> Map.update!(:decision_points, fn [point] ->
+          [point |> thompson_point.() |> Map.put(:max_condition_share, 2.0)]
+        end)
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
                Experiments.create_experiment(invalid_guardrail)
@@ -667,14 +661,12 @@ defmodule Oli.Experiments.ContextTest do
                  %UpdateExperimentRequest{
                    scope: scope,
                    name: "Updated name",
-                   description: "Updated description",
-                   policy_config: %{"salt" => "new"}
+                   description: "Updated description"
                  }
                )
 
       assert updated.name == "Updated name"
       assert updated.description == "Updated description"
-      assert updated.policy_config == %{"salt" => "new"}
       refute private_schema?(updated)
     end
 
@@ -1050,7 +1042,6 @@ defmodule Oli.Experiments.ContextTest do
           decision_point_key: "alternatives:#{alternatives.resource_id}",
           title: alternatives.title,
           algorithm: :weighted_random,
-          policy_config: %{},
           mappings:
             Enum.with_index(conditions, fn condition, position ->
               %{

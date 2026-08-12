@@ -338,7 +338,6 @@ defmodule Oli.Experiments.ConfigurationTest do
       decision_point_key: "alternatives:#{group.resource_id}",
       title: group.title,
       algorithm: :weighted_random,
-      policy_config: %{},
       mappings: [
         %{condition_ref: "control", option_id: "alt-a", weight: 1.0, position: 0},
         %{condition_ref: "variant", option_id: "alt-b", weight: 1.0, position: 1}

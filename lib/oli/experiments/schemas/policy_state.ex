@@ -13,7 +13,6 @@ defmodule Oli.Experiments.Schemas.PolicyState do
     field :algorithm, Ecto.Enum, values: @algorithms
     field :algorithm_version, :string
     field :state, :map, default: %{}
-    field :prior_config, :map, default: %{}
     field :reward_success_count, :integer, default: 0
     field :reward_failure_count, :integer, default: 0
     field :assignment_count, :integer, default: 0
@@ -32,7 +31,6 @@ defmodule Oli.Experiments.Schemas.PolicyState do
       :algorithm,
       :algorithm_version,
       :state,
-      :prior_config,
       :reward_success_count,
       :reward_failure_count,
       :assignment_count
@@ -43,7 +41,6 @@ defmodule Oli.Experiments.Schemas.PolicyState do
       :algorithm,
       :algorithm_version,
       :state,
-      :prior_config,
       :reward_success_count,
       :reward_failure_count,
       :assignment_count

@@ -348,8 +348,7 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
         experiment_id: experiment.id,
         alternatives_resource_id: alternatives.resource_id,
         decision_point_key: "point-a",
-        algorithm: :thompson_sampling,
-        policy_config: %{}
+        algorithm: :thompson_sampling
       })
       |> Repo.insert!()
 

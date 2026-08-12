@@ -59,7 +59,7 @@ defmodule Oli.Experiments.PolicyTest do
       assert update.counters == %{reward_success_count: 1, reward_failure_count: 0}
     end
 
-    test "accepts valid custom priors from policy config" do
+    test "rejects removed per-condition prior overrides" do
       policy_config = %{
         "priors" => %{
           "default" => %{"alpha" => 2.0, "beta" => 3.0},
@@ -67,22 +67,11 @@ defmodule Oli.Experiments.PolicyTest do
         }
       }
 
-      assert {:ok, update} =
+      assert {:error, :condition_priors_not_supported} =
                ThompsonSampling.record_reward(policy_config, %{}, %{
                  condition_code: "b",
                  reward_value: 0.0
                })
-
-      assert update.next_state["b"] == %{
-               "prior_alpha" => 5.0,
-               "prior_beta" => 7.0,
-               "successes" => 0,
-               "failures" => 1,
-               "posterior_alpha" => 5.0,
-               "posterior_beta" => 8.0
-             }
-
-      assert update.counters == %{reward_success_count: 0, reward_failure_count: 1}
     end
 
     test "rejects invalid priors" do

@@ -14,7 +14,6 @@ defmodule Oli.Experiments.ExperimentDefinition do
     :state,
     :assignment_unit,
     :algorithm,
-    :policy_config,
     :started_at,
     :ended_at
   ]

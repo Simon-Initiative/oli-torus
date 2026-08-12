@@ -579,8 +579,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         name: "Original Experiment",
         state: :archived,
         assignment_unit: :enrollment,
-        algorithm: :weighted_random,
-        policy_config: %{}
+        algorithm: :weighted_random
       })
       |> Repo.insert!()
 
@@ -691,13 +690,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
           "name" => "Homepage Study",
           "slug" => "homepage-study",
           "algorithm" => "weighted_random",
-          "decision_point" => selected_decision_point_value(view),
-          "weight_a" => "2",
-          "weight_b" => "1",
-          "prior_alpha" => "1",
-          "prior_beta" => "1",
-          "warm_up_assignments" => "0",
-          "max_condition_share" => "1"
+          "decision_point" => selected_decision_point_value(view)
         }
       })
 
@@ -711,6 +704,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       id = experiment_id(view)
       details_path = ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}"
       {:ok, details_view, _html} = live(conn, details_path)
+
+      assert has_element?(details_view, "#mapping-0-0-weight[value='1.0']")
+      assert has_element?(details_view, "#mapping-0-1-weight[value='1.0']")
 
       configure_intervention(details_view, project, group.resource_id, :weighted_random)
 
@@ -994,31 +990,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       open_create_experiment(view)
 
       assert has_element?(view, "#experiment_algorithm option", "Thompson Sampling")
-      assert has_element?(view, "#experiment_weight_a[value='1']")
-      assert has_element?(view, "#experiment_weight_b[value='1']")
+      refute has_element?(view, "#experiment_weight_a")
+      refute has_element?(view, "#experiment_weight_b")
+      refute has_element?(view, "#experiment_prior_alpha")
+      refute has_element?(view, "#experiment_prior_beta")
+      refute has_element?(view, "#experiment_warm_up_assignments")
+      refute has_element?(view, "#experiment_max_condition_share")
       refute render(view) =~ "Coming soon"
 
       view
       |> element("#create-ab-experiment-form")
       |> render_change(%{"experiment" => %{"algorithm" => "thompson_sampling"}})
 
-      assert has_element?(
-               view,
-               "#thompson-sampling-options.font-weight-bold",
-               "Thompson Sampling Options"
-             )
-
-      refute has_element?(view, "#thompson-sampling-config")
-      assert has_element?(view, "#experiment_prior_alpha[value='1']")
-
-      assert has_element?(
-               view,
-               "#experiment_prior_alpha[aria-describedby='experiment_prior_alpha_help']"
-             )
-
-      assert has_element?(view, "#experiment_prior_beta[value='1']")
-      assert has_element?(view, "#experiment_warm_up_assignments[value='0']")
-      assert has_element?(view, "#experiment_max_condition_share[value='1']")
+      refute has_element?(view, "#thompson-sampling-options")
 
       view
       |> element("#create-ab-experiment-form")
@@ -1027,13 +1011,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
           "name" => "Adaptive Study",
           "slug" => "adaptive-study",
           "algorithm" => "thompson_sampling",
-          "decision_point" => selected_decision_point_value(view),
-          "weight_a" => "1",
-          "weight_b" => "1",
-          "prior_alpha" => "1",
-          "prior_beta" => "1",
-          "warm_up_assignments" => "0",
-          "max_condition_share" => "1"
+          "decision_point" => selected_decision_point_value(view)
         }
       })
 
@@ -1045,6 +1023,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       {:ok, details_view, _html} =
         live(conn, ~p"/workspaces/course_author/#{project.slug}/experiments/#{id}")
+
+      assert has_element?(details_view, "#point-0-prior_alpha[value='1.0']")
+      assert has_element?(details_view, "#point-0-prior_beta[value='1.0']")
+      assert has_element?(details_view, "#point-0-warm_up_assignments[value='0']")
+      assert has_element?(details_view, "#point-0-max_condition_share[value='1.0']")
+      refute has_element?(details_view, "#experiment-configuration pre")
+
+      assert has_element?(
+               details_view,
+               "#decision-point-config-0",
+               "Assignment policy and guardrails"
+             )
+
+      assert has_element?(
+               details_view,
+               "#decision-point-config-0",
+               "These settings apply only to this decision point."
+             )
 
       configure_intervention(details_view, project, group.resource_id, :thompson_sampling)
 
@@ -1073,7 +1069,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(
                details_view,
-               "#experiment-graph-configuration p.text-gray-500",
+               "#experiment-graph-configuration .card-header.flex-col.sm\\:flex-row #experiment-structure-read-only.sm\\:text-right",
                "Experiment structure is read-only after leaving draft."
              )
 
@@ -1127,6 +1123,51 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         )
 
       assert has_element?(details_view, "#decision-point-config-0")
+      refute has_element?(details_view, "#point-0-prior_alpha")
+
+      details_view
+      |> form("#experiment-graph-form", %{
+        "configuration" => %{
+          "conditions" => %{
+            "0" => %{"label" => "Edited condition label"}
+          },
+          "decision_points" => %{
+            "0" => %{"algorithm" => "thompson_sampling"}
+          }
+        }
+      })
+      |> render_change()
+
+      assert has_element?(details_view, "#point-0-prior_alpha[value='1.0']")
+      assert has_element?(details_view, "#condition-0-label[value='Edited condition label']")
+
+      details_view
+      |> form("#experiment-graph-form", %{
+        "configuration" => %{
+          "decision_points" => %{
+            "0" => %{
+              "algorithm" => "weighted_random",
+              "prior_alpha" => "2.5"
+            }
+          }
+        }
+      })
+      |> render_change()
+
+      refute has_element?(details_view, "#point-0-prior_alpha")
+
+      details_view
+      |> form("#experiment-graph-form", %{
+        "configuration" => %{
+          "decision_points" => %{
+            "0" => %{"algorithm" => "thompson_sampling"}
+          }
+        }
+      })
+      |> render_change()
+
+      assert has_element?(details_view, "#point-0-prior_alpha[value='2.5']")
+      assert has_element?(details_view, "#condition-0-label[value='Edited condition label']")
 
       assert has_element?(
                details_view,
@@ -1137,8 +1178,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(
                details_view,
                "#decision-point-config-0 h5.font-weight-bold.mt-4.mb-3",
-               "Policy and guardrails"
+               "Interventions and assessments"
              )
+
+      refute has_element?(details_view, "#experiment-policy-configuration")
 
       assert has_element?(
                details_view,
@@ -1217,7 +1260,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       refute has_element?(details_view, "#decision-point-config-1")
     end
 
-    test "shows field error for malformed Thompson Sampling numeric input", %{
+    test "creation modal stays limited to policy, identity, and decision point fields", %{
       conn: conn,
       project: project
     } do
@@ -1225,120 +1268,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
       open_create_experiment(view)
-
-      view
-      |> element("#create-ab-experiment-form")
-      |> render_submit(%{
-        "experiment" => %{
-          "name" => "Adaptive Study",
-          "slug" => "adaptive-study",
-          "algorithm" => "thompson_sampling",
-          "decision_point" => selected_decision_point_value(view),
-          "weight_a" => "2.5",
-          "weight_b" => "3.5",
-          "prior_alpha" => "1abc",
-          "prior_beta" => "2.25",
-          "warm_up_assignments" => "7",
-          "max_condition_share" => "0.75"
-        }
-      })
-
-      assert has_element?(
-               view,
-               "#experiment_prior_alpha_error",
-               "Prior alpha must be between 0.0001 and 1000."
-             )
-
-      assert has_element?(view, "#experiment_prior_alpha.is-invalid")
-
-      assert has_element?(
-               view,
-               "#experiment_prior_alpha[aria-describedby='experiment_prior_alpha_help experiment_prior_alpha_error']"
-             )
-
-      assert has_element?(
-               view,
-               "#create-experiment-modal #create-experiment-error[role='alert'][tabindex='-1'][phx-mounted]",
-               "Prior alpha must be between 0.0001 and 1000."
-             )
-
-      refute has_element?(view, "section > .alert.alert-danger")
-
-      assert has_element?(view, "#experiment_name[value='Adaptive Study']")
-      assert has_element?(view, "#experiment_weight_a[value='2.5']")
-      assert has_element?(view, "#experiment_weight_b[value='3.5']")
-      assert has_element?(view, "#experiment_prior_alpha[value='1abc']")
-      assert has_element?(view, "#experiment_prior_beta[value='2.25']")
-      assert has_element?(view, "#experiment_warm_up_assignments[value='7']")
-      assert has_element?(view, "#experiment_max_condition_share[value='0.75']")
-    end
-
-    test "preserves empty numeric inputs after validation", %{conn: conn, project: project} do
-      insert_alternatives_group(project)
-      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
-
-      open_create_experiment(view)
-
-      view
-      |> element("#create-ab-experiment-form")
-      |> render_submit(%{
-        "experiment" => %{
-          "name" => "Empty Numeric Study",
-          "slug" => "empty-numeric-study",
-          "algorithm" => "thompson_sampling",
-          "decision_point" => selected_decision_point_value(view),
-          "weight_a" => "",
-          "weight_b" => "",
-          "prior_alpha" => "",
-          "prior_beta" => "",
-          "warm_up_assignments" => "",
-          "max_condition_share" => ""
-        }
-      })
-
-      assert has_element?(view, "#experiment_weight_a[value='']")
-      assert has_element?(view, "#experiment_weight_b[value='']")
-      assert has_element?(view, "#experiment_prior_alpha[value='']")
-      assert has_element?(view, "#experiment_prior_beta[value='']")
-      assert has_element?(view, "#experiment_warm_up_assignments[value='']")
-      assert has_element?(view, "#experiment_max_condition_share[value='']")
-    end
-
-    test "preserves Thompson Sampling inputs while switching assignment policies", %{
-      conn: conn,
-      project: project
-    } do
-      insert_alternatives_group(project)
-      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
-
-      open_create_experiment(view)
-
-      view
-      |> element("#create-ab-experiment-form")
-      |> render_change(%{
-        "experiment" => %{
-          "algorithm" => "thompson_sampling",
-          "prior_alpha" => "2.5",
-          "prior_beta" => "3.5",
-          "warm_up_assignments" => "12",
-          "max_condition_share" => "0.8"
-        }
-      })
-
-      view
-      |> element("#create-ab-experiment-form")
-      |> render_change(%{"experiment" => %{"algorithm" => "weighted_random"}})
-
-      refute has_element?(view, "#thompson-sampling-options")
 
       view
       |> element("#create-ab-experiment-form")
       |> render_change(%{"experiment" => %{"algorithm" => "thompson_sampling"}})
 
-      assert has_element?(view, "#experiment_prior_alpha[value='2.5']")
-      assert has_element?(view, "#experiment_prior_beta[value='3.5']")
-      assert has_element?(view, "#experiment_warm_up_assignments[value='12']")
-      assert has_element?(view, "#experiment_max_condition_share[value='0.8']")
+      assert has_element?(view, "#experiment_algorithm")
+      assert has_element?(view, "#experiment_name")
+      assert has_element?(view, "#experiment_slug")
+      assert has_element?(view, "#experiment_decision_point")
+
+      assert length(
+               Floki.find(
+                 Floki.parse_fragment!(render(view)),
+                 "#create-ab-experiment-form input, #create-ab-experiment-form select"
+               )
+             ) == 4
     end
 
     test "does not offer learner preference alternatives as A/B Testing decision points", %{
@@ -1539,11 +1484,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     assert has_element?(view, "#experiment-option-picker-table", "Welcome intervention")
     assert has_element?(view, "#experiment-option-picker-table", "[Activity]")
     refute has_element?(view, "#experiment-option-picker-table", "unsupported")
+
     assert has_element?(
              view,
              "#experiment-option-picker",
              "Elements are listed in the order they appear on the page"
            )
+
     assert has_element?(view, "#experiment-option-picker-table th", "Position")
 
     assert has_element?(

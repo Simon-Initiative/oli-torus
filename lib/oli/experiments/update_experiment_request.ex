@@ -13,7 +13,6 @@ defmodule Oli.Experiments.UpdateExperimentRequest do
     :algorithm,
     :section_ids,
     :assignment_unit,
-    :policy_config,
     :decision_points,
     :conditions
   ]
@@ -26,7 +25,6 @@ defmodule Oli.Experiments.UpdateExperimentRequest do
           algorithm: :weighted_random | :thompson_sampling | nil,
           section_ids: [integer()] | nil,
           assignment_unit: :enrollment | nil,
-          policy_config: map() | nil,
           decision_points: [map()] | nil,
           conditions: [map()] | nil
         }

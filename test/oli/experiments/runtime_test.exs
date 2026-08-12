@@ -552,7 +552,6 @@ defmodule Oli.Experiments.RuntimeTest do
         algorithm: :thompson_sampling,
         algorithm_version: "thompson_sampling:v2",
         state: %{"a" => %{"successes" => "bad"}},
-        prior_config: %{},
         reward_success_count: 0,
         reward_failure_count: 0,
         assignment_count: 0
@@ -919,8 +918,7 @@ defmodule Oli.Experiments.RuntimeTest do
         scope: scope,
         slug: "runtime-#{System.unique_integer([:positive])}",
         name: "Runtime experiment",
-        algorithm: algorithm,
-        policy_config: policy_config
+        algorithm: algorithm
       })
 
     {:ok, active} =
@@ -933,7 +931,13 @@ defmodule Oli.Experiments.RuntimeTest do
         alternatives_resource_id: revision.resource_id,
         decision_point_key: decision_point_key(revision),
         algorithm: active.algorithm,
-        policy_config: active.policy_config
+        prior_alpha: get_in(policy_config, ["priors", "default", "alpha"]) || 1.0,
+        prior_beta: get_in(policy_config, ["priors", "default", "beta"]) || 1.0,
+        warm_up_assignments: get_in(policy_config, ["guardrails", "warm_up_assignments"]) || 0,
+        max_condition_share: get_in(policy_config, ["guardrails", "max_condition_share"]) || 1.0,
+        fixed_control_allocation:
+          get_in(policy_config, ["guardrails", "fixed_control_allocation"]),
+        imbalance_threshold: get_in(policy_config, ["guardrails", "imbalance_threshold"]) || 1.0
       })
       |> Repo.insert!()
 

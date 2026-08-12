@@ -14,8 +14,7 @@ defmodule Oli.Experiments.CreateExperimentRequest do
     :section_ids,
     decision_points: [],
     conditions: [],
-    assignment_unit: :enrollment,
-    policy_config: %{}
+    assignment_unit: :enrollment
   ]
 
   @type t :: %__MODULE__{
@@ -27,7 +26,6 @@ defmodule Oli.Experiments.CreateExperimentRequest do
           section_ids: [integer()] | nil,
           decision_points: [map()],
           conditions: [map()],
-          assignment_unit: :enrollment,
-          policy_config: map()
+          assignment_unit: :enrollment
         }
 end

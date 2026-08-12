@@ -343,8 +343,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
           experiment_id: experiment.id,
           alternatives_resource_id: alternatives_revision.resource_id,
           decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
-          algorithm: :weighted_random,
-          policy_config: %{}
+          algorithm: :weighted_random
         })
         |> Repo.insert!()
 
@@ -807,8 +806,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
         experiment_id: experiment.id,
         alternatives_resource_id: alternatives.resource_id,
         decision_point_key: "page-finalization-point",
-        algorithm: :thompson_sampling,
-        policy_config: %{}
+        algorithm: :thompson_sampling
       })
       |> Repo.insert!()
 

@@ -84,7 +84,7 @@ defmodule Oli.Experiments.PersistenceTest do
                })
                |> Repo.insert()
 
-      assert %{project_id: ["has already been taken"]} = errors_on(changeset)
+      assert %{slug: ["has already been taken"]} = errors_on(changeset)
     end
   end
 
@@ -227,7 +227,6 @@ defmodule Oli.Experiments.PersistenceTest do
           algorithm: :thompson_sampling,
           algorithm_version: "thompson_sampling:v2",
           state: %{},
-          prior_config: %{},
           reward_success_count: 1,
           reward_failure_count: 0,
           assignment_count: 1

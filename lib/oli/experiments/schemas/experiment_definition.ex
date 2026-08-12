@@ -24,7 +24,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     field :state, Ecto.Enum, values: @states, default: :draft
     field :assignment_unit, Ecto.Enum, values: @assignment_units, default: :enrollment
     field :algorithm, Ecto.Enum, values: @algorithms
-    field :policy_config, :map, default: %{}
     field :started_at, :utc_datetime
     field :ended_at, :utc_datetime
 
@@ -48,7 +47,6 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
       :state,
       :assignment_unit,
       :algorithm,
-      :policy_config,
       :started_at,
       :ended_at
     ])
@@ -60,8 +58,7 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
       :name,
       :state,
       :assignment_unit,
-      :algorithm,
-      :policy_config
+      :algorithm
     ])
     |> validate_length(:slug, min: 1, max: 255)
     |> validate_length(:name, min: 1, max: 255)

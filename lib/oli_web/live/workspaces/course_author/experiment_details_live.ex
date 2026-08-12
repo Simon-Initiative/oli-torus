@@ -180,10 +180,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           </div>
 
           <div class="row">
-            <div
-              :if={not Enum.empty?(@authoring_view.conditions)}
-              class="col-12 col-xl-6 mt-2"
-            >
+            <div :if={not Enum.empty?(@authoring_view.conditions)} class="col-12 mt-2">
               <h4 class="h6 font-weight-bold mb-3">Conditions</h4>
               <div class="table-responsive">
                 <table
@@ -217,14 +214,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                 </table>
               </div>
             </div>
-
-            <div
-              :if={map_size(@experiment.policy_config || %{}) > 0}
-              class="col-12 col-xl-6 mt-2"
-            >
-              <h4 class="h6 font-weight-bold mb-3">Policy configuration</h4>
-              <pre class="bg-light border rounded p-3 mb-0 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-100"><%= Jason.encode!(@experiment.policy_config, pretty: true) %></pre>
-            </div>
           </div>
         </div>
       </section>
@@ -234,15 +223,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         class="card mt-4 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100"
         aria-labelledby="experiment-graph-heading"
       >
-        <div class="card-header bg-white px-4 py-3 dark:border-gray-700 dark:bg-neutral-800">
+        <div class="card-header flex flex-col gap-1 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 dark:border-gray-700 dark:bg-neutral-800">
           <h3 id="experiment-graph-heading" class="h5 font-weight-bold mb-0">
             Decision-point configuration
           </h3>
-        </div>
-        <div class="card-body px-4 pt-4">
-          <p :if={@experiment.state != :draft} class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          <p
+            :if={@experiment.state != :draft}
+            id="experiment-structure-read-only"
+            class="mb-0 text-sm text-gray-500 sm:text-right dark:text-gray-400"
+          >
             Experiment structure is read-only after leaving draft.
           </p>
+        </div>
+        <div class="card-body px-4 pt-4">
           <div :if={@configuration_error} class="alert alert-danger" role="alert">
             {@configuration_error}
           </div>
@@ -252,6 +245,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           <.form
             for={to_form(%{}, as: :configuration)}
             id="experiment-graph-form"
+            phx-change="change_configuration"
             phx-submit="save_configuration"
           >
             <fieldset disabled={@experiment.state != :draft}>
@@ -320,6 +314,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                   name={"configuration[decision_points][#{point_index}][title]"}
                   value={point.title}
                 />
+                <div :if={point.algorithm == :weighted_random}>
+                  <input
+                    :for={
+                      {key, value} <- [
+                        {"prior_alpha", point.prior_alpha},
+                        {"prior_beta", point.prior_beta},
+                        {"warm_up_assignments", point.warm_up_assignments},
+                        {"max_condition_share", point.max_condition_share},
+                        {"fixed_control_allocation", point.fixed_control_allocation},
+                        {"imbalance_threshold", point.imbalance_threshold}
+                      ]
+                    }
+                    type="hidden"
+                    name={"configuration[decision_points][#{point_index}][#{key}]"}
+                    value={value}
+                  />
+                </div>
                 <div class="d-flex justify-content-between align-items-center gap-2">
                   <h4 class="h6 font-weight-bold mb-0">{point.title}</h4>
                   <button
@@ -386,9 +397,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                     />
                   </div>
                 </div>
-                <div class="mt-3">
-                  <h5 class="h6 mb-3 mt-4 font-weight-bold">Policy and guardrails</h5>
+                <div :if={point.algorithm == :thompson_sampling} class="mt-3">
+                  <h5 class="h6 mb-3 mt-4 font-weight-bold">
+                    Assignment policy and guardrails
+                  </h5>
+                  <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
+                    These settings apply only to this decision point.
+                  </p>
                   <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <label for={"point-#{point_index}-reward-source"}>Reward source</label>
+                      <input
+                        id={"point-#{point_index}-reward-source"}
+                        class="form-control disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                        value="Assessment page normalized score"
+                        disabled
+                      />
+                    </div>
                     <.number_field
                       point_index={point_index}
                       key="prior_alpha"
@@ -1154,6 +1179,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     end
   end
 
+  def handle_event("change_configuration", %{"configuration" => params}, socket) do
+    case socket.assigns.experiment.state do
+      :draft ->
+        condition_changes = submitted_condition_changes(params["conditions"])
+        point_changes = submitted_point_changes(params["decision_points"])
+
+        {:noreply,
+         update(socket, :graph_draft, fn draft ->
+           draft
+           |> Map.update!(:conditions, &merge_indexed_changes(&1, condition_changes))
+           |> Map.update!(:decision_points, &merge_indexed_changes(&1, point_changes))
+         end)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   defp transition_experiment(socket, action) do
     request = %LifecycleRequest{scope: authoring_scope(socket)}
 
@@ -1236,7 +1279,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       <input
         id={"point-#{@point_index}-#{@key}"}
         type="number"
-        class="form-control"
+        class="form-control disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
         name={"configuration[decision_points][#{@point_index}][#{@key}]"}
         value={@value}
         min={@min}
@@ -1394,9 +1437,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             }
           end)
 
-        guardrails = get_in(point.policy_config || %{}, ["guardrails"]) || %{}
-        priors = get_in(point.policy_config || %{}, ["priors", "default"]) || %{}
-
         %{
           alternatives_resource_id: point.alternatives_resource_id,
           decision_point_key: point.decision_point_key,
@@ -1404,12 +1444,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           algorithm: point.algorithm,
           mappings: mappings,
           interventions: interventions,
-          prior_alpha: Map.get(priors, "alpha", 1.0),
-          prior_beta: Map.get(priors, "beta", 1.0),
-          warm_up_assignments: Map.get(guardrails, "warm_up_assignments", 0),
-          max_condition_share: Map.get(guardrails, "max_condition_share", 1.0),
-          fixed_control_allocation: Map.get(guardrails, "fixed_control_allocation"),
-          imbalance_threshold: Map.get(guardrails, "imbalance_threshold", 1.0)
+          prior_alpha: point.prior_alpha,
+          prior_beta: point.prior_beta,
+          warm_up_assignments: point.warm_up_assignments,
+          max_condition_share: point.max_condition_share,
+          fixed_control_allocation: point.fixed_control_allocation,
+          imbalance_threshold: point.imbalance_threshold
         }
       end)
 
@@ -1690,14 +1730,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          {:ok, algorithm} <- parse_algorithm(point["algorithm"]),
          {:ok, mappings} <- parse_mappings(point["mappings"], conditions),
          {:ok, interventions} <- parse_interventions(point["interventions"], algorithm),
-         {:ok, policy_config} <- parse_policy_config(point, algorithm) do
+         {:ok, policy_fields} <- parse_policy_fields(point, algorithm) do
       {:ok,
        %{
          alternatives_resource_id: resource_id,
          decision_point_key: point["decision_point_key"],
          title: point["title"] || "Decision point #{position + 1}",
          algorithm: algorithm,
-         policy_config: policy_config,
+         prior_alpha: policy_fields.prior_alpha,
+         prior_beta: policy_fields.prior_beta,
+         warm_up_assignments: policy_fields.warm_up_assignments,
+         max_condition_share: policy_fields.max_condition_share,
+         fixed_control_allocation: policy_fields.fixed_control_allocation,
+         imbalance_threshold: policy_fields.imbalance_threshold,
+         reward_source: policy_fields.reward_source,
          mappings: mappings,
          interventions: interventions,
          position: position
@@ -1777,9 +1823,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     end
   end
 
-  defp parse_policy_config(_point, :weighted_random), do: {:ok, %{}}
-
-  defp parse_policy_config(point, :thompson_sampling) do
+  defp parse_policy_fields(point, algorithm)
+       when algorithm in [:weighted_random, :thompson_sampling] do
     with {:ok, alpha} <- parse_positive_number(point["prior_alpha"]),
          {:ok, beta} <- parse_positive_number(point["prior_beta"]),
          {:ok, warm_up} <- parse_non_negative_integer(point["warm_up_assignments"]),
@@ -1788,15 +1833,120 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          {:ok, imbalance} <- parse_share(point["imbalance_threshold"]) do
       {:ok,
        %{
-         "reward_source" => "assessment_page:normalized_score",
-         "priors" => %{"default" => %{"alpha" => alpha, "beta" => beta}, "conditions" => %{}},
-         "guardrails" => %{
-           "warm_up_assignments" => warm_up,
-           "max_condition_share" => max_share,
-           "fixed_control_allocation" => fixed,
-           "imbalance_threshold" => imbalance
-         }
+         prior_alpha: alpha,
+         prior_beta: beta,
+         warm_up_assignments: warm_up,
+         max_condition_share: max_share,
+         fixed_control_allocation: fixed,
+         imbalance_threshold: imbalance,
+         reward_source: "assessment_page:normalized_score"
        }}
+    end
+  end
+
+  defp submitted_point_changes(params) when is_map(params) do
+    Enum.reduce(params, %{}, fn {index, point}, changes ->
+      with {:ok, parsed_index} <- parse_index(index),
+           {:ok, algorithm} <- parse_algorithm(point["algorithm"]) do
+        policy_changes =
+          ~w(prior_alpha prior_beta warm_up_assignments max_condition_share fixed_control_allocation imbalance_threshold)
+          |> Enum.reduce(%{algorithm: algorithm}, fn key, point_changes ->
+            case Map.fetch(point, key) do
+              {:ok, value} -> Map.put(point_changes, String.to_existing_atom(key), value)
+              :error -> point_changes
+            end
+          end)
+
+        point_changes =
+          policy_changes
+          |> Map.put(:mappings, submitted_mapping_changes(point["mappings"]))
+          |> Map.put(:interventions, submitted_intervention_changes(point["interventions"]))
+
+        Map.put(changes, parsed_index, point_changes)
+      else
+        _ -> changes
+      end
+    end)
+  end
+
+  defp submitted_point_changes(_params), do: %{}
+
+  defp submitted_condition_changes(params) when is_map(params) do
+    submitted_indexed_changes(params, fn condition ->
+      %{}
+      |> put_submitted(:label, condition["label"])
+      |> put_submitted(:active, submitted_boolean(condition["active"]))
+    end)
+  end
+
+  defp submitted_condition_changes(_params), do: %{}
+
+  defp submitted_mapping_changes(params) when is_map(params) do
+    submitted_indexed_changes(params, fn mapping ->
+      %{}
+      |> put_submitted(:option_id, mapping["option_id"])
+      |> put_submitted(:weight, mapping["weight"])
+    end)
+  end
+
+  defp submitted_mapping_changes(_params), do: %{}
+
+  defp submitted_intervention_changes(params) when is_map(params) do
+    submitted_indexed_changes(params, fn intervention ->
+      %{}
+      |> put_submitted(
+        :page_resource_id,
+        submitted_positive_integer(intervention["page_resource_id"])
+      )
+      |> put_submitted(:content_element_id, intervention["content_element_id"])
+      |> put_submitted(
+        :assessment_page_resource_id,
+        submitted_positive_integer(intervention["assessment_page_resource_id"])
+      )
+      |> put_submitted(:reward_threshold, intervention["reward_threshold"])
+    end)
+  end
+
+  defp submitted_intervention_changes(_params), do: %{}
+
+  defp submitted_indexed_changes(params, changes_for_value) do
+    Enum.reduce(params, %{}, fn {index, value}, changes ->
+      case parse_index(index) do
+        {:ok, parsed_index} -> Map.put(changes, parsed_index, changes_for_value.(value))
+        _ -> changes
+      end
+    end)
+  end
+
+  defp merge_indexed_changes(values, changes) do
+    Enum.with_index(values, fn value, index ->
+      case Map.get(changes, index) do
+        %{mappings: mapping_changes, interventions: intervention_changes} = value_changes ->
+          value
+          |> Map.merge(Map.drop(value_changes, [:mappings, :interventions]))
+          |> Map.update!(:mappings, &merge_indexed_changes(&1, mapping_changes))
+          |> Map.update!(:interventions, &merge_indexed_changes(&1, intervention_changes))
+
+        value_changes when is_map(value_changes) ->
+          Map.merge(value, value_changes)
+
+        nil ->
+          value
+      end
+    end)
+  end
+
+  defp put_submitted(changes, _key, nil), do: changes
+  defp put_submitted(changes, key, value), do: Map.put(changes, key, value)
+
+  defp submitted_boolean("true"), do: true
+  defp submitted_boolean("false"), do: false
+  defp submitted_boolean(value), do: value
+
+  defp submitted_positive_integer(value) do
+    case parse_positive_integer(value) do
+      {:ok, parsed} -> parsed
+      _ -> value
     end
   end
 

@@ -62,7 +62,6 @@ defmodule Oli.Experiments.AnalyticsTest do
                   algorithm_version: "thompson_sampling:v2",
                   assignment_count: 1,
                   reward_success_count: 1,
-                  prior_config: %{"default" => %{"alpha" => 1.0, "beta" => 1.0}},
                   guardrail_state: %{
                     "assignment_count" => 1,
                     "reward_count" => 1
@@ -134,8 +133,7 @@ defmodule Oli.Experiments.AnalyticsTest do
         experiment_id: active.id,
         alternatives_resource_id: revision.resource_id,
         decision_point_key: decision_point_key(revision),
-        algorithm: active.algorithm,
-        policy_config: active.policy_config
+        algorithm: active.algorithm
       })
       |> Repo.insert!()
 
