@@ -72,6 +72,30 @@ export type JournalRecord = {
 
 export type FenceStamp = { seq: number; screenId: string; at: number };
 
+/**
+ * B4-STAMP: the permit kinds the driver may request. Declared HERE, in the
+ * journal's own domain, rather than imported from the oracle — the issuer is
+ * the authority on what it can issue, and the oracle's audited `Permit` type
+ * is structurally compatible on purpose.
+ */
+export type IssuedPermitKind = 'check-click' | 'feedback-ack' | 'widget-button';
+
+/**
+ * B4-STAMP (MATERIAL): permits and readback-completed fences come from the
+ * journal's monotonic domain, so they are strictly ordered against every wire
+ * event. NO issuance method accepts a seq — the driver chooses WHEN to ask and
+ * nothing else. `at` is informational; ordering is `seq` alone.
+ */
+export type PermitStamp = {
+  kind: IssuedPermitKind;
+  screenId: string;
+  stepIndex: number;
+  seq: number;
+  at: number;
+};
+
+export type ReadbackStamp = { screenId: string; stepIndex: number; seq: number; at: number };
+
 export type FinalizationFailure = { reason: FinalizationFailureReason };
 
 /**
@@ -100,6 +124,13 @@ export type JournalSnapshot = {
   records: JournalRecord[];
   postSealMarkers: number;
   fences: FenceStamp[];
+  /**
+   * B4-STAMP: what the journal ACTUALLY issued. The audit compares the
+   * driver's runRecord against these — journal issuance alone would still let a
+   * driver hand the oracle a permit it never obtained (contract threats 1/3).
+   */
+  permits: PermitStamp[];
+  readbackFences: ReadbackStamp[];
 };
 
 /**
@@ -124,6 +155,8 @@ export type JournalSnapshot = {
 export class AdaptiveJournalCore {
   private readonly log: JournalRecord[] = [];
   private readonly fenceLog: FenceStamp[] = [];
+  private readonly permitLog: PermitStamp[] = [];
+  private readonly readbackLog: ReadbackStamp[] = [];
   private seq = 0;
   private wireEvents = 0;
   private journalState: JournalState = 'armed';
@@ -167,6 +200,49 @@ export class AdaptiveJournalCore {
     this.fenceLog.push(stamp);
     // a copy: no retained reference can rewrite the stored fence after seal/freeze
     return { ...stamp };
+  }
+
+  /**
+   * B4-STAMP: issue a permit for one step. Armed-only, like every other stamp —
+   * a permit minted against a sealing/sealed/frozen journal would sit outside
+   * the audited order. Returns a COPY so a retained reference cannot rewrite
+   * the issued record after the seal.
+   */
+  issuePermit(kind: IssuedPermitKind, screenId: string, stepIndex: number): PermitStamp {
+    if (this.journalState !== 'armed') {
+      throw new Error(`journal cannot issue a permit while ${this.journalState}`);
+    }
+    if (!Number.isInteger(stepIndex) || stepIndex < 0) {
+      throw new Error(`permit step index must be a non-negative integer, got ${stepIndex}`);
+    }
+    const stamp: PermitStamp = { kind, screenId, stepIndex, seq: ++this.seq, at: this.now() };
+    this.permitLog.push(stamp);
+    return { ...stamp };
+  }
+
+  /**
+   * B4-STAMP: the readback-completed fence — `savedBarrier`'s lower bound
+   * (§3.5). Same domain as the wire events it bounds, so "the save landed after
+   * readback finished" is a comparison of two journal seqs, never of clocks.
+   */
+  issueReadbackFence(screenId: string, stepIndex: number): ReadbackStamp {
+    if (this.journalState !== 'armed') {
+      throw new Error(`journal cannot issue a readback fence while ${this.journalState}`);
+    }
+    if (!Number.isInteger(stepIndex) || stepIndex < 0) {
+      throw new Error(`readback fence step index must be a non-negative integer, got ${stepIndex}`);
+    }
+    const stamp: ReadbackStamp = { screenId, stepIndex, seq: ++this.seq, at: this.now() };
+    this.readbackLog.push(stamp);
+    return { ...stamp };
+  }
+
+  permits(): PermitStamp[] {
+    return structuredClone(this.permitLog);
+  }
+
+  readbackFences(): ReadbackStamp[] {
+    return structuredClone(this.readbackLog);
   }
 
   noteLessonEnd() {
@@ -487,6 +563,8 @@ export class AdaptiveJournalCore {
       records: audited as JournalRecord[],
       postSealMarkers: this.log.filter((r) => r.postSeal).length,
       fences: this.fenceLog as FenceStamp[],
+      permits: this.permitLog as PermitStamp[],
+      readbackFences: this.readbackLog as ReadbackStamp[],
     });
   }
 

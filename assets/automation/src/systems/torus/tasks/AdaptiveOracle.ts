@@ -169,6 +169,7 @@ export type ViolationFacts = {
     | 'wrong-successor-target'
     | 'ambiguous-part-order'
     | 'ambiguous-attempt-order'
+    | 'not-journal-issued'
     | 'missing'
     | 'beyond-route'
     | 'incorrect-singleton'
@@ -335,6 +336,66 @@ export function auditRun(
           detail: 'beyond-route',
           permitKind: p.kind,
           seq: p.seq,
+        }),
+      );
+    }
+  }
+
+  // ---- B4-STAMP: every runRecord permit must BE a journal issuance ----------
+  // The journal owning the seq domain is not enough on its own: without this
+  // comparison a driver could hand the oracle a permit it never obtained, or
+  // re-label an issued one, and the causal-edge audit below would license it
+  // (contract threats 1 and 3). Matching is on the WHOLE tuple, and each
+  // issuance is consumed at most once, so a single permit cannot cover two
+  // claims.
+  // A snapshot DESERIALIZED from a capture written before the journal issued
+  // permits carries no issuance arrays at all. Absence is read as "this
+  // producer recorded no issuances" — NOT as a licence: the check below is on
+  // the CLAIM side, so a runRecord claiming a permit against a snapshot with no
+  // issuance record still fails closed, while a runRecord claiming none has
+  // nothing to license. Every other permit rule (window, role, duplicate,
+  // required-widget-button) is unaffected by this read.
+  const issuedPermits = snapshot.permits ?? [];
+  const issuedReadbackFences = snapshot.readbackFences ?? [];
+  const unclaimedIssuance = issuedPermits.map((issued) => ({ issued, claimed: false }));
+  for (const p of permits) {
+    const match = unclaimedIssuance.filter(
+      (candidate) =>
+        !candidate.claimed &&
+        candidate.issued.seq === p.seq &&
+        candidate.issued.kind === p.kind &&
+        candidate.issued.screenId === p.screenId &&
+        candidate.issued.stepIndex === p.stepIndex,
+    )[0];
+    if (!match) {
+      violations.push(
+        violation('permit-mismatch', p.screenId, p.stepIndex, {
+          detail: 'not-journal-issued',
+          permitKind: p.kind,
+          seq: p.seq,
+        }),
+      );
+      continue;
+    }
+    match.claimed = true;
+  }
+
+  // Same requirement for the readback-completed fence: it is savedBarrier's
+  // LOWER bound (§3.5), so a driver-chosen value lets any earlier save satisfy
+  // the barrier. Declared ⇒ journal-issued for that screen and step.
+  for (const r of receipts) {
+    if (r.readbackCompletedSeq === undefined) continue;
+    const issued = issuedReadbackFences.some(
+      (fence) =>
+        fence.seq === r.readbackCompletedSeq &&
+        fence.screenId === r.screenId &&
+        fence.stepIndex === r.stepIndex,
+    );
+    if (!issued) {
+      violations.push(
+        violation('receipt-mismatch', r.screenId, r.stepIndex, {
+          detail: 'not-journal-issued',
+          seq: r.readbackCompletedSeq,
         }),
       );
     }
@@ -1678,7 +1739,9 @@ const TEMPLATES: Record<ViolationCode, (f: ViolationFacts) => string> = {
               ? `${String(f.count)} receipt(s) on a non-graded step`
               : f.detail === 'duplicate'
                 ? `${String(f.count)} receipts for one graded step — exactly one is licensed`
-                : 'receipt expectations do not correspond to the manifest',
+                : f.detail === 'not-journal-issued'
+                  ? `receipt declares readback-completed seq ${String(f.seq)}, which the journal never issued for this step`
+                  : 'receipt expectations do not correspond to the manifest',
   'payload-mismatch': (f) =>
     f.detail === 'no-response'
       ? `cross-screen check (seq ${String(f.seq)}) has no response to hold the prior state stable through`
@@ -1718,9 +1781,11 @@ const TEMPLATES: Record<ViolationCode, (f: ViolationFacts) => string> = {
             ? `${String(f.permitKind)} permit (seq ${String(f.seq)}) is not licensed for its screen's role`
             : f.detail === 'beyond-route'
               ? `${String(f.permitKind)} permit (seq ${String(f.seq)}) names a step with no visit`
-              : f.detail === 'missing'
-                ? `fully audited navigation window holds no ${String(f.permitKind)} permit`
-                : `${String(f.permitKind)} permit (seq ${String(f.seq)}) licensed nothing that happened`,
+              : f.detail === 'not-journal-issued'
+                ? `${String(f.permitKind)} permit (seq ${String(f.seq)}) was never issued by the journal`
+                : f.detail === 'missing'
+                  ? `fully audited navigation window holds no ${String(f.permitKind)} permit`
+                  : `${String(f.permitKind)} permit (seq ${String(f.seq)}) licensed nothing that happened`,
   'obligation-unfulfilled': (f) =>
     f.detail === 'no-ack'
       ? `feedback plan (seq ${String(f.seq)}) has no acknowledging permit after its response`

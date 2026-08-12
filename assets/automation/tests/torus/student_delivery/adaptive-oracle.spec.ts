@@ -9,6 +9,7 @@ import {
   validateRouteCoverage,
 } from '@tasks/AdaptiveManifest';
 import {
+  Permit,
   RunRecord,
   StepReceipt,
   auditCrossScreenReceipt,
@@ -104,21 +105,31 @@ const event = (correct: boolean, actions: Array<NavAction | FeedbackAction>): Re
   params: { correct, actions },
 });
 
-function fireEval(
+/**
+ * The request half only — lets a fixture act between the request and the
+ * response event (the §3.5 causality window) without restating the wire shape.
+ */
+function openEval(
   c: AdaptiveJournalCore,
   guid: string,
   parts: Array<{ path: string; value: unknown; partGuid?: string }>,
-  body: { correct: boolean; results: ResultEvent[]; llm?: { text: string } },
 ): number {
   const partInputs = parts.map((p, i) => ({
     attemptGuid: p.partGuid ?? `part-${guid}`,
     response: { input: { [`k${i}`]: { path: p.path, value: p.value } } },
   }));
-  const handle = c.ingestRequest({
+  return c.ingestRequest({
     method: 'PUT',
     url: `${ORIGIN}/state/course/s1/activity_attempt/${guid}`,
     postData: JSON.stringify({ partInputs }),
   }) as number;
+}
+
+function settleEval(
+  c: AdaptiveJournalCore,
+  handle: number,
+  body: { correct: boolean; results: ResultEvent[]; llm?: { text: string } },
+): number {
   c.ingestResponse(handle, 200);
   c.ingestResponseBody(
     handle,
@@ -128,6 +139,15 @@ function fireEval(
     }),
   );
   return handle;
+}
+
+function fireEval(
+  c: AdaptiveJournalCore,
+  guid: string,
+  parts: Array<{ path: string; value: unknown; partGuid?: string }>,
+  body: { correct: boolean; results: ResultEvent[]; llm?: { text: string } },
+): number {
+  return settleEval(c, openEval(c, guid, parts), body);
 }
 
 function fireSave(
@@ -175,9 +195,6 @@ function acceptFinalization(c: AdaptiveJournalCore) {
   c.ingestResponseBody(handle, JSON.stringify({ result: 'success', commandResult: 'success' }));
 }
 
-const beforeSeq = (c: AdaptiveJournalCore, handle: number): number =>
-  (c.records()[handle].requestSeq as number) - 0.5;
-
 const RECEIPT_Q1: StepReceipt = {
   stepIndex: 1,
   screenId: 'q:1',
@@ -200,14 +217,22 @@ function buildRun(
     duplicateGradedEval?: boolean;
     contentTerminal?: boolean;
     skipCheckClick?: boolean;
+    /** issue a feedback-ack BEFORE the first identity fence (pre-window) */
+    earlyAckPermit?: boolean;
     receipts?: StepReceipt[] | null;
     omitPlans?: boolean;
   } = {},
-): { snapshot: JournalSnapshot; runRecord: RunRecord } {
+): { snapshot: JournalSnapshot; runRecord: RunRecord; earlyAck: Permit | null } {
   const c = new AdaptiveJournalCore(() => 1_000);
   c.setRunCorrelation(CORR);
 
+  // issued before ANY identity fence exists — genuinely outside every window
+  const earlyAck = poison.earlyAckPermit ? c.issuePermit('feedback-ack', 'n:1', 0) : null;
   const v0 = c.issueFence('n:1');
+  // B4-STAMP: permits are journal issuances taken AT the moment the driver
+  // would act, so their order against the wire events is the journal's, not a
+  // back-dated arithmetic seq. Issue before the evaluation it licenses.
+  const navPermit = c.issuePermit('widget-button', 'n:1', 0);
   const navEval = fireEval(c, 'a-n1', [], {
     correct: true,
     results: [event(true, [navTo('next')])],
@@ -221,6 +246,7 @@ function buildRun(
     },
     ...(poison.gradedExtraParts ?? []),
   ];
+  const gradedPermit = poison.skipCheckClick ? null : c.issuePermit('check-click', 'q:1', 1);
   const gradedEval = fireEval(c, 'a-q1', gradedParts, {
     correct: poison.gradedVerdict ?? true,
     results: [event(poison.gradedVerdict ?? true, [navTo('next')])],
@@ -230,6 +256,7 @@ function buildRun(
   }
 
   const v2 = c.issueFence('c:1');
+  const contentPermit = c.issuePermit('check-click', 'c:1', 2);
   const contentEval = fireEval(c, 'a-c1', [{ path: 'c:1|stage.done', value: 1 }], {
     correct: true,
     results: [event(true, [navTo(poison.contentTerminal === false ? 'next' : 'endOfLesson')])],
@@ -246,20 +273,7 @@ function buildRun(
   ];
   const runRecord: RunRecord = {
     visits,
-    permits: [
-      { kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: beforeSeq(c, navEval) },
-      ...(poison.skipCheckClick
-        ? []
-        : [
-            {
-              kind: 'check-click' as const,
-              screenId: 'q:1',
-              stepIndex: 1,
-              seq: beforeSeq(c, gradedEval),
-            },
-          ]),
-      { kind: 'check-click', screenId: 'c:1', stepIndex: 2, seq: beforeSeq(c, contentEval) },
-    ],
+    permits: [navPermit, ...(gradedPermit ? [gradedPermit] : []), contentPermit],
     receipts: poison.receipts === undefined ? [RECEIPT_Q1] : (poison.receipts ?? []),
     operationFailures: [],
     plans: poison.omitPlans
@@ -270,7 +284,7 @@ function buildRun(
           recordedPlanFor(c, contentEval, 2),
         ],
   };
-  return { snapshot: c.snapshot(), runRecord };
+  return { snapshot: c.snapshot(), runRecord, earlyAck };
 }
 
 /** The driver's recorded online plan = the replay over the same body. */
@@ -779,7 +793,9 @@ test.describe('auditRun over a driven journal', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
-    const navEval = fireEval(c, 'a-n1', [], {
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_widget_button_navEval = c.issuePermit('widget-button', 'n:1', 0);
+    fireEval(c, 'a-n1', [], {
       correct: true,
       results: [event(true, [navTo('endOfLesson')])],
     });
@@ -788,9 +804,7 @@ test.describe('auditRun over a driven journal', () => {
     c.markFrozenAccepted();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
-      permits: [
-        { kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: beforeSeq(c, navEval) },
-      ],
+      permits: [permit_widget_button_navEval],
       receipts: [],
       operationFailures: [],
     };
@@ -804,6 +818,7 @@ test.describe('navigation sequence rule', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
+    const permit = c.issuePermit('widget-button', 'n:1', 0);
     build(c);
     c.beginSeal();
     c.finishSeal();
@@ -811,10 +826,11 @@ test.describe('navigation sequence rule', () => {
       snapshot: c.snapshot(),
       runRecord: {
         visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
-        permits: [{ kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+        permits: [permit],
         receipts: [],
         operationFailures: [],
       },
+      earlyAck: null,
     };
   }
   const NAV_ONLY = manifest({
@@ -876,8 +892,15 @@ test.describe('savedBarrier temporal audit and distinct-path min_count', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
-    const readbackSeq = c.issueFence('q:1').seq; // stands in for the driver's readback stamp
+    // B4-STAMP: the readback-completed stamp is a journal issuance, not a
+    // driver-chosen number — the barrier's lower bound is only meaningful if
+    // the journal ordered it against the save it must precede
+    const readbackSeq = c.issueReadbackFence('q:1', 0).seq;
     fireSave(c, 'a-q1', [{ path: 'q:1|stage.widget.state', value: 'ready' }]);
+    // a SECOND, genuinely later issuance for the mid-gesture case below: the
+    // save now precedes readback completion, so it cannot satisfy the barrier
+    const lateReadbackSeq = c.issueReadbackFence('q:1', 0).seq;
+    const gradedPermit = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
       'a-q1',
@@ -893,9 +916,7 @@ test.describe('savedBarrier temporal audit and distinct-path min_count', () => {
     });
     const base: RunRecord = {
       visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
-      permits: [
-        { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-      ],
+      permits: [gradedPermit],
       receipts: [{ ...receiptWithBarrier(readbackSeq), stepIndex: 0 }],
       operationFailures: [],
       plans: [recordedPlanFor(c, gradedEval, 0)],
@@ -905,7 +926,7 @@ test.describe('savedBarrier temporal audit and distinct-path min_count', () => {
     // the same save cannot satisfy a barrier whose readback completed AFTER it
     const midGesture: RunRecord = {
       ...base,
-      receipts: [{ ...receiptWithBarrier(readbackSeq + 4), stepIndex: 0 }],
+      receipts: [{ ...receiptWithBarrier(lateReadbackSeq), stepIndex: 0 }],
     };
     expect(codes(auditRun(m, midGesture, c.snapshot()))).toContain('saved-barrier');
   });
@@ -1157,7 +1178,9 @@ test.describe('sealed and freeze-failure audits', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
-    const navEval = fireEval(c, 'a-n1', [], {
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_widget_button_navEval = c.issuePermit('widget-button', 'n:1', 0);
+    fireEval(c, 'a-n1', [], {
       correct: true,
       results: [event(true, [navTo('endOfLesson')])],
     });
@@ -1166,9 +1189,7 @@ test.describe('sealed and freeze-failure audits', () => {
     c.markFrozenCompletedFailure();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
-      permits: [
-        { kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: beforeSeq(c, navEval) },
-      ],
+      permits: [permit_widget_button_navEval],
       receipts: [],
       operationFailures: [],
     };
@@ -1185,11 +1206,6 @@ test.describe('sealed and freeze-failure audits', () => {
 // ---------------------------------------------------------------------------
 // checkpoint A round-1 witnesses (§8 rows surfaced by review)
 // ---------------------------------------------------------------------------
-
-const betweenSeq = (c: AdaptiveJournalCore, handle: number): number => {
-  const r = c.records()[handle];
-  return ((r.requestSeq as number) + (r.responseSeq as number)) / 2;
-};
 
 test.describe('recorded plan vs replay (§3.5 replay agreement)', () => {
   test('a recorded plan that disagrees with the replay is a divergence', () => {
@@ -1216,25 +1232,24 @@ test.describe('obligations are bounded by the RESPONSE that created the plan (§
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
-    const gradedEval = fireEval(
-      c,
-      'a-q1',
-      [{ path: 'q:1|stage.dropdown.selectedItem', value: 'Basalt' }],
-      { correct: true, results: [event(true, [feedback()])] },
-    );
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
+    // the evaluation is staged by hand here (not via fireEval) so the
+    // 'between' ack can be a REAL issuance taken after the request and before
+    // the response event — the causality this pair of tests is about
+    const gradedEval = openEval(c, 'a-q1', [
+      { path: 'q:1|stage.dropdown.selectedItem', value: 'Basalt' },
+    ]);
+    const ackBetween = ackAt === 'between' ? c.issuePermit('feedback-ack', 'q:1', 0) : null;
+    settleEval(c, gradedEval, { correct: true, results: [event(true, [feedback()])] });
+    const ackAfter = ackAt === 'after' ? c.issuePermit('feedback-ack', 'q:1', 0) : null;
+    const ackPermit = (ackBetween ?? ackAfter) as Permit;
     c.noteLessonEnd();
     acceptFinalization(c);
     c.markFrozenAccepted();
-    const ackSeq =
-      ackAt === 'between'
-        ? betweenSeq(c, gradedEval)
-        : (c.records()[gradedEval].responseSeq as number) + 0.5;
     const runRecord: RunRecord = {
       visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
-      permits: [
-        { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-        { kind: 'feedback-ack', screenId: 'q:1', stepIndex: 0, seq: ackSeq },
-      ],
+      permits: [permit_check_click_gradedEval, ackPermit],
       receipts: [{ ...RECEIPT_Q1, stepIndex: 0 }],
       operationFailures: [],
       plans: [recordedPlanFor(c, gradedEval, 0)],
@@ -1266,6 +1281,8 @@ test.describe('saved-barrier absence is gated by the §3.2 matrix', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
       'a-q1',
@@ -1276,9 +1293,7 @@ test.describe('saved-barrier absence is gated by the §3.2 matrix', () => {
     c.finishSeal();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
-      permits: [
-        { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-      ],
+      permits: [permit_check_click_gradedEval],
       receipts: [
         {
           ...RECEIPT_Q1,
@@ -1336,12 +1351,13 @@ test.describe('permit inventory (§3.4)', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('c:1');
+    const contentPermit = c.issuePermit('check-click', 'c:1', 0);
     c.noteLessonEnd();
     acceptFinalization(c);
     c.markFrozenAccepted();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'c:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-c1', resourceId: 1 }],
-      permits: [{ kind: 'check-click', screenId: 'c:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+      permits: [contentPermit],
       receipts: [],
       operationFailures: [],
       plans: [],
@@ -1388,12 +1404,14 @@ test.describe('cross-screen grading THROUGH auditRun (§3.6)', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('s:1');
+    const contentPermit = c.issuePermit('check-click', 's:1', 0);
     const contentEval = fireEval(c, 'a-s1', [], {
       correct: true,
       results: [event(true, [navTo('next')])],
     });
     fireSave(c, 'a-s1', [{ path: 's:1|stage.sim.Correct', value: simValue }]);
     const v1 = c.issueFence('q:2');
+    const checkingPermit = c.issuePermit('check-click', 'q:2', 1);
     const checkingEval = fireEval(c, 'a-q2', [], {
       correct: true,
       results: [event(true, [navTo('next')])],
@@ -1406,10 +1424,7 @@ test.describe('cross-screen grading THROUGH auditRun (§3.6)', () => {
         { screenId: 's:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-s1', resourceId: 1 },
         { screenId: 'q:2', entrySeq: v1.seq, renderedAttemptGuid: 'a-q2', resourceId: 2 },
       ],
-      permits: [
-        { kind: 'check-click', screenId: 's:1', stepIndex: 0, seq: beforeSeq(c, contentEval) },
-        { kind: 'check-click', screenId: 'q:2', stepIndex: 1, seq: beforeSeq(c, checkingEval) },
-      ],
+      permits: [contentPermit, checkingPermit],
       receipts: [receipt],
       operationFailures: [],
       plans: [recordedPlanFor(c, contentEval, 0), recordedPlanFor(c, checkingEval, 1)],
@@ -1466,6 +1481,8 @@ test.describe('remaining §8 rows', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
       'a-q1',
@@ -1477,9 +1494,7 @@ test.describe('remaining §8 rows', () => {
     c.markFrozenAccepted();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
-      permits: [
-        { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-      ],
+      permits: [permit_check_click_gradedEval],
       receipts: [{ ...RECEIPT_Q1, stepIndex: 0 }],
       operationFailures: [],
       plans: [recordedPlanFor(c, gradedEval, 0)],
@@ -1503,11 +1518,15 @@ test.describe('remaining §8 rows', () => {
       const guid = firstScreen === 'q:1' ? 'a-q1' : 'a-n1';
       const parts =
         firstScreen === 'q:1' ? [{ path: 'q:1|stage.dropdown.selectedItem', value: 'Basalt' }] : [];
+      // the graded case's click permit is taken BEFORE the identity fence —
+      // genuinely pre-entry, issued by the journal at that point
+      const prePermit = firstScreen === 'q:1' ? c.issuePermit('check-click', 'q:1', 0) : null;
       const preEval = fireEval(c, guid, parts, {
         correct: true,
         results: [event(true, [navTo('endOfLesson')])],
       });
       const v0 = c.issueFence(firstScreen);
+      const navPermit = firstScreen === 'n:1' ? c.issuePermit('widget-button', 'n:1', 0) : null;
       c.noteLessonEnd();
       acceptFinalization(c);
       c.markFrozenAccepted();
@@ -1515,10 +1534,7 @@ test.describe('remaining §8 rows', () => {
         visits: [
           { screenId: firstScreen, entrySeq: v0.seq, renderedAttemptGuid: guid, resourceId: 1 },
         ],
-        permits:
-          firstScreen === 'q:1'
-            ? [{ kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, preEval) }]
-            : [{ kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+        permits: firstScreen === 'q:1' ? [prePermit as Permit] : [navPermit as Permit],
         receipts: firstScreen === 'q:1' ? [{ ...RECEIPT_Q1, stepIndex: 0 }] : [],
         operationFailures: [],
         plans: [recordedPlanFor(c, preEval, 0)],
@@ -1617,11 +1633,15 @@ test.describe('round-2: cardinality, ordering and inventory', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('c:1');
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_check_click_first = c.issuePermit('check-click', 'c:1', 0);
     const first = fireEval(c, 'a-c1', [], {
       correct: true,
       results: [event(true, [feedback()])],
       llm: { text: 'AI feedback forces a feedback plan' },
     });
+    // acknowledged after the first evaluation's feedback arrived
+    const ackPermit = c.issuePermit('feedback-ack', 'c:1', 0);
     const second = fireEval(c, 'a-c1', [], {
       correct: true,
       results: [event(true, [navTo('endOfLesson')])],
@@ -1629,13 +1649,9 @@ test.describe('round-2: cardinality, ordering and inventory', () => {
     c.noteLessonEnd();
     acceptFinalization(c);
     c.markFrozenAccepted();
-    const ackSeq = (c.records()[first].responseSeq as number) + 0.5;
     const runRecord: RunRecord = {
       visits: [{ screenId: 'c:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-c1', resourceId: 1 }],
-      permits: [
-        { kind: 'check-click', screenId: 'c:1', stepIndex: 0, seq: beforeSeq(c, first) },
-        { kind: 'feedback-ack', screenId: 'c:1', stepIndex: 0, seq: ackSeq },
-      ],
+      permits: [permit_check_click_first, ackPermit],
       receipts: [],
       operationFailures: [],
       plans: [recordedPlanFor(c, first, 0), recordedPlanFor(c, second, 0)],
@@ -1686,13 +1702,8 @@ test.describe('round-2: cardinality, ordering and inventory', () => {
   });
 
   test('a first-step permit stamped before the identity fence is outside its window (§3.4)', () => {
-    const { snapshot, runRecord } = buildRun();
-    runRecord.permits.push({
-      kind: 'feedback-ack',
-      screenId: 'n:1',
-      stepIndex: 0,
-      seq: runRecord.visits[0].entrySeq - 0.5,
-    });
+    const { snapshot, runRecord, earlyAck } = buildRun({ earlyAckPermit: true });
+    runRecord.permits.push(earlyAck as Permit);
     const found = auditRun(manifest(), runRecord, snapshot);
     expect(
       found.some((v) => v.code === 'permit-mismatch' && v.facts.detail === 'outside-window'),
@@ -1705,6 +1716,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
+    const navPermit = c.issuePermit('widget-button', 'n:1', 0);
     const navEval = fireEval(c, 'a-n1', [], {
       correct: true,
       results: [event(true, [navTo('endOfLesson')])],
@@ -1716,7 +1728,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
     if (mutate && plans.length) mutate(plans[0] as unknown as { plan: unknown });
     const runRecord: RunRecord = {
       visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
-      permits: [{ kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+      permits: [navPermit],
       receipts: [],
       operationFailures: [],
       plans,
@@ -1752,6 +1764,8 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
       'a-q1',
@@ -1759,6 +1773,8 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
       { correct: true, results: [event(true, [navTo('x:9')])] },
     );
     const v1 = c.issueFence('c:1');
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_check_click_contentEval = c.issuePermit('check-click', 'c:1', 1);
     const contentEval = fireEval(c, 'a-c1', [], {
       correct: true,
       results: [event(true, [navTo('endOfLesson')])],
@@ -1771,10 +1787,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
         { screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 },
         { screenId: 'c:1', entrySeq: v1.seq, renderedAttemptGuid: 'a-c1', resourceId: 2 },
       ],
-      permits: [
-        { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-        { kind: 'check-click', screenId: 'c:1', stepIndex: 1, seq: beforeSeq(c, contentEval) },
-      ],
+      permits: [permit_check_click_gradedEval, permit_check_click_contentEval],
       receipts: [{ ...RECEIPT_Q1, stepIndex: 0 }],
       operationFailures: [],
       plans: [recordedPlanFor(c, gradedEval, 0), recordedPlanFor(c, contentEval, 1)],
@@ -1800,6 +1813,8 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
       const c = new AdaptiveJournalCore(() => 1_000);
       c.setRunCorrelation(CORR);
       const v0 = c.issueFence('q:1');
+      // B4-STAMP: journal-issued at the moment the driver would act
+      const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
       const gradedEval = fireEval(
         c,
         'a-q1',
@@ -1811,9 +1826,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
       c.markFrozenAccepted();
       const runRecord: RunRecord = {
         visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
-        permits: [
-          { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-        ],
+        permits: [permit_check_click_gradedEval],
         receipts: [{ ...RECEIPT_Q1, stepIndex: 0 }],
         operationFailures: [],
         plans: [recordedPlanFor(c, gradedEval, 0)],
@@ -1836,6 +1849,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
+    const navPermit = c.issuePermit('widget-button', 'n:1', 0);
     fireEval(c, 'a-n1', [], { correct: false, results: [event(false, [feedback()])] });
     fireEval(c, 'a-n1b', [], { correct: true, results: [event(true, [navTo('next')])] });
     fireMint(c, 'a-n1', 'a-n1b'); // too late — after the second check used it
@@ -1843,7 +1857,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
     c.finishSeal();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
-      permits: [{ kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+      permits: [navPermit],
       receipts: [],
       operationFailures: [],
       plans: [],
@@ -1862,6 +1876,7 @@ test.describe('round-2: matrix rows through auditRun', () => {
       const c = new AdaptiveJournalCore(() => 1_000);
       c.setRunCorrelation(CORR);
       const v0 = c.issueFence('q:1');
+      const gradedPermit = c.issuePermit('check-click', 'q:1', 0);
       const gradedEval = fireEval(
         c,
         'a-q1',
@@ -1872,24 +1887,14 @@ test.describe('round-2: matrix rows through auditRun', () => {
           llm: { text: 'AI says: well reasoned' },
         },
       );
+      // the acknowledgment happens after the feedback arrives — issue it there
+      const ackPermit = withAck ? c.issuePermit('feedback-ack', 'q:1', 0) : null;
       c.noteLessonEnd();
       acceptFinalization(c);
       c.markFrozenAccepted();
       const runRecord: RunRecord = {
         visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
-        permits: [
-          { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-          ...(withAck
-            ? [
-                {
-                  kind: 'feedback-ack' as const,
-                  screenId: 'q:1',
-                  stepIndex: 0,
-                  seq: (c.records()[gradedEval].responseSeq as number) + 0.5,
-                },
-              ]
-            : []),
-        ],
+        permits: [gradedPermit, ...(ackPermit ? [ackPermit] : [])],
         receipts: [{ ...RECEIPT_Q1, stepIndex: 0 }],
         operationFailures: [],
         plans: [recordedPlanFor(c, gradedEval, 0)],
@@ -1910,6 +1915,7 @@ test.describe('round-2: matrix rows through auditRun', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('s:1');
+    const contentPermit = c.issuePermit('check-click', 's:1', 0);
     const contentEval = fireEval(c, 'a-s1', [], {
       correct: true,
       results: [event(true, [navTo('next')])],
@@ -1918,6 +1924,7 @@ test.describe('round-2: matrix rows through auditRun', () => {
     // dependency's lineage — the committed prior state stays empty
     fireSave(c, 'a-alien', [{ path: 's:1|stage.sim.Correct', value: true }]);
     const v1 = c.issueFence('q:2');
+    const checkingPermit = c.issuePermit('check-click', 'q:2', 1);
     const checkingEval = fireEval(c, 'a-q2', [], {
       correct: true,
       results: [event(true, [navTo('next')])],
@@ -1948,10 +1955,7 @@ test.describe('round-2: matrix rows through auditRun', () => {
         { screenId: 's:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-s1', resourceId: 1 },
         { screenId: 'q:2', entrySeq: v1.seq, renderedAttemptGuid: 'a-q2', resourceId: 2 },
       ],
-      permits: [
-        { kind: 'check-click', screenId: 's:1', stepIndex: 0, seq: beforeSeq(c, contentEval) },
-        { kind: 'check-click', screenId: 'q:2', stepIndex: 1, seq: beforeSeq(c, checkingEval) },
-      ],
+      permits: [contentPermit, checkingPermit],
       receipts: [
         {
           stepIndex: 1,
@@ -1974,6 +1978,8 @@ test.describe('round-2: matrix rows through auditRun', () => {
       const c = new AdaptiveJournalCore(() => 1_000);
       c.setRunCorrelation(CORR);
       const v0 = c.issueFence('q:1');
+      // B4-STAMP: journal-issued at the moment the driver would act
+      const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
       const gradedEval = fireEval(
         c,
         'a-q1',
@@ -1995,9 +2001,7 @@ test.describe('round-2: matrix rows through auditRun', () => {
           { screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 },
           { screenId: 'c:1', entrySeq: v1.seq, renderedAttemptGuid: 'a-c1', resourceId: 2 },
         ],
-        permits: [
-          { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-        ],
+        permits: [permit_check_click_gradedEval],
         receipts: [], // graded window 0 has NO receipt
         operationFailures: [],
         plans: [recordedPlanFor(c, gradedEval, 0)],
@@ -2106,12 +2110,13 @@ test.describe('round-3: settlement, domain sweep and remaining §8 rows', () => 
     // half after it; no causal mint anywhere — one whole-sequence judgement
     fireEval(c, 'a-n1', [], { correct: false, results: [event(false, [feedback()])] });
     const v0 = c.issueFence('n:1');
+    const navPermit = c.issuePermit('widget-button', 'n:1', 0);
     fireEval(c, 'a-n1b', [], { correct: true, results: [event(true, [navTo('next')])] });
     c.beginSeal();
     c.finishSeal();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
-      permits: [{ kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+      permits: [navPermit],
       receipts: [],
       operationFailures: [],
       plans: [],
@@ -2151,6 +2156,7 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
+    const navPermit = c.issuePermit('widget-button', 'n:1', 0);
     fireEval(c, 'a-n1', [], { correct: false, results: [event(false, [])] }); // plan: none
     fireMint(c, 'a-n1', 'a-n1b');
     fireEval(c, 'a-n1b', [], { correct: true, results: [event(true, [navTo('next')])] });
@@ -2158,7 +2164,7 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
     c.finishSeal();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
-      permits: [{ kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+      permits: [navPermit],
       receipts: [],
       operationFailures: [],
       plans: [],
@@ -2229,7 +2235,9 @@ test.describe('round-5: barrier commit order, unconditional coverage, permit all
         ],
       }),
     }) as number;
-    const clickSeq = (c.records()[save].requestSeq as number) + 0.5;
+    // the click permit is taken while the save is STILL IN FLIGHT — a real
+    // issuance between the save's request and its response event
+    const clickPermit = c.issuePermit('check-click', 'q:1', 0);
     c.ingestResponse(save, 200);
     c.ingestResponseBody(save, JSON.stringify({ type: 'success' }));
     const gradedEval = fireEval(
@@ -2243,7 +2251,7 @@ test.describe('round-5: barrier commit order, unconditional coverage, permit all
     c.markFrozenAccepted();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
-      permits: [{ kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: clickSeq }],
+      permits: [clickPermit],
       receipts: [
         {
           ...RECEIPT_Q1,
@@ -2338,6 +2346,8 @@ test.describe('round-7: terminal commit proofs, causal tips, permit and attribut
     }) as number;
     c.ingestResponse(save, 200); // headers seen...
     c.ingestRequestFailed(save); // ...then the request dies before the body
+    // B4-STAMP: journal-issued at the moment the driver would act
+    const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
       'a-q1',
@@ -2349,9 +2359,7 @@ test.describe('round-7: terminal commit proofs, causal tips, permit and attribut
     c.markFrozenAccepted();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
-      permits: [
-        { kind: 'check-click', screenId: 'q:1', stepIndex: 0, seq: beforeSeq(c, gradedEval) },
-      ],
+      permits: [permit_check_click_gradedEval],
       receipts: [
         {
           ...RECEIPT_Q1,
@@ -2397,6 +2405,7 @@ test.describe('round-7: terminal commit proofs, causal tips, permit and attribut
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('s:1');
+    const contentPermit = c.issuePermit('check-click', 's:1', 0);
     const contentEval = fireEval(c, 'a-s1', [], {
       correct: true,
       results: [event(true, [navTo('next')])],
@@ -2405,6 +2414,7 @@ test.describe('round-7: terminal commit proofs, causal tips, permit and attribut
     fireMint(c, 'a-s1', 'a-x');
     fireMint(c, 'a-s1', 'a-y'); // sibling — response order cannot prove row order
     const v1 = c.issueFence('q:2');
+    const checkingPermit = c.issuePermit('check-click', 'q:2', 1);
     const checkingEval = fireEval(c, 'a-q2', [], {
       correct: true,
       results: [event(true, [navTo('next')])],
@@ -2435,10 +2445,7 @@ test.describe('round-7: terminal commit proofs, causal tips, permit and attribut
         { screenId: 's:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-s1', resourceId: 1 },
         { screenId: 'q:2', entrySeq: v1.seq, renderedAttemptGuid: 'a-q2', resourceId: 2 },
       ],
-      permits: [
-        { kind: 'check-click', screenId: 's:1', stepIndex: 0, seq: beforeSeq(c, contentEval) },
-        { kind: 'check-click', screenId: 'q:2', stepIndex: 1, seq: beforeSeq(c, checkingEval) },
-      ],
+      permits: [contentPermit, checkingPermit],
       receipts: [
         {
           stepIndex: 1,
@@ -2523,12 +2530,14 @@ test.describe('round-8: PUT commits, presence-only counts, exact failure attribu
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('s:1');
+    const contentPermit = c.issuePermit('check-click', 's:1', 0);
     // the dependency's own evaluation PUT carries and PERSISTS its state
     const contentEval = fireEval(c, 'a-s1', [{ path: 's:1|stage.sim.Correct', value: true }], {
       correct: true,
       results: [event(true, [navTo('next')])],
     });
     const v1 = c.issueFence('q:2');
+    const checkingPermit = c.issuePermit('check-click', 'q:2', 1);
     const checkingEval = fireEval(c, 'a-q2', [], {
       correct: true,
       results: [event(true, [navTo('next')])],
@@ -2559,10 +2568,7 @@ test.describe('round-8: PUT commits, presence-only counts, exact failure attribu
         { screenId: 's:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-s1', resourceId: 1 },
         { screenId: 'q:2', entrySeq: v1.seq, renderedAttemptGuid: 'a-q2', resourceId: 2 },
       ],
-      permits: [
-        { kind: 'check-click', screenId: 's:1', stepIndex: 0, seq: beforeSeq(c, contentEval) },
-        { kind: 'check-click', screenId: 'q:2', stepIndex: 1, seq: beforeSeq(c, checkingEval) },
-      ],
+      permits: [contentPermit, checkingPermit],
       receipts: [
         {
           stepIndex: 1,
@@ -2742,12 +2748,14 @@ test.describe('round-9: schema boundary, visit-anchored attribution, complete pe
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('c:1');
+    // genuinely issued, but the step has no usable evaluation to license it
+    const strayAck = c.issuePermit('feedback-ack', 'c:1', 0);
     c.noteLessonEnd();
     acceptFinalization(c);
     c.markFrozenAccepted();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'c:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-c1', resourceId: 1 }],
-      permits: [{ kind: 'feedback-ack', screenId: 'c:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+      permits: [strayAck],
       receipts: [],
       operationFailures: [],
       plans: [],
@@ -2797,11 +2805,12 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
+    const navPermit = c.issuePermit('widget-button', 'n:1', 0);
     c.beginSeal();
     c.finishSeal();
     const runRecord: RunRecord = {
       visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
-      permits: [{ kind: 'widget-button', screenId: 'n:1', stepIndex: 0, seq: v0.seq + 0.5 }],
+      permits: [navPermit],
       receipts: [],
       operationFailures: [], // the wrapper failed to stamp anything
       plans: [],
