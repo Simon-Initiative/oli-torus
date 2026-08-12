@@ -215,7 +215,7 @@ type OutlineItemProps = {
   content: PageEditorContent;
   collapsedGroupMap: Immutable.Map<string, boolean>;
   onEditContent: (content: PageEditorContent) => void;
-  setActiveDragId: (id: string) => void;
+  setActiveDragId: React.Dispatch<React.SetStateAction<string | null>>;
   onKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
   onFocus: (id: string) => void;
   setCollapsedGroupMap: (map: Immutable.Map<string, boolean>) => void;
@@ -375,7 +375,7 @@ type ResourceGroupItemProps = {
   expanded: boolean;
   toggleCollapsibleGroup: (id: string) => void;
   onEditContent: (content: PageEditorContent) => void;
-  setActiveDragId: (id: string) => void;
+  setActiveDragId: React.Dispatch<React.SetStateAction<string | null>>;
   onFocus: (id: string) => void;
   setCollapsedGroupMap: (map: Immutable.Map<string, boolean>) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>, index: number[]) => void;
