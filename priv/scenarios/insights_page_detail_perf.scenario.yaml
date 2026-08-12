@@ -1,0 +1,67 @@
+- project:
+    name: "insights_perf_course"
+    title: "MER-5838 Insights Performance"
+    root:
+      children:
+        - page: "Scored page with attempts"
+        - page: "Practice page without attempts"
+
+- create_activity:
+    project: "insights_perf_course"
+    title: "Performance question 1"
+    virtual_id: "performance_question_1"
+    type: "oli_multiple_choice"
+    content: |
+      stem_md: "Which answer is correct?"
+      choices:
+        - id: "a"
+          body_md: "Incorrect"
+        - id: "b"
+          body_md: "Correct"
+          correct: true
+
+- edit_page:
+    project: "insights_perf_course"
+    page: "Scored page with attempts"
+    content: |
+      title: "Scored page with attempts"
+      graded: true
+      blocks:
+        - type: prose
+          body_md: "A scored page with a real embedded activity."
+        - type: activity_reference
+          virtual_id: "performance_question_1"
+
+- edit_page:
+    project: "insights_perf_course"
+    page: "Practice page without attempts"
+    content: |
+      title: "Practice page without attempts"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "An intentionally unattempted practice page."
+
+- publish:
+    to: "insights_perf_course"
+    description: "Publish MER-5838 performance fixture"
+
+- section:
+    name: "insights_perf_section"
+    title: "MER-5838 Insights Performance"
+    from: "insights_perf_course"
+    open_and_free: true
+
+- user:
+    name: "insights_perf_instructor"
+    type: "instructor"
+    email: "insights-perf-instructor@example.edu"
+    password: "insights-perf-5838"
+    given_name: "Insights"
+    family_name: "Performance"
+    can_create_sections: true
+
+- enroll:
+    user: "insights_perf_instructor"
+    section: "insights_perf_section"
+    role: "instructor"
