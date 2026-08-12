@@ -1459,16 +1459,116 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
             "type" => "alternatives",
             "id" => "placement-a",
             "alternatives_id" => alternatives_resource_id,
-            "children" => []
+            "children" => [
+              %{
+                "type" => "alternative",
+                "children" => [
+                  %{"type" => "p", "children" => [%{"text" => "Welcome intervention"}]},
+                  %{"type" => "activity-reference", "activity_id" => 123}
+                ]
+              }
+            ]
           }
         ]
       })
 
     assessment = insert_project_page(project, "Assessment", true, %{"model" => []})
+    alternate = insert_project_page(project, "Alternate intervention", false, %{"model" => []})
+
+    for ordinal <- 1..8 do
+      insert_project_page(project, "ZZ Picker page #{ordinal}", false, %{"model" => []})
+    end
 
     view
     |> element("button[phx-click='add_draft_intervention'][phx-value-index='0']")
     |> render_click()
+
+    open_picker(view, "intervention_page")
+
+    view
+    |> element("button[phx-click='change_picker_page'][phx-value-offset='8']", "2")
+    |> render_click()
+
+    view
+    |> element("button[phx-click='change_picker_page'][phx-value-offset='0']", "1")
+    |> render_click()
+
+    assert has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='#{intervention.resource_id}']"
+           )
+
+    refute has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='#{assessment.resource_id}']"
+           )
+
+    view
+    |> element("#experiment-option-picker-table tr[phx-value-id='#{alternate.resource_id}']")
+    |> render_click()
+
+    assert has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='#{alternate.resource_id}'] input[checked]"
+           )
+
+    view
+    |> element("#experiment-option-picker-table tr[phx-value-id='#{intervention.resource_id}']")
+    |> render_click()
+
+    refute has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='#{alternate.resource_id}'] input[checked]"
+           )
+
+    assert has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='#{intervention.resource_id}'] input[checked]"
+           )
+
+    submit_picker(view, intervention.resource_id)
+
+    open_picker(view, "placement_element")
+
+    assert has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='placement-a']"
+           )
+
+    assert has_element?(view, "#experiment-option-picker-table", "Alternative Content")
+    assert has_element?(view, "#experiment-option-picker-table", "Welcome intervention")
+    assert has_element?(view, "#experiment-option-picker-table", "[Activity]")
+    refute has_element?(view, "#experiment-option-picker-table", "unsupported")
+    assert has_element?(
+             view,
+             "#experiment-option-picker",
+             "Elements are listed in the order they appear on the page"
+           )
+    assert has_element?(view, "#experiment-option-picker-table th", "Position")
+
+    assert has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='placement-a']",
+             "1"
+           )
+
+    submit_picker(view, "placement-a")
+
+    if algorithm == :thompson_sampling do
+      open_picker(view, "assessment_page")
+
+      assert has_element?(
+               view,
+               "#experiment-option-picker-table tr[phx-value-id='#{assessment.resource_id}']"
+             )
+
+      refute has_element?(
+               view,
+               "#experiment-option-picker-table tr[phx-value-id='#{intervention.resource_id}']"
+             )
+
+      submit_picker(view, assessment.resource_id)
+    end
 
     params = %{
       "decision_points" => %{
@@ -1476,13 +1576,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
           "algorithm" => Atom.to_string(algorithm),
           "interventions" => %{
             "0" => %{
-              "page_resource_id" => to_string(intervention.resource_id),
-              "content_element_id" => "placement-a",
-              "assessment_page_resource_id" =>
-                if(algorithm == :thompson_sampling,
-                  do: to_string(assessment.resource_id),
-                  else: ""
-                ),
               "reward_threshold" => "0.7"
             }
           }
@@ -1495,6 +1588,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     |> render_submit()
 
     assert has_element?(view, "[role='status']", "Experiment configuration saved.")
+  end
+
+  defp open_picker(view, kind) do
+    view
+    |> element(
+      "input[phx-click='open_option_picker'][phx-value-kind='#{kind}'][phx-value-point-index='0'][phx-value-intervention-index='0']"
+    )
+    |> render_click()
+  end
+
+  defp submit_picker(view, value) do
+    view
+    |> element("#experiment-option-picker-table tr[phx-value-id='#{value}']")
+    |> render_click()
+
+    assert has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='#{value}'] input[checked]"
+           )
+
+    view
+    |> element("#experiment-option-picker button[phx-click='select_picker_option']", "Select")
+    |> render_click()
   end
 
   defp insert_project_page(project, title, graded, content) do

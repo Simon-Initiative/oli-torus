@@ -378,6 +378,73 @@ defmodule Oli.Experiments do
   def list_available_decision_points(_scope), do: invalid_request("expected Scope")
 
   @doc """
+  Lists current project pages available to experiment intervention and assessment pickers.
+  """
+  def list_available_pages(%Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_access(scope) do
+      pages =
+        scope.project_slug
+        |> AuthoringResolver.revisions_of_type(ResourceType.id_for_page())
+        |> Enum.reject(& &1.deleted)
+        |> Enum.sort_by(&{&1.title, &1.resource_id})
+        |> Enum.map(&%{value: &1.resource_id, label: &1.title, graded: &1.graded})
+
+      {:ok, pages}
+    end
+  end
+
+  def list_available_pages(_scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Lists Alternatives elements on a current project page and identifies experiment-controlled ones.
+  """
+  def list_page_alternatives_elements(page_resource_id, %Scope{} = scope)
+      when is_integer(page_resource_id) and page_resource_id > 0 do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_access(scope),
+         %Revision{} = page <-
+           AuthoringResolver.from_resource_id(scope.project_slug, page_resource_id),
+         true <- page.resource_type_id == ResourceType.id_for_page() do
+      placements = Oli.Resources.PageContent.alternatives_placements(page.content || %{})
+
+      ids =
+        placements
+        |> Enum.map(& &1["alternatives_id"])
+        |> Enum.filter(&is_integer/1)
+        |> Enum.uniq()
+
+      experiment_ids =
+        scope.project_slug
+        |> AuthoringResolver.from_resource_id(ids)
+        |> Enum.reject(&is_nil/1)
+        |> Enum.filter(&experiment_decision_point_revision?/1)
+        |> MapSet.new(& &1.resource_id)
+
+      {:ok,
+       placements
+       |> Enum.with_index(1)
+       |> Enum.map(fn {placement, position} ->
+         id = placement["id"]
+
+         %{
+           value: id,
+           label: id,
+           position: position,
+           type: placement["type"],
+           content: placement["children"] || [],
+           experiment_controlled?: MapSet.member?(experiment_ids, placement["alternatives_id"])
+         }
+       end)}
+    else
+      _ -> not_found("page not found", %{page_resource_id: page_resource_id})
+    end
+  end
+
+  def list_page_alternatives_elements(_page_resource_id, _scope),
+    do: invalid_request("expected a page resource ID and Scope")
+
+  @doc """
   Returns whether a project-scoped decision point is referenced by a non-archived experiment
   definition.
   """

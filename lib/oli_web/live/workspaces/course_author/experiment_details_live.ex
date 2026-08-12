@@ -28,7 +28,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          {:ok, participation} <-
            ABExperiments.get_section_participation(experiment_id, scope),
          {:ok, policy_snapshot} <- ABExperiments.policy_snapshot(authoring_view, scope),
-         {:ok, decision_point_candidates} <- decision_point_candidates(authoring_view, scope) do
+         {:ok, decision_point_candidates} <- decision_point_candidates(authoring_view, scope),
+         {:ok, page_options} <- ABExperiments.list_available_pages(scope) do
       experiment = authoring_view.definition
 
       {:ok,
@@ -38,6 +39,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          participation: participation,
          policy_snapshot: policy_snapshot,
          decision_point_candidates: decision_point_candidates,
+         page_options: page_options,
+         picker: nil,
          graph_draft: graph_draft(authoring_view, decision_point_candidates),
          configuration_error: nil,
          configuration_success: nil,
@@ -447,29 +450,40 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                   <h5 class="h6 mb-3 mt-4 font-weight-bold">Interventions and assessments</h5>
                   <div
                     :for={{intervention, intervention_index} <- Enum.with_index(point.interventions)}
-                    class="mb-3 grid grid-cols-1 gap-3 rounded border p-3 md:grid-cols-4 dark:border-gray-700"
+                    class="mb-3 grid grid-cols-1 gap-3 rounded border p-3 md:grid-cols-[repeat(4,minmax(0,1fr))_auto] dark:border-gray-700"
                   >
-                    <.text_field
+                    <.selector_field
                       point_index={point_index}
                       intervention_index={intervention_index}
                       key="page_resource_id"
-                      label="Intervention page resource ID"
+                      label="Intervention page"
                       value={intervention.page_resource_id}
+                      display_value={page_option_label(@page_options, intervention.page_resource_id)}
+                      picker_kind="intervention_page"
+                      disabled={@experiment.state != :draft}
                     />
-                    <.text_field
+                    <.selector_field
                       point_index={point_index}
                       intervention_index={intervention_index}
                       key="content_element_id"
                       label="Placement element ID"
                       value={intervention.content_element_id}
+                      display_value={intervention.content_element_id}
+                      picker_kind="placement_element"
+                      disabled={@experiment.state != :draft or is_nil(intervention.page_resource_id)}
                     />
-                    <.text_field
+                    <.selector_field
                       point_index={point_index}
                       intervention_index={intervention_index}
                       key="assessment_page_resource_id"
-                      label="Scored page resource ID"
+                      label="Scored page"
                       value={intervention.assessment_page_resource_id}
+                      display_value={
+                        page_option_label(@page_options, intervention.assessment_page_resource_id)
+                      }
+                      picker_kind="assessment_page"
                       required={false}
+                      disabled={@experiment.state != :draft}
                     />
                     <.text_field
                       point_index={point_index}
@@ -478,16 +492,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       label="Success threshold"
                       value={intervention.reward_threshold}
                       required={false}
+                      disabled={@experiment.state != :draft}
                     />
                     <button
                       :if={@experiment.state == :draft}
+                      id={"remove-intervention-#{point_index}-#{intervention_index}"}
                       type="button"
-                      class="btn btn-link text-danger"
+                      class="mt-6 inline-flex h-[42px] w-[42px] self-start items-center justify-center rounded-md text-red-600 hover:bg-red-50 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-red-400 dark:hover:bg-red-950/30"
                       phx-click="remove_draft_intervention"
                       phx-value-point-index={point_index}
                       phx-value-intervention-index={intervention_index}
+                      phx-hook="GlobalTooltip"
+                      data-tooltip="Remove intervention"
+                      data-tooltip-style="body"
+                      aria-label="Remove intervention"
                     >
-                      Remove intervention
+                      <i class="fa-solid fa-trash" aria-hidden="true"></i>
                     </button>
                   </div>
                   <button
@@ -776,6 +796,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         </div>
       </section>
 
+      <OliWeb.Live.Common.FilteredOptionPicker.filtered_option_picker
+        :if={@picker}
+        id="experiment-option-picker"
+        title={@picker.title}
+        label={@picker.label}
+        description={Map.get(@picker, :description)}
+        options={@picker.options}
+        filter={@picker.filter}
+        description_key={Map.get(@picker, :description_key)}
+        position_key={Map.get(@picker, :position_key)}
+        selection_mode={@picker.selection_mode}
+        selected_values={@picker.selected_values}
+        page={@picker.page}
+        page_size={@picker.page_size}
+        on_toggle="toggle_picker_option"
+        on_page="change_picker_page"
+        on_select="select_picker_option"
+        on_cancel="close_picker"
+      />
+
       <OliWeb.Components.Modal.modal
         :if={@show_add_decision_point}
         id="add-decision-point-modal"
@@ -947,6 +987,75 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   def handle_event("close_add_decision_point", _params, socket) do
     {:noreply, assign(socket, show_add_decision_point: false)}
+  end
+
+  def handle_event(
+        "open_option_picker",
+        %{
+          "kind" => kind,
+          "point-index" => point_index,
+          "intervention-index" => intervention_index
+        },
+        socket
+      ) do
+    with :draft <- socket.assigns.experiment.state,
+         {:ok, point_index} <- parse_index(point_index),
+         {:ok, intervention_index} <- parse_index(intervention_index),
+         {:ok, picker} <- build_picker(socket, kind, point_index, intervention_index) do
+      {:noreply, assign(socket, picker: picker)}
+    else
+      _ -> invalid_configuration_event(socket)
+    end
+  end
+
+  def handle_event("close_picker", _params, socket), do: {:noreply, assign(socket, picker: nil)}
+
+  def handle_event("toggle_picker_option", %{"id" => value}, socket) do
+    with picker when not is_nil(picker) <- socket.assigns.picker do
+      selected_values =
+        case picker.selection_mode do
+          :single -> [value]
+          :multiple -> toggle_picker_value(picker.selected_values, value)
+        end
+
+      {:noreply, assign(socket, picker: %{picker | selected_values: selected_values})}
+    else
+      _ -> invalid_configuration_event(socket)
+    end
+  end
+
+  def handle_event("change_picker_page", %{"offset" => offset}, socket) do
+    with picker when not is_nil(picker) <- socket.assigns.picker,
+         {:ok, offset} <- parse_non_negative_integer(offset) do
+      page = div(offset, picker.page_size) + 1
+      {:noreply, assign(socket, picker: %{picker | page: page})}
+    else
+      _ -> invalid_configuration_event(socket)
+    end
+  end
+
+  def handle_event("select_picker_option", _params, socket) do
+    with %{point_index: point_index, intervention_index: intervention_index, key: key} <-
+           socket.assigns.picker,
+         [value] <- socket.assigns.picker.selected_values,
+         {:ok, parsed_value} <- parse_picker_value(key, value) do
+      socket = assign(socket, picker: nil, configuration_error: nil)
+
+      update_graph_points(socket, fn points ->
+        List.update_at(points, point_index, fn point ->
+          interventions =
+            List.update_at(point.interventions, intervention_index, fn intervention ->
+              intervention
+              |> Map.put(key, parsed_value)
+              |> maybe_clear_element_selection(key)
+            end)
+
+          %{point | interventions: interventions}
+        end)
+      end)
+    else
+      _ -> invalid_configuration_event(socket)
+    end
   end
 
   def handle_event(
@@ -1170,6 +1279,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   attr :label, :string, required: true
   attr :value, :any, required: true
   attr :required, :boolean, default: true
+  attr :disabled, :boolean, default: false
 
   defp text_field(assigns) do
     ~H"""
@@ -1177,11 +1287,66 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       <label for={"intervention-#{@point_index}-#{@intervention_index}-#{@key}"}>{@label}</label>
       <input
         id={"intervention-#{@point_index}-#{@intervention_index}-#{@key}"}
-        class="form-control"
+        class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
         name={"configuration[decision_points][#{@point_index}][interventions][#{@intervention_index}][#{@key}]"}
         value={@value}
         required={@required}
+        disabled={@disabled}
       />
+    </div>
+    """
+  end
+
+  attr :point_index, :integer, required: true
+  attr :intervention_index, :integer, required: true
+  attr :key, :string, required: true
+  attr :label, :string, required: true
+  attr :value, :any, required: true
+  attr :display_value, :any, required: true
+  attr :picker_kind, :string, required: true
+  attr :required, :boolean, default: true
+  attr :disabled, :boolean, default: false
+
+  defp selector_field(assigns) do
+    ~H"""
+    <div>
+      <label for={"intervention-#{@point_index}-#{@intervention_index}-#{@key}"}>{@label}</label>
+      <input
+        type="hidden"
+        name={"configuration[decision_points][#{@point_index}][interventions][#{@intervention_index}][#{@key}]"}
+        value={@value}
+      />
+      <div class="flex w-full">
+        <input
+          id={"intervention-#{@point_index}-#{@intervention_index}-#{@key}"}
+          class={[
+            "min-w-0 flex-1 rounded-l-md rounded-r-none border border-r-0 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:z-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-700 dark:disabled:text-gray-400",
+            @disabled && "cursor-not-allowed",
+            !@disabled && "cursor-pointer"
+          ]}
+          value={@display_value || "Not selected"}
+          readonly
+          disabled={@disabled}
+          aria-required={to_string(@required)}
+          aria-haspopup="dialog"
+          phx-click={if @disabled, do: nil, else: "open_option_picker"}
+          phx-value-kind={@picker_kind}
+          phx-value-point-index={@point_index}
+          phx-value-intervention-index={@intervention_index}
+        />
+        <button
+          type="button"
+          class="whitespace-nowrap rounded-l-none rounded-r-md border border-blue-600 bg-white px-3 py-2 font-medium text-blue-700 shadow-sm hover:bg-blue-50 focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700"
+          phx-click="open_option_picker"
+          phx-value-kind={@picker_kind}
+          phx-value-point-index={@point_index}
+          phx-value-intervention-index={@intervention_index}
+          disabled={@disabled}
+          aria-haspopup="dialog"
+        >
+          Choose…
+        </button>
+      </div>
     </div>
     """
   end
@@ -1302,6 +1467,128 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp unused_candidates(graph_draft, candidates) do
     used = MapSet.new(graph_draft.decision_points, & &1.alternatives_resource_id)
     Enum.reject(candidates, &MapSet.member?(used, &1.alternatives_resource_id))
+  end
+
+  defp build_picker(socket, "intervention_page", point_index, intervention_index) do
+    with {:ok, options} <- ABExperiments.list_available_pages(authoring_scope(socket)) do
+      {:ok,
+       %{
+         title: "Choose intervention page",
+         label: "Unscored page",
+         options: options,
+         filter: fn option -> not option.graded end,
+         description_key: nil,
+         position_key: nil,
+         selection_mode: :single,
+         selected_values: [],
+         page: 1,
+         page_size: 8,
+         point_index: point_index,
+         intervention_index: intervention_index,
+         key: :page_resource_id
+       }}
+    end
+  end
+
+  defp build_picker(socket, "assessment_page", point_index, intervention_index) do
+    with {:ok, options} <- ABExperiments.list_available_pages(authoring_scope(socket)) do
+      {:ok,
+       %{
+         title: "Choose scored page",
+         label: "Scored page",
+         options: options,
+         filter: fn option -> option.graded end,
+         description_key: nil,
+         position_key: nil,
+         selection_mode: :single,
+         selected_values: [],
+         page: 1,
+         page_size: 8,
+         point_index: point_index,
+         intervention_index: intervention_index,
+         key: :assessment_page_resource_id
+       }}
+    end
+  end
+
+  defp build_picker(socket, "placement_element", point_index, intervention_index) do
+    with %{page_resource_id: page_resource_id} <-
+           get_in(socket.assigns.graph_draft, [
+             :decision_points,
+             Access.at(point_index),
+             :interventions,
+             Access.at(intervention_index)
+           ]),
+         true <- is_integer(page_resource_id),
+         {:ok, options} <-
+           ABExperiments.list_page_alternatives_elements(
+             page_resource_id,
+             authoring_scope(socket)
+           ) do
+      {:ok,
+       %{
+         title: "Choose placement element",
+         label: "A/B Test Alternatives",
+         description: "Elements are listed in the order they appear on the page",
+         options: Enum.map(options, &describe_element_option/1),
+         filter: &experiment_alternatives_element?/1,
+         description_key: :description,
+         position_key: :position,
+         selection_mode: :single,
+         selected_values: [],
+         page: 1,
+         page_size: 8,
+         point_index: point_index,
+         intervention_index: intervention_index,
+         key: :content_element_id
+       }}
+    end
+  end
+
+  defp build_picker(_socket, _kind, _point_index, _intervention_index),
+    do: {:error, :invalid_picker}
+
+  defp experiment_alternatives_element?(option),
+    do: option.type == "alternatives" and option.experiment_controlled?
+
+  defp describe_element_option(option) do
+    option
+    |> Map.put(:label, element_type_label(option.type))
+    |> Map.put(
+      :description,
+      OliWeb.Common.Utils.extract_text_from_content(option.content)
+    )
+  end
+
+  defp element_type_label("alternatives"), do: "Alternative Content"
+  defp element_type_label(type), do: Oli.Utils.snake_case_to_friendly(type)
+
+  defp parse_picker_value(:content_element_id, value) when is_binary(value) and value != "",
+    do: {:ok, value}
+
+  defp parse_picker_value(key, value)
+       when key in [:page_resource_id, :assessment_page_resource_id],
+       do: parse_positive_integer(value)
+
+  defp parse_picker_value(_key, _value), do: {:error, :invalid_picker_value}
+
+  defp toggle_picker_value(values, value) do
+    case value in values do
+      true -> List.delete(values, value)
+      false -> [value | values]
+    end
+  end
+
+  defp maybe_clear_element_selection(intervention, :page_resource_id),
+    do: %{intervention | content_element_id: nil}
+
+  defp maybe_clear_element_selection(intervention, _key), do: intervention
+
+  defp page_option_label(options, resource_id) do
+    case Enum.find(options, &(&1.value == resource_id)) do
+      nil -> if(resource_id, do: "Selected page", else: nil)
+      option -> option.label
+    end
   end
 
   defp decision_point_candidates(%{definition: %{state: :draft}}, scope),
