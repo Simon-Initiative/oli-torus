@@ -4,78 +4,111 @@
 > decision (`mer-5674-driver-decision.md` §4); the checkpoint-A review history cites the
 > old file name. The work's name is the strict adaptive verification framework.
 
-## ⇥ HANDOFF — session boundary 2026-08-11 (read this first)
+## ⇥ HANDOFF — session boundary 2026-08-12 (read this first)
 
-**Where we are → what's next:** steps 0–3 SHIPPED; gate B0 CLOSED; the gate-B contract is
-CLOSED SOUND-AS-DRAFTED (`8a634180c2`); **step-4 units 4a and 4b are BUILT, REVIEWED and
-COMMITTED** (`9b0f4ec09a`, `016764f031`); **4b-2 (manifest v1→v2 translation) is DONE — a
-PRIVATE-ARTIFACT edit, nothing to commit.** Next unit: **4c, the new driver.**
+**Where we are → what's next:** steps 0–3 SHIPPED; gate B0 CLOSED; gate-B contract CLOSED
+SOUND-AS-DRAFTED (`8a634180c2`); units 4a/4b COMMITTED (`9b0f4ec09a`, `016764f031`); 4b-2
+manifest translation DONE (private artifact). **Unit 4c is HALF DONE: pieces 1–2 committed
+(`ad72589959`, `72920220f7`), pieces 3–4 remain.** Next: **4c piece 3, the new driver.**
 
-### 4b-2 — DONE 2026-08-11 (private artifact; both gates now GREEN)
+### 4c — the unit in flight (4 pieces; human call 2026-08-11: build them all, THEN Codex)
 
-`lote-manifest-v2.json` carries v2 `operations` on all 19 graded screens and no `_v1_answers`
-/ `_translation_todo` / presence-only expectation. Reproducible by
-`translate_lote_manifest_v2.py` (idempotent — a second run is byte-identical). Evidence:
+| Piece | State | Evidence |
+|---|---|---|
+| 1. Frozen suite inventory (B4-SUITE `EXPECTED-INV`) | ✅ `ad72589959` | 271 frozen + 72 additive + 2 demo = 345 |
+| 2. Journal permit/fence domain (**B4-STAMP, MATERIAL**) | ✅ `72920220f7` | 339 passed, tsc 2-only |
+| 3. New driver as core+registry consumer | ⬜ **START HERE** | — |
+| 4. Exit-site inventory + per-site fault injection | ⬜ | B4-EXIT-INV/EM/MAP, W-E1–E6 |
 
-- **B4-MAN + B4-BIJ ✅** "22 screens corroborated from Plate Tectonics" (was: RED at
-  `q:1516177456571:380`, "declares neither an answer operation nor a cross-screen dependency").
-- **B4-PRED ✅** `q:1516197466626:752`: 64 states (32 selections × 2 §3.8 encodings),
-  62 correct / 2 incorrect — the 2 are the empty selection, i.e. exactly §6.3 arm (a).
-- Executed subset: `npx playwright test mer5865-archive-gates` with the private env =
-  **48 passed** (both private-archive tests run, no skips). Step-3 shadow gate re-replayed
-  on the NEW manifest: **7/7**, both greens in-scope 0 / unexplained 0 / 65=65 pinned.
-- Repo unchanged by this unit, so the `adaptive-` baseline (334/2) was not re-run.
+**Then: CODEX REVIEWS 4c BEFORE 4d** (human call 2026-08-11, overriding "first code read at
+gate B" — the driver plus the spec switch is thousands of lines unreviewed, and a B4-STAMP API
+objection raised at gate B would cost two rewrites instead of one). Gate B still owns what
+needs the switched spec running live (CORE-L, ENTRY-L, REG-L, VERDICT-L, exit-site injection)
+plus the four reviewer-derived obligations (contract §7).
 
-Translation table (authored from the registry, NOT read out of the archive — a version copied
-from the file the reader parses would make B4-MAN tautological): `mcq_radio` →
-`janus-mcq@1:radio`, `mcq_checkboxes` → `janus-mcq@1:checkboxes`, `text_input` →
-`janus-input-text@1`, `frame_selects` → `spr-widget-fill-in-the-blanks@2`, `matching` →
-`spr-widget-matching@2`, `custom_dnd` → `spr-widget-general-drag-drop@6`. Operation ids are
-`op.<partId>`. Janus directives declare `part_id` parsed from the screen's expectation path,
-so B4-MAN corroborates `partsLayout` ids against fact paths taken from `authoring.rules` —
-two independent archive locations. CAPI directives declare none (`ownCapiPart` never reads it).
+### PIECE 3 — the new driver (start here)
 
-### 4c PIECE 1 — DONE 2026-08-11: the B4-SUITE pre-build artifact
+`AdaptiveHappyPathTask.ts` (924 lines), `AdaptiveEvaluationObserver.ts` (244),
+`AdaptiveStrictContract.ts` (513) become consumers of the committed core — registry-driven
+answers, journal-issued fences/permits/readback stamps, recorded plans. **✅ verified sizes
+2026-08-12.** First step, and do it before writing the driver:
 
-`assets/automation/gate-evidence/mer-5865-expected-inv.json` (committed). **Finding: this was
-a PRE-BUILD contract obligation that 4a and 4b landed without** — B4-SUITE requires the
-pre-step-4 `adaptive-` discovery "committed as an artifact BEFORE build", and it existed
-nowhere. Recoverable only because `f9f9982874` is immutable: the frozen half is read from a
-git worktree at that revision, never from the working tree, and step-4 additions enter only
-through `additive_step_4`. **The deviation is written into the artifact for the gate-B
-reviewer, not hidden.** Arithmetic closes exactly: frozen 271 (`adaptive-` 264 + `mer5865-`
-7) + additive 72 (4a 24 + 4b 48) + 2 classified never-committed demo entries = 345 discovered.
-Identity is **file+title**, not file:line — step-4 edits move lines without changing test
-identity. Still owed inside 4c (recorded in the artifact): W-U7/W-U9 runtime case inventory
-for cardinality-bearing inner loops (`adaptive-oracle.spec.ts:1799`), whose cases are ONE
-discovery identity each and so are invisible to `--list`.
+**`AdaptiveJournal.ts:2` imports `CheckActions` from `AdaptiveStrictContract`** — one of the
+three files `B4-DEL` deletes at 4d (used at `:62` `actions: CheckActions | null` and `:682`).
+The committed core depends on a file scheduled for deletion, so the type must MOVE into the
+journal's own domain or the DEL sweep can never come back clean. ✅ verified 2026-08-12.
 
-**Read the gate contract's PRE-BUILD clauses at the START of every remaining unit** — that is
-how this was missed for three units.
+### PIECE 2 — what landed, and the design calls that compaction would lose
 
-### NEXT — 4c pieces 2–4, then Codex, then 4d
+`72920220f7` (+284/−132 over `AdaptiveJournal.ts`, `AdaptiveOracle.ts`, `adaptive-oracle.spec.ts`):
 
-**Human call 2026-08-11: build pieces 2–4 in one pass, then CODEX REVIEWS 4c BEFORE 4d** — no
-longer "first code read at gate B". Rationale recorded: the driver plus the spec switch is
-thousands of lines unreviewed, and a `B4-STAMP` API objection raised at gate B would cost two
-rewrites instead of one. Gate B keeps what needs the switched spec running live (CORE-L,
-ENTRY-L, REG-L, VERDICT-L, exit-site injection) plus the four reviewer-derived obligations.
+- **Journal issues, driver only times.** `issuePermit(kind, screenId, stepIndex)` and
+  `issueReadbackFence(screenId, stepIndex)` (`AdaptiveJournal.ts:211,228`) — armed-only, seq
+  from the one monotonic domain, returned as copies. **No method accepts a seq**, which is
+  B4-STAMP's type-level half. Snapshot gained `permits` + `readbackFences`.
+- **Issuance alone does NOT close B4-STAMP** — the decisive call. Without a claim-side check a
+  driver can hand the oracle a permit it never obtained (contract threats 1/3). `auditRun` now
+  matches every runRecord permit against a journal issuance on the WHOLE tuple, each issuance
+  claimable once, and requires a declared `readbackCompletedSeq` to be a real issuance for that
+  screen+step. New violation detail `not-journal-issued` + 2 reporter templates.
+- **REJECTED: gating the check on "snapshot carries issuances".** That switches it off exactly
+  when a driver issues nothing and fabricates everything. Migrated 9+ fixtures instead.
+- **Absence of the issuance arrays is read as "recorded none"** (`AdaptiveOracle.ts` — `?? []`),
+  because captures serialized before these fields exist would otherwise crash. Safe ONLY because
+  the check is claim-side: claiming a permit against a snapshot with no issuance record still
+  fails closed. Do not "harden" this into a throw without re-reading the shadow-replay path.
+- **Fixtures no longer fabricate seqs at all** — `grep -cE "beforeSeq|betweenSeq|\+ 0\.5|- 0\.5"`
+  on `adaptive-oracle.spec.ts` = **0** ✅. `fireEval` was split into `openEval`/`settleEval` so
+  the between-request-and-response ack is a REAL mid-flight issuance without restating the wire
+  payload shape (my hand-written copy of that shape was wrong first try — that is why the split
+  exists). `buildRun` gained an `earlyAckPermit` hook that issues before any fence exists.
 
-### NEXT UNIT — 4c, the new driver (detail)
+### PIECE 1 — the pre-build finding worth not repeating
 
-`AdaptiveHappyPathTask.ts`, `AdaptiveEvaluationObserver.ts`, `AdaptiveStrictContract.ts`
-become consumers of the committed core: registry-driven answers, driver-stamped fences,
-journal-domain permit + readback stamps per **B4-STAMP (MATERIAL)**, and the B4-EXIT
-control-flow exit-site inventory. Gate command for the manifest gates:
+`assets/automation/gate-evidence/mer-5865-expected-inv.json`. B4-SUITE required this artifact
+"committed BEFORE build" and **4a and 4b landed without it**; recoverable only because
+`f9f9982874` is immutable (frozen half read from a git worktree at that revision, never the
+working tree; step-4 additions enter only via `additive_step_4`). The deviation is written INTO
+the artifact for the reviewer. Identity is **file+title**, not file:line. Still owed inside 4c:
+the W-U7/W-U9 runtime case inventory for cardinality-bearing inner loops
+(`adaptive-oracle.spec.ts:1799`) — one discovery identity each, invisible to `--list`.
+
+**Read the gate contract's PRE-BUILD clauses at the START of every remaining unit.**
+
+### 4b-2 — manifest translation, DONE (private artifact, nothing to commit)
+
+`lote-manifest-v2.json`: v2 `operations` on all 19 graded screens, no `_v1_answers` /
+`_translation_todo` / presence-only expectation. Reproducible + idempotent via
+`translate_lote_manifest_v2.py`. Translation table (**authored from the registry, NOT read out
+of the archive** — a version copied from the file the reader parses would make B4-MAN
+tautological): `mcq_radio` → `janus-mcq@1:radio`, `mcq_checkboxes` → `janus-mcq@1:checkboxes`,
+`text_input` → `janus-input-text@1`, `frame_selects` → `spr-widget-fill-in-the-blanks@2`,
+`matching` → `spr-widget-matching@2`, `custom_dnd` → `spr-widget-general-drag-drop@6`.
+Operation ids `op.<partId>`; janus directives carry `part_id` parsed from the expectation path
+so B4-MAN corroborates `partsLayout` ids against `authoring.rules` fact paths (two independent
+archive locations); CAPI directives carry none (`ownCapiPart` never reads it).
+
+### TEST BASELINE ✅ verified 2026-08-12 (cite the EXACT subset, never a round number)
+
+`adaptive-journal adaptive-attribution adaptive-oracle adaptive-family-registry
+adaptive-strict-driver adaptive-strict-walk mer5865-archive-gates mer5865-shadow-gate` with the
+private env = **339 passed / 0 failed**. Archive gates: 22 screens corroborated; Reflect 64
+states, 62 correct / 2 incorrect. Shadow gate 7/7, both greens in-scope 0 / unexplained 0 /
+65=65 pinned. `tsc` = exactly 2 fenced `liveSocket` errors and **0** others. eslint + prettier
+clean on touched files. `adaptive-authoring` (the flake) passed **4/4** on a separate retry.
+Full discovery `adaptive- mer5865-` = 345 entries in 0.94s.
+
+Gate command for the manifest gates (private env; `<scratchpad>` = HANDOFF "PRIVATE ARTIFACTS"):
 
 ```
-cd assets/automation && MER5865_ARCHIVE_DIR=<scratchpad>/lote MER5865_ARCHIVE_PAGE=397294 \
+cd /Users/franciscocastro/code/oli-torus/assets/automation && \
+  MER5865_ARCHIVE_DIR=<scratchpad>/lote MER5865_ARCHIVE_PAGE=397294 \
   MER5865_MANIFEST=<scratchpad>/lote-manifest-v2.json \
   npx playwright test mer5865-archive-gates --reporter=line
 ```
 
-Then 4d (spec switch + verdict boundary, then delete the old walker), gate B (ONE Codex
-implementation pass over assembled step 4), 5–6 → C1, 7–8 → C2, 9–10.
+Then 4d (spec switch + verdict boundary, then delete the old walker), gate B, 5–6 → C1,
+7–8 → C2, 9–10.
 
 ### SHIPPED (✅ verified 2026-08-11 unless flagged; nothing pushed — human gates every commit)
 
@@ -99,6 +132,12 @@ implementation pass over assembled step 4), 5–6 → C1, 7–8 → C2, 9–10.
 - `016764f031` — **unit 4b**: `AdaptiveArchiveReader.ts`, `AdaptivePredicateEquivalence.ts`,
   `AdaptiveArchiveGates.ts`, `mer5865-archive-gates.spec.ts` (48 tests), 4 tsconfig aliases,
   plus the three Codex implementation reviews.
+- `3e48df1019`, `94e8b94471` — spec records: manifest translation + Reflect predicate decision;
+  authoring-flake cause claim corrected and the greenhouse coordination question retired.
+- `ad72589959` — **4c piece 1**: `gate-evidence/mer-5865-expected-inv.json` (frozen suite
+  inventory, 1,816 lines of test identities).
+- `72920220f7` — **4c piece 2**: journal-issued permits/readback fences + the oracle's
+  claim-side refusal of anything the journal never issued.
 
 Every commit: `[ENHANCEMENT] [MER-5865] subject`, single line, no trailers.
 Branch: `MER-5865-adaptive-lessons-share-strict-verification-and-migrate-real-chem-specs`.
@@ -350,6 +389,12 @@ loop until Codex flags nothing material or the human calls it.
   `ready()` for mcq is `waitForDeckReady()` plus `selectMcqByText`'s 2s visibility wait
   (`AdaptiveDeckPO.ts:423`). If 4c live runs flake on mcq readiness, the fix belongs in the
   registry entry's `ready()`, not in a dead directive field. Owner: 4c live acceptance runs.
+- **`AdaptiveJournal.ts:2` imports `CheckActions` from `AdaptiveStrictContract`** — a file
+  `B4-DEL` deletes. Move the type before 4d or the sweep can never come back clean. ✅ verified
+  2026-08-12. Owner: 4c piece 3 (first step).
+- **W-U7/W-U9 runtime case inventory** for cardinality-bearing inner loops
+  (`adaptive-oracle.spec.ts:1799`) is NOT covered by the frozen suite artifact — those cases are
+  one discovery identity each. Owner: 4c, before the Codex read.
 - **LotE Cover's `action.src_fragment` is `"prod"`** — it identifies exactly one part src on
   that screen today (`spr-widget-buttonwidget/prod/2.0.*`; the timer widget is not prod-served),
   so B4-BIJ passes, and a second prod-served widget would make it fail AMBIGUOUS, not wrong.
@@ -403,6 +448,15 @@ loop until Codex flags nothing material or the human calls it.
 - The bail capture run's TEST FAILURE is the intended outcome — the dump file is the product.
 - **`MER5865_ARCHIVE_PAGE` is a RESOURCE ID, not a title** — LotE "Plate Tectonics" is
   `397294`. Passing a title yields `resource NaN is absent`.
+- **`tsc` cannot see across the JSON boundary.** Adding required fields to `JournalSnapshot`
+  type-checked clean and then CRASHED the shadow gate at runtime (`Cannot read properties of
+  undefined (reading 'map')`) — captures are deserialized and typed by assertion, so old dumps
+  simply lack new fields. Any snapshot-shape change must be replayed against the captures, not
+  just compiled. ✅ hit and fixed 2026-08-12.
+- **A bulk `sed`/python replace across a spec file WILL hit sites you did not mean.** Dropping
+  `const navEval =` removed two bindings still referenced 500 lines away, and a stale return-type
+  annotation survived; the SUITE stayed green while `tsc`/eslint were red. Run tsc + eslint before
+  reporting, never test results alone. ✅ 2026-08-12.
 - **Shell cwd persistence bit again 2026-08-11**: a `cd /Users/.../oli-torus` earlier in the
   session left later `npx playwright test` calls running from the repo root, which reports
   "No tests found" + a bogus `test.afterAll()` error that looks like broken code. Always
