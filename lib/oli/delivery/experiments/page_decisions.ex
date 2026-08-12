@@ -44,6 +44,13 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
   """
   def prepare_content(section, page, user, content) do
     placements = PageContent.alternatives_placements(content)
+    prepare_placements(section, page, user, placements)
+  end
+
+  @doc """
+  Prepares delivery decisions from Alternatives placements already extracted from page content.
+  """
+  def prepare_placements(section, page, user, placements) when is_list(placements) do
     alternatives_resource_ids = alternatives_resource_ids(placements)
 
     case alternatives_resource_ids do

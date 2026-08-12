@@ -206,31 +206,11 @@ defmodule Oli.Delivery.Page.PageContext do
     prepared =
       PageDecisions.prepare_content(section, decision_revision, user, decision_revision.content)
 
-    activity_provider = fn content, source, prototypes, learner, slug, resolver ->
-      selected_content =
-        Oli.Resources.Alternatives.apply_experiment_decisions(
-          content,
-          prepared.alternative_groups_by_id,
-          prepared.experiment_decisions
-        )
-
-      result =
-        Oli.Delivery.ActivityProvider.provide(
-          selected_content,
-          source,
-          prototypes,
-          learner,
-          slug,
-          resolver
-        )
-
-      %{
-        result
-        | alternative_groups_by_id: prepared.alternative_groups_by_id,
-          experiment_decisions: prepared.experiment_decisions,
-          experiment_attributions: prepared.experiment_attributions
-      }
-    end
+    activity_provider =
+      Oli.Delivery.Experiments.ActivityProvider.from_prepared(
+        &Oli.Delivery.ActivityProvider.provide/6,
+        prepared
+      )
 
     {progress_state, resource_attempts, latest_attempts, activities} =
       Appsignal.instrument("PageLifecycle.visit", fn ->
