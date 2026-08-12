@@ -64,7 +64,7 @@ defmodule Oli.Rendering.Alternatives do
       },
       element
     )
-    |> render_selected_alternatives(context, writer)
+    |> render_selected_alternatives(context, element, writer)
     |> maybe_render_preference_selector(context, element, writer, by_id)
   end
 
@@ -80,7 +80,17 @@ defmodule Oli.Rendering.Alternatives do
     end
   end
 
-  defp render_selected_alternatives(selected_alternatives, %Context{} = context, writer) do
+  defp render_selected_alternatives(
+         selected_alternatives,
+         %Context{mode: mode} = context,
+         element,
+         Oli.Rendering.Alternatives.Html = writer
+       )
+       when mode in [:author_preview, :instructor_preview] do
+    writer.preview_alternatives(context, element, selected_alternatives)
+  end
+
+  defp render_selected_alternatives(selected_alternatives, %Context{} = context, _element, writer) do
     selected_alternatives
     |> Enum.flat_map(fn alternative ->
       writer.alternative(

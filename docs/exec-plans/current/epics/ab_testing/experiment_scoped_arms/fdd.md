@@ -13,6 +13,7 @@ This design requires additive PostgreSQL tables for decision-point mappings, int
 - Functional requirements:
   - Experiment structure and binding: FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-017, FR-018, FR-019, FR-020.
   - Assignment and policies: FR-007, FR-008, FR-009, FR-010, FR-021, FR-022, FR-027.
+  - Alternatives non-nesting structure: FR-034.
   - Assessment rewards and evidence: FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-023, FR-024, FR-032.
   - Compatibility and authoring surfaces: FR-025, FR-026, FR-028, FR-029, FR-030, FR-031, FR-033.
   - Acceptance traceability: AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012, AC-013, AC-014, AC-015, AC-016, AC-017, AC-018, AC-019, AC-020, AC-021, AC-022, AC-023, AC-024, AC-025, AC-026, AC-027, AC-028, AC-029, AC-030, AC-031, AC-032, and AC-033 are verified by the corresponding test categories in section 13.
@@ -26,11 +27,12 @@ This design requires additive PostgreSQL tables for decision-point mappings, int
 - Assumptions:
   - A condition has one stable identity within an experiment and represents a comparable treatment at every decision point where mapped.
   - The stable intervention key is the page resource ID plus the page element's stable `id`; revision and publication IDs are evidence only.
-  - Whole-page moves preserve the page resource ID. Page duplication and element recreation generate new IDs through existing editing behavior.
+  - Whole-page moves preserve the page resource ID. Page duplication creates a new page resource ID while preserving copied content-element IDs; same-page element copy or recreation generates a new element ID.
   - Existing finalized scored-page attempt ordering and normalized overall page scores are authoritative; experiment code does not recompute scoring.
   - Existing Thompson Sampling guardrail semantics remain valid after moving their state to decision-point scope.
   - No feature flag is added, consistent with the PRD and `harness.yml` default. Rollout is controlled by valid draft activation and normal deployment.
   - Jira is the issue system of record, but this design performs no Jira writes.
+  - Both Alternatives strategies may be placed inside ordinary content containers, but no Alternatives placement may have another Alternatives placement as an ancestor.
 
 ## 3. Repository Context Summary
 
@@ -46,7 +48,7 @@ This design requires additive PostgreSQL tables for decision-point mappings, int
   - Published revisions and learner attempts pin delivered content, so intervention lookup must use page resource identity while recording the actual revision/publication as evidence.
 - Unknowns to confirm:
   - None block architecture. During detailed design, confirm the exact scored-page final lifecycle states and the canonical persisted attempt ordering column before writing the reward eligibility query.
-  - Confirm whether existing copy/duplicate editor functions already regenerate every nested alternatives element ID; otherwise that behavior must be made explicit at those editing boundaries.
+  - Confirm same-page copy/reinsert operations regenerate the Alternatives placement ID. Whole-page duplication must preserve content-element IDs because its new page resource ID already creates a distinct intervention and blanket regeneration could break unrelated page-local references.
   - Confirm the current ClickHouse raw-event schema version at implementation time before naming the additive migration columns.
 
 ## 4. Proposed Design
@@ -65,7 +67,7 @@ Web and delivery modules remain adapters:
 
 - `ExperimentsLive` composes experiment listing/configuration with a shared group-management component configured for `:experiment_controlled`. The shared component is extracted from the current Experiments `Decision Points` Alternatives Groups editor, whose more polished presentation and interaction model is the UX baseline.
 - `AlternativesLive` adopts that Experiments-derived component configured for `:user_section_preference`, replacing its less-polished group editor while retaining its route, Learner Choice filtering, labels, and permissions.
-- `PageDecisions` performs the relevance gate, derives `(page_resource_id, element_id)` from attempt content, and calls the assignment API only for experiment-controlled groups.
+- `PageDecisions` performs the relevance gate, classifies Alternatives with one content-tree traversal, derives `(page_resource_id, element_id)` for valid placements, and calls one page-level assignment API for experiment-controlled groups.
 - `RewardHandoffWorker` receives finalized resource-attempt IDs after the scoring transaction commits and delegates to `Rewards`.
 - xAPI/ClickHouse adapters emit evidence after the PostgreSQL transaction; retryable evidence delivery does not change accepted reward state.
 
@@ -82,8 +84,8 @@ Authoring flow:
 Delivery assignment flow:
 
 1. `PageDecisions` checks whether the section has a relevant active experiment using one indexed `exists` query. A negative result bypasses all experiment tables.
-2. Group revisions are resolved from the attempt's publication-pinned content. Strategy normalization determines whether experiment behavior applies.
-3. For each placed experiment-controlled element, lookup uses project/section scope, group resource ID, page resource ID, and element ID. Missing or inapplicable bindings select the first local alternative without state or evidence.
+2. Group revisions are resolved for all Alternatives references in the attempt's publication-pinned content. One traversal classifies placements as valid within ordinary containers or invalid beneath an Alternatives ancestor.
+3. Valid experiment-controlled placements are resolved together using project/section scope, group resource ID, page resource ID, and element ID. Invalid nested placements are never submitted for assignment or exposure and select their first local alternative. Missing or inapplicable bindings use the same inert fallback.
 4. Revisit lookup returns the assignment by the full uniqueness key. A first encounter reads one committed decision-point policy-state snapshot, samples through `WeightedRandom` or `ThompsonSampling`, and inserts the assignment with delivery evidence.
 5. On uniqueness conflict, the transaction discards its speculative choice, reloads the winning assignment, and records a concurrency-resolution signal. Only a successful insert increments assignment counts.
 6. Rendering, progress, and completion use the persisted assignment's mapped option ID, never an element strategy or a new sample. Progress/completion denominator construction traverses only each persisted displayed alternative and excludes every hidden sibling, so learners with any valid combination of intervention assignments can reach 100% after completing all content they were shown.
@@ -250,7 +252,7 @@ Analytics storage:
 
 - Experiment-scoped condition migration could mis-map historical rows: preserve every legacy condition ID and code, create one mapping row from each legacy decision-point relationship, and never infer shared identity from matching codes. Validate row and relationship counts before replacing decision-point-scoped uniqueness with experiment-scoped uniqueness; fail safely on unreconcilable conflicts and test rollback with representative QA data and code-keyed policy state.
 - JSON policy state permits malformed data: centralize encode/decode validation, lock on update, fail closed, and test corrupt-state behavior.
-- Element copy behavior may retain IDs: audit every copy/duplicate entry point and add identity contract tests before binding activation is enabled.
+- Same-page element copy behavior may retain IDs: audit those entry points and add identity contract tests before binding activation is enabled. Do not regenerate the complete content tree during page duplication.
 - Page-level assessment rewards touch broader attempt lifecycle code: enqueue only after commit and keep eligibility/scoring resolution in a narrow experiment adapter.
 - Multiple placements can create N+1 delivery work: batch binding and assignment reads for a page and enforce query-count tests.
 - Extracting the Experiments editor could accidentally broaden edits or regress its polished UX: treat the current Experiments `Decision Points` editor as the behavioral and visual baseline, extract before adapting, parameterize only strategy/labels/capabilities, and retain domain authorization, deletion safeguards, accessible reorder behavior, and immutable option identity checks on both surfaces.

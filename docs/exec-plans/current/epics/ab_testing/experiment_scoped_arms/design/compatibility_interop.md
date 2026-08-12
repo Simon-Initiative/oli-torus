@@ -19,7 +19,9 @@ New A/B Test group creation and canonical ingest persist `experiment_controlled`
 
 New placements contain `type`, stable `id`, valid `alternatives_id`, and `children`, and omit `strategy`. Update `priv/schemas/v0-1-0/content-alternatives.schema.json` so `alternatives_id` is required and valid while the legacy strategy property remains permitted but non-authoritative. Keep the parent elements-schema reference intact.
 
-Identity behavior is defined in `design/assignment_rendering_completion.md`: content recreation regenerates element IDs but preserves `alternatives_id`; publication/revision changes and whole-page movement preserve intervention identity.
+Both group strategies may be placed inside ordinary content containers, but an Alternatives placement may not contain another Alternatives descendant. The versioned schema enforces this recursively within placement-local branches. Existing invalid content is not backfilled; authors may repair it by dragging the inner placement outward, and delivery fails it closed to the first local branch without assignment or exposure.
+
+Identity behavior is defined in `design/assignment_rendering_completion.md`: same-page placement recreation generates a new placement ID while preserving `alternatives_id`; page duplication preserves element IDs but receives a new page resource ID; publication/revision changes and whole-page movement preserve intervention identity.
 
 ## Export and Ingest Order
 
@@ -41,7 +43,7 @@ The imported page receives imported group resource IDs. Repeated placements of o
 - Editing a legacy group preserves `upgrade_decision_point`; generic resource editing performs no strategy normalization.
 - Existing single-decision-point experiment records remain readable during the indivisible implementation, but the old request/report API shape and any temporary adapter must be removed before Gate I.
 - Legacy assignments without intervention IDs remain readable as historical decision-point assignments; new runtime writes require intervention identity.
-- No feature-specific content backfill, forced author save, republication, or experiment conversion job is introduced.
+- No feature-specific content backfill, forced republication, or experiment conversion job is introduced. The small set of invalid Alternatives-within-Alternatives pages is repaired manually before further authoring saves.
 - Project clone currently shares resource/revision identity. Compatibility tests must prove project and publication scoping prevents cross-project experiment capture.
 
 ## Analytics Compatibility

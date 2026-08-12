@@ -21,6 +21,13 @@ requirements:
     reordered, added, removed, or otherwise mutated in place through supported authoring
     operations.
   id: FR-004
+- title: Prohibit Alternatives within Alternatives
+  description: Any Alternatives placement may appear at any depth inside ordinary
+    page content, but must not have another Alternatives placement as an ancestor.
+    Authoring insertion, drag/drop, schema validation, and experiment configuration
+    enforce this structural invariant. Delivery discovers every valid placement in
+    one traversal and never assigns an invalid nested placement.
+  id: FR-034
 - title: Store content on placed Alternatives instances
   description: Every placement of a reusable group must own its local content for
     all alternatives, and editing one placement in the page content editor must not
@@ -96,9 +103,11 @@ requirements:
   id: FR-018
 - title: Preserve binding identity through supported edits
   description: Same-page reorder and whole-page course moves must retain bindings,
-    while copying or recreating an element, duplicating a page, or any future cross-page
-    element move must create new intervention identity without copying bindings or
-    experiment state.
+    while copying or recreating an element within the same page must generate a new
+    content-element ID. Page duplication and any future cross-page element move create
+    new intervention identity through the destination page resource ID and must not
+    copy or retarget bindings or experiment state; unrelated content-element IDs remain
+    unchanged during whole-page duplication.
   id: FR-019
 - title: Require explicit draft dependency reconciliation
   description: Bound groups, interventions, and assessments must not be deleted through
@@ -228,8 +237,10 @@ acceptance_criteria:
   id: AC-005
 - requirement: FR-006
   description: Ordinary content edits, revisions, publication, same-page reorder,
-    and moving the containing page preserve intervention identity, while element recreation
-    or page duplication produces a new identity.
+    and moving the containing page preserve intervention identity. Same-page element
+    recreation produces a new content-element ID, while page duplication produces
+    a new identity through its new page resource ID without regenerating copied content-element
+    IDs.
   id: AC-006
 - requirement: FR-007
   description: One learner can receive different conditions at two instances of the
@@ -293,8 +304,10 @@ acceptance_criteria:
   id: AC-018
 - requirement: FR-019
   description: Tests prove bindings survive identity-preserving reorder and course
-    moves but are not copied or retargeted by element copy, page duplication, deletion
-    and reinsertion, or simulated cross-page movement.
+    moves; same-page element copy and deletion/reinsertion generate new element IDs;
+    and page duplication or simulated cross-page movement obtains a new page resource
+    identity without copying or retargeting bindings or rewriting unrelated element
+    IDs.
   id: AC-019
 - requirement: FR-020
   description: Attempts to delete a draft bound group, intervention, or assessment
@@ -396,3 +409,13 @@ acceptance_criteria:
     revisions; historical and deployed revisions remain unchanged and functional without
     republication; and unsupported strategy identifiers still fail safely.
   id: AC-033
+- requirement: FR-034
+  description: Authoring insertion and drag/drop tests allow both Learner Choice and
+    Experiment-Controlled Alternatives inside ordinary containers, reject all four
+    strategy combinations when one Alternatives placement would be nested beneath
+    another, and allow an invalid legacy placement to be dragged outward for repair.
+    Schema and experiment configuration validation reject direct or deeply nested
+    Alternatives descendants. Delivery tests prove valid non-root experiment placements
+    participate in the single page batch, while invalid nested placements receive inert
+    first-branch fallback and are never submitted for assignment or exposure.
+  id: AC-034

@@ -174,6 +174,43 @@ defmodule Oli.Experiments.PolicyTest do
       assert assignment.metadata == %{posterior_sample: 0.8}
     end
 
+    test "shares one committed point snapshot across interventions without leaking to other points" do
+      {:ok, update} =
+        ThompsonSampling.record_reward(%{}, %{}, %{
+          condition_code: "a",
+          reward_value: 1.0
+        })
+
+      sampler = fn alpha, beta, code ->
+        send(self(), {:sampled, code, alpha, beta})
+        if code == "a", do: 0.9, else: 0.1
+      end
+
+      for assignment_key <- ["point-1:intervention-1", "point-1:intervention-2"] do
+        assert {:ok, %{condition_code: "a"}} =
+                 ThompsonSampling.assign(%{}, update.next_state, %{
+                   conditions: conditions(),
+                   assignment_key: assignment_key,
+                   beta_sampler: sampler
+                 })
+
+        assert_receive {:sampled, "a", 2.0, 1.0}
+        assert_receive {:sampled, "b", 1.0, 1.0}
+      end
+
+      for assignment_key <- ["point-2:intervention-1", "experiment-2:point-1"] do
+        assert {:ok, _assignment} =
+                 ThompsonSampling.assign(%{}, %{}, %{
+                   conditions: conditions(),
+                   assignment_key: assignment_key,
+                   beta_sampler: sampler
+                 })
+
+        assert_receive {:sampled, "a", 1.0, 1.0}
+        assert_receive {:sampled, "b", 1.0, 1.0}
+      end
+    end
+
     test "updates only the assigned condition posterior" do
       previous_state = %{
         "a" => %{

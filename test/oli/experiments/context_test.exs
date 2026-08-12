@@ -984,7 +984,22 @@ defmodule Oli.Experiments.ContextTest do
   end
 
   defp graph_request(scope, alternatives, conditions \\ nil) do
-    page = page_revision(scope.project_id)
+    page =
+      scope.project_id
+      |> page_revision()
+      |> Ecto.Changeset.change(
+        content: %{
+          "model" => [
+            %{
+              "type" => "alternatives",
+              "id" => "placement",
+              "alternatives_id" => alternatives.resource_id,
+              "children" => []
+            }
+          ]
+        }
+      )
+      |> Repo.update!()
 
     conditions =
       conditions ||

@@ -134,7 +134,9 @@ defmodule Oli.Experiments.AnalyticsTest do
       |> DecisionPoint.changeset(%{
         experiment_id: active.id,
         alternatives_resource_id: revision.resource_id,
-        decision_point_key: decision_point_key(revision)
+        decision_point_key: decision_point_key(revision),
+        algorithm: active.algorithm,
+        policy_config: active.policy_config
       })
       |> Repo.insert!()
 

@@ -12,6 +12,7 @@ import {
   createDefaultStructuredContent,
   createGroup,
   createReport,
+  hasAncestorOfType,
 } from 'data/content/resource';
 import {
   ResourceContent,
@@ -42,6 +43,8 @@ export const NonActivities: React.FC<Props> = ({
   featureFlags,
   resourceContext,
 }) => {
+  const hasAlternativesAncestor = hasAncestorOfType(parents, 'alternatives');
+
   return (
     <div className="d-flex flex-column">
       <div className="resource-choice-header">Content types</div>
@@ -108,7 +111,7 @@ export const NonActivities: React.FC<Props> = ({
           disabled={false}
           onClick={() => addReport(onAddItem, index, resourceContext.projectSlug)}
         />
-        {resourceContext.alternativesEnabled && (
+        {!hasAlternativesAncestor && resourceContext.alternativesEnabled && (
           <ResourceChoice
             icon="window-restore"
             label="Alt"
@@ -121,7 +124,7 @@ export const NonActivities: React.FC<Props> = ({
             onClick={() => addAlternatives(onAddItem, index, resourceContext.projectSlug)}
           />
         )}
-        {resourceContext.experimentsEnabled && (
+        {!hasAlternativesAncestor && resourceContext.experimentsEnabled && (
           <ResourceChoice
             icon="vial"
             label="A/B Test"
@@ -218,10 +221,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         }
         onDone={(alternativesId: string | number) => {
           window.oliDispatch(modalActions.dismiss());
-          onAddItem(
-            createAlternatives(Number(alternativesId), 'user_section_preference', Immutable.List()),
-            index,
-          );
+          onAddItem(createAlternatives(Number(alternativesId), Immutable.List()), index);
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,
@@ -272,14 +272,7 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
           }
 
           const children = experiment.options.map((option) => createAlternative(option.id));
-          onAddItem(
-            createAlternatives(
-              Number(experiment.id),
-              'upgrade_decision_point',
-              Immutable.List(children),
-            ),
-            index,
-          );
+          onAddItem(createAlternatives(Number(experiment.id), Immutable.List(children)), index);
           window.oliDispatch(modalActions.dismiss());
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}

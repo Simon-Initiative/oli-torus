@@ -22,11 +22,15 @@ defmodule Oli.Experiments.RuntimeTest do
     Assignment,
     Condition,
     DecisionPoint,
+    DecisionPointCondition,
     ExperimentSection,
+    Intervention,
     PolicyState
   }
 
   alias Oli.Resources.ResourceType
+  alias Oli.Resources.Alternatives
+  alias Oli.Resources.Alternatives.AlternativesStrategyContext
 
   describe "assign_condition/1" do
     test "returns no_experiment when no active experiment matches and emits fallback telemetry" do
@@ -63,6 +67,251 @@ defmodule Oli.Experiments.RuntimeTest do
       assert_operational_event(:assignment_decided, "assignment")
 
       assert_operational_event(:assignment_decided, "assignment")
+    end
+
+    test "creates independent sticky assignments for repeated interventions" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions()
+
+      first_page = insert(:resource)
+      second_page = insert(:resource)
+
+      first_intervention =
+        insert_intervention!(decision_point, first_page.id, "placement-one")
+
+      second_intervention =
+        insert_intervention!(decision_point, second_page.id, "placement-two")
+
+      first_request =
+        intervention_request(scope, revision, first_intervention, first_page.id, ["a", "b"])
+
+      second_request =
+        intervention_request(scope, revision, second_intervention, second_page.id, ["a", "b"])
+
+      assert {:ok, %AssignmentDecision{reused?: false} = first} =
+               Experiments.assign_condition(first_request)
+
+      assert {:ok, %AssignmentDecision{reused?: false} = second} =
+               Experiments.assign_condition(second_request)
+
+      assert first.assignment_id != second.assignment_id
+
+      assert {:ok, %AssignmentDecision{assignment_id: first_id, reused?: true}} =
+               Experiments.assign_condition(first_request)
+
+      assert first_id == first.assignment_id
+      assert Repo.aggregate(Assignment, :count, :id) == 2
+    end
+
+    test "checks active section relevance without entering assignment resolution" do
+      %{scope: scope} = active_experiment_with_conditions()
+
+      assert Experiments.relevant_active_experiment?(scope.section_id, scope.project_id)
+      refute Experiments.relevant_active_experiment?(scope.section_id, insert(:project).id)
+    end
+
+    test "page batch assignment keeps SELECT reads constant for 2 and 10 distinct placements" do
+      select_counts =
+        for placement_count <- [2, 10] do
+          %{scope: scope, revision: revision, decision_point: decision_point} =
+            active_experiment_with_conditions()
+
+          add_condition_mappings!(decision_point)
+          page = insert(:resource)
+
+          requests =
+            for index <- 1..placement_count do
+              intervention = insert_intervention!(decision_point, page.id, "placement-#{index}")
+              intervention_request(scope, revision, intervention, page.id, ["a", "b"])
+            end
+
+          count_select_queries(fn ->
+            assert {:ok, decisions} = Experiments.assign_page_conditions(requests)
+            assert map_size(decisions) == placement_count
+          end)
+        end
+
+      assert [two_placements, ten_placements] = select_counts
+      assert two_placements == ten_placements
+    end
+
+    test "delivery preparation batches distinct placements into placement-keyed decisions" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions()
+
+      add_condition_mappings!(decision_point)
+      page = insert(:resource)
+
+      elements =
+        for index <- 1..2 do
+          id = "placement-#{index}"
+          insert_intervention!(decision_point, page.id, id)
+
+          %{
+            "type" => "alternatives",
+            "id" => id,
+            "alternatives_id" => revision.resource_id,
+            "children" => [
+              %{"type" => "alternative", "value" => "a", "children" => []},
+              %{"type" => "alternative", "value" => "b", "children" => []}
+            ]
+          }
+        end
+
+      context = %AlternativesStrategyContext{
+        enrollment_id: scope.enrollment_id,
+        user: Repo.get!(Oli.Accounts.User, scope.user_id),
+        institution_id: scope.institution_id,
+        project_id: scope.project_id,
+        publication_id: scope.publication_id,
+        section_id: scope.section_id,
+        mode: :delivery,
+        page_resource_id: page.id,
+        alternative_groups_by_id: %{
+          revision.resource_id => %{
+            id: revision.resource_id,
+            revision_id: revision.id,
+            strategy: "experiment_controlled",
+            options: [%{"id" => "a"}, %{"id" => "b"}]
+          }
+        }
+      }
+
+      {decisions, _attributions} =
+        Alternatives.prepare_delivery_decisions(context, %{"model" => elements})
+
+      assert Map.keys(decisions) |> Enum.sort() == ["placement-1", "placement-2"]
+      assert Repo.aggregate(Assignment, :count, :id) == 2
+    end
+
+    test "delivery preparation discovers experiment placements inside ordinary containers" do
+      {context, [placement]} = batch_delivery_fixture(1)
+
+      content = %{
+        "model" => [
+          %{
+            "type" => "group",
+            "id" => "ordinary-container",
+            "children" => [placement]
+          }
+        ]
+      }
+
+      {decisions, _attributions} = Alternatives.prepare_delivery_decisions(context, content)
+
+      assert Map.keys(decisions) == ["placement-1"]
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+    end
+
+    test "delivery preparation never assigns an experiment nested within Alternatives" do
+      {context, [nested_experiment]} = batch_delivery_fixture(1)
+      outer_group_id = System.unique_integer([:positive])
+
+      context = %{
+        context
+        | alternative_groups_by_id:
+            Map.put(context.alternative_groups_by_id, outer_group_id, %{
+              id: outer_group_id,
+              revision_id: System.unique_integer([:positive]),
+              strategy: "user_section_preference",
+              options: [%{"id" => "outer"}]
+            })
+      }
+
+      content = %{
+        "model" => [
+          %{
+            "type" => "alternatives",
+            "id" => "outer",
+            "alternatives_id" => outer_group_id,
+            "children" => [
+              %{
+                "type" => "alternative",
+                "value" => "outer",
+                "children" => [nested_experiment]
+              }
+            ]
+          }
+        ]
+      }
+
+      assert {%{}, []} = Alternatives.prepare_delivery_decisions(context, content)
+      assert Repo.aggregate(Assignment, :count, :id) == 0
+    end
+
+    test "full delivery preparation keeps SELECT reads constant for 2 and 10 placements" do
+      select_counts =
+        for placement_count <- [2, 10] do
+          {context, elements} = batch_delivery_fixture(placement_count)
+
+          count_select_queries(fn ->
+            {decisions, _attributions} =
+              Alternatives.prepare_delivery_decisions(context, %{"model" => elements})
+
+            assert map_size(decisions) == placement_count
+          end)
+        end
+
+      assert [two_placements, ten_placements] = select_counts
+      assert two_placements == ten_placements
+    end
+
+    test "batch rollback emits no assignment evidence for earlier placements" do
+      attach_telemetry([[:oli, :experiments, :telemetry, :assignment_decided]])
+      {context, _elements} = batch_delivery_fixture(2)
+      decision_point = Repo.one!(DecisionPoint)
+
+      revision =
+        Repo.one!(
+          from revision in Oli.Resources.Revision,
+            where: revision.resource_id == ^decision_point.alternatives_resource_id
+        )
+
+      interventions = Repo.all(from intervention in Intervention, order_by: intervention.id)
+
+      requests =
+        Enum.map(interventions, fn intervention ->
+          intervention_request(
+            %Scope{
+              institution_id: context.institution_id,
+              project_id: context.project_id,
+              publication_id: context.publication_id,
+              section_id: context.section_id,
+              user_id: context.user.id,
+              enrollment_id: context.enrollment_id
+            },
+            revision,
+            intervention,
+            context.page_resource_id,
+            if(intervention == List.last(interventions), do: ["invalid"], else: ["a", "b"])
+          )
+        end)
+
+      assert {:error, %Oli.Experiments.ExperimentError{}} =
+               Experiments.assign_page_conditions(requests)
+
+      assert Repo.aggregate(Assignment, :count, :id) == 0
+      refute_receive {:telemetry, [:oli, :experiments, :telemetry, :assignment_decided], _, _}
+    end
+
+    test "concurrent page batches reload the sticky winner" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions()
+
+      add_condition_mappings!(decision_point)
+      page = insert(:resource)
+      intervention = insert_intervention!(decision_point, page.id, "placement")
+      request = intervention_request(scope, revision, intervention, page.id, ["a", "b"])
+
+      results =
+        1..2
+        |> Enum.map(fn _ ->
+          Task.async(fn -> Experiments.assign_page_conditions([request]) end)
+        end)
+        |> Enum.map(&Task.await(&1, 5_000))
+
+      assert Enum.all?(results, &match?({:ok, %{"placement" => %AssignmentDecision{}}}, &1))
+      assert Repo.aggregate(Assignment, :count, :id) == 1
     end
 
     test "an active experiment with no selected sections applies nowhere" do
@@ -682,7 +931,9 @@ defmodule Oli.Experiments.RuntimeTest do
       |> DecisionPoint.changeset(%{
         experiment_id: active.id,
         alternatives_resource_id: revision.resource_id,
-        decision_point_key: decision_point_key(revision)
+        decision_point_key: decision_point_key(revision),
+        algorithm: active.algorithm,
+        policy_config: active.policy_config
       })
       |> Repo.insert!()
 
@@ -726,6 +977,119 @@ defmodule Oli.Experiments.RuntimeTest do
       decision_point_key: decision_point_key(revision),
       available_condition_codes: condition_codes
     }
+  end
+
+  defp insert_intervention!(decision_point, page_resource_id, content_element_id) do
+    %Intervention{}
+    |> Intervention.changeset(%{
+      decision_point_id: decision_point.id,
+      page_resource_id: page_resource_id,
+      content_element_id: content_element_id
+    })
+    |> Repo.insert!()
+  end
+
+  defp add_condition_mappings!(decision_point) do
+    Condition
+    |> where([condition], condition.decision_point_id == ^decision_point.id)
+    |> order_by([condition], asc: condition.position)
+    |> Repo.all()
+    |> Enum.each(fn condition ->
+      %DecisionPointCondition{}
+      |> DecisionPointCondition.changeset(%{
+        decision_point_id: decision_point.id,
+        condition_id: condition.id,
+        option_id: condition.condition_code,
+        weight: condition.weight,
+        position: condition.position
+      })
+      |> Repo.insert!()
+    end)
+  end
+
+  defp batch_delivery_fixture(placement_count) do
+    %{scope: scope, revision: revision, decision_point: decision_point} =
+      active_experiment_with_conditions()
+
+    add_condition_mappings!(decision_point)
+    page = insert(:resource)
+
+    elements =
+      for index <- 1..placement_count do
+        id = "placement-#{index}"
+        insert_intervention!(decision_point, page.id, id)
+
+        %{
+          "type" => "alternatives",
+          "id" => id,
+          "alternatives_id" => revision.resource_id,
+          "children" => [
+            %{"type" => "alternative", "value" => "a", "children" => []},
+            %{"type" => "alternative", "value" => "b", "children" => []}
+          ]
+        }
+      end
+
+    context = %AlternativesStrategyContext{
+      enrollment_id: scope.enrollment_id,
+      user: Repo.get!(Oli.Accounts.User, scope.user_id),
+      institution_id: scope.institution_id,
+      project_id: scope.project_id,
+      publication_id: scope.publication_id,
+      section_id: scope.section_id,
+      mode: :delivery,
+      page_resource_id: page.id,
+      alternative_groups_by_id: %{
+        revision.resource_id => %{
+          id: revision.resource_id,
+          revision_id: revision.id,
+          strategy: "experiment_controlled",
+          options: [%{"id" => "a"}, %{"id" => "b"}]
+        }
+      }
+    }
+
+    {context, elements}
+  end
+
+  defp intervention_request(scope, revision, intervention, page_resource_id, condition_codes) do
+    %{
+      assign_request(scope, revision, condition_codes)
+      | page_resource_id: page_resource_id,
+        content_element_id: intervention.content_element_id
+    }
+  end
+
+  defp count_select_queries(fun) do
+    parent = self()
+    handler_id = "page-batch-query-count-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler_id,
+      [:oli, :repo, :query],
+      fn _, _, metadata, _ ->
+        case metadata.query do
+          "SELECT" <> _ -> send(parent, :page_batch_select)
+          _ -> :ok
+        end
+      end,
+      %{}
+    )
+
+    try do
+      fun.()
+      count_messages(:page_batch_select, 0)
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp count_messages(message, count) do
+    receive do
+      ^message -> count_messages(message, count + 1)
+    after
+      0 -> count
+    end
   end
 
   defp decision_point_key(revision), do: "alternatives:#{revision.resource_id}"

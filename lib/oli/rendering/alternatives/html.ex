@@ -10,6 +10,46 @@ defmodule Oli.Rendering.Alternatives.Html do
 
   @behaviour Oli.Rendering.Alternatives
 
+  @doc "Renders preview alternatives as a keyboard-operable tab set."
+  def preview_alternatives(context, element, selections) do
+    placement_id =
+      element
+      |> Map.get("id", "preview")
+      |> to_string()
+      |> Base.url_encode64(padding: false)
+
+    tabs =
+      selections
+      |> Enum.with_index()
+      |> Enum.map(fn {_selection, index} ->
+        selected? = index == 0
+
+        ~s|<button type="button" role="tab" id="preview-alternative-tab-#{placement_id}-#{index}" aria-selected="#{selected?}" aria-controls="preview-alternative-panel-#{placement_id}-#{index}" tabindex="#{if(selected?, do: 0, else: -1)}">Alternative #{index + 1}</button>|
+      end)
+
+    panels =
+      selections
+      |> Enum.with_index()
+      |> Enum.map(fn {%Selection{alternative: %{"children" => children}}, index} ->
+        hidden = if index == 0, do: "", else: " hidden"
+
+        [
+          ~s|<div role="tabpanel" id="preview-alternative-panel-#{placement_id}-#{index}" aria-labelledby="preview-alternative-tab-#{placement_id}-#{index}"#{hidden}>|,
+          Elements.render(context, children, Elements.Html),
+          "</div>"
+        ]
+      end)
+
+    [
+      ~s|<div id="preview-alternatives-#{placement_id}" phx-hook="PreviewAlternativesTabs">|,
+      ~s|<div role="tablist" aria-label="Alternative content options">|,
+      tabs,
+      "</div>",
+      panels,
+      "</div>"
+    ]
+  end
+
   @impl Oli.Rendering.Alternatives
   def alternative(
         %Context{} = context,

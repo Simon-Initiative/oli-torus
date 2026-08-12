@@ -16,7 +16,7 @@ Guardrails:
 - Existing revisions, publications, assignments, rewards, and analytics remain readable without a feature-specific backfill, content rewrite, forced author save, or republication.
 - New database migrations are generated with `mix ecto.gen.migration`, implement explicit `up/0` and `down/0`, avoid destructive cascades, and are verified forward and backward against representative existing data.
 - Experiment mutation and lifecycle rules belong in `Oli.Experiments`; LiveViews and delivery modules remain interaction and transport adapters with server-derived authorization and identity.
-- Delivery pays only one indexed relevance check for sections without an applicable active experiment and batch-loads positive-path bindings and assignments.
+- Both Alternatives strategies may appear inside ordinary containers, but no Alternatives placement may have another Alternatives placement as an ancestor. Delivery pays only one indexed relevance check for sections without an applicable active experiment and resolves all valid positive-path experiment placements in one set-based operation without recursive assignment rounds.
 - Preview never creates experiment state or evidence. Learner rendering and completion use the same persisted intervention decisions.
 - New UI uses existing components and Tailwind conventions. The current Experiments group editor is the behavioral baseline for the shared component. Produce approved design guidance before implementing the expanded experiment configuration and posterior-reporting UI.
 - No feature flag is added. Rollout is gated by migration safety, valid draft activation, and normal deployment.
@@ -110,27 +110,28 @@ Guardrails:
 
 ## Phase 4: Deliver Intervention-Scoped Assignment, Rendering, and Completion
 
-- Goal: Assign independently and stickily per placement, retain bounded performance, and make rendering, preview, fallback, and completion honor the persisted visible alternative (FR-005 through FR-010, FR-019, FR-021, FR-022, FR-027).
+- Goal: Assign independently and stickily per placement, retain bounded performance, make rendering, preview, fallback, and completion honor the persisted visible alternative, and prohibit Alternatives placements from containing another Alternatives placement while allowing both strategies in ordinary containers (FR-005 through FR-010, FR-019, FR-021, FR-022, FR-027, FR-034).
 - Tasks:
-  - [ ] Add the indexed section-level active-experiment relevance gate; on a negative result perform no experiment binding, assignment, policy, reward, or evidence work.
-  - [ ] Batch resolve pinned group revisions, normalized strategies, intervention bindings, policy snapshots, mappings, and existing assignments for all placements on a page.
-  - [ ] Implement `assign_condition/1` and `assigned_condition/1` using enrollment, decision point, page resource ID, and element ID; retain revision/publication only as event context.
-  - [ ] Implement weighted-random and Thompson Sampling from one committed decision-point snapshot with deterministic test seams, configured/default priors, and guardrails at decision-point scope.
-  - [ ] Resolve concurrent inserts through database uniqueness, reload the persisted winner, and increment assignment counts only for the successful insert.
-  - [ ] Make missing/inactive/incompatible/corrupt experiment state fail safely to the first local alternative with bounded telemetry and no experiment state.
-  - [ ] Feed the same persisted prepared decisions into rendering and progress/completion traversal so hidden siblings never enter the learner-specific numerator or denominator.
-  - [ ] Ensure Authoring and Instructor Preview show all local alternatives in accessible tabs without assignments, exposures, rewards, or policy effects.
-  - [ ] Audit and correct copy/duplicate boundaries so reorder and whole-page moves preserve intervention identity while recreation, duplication, reinsertion, and future cross-page moves generate a new identity without bindings.
+  - [x] Add the indexed section-level active-experiment relevance gate; on a negative result perform no experiment binding, assignment, policy, reward, or evidence work.
+  - [x] Enforce the structural no-Alternatives-ancestor rule in insertion, drag/drop, schema, and experiment configuration while allowing both strategies inside ordinary containers and preserving a drag-out repair path for invalid legacy content.
+  - [x] Resolve pinned group revisions for all rendered Alternatives while classifying placements in one traversal and resolving intervention bindings, policy snapshots, mappings, and existing assignments for valid experiment-controlled placements in one set-based operation.
+  - [x] Implement `assign_condition/1` and `assigned_condition/1` using enrollment, decision point, page resource ID, and element ID; retain revision/publication only as event context.
+  - [x] Implement weighted-random and Thompson Sampling from one committed decision-point snapshot with deterministic test seams, configured/default priors, and guardrails at decision-point scope.
+  - [x] Resolve concurrent inserts through database uniqueness, reload the persisted winner, and increment assignment counts only for the successful insert.
+  - [x] Make missing/inactive/incompatible/corrupt experiment state fail safely to the first local alternative with bounded telemetry and no experiment state.
+  - [x] Feed the same persisted prepared decisions into rendering and progress/completion traversal so hidden siblings never enter the learner-specific numerator or denominator.
+  - [x] Ensure Authoring and Instructor Preview show all local alternatives in accessible tabs without assignments, exposures, rewards, or policy effects.
+  - [x] Audit and correct copy boundaries so reorder and whole-page moves preserve intervention identity; same-page element recreation/reinsertion generates a new element ID; and page duplication/future cross-page moves derive new intervention identity from the destination page resource without regenerating unrelated content-element IDs or copying bindings.
 - Testing Tasks:
-  - [ ] Add deterministic policy tests for fixed weights, Beta priors, one-snapshot draws, shared per-point posterior state, point/experiment isolation, sticky revisits, and independent placements.
-  - [ ] Add concurrent first-encounter tests for same and different interventions and assert compact evidence/count behavior.
-  - [ ] Add query-count tests proving the one-query negative path and batched positive path without per-placement N+1 queries or analytical reads.
-  - [ ] Add rendering, fallback, preview accessibility, edit identity, and completion tests with alternatives containing different required-activity counts; prove visible-only partial percentages and exact 100% completion for multiple assignment combinations.
+  - [x] Add deterministic policy tests for fixed weights, Beta priors, one-snapshot draws, shared per-point posterior state, point/experiment isolation, sticky revisits, and independent placements.
+  - [x] Add concurrent first-encounter tests for same and different interventions and assert compact evidence/count behavior.
+  - [x] Add query-count tests proving the one-query negative path and set-based positive placement path without recursive assignment rounds, per-placement N+1 queries, or analytical reads.
+  - [x] Add rendering, fallback, preview accessibility, edit identity, and completion tests with alternatives containing different required-activity counts; prove visible-only partial percentages and exact 100% completion for multiple assignment combinations.
   - Command(s): `mix test <policy, page decisions, rendering, progress/completion, editor identity, and preview tests>`
 - Definition of Done:
   - Learners receive independent sticky selections per intervention; rendering and completion remain stable and correct; preview and fallback are inert; measured query behavior remains bounded.
 - Gate:
-  - Gate D — AC-005 through AC-010, AC-019, AC-021, AC-022, and AC-027 pass, including concurrency, query-count, accessibility, and 100%-completion proofs, and the phase changes complete focused code review. This gate does not authorize deployment.
+  - Gate D — AC-005 through AC-010, AC-019, AC-021, AC-022, AC-027, and AC-034 pass, including concurrency, query-count, accessibility, structural non-nesting, and 100%-completion proofs, and the phase changes complete focused code review. This gate does not authorize deployment.
 - Dependencies:
   - Gate C for valid active configurations. Editor identity fixes that do not depend on activation may begin after Gate A.
 - Parallelizable Work:
@@ -274,7 +275,7 @@ Guardrails:
 ## Acceptance-Criteria Traceability
 
 - Phase 3 proves AC-001, AC-002, AC-003, AC-004, AC-011, AC-012, AC-017, AC-018, AC-019, and AC-020 through configuration, constraint, lifecycle, authorization, and history tests.
-- Phase 4 proves AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-019, AC-021, AC-022, and AC-027 through identity, policy, concurrency, delivery-query, rendering, preview, and completion tests.
+- Phase 4 proves AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-019, AC-021, AC-022, AC-027, and AC-034 through identity, policy, concurrency, delivery-query, rendering, preview, completion, and Alternatives non-nesting tests.
 - Phase 5 proves AC-011, AC-012, AC-013, AC-014, AC-015, and AC-016 through attempt-order, threshold, attribution, transaction, concurrency, replay, and asynchronous handoff tests.
 - Phase 6 proves AC-004, AC-017, AC-021, AC-028, AC-029, AC-030, AC-032, and the UI portions of AC-033 through context, LiveView, component, accessibility, and JSON Schema tests.
 - Phase 7 proves AC-023, AC-024, AC-025, AC-026, AC-031, and the interop/evidence portions of AC-033 through migration, compatibility, export/ingest, analytics, privacy, and telemetry tests.

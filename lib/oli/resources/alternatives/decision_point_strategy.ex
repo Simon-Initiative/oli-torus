@@ -8,9 +8,8 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     Scope
   }
 
-  alias Oli.Experiments.Schemas.Assignment
-  alias Oli.Experiments.XAPI.Attributions
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
+  alias Oli.Resources.PageContent
   alias Oli.Resources.Alternatives.Selection
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Delivery.Sections.Section
@@ -33,10 +32,46 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
         %{"model" => _model} = content
       )
       when is_map(by_id) do
-    prepare_visible_decisions(context, Map.get(content, "model", []), {%{}, []})
+    placements = PageContent.alternatives_placements(content)
+    prepare_decisions(context, placements)
   end
 
   def prepare_delivery_decisions(%AlternativesStrategyContext{}, _content), do: {%{}, []}
+
+  @doc """
+  Resolves delivery decisions from placements already classified by page content traversal.
+
+  This avoids repeating classification when the caller also needs the complete placement set
+  to resolve Alternatives metadata.
+  """
+  def prepare_classified_delivery_decisions(
+        %AlternativesStrategyContext{
+          mode: :delivery,
+          alternative_groups_by_id: by_id
+        } = context,
+        placements
+      )
+      when is_map(by_id) and is_list(placements) do
+    prepare_decisions(context, placements)
+  end
+
+  def prepare_classified_delivery_decisions(%AlternativesStrategyContext{}, _placements),
+    do: {%{}, []}
+
+  @doc "Builds placement-keyed inert decisions without experiment persistence access."
+  def fallback_delivery_decisions(%{"model" => model}) when is_list(model) do
+    placements = PageContent.alternatives_placements(%{"model" => model})
+    {fallback_decisions(placements, %{}), []}
+  end
+
+  def fallback_delivery_decisions(_content), do: {%{}, []}
+
+  @doc "Builds placement-keyed inert decisions from an already classified placement list."
+  def fallback_classified_delivery_decisions(placements) when is_list(placements) do
+    {fallback_decisions(placements, %{}), []}
+  end
+
+  def fallback_classified_delivery_decisions(_placements), do: {%{}, []}
 
   @doc """
   Uses A/B testing assignment for a delivery decision point and falls back to the
@@ -50,16 +85,16 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
         %{
           "children" => children,
           "alternatives_id" => alternatives_id
-        }
+        } = alternatives_element
       ) do
     decision_point = Map.get(by_id, alternatives_id)
 
-    with nil <- prepared_decision(context, alternatives_id),
+    with nil <- prepared_decision(context, alternatives_element),
          {%Scope{} = scope, decision_point} <- scoped_decision_point(context, decision_point),
          {:ok, %AssignmentDecision{status: :assigned} = decision} <-
-           assign_condition(scope, decision_point),
+           assign_condition(scope, decision_point, context, alternatives_element),
          selections when selections != [] <-
-           select_matching_condition(children, decision_point, decision.condition_code),
+           select_matching_assignment(children, decision_point, decision),
          :ok =
            maybe_record_exposure(
              decision,
@@ -70,6 +105,12 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     else
       {:ok, %AssignmentDecision{status: :no_experiment}} ->
         display_first(children)
+
+      %{status: :assigned, option_id: option_id} when is_binary(option_id) ->
+        case select_matching_value(children, option_id) do
+          [] -> display_first(children)
+          selections -> selections
+        end
 
       %{status: :assigned, condition_code: condition_code} ->
         case select_matching_condition(children, decision_point, condition_code) do
@@ -110,9 +151,9 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
          {%Scope{} = scope, decision_point} <-
            scoped_decision_point(context, decision_point, false),
          {:ok, %AssignmentDecision{status: :assigned} = decision} <-
-           assigned_condition(scope, decision_point),
+           assigned_condition(scope, decision_point, context, %{}),
          selections when selections != [] <-
-           select_matching_condition(children, decision_point, decision.condition_code) do
+           select_matching_assignment(children, decision_point, decision) do
       selections
     else
       selections when is_list(selections) and selections != [] ->
@@ -143,24 +184,38 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     end
   end
 
+  def select(
+        %AlternativesStrategyContext{mode: mode},
+        %{"children" => children}
+      )
+      when mode in [:author_preview, :instructor_preview] do
+    Enum.map(children, &%Selection{alternative: &1})
+  end
+
   def select(_, %{"children" => children}), do: display_first(children)
 
-  defp assign_condition(%Scope{} = scope, decision_point) do
+  defp assign_condition(%Scope{} = scope, decision_point, context, element) do
     Oli.Experiments.assign_condition(%AssignConditionRequest{
       scope: scope,
       alternatives_resource_id: decision_point.id,
       alternatives_revision_id: decision_point.revision_id,
       decision_point_key: decision_point_key(decision_point.id),
+      page_resource_id: context.page_resource_id,
+      page_revision_id: context.page_revision_id,
+      content_element_id: Map.get(element, "id"),
       available_condition_codes: Enum.map(decision_point.options, &option_condition_code/1)
     })
   end
 
-  defp assigned_condition(%Scope{} = scope, decision_point) do
+  defp assigned_condition(%Scope{} = scope, decision_point, context, element) do
     Oli.Experiments.assigned_condition(%AssignConditionRequest{
       scope: scope,
       alternatives_resource_id: decision_point.id,
       alternatives_revision_id: decision_point.revision_id,
       decision_point_key: decision_point_key(decision_point.id),
+      page_resource_id: context.page_resource_id,
+      page_revision_id: context.page_revision_id,
+      content_element_id: Map.get(element, "id"),
       available_condition_codes: Enum.map(decision_point.options, &option_condition_code/1)
     })
   end
@@ -188,211 +243,127 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     end
   end
 
-  defp prepare_delivery_decision(
-         %AlternativesStrategyContext{} = context,
-         %{strategy: strategy} = decision_point,
-         %{"children" => children}
+  defp prepare_decisions(
+         %AlternativesStrategyContext{page_resource_id: page_resource_id},
+         _elements
        )
-       when strategy in ["experiment_controlled", "upgrade_decision_point"] do
-    with {%Scope{} = scope, decision_point} <- scoped_decision_point(context, decision_point),
-         {:ok, %AssignmentDecision{status: :assigned} = decision} <-
-           assign_condition(scope, decision_point),
-         renderable_selections when renderable_selections != [] <-
-           select_matching_condition(children, decision_point, decision.condition_code) do
-      {attributions, _status} = record_exposure_attributions(decision, scope, decision_point)
+       when not is_integer(page_resource_id),
+       do: {%{}, []}
 
-      {:ok,
-       %{
-         status: :assigned,
-         condition_code: decision.condition_code,
-         decision_point_key: decision_point_key(decision_point.id)
-       }, attributions}
-    else
-      {:ok, %AssignmentDecision{status: :no_experiment}} ->
-        {:ok, %{status: :no_experiment}, []}
-
-      [] ->
-        {:ok, %{status: :fallback}, []}
-
-      {:error, error} ->
-        Logger.warning("A/B testing assignment fell back to first option: #{inspect(error)}")
-        {:ok, %{status: :fallback}, []}
-
-      _ ->
-        {:ok, %{status: :fallback}, []}
-    end
-  end
-
-  defp prepare_delivery_decision(%AlternativesStrategyContext{}, _decision_point, _element),
-    do: :skip
-
-  defp prepare_visible_decisions(context, elements, acc) when is_list(elements) do
-    Enum.reduce(elements, acc, &prepare_visible_decision(context, &1, &2))
-  end
-
-  defp prepare_visible_decisions(_context, _elements, acc), do: acc
-
-  defp prepare_visible_decision(
+  defp prepare_decisions(
          %AlternativesStrategyContext{alternative_groups_by_id: by_id} = context,
-         %{"type" => "alternatives", "alternatives_id" => alternatives_id} = element,
-         {decisions, attrs}
+         elements
        ) do
-    decision_point = Map.get(by_id, alternatives_id)
+    placements =
+      Enum.filter(elements, fn
+        %{"type" => "alternatives", "id" => _id, "alternatives_id" => alternatives_id} ->
+          group = Map.get(by_id, alternatives_id)
+          experiment_group?(group)
 
-    case {Map.get(decisions, alternatives_id), decision_point} do
-      {nil, %{strategy: strategy}}
-      when strategy in ["experiment_controlled", "upgrade_decision_point"] ->
-        case prepare_delivery_decision(context, decision_point, element) do
-          {:ok, decision, attributions} ->
-            next_acc = {Map.put(decisions, alternatives_id, decision), attrs ++ attributions}
-            visible_children = visible_children_for_decision(element, decision_point, decision)
+        _ ->
+          false
+      end)
 
-            prepare_visible_decisions(context, visible_children, next_acc)
+    case placements do
+      [] ->
+        {%{}, []}
 
-          :skip ->
-            prepare_visible_decision_children(context, element, {decisions, attrs})
+      [first | _] ->
+        first_group = Map.get(by_id, first["alternatives_id"])
+
+        with {%Scope{} = scope, _group} <- scoped_decision_point(context, first_group),
+             requests <- Enum.map(placements, &batch_request(&1, context, scope, by_id)),
+             {:ok, assigned} <- Oli.Experiments.assign_page_conditions(requests),
+             exposure_requests <- batch_exposure_requests(placements, assigned, scope, by_id),
+             {:ok, attributions} <- Oli.Experiments.record_page_exposures(exposure_requests) do
+          decisions =
+            Enum.reduce(placements, %{}, fn element, decisions ->
+              decision = Map.fetch!(assigned, element["id"])
+              group = Map.fetch!(by_id, element["alternatives_id"])
+              prepared = prepared_assignment(decision, group)
+              Map.put(decisions, element["id"], prepared)
+            end)
+
+          {decisions, attributions}
+        else
+          _ -> {%{}, []}
         end
-
-      {nil, _decision_point} ->
-        visible_children = visible_children_for_non_experiment(context, element, decision_point)
-
-        prepare_visible_decisions(context, visible_children, {decisions, attrs})
-
-      {_existing_decision, _decision_point} ->
-        {decisions, attrs}
     end
   end
 
-  defp prepare_visible_decision(context, %{"children" => children} = element, acc)
-       when is_list(children) do
-    element
-    |> nested_children()
-    |> prepare_visible_decisions(context, acc)
+  defp experiment_group?(%{strategy: strategy}),
+    do: strategy in ["experiment_controlled", "upgrade_decision_point"]
+
+  defp experiment_group?(_group), do: false
+
+  defp batch_request(element, context, scope, by_id) do
+    group = Map.fetch!(by_id, element["alternatives_id"])
+
+    %AssignConditionRequest{
+      scope: scope,
+      alternatives_resource_id: group.id,
+      alternatives_revision_id: group.revision_id,
+      decision_point_key: decision_point_key(group.id),
+      page_resource_id: context.page_resource_id,
+      page_revision_id: context.page_revision_id,
+      content_element_id: element["id"],
+      available_condition_codes: Enum.map(group.options, &option_condition_code/1)
+    }
   end
 
-  defp prepare_visible_decision(_context, _element, acc), do: acc
-
-  defp prepare_visible_decision_children(context, %{} = element, acc) do
-    prepare_visible_decisions(context, nested_children(element), acc)
+  defp prepared_assignment(%AssignmentDecision{status: :assigned} = decision, group) do
+    %{
+      status: :assigned,
+      condition_code: decision.condition_code,
+      option_id: decision.option_id,
+      decision_point_key: decision_point_key(group.id)
+    }
   end
 
-  defp visible_children_for_decision(
-         %{"children" => children},
-         decision_point,
-         %{status: :assigned, condition_code: condition_code}
-       ) do
-    case select_matching_condition(children, decision_point, condition_code) do
-      [] -> display_first(children)
-      selections -> selections
-    end
-    |> selected_alternative_children()
-  end
+  defp prepared_assignment(_decision, _group), do: %{status: :no_experiment}
 
-  defp visible_children_for_decision(%{"children" => children}, _decision_point, _decision) do
-    children
-    |> display_first()
-    |> selected_alternative_children()
-  end
+  defp batch_exposure_requests(placements, assigned, scope, by_id) do
+    Enum.flat_map(placements, fn element ->
+      group = Map.fetch!(by_id, element["alternatives_id"])
 
-  defp visible_children_for_non_experiment(context, %{"children" => children} = element, %{
-         strategy: "select_all"
-       }) do
-    Oli.Resources.Alternatives.SelectAllStrategy.select(context, element)
-    |> selected_alternative_children()
-  rescue
-    _ -> nested_children(%{"children" => children})
-  end
+      case Map.fetch!(assigned, element["id"]) do
+        %AssignmentDecision{status: :assigned, assignment_id: assignment_id} ->
+          [
+            %RecordExposureRequest{
+              key: "alternatives:#{group.id}:#{group.revision_id}:assignment:#{assignment_id}",
+              scope: scope,
+              assignment_id: assignment_id,
+              content_revision_id: group.revision_id
+            }
+          ]
 
-  defp visible_children_for_non_experiment(context, %{"children" => children} = element, %{
-         strategy: "user_section_preference"
-       }) do
-    Oli.Resources.Alternatives.UserSectionPreferenceStrategy.select(context, element)
-    |> selected_alternative_children()
-  rescue
-    _ ->
-      children
-      |> display_first()
-      |> selected_alternative_children()
-  end
-
-  defp visible_children_for_non_experiment(_context, %{"children" => children}, _decision_point),
-    do: nested_children(%{"children" => children})
-
-  defp selected_alternative_children(selections) do
-    selections
-    |> Enum.reject(& &1.hidden)
-    |> Enum.flat_map(fn %{alternative: alternative} -> nested_children(alternative) end)
-  end
-
-  defp nested_children(%{} = element) do
-    ["children", "caption", "pronunciation", "translations", "content", "meanings"]
-    |> Enum.flat_map(fn property ->
-      case Map.get(element, property) do
-        children when is_list(children) -> children
-        _ -> []
+        _decision ->
+          []
       end
     end)
   end
 
-  defp record_exposure_attributions(
-         %AssignmentDecision{assignment_id: assignment_id},
-         %Scope{} = scope,
-         decision_point
-       ) do
-    request = %RecordExposureRequest{
-      key:
-        "alternatives:#{decision_point.id}:#{decision_point.revision_id}:assignment:#{assignment_id}",
-      scope: scope,
-      assignment_id: assignment_id,
-      content_revision_id: decision_point.revision_id
-    }
-
-    case Oli.Experiments.record_exposure(request) do
-      {:ok, receipt} ->
-        {exposure_attributions(receipt, request), :ok}
-
-      {:error, error} ->
-        Logger.warning("A/B testing exposure recording failed: #{inspect(error)}")
-        {[], :error}
-    end
-  end
-
-  defp exposure_attributions(
-         receipt,
-         %RecordExposureRequest{assignment_id: assignment_id} = request
-       ) do
-    query =
-      from assignment in Assignment,
-        join: experiment in assoc(assignment, :experiment),
-        join: condition in assoc(assignment, :condition),
-        on: condition.experiment_id == experiment.id,
-        join: decision_point in assoc(assignment, :decision_point),
-        on: decision_point.experiment_id == experiment.id,
-        where: assignment.id == ^assignment_id,
-        preload: [
-          experiment: experiment,
-          condition: condition,
-          decision_point: decision_point
-        ]
-
-    case Repo.one(query) do
-      %Assignment{} = assignment ->
-        Attributions.attributions_for_page_view(receipt, request, assignment: assignment)
-
-      nil ->
-        []
-    end
-  end
-
   defp prepared_decision(
          %AlternativesStrategyContext{experiment_decisions: decisions},
-         alternatives_id
+         element
        )
        when is_map(decisions) do
-    Map.get(decisions, alternatives_id)
+    placement_id = Map.get(element, "id") || Map.get(element, "alternatives_id")
+    Map.get(decisions, placement_id)
   end
 
-  defp prepared_decision(%AlternativesStrategyContext{}, _alternatives_id), do: nil
+  defp prepared_decision(%AlternativesStrategyContext{}, _element), do: nil
+
+  defp fallback_decisions(elements, decisions) when is_list(elements) do
+    Enum.reduce(elements, decisions, fn
+      %{"type" => "alternatives"} = element, acc ->
+        id = Map.get(element, "id") || Map.get(element, "alternatives_id")
+        Map.put(acc, id, %{status: :no_experiment})
+
+      _element, acc ->
+        acc
+    end)
+  end
 
   defp scoped_decision_point(context, decision_point, include_publication? \\ true)
 
@@ -507,6 +478,13 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
         select_matching_value(children, option_id)
     end
   end
+
+  defp select_matching_assignment(children, _decision_point, %{option_id: option_id})
+       when is_binary(option_id),
+       do: select_matching_value(children, option_id)
+
+  defp select_matching_assignment(children, decision_point, decision),
+    do: select_matching_condition(children, decision_point, decision.condition_code)
 
   defp select_matching_value(children, value) do
     selections =

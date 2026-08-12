@@ -4,13 +4,13 @@
 
 This slice owns the section relevance gate, page-level batching, intervention-scoped assignment, delivery fallback, preview behavior, rendering, and learner completion consistency in Phase 4.
 
-## Confirmed Current Contracts and Baseline
+## Confirmed Phase-Entry Contracts and Baseline
 
-- `OliWeb.Delivery.Student.LessonLive` calls `Oli.Delivery.Experiments.PageDecisions.prepare/2` before rendering.
-- No-attempt/no-Alternatives content returns without database work; this is protected by `test/oli/delivery/experiments/page_decisions_test.exs`.
-- When any Alternatives placement exists, the current path batch-resolves group revisions, then performs the one-query `Sections.get_alternatives_render_context/2` lookup. There is no section-level active-experiment relevance query.
-- Experiment resolution is recursive and one database path per distinct `alternatives_id`. The prepared-decision map is keyed by group ID, so repeated placements of one group collapse to one assignment and one exposure.
-- The current path therefore scales with distinct experiment-controlled groups and cannot satisfy intervention-scoped assignment or the required one-query negative gate without restructuring.
+- At Phase 4 entry, `OliWeb.Delivery.Student.LessonLive` called `Oli.Delivery.Experiments.PageDecisions.prepare/2` before rendering.
+- No-attempt/no-Alternatives content returned without database work; this was protected by `test/oli/delivery/experiments/page_decisions_test.exs`.
+- When any Alternatives placement existed, the phase-entry path batch-resolved group revisions, then performed the one-query `Sections.get_alternatives_render_context/2` lookup. There was no section-level active-experiment relevance query.
+- Experiment resolution was recursive and used one database path per distinct `alternatives_id`. The prepared-decision map was keyed by group ID, so repeated placements of one group collapsed to one assignment and one exposure.
+- The phase-entry path therefore scaled with distinct experiment-controlled groups and could not satisfy intervention-scoped assignment or the required one-query negative gate without restructuring.
 
 The Phase 4 characterization suite must record SELECT statements (excluding transaction/savepoint noise) for: no Alternatives, irrelevant Alternatives, first active assignment, sticky revisit, 2 and 10 repeated placements, and multiple distinct groups. It must classify queries by touched experiment table and prove runtime code does not query reward history, ClickHouse, or xAPI storage. Target behavior is exactly one indexed relevance query on the negative path; positive-path read counts remain constant as placement count grows except for inserts of missing assignments.
 
@@ -21,16 +21,16 @@ Phase 1 records the current experiment-decision core baseline for both two and t
 - Fresh placement insertion creates a new wrapper ID and new child IDs.
 - Same-page reorder removes and reinserts the same content object, preserving page resource and nested element IDs.
 - Whole-page curriculum reorder or movement preserves the page resource and page content, so intervention identity remains stable.
-- Basic page duplication creates a new page resource but currently preserves all non-activity element IDs. Cross-window/cross-page copy also inserts parsed content unchanged. Both differ from the target contract and require an explicit full-tree identity-regeneration helper.
+- Basic page duplication creates a new page resource and preserves non-activity element IDs. This satisfies the intervention contract because identity is the tuple of page resource ID and placement element ID. Same-page copy/reinsertion must generate a new placement ID; a future cross-page move obtains identity from its destination page resource and must not copy experiment bindings.
 - Whole-project clone currently shares page resources/revisions initially. Project/experiment scoping must prevent a clone from inheriting an active binding unintentionally; this is not treated as a cross-page element move.
 
-The regeneration helper must preserve `alternatives_id` while replacing the Alternatives wrapper ID and all recreated nested element IDs. It is invoked by page duplication, content recreation/reinsertion, and future cross-page element moves, but never by in-page reorder or whole-page movement.
+Do not regenerate an entire duplicated page's content-element IDs. Same-page Alternatives copy or recreation must generate only the new placement identity needed to avoid collision, preserving `alternatives_id` and unrelated internal element references. In-page reorder and whole-page movement preserve both parts of intervention identity.
 
 ## Public API and Prepared Data
 
 `PageDecisions.prepare/2` first asks `Oli.Experiments` whether the section/publication has a relevant active experiment. On a negative result it returns deterministic first-alternative decisions without loading experiment bindings, assignments, policies, rewards, or evidence.
 
-On a positive result, one context API accepts trusted section, publication, enrollment, page resource ID, and all stable placement IDs. It batch-loads pinned group revisions, normalized group strategies, intervention bindings, one policy snapshot per relevant decision point, mappings, and existing assignments. Prepared decisions are keyed by intervention identity, not group ID, and are reused by rendering and completion traversal.
+On a positive result, one context API accepts trusted section, publication, enrollment, page resource ID, and all stable valid placement IDs. A single traversal discovers placements inside ordinary containers and stops assignment discovery at each Alternatives boundary, so an Alternatives choice can never reveal another assignment round. The API batch-loads pinned group revisions, normalized group strategies, intervention bindings, one policy snapshot per relevant decision point, mappings, and existing assignments. Prepared decisions are keyed by intervention identity, not group ID, and are reused by rendering and completion traversal. Invalid legacy nested placements receive first-branch fallback without assignment or exposure.
 
 ## Transaction and Concurrency Ownership
 

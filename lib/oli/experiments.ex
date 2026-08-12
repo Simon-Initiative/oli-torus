@@ -39,6 +39,7 @@ defmodule Oli.Experiments do
   }
 
   alias Oli.Experiments.Policies.{ThompsonSampling, WeightedRandom}
+  alias Oli.Experiments.XAPI.Attributions
 
   alias Oli.Experiments.Schemas.ExperimentDefinition, as: ExperimentDefinitionSchema
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
@@ -585,6 +586,88 @@ defmodule Oli.Experiments do
   end
 
   def assigned_condition(_request), do: invalid_request("expected AssignConditionRequest")
+
+  @doc """
+  Assigns or reuses all valid experiment-controlled Alternatives placements on one
+  delivered page, using a bounded set of reads.
+  Decisions are keyed by stable content-element ID.
+
+  Callers must pass requests derived from server-resolved page content and deployed
+  Alternatives revisions. An Alternatives placement may be inside ordinary containers,
+  but must not have another Alternatives placement as an ancestor. Every request must
+  share one delivery scope and page resource ID.
+  """
+  def assign_page_conditions([%Oli.Experiments.AssignConditionRequest{} | _] = requests) do
+    with {:ok, scope} <- common_page_assignment_scope(requests),
+         :ok <- require_delivery_scope(scope),
+         {:ok, scope} <- validate_publication(scope) do
+      Repo.transaction(fn -> batch_assign_page_conditions(requests, scope) end)
+      |> case do
+        {:ok, {decisions, events}} ->
+          Enum.each(events, &emit_committed_batch_assignment/1)
+          {:ok, decisions}
+
+        {:error, %ExperimentError{} = error} ->
+          {:error, error}
+      end
+    end
+  end
+
+  def assign_page_conditions([]), do: {:ok, %{}}
+  def assign_page_conditions(_requests), do: invalid_request("expected assignment requests")
+
+  @doc """
+  Records exposure evidence for a page's assigned root Alternatives placements with
+  one assignment read. Requests must be derived from server-resolved delivery state.
+  """
+  def record_page_exposures([%Oli.Experiments.RecordExposureRequest{} | _] = requests) do
+    with {:ok, scope} <- common_exposure_scope(requests),
+         {:ok, assignments} <- batch_exposure_assignments(requests, scope),
+         {:ok, revisions} <- batch_exposure_revisions(requests, assignments) do
+      attributions =
+        Enum.flat_map(requests, fn request ->
+          assignment = Map.fetch!(assignments, request.assignment_id)
+          _revision = Map.fetch!(revisions, request.content_revision_id)
+          event = Map.put(runtime_event(request), "reused", false)
+          receipt = exposure_receipt(assignment, event)
+
+          :telemetry.execute([:oli, :experiments, :exposure, :recorded], %{count: 1}, %{
+            experiment_id: assignment.experiment_id,
+            decision_point_id: assignment.decision_point_id
+          })
+
+          Telemetry.emit(:exposure_recorded, {receipt, request}, assignment: assignment)
+          Attributions.attributions_for_page_view(receipt, request, assignment: assignment)
+        end)
+
+      {:ok, attributions}
+    end
+  end
+
+  def record_page_exposures([]), do: {:ok, []}
+  def record_page_exposures(_requests), do: invalid_request("expected exposure requests")
+
+  @doc """
+  Returns whether a section and project have a relevant active experiment.
+
+  This is the bounded delivery gate; callers must not enter experiment-specific
+  resolution when it returns false.
+  """
+  @spec relevant_active_experiment?(integer(), integer()) :: boolean()
+  def relevant_active_experiment?(section_id, project_id)
+      when is_integer(section_id) and is_integer(project_id) do
+    Repo.exists?(
+      from experiment_section in ExperimentSection,
+        join: experiment in ExperimentDefinitionSchema,
+        on: experiment.id == experiment_section.experiment_id,
+        where:
+          experiment_section.section_id == ^section_id and
+            experiment.project_id == ^project_id and
+            experiment.state == :active
+    )
+  end
+
+  def relevant_active_experiment?(_section_id, _project_id), do: false
 
   @doc """
   Records operational exposure evidence and emits the durable xAPI exposure event.
@@ -1240,6 +1323,430 @@ defmodule Oli.Experiments do
     end
   end
 
+  defp common_page_assignment_scope([first | rest]) do
+    with {:ok, scope} <- validate_delivery_participation_scope(first.scope),
+         true <-
+           Enum.all?(rest, fn request ->
+             request.scope == first.scope and
+               request.page_resource_id == first.page_resource_id
+           end) do
+      {:ok, scope}
+    else
+      false -> invalid_scope("page assignment requests must share one scope and page")
+      {:error, %ExperimentError{} = error} -> {:error, error}
+    end
+  end
+
+  defp common_exposure_scope([first | rest]) do
+    with {:ok, scope} <- validate_delivery_participation_scope(first.scope),
+         true <- Enum.all?(rest, &(&1.scope == first.scope)) do
+      {:ok, scope}
+    else
+      false -> invalid_scope("page exposure requests must share one scope")
+      {:error, %ExperimentError{} = error} -> {:error, error}
+    end
+  end
+
+  defp batch_exposure_assignments(requests, scope) do
+    assignment_ids = Enum.map(requests, & &1.assignment_id)
+
+    assignments =
+      from(assignment in Assignment,
+        join: experiment in assoc(assignment, :experiment),
+        join: condition in assoc(assignment, :condition),
+        on: condition.experiment_id == experiment.id,
+        join: decision_point in assoc(assignment, :decision_point),
+        on: decision_point.experiment_id == experiment.id,
+        where:
+          assignment.id in ^assignment_ids and
+            experiment.project_id == ^scope.project_id and
+            assignment.section_id == ^scope.section_id and
+            assignment.enrollment_id == ^scope.enrollment_id and
+            assignment.user_id == ^scope.user_id,
+        preload: [experiment: experiment, condition: condition, decision_point: decision_point]
+      )
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    case map_size(assignments) == length(Enum.uniq(assignment_ids)) do
+      true -> {:ok, assignments}
+      false -> invalid_scope("one or more page exposure assignments are outside delivery scope")
+    end
+  end
+
+  defp batch_exposure_revisions(requests, assignments) do
+    revision_ids = Enum.map(requests, & &1.content_revision_id)
+
+    revisions =
+      Revision
+      |> where([revision], revision.id in ^revision_ids)
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    valid? =
+      Enum.all?(requests, fn request ->
+        with %Revision{} = revision <- Map.get(revisions, request.content_revision_id),
+             %Assignment{} = assignment <- Map.get(assignments, request.assignment_id) do
+          revision.resource_id == assignment.decision_point.alternatives_resource_id
+        else
+          _ -> false
+        end
+      end)
+
+    case valid? do
+      true -> {:ok, revisions}
+      false -> invalid_condition("page exposure revision does not match its decision point")
+    end
+  end
+
+  defp batch_assign_page_conditions(requests, scope) do
+    page_resource_id = hd(requests).page_resource_id
+    content_element_ids = Enum.map(requests, & &1.content_element_id)
+
+    rows =
+      scope
+      |> batch_assignment_rows(page_resource_id, content_element_ids)
+      |> ensure_batch_policy_states()
+
+    decision_point_ids = rows |> Enum.map(& &1.decision_point.id) |> Enum.uniq()
+    counts = batch_assignment_counts(decision_point_ids)
+
+    rows_by_placement =
+      Enum.group_by(
+        rows,
+        &{&1.intervention.content_element_id, &1.decision_point.alternatives_resource_id}
+      )
+
+    {decisions, _counts, events} =
+      Enum.reduce(requests, {%{}, counts, []}, fn request, {decisions, current_counts, events} ->
+        matching_rows =
+          Map.get(
+            rows_by_placement,
+            {request.content_element_id, request.alternatives_resource_id},
+            []
+          )
+
+        case batch_assignment_decision(matching_rows, request, scope, current_counts) do
+          {:ok, decision, next_counts, event} ->
+            {Map.put(decisions, request.content_element_id, decision), next_counts,
+             [event | events]}
+
+          {:fallback, reason} ->
+            emit_batch_fallback(reason, matching_rows)
+
+            {Map.put(decisions, request.content_element_id, %AssignmentDecision{
+               status: :no_experiment
+             }), current_counts, events}
+
+          {:error, %ExperimentError{} = error} ->
+            Repo.rollback(error)
+        end
+      end)
+
+    {decisions, Enum.reverse(events)}
+  end
+
+  defp batch_assignment_rows(scope, page_resource_id, content_element_ids) do
+    from(intervention in Intervention,
+      join: decision_point in DecisionPoint,
+      on: decision_point.id == intervention.decision_point_id,
+      join: experiment in ExperimentDefinitionSchema,
+      as: :experiment,
+      on: experiment.id == decision_point.experiment_id,
+      join: mapping in DecisionPointCondition,
+      on: mapping.decision_point_id == decision_point.id,
+      join: condition in Condition,
+      on: condition.id == mapping.condition_id and condition.active == true,
+      left_join: policy_state in PolicyState,
+      on:
+        policy_state.experiment_id == experiment.id and
+          policy_state.decision_point_id == decision_point.id and
+          policy_state.algorithm == decision_point.algorithm,
+      left_join: assignment in Assignment,
+      on:
+        assignment.intervention_id == intervention.id and
+          assignment.enrollment_id == ^scope.enrollment_id,
+      where:
+        intervention.page_resource_id == ^page_resource_id and
+          intervention.content_element_id in ^content_element_ids and
+          experiment.project_id == ^scope.project_id and
+          experiment.state == :active and
+          exists(participating_section_query(scope.section_id)),
+      order_by: [asc: intervention.id, asc: mapping.position, asc: condition.id],
+      select: %{
+        intervention: intervention,
+        decision_point: decision_point,
+        experiment: experiment,
+        condition: %{condition | option_id: mapping.option_id, weight: mapping.weight},
+        policy_state: policy_state,
+        assignment: assignment
+      }
+    )
+    |> Repo.all()
+  end
+
+  defp ensure_batch_policy_states(rows) do
+    states =
+      rows
+      |> Enum.group_by(& &1.decision_point.id)
+      |> Map.new(fn {decision_point_id, point_rows} ->
+        first = hd(point_rows)
+
+        state =
+          first.policy_state ||
+            get_or_create_policy_state(first.experiment, decision_point_id)
+
+        {decision_point_id, state}
+      end)
+
+    Enum.map(rows, fn row ->
+      %{row | policy_state: Map.fetch!(states, row.decision_point.id)}
+    end)
+  end
+
+  defp batch_assignment_counts([]), do: %{}
+
+  defp batch_assignment_counts(decision_point_ids) do
+    from(assignment in Assignment,
+      where: assignment.decision_point_id in ^decision_point_ids,
+      group_by: [assignment.decision_point_id, assignment.condition_id],
+      select: {{assignment.decision_point_id, assignment.condition_id}, count(assignment.id)}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  defp batch_assignment_decision([], _request, _scope, _counts),
+    do: {:fallback, :no_experiment}
+
+  defp batch_assignment_decision(rows, request, scope, counts) do
+    first = hd(rows)
+
+    cond do
+      Enum.any?(rows, &(&1.experiment.id != first.experiment.id)) ->
+        {:fallback, :ambiguous_match}
+
+      existing = Enum.find_value(rows, & &1.assignment) ->
+        condition = Enum.find(rows, &(&1.condition.id == existing.condition_id)).condition
+        decision = to_assignment_decision(existing, condition, true, condition.option_id)
+        event = batch_assignment_event(decision, request, existing, first, nil, true)
+        {:ok, decision, counts, event}
+
+      true ->
+        conditions = Enum.map(rows, & &1.condition)
+
+        with :ok <- validate_batch_options(conditions, request.available_condition_codes),
+             {:ok, selection} <-
+               select_batch_condition(first, conditions, request, scope, counts),
+             {:ok, decision, assignment, inserted?} <-
+               insert_batch_assignment(first, selection, request, scope) do
+          next_counts =
+            case inserted? do
+              true ->
+                increment_batch_assignment_count(first)
+
+                Map.update(
+                  counts,
+                  {first.decision_point.id, selection.condition.id},
+                  1,
+                  &(&1 + 1)
+                )
+
+              false ->
+                counts
+            end
+
+          event =
+            batch_assignment_event(
+              decision,
+              request,
+              assignment,
+              first,
+              selection,
+              not inserted?
+            )
+
+          {:ok, decision, next_counts, event}
+        end
+    end
+  end
+
+  defp validate_batch_options(conditions, available_option_ids) do
+    mapped = conditions |> Enum.map(& &1.option_id) |> MapSet.new()
+    available = MapSet.new(available_option_ids)
+
+    case mapped == available do
+      true ->
+        :ok
+
+      false ->
+        invalid_condition("delivery alternatives options do not match intervention mapping")
+    end
+  end
+
+  defp select_batch_condition(first, conditions, _request, scope, counts) do
+    decision_point = first.decision_point
+
+    point_counts =
+      counts
+      |> Enum.reduce(%{}, fn
+        {{point_id, condition_id}, count}, acc when point_id == decision_point.id ->
+          Map.put(acc, condition_id, count)
+
+        _, acc ->
+          acc
+      end)
+
+    {policy_module, policy_conditions, guardrail_action} =
+      assignment_policy_for_snapshot(
+        first.experiment,
+        decision_point,
+        conditions,
+        first.policy_state,
+        point_counts
+      )
+
+    context = %{
+      conditions: policy_conditions,
+      assignment_key:
+        assignment_key(
+          first.experiment.id,
+          decision_point.id,
+          first.intervention.id,
+          scope.enrollment_id
+        )
+    }
+
+    case policy_module.assign(
+           decision_point.policy_config,
+           first.policy_state && first.policy_state.state,
+           context
+         ) do
+      {:ok, policy_assignment} ->
+        condition = Enum.find(conditions, &(&1.id == policy_assignment.condition_id))
+
+        {:ok,
+         %{
+           condition: condition,
+           policy_assignment: policy_assignment,
+           guardrail_action: guardrail_action,
+           assignment_counts: point_counts
+         }}
+
+      {:error, reason} ->
+        invalid_condition("policy could not assign a condition", %{reason: reason})
+    end
+  end
+
+  defp insert_batch_assignment(first, selection, _request, scope) do
+    attrs = %{
+      experiment_id: first.experiment.id,
+      decision_point_id: first.decision_point.id,
+      condition_id: selection.condition.id,
+      intervention_id: first.intervention.id,
+      section_id: scope.section_id,
+      enrollment_id: scope.enrollment_id,
+      user_id: scope.user_id,
+      assigned_by_policy: Atom.to_string(first.decision_point.algorithm),
+      policy_version: selection.policy_assignment.policy_version,
+      assignment_key:
+        assignment_key(
+          first.experiment.id,
+          first.decision_point.id,
+          first.intervention.id,
+          scope.enrollment_id
+        ),
+      assigned_at: now()
+    }
+
+    case Repo.insert(Assignment.changeset(%Assignment{}, attrs), mode: :savepoint) do
+      {:ok, assignment} ->
+        {:ok,
+         to_assignment_decision(
+           assignment,
+           selection.condition,
+           false,
+           selection.condition.option_id
+         ), assignment, true}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        case conflict?(changeset) do
+          true ->
+            assignment =
+              Repo.get_by!(Assignment,
+                intervention_id: first.intervention.id,
+                enrollment_id: scope.enrollment_id
+              )
+
+            condition = Repo.get!(Condition, assignment.condition_id)
+            {:ok, to_assignment_decision(assignment, condition, true), assignment, false}
+
+          false ->
+            normalize_result({:error, changeset})
+        end
+    end
+  end
+
+  defp increment_batch_assignment_count(%{policy_state: %PolicyState{id: id}}) do
+    from(policy_state in PolicyState, where: policy_state.id == ^id)
+    |> Repo.update_all(inc: [assignment_count: 1])
+  end
+
+  defp increment_batch_assignment_count(first),
+    do: increment_assignment_count(first.experiment, first.decision_point.id)
+
+  defp batch_assignment_event(decision, request, assignment, first, selection, reused?) do
+    %{
+      decision: decision,
+      request: request,
+      assignment: assignment,
+      experiment: first.experiment,
+      decision_point: first.decision_point,
+      selection: selection,
+      reused?: reused?
+    }
+  end
+
+  defp emit_committed_batch_assignment(event) do
+    if event.reused? do
+      :telemetry.execute([:oli, :experiments, :assignment, :reuse], %{count: 1}, %{
+        experiment_id: event.assignment.experiment_id,
+        decision_point_id: event.assignment.decision_point_id,
+        algorithm: event.assignment.assigned_by_policy,
+        algorithm_version: event.assignment.policy_version,
+        selected_condition_id: event.assignment.condition_id,
+        selected_condition_code: event.decision.condition_code,
+        guardrail_action: :sticky_reuse
+      })
+    else
+      selection = event.selection
+
+      emit_assignment_guardrail_telemetry(
+        event.experiment,
+        event.decision_point,
+        selection.condition,
+        selection.policy_assignment,
+        selection.guardrail_action,
+        selection.assignment_counts
+      )
+    end
+
+    Telemetry.emit(:assignment_decided, {event.decision, event.request},
+      assignment: event.assignment,
+      experiment: event.experiment
+    )
+  end
+
+  defp emit_batch_fallback(reason, rows) do
+    first = List.first(rows)
+
+    :telemetry.execute([:oli, :experiments, :assignment, :fallback], %{count: 1}, %{
+      reason: reason,
+      experiment_id: first && first.experiment.id,
+      decision_point_id: first && first.decision_point.id
+    })
+  end
+
   defp do_assign_condition_for_current_project(request, scope) do
     with {:ok, scope} <- validate_publication(scope),
          {:ok, revision} <- resolve_delivery_revision(request, scope),
@@ -1270,6 +1777,63 @@ defmodule Oli.Experiments do
     end
   end
 
+  defp active_experiment_match(
+         %{page_resource_id: page_resource_id, content_element_id: content_element_id} = request,
+         scope,
+         revision
+       )
+       when is_integer(page_resource_id) and is_binary(content_element_id) do
+    query =
+      from experiment in ExperimentDefinitionSchema,
+        as: :experiment,
+        join: decision_point in DecisionPoint,
+        on: decision_point.experiment_id == experiment.id,
+        join: intervention in Intervention,
+        on: intervention.decision_point_id == decision_point.id,
+        where:
+          experiment.state == :active and
+            experiment.project_id == ^scope.project_id and
+            decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
+            intervention.page_resource_id == ^page_resource_id and
+            intervention.content_element_id == ^content_element_id,
+        order_by: [asc: experiment.id],
+        limit: 3,
+        select:
+          {experiment, decision_point, intervention,
+           exists(participating_section_query(scope.section_id))}
+
+    case Repo.all(query) do
+      [] ->
+        no_experiment_match()
+
+      [{_experiment, _decision_point, _intervention, false}] ->
+        no_experiment_match()
+
+      [{experiment, decision_point, intervention, true}] ->
+        with {:ok, conditions} <-
+               validate_runtime_condition_compatibility(experiment, decision_point, revision) do
+          decision_point = runtime_decision_point(experiment, decision_point, conditions)
+
+          {:ok,
+           %{
+             experiment: experiment,
+             decision_point: decision_point,
+             intervention: intervention,
+             conditions: conditions,
+             available_condition_codes: request.available_condition_codes
+           }}
+        end
+
+      matches ->
+        ambiguous_match(
+          matches,
+          scope,
+          request,
+          fn {experiment, _decision_point, _intervention, _participating?} -> experiment.id end
+        )
+    end
+  end
+
   defp active_experiment_match(request, scope, revision) do
     query =
       from experiment in ExperimentDefinitionSchema,
@@ -1288,22 +1852,10 @@ defmodule Oli.Experiments do
 
     case Repo.all(query) do
       [] ->
-        :telemetry.execute(
-          [:oli, :experiments, :assignment, :fallback],
-          %{count: 1},
-          %{reason: :no_experiment}
-        )
-
-        {:ok, %{status: :no_experiment}}
+        no_experiment_match()
 
       [{_experiment, _decision_point, false}] ->
-        :telemetry.execute(
-          [:oli, :experiments, :assignment, :fallback],
-          %{count: 1},
-          %{reason: :no_experiment}
-        )
-
-        {:ok, %{status: :no_experiment}}
+        no_experiment_match()
 
       [{experiment, decision_point, true}] ->
         with {:ok, conditions} <-
@@ -1312,6 +1864,8 @@ defmodule Oli.Experiments do
                  decision_point,
                  revision
                ) do
+          decision_point = runtime_decision_point(experiment, decision_point, conditions)
+
           {:ok,
            %{
              experiment: experiment,
@@ -1322,26 +1876,37 @@ defmodule Oli.Experiments do
         end
 
       matches ->
-        experiment_ids =
-          matches
-          |> Enum.take(2)
-          |> Enum.map(fn {experiment, _decision_point, _participating?} -> experiment.id end)
-
-        :telemetry.execute(
-          [:oli, :experiments, :assignment, :ambiguous_match],
-          %{count: 1, sampled_match_count: length(experiment_ids)},
-          %{
-            experiment_ids: experiment_ids,
-            truncated?: length(matches) > 2,
-            project_id: scope.project_id,
-            section_id: scope.section_id,
-            alternatives_resource_id: request.alternatives_resource_id,
-            decision_point_key: request.decision_point_key
-          }
-        )
-
-        {:ok, %{status: :no_experiment}}
+        ambiguous_match(matches, scope, request, fn {experiment, _, _} -> experiment.id end)
     end
+  end
+
+  defp no_experiment_match do
+    :telemetry.execute(
+      [:oli, :experiments, :assignment, :fallback],
+      %{count: 1},
+      %{reason: :no_experiment}
+    )
+
+    {:ok, %{status: :no_experiment}}
+  end
+
+  defp ambiguous_match(matches, scope, request, experiment_id_fn) do
+    experiment_ids = matches |> Enum.take(2) |> Enum.map(experiment_id_fn)
+
+    :telemetry.execute(
+      [:oli, :experiments, :assignment, :ambiguous_match],
+      %{count: 1, sampled_match_count: length(experiment_ids)},
+      %{
+        experiment_ids: experiment_ids,
+        truncated?: length(matches) > 2,
+        project_id: scope.project_id,
+        section_id: scope.section_id,
+        alternatives_resource_id: request.alternatives_resource_id,
+        decision_point_key: request.decision_point_key
+      }
+    )
+
+    {:ok, %{status: :no_experiment}}
   end
 
   defp resolve_delivery_revision(request, scope) do
@@ -1385,7 +1950,21 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp select_condition(_experiment, _decision_point, _conditions, [], _scope),
+  defp runtime_decision_point(experiment, decision_point, conditions) do
+    case Enum.all?(conditions, &is_nil(&1.option_id)) do
+      true ->
+        %{
+          decision_point
+          | algorithm: experiment.algorithm,
+            policy_config: experiment.policy_config
+        }
+
+      false ->
+        decision_point
+    end
+  end
+
+  defp select_condition(_experiment, _decision_point, _conditions, [], _scope, _intervention),
     do: invalid_condition("no condition codes supplied")
 
   defp select_condition(
@@ -1393,10 +1972,13 @@ defmodule Oli.Experiments do
          decision_point,
          active_conditions,
          available_condition_codes,
-         scope
+         scope,
+         intervention
        ) do
     conditions =
-      Enum.filter(active_conditions, &(&1.condition_code in available_condition_codes))
+      Enum.filter(active_conditions, fn condition ->
+        (condition.option_id || condition.condition_code) in available_condition_codes
+      end)
 
     case conditions do
       [] ->
@@ -1426,7 +2008,13 @@ defmodule Oli.Experiments do
 
         policy_context = %{
           conditions: conditions,
-          assignment_key: assignment_key(experiment.id, decision_point.id, scope.enrollment_id)
+          assignment_key:
+            assignment_key(
+              experiment.id,
+              decision_point.id,
+              intervention && intervention.id,
+              scope.enrollment_id
+            )
         }
 
         policy_module
@@ -1465,11 +2053,13 @@ defmodule Oli.Experiments do
          experiment,
          %DecisionPoint{algorithm: :thompson_sampling} = decision_point,
          conditions,
-         policy_state
+         _policy_state
        ) do
     assignment_counts = assignment_counts_by_condition(experiment.id, decision_point.id)
     guardrails = thompson_guardrails(decision_point.policy_config)
-    assignment_count = (policy_state && policy_state.assignment_count) || 0
+
+    assignment_count =
+      Enum.reduce(assignment_counts, 0, fn {_id, count}, total -> total + count end)
 
     cond do
       assignment_count < guardrails["warm_up_assignments"] ->
@@ -1502,6 +2092,50 @@ defmodule Oli.Experiments do
        ) do
     {policy_module(decision_point.algorithm), conditions, :none}
   end
+
+  defp assignment_policy_for_snapshot(
+         _experiment,
+         %DecisionPoint{algorithm: :thompson_sampling} = decision_point,
+         conditions,
+         _policy_state,
+         assignment_counts
+       ) do
+    guardrails = thompson_guardrails(decision_point.policy_config)
+
+    assignment_count =
+      Enum.reduce(assignment_counts, 0, fn {_id, count}, total -> total + count end)
+
+    cond do
+      assignment_count < guardrails["warm_up_assignments"] ->
+        {WeightedRandom, conditions, :warm_up}
+
+      fixed_control_condition =
+          fixed_control_condition(
+            conditions,
+            assignment_counts,
+            guardrails["fixed_control_allocation"]
+          ) ->
+        {WeightedRandom, [fixed_control_condition], :fixed_control}
+
+      capped_conditions =
+          cap_eligible_conditions(
+            conditions,
+            assignment_counts,
+            guardrails["max_condition_share"]
+          ) ->
+        {policy_module(decision_point.algorithm), capped_conditions,
+         cap_guardrail_action(capped_conditions, conditions)}
+    end
+  end
+
+  defp assignment_policy_for_snapshot(
+         _experiment,
+         decision_point,
+         conditions,
+         _policy_state,
+         _assignment_counts
+       ),
+       do: {policy_module(decision_point.algorithm), conditions, :none}
 
   defp assignment_counts_for_guardrails(experiment, decision_point),
     do: assignment_counts_by_condition(experiment.id, decision_point.id)
@@ -1587,6 +2221,10 @@ defmodule Oli.Experiments do
         on: decision_point.id == assignment.decision_point_id,
         join: condition in Condition,
         on: condition.id == assignment.condition_id,
+        left_join: mapping in DecisionPointCondition,
+        on:
+          mapping.decision_point_id == assignment.decision_point_id and
+            mapping.condition_id == assignment.condition_id,
         where:
           experiment.project_id == ^scope.project_id and
             exists(participating_section_query(scope.section_id)) and
@@ -1596,25 +2234,44 @@ defmodule Oli.Experiments do
             decision_point.alternatives_resource_id == ^request.alternatives_resource_id and
             decision_point.decision_point_key == ^request.decision_point_key and
             condition.active == true and
-            condition.condition_code in ^request.available_condition_codes,
+            (mapping.option_id in ^request.available_condition_codes or
+               (is_nil(mapping.id) and
+                  condition.condition_code in ^request.available_condition_codes)),
         order_by: [desc: assignment.id],
         limit: 1,
-        select: {assignment, condition}
+        select: {assignment, condition, mapping.option_id}
+
+    query = maybe_filter_assignment_intervention(query, request)
 
     case Repo.one(query) do
-      {%Assignment{} = assignment, %Condition{} = condition} ->
-        {:ok, to_assignment_decision(assignment, condition, true)}
+      {%Assignment{} = assignment, %Condition{} = condition, option_id} ->
+        {:ok, to_assignment_decision(assignment, condition, true, option_id)}
 
       nil ->
         {:ok, %AssignmentDecision{status: :no_experiment}}
     end
   end
 
+  defp maybe_filter_assignment_intervention(
+         query,
+         %{page_resource_id: page_resource_id, content_element_id: content_element_id}
+       )
+       when is_integer(page_resource_id) and is_binary(content_element_id) do
+    from [assignment, _experiment, _decision_point, _condition, _mapping] in query,
+      join: intervention in Intervention,
+      on: intervention.id == assignment.intervention_id,
+      where:
+        intervention.page_resource_id == ^page_resource_id and
+          intervention.content_element_id == ^content_element_id
+  end
+
+  defp maybe_filter_assignment_intervention(query, _request), do: query
+
   defp assign_or_reuse(%{status: :no_experiment}, _scope, _request),
     do: {:ok, %AssignmentDecision{status: :no_experiment}}
 
   defp assign_or_reuse(match, scope, request) do
-    case find_assignment(match.experiment.id, match.decision_point.id, scope.enrollment_id) do
+    case find_assignment(match, scope.enrollment_id) do
       %Assignment{} = assignment ->
         condition = Repo.get!(Condition, assignment.condition_id)
         decision = to_assignment_decision(assignment, condition, true)
@@ -1639,19 +2296,30 @@ defmodule Oli.Experiments do
                  match.decision_point,
                  match.conditions,
                  match.available_condition_codes,
-                 scope
+                 scope,
+                 Map.get(match, :intervention)
                ) do
           create_assignment(Map.merge(match, selection), scope, request)
         end
     end
   end
 
-  defp find_assignment(experiment_id, decision_point_id, enrollment_id) do
+  defp find_assignment(%{intervention: %Intervention{id: intervention_id}}, enrollment_id) do
     Repo.one(
       from assignment in Assignment,
         where:
-          assignment.experiment_id == ^experiment_id and
-            assignment.decision_point_id == ^decision_point_id and
+          assignment.intervention_id == ^intervention_id and
+            assignment.enrollment_id == ^enrollment_id
+    )
+  end
+
+  defp find_assignment(%{experiment: experiment, decision_point: decision_point}, enrollment_id) do
+    Repo.one(
+      from assignment in Assignment,
+        where:
+          assignment.experiment_id == ^experiment.id and
+            assignment.decision_point_id == ^decision_point.id and
+            is_nil(assignment.intervention_id) and
             assignment.enrollment_id == ^enrollment_id
     )
   end
@@ -1661,13 +2329,19 @@ defmodule Oli.Experiments do
       experiment_id: match.experiment.id,
       decision_point_id: match.decision_point.id,
       condition_id: match.condition.id,
+      intervention_id: Map.get(match, :intervention) && match.intervention.id,
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,
       assigned_by_policy: Atom.to_string(match.decision_point.algorithm),
       policy_version: match.policy_assignment.policy_version,
       assignment_key:
-        assignment_key(match.experiment.id, match.decision_point.id, scope.enrollment_id),
+        assignment_key(
+          match.experiment.id,
+          match.decision_point.id,
+          Map.get(match, :intervention) && match.intervention.id,
+          scope.enrollment_id
+        ),
       assigned_at: now()
     }
 
@@ -1689,7 +2363,7 @@ defmodule Oli.Experiments do
       {:error, %Ecto.Changeset{} = changeset} ->
         if conflict?(changeset) do
           assignment =
-            find_assignment(match.experiment.id, match.decision_point.id, scope.enrollment_id)
+            find_assignment(match, scope.enrollment_id)
 
           condition = Repo.get!(Condition, assignment.condition_id)
           decision = to_assignment_decision(assignment, condition, true)
@@ -1706,8 +2380,12 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp assignment_key(experiment_id, decision_point_id, enrollment_id) do
+  defp assignment_key(experiment_id, decision_point_id, nil, enrollment_id) do
     "#{experiment_id}:#{decision_point_id}:#{enrollment_id}"
+  end
+
+  defp assignment_key(experiment_id, decision_point_id, intervention_id, enrollment_id) do
+    "#{experiment_id}:#{decision_point_id}:#{intervention_id}:#{enrollment_id}"
   end
 
   defp increment_assignment_count(experiment, decision_point_id) do
@@ -2923,22 +3601,38 @@ defmodule Oli.Experiments do
   end
 
   defp active_conditions(experiment_id, decision_point_id) do
-    from(condition in Condition,
-      join: mapping in DecisionPointCondition,
-      on: mapping.condition_id == condition.id,
-      where:
-        condition.experiment_id == ^experiment_id and
-          mapping.decision_point_id == ^decision_point_id and
-          condition.active == true,
-      order_by: [asc: mapping.position, asc: condition.id],
-      select: %{
-        condition
-        | option_id: mapping.option_id,
-          weight: mapping.weight,
-          position: mapping.position
-      }
-    )
-    |> Repo.all()
+    mapped =
+      from(condition in Condition,
+        join: mapping in DecisionPointCondition,
+        on: mapping.condition_id == condition.id,
+        where:
+          condition.experiment_id == ^experiment_id and
+            mapping.decision_point_id == ^decision_point_id and
+            condition.active == true,
+        order_by: [asc: mapping.position, asc: condition.id],
+        select: %{
+          condition
+          | option_id: mapping.option_id,
+            weight: mapping.weight,
+            position: mapping.position
+        }
+      )
+      |> Repo.all()
+
+    case mapped do
+      [] ->
+        Repo.all(
+          from condition in Condition,
+            where:
+              condition.experiment_id == ^experiment_id and
+                condition.decision_point_id == ^decision_point_id and
+                condition.active == true,
+            order_by: [asc: condition.position, asc: condition.id]
+        )
+
+      conditions ->
+        conditions
+    end
   end
 
   defp validate_activation_interventions(decision_point, interventions) do
@@ -3469,7 +4163,8 @@ defmodule Oli.Experiments do
          :ok <- validate_experiment_decision_point_revision(revision),
          :ok <-
            validate_mapping_bijection(attrs, revision, condition_refs, mapped_refs, option_ids),
-         :ok <- validate_interventions(attrs, scope),
+         :ok <-
+           validate_interventions(attrs, scope, attrs.alternatives_resource_id),
          :ok <-
            validate_policy_config(
              Map.get(attrs, :algorithm, :weighted_random),
@@ -3522,7 +4217,7 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp validate_interventions(point, scope) do
+  defp validate_interventions(point, scope, alternatives_resource_id) do
     interventions = Enum.map(Map.get(point, :interventions, []), &atomize_keys/1)
 
     identities =
@@ -3542,6 +4237,12 @@ defmodule Oli.Experiments do
         &(not valid_project_page?(scope, Map.get(&1, :page_resource_id), false))
       ) ->
         invalid_condition("intervention page is not compatible with the experiment project")
+
+      Enum.any?(
+        interventions,
+        &(not valid_experiment_placement?(&1, scope, alternatives_resource_id))
+      ) ->
+        invalid_condition("Alternatives placements cannot be nested within another Alternatives")
 
       algorithm == :thompson_sampling ->
         validate_adaptive_bindings(interventions, scope)
@@ -3589,6 +4290,31 @@ defmodule Oli.Experiments do
   end
 
   defp valid_project_page?(_scope, _resource_id, _require_graded?), do: false
+
+  defp valid_experiment_placement?(intervention, scope, alternatives_resource_id) do
+    page_resource_id = Map.get(intervention, :page_resource_id)
+    content_element_id = Map.get(intervention, :content_element_id)
+
+    case AuthoringResolver.from_resource_id(scope.project_slug, page_resource_id) do
+      %Revision{content: %{"model" => model}} when is_list(model) ->
+        valid = Oli.Resources.PageContent.alternatives_placements(%{"model" => model})
+
+        Enum.any?(valid, fn
+          %{
+            "type" => "alternatives",
+            "id" => ^content_element_id,
+            "alternatives_id" => ^alternatives_resource_id
+          } ->
+            true
+
+          _ ->
+            false
+        end)
+
+      _ ->
+        false
+    end
+  end
 
   defp validate_authoring_conditions(conditions) when is_list(conditions) do
     normalized = Enum.map(conditions, &atomize_keys/1)
@@ -4335,15 +5061,36 @@ defmodule Oli.Experiments do
     do: %AssignmentDecision{status: :no_experiment}
 
   defp to_assignment_decision(%Assignment{} = assignment, %Condition{} = condition, reused?) do
+    to_assignment_decision(assignment, condition, reused?, nil)
+  end
+
+  defp to_assignment_decision(
+         %Assignment{} = assignment,
+         %Condition{} = condition,
+         reused?,
+         option_id
+       ) do
     %AssignmentDecision{
       status: :assigned,
       experiment_id: assignment.experiment_id,
       decision_point_id: assignment.decision_point_id,
       condition_id: assignment.condition_id,
       condition_code: condition.condition_code,
+      option_id: option_id || assigned_option_id(assignment, condition),
       assignment_id: assignment.id,
       reused?: reused?
     }
+  end
+
+  defp assigned_option_id(%Assignment{} = assignment, %Condition{} = condition) do
+    condition.option_id ||
+      Repo.one(
+        from mapping in DecisionPointCondition,
+          where:
+            mapping.decision_point_id == ^assignment.decision_point_id and
+              mapping.condition_id == ^condition.id,
+          select: mapping.option_id
+      ) || condition.condition_code
   end
 
   defp exposure_receipt(%Assignment{} = assignment, event) do
@@ -4386,7 +5133,9 @@ defmodule Oli.Experiments do
       enrollment_id: scope.enrollment_id,
       alternatives_resource_id: request.alternatives_resource_id,
       alternatives_revision_id: request.alternatives_revision_id,
-      decision_point_key: request.decision_point_key
+      decision_point_key: request.decision_point_key,
+      page_resource_id: request.page_resource_id,
+      content_element_id: request.content_element_id
     }
   end
 

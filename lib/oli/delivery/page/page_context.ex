@@ -35,7 +35,10 @@ defmodule Oli.Delivery.Page.PageContext do
     :is_instructor,
     :is_student,
     :effective_settings,
-    :license
+    :license,
+    :alternative_groups_by_id,
+    :experiment_decisions,
+    :experiment_attributions
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -45,6 +48,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
+  alias Oli.Delivery.Experiments.PageDecisions
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Resources.Collaboration
@@ -176,7 +180,7 @@ defmodule Oli.Delivery.Page.PageContext do
   """
   @decorate transaction_event()
   def create_for_visit(
-        %Section{slug: section_slug, id: section_id},
+        %Section{slug: section_slug, id: section_id} = section,
         page_slug,
         user,
         datashop_session_id
@@ -192,7 +196,41 @@ defmodule Oli.Delivery.Page.PageContext do
 
     Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    decision_revision =
+      experiment_decision_revision(
+        page_revision,
+        Attempts.get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id),
+        effective_settings
+      )
+
+    prepared =
+      PageDecisions.prepare_content(section, decision_revision, user, decision_revision.content)
+
+    activity_provider = fn content, source, prototypes, learner, slug, resolver ->
+      selected_content =
+        Oli.Resources.Alternatives.apply_experiment_decisions(
+          content,
+          prepared.alternative_groups_by_id,
+          prepared.experiment_decisions
+        )
+
+      result =
+        Oli.Delivery.ActivityProvider.provide(
+          selected_content,
+          source,
+          prototypes,
+          learner,
+          slug,
+          resolver
+        )
+
+      %{
+        result
+        | alternative_groups_by_id: prepared.alternative_groups_by_id,
+          experiment_decisions: prepared.experiment_decisions,
+          experiment_attributions: prepared.experiment_attributions
+      }
+    end
 
     {progress_state, resource_attempts, latest_attempts, activities} =
       Appsignal.instrument("PageLifecycle.visit", fn ->
@@ -275,9 +313,32 @@ defmodule Oli.Delivery.Page.PageContext do
       collab_space_config: collab_space_config,
       is_instructor: user_roles.is_instructor?,
       is_student: user_roles.is_student?,
-      effective_settings: effective_settings
+      effective_settings: effective_settings,
+      alternative_groups_by_id: prepared.alternative_groups_by_id,
+      experiment_decisions: prepared.experiment_decisions,
+      experiment_attributions: prepared.experiment_attributions
     }
   end
+
+  # Graded batch-scoring attempts remain pinned when a newer page revision is deployed.
+  # An active graded attempt also remains pinned across a graded-to-ungraded transition.
+  # Select that revision before experiment preparation so assignment and exposure context
+  # always describe the content that PageLifecycle will render.
+  defp experiment_decision_revision(
+         page_revision,
+         %{lifecycle_state: :active, revision: attempt_revision},
+         effective_settings
+       )
+       when attempt_revision.id != page_revision.id do
+    case {attempt_revision.graded, page_revision.graded, effective_settings.batch_scoring} do
+      {true, false, _batch_scoring} -> attempt_revision
+      {true, true, true} -> attempt_revision
+      _ -> page_revision
+    end
+  end
+
+  defp experiment_decision_revision(page_revision, _latest_attempt, _effective_settings),
+    do: page_revision
 
   defp assemble_final_context(
          state,

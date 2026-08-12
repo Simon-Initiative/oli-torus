@@ -19,7 +19,7 @@ Phase: `1 - Confirm Runtime Contracts and Detailed Slice Boundaries`
 
 - Resource-attempt canonical order is `attempt_number ASC` with defensive `id ASC`; authoritative successful final state is `:evaluated`. Active/submitted earlier attempts block later evaluated attempts.
 - Automatic reward handoff is currently activity-attempt based and inside activity rollup transactions; manual grading has no equivalent reward hook. The future seam is one resource-attempt handoff after successful commit.
-- Fresh Alternatives insertion creates new nested IDs; reorder and whole-page movement retain them. Basic page duplication and cross-page/cross-window content copy currently retain nested IDs and need explicit regeneration later.
+- Fresh Alternatives insertion creates new nested IDs; reorder and whole-page movement retain them. Basic page duplication retains element IDs but creates a new page resource, which is sufficient to create new compound intervention identities. Only same-page element copy/reinsertion must regenerate the placement ID; blanket content-tree regeneration is neither required nor safe.
 - Delivery has no section-level active-experiment relevance gate. Group revisions and render context are batched, but experiment resolution is per distinct group and repeated placements collapse by `alternatives_id`.
 - Detailed evidence is attached to host xAPI statements; current assignment runtime JSON is not a durable outbox. The ClickHouse target is the existing `experiment_attributions` table through an additive migration.
 - No feature-level Figma exists or is required. Phase 6 will implement a minimal best-effort Torus-native UI, default to LiveView/LiveComponents and Tailwind light/dark patterns, and refine the UX against the running application.

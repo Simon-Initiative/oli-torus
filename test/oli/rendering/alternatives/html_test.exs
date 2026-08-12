@@ -153,9 +153,17 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
 
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
+      assert rendered_html_string =~ ~s|phx-hook="PreviewAlternativesTabs"|
+      assert rendered_html_string =~ ~s|role="tablist"|
+      assert rendered_html_string =~ ~s|aria-label="Alternative content options"|
+      assert rendered_html_string =~ ~s|role="tab"|
+      assert rendered_html_string =~ ~s|aria-selected="true"|
+      assert rendered_html_string =~ ~s|role="tabpanel"|
+      assert rendered_html_string =~ ~s| hidden>|
+
       # renders R alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-DhY8ERStw7vXActR5U5BqR"><div class="content" ><p data-point-marker="19094070">R</p>|
+               ~s|<div class="content" ><p data-point-marker="19094070">R</p>|
 
       # renders activity embedded in R alternative
       assert rendered_html_string =~
@@ -163,11 +171,11 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
 
       # renders Excel alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-kQqFWsHyXeMenEDzT9rymP"><div class=\"content\" ><p data-point-marker="1742467879">Excel</p>\n</div>|
+               ~s|<div class=\"content\" ><p data-point-marker="1742467879">Excel</p>\n</div>|
 
       # renders Python alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-bdaqYkKs8RFE4LWLmPCLnf"><div class=\"content\" ><p data-point-marker="378189886">Python</p>\n</div>|
+               ~s|<div class=\"content\" ><p data-point-marker="378189886">Python</p>\n</div>|
     end
   end
 end

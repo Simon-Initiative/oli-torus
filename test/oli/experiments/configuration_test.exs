@@ -96,6 +96,84 @@ defmodule Oli.Experiments.ConfigurationTest do
     assert adaptive_message == "assessment binding must reference a compatible scored page"
   end
 
+  test "accepts an experiment-controlled Alternatives placement inside an ordinary container" do
+    scope = project_scope()
+    group = alternatives_revision(scope.project_id, "Group")
+    page = page_revision(scope.project_id, "Intervention", false)
+    decision_point = point(group, page, "nested-placement")
+
+    nested_content = %{
+      "model" => [
+        %{
+          "type" => "content",
+          "id" => "container",
+          "children" => [
+            %{
+              "type" => "alternatives",
+              "id" => "nested-placement",
+              "alternatives_id" => group.resource_id,
+              "children" => []
+            }
+          ]
+        }
+      ]
+    }
+
+    page
+    |> Ecto.Changeset.change(content: nested_content)
+    |> Repo.update!()
+
+    assert {:ok, _definition} =
+             Experiments.create_experiment(graph_request(scope, [decision_point]))
+  end
+
+  test "rejects an Alternatives placement nested within another Alternatives placement" do
+    scope = project_scope()
+    group = alternatives_revision(scope.project_id, "Inner Group")
+    outer_group = alternatives_revision(scope.project_id, "Outer Group")
+    page = page_revision(scope.project_id, "Intervention", false)
+    decision_point = point(group, page, "nested-placement")
+
+    nested_content = %{
+      "model" => [
+        %{
+          "type" => "alternatives",
+          "id" => "outer-placement",
+          "alternatives_id" => outer_group.resource_id,
+          "children" => [
+            %{
+              "type" => "alternative",
+              "id" => "outer-option",
+              "value" => "outer",
+              "children" => [
+                %{
+                  "type" => "group",
+                  "children" => [
+                    %{
+                      "type" => "alternatives",
+                      "id" => "nested-placement",
+                      "alternatives_id" => group.resource_id,
+                      "children" => []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+
+    page
+    |> Ecto.Changeset.change(content: nested_content)
+    |> Repo.update!()
+
+    assert {:error, %ExperimentError{message: message}} =
+             Experiments.create_experiment(graph_request(scope, [decision_point]))
+
+    assert message == "Alternatives placements cannot be nested within another Alternatives"
+  end
+
   test "requires explicit draft reconciliation and preserves non-draft history" do
     scope = project_scope()
     group = alternatives_revision(scope.project_id, "Group")
@@ -253,6 +331,8 @@ defmodule Oli.Experiments.ConfigurationTest do
   end
 
   defp point(group, page, element_id) do
+    ensure_root_placement!(page, group.resource_id, element_id)
+
     %{
       alternatives_resource_id: group.resource_id,
       decision_point_key: "alternatives:#{group.resource_id}",
@@ -267,6 +347,23 @@ defmodule Oli.Experiments.ConfigurationTest do
         %{page_resource_id: page.resource_id, content_element_id: element_id}
       ]
     }
+  end
+
+  defp ensure_root_placement!(page, alternatives_resource_id, element_id) do
+    content = %{
+      "model" => [
+        %{
+          "type" => "alternatives",
+          "id" => element_id,
+          "alternatives_id" => alternatives_resource_id,
+          "children" => []
+        }
+      ]
+    }
+
+    page
+    |> Ecto.Changeset.change(content: content)
+    |> Repo.update!()
   end
 
   defp persisted_point(group, page, element_id, control_id, variant_id) do

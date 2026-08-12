@@ -260,6 +260,7 @@ const OutlineItem = ({
   const dropIndex =
     index >= activeDragIndex[level] ? [...parentDropIndex, index + 1] : [...parentDropIndex, index];
   const canDropHere = canDrop(activeDragId, parents, content);
+  const canDropWithin = canDrop(activeDragId, [...parents, contentItem], content);
 
   const expanded = !collapsedGroupMap.get(id);
   const toggleCollapsibleGroup = (id: string) =>
@@ -281,6 +282,7 @@ const OutlineItem = ({
     activeDragIndex,
     collapsedGroupMap,
     canDropHere,
+    canDropWithin,
     dropIndex,
     expanded,
     toggleCollapsibleGroup,
@@ -367,6 +369,7 @@ type ResourceGroupItemProps = {
   content: PageEditorContent;
   collapsedGroupMap: Immutable.Map<string, boolean>;
   canDropHere: boolean;
+  canDropWithin: boolean;
   dropIndex: number[];
   children: React.ReactNode;
   expanded: boolean;
@@ -396,6 +399,7 @@ const ResourceGroupItem = ({
   activeDragIndex,
   collapsedGroupMap,
   canDropHere,
+  canDropWithin,
   dropIndex,
   children,
   expanded,
@@ -448,7 +452,7 @@ const ResourceGroupItem = ({
                   />
                 );
               })}
-            {isReorderMode && canDrop(activeDragId, [...parents, contentItem], content) && (
+            {isReorderMode && canDropWithin && (
               <DropTarget
                 key="last"
                 id="last"
