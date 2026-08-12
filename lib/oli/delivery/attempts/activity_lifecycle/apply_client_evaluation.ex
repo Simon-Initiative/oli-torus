@@ -157,48 +157,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
     end
   end
 
-  defp evaluate_with_rule_engine_score(activity_attempt, section_id, score, out_of) do
+  defp evaluate_with_rule_engine_score(activity_attempt, _section_id, score, out_of) do
     Logger.debug("evaluate_with_rule_engine_score: score: #{score}, out_of: #{out_of}")
 
     now = DateTime.utc_now()
 
-    activity_attempt
-    |> update_activity_attempt(%{
+    update_activity_attempt(activity_attempt, %{
       score: score,
       out_of: out_of,
       lifecycle_state: :evaluated,
       date_evaluated: now,
       date_submitted: now
     })
-    |> enqueue_reward_after_update(section_id)
   end
-
-  @doc false
-  def enqueue_reward_after_update(
-        result,
-        section_id,
-        enqueue_fn \\ fn activity_attempt_id, section_id ->
-          Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt_id, section_id)
-        end
-      )
-
-  def enqueue_reward_after_update(
-        {:ok, %{id: activity_attempt_id}} = result,
-        section_id,
-        enqueue_fn
-      ) do
-    case enqueue_fn.(activity_attempt_id, section_id) do
-      :ok ->
-        result
-
-      {:error, reason} ->
-        Logger.warning(
-          "A/B testing reward handoff failed after client evaluation: #{inspect(%{activity_attempt_id: activity_attempt_id, section_id: section_id, reason: reason})}"
-        )
-
-        result
-    end
-  end
-
-  def enqueue_reward_after_update(error, _section_id, _enqueue_fn), do: error
 end

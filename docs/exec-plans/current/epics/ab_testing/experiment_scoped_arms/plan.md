@@ -141,17 +141,16 @@ Guardrails:
 
 - Goal: Convert the first eligible finalized scored-page attempt into exactly one condition reward without blocking submission or corrupting posterior state (FR-011 through FR-016).
 - Tasks:
-  - [ ] Enqueue `RewardHandoffWorker` only after scored-page evaluation commits, passing only trusted resource-attempt identity and server scope.
-  - [ ] Resolve relevant bindings, enrollment, normalized overall score, canonical attempt order, and the first eligible finalized attempt server-side; keep an earlier pending attempt as a blocker.
-  - [ ] Resolve only the persisted assignment for the bound intervention; record a bounded skip when absent and never infer or create a retroactive assignment.
-  - [ ] In one transaction, lock the decision-point policy row, claim the unique binding/source reward, calculate `normalized_score >= threshold`, update only the assigned condition posterior and accepted counts, and persist compact before/after context.
-  - [ ] Make duplicate/replayed work return the prior disposition and make concurrent distinct rewards serialize without lost updates.
-  - [ ] Dispatch detailed evidence and latency telemetry only after commit; retry evidence delivery independently from posterior mutation.
+  - [x] Enqueue `RewardHandoffWorker` only after scored-page evaluation commits, passing only trusted resource-attempt identity and server scope.
+  - [x] Resolve relevant bindings, enrollment, normalized overall score, canonical attempt order, and the first eligible finalized attempt server-side; keep an earlier pending attempt as a blocker.
+  - [x] Resolve only the persisted assignment for the bound intervention; record a bounded skip when absent and never infer or create a retroactive assignment.
+  - [x] In one transaction, lock the decision-point policy row, claim the unique binding/source reward, calculate `normalized_score >= threshold`, update only the assigned condition posterior and accepted counts, and persist compact before/after context.
+  - [x] Make duplicate/replayed work return the prior disposition and make concurrent distinct rewards serialize without lost updates.
 - Testing Tasks:
-  - [ ] Cover threshold `0.0`, `1.0`, exact boundary, below boundary, binding-specific values, and proof that existing page scoring—not activity inspection—supplies the score.
-  - [ ] Cover pending blockers, canonical attempt ordering, eventual first-final acceptance, later attempts, reevaluation, missing assignment, duplicate job, rollback, and retry.
-  - [ ] Add concurrency tests for one replayed reward and multiple distinct rewards to the same policy row; assert one claim per accepted source and no lost alpha/beta increments.
-  - [ ] Prove submission completes independently, only committed posterior updates affect later new assignments, and existing assignments never change.
+  - [x] Cover threshold `0.0`, `1.0`, exact boundary, below boundary, binding-specific values, and proof that existing page scoring—not activity inspection—supplies the score.
+  - [x] Cover pending blockers, canonical attempt ordering, eventual first-final acceptance, later attempts, reevaluation, missing assignment, duplicate job, rollback, and retry.
+  - [x] Add concurrency tests for one replayed reward and multiple distinct rewards to the same policy row; assert one claim per accepted source and no lost alpha/beta increments.
+  - [x] Prove submission completes independently, only committed posterior updates affect later new assignments, and existing assignments never change.
   - Command(s): `mix test <reward handoff, worker, attempt eligibility, policy transaction, and Oban tests>`
 - Definition of Done:
   - Reward processing is post-commit, deterministic, atomic, idempotent, retryable, and correctly attributed; failures cannot block assessment submission or partially mutate policy state.
@@ -196,6 +195,7 @@ Guardrails:
   - [ ] Extend project export to include every referenced Alternatives Group's canonical strategy, stable option identities/labels, and required content exactly once while preserving repeated placement-local content.
   - [ ] Update ingest to create/normalize groups before rewiring every `alternatives_id`; ignore placement strategy, default strategy-less legacy groups to `user_section_preference`, and canonicalize imported `upgrade_decision_point` groups.
   - [ ] Extend assignment, exposure, assessment, reward, disposition, and policy-update evidence with intervention, binding, attempt, threshold/score where permitted, publication/revision snapshot, and before/after policy context.
+  - [ ] Dispatch detailed reward evidence and latency telemetry only after the PostgreSQL reward transaction commits; retry evidence delivery independently without reapplying posterior mutation.
   - [ ] Add bounded telemetry for relevance, binding resolution, assignment creation/reuse/conflict/fallback, sampling mode, reward outcomes, posterior updates, queue/transaction latency, evidence dispatch, and migration anomalies.
   - [ ] Verify that logs, telemetry, xAPI, ClickHouse, and retry/outbox payloads exclude raw responses, free-form content, email/name, and unnecessary learner identity.
   - [ ] Define AppSignal dashboard/alert follow-up for fallback/error rate, queue-to-update latency, skip/duplicate reasons, update failure, imbalance, and migration anomalies; keep environment changes outside this code plan unless separately authorized.

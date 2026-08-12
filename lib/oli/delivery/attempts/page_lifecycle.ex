@@ -22,6 +22,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
     ResourceAttempt
   }
 
+  alias Oli.Delivery.Experiments
+
   alias Oli.Delivery.Attempts.PageLifecycle.{
     VisitContext,
     FinalizationContext,
@@ -249,20 +251,40 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             impl = determine_page_impl(resource_attempt.revision.graded)
 
             case impl.finalize(context) do
-              {:ok, results} -> results
-              {:error, error} -> Repo.rollback(error)
+              {:ok, results} ->
+                {results, resource_attempt.id, resource_access.section_id}
+
+              {:error, error} ->
+                Repo.rollback(error)
             end
         end
       end)
 
     case result do
       {:ok,
-       %FinalizationSummary{
-         graded: graded,
-         part_attempt_guids: part_attempt_guids
-       } = finalization_summary} ->
+       {
+         %FinalizationSummary{
+           graded: graded,
+           lifecycle_state: lifecycle_state,
+           part_attempt_guids: part_attempt_guids
+         } = finalization_summary,
+         resource_attempt_id,
+         section_id
+       }} ->
         if graded do
           Snapshots.queue_or_create_snapshot(part_attempt_guids, section_slug)
+        end
+
+        if lifecycle_state == :evaluated do
+          case Experiments.RewardHandoffWorker.maybe_enqueue(resource_attempt_id, section_id) do
+            :ok ->
+              :ok
+
+            {:error, reason} ->
+              Logger.warning(
+                "A/B testing reward handoff was not enqueued after page finalization: #{inspect(%{resource_attempt_id: resource_attempt_id, reason: reason})}"
+              )
+          end
         end
 
         {:ok, finalization_summary}

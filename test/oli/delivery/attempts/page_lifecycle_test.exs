@@ -10,7 +10,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Experiments.RewardHandoffWorker
+
+  alias Oli.Experiments.Schemas.{
+    AssessmentBinding,
+    DecisionPoint,
+    ExperimentDefinition,
+    ExperimentSection,
+    Intervention
+  }
+
   alias Oli.Activities.Model.{Part}
+  alias Oli.Factory
   alias Oli.Repo
 
   @content_automatic_by_default %{
@@ -247,16 +257,34 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     end
 
     test "finalization results in correct end state for resource attempts", %{
+      project: project,
       section: section,
       attempt1: attempt1,
       attempt2: attempt2
     } do
       datashop_session_id_user1 = UUID.uuid4()
 
+      assessment_page_resource_id =
+        Repo.get!(Oli.Delivery.Attempts.Core.ResourceAccess, attempt1.resource_access_id).resource_id
+
+      add_assessment_binding(project, section, assessment_page_resource_id)
+
       {:ok, %FinalizationSummary{resource_access: resource_access1}} =
         PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
 
-      refute_enqueued(worker: RewardHandoffWorker)
+      assert_enqueued(
+        worker: RewardHandoffWorker,
+        args: %{"resource_attempt_id" => attempt1.id}
+      )
+
+      assert {:error, {:already_submitted}} =
+               PageLifecycle.finalize(
+                 section.slug,
+                 attempt1.attempt_guid,
+                 datashop_session_id_user1
+               )
+
+      assert [_job] = all_enqueued(worker: RewardHandoffWorker)
 
       {:ok, %FinalizationSummary{resource_access: resource_access2}} =
         PageLifecycle.finalize(section.slug, attempt2.attempt_guid, datashop_session_id_user1)
@@ -520,5 +548,52 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       assert is_nil(resource_attempt.out_of)
       assert resource_access.progress == 1.0
     end
+  end
+
+  defp add_assessment_binding(project, section, assessment_page_resource_id) do
+    experiment =
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: project.id,
+        slug: "page-finalization-reward-#{System.unique_integer([:positive])}",
+        name: "Page finalization reward",
+        state: :active,
+        algorithm: :thompson_sampling
+      })
+      |> Repo.insert!()
+
+    %ExperimentSection{}
+    |> ExperimentSection.changeset(%{experiment_id: experiment.id, section_id: section.id})
+    |> Repo.insert!()
+
+    alternatives = Factory.insert(:revision)
+
+    decision_point =
+      %DecisionPoint{}
+      |> DecisionPoint.changeset(%{
+        experiment_id: experiment.id,
+        alternatives_resource_id: alternatives.resource_id,
+        decision_point_key: "page-finalization-point",
+        algorithm: :thompson_sampling,
+        policy_config: %{}
+      })
+      |> Repo.insert!()
+
+    intervention =
+      %Intervention{}
+      |> Intervention.changeset(%{
+        decision_point_id: decision_point.id,
+        page_resource_id: alternatives.resource_id,
+        content_element_id: "page-finalization-placement"
+      })
+      |> Repo.insert!()
+
+    %AssessmentBinding{}
+    |> AssessmentBinding.changeset(%{
+      intervention_id: intervention.id,
+      assessment_page_resource_id: assessment_page_resource_id,
+      reward_threshold: 1.0
+    })
+    |> Repo.insert!()
   end
 end
