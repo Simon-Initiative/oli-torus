@@ -17,7 +17,7 @@ defmodule Oli.Experiments.Policies.ThompsonSampling do
 
   def default_policy_config do
     %{
-      "reward_source" => "activity_attempt:full_credit",
+      "reward_source" => "assessment_page:normalized_score",
       "priors" => %{
         "default" => %{"alpha" => @default_prior_alpha, "beta" => @default_prior_beta},
         "conditions" => %{}

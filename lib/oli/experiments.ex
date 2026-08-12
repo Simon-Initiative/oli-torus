@@ -62,7 +62,7 @@ defmodule Oli.Experiments do
     archived: []
   }
 
-  @thompson_reward_source "activity_attempt:full_credit"
+  @thompson_reward_source "assessment_page:normalized_score"
   @thompson_default_guardrails %{
     "manual_pause_enabled" => true,
     "warm_up_assignments" => 0,

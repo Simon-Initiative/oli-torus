@@ -121,7 +121,7 @@ Only `:active` Thompson Sampling experiments can create new assignments. `:pause
   - `policy_config` accepts:
     - `"priors"`: per-condition or default alpha/beta prior settings.
     - `"guardrails"`: warm-up count, traffic cap, optional fixed control allocation, imbalance threshold, and manual pause behavior.
-    - `"reward_source"`: `"activity_attempt:full_credit"` for MVP.
+    - `"reward_source"`: `"assessment_page:normalized_score"` for finalized scored-page assessment rewards.
   - Validation rejects non-positive alpha/beta values, malformed per-condition prior keys, unsupported reward sources, impossible traffic caps, and guardrails that cannot be enforced.
 - Lifecycle:
   - `activate_experiment/2` validates Thompson Sampling readiness instead of returning "coming soon" for project-authored graph experiments.
@@ -133,7 +133,7 @@ Only `:active` Thompson Sampling experiments can create new assignments. `:pause
 - Reuse `experiment_definitions`:
   - `algorithm = :thompson_sampling`.
   - `policy_config` stores normalized Thompson Sampling config:
-    - `"reward_source" => "activity_attempt:full_credit"`.
+    - `"reward_source" => "assessment_page:normalized_score"`.
     - `"priors" => %{"default" => %{"alpha" => 1.0, "beta" => 1.0}, "conditions" => %{...}}`.
     - `"guardrails" => %{"warm_up_assignments" => integer, "max_condition_share" => number, "fixed_control_allocation" => number | nil, "imbalance_threshold" => number, "manual_pause_enabled" => true}`.
 - Reuse `experiment_policy_states`:

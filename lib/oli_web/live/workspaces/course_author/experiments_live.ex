@@ -1503,7 +1503,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            parse_share(params["max_condition_share"], "Max condition share") do
       {:ok,
        %{
-         "reward_source" => "activity_attempt:full_credit",
+         "reward_source" => "assessment_page:normalized_score",
          "priors" => %{
            "default" => %{"alpha" => prior_alpha, "beta" => prior_beta},
            "conditions" => %{}

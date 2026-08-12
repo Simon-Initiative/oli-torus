@@ -300,7 +300,7 @@ defmodule Oli.Experiments.ContextTest do
       assert {:ok, %ExperimentDefinition{} = definition} = Experiments.create_experiment(request)
 
       assert definition.algorithm == :thompson_sampling
-      assert definition.policy_config["reward_source"] == "activity_attempt:full_credit"
+      assert definition.policy_config["reward_source"] == "assessment_page:normalized_score"
       assert definition.policy_config["priors"]["default"] == %{"alpha" => 1.0, "beta" => 1.0}
       assert definition.policy_config["guardrails"]["manual_pause_enabled"]
 
