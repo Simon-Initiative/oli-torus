@@ -329,6 +329,10 @@ defmodule Oli.GenAI.Dialogue.Server do
     {:noreply, %{state | engagement_task: nil}}
   end
 
+  # A task can complete just before its engagement is replaced. Demonitoring
+  # suppresses its :DOWN message but does not flush an already-delivered reply.
+  def handle_info({ref, _result}, state) when is_reference(ref), do: {:noreply, state}
+
   def handle_info(
         {:DOWN, ref, :process, _pid, reason},
         %{engagement_task: %Task{ref: ref}} = state

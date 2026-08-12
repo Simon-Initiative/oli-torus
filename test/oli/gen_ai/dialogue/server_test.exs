@@ -69,6 +69,41 @@ defmodule Oli.GenAI.Dialogue.ServerTest do
     refute log =~ "secret response body"
   end
 
+  test "ignores a stale task reply after replacing an engagement" do
+    test_pid = self()
+
+    config = %Configuration{
+      service_config: %ServiceConfig{id: 1, primary_model: %{id: 1}},
+      functions: [],
+      reply_to_pid: test_pid,
+      messages: [Message.new(:system, "base system prompt")],
+      execution_fn: fn _, _, _, _, _, _ ->
+        send(test_pid, {:execution_started, self()})
+
+        receive do
+          :finish -> :ok
+        end
+      end
+    }
+
+    {:ok, server} = Server.new(config)
+    on_exit(fn -> if Process.alive?(server), do: GenServer.stop(server) end)
+
+    Server.engage(server, Message.new(:user, "first"))
+    assert_receive {:execution_started, _first_task_pid}
+    %{engagement_task: %{ref: stale_ref}} = :sys.get_state(server)
+
+    Server.engage(server, Message.new(:user, "second"))
+    assert_receive {:execution_started, second_task_pid}
+
+    send(server, {stale_ref, {:noreply, :stale_state}})
+
+    assert %{engagement_task: %{pid: ^second_task_pid}} = :sys.get_state(server)
+    assert Process.alive?(server)
+
+    send(second_task_pid, :finish)
+  end
+
   @tag capture_log: true
   test "notifies the client when tool arguments are invalid JSON" do
     config = %Configuration{

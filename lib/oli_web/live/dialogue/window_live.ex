@@ -809,12 +809,14 @@ defmodule OliWeb.Dialogue.WindowLive do
         )
 
         {:noreply,
-         assign(socket,
+         socket
+         |> assign(
            active_message: socket.assigns.active_message <> "\n\n",
            messages: socket.assigns.messages ++ [message],
            trigger_queue: rest,
            current_llm_metadata: nil
-         )}
+         )
+         |> start_streaming(socket.assigns.engagement_id)}
     end
   end
 

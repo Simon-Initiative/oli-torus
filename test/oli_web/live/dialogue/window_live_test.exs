@@ -504,6 +504,46 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
       assert socket_assigns(view).allow_submission?
     end
 
+    test "restarts the watchdog for a queued trigger continuation", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
+        )
+
+      trigger = %Oli.Conversation.Trigger{
+        trigger_type: :page,
+        data: %{},
+        prompt: "Offer help with the current page."
+      }
+
+      send(view.pid, {:trigger, trigger})
+      %{engagement_id: engagement_id, watchdog_timer: first_watchdog} = socket_assigns(view)
+
+      send(view.pid, {:trigger, trigger})
+      send(view.pid, {:dialogue_server, engagement_id, {:tokens_received, "First response."}})
+      send(view.pid, {:dialogue_server, engagement_id, {:tokens_finished}})
+
+      %{
+        engagement_id: ^engagement_id,
+        trigger_queue: [],
+        watchdog_timer: second_watchdog
+      } = socket_assigns(view)
+
+      assert second_watchdog != first_watchdog
+    end
+
     test "ignores dialogue events from a stale engagement", %{
       conn: conn,
       user: user,
