@@ -7,6 +7,9 @@ defmodule Oli.Experiments.ExperimentAuthoringView do
     :definition,
     decision_points: [],
     conditions: [],
+    mappings: [],
+    interventions: [],
+    assessment_bindings: [],
     assignment_counts: %{}
   ]
 

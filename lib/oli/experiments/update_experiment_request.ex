@@ -14,7 +14,7 @@ defmodule Oli.Experiments.UpdateExperimentRequest do
     :section_ids,
     :assignment_unit,
     :policy_config,
-    :decision_point,
+    :decision_points,
     :conditions
   ]
 
@@ -27,7 +27,7 @@ defmodule Oli.Experiments.UpdateExperimentRequest do
           section_ids: [integer()] | nil,
           assignment_unit: :enrollment | nil,
           policy_config: map() | nil,
-          decision_point: map() | nil,
+          decision_points: [map()] | nil,
           conditions: [map()] | nil
         }
 end

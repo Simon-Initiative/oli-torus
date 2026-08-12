@@ -86,18 +86,18 @@ Guardrails:
 
 - Goal: Provide authorized domain APIs for multi-decision-point experiment configuration, activation, immutability, reuse, and explicit dependency reconciliation (FR-001 through FR-004, FR-011, FR-012, FR-017 through FR-020).
 - Tasks:
-  - [ ] Refactor `Oli.Experiments` internals around focused configuration operations while preserving it as the public boundary; migrate all in-repository callers to the multi-point request/report contracts and delete the legacy single-point shape without adding an adapter.
-  - [ ] Add experiment-owned condition and per-decision-point configuration APIs for group binding, algorithm/guardrails, bijective mappings, interventions, distinct scored-page bindings, and inclusive decimal thresholds defaulting to `1.0`.
-  - [ ] Resolve request-local condition `client_ref` values during atomic graph creation, generate immutable readable codes from labels under the experiment lock with deterministic collision suffixes, and persist mappings by `condition_id`.
-  - [ ] Enforce `Scope` authorization, compatible project lineage, experiment-controlled group strategy, stable group/option identities, current-binding exclusivity, mapping cardinality, scored-page eligibility, and assessment exclusivity.
-  - [ ] Lock the experiment and sorted group resources for save/activation; reject invalid transitions and all prohibited non-draft structural mutations.
-  - [ ] Implement explicit dependency discovery/reconciliation for bound groups, interventions, and assessment pages; never silently cascade or retarget active history.
-  - [ ] Preserve completed/archived history and allow sequential group reuse only through a new draft decision point with independent state.
+  - [x] Refactor `Oli.Experiments` internals around focused configuration operations while preserving it as the public boundary; migrate all in-repository callers to the multi-point request/report contracts and delete the legacy single-point shape without adding an adapter.
+  - [x] Add experiment-owned condition and per-decision-point configuration APIs for group binding, algorithm/guardrails, bijective mappings, interventions, distinct scored-page bindings, and inclusive decimal thresholds defaulting to `1.0`.
+  - [x] Resolve request-local condition `client_ref` values during atomic graph creation, generate immutable readable codes from labels under the experiment lock with deterministic collision suffixes, and persist mappings by `condition_id`.
+  - [x] Enforce `Scope` authorization, compatible project lineage, experiment-controlled group strategy, stable group/option identities, current-binding exclusivity, mapping cardinality, scored-page eligibility, and assessment exclusivity.
+  - [x] Lock the experiment and sorted group resources for save/activation; reject invalid transitions and all prohibited non-draft structural mutations.
+  - [x] Implement explicit dependency discovery/reconciliation for bound groups, interventions, and assessment pages; never silently cascade or retarget active history.
+  - [x] Preserve completed/archived history and allow sequential group reuse only through a new draft decision point with independent state.
 - Testing Tasks:
-  - [ ] Add context and changeset tests for valid multi-point configuration and every structured activation error, including duplicate/missing mappings and incompatible or simultaneously bound groups.
-  - [ ] Test duplicate, missing, and unknown request-local condition references, slug normalization, deterministic collision suffixes, label edits preserving codes, and experiment-scoped database uniqueness.
-  - [ ] Add authorization, transaction-lock, lifecycle-transition, immutable-history, sequential-reuse, and dependency-deletion tests.
-  - [ ] Test threshold defaults and boundary validation at `0.0` and `1.0`, plus weighted-random configurations without assessment bindings.
+  - [x] Add context and changeset tests for valid multi-point configuration and every structured activation error, including duplicate/missing mappings and incompatible or simultaneously bound groups.
+  - [x] Test duplicate, missing, and unknown request-local condition references, slug normalization, deterministic collision suffixes, label edits preserving codes, and experiment-scoped database uniqueness.
+  - [x] Add authorization, transaction-lock, lifecycle-transition, immutable-history, sequential-reuse, and dependency-deletion tests.
+  - [x] Test threshold defaults and boundary validation at `0.0` and `1.0`, plus weighted-random configurations without assessment bindings.
   - Command(s): `mix test <experiment configuration, authorization, lifecycle, and dependency tests>`
 - Definition of Done:
   - Authorized authors can build and activate only structurally valid draft experiments; invalid or historical structures cannot be mutated; configuration errors identify their decision point, mapping, intervention, or binding.

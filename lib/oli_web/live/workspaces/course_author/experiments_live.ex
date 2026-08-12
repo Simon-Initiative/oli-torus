@@ -1427,27 +1427,39 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          algorithm: algorithm,
          section_ids: section_ids,
          policy_config: policy_config,
-         decision_point: %{
-           alternatives_resource_id: candidate.alternatives_resource_id,
-           decision_point_key: candidate.decision_point_key,
-           title: candidate.title
-         },
          conditions: [
            %{
-             condition_code: option_a,
-             option_id: option_a,
+             client_ref: "condition-a",
              label: Map.get(candidate.option_labels, option_a, option_a),
              weight: weight_a,
              active: true,
              position: 0
            },
            %{
-             condition_code: option_b,
-             option_id: option_b,
+             client_ref: "condition-b",
              label: Map.get(candidate.option_labels, option_b, option_b),
              weight: weight_b,
              active: true,
              position: 1
+           }
+         ],
+         decision_points: [
+           %{
+             alternatives_resource_id: candidate.alternatives_resource_id,
+             decision_point_key: candidate.decision_point_key,
+             title: candidate.title,
+             algorithm: algorithm,
+             policy_config: policy_config,
+             mappings: [
+               %{
+                 condition_ref: "condition-a",
+                 option_id: option_a,
+                 weight: weight_a,
+                 position: 0
+               },
+               %{condition_ref: "condition-b", option_id: option_b, weight: weight_b, position: 1}
+             ],
+             interventions: []
            }
          ]
        }}

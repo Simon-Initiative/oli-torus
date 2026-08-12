@@ -26,7 +26,6 @@ defmodule Oli.Experiments.Schemas.Condition do
     condition
     |> cast(attrs, [
       :experiment_id,
-      :decision_point_id,
       :condition_code,
       :option_id,
       :label,
@@ -36,8 +35,8 @@ defmodule Oli.Experiments.Schemas.Condition do
     ])
     |> validate_required([
       :experiment_id,
-      :decision_point_id,
       :condition_code,
+      :label,
       :weight,
       :active,
       :position
