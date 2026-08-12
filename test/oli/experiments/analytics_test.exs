@@ -64,7 +64,6 @@ defmodule Oli.Experiments.AnalyticsTest do
                   reward_success_count: 1,
                   prior_config: %{"default" => %{"alpha" => 1.0, "beta" => 1.0}},
                   guardrail_state: %{
-                    "manual_pause_enabled" => true,
                     "assignment_count" => 1,
                     "reward_count" => 1
                   }

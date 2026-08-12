@@ -135,7 +135,7 @@ Only `:active` Thompson Sampling experiments can create new assignments. `:pause
   - `policy_config` stores normalized Thompson Sampling config:
     - `"reward_source" => "assessment_page:normalized_score"`.
     - `"priors" => %{"default" => %{"alpha" => 1.0, "beta" => 1.0}, "conditions" => %{...}}`.
-    - `"guardrails" => %{"warm_up_assignments" => integer, "max_condition_share" => number, "fixed_control_allocation" => number | nil, "imbalance_threshold" => number, "manual_pause_enabled" => true}`.
+    - `"guardrails" => %{"warm_up_assignments" => integer, "max_condition_share" => number, "fixed_control_allocation" => number | nil, "imbalance_threshold" => number}`. Pausing is governed by the experiment lifecycle rather than policy configuration.
 - Reuse `experiment_policy_states`:
   - `algorithm = :thompson_sampling`.
   - `algorithm_version = "thompson_sampling:v2"`.

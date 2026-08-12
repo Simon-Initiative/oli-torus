@@ -64,7 +64,6 @@ defmodule Oli.Experiments do
 
   @thompson_reward_source "assessment_page:normalized_score"
   @thompson_default_guardrails %{
-    "manual_pause_enabled" => true,
     "warm_up_assignments" => 0,
     "max_condition_share" => 1.0,
     "fixed_control_allocation" => nil,
@@ -1504,7 +1503,6 @@ defmodule Oli.Experiments do
     snapshot
     |> Map.delete(:policy_config)
     |> Map.put(:guardrail_state, %{
-      "manual_pause_enabled" => guardrails["manual_pause_enabled"],
       "warm_up_assignments" => guardrails["warm_up_assignments"],
       "max_condition_share" => guardrails["max_condition_share"],
       "fixed_control_allocation" => guardrails["fixed_control_allocation"],
@@ -4127,12 +4125,6 @@ defmodule Oli.Experiments do
           "conditions" => normalized_condition_priors
         },
         "guardrails" => %{
-          "manual_pause_enabled" =>
-            Map.get(
-              guardrails,
-              "manual_pause_enabled",
-              @thompson_default_guardrails["manual_pause_enabled"]
-            ),
           "warm_up_assignments" =>
             Map.get(
               guardrails,
@@ -4232,9 +4224,6 @@ defmodule Oli.Experiments do
     guardrails = policy_config["guardrails"]
 
     cond do
-      not is_boolean(guardrails["manual_pause_enabled"]) ->
-        invalid_condition("Thompson Sampling manual pause guardrail must be enabled or disabled")
-
       not non_negative_integer?(guardrails["warm_up_assignments"]) ->
         invalid_condition("Thompson Sampling warm-up assignments must be a non-negative integer")
 

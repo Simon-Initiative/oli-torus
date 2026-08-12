@@ -1791,7 +1791,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          "reward_source" => "assessment_page:normalized_score",
          "priors" => %{"default" => %{"alpha" => alpha, "beta" => beta}, "conditions" => %{}},
          "guardrails" => %{
-           "manual_pause_enabled" => true,
            "warm_up_assignments" => warm_up,
            "max_condition_share" => max_share,
            "fixed_control_allocation" => fixed,

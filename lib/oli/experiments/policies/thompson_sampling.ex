@@ -23,7 +23,6 @@ defmodule Oli.Experiments.Policies.ThompsonSampling do
         "conditions" => %{}
       },
       "guardrails" => %{
-        "manual_pause_enabled" => true,
         "warm_up_assignments" => 0,
         "max_condition_share" => 1.0,
         "fixed_control_allocation" => nil,

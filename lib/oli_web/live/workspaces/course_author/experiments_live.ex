@@ -1509,7 +1509,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            "conditions" => %{}
          },
          "guardrails" => %{
-           "manual_pause_enabled" => true,
            "warm_up_assignments" => warm_up_assignments,
            "max_condition_share" => max_condition_share,
            "fixed_control_allocation" => nil,

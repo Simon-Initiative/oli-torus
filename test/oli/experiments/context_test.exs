@@ -302,7 +302,7 @@ defmodule Oli.Experiments.ContextTest do
       assert definition.algorithm == :thompson_sampling
       assert definition.policy_config["reward_source"] == "assessment_page:normalized_score"
       assert definition.policy_config["priors"]["default"] == %{"alpha" => 1.0, "beta" => 1.0}
-      assert definition.policy_config["guardrails"]["manual_pause_enabled"]
+      refute Map.has_key?(definition.policy_config["guardrails"], "manual_pause_enabled")
 
       policy_state = Repo.get_by!(PolicyState, experiment_id: definition.id)
       assert policy_state.algorithm == :thompson_sampling
