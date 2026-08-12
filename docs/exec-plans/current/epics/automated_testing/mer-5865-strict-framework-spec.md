@@ -4,13 +4,54 @@
 > decision (`mer-5674-driver-decision.md` §4); the checkpoint-A review history cites the
 > old file name. The work's name is the strict adaptive verification framework.
 
-## ⇥ HANDOFF — session boundary 2026-08-10 (read this first)
+## ⇥ HANDOFF — session boundary 2026-08-11 (read this first)
 
-**Where we are → what's next:** steps 0–3 SHIPPED; gate B0 CLOSED by human call after 8
-rounds; the gate-B **contract-before-build page is CLOSED SOUND-AS-DRAFTED** and committed
-(`8a634180c2`). Next unit: **BUILD step 4** against that contract's IDs.
+**Where we are → what's next:** steps 0–3 SHIPPED; gate B0 CLOSED; the gate-B contract is
+CLOSED SOUND-AS-DRAFTED (`8a634180c2`); **step-4 units 4a and 4b are BUILT, REVIEWED and
+COMMITTED** (`9b0f4ec09a`, `016764f031`); **4b-2 (manifest v1→v2 translation) is DONE — a
+PRIVATE-ARTIFACT edit, nothing to commit.** Next unit: **4c, the new driver.**
 
-### SHIPPED (all ✅ verified this session; nothing pushed — human gates every commit)
+### 4b-2 — DONE 2026-08-11 (private artifact; both gates now GREEN)
+
+`lote-manifest-v2.json` carries v2 `operations` on all 19 graded screens and no `_v1_answers`
+/ `_translation_todo` / presence-only expectation. Reproducible by
+`translate_lote_manifest_v2.py` (idempotent — a second run is byte-identical). Evidence:
+
+- **B4-MAN + B4-BIJ ✅** "22 screens corroborated from Plate Tectonics" (was: RED at
+  `q:1516177456571:380`, "declares neither an answer operation nor a cross-screen dependency").
+- **B4-PRED ✅** `q:1516197466626:752`: 64 states (32 selections × 2 §3.8 encodings),
+  62 correct / 2 incorrect — the 2 are the empty selection, i.e. exactly §6.3 arm (a).
+- Executed subset: `npx playwright test mer5865-archive-gates` with the private env =
+  **48 passed** (both private-archive tests run, no skips). Step-3 shadow gate re-replayed
+  on the NEW manifest: **7/7**, both greens in-scope 0 / unexplained 0 / 65=65 pinned.
+- Repo unchanged by this unit, so the `adaptive-` baseline (334/2) was not re-run.
+
+Translation table (authored from the registry, NOT read out of the archive — a version copied
+from the file the reader parses would make B4-MAN tautological): `mcq_radio` →
+`janus-mcq@1:radio`, `mcq_checkboxes` → `janus-mcq@1:checkboxes`, `text_input` →
+`janus-input-text@1`, `frame_selects` → `spr-widget-fill-in-the-blanks@2`, `matching` →
+`spr-widget-matching@2`, `custom_dnd` → `spr-widget-general-drag-drop@6`. Operation ids are
+`op.<partId>`. Janus directives declare `part_id` parsed from the screen's expectation path,
+so B4-MAN corroborates `partsLayout` ids against fact paths taken from `authoring.rules` —
+two independent archive locations. CAPI directives declare none (`ownCapiPart` never reads it).
+
+### NEXT UNIT — 4c, the new driver (start here)
+
+`AdaptiveHappyPathTask.ts`, `AdaptiveEvaluationObserver.ts`, `AdaptiveStrictContract.ts`
+become consumers of the committed core: registry-driven answers, driver-stamped fences,
+journal-domain permit + readback stamps per **B4-STAMP (MATERIAL)**, and the B4-EXIT
+control-flow exit-site inventory. Gate command for the manifest gates:
+
+```
+cd assets/automation && MER5865_ARCHIVE_DIR=<scratchpad>/lote MER5865_ARCHIVE_PAGE=397294 \
+  MER5865_MANIFEST=<scratchpad>/lote-manifest-v2.json \
+  npx playwright test mer5865-archive-gates --reporter=line
+```
+
+Then 4d (spec switch + verdict boundary, then delete the old walker), gate B (ONE Codex
+implementation pass over assembled step 4), 5–6 → C1, 7–8 → C2, 9–10.
+
+### SHIPPED (✅ verified 2026-08-11 unless flagged; nothing pushed — human gates every commit)
 
 - `2c843a8ecf` docs, `b05ac917cf` step 1, `5fb5bfee1c` step 2 — checkpoint-A core
   (journal/attribution/manifest/planner/oracle).
@@ -26,10 +67,54 @@ rounds; the gate-B **contract-before-build page is CLOSED SOUND-AS-DRAFTED** and
 - `f9f9982874` — evidence doc + B0 rounds 1–8 + closure consult + process consult.
 - `8a634180c2` — **gate-B proof contract v6** (`mer-5865-step4-driver-swap-contract.md`) +
   six Codex design reads (`reviews/mer-5865-step4-contract-read{,-2..-6}.md`).
+- `9b0f4ec09a` — **unit 4a**: `AdaptiveFamilyRegistry.ts` (6 LotE families keyed
+  family+version(+mode), fail-closed resolution by name) + `adaptive-family-registry.spec.ts`
+  (24 tests) + 4 part-scoped primitives added to `AdaptiveDeckPO.ts` (additive only).
+- `016764f031` — **unit 4b**: `AdaptiveArchiveReader.ts`, `AdaptivePredicateEquivalence.ts`,
+  `AdaptiveArchiveGates.ts`, `mer5865-archive-gates.spec.ts` (48 tests), 4 tsconfig aliases,
+  plus the three Codex implementation reviews.
 
 Every commit: `[ENHANCEMENT] [MER-5865] subject`, single line, no trailers.
-Branch: `MER-5865-adaptive-lessons-share-strict-verification-and-migrate-real-chem-specs`
-on `b8042f0cf8`.
+Branch: `MER-5865-adaptive-lessons-share-strict-verification-and-migrate-real-chem-specs`.
+**Test baseline ✅ 2026-08-11: `adaptive-` + `mer5865-archive-gates` = 334 passed / 2 skipped**
+(the 2 skips are the private-archive tests when env is absent). tsc = exactly 2 known
+`liveSocket` errors. Shadow gate replays 7/7.
+
+### UNIT 4a + 4b — architecture decisions and their rationale (compaction loses these)
+
+- **Registry keys on family+version(+mode); version is MAJOR ONLY.** The archive pins CAPI
+  widget srcs at a major wildcard (`/spr-widget-matching/prod/2.*`,
+  `/spr-widget-general-drag-drop/6.*`), so major is all that is declarable. Recorded as
+  contract §6.8 with its bound. ✅ verified from live capture srcs.
+- **CAPI ownership is by `/family/` segment in the iframe src PLUS declared major** — a
+  wrong-family resolution fails at `detect`, which is B4-REG-L's offline half.
+- **Readback is now REAL evidence.** The shipped walker's receipt `readback` was a cosmetic
+  string built from the directive name (`AdaptiveHappyPathTask.ts:484`) asserting nothing
+  about the widget. Registry entries verify the answer registered on the owning part.
+- **The equivalence checker's archive leg runs PRODUCT code** — `@product/adaptivity/operators/
+  {contains,equality}` inside `json-rules-engine`, mirroring `rulesEngineFactory`
+  (`rules-engine.ts:48-56`) — while the manifest leg runs the committed mirror
+  `evaluatePredicate`. Rationale: if BOTH legs ran `evaluatePredicate`, a mirror bug would
+  cancel out (contract threat #7). ✅ verified the 4 operator modules have NO name collisions,
+  so the partial merge binds exactly what the product binds.
+- **REJECTED: importing `scripting.ts` for the full `evalAssignScript`.** It adds a
+  pre-existing product error (`scripting.ts:545`), taking tsc to 3 and breaking the
+  "exactly two liveSocket errors" invariant every gate replay cites. Took the narrow
+  `capi.ts` `getCapiType`+`coerceCapiValue` path instead (✅ probed: tsc stays at 2). Codex
+  round 3 independently judged full assignment DOMINATED for this bounded domain.
+- **The correct verdict is a DISJUNCTION, not first-match.** `rules-engine.ts:519` folds
+  `isCorrect = resultEvents.some(e => e.params.correct)` after removing the default-wrong
+  event; `combineFeedback: false` selects `results[0]` for the PLAN only, never for
+  correctness. An earlier "first matching rule wins" reading was wrong and is pinned by a
+  named test.
+- **Role is derived in the READER, not added to `ArchiveFacts`.** `ArchiveFacts` carries no
+  role map, and adding a required field would invalidate the existing facts artifact and
+  break the step-3 shadow replay for no gain — no other consumer needs roles. ✅ the
+  derivation agrees with all 22 declared LotE roles.
+- **Prior-state refs are scoped to GRADED screens** (round-3 M1,
+  `mer-5865-shadow-gate-evidence.md:117`): navigation verdicts are unasserted by design, and
+  the coverage consumer demands expectations unconditionally, so an over-collecting reader
+  would demand an impossible expectation on LotE's Cover.
 
 ### GATE B0 — CLOSED 2026-08-10 (human call; consult ENDORSE-WITH-AMENDMENTS)
 
@@ -57,7 +142,9 @@ differential harness built precisely for the swap, and live acceptance runs.
 
 `/private/tmp/claude-501/-Users-franciscocastro-code-oli-torus/17b893f6-258e-4945-ba2d-bfe0e7b81b49/scratchpad/mer5865/`:
 `extract_lote_facts.py` (v7: combine map, correct_plan_kinds, llm_feedback_capable,
-reproducible draft), `extract_lote_manifest_v2.py`,
+reproducible draft), `extract_lote_manifest_v2.py`, `translate_lote_manifest_v2.py` (4b-2:
+v1 directives → v2 operations, family table + §6.3 arm (a); run it AFTER any re-extract,
+which re-emits `_v1_answers`),
 `lote-archive-facts.json`, `lote-manifest-v2.json`. CURRENT captures (2026-08-10, r6
 harness, correlation recorded): `shadow/lote-green-{1786378384523,1786378649848}.json`,
 `shadow/lote-bail-1786378973158.json` (poison-stamped). The 2026-08-09 dumps are RETIRED
@@ -84,44 +171,23 @@ inventory, CONFORMANCE-MAP semantic conformance.
 as a §3.2 amendment (writer recommendation) or keep B4-FIN1 narrowed to `already_submitted`.
 Blocks the oracle finalization edit, not the registry/driver/manifest units.
 
-### STEP-4 BUILD — unit 4a DONE (uncommitted, awaiting human gate)
+### ROADMAP TAIL (the immediate unit is at the top of this block)
 
-`AdaptiveFamilyRegistry.ts` (new) + `adaptive-family-registry.spec.ts` (24 contract-matrix
-tests) + 3 part-scoped readback primitives added to `AdaptiveDeckPO.ts` (additive only:
-`partScope`, `mcqSelectionCount`, `fillTextInputInPart`, `textInputMatches`). Six LotE
-families registered, keyed family+version(+mode), resolution fail-closed by name:
-`janus-mcq@1:radio`, `janus-mcq@1:checkboxes`, `janus-input-text@1`,
-`spr-widget-fill-in-the-blanks@2`, `spr-widget-matching@2`,
-`spr-widget-general-drag-drop@6`. CAPI ownership is by `/family/` segment in the iframe src
-PLUS declared major — a wrong-family resolution fails at detect (B4-REG-L's live half).
-Readback is now REAL evidence per family (the shipped walker's `readback` was a cosmetic
-string, `AdaptiveHappyPathTask.ts:484`). Verified: tsc (only the 2 known `liveSocket`
-errors), eslint clean, prettier applied, 285/288 adaptive tests pass — the only failure is
-the documented `adaptive-authoring:133` flake (see below). **Contract §6.8 added:** registry
-version precision is MAJOR-only because the archive pins widget srcs at a major wildcard.
-Remaining units: 4b manifest v2 + build gates, 4c driver + journal fences/permits, 4d spec
-switch + verdict boundary.
-
-**`adaptive-authoring:133` flake — new data (2026-08-11):** 1 pass in 5 runs this session
-(recorded prior rate ~50%). Always fails at `BasicPracticePagePO.ts:399` waiting for
-`.flowchart-node` toHaveCount(3), received 2 — the "-- Create new screen --" rule does not
-add its node. NOT cross-test pollution: it fails with `:79` excluded too. Unrelated to the
-registry (no import path; the deck-PO diff is additive). Still owed a real ticket + owner.
-
-### NEXT
-
-1. **BUILD step 4** against the contract IDs (swap the shipped walker internals:
-   `AdaptiveHappyPathTask.ts`, `AdaptiveEvaluationObserver.ts`, `AdaptiveStrictContract.ts`
-   become consumers of the committed core; driver-stamped fences; journal-domain permit +
-   readback stamps per B4-STAMP).
-3. Verify mechanically: strict suite + shadow differential harness (run the swapped driver
-   on live LotE, gate compares accounts) + live acceptance run.
-4. ONE implementation review pass (gate B) → fixes → human commit gate.
-5. Then steps 5–6 → C1 (single-pass), 7–8 → C2 (single-pass), 9–10 (no Codex).
-6. Open human actions: `adaptive-authoring.spec.ts:133` flake needs a real ticket + owner;
-   leaked automation section/project slugs owed a batch cleanup.
-7. Demo files (`mer5865-demo-oracle-contrast.spec.ts`, `mer5865-demo-presentation.html`,
-   `branch-map-tsunami-mechanics.*`) NEVER committed.
+1. ~~**4b-2** manifest v1→v2 translation~~ DONE 2026-08-11 (private artifact, no commit).
+2. **4c** new driver: `AdaptiveHappyPathTask.ts`, `AdaptiveEvaluationObserver.ts`,
+   `AdaptiveStrictContract.ts` become consumers of the committed core; driver-stamped
+   fences; journal-domain permit + readback stamps per B4-STAMP (MATERIAL); the B4-EXIT
+   control-flow exit-site inventory.
+3. **4d** LotE spec switched + verdict boundary; old strict walker deleted once green.
+4. Verify mechanically: the EXACT executed strict subset (never "the 264") + shadow
+   differential harness on the swapped driver + canary and 3 fresh-seed live runs.
+5. **Gate B** — ONE Codex implementation pass over assembled step 4 → fixes → human gate.
+6. Then 5–6 → C1, 7–8 → C2, 9–10 (no Codex).
+7. Open human actions: `adaptive-authoring.spec.ts:133` flake needs a ticket + owner; leaked
+   automation section/project slugs owed a batch cleanup; Santi coordination before step 8.
+8. Demo files (`mer5865-demo-oracle-contrast.spec.ts`, `mer5865-demo-presentation.html`,
+   `branch-map-tsunami-mechanics.*`) and `lib/oli_web/live/dev/mer5865_tracker_live.ex`
+   NEVER committed.
 
 Review model (human-agreed 2026-08-05; amended 2026-08-09, round-1 SF3 approved):
 **checkpoints, not per-step loops** — **A CLOSED 2026-08-09** after 10 rounds (human call,
@@ -174,6 +240,48 @@ in the current gate, and any deferral has a named owner that closes before first
   (5) No capture-internal row can independently license a green; the final decision
   formula is stated and mutated across row boundaries.
 
+### REVIEW REGIME — AMENDED 2026-08-11 (human call)
+
+The single-pass rule below still governs **gate B**. But the human ruled that a large
+subagent-written diff gets reviewed from both sides: unit 4b (~1,700 lines) got a writer
+read AND three Codex implementation rounds (4B/3SF → 1B/3SF → 0B/2SF → NOT BLOCKED). Apply
+the same standard to any future unit of comparable size. Never self-impose a round cap —
+loop until Codex flags nothing material or the human calls it.
+
+**What those rounds actually caught (worth internalising, not repeating):**
+1. Nothing corroborated screen **role**, and role is the switch arming the oracle's graded
+   checks — a manifest could relabel a graded screen `content` and silently disarm them
+   while every gate stayed green.
+2. A **fix can be unwitnessed**. Codex ran mutations: deleting the preprocessing wiring, the
+   same-engine-fact assertion, or the cap guard each left the suite GREEN. Correct code, no
+   regression lock. All three are now killed by named tests (✅ replayed by the writer,
+   sources restored byte-identical).
+3. **Conservatism was the bug.** A stringified enumeration leg added "to be safe" fed the
+   engine a representation the product never produces (`check()` runs `evalAssignScript`
+   first). It proved a fiction while leaving the real preprocessing seam unchecked.
+
+### DECISIONS TAKEN BY THE WRITER (no human input needed; overturn if you disagree)
+
+- **B4-FIN1 CLOSED — no §3.2 amendment.** `page_lifecycle_controller.ex:89-97` returns
+  `success`+`success` only on the success branch; a second finalize on the same attempt is
+  `already_submitted` → `command_failure`. Two ACCEPTED finalizations are unreachable, so
+  the narrowed FIN1 (`already_submitted` only) is complete. ✅ verified.
+- **Bucket key for manifest v2: side-by-side `answers-strict.json`** — spec §10 Q3's own
+  proposal, keeps every commit runnable. Reversible.
+- **§6.3 arm (a)** for Reflect, with ONE deviation from the earlier draft: the second
+  expectation on `stage.Metacognition.selectedChoices` is `{op: selectedCountNotEqual, value:
+  0}`, **not** `{op: minLength, value: 1}`. Both make the CONJUNCTION equivalent, but only
+  `selectedCountNotEqual` is equivalent ON ITS OWN. ✅ mechanical witness (three single-conjunct
+  variant manifests through B4-PRED): count-only PASS, selectedCountNotEqual-only PASS,
+  minLength-only FAILS — `state selected=[] (stringified): the archive rule chain says
+  INCORRECT and the declared predicate says CORRECT` (`String("[]").length` is 2). `minLength`
+  would have survived only behind its sibling conjunct and would pass a payload whose
+  `selectedChoices` is empty while `numberOfSelectedChoices` is not. The committed synthetic
+  fixture `PICK_EXPECTATIONS` still uses `minLength` — that is a fixture proving the pair is
+  accepted, not a claim about LotE, and it was left untouched.
+- **§6.8 major-only version precision** recorded as a named bound, contract NOT reopened.
+  Say so if you read it as material.
+
 ### DEBT / OWED
 
 - Passive shadow capture (journal armed on live LotE runs) — deferred from step 1.
@@ -187,6 +295,29 @@ in the current gate, and any deferral has a named owner that closes before first
 - Destination-guard ancestor-swap race (capture harness, r7 N1): close with a handle-based
   no-follow write before any capture on a shared machine.
 - `adaptive-authoring.spec.ts:133` flake: needs a real suite-health ticket + owner (human).
+  **New data ✅ 2026-08-11: 1 pass in 5 runs** (recorded prior rate ~50%). Always fails at
+  `BasicPracticePagePO.ts:399` waiting for `.flowchart-node` `toHaveCount(3)`, received 2 —
+  the "-- Create new screen --" rule does not add its node. NOT cross-test pollution: it
+  fails with `:79` excluded too. Unrelated to the registry (no import path).
+- **4b-2 dropped the v1 `labels_match` field** from every mcq directive — no registry entry
+  reads it, and a directive field nothing consumes reads as a guarantee that is not there.
+  It WAS the v1 walker's per-screen readiness wait on a specific option label; the registry's
+  `ready()` for mcq is `waitForDeckReady()` plus `selectMcqByText`'s 2s visibility wait
+  (`AdaptiveDeckPO.ts:423`). If 4c live runs flake on mcq readiness, the fix belongs in the
+  registry entry's `ready()`, not in a dead directive field. Owner: 4c live acceptance runs.
+- **LotE Cover's `action.src_fragment` is `"prod"`** — it identifies exactly one part src on
+  that screen today (`spr-widget-buttonwidget/prod/2.0.*`; the timer widget is not prod-served),
+  so B4-BIJ passes, and a second prod-served widget would make it fail AMBIGUOUS, not wrong.
+  Tightening it to `spr-widget-buttonwidget` is a one-line private-manifest edit, deliberately
+  left out of 4b-2's scope (it is not a v1 directive translation).
+- **Reader refuses the d-orbitals/greenhouse route shape** (Codex r1 SF1, accepted debt):
+  `routeSuccessors` demands one answer-independent target per screen, but §3.8 records both
+  Real Chem lessons forking at Title on session state. Fail-closed, NOT a false green — but
+  it needs a separately corroborated selected-route input before those manifests can be
+  statically validated at step 5. Owner: step-5 manifest work.
+- **`assets/automation/tsconfig.json` now aliases into `assets/src`** (`@product/*`,
+  `utils/*`, `data/*`, `components/*`). Load-bearing but fail-loudly: a product refactor of
+  those paths breaks automation type-check rather than silently changing semantics.
 - Open questions 2 (Santi/greenhouse), 3 (bucket key policy) — human.
   ~~Open question 4 (run budget)~~ RESOLVED 2026-08-09: unconstrained, local dev DB reset
   accepted.
@@ -220,12 +351,27 @@ in the current gate, and any deferral has a named owner that closes before first
   or every capture 401s/404s at asset fetch (values: HANDOFF "PRIVATE ARTIFACTS"). The
   capture API key is created at `/admin/api_keys` with automation_setup_enabled.
 - The bail capture run's TEST FAILURE is the intended outcome — the dump file is the product.
+- **`MER5865_ARCHIVE_PAGE` is a RESOURCE ID, not a title** — LotE "Plate Tectonics" is
+  `397294`. Passing a title yields `resource NaN is absent`.
+- **Shell cwd persistence bit again 2026-08-11**: a `cd /Users/.../oli-torus` earlier in the
+  session left later `npx playwright test` calls running from the repo root, which reports
+  "No tests found" + a bogus `test.afterAll()` error that looks like broken code. Always
+  `cd /Users/franciscocastro/code/oli-torus/assets/automation && …` in the same command.
+- **The dev tracker page `/dev/mer5865`** (`lib/oli_web/live/dev/mer5865_tracker_live.ex` +
+  one router line) is the at-a-glance view of this work: map, blockers, decisions, learnings.
+  Dev/test only, guarded by `compile_env!(:oli, :env)`. **NEVER COMMITTED** — delete both when
+  the ticket ships. Keep it updated as state changes; the human reads it instead of asking.
 
 ### Pointers
 
 Spec = the rest of THIS document (§7 = step order, §8 = verification). Vocabulary:
 `adaptive-lesson-terminology.md`. Why the strict path exists: `lesson-completion-is-not-an-oracle.md`.
-Review history: `reviews/mer-5865-step1-round-{1,2}.md`. Cross-session memory:
+**Gate-B proof contract (NORMATIVE for step 4 — row + witness IDs are stable and reused by
+implementation tests): `mer-5865-step4-driver-swap-contract.md`.** Step-4 obligations and
+their B0 discharge map: `mer-5865-shadow-gate-evidence.md`. Review history:
+`reviews/mer-5865-step4-contract-read{,-2..-6}.md` (design) and
+`reviews/mer-5865-4b-implementation-review{,-2,-3}.md` (implementation). At-a-glance state:
+`/dev/mer5865`. Cross-session memory:
 `~/.claude/projects/-Users-franciscocastro-code-oli-torus/memory/project_mer5865_status.md`.
 
 **Status:** v9 — REVIEW LOOP CLOSED after pass 8 (writer's call, delegated by the human
