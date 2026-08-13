@@ -196,9 +196,15 @@ export async function driveStrictLesson(
   journal: AdaptiveJournalCore,
   options: StrictDriverOptions = {},
 ): Promise<StrictRunOutcome> {
-  const timeouts: StrictTimeouts = { ...DEFAULT_TIMEOUTS, ...(options.timeouts ?? {}) };
-  const sleep = options.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-  const now = options.now ?? (() => Date.now());
+  // NOTHING here may execute caller-supplied code or a constructor: an exit
+  // above the boundary carries no run record and so pins no producer. Every
+  // declaration below initialises from a module constant, a literal or a
+  // lambda body that does not run yet; the options themselves are READ inside
+  // the boundary, where a throwing getter becomes a typed record like any
+  // other fault. The inventory freezes this region's exact contents.
+  let timeouts: StrictTimeouts = DEFAULT_TIMEOUTS;
+  let sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+  let now = () => Date.now();
   // logging is never evidence: a reporting sink that throws must not become an
   // exit site with nothing to produce
   const log = (line: string) => {
@@ -216,7 +222,7 @@ export async function driveStrictLesson(
   const operationFailures: OperationFailure[] = [];
   const runRecord = (): RunRecord => ({ visits, permits, receipts, operationFailures, plans });
 
-  const screensById = new Map(manifest.screens.map((s) => [s.id, s]));
+  let screensById: Map<string, ScreenDefinition> | undefined;
 
   // the failure the FIRST failing site named; an outer site never relabels it
   let pending: OperationFailure | null = null;
@@ -566,7 +572,7 @@ export async function driveStrictLesson(
 
   const runStep = async (stepIndex: number): Promise<void> => {
     const step = manifest.scenario[stepIndex];
-    const screen = screensById.get(step.screen_ref);
+    const screen = screensById?.get(step.screen_ref);
 
     const identity = await perform('identity-unresolved', null, stepIndex, 'identity', async () => {
       if (!screen) throw new Error(`scenario references undeclared screen "${step.screen_ref}"`);
@@ -672,6 +678,13 @@ export async function driveStrictLesson(
   };
 
   try {
+    // reading the caller's options is itself inside the boundary now: a
+    // throwing getter or proxy trap on `options` is a typed record, not an
+    // exit above the record it should have produced
+    timeouts = { ...DEFAULT_TIMEOUTS, ...(options.timeouts ?? {}) };
+    if (options.sleep) sleep = options.sleep;
+    if (options.now) now = options.now;
+    screensById = new Map(manifest.screens.map((s) => [s.id, s]));
     for (let i = 0; i < manifest.scenario.length; i += 1) {
       activeStep = i;
       activeScreenId = null;
@@ -698,10 +711,12 @@ export async function driveStrictLesson(
       kind: 'aborted',
       runRecord: runRecord(),
       failure: pending,
-      // only text THIS module authored escapes: a downstream exception message
-      // can quote selectors and values derived from the private answer manifest
+      // only text THIS module authored escapes — a downstream exception can
+      // quote selectors and values derived from the private answer manifest —
+      // and `e` need not be an Error at all, so reading `.message` off it
+      // unguarded would make THIS boundary the one exit that emits nothing
       cause:
-        (e as Error).message === authoredCause
+        e instanceof Error && e.message === authoredCause
           ? (authoredCause as string)
           : describe(activeStep, 'unattributed driver fault'),
     };

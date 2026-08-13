@@ -1,0 +1,2139 @@
+{
+  "row": "B4-EXIT-INV",
+  "contract": "docs/exec-plans/current/epics/automated_testing/mer-5865-step4-driver-swap-contract.md (v6)",
+  "unit": "4c piece 4",
+  "revision": "rebuild after Codex round 9 — 5 blockers, all accepted",
+  "authored": "2026-08-13",
+  "site_identity": {
+    "form": "call-edge",
+    "definition": "caller file:line -> callee + exit kind, qualified by producing origin",
+    "row_key": "(caller, callee, producer). ONE producer per row BY CONSTRUCTION: delegating rows are COMPUTED from the callee’s own rows, so a union cannot be hand-written into the table (round-9 blocker 3).",
+    "amendment_status": "PROPOSED-PENDING (human ruling 2026-08-12: build under call-edge, contract left unamended)",
+    "why": "Contract §1 step 1 defines a site as `file:line + exit kind`. Under that wording a shared helper is permanently MULTI-VALUED and \"each site pins exactly ONE typed producer\" is unsatisfiable: deck.waitForDeckReady is OF(identity-unresolved) from :579 and OF(readiness-timeout) through a registry ready() at :461, and driver :687 and :695 each carry two distinct callees on one line.",
+    "if_rejected": "the identity column is redone as file:line + kind and the multi-valued sites become declared exceptions rather than sites"
+  },
+  "kind_list": [
+    "throw",
+    "rejecting-await",
+    "failure-path-return",
+    "catch-branch",
+    "finally-cleanup",
+    "outer-boundary"
+  ],
+  "producer_legend": {
+    "OF(kind)": "exactly one OperationFailure of that kind in the run record",
+    "OF(driver-internal)": "post-visit fault no operation named, attributed to the open step’s screen",
+    "OF(identity-unresolved)": "pre-visit fault, screenId null",
+    "JR": "a journal record that is already the evidence (unusable evaluation) — NO OperationFailure",
+    "RP": "an illegal recorded plan — NO OperationFailure",
+    "CE": "the oracle’s ungated causal-edge finding — NO OperationFailure"
+  },
+  "pre_boundary_region": {
+    "rule": "Every statement between the signature and `try {` must initialise from a module constant, a literal, or a lambda body that does not execute yet. No constructor call, no call at assignment position, no read of caller-supplied options. Enforced STRUCTURALLY by adaptive-exit-inventory.spec.ts, which re-parses the region rather than trusting this note.",
+    "why": "ROUND-9 BLOCKER 2: an exit above the boundary carries no run record, so it pins no producer. The round-8 fix moved only `manifest.screens.map`; option normalisation and the Map constructor still ran outside it. All initialisation is now inside the boundary, and reading `options` is itself a typed site (:684-:686)."
+  },
+  "interior_collapse": {
+    "statement": "For a driver call edge wrapped by perform(K), a fault raised in the callee’s transitive interior emits OF(K) — UNLESS a local catch in that interior converts the fault into a degraded RETURN VALUE first. That is not a silent loss: for every driver-reachable PO method below, the degraded value is either consumed by a driver-side check that fails typed, or the absorption is deliberate and individually justified.",
+    "round_9_correction": "The round-8 artifact stated the collapse unconditionally. That was FALSE and the reviewer was right. The absorbing set turns out to be small and enumerable rather than pervasive; `lessonEnded`, one of the two examples cited, in fact reaches a producer on every driver edge — recorded here for precision, not as a defence of the original claim.",
+    "per_method": [
+      {
+        "method": "waitForDeckReady",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:57",
+        "degraded": "footer wait swallowed; the FIRST locator wait has no catch and still rejects",
+        "consumer": "driver :579 (identity) / registry ready() :461",
+        "ruling": "DELIBERATE ABSORPTION of the footer wait only — screens driven by in-canvas controls have no footer. Justified exclusion."
+      },
+      {
+        "method": "lessonEnded",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:69",
+        "degraded": "false = \"not ended\"",
+        "consumer": "driver :580, the :506/:634 transition loops, :695",
+        "ruling": "CONSUMED on every edge: at :580 it reads as the benign value and the step proceeds; at :695 noteLessonEnd is skipped and the oracle reports the missing lesson end; in the loops it waits until the typed navigation timeout."
+      },
+      {
+        "method": "readScreenIdentity",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:299,:305",
+        "degraded": "partial identity / []",
+        "consumer": "driver :583 comparison",
+        "ruling": "CONSUMED — a mismatch throws inside the identity perform."
+      },
+      {
+        "method": "readPartInventory",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:339,:345,:373",
+        "degraded": "[]",
+        "consumer": "driver :456/:457 detect",
+        "ruling": "CONSUMED — an empty inventory owns no part and fails typed as answer-failed."
+      },
+      {
+        "method": "playVideos",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:838,:859,:907",
+        "degraded": "0",
+        "consumer": "driver :409 (media) and :417 (gate)",
+        "ruling": "SPLIT: on the gate edge 0 is consumed and throws gate-unsatisfied; on the media edge nothing asserts, which is deliberate — driving media cannot manufacture evidence. Justified exclusion for the media edge ONLY."
+      },
+      {
+        "method": "submitCheck / acknowledgeFeedback",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:191,:200",
+        "degraded": "false from isVisible",
+        "consumer": "the method’s own throw two lines later",
+        "ruling": "CONSUMED — the catch feeds a guard that raises."
+      },
+      {
+        "method": "waitForCheckEnabled / waitForFeedbackOpen",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:152,:211",
+        "degraded": "none — the catch RETHROWS a named error",
+        "consumer": "the wrapping perform",
+        "ruling": "NOT an absorption; the collapse holds unqualified here."
+      },
+      {
+        "method": "waitForScreenChange / waitForLessonEnd",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:231",
+        "degraded": "null identity keeps the loop waiting",
+        "consumer": "the loop’s own deadline throw",
+        "ruling": "CONSUMED as navigation-timeout."
+      },
+      {
+        "method": "widgetControlReady / selectMcqByText / mcqSelectionCount / fillTextInputInPart / textInputMatches / fillFrameSelects / linkMatchingPairs / dragCustomDnD",
+        "catch_at": "probe .catch(() => false|0|[]|\"\") throughout",
+        "degraded": "a negative observation",
+        "consumer": "the registry entry’s own throw, inside the driver’s perform",
+        "ruling": "CONSUMED — the fail-closed readiness/answer/readback contract from piece 3."
+      },
+      {
+        "method": "widgetFrame",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:733,:750",
+        "degraded": "null/undefined; the ready-selector timeout is swallowed by design",
+        "consumer": "nothing — which is why widgetControlReady exists",
+        "ruling": "DELIBERATE ABSORPTION. Justified exclusion, and the reason piece 3 added the fail-closed readiness primitive."
+      }
+    ]
+  },
+  "scope": {
+    "declared": [
+      "src/systems/torus/tasks/AdaptiveStrictDriver.ts — entry and outer boundary; enumerated site-by-site below",
+      "tests/torus/student_delivery/adaptiveStrictDeck.ts — ROUND-9 BLOCKER 1: the fixture implementation actually passed to the real driver by driveScripted; faults from its methods cross the driver's outer boundary",
+      "src/systems/torus/tasks/AdaptiveFamilyRegistry.ts — resolver and all six entries (interior, pinned by :447-:469)",
+      "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts — production primitives (interior, pinned by :409-:659, qualified by interior_collapse above)",
+      "src/systems/torus/tasks/AdaptiveManifest.ts — runtime resolveOperations path (pinned by :600)",
+      "src/systems/torus/tasks/AdaptiveTransitionPlanner.ts — online planner path (pinned by :379)",
+      "src/systems/torus/tasks/AdaptiveJournal.ts — core stamps/scans and prospective recorder lifecycle"
+    ],
+    "exclusions": [
+      {
+        "file": "AdaptiveOracle.ts",
+        "reason": "post-walk judge — it reads the run record and frozen journal AFTER the walk; its rejections are the EXIT-MAP reference, not exit sites"
+      },
+      {
+        "file": "AdaptiveShadowCapture.ts / AdaptiveShadowProjector.ts",
+        "reason": "differential harness over captures; no edge from the driver"
+      },
+      {
+        "file": "AdaptiveArchiveReader.ts / AdaptiveArchiveGates.ts / AdaptivePredicateEquivalence.ts",
+        "reason": "offline archive validation; no edge from the driver"
+      },
+      {
+        "file": "AdaptiveHappyPathTask.ts / AdaptiveEvaluationObserver.ts / AdaptiveStrictContract.ts",
+        "reason": "the old strict walker — a substitute production graph B4-DEL deletes"
+      },
+      {
+        "file": "adaptive-exit-inventory.spec.ts",
+        "reason": "evidence machinery, not a source producer (round-9 accepted)"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:206-212 log()",
+        "reason": "a reporting sink that throws is swallowed by construction — logging is never evidence"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:148-151 recorder.detach()",
+        "reason": "cleanup after the journal is already sealed or frozen; a detach failure cannot invalidate what was recorded"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:113-125 correlation read",
+        "reason": "local .catch(() => null); correlate() returns false and the CALLER decides. Not an exit."
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:138-141 awaitFreeze fallback",
+        "reason": "falls back to seal; journal-evidenced ONLY for a real freeze timeout — round 9 correctly narrowed the round-8 wording, which claimed it for any injected rejection"
+      },
+      {
+        "site": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:57 footer readiness",
+        "reason": "see interior_collapse.per_method — deliberate, screens without a footer"
+      },
+      {
+        "site": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:733,:750 widgetFrame",
+        "reason": "see interior_collapse.per_method — the swallow widgetControlReady exists to defeat"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:409 media edge",
+        "reason": "see interior_collapse.per_method — driving media asserts nothing by design"
+      }
+    ]
+  },
+  "machinery": [
+    {
+      "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:252",
+      "what": "fail() -> throw",
+      "ruling": "shared exit implementation qualified by its calling origin — NOT a union-valued site (round 9)"
+    },
+    {
+      "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:263",
+      "what": "stop() -> throw",
+      "ruling": "qualified by the four journal-side origins :322/:528/:556/:563"
+    },
+    {
+      "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:276",
+      "what": "perform() catch -> fail",
+      "ruling": "qualified by each wrapper’s kind argument"
+    },
+    {
+      "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:697",
+      "what": "outer catch",
+      "ruling": "qualified by the preserved pending/stopped origin — it relabels nothing. Its three origins are: a pending OF already recorded by a site above; an unnamed post-visit fault (driver-internal); an unnamed pre-visit fault (identity-unresolved). Each appears as its own row, so this is not one union-valued site (round 9)."
+    }
+  ],
+  "non_sites": [
+    {
+      "line": 109,
+      "why": "recorder.core is a property of the returned handle, not a call (round 9)"
+    },
+    {
+      "line": 112,
+      "why": "expression head of the :113 edge, not a second site (round 9)"
+    },
+    {
+      "line": 187,
+      "why": "paths.push on a local array inside submittedPaths; the `entry` binding there is a local, not the registry entry (round 9)"
+    }
+  ],
+  "prospective": {
+    "reason": "armStrictRun has no routed live caller at this revision; the first routed caller (step 4d) owes the attach/correlate/freeze/seal/detach proof. Round 9 accepted the deferral.",
+    "sites": [
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:105",
+        "what": "new AdaptiveJournalRecorder(page) — ROUND 9: absent from the round-8 list"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:106",
+        "what": "recorder.attach()"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:127",
+        "what": "recorder.core.setRunCorrelation"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:136",
+        "what": "recorder.core.lessonEndNoted"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:140",
+        "what": "recorder.seal (freeze-failure arm)"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:144",
+        "what": "recorder.seal (normal arm)"
+      },
+      {
+        "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:154",
+        "what": "recorder.core.snapshot"
+      }
+    ]
+  },
+  "reviewer_comparison": {
+    "round_8": "reviews/mer-5865-4c-driver-review.md \"Re-derived exit-site set\" — membership agreed both directions; produced F-1/F-2/F-3.",
+    "round_9": "reviews/mer-5865-4c-driver-review.md \"## Round 9\" — BLOCKED, 5 blockers. ALL FIVE ACCEPTED; this artifact is the rebuild.",
+    "findings": [
+      {
+        "id": "F-1",
+        "finding": "the outer boundary read `(e as Error).message` unguarded, so a non-Error rejection made the boundary itself the exit that emitted nothing",
+        "disposition": "FIXED in round 8; witness W-E2-NONERROR"
+      },
+      {
+        "id": "F-2",
+        "finding": "initialization above the boundary exits with no run record",
+        "disposition": "ROUND 9 REOPENED THIS AND WAS RIGHT. The round-8 fix moved only manifest.screens.map, leaving option normalisation and the Map constructor outside. A smallest-diff fix has been replaced by the class fix: all initialisation is inside the boundary and the pre-boundary region is structurally enforced."
+      },
+      {
+        "id": "F-3",
+        "finding": "swallowed sites need individually justified exclusions",
+        "disposition": "ROUND 9: the round-8 list was not exhaustive. Replaced by interior_collapse.per_method over every driver-reachable PO method."
+      },
+      {
+        "id": "R9-1",
+        "finding": "EXIT-SCOPE omitted the executed fixture module; the interior-collapse claim was false as written",
+        "disposition": "ACCEPTED — fixture declared, collapse requalified"
+      },
+      {
+        "id": "R9-2",
+        "finding": "F-2 remained open; the candidate regex could not see pre-boundary lines",
+        "disposition": "ACCEPTED — structural pre-boundary check replaces pattern matching"
+      },
+      {
+        "id": "R9-3",
+        "finding": "rows pinned producer unions; the one-producer test only rejected empty strings",
+        "disposition": "ACCEPTED — row key is (caller, callee, producer), delegating rows are computed, and the test now rejects any union"
+      },
+      {
+        "id": "R9-4",
+        "finding": "covered-by citations did not activate the claimed edge; the PO-interior witness drove the fixture",
+        "disposition": "ACCEPTED — false citations replaced by real injections; the fixture witness renamed to what it proves and a production-PO witness added"
+      },
+      {
+        "id": "R9-5",
+        "finding": "EXIT-MAP sampled the journal matrix; the completed-failure case only sealed",
+        "disposition": "ACCEPTED — real terminalized freeze, all five finalization reasons through auditRun, W-E5 with the record suppressed"
+      }
+    ]
+  },
+  "invariants_checked_by": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+  "site_count": 132,
+  "sites": [
+    {
+      "id": "EX-001",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:281",
+      "source_line": "const deadline = now() + timeouts.quiescenceTimeoutMs;",
+      "callee": "now",
+      "origin": "awaitQuiescence",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-NOW-QUIESCENCE"
+      }
+    },
+    {
+      "id": "EX-002",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:283",
+      "source_line": "if (journal.outstanding() === 0) {",
+      "callee": "journal.outstanding",
+      "origin": "awaitQuiescence",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-QUIESCENCE-READ"
+      }
+    },
+    {
+      "id": "EX-003",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:284",
+      "source_line": "const seen = journal.wireEventCount();",
+      "callee": "journal.wireEventCount",
+      "origin": "awaitQuiescence",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-WIRE-COUNT"
+      }
+    },
+    {
+      "id": "EX-004",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:285",
+      "source_line": "await sleep(timeouts.quiescenceMs);",
+      "callee": "sleep",
+      "origin": "awaitQuiescence",
+      "kind": "rejecting-await",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-SLEEP-QUIESCENT"
+      }
+    },
+    {
+      "id": "EX-005",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:286",
+      "source_line": "if (journal.wireEventCount() === seen && journal.outstanding() === 0) return true;",
+      "callee": "journal.outstanding",
+      "origin": "awaitQuiescence",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-006",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:286",
+      "source_line": "if (journal.wireEventCount() === seen && journal.outstanding() === 0) return true;",
+      "callee": "journal.wireEventCount",
+      "origin": "awaitQuiescence",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-007",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:288",
+      "source_line": "await sleep(timeouts.pollMs);",
+      "callee": "sleep",
+      "origin": "awaitQuiescence",
+      "kind": "rejecting-await",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-SLEEP-POLL"
+      }
+    },
+    {
+      "id": "EX-008",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:290",
+      "source_line": "if (now() >= deadline) return false;",
+      "callee": "now",
+      "origin": "awaitQuiescence",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-009",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:306",
+      "source_line": "const deadline = now() + timeouts.evaluationMs;",
+      "callee": "now",
+      "origin": "awaitEvaluation",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-010",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:309",
+      "source_line": ".records()",
+      "callee": "journal.records",
+      "origin": "awaitEvaluation",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-RECORDS-EVAL"
+      }
+    },
+    {
+      "id": "EX-011",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:322",
+      "source_line": "return stop(",
+      "callee": "stop",
+      "origin": "awaitEvaluation",
+      "kind": "failure-path-return",
+      "class": "stop-journal",
+      "producer": "JR",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-STOP-UNUSABLE"
+      }
+    },
+    {
+      "id": "EX-012",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:328",
+      "source_line": "if (now() >= deadline) {",
+      "callee": "now",
+      "origin": "awaitEvaluation",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-013",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:329",
+      "source_line": "return fail(",
+      "callee": "fail",
+      "origin": "awaitEvaluation@ack",
+      "kind": "failure-path-return",
+      "class": "typed-exit",
+      "producer": "OF(ack-no-effect)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-EVAL-TIMEOUT-ACK"
+      }
+    },
+    {
+      "id": "EX-014",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:329",
+      "source_line": "return fail(",
+      "callee": "fail",
+      "origin": "awaitEvaluation@check",
+      "kind": "failure-path-return",
+      "class": "typed-exit",
+      "producer": "OF(check-click-no-effect)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-EVAL-TIMEOUT"
+      }
+    },
+    {
+      "id": "EX-015",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:336",
+      "source_line": "await sleep(timeouts.pollMs);",
+      "callee": "sleep",
+      "origin": "awaitEvaluation",
+      "kind": "rejecting-await",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-016",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:346",
+      "source_line": "const deadline = now() + timeouts.barrierMs;",
+      "callee": "now",
+      "origin": "awaitSavedBarrier",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-017",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:349",
+      "source_line": ".records()",
+      "callee": "journal.records",
+      "origin": "awaitSavedBarrier",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-RECORDS-BARRIER"
+      }
+    },
+    {
+      "id": "EX-018",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:359",
+      "source_line": "submittedPaths(r.partInputs).some((p) => p.includes(prefix)),",
+      "callee": "submittedPaths",
+      "origin": "awaitSavedBarrier",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-019",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:362",
+      "source_line": "if (now() >= deadline) {",
+      "callee": "now",
+      "origin": "awaitSavedBarrier",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-020",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:363",
+      "source_line": "fail(",
+      "callee": "fail",
+      "origin": "awaitSavedBarrier",
+      "kind": "failure-path-return",
+      "class": "typed-exit",
+      "producer": "OF(barrier-timeout)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-BARRIER-TIMEOUT"
+      }
+    },
+    {
+      "id": "EX-021",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:370",
+      "source_line": "await sleep(timeouts.pollMs);",
+      "callee": "sleep",
+      "origin": "awaitSavedBarrier",
+      "kind": "rejecting-await",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-022",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:379",
+      "source_line": "const plan = planTransition(resultsOf(record), record.llmFeedback, !!screen.combine_feedback);",
+      "callee": "planTransition",
+      "origin": "recordPlan",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-023",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:393",
+      "source_line": ".records()",
+      "callee": "journal.records",
+      "origin": "recordObservedPlans",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-RECORDS-SWEEP"
+      }
+    },
+    {
+      "id": "EX-024",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:396",
+      "source_line": ".forEach((r) => recordPlan(stepIndex, r, screen));",
+      "callee": "recordPlan",
+      "origin": "recordPlan — see its own row pinning OF(driver-internal)",
+      "kind": "throw",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the recordPlan row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-025",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:408",
+      "source_line": "await perform('readiness-timeout', screen.id, stepIndex, 'media', async () => {",
+      "callee": "perform(readiness-timeout, media)",
+      "origin": "runGates",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-026",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:409",
+      "source_line": "await deck.playVideos();",
+      "callee": "deck.playVideos",
+      "origin": "runGates",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-MEDIA"
+      }
+    },
+    {
+      "id": "EX-027",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:410",
+      "source_line": "await deck.clickThroughCarousels();",
+      "callee": "deck.clickThroughCarousels",
+      "origin": "runGates",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-MEDIA-CAROUSEL"
+      }
+    },
+    {
+      "id": "EX-028",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:415",
+      "source_line": "await perform('gate-unsatisfied', screen.id, stepIndex, `gate ${gate.gate}`, async () => {",
+      "callee": "perform(gate-unsatisfied)",
+      "origin": "runGates",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(gate-unsatisfied)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-029",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:417",
+      "source_line": "if ((await deck.playVideos()) === 0) throw new Error('no video started');",
+      "callee": "deck.playVideos",
+      "origin": "runGates",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(gate-unsatisfied)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-GATE-VIDEO"
+      }
+    },
+    {
+      "id": "EX-030",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:421",
+      "source_line": "if ((await deck.clickThroughCarousels()) === 0) throw new Error('no carousel advanced');",
+      "callee": "deck.clickThroughCarousels",
+      "origin": "runGates",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(gate-unsatisfied)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-GATE-CAROUSEL"
+      }
+    },
+    {
+      "id": "EX-031",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:424",
+      "source_line": "throw new Error(`gate \"${gate.gate}\" has no driver primitive`);",
+      "callee": "unknown gate",
+      "origin": "runGates",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(gate-unsatisfied)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-GATE-UNKNOWN"
+      }
+    },
+    {
+      "id": "EX-032",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:434",
+      "source_line": "const parts: PartInventory = await perform(",
+      "callee": "perform(answer-failed, part inventory)",
+      "origin": "answerScreen",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-033",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:439",
+      "source_line": "() => deck.readPartInventory(),",
+      "callee": "deck.readPartInventory",
+      "origin": "answerScreen",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-PART-INVENTORY"
+      }
+    },
+    {
+      "id": "EX-034",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:446",
+      "source_line": "const entry = await perform('answer-failed', screen.id, stepIndex, label, async () => {",
+      "callee": "perform(answer-failed, resolve)",
+      "origin": "answerScreen",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-035",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:447",
+      "source_line": "const resolved = resolveFamily({",
+      "callee": "resolveFamily",
+      "origin": "answerScreen",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-UNKNOWN-FAMILY"
+      }
+    },
+    {
+      "id": "EX-036",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:452",
+      "source_line": "resolved.validateDirective(op.directive);",
+      "callee": "resolved.validateDirective",
+      "origin": "answerScreen",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-BAD-DIRECTIVE"
+      }
+    },
+    {
+      "id": "EX-037",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:455",
+      "source_line": "const part = await perform('answer-failed', screen.id, stepIndex, label, async () => {",
+      "callee": "perform(answer-failed, detect)",
+      "origin": "answerScreen",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-038",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:456",
+      "source_line": "const owned = entry.detect(parts, op.directive);",
+      "callee": "entry.detect",
+      "origin": "answerScreen",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-DETECT"
+      }
+    },
+    {
+      "id": "EX-039",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:457",
+      "source_line": "if (!owned) throw new Error(`no live part owned by ${label}`);",
+      "callee": "no owned part",
+      "origin": "answerScreen",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-UNOWNED-PART"
+      }
+    },
+    {
+      "id": "EX-040",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:460",
+      "source_line": "await perform('readiness-timeout', screen.id, stepIndex, label, () =>",
+      "callee": "perform(readiness-timeout, ready)",
+      "origin": "answerScreen",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-041",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:461",
+      "source_line": "entry.ready(deck, part, op.directive),",
+      "callee": "entry.ready",
+      "origin": "answerScreen",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-INTERIOR-REGISTRY"
+      }
+    },
+    {
+      "id": "EX-042",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:463",
+      "source_line": "await perform('answer-failed', screen.id, stepIndex, label, () =>",
+      "callee": "perform(answer-failed, answer)",
+      "origin": "answerScreen",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-043",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:464",
+      "source_line": "entry.answer(deck, part, op.directive),",
+      "callee": "entry.answer",
+      "origin": "answerScreen",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-FIXTURE-INTERIOR"
+      }
+    },
+    {
+      "id": "EX-044",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:466",
+      "source_line": "await perform('readback-failed', screen.id, stepIndex, label, () =>",
+      "callee": "perform(readback-failed, readback)",
+      "origin": "answerScreen",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(readback-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-045",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:467",
+      "source_line": "entry.readback(deck, part, op.directive),",
+      "callee": "entry.readback",
+      "origin": "answerScreen",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(readback-failed)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-READBACK"
+      }
+    },
+    {
+      "id": "EX-046",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:469",
+      "source_line": "barriers.push(...entry.savedBarrier(part, op.directive));",
+      "callee": "entry.savedBarrier",
+      "origin": "answerScreen",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+      }
+    },
+    {
+      "id": "EX-047",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:475",
+      "source_line": "const readback = journal.issueReadbackFence(screen.id, stepIndex);",
+      "callee": "journal.issueReadbackFence",
+      "origin": "answerScreen",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-READBACK-FENCE"
+      }
+    },
+    {
+      "id": "EX-048",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:477",
+      "source_line": "await awaitSavedBarrier(prefix, readback.seq, screen.id, stepIndex);",
+      "callee": "awaitSavedBarrier",
+      "origin": "awaitSavedBarrier — see its own row pinning OF(barrier-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(barrier-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitSavedBarrier row that pins OF(barrier-timeout)"
+      }
+    },
+    {
+      "id": "EX-049",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:477",
+      "source_line": "await awaitSavedBarrier(prefix, readback.seq, screen.id, stepIndex);",
+      "callee": "awaitSavedBarrier",
+      "origin": "awaitSavedBarrier — see its own row pinning OF(driver-internal)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitSavedBarrier row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-050",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:487",
+      "source_line": "expectations: structuredClone(screen.expectations ?? []),",
+      "callee": "structuredClone",
+      "origin": "answerScreen",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-CLONE"
+      }
+    },
+    {
+      "id": "EX-051",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:500",
+      "source_line": "await perform('navigation-timeout', screen.id, stepIndex, 'lesson end', () =>",
+      "callee": "perform(navigation-timeout, lesson end)",
+      "origin": "awaitTransition",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-052",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:501",
+      "source_line": "deck.waitForLessonEnd(timeouts.navigationMs),",
+      "callee": "deck.waitForLessonEnd",
+      "origin": "awaitTransition",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-LESSON-END-WAIT"
+      }
+    },
+    {
+      "id": "EX-053",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:505",
+      "source_line": "await perform('navigation-timeout', screen.id, stepIndex, 'navigate', () =>",
+      "callee": "perform(navigation-timeout, navigate)",
+      "origin": "awaitTransition",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-054",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:506",
+      "source_line": "deck.waitForScreenChange(fromId, timeouts.navigationMs),",
+      "callee": "deck.waitForScreenChange",
+      "origin": "awaitTransition",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-GRADED-NAV"
+      }
+    },
+    {
+      "id": "EX-055",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:523",
+      "source_line": "await awaitTransition(screen, stepIndex, fromId, plan);",
+      "callee": "awaitTransition",
+      "origin": "awaitTransition — see its own row pinning OF(navigation-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitTransition row that pins OF(navigation-timeout)"
+      }
+    },
+    {
+      "id": "EX-056",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:528",
+      "source_line": "stop(stepIndex, `screen \"${screen.id}\": the evaluation queued no transition`);",
+      "callee": "stop",
+      "origin": "followPlan",
+      "kind": "failure-path-return",
+      "class": "stop-journal",
+      "producer": "RP",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-STOP-NONE-PLAN"
+      }
+    },
+    {
+      "id": "EX-057",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:532",
+      "source_line": "await perform('feedback-never-opened', screen.id, stepIndex, 'feedback', () =>",
+      "callee": "perform(feedback-never-opened)",
+      "origin": "followPlan",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(feedback-never-opened)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-058",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:533",
+      "source_line": "deck.waitForFeedbackOpen(timeouts.feedbackMs),",
+      "callee": "deck.waitForFeedbackOpen",
+      "origin": "followPlan",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(feedback-never-opened)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-FEEDBACK-OPEN"
+      }
+    },
+    {
+      "id": "EX-059",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:535",
+      "source_line": "const ack = journal.issuePermit('feedback-ack', screen.id, stepIndex);",
+      "callee": "journal.issuePermit",
+      "origin": "followPlan",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-PERMIT-ACK"
+      }
+    },
+    {
+      "id": "EX-060",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:537",
+      "source_line": "await perform('ack-no-effect', screen.id, stepIndex, 'acknowledge', () =>",
+      "callee": "perform(ack-no-effect, acknowledge)",
+      "origin": "followPlan",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(ack-no-effect)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-061",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:538",
+      "source_line": "deck.acknowledgeFeedback(),",
+      "callee": "deck.acknowledgeFeedback",
+      "origin": "followPlan",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(ack-no-effect)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-ACK"
+      }
+    },
+    {
+      "id": "EX-062",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:542",
+      "source_line": "await awaitTransition(screen, stepIndex, fromId, plan);",
+      "callee": "awaitTransition",
+      "origin": "awaitTransition — see its own row pinning OF(navigation-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitTransition row that pins OF(navigation-timeout)"
+      }
+    },
+    {
+      "id": "EX-063",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:553",
+      "source_line": "const second = await awaitEvaluation(ack.seq, 'ack-no-effect', screen.id, stepIndex);",
+      "callee": "awaitEvaluation@ack",
+      "origin": "awaitEvaluation@ack — see its own row pinning OF(ack-no-effect)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(ack-no-effect)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitEvaluation@ack row that pins OF(ack-no-effect)"
+      }
+    },
+    {
+      "id": "EX-064",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:554",
+      "source_line": "const secondPlan = recordPlan(stepIndex, second, screen);",
+      "callee": "recordPlan",
+      "origin": "recordPlan — see its own row pinning OF(driver-internal)",
+      "kind": "throw",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the recordPlan row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-065",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:556",
+      "source_line": "stop(",
+      "callee": "stop",
+      "origin": "followPlan",
+      "kind": "failure-path-return",
+      "class": "stop-journal",
+      "producer": "CE",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-STOP-NONGRADED"
+      }
+    },
+    {
+      "id": "EX-066",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:563",
+      "source_line": "stop(",
+      "callee": "stop",
+      "origin": "followPlan",
+      "kind": "failure-path-return",
+      "class": "stop-journal",
+      "producer": "RP",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-STOP-RECHECK-KIND"
+      }
+    },
+    {
+      "id": "EX-067",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:570",
+      "source_line": "await awaitTransition(screen, stepIndex, fromId, secondPlan);",
+      "callee": "awaitTransition",
+      "origin": "awaitTransition — see its own row pinning OF(navigation-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitTransition row that pins OF(navigation-timeout)"
+      }
+    },
+    {
+      "id": "EX-068",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:577",
+      "source_line": "const identity = await perform('identity-unresolved', null, stepIndex, 'identity', async () => {",
+      "callee": "perform(identity-unresolved, identity)",
+      "origin": "runStep",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-069",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:578",
+      "source_line": "if (!screen) throw new Error(`scenario references undeclared screen \"${step.screen_ref}\"`);",
+      "callee": "undeclared screen",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-UNDECLARED-SCREEN"
+      }
+    },
+    {
+      "id": "EX-070",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:579",
+      "source_line": "await deck.waitForDeckReady();",
+      "callee": "deck.waitForDeckReady",
+      "origin": "runStep",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-IDENTITY-READY"
+      }
+    },
+    {
+      "id": "EX-071",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:580",
+      "source_line": "if (await deck.lessonEnded()) throw new Error('the lesson ended before this step');",
+      "callee": "deck.lessonEnded",
+      "origin": "runStep",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-IDENTITY-ENDED"
+      }
+    },
+    {
+      "id": "EX-072",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:581",
+      "source_line": "const live = await deck.readScreenIdentity();",
+      "callee": "deck.readScreenIdentity",
+      "origin": "runStep",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-IDENTITY-READ"
+      }
+    },
+    {
+      "id": "EX-073",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:583",
+      "source_line": "throw new Error(`deck shows \"${live.id}\", the scenario declares \"${step.screen_ref}\"`);",
+      "callee": "identity mismatch",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-IDENTITY-MISMATCH"
+      }
+    },
+    {
+      "id": "EX-074",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:589",
+      "source_line": "const fence = journal.issueFence(identity.id);",
+      "callee": "journal.issueFence",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-FENCE"
+      }
+    },
+    {
+      "id": "EX-075",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:600",
+      "source_line": "const operations = resolveOperations(declared, step);",
+      "callee": "resolveOperations",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-OPERATIONS"
+      }
+    },
+    {
+      "id": "EX-076",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:608",
+      "source_line": "await perform(",
+      "callee": "perform(widget-button-unavailable, ready)",
+      "origin": "runStep",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(widget-button-unavailable)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-077",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:614",
+      "source_line": "if (!declared.action) throw new Error('the screen declares no in-widget action');",
+      "callee": "no declared action",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(widget-button-unavailable)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-NO-ACTION"
+      }
+    },
+    {
+      "id": "EX-078",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:615",
+      "source_line": "if (!(await deck.widgetButtonReady(declared.action.src_fragment))) {",
+      "callee": "deck.widgetButtonReady",
+      "origin": "runStep",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(widget-button-unavailable)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-WIDGET-READY"
+      }
+    },
+    {
+      "id": "EX-079",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:616",
+      "source_line": "throw new Error('the in-widget button never rendered');",
+      "callee": "button never rendered",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(widget-button-unavailable)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-WIDGET-UNRENDERED"
+      }
+    },
+    {
+      "id": "EX-080",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:620",
+      "source_line": "const permit = journal.issuePermit('widget-button', identity.id, stepIndex);",
+      "callee": "journal.issuePermit",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-PERMIT-WIDGET"
+      }
+    },
+    {
+      "id": "EX-081",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:622",
+      "source_line": "await perform(",
+      "callee": "perform(widget-button-unavailable, click)",
+      "origin": "runStep",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(widget-button-unavailable)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-082",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:628",
+      "source_line": "if (!(await deck.clickWidgetButton(declared.action!.src_fragment))) {",
+      "callee": "deck.clickWidgetButton",
+      "origin": "runStep",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(widget-button-unavailable)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-WIDGET-CLICK"
+      }
+    },
+    {
+      "id": "EX-083",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:629",
+      "source_line": "throw new Error('the in-widget button was not clickable');",
+      "callee": "button not clickable",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "wrapped",
+      "producer": "OF(widget-button-unavailable)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-WIDGET-UNCLICKABLE"
+      }
+    },
+    {
+      "id": "EX-084",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:633",
+      "source_line": "await perform('navigation-timeout', identity.id, stepIndex, 'navigate', () =>",
+      "callee": "perform(navigation-timeout, navigate)",
+      "origin": "runStep",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-085",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:634",
+      "source_line": "deck.waitForScreenChange(identity.id, timeouts.widgetNavigationMs),",
+      "callee": "deck.waitForScreenChange",
+      "origin": "runStep",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-WIDGET-NAV"
+      }
+    },
+    {
+      "id": "EX-086",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:636",
+      "source_line": "if (!(await awaitQuiescence())) {",
+      "callee": "awaitQuiescence",
+      "origin": "awaitQuiescence — see its own row pinning OF(driver-internal)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitQuiescence row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-087",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:637",
+      "source_line": "fail('traffic-unsettled', identity.id, stepIndex, 'settle after transition');",
+      "callee": "fail",
+      "origin": "runStep",
+      "kind": "failure-path-return",
+      "class": "typed-exit",
+      "producer": "OF(traffic-unsettled)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-TRAFFIC-NAV"
+      }
+    },
+    {
+      "id": "EX-088",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:642",
+      "source_line": "recordObservedPlans(stepIndex, declared, stepIndex === 0 ? 0 : fence.seq);",
+      "callee": "recordObservedPlans",
+      "origin": "recordObservedPlans — see its own row pinning OF(driver-internal)",
+      "kind": "throw",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the recordObservedPlans row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-089",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:647",
+      "source_line": "await runGates(declared, gates, stepIndex);",
+      "callee": "runGates",
+      "origin": "runGates — see its own row pinning OF(gate-unsatisfied)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(gate-unsatisfied)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runGates row that pins OF(gate-unsatisfied)"
+      }
+    },
+    {
+      "id": "EX-090",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:647",
+      "source_line": "await runGates(declared, gates, stepIndex);",
+      "callee": "runGates",
+      "origin": "runGates — see its own row pinning OF(readiness-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runGates row that pins OF(readiness-timeout)"
+      }
+    },
+    {
+      "id": "EX-091",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:650",
+      "source_line": "receipts.push(await answerScreen(declared, answers, stepIndex));",
+      "callee": "answerScreen",
+      "origin": "answerScreen — see its own row pinning OF(answer-failed)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the answerScreen row that pins OF(answer-failed)"
+      }
+    },
+    {
+      "id": "EX-092",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:650",
+      "source_line": "receipts.push(await answerScreen(declared, answers, stepIndex));",
+      "callee": "answerScreen",
+      "origin": "answerScreen — see its own row pinning OF(barrier-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(barrier-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the answerScreen row that pins OF(barrier-timeout)"
+      }
+    },
+    {
+      "id": "EX-093",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:650",
+      "source_line": "receipts.push(await answerScreen(declared, answers, stepIndex));",
+      "callee": "answerScreen",
+      "origin": "answerScreen — see its own row pinning OF(driver-internal)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the answerScreen row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-094",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:650",
+      "source_line": "receipts.push(await answerScreen(declared, answers, stepIndex));",
+      "callee": "answerScreen",
+      "origin": "answerScreen — see its own row pinning OF(readback-failed)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(readback-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the answerScreen row that pins OF(readback-failed)"
+      }
+    },
+    {
+      "id": "EX-095",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:650",
+      "source_line": "receipts.push(await answerScreen(declared, answers, stepIndex));",
+      "callee": "answerScreen",
+      "origin": "answerScreen — see its own row pinning OF(readiness-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the answerScreen row that pins OF(readiness-timeout)"
+      }
+    },
+    {
+      "id": "EX-096",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:653",
+      "source_line": "await perform('readiness-timeout', identity.id, stepIndex, 'check control', () =>",
+      "callee": "perform(readiness-timeout, check control)",
+      "origin": "runStep",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-097",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:654",
+      "source_line": "deck.waitForCheckEnabled(timeouts.feedbackMs),",
+      "callee": "deck.waitForCheckEnabled",
+      "origin": "runStep",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-CHECK-READY"
+      }
+    },
+    {
+      "id": "EX-098",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:656",
+      "source_line": "const checkPermit = journal.issuePermit('check-click', identity.id, stepIndex);",
+      "callee": "journal.issuePermit",
+      "origin": "runStep",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-PERMIT-CHECK"
+      }
+    },
+    {
+      "id": "EX-099",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:658",
+      "source_line": "await perform('check-click-no-effect', identity.id, stepIndex, 'check click', () =>",
+      "callee": "perform(check-click-no-effect, check click)",
+      "origin": "runStep",
+      "kind": "catch-branch",
+      "class": "wrapper",
+      "producer": "OF(check-click-no-effect)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the wrapped edges inside this perform, each separately injected"
+      }
+    },
+    {
+      "id": "EX-100",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:659",
+      "source_line": "deck.submitCheck(),",
+      "callee": "deck.submitCheck",
+      "origin": "runStep",
+      "kind": "rejecting-await",
+      "class": "wrapped",
+      "producer": "OF(check-click-no-effect)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-CHECK-CLICK"
+      }
+    },
+    {
+      "id": "EX-101",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:662",
+      "source_line": "const first = await awaitEvaluation(",
+      "callee": "awaitEvaluation@check",
+      "origin": "awaitEvaluation@check — see its own row pinning OF(check-click-no-effect)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(check-click-no-effect)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitEvaluation@check row that pins OF(check-click-no-effect)"
+      }
+    },
+    {
+      "id": "EX-102",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:668",
+      "source_line": "const plan = recordPlan(stepIndex, first, declared);",
+      "callee": "recordPlan",
+      "origin": "recordPlan — see its own row pinning OF(driver-internal)",
+      "kind": "throw",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the recordPlan row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-103",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:669",
+      "source_line": "await followPlan(declared, stepIndex, identity.id, plan);",
+      "callee": "followPlan",
+      "origin": "followPlan — see its own row pinning CE",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "CE",
+      "injection": {
+        "status": "covered-by",
+        "by": "the followPlan row that pins CE"
+      }
+    },
+    {
+      "id": "EX-104",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:669",
+      "source_line": "await followPlan(declared, stepIndex, identity.id, plan);",
+      "callee": "followPlan",
+      "origin": "followPlan — see its own row pinning OF(ack-no-effect)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(ack-no-effect)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the followPlan row that pins OF(ack-no-effect)"
+      }
+    },
+    {
+      "id": "EX-105",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:669",
+      "source_line": "await followPlan(declared, stepIndex, identity.id, plan);",
+      "callee": "followPlan",
+      "origin": "followPlan — see its own row pinning OF(driver-internal)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the followPlan row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-106",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:669",
+      "source_line": "await followPlan(declared, stepIndex, identity.id, plan);",
+      "callee": "followPlan",
+      "origin": "followPlan — see its own row pinning OF(feedback-never-opened)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(feedback-never-opened)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the followPlan row that pins OF(feedback-never-opened)"
+      }
+    },
+    {
+      "id": "EX-107",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:669",
+      "source_line": "await followPlan(declared, stepIndex, identity.id, plan);",
+      "callee": "followPlan",
+      "origin": "followPlan — see its own row pinning OF(navigation-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the followPlan row that pins OF(navigation-timeout)"
+      }
+    },
+    {
+      "id": "EX-108",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:669",
+      "source_line": "await followPlan(declared, stepIndex, identity.id, plan);",
+      "callee": "followPlan",
+      "origin": "followPlan — see its own row pinning RP",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "RP",
+      "injection": {
+        "status": "covered-by",
+        "by": "the followPlan row that pins RP"
+      }
+    },
+    {
+      "id": "EX-109",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:671",
+      "source_line": "if (!(await awaitQuiescence())) {",
+      "callee": "awaitQuiescence",
+      "origin": "awaitQuiescence — see its own row pinning OF(driver-internal)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the awaitQuiescence row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-110",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:672",
+      "source_line": "fail('traffic-unsettled', identity.id, stepIndex, 'settle after transition');",
+      "callee": "fail",
+      "origin": "runStep",
+      "kind": "failure-path-return",
+      "class": "typed-exit",
+      "producer": "OF(traffic-unsettled)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-TRAFFIC-GRADED"
+      }
+    },
+    {
+      "id": "EX-111",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:684",
+      "source_line": "timeouts = { ...DEFAULT_TIMEOUTS, ...(options.timeouts ?? {}) };",
+      "callee": "options.timeouts read + spread",
+      "origin": "outer",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-OPTIONS"
+      }
+    },
+    {
+      "id": "EX-112",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:685",
+      "source_line": "if (options.sleep) sleep = options.sleep;",
+      "callee": "options.sleep read",
+      "origin": "outer",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-OPTIONS-SLEEP"
+      }
+    },
+    {
+      "id": "EX-113",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:686",
+      "source_line": "if (options.now) now = options.now;",
+      "callee": "options.now read",
+      "origin": "outer",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-OPTIONS-NOW"
+      }
+    },
+    {
+      "id": "EX-114",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:687",
+      "source_line": "screensById = new Map(manifest.screens.map((s) => [s.id, s]));",
+      "callee": "manifest.screens.map",
+      "origin": "outer",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-PRETRY"
+      }
+    },
+    {
+      "id": "EX-115",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:687",
+      "source_line": "screensById = new Map(manifest.screens.map((s) => [s.id, s]));",
+      "callee": "new Map",
+      "origin": "outer",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "not-injected",
+        "reason": "NOT FAULTABLE through the public surface: the map callback always returns a two-element array, so the constructor’s only failure mode is a patched global. Moved inside the boundary anyway (round-9 blocker 2), so it can no longer exit above the record."
+      }
+    },
+    {
+      "id": "EX-116",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning CE",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "CE",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins CE"
+      }
+    },
+    {
+      "id": "EX-117",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(ack-no-effect)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(ack-no-effect)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(ack-no-effect)"
+      }
+    },
+    {
+      "id": "EX-118",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(answer-failed)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(answer-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(answer-failed)"
+      }
+    },
+    {
+      "id": "EX-119",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(barrier-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(barrier-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(barrier-timeout)"
+      }
+    },
+    {
+      "id": "EX-120",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(check-click-no-effect)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(check-click-no-effect)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(check-click-no-effect)"
+      }
+    },
+    {
+      "id": "EX-121",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(driver-internal)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(driver-internal)"
+      }
+    },
+    {
+      "id": "EX-122",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(feedback-never-opened)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(feedback-never-opened)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(feedback-never-opened)"
+      }
+    },
+    {
+      "id": "EX-123",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(gate-unsatisfied)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(gate-unsatisfied)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(gate-unsatisfied)"
+      }
+    },
+    {
+      "id": "EX-124",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(identity-unresolved)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(identity-unresolved)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(identity-unresolved)"
+      }
+    },
+    {
+      "id": "EX-125",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(navigation-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(navigation-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(navigation-timeout)"
+      }
+    },
+    {
+      "id": "EX-126",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(readback-failed)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(readback-failed)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(readback-failed)"
+      }
+    },
+    {
+      "id": "EX-127",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(readiness-timeout)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(readiness-timeout)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(readiness-timeout)"
+      }
+    },
+    {
+      "id": "EX-128",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(traffic-unsettled)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(traffic-unsettled)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(traffic-unsettled)"
+      }
+    },
+    {
+      "id": "EX-129",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning OF(widget-button-unavailable)",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "OF(widget-button-unavailable)",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins OF(widget-button-unavailable)"
+      }
+    },
+    {
+      "id": "EX-130",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:691",
+      "source_line": "await runStep(i);",
+      "callee": "runStep",
+      "origin": "runStep — see its own row pinning RP",
+      "kind": "rejecting-await",
+      "class": "delegating",
+      "producer": "RP",
+      "injection": {
+        "status": "covered-by",
+        "by": "the runStep row that pins RP"
+      }
+    },
+    {
+      "id": "EX-131",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:695",
+      "source_line": "if (await deck.lessonEnded()) journal.noteLessonEnd();",
+      "callee": "deck.lessonEnded",
+      "origin": "outer",
+      "kind": "rejecting-await",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-LESSON-END-READ"
+      }
+    },
+    {
+      "id": "EX-132",
+      "caller": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:695",
+      "source_line": "if (await deck.lessonEnded()) journal.noteLessonEnd();",
+      "callee": "journal.noteLessonEnd",
+      "origin": "outer",
+      "kind": "throw",
+      "class": "unwrapped",
+      "producer": "OF(driver-internal)",
+      "injection": {
+        "status": "injected",
+        "witness": "W-E2-NOTE-LESSON-END"
+      }
+    }
+  ]
+}
