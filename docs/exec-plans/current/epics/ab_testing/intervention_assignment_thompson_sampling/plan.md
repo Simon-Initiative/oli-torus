@@ -8,26 +8,27 @@ Scope and reference artifacts:
 
 ## Scope
 
-Extend `Oli.Experiments` so experiments own one assignment policy and stable conditions while decision points independently configure mappings and policy parameters, and each placed Alternatives instance is a distinct sticky assignment opportunity. Add assessment-driven, asynchronous Beta-Bernoulli Thompson Sampling rewards; preserve weighted-random behavior; make Alternatives Group strategy canonical and group-owned; preserve authoring, publication, delivery, completion, export/ingest, and legacy-content compatibility; and expose bounded policy reporting, analytics evidence, and operational telemetry.
+Extend `Oli.Experiments` so each experiment owns one assignment policy, one reusable Alternatives Group, stable conditions and mappings, and one policy/posterior scope, while each placed Alternatives instance is a distinct sticky assignment opportunity. Add assessment-driven, asynchronous Beta-Bernoulli Thompson Sampling rewards; preserve weighted-random behavior; make Alternatives Group strategy canonical and group-owned; preserve authoring, publication, delivery, completion, export/ingest, and legacy-content compatibility; and expose bounded policy reporting, analytics evidence, and operational telemetry.
 
 Guardrails:
 
 - PostgreSQL remains the transactional source of truth. Assignment, reward, and reporting paths must not read ClickHouse, xAPI, or reward history.
-- Existing revisions, publications, assignments, rewards, and analytics remain readable without a feature-specific backfill, content rewrite, forced author save, or republication.
-- New database migrations are generated with `mix ecto.gen.migration`, implement explicit `up/0` and `down/0`, avoid destructive cascades, and are verified forward and backward against representative existing data.
+- Existing Alternatives revisions and publications remain readable without content rewrite, forced author save, or republication. Pre-release QA experiment definitions, assignments, rewards, policy state, and experiment analytics are disposable and require no migration or preservation.
+- New database migrations are generated with `mix ecto.gen.migration`, implement explicit `up/0` and `down/0`, and are verified forward and backward for PostgreSQL and ClickHouse schema correctness. Rollback restores schema shape, not discarded QA experiment rows.
 - Experiment mutation and lifecycle rules belong in `Oli.Experiments`; LiveViews and delivery modules remain interaction and transport adapters with server-derived authorization and identity.
 - Both Alternatives strategies may appear inside ordinary containers, but no Alternatives placement may have another Alternatives placement as an ancestor. Delivery pays only one indexed relevance check for sections without an applicable active experiment and resolves all valid positive-path experiment placements in one set-based operation without recursive assignment rounds.
 - Preview never creates experiment state or evidence. Learner rendering and completion use the same persisted intervention decisions.
 - New UI uses existing components and Tailwind conventions. The current Experiments group editor is the behavioral baseline for the shared component. Produce approved design guidance before implementing the expanded experiment configuration and posterior-reporting UI.
 - No feature flag is added. Rollout is gated by migration safety, valid draft activation, and normal deployment.
-- All phases form one indivisible unit of work. Each phase receives a focused code review at its gate, but no phase is deployed, released, or treated as independently shippable; production rollout occurs only after Gate I confirms the complete implementation.
+- The canonical change is a coordinated QA-only schema and code cutover. It requires no expand/backfill stage, mixed-version compatibility window, dual reads/writes, or preservation of existing experiment rows. Only Gate P authorizes the completed canonical implementation.
 - Jira ticket creation or editing is a separate operation: draft exact ticket changes and obtain explicit user approval before any Jira write.
 
 ## Clarifications & Default Assumptions
 
+- Phases 1 through 12 record completed implementation history. Any multi-point task or gate in those phases is superseded by the canonical single-scope contract and Phases 13 through 16; it is not an active requirement for handoff or release.
 - During Phase 1, confirm the canonical resource-attempt ordering column, the successfully finalized attempt predicate, nested Alternatives element-ID behavior across every copy/duplicate path, and the current ClickHouse event schema. These are implementation facts; if repository behavior differs from the FDD, update the detailed slice design before coding without changing the product requirements silently.
-- Use dependency-ordered PostgreSQL migrations rather than one large migration unless inspection proves a combined migration is safer. Preserve legacy nullable rows while requiring complete intervention-scoped state for new writes.
-- Replace the existing single-decision-point request and report shapes with the multi-point model in the same unit of work. Migrate every in-repository caller and remove the old shape and any temporary adapter before Gate I; no compatibility layer remains in the completed implementation.
+- Use dependency-ordered generated PostgreSQL migrations and ordinary ClickHouse migrations. They may delete or recreate QA experiment rows but must leave existing Alternatives content untouched.
+- Replace nested decision-point request and report shapes with singular experiment group, mapping, policy, and posterior fields. Migrate every in-repository caller directly; do not introduce temporary compatibility adapters.
 - Extend existing policy modules, outbox/evidence infrastructure, and Oban reward handoff rather than introducing parallel runtimes.
 - Use deterministic injectable random seams in policy tests; production sampling continues to use the repository's established random source.
 - If current `Oli.Scenarios` directives cannot express experiment configuration, assignment visibility, scored-page finalization, posterior assertions, and completion percentage, use `extend_scenario` before `build_scenario` for the minimum reusable DSL additions.
@@ -86,7 +87,7 @@ Guardrails:
 
 - Goal: Provide authorized domain APIs for multi-decision-point experiment configuration, activation, immutability, reuse, and explicit dependency reconciliation (FR-001 through FR-004, FR-011, FR-012, FR-017 through FR-020).
 - Tasks:
-  - [x] Refactor `Oli.Experiments` internals around focused configuration operations while preserving it as the public boundary; migrate all in-repository callers to the multi-point request/report contracts and delete the legacy single-point shape without adding an adapter.
+  - [x] Refactor `Oli.Experiments` internals around focused configuration operations while preserving it as the public boundary. This completed multi-point intermediate is superseded by Phase 14's singular contract.
   - [x] Add experiment-owned algorithm/condition configuration and per-decision-point APIs for group binding, guardrails, bijective mappings, interventions, distinct scored-page bindings, and inclusive decimal thresholds defaulting to `1.0`.
   - [x] Resolve request-local condition `client_ref` values during atomic graph creation, generate immutable readable codes from labels under the experiment lock with deterministic collision suffixes, and persist mappings by `condition_id`.
   - [x] Enforce `Scope` authorization, compatible project lineage, experiment-controlled group strategy, stable group/option identities, current-binding exclusivity, mapping cardinality, scored-page eligibility, and assessment exclusivity.
@@ -94,7 +95,7 @@ Guardrails:
   - [x] Implement explicit dependency discovery/reconciliation for bound groups, interventions, and assessment pages; never silently cascade or retarget active history.
   - [x] Preserve completed/archived history and allow sequential group reuse only through a new draft decision point with independent state.
 - Testing Tasks:
-  - [x] Add context and changeset tests for valid multi-point configuration and every structured activation error, including duplicate/missing mappings and incompatible or simultaneously bound groups.
+  - [x] Add context and changeset tests for the then-current graph configuration and structured activation errors. Phase 14 replaces multi-point fixtures with singular configuration coverage.
   - [x] Test duplicate, missing, and unknown request-local condition references, slug normalization, deterministic collision suffixes, label edits preserving codes, and experiment-scoped database uniqueness.
   - [x] Add authorization, transaction-lock, lifecycle-transition, immutable-history, sequential-reuse, and dependency-deletion tests.
   - [x] Test threshold defaults and boundary validation at `0.0` and `1.0`, plus weighted-random configurations without assessment bindings.
@@ -220,7 +221,7 @@ Guardrails:
   - [x] Audit existing `Oli.Scenarios` directives for experiment creation/configuration, repeated Alternatives placement, publication, section participation, learner assignment visibility, scored-page evaluation, posterior assertion, and completion percentage.
   - [x] If required, use `extend_scenario` to add the smallest reusable directive/parser/handler/assertion support with infrastructure tests.
   - [x] Use `build_scenario` to author a workflow with two learners assigned to different alternatives across repeated interventions; complete only each learner's visible required activities plus the shared assessment and assert both reach 100%.
-  - [x] Add a workflow proving sticky revisits, scored-page finalization, one accepted reward, posterior reuse by a later intervention, and isolation from a separate decision point.
+  - [x] Add a workflow proving sticky revisits, scored-page finalization, one accepted reward, posterior reuse by a later intervention, and isolation from a separate experiment.
   - [x] Keep scenarios concise; retain concurrency, exhaustive boundary, migration, and detailed UI assertions in targeted ExUnit/LiveView tests.
 - Testing Tasks:
   - [x] Validate each scenario YAML with `Oli.Scenarios.validate_file/1`.
@@ -235,18 +236,18 @@ Guardrails:
 - Parallelizable Work:
   - DSL capability work and scenario drafting may overlap, but final scenarios wait for the relevant integrated behavior.
 
-## Phase 9: Final Verification, Review, and Rollout Readiness
+## Phase 9: Historical Integrated Verification Checkpoint (Superseded)
 
-- Goal: Demonstrate complete requirement coverage, migration safety, performance bounds, security/privacy posture, compatibility, and operational readiness before rollout (FR-001 through FR-034).
+- Goal: Record the earlier FR-001 through FR-034 integrated checkpoint. This phase no longer establishes release readiness; Phase 16 and Gate P supersede it.
 - Tasks:
   - [ ] Run the full targeted suite followed by broader experiment, delivery, attempt, publication, interop, analytics, LiveView, and scenario suites warranted by changed files.
   - [ ] Apply `mix format`, compile with warnings treated according to repository CI, and run frontend lint/format/tests for touched assets.
-  - [ ] Repeat PostgreSQL and ClickHouse forward/rollback verification in dependency order against representative already-running QA state and confirm no content backfill or forced republication is required.
+  - [ ] Repeat PostgreSQL and ClickHouse forward/rollback schema verification in dependency order and confirm no Alternatives content backfill or forced republication is required; experiment-row preservation is excluded.
   - [ ] Re-measure negative and positive delivery query counts, assignment/reward boundedness, concurrency behavior, and policy snapshot queries against Phase 1 baselines.
   - [ ] Review changes using `.review/security.md` and `.review/performance.md` always, plus `.review/elixir.md`, `.review/ui.md`, `.review/typescript.md`, and `.review/requirements.md` when applicable; resolve all blocking findings.
-  - [ ] Verify AppSignal event names/dimensions and prepare dashboard/alert and deployment-order notes, including worker compatibility during rolling deployment and rollback.
+  - [ ] Verify AppSignal event names/dimensions and prepare dashboard/alert and coordinated QA deployment/rollback notes.
   - [ ] Reconcile PRD/FDD/plan/requirements proof artifacts if implementation drift occurred, then run harness requirement and work-item validation.
-  - [ ] Search for and remove the legacy single-decision-point request/report shape, adapters, transitional branches, dead tests, and stale documentation; prove all callers use the multi-point contract.
+  - [ ] Superseded by Phase 14: remove nested point request/report shapes and prove all callers use the singular experiment contract.
   - [ ] If Jira updates are desired, draft the exact tickets/comments for separate user approval before running any `jira` write command; read back and verify formatting after approved writes.
 - Testing Tasks:
   - [ ] Run targeted and relevant aggregate backend/LiveView/scenario tests, schema fixtures, migration verification, and frontend tests.
@@ -254,9 +255,9 @@ Guardrails:
   - [ ] Produce a traceability report showing implementation and test evidence for every FR/AC pair.
   - Command(s): `mix format`; `mix compile`; `mix test <all affected suites>`; `cd assets && yarn test <affected suites>`; `cd assets && yarn lint`; `cd assets && yarn format`; `python3 <skills_root>/requirements/scripts/requirements_trace.py <work_item_dir> --action master_validate --stage implementation_complete`; `python3 <skills_root>/validate/scripts/validate_work_item.py <work_item_dir> --check all`
 - Definition of Done:
-  - All FR-001 through FR-034 and AC-001 through AC-034 have passing proof; every phase has completed focused code review; the integrated implementation passes final review; no legacy single-point compatibility layer remains; migrations and rollback are safe; performance and privacy guardrails hold; operational and deployment notes are ready.
+  - Historical FR-001 through FR-034 verification is recorded; canonical completion remains pending through Phase 16.
 - Gate:
-  - Gate I — the entire work item validates at implementation-complete stage and is approved as one deployable unit without a feature flag, historical rewrite, legacy single-point compatibility layer, or unapproved external-system mutation. This is the only release boundary.
+  - Gate I — superseded historical checkpoint; it does not authorize release of the canonical single-scope implementation.
 - Dependencies:
   - Gates B through H.
 - Parallelizable Work:
@@ -280,7 +281,7 @@ Guardrails:
 
 ## Phase 11: Make Assignment Policy Experiment-Scoped
 
-- Goal: Make one experiment-level algorithm authoritative across every decision point.
+- Goal: Make one experiment-level algorithm authoritative across the then-current point hierarchy; Phase 13 onward removes that hierarchy.
 - Tasks:
   - [x] Keep assignment-policy selection in experiment creation and display it read-only afterward.
   - [x] Apply the immutable creation-time policy to all existing and newly added decision points.
@@ -309,25 +310,114 @@ Guardrails:
 - Gate:
   - Gate L — migration, domain, runtime, documentation, and review checks confirm the duplicate persistence invariant is gone.
 
+## Phase 13: Replace Experiment Persistence with the Singular Schema
+
+- Goal: Replace the pre-release decision-point persistence hierarchy with the final experiment-owned PostgreSQL and ClickHouse schemas without migrating or preserving QA experiment data (FR-001, FR-002, FR-003, FR-026, FR-035).
+- Tasks:
+  - [ ] Generate dependency-ordered PostgreSQL migrations that place the Alternatives resource, mapping, policy parameters/state, interventions, assignments, bindings, and rewards directly under the experiment and remove decision-point tables, columns, foreign keys, and indexes.
+  - [ ] Use explicit `up/0` and `down/0`. Forward migration may delete or recreate pre-release QA experiment rows in dependency-safe order; rollback restores the prior schema shape but need not reconstruct discarded rows.
+  - [ ] Add the final experiment-scoped unique constraints, foreign keys, and composite indexes required by configuration, assignment, reward, and reporting paths.
+  - [ ] Add an ordinary reversible ClickHouse migration to remove decision-point attribution and retain experiment, intervention, condition, assignment, and assessment identity where the analytical schema changes.
+  - [ ] Keep Alternatives Groups, page content, revisions, and publications outside the destructive experiment-data boundary.
+- Testing Tasks:
+  - [ ] Add PostgreSQL migration tests that assert the exact forward and rollback tables, columns, foreign keys, indexes, and constraints without asserting experiment-row preservation.
+  - [ ] Apply and roll back the ClickHouse migration and verify the final attribution schema in both directions.
+  - [ ] Prove representative existing Alternatives content remains readable and publishable without conversion or republication after the experiment schema replacement.
+  - Command(s): `mix test test/oli/experiments/persistence_test.exs`
+- Definition of Done:
+  - PostgreSQL and ClickHouse expose the final singular schema with correct constraints and indexes; the legacy decision-point persistence hierarchy is absent; no experiment-data backfill or compatibility storage remains.
+- Gate:
+  - Gate M — forward/rollback schema verification passes, existing Alternatives content remains compatible, and review confirms that destructive scope is limited to disposable QA experiment data.
+- Dependencies:
+  - Phase 12 and the canonical single-scope PRD/FDD/requirements.
+- Parallelizable Work:
+  - Singular request/view design and test-fixture updates may proceed while migrations are authored; code integration waits for the final schema contract at Gate M.
+
+## Phase 14: Simplify Domain and Runtime Contracts
+
+- Goal: Remove decision-point concepts from configuration, assignment, policy, reward, and reporting code while preserving repeated-intervention semantics (FR-006 through FR-017, FR-021 through FR-024).
+- Tasks:
+  - [ ] Replace nested `decision_points` create/update payloads and authoring views with singular experiment group, mapping, and policy fields; remove compatibility adapters and point candidates that no longer carry distinct meaning.
+  - [ ] Replace point-specific validation, graph reconciliation, ordering, grouping, hydration, ambiguity, and conflict helpers directly with singular experiment operations; do not add dual-compatible reads or writes.
+  - [ ] Resolve active experiments directly by project, section participation, state, and Alternatives resource; keep weighted-random lazy intervention materialization bounded and server-validated.
+  - [ ] Key policy-state lookup/locking, assignment counts, guardrails, Thompson snapshots, and posterior rewards directly by experiment and condition.
+  - [ ] Remove decision-point identity from transactional telemetry and new xAPI/ClickHouse attribution contracts while preserving experiment, intervention, condition, group, assignment, and assessment identities.
+- Testing Tasks:
+  - [ ] Rewrite context, configuration, runtime, concurrency, reward-handoff, telemetry, analytics, and attribution tests around one experiment policy scope and many interventions.
+  - [ ] Retain query-count proofs for negative delivery, lazy materialization, page batching, sticky reuse, and reward processing.
+  - [ ] Add deny-by-default cross-project, cross-tenant, and cross-section tests for flattened create/update group references, lazy materialization, assignment access, reward resolution, and reporting.
+  - [ ] Run representative-data `EXPLAIN (ANALYZE, BUFFERS)` checks for active-experiment resolution, intervention/sticky assignment lookup, reward lookup, and policy snapshot using replacement indexes.
+  - Command(s): `mix test test/oli/experiments test/oli/delivery/experiments test/oli/analytics/xapi`
+- Definition of Done:
+  - All domain, runtime, worker, analytics, and public-interface paths use singular experiment ownership against the final schema, with no compatibility adapters or old storage dependencies.
+- Gate:
+  - Gate N — domain/runtime/analytics/security review confirms singular ownership, concurrency safety, correct index use, and complete caller migration.
+- Dependencies:
+  - Gate M.
+- Parallelizable Work:
+  - Analytics contract cleanup and pure request/view refactors can proceed in parallel after migration field names are fixed; shared `Oli.Experiments` query work must have one owner.
+
+## Phase 15: Simplify Authoring and Reporting UI
+
+- Goal: Present one experiment-owned Alternatives Group and policy configuration without repeatable decision-point cards (FR-001 through FR-003, FR-017, FR-028, FR-032).
+- Tasks:
+  - [ ] Flatten LiveView draft state and form parsing to singular group, mappings, weights, priors, and guardrails.
+  - [ ] Keep assignment policy creation-only and read-only afterward; retain weighted-random automatic-placement information and Thompson intervention/assessment controls.
+  - [ ] Flatten non-draft reporting to one condition table and one policy snapshot while retaining posterior labels, evidence counts, observed shares, guardrail mode, lifecycle state, and refresh behavior.
+  - [ ] Remove point add/remove/reorder controls, point titles/positions, point-scoped error copy, and point IDs from DOM/test contracts.
+- Testing Tasks:
+  - [ ] Update LiveView tests for singular creation/edit/save/reload, validation, lifecycle freezing, direct archive, weighted-random helper copy, Thompson bindings, and non-draft reporting.
+  - [ ] Perform manual responsive, keyboard, focus, and screen-reader checks on the simplified configuration card.
+  - Command(s): `mix test test/oli_web/live/workspaces/course_author/experiments_live_test.exs`
+- Definition of Done:
+  - Authors configure and understand one group/policy scope per experiment with no decision-point terminology or controls.
+- Gate:
+  - Gate O — UI and accessibility review confirms the simplified surface preserves all supported authoring and reporting workflows.
+- Dependencies:
+  - Gate N's singular public authoring/reporting contracts.
+- Parallelizable Work:
+  - Copy and accessibility review can proceed alongside test updates once the singular component structure is stable.
+
+## Phase 16: Integrated Reconciliation and Final Verification
+
+- Goal: Remove remaining multi-point assumptions and prove the complete authoring-to-delivery workflow under the final model (FR-001 through FR-035).
+- Tasks:
+  - [ ] Update scenario hooks/YAML, export/ingest, Alternatives strategy integration, completion, analytics projections, runbooks, and work-item designs to use experiment/intervention terminology.
+  - [ ] Remove obsolete decision-point schemas, helpers, fixtures, and references left after the Phase 13 schema replacement and Phase 14 caller migration.
+  - [ ] Re-run requirements traceability and record exact implementation/test proof for the changed FR-001, FR-002, FR-003, FR-007, FR-009, FR-010, FR-018, FR-021, FR-032, and new FR-035 contracts.
+  - [ ] Run required Elixir, UI, security, performance, and requirements reviews and resolve all blocking findings.
+- Testing Tasks:
+  - [ ] Run focused suites, repeated-intervention Thompson scenario, PostgreSQL and ClickHouse up/down schema verification, formatting, compilation, and broader experiment-adjacent regression suites.
+  - Command(s): `mix format`, `mix compile`, `mix test test/oli/experiments test/oli/delivery/experiments test/oli_web/live/workspaces/course_author/experiments_live_test.exs`
+- Definition of Done:
+  - Canonical docs, schemas, code, UI, evidence, scenarios, and tests consistently model one experiment policy scope with many interventions and contain no unsupported multi-point behavior.
+- Gate:
+  - Gate P — full traceability and review sign-off approve handoff/release readiness.
+- Dependencies:
+  - Gates M, N, and O.
+- Parallelizable Work:
+  - Documentation reconciliation, scenario updates, analytics verification, and review lenses may run concurrently after the implementation contracts stabilize.
+
 ## Parallelization Notes
 
-- The critical path is Phase 1 contract confirmation → Phase 2 persistence → Phase 3 configuration → Phase 4 assignment → Phase 5 reward processing → Phase 8 integrated scenarios → Phase 9 final verification.
+- The current critical path is Gate M singular schema replacement → Gate N singular domain/runtime implementation → Gate O UI/reporting simplification → Gate P integrated final verification.
 - Phase 6 UI slices may begin after stable Phase 3 APIs and approved design guidance; posterior reporting waits for Phase 5's final state/count contract.
 - Phase 7 interop and analytics can begin after Phase 2 canonical schemas/events are fixed and can run alongside most Phase 6 UI work.
 - Assign one owner to each shared boundary (`Oli.Experiments` public APIs, policy-state codec, Alternatives strategy normalization, and evidence schema) to prevent parallel slices from introducing competing contracts.
 - Merge migration-owning work in dependency order. Rebase later schema consumers on the finalized generated migration names rather than duplicating migrations.
-- Treat Gates A through H as focused code-review checkpoints within one branch/unit of work. Only Gate I permits the complete feature to ship; intermediate phases must not be independently deployed or released.
+- Gates A through L record earlier feature checkpoints. Gate P is the sole release-ready boundary for the canonical single-scope model; Gates M through O are implementation checkpoints within the coordinated QA cutover.
 - Keep exhaustive concurrency and boundary cases in targeted tests; use scenarios only for the two high-value cross-domain workflows described in Phase 8.
 
 ## Acceptance-Criteria Traceability
 
+- Phase 13 proves AC-026 and AC-035 through PostgreSQL and ClickHouse forward/rollback schema tests, final constraint/index assertions, and existing Alternatives content compatibility checks.
 - Phase 3 proves AC-001, AC-002, AC-003, AC-004, AC-011, AC-012, AC-017, AC-018, AC-019, and AC-020 through configuration, constraint, lifecycle, authorization, and history tests.
 - Phase 4 proves AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-019, AC-021, AC-022, AC-027, and AC-034 through identity, policy, concurrency, delivery-query, rendering, preview, completion, and Alternatives non-nesting tests.
 - Phase 5 proves AC-011, AC-012, AC-013, AC-014, AC-015, and AC-016 through attempt-order, threshold, attribution, transaction, concurrency, replay, and asynchronous handoff tests.
 - Phase 6 proves AC-004, AC-017, AC-021, AC-028, AC-029, AC-030, AC-032, and the UI portions of AC-033 through context, LiveView, component, accessibility, and JSON Schema tests.
 - Phase 7 proves AC-023, AC-024, AC-025, AC-026, AC-031, and the interop/evidence portions of AC-033 through migration, compatibility, export/ingest, analytics, privacy, and telemetry tests.
 - Phase 8 supplies workflow-level proof for AC-005, AC-007, AC-009, AC-010, AC-013, AC-014, AC-016, AC-021, AC-022, and AC-023.
-- Phase 9 confirms that AC-001 through AC-034 each has linked implementation and passing test evidence before rollout.
+- Phase 16 confirms that AC-001 through AC-035 each has linked implementation and passing test evidence before release readiness.
 
 ## Phase Gate Summary
 
@@ -339,9 +429,27 @@ Guardrails:
 - Gate F: Strategy-specific authoring, experiment configuration/reporting, accessibility, and the versioned Alternatives schema meet the final contract.
 - Gate G: Export/ingest, evidence, telemetry, privacy, legacy compatibility, and analytics migration behavior are proven.
 - Gate H: Real multi-learner authoring-to-delivery scenarios prove completion and posterior reuse across repeated interventions.
-- Gate I: Full traceability, formatting, compile/tests, per-phase and integrated reviews, legacy adapter removal, migration rollback, performance, security, and rollout readiness pass for the single complete release unit.
+- Gate I: Superseded historical checkpoint; Gate P is required for release readiness.
+- Gate M: The singular PostgreSQL and ClickHouse schemas apply and roll back correctly, are indexed and constrained, and limit destructive behavior to disposable QA experiment data.
+- Gate N: Singular domain/runtime contracts are authorized, concurrency-safe, index-backed, and free of decision-point compatibility paths.
+- Gate O: Singular authoring and reporting UI is accessible, understandable, and complete.
+- Gate P: Singular storage, code, UI, workflows, reviews, migrations, and regression suites pass; this is the sole release-ready gate.
 
 ## Decision Log
+
+### 2026-08-13 - Replace QA experiment storage without backfill
+
+- Change: Replaced the expand/backfill, dual-compatible cutover, and later contraction sequence with a direct singular schema replacement followed by direct caller migration and final reconciliation.
+- Reason: The epic is deployed only in QA, and preservation of existing experiment rows is a non-goal.
+- Evidence: Explicit deployment-scope clarification for Phase 13.
+- Impact: PostgreSQL and ClickHouse migrations remain mandatory and reversible at the schema level, but no data transformation, mixed-version verification, or historical experiment-row preservation work is planned.
+
+### 2026-08-13 - Plan the single-scope schema collapse
+
+- Change: Added Phases 13 through 16 for persistence collapse, domain/runtime simplification, UI flattening, and integrated reconciliation.
+- Reason: The canonical model now treats interventions—not independently optimized decision points—as the useful multiple exposure locations within one experiment.
+- Evidence: `design/single_decision_point_analysis.md`, updated PRD/FDD/requirements, and code/schema waypointing.
+- Impact: Implementation handoff begins at Gate M and must complete the phases in dependency order before the feature is considered done.
 
 ### 2026-08-13 - Remove duplicated decision-point algorithms
 

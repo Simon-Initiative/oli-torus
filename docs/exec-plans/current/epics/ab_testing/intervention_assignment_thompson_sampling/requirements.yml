@@ -1,12 +1,13 @@
 work_item: intervention_assignment_thompson_sampling
 requirements:
-- title: Model experiment-scoped conditions and decision points
-  description: An experiment must own one assignment policy, N stable condition identities,
-    and one or more decision points with independently configured mappings and policy
-    parameters; policy state and rewards remain isolated between decision points and experiments.
+- title: Model one policy scope per experiment
+  description: An experiment must own one immutable assignment policy, one reusable
+    Experiment-Controlled Alternatives Group, N stable condition identities, one bijective
+    condition mapping, and one policy/posterior state; many intervention placements may
+    share that scope while remaining separate sticky assignment opportunities.
   id: FR-001
-- title: Bind one reusable Alternatives Group per decision point
-  description: Each decision point must bind one project-compatible Experiment-Controlled
+- title: Bind one reusable Alternatives Group per experiment
+  description: Each experiment must bind one project-compatible Experiment-Controlled
     Alternatives Group, recognizing canonical experiment_controlled and legacy upgrade_decision_point
     revisions as the same internal strategy, and a group may have at most one binding
     to a current draft, active, or paused experiment across the project.
@@ -39,7 +40,7 @@ requirements:
     evidence rather than logical identity.
   id: FR-006
 - title: Assign independently and stickily per intervention
-  description: Assignment identity must include section enrollment, decision point,
+  description: Assignment identity must include section enrollment, experiment,
     and intervention instance so first encounters at different instances sample independently
     and revisits reuse the persisted assignment.
   id: FR-007
@@ -49,14 +50,14 @@ requirements:
     independently assignable.
   id: FR-008
 - title: Support weighted-random intervention assignment
-  description: Weighted random must sample fixed decision-point condition weights
+  description: Weighted random must sample fixed experiment condition weights
     for every newly discovered valid placement, lazily persist the intervention identity
     on first delivery encounter, and must not require author-configured interventions,
     assessment bindings, or rewards.
   id: FR-009
-- title: Share Thompson Sampling state within a decision point
-  description: Thompson Sampling must maintain one Beta posterior per decision point
-    and condition, default to Beta(1,1) unless configured otherwise, and sample every
+- title: Share Thompson Sampling state within an experiment
+  description: Thompson Sampling must maintain one Beta posterior per experiment
+    condition, default to Beta(1,1) unless configured otherwise, and sample every
     condition from one consistent committed snapshot for each new assignment.
   id: FR-010
 - title: Bind a distinct scored page to every adaptive intervention
@@ -100,7 +101,7 @@ requirements:
 - title: Preserve immutable history and sequential group reuse
   description: Completed or archived experiments must retain immutable group bindings,
     mappings, publication context, assignments, policy state, and evidence while allowing
-    the group to be bound later to a new draft decision point with independent state.
+    the group to be bound later to a new draft experiment with independent state.
   id: FR-018
 - title: Preserve binding identity through supported edits
   description: Same-page reorder and whole-page course moves must retain bindings,
@@ -116,8 +117,8 @@ requirements:
     dependent bindings before deletion.
   id: FR-020
 - title: Provide deterministic fallback and inert previews
-  description: An experiment-controlled placement without an applicable active decision
-    point must render its first local alternative without evidence or policy effects,
+  description: An experiment-controlled placement without an applicable active experiment
+    must render its first local alternative without evidence or policy effects,
     while authoring and instructor previews must show all alternatives in keyboard-accessible
     tabs without creating assignments, exposures, rewards, or updates.
   id: FR-021
@@ -139,16 +140,16 @@ requirements:
   id: FR-024
 - title: Preserve existing content without feature conversion
   description: Existing upgrade_decision_point groups, alternatives, placements, revisions,
-    publications, experiment data, and analytics must remain supported through read-time
+    and publications must remain supported through read-time
     normalization to experiment_controlled without historical content rewrite, forced
-    author re-save, feature-specific backfill, experiment-data conversion job, or
-    forced republication.
+    author re-save, content backfill, or forced republication. Preservation or conversion
+    of pre-release QA experiment operational and analytical rows is explicitly excluded.
   id: FR-025
 - title: Use production-safe schema migrations
   description: Required PostgreSQL migrations must be generated conventionally with
     explicit up and down functions, affected ClickHouse schemas must use ordinary
-    migrations, and non-trivial forward and rollback behavior must be verified in
-    dependency-safe order against running QA-compatible state.
+    migrations, and forward and rollback schema behavior must be verified in dependency-safe
+    order. Experiment-row transformation, backfill, and preservation are not required.
   id: FR-026
 - title: Gate delivery experiment work by active section relevance
   description: Delivery must run experiment-specific queries or processing only when
@@ -192,7 +193,7 @@ requirements:
   id: FR-031
 - title: Display current condition posterior metrics after draft
   description: For active, paused, completed, and archived Thompson Sampling experiments,
-    the experiment details page must show every decision point condition's current
+    the experiment details page must show every condition's current
     posterior mean as Estimated success probability using posterior_alpha divided
     by posterior_alpha plus posterior_beta, accepted success and failure counts, observed
     assignment count and share, expandable posterior alpha and beta values, and the
@@ -212,13 +213,20 @@ requirements:
     strategy for immutable historical revisions and existing publications; the transition
     must not rewrite historical revisions, require a backfill, or force republication.
   id: FR-033
+- title: Remove the decision-point persistence hierarchy
+  description: Experiment group binding, mapping, policy parameters, interventions,
+    assignments, and policy state must relate directly to the experiment. The decision-point
+    and decision-point-condition tables and foreign keys must be removed through generated,
+    reversible PostgreSQL migrations, with corresponding ClickHouse schema changes where
+    evidence dimensions change. The migrations may discard pre-release QA experiment rows;
+    no backfill, relationship preservation, or mixed-version compatibility is required.
+  id: FR-035
 acceptance_criteria:
 - requirement: FR-001
   description: Tests show an experiment's assignment policy is selected at creation,
-    cannot be changed afterward, and is applied consistently to multiple decision points
-    with shared stable conditions while assignments, weights, posteriors, and rewards
-    remain isolated by decision point and experiment, and no duplicate algorithm value is persisted
-    on decision points.
+    cannot be changed afterward, and owns exactly one group binding, condition mapping,
+    policy configuration, and posterior scope. Many interventions share that scope, no
+    decision-point persistence remains, and separate experiments retain isolated state.
   id: AC-001
 - requirement: FR-002
   description: Valid project-compatible groups bind successfully, simultaneous current
@@ -264,7 +272,7 @@ acceptance_criteria:
 - requirement: FR-010
   description: Thompson Sampling tests draw once from every condition posterior in
     a consistent snapshot, select the highest draw, use configured or Beta(1,1) priors,
-    and share later committed updates across interventions of only that decision point.
+    and share later committed updates across interventions of only that experiment.
   id: AC-010
 - requirement: FR-011
   description: Draft validation requires exactly one distinct eligible scored-page
@@ -319,7 +327,7 @@ acceptance_criteria:
     deletion without silent cascades.
   id: AC-020
 - requirement: FR-021
-  description: Delivery without an applicable decision point deterministically renders
+  description: Delivery without an applicable active experiment deterministically renders
     the first local alternative with no experiment effects, and keyboard navigation
     through preview alternatives creates no learner or policy state.
   id: AC-021
@@ -340,15 +348,16 @@ acceptance_criteria:
     and without raw responses or unnecessary learner identity.
   id: AC-024
 - requirement: FR-025
-  description: Representative existing Alternatives and experiment records render
-    and publish through legacy-strategy normalization without transformation, and
+  description: Representative existing Alternatives content renders
+    and publishes through legacy-strategy normalization without transformation, and
     no feature-specific content backfill, forced republication, or author re-save
-    is required.
+    is required. Tests do not require preservation of pre-release QA experiment rows.
   id: AC-025
 - requirement: FR-026
-  description: PostgreSQL and ClickHouse schema changes apply and roll back against
-    representative QA-state data, Ecto migrations use explicit up and down functions,
-    and dependency ordering preserves existing content and history.
+  description: PostgreSQL and ClickHouse schema changes apply and roll back in dependency-safe
+    order, Ecto migrations use explicit up and down functions, and tests verify final
+    tables, columns, indexes, foreign keys, and constraints without requiring experiment-row
+    backfill or preservation.
   id: AC-026
 - requirement: FR-027
   description: Delivery-path tests prove that a section without a relevant active
@@ -396,7 +405,7 @@ acceptance_criteria:
 - requirement: FR-032
   description: Context and LiveView tests prove draft experiments omit posterior metrics;
     non-draft Thompson Sampling experiments display correctly calculated and labeled
-    values for every condition of every decision point with accepted success and failure
+    values for every experiment condition with accepted success and failure
     counts, observed assignment count and share, expandable posterior alpha and beta,
     and updated time. Tests cover normal, warm-up, fixed-control, and traffic-cap
     modes, affected conditions, configured thresholds, current progress, imbalance
@@ -413,6 +422,12 @@ acceptance_criteria:
     revisions; historical and deployed revisions remain unchanged and functional without
     republication; and unsupported strategy identifiers still fail safely.
   id: AC-033
+- requirement: FR-035
+  description: PostgreSQL and ClickHouse migration tests prove the singular schema applies
+    and rolls back in dependency-safe order; the forward schema contains direct experiment
+    relationships and no decision-point tables, columns, foreign keys, or indexes. No test
+    requires transformation or preservation of pre-release QA experiment data.
+  id: AC-035
 - requirement: FR-034
   description: Authoring insertion and drag/drop tests allow both Learner Choice and
     Experiment-Controlled Alternatives inside ordinary containers, reject all four
