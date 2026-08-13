@@ -156,9 +156,12 @@ function capiEntry(
     detect: (parts) => ownCapiPart(entry, parts),
     async ready(deck, part, raw) {
       const selector = spec.readySelector ? spec.readySelector(raw) : undefined;
-      const frame = await deck.widgetFrame(`/${family}/`, selector ?? 'body');
-      if (!frame)
+      // fail CLOSED on the declared control: `widgetFrame` swallows its
+      // ready-selector timeout, so a frame it returns proves only that the
+      // iframe is visible — never that the control the answer needs exists
+      if (!(await deck.widgetControlReady(`/${family}/`, selector ?? 'body'))) {
         throw new Error(`family "${family}": widget frame for part "${part.id}" not ready`);
+      }
     },
     answer: spec.answer,
     async readback(_deck, part, raw) {

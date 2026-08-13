@@ -139,6 +139,52 @@ export class AdaptiveDeckPO {
     return false;
   }
 
+  /**
+   * Strict: readiness of the Check control, separated from the click so a step
+   * claims its check-click permit only once the control it licenses exists
+   * (spec §3.6: readiness is expectation-specific and never swallowed).
+   */
+  async waitForCheckEnabled(timeout = 15_000) {
+    await this.page
+      .locator('.checkBtn:not([disabled])')
+      .first()
+      .waitFor({ state: 'visible', timeout })
+      .catch(() => {
+        throw new Error(`strict submit: no enabled .checkBtn within ${timeout}ms`);
+      });
+  }
+
+  /**
+   * Strict: FAIL-CLOSED readiness of a control inside a widget iframe.
+   * `widgetFrame` deliberately swallows its ready-selector timeout so a CAPI
+   * handshake can settle, and returns the frame regardless — readiness built on
+   * it would report "ready" for a control that never rendered.
+   */
+  async widgetControlReady(
+    srcFragment: string,
+    selector: string,
+    timeout = 15_000,
+  ): Promise<boolean> {
+    const iframe = this.page.locator(`iframe[src*="${srcFragment}"]`).first();
+    if (!(await iframe.isVisible({ timeout: 10_000 }).catch(() => false))) return false;
+
+    return this.page
+      .frameLocator(`iframe[src*="${srcFragment}"]`)
+      .first()
+      .locator(selector)
+      .first()
+      .waitFor({ state: 'visible', timeout })
+      .then(
+        () => true,
+        () => false,
+      );
+  }
+
+  /** Strict: readiness of an in-widget button, separated from the click. */
+  async widgetButtonReady(srcFragment: string, timeout = 15_000): Promise<boolean> {
+    return this.widgetControlReady(srcFragment, '.button-widget .button', timeout);
+  }
+
   /** Strict: click the Check control exactly once. Throws if it is not available. */
   async submitCheck() {
     const check = this.page.locator('.checkBtn:not([disabled])').first();
