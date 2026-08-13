@@ -1,6 +1,6 @@
 # Phase 8 Execution Record
 
-Work item: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms`
+Work item: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling`
 Phase: `8 - Add Workflow-Level Scenario Coverage`
 
 ## Scope from plan.md

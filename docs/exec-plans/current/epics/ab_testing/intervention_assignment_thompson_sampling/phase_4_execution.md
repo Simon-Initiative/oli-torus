@@ -1,6 +1,6 @@
 # Phase 4 Execution Record
 
-Work item: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms`
+Work item: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling`
 Phase: `4 - Intervention-Scoped Assignment, Rendering, and Completion`
 
 ## Scope from plan.md

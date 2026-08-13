@@ -1,6 +1,6 @@
 # Phase 6 Execution Record
 
-Work item: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms`
+Work item: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling`
 Phase: `6 - Complete Authoring Surfaces, Policy Reporting, and Content Contract`
 
 ## Scope from plan.md

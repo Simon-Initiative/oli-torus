@@ -2,9 +2,9 @@
 
 Scope and reference artifacts:
 
-- PRD: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms/prd.md`
-- FDD: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms/fdd.md`
-- Requirements: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms/requirements.yml`
+- PRD: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling/prd.md`
+- FDD: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling/fdd.md`
+- Requirements: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling/requirements.yml`
 
 ## Scope
 
@@ -225,7 +225,7 @@ Guardrails:
 - Testing Tasks:
   - [x] Validate each scenario YAML with `Oli.Scenarios.validate_file/1`.
   - [x] Run scenario-infrastructure tests if the DSL changes, then targeted companion ExUnit runners and fail on any scenario execution or verification error.
-  - Command(s): `mix test <scenario infrastructure tests>`; `mix test <experiment scoped arms scenario runners>`
+  - Command(s): `mix test <scenario infrastructure tests>`; `mix test <intervention assignment Thompson Sampling scenario runners>`
 - Definition of Done:
   - Real authoring, publishing, delivery, assignment, completion, assessment, reward, and later sampling behavior succeeds end to end for multiple learners and interventions.
 - Gate:

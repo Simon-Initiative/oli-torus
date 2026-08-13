@@ -1,6 +1,6 @@
 # Phase 2 Execution Record
 
-Work item: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms`
+Work item: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling`
 Phase: `2 - Establish Canonical Strategy and Persistence Foundations`
 
 ## Scope from plan.md

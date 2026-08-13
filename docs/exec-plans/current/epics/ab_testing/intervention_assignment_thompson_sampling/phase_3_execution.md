@@ -1,6 +1,6 @@
 # Phase 3 Execution Record
 
-Work item: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms`
+Work item: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling`
 Phase: `3 - Draft Configuration, Validation, and Lifecycle Integrity`
 
 ## Scope from plan.md
@@ -41,7 +41,7 @@ representative mapping values during rollback.
 
 ## Verification Evidence
 
-- `python3 /Users/eliknebel/.local/share/harness/skills/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms --check all` - passed before implementation.
+- `python3 /Users/eliknebel/.local/share/harness/skills/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling --check all` - passed before implementation.
 - `mix test test/oli/experiments/configuration_test.exs test/oli/experiments/persistence_test.exs` - 12 tests, 0 failures.
 - `mix test test/oli/experiments/context_test.exs` - 32 tests, 0 failures.
 - `mix ecto.migrate` - forward migration passed.
@@ -50,7 +50,7 @@ representative mapping values during rollback.
 - `mix format <touched Elixir, test, and migration files>` - passed.
 - `mix compile` - passed.
 - `git diff --check` - passed.
-- `python3 /Users/eliknebel/.local/share/harness/skills/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms --check all` - passed after implementation.
+- `python3 /Users/eliknebel/.local/share/harness/skills/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling --check all` - passed after implementation.
 
 ## Done Definition
 

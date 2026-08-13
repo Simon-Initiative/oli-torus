@@ -1,6 +1,6 @@
 # Phase 1 Execution Record
 
-Work item: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms`
+Work item: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling`
 Phase: `1 - Confirm Runtime Contracts and Detailed Slice Boundaries`
 
 ## Scope from plan.md

@@ -1,4 +1,4 @@
-work_item: experiment_scoped_arms
+work_item: intervention_assignment_thompson_sampling
 requirements:
 - title: Model experiment-scoped conditions and decision points
   description: An experiment must own N stable condition identities and one or more

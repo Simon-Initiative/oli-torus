@@ -1,6 +1,6 @@
 # Phase 7 Execution Record
 
-Work item: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms`
+Work item: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling`
 Phase: `7 - Preserve Export/Ingest and Emit Detailed Evidence`
 
 ## Scope from plan.md

@@ -1,6 +1,6 @@
 # Phase 9 Execution Record
 
-Work item: `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms`
+Work item: `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling`
 Phase: `9 - Final Verification, Review, and Rollout Readiness`
 
 ## Scope from plan.md

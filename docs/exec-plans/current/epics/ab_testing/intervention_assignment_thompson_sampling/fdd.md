@@ -269,8 +269,8 @@ Analytics storage:
 
 ## 17. References
 
-- `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms/prd.md`
-- `docs/exec-plans/current/epics/ab_testing/experiment_scoped_arms/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/intervention_assignment_thompson_sampling/requirements.yml`
 - `ARCHITECTURE.md`
 - `harness.yml`
 - `docs/BACKEND.md`
