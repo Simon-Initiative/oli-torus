@@ -3,6 +3,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   alias OliWeb.Api.AutomationSetupController
   alias Oli.Resources.Revision
   alias Oli.Accounts
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
@@ -93,6 +94,17 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
 
       publication = Repo.one!(from p in Publication, where: p.project_id == ^project.id, limit: 1)
 
+      stale_automation_section =
+        insert(:section,
+          title: "Section imported with the project archive",
+          base_project: project
+        )
+
+      {:ok, stale_automation_section} =
+        Sections.create_section_resources(stale_automation_section, publication)
+
+      assert stale_automation_section.root_section_resource_id
+
       insert(:section_project_publication,
         section: insert(:section),
         project: project,
@@ -139,6 +151,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       refute Oli.Authoring.Course.get_project_by_slug(project_slug)
 
       refute Oli.Delivery.Sections.get_section_by(slug: section_slug)
+      refute Oli.Delivery.Sections.get_section_by(slug: stale_automation_section.slug)
 
       refute Repo.exists?(
                from spp in SectionsProjectsPublications,

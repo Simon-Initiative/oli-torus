@@ -258,6 +258,8 @@ defmodule OliWeb.Api.AutomationSetupController do
         "section_slug" => section_slug,
         "project_slug" => project_slug
       }) do
+    conn = extend_teardown_idle_timeout(conn)
+
     # The order these happen in matters
     author_deleted = AutomationSetup.teardown_author(author_email, author_password)
     educator_deleted = AutomationSetup.teardown_educator(educator_email, educator_password)
@@ -273,6 +275,18 @@ defmodule OliWeb.Api.AutomationSetupController do
       project_deleted: project_deleted
     })
   end
+
+  # Deleting a fully imported automation course can exceed Cowboy's default
+  # 60-second HTTP/1 idle timeout. Scope the longer timeout to this endpoint
+  # rather than holding every connection open longer application-wide.
+  defp extend_teardown_idle_timeout(
+         %Plug.Conn{adapter: {Plug.Cowboy.Conn, cowboy_request}} = conn
+       ) do
+    :cowboy_req.cast({:set_options, %{idle_timeout: 300_000}}, cowboy_request)
+    conn
+  end
+
+  defp extend_teardown_idle_timeout(conn), do: conn
 
   defp format_project(project) do
     %{

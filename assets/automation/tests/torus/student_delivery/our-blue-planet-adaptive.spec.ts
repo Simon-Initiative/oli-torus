@@ -85,17 +85,15 @@ test.describe.serial('BioBeyond Our Blue Planet adaptive lesson', () => {
   });
 
   test.afterAll(async ({ request }) => {
+    test.setTimeout(360_000);
+
     try {
       if (seededCourse) {
-        await Promise.race([
-          teardownAutomationCourse(request, seededCourse, {
-            baseUrl,
-            apiKey: automationApiKey!,
-          }),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('teardown timeout')), 15_000),
-          ),
-        ]);
+        await teardownAutomationCourse(request, seededCourse, {
+          baseUrl,
+          apiKey: automationApiKey!,
+          teardownTimeoutMs: 300_000,
+        });
       }
     } catch (error) {
       const ids = seededCourse

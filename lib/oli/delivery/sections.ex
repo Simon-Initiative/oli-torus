@@ -1670,7 +1670,22 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def delete_section(%Section{} = section) do
-    Repo.delete(section)
+    Multi.new()
+    # A section owns its section resources, but also points back to the root
+    # section resource. Clear that circular reference before deleting the
+    # section so the section_resources ON DELETE CASCADE can run safely.
+    |> Multi.update_all(
+      :clear_root_section_resource,
+      from(s in Section, where: s.id == ^section.id),
+      set: [root_section_resource_id: nil]
+    )
+    |> Multi.delete(:section, section)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{section: deleted_section}} -> {:ok, deleted_section}
+      {:error, :section, changeset, _changes} -> {:error, changeset}
+      {:error, _operation, reason, _changes} -> {:error, reason}
+    end
   end
 
   defp validate_unnumbered_unit_ids(%Ecto.Changeset{} = changeset) do

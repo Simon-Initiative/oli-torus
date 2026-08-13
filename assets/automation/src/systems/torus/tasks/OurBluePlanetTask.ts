@@ -72,7 +72,11 @@ export class OurBluePlanetTask {
       const screen = await this.screenSignature();
       let incorrectLabel = '';
 
-      if (incorrectFirst && !incorrectAttempted.has(screen)) {
+      if (
+        incorrectFirst &&
+        !incorrectAttempted.has(screen) &&
+        !(await this.isCompletionScoredScreen())
+      ) {
         const incorrect = await this.answerScreen(answers, 'incorrect');
         if (incorrect.answered) {
           await this.submitIncorrect(screen);
@@ -257,6 +261,7 @@ export class OurBluePlanetTask {
   }
 
   private async submitIncorrect(screen: string) {
+    const previousPhase = await this.activityPhaseSignature();
     const check = this.page.locator('.checkBtn:not([disabled])').first();
     const primary = (await check.isVisible({ timeout: 500 }).catch(() => false))
       ? check
@@ -268,6 +273,9 @@ export class OurBluePlanetTask {
 
     const deadline = Date.now() + 30_000;
     while (Date.now() < deadline) {
+      const currentPhase = await this.activityPhaseSignature();
+      if (currentPhase && currentPhase !== previousPhase) return;
+
       if ((await this.screenSignature()) !== screen || (await this.lessonEnded())) {
         throw new Error('The configured incorrect answer unexpectedly advanced the lesson');
       }
@@ -294,6 +302,23 @@ export class OurBluePlanetTask {
     }
 
     throw new Error(`Incorrect-answer feedback did not appear: ${await this.feedbackText()}`);
+  }
+
+  private async isCompletionScoredScreen() {
+    const instructions = this.page.locator('p').filter({
+      hasText: /scored (?:based )?on (?:the )?completion,?\s+not (?:the )?accuracy/i,
+    });
+
+    for (let index = 0; index < (await instructions.count()); index += 1) {
+      if (
+        await instructions
+          .nth(index)
+          .isVisible()
+          .catch(() => false)
+      )
+        return true;
+    }
+    return false;
   }
 
   private async answerScreenWithPolling(answers: OurBluePlanetAnswers) {
@@ -559,6 +584,26 @@ export class OurBluePlanetTask {
   }
 
   private async setFibDropdowns(labels: string[]) {
+    const controlsDeadline = Date.now() + 15_000;
+    let combos: Locator[] = [];
+
+    while (Date.now() < controlsDeadline) {
+      const candidates = await this.interactableParts('.fib-select-display');
+      if (candidates.length === labels.length) {
+        await this.page.waitForTimeout(300);
+        const settledCandidates = await this.interactableParts('.fib-select-display');
+        if (settledCandidates.length === labels.length) {
+          combos = settledCandidates;
+          break;
+        }
+      }
+      await this.page.waitForTimeout(200);
+    }
+
+    if (combos.length !== labels.length) {
+      throw new Error(`Expected ${labels.length} stable FITB controls, found ${combos.length}`);
+    }
+
     const save = this.page.waitForResponse(
       (response) => {
         if (response.request().method() !== 'PATCH' || response.status() !== 200) return false;
@@ -570,11 +615,6 @@ export class OurBluePlanetTask {
       },
       { timeout: 15_000 },
     );
-
-    const combos = await this.interactableParts('.fib-select-display');
-    if (combos.length !== labels.length) {
-      throw new Error(`Expected ${labels.length} FITB controls, found ${combos.length}`);
-    }
 
     for (let index = 0; index < labels.length; index += 1) {
       const combo = combos[index];
