@@ -16,7 +16,7 @@ This slice owns the additive PostgreSQL model, canonical strategy normalization,
 Replace the single-point request shape with an experiment graph containing:
 
 - experiment-owned conditions with stable database identities and author-facing labels;
-- a list of decision points, each with algorithm, guardrails, condition-to-option mappings, ordered interventions, and optional assessment bindings;
+- an experiment-level immutable algorithm plus a list of decision points with policy-specific parameters and condition-to-option mappings; Thompson Sampling points additionally carry ordered interventions and required assessment bindings, while weighted-random points omit them;
 - explicit draft reconciliation operations for removing a mapping, intervention, assessment binding, or group dependency.
 
 All public reads and writes accept or derive `Oli.Experiments.Scope`, enforce project/section ownership and author membership centrally, deny cross-project and cross-tenant access by default, return public structs/errors, and never expose Ecto schemas. Structured validation errors identify the decision point, mapping, intervention, or assessment binding that failed without disclosing inaccessible object details.
@@ -94,3 +94,10 @@ This slice begins after Gate A. Assignment, reward, UI, and interop slices consu
 - Reason: Removing the established code contract would broaden this work across policy, delivery, reward, analytics, and tests; readable stable codes remain useful for diagnostics and evidence.
 - Evidence: Current native experiment policy state, assignment responses, and analytics already use option-derived condition codes.
 - Impact: New codes are readable and guaranteed unique within an experiment without label-collision races; database IDs remain the relational identity, and existing codes are preserved without automatic renaming or merging.
+
+### 2026-08-13 - Make intervention configuration adaptive-only
+
+- Change: Weighted-random graph configuration omits interventions; Thompson Sampling retains explicit ordered interventions and assessment bindings.
+- Reason: Weighted-random placements require runtime assignment identity but no advance reward configuration.
+- Evidence: `lib/oli/experiments.ex` activation and lazy materialization behavior plus experiment-details parsing and rendering.
+- Impact: Persistence remains shared, but weighted-random intervention rows originate from trusted delivery discovery rather than draft authoring.

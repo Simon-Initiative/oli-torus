@@ -658,7 +658,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       conn: conn,
       project: project
     } do
-      group = insert_alternatives_group(project)
+      _group = insert_alternatives_group(project)
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
       refute render(view) =~ "Coming soon"
@@ -708,7 +708,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "#mapping-0-0-weight[value='1.0']")
       assert has_element?(details_view, "#mapping-0-1-weight[value='1.0']")
 
-      configure_intervention(details_view, project, group.resource_id, :weighted_random)
+      refute has_element?(details_view, "button", "Add intervention")
+      refute has_element?(details_view, "#decision-point-config-0", "Scored page")
+
+      assert has_element?(
+               details_view,
+               "#decision-point-config-0",
+               "All placements of this Alternatives Group are included automatically."
+             )
 
       details_view
       |> element("button[phx-click='start_experiment']", "Start")
@@ -787,6 +794,50 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(archived_index_view, "#show-archived-experiments[checked]")
       assert has_element?(archived_index_view, "#ab-experiments-table", "Homepage Study")
       assert has_element?(archived_index_view, "#ab-experiments-table", "Archived")
+    end
+
+    test "archives a draft experiment without starting it", %{conn: conn, project: project} do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Unused Draft",
+          "slug" => "unused-draft",
+          "algorithm" => "weighted_random",
+          "decision_point" => selected_decision_point_value(view)
+        }
+      })
+
+      details_path =
+        ~p"/workspaces/course_author/#{project.slug}/experiments/#{experiment_id(view)}"
+
+      {:ok, details_view, _html} = live(conn, details_path)
+
+      assert has_element?(details_view, "#experiment-configuration", "Draft")
+
+      details_view
+      |> element(
+        "button[phx-click='request_experiment_transition'][phx-value-action='archive']",
+        "Archive"
+      )
+      |> render_click()
+
+      assert has_element?(
+               details_view,
+               "#confirm-experiment-transition-modal [role='dialog']",
+               "Archive “Unused Draft”?"
+             )
+
+      details_view
+      |> element("#confirm-experiment-transition-modal button", "Archive")
+      |> render_click()
+
+      assert has_element?(details_view, "#experiment-configuration", "Archived")
     end
 
     test "configuration page shows details and paginates editable participating sections", %{
@@ -1123,6 +1174,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         )
 
       assert has_element?(details_view, "#decision-point-config-0")
+      refute has_element?(details_view, "#experiment-assignment-policy")
+      refute has_element?(details_view, "#decision-point-0-algorithm")
+      assert has_element?(details_view, "#experiment-details-grid", "Weighted random")
       refute has_element?(details_view, "#point-0-prior_alpha")
 
       details_view
@@ -1130,43 +1184,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         "configuration" => %{
           "conditions" => %{
             "0" => %{"label" => "Edited condition label"}
-          },
-          "decision_points" => %{
-            "0" => %{"algorithm" => "thompson_sampling"}
           }
         }
       })
       |> render_change()
 
-      assert has_element?(details_view, "#point-0-prior_alpha[value='1.0']")
-      assert has_element?(details_view, "#condition-0-label[value='Edited condition label']")
-
-      details_view
-      |> form("#experiment-graph-form", %{
-        "configuration" => %{
-          "decision_points" => %{
-            "0" => %{
-              "algorithm" => "weighted_random",
-              "prior_alpha" => "2.5"
-            }
-          }
-        }
-      })
-      |> render_change()
-
-      refute has_element?(details_view, "#point-0-prior_alpha")
-
-      details_view
-      |> form("#experiment-graph-form", %{
-        "configuration" => %{
-          "decision_points" => %{
-            "0" => %{"algorithm" => "thompson_sampling"}
-          }
-        }
-      })
-      |> render_change()
-
-      assert has_element?(details_view, "#point-0-prior_alpha[value='2.5']")
       assert has_element?(details_view, "#condition-0-label[value='Edited condition label']")
 
       assert has_element?(
@@ -1175,19 +1197,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
                "Save configuration"
              )
 
-      assert has_element?(
-               details_view,
-               "#decision-point-config-0 h5.font-weight-bold.mt-4.mb-3",
-               "Interventions and assessments"
-             )
-
       refute has_element?(details_view, "#experiment-policy-configuration")
-
-      assert has_element?(
-               details_view,
-               "#decision-point-config-0 h5.font-weight-bold.mt-4.mb-3",
-               "Interventions and assessments"
-             )
 
       assert has_element?(
                details_view,
@@ -1531,9 +1541,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     end
 
     params = %{
+      "algorithm" => Atom.to_string(algorithm),
       "decision_points" => %{
         "0" => %{
-          "algorithm" => Atom.to_string(algorithm),
           "interventions" => %{
             "0" => %{
               "reward_threshold" => "0.7"

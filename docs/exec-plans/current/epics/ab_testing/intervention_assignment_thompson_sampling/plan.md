@@ -8,7 +8,7 @@ Scope and reference artifacts:
 
 ## Scope
 
-Extend `Oli.Experiments` so experiments own stable conditions and independently configured decision points, while each placed Alternatives instance is a distinct sticky assignment opportunity. Add assessment-driven, asynchronous Beta-Bernoulli Thompson Sampling rewards; preserve weighted-random behavior; make Alternatives Group strategy canonical and group-owned; preserve authoring, publication, delivery, completion, export/ingest, and legacy-content compatibility; and expose bounded policy reporting, analytics evidence, and operational telemetry.
+Extend `Oli.Experiments` so experiments own one assignment policy and stable conditions while decision points independently configure mappings and policy parameters, and each placed Alternatives instance is a distinct sticky assignment opportunity. Add assessment-driven, asynchronous Beta-Bernoulli Thompson Sampling rewards; preserve weighted-random behavior; make Alternatives Group strategy canonical and group-owned; preserve authoring, publication, delivery, completion, export/ingest, and legacy-content compatibility; and expose bounded policy reporting, analytics evidence, and operational telemetry.
 
 Guardrails:
 
@@ -87,7 +87,7 @@ Guardrails:
 - Goal: Provide authorized domain APIs for multi-decision-point experiment configuration, activation, immutability, reuse, and explicit dependency reconciliation (FR-001 through FR-004, FR-011, FR-012, FR-017 through FR-020).
 - Tasks:
   - [x] Refactor `Oli.Experiments` internals around focused configuration operations while preserving it as the public boundary; migrate all in-repository callers to the multi-point request/report contracts and delete the legacy single-point shape without adding an adapter.
-  - [x] Add experiment-owned condition and per-decision-point configuration APIs for group binding, algorithm/guardrails, bijective mappings, interventions, distinct scored-page bindings, and inclusive decimal thresholds defaulting to `1.0`.
+  - [x] Add experiment-owned algorithm/condition configuration and per-decision-point APIs for group binding, guardrails, bijective mappings, interventions, distinct scored-page bindings, and inclusive decimal thresholds defaulting to `1.0`.
   - [x] Resolve request-local condition `client_ref` values during atomic graph creation, generate immutable readable codes from labels under the experiment lock with deterministic collision suffixes, and persist mappings by `condition_id`.
   - [x] Enforce `Scope` authorization, compatible project lineage, experiment-controlled group strategy, stable group/option identities, current-binding exclusivity, mapping cardinality, scored-page eligibility, and assessment exclusivity.
   - [x] Lock the experiment and sorted group resources for save/activation; reject invalid transitions and all prohibited non-draft structural mutations.
@@ -262,6 +262,53 @@ Guardrails:
 - Parallelizable Work:
   - Review lenses, documentation reconciliation, telemetry/deployment notes, and broad suite execution can run concurrently after all feature slices are integrated; final sign-off and any deployment wait for all results.
 
+## Phase 10: Discover Weighted-Random Interventions During Delivery
+
+- Goal: Remove author-managed weighted-random intervention configuration while retaining durable per-placement assignment identity (FR-006 through FR-009).
+- Tasks:
+  - [x] Allow weighted-random experiments to activate without persisted interventions while retaining Thompson Sampling intervention and assessment validation.
+  - [x] Bulk-discover active weighted-random decision points from delivered group placements and lazily insert missing intervention identities with uniqueness-conflict safety.
+  - [x] Keep Thompson Sampling limited to explicitly configured interventions and bindings.
+  - [x] Remove weighted-random intervention and assessment controls from the experiment details form and ignore stale submitted intervention fields when the selected policy is weighted random.
+- Testing Tasks:
+  - [x] Prove weighted-random activation without interventions, lazy assignment/materialization, sticky reuse, bounded page batching, and policy-specific authoring controls.
+  - [x] Run focused context, runtime, and LiveView tests plus formatting, compilation, and work-item validation.
+- Definition of Done:
+  - Weighted-random authors configure mappings and weights only; all valid delivered placements participate automatically and retain durable sticky assignment identities.
+- Gate:
+  - Gate J — focused domain/runtime/UI tests and review confirm lazy materialization is secure, conflict-safe, bounded, and isolated from Thompson Sampling configuration.
+
+## Phase 11: Make Assignment Policy Experiment-Scoped
+
+- Goal: Make one experiment-level algorithm authoritative across every decision point.
+- Tasks:
+  - [x] Keep assignment-policy selection in experiment creation and display it read-only afterward.
+  - [x] Apply the immutable creation-time policy to all existing and newly added decision points.
+  - [x] Remove decision-point policy selection from the supported authoring graph and apply the experiment policy to every point.
+  - [x] Preserve decision-point-specific mappings, weights, guardrails, policy state, interventions, and assessment bindings.
+- Testing Tasks:
+  - [x] Verify the details surface has no assignment-policy control and structural saves retain the creation-time policy.
+  - [x] Verify assignment-policy updates fail and focused context/LiveView suites pass.
+- Definition of Done:
+  - Authors select assignment policy once during experiment creation and cannot later change it or create a mixed-policy graph.
+- Gate:
+  - Gate K — domain and LiveView tests confirm experiment-level authority and coherent decision-point persistence.
+
+## Phase 12: Remove Decision-Point Algorithm Persistence
+
+- Goal: Make the experiment definition the sole persisted source of assignment policy.
+- Tasks:
+  - [x] Generate a reversible migration that removes the decision-point algorithm column and restores it from experiment definitions on rollback.
+  - [x] Make the decision-point schema algorithm virtual and exclude it from changesets and persistence attributes.
+  - [x] Derive policy dispatch, authoring payloads, activation validation, runtime joins, rewards, and policy-state creation from the owning experiment.
+- Testing Tasks:
+  - [x] Run focused configuration and runtime suites against the migrated schema.
+  - [x] Run formatting, compilation, work-item validation, and relevant review lenses.
+- Definition of Done:
+  - Experiment definitions are the only persisted assignment-policy owner and every decision-point consumer derives that value consistently.
+- Gate:
+  - Gate L — migration, domain, runtime, documentation, and review checks confirm the duplicate persistence invariant is gone.
+
 ## Parallelization Notes
 
 - The critical path is Phase 1 contract confirmation → Phase 2 persistence → Phase 3 configuration → Phase 4 assignment → Phase 5 reward processing → Phase 8 integrated scenarios → Phase 9 final verification.
@@ -296,9 +343,30 @@ Guardrails:
 
 ## Decision Log
 
+### 2026-08-13 - Remove duplicated decision-point algorithms
+
+- Change: Added Phase 12 to remove the decision-point algorithm column and derive policy exclusively from the experiment definition.
+- Reason: Copying an immutable experiment-level value to every decision point adds storage and a consistency invariant without adding information.
+- Evidence: Generated reversible migration, schema/query refactor, and focused configuration/runtime verification.
+- Impact: Decision points retain policy parameters, while policy state retains an algorithm identity for state-version dispatch.
+
+### 2026-08-13 - Move assignment policy to experiment scope
+
+- Change: Added the follow-up implementation task to enforce one immutable creation-time experiment assignment policy.
+- Reason: Per-decision-point algorithm selection conflicts with the intended experiment-wide assignment strategy.
+- Evidence: Updated PRD, FDD, requirements, form contract, validation, persistence, and tests.
+- Impact: Decision points no longer expose policy selection and continue to own policy-specific parameters and state, with redundant policy persistence removed in Phase 12.
+
 ### 2026-08-11 - Retain readable condition codes
 
 - Change: Phase 2 retains condition codes and adds locked, deterministic generation plus experiment-scoped uniqueness.
 - Reason: Full removal would expand the work across established policy, delivery, reward, analytics, and test contracts.
 - Evidence: The persistence design documents the current code usage and the bounded generation algorithm.
 - Impact: Phase 2 preserves legacy IDs/codes, tests collision handling and immutability, and keeps policy/evidence keyed by code while mappings continue to use condition IDs.
+
+### 2026-08-13 - Add weighted-random delivery discovery follow-up
+
+- Change: Added Phase 10 to remove author-managed weighted-random interventions and lazily materialize valid delivered placements.
+- Reason: Assessment binding is the reason to configure adaptive interventions in advance; weighted random has no corresponding authoring requirement.
+- Evidence: Updated PRD/FDD/requirements and implementation tasks in this plan.
+- Impact: Phase 10 changes activation, delivery assignment, authoring UI, and focused verification without changing Thompson Sampling reward behavior or the intervention persistence schema.

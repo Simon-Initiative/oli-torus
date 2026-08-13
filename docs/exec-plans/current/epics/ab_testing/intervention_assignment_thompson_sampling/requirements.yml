@@ -1,9 +1,9 @@
 work_item: intervention_assignment_thompson_sampling
 requirements:
 - title: Model experiment-scoped conditions and decision points
-  description: An experiment must own N stable condition identities and one or more
-    independently configured decision points, with policy state and rewards isolated
-    between decision points and experiments.
+  description: An experiment must own one assignment policy, N stable condition identities,
+    and one or more decision points with independently configured mappings and policy
+    parameters; policy state and rewards remain isolated between decision points and experiments.
   id: FR-001
 - title: Bind one reusable Alternatives Group per decision point
   description: Each decision point must bind one project-compatible Experiment-Controlled
@@ -50,8 +50,9 @@ requirements:
   id: FR-008
 - title: Support weighted-random intervention assignment
   description: Weighted random must sample fixed decision-point condition weights
-    for every new intervention assignment and must not require assessment bindings
-    or consume rewards.
+    for every newly discovered valid placement, lazily persist the intervention identity
+    on first delivery encounter, and must not require author-configured interventions,
+    assessment bindings, or rewards.
   id: FR-009
 - title: Share Thompson Sampling state within a decision point
   description: Thompson Sampling must maintain one Beta posterior per decision point
@@ -213,9 +214,11 @@ requirements:
   id: FR-033
 acceptance_criteria:
 - requirement: FR-001
-  description: Tests show one experiment can contain multiple decision points with
-    shared stable conditions while assignments, weights, posteriors, and rewards remain
-    isolated by decision point and experiment.
+  description: Tests show an experiment's assignment policy is selected at creation,
+    cannot be changed afterward, and is applied consistently to multiple decision points
+    with shared stable conditions while assignments, weights, posteriors, and rewards
+    remain isolated by decision point and experiment, and no duplicate algorithm value is persisted
+    on decision points.
   id: AC-001
 - requirement: FR-002
   description: Valid project-compatible groups bind successfully, simultaneous current
@@ -253,9 +256,10 @@ acceptance_criteria:
     not share uniqueness.
   id: AC-008
 - requirement: FR-009
-  description: Weighted-random tests show every new intervention samples the configured
-    fixed weights, revisits remain sticky, and no assessment or posterior state is
-    required or updated.
+  description: Weighted-random tests show activation succeeds without configured interventions,
+    every valid delivered group placement is lazily materialized and samples the configured
+    fixed weights, revisits reuse the same identity, concurrent discovery converges,
+    and no assessment or posterior state is required or updated.
   id: AC-009
 - requirement: FR-010
   description: Thompson Sampling tests draw once from every condition posterior in

@@ -15,7 +15,7 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
 
     field :algorithm, Ecto.Enum,
       values: ExperimentDefinition.algorithms(),
-      default: :weighted_random
+      virtual: true
 
     field :prior_alpha, :float, default: 1.0
     field :prior_beta, :float, default: 1.0
@@ -41,7 +41,6 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
       :decision_point_key,
       :title,
       :position,
-      :algorithm,
       :prior_alpha,
       :prior_beta,
       :warm_up_assignments,
@@ -55,7 +54,6 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
       :alternatives_resource_id,
       :decision_point_key,
       :position,
-      :algorithm,
       :prior_alpha,
       :prior_beta,
       :warm_up_assignments,

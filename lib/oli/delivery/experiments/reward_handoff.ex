@@ -68,12 +68,11 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
       join: intervention in Intervention,
       on: intervention.id == binding.intervention_id,
       join: decision_point in DecisionPoint,
-      on:
-        decision_point.id == intervention.decision_point_id and
-          decision_point.algorithm == :thompson_sampling,
+      on: decision_point.id == intervention.decision_point_id,
       join: experiment in ExperimentDefinition,
       on:
-        experiment.id == decision_point.experiment_id and experiment.state == :active and
+        experiment.id == decision_point.experiment_id and
+          experiment.algorithm == :thompson_sampling and experiment.state == :active and
           experiment.project_id == section.base_project_id,
       join: experiment_section in ExperimentSection,
       on:
@@ -161,7 +160,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
       where:
         binding.assessment_page_resource_id == ^context.resource_access.resource_id and
           experiment.project_id == ^context.project_id and experiment.state == :active and
-          decision_point.algorithm == :thompson_sampling,
+          experiment.algorithm == :thompson_sampling,
       select: %{
         binding: %{binding | intervention: intervention},
         experiment_id: experiment.id,

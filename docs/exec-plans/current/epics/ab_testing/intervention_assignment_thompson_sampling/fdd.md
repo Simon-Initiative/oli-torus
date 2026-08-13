@@ -57,7 +57,7 @@ This design requires additive PostgreSQL tables for decision-point mappings, int
 
 `Oli.Experiments` remains the public domain boundary and is split internally into focused services as implementation proceeds:
 
-- `Configuration` validates draft definitions, experiment-owned conditions, decision points, bijective mappings, interventions, bindings, lifecycle restrictions, and deletion dependencies.
+- `Configuration` validates draft definitions, experiment-owned conditions, decision points, bijective mappings, Thompson Sampling interventions and bindings, lifecycle restrictions, and deletion dependencies. Weighted-random configuration contains no author-managed interventions.
 - `Strategy` normalizes group strategy: `experiment_controlled` and `upgrade_decision_point` both become internal `:experiment_controlled`; unsupported values fail closed.
 - `Assignments` resolves the active experiment and intervention, reads one policy snapshot, samples through the existing policy modules, and inserts or returns the unique persisted assignment.
 - `Rewards` resolves finalized assessment attempts, claims accepted rewards, updates posterior state, and writes compact evidence in one transaction.
@@ -78,14 +78,14 @@ Authoring flow:
 1. The management surface creates a group with an implicit immutable canonical strategy and stable option IDs.
 2. Page insertion stores `{type, id, alternatives_id, children}` with placement-local child content and no strategy.
 3. A draft experiment creates stable experiment conditions, one or more decision points, and a bijective condition-to-option mapping for each point.
-4. Placed instances are registered as interventions using page resource ID and element ID. Thompson Sampling requires one distinct scored-page binding and threshold for each intervention.
-5. Activation locks the experiment definition and validates project compatibility, current-binding exclusivity, mapping completeness, all referenced working revisions, intervention existence, distinct assessments, and participating sections in one transaction.
+4. For Thompson Sampling, placed instances are explicitly registered as interventions using page resource ID and element ID, with one distinct scored-page binding and threshold for each intervention. Weighted-random drafts do not register placements.
+5. Activation locks the experiment definition and validates project compatibility, current-binding exclusivity, mapping completeness, all referenced working revisions, and participating sections in one transaction. It additionally validates intervention existence and distinct assessments for Thompson Sampling only.
 
 Delivery assignment flow:
 
 1. `PageDecisions` checks whether the section has a relevant active experiment using one indexed `exists` query. A negative result bypasses all experiment tables.
 2. Group revisions are resolved for all Alternatives references in the attempt's publication-pinned content. One traversal classifies placements as valid within ordinary containers or invalid beneath an Alternatives ancestor.
-3. Valid experiment-controlled placements are resolved together using project/section scope, group resource ID, page resource ID, and element ID. Invalid nested placements are never submitted for assignment or exposure and select their first local alternative. Missing or inapplicable bindings use the same inert fallback.
+3. Valid experiment-controlled placements are resolved together using project/section scope, group resource ID, page resource ID, and element ID. For weighted random, delivery bulk inserts any missing intervention identities with conflict-safe lazy materialization before assignment lookup. Thompson Sampling resolves only explicitly configured interventions and bindings. Invalid nested placements are never submitted for assignment or exposure and select their first local alternative. Missing or inapplicable adaptive bindings use the same inert fallback.
 4. Revisit lookup returns the assignment by the full uniqueness key. A first encounter reads one committed decision-point policy-state snapshot, samples through `WeightedRandom` or `ThompsonSampling`, and inserts the assignment with delivery evidence.
 5. On uniqueness conflict, the transaction discards its speculative choice, reloads the winning assignment, and records a concurrency-resolution signal. Only a successful insert increments assignment counts.
 6. Rendering, progress, and completion use the persisted assignment's mapped option ID, never an element strategy or a new sample. Progress/completion denominator construction traverses only each persisted displayed alternative and excludes every hidden sibling, so learners with any valid combination of intervention assignments can reach 100% after completing all content they were shown.
@@ -111,7 +111,8 @@ Reporting flow:
 - Alternatives Group resource: owns immutable strategy and stable option identity/label contract. New successor revisions may change labels only where allowed; strategy and option IDs cannot be changed through supported APIs.
 - Page revision: owns placement element ID and local content. Publication/attempt pinning owns the delivered snapshot.
 - Experiment: owns stable condition identities and lifecycle.
-- Decision point: owns group binding, algorithm configuration, condition mapping, aggregate policy state, and its interventions.
+- Experiment: owns the immutable, creation-time assignment algorithm applied to every decision point.
+- Decision point: owns group binding, condition mapping, algorithm-specific parameters, aggregate policy state, and its interventions.
 - Intervention: owns logical placement identity `(page_resource_id, content_element_id)` under one decision point.
 - Assessment binding: owns scored-page resource ID and inclusive threshold for one Thompson intervention.
 - Assignment: owns the sticky selection for one enrollment and intervention and supplies the stable visibility decision used by rendering and learner-specific progress/completion denominator construction. Publication and page-revision snapshots are not assignment state; they are captured on assignment/exposure evidence events.
@@ -122,7 +123,8 @@ Reporting flow:
 
 - Keep conditions duplicated per decision point: rejected because FR-001 requires stable experiment-scoped identities and duplication permits drift. A mapping table is the simplest explicit shared contract.
 - Encode intervention identity in `assignment_key` only: rejected because database constraints, joins, evidence, and deletion checks require typed foreign keys and indexed columns.
-- Derive interventions at delivery from group occurrences without persisted binding rows: rejected because assessment bindings, lifecycle immutability, referential checks, and copy semantics require durable identity.
+- Keep weighted-random interventions exclusively author-configured: rejected because weighted random has no assessment binding and manual registration becomes stale when placements are added, copied, moved, or removed.
+- Derive interventions without ever persisting identity: rejected because assignments, evidence, concurrency constraints, and deletion checks benefit from typed foreign keys. Weighted-random delivery instead lazily materializes the durable row; Thompson Sampling retains explicit configuration because its assessment binding must exist before activation.
 - Store posteriors only as reward history and recalculate: rejected because assignment and reporting must be bounded and independent of analytical stores.
 - Synchronously update rewards during submission: rejected because scoring latency and failures must not block assessment completion.
 - Migrate legacy page JSON and group revisions: rejected because immutable publications and existing attempts must continue to function without backfill or republication.
@@ -153,7 +155,7 @@ PostgreSQL changes:
 - `experiment_assignments`: add non-null `intervention_id` for new rows. Replace sticky uniqueness with `(experiment_id, decision_point_id, intervention_id, enrollment_id)`. Retain section/user and compact policy evidence. Do not add `publication_id` or `page_revision_id`: assignments remain sticky across publications and revisions, while delivered snapshot context belongs to xAPI/ClickHouse assignment and exposure evidence. Existing rows remain readable and are treated as legacy decision-point assignments; no conversion job is required, and new runtime paths write intervention-scoped rows only.
 - Accepted reward storage: add `assessment_binding_id`, `intervention_id`, and source `resource_attempt_id`; enforce one accepted claim per binding/enrollment and one claim per binding/source attempt. Keep disposition metadata compact and immutable.
 - `experiment_policy_states`: continue one row per decision point/algorithm. Store per-condition posterior alpha/beta and accepted counts in the existing bounded JSON state, with aggregate columns retained for efficient summaries. Updates lock this row.
-- Decision points own typed columns for the supported policy configuration: default alpha/beta, warm-up assignments, maximum condition share, optional fixed-control allocation, imbalance threshold, and reward source. Per-condition prior overrides are not supported. The legacy definition- and decision-point-level policy JSON plus the redundant policy-state prior snapshot are removed, and existing rows receive the typed column defaults rather than migrated JSON values; mutable posterior state remains in the policy-state JSON because it is inherently keyed by the decision point's conditions. The experiment algorithm may remain as a compatibility/default field, but new multi-point writes resolve configuration from the decision point.
+- Decision points own typed columns for policy-specific parameters: default alpha/beta, warm-up assignments, maximum condition share, optional fixed-control allocation, imbalance threshold, and reward source. Per-condition prior overrides are not supported. The experiment definition is the only persisted owner of the algorithm; authoring and runtime views derive it through the experiment relationship. Mutable posterior state remains keyed by decision point and condition.
 - All new foreign keys use `on_delete: :nothing`; domain APIs reconcile draft dependencies explicitly. No active-history cascade is introduced.
 
 Content storage:
@@ -185,7 +187,7 @@ Analytics storage:
 ## 9. Performance & Scalability Posture
 
 - Negative delivery path: one indexed `exists` query by section, active state, and relevant publication/project; no assignment, binding, policy, reward, or analytics queries.
-- Positive path: batch-load relevant group revisions and intervention bindings for all placement IDs on the page; batch-load existing assignments; create only missing assignments. Avoid per-element N+1 queries.
+- Positive path: batch-load relevant group revisions, bulk-materialize missing weighted-random intervention identities, resolve configured Thompson Sampling bindings, and batch-load existing assignments. Avoid per-element N+1 queries.
 - Assignment cost is proportional to the number of conditions for one decision point, never reward history or total experiment history.
 - Reward lookup is indexed by assessment page, section/enrollment, and ordered resource attempt identity. Posterior update touches one claim row and one policy-state row.
 - Reporting groups assignment counts in SQL and reads one policy row per decision point. It does not calculate next-assignment probabilities.
@@ -303,3 +305,24 @@ Analytics storage:
 - Reason: Removing the existing code contract would materially broaden the feature, while readable codes remain valuable operationally.
 - Evidence: Current policy state, delivery decisions, rewards, xAPI, and ClickHouse attribution already carry `condition_code`.
 - Impact: PostgreSQL enforces `(experiment_id, condition_code)` uniqueness, codes do not change with labels, and migration preserves existing codes without implicit merging.
+
+### 2026-08-13 - Lazily materialize weighted-random interventions
+
+- Change: Delivery derives weighted-random interventions from valid group placements and conflict-safely persists missing identities on first encounter; Thompson Sampling interventions remain explicit configuration.
+- Reason: Only adaptive interventions need advance assessment bindings. Requiring the same authoring workflow for weighted random creates unnecessary synchronization state.
+- Evidence: `Oli.Experiments.assign_page_conditions/1`, activation validation, experiment-details authoring behavior, and focused tests.
+- Impact: The intervention table remains the durable assignment/evidence identity, but weighted-random authoring and activation no longer depend on preconfigured rows.
+
+### 2026-08-13 - Remove duplicated decision-point algorithm persistence
+
+- Change: Removed the decision-point algorithm column and derive the policy from the owning experiment in authoring, activation, assignment, reward, and policy-state paths.
+- Reason: Persisting the same immutable policy on both the experiment and every decision point creates an avoidable consistency invariant.
+- Evidence: Generated reversible migration, `DecisionPoint` schema, `Oli.Experiments` queries and policy dispatch, plus focused configuration/runtime tests.
+- Impact: Experiment definitions are the sole persisted policy source; decision points retain only policy-specific parameters and policy state retains its algorithm identity.
+
+### 2026-08-13 - Make assignment policy experiment-scoped
+
+- Change: The experiment definition is authoritative for assignment algorithm across all decision points.
+- Reason: Policy selection is an experiment-wide semantic choice; per-point selectors permitted incoherent mixed-policy experiments.
+- Evidence: `Oli.Experiments` graph validation/insertion and experiment-details form parsing.
+- Impact: Authoring exposes policy selection only during experiment creation; a follow-up removes redundant decision-point persistence.

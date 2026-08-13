@@ -121,7 +121,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             Complete
           </button>
           <button
-            :if={@experiment.state == :completed}
+            :if={@experiment.state in [:draft, :completed]}
             type="button"
             class="btn btn-outline-danger"
             phx-click="request_experiment_transition"
@@ -155,8 +155,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           >
             <.detail_item label="Slug" value={@experiment.slug} monospace />
             <.detail_item
-              label="Assignment policies"
-              value={decision_point_algorithms(@authoring_view.decision_points)}
+              label="Assignment policy"
+              value={format_algorithm(@experiment.algorithm)}
             />
             <.detail_item
               label="Assignment unit"
@@ -250,6 +250,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           >
             <fieldset disabled={@experiment.state != :draft}>
               <legend class="sr-only">Experiment decision points and conditions</legend>
+              <input
+                type="hidden"
+                name="configuration[algorithm]"
+                value={@experiment.algorithm}
+              />
               <div class="mb-4">
                 <h4 class="h6 mb-3 mt-2 font-weight-bold">Shared conditions</h4>
                 <div
@@ -344,24 +349,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                   </button>
                 </div>
                 <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div>
-                    <label for={"decision-point-#{point_index}-algorithm"}>Assignment policy</label>
-                    <select
-                      id={"decision-point-#{point_index}-algorithm"}
-                      class="form-control"
-                      name={"configuration[decision_points][#{point_index}][algorithm]"}
-                    >
-                      <option value="weighted_random" selected={point.algorithm == :weighted_random}>
-                        Weighted random
-                      </option>
-                      <option
-                        value="thompson_sampling"
-                        selected={point.algorithm == :thompson_sampling}
-                      >
-                        Thompson Sampling
-                      </option>
-                    </select>
-                  </div>
                   <div :for={{mapping, mapping_index} <- Enum.with_index(point.mappings)}>
                     <input
                       type="hidden"
@@ -471,7 +458,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                     />
                   </div>
                 </div>
-                <div class="mt-3">
+                <div :if={point.algorithm == :thompson_sampling} class="mt-3">
                   <h5 class="h6 mb-3 mt-4 font-weight-bold">Interventions and assessments</h5>
                   <div
                     :for={{intervention, intervention_index} <- Enum.with_index(point.interventions)}
@@ -545,6 +532,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                     Add intervention
                   </button>
                 </div>
+                <p
+                  :if={point.algorithm == :weighted_random}
+                  class="mb-0 mt-4 text-sm text-gray-600 dark:text-gray-300"
+                >
+                  All placements of this Alternatives Group are included automatically.
+                  Assessments and rewards are not used.
+                </p>
               </div>
 
               <div>
@@ -1098,7 +1092,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
              ),
              &(&1.alternatives_resource_id == resource_id)
            ) do
-      point = draft_point(candidate, socket.assigns.graph_draft.conditions)
+      point =
+        draft_point(
+          candidate,
+          socket.assigns.graph_draft.conditions,
+          socket.assigns.graph_draft.algorithm
+        )
 
       {:noreply,
        socket
@@ -1183,11 +1182,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     case socket.assigns.experiment.state do
       :draft ->
         condition_changes = submitted_condition_changes(params["conditions"])
-        point_changes = submitted_point_changes(params["decision_points"])
+        algorithm = socket.assigns.experiment.algorithm
+        point_changes = submitted_point_changes(params["decision_points"], algorithm)
 
         {:noreply,
          update(socket, :graph_draft, fn draft ->
            draft
+           |> Map.put(:algorithm, algorithm)
            |> Map.update!(:conditions, &merge_indexed_changes(&1, condition_changes))
            |> Map.update!(:decision_points, &merge_indexed_changes(&1, point_changes))
          end)}
@@ -1453,10 +1454,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         }
       end)
 
-    %{conditions: conditions, decision_points: points}
+    %{
+      algorithm: authoring_view.definition.algorithm,
+      conditions: conditions,
+      decision_points: points
+    }
   end
 
-  defp draft_point(candidate, conditions) do
+  defp draft_point(candidate, conditions, algorithm) do
     options = candidate_options(candidate)
 
     mappings =
@@ -1478,9 +1483,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       alternatives_resource_id: candidate.alternatives_resource_id,
       decision_point_key: candidate.decision_point_key,
       title: candidate.title,
-      algorithm: :weighted_random,
+      algorithm: algorithm,
       mappings: mappings,
-      interventions: [empty_intervention()],
+      interventions: [],
       prior_alpha: 1.0,
       prior_beta: 1.0,
       warm_up_assignments: 0,
@@ -1681,11 +1686,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     do: {:noreply, assign(socket, configuration_error: "Invalid configuration selection.")}
 
   defp configuration_request(socket, params) do
+    algorithm = socket.assigns.experiment.algorithm
+
     with {:ok, conditions} <- parse_conditions(params["conditions"]),
-         {:ok, decision_points} <- parse_decision_points(params["decision_points"], conditions) do
+         {:ok, decision_points} <-
+           parse_decision_points(params["decision_points"], conditions, algorithm) do
       {:ok,
        %UpdateExperimentRequest{
          scope: authoring_scope(socket),
+         algorithm: algorithm,
          conditions: conditions,
          decision_points: decision_points
        }}
@@ -1710,12 +1719,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp parse_conditions(_params), do: {:error, "At least two conditions are required."}
 
-  defp parse_decision_points(params, conditions) when is_map(params) do
+  defp parse_decision_points(params, conditions, algorithm) when is_map(params) do
     params
     |> ordered_values()
     |> Enum.with_index()
     |> Enum.reduce_while({:ok, []}, fn {point, position}, {:ok, acc} ->
-      case parse_decision_point(point, conditions, position) do
+      case parse_decision_point(point, conditions, algorithm, position) do
         {:ok, parsed} -> {:cont, {:ok, [parsed | acc]}}
         error -> {:halt, error}
       end
@@ -1723,12 +1732,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     |> reverse_parsed_values()
   end
 
-  defp parse_decision_points(_params, _conditions),
+  defp parse_decision_points(_params, _conditions, _algorithm),
     do: {:error, "At least one decision point is required."}
 
-  defp parse_decision_point(point, conditions, position) do
+  defp parse_decision_point(point, conditions, algorithm, position) do
     with {:ok, resource_id} <- parse_positive_integer(point["alternatives_resource_id"]),
-         {:ok, algorithm} <- parse_algorithm(point["algorithm"]),
          {:ok, mappings} <- parse_mappings(point["mappings"], conditions),
          {:ok, interventions} <- parse_interventions(point["interventions"], algorithm),
          {:ok, policy_fields} <- parse_policy_fields(point, algorithm) do
@@ -1786,14 +1794,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp parse_mappings(_params, _conditions), do: {:error, "Every condition must be mapped."}
 
-  defp parse_interventions(params, algorithm) when is_map(params) do
+  defp parse_interventions(_params, :weighted_random), do: {:ok, []}
+
+  defp parse_interventions(params, :thompson_sampling) when is_map(params) do
     params
     |> ordered_values()
     |> Enum.reduce_while({:ok, []}, fn intervention, {:ok, acc} ->
       with {:ok, page_resource_id} <- parse_positive_integer(intervention["page_resource_id"]),
            element_id when is_binary(element_id) and element_id != "" <-
              String.trim(intervention["content_element_id"] || ""),
-           {:ok, binding} <- parse_binding(intervention, algorithm) do
+           {:ok, binding} <- parse_binding(intervention, :thompson_sampling) do
         parsed = %{
           page_resource_id: page_resource_id,
           content_element_id: element_id,
@@ -1813,8 +1823,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp reverse_parsed_values({:ok, values}), do: {:ok, Enum.reverse(values)}
   defp reverse_parsed_values(error), do: error
-
-  defp parse_binding(_params, :weighted_random), do: {:ok, nil}
 
   defp parse_binding(params, :thompson_sampling) do
     with {:ok, page_id} <- parse_positive_integer(params["assessment_page_resource_id"]),
@@ -1845,10 +1853,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     end
   end
 
-  defp submitted_point_changes(params) when is_map(params) do
+  defp submitted_point_changes(params, algorithm) when is_map(params) do
     Enum.reduce(params, %{}, fn {index, point}, changes ->
-      with {:ok, parsed_index} <- parse_index(index),
-           {:ok, algorithm} <- parse_algorithm(point["algorithm"]) do
+      with {:ok, parsed_index} <- parse_index(index) do
         policy_changes =
           ~w(prior_alpha prior_beta warm_up_assignments max_condition_share fixed_control_allocation imbalance_threshold)
           |> Enum.reduce(%{algorithm: algorithm}, fn key, point_changes ->
@@ -1870,7 +1877,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     end)
   end
 
-  defp submitted_point_changes(_params), do: %{}
+  defp submitted_point_changes(_params, _algorithm), do: %{}
 
   defp submitted_condition_changes(params) when is_map(params) do
     submitted_indexed_changes(params, fn condition ->
@@ -1964,10 +1971,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       {:error, _} -> []
     end
   end
-
-  defp parse_algorithm("weighted_random"), do: {:ok, :weighted_random}
-  defp parse_algorithm("thompson_sampling"), do: {:ok, :thompson_sampling}
-  defp parse_algorithm(_), do: {:error, :invalid_algorithm}
 
   defp parse_boolean("true"), do: {:ok, true}
   defp parse_boolean("false"), do: {:ok, false}
@@ -2127,7 +2130,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp parse_confirmation_action(_action), do: {:error, :invalid_action}
 
   defp transition_available?(state, :complete), do: state in [:active, :paused]
-  defp transition_available?(:completed, :archive), do: true
+  defp transition_available?(state, :archive), do: state in [:draft, :completed]
   defp transition_available?(_state, _action), do: false
 
   defp transition_title(:complete), do: "Complete Experiment"
@@ -2142,17 +2145,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp transition_confirmation(experiment, :archive) do
     "Archive “#{experiment.name}”? The experiment will be removed from active use."
-  end
-
-  defp decision_point_algorithms(decision_points) do
-    decision_points
-    |> Enum.map(&format_algorithm(&1.algorithm))
-    |> Enum.uniq()
-    |> Enum.join(", ")
-    |> case do
-      "" -> "—"
-      algorithms -> algorithms
-    end
   end
 
   defp display_value(nil), do: "—"

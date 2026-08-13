@@ -162,6 +162,18 @@ defmodule Oli.Experiments.PersistenceTest do
   end
 
   describe "retained runtime persistence" do
+    test "persists assignment policy only on the experiment definition" do
+      columns =
+        Ecto.Adapters.SQL.query!(
+          Repo,
+          "SELECT column_name FROM information_schema.columns WHERE table_name IN ('experiment_definitions', 'experiment_decision_points') AND column_name = 'algorithm' ORDER BY table_name",
+          []
+        ).rows
+
+      assert columns == [["algorithm"]]
+      assert DecisionPoint.__schema__(:virtual_fields) |> Enum.member?(:algorithm)
+    end
+
     test "persists definition graph, assignment runtime state, and policy state" do
       project = insert(:project)
       section = insert(:section, base_project: project)

@@ -30,7 +30,7 @@ Do not regenerate an entire duplicated page's content-element IDs. Same-page Alt
 
 `PageDecisions.prepare/2` first asks `Oli.Experiments` whether the section/publication has a relevant active experiment. On a negative result it returns deterministic first-alternative decisions without loading experiment bindings, assignments, policies, rewards, or evidence.
 
-On a positive result, one context API accepts trusted section, publication, enrollment, page resource ID, and all stable valid placement IDs. A single traversal discovers placements inside ordinary containers and stops assignment discovery at each Alternatives boundary, so an Alternatives choice can never reveal another assignment round. The API batch-loads pinned group revisions, normalized group strategies, intervention bindings, one policy snapshot per relevant decision point, mappings, and existing assignments. Prepared decisions are keyed by intervention identity, not group ID, and are reused by rendering and completion traversal. Invalid legacy nested placements receive first-branch fallback without assignment or exposure.
+On a positive result, one context API accepts trusted section, publication, enrollment, page resource ID, and all stable valid placement IDs. A single traversal discovers placements inside ordinary containers and stops assignment discovery at each Alternatives boundary, so an Alternatives choice can never reveal another assignment round. The API batch-loads pinned group revisions and normalized group strategies, bulk-materializes missing weighted-random intervention identities, resolves configured Thompson Sampling interventions/bindings, then loads policy snapshots, mappings, and existing assignments. Prepared decisions are keyed by intervention identity, not group ID, and are reused by rendering and completion traversal. Invalid legacy nested placements receive first-branch fallback without assignment or exposure.
 
 ## Transaction and Concurrency Ownership
 
@@ -60,3 +60,14 @@ Rendering and progress/completion consume the same persisted prepared decision. 
 The negative gate is one `EXISTS` query rooted at `experiment_sections`: join `experiment_definitions` on experiment ID and require the trusted section ID, `state = 'active'`, and a definition project ID in the section's server-derived base/current-remix lineage. It deliberately does not join interventions, assignments, policy state, rewards, or analytics; page-specific work begins only after this gate succeeds.
 
 Support that shape with composite `experiment_sections(section_id, experiment_id)` and a selective active-definition index whose leading key is `project_id` (prefer partial `(project_id, id) WHERE state = 'active'` after verifying enum/DDL compatibility; otherwise `(project_id, state, id)`). Positive-path binding resolution uses `experiment_interventions(page_resource_id, content_element_id)` and joins its decision point/experiment through primary/foreign keys. Assignment uniqueness is indexed by experiment, decision point, intervention, and enrollment. Verify both the negative `EXISTS` plan and the positive binding plan with `EXPLAIN` against representative data before Gate D; reject sequential scans caused by missing/selectivity-poor indexes at expected QA cardinality.
+
+Weighted-random delivery first resolves active participating decision points by the trusted placement's Alternatives Group resource ID, then performs one conflict-safe bulk insert for missing `(decision_point_id, page_resource_id, content_element_id)` rows. Thompson Sampling never takes this path because every adaptive intervention and assessment binding must be validated before activation.
+
+## Decision Log
+
+### 2026-08-13 - Lazily materialize weighted-random placement identity
+
+- Change: The positive delivery batch discovers and persists missing weighted-random intervention rows before assignment resolution.
+- Reason: Placement traversal is already the authoritative runtime discovery boundary, and weighted random has no assessment configuration that must precede delivery.
+- Evidence: `Oli.Experiments.assign_page_conditions/1` and runtime tests for lazy creation, sticky reuse, and constant batch query shape.
+- Impact: Newly placed weighted-random group instances participate without experiment-form synchronization; Thompson Sampling resolution is unchanged.

@@ -40,7 +40,7 @@ The current native experiment model treats a decision point as both the policy s
 - Offer both `Alt` and `A/B Test` insertion and drag/drop in supported ordinary containers. Hide both insertion choices and reject moves or copied content when the target has an Alternatives ancestor. Existing invalid nesting may be repaired by dragging the inner placement outward.
 - Retain group management on both existing routes. Rename the group-management section currently labeled `Decision Points` on the Experiments page to `Experiment-Controlled Alternatives` so it is not confused with decision-point policy bindings, and preserve experiment listing and configuration on that page.
 - Use the standard page content editor as the only surface for placement-local alternative content on both group types; neither group-management surface edits page content inline.
-- Let authorized authors configure decision-point group bindings, condition-to-alternative mappings, algorithms, priors or weights, guardrails, assessment bindings, and reward thresholds while the experiment is in `draft`.
+- Select one assignment policy when creating the experiment and make it immutable afterward. Authorized authors may configure decision-point group bindings, condition-to-alternative mappings, priors or weights, and guardrails while the experiment is in `draft`. Configure interventions, assessment bindings, and reward thresholds only for Thompson Sampling; weighted-random placements are discovered during delivery.
 - Make validation errors identify missing, incompatible, duplicate, or structurally invalid configuration before activation.
 - Show all local alternatives in Authoring Preview and Instructor Preview through a basic keyboard-accessible tab interface without invoking assignment or policy behavior.
 - Report observed allocations and policy state without presenting probabilistic outcomes as guarantees.
@@ -63,7 +63,7 @@ Requirements are found in requirements.yml
 - PostgreSQL and ClickHouse schema changes must use ordinary production-quality migrations that are safe for already-running QA databases and support dependency-safe rollback.
 
 ## 9. Data, Interfaces & Dependencies
-- Experiment owns stable conditions and one or more decision points; each decision point owns one group binding, one bijective condition mapping, one algorithm configuration, aggregate state, and many intervention points.
+- Experiment owns the assignment policy, stable conditions, and one or more decision points; each decision point owns one group binding, one bijective condition mapping, policy parameters/state, and many intervention points.
 - An intervention is identified by `(page_resource_id, content_element_id)`; revision and publication identifiers provide delivered-snapshot evidence but do not create a new logical intervention.
 - Selection strategy is stored and resolved exclusively from the referenced Alternatives Group. A content element's `strategy` field is legacy, non-authoritative data and must be ignored by authoring, validation, and delivery behavior.
 - `priv/schemas/v0-1-0/content-alternatives.schema.json` must describe the completed placement contract: `alternatives_id` is the required group reference, element-level `strategy` is not required or authoritative, and legacy elements that retain a strategy value remain schema-compatible without migration.
@@ -73,6 +73,7 @@ Requirements are found in requirements.yml
 - Thompson Sampling state consists of one Beta posterior per decision point and condition, defaulting to `Beta(1, 1)` unless configured otherwise.
 - The experiment details page must read the current bounded PostgreSQL policy-state snapshot for posterior display; it must not scan rewards or query xAPI or ClickHouse. Values must be current when the page is loaded or explicitly refreshed, and completed or archived experiments display their frozen final state.
 - Each Thompson Sampling intervention has exactly one binding to a distinct scored page and threshold in `[0.0, 1.0]`; weighted random requires no assessment binding.
+- Weighted-random delivery recognizes every valid placement of the decision point's Alternatives Group as an intervention and lazily materializes its durable `(decision_point_id, page_resource_id, content_element_id)` identity on first encounter. Authors do not register weighted-random interventions.
 - Reward identity retains the binding, intervention, decision point, assignment, and source scored-page attempt; compact operational state lives in PostgreSQL and detailed evidence flows through configured xAPI or ClickHouse paths.
 - Existing page scoring owns activity weighting, partial credit, manual grading, and normalized overall score calculation.
 
@@ -128,7 +129,7 @@ Existing experiment definitions, assignments, rewards, analytics, Alternatives G
 ## 15. QA Plan
 - Automated validation:
   - ExUnit coverage for cardinality and referential constraints, draft-only mutation, binding exclusivity, immutable history, migrations, and authorization.
-  - Policy tests for weighted-random and Thompson Sampling assignment per instance, posterior snapshot reads, sticky revisits, concurrent first encounters, atomic updates, and deterministic random seams.
+  - Policy tests for automatic weighted-random intervention discovery and Thompson Sampling assignment per configured instance, posterior snapshot reads, sticky revisits, concurrent first encounters, atomic updates, and deterministic random seams.
   - Reward tests for threshold boundaries, attempt ordering, pending or ineligible attempts, missing assignments, duplicate and concurrent processing, completion freeze, and asynchronous retry behavior.
   - LiveView and frontend tests for configuration validation, local-content ownership, copy or duplicate semantics, lifecycle restrictions, and keyboard-accessible preview tabs.
   - UI tests proving the Alternatives page lists and creates only Learner Choice groups, the Experiments page's `Experiment-Controlled Alternatives` section lists and creates only experiment-controlled groups, both routes remain available, shared interactions stay consistent, and neither surface offers a strategy selector.
@@ -139,7 +140,7 @@ Existing experiment definitions, assignments, rewards, analytics, Alternatives G
   - Telemetry and analytics tests for required identities, dispositions, policy values, privacy boundaries, export behavior, and absence of analytical-store reads on delivery paths.
   - LiveView and context tests for non-draft posterior display across multiple decision points and conditions, posterior-mean calculation, evidence and assignment counts, observed shares, expandable α and β values, updated timestamps, refresh behavior, algorithm-specific visibility, effective guardrail status, and frozen completed or archived values.
 - Manual validation:
-  - Configure a multi-intervention weighted-random experiment and a Thompson Sampling experiment, exercise learners through repeated interventions and distinct shared assessments, and confirm assignment, revisit, reward, reporting, preview, lifecycle, and completion behavior.
+  - Configure a weighted-random experiment without interventions, place its group multiple times, configure a multi-intervention Thompson Sampling experiment, and confirm automatic weighted-random discovery plus assignment, revisit, reward, reporting, preview, lifecycle, and completion behavior.
   - Create a Learner Choice group from the Alternatives page and an Experiment-Controlled Alternatives group from the Experiments page, verify neither surface mixes types or asks for strategy, and confirm group-management navigation remains contextual.
   - Place each group through its eligible page-editor insertion path and verify placement-local content authoring and runtime selection resolve the group-owned strategy exclusively.
   - Export and ingest a representative project containing both group types and repeated placements, then verify group strategy, options, local placement content, rewired references, and runtime selection semantics in the imported project.
@@ -153,3 +154,19 @@ Existing experiment definitions, assignments, rewards, analytics, Alternatives G
 - [ ] Project export and ingest preserve group-owned Alternatives strategy and placement references
 - [ ] Non-draft Thompson Sampling experiments display current, correctly labeled posterior metrics
 - [ ] validation passes
+
+## Decision Log
+
+### 2026-08-13 - Discover weighted-random interventions during delivery
+
+- Change: Weighted-random experiments no longer require authors to configure interventions; every valid delivered placement is discovered and durably materialized on first encounter. Explicit intervention and assessment configuration remains required for Thompson Sampling.
+- Reason: Weighted random consumes no rewards, so pre-registering placements adds brittle authoring synchronization without contributing policy configuration.
+- Evidence: `lib/oli/experiments.ex`, `lib/oli_web/live/workspaces/course_author/experiment_details_live.ex`, and focused context/runtime/LiveView tests.
+- Impact: Weighted-random drafts can activate without intervention rows, new placements participate automatically, and sticky assignments continue to use persisted intervention identity.
+
+### 2026-08-13 - Set assignment policy at experiment scope
+
+- Change: Authors select one immutable assignment policy when creating the experiment rather than selecting or changing policy on decision points or the details page.
+- Reason: An experiment represents one assignment strategy applied consistently across all of its decision points.
+- Evidence: Experiment-details form, `Oli.Experiments` graph validation/persistence, and focused context/LiveView tests.
+- Impact: Decision points retain mappings, weights, policy parameters, and intervention bindings, but their persisted algorithm must match the immutable experiment algorithm.

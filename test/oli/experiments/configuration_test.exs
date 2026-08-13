@@ -90,8 +90,10 @@ defmodule Oli.Experiments.ConfigurationTest do
         reward_threshold: Decimal.new("0.5")
       })
 
+    adaptive_request = %{graph_request(scope, [adaptive]) | algorithm: :thompson_sampling}
+
     assert {:error, %ExperimentError{message: adaptive_message}} =
-             Experiments.create_experiment(graph_request(scope, [adaptive]))
+             Experiments.create_experiment(adaptive_request)
 
     assert adaptive_message == "assessment binding must reference a compatible scored page"
   end
@@ -330,10 +332,13 @@ defmodule Oli.Experiments.ConfigurationTest do
     end
 
     request =
-      graph_request(scope, [
-        adaptive_point.(group_a, page_a, assessment_a, "a", Decimal.new(0)),
-        adaptive_point.(group_b, page_b, assessment_b, "b", Decimal.new(1))
-      ])
+      %{
+        graph_request(scope, [
+          adaptive_point.(group_a, page_a, assessment_a, "a", Decimal.new(0)),
+          adaptive_point.(group_b, page_b, assessment_b, "b", Decimal.new(1))
+        ])
+        | algorithm: :thompson_sampling
+      }
 
     assert {:ok, definition} = Experiments.create_experiment(request)
     assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)

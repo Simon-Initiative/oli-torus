@@ -124,8 +124,13 @@ defmodule Oli.Experiments.ContextTest do
       assert candidate.alternatives_resource_id == alternatives.resource_id
       assert candidate.option_labels == %{"alt-a" => "A", "alt-b" => "B"}
 
+      request =
+        Map.update!(graph_request(scope, alternatives), :decision_points, fn [point] ->
+          [%{point | interventions: []}]
+        end)
+
       assert {:ok, %ExperimentDefinition{} = definition} =
-               Experiments.create_experiment(graph_request(scope, alternatives))
+               Experiments.create_experiment(request)
 
       assert Experiments.project_has_experiments?(scope.project_id)
 
@@ -143,6 +148,7 @@ defmodule Oli.Experiments.ContextTest do
       assert [%{decision_point_key: decision_point_key}] = view.decision_points
       assert decision_point_key == "alternatives:#{alternatives.resource_id}"
       assert Enum.map(view.conditions, & &1.condition_code) == ["a", "b"]
+      assert view.interventions == []
       assert view.assignment_counts == %{}
 
       assert {:ok, %ExperimentDefinition{state: :active}} =
@@ -244,6 +250,20 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.create_experiment(request)
 
       assert message == "active condition weights must have a positive total"
+    end
+
+    test "rejects changing the assignment policy after creation" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.update_experiment(definition.id, %UpdateExperimentRequest{
+                 scope: scope,
+                 algorithm: :thompson_sampling
+               })
+
+      assert message == "assignment policy cannot be changed after experiment creation"
     end
 
     test "rejects learner preference alternatives as experiment decision points" do

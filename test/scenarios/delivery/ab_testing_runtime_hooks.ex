@@ -26,6 +26,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     Assignment,
     Condition,
     DecisionPoint,
+    ExperimentDefinition,
     ExperimentSection,
     PolicyState
   }
@@ -229,11 +230,13 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     from(assignment in Assignment,
       join: decision_point in DecisionPoint,
       on: decision_point.id == assignment.decision_point_id,
+      join: experiment in ExperimentDefinition,
+      on: experiment.id == decision_point.experiment_id,
       where:
         assignment.section_id == ^scope.section_id and
           assignment.user_id == ^scope.user_id and
           not is_nil(assignment.intervention_id) and
-          decision_point.algorithm == :weighted_random,
+          experiment.algorithm == :weighted_random,
       order_by: [asc: assignment.intervention_id]
     )
     |> Repo.all()

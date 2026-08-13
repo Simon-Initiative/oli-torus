@@ -103,6 +103,150 @@ defmodule Oli.Experiments.RuntimeTest do
       assert Repo.aggregate(Assignment, :count, :id) == 2
     end
 
+    test "lazily materializes weighted-random interventions from delivered placements" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions()
+
+      add_condition_mappings!(decision_point)
+      page = insert(:resource)
+
+      request = %{
+        assign_request(scope, revision, ["a", "b"])
+        | page_resource_id: page.id,
+          content_element_id: "discovered-placement"
+      }
+
+      assert Repo.aggregate(Intervention, :count, :id) == 0
+
+      assert {:ok, %AssignmentDecision{status: :assigned, reused?: false} = first} =
+               Experiments.assign_condition(request)
+
+      intervention = Repo.one!(Intervention)
+      assert intervention.decision_point_id == decision_point.id
+      assert intervention.page_resource_id == page.id
+      assert intervention.content_element_id == "discovered-placement"
+
+      assert Repo.get!(Assignment, first.assignment_id).intervention_id == intervention.id
+
+      assert {:ok, %AssignmentDecision{assignment_id: assignment_id, reused?: true}} =
+               Experiments.assign_condition(request)
+
+      assert assignment_id == first.assignment_id
+      assert Repo.aggregate(Intervention, :count, :id) == 1
+    end
+
+    test "batch assignment materializes all missing weighted-random placements" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions()
+
+      add_condition_mappings!(decision_point)
+      page = insert(:resource)
+
+      requests =
+        for id <- ["first-discovered", "second-discovered"] do
+          %{
+            assign_request(scope, revision, ["a", "b"])
+            | page_resource_id: page.id,
+              content_element_id: id
+          }
+        end
+
+      assert {:ok, decisions} = Experiments.assign_page_conditions(requests)
+      assert Map.keys(decisions) |> Enum.sort() == ["first-discovered", "second-discovered"]
+      assert Repo.aggregate(Intervention, :count, :id) == 2
+      assert Repo.aggregate(Assignment, :count, :id) == 2
+    end
+
+    test "lazy page materialization keeps SELECT reads constant for 2 and 10 placements" do
+      select_counts =
+        for placement_count <- [2, 10] do
+          %{scope: scope, revision: revision, decision_point: decision_point} =
+            active_experiment_with_conditions()
+
+          add_condition_mappings!(decision_point)
+          page = insert(:resource)
+
+          requests =
+            for index <- 1..placement_count do
+              %{
+                assign_request(scope, revision, ["a", "b"])
+                | page_resource_id: page.id,
+                  content_element_id: "lazy-placement-#{index}"
+              }
+            end
+
+          count =
+            count_select_queries(fn ->
+              assert {:ok, decisions} = Experiments.assign_page_conditions(requests)
+              assert map_size(decisions) == placement_count
+            end)
+
+          assert Repo.aggregate(
+                   from(intervention in Intervention,
+                     where: intervention.decision_point_id == ^decision_point.id
+                   ),
+                   :count,
+                   :id
+                 ) == placement_count
+
+          assert Repo.aggregate(
+                   from(assignment in Assignment,
+                     where: assignment.decision_point_id == ^decision_point.id
+                   ),
+                   :count,
+                   :id
+                 ) == placement_count
+
+          count
+        end
+
+      assert [two_placements, ten_placements] = select_counts
+      assert two_placements == ten_placements
+    end
+
+    test "concurrent batches converge while lazily discovering the same placement" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions()
+
+      add_condition_mappings!(decision_point)
+      page = insert(:resource)
+
+      request = %{
+        assign_request(scope, revision, ["a", "b"])
+        | page_resource_id: page.id,
+          content_element_id: "concurrently-discovered"
+      }
+
+      results =
+        1..2
+        |> Enum.map(fn _ ->
+          Task.async(fn -> Experiments.assign_page_conditions([request]) end)
+        end)
+        |> Enum.map(&Task.await(&1, 5_000))
+
+      assert Enum.all?(results, &match?({:ok, %{"concurrently-discovered" => _}}, &1))
+      assert Repo.aggregate(Intervention, :count, :id) == 1
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+    end
+
+    test "invalid placement identities do not materialize interventions" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions()
+
+      add_condition_mappings!(decision_point)
+
+      request = %{
+        assign_request(scope, revision, ["a", "b"])
+        | page_resource_id: insert(:resource).id,
+          content_element_id: String.duplicate("x", 256)
+      }
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assign_condition(request)
+
+      assert Repo.aggregate(Intervention, :count, :id) == 0
+    end
+
     test "checks active section relevance without entering assignment resolution" do
       %{scope: scope} = active_experiment_with_conditions()
 

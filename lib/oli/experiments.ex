@@ -110,13 +110,14 @@ defmodule Oli.Experiments do
              structural_configuration_change?(request)
            ),
          :ok <- validate_update_state(schema, request),
+         :ok <- validate_immutable_algorithm(schema, request.algorithm),
          :ok <-
            validate_authoring_algorithm(
              request.algorithm || schema.algorithm,
              structural_configuration_change?(request)
            ),
          :ok <- validate_assignment_safe_update(schema, request),
-         :ok <- validate_graph_request(request, scope),
+         :ok <- validate_graph_request(request, scope, request.algorithm || schema.algorithm),
          :ok <- validate_current_bindings(request.decision_points, scope, schema.id),
          {:ok, section_ids} <- validate_experiment_sections(request.section_ids, scope),
          {:ok, updated} <- update_definition_graph(schema, request, section_ids) do
@@ -335,7 +336,7 @@ defmodule Oli.Experiments do
       {:ok,
        %ExperimentAuthoringView{
          definition: to_definition(schema),
-         decision_points: Enum.map(decision_points, &public_decision_point/1),
+         decision_points: Enum.map(decision_points, &public_decision_point(&1, schema.algorithm)),
          conditions: conditions,
          mappings: mappings,
          interventions:
@@ -1601,6 +1602,8 @@ defmodule Oli.Experiments do
     page_resource_id = hd(requests).page_resource_id
     content_element_ids = Enum.map(requests, & &1.content_element_id)
 
+    materialize_weighted_random_interventions(requests, scope)
+
     rows =
       scope
       |> batch_assignment_rows(page_resource_id, content_element_ids)
@@ -1660,7 +1663,7 @@ defmodule Oli.Experiments do
       on:
         policy_state.experiment_id == experiment.id and
           policy_state.decision_point_id == decision_point.id and
-          policy_state.algorithm == decision_point.algorithm,
+          policy_state.algorithm == experiment.algorithm,
       left_join: assignment in Assignment,
       on:
         assignment.intervention_id == intervention.id and
@@ -1682,6 +1685,9 @@ defmodule Oli.Experiments do
       }
     )
     |> Repo.all()
+    |> Enum.map(fn row ->
+      %{row | decision_point: runtime_decision_point(row.experiment, row.decision_point, [])}
+    end)
   end
 
   defp ensure_batch_policy_states(rows) do
@@ -1860,7 +1866,7 @@ defmodule Oli.Experiments do
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,
-      assigned_by_policy: Atom.to_string(first.decision_point.algorithm),
+      assigned_by_policy: Atom.to_string(first.experiment.algorithm),
       policy_version: selection.policy_assignment.policy_version,
       assignment_key:
         assignment_key(
@@ -1963,6 +1969,7 @@ defmodule Oli.Experiments do
   defp do_assign_condition_for_current_project(request, scope) do
     with {:ok, scope} <- validate_publication(scope),
          {:ok, revision} <- resolve_delivery_revision(request, scope),
+         :ok <- materialize_weighted_random_intervention(request, scope),
          {:ok, match} <- active_experiment_match(request, scope, revision),
          {:ok, decision} <- assign_or_reuse(match, scope, request) do
       {:ok, decision}
@@ -2163,15 +2170,8 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp runtime_decision_point(experiment, decision_point, conditions) do
-    case Enum.all?(conditions, &is_nil(&1.option_id)) do
-      true ->
-        %{decision_point | algorithm: experiment.algorithm}
-
-      false ->
-        decision_point
-    end
-  end
+  defp runtime_decision_point(experiment, decision_point, _conditions),
+    do: %{decision_point | algorithm: experiment.algorithm}
 
   defp select_condition(_experiment, _decision_point, _conditions, [], _scope, _intervention),
     do: invalid_condition("no condition codes supplied")
@@ -2205,7 +2205,7 @@ defmodule Oli.Experiments do
 
       conditions ->
         policy_state =
-          get_policy_state(experiment.id, decision_point.id, decision_point.algorithm)
+          get_policy_state(experiment.id, decision_point.id, experiment.algorithm)
 
         {policy_module, policy_conditions, guardrail_action} =
           assignment_policy_for(
@@ -2419,7 +2419,7 @@ defmodule Oli.Experiments do
     :telemetry.execute([:oli, :experiments, :assignment, :guardrail], %{count: 1}, %{
       experiment_id: experiment.id,
       decision_point_id: decision_point.id,
-      algorithm: decision_point.algorithm,
+      algorithm: experiment.algorithm,
       algorithm_version: policy_assignment.policy_version,
       selected_condition_id: condition && condition.id,
       selected_condition_code: condition && condition.condition_code,
@@ -2511,7 +2511,7 @@ defmodule Oli.Experiments do
         :telemetry.execute([:oli, :experiments, :assignment, :reuse], %{count: 1}, %{
           experiment_id: match.experiment.id,
           decision_point_id: match.decision_point.id,
-          algorithm: match.decision_point.algorithm,
+          algorithm: match.experiment.algorithm,
           algorithm_version: assignment.policy_version,
           selected_condition_id: assignment.condition_id,
           selected_condition_code: condition.condition_code,
@@ -2565,7 +2565,7 @@ defmodule Oli.Experiments do
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,
-      assigned_by_policy: Atom.to_string(match.decision_point.algorithm),
+      assigned_by_policy: Atom.to_string(match.experiment.algorithm),
       policy_version: match.policy_assignment.policy_version,
       assignment_key:
         assignment_key(
@@ -3116,7 +3116,6 @@ defmodule Oli.Experiments do
       :decision_point_key,
       :title,
       :position,
-      :algorithm,
       :prior_alpha,
       :prior_beta,
       :warm_up_assignments,
@@ -3131,9 +3130,12 @@ defmodule Oli.Experiments do
 
   defp record_policy_reward(assignment, request, reward_event) do
     experiment = Repo.get!(ExperimentDefinitionSchema, assignment.experiment_id)
-    decision_point = Repo.get!(DecisionPoint, assignment.decision_point_id)
 
-    case decision_point.algorithm do
+    decision_point =
+      experiment
+      |> runtime_decision_point(Repo.get!(DecisionPoint, assignment.decision_point_id), [])
+
+    case experiment.algorithm do
       :weighted_random ->
         :ok
 
@@ -3162,7 +3164,7 @@ defmodule Oli.Experiments do
       |> get_or_create_policy_state(assignment.decision_point_id)
       |> lock_policy_state()
 
-    decision_point.algorithm
+    experiment.algorithm
     |> policy_module()
     |> apply(:record_reward, [
       decision_point_policy_config(decision_point),
@@ -3185,7 +3187,7 @@ defmodule Oli.Experiments do
         :telemetry.execute([:oli, :experiments, :policy, :update_failed], %{count: 1}, %{
           policy_state_id: policy_state.id,
           reward_key_hash: hash_key(request.key),
-          algorithm: decision_point.algorithm,
+          algorithm: experiment.algorithm,
           algorithm_version: policy_state.algorithm_version,
           reward_class: reward_class(request.reward_value),
           error_type: reason
@@ -3218,9 +3220,11 @@ defmodule Oli.Experiments do
   end
 
   defp get_or_create_policy_state(experiment, decision_point_id) do
-    decision_point = Repo.get!(DecisionPoint, decision_point_id)
+    decision_point =
+      experiment
+      |> runtime_decision_point(Repo.get!(DecisionPoint, decision_point_id), [])
 
-    case get_policy_state(experiment.id, decision_point_id, decision_point.algorithm) do
+    case get_policy_state(experiment.id, decision_point_id, experiment.algorithm) do
       nil ->
         {algorithm_version, state} =
           initial_policy_state_attrs(experiment, decision_point)
@@ -3229,7 +3233,7 @@ defmodule Oli.Experiments do
         |> PolicyState.changeset(%{
           experiment_id: experiment.id,
           decision_point_id: decision_point_id,
-          algorithm: decision_point.algorithm,
+          algorithm: experiment.algorithm,
           algorithm_version: algorithm_version,
           state: state,
           reward_success_count: 0,
@@ -3765,7 +3769,8 @@ defmodule Oli.Experiments do
       |> Repo.all()
       |> Enum.group_by(& &1.decision_point_id)
 
-    Enum.reduce_while(decision_points, :ok, fn decision_point, :ok ->
+    Enum.reduce_while(decision_points, :ok, fn persisted_decision_point, :ok ->
+      decision_point = runtime_decision_point(schema, persisted_decision_point, [])
       conditions = Map.get(conditions_by_point, decision_point.id, [])
       interventions = Map.get(interventions_by_point, decision_point.id, [])
 
@@ -3873,7 +3878,7 @@ defmodule Oli.Experiments do
 
   defp validate_activation_interventions(decision_point, interventions) do
     cond do
-      interventions == [] ->
+      decision_point.algorithm == :thompson_sampling and interventions == [] ->
         invalid_condition("decision point requires at least one intervention", %{
           decision_point_id: decision_point.id
         })
@@ -3896,6 +3901,111 @@ defmodule Oli.Experiments do
       true ->
         :ok
     end
+  end
+
+  defp materialize_weighted_random_intervention(
+         %{page_resource_id: page_resource_id, content_element_id: content_element_id} = request,
+         scope
+       )
+       when is_integer(page_resource_id) and is_binary(content_element_id) do
+    materialize_weighted_random_interventions([request], scope)
+    :ok
+  end
+
+  defp materialize_weighted_random_intervention(_request, _scope), do: :ok
+
+  defp materialize_weighted_random_interventions(requests, scope) do
+    requests =
+      requests
+      |> Enum.filter(&valid_intervention_identity?/1)
+      |> Enum.uniq_by(&{&1.alternatives_resource_id, &1.page_resource_id, &1.content_element_id})
+
+    alternatives_resource_ids =
+      requests
+      |> Enum.map(& &1.alternatives_resource_id)
+      |> Enum.uniq()
+
+    decision_points_by_resource =
+      from(decision_point in DecisionPoint,
+        join: experiment in ExperimentDefinitionSchema,
+        as: :experiment,
+        on: experiment.id == decision_point.experiment_id,
+        where:
+          experiment.project_id == ^scope.project_id and
+            experiment.state == :active and
+            experiment.algorithm == :weighted_random and
+            decision_point.alternatives_resource_id in ^alternatives_resource_ids and
+            exists(participating_section_query(scope.section_id)),
+        select: {decision_point.alternatives_resource_id, decision_point.id}
+      )
+      |> Repo.all()
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+
+    now = now()
+
+    candidate_entries =
+      for request <- requests,
+          decision_point_id <-
+            Map.get(decision_points_by_resource, request.alternatives_resource_id, []) do
+        %{
+          decision_point_id: decision_point_id,
+          page_resource_id: request.page_resource_id,
+          content_element_id: request.content_element_id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end
+
+    existing_identities =
+      case candidate_entries do
+        [] ->
+          MapSet.new()
+
+        entries ->
+          decision_point_ids = entries |> Enum.map(& &1.decision_point_id) |> Enum.uniq()
+          page_resource_ids = entries |> Enum.map(& &1.page_resource_id) |> Enum.uniq()
+          content_element_ids = entries |> Enum.map(& &1.content_element_id) |> Enum.uniq()
+
+          from(intervention in Intervention,
+            where:
+              intervention.decision_point_id in ^decision_point_ids and
+                intervention.page_resource_id in ^page_resource_ids and
+                intervention.content_element_id in ^content_element_ids,
+            select:
+              {intervention.decision_point_id, intervention.page_resource_id,
+               intervention.content_element_id}
+          )
+          |> Repo.all()
+          |> MapSet.new()
+      end
+
+    entries =
+      Enum.reject(candidate_entries, fn entry ->
+        MapSet.member?(existing_identities, {
+          entry.decision_point_id,
+          entry.page_resource_id,
+          entry.content_element_id
+        })
+      end)
+
+    case entries do
+      [] ->
+        :ok
+
+      entries ->
+        Repo.insert_all(Intervention, entries,
+          on_conflict: :nothing,
+          conflict_target: [:decision_point_id, :page_resource_id, :content_element_id]
+        )
+
+        :ok
+    end
+  end
+
+  defp valid_intervention_identity?(request) do
+    is_integer(request.page_resource_id) and request.page_resource_id > 0 and
+      is_binary(request.content_element_id) and
+      byte_size(request.content_element_id) in 1..255
   end
 
   defp validate_adaptive_activation_for_point(
@@ -4095,14 +4205,30 @@ defmodule Oli.Experiments do
 
   defp validate_authoring_algorithm(_algorithm, _structural_configuration_change?), do: :ok
 
-  defp validate_graph_request(request, scope) do
+  defp validate_immutable_algorithm(_schema, nil), do: :ok
+
+  defp validate_immutable_algorithm(%ExperimentDefinitionSchema{algorithm: algorithm}, algorithm),
+    do: :ok
+
+  defp validate_immutable_algorithm(_schema, _algorithm),
+    do: invalid_condition("assignment policy cannot be changed after experiment creation")
+
+  defp validate_graph_request(request, scope),
+    do: validate_graph_request(request, scope, request.algorithm)
+
+  defp validate_graph_request(request, scope, algorithm) do
     case structural_configuration_change?(request) do
       false ->
         :ok
 
       true ->
+        decision_points =
+          Enum.map(request.decision_points, fn point ->
+            point |> atomize_keys() |> Map.put(:algorithm, algorithm)
+          end)
+
         with :ok <- validate_authoring_conditions(request.conditions),
-             :ok <- validate_decision_points(request.decision_points, request.conditions, scope) do
+             :ok <- validate_decision_points(decision_points, request.conditions, scope) do
           :ok
         end
     end
@@ -4645,14 +4771,14 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp public_decision_point(%DecisionPoint{} = decision_point) do
+  defp public_decision_point(%DecisionPoint{} = decision_point, algorithm) do
     %{
       id: decision_point.id,
       alternatives_resource_id: decision_point.alternatives_resource_id,
       decision_point_key: decision_point.decision_point_key,
       title: decision_point.title,
       position: decision_point.position,
-      algorithm: decision_point.algorithm,
+      algorithm: algorithm,
       prior_alpha: decision_point.prior_alpha,
       prior_beta: decision_point.prior_beta,
       warm_up_assignments: decision_point.warm_up_assignments,

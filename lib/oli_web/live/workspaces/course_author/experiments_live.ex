@@ -94,7 +94,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
           <%= if Enum.empty?(@ab_experiments) do %>
             No A/B Testing experiments have been created yet.
           <% else %>
-            No non-archived experiments to display.
+            No experiments to display
           <% end %>
         </div>
       <% else %>
