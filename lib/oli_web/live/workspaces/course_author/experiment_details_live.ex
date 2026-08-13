@@ -42,6 +42,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          page_options: page_options,
          picker: nil,
          graph_draft: graph_draft(authoring_view, alternatives_candidates),
+         configuration_dirty: false,
          configuration_error: nil,
          configuration_success: nil,
          read_only: experiment.state in [:completed, :archived],
@@ -174,43 +175,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               value={@experiment.description}
             />
           </div>
-
-          <div class="row">
-            <div :if={not Enum.empty?(@authoring_view.conditions)} class="col-12 mt-2">
-              <h4 class="h6 mb-3 !font-medium">Conditions</h4>
-              <div class="table-responsive">
-                <table
-                  id="experiment-conditions-table"
-                  class="table table-sm table-hover mb-0 dark:text-gray-100"
-                >
-                  <caption class="sr-only">Experiment conditions</caption>
-                  <thead class="thead-light dark:bg-neutral-700 dark:text-gray-100">
-                    <tr>
-                      <th scope="col">Condition</th>
-                      <th scope="col">Option ID</th>
-                      <th scope="col">Weight</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      :for={row <- condition_rows(@authoring_view)}
-                      class="dark:border-gray-700 dark:hover:bg-neutral-700"
-                    >
-                      <td class="font-weight-bold">
-                        {row.condition.label || row.condition.condition_code}
-                      </td>
-                      <td>
-                        <span class="font-monospace text-muted dark:text-gray-400">
-                          {row.mapping.option_id}
-                        </span>
-                      </td>
-                      <td>{row.mapping.weight}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -223,13 +187,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           <h3 id="experiment-graph-heading" class="h5 mb-0 !font-semibold">
             Experiment configuration
           </h3>
-          <p
-            :if={@experiment.state != :draft}
-            id="experiment-structure-read-only"
-            class="mb-0 text-sm text-gray-500 sm:text-right dark:text-gray-400"
-          >
-            Experiment structure is read-only after leaving draft.
-          </p>
         </div>
         <div class="card-body px-4 pt-4">
           <div :if={@configuration_error} class="alert alert-danger" role="alert">
@@ -244,8 +201,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             phx-change="change_configuration"
             phx-submit="save_configuration"
           >
-            <fieldset disabled={@experiment.state != :draft}>
-              <legend class="sr-only">Experiment Decision Point, conditions, and policy</legend>
+            <div>
               <input
                 type="hidden"
                 name="configuration[algorithm]"
@@ -296,6 +252,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                         class="form-control"
                         name={"configuration[conditions][#{condition_index}][label]"}
                         value={condition.label}
+                        disabled={@experiment.state != :draft}
                         required
                       />
                     </div>
@@ -314,6 +271,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                         id={"condition-#{condition_index}-option"}
                         class="form-control"
                         name={"configuration[conditions][#{condition_index}][option_id]"}
+                        disabled={@experiment.state != :draft}
                       >
                         <option
                           :for={{label, option_id} <- @graph_draft.options}
@@ -330,21 +288,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                         id={"condition-#{condition_index}-active"}
                         class="form-control"
                         name={"configuration[conditions][#{condition_index}][active]"}
+                        disabled={@experiment.state in [:completed, :archived]}
+                        phx-change="change_condition_availability"
                       >
                         <option value="true" selected={condition.active}>Active</option>
                         <option value="false" selected={not condition.active}>Inactive</option>
                       </select>
                     </div>
                     <div>
-                      <label for={"condition-#{condition_index}-weight"}>Weight</label>
+                      <label for={"condition-#{condition_index}-weight"}>
+                        {condition_weight_label(@experiment.algorithm)}
+                      </label>
                       <input
                         id={"condition-#{condition_index}-weight"}
                         type="number"
                         min="0"
                         step="any"
-                        class="form-control"
+                        class="form-control disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                         name={"configuration[conditions][#{condition_index}][weight]"}
                         value={condition.weight}
+                        disabled={not condition_weight_editable?(@experiment)}
                         required
                       />
                     </div>
@@ -374,6 +337,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       value={@graph_draft.prior_alpha}
                       min="0.0001"
                       max="1000"
+                      disabled={@experiment.state != :draft}
                     />
                     <.number_field
                       key="prior_beta"
@@ -382,14 +346,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       value={@graph_draft.prior_beta}
                       min="0.0001"
                       max="1000"
+                      disabled={@experiment.state != :draft}
                     />
                     <.number_field
                       key="warm_up_assignments"
                       label="Warm-up assignments"
-                      help="The minimum assignment count collected before adaptive allocation begins."
+                      help="Assignments use each condition's Warm-up weight as weighted random allocation until this total assignment threshold is met. Afterward, Thompson Sampling uses the collected evidence for adaptive allocation."
                       value={@graph_draft.warm_up_assignments}
                       min="0"
                       step="1"
+                      disabled={@experiment.state != :draft}
                     />
                     <.number_field
                       key="max_condition_share"
@@ -398,6 +364,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       value={@graph_draft.max_condition_share}
                       min="0.0001"
                       max="1"
+                      disabled={@experiment.state != :draft}
                     />
                     <.number_field
                       key="fixed_control_allocation"
@@ -407,6 +374,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       min="0"
                       max="1"
                       required={false}
+                      disabled={@experiment.state != :draft}
                     />
                     <.number_field
                       key="imbalance_threshold"
@@ -415,6 +383,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       value={@graph_draft.imbalance_threshold}
                       min="0"
                       max="1"
+                      disabled={@experiment.state != :draft}
                     />
                   </div>
                 </div>
@@ -491,12 +460,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                 </div>
               </div>
 
-              <div :if={@experiment.state == :draft} class="mt-4 flex justify-end">
-                <button type="submit" class="btn btn-primary">
+              <div
+                :if={@experiment.state in [:draft, :active, :paused]}
+                class="mt-4 flex justify-end"
+              >
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  disabled={not @configuration_dirty}
+                >
                   Save configuration
                 </button>
               </div>
-            </fieldset>
+            </div>
           </.form>
         </div>
       </section>
@@ -974,51 +950,95 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     end
   end
 
-  def handle_event("save_configuration", %{"configuration" => params}, socket) do
-    with :draft <- socket.assigns.experiment.state,
-         {:ok, request} <- configuration_request(socket, params),
-         {:ok, experiment} <-
-           ABExperiments.update_experiment(socket.assigns.experiment.id, request),
-         {:ok, authoring_view} <-
-           ABExperiments.get_experiment_authoring_view(experiment.id, authoring_scope(socket)) do
-      {:noreply,
-       assign(socket,
-         experiment: experiment,
-         authoring_view: authoring_view,
-         graph_draft: graph_draft(authoring_view, socket.assigns.alternatives_candidates),
-         configuration_success: "Experiment configuration saved.",
-         configuration_error: nil
-       )}
-    else
-      {:error, %Oli.Experiments.ExperimentError{} = error} ->
-        {:noreply, assign(socket, configuration_error: error.message, configuration_success: nil)}
+  def handle_event(
+        "change_condition_availability",
+        %{
+          "_target" => ["configuration", "conditions", condition_index, "active"],
+          "configuration" => %{"conditions" => conditions}
+        },
+        socket
+      ) do
+    with {:ok, condition_index} <- parse_index(condition_index),
+         %{"active" => active_value} <- Map.get(conditions, Integer.to_string(condition_index)),
+         {:ok, active} <- parse_boolean(active_value),
+         condition when not is_nil(condition) <-
+           Enum.at(socket.assigns.graph_draft.conditions, condition_index) do
+      case socket.assigns.experiment.state do
+        state when state in [:draft, :active, :paused] ->
+          {:noreply,
+           socket
+           |> update(:graph_draft, fn draft ->
+             Map.update!(draft, :conditions, fn current_conditions ->
+               List.update_at(current_conditions, condition_index, &Map.put(&1, :active, active))
+             end)
+           end)
+           |> assign(configuration_dirty: true, configuration_error: nil)}
 
-      {:error, message} when is_binary(message) ->
-        {:noreply, assign(socket, configuration_error: message, configuration_success: nil)}
+        _state ->
+          {:noreply, socket}
+      end
+    else
+      _ -> invalid_configuration_event(socket)
+    end
+  end
+
+  def handle_event(
+        "change_condition_availability",
+        %{"configuration" => %{"conditions" => conditions}} = params,
+        socket
+      )
+      when not is_map_key(params, "_target") do
+    case Map.keys(conditions) do
+      [condition_index] ->
+        handle_event(
+          "change_condition_availability",
+          Map.put(params, "_target", ["configuration", "conditions", condition_index, "active"]),
+          socket
+        )
 
       _ ->
-        {:noreply,
-         assign(socket,
-           configuration_error: "Experiment configuration is read-only.",
-           configuration_success: nil
-         )}
+        invalid_configuration_event(socket)
+    end
+  end
+
+  def handle_event("save_configuration", %{"configuration" => params}, socket) do
+    case socket.assigns.experiment.state do
+      :draft -> save_draft_configuration(socket, params)
+      state when state in [:active, :paused] -> save_condition_availabilities(socket, params)
+      _state -> configuration_read_only(socket)
     end
   end
 
   def handle_event("change_configuration", %{"configuration" => params}, socket) do
-    case socket.assigns.experiment.state do
-      :draft ->
+    algorithm = socket.assigns.experiment.algorithm
+
+    case {socket.assigns.experiment.state, algorithm} do
+      {:draft, _algorithm} ->
         condition_changes = submitted_condition_changes(params["conditions"])
-        algorithm = socket.assigns.experiment.algorithm
         configuration_changes = submitted_configuration_changes(params, algorithm)
 
         {:noreply,
-         update(socket, :graph_draft, fn draft ->
+         socket
+         |> update(:graph_draft, fn draft ->
            draft
            |> Map.put(:algorithm, algorithm)
            |> Map.update!(:conditions, &merge_indexed_changes(&1, condition_changes))
            |> Map.merge(configuration_changes)
-         end)}
+         end)
+         |> assign(configuration_dirty: true, configuration_error: nil)}
+
+      {state, :weighted_random} when state in [:active, :paused] ->
+        condition_changes =
+          params["conditions"]
+          |> submitted_condition_changes()
+          |> normalize_submitted_weights()
+
+        {:noreply,
+         socket
+         |> update(:graph_draft, fn draft ->
+           Map.update!(draft, :conditions, &merge_indexed_changes(&1, condition_changes))
+         end)
+         |> assign(configuration_dirty: true, configuration_error: nil)}
 
       _ ->
         {:noreply, socket}
@@ -1090,6 +1110,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   attr :step, :string, default: "any"
   attr :required, :boolean, default: true
   attr :help, :string, default: nil
+  attr :disabled, :boolean, default: false
 
   defp number_field(assigns) do
     ~H"""
@@ -1113,6 +1134,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         max={@max}
         step={@step}
         required={@required}
+        disabled={@disabled}
       />
     </div>
     """
@@ -1412,6 +1434,80 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp invalid_configuration_event(socket),
     do: {:noreply, assign(socket, configuration_error: "Invalid configuration selection.")}
 
+  defp save_draft_configuration(socket, params) do
+    with :draft <- socket.assigns.experiment.state,
+         {:ok, request} <- configuration_request(socket, params),
+         {:ok, experiment} <-
+           ABExperiments.update_experiment(socket.assigns.experiment.id, request),
+         {:ok, authoring_view} <-
+           ABExperiments.get_experiment_authoring_view(experiment.id, authoring_scope(socket)) do
+      {:noreply,
+       assign(socket,
+         experiment: experiment,
+         authoring_view: authoring_view,
+         graph_draft: graph_draft(authoring_view, socket.assigns.alternatives_candidates),
+         configuration_dirty: false,
+         configuration_success: "Experiment configuration saved.",
+         configuration_error: nil
+       )}
+    else
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        {:noreply, assign(socket, configuration_error: error.message, configuration_success: nil)}
+
+      {:error, message} when is_binary(message) ->
+        {:noreply, assign(socket, configuration_error: message, configuration_success: nil)}
+
+      _ ->
+        configuration_read_only(socket)
+    end
+  end
+
+  defp save_condition_availabilities(socket, _params) do
+    scope = authoring_scope(socket)
+
+    condition_fields =
+      case socket.assigns.experiment.algorithm do
+        :weighted_random -> [:id, :active, :weight]
+        _ -> [:id, :active]
+      end
+
+    availabilities =
+      Enum.map(socket.assigns.graph_draft.conditions, &Map.take(&1, condition_fields))
+
+    with {:ok, _conditions} <-
+           ABExperiments.update_condition_availabilities(
+             socket.assigns.experiment.id,
+             availabilities,
+             scope
+           ),
+         {:ok, authoring_view} <-
+           ABExperiments.get_experiment_authoring_view(socket.assigns.experiment.id, scope) do
+      {:noreply,
+       assign(socket,
+         authoring_view: authoring_view,
+         graph_draft: graph_draft(authoring_view, socket.assigns.alternatives_candidates),
+         configuration_dirty: false,
+         configuration_success: "Experiment configuration saved.",
+         configuration_error: nil
+       )}
+    else
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        {:noreply,
+         assign(socket,
+           configuration_error: error.message,
+           configuration_success: nil
+         )}
+    end
+  end
+
+  defp configuration_read_only(socket) do
+    {:noreply,
+     assign(socket,
+       configuration_error: "Experiment configuration is read-only.",
+       configuration_success: nil
+     )}
+  end
+
   defp configuration_request(socket, params) do
     algorithm = socket.assigns.experiment.algorithm
 
@@ -1550,6 +1646,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp submitted_condition_changes(_params), do: %{}
 
+  defp normalize_submitted_weights(changes) do
+    Map.new(changes, fn {index, condition} ->
+      normalized =
+        case Map.fetch(condition, :weight) do
+          {:ok, weight} ->
+            case parse_non_negative_number(to_string(weight)) do
+              {:ok, parsed} -> Map.put(condition, :weight, parsed)
+              {:error, _reason} -> condition
+            end
+
+          :error ->
+            condition
+        end
+
+      {index, normalized}
+    end)
+  end
+
   defp submitted_intervention_changes(params) when is_map(params) do
     submitted_indexed_changes(params, fn intervention ->
       %{}
@@ -1665,14 +1779,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp parse_optional_share(value) when value in [nil, ""], do: {:ok, nil}
   defp parse_optional_share(value), do: parse_share(value)
 
-  defp condition_rows(authoring_view) do
-    Enum.map(authoring_view.conditions, fn condition ->
-      %{mapping: condition, condition: condition}
-    end)
-  end
-
   defp show_policy_report?(experiment, snapshot),
     do: experiment.state != :draft and snapshot != []
+
+  defp condition_weight_editable?(%{state: :draft}), do: true
+
+  defp condition_weight_editable?(%{algorithm: :weighted_random, state: state})
+       when state in [:active, :paused],
+       do: true
+
+  defp condition_weight_editable?(_experiment), do: false
+
+  defp condition_weight_label(:thompson_sampling), do: "Warm-up weight"
+  defp condition_weight_label(_algorithm), do: "Weight"
 
   defp format_percent(value), do: :erlang.float_to_binary(value * 100, decimals: 1) <> "%"
 

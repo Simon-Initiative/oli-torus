@@ -135,6 +135,113 @@ defmodule Oli.Experiments do
     do: invalid_request("expected UpdateExperimentRequest")
 
   @doc """
+  Changes whether a condition is eligible for new assignments.
+
+  Availability may be changed while an experiment is draft, active, or paused. Existing
+  assignments remain sticky when their condition is made unavailable.
+  """
+  def update_condition_availability(experiment_id, condition_id, active, %Scope{} = scope)
+      when is_integer(experiment_id) and is_integer(condition_id) and is_boolean(active) do
+    with {:ok, updated} <-
+           update_condition_availabilities(
+             experiment_id,
+             [%{id: condition_id, active: active}],
+             scope
+           ) do
+      {:ok, Enum.find(updated, &(&1.id == condition_id))}
+    end
+  end
+
+  def update_condition_availability(_experiment_id, _condition_id, _active, _scope),
+    do: invalid_request("expected experiment, condition, availability, and authoring scope")
+
+  @doc """
+  Atomically changes condition availability and weighted-random allocation weights.
+  """
+  def update_condition_availabilities(experiment_id, availabilities, %Scope{} = scope)
+      when is_integer(experiment_id) and is_list(availabilities) and availabilities != [] do
+    with {:ok, scope} <- validate_scope(scope),
+         {:ok, schema} <- get_scoped_definition(experiment_id, scope),
+         :ok <- require_authoring_access(scope),
+         :ok <- validate_availability_update_state(schema),
+         {:ok, updates_by_id} <- normalize_condition_updates(availabilities),
+         :ok <- validate_condition_weight_updates(schema, updates_by_id) do
+      result =
+        Repo.transaction(fn ->
+          lock_experiment!(schema.id)
+          locked_schema = Repo.get!(ExperimentDefinitionSchema, schema.id)
+
+          case validate_availability_update_state(locked_schema) do
+            :ok -> :ok
+            {:error, %ExperimentError{} = error} -> Repo.rollback(error)
+          end
+
+          case validate_condition_weight_updates(locked_schema, updates_by_id) do
+            :ok -> :ok
+            {:error, %ExperimentError{} = error} -> Repo.rollback(error)
+          end
+
+          conditions =
+            from(condition in Condition, where: condition.experiment_id == ^schema.id)
+            |> Repo.all()
+
+          unknown_ids = Map.keys(updates_by_id) -- Enum.map(conditions, & &1.id)
+
+          if unknown_ids != [] do
+            Repo.rollback(
+              elem(
+                not_found("experiment condition was not found", %{condition_ids: unknown_ids}),
+                1
+              )
+            )
+          end
+
+          updated_conditions =
+            conditions
+            |> Enum.map(fn current ->
+              update = Map.get(updates_by_id, current.id, %{})
+
+              %{
+                current
+                | active: Map.get(update, :active, current.active),
+                  weight: Map.get(update, :weight, current.weight)
+              }
+            end)
+
+          case validate_available_conditions(updated_conditions, locked_schema.state) do
+            :ok ->
+              Enum.map(conditions, fn condition ->
+                update = Map.get(updates_by_id, condition.id, %{})
+
+                condition
+                |> Condition.changeset(update)
+                |> Repo.update!()
+              end)
+
+            {:error, %ExperimentError{} = error} ->
+              Repo.rollback(error)
+          end
+        end)
+        |> normalize_transaction_result()
+
+      case result do
+        {:ok, _updated} ->
+          emit_authoring_telemetry(:condition_configuration, schema, %{
+            condition_ids: Map.keys(updates_by_id)
+          })
+
+          result
+
+        _error ->
+          result
+      end
+    end
+  end
+
+  def update_condition_availabilities(_experiment_id, _availabilities, _scope),
+    do: invalid_request("expected one or more condition availability changes")
+
+  @doc """
   Activates a draft or paused experiment.
   """
   def activate_experiment(experiment_id, request),
@@ -2361,7 +2468,6 @@ defmodule Oli.Experiments do
             assignment.enrollment_id == ^scope.enrollment_id and
             assignment.user_id == ^scope.user_id and
             experiment.alternatives_resource_id == ^request.alternatives_resource_id and
-            condition.active == true and
             (condition.option_id in ^request.available_condition_codes or
                condition.condition_code in ^request.available_condition_codes),
         order_by: [desc: assignment.id],
@@ -3847,6 +3953,90 @@ defmodule Oli.Experiments do
            message: "experiment state does not allow this edit",
            details: %{state: schema.state}
          }}
+    end
+  end
+
+  defp validate_availability_update_state(%ExperimentDefinitionSchema{state: state})
+       when state in [:draft, :active, :paused],
+       do: :ok
+
+  defp validate_availability_update_state(%ExperimentDefinitionSchema{state: state}) do
+    {:error,
+     %ExperimentError{
+       type: :invalid_state,
+       message: "condition availability cannot be changed for this experiment",
+       details: %{state: state}
+     }}
+  end
+
+  defp validate_available_conditions(conditions, state) do
+    active_conditions = Enum.filter(conditions, & &1.active)
+    minimum_active = if state == :draft, do: 2, else: 1
+
+    cond do
+      length(active_conditions) < minimum_active ->
+        message =
+          case state do
+            :draft -> "experiments require at least two active conditions"
+            _ -> "experiments require at least one active condition"
+          end
+
+        invalid_condition(message)
+
+      Enum.reduce(active_conditions, 0.0, &(&1.weight + &2)) <= 0.0 ->
+        invalid_condition("active condition weights must have a positive total")
+
+      true ->
+        :ok
+    end
+  end
+
+  defp normalize_condition_updates(availabilities) do
+    normalized =
+      Enum.reduce_while(availabilities, {:ok, %{}}, fn availability, {:ok, acc} ->
+        id = Map.get(availability, :id) || Map.get(availability, "id")
+        active = Map.get(availability, :active, Map.get(availability, "active"))
+        weight = Map.get(availability, :weight, Map.get(availability, "weight"))
+
+        update =
+          %{active: active}
+          |> then(fn update ->
+            case weight do
+              nil -> update
+              weight -> Map.put(update, :weight, weight)
+            end
+          end)
+
+        case {id, active, weight, Map.has_key?(acc, id)} do
+          {id, active, weight, false}
+          when is_integer(id) and is_boolean(active) and
+                 (is_nil(weight) or (is_number(weight) and weight >= 0)) ->
+            {:cont, {:ok, Map.put(acc, id, update)}}
+
+          _ ->
+            {:halt, invalid_request("condition availability changes must have unique IDs")}
+        end
+      end)
+
+    case normalized do
+      {:ok, availability_by_id} when map_size(availability_by_id) > 0 ->
+        {:ok, availability_by_id}
+
+      _ ->
+        invalid_request("expected one or more condition availability changes")
+    end
+  end
+
+  defp validate_condition_weight_updates(
+         %ExperimentDefinitionSchema{algorithm: :weighted_random},
+         _updates
+       ),
+       do: :ok
+
+  defp validate_condition_weight_updates(_schema, updates) do
+    case Enum.any?(updates, fn {_id, update} -> Map.has_key?(update, :weight) end) do
+      true -> invalid_condition("condition weights apply only to weighted random experiments")
+      false -> :ok
     end
   end
 

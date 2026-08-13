@@ -6,7 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Authoring.Experiments
-  alias Oli.Experiments.Schemas.ExperimentDefinition
+  alias Oli.Experiments.Schemas.{Condition, ExperimentDefinition}
   alias Oli.Resources.{Resource, ResourceType, Revision}
   alias Oli.Repo
 
@@ -718,7 +718,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(details_view, "#experiment-configuration", "Active")
       refute has_element?(details_view, "#experiment-policy-report")
-      assert has_element?(details_view, "#experiment-graph-form fieldset[disabled]")
+      assert has_element?(details_view, "#condition-0-label[disabled]")
+      assert has_element?(details_view, "#condition-0-option[disabled]")
+      refute has_element?(details_view, "#condition-0-weight[disabled]")
+      refute has_element?(details_view, "#condition-0-active[disabled]")
+
+      condition = Repo.get_by!(Condition, experiment_id: id, position: 0)
+
+      details_view
+      |> element("#experiment-graph-form")
+      |> render_change(%{
+        "configuration" => %{"conditions" => %{"0" => %{"weight" => "3.0"}}}
+      })
+
+      assert Repo.get!(Condition, condition.id).weight == 1.0
+
+      details_view
+      |> form("#experiment-graph-form")
+      |> render_submit(%{"configuration" => %{}})
+
+      assert Repo.get!(Condition, condition.id).weight == 3.0
 
       details_view
       |> element("button[phx-click='pause_experiment']", "Pause")
@@ -726,6 +745,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(details_view, "#experiment-configuration", "Paused")
       assert has_element?(details_view, "button[phx-click='start_experiment']", "Resume")
+      refute has_element?(details_view, "#condition-0-weight[disabled]")
 
       details_view
       |> element("button[phx-click='start_experiment']", "Resume")
@@ -895,17 +915,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "h4", "Conditions")
       assert has_element?(details_view, "input[id^='condition-'][id$='-code'][disabled]")
       refute has_element?(details_view, "input[id^='condition-'][id$='-code'][readonly]")
-
-      assert has_element?(
-               details_view,
-               "#experiment-conditions-table > caption.sr-only",
-               "Experiment conditions"
-             )
-
-      assert has_element?(details_view, "#experiment-conditions-table th", "Option ID")
-      assert has_element?(details_view, "#experiment-conditions-table td", "A")
-      assert has_element?(details_view, "#experiment-conditions-table td", "B")
-      assert has_element?(details_view, "#experiment-conditions-table td", "alt-a")
 
       assert has_element?(
                details_view,
@@ -1080,6 +1089,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "#experiment-prior_beta[value='1.0']")
       assert has_element?(details_view, "#experiment-warm_up_assignments[value='0']")
       assert has_element?(details_view, "#experiment-max_condition_share[value='1.0']")
+      assert has_element?(details_view, "label[for='condition-0-weight']", "Warm-up weight")
       refute has_element?(details_view, "#experiment-configuration pre")
 
       assert has_element?(
@@ -1117,18 +1127,33 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(details_view, "details[id^='policy-technical-details-']", "Posterior α")
       refute render(details_view) =~ "next-assignment probability"
-      assert has_element?(details_view, "#experiment-graph-form fieldset[disabled]")
+      assert has_element?(details_view, "#condition-0-label[disabled]")
+      assert has_element?(details_view, "#condition-0-option[disabled]")
+      assert has_element?(details_view, "#condition-0-weight[disabled]")
+      refute has_element?(details_view, "#condition-0-active[disabled]")
 
-      assert has_element?(
-               details_view,
-               "#experiment-graph-configuration .card-header.flex-col.sm\\:flex-row #experiment-structure-read-only.sm\\:text-right",
-               "Experiment structure is read-only after leaving draft."
-             )
+      condition = Repo.get_by!(Condition, experiment_id: id, position: 0)
+
+      details_view
+      |> element("#condition-0-active")
+      |> render_change(%{
+        "configuration" => %{"conditions" => %{"0" => %{"active" => "false"}}}
+      })
+
+      assert Repo.get!(Condition, condition.id).active
+      refute has_element?(details_view, "button[type='submit'][disabled]", "Save configuration")
+
+      details_view
+      |> form("#experiment-graph-form")
+      |> render_submit(%{"configuration" => %{}})
+
+      refute Repo.get!(Condition, condition.id).active
+      assert has_element?(details_view, "button[type='submit'][disabled]", "Save configuration")
 
       refute has_element?(details_view, "button", "Remove decision point")
       refute has_element?(details_view, "button", "Remove intervention")
       refute has_element?(details_view, "button", "Add intervention")
-      refute has_element?(details_view, "button", "Save configuration")
+      assert has_element?(details_view, "button[type='submit'][disabled]", "Save configuration")
 
       assert has_element?(
                details_view,

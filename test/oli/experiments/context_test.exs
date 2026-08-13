@@ -364,14 +364,46 @@ defmodule Oli.Experiments.ContextTest do
                "Thompson Sampling max condition share must be greater than 0 and at most 1"
     end
 
-    test "blocks assigned condition deletion and deactivation" do
+    test "allows condition availability changes after launch without invalidating assignments" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
-      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      alternatives =
+        alternatives
+        |> Ecto.Changeset.change(
+          content: %{
+            "strategy" => "upgrade_decision_point",
+            "options" => [
+              %{"id" => "alt-a", "name" => "A"},
+              %{"id" => "alt-b", "name" => "B"},
+              %{"id" => "alt-c", "name" => "C"}
+            ]
+          }
+        )
+        |> Repo.update!()
+
+      conditions = [
+        %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 1.0, active: true},
+        %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 1.0, active: true},
+        %{condition_code: "alt-c", option_id: "alt-c", label: "C", weight: 1.0, active: true}
+      ]
+
+      {:ok, definition} =
+        Experiments.create_experiment(graph_request(scope, alternatives, conditions))
+
       {:ok, _active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
       condition = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "a")
       intervention = Repo.get_by!(Intervention, experiment_id: definition.id)
       runtime_scope = runtime_scope(scope)
+
+      assert {:ok, _conditions} =
+               Experiments.update_condition_availabilities(
+                 definition.id,
+                 [%{id: condition.id, active: true, weight: 3.0}],
+                 scope
+               )
+
+      assert Repo.get!(Condition, condition.id).weight == 3.0
 
       %Assignment{}
       |> Assignment.changeset(%{
@@ -388,21 +420,47 @@ defmodule Oli.Experiments.ContextTest do
       })
       |> Repo.insert!()
 
-      {:ok, paused} = Experiments.pause_experiment(definition.id, lifecycle(scope))
+      assert {:ok, %{active: false}} =
+               Experiments.update_condition_availability(
+                 definition.id,
+                 condition.id,
+                 false,
+                 scope
+               )
 
-      update = %UpdateExperimentRequest{
-        scope: scope,
-        name: paused.name,
-        conditions: [
-          %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 1.0, active: false},
-          %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 1.0, active: true}
-        ]
-      }
+      assert Repo.get!(Assignment, Repo.one!(Assignment).id).condition_id == condition.id
 
-      assert {:error, %ExperimentError{type: :invalid_state, message: message}} =
-               Experiments.update_experiment(definition.id, update)
+      second = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "b")
 
-      assert message == "non-draft experiments are read-only"
+      assert {:ok, %{active: false}} =
+               Experiments.update_condition_availability(
+                 definition.id,
+                 second.id,
+                 false,
+                 scope
+               )
+
+      third = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "c")
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.update_condition_availability(
+                 definition.id,
+                 third.id,
+                 false,
+                 scope
+               )
+
+      assert message == "experiments require at least one active condition"
+
+      {:ok, _completed} = Experiments.complete_experiment(definition.id, lifecycle(scope))
+
+      assert {:error, %ExperimentError{type: :invalid_state}} =
+               Experiments.update_condition_availability(
+                 definition.id,
+                 condition.id,
+                 true,
+                 scope
+               )
     end
   end
 

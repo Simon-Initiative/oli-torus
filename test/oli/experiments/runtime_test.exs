@@ -765,6 +765,28 @@ defmodule Oli.Experiments.RuntimeTest do
                Experiments.assigned_condition(%{request | page_resource_id: nil})
     end
 
+    test "assigned-condition lookup keeps sticky assignments to unavailable conditions" do
+      %{scope: scope, revision: revision} = active_experiment_with_conditions()
+      request = assign_request(scope, revision, ["a", "b"])
+
+      assert {:ok, %AssignmentDecision{status: :assigned} = assigned} =
+               Experiments.assign_condition(request)
+
+      assigned.condition_id
+      |> then(&Repo.get!(Condition, &1))
+      |> Condition.changeset(%{active: false})
+      |> Repo.update!()
+
+      assert {:ok,
+              %AssignmentDecision{
+                status: :assigned,
+                condition_id: condition_id,
+                reused?: true
+              }} = Experiments.assigned_condition(request)
+
+      assert condition_id == assigned.condition_id
+    end
+
     test "deselection blocks sticky reuse and all later evidence while retaining history" do
       %{scope: scope, revision: revision, definition: definition} =
         active_experiment_with_conditions(algorithm: :thompson_sampling)
