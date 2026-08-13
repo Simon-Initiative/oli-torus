@@ -217,14 +217,14 @@ Guardrails:
 
 - Goal: Prove the integrated authoring-to-delivery workflows with real Torus infrastructure and persistence rather than fixtures or browser automation (FR-005 through FR-016, FR-021 through FR-023, FR-027).
 - Tasks:
-  - [ ] Audit existing `Oli.Scenarios` directives for experiment creation/configuration, repeated Alternatives placement, publication, section participation, learner assignment visibility, scored-page evaluation, posterior assertion, and completion percentage.
-  - [ ] If required, use `extend_scenario` to add the smallest reusable directive/parser/handler/assertion support with infrastructure tests.
-  - [ ] Use `build_scenario` to author a workflow with two learners assigned to different alternatives across repeated interventions; complete only each learner's visible required activities plus the shared assessment and assert both reach 100%.
-  - [ ] Add a workflow proving sticky revisits, scored-page finalization, one accepted reward, posterior reuse by a later intervention, and isolation from a separate decision point.
-  - [ ] Keep scenarios concise; retain concurrency, exhaustive boundary, migration, and detailed UI assertions in targeted ExUnit/LiveView tests.
+  - [x] Audit existing `Oli.Scenarios` directives for experiment creation/configuration, repeated Alternatives placement, publication, section participation, learner assignment visibility, scored-page evaluation, posterior assertion, and completion percentage.
+  - [x] If required, use `extend_scenario` to add the smallest reusable directive/parser/handler/assertion support with infrastructure tests.
+  - [x] Use `build_scenario` to author a workflow with two learners assigned to different alternatives across repeated interventions; complete only each learner's visible required activities plus the shared assessment and assert both reach 100%.
+  - [x] Add a workflow proving sticky revisits, scored-page finalization, one accepted reward, posterior reuse by a later intervention, and isolation from a separate decision point.
+  - [x] Keep scenarios concise; retain concurrency, exhaustive boundary, migration, and detailed UI assertions in targeted ExUnit/LiveView tests.
 - Testing Tasks:
-  - [ ] Validate each scenario YAML with `Oli.Scenarios.validate_file/1`.
-  - [ ] Run scenario-infrastructure tests if the DSL changes, then targeted companion ExUnit runners and fail on any scenario execution or verification error.
+  - [x] Validate each scenario YAML with `Oli.Scenarios.validate_file/1`.
+  - [x] Run scenario-infrastructure tests if the DSL changes, then targeted companion ExUnit runners and fail on any scenario execution or verification error.
   - Command(s): `mix test <scenario infrastructure tests>`; `mix test <experiment scoped arms scenario runners>`
 - Definition of Done:
   - Real authoring, publishing, delivery, assignment, completion, assessment, reward, and later sampling behavior succeeds end to end for multiple learners and interventions.
