@@ -2,7 +2,6 @@ import { JournalSnapshot } from '@tasks/AdaptiveJournal';
 import { AdaptiveManifest, ScreenRole } from '@tasks/AdaptiveManifest';
 import { RunRecord, RunVisit, StepReceipt, Violation, auditRun } from '@tasks/AdaptiveOracle';
 import { planTransition } from '@tasks/AdaptiveTransitionPlanner';
-import { LedgerEntry } from '@tasks/AdaptiveStrictContract';
 
 /**
  * MER-5865 step 3 — shadow projector (B0 round-2 redesign).
@@ -22,10 +21,25 @@ import { LedgerEntry } from '@tasks/AdaptiveStrictContract';
  * payload-vs-archive expectations, provenance, transitions, freeze.
  */
 
+/**
+ * The shipped walker's ledger AS IT APPEARS IN FROZEN CAPTURES — the fields
+ * this projector compares, nothing more. Declared here, in the replay domain,
+ * because `B4-DEL` deletes the walker while its captures stay replayable.
+ */
+export type CapturedLedgerEntry = {
+  screenId: string;
+  role: ScreenRole;
+  evaluationCount: number;
+  expectedEvaluations?: number;
+  verdict: boolean | null;
+  payloadMatch: boolean | null;
+  transition: unknown;
+};
+
 export type ShadowDump = {
   visits: RunVisit[];
   snapshot: JournalSnapshot;
-  ledger?: LedgerEntry[] | null;
+  ledger?: CapturedLedgerEntry[] | null;
   poisonFired?: string | null;
   outcome?: 'green' | 'bail' | null;
   flavor?: string | null;
@@ -560,7 +574,7 @@ export function projectFromJournal(
 
 /** Shipped-vs-shadow diff over the fields the ledger exposes. */
 export function compareProjections(
-  ledger: LedgerEntry[],
+  ledger: CapturedLedgerEntry[],
   shadow: ScreenProjection[],
   oracleViolations: Violation[],
 ): ProjectionDiff[] {
