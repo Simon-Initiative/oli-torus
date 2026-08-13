@@ -8,35 +8,84 @@
 
 **Where we are → what's next:** steps 0–3 SHIPPED; gate B0 CLOSED; gate-B contract CLOSED
 SOUND-AS-DRAFTED (`8a634180c2`); units 4a/4b COMMITTED (`9b0f4ec09a`, `016764f031`); 4b-2
-manifest translation DONE (private artifact). **Unit 4c is HALF DONE: pieces 1–2 committed
-(`ad72589959`, `72920220f7`), pieces 3–4 remain.** Next: **4c piece 3, the new driver.**
+manifest translation DONE (private artifact). **Unit 4c pieces 1–3 are COMMITTED
+(`ad72589959`, `72920220f7`, `028c615fee` + `fdc52cf772` + `b5aaadc039`) and piece 3 is
+REVIEW-CLOSED after 8 Codex rounds (round 8 = 0 blockers / 0 should-fix / 0 nits).**
+Next: **4c piece 4, the exit-site inventory + per-site fault injection.**
 
-### 4c — the unit in flight (4 pieces; human call 2026-08-11: build them all, THEN Codex)
+### 4c — the unit in flight (human call 2026-08-11: build all pieces, THEN Codex)
 
 | Piece | State | Evidence |
 |---|---|---|
 | 1. Frozen suite inventory (B4-SUITE `EXPECTED-INV`) | ✅ `ad72589959` | 271 frozen + 72 additive + 2 demo = 345 |
 | 2. Journal permit/fence domain (**B4-STAMP, MATERIAL**) | ✅ `72920220f7` | 339 passed, tsc 2-only |
-| 3. New driver as core+registry consumer | ⬜ **START HERE** | — |
-| 4. Exit-site inventory + per-site fault injection | ⬜ | B4-EXIT-INV/EM/MAP, W-E1–E6 |
+| 3. New driver as core+registry consumer | ✅ `028c615fee`, `fdc52cf772`, `b5aaadc039` | 366 passed; 8 review rounds; ✅ 2026-08-12 |
+| 4. Exit-site inventory + per-site fault injection | ⬜ **START HERE** | B4-EXIT-INV/EM/MAP, W-E1–E6 |
+| 4c owed | W-U7/W-U9 runtime case inventory | ⬜ | inner loops, `adaptive-oracle.spec.ts` |
 
-**Then: CODEX REVIEWS 4c BEFORE 4d** (human call 2026-08-11, overriding "first code read at
-gate B" — the driver plus the spec switch is thousands of lines unreviewed, and a B4-STAMP API
-objection raised at gate B would cost two rewrites instead of one). Gate B still owns what
-needs the switched spec running live (CORE-L, ENTRY-L, REG-L, VERDICT-L, exit-site injection)
-plus the four reviewer-derived obligations (contract §7).
+Gate B still owns what needs the switched spec running live (CORE-L, ENTRY-L, REG-L, VERDICT-L,
+exit-site injection) plus the four reviewer-derived obligations (contract §7).
 
-### PIECE 3 — the new driver (start here)
+### PIECE 4 — start here
 
-`AdaptiveHappyPathTask.ts` (924 lines), `AdaptiveEvaluationObserver.ts` (244),
-`AdaptiveStrictContract.ts` (513) become consumers of the committed core — registry-driven
-answers, journal-issued fences/permits/readback stamps, recorded plans. **✅ verified sizes
-2026-08-12.** First step, and do it before writing the driver:
+**Build the inventory against Codex's OWN derived exit-site table**, not a fresh one of your
+own: `reviews/mer-5865-4c-driver-review.md` (untracked, 1,838 lines) carries a re-derived table
+per round, most recently in `## Round 8`. Contract §1 step 0 makes closing the source universe a
+REVIEWER obligation precisely so the writer does not fix it alone — so the artifact is built to
+his list and compared bidirectionally, and any disagreement is a finding, not a merge.
 
-**`AdaptiveJournal.ts:2` imports `CheckActions` from `AdaptiveStrictContract`** — one of the
-three files `B4-DEL` deletes at 4d (used at `:62` `actions: CheckActions | null` and `:682`).
-The committed core depends on a file scheduled for deletion, so the type must MOVE into the
-journal's own domain or the DEL sweep can never come back clean. ✅ verified 2026-08-12.
+The driver has **9 exit sites** (`grep -c "fail(\|stop(" AdaptiveStrictDriver.ts`), each already
+designed to pin exactly ONE typed producer: `fail(kind, screenId, stepIndex, what)` records one
+`OperationFailure`; `stop(stepIndex, what)` records NOTHING because its producer already exists
+journal-side (an unusable evaluation, an illegal recorded plan). The outer boundary types any
+otherwise-unnamed fault as `driver-internal` (post-visit, screen-attributed) or
+`identity-unresolved` (pre-visit, `screenId: null`) — a `stopped` flag keeps it from
+double-recording at `stop()` sites.
+
+⚠️ **BLOCKED-ISH on one human decision** (see DEBT): contract §1 step 1 defines a site as
+`file:line + exit kind`, under which shared helpers are permanently multi-valued
+(`waitForDeckReady` is `identity-unresolved` from the identity read and `readiness-timeout`
+through a registry `ready()`). Writer recommendation, Codex agreed: amend to **CALL EDGE**
+identity (caller `file:line` → callee + kind). You can build under call-edge identity and mark
+the amendment proposed-pending; if the human rejects it, the artifact's identity column is redone.
+
+### PIECE 3 — what landed, and the design calls that compaction would lose
+
+`AdaptiveStrictDriver.ts` (709 lines) + `adaptive-strict-run.spec.ts` (845, **20 tests**).
+It DRIVES and RECORDS; it never judges — no green flag, no assertion, no notion of a violation.
+
+- **Failure is DATA, with one producer per exit** (above). A scripted deck plays the product's
+  side of the wire into a REAL `AdaptiveJournalCore`, so the driver's own run record is audited
+  by the committed `auditRun` rather than by assertions restating the driver.
+- **Receipts restate the MANIFEST verbatim** (`structuredClone(screen.expectations ?? [])`) —
+  `auditReceiptIdentity` JSON-compares them, so a driver-derived expectation set would be the
+  driver grading itself. The independent leg is B4-MAN/B4-PRED, not the receipt.
+- **Check-click steps NEVER sweep recorded plans** (only the plans the driver derived and acted
+  on); navigation steps DO sweep, from journal start on step 0 — §3.3 gives the first visit the
+  pre-entry window and §3.5 binds replay agreement to every owned evaluation. Sweeping on
+  check-click steps would launder an unexpected extra evaluation into licensed evidence.
+- **A non-graded re-check waits for the second evaluation and records its plan BEFORE stopping**
+  — the ack has already gone in, so the re-check is on the wire regardless, and the oracle's
+  UNGATED causal-edge rule is what names the screen. Stopping first left only the screenless
+  `seal-without-evidence` (the aborting step's window is open, so cardinality checks suppress).
+- **Fail-closed widget/CAPI readiness** (`widgetControlReady`): `widgetFrame` deliberately
+  swallows its ready-selector timeout, so readiness built on it reported controls that never
+  rendered. Registry CAPI `ready()` had the same defect and was swept with it.
+- `CheckActions` now lives in the journal's domain and the captured ledger shape
+  (`CapturedLedgerEntry`) in the projector's — the committed core no longer imports anything
+  `B4-DEL` deletes. ✅ verified: no core file references the three doomed filenames.
+
+### PIECE 3 — the review's most expensive lesson (do not re-learn it)
+
+Rounds 3–7 all found ONE class: a malformed or **hollow** evaluation body normalizing into the
+navigation rotation's LICENSED `none` plan, green on both live runs and capture replay. Each
+round's fix was incomplete because the boundary was calibrated by imagination (mine from
+reasoning, then from capture samples). It converged only when the boundary was re-derived as a
+**closed list from the product's own reads** — now spec §3.2's acceptance table, every row citing
+`triggerCheck.ts` / `DeckLayoutFooter.tsx` / `rules-engine.ts` / `attempt_controller.ex` /
+`scripting.ts`. Enforced TWICE, independently (recorder at response-parse time, oracle at audit
+time) because captures predate any given guard. **If you extend that boundary, derive the row
+from the emitter/consumer and add it to the table — do not add a shape you imagined.**
 
 ### PIECE 2 — what landed, and the design calls that compaction would lose
 
@@ -91,8 +140,12 @@ archive locations); CAPI directives carry none (`ownCapiPart` never reads it).
 ### TEST BASELINE ✅ verified 2026-08-12 (cite the EXACT subset, never a round number)
 
 `adaptive-journal adaptive-attribution adaptive-oracle adaptive-family-registry
-adaptive-strict-driver adaptive-strict-walk mer5865-archive-gates mer5865-shadow-gate` with the
-private env = **339 passed / 0 failed**. Archive gates: 22 screens corroborated; Reflect 64
+adaptive-strict-driver adaptive-strict-run adaptive-strict-walk mer5865-archive-gates
+mer5865-shadow-gate` with the private env = **366 passed / 0 failed** (the nine-spec subset;
+`adaptive-strict-run` is the driver's own 20 tests). Shadow replay UNCHANGED through every
+hardening round — both greens in-scope 0, driver-evidence **65**, unexplained 0, intentional
+delta 1; bail 1 violation. That the tightened acceptance boundary still accepts every real
+capture is the evidence it is not over-strict. Earlier baseline, for reference: Archive gates: 22 screens corroborated; Reflect 64
 states, 62 correct / 2 incorrect. Shadow gate 7/7, both greens in-scope 0 / unexplained 0 /
 65=65 pinned. `tsc` = exactly 2 fenced `liveSocket` errors and **0** others. eslint + prettier
 clean on touched files. `adaptive-authoring` (the flake) passed **4/4** on a separate retry.
@@ -138,6 +191,15 @@ Then 4d (spec switch + verdict boundary, then delete the old walker), gate B, 5�
   inventory, 1,816 lines of test identities).
 - `72920220f7` — **4c piece 2**: journal-issued permits/readback fences + the oracle's
   claim-side refusal of anything the journal never issued.
+- `028c615fee` — **4c piece 3**: `AdaptiveStrictDriver.ts` + `adaptive-strict-run.spec.ts`
+  (20 tests) + fail-closed deck primitives (`widgetControlReady`, `waitForCheckEnabled`) +
+  registry CAPI readiness swept with the same defect class.
+- `fdc52cf772` — evaluation-acceptance hardening on BOTH legs (recorder at response-parse time,
+  oracle at audit time) + spec §3.2's closed derivation table + witnesses. Also added three
+  closed failure kinds (`gate-unsatisfied`, `traffic-unsettled`, `driver-internal`) and made the
+  transition planner TOTAL over unknown wire input (it replays captures, where no live guard
+  applies).
+- `b5aaadc039` — captured ledger shape into the projector's replay domain.
 
 Every commit: `[ENHANCEMENT] [MER-5865] subject`, single line, no trailers.
 Branch: `MER-5865-adaptive-lessons-share-strict-verification-and-migrate-real-chem-specs`.
@@ -357,6 +419,28 @@ loop until Codex flags nothing material or the human calls it.
 - **§6.8 major-only version precision** recorded as a named bound, contract NOT reopened.
   Say so if you read it as material.
 
+### SCOPE-CUT DECISION IN FLIGHT (2026-08-13) — owed communications
+
+Human direction: reframe the ticket as **"build the strict verification foundation and PROVE it on a
+real lesson against the real defect"**; migrations of d-Orbitals + Greenhouse and the compat-walk
+deletion move to a follow-up. Evidence for the reframe already exists in
+`mer5865-demo-presentation.html` (2026-08-07): the shipped d-Orbitals spec produced **20
+`correct=false` verdicts in one GREEN run** with no sabotage at all, while the strict path stopped at
+the guilty screen and named it. MER-5865's own Verification section already contemplates a scope
+amendment at the migration boundary ("if not achievable, the Greenhouse migration stops and this
+ticket's scope is explicitly amended").
+
+**OWED, in this order — do not do these early:**
+1. **Jira comment on MER-5865** (writer drafts the message, human posts it). **A COMMENT, never a
+   direct edit of the ticket fields.** Human will ask for the text when ready — not yet.
+2. **Follow-up Jira ticket** for the two migrations + compat deletion. **Created AFTER this ticket is
+   finished, never before.**
+3. PR description carries the same spine (no PR exists yet; 20 commits ahead of master).
+
+Reviewer budget is the binding constraint: Codex has ~20% of its 7-day limit left, resetting
+2026-08-19. Remaining Codex gates under the cut = round 10 on piece 4 + gate B (C1 and C2 disappear
+with steps 5–8).
+
 ### DEBT / OWED
 
 - Passive shadow capture (journal armed on live LotE runs) — deferred from step 1.
@@ -389,9 +473,36 @@ loop until Codex flags nothing material or the human calls it.
   `ready()` for mcq is `waitForDeckReady()` plus `selectMcqByText`'s 2s visibility wait
   (`AdaptiveDeckPO.ts:423`). If 4c live runs flake on mcq readiness, the fix belongs in the
   registry entry's `ready()`, not in a dead directive field. Owner: 4c live acceptance runs.
-- **`AdaptiveJournal.ts:2` imports `CheckActions` from `AdaptiveStrictContract`** — a file
-  `B4-DEL` deletes. Move the type before 4d or the sweep can never come back clean. ✅ verified
-  2026-08-12. Owner: 4c piece 3 (first step).
+- ~~`AdaptiveJournal.ts:2` imports `CheckActions` from `AdaptiveStrictContract`~~ **CLOSED
+  2026-08-12** (`b5aaadc039`, `fdc52cf772`): the type moved to the journal's domain, and the
+  SIBLING nobody had noticed — `AdaptiveShadowProjector.ts:5` importing `LedgerEntry` from the
+  same doomed file — moved to the projector's as `CapturedLedgerEntry`. ✅ no core file
+  references the three doomed filenames.
+- **TWO HUMAN DECISIONS PENDING (2026-08-12), neither blocking a commit:**
+  1. **Call-edge site identity** — amend contract §1 step 1 so an exit site is `caller file:line
+     → callee + kind` instead of `file:line + kind`. Under the current wording shared helpers are
+     permanently multi-valued and the artifact cannot satisfy "exactly ONE producer per site".
+     Codex agreed (round 6, with an origin-preservation qualification in his round-7 text).
+     Affects the SHAPE of piece 4's artifact — build under call-edge and mark proposed-pending,
+     or wait for the ruling.
+  2. **Compat-walk extraction** — `real-chem-dazzling-d-orbitals.spec.ts:14` and
+     `real-chem-greenhouse-molecules.spec.ts:14` import `completeAdaptiveHappyPath` from
+     `AdaptiveHappyPathTask.ts`, which `B4-DEL` stage 2 deletes at gate B — but those specs only
+     migrate at steps 7–8 and compat deletion is 9–10. Fix: extract the compat walk to its own
+     module as a behavior-preserving change WITH a §1/§6 delta-list amendment and a regression
+     witness. Codex: moving it without amending the closed delta would make DIFF/DEL green under
+     an unauthorized change. **Do the extraction as its own commit, never inside the deletion
+     commit.**
+- **Residual the fix cannot reach backwards** (2026-08-12): a capture written by the OLD recorder
+  that relabelled a malformed evaluation as `activity-finalize` DISCARDED the body, so no
+  audit-time check can recover it. No current capture is affected (replay unchanged). Record it
+  in gate evidence before step 5.
+- **`adaptive-authoring.spec.ts:133` flake — DIAGNOSE IT, do not file a cause-unknown ticket.**
+  Contract §6.4 needs a named owner + one recorded retry in SUITE evidence, not necessarily a
+  Jira issue. Nobody has looked yet: run it with trace and check whether the `.flowchart-node`
+  appears AFTER the 30s assertion gives up (test race → fix the wait) or never (product defect →
+  then file a bug WITH the trace). Human pushback 2026-08-12: filing a ticket for an
+  uninvestigated flake is not progress.
 - **W-U7/W-U9 runtime case inventory** for cardinality-bearing inner loops
   (`adaptive-oracle.spec.ts:1799`) is NOT covered by the frozen suite artifact — those cases are
   one discovery identity each. Owner: 4c, before the Codex read.
@@ -440,6 +551,16 @@ loop until Codex flags nothing material or the human calls it.
 - NEVER `git stash` around a timeout-prone command: a timeout kills the compound command
   before `stash pop` and strands uncommitted work in the stash (cost a scare 2026-08-10;
   recovery: `git stash list` → `pop`). Back up files to the scratchpad instead.
+- **NEVER `git checkout -- <file>` to undo a probe** (2026-08-12): the file also held hours of
+  uncommitted work and the checkout discarded ALL of it, not just the probe. Revert a probe with
+  an editor edit, or copy to the scratchpad first. Recovery here was only possible because the
+  edits were re-derivable from context.
+- **NEVER run `npm run format` (repo-wide) with uncommitted work** (2026-08-12): in
+  `assets/automation` it expands to `prettier --write .` + `eslint . --fix` over the WHOLE
+  package — it rewrote 22 unrelated files including `gate-evidence/mer-5865-expected-inv.json`,
+  the FROZEN suite inventory whose whole value is matching its committed bytes. Scope the
+  formatter to the files you changed. Recovery: classify each unrelated diff as formatter-only,
+  then `git checkout HEAD -- <those paths>`.
 - Prettier `--write` reformats beyond the diff you made — run it BEFORE final gate replays,
   and re-verify after.
 - The dev server must be started with `PLAYWRIGHT_SCENARIO_TOKEN` + `PLAYWRIGHT_ASSETS_BUCKET`

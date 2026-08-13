@@ -10,16 +10,42 @@ expected rejection locus; replay statuses are recorded in the gate-B submission.
 
 Gate B licenses exactly: the LotE spec switched to the new strict entry point (family
 registry + new driver consuming the committed journal/attribution/planner/permits/oracle
-core, LotE manifest v2), then — second stage, same gate — deletion of the old strict
+core, LotE manifest v2), then — second stage — deletion of the old strict
 walker (`AdaptiveHappyPathTask.ts`, `AdaptiveEvaluationObserver.ts`,
 `AdaptiveStrictContract.ts`). NOT licensed: C1/C2 scope, registry entries beyond LotE's
 six families, compat deletion, changes to `AutomationSetupTask.ts`/`AdaptiveLessonTask.ts`.
 
+> **AMENDMENT A1 — the two stages become two GATES (2026-08-13).** Human scope decision:
+> MER-5865 ships the strict verification FOUNDATION, proven live on LotE; migrating the two
+> Real Chem lessons and deleting the old walker move to a follow-up ticket. Stage 2 (`DEL`)
+> therefore defers WITH them.
+>
+> **This is a rename, not a weakening.** Reviewer ruling (round-9 consult, 2026-08-13):
+> *"The cut is sound only as a renamed foundation gate. SWAP-GREEN certifies that the strict
+> stack is wired, fail-closed, and proven live on LotE; it does not certify replacement
+> completeness. Amend the contract explicitly — calling original GATE-B-CLOSE green without
+> DEL would contradict its fail-closed composition rule."* Same ruling, same consult:
+> **no `SWAP-GREEN` conjunct may be cut** — the four §7 derivations, SUITE, DIFF and ACCEPT
+> all stand. `DEL` defers because it proves EXCLUSIVITY (nothing else consumes the old
+> walker), which is a property of replacement, not of foundation correctness.
+>
+> Consequences, all normative:
+> - `GATE-B-FOUNDATION` is what this ticket closes. It licenses the switched spec ONLY.
+>   It does NOT license any claim that the old walker is unused, unreachable, or retired.
+> - `GATE-B-CLOSE` keeps its original meaning and its `∧ DEL` conjunct, and is UNCLOSED
+>   until the follow-up ticket. Two walkers coexisting is the accepted residue.
+> - The compat-walk extraction and its §1/§6 delta-list amendment defer with `DEL`; the two
+>   Real Chem specs keep importing `completeAdaptiveHappyPath` untouched.
+> - §6.1 and §6.2 expiries ("Expiry: gate B") attach to `GATE-B-FOUNDATION`.
+> - W-DEL1/2/3 are PENDING-FOLLOW-UP, not waived: an unexecuted conjunct is red for
+>   `GATE-B-CLOSE`, which simply is not the gate being claimed here.
+
 **Final predicate — any missing, unknown, malformed, or unexecuted conjunct = RED:**
 
 ```
-SWAP-GREEN    ⟺ WIRE ∧ SUITE ∧ DIFF ∧ ACCEPT ∧ EXIT-TOTAL
-GATE-B-CLOSE  ⟺ SWAP-GREEN ∧ DEL
+SWAP-GREEN         ⟺ WIRE ∧ SUITE ∧ DIFF ∧ ACCEPT ∧ EXIT-TOTAL
+GATE-B-FOUNDATION  ⟺ SWAP-GREEN                      (A1: what MER-5865 closes)
+GATE-B-CLOSE       ⟺ SWAP-GREEN ∧ DEL                (A1: deferred to the follow-up)
 
 WIRE       = ENTRY ∧ CORE ∧ VERDICT-S ∧ VERDICT-L ∧ REG ∧ MAN ∧ BIJ (rows §3; W-W*)
 SUITE      = executed set == EXPECTED-INV ∧ all pass ∧ CONFORMANCE-MAP total (W-U*)
@@ -226,6 +252,11 @@ assertion is weaker than the subcase it claims = RED (r5-B3).
 
 ## 5. Composition and fail-closed rules
 
+**A1 (2026-08-13):** the composition rules below govern `SWAP-GREEN`, and therefore govern
+`GATE-B-FOUNDATION` unchanged — deferring `DEL` removes a conjunct from a DIFFERENT gate, it
+does not relax any rule stated here. A claim of `GATE-B-CLOSE` still requires `∧ DEL` and is
+not made by this ticket.
+
 GATE-B-CLOSE is the §1 two-stage conjunction, stated once, mutated ACROSS row boundaries
 (SUITE ∧ DIFF green + C12b failed → RED; ACCEPT green + any EXIT row absent → RED; WIRE
 statics green + W-W11 failing → RED; EXIT-INV green under a scope that failed EXIT-SCOPE
@@ -297,6 +328,15 @@ reviewer derivation that is not performed leaves its conjunct UNEXECUTED = RED (
    deferral); revisit only if widget srcs gain exact versions.
 
 ## Appendix A — fold history
+
+- **A1 (2026-08-13, scope amendment — human decision + reviewer ruling):** the two stages split
+  into two gates. `GATE-B-FOUNDATION ⟺ SWAP-GREEN` is what MER-5865 closes; `GATE-B-CLOSE`
+  keeps `∧ DEL` and defers to the follow-up ticket with steps 5–10. No `SWAP-GREEN` conjunct
+  was cut. Reviewer also ruled: merge the piece-4 round-10 pass INTO the single gate pass
+  (EXIT-SCOPE/INV and CONFORMANCE-MAP subsume the round-9 recheck), and §1 SUITE's
+  "either become named tests" arm is accepted for the cardinality-bearing inner loops
+  provided each case carries a unique stable discovered identity and an explicit subcase
+  mapping.
 
 - r1 (8B/2SF): two-stage predicate + sweep; EXIT concept; WIRE rows; SUITE pinning; C4A
   independent leg; PRED enumeration + raw comparison; §6.1 closed retirement mapping; §4
