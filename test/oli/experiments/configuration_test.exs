@@ -305,7 +305,7 @@ defmodule Oli.Experiments.ConfigurationTest do
     assert Enum.map(unchanged.interventions, & &1.id) == [intervention.id]
   end
 
-  test "rejects simultaneous current bindings and permits sequential reuse after completion" do
+  test "allows shared draft bindings but only one active binding" do
     scope = project_scope()
     group = alternatives_revision(scope.project_id, "Reusable Group")
     first_page = page_revision(scope.project_id, "First", false)
@@ -316,7 +316,7 @@ defmodule Oli.Experiments.ConfigurationTest do
                graph_request(scope, [point(group, first_page, "first")])
              )
 
-    assert {:error, %ExperimentError{type: :conflict}} =
+    assert {:ok, second} =
              Experiments.create_experiment(
                graph_request(scope, [point(group, second_page, "second")])
              )
@@ -324,15 +324,14 @@ defmodule Oli.Experiments.ConfigurationTest do
     assert {:ok, _active} =
              Experiments.activate_experiment(first.id, %LifecycleRequest{scope: scope})
 
-    assert {:ok, _completed} =
-             Experiments.complete_experiment(first.id, %LifecycleRequest{scope: scope})
+    assert {:error, %ExperimentError{type: :conflict}} =
+             Experiments.activate_experiment(second.id, %LifecycleRequest{scope: scope})
 
-    assert {:ok, second} =
-             Experiments.create_experiment(
-               graph_request(scope, [point(group, second_page, "second")])
-             )
+    assert {:ok, _paused} =
+             Experiments.pause_experiment(first.id, %LifecycleRequest{scope: scope})
 
-    refute second.id == first.id
+    assert {:ok, _active} =
+             Experiments.activate_experiment(second.id, %LifecycleRequest{scope: scope})
   end
 
   test "persists inclusive Thompson thresholds at both boundaries" do

@@ -34,8 +34,8 @@ defmodule Oli.Repo.Migrations.ReplaceExperimentPersistenceWithSingularSchema do
     add_policy_constraints(:experiment_definitions)
 
     create unique_index(:experiment_definitions, [:alternatives_resource_id],
-             where: "state IN ('draft', 'active', 'paused')",
-             name: :experiment_definitions_current_alternatives_idx
+             where: "state = 'active'",
+             name: :experiment_definitions_active_alternatives_idx
            )
 
     create index(:experiment_definitions, [:project_id, :alternatives_resource_id],
@@ -259,9 +259,13 @@ defmodule Oli.Repo.Migrations.ReplaceExperimentPersistenceWithSingularSchema do
            name: :experiment_definitions_group_lookup_idx
          )
 
-    drop index(:experiment_definitions, [:alternatives_resource_id],
-           name: :experiment_definitions_current_alternatives_idx
-         )
+    drop_if_exists index(:experiment_definitions, [:alternatives_resource_id],
+                     name: :experiment_definitions_active_alternatives_idx
+                   )
+
+    drop_if_exists index(:experiment_definitions, [:alternatives_resource_id],
+                     name: :experiment_definitions_current_alternatives_idx
+                   )
 
     drop_policy_constraints(:experiment_definitions)
 

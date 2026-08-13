@@ -46,7 +46,7 @@ defmodule Oli.Experiments.PersistenceTest do
       end
 
       indexes = indexes_for("experiment_definitions")
-      assert "experiment_definitions_current_alternatives_idx" in indexes
+      assert "experiment_definitions_active_alternatives_idx" in indexes
       assert "experiment_definitions_group_lookup_idx" in indexes
     end
 

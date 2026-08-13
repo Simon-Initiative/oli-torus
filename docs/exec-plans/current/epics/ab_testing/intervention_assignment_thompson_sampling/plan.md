@@ -90,10 +90,10 @@ Guardrails:
   - [x] Refactor `Oli.Experiments` internals around focused configuration operations while preserving it as the public boundary. This completed multi-point intermediate is superseded by Phase 14's singular contract.
   - [x] Add experiment-owned algorithm/condition configuration and per-decision-point APIs for group binding, guardrails, bijective mappings, interventions, distinct scored-page bindings, and inclusive decimal thresholds defaulting to `1.0`.
   - [x] Resolve request-local condition `client_ref` values during atomic graph creation, generate immutable readable codes from labels under the experiment lock with deterministic collision suffixes, and persist mappings by `condition_id`.
-  - [x] Enforce `Scope` authorization, compatible project lineage, experiment-controlled group strategy, stable group/option identities, current-binding exclusivity, mapping cardinality, scored-page eligibility, and assessment exclusivity.
+  - [x] Enforce `Scope` authorization, compatible project lineage, experiment-controlled group strategy, stable group/option identities, active-binding exclusivity, mapping cardinality, scored-page eligibility, and assessment exclusivity.
   - [x] Lock the experiment and sorted group resources for save/activation; reject invalid transitions and all prohibited non-draft structural mutations.
   - [x] Implement explicit dependency discovery/reconciliation for bound groups, interventions, and assessment pages; never silently cascade or retarget active history.
-  - [x] Preserve completed/archived history and allow sequential group reuse only through a new draft decision point with independent state.
+  - [x] Preserve completed/archived history, allow multiple draft or paused experiments to share a group with independent state, and enforce at most one active experiment per group.
 - Testing Tasks:
   - [x] Add context and changeset tests for the then-current graph configuration and structured activation errors. Phase 14 replaces multi-point fixtures with singular configuration coverage.
   - [x] Test duplicate, missing, and unknown request-local condition references, slug normalization, deterministic collision suffixes, label edits preserving codes, and experiment-scoped database uniqueness.

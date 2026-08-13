@@ -863,7 +863,11 @@ defmodule Oli.Experiments.ContextTest do
         |> Map.put(:section_ids, [first_section.section_id])
 
       assert {:ok, first} = Experiments.create_experiment(request)
-      assert {:error, %ExperimentError{type: :conflict}} = Experiments.create_experiment(request)
+
+      second_request =
+        Map.put(request, :slug, "second-draft-#{System.unique_integer([:positive])}")
+
+      assert {:ok, second} = Experiments.create_experiment(second_request)
 
       assert {:ok, different} =
                Experiments.create_experiment(graph_request(scope, other_alternatives))
@@ -871,17 +875,26 @@ defmodule Oli.Experiments.ContextTest do
       assert {:ok, %{state: :active}} =
                Experiments.activate_experiment(first.id, lifecycle(scope))
 
+      assert {:error,
+              %ExperimentError{
+                type: :conflict,
+                message: "Decision Point is already used by an active experiment"
+              }} = Experiments.activate_experiment(second.id, lifecycle(scope))
+
       assert {:ok, %{state: :active}} =
                Experiments.activate_experiment(different.id, lifecycle(scope))
 
-      assert {:ok, %{state: :completed}} =
-               Experiments.complete_experiment(first.id, lifecycle(scope))
+      assert {:ok, %{state: :paused}} =
+               Experiments.pause_experiment(first.id, lifecycle(scope))
 
-      after_completion_request =
-        Map.put(request, :slug, "after-completion-#{System.unique_integer([:positive])}")
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(second.id, lifecycle(scope))
 
-      assert {:ok, after_completion} = Experiments.create_experiment(after_completion_request)
-      refute after_completion.id == first.id
+      assert {:ok, %{state: :paused}} =
+               Experiments.pause_experiment(second.id, lifecycle(scope))
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(first.id, lifecycle(scope))
     end
 
     test "rejects competing activation requests for the same stable decision point" do
@@ -889,20 +902,66 @@ defmodule Oli.Experiments.ContextTest do
       section = runtime_scope(scope)
       alternatives = alternatives_revision(scope.project_id)
 
-      results =
+      experiments =
         1..2
-        |> Enum.map(fn _index ->
+        |> Enum.map(fn index ->
           request =
             scope
             |> graph_request(alternatives)
+            |> Map.put(:slug, "competing-activation-#{index}")
             |> Map.put(:section_ids, [section.section_id])
 
-          Task.async(fn -> Experiments.create_experiment(request) end)
+          assert {:ok, experiment} = Experiments.create_experiment(request)
+          experiment
+        end)
+
+      results =
+        experiments
+        |> Enum.map(fn experiment ->
+          Task.async(fn -> Experiments.activate_experiment(experiment.id, lifecycle(scope)) end)
         end)
         |> Enum.map(&Task.await(&1, 5_000))
 
-      assert Enum.count(results, &match?({:ok, %{state: :draft}}, &1)) == 1
+      assert Enum.count(results, &match?({:ok, %{state: :active}}, &1)) == 1
       assert Enum.count(results, &match?({:error, %ExperimentError{type: :conflict}}, &1)) == 1
+    end
+
+    test "rejects activation when another project uses the same active decision point" do
+      first_scope = project_scope()
+      second_scope = project_scope()
+      section = runtime_scope(first_scope)
+      alternatives = alternatives_revision(first_scope.project_id)
+
+      insert(:project_resource,
+        project_id: second_scope.project_id,
+        resource_id: alternatives.resource_id
+      )
+
+      attach_revision_to_project_publications(second_scope.project_id, alternatives)
+
+      first_request =
+        first_scope
+        |> graph_request(alternatives)
+        |> Map.put(:section_ids, [section.section_id])
+
+      second_request =
+        second_scope
+        |> graph_request(alternatives)
+        |> Map.put(:slug, "shared-resource-other-project")
+
+      assert {:ok, first} = Experiments.create_experiment(first_request)
+      assert {:ok, second} = Experiments.create_experiment(second_request)
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(first.id, lifecycle(first_scope))
+
+      assert {:error,
+              %ExperimentError{
+                type: :conflict,
+                details: %{alternatives_resource_id: resource_id}
+              }} = Experiments.activate_experiment(second.id, lifecycle(second_scope))
+
+      assert resource_id == alternatives.resource_id
     end
   end
 

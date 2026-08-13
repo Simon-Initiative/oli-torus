@@ -107,7 +107,7 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     |> unique_constraint(:uuid, name: :experiment_definitions_uuid_idx)
     |> unique_constraint(:slug, name: :experiment_definitions_project_slug_idx)
     |> unique_constraint(:alternatives_resource_id,
-      name: :experiment_definitions_current_alternatives_idx
+      name: :experiment_definitions_active_alternatives_idx
     )
   end
 

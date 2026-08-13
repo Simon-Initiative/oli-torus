@@ -79,11 +79,10 @@ defmodule Oli.Experiments do
              request.algorithm,
              structural_configuration_change?(request)
            ),
-         :ok <- validate_graph_request(request, scope),
-         :ok <- validate_current_binding(request.alternatives_resource_id, scope, nil),
+         :ok <- validate_configuration_request(request, scope),
          {:ok, section_ids} <- validate_experiment_sections(request.section_ids, scope),
          attrs <- create_attrs(request, scope),
-         {:ok, schema} <- insert_definition_graph(attrs, request, section_ids) do
+         {:ok, schema} <- insert_experiment_configuration(attrs, request, section_ids) do
       emit_authoring_telemetry(:create, schema, %{algorithm: schema.algorithm})
       {:ok, to_definition(schema)}
     else
@@ -110,15 +109,10 @@ defmodule Oli.Experiments do
              structural_configuration_change?(request)
            ),
          :ok <- validate_assignment_safe_update(schema, request),
-         :ok <- validate_graph_request(request, scope, request.algorithm || schema.algorithm),
          :ok <-
-           validate_current_binding(
-             request.alternatives_resource_id || schema.alternatives_resource_id,
-             scope,
-             schema.id
-           ),
+           validate_configuration_request(request, scope, request.algorithm || schema.algorithm),
          {:ok, section_ids} <- validate_experiment_sections(request.section_ids, scope),
-         {:ok, updated} <- update_definition_graph(schema, request, section_ids) do
+         {:ok, updated} <- update_experiment_configuration(schema, request, section_ids) do
       emit_authoring_telemetry(:update, updated, %{algorithm: updated.algorithm})
       {:ok, to_definition(updated)}
     else
@@ -1279,6 +1273,7 @@ defmodule Oli.Experiments do
                |> Repo.one(),
              :ok <- validate_transition(schema.state, target_state),
              :ok <- validate_transition_prerequisites(schema, schema.state, target_state),
+             :ok <- maybe_lock_and_validate_active_binding(schema, target_state),
              attrs <- transition_attrs(schema, target_state, request.transitioned_at),
              {:ok, updated} <-
                schema
@@ -2788,7 +2783,7 @@ defmodule Oli.Experiments do
     }
   end
 
-  defp insert_definition_graph(attrs, request, section_ids) do
+  defp insert_experiment_configuration(attrs, request, section_ids) do
     case structural_configuration_change?(request) do
       false ->
         insert_definition(attrs, section_ids)
@@ -2803,14 +2798,6 @@ defmodule Oli.Experiments do
             {:ok, definition} ->
               replace_experiment_sections!(definition.id, section_ids)
 
-              lock_experiment!(definition.id)
-
-              lock_and_validate_current_binding!(
-                request.alternatives_resource_id,
-                scope_from_definition(definition),
-                definition.id
-              )
-
               insert_conditions!(definition.id, request.conditions)
               insert_interventions!(definition.id, request.interventions || [])
               get_or_create_policy_state(definition)
@@ -2824,7 +2811,7 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp update_definition_graph(schema, request, section_ids) do
+  defp update_experiment_configuration(schema, request, section_ids) do
     case structural_configuration_change?(request) do
       false ->
         update_definition(
@@ -2842,23 +2829,15 @@ defmodule Oli.Experiments do
             |> Repo.update!()
 
           maybe_replace_experiment_sections!(updated.id, request.section_ids, section_ids)
-          lock_experiment!(updated.id)
-
-          lock_and_validate_current_binding!(
-            request.alternatives_resource_id || updated.alternatives_resource_id,
-            scope_from_definition(updated),
-            updated.id
-          )
-
-          replace_definition_graph!(updated, request)
+          replace_experiment_configuration!(updated, request)
           Repo.preload(updated, :sections, force: true)
         end)
         |> normalize_transaction_result()
     end
   end
 
-  defp replace_definition_graph!(schema, request) do
-    delete_draft_graph!(schema.id, preserve_conditions: true)
+  defp replace_experiment_configuration!(schema, request) do
+    delete_draft_configuration!(schema.id, preserve_conditions: true)
     reconcile_conditions!(schema.id, request.conditions)
     insert_interventions!(schema.id, request.interventions || [])
     get_or_create_policy_state(schema)
@@ -3002,7 +2981,7 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp delete_draft_graph!(experiment_id, options) do
+  defp delete_draft_configuration!(experiment_id, options) do
     intervention_ids =
       from(intervention in Intervention,
         where: intervention.experiment_id == ^experiment_id,
@@ -3641,15 +3620,12 @@ defmodule Oli.Experiments do
 
   defp validate_transition_prerequisites(schema, :draft, :active) do
     with :ok <- validate_activation_algorithm(schema),
-         :ok <- validate_activation_configuration(schema),
-         :ok <- validate_no_active_group_conflict(schema) do
+         :ok <- validate_activation_configuration(schema) do
       :ok
     end
   end
 
-  defp validate_transition_prerequisites(schema, :paused, :active) do
-    validate_no_active_group_conflict(schema)
-  end
+  defp validate_transition_prerequisites(_schema, :paused, :active), do: :ok
 
   defp validate_activation_configuration(schema) do
     conditions = active_conditions(schema.id)
@@ -3669,48 +3645,6 @@ defmodule Oli.Experiments do
          :ok <- validate_activation_interventions(schema, interventions),
          :ok <- validate_adaptive_activation(schema, conditions) do
       :ok
-    end
-  end
-
-  defp validate_no_active_group_conflict(schema) do
-    resource_ids = [schema.alternatives_resource_id]
-
-    # Competing experiments have different experiment rows, so their lifecycle locks cannot
-    # serialize this exclusivity check. Lock the shared Alternatives Group resources before the
-    # conflict query so concurrent activations cannot both observe "no conflict" and proceed.
-    # Acquire multiple resource locks in a stable order to reduce deadlock risk.
-    from(resource in Resource,
-      where: resource.id in ^resource_ids,
-      order_by: [asc: resource.id],
-      lock: "FOR UPDATE"
-    )
-    |> Repo.all()
-
-    conflict =
-      from(experiment in ExperimentDefinitionSchema,
-        where:
-          experiment.id != ^schema.id and
-            experiment.state in [:draft, :active, :paused] and
-            experiment.alternatives_resource_id in ^resource_ids,
-        select: {experiment.id, experiment.alternatives_resource_id},
-        limit: 1
-      )
-      |> Repo.one()
-
-    case conflict do
-      nil ->
-        :ok
-
-      {experiment_id, alternatives_resource_id} ->
-        {:error,
-         %ExperimentError{
-           type: :conflict,
-           message: "another current experiment already targets this Alternatives Group",
-           details: %{
-             experiment_id: experiment_id,
-             alternatives_resource_id: alternatives_resource_id
-           }
-         }}
     end
   end
 
@@ -4105,10 +4039,10 @@ defmodule Oli.Experiments do
   defp validate_immutable_algorithm(_schema, _algorithm),
     do: invalid_condition("assignment policy cannot be changed after experiment creation")
 
-  defp validate_graph_request(request, scope),
-    do: validate_graph_request(request, scope, request.algorithm)
+  defp validate_configuration_request(request, scope),
+    do: validate_configuration_request(request, scope, request.algorithm)
 
-  defp validate_graph_request(request, scope, algorithm) do
+  defp validate_configuration_request(request, scope, algorithm) do
     case structural_configuration_change?(request) do
       false ->
         :ok
@@ -4287,15 +4221,14 @@ defmodule Oli.Experiments do
   defp non_negative_integer?(value), do: is_integer(value) and value >= 0
   defp share?(value), do: is_number(value) and value > 0.0 and value <= 1.0
 
-  defp validate_current_binding(resource_id, scope, excluded_experiment_id)
+  defp validate_active_binding(resource_id, _scope, excluded_experiment_id)
        when is_integer(resource_id) do
     query =
       from(experiment in ExperimentDefinitionSchema,
         where:
-          experiment.project_id == ^scope.project_id and
-            experiment.state in [:draft, :active, :paused] and
+          experiment.state == :active and
             experiment.alternatives_resource_id == ^resource_id,
-        select: experiment.id,
+        select: true,
         limit: 1
       )
 
@@ -4309,23 +4242,33 @@ defmodule Oli.Experiments do
       nil ->
         :ok
 
-      experiment_id ->
+      true ->
         {:error,
          %ExperimentError{
            type: :conflict,
-           message: "Alternatives Group is already bound to a current experiment",
-           details: %{experiment_id: experiment_id, alternatives_resource_id: resource_id}
+           message: "Decision Point is already used by an active experiment",
+           details: %{alternatives_resource_id: resource_id}
          }}
     end
   end
 
-  defp validate_current_binding(_resource_id, _scope, _excluded_experiment_id),
+  defp validate_active_binding(_resource_id, _scope, _excluded_experiment_id),
     do: invalid_condition("alternatives_resource_id is required")
 
-  defp lock_and_validate_current_binding!(resource_id, scope, excluded_experiment_id) do
+  defp maybe_lock_and_validate_active_binding(schema, :active) do
+    lock_and_validate_active_binding!(
+      schema.alternatives_resource_id,
+      scope_from_definition(schema),
+      schema.id
+    )
+  end
+
+  defp maybe_lock_and_validate_active_binding(_schema, _target_state), do: :ok
+
+  defp lock_and_validate_active_binding!(resource_id, scope, excluded_experiment_id) do
     Repo.one!(from(resource in Resource, where: resource.id == ^resource_id, lock: "FOR UPDATE"))
 
-    case validate_current_binding(resource_id, scope, excluded_experiment_id) do
+    case validate_active_binding(resource_id, scope, excluded_experiment_id) do
       :ok -> :ok
       {:error, %ExperimentError{} = error} -> Repo.rollback(error)
     end

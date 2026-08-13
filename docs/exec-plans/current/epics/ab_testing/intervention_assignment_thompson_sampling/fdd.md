@@ -117,7 +117,7 @@ Reporting flow:
 - Assessment binding: owns scored-page resource ID and inclusive threshold for one Thompson intervention.
 - Assignment: owns the sticky selection for one enrollment and intervention and supplies the stable visibility decision used by rendering and learner-specific progress/completion denominator construction. Publication and page-revision snapshots are not assignment state; they are captured on assignment/exposure evidence events.
 - Accepted reward: owns the immutable binding/source-attempt claim and disposition. Policy state owns reduced sufficient statistics.
-- Completed/archived experiment rows are append-only/read-only through supported APIs. Sequential group reuse creates a new experiment with new intervention, assignment, reward, and policy rows.
+- Completed/archived experiment rows are append-only/read-only through supported APIs. Multiple draft or paused experiments may bind the same group with independent intervention, assignment, reward, and policy rows, but only one may be active at a time.
 
 ### 4.4 Alternatives Considered
 
@@ -172,7 +172,7 @@ Analytics storage:
 
 ## 7. Consistency & Transactions
 
-- Draft create/update/activate runs under an experiment row lock. Activation also locks referenced group resources in sorted ID order, preventing simultaneous current bindings and deadlock-prone lock inversion.
+- Draft create/update runs atomically. Activation runs under an experiment row lock and also locks the referenced group resource, preventing simultaneous active bindings and deadlock-prone lock inversion.
 - Assignment uses a transaction with a consistent policy-state read. Thompson Sampling draws from that single state value. Insert uniqueness is the concurrency arbiter; losing transactions reload the winner. Policy assignment counts update only for the inserted assignment.
 - Reward acceptance uses one transaction and locks the policy-state row before inserting the claim and updating posterior state. The unique claim plus row lock prevents duplicate increments and lost updates.
 - Evidence emission occurs only after commit. Retry uses persisted accepted reward/assignment data and cannot mutate policy again.

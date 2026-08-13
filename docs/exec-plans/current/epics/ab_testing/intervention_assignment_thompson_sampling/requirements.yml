@@ -9,8 +9,8 @@ requirements:
 - title: Bind one reusable Alternatives Group per experiment
   description: Each experiment must bind one project-compatible Experiment-Controlled
     Alternatives Group, recognizing canonical experiment_controlled and legacy upgrade_decision_point
-    revisions as the same internal strategy, and a group may have at most one binding
-    to a current draft, active, or paused experiment across the project.
+    revisions as the same internal strategy. Multiple draft or paused experiments may bind
+    the same group, but at most one experiment using that group may be active at a time.
   id: FR-002
 - title: Enforce a bijective condition mapping
   description: The bound group must have the same number of alternatives as the experiment
@@ -229,9 +229,9 @@ acceptance_criteria:
     decision-point persistence remains, and separate experiments retain isolated state.
   id: AC-001
 - requirement: FR-002
-  description: Valid project-compatible groups bind successfully, simultaneous current
-    bindings are rejected across experiments, and a completed or archived prior binding
-    does not block a new draft binding.
+  description: Valid project-compatible groups bind successfully, multiple draft and paused
+    experiments may share a group, simultaneous active bindings are rejected across
+    experiments, and authors can switch the active binding by pausing the current experiment.
   id: AC-002
 - requirement: FR-003
   description: Activation and supported writes reject mismatched cardinality, duplicate

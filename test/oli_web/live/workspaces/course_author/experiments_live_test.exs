@@ -726,7 +726,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       condition = Repo.get_by!(Condition, experiment_id: id, position: 0)
 
       details_view
-      |> element("#experiment-graph-form")
+      |> element("#experiment-configuration-form")
       |> render_change(%{
         "configuration" => %{"conditions" => %{"0" => %{"weight" => "3.0"}}}
       })
@@ -734,7 +734,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert Repo.get!(Condition, condition.id).weight == 1.0
 
       details_view
-      |> form("#experiment-graph-form")
+      |> form("#experiment-configuration-form")
       |> render_submit(%{"configuration" => %{}})
 
       assert Repo.get!(Condition, condition.id).weight == 3.0
@@ -1092,6 +1092,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "label[for='condition-0-weight']", "Warm-up weight")
       refute has_element?(details_view, "#experiment-configuration pre")
 
+      details_view
+      |> form("#experiment-configuration-form", %{
+        "configuration" => %{"prior_alpha" => "not-a-number"}
+      })
+      |> render_change()
+
+      assert has_element?(details_view, "#experiment-prior_alpha[value='1.0']")
+      assert has_element?(details_view, "button[type='submit'][disabled]", "Save configuration")
+
+      details_view
+      |> form("#experiment-configuration-form", %{
+        "configuration" => %{"prior_alpha" => "2.0"}
+      })
+      |> render_change()
+
+      refute has_element?(details_view, "button[type='submit'][disabled]", "Save configuration")
+
+      details_view
+      |> form("#experiment-configuration-form", %{
+        "configuration" => %{"prior_alpha" => "1.0"}
+      })
+      |> render_change()
+
+      assert has_element?(details_view, "button[type='submit'][disabled]", "Save configuration")
+
       assert has_element?(
                details_view,
                "#experiment-policy-configuration",
@@ -1144,7 +1169,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       refute has_element?(details_view, "button[type='submit'][disabled]", "Save configuration")
 
       details_view
-      |> form("#experiment-graph-form")
+      |> form("#experiment-configuration-form")
       |> render_submit(%{"configuration" => %{}})
 
       refute Repo.get!(Condition, condition.id).active
@@ -1212,7 +1237,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       refute has_element?(details_view, "#experiment-prior_alpha")
 
       details_view
-      |> form("#experiment-graph-form", %{
+      |> form("#experiment-configuration-form", %{
         "configuration" => %{
           "conditions" => %{
             "0" => %{"label" => "Edited condition label"}
@@ -1410,6 +1435,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     |> element("button[phx-click='add_draft_intervention']")
     |> render_click()
 
+    refute has_element?(view, "button[type='submit'][disabled]", "Save configuration")
+
+    view
+    |> element("button[phx-click='remove_draft_intervention']")
+    |> render_click()
+
+    assert has_element?(view, "button[type='submit'][disabled]", "Save configuration")
+
+    view
+    |> element("button[phx-click='add_draft_intervention']")
+    |> render_click()
+
     open_picker(view, "intervention_page")
 
     view
@@ -1514,7 +1551,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     }
 
     view
-    |> form("#experiment-graph-form", %{"configuration" => params})
+    |> form("#experiment-configuration-form", %{"configuration" => params})
     |> render_submit()
 
     assert has_element?(view, "[role='status']", "Experiment configuration saved.")

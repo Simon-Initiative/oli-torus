@@ -4,6 +4,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{LifecycleRequest, Scope, UpdateExperimentRequest}
 
+  @configuration_types %{
+    algorithm: :any,
+    alternatives_resource_id: :integer,
+    conditions: {:array, :map},
+    interventions: {:array, :map},
+    prior_alpha: :float,
+    prior_beta: :float,
+    warm_up_assignments: :integer,
+    max_condition_share: :float,
+    fixed_control_allocation: :float,
+    imbalance_threshold: :float
+  }
+  @configuration_scalar_fields [
+    :alternatives_resource_id,
+    :prior_alpha,
+    :prior_beta,
+    :warm_up_assignments,
+    :max_condition_share,
+    :fixed_control_allocation,
+    :imbalance_threshold
+  ]
+
   @page_size 10
 
   @impl Phoenix.LiveView
@@ -31,6 +53,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          {:ok, alternatives_candidates} <- alternatives_candidates(authoring_view, scope),
          {:ok, page_options} <- ABExperiments.list_available_pages(scope) do
       experiment = authoring_view.definition
+      configuration = experiment_configuration(authoring_view)
+      candidate = selected_alternatives_candidate(experiment, alternatives_candidates)
 
       {:ok,
        assign(socket,
@@ -41,8 +65,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          alternatives_candidates: alternatives_candidates,
          page_options: page_options,
          picker: nil,
-         graph_draft: graph_draft(authoring_view, alternatives_candidates),
-         configuration_dirty: false,
+         configuration_changeset: configuration_changeset(configuration, configuration),
+         decision_point_title: candidate && candidate.title,
+         condition_options: candidate_options(candidate),
          configuration_error: nil,
          configuration_success: nil,
          read_only: experiment.state in [:completed, :archived],
@@ -77,6 +102,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       assigns
       |> assign(:page_sections, page_sections(assigns.participation, assigns.page))
       |> assign(:page_count, page_count(assigns.participation))
+      |> assign(:configuration, Ecto.Changeset.apply_changes(assigns.configuration_changeset))
+      |> assign(
+        :configuration_form,
+        to_form(assigns.configuration_changeset, as: :configuration)
+      )
 
     ~H"""
     <div id="experiment-configuration" class="dark:text-gray-100">
@@ -168,7 +198,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               badge
               badge_class={status_badge_class(@experiment.state)}
             />
-            <.detail_item label="Decision Point" value={@graph_draft.title || "Not selected"} />
+            <.detail_item label="Decision Point" value={@decision_point_title || "Not selected"} />
             <.detail_item
               :if={@experiment.description}
               label="Description"
@@ -179,12 +209,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       </section>
 
       <section
-        id="experiment-graph-configuration"
+        id="experiment-configuration-card"
         class="card mt-4 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100"
-        aria-labelledby="experiment-graph-heading"
+        aria-labelledby="experiment-configuration-heading"
       >
         <div class="card-header flex flex-col gap-1 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 dark:border-gray-700 dark:bg-neutral-800">
-          <h3 id="experiment-graph-heading" class="h5 mb-0 !font-semibold">
+          <h3 id="experiment-configuration-heading" class="h5 mb-0 !font-semibold">
             Experiment configuration
           </h3>
         </div>
@@ -196,8 +226,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             {@configuration_success}
           </div>
           <.form
-            for={to_form(%{}, as: :configuration)}
-            id="experiment-graph-form"
+            for={@configuration_form}
+            id="experiment-configuration-form"
             phx-change="change_configuration"
             phx-submit="save_configuration"
           >
@@ -214,18 +244,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                 <input
                   type="hidden"
                   name="configuration[alternatives_resource_id]"
-                  value={@graph_draft.alternatives_resource_id}
+                  value={@configuration.alternatives_resource_id}
                 />
-                <div :if={@graph_draft.algorithm == :weighted_random}>
+                <div :if={@configuration.algorithm == :weighted_random}>
                   <input
                     :for={
                       {key, value} <- [
-                        {"prior_alpha", @graph_draft.prior_alpha},
-                        {"prior_beta", @graph_draft.prior_beta},
-                        {"warm_up_assignments", @graph_draft.warm_up_assignments},
-                        {"max_condition_share", @graph_draft.max_condition_share},
-                        {"fixed_control_allocation", @graph_draft.fixed_control_allocation},
-                        {"imbalance_threshold", @graph_draft.imbalance_threshold}
+                        {"prior_alpha", @configuration.prior_alpha},
+                        {"prior_beta", @configuration.prior_beta},
+                        {"warm_up_assignments", @configuration.warm_up_assignments},
+                        {"max_condition_share", @configuration.max_condition_share},
+                        {"fixed_control_allocation", @configuration.fixed_control_allocation},
+                        {"imbalance_threshold", @configuration.imbalance_threshold}
                       ]
                     }
                     type="hidden"
@@ -236,7 +266,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                 <h4 class="h6 mb-0 !font-medium">Conditions</h4>
                 <div class="mt-3 space-y-3">
                   <div
-                    :for={{condition, condition_index} <- Enum.with_index(@graph_draft.conditions)}
+                    :for={{condition, condition_index} <- Enum.with_index(@configuration.conditions)}
                     id={"condition-row-#{condition_index}"}
                     class="grid grid-cols-1 gap-3 rounded border p-3 md:grid-cols-2 xl:grid-cols-5 dark:border-gray-700"
                   >
@@ -274,7 +304,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                         disabled={@experiment.state != :draft}
                       >
                         <option
-                          :for={{label, option_id} <- @graph_draft.options}
+                          :for={{label, option_id} <- @condition_options}
                           value={option_id}
                           selected={condition.option_id == option_id}
                         >
@@ -313,7 +343,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                     </div>
                   </div>
                 </div>
-                <div :if={@graph_draft.algorithm == :thompson_sampling} class="mt-3">
+                <div :if={@configuration.algorithm == :thompson_sampling} class="mt-3">
                   <h5 class="h6 mb-3 mt-4 !font-medium">
                     Assignment policy and guardrails
                   </h5>
@@ -334,7 +364,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       key="prior_alpha"
                       label="Prior alpha"
                       help="Alpha represents prior and observed successful outcomes. Higher values increase the estimated success probability."
-                      value={@graph_draft.prior_alpha}
+                      value={@configuration.prior_alpha}
                       min="0.0001"
                       max="1000"
                       disabled={@experiment.state != :draft}
@@ -343,7 +373,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       key="prior_beta"
                       label="Prior beta"
                       help="Beta represents prior and observed unsuccessful outcomes. Higher values decrease the estimated success probability."
-                      value={@graph_draft.prior_beta}
+                      value={@configuration.prior_beta}
                       min="0.0001"
                       max="1000"
                       disabled={@experiment.state != :draft}
@@ -352,7 +382,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       key="warm_up_assignments"
                       label="Warm-up assignments"
                       help="Assignments use each condition's Warm-up weight as weighted random allocation until this total assignment threshold is met. Afterward, Thompson Sampling uses the collected evidence for adaptive allocation."
-                      value={@graph_draft.warm_up_assignments}
+                      value={@configuration.warm_up_assignments}
                       min="0"
                       step="1"
                       disabled={@experiment.state != :draft}
@@ -361,7 +391,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       key="max_condition_share"
                       label="Max condition share"
                       help="The traffic cap limits the largest share of assignments any one condition may receive."
-                      value={@graph_draft.max_condition_share}
+                      value={@configuration.max_condition_share}
                       min="0.0001"
                       max="1"
                       disabled={@experiment.state != :draft}
@@ -370,7 +400,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       key="fixed_control_allocation"
                       label="Fixed-control allocation"
                       help="The target share reserved for the control condition while the fixed-control guardrail is active."
-                      value={@graph_draft.fixed_control_allocation}
+                      value={@configuration.fixed_control_allocation}
                       min="0"
                       max="1"
                       required={false}
@@ -380,19 +410,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                       key="imbalance_threshold"
                       label="Imbalance warning threshold"
                       help="Shows a warning when a condition's observed assignment share differs from an even allocation by more than this amount."
-                      value={@graph_draft.imbalance_threshold}
+                      value={@configuration.imbalance_threshold}
                       min="0"
                       max="1"
                       disabled={@experiment.state != :draft}
                     />
                   </div>
                 </div>
-                <div :if={@graph_draft.algorithm == :thompson_sampling} class="mt-3">
+                <div :if={@configuration.algorithm == :thompson_sampling} class="mt-3">
                   <h5 class="h6 mb-3 mt-4 !font-medium">Interventions</h5>
                   <div
                     :for={
                       {intervention, intervention_index} <-
-                        Enum.with_index(@graph_draft.interventions)
+                        Enum.with_index(@configuration.interventions)
                     }
                     class="mb-3 grid grid-cols-1 gap-3 rounded border p-3 md:grid-cols-[repeat(4,minmax(0,1fr))_auto] dark:border-gray-700"
                   >
@@ -467,7 +497,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                 <button
                   type="submit"
                   class="btn btn-primary"
-                  disabled={not @configuration_dirty}
+                  disabled={not configuration_dirty?(@configuration_changeset)}
                 >
                   Save configuration
                 </button>
@@ -915,15 +945,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          {:ok, parsed_value} <- parse_picker_value(key, value) do
       socket = assign(socket, picker: nil, configuration_error: nil)
 
-      update_graph_draft(socket, fn draft ->
+      update_configuration(socket, fn configuration ->
         interventions =
-          List.update_at(draft.interventions, intervention_index, fn intervention ->
+          List.update_at(configuration.interventions, intervention_index, fn intervention ->
             intervention
             |> Map.put(key, parsed_value)
             |> maybe_clear_element_selection(key)
           end)
 
-        %{draft | interventions: interventions}
+        %{configuration | interventions: interventions}
       end)
     else
       _ -> invalid_configuration_event(socket)
@@ -931,8 +961,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   end
 
   def handle_event("add_draft_intervention", _params, socket) do
-    update_graph_draft(socket, fn draft ->
-      %{draft | interventions: draft.interventions ++ [empty_intervention()]}
+    update_configuration(socket, fn configuration ->
+      %{configuration | interventions: configuration.interventions ++ [empty_intervention()]}
     end)
   end
 
@@ -942,8 +972,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         socket
       ) do
     with {:ok, intervention_index} <- parse_index(intervention_index) do
-      update_graph_draft(socket, fn draft ->
-        %{draft | interventions: List.delete_at(draft.interventions, intervention_index)}
+      update_configuration(socket, fn configuration ->
+        %{
+          configuration
+          | interventions: List.delete_at(configuration.interventions, intervention_index)
+        }
       end)
     else
       _ -> invalid_configuration_event(socket)
@@ -962,17 +995,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          %{"active" => active_value} <- Map.get(conditions, Integer.to_string(condition_index)),
          {:ok, active} <- parse_boolean(active_value),
          condition when not is_nil(condition) <-
-           Enum.at(socket.assigns.graph_draft.conditions, condition_index) do
+           Enum.at(current_configuration(socket).conditions, condition_index) do
       case socket.assigns.experiment.state do
         state when state in [:draft, :active, :paused] ->
           {:noreply,
-           socket
-           |> update(:graph_draft, fn draft ->
-             Map.update!(draft, :conditions, fn current_conditions ->
+           update_configuration_socket(socket, fn configuration ->
+             Map.update!(configuration, :conditions, fn current_conditions ->
                List.update_at(current_conditions, condition_index, &Map.put(&1, :active, active))
              end)
-           end)
-           |> assign(configuration_dirty: true, configuration_error: nil)}
+           end)}
 
         _state ->
           {:noreply, socket}
@@ -1018,14 +1049,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         configuration_changes = submitted_configuration_changes(params, algorithm)
 
         {:noreply,
-         socket
-         |> update(:graph_draft, fn draft ->
-           draft
+         update_configuration_socket(socket, fn configuration ->
+           configuration
            |> Map.put(:algorithm, algorithm)
            |> Map.update!(:conditions, &merge_indexed_changes(&1, condition_changes))
            |> Map.merge(configuration_changes)
-         end)
-         |> assign(configuration_dirty: true, configuration_error: nil)}
+         end)}
 
       {state, :weighted_random} when state in [:active, :paused] ->
         condition_changes =
@@ -1034,11 +1063,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           |> normalize_submitted_weights()
 
         {:noreply,
-         socket
-         |> update(:graph_draft, fn draft ->
-           Map.update!(draft, :conditions, &merge_indexed_changes(&1, condition_changes))
-         end)
-         |> assign(configuration_dirty: true, configuration_error: nil)}
+         update_configuration_socket(socket, fn configuration ->
+           Map.update!(configuration, :conditions, &merge_indexed_changes(&1, condition_changes))
+         end)}
 
       _ ->
         {:noreply, socket}
@@ -1239,14 +1266,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     """
   end
 
-  defp graph_draft(authoring_view, candidates) do
-    candidate_by_resource = Map.new(candidates, &{&1.alternatives_resource_id, &1})
-
+  defp experiment_configuration(authoring_view) do
     bindings_by_intervention =
       Map.new(authoring_view.assessment_bindings, &{&1.intervention_id, &1})
 
     definition = authoring_view.definition
-    candidate = Map.get(candidate_by_resource, definition.alternatives_resource_id)
 
     interventions =
       Enum.map(authoring_view.interventions, fn intervention ->
@@ -1263,9 +1287,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     %{
       algorithm: definition.algorithm,
       alternatives_resource_id: definition.alternatives_resource_id,
-      title: candidate && candidate.title,
-      options: candidate_options(candidate),
-      conditions: authoring_view.conditions,
+      conditions: Enum.map(authoring_view.conditions, &condition_configuration/1),
       interventions: interventions,
       prior_alpha: definition.prior_alpha,
       prior_beta: definition.prior_beta,
@@ -1274,6 +1296,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       fixed_control_allocation: definition.fixed_control_allocation,
       imbalance_threshold: definition.imbalance_threshold
     }
+  end
+
+  defp condition_configuration(condition) do
+    Map.take(condition, [
+      :id,
+      :condition_code,
+      :label,
+      :active,
+      :option_id,
+      :weight,
+      :position
+    ])
+  end
+
+  defp selected_alternatives_candidate(experiment, candidates) do
+    Enum.find(candidates, &(&1.alternatives_resource_id == experiment.alternatives_resource_id))
   end
 
   defp candidate_options(nil), do: []
@@ -1332,7 +1370,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp build_picker(socket, "placement_element", intervention_index) do
     with %{alternatives_resource_id: alternatives_resource_id, interventions: interventions} <-
-           socket.assigns.graph_draft,
+           current_configuration(socket),
          %{page_resource_id: page_resource_id} <- Enum.at(interventions, intervention_index),
          true <- is_integer(page_resource_id),
          {:ok, options} <-
@@ -1410,13 +1448,107 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp alternatives_candidates(_authoring_view, scope),
     do: ABExperiments.list_available_alternatives(scope)
 
-  defp update_graph_draft(socket, fun) do
+  defp update_configuration(socket, fun) do
     case socket.assigns.experiment.state do
       :draft ->
-        {:noreply, update(socket, :graph_draft, fun)}
+        {:noreply, update_configuration_socket(socket, fun)}
 
       _ ->
         {:noreply, assign(socket, configuration_error: "Experiment configuration is read-only.")}
+    end
+  end
+
+  defp update_configuration_socket(socket, fun) do
+    current = current_configuration(socket)
+    updated = fun.(current)
+    baseline = socket.assigns.configuration_changeset.data
+
+    assign(socket,
+      configuration_changeset: configuration_changeset(baseline, updated),
+      configuration_error: nil
+    )
+  end
+
+  defp current_configuration(socket),
+    do: Ecto.Changeset.apply_changes(socket.assigns.configuration_changeset)
+
+  defp configuration_changeset(baseline, configuration) do
+    baseline = normalize_configuration(baseline)
+    configuration = normalize_configuration(configuration)
+
+    {baseline, @configuration_types}
+    |> Ecto.Changeset.cast(
+      Map.take(configuration, @configuration_scalar_fields),
+      @configuration_scalar_fields
+    )
+    |> put_configuration_change(:algorithm, configuration.algorithm)
+    |> put_configuration_change(:conditions, configuration.conditions)
+    |> put_configuration_change(:interventions, configuration.interventions)
+  end
+
+  defp configuration_dirty?(changeset), do: changeset.changes != %{}
+
+  defp put_configuration_change(changeset, field, value) do
+    Ecto.Changeset.put_change(changeset, field, value)
+  end
+
+  defp normalize_configuration(configuration) do
+    configuration
+    |> normalize_configuration_number(:prior_alpha)
+    |> normalize_configuration_number(:prior_beta)
+    |> normalize_configuration_integer(:warm_up_assignments)
+    |> normalize_configuration_number(:max_condition_share)
+    |> normalize_configuration_number(:fixed_control_allocation, optional: true)
+    |> normalize_configuration_number(:imbalance_threshold)
+    |> Map.update!(:conditions, fn conditions ->
+      Enum.map(conditions, &Map.update!(&1, :weight, fn value -> normalize_number(value) end))
+    end)
+    |> Map.update!(:interventions, fn interventions ->
+      Enum.map(interventions, fn intervention ->
+        Map.update!(intervention, :reward_threshold, &normalize_decimal/1)
+      end)
+    end)
+  end
+
+  defp normalize_configuration_number(configuration, key, options \\ []) do
+    Map.update!(configuration, key, fn value ->
+      case {Keyword.get(options, :optional, false), value} do
+        {true, value} when value in [nil, ""] -> nil
+        _ -> normalize_number(value)
+      end
+    end)
+  end
+
+  defp normalize_configuration_integer(configuration, key) do
+    Map.update!(configuration, key, fn
+      value when is_integer(value) -> value
+      value -> parse_normalized_integer(value)
+    end)
+  end
+
+  defp normalize_number(value) when is_number(value), do: value
+
+  defp normalize_number(value) do
+    case Float.parse(to_string(value)) do
+      {number, ""} -> number
+      _ -> value
+    end
+  end
+
+  defp parse_normalized_integer(value) do
+    case Integer.parse(to_string(value)) do
+      {integer, ""} -> integer
+      _ -> value
+    end
+  end
+
+  defp normalize_decimal(nil), do: nil
+  defp normalize_decimal(%Decimal{} = value), do: value
+
+  defp normalize_decimal(value) do
+    case Decimal.cast(value) do
+      {:ok, decimal} -> decimal
+      :error -> value
     end
   end
 
@@ -1445,8 +1577,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
        assign(socket,
          experiment: experiment,
          authoring_view: authoring_view,
-         graph_draft: graph_draft(authoring_view, socket.assigns.alternatives_candidates),
-         configuration_dirty: false,
+         configuration_changeset:
+           authoring_view
+           |> experiment_configuration()
+           |> then(&configuration_changeset(&1, &1)),
          configuration_success: "Experiment configuration saved.",
          configuration_error: nil
        )}
@@ -1472,7 +1606,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       end
 
     availabilities =
-      Enum.map(socket.assigns.graph_draft.conditions, &Map.take(&1, condition_fields))
+      Enum.map(current_configuration(socket).conditions, &Map.take(&1, condition_fields))
 
     with {:ok, _conditions} <-
            ABExperiments.update_condition_availabilities(
@@ -1485,8 +1619,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       {:noreply,
        assign(socket,
          authoring_view: authoring_view,
-         graph_draft: graph_draft(authoring_view, socket.assigns.alternatives_candidates),
-         configuration_dirty: false,
+         configuration_changeset:
+           authoring_view
+           |> experiment_configuration()
+           |> then(&configuration_changeset(&1, &1)),
          configuration_success: "Experiment configuration saved.",
          configuration_error: nil
        )}
