@@ -18,12 +18,16 @@ export const FLASHCARD_THEME_PRESETS = [
   { id: 'slate', color: 'rgba(100,116,139,1)' },
 ] as const;
 
+export const DEFAULT_FLASHCARD_FACE_COLOR = '#ffffff';
+
 export const DEFAULT_FLASHCARD_THEME = FLASHCARD_THEME_PRESETS[3].color;
 
 export const presetThemeColorForIndex = (index: number): string =>
   FLASHCARD_THEME_PRESETS[index % FLASHCARD_THEME_PRESETS.length].color;
 
 const normalizeColor = (value: string): string => value.replace(/\s+/g, '').toLowerCase();
+
+export const isDefaultThemeColor = (value?: string): boolean => !value;
 
 export const isPresetThemeColor = (value?: string): boolean =>
   !!value &&

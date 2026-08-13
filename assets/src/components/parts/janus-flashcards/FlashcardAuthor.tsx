@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
+import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import {
   NotificationType,
@@ -13,7 +14,7 @@ import FlashcardQuillEditor from './FlashcardQuillEditor';
 import FlashcardThemePicker from './FlashcardThemePicker';
 import { FlashcardsView } from './FlashcardsView';
 import { getFaceNodes, plainTextToDefaultNodes } from './flashcardContent';
-import { nodesToPlainText, presetThemeColorForIndex, computeFlashcardCellWidth, FLASHCARD_PREVIEW_HEIGHT_SCALE } from './flashcard-util';
+import { nodesToPlainText, DEFAULT_FLASHCARD_FACE_COLOR, computeFlashcardCellWidth, FLASHCARD_PREVIEW_HEIGHT_SCALE } from './flashcard-util';
 import {
   FlashcardItem,
   FlashcardsModel,
@@ -38,11 +39,10 @@ type PreviousLayout = {
 
 type CardSide = 'front' | 'back';
 
-const newCard = (label: string, index: number): FlashcardItem => ({
+const newCard = (label: string): FlashcardItem => ({
   id: guid(),
   frontNodes: plainTextToDefaultNodes(`${label} front`),
   backNodes: plainTextToDefaultNodes(`${label} back`),
-  themeColor: presetThemeColorForIndex(index),
 });
 
 const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (props) => {
@@ -54,6 +54,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
   const [activeCardId, setActiveCardId] = React.useState<string | null>(null);
   const [activeSide, setActiveSide] = React.useState<CardSide>('front');
   const [draftCards, setDraftCards] = React.useState<FlashcardItem[]>(model.cards ?? []);
+  const [confirmDeleteCardId, setConfirmDeleteCardId] = React.useState<string | null>(null);
   const [portalElement, setPortalElement] = React.useState<HTMLElement | null>(null);
   const [measuredContainerWidth, setMeasuredContainerWidth] = React.useState(0);
   const previousLayoutRef = React.useRef<PreviousLayout | null>(null);
@@ -90,10 +91,11 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
       setInConfigureMode(configure);
 
       if (configure) {
-        const cards = model.cards?.length ? model.cards : [newCard('New Card', 0)];
+        const cards = model.cards?.length ? model.cards : [newCard('New Card')];
         setDraftCards(cards);
         setActiveCardId(cards[0].id);
         setActiveSide('front');
+        setConfirmDeleteCardId(null);
         onConfigure({
           id,
           configure: true,
@@ -117,6 +119,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
     setInConfigureMode(false);
     setActiveCardId(null);
     setActiveSide('front');
+    setConfirmDeleteCardId(null);
   }, [containerWidth, draftCards, id, model, onSaveConfigure]);
 
   const previewModel = useMemo(() => {
@@ -300,6 +303,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
       setInConfigureMode(false);
       setActiveCardId(null);
       setActiveSide('front');
+      setConfirmDeleteCardId(null);
       onCancelConfigure({ id });
     };
 
@@ -345,7 +349,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
   };
 
   const addCard = () => {
-    const card = newCard(`Card ${draftCards.length + 1}`, draftCards.length);
+    const card = newCard(`Card ${draftCards.length + 1}`);
     setDraftCards((cards) => [...cards, card]);
     setActiveCardId(card.id);
     setActiveSide('front');
@@ -364,11 +368,37 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
     });
   };
 
-  const updateActiveCardTheme = (themeColor: string) => {
+  const confirmDeleteCard = () => {
+    if (!confirmDeleteCardId) {
+      return;
+    }
+
+    deleteCard(confirmDeleteCardId);
+    setConfirmDeleteCardId(null);
+  };
+
+  const confirmDeleteCardIndex = confirmDeleteCardId
+    ? draftCards.findIndex((card) => card.id === confirmDeleteCardId)
+    : -1;
+  const confirmDeleteCardName =
+    confirmDeleteCardIndex >= 0 ? `Card ${confirmDeleteCardIndex + 1}` : 'this card';
+
+  const updateActiveCardTheme = (themeColor: string | undefined) => {
     if (!activeCardId) return;
 
     setDraftCards((cards) =>
-      cards.map((card) => (card.id === activeCardId ? { ...card, themeColor } : card)),
+      cards.map((card) => {
+        if (card.id !== activeCardId) {
+          return card;
+        }
+
+        if (!themeColor) {
+          const { themeColor: _removed, ...rest } = card;
+          return rest;
+        }
+
+        return { ...card, themeColor };
+      }),
     );
   };
 
@@ -412,7 +442,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
                       >
                         <span
                           className="fc-config-card-strip"
-                          style={{ background: card.themeColor || '#cbd5e1' }}
+                          style={{ background: card.themeColor || DEFAULT_FLASHCARD_FACE_COLOR }}
                         />
                         <div className="fc-config-card-body">
                           <div className="fc-config-card-item-header">
@@ -424,7 +454,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
                               title="Delete card"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                deleteCard(card.id);
+                                setConfirmDeleteCardId(card.id);
                               }}
                             >
                               <i className="fa fa-trash-alt" aria-hidden="true" />
@@ -517,6 +547,16 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
         onLayoutWidthChange={setMeasuredContainerWidth}
       />
       {configureContent}
+      {confirmDeleteCardId && (
+        <ConfirmDelete
+          show={!!confirmDeleteCardId}
+          elementType="card"
+          elementName={`"${confirmDeleteCardName}"`}
+          explanation="This cannot be undone."
+          deleteHandler={confirmDeleteCard}
+          cancelHandler={() => setConfirmDeleteCardId(null)}
+        />
+      )}
     </>
   );
 };

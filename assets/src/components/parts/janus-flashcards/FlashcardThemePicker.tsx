@@ -1,10 +1,10 @@
 import React, { CSSProperties, useRef, useState } from 'react';
 import { ColorResult, RGBColor, SketchPicker } from 'react-color';
-import { FLASHCARD_THEME_PRESETS, isPresetThemeColor } from './flashcard-util';
+import { FLASHCARD_THEME_PRESETS, isDefaultThemeColor, isPresetThemeColor } from './flashcard-util';
 
 type FlashcardThemePickerProps = {
   value?: string;
-  onChange: (color: string) => void;
+  onChange: (color: string | undefined) => void;
   compact?: boolean;
 };
 
@@ -56,6 +56,16 @@ const FlashcardThemePicker: React.FC<FlashcardThemePickerProps> = ({
     <div className={`fc-theme-picker${compact ? ' is-compact' : ''}`}>
       <span className="fc-theme-picker-label">Theme</span>
       <div className="fc-theme-picker-swatches">
+        <button
+          type="button"
+          className={`fc-theme-swatch fc-theme-swatch-default${
+            isDefaultThemeColor(value) ? ' is-selected' : ''
+          }`}
+          aria-label="Default theme (white)"
+          aria-pressed={isDefaultThemeColor(value)}
+          onClick={() => onChange(undefined)}
+        />
+
         {FLASHCARD_THEME_PRESETS.map((preset) => {
           const isSelected = value === preset.color;
 

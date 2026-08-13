@@ -309,6 +309,11 @@
     }
   }
 
+  .fc-theme-swatch-default {
+    background: #ffffff;
+    border-color: #d1d5db;
+  }
+
   .fc-theme-custom-wrap {
     position: relative;
   }
@@ -593,11 +598,18 @@
     top: 12px;
     left: 14px;
     z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #6b7280;
+    color: #374151;
     pointer-events: none;
   }
 
