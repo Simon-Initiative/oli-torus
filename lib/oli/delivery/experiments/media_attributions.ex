@@ -13,7 +13,14 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
     Scope
   }
 
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
+  alias Oli.Experiments.Schemas.{
+    Assignment,
+    Condition,
+    DecisionPoint,
+    DecisionPointCondition,
+    ExperimentDefinition
+  }
+
   alias Oli.Experiments.XAPI.Attributions
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
@@ -103,10 +110,12 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
         option_id = branch.option_id
 
         dynamic(
-          [decision_point: decision_point, condition: condition],
+          [decision_point: decision_point, condition: condition, mapping: mapping],
           ^branch_filter or
             (decision_point.alternatives_resource_id == ^alternatives_resource_id and
-               (condition.option_id == ^option_id or condition.condition_code == ^option_id))
+               (mapping.option_id == ^option_id or
+                  (is_nil(mapping.id) and
+                     (condition.option_id == ^option_id or condition.condition_code == ^option_id))))
         )
       end)
 
@@ -121,6 +130,11 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       join: condition in Condition,
       as: :condition,
       on: condition.id == assignment.condition_id,
+      left_join: mapping in DecisionPointCondition,
+      as: :mapping,
+      on:
+        mapping.decision_point_id == assignment.decision_point_id and
+          mapping.condition_id == assignment.condition_id,
       join: section in Oli.Delivery.Sections.Section,
       as: :section,
       on: section.id == assignment.section_id,

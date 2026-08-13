@@ -7,7 +7,7 @@ defmodule Oli.Analytics.XAPITest do
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Experiments
   alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, DecisionPointCondition}
   alias Oli.Resources.ResourceType
 
   @experiment_attributions_key "http://oli.cmu.edu/extensions/experiment_attributions"
@@ -114,6 +114,13 @@ defmodule Oli.Analytics.XAPITest do
       %{user: user, resource_attempt: resource_attempt, assignment: assignment} =
         setup_video_experiment_context()
 
+      DecisionPointCondition
+      |> Repo.get_by!(
+        decision_point_id: assignment.decision_point_id,
+        condition_id: assignment.condition_id
+      )
+      |> Repo.delete!()
+
       Condition
       |> Repo.get!(assignment.condition_id)
       |> Condition.changeset(%{option_id: nil, condition_code: "alt-a"})
@@ -173,13 +180,22 @@ defmodule Oli.Analytics.XAPITest do
         %Condition{}
         |> Condition.changeset(%{
           experiment_id: experiment.id,
-          decision_point_id: unrelated_decision_point.id,
           condition_code: "other",
-          option_id: "other",
+          label: "Other",
           weight: 1.0,
           position: 0
         })
         |> Repo.insert!()
+
+      %DecisionPointCondition{}
+      |> DecisionPointCondition.changeset(%{
+        decision_point_id: unrelated_decision_point.id,
+        condition_id: unrelated_condition.id,
+        option_id: "other",
+        weight: 1.0,
+        position: 0
+      })
+      |> Repo.insert!()
 
       %Assignment{}
       |> Assignment.changeset(%{
@@ -486,13 +502,22 @@ defmodule Oli.Analytics.XAPITest do
       })
       |> Repo.insert!()
 
-    %Condition{}
-    |> Condition.changeset(%{
-      experiment_id: active.id,
+    condition =
+      %Condition{}
+      |> Condition.changeset(%{
+        experiment_id: active.id,
+        condition_code: "condition-a",
+        label: "Condition A",
+        weight: 1.0,
+        position: 0
+      })
+      |> Repo.insert!()
+
+    %DecisionPointCondition{}
+    |> DecisionPointCondition.changeset(%{
       decision_point_id: decision_point.id,
-      condition_code: "condition-a",
+      condition_id: condition.id,
       option_id: "alt-a",
-      label: "Condition A",
       weight: 1.0,
       position: 0
     })
@@ -504,7 +529,7 @@ defmodule Oli.Analytics.XAPITest do
         alternatives_resource_id: alternatives_revision.resource_id,
         alternatives_revision_id: alternatives_revision.id,
         decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
-        available_condition_codes: ["condition-a"]
+        available_condition_codes: ["alt-a"]
       })
 
     Repo.get!(Oli.Experiments.Schemas.Assignment, decision.assignment_id)

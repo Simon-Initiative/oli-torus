@@ -27,7 +27,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     stub_clickhouse_http(%{
       database_exists: false,
       raw_events_exists: false,
-      pending_migrations: 2
+      pending_migrations: 3
     })
 
     {:ok, view, _html} = live(conn, @route)
@@ -44,7 +44,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert html =~ "✓ Reachable"
     assert html =~ "✗ Database exists"
     assert html =~ "Current DB: default"
-    assert html =~ "2 pending migrations"
+    assert html =~ "3 pending migrations"
     assert html =~ ">Setup Database<"
     assert html =~ ">Migrate Up<"
     assert html =~ ">Migrate Down<"
@@ -345,8 +345,9 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
             %{
               "version_id" =>
                 case pending_migrations do
-                  0 -> "20260714120000"
-                  1 -> "20260326213833"
+                  0 -> "20260811190000"
+                  1 -> "20260714120000"
+                  2 -> "20260326213833"
                   _ -> nil
                 end
             }
