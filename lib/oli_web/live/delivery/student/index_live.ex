@@ -593,7 +593,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
         <div class="flex flex-col items-start gap-2.5">
           <h2 class="text-3xl text-white font-medium">
-            {build_welcome_title(@section.welcome_title)}
+            <Student.welcome_title
+              title={@section.welcome_title}
+              fallback="Welcome to the Course"
+            />
           </h2>
           <div class="text-white/60 text-lg font-semibold">
             {@section.encouraging_subtitle ||
@@ -1572,19 +1575,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   end
 
   defp maybe_put_return_to(params, _preview_mode, _preview_return), do: params
-
-  defp build_welcome_title(welcome_title)
-       when welcome_title not in [nil, %{}],
-       do:
-         Phoenix.HTML.raw(
-           Oli.Rendering.Content.render(
-             %Oli.Rendering.Context{},
-             welcome_title["children"],
-             Oli.Rendering.Content.Html
-           )
-         )
-
-  defp build_welcome_title(_), do: "Welcome to the Course"
 
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts

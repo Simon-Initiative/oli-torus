@@ -27,8 +27,6 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
     introduction_step = %Step{
       title: "Introduction",
-      description:
-        "Welcome to #{section.title}! Here's what you can expect during this set up process.",
       render_fn: &render_step/1,
       data: %{},
       next_button_label:
