@@ -63,7 +63,9 @@ function respond(c: AdaptiveJournalCore, handle: number, body: unknown, status =
 }
 
 const respondCorrect = (c: AdaptiveJournalCore, handle: number, correct = true) =>
-  respond(c, handle, { actions: { correct } });
+  // product-shaped: `rules-engine.ts:577` always emits `results` inside the
+  // CheckResult the controller returns as `actions`
+  respond(c, handle, { actions: { correct, results: [{ params: { correct, actions: [] } }] } });
 
 function postFinalization(c: AdaptiveJournalCore, bodyOver: Record<string, unknown> = {}): number {
   return request(c, 'POST', '/page_lifecycle', {
@@ -153,7 +155,12 @@ test.describe('journal request-time classification', () => {
     const garbage = putEval(c);
     respond(c, garbage, {});
     const errored = putEval(c);
-    respond(c, errored, { actions: { correct: true } }, 500);
+    respond(
+      c,
+      errored,
+      { actions: { correct: true, results: [{ params: { correct: true, actions: [] } }] } },
+      500,
+    );
     const failed = putEval(c);
     c.ingestRequestFailed(failed);
     const silent = putEval(c);
@@ -165,6 +172,22 @@ test.describe('journal request-time classification', () => {
     expect(c.records()[errored].parseError).toMatch(/status 500/);
     expect(c.records()[failed].terminal).toBe('failed');
     expect(c.records()[silent].terminal).toBeNull();
+  });
+
+  test('a result list of the wrong shape is unusable, not an empty plan', () => {
+    const c = core();
+    const object = putEval(c);
+    respond(c, object, { actions: { correct: true, results: {} } });
+    const scalar = putEval(c);
+    respond(c, scalar, { actions: { correct: true, results: 'nope' } });
+
+    for (const h of [object, scalar]) {
+      // accepting these would hand the planner a value it iterates, and an
+      // "empty plan" reads as `none` — a DIFFERENT, milder finding than
+      // "this response is unusable"
+      expect(c.records()[h].resolution).toBe('unresolved');
+      expect(c.records()[h].parseError).toMatch(/no boolean actions.correct/);
+    }
   });
 
   test('a pathless request body is recorded with a parse error, not dropped', () => {
@@ -204,7 +227,12 @@ test.describe('two-phase response stamping', () => {
     const h = putEval(c);
     c.ingestResponse(h, 200);
     expect(c.outstanding()).toBe(1);
-    c.ingestResponseBody(h, JSON.stringify({ actions: { correct: true } }));
+    c.ingestResponseBody(
+      h,
+      JSON.stringify({
+        actions: { correct: true, results: [{ params: { correct: true, actions: [] } }] },
+      }),
+    );
     expect(c.outstanding()).toBe(0);
     expect(c.records()[h].resolution).toBe('evaluation');
   });
@@ -212,7 +240,12 @@ test.describe('two-phase response stamping', () => {
   test('a body without a stamped response event is ignored', () => {
     const c = core();
     const h = putEval(c);
-    c.ingestResponseBody(h, JSON.stringify({ actions: { correct: true } }));
+    c.ingestResponseBody(
+      h,
+      JSON.stringify({
+        actions: { correct: true, results: [{ params: { correct: true, actions: [] } }] },
+      }),
+    );
     expect(c.records()[h].resolution).toBe('unresolved');
     expect(c.records()[h].terminal).toBeNull();
   });
@@ -231,7 +264,12 @@ test.describe('two-phase response stamping', () => {
     expect(record.resolution).toBe('unresolved');
 
     // a body that straggles in after the failure changes nothing
-    c.ingestResponseBody(h, JSON.stringify({ actions: { correct: true } }));
+    c.ingestResponseBody(
+      h,
+      JSON.stringify({
+        actions: { correct: true, results: [{ params: { correct: true, actions: [] } }] },
+      }),
+    );
     expect(c.records()[h].resolution).toBe('unresolved');
     expect(c.records()[h].terminal).toBe('failed');
   });
@@ -497,7 +535,9 @@ test.describe('freeze state machine', () => {
     expect(c.records()[late].terminal).toBe('unterminated');
     expect(c.outstanding()).toBe(0);
 
-    respond(c, late, { actions: { correct: true } });
+    respond(c, late, {
+      actions: { correct: true, results: [{ params: { correct: true, actions: [] } }] },
+    });
     expect(c.records()[late].status).toBeNull();
     expect(c.records()[late].resolution).toBe('unresolved');
   });
@@ -595,7 +635,12 @@ test.describe('audited-state immutability', () => {
     expect(() => c.issueFence('q:1')).toThrow(/while sealed/);
     expect(() => c.markFreezeTimeout()).toThrow(/while sealed/);
     c.ingestResponse(h, 500);
-    c.ingestResponseBody(h, JSON.stringify({ actions: { correct: false } }));
+    c.ingestResponseBody(
+      h,
+      JSON.stringify({
+        actions: { correct: false, results: [{ params: { correct: false, actions: [] } }] },
+      }),
+    );
     c.ingestRequestFailed(h);
     const snapshot = c.snapshot();
     expect(snapshot.records[h].status).toBe(200);
@@ -734,7 +779,9 @@ test.describe('journal recorder on a live page', () => {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ actions: { correct: true } }),
+        body: JSON.stringify({
+          actions: { correct: true, results: [{ params: { correct: true, actions: [] } }] },
+        }),
       });
     });
     const recorder = new AdaptiveJournalRecorder(page);

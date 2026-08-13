@@ -1,5 +1,4 @@
 import { Page, Request, Response } from '@playwright/test';
-import { CheckActions } from '@tasks/AdaptiveStrictContract';
 
 const EVAL_URL = /\/activity_attempt\/([^/?#]+)(?:[?#]|$)/;
 const SAVE_URL = /\/activity_attempt\/([^/?#]+)\/active(?:[?#]|$)/;
@@ -36,6 +35,20 @@ export type PageFinalizationFields = {
   result: string | null;
   commandResult: string | null;
   reason: string | null;
+};
+
+/**
+ * The `actions` body a check evaluation returns. Declared HERE because the
+ * journal is what parses it off the wire — importing it from the walker
+ * contract `B4-DEL` deletes would leave the core depending on a deleted file.
+ */
+export type CheckActions = {
+  correct: boolean;
+  score?: number;
+  out_of?: number;
+  results?: Array<{
+    params?: { actions?: Array<{ type: string; params?: Record<string, unknown> }> };
+  }>;
 };
 
 export type JournalRecord = {
@@ -688,17 +701,139 @@ export class AdaptiveJournalCore {
       return;
     }
     const actions = parsed.actions;
-    if (actions && typeof actions.correct === 'boolean') {
+    // The COMPLETE planner-consumed shape is validated here, not just the outer
+    // list. A malformed nested member normalizes to an empty action list, and an
+    // empty action list is a LEGAL plan (`none` is the navigation rotation's
+    // licensed first half, §3.4) — so accepting it would turn a malformed
+    // response into a legal-looking one instead of a typed unusable record.
+    const wellFormed =
+      !!actions &&
+      typeof actions.correct === 'boolean' &&
+      plannableResults(actions.results, actions.correct) &&
+      plannableFeedback(parsed.llm_feedback);
+    if (wellFormed) {
       record.resolution = 'evaluation';
       record.actions = actions;
-      record.correct = actions.correct;
+      record.correct = (actions as CheckActions).correct;
       record.llmFeedback = parsed.llm_feedback ?? null;
-    } else if (parsed.type === 'success') {
+    } else if (parsed.type === 'success' && (actions === undefined || actions === null)) {
+      // ONLY a response with no evaluation payload at all is the bare-success
+      // finalize. A `type: success` carrying a malformed `actions` would
+      // otherwise be relabelled informational, erasing owned traffic from every
+      // evaluation audit — and a capture keeps the relabelling, not the body.
       record.resolution = 'activity-finalize';
     } else {
       record.parseError ??= 'evaluation response carries no boolean actions.correct';
     }
   }
+}
+
+const isPlainObject = (v: unknown): boolean => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/**
+ * The evaluation body the transition planner consumes, validated when the
+ * RESPONSE BODY is parsed (§3.2 fail-closed classification).
+ *
+ * The boundary is derived from PRODUCT SOURCE, not from what a sample happens
+ * to contain: `rules-engine.ts:577` always emits `results` inside the
+ * `CheckResult` the controller returns as `actions`
+ * (`attempt_controller.ex:762`), the footer dereferences `evt.params.actions`
+ * (`DeckLayoutFooter.tsx:210`) and a recognized feedback action's
+ * `params.feedback` (`:550`). So none of these is a product-legal optional.
+ * Corroborated, not established, by the captures: 46/46 evaluations in the two
+ * gate greens carry `results`; every navigation action carries `params.target`
+ * and every feedback action `params.feedback` (107 result events across all
+ * seven dumps in the shadow directory agree).
+ *
+ * MISSING matters as much as malformed: a hollow field normalizes to an empty
+ * action list, and an empty action list is a LEGAL plan — `none` is the
+ * navigation rotation's licensed first half (§3.4).
+ */
+function plannableResults(results: unknown, verdict: boolean): boolean {
+  if (!Array.isArray(results)) return false;
+  // NEVER empty: after folding and filtering, `check()` installs `[defaultWrong]`
+  // when the set is empty (`rules-engine.ts:528-531`), so an empty list is not a
+  // response the product can emit — and `every()` would accept it vacuously,
+  // including the verdict-agreement check, straight into the rotation's legal
+  // `none`. (The measured rotation has an empty ACTIONS array, not an empty
+  // RESULTS array — a distinction this predicate previously blurred.)
+  if (results.length === 0) return false;
+  return results.every((result) => {
+    if (!isPlainObject(result)) return false;
+    const params = (result as { params?: unknown }).params;
+    if (!isPlainObject(params)) return false;
+    const { correct, actions } = params as { correct?: unknown; actions?: unknown };
+    // the footer's own aggregate verdict reads this (DeckLayoutFooter:420)
+    if (typeof correct !== 'boolean') return false;
+    // and it must AGREE with the outer verdict: the engine folds `isCorrect`
+    // then FILTERS the returned events to that verdict, so a non-empty list is
+    // homogeneous (`rules-engine.ts:517-530`). Two individually boolean but
+    // contradictory verdicts would let the audit read one while the footer's
+    // combine-feedback selection reads the other.
+    if (correct !== verdict) return false;
+    if (!Array.isArray(actions)) return false;
+    return actions.every(plannableAction);
+  });
+}
+
+/**
+ * An UNKNOWN action type stays legal — `processResults` ignores what it does
+ * not recognize — but a RECOGNIZED one must carry the member the footer
+ * dereferences, or hollowing it silently downgrades the plan.
+ */
+function plannableAction(action: unknown): boolean {
+  if (!isPlainObject(action)) return false;
+  const { type, params } = action as { type?: unknown; params?: unknown };
+  if (typeof type !== 'string') return false;
+  if (!isPlainObject(params)) return false;
+  const fields = params as Record<string, unknown>;
+  if (type === 'feedback') return fields.feedback !== undefined;
+  if (type === 'navigation') return typeof fields.target === 'string';
+  if (type === 'mutateState') return plannableMutation(fields);
+  return true;
+}
+
+/**
+ * `applyState` dispatches on this closed operator set and returns
+ * `{error: true}` — SILENTLY, no throw — for anything else
+ * (`scripting.ts:412-482`). A malformed mutation whose result carries terminal
+ * navigation is therefore lost with no later check to expose it, so the wire
+ * shape is checked here. Expression evaluation and mutation EFFECTS stay
+ * product-owned; this is the declared-shape surface only.
+ */
+const APPLY_STATE_OPERATORS = [
+  'adding',
+  '+',
+  'subtracting',
+  '-',
+  'bind to',
+  'anchor to',
+  'setting to',
+  '=',
+];
+
+function plannableMutation(fields: Record<string, unknown>): boolean {
+  const { target, operator, value } = fields;
+  if (typeof target !== 'string' || target.length === 0) return false;
+  if (typeof operator !== 'string' || APPLY_STATE_OPERATORS.indexOf(operator) === -1) return false;
+  if (value === undefined) return false;
+  if ((operator === 'bind to' || operator === 'anchor to') && typeof value !== 'string') {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * `llm_feedback.text` decides the feedback plan (§3.5). The controller emits
+ * the member ONLY as `%{"text" => text, "ai_generated" => true}`
+ * (`attempt_controller.ex:764`), so a present member without a string `text` is
+ * malformed — not an alternate shape. Extra fields are ignored, and an EMPTY
+ * string is legal: the product treats it as no feedback and so does the planner.
+ */
+function plannableFeedback(feedback: unknown): boolean {
+  if (feedback === undefined || feedback === null) return true;
+  if (!isPlainObject(feedback)) return false;
+  return typeof (feedback as { text?: unknown }).text === 'string';
 }
 
 function parseJson(raw: string | null): unknown {

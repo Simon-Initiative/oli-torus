@@ -704,7 +704,13 @@ contract.** Many bails leave no journal trace. The driver records each as an
 unlisted failure mode is itself a spec bug, not a free extension point:
 `identity-unresolved | readiness-timeout | answer-failed | readback-failed | barrier-timeout |
 check-click-no-effect | feedback-never-opened | ack-no-effect | widget-button-unavailable |
-navigation-timeout`. **Attribution rule:** to the observed screen when an identity was
+navigation-timeout | gate-unsatisfied | traffic-unsettled | driver-internal`. The last three
+were added during the step-4 build (Codex 4c round 1, SF5 + blocker 2): a declared gate the
+driver cannot satisfy is not a readiness timeout, a completed transition whose traffic never
+settles is not a navigation timeout, and a fault no operation was performing — a refused
+stamp, a helper throwing — must be reported AS ITSELF, attributed to the step whose window is
+open, rather than disguised as a deck outcome or left to the oracle's
+`seal-without-evidence` fallback, which names no screen. **Attribution rule:** to the observed screen when an identity was
 resolved; otherwise (`identity-unresolved`) to the EXPECTED scenario step by position — so
 same-screen shadow equivalence is deterministic even when the failure is that identity never
 arrived. The oracle maps every record to a violation; a sealed audit cannot return zero
@@ -712,6 +718,51 @@ violations for an ordinary bail.
 
 This is what makes the §7 step-3 bail↔violation equivalence implementable — a bailed run's
 journal can never satisfy the freeze predicate.
+
+**Evaluation-body acceptance is a CLOSED DERIVATION from the product's own reads** (added during
+the step-4 build after three review rounds kept finding new malformed shapes one at a time —
+sample-calibrated strictness could not converge, so the boundary is now taken from the code that
+emits and consumes the payload). A response is a usable evaluation only if every row below holds;
+anything else is an unresolved candidate live, and an unusable record on replay. MISSING counts
+as malformed: a hollow field normalizes to an empty action list, and an empty action list is the
+navigation rotation's LEGAL first half (§3.4), so hollowing is how malformed traffic passes as a
+green run.
+
+| Field | Product consumer (normative) | Required |
+|---|---|---|
+| `actions` | `triggerCheck.ts:338` | object |
+| `actions.results` | `triggerCheck.ts:339`; `DeckLayoutFooter.tsx:415,420,424,436` | array, NEVER empty — `rules-engine.ts:528-531` substitutes `[defaultWrong]` when filtering empties the set, and an empty list satisfies every per-member rule vacuously before planning `none`. (The measured rotation has an empty ACTIONS array, not an empty RESULTS array.) |
+| `actions.correct` | `triggerCheck.ts:340` | boolean; on replay it must equal the recorder-derived `record.correct` |
+| `actions.correct` vs `results[].params.correct` | `rules-engine.ts:517-530` folds the verdict then FILTERS the returned events to it, so a non-empty list is homogeneous; `triggerCheck.ts:340` reads the outer value while `DeckLayoutFooter.tsx:420` recomputes from the inner ones | must AGREE — two individually boolean but contradictory verdicts let the audit read one and the footer's combine-feedback selection read the other |
+| `results[].params` | `DeckLayoutFooter.tsx:223,420` | object |
+| `results[].params.correct` | `DeckLayoutFooter.tsx:420` (`every`) | boolean |
+| `results[].params.actions` | `DeckLayoutFooter.tsx:210,223` (`forEach`) | array |
+| `action.type` | `DeckLayoutFooter.tsx:212,225` | string; an UNKNOWN type stays legal — `processResults` ignores it |
+| `action.params` | every emitted action carries it (186/186 across the captures) | object, for EVERY action type — stronger than the per-type rows below and deliberately so: it is fail-closed and costs nothing |
+| `action.params.feedback` (type `feedback`) | `DeckLayoutFooter.tsx:550` | present |
+| `action.params.target` (type `navigation`) | `triggerCheck.ts:392,490` | string |
+| `action.params` (type `mutateState`) | `DeckLayoutFooter.tsx:450-538` → `applyState` (`scripting.ts:412-482`) | non-empty string `target`; `operator` from the closed set `adding \| + \| subtracting \| - \| bind to \| anchor to \| setting to \| =`; `value` present; string `value` for `bind to`/`anchor to`. `applyState` returns `{error: true}` SILENTLY on an unknown operator, so a malformed mutation inside a TERMINAL result is never exposed by a later check — the earlier "a later screen will catch it" bound was wrong. Effects and expression evaluation stay product-owned; this is the declared shape only. |
+| `llm_feedback` | `DeckLayoutFooter.tsx:546`; emitted only as `{text, ai_generated}` (`attempt_controller.ex:764`) | absent/null, or object with string `text` (empty string legal — the product treats it as no feedback) |
+| `actions.score`, `actions.out_of` | `triggerCheck.ts:341-342` | NOT validated: scoring-only, read by no transition and no audit |
+
+Enforced TWICE, independently (§3.2 common-mode rule): the recorder refuses the body at
+response-parse time, and the oracle refuses the record at audit time — captures were serialized
+before any given guard existed, so the live leg cannot cover replay. `type: 'success'` selects the
+informational activity-finalize branch ONLY when no `actions` member is present, or the run could
+relabel malformed owned traffic as informational and erase it from every evaluation audit.
+
+**Deliberately NOT validated, with the reason** (proposed as rows during the 4c review and
+declined by the writer — the boundary guards the AUDITED plan/verdict projection, and neither of
+these can reach it):
+
+- **`feedback.params.feedback` internal shape** (`partsLayout`, `FeedbackRenderer.tsx:229-270`).
+  Presence is required (a missing member downgrades the plan); the RENDERABLE shape is not,
+  because a hollow payload plans exactly what a real feedback plans, and the difference shows up
+  live as feedback that never opens — a typed `feedback-never-opened` operation failure. There is
+  no ordering in which accepting it produces a green a legitimate response would not also produce.
+
+Both are recorded as named bounds rather than fixed: if either is ever shown to reach the audited
+projection, it becomes a row above.
 
 ### 3.3 Attribution
 

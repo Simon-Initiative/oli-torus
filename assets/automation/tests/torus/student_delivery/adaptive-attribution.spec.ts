@@ -43,7 +43,12 @@ function fireEvaluation(
   });
   if (handle === null) throw new Error('journal ignored the evaluation PUT');
   c.ingestResponse(handle, 200);
-  c.ingestResponseBody(handle, JSON.stringify({ actions: { correct: true } }));
+  c.ingestResponseBody(
+    handle,
+    JSON.stringify({
+      actions: { correct: true, results: [{ params: { correct: true, actions: [] } }] },
+    }),
+  );
   return handle;
 }
 
@@ -55,7 +60,12 @@ function firePathlessEvaluation(c: AdaptiveJournalCore, guid: string): number {
   });
   if (handle === null) throw new Error('journal ignored the evaluation PUT');
   c.ingestResponse(handle, 200);
-  c.ingestResponseBody(handle, JSON.stringify({ actions: { correct: true } }));
+  c.ingestResponseBody(
+    handle,
+    JSON.stringify({
+      actions: { correct: true, results: [{ params: { correct: true, actions: [] } }] },
+    }),
+  );
   return handle;
 }
 

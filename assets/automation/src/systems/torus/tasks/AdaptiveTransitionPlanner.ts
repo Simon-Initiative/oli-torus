@@ -38,8 +38,21 @@ export type PlannedTransition =
   | { kind: 'feedback'; ack: { kind: 'navigate'; target: string } | { kind: 'recheck' } }
   | { kind: 'none' };
 
+/**
+ * TOTAL over unknown wire input. The planner replays CAPTURED journals as well
+ * as live ones, so a malformed shape that a live journal now rejects can still
+ * arrive from an older dump: it must degrade to "no actions" and let the audit
+ * report a typed violation, never throw inside the oracle.
+ */
+const actionsOf = (event: CheckResultEvent): TransitionAction[] => {
+  const actions = (event as { params?: { actions?: unknown } } | null)?.params?.actions;
+  return Array.isArray(actions)
+    ? actions.filter((a): a is TransitionAction => !!a && typeof a === 'object')
+    : [];
+};
+
 const navigationActions = (event: CheckResultEvent): TransitionAction[] =>
-  (event.params?.actions ?? []).filter((a) => a.type === 'navigation');
+  actionsOf(event).filter((a) => a.type === 'navigation');
 
 /** DeckLayoutFooter.tsx:307-323 — every result navigates, one distinct target. */
 function allEventsShareOneNavigation(results: CheckResultEvent[]): boolean {
@@ -58,12 +71,15 @@ export function selectProcessedEvents(
   results: CheckResultEvent[],
   combineFeedback: boolean,
 ): CheckResultEvent[] {
-  if (results.length === 0) return [];
-  if (!combineFeedback) return [results[0]];
-  if (allEventsShareOneNavigation(results)) return results;
-  const isCorrect = results.every((r) => !!r.params?.correct);
-  if (navigationActions(results[0]).length > 0 && !isCorrect) return [results[0]];
-  return results;
+  const events = Array.isArray(results)
+    ? results.filter((r): r is CheckResultEvent => !!r && typeof r === 'object')
+    : [];
+  if (events.length === 0) return [];
+  if (!combineFeedback) return [events[0]];
+  if (allEventsShareOneNavigation(events)) return events;
+  const isCorrect = events.every((r) => !!r.params?.correct);
+  if (navigationActions(events[0]).length > 0 && !isCorrect) return [events[0]];
+  return events;
 }
 
 export function planTransition(
@@ -72,7 +88,7 @@ export function planTransition(
   combineFeedback: boolean,
 ): PlannedTransition {
   const events = selectProcessedEvents(results, combineFeedback);
-  const actions = events.flatMap((e) => e.params?.actions ?? []);
+  const actions = events.flatMap(actionsOf);
   const feedback = actions.filter((a) => a.type === 'feedback');
   const navigation = actions.filter((a) => a.type === 'navigation');
   const target = navigation.length > 0 ? String(navigation[0].params?.target ?? '') : '';

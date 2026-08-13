@@ -47,7 +47,17 @@ export type OperationFailureKind =
   | 'feedback-never-opened'
   | 'ack-no-effect'
   | 'widget-button-unavailable'
-  | 'navigation-timeout';
+  | 'navigation-timeout'
+  /** a declared gate operation the driver could not satisfy */
+  | 'gate-unsatisfied'
+  /** the transition completed but its traffic never settled */
+  | 'traffic-unsettled'
+  /**
+   * The driver itself failed where no operation was in flight (a stamp refused,
+   * a helper threw). Named rather than folded into a neighbouring kind: an
+   * unknown fault must not be reported as if it were one of the deck outcomes.
+   */
+  | 'driver-internal';
 
 export type OperationFailure = {
   kind: OperationFailureKind;
@@ -200,6 +210,98 @@ const violation = (
 
 type OwnedEvaluation = { record: JournalRecord; attributed: AttributedRecord };
 
+/**
+ * Audit-time shape check, INDEPENDENT of the journal's response-time one (§3.2
+ * common-mode rule): captured journals were serialized by an older recorder, so
+ * the live guard cannot have applied to them. It matters because the planner is
+ * total — a malformed member would otherwise normalize to an empty action list,
+ * and `none` is a LEGAL plan for the navigation rotation's first evaluation
+ * (§3.4). Every field below is one the planner reads.
+ */
+function replayableActions(record: JournalRecord): boolean {
+  const objectOnly = (v: unknown): boolean =>
+    v !== null && typeof v === 'object' && !(v instanceof Array);
+
+  const feedback = record.llmFeedback;
+  if (feedback !== null && feedback !== undefined) {
+    if (!objectOnly(feedback)) return false;
+    if (typeof (feedback as { text?: unknown }).text !== 'string') return false;
+  }
+
+  // the OUTER body first: an `actions` array answers `?.results` with
+  // `undefined`, so starting at the results would wave the whole malformed body
+  // through on the strength of the duplicated top-level verdict
+  const body = record.actions as unknown;
+  if (!objectOnly(body)) return false;
+  const verdict = (body as { correct?: unknown }).correct;
+  if (typeof verdict !== 'boolean') return false;
+  // the recorder DERIVED `record.correct` from this field; a capture where the
+  // two disagree has been edited between them
+  if (verdict !== record.correct) return false;
+
+  const results = (body as { results?: unknown }).results;
+  if (!(results instanceof Array)) return false;
+  // an empty list is not emittable: the engine substitutes the default-wrong
+  // event when filtering empties the set (`rules-engine.ts:528-531`), and an
+  // empty list would satisfy every per-member rule below vacuously — then plan
+  // `none`, which §3.4 licenses as the rotation's first half
+  if (results.length === 0) return false;
+  for (const result of results) {
+    if (!objectOnly(result)) return false;
+    const params = (result as { params?: unknown }).params;
+    if (!objectOnly(params)) return false;
+    const inner = (params as { correct?: unknown }).correct;
+    if (typeof inner !== 'boolean') return false;
+    // the engine filters returned events to the folded verdict
+    // (`rules-engine.ts:517-530`), so a non-empty list is homogeneous and must
+    // agree with the outer one — the audit reads the outer value while the
+    // footer's event selection reads these
+    if (inner !== verdict) return false;
+    const list = (params as { actions?: unknown }).actions;
+    if (!(list instanceof Array)) return false;
+    for (const action of list) {
+      if (!objectOnly(action)) return false;
+      const type = (action as { type?: unknown }).type;
+      if (typeof type !== 'string') return false;
+      const actionParams = (action as { params?: unknown }).params;
+      if (!objectOnly(actionParams)) return false;
+      // recognized actions must carry what the footer dereferences; unknown
+      // types stay legal because `processResults` ignores them
+      const fields = actionParams as Record<string, unknown>;
+      if (type === 'feedback' && fields.feedback === undefined) return false;
+      if (type === 'navigation' && typeof fields.target !== 'string') return false;
+      // `applyState` fails SILENTLY on an unknown operator (`scripting.ts:481`),
+      // so a malformed mutation in a TERMINAL result is never exposed by a later
+      // check — the audit has to refuse the record itself
+      if (type === 'mutateState') {
+        const target = fields.target;
+        const operator = fields.operator;
+        if (typeof target !== 'string' || target.length === 0) return false;
+        if (
+          operator !== 'adding' &&
+          operator !== '+' &&
+          operator !== 'subtracting' &&
+          operator !== '-' &&
+          operator !== 'bind to' &&
+          operator !== 'anchor to' &&
+          operator !== 'setting to' &&
+          operator !== '='
+        ) {
+          return false;
+        }
+        if (fields.value === undefined) return false;
+        if (
+          (operator === 'bind to' || operator === 'anchor to') &&
+          typeof fields.value !== 'string'
+        ) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 const usable = (r: JournalRecord): boolean =>
   r.resolution === 'evaluation' &&
   r.status !== null &&
@@ -208,7 +310,8 @@ const usable = (r: JournalRecord): boolean =>
   r.responseSeq !== null &&
   r.parseError === null &&
   r.actions !== null &&
-  typeof r.correct === 'boolean';
+  typeof r.correct === 'boolean' &&
+  replayableActions(r);
 
 const resultsOf = (r: JournalRecord): CheckResultEvent[] =>
   (r.actions?.results ?? []) as CheckResultEvent[];

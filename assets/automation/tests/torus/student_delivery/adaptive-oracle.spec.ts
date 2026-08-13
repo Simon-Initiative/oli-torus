@@ -9,6 +9,7 @@ import {
   validateRouteCoverage,
 } from '@tasks/AdaptiveManifest';
 import {
+  OperationFailureKind,
   Permit,
   RunRecord,
   StepReceipt,
@@ -668,6 +669,27 @@ test.describe('predicate matrix — accept and reject per operator', () => {
 test.describe('transition planner — combineFeedback branches (DeckLayoutFooter:420-444)', () => {
   const nav = (target: string, correct = true) => event(correct, [navTo(target)]);
   const fb = (correct = true) => event(correct, [feedback()]);
+
+  test('the planner is TOTAL over malformed wire shapes — it degrades, never throws', () => {
+    // a live journal now refuses these bodies, but the planner also replays
+    // CAPTURED dumps, where an older serialization can still carry them: an
+    // exception here would escape auditRun instead of becoming a violation
+    const malformed: unknown[] = [
+      [null],
+      [{ params: { actions: {} } }],
+      [{ params: { actions: 'nope' } }],
+      [{ params: { actions: [null, 'x'] } }],
+      ['not-an-event'],
+      {},
+      null,
+    ];
+    malformed.forEach((results) => {
+      const arg = results as Parameters<typeof planTransition>[0];
+      expect(() => selectProcessedEvents(arg, true)).not.toThrow();
+      expect(planTransition(arg, null, true)).toEqual({ kind: 'none' });
+      expect(planTransition(arg, null, false)).toEqual({ kind: 'none' });
+    });
+  });
 
   test('combine_feedback false processes results[0] alone', () => {
     const results = [nav('next'), fb()];
@@ -1450,18 +1472,26 @@ test.describe('cross-screen grading THROUGH auditRun (§3.6)', () => {
 
 test.describe('remaining §8 rows', () => {
   test('every operation-failure union member maps to its violation', () => {
-    const kinds = [
-      'identity-unresolved',
-      'readiness-timeout',
-      'answer-failed',
-      'readback-failed',
-      'barrier-timeout',
-      'check-click-no-effect',
-      'feedback-never-opened',
-      'ack-no-effect',
-      'widget-button-unavailable',
-      'navigation-timeout',
-    ] as const;
+    // Authored HERE, never imported from the source (W-U9: the expected set
+    // shares no constant, array or helper with the emitter) — but typed as a
+    // TOTAL map, so adding a union member fails type-check until this matrix
+    // lists it. A stale enumeration is the failure mode this shape removes.
+    const KIND_MATRIX: Record<OperationFailureKind, true> = {
+      'identity-unresolved': true,
+      'readiness-timeout': true,
+      'answer-failed': true,
+      'readback-failed': true,
+      'barrier-timeout': true,
+      'check-click-no-effect': true,
+      'feedback-never-opened': true,
+      'ack-no-effect': true,
+      'widget-button-unavailable': true,
+      'navigation-timeout': true,
+      'gate-unsatisfied': true,
+      'traffic-unsettled': true,
+      'driver-internal': true,
+    };
+    const kinds = Object.keys(KIND_MATRIX) as OperationFailureKind[];
     const { snapshot, runRecord } = buildRun();
     const stepScreens = ['n:1', 'q:1', 'c:1'];
     runRecord.operationFailures = kinds.map((kind, n) => ({
@@ -2179,6 +2209,324 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
     // first half; a NAVIGATING first plan remains illegal
     expect(codes(found)).not.toContain('navigation-sequence');
     expect(codes(found)).not.toContain('plan-illegal');
+  });
+
+  test('a rotation whose first response is MALFORMED is not the legal `none` half (§3.4)', () => {
+    // `none` is legal for the rotation's first check, so a malformed shape that
+    // normalized to an empty action list would slip into that licence. The
+    // planner is total by design (it must never throw inside a replay), so the
+    // refusal has to happen at classification — twice, independently: the
+    // journal refuses to resolve it live, and the ORACLE refuses to treat it as
+    // usable when auditing a capture the live guard never saw.
+    // scalar poison is the easy half; OBJECT-SHAPED poison is what a shallow
+    // "truthy and typeof object" check waves through, and every one of these
+    // fields is read by the planner the audit replays
+    const malformedBodies = [
+      { correct: false, results: [null] },
+      { correct: false, results: [{ params: { actions: {} } }] },
+      { correct: false, results: [{ params: { actions: ['x'] } }] },
+      { correct: false, results: [{}] },
+      { correct: false, results: [[]] },
+      { correct: false, results: [{ params: [] }] },
+      { correct: false, results: [{ params: { correct: 'yes', actions: [] } }] },
+      { correct: false, results: [{ params: { correct: false, actions: [{}] } }] },
+      { correct: false, results: [{ params: { correct: false, actions: [{ type: 7 }] } }] },
+      // an EMPTY list satisfies every per-member rule vacuously, then plans
+      // `none` — the engine substitutes [defaultWrong] rather than emitting it
+      { correct: false, results: [] },
+      // a mutation `applyState` cannot dispatch: it fails silently, so a
+      // TERMINAL result leaves no later check to expose the lost update
+      {
+        correct: false,
+        results: [
+          {
+            params: {
+              correct: false,
+              actions: [
+                {
+                  type: 'mutateState',
+                  params: { target: 'variables.x', operator: 'nope', value: 1 },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      {
+        correct: false,
+        results: [
+          {
+            params: {
+              correct: false,
+              actions: [{ type: 'mutateState', params: { target: '', operator: '=', value: 1 } }],
+            },
+          },
+        ],
+      },
+      {
+        correct: false,
+        results: [
+          {
+            params: {
+              correct: false,
+              actions: [
+                {
+                  type: 'mutateState',
+                  params: { target: 'variables.x', operator: 'bind to', value: 3 },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      // HOLLOW, not malformed-typed: the product always emits these, and every
+      // one of them normalizes to the rotation's licensed `none`
+      { correct: false },
+      {
+        correct: false,
+        results: [{ params: { correct: false, actions: [{ type: 'feedback' }] } }],
+      },
+      {
+        correct: false,
+        results: [{ params: { correct: false, actions: [{ type: 'feedback', params: {} }] } }],
+      },
+      {
+        correct: false,
+        results: [{ params: { correct: false, actions: [{ type: 'navigation', params: {} }] } }],
+      },
+    ];
+
+    malformedBodies.forEach((body, i) => {
+      const c = new AdaptiveJournalCore(() => 1_000);
+      c.setRunCorrelation(CORR);
+      const v0 = c.issueFence('n:1');
+      const navPermit = c.issuePermit('widget-button', 'n:1', 0);
+      const first = fireEval(c, 'a-n1', [], { correct: false, results: [event(false, [])] });
+      fireMint(c, 'a-n1', 'a-n1b');
+      fireEval(c, 'a-n1b', [], { correct: true, results: [event(true, [navTo('next')])] });
+      c.beginSeal();
+      c.finishSeal();
+
+      const snapshot = c.snapshot();
+      // a CAPTURE written before the live guard existed: the record is typed by
+      // assertion at load, so the malformed body reaches the audit intact
+      snapshot.records[first].actions = body as never;
+
+      const runRecord: RunRecord = {
+        visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
+        permits: [navPermit],
+        receipts: [],
+        operationFailures: [],
+        plans: [],
+      };
+      const m = manifest({
+        screens: [MANIFEST.screens[0]],
+        scenario: [{ screen_ref: 'n:1', expected_verdict: 'correct' }],
+      });
+      const found = auditRun(m, runRecord, c.snapshot());
+      const poisoned = auditRun(m, runRecord, snapshot);
+      expect(codes(found), `control run ${i}`).not.toContain('evaluation-unusable');
+      expect(codes(poisoned), formatViolations(poisoned)).toContain('evaluation-unusable');
+    });
+  });
+
+  test('the OUTER evaluation body is validated, and its duplicated verdict reconciled', () => {
+    // `record.actions?.results` answers `undefined` for an ARRAY body, so a
+    // predicate starting there would pass the whole malformed body on the
+    // strength of the recorder-derived `record.correct` alone
+    const poisons: Array<(r: { actions: unknown; correct: boolean | null }) => void> = [
+      (r) => (r.actions = [] as never),
+      (r) => (r.actions = 'nope' as never),
+      (r) => ((r.actions as { correct: unknown }).correct = 'no'),
+      // the recorder DERIVED record.correct from actions.correct; disagreement
+      // means the capture was edited between them
+      (r) => ((r.actions as { correct: unknown }).correct = true),
+      // outer and inner verdicts individually boolean but CONTRADICTORY: the
+      // audit reads the outer, the footer's event selection reads the inner
+      (r) => {
+        const results = (r.actions as { results: Array<{ params: { correct: boolean } }> }).results;
+        results[0].params.correct = true;
+      },
+    ];
+
+    poisons.forEach((poison, i) => {
+      const c = new AdaptiveJournalCore(() => 1_000);
+      c.setRunCorrelation(CORR);
+      const v0 = c.issueFence('n:1');
+      const navPermit = c.issuePermit('widget-button', 'n:1', 0);
+      const first = fireEval(c, 'a-n1', [], { correct: false, results: [event(false, [])] });
+      fireMint(c, 'a-n1', 'a-n1b');
+      fireEval(c, 'a-n1b', [], { correct: true, results: [event(true, [navTo('next')])] });
+      c.beginSeal();
+      c.finishSeal();
+
+      const snapshot = c.snapshot();
+      poison(snapshot.records[first] as unknown as { actions: unknown; correct: boolean | null });
+      const m = manifest({
+        screens: [MANIFEST.screens[0]],
+        scenario: [{ screen_ref: 'n:1', expected_verdict: 'correct' }],
+      });
+      const found = auditRun(
+        m,
+        {
+          visits: [
+            { screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 },
+          ],
+          permits: [navPermit],
+          receipts: [],
+          operationFailures: [],
+          plans: [],
+        },
+        snapshot,
+      );
+      expect(codes(found), `poison ${i}: ${formatViolations(found)}`).toContain(
+        'evaluation-unusable',
+      );
+    });
+  });
+
+  test('malformed LLM feedback is not a usable evaluation either (§3.5)', () => {
+    // `llm_feedback.text` is a PLANNER-READ field: a non-string truthy value
+    // plans feedback/recheck exactly as real feedback would
+    const c = new AdaptiveJournalCore(() => 1_000);
+    c.setRunCorrelation(CORR);
+    const v0 = c.issueFence('n:1');
+    const navPermit = c.issuePermit('widget-button', 'n:1', 0);
+    const first = fireEval(c, 'a-n1', [], { correct: false, results: [event(false, [])] });
+    fireMint(c, 'a-n1', 'a-n1b');
+    fireEval(c, 'a-n1b', [], { correct: true, results: [event(true, [navTo('next')])] });
+    c.beginSeal();
+    c.finishSeal();
+
+    const snapshot = c.snapshot();
+    // `{}` is the HOLLOW case: the controller only ever emits
+    // `{text, ai_generated}`, so a member without text is malformed, and
+    // hollowing a real feedback downgrades the plan to the legal `none`
+    const hollow = c.snapshot();
+    hollow.records[first].llmFeedback = {} as never;
+    const hollowFound = auditRun(
+      manifest({
+        screens: [MANIFEST.screens[0]],
+        scenario: [{ screen_ref: 'n:1', expected_verdict: 'correct' }],
+      }),
+      {
+        visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
+        permits: [navPermit],
+        receipts: [],
+        operationFailures: [],
+        plans: [],
+      },
+      hollow,
+    );
+    expect(codes(hollowFound), formatViolations(hollowFound)).toContain('evaluation-unusable');
+
+    snapshot.records[first].llmFeedback = { text: 7 } as never;
+    const m = manifest({
+      screens: [MANIFEST.screens[0]],
+      scenario: [{ screen_ref: 'n:1', expected_verdict: 'correct' }],
+    });
+    const runRecord: RunRecord = {
+      visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
+      permits: [navPermit],
+      receipts: [],
+      operationFailures: [],
+      plans: [],
+    };
+    const found = auditRun(m, runRecord, snapshot);
+    expect(codes(found), formatViolations(found)).toContain('evaluation-unusable');
+  });
+
+  test('the wire refuses every malformed evaluation shape, including object shells', () => {
+    const c = new AdaptiveJournalCore(() => 1_000);
+    // the RAW response body, not the fixture's re-wrapped one: these tests are
+    // about the exact bytes the server can put on the wire
+    const fireRaw = (guid: string, body: unknown): number => {
+      const handle = openEval(c, guid, []);
+      c.ingestResponse(handle, 200);
+      c.ingestResponseBody(handle, JSON.stringify(body));
+      return handle;
+    };
+    const refused = [
+      { actions: { correct: false, results: [null] } },
+      { actions: { correct: false, results: [{ params: { actions: {} } }] } },
+      { actions: { correct: false, results: [{ params: { actions: [7] } }] } },
+      { actions: { correct: false, results: [{}] } },
+      { actions: { correct: false, results: [[]] } },
+      { actions: { correct: false, results: [{ params: [] }] } },
+      { actions: { correct: false, results: [{ params: { correct: 'yes' } }] } },
+      { actions: { correct: false, results: [{ params: { actions: [{ type: 7 }] } }] } },
+      {
+        actions: { correct: false, results: [{ params: { correct: false, actions: [] } }] },
+        llm_feedback: { text: 7 },
+      },
+      {
+        actions: { correct: false, results: [{ params: { correct: false, actions: [] } }] },
+        llm_feedback: {},
+      },
+      // contradictory verdicts: the engine filters events to the folded
+      // verdict, so a mixed list never comes off a real server
+      { actions: { correct: false, results: [{ params: { correct: true, actions: [] } }] } },
+      { actions: { correct: true, results: [{ params: { correct: false, actions: [] } }] } },
+      // hollow list, and a silently-failing mutation alongside TERMINAL
+      // navigation — the ordering with no later check to expose it
+      { actions: { correct: false, results: [] } },
+      {
+        actions: {
+          correct: true,
+          results: [
+            {
+              params: {
+                correct: true,
+                actions: [
+                  {
+                    type: 'mutateState',
+                    params: { target: 'variables.x', operator: 'nope', value: 1 },
+                  },
+                  { type: 'navigation', params: { target: 'endOfLesson' } },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      // hollow product fields: `results` is never optional (rules-engine.ts:577),
+      // and a RECOGNIZED action must carry what the footer dereferences
+      { actions: { correct: false } },
+      {
+        actions: {
+          correct: false,
+          results: [{ params: { correct: false, actions: [{ type: 'feedback' }] } }],
+        },
+      },
+      {
+        actions: {
+          correct: false,
+          results: [{ params: { correct: false, actions: [{ type: 'navigation', params: {} }] } }],
+        },
+      },
+      // `type: success` must not launder an evaluation-shaped malformed member
+      // into an informational finalize — that erases it from every audit
+      { type: 'success', actions: { correct: false, results: [null] } },
+    ];
+    refused.forEach((body, i) => {
+      const h = fireRaw(`a-${i}`, body);
+      expect(c.records()[h].resolution, `body ${i}`).toBe('unresolved');
+      expect(c.records()[h].actions, `body ${i}`).toBeNull();
+    });
+  });
+
+  test('a genuinely bare-success response is still an informational finalize', () => {
+    const c = new AdaptiveJournalCore(() => 1_000);
+    const fireRaw = (guid: string, body: unknown): number => {
+      const handle = openEval(c, guid, []);
+      c.ingestResponse(handle, 200);
+      c.ingestResponseBody(handle, JSON.stringify(body));
+      return handle;
+    };
+    const bare = fireRaw('a-bare', { type: 'success' });
+    const nulled = fireRaw('a-null', { type: 'success', actions: null });
+    expect(c.records()[bare].resolution).toBe('activity-finalize');
+    expect(c.records()[nulled].resolution).toBe('activity-finalize');
   });
 
   test('receipt inventory: duplicates on a graded step and receipts on non-graded steps (§3.5)', () => {
