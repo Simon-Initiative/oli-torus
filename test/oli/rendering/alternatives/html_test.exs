@@ -158,6 +158,13 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
       assert rendered_html_string =~ ~s|aria-label="Alternative content options"|
       assert rendered_html_string =~ ~s|role="tab"|
       assert rendered_html_string =~ ~s|aria-selected="true"|
+
+      assert rendered_html_string =~
+               ~s|class="btn btn-sm mr-2 whitespace-nowrap bg-primary text-white dark:bg-blue-600 dark:text-white"|
+
+      assert rendered_html_string =~
+               ~s|class="btn btn-sm mr-2 whitespace-nowrap hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-700"|
+
       assert rendered_html_string =~ ~s|role="tabpanel"|
       assert rendered_html_string =~ ~s| hidden>|
 
@@ -176,6 +183,103 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
       # renders Python alternative
       assert rendered_html_string =~
                ~s|<div class=\"content\" ><p data-point-marker="378189886">Python</p>\n</div>|
+    end
+
+    test "treats legacy upgrade decision points as experiment-controlled in preview", %{
+      author: author
+    } do
+      element = %{
+        "type" => "alternatives",
+        "id" => "legacy-placement",
+        "alternatives_id" => 1,
+        "strategy" => "user_section_preference",
+        "children" => [
+          %{"type" => "alternative", "value" => "a", "children" => []},
+          %{"type" => "alternative", "value" => "b", "children" => []}
+        ]
+      }
+
+      groups_fn = fn ->
+        {:ok,
+         [
+           %{
+             id: 1,
+             revision_id: 1,
+             title: "Legacy decision point",
+             strategy: "upgrade_decision_point",
+             options: [%{"id" => "a", "name" => "A"}, %{"id" => "b", "name" => "B"}]
+           }
+         ]}
+      end
+
+      rendered =
+        Alternatives.render(
+          %Context{
+            user: author,
+            activity_map: %{},
+            alternatives_groups_fn: groups_fn,
+            alternatives_selector_fn: &Oli.Resources.Alternatives.select/2,
+            mode: :author_preview
+          },
+          element,
+          Alternatives.Html
+        )
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered =~ ~s|phx-hook="PreviewAlternativesTabs"|
+      assert rendered =~ "Alternative 1"
+      assert rendered =~ "Alternative 2"
+      refute rendered =~ "AlternativesPreferenceSelector"
+      refute rendered =~ "alternatives-selector-1"
+    end
+
+    test "renders user preference alternatives with the dropdown instead of tabs in preview", %{
+      author: author
+    } do
+      element = %{
+        "type" => "alternatives",
+        "id" => "preference-placement",
+        "alternatives_id" => 1,
+        "children" => [
+          %{"type" => "alternative", "value" => "a", "children" => []},
+          %{"type" => "alternative", "value" => "b", "children" => []}
+        ]
+      }
+
+      groups_fn = fn ->
+        {:ok,
+         [
+           %{
+             id: 1,
+             revision_id: 1,
+             title: "Learner choice",
+             strategy: "user_section_preference",
+             options: [%{"id" => "a", "name" => "A"}, %{"id" => "b", "name" => "B"}]
+           }
+         ]}
+      end
+
+      rendered =
+        Alternatives.render(
+          %Context{
+            user: author,
+            activity_map: %{},
+            alternatives_groups_fn: groups_fn,
+            alternatives_selector_fn: &Oli.Resources.Alternatives.select/2,
+            extrinsic_read_section_fn: fn _, _, _ -> {:ok, %{}} end,
+            mode: :author_preview
+          },
+          element,
+          Alternatives.Html
+        )
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered =~ "AlternativesPreferenceSelector"
+      assert rendered =~ "alternatives-selector-1"
+      refute rendered =~ ~s|phx-hook="PreviewAlternativesTabs"|
+      refute rendered =~ ~s|role="tablist"|
     end
   end
 end

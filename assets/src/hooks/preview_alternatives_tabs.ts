@@ -5,6 +5,9 @@ type PreviewAlternativesTabsHook = {
   onKeyDown?: (event: KeyboardEvent) => void;
 };
 
+const SELECTED_CLASSES = ['bg-primary', 'text-white', 'dark:bg-blue-600', 'dark:text-white'];
+const UNSELECTED_CLASSES = ['hover:bg-gray-200', 'dark:text-gray-100', 'dark:hover:bg-gray-700'];
+
 const tabs = (element: HTMLElement) => {
   const tablist = element.querySelector<HTMLElement>(':scope > [role="tablist"]');
 
@@ -22,6 +25,8 @@ export const PreviewAlternativesTabs = {
 
         tab.setAttribute('aria-selected', String(selected));
         tab.tabIndex = selected ? 0 : -1;
+        SELECTED_CLASSES.forEach((className) => tab.classList.toggle(className, selected));
+        UNSELECTED_CLASSES.forEach((className) => tab.classList.toggle(className, !selected));
         panel?.toggleAttribute('hidden', !selected);
       });
     };

@@ -24,7 +24,14 @@ defmodule Oli.Rendering.Alternatives.Html do
       |> Enum.map(fn {_selection, index} ->
         selected? = index == 0
 
-        ~s|<button type="button" role="tab" id="preview-alternative-tab-#{placement_id}-#{index}" aria-selected="#{selected?}" aria-controls="preview-alternative-panel-#{placement_id}-#{index}" tabindex="#{if(selected?, do: 0, else: -1)}">Alternative #{index + 1}</button>|
+        classes =
+          if selected? do
+            "btn btn-sm mr-2 whitespace-nowrap bg-primary text-white dark:bg-blue-600 dark:text-white"
+          else
+            "btn btn-sm mr-2 whitespace-nowrap hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-700"
+          end
+
+        ~s|<button type="button" role="tab" class="#{classes}" id="preview-alternative-tab-#{placement_id}-#{index}" aria-selected="#{selected?}" aria-controls="preview-alternative-panel-#{placement_id}-#{index}" tabindex="#{if(selected?, do: 0, else: -1)}">Alternative #{index + 1}</button>|
       end)
 
     panels =

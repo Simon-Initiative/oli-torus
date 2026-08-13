@@ -25,6 +25,15 @@ describe('PreviewAlternativesTabs', () => {
 
     second.click();
     expect(second.getAttribute('aria-selected')).toBe('true');
+    expect(second).toHaveClass('bg-primary', 'text-white', 'dark:bg-blue-600', 'dark:text-white');
+    expect(first).not.toHaveClass(
+      'bg-primary',
+      'text-white',
+      'dark:bg-blue-600',
+      'dark:text-white',
+    );
+    expect(first).toHaveClass('dark:text-gray-100', 'dark:hover:bg-gray-700');
+    expect(second).not.toHaveClass('dark:text-gray-100', 'dark:hover:bg-gray-700');
     expect(firstPanel.hidden).toBe(true);
     expect(secondPanel.hidden).toBe(false);
 
