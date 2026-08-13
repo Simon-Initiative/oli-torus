@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { AdvancedAuthoringModal } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import { MediaPickerModal } from '../../../apps/authoring/components/Modal/MediaPickerModal';
+import { RichLabelField } from '../common/RichLabelField';
+import { htmlToPlainText, normalizeRichLabelForStorage } from '../../../utils/richOptionLabel';
 import './ItemBankAuthorModal.scss';
 import { genId } from './grouping-util';
 import { GroupingItem, GroupingItemType } from './schema';
@@ -55,7 +57,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
 
   const handleSave = useCallback(() => {
     const trimmedLabel = label.trim();
-    const trimmedText = text.trim();
+    const normalizedText = normalizeRichLabelForStorage(text);
     const trimmedAlt = alt.trim();
 
     if (!trimmedLabel) {
@@ -69,7 +71,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
     }
 
     if (type === 'text') {
-      if (!trimmedText) {
+      if (!htmlToPlainText(normalizedText)) {
         setError('Text is required.');
         return;
       }
@@ -83,11 +85,11 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
       type,
       label: trimmedLabel,
       ...(type === 'text'
-        ? { text: trimmedText }
+        ? { text: normalizedText }
         : {
             imageSrc: imageSrc.trim(),
             alt: trimmedAlt,
-            text: trimmedText,
+            text: normalizedText,
           }),
     };
 
@@ -164,16 +166,14 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                   Text
                 </label>
                 <span className="iem-hint">Content shown on the item card</span>
-                <textarea
+                <RichLabelField
                   id="iem-text"
-                  className="form-control"
-                  rows={3}
+                  inline
                   value={text}
-                  onChange={(e) => {
-                    setText(e.target.value);
+                  onChange={(next) => {
+                    setText(next);
                     setError('');
                   }}
-                  placeholder="Enter item text…"
                 />
               </div>
             ) : (
@@ -185,7 +185,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                       <img
                         className="iem-image-preview"
                         src={imageSrc}
-                        alt={alt.trim() || text.trim() || label.trim()}
+                        alt={alt.trim() || htmlToPlainText(text) || label.trim()}
                       />
                     ) : (
                       <div className="iem-image-placeholder">No image selected</div>
@@ -209,16 +209,14 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                   <span className="iem-hint">
                     Optional caption shown above the image on the item card
                   </span>
-                  <input
+                  <RichLabelField
                     id="iem-image-text"
-                    type="text"
-                    className="form-control"
+                    inline
                     value={text}
-                    onChange={(e) => {
-                      setText(e.target.value);
+                    onChange={(next) => {
+                      setText(next);
                       setError('');
                     }}
-                    placeholder="Enter caption text…"
                   />
                 </div>
                 <div className="iem-field">

@@ -1,5 +1,6 @@
 import { CSSProperties } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { htmlToPlainText } from '../../../utils/richOptionLabel';
 import {
   DEFAULT_GROUPING_MIN_HEIGHT,
   GroupingCategory,
@@ -85,9 +86,14 @@ export const itemImageCaption = (item: GroupingItem): string => {
 /** Returns learner-facing screen-reader text without exposing the CAPI label unnecessarily. */
 export const itemAccessibleText = (item: GroupingItem): string => {
   if (item.type === 'image') {
-    return item.alt?.trim() || itemImageCaption(item) || item.label?.trim() || '';
+    return (
+      item.alt?.trim() ||
+      htmlToPlainText(itemImageCaption(item)) ||
+      item.label?.trim() ||
+      ''
+    );
   }
-  return itemDisplayText(item);
+  return htmlToPlainText(itemDisplayText(item));
 };
 
 /** Ensure image items always carry an explicit `text` value for redux lodash merge saves. */
