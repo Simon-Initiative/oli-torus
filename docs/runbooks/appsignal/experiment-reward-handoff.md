@@ -3,10 +3,10 @@
 ## Purpose
 
 This runbook configures production monitoring for the asynchronous experiment reward handoff. The
-handoff processes evaluated activity attempts in `Oli.Delivery.Experiments.RewardHandoffWorker` and
-currently performs reward-eligibility work once per loaded attempt. Set-oriented eligibility
-loading is intentionally deferred until production telemetry shows that the query amplification is
-material.
+handoff processes finalized scored-page resource attempts in
+`Oli.Delivery.Experiments.RewardHandoffWorker`. Eligibility context is loaded in one bounded batch,
+while assignment resolution remains observable so production telemetry can show whether further
+set-oriented optimization is warranted.
 
 Use this runbook to:
 
@@ -16,7 +16,7 @@ Use this runbook to:
 - validate that telemetry is arriving after deployment.
 
 The metrics contain only bounded status tags. They do not contain user, section, experiment,
-resource, or activity-attempt identifiers.
+resource, or resource-attempt identifiers.
 
 ## Prerequisites
 
@@ -24,7 +24,8 @@ resource, or activity-attempt identifiers.
 - The deployment includes `Oli.Delivery.Experiments.Telemetry` in the application supervision tree.
 - AppSignal's automatic Oban and Ecto instrumentation is enabled. Torus does not disable either
   integration in repository configuration.
-- At least one `Oli.Delivery.Experiments.RewardHandoffWorker` job has run after deployment.
+- At least one `Oli.Delivery.Experiments.RewardHandoffWorker` and, for accepted rewards, one
+  `Oli.Delivery.Experiments.EvidenceDispatchWorker` job has run after deployment.
 
 Phoenix LiveDashboard is useful for current node, VM, and Ecto health, but it does not register the
 reward-handoff custom events. AppSignal is the durable monitoring surface for the metrics below.
@@ -36,7 +37,7 @@ All custom metrics use the prefix `oli.experiments.reward_handoff`.
 | Metric | Type | Status values | Meaning |
 | --- | --- | --- | --- |
 | `batch.duration_ms` | Distribution | `ok`, `error`, `unknown` | End-to-end time spent processing one loaded reward batch. |
-| `batch.attempt_count` | Distribution | `ok`, `error`, `unknown` | Valid activity-attempt IDs requested by the batch. |
+| `batch.attempt_count` | Distribution | `ok`, `error`, `unknown` | Valid resource-attempt IDs requested by the batch. |
 | `batch.context_count` | Distribution | `ok`, `error`, `unknown` | Attempt contexts found and processed. |
 | `batch.failure_count` | Distribution | `ok`, `error`, `unknown` | Attempts that failed during the batch. |
 | `batch.completed` | Counter | `ok`, `error`, `unknown` | Completed reward batches. |
@@ -44,9 +45,13 @@ All custom metrics use the prefix `oli.experiments.reward_handoff`.
 | `eligibility.assignment_count` | Distribution | `matched`, `empty`, `error`, `unknown` | Eligible assignments returned for one attempt. |
 | `eligibility.lookup` | Counter | `matched`, `empty`, `error`, `unknown` | Eligibility lookups attempted. |
 | `eligibility.assignment_query` | Counter | `matched`, `empty`, `error`, `unknown` | PostgreSQL assignment queries executed. A lookup with no matching alternatives branch contributes zero. |
+| `evidence_dispatch.duration_ms` | Distribution | `ok`, `error`, `unknown` | Time spent dispatching one durable post-commit evidence record. |
+| `evidence_dispatch.completed` | Counter | `ok`, `error`, `unknown` | Completed durable evidence dispatch attempts. |
+| `outcome` | Counter | `accepted`, `duplicate`, or `skipped`; bounded `reason` | Reward dispositions. Reasons are restricted to the allowlist in `Oli.Delivery.Experiments.Telemetry`. |
 
-AppSignal may display the tag key as `status`. Do not add identifiers as metric tags when extending
-this instrumentation; high-cardinality tags make custom metrics expensive and difficult to use.
+Metric names are emitted exactly as `oli.experiments.reward_handoff.<metric>`. Status, outcome, and
+bounded reason are the only custom dimensions. Do not add experiment, decision-point, intervention,
+binding, attempt, section, enrollment, author, or learner identifiers as AppSignal tags.
 
 ## Dashboard Configuration
 
@@ -186,3 +191,27 @@ batching eligibility queries is not the remedy for those conditions.
 - [ ] Exercise alert notification routing in a non-production environment or through AppSignal's
       alert test facility.
 - [ ] Record the production baseline and revise the initial thresholds after representative usage.
+
+## Deployment and Rollback Order
+
+Ship this feature as one release unit; the intermediate phase commits are not independently
+deployable.
+
+1. Apply the PostgreSQL migrations in timestamp order, followed by the additive ClickHouse
+   migration. The new ClickHouse evidence fields are nullable, so existing rows and older producers
+   remain valid.
+2. Deploy web nodes and Oban workers from the same release. During a rolling deployment, new
+   finalized-page jobs carry only `resource_attempt_id`; old workers that cannot process that job
+   shape must be drained or paused before new web nodes enqueue it. Resume the queue after every
+   worker runs the new release.
+3. Verify reward-handoff and evidence-dispatch telemetry, then configure the dashboard and alerts
+   above. Dashboard creation is an external operational action and is not performed by repository
+   deployment.
+4. For code rollback, first pause or drain the affected Oban queue, deploy code that still reads
+   both `experiment_controlled` and the legacy `upgrade_decision_point` alias, and only then consider
+   schema rollback. Do not roll back PostgreSQL after intervention-scoped production writes unless
+   the data-loss implications have been reviewed. ClickHouse rollback removes only the additive
+   nullable columns.
+
+No content backfill, historical revision rewrite, author re-save, forced republication, or
+feature-specific experiment conversion job is part of deployment or rollback.

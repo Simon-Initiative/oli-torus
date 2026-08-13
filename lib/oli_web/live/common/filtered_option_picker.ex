@@ -51,7 +51,14 @@ defmodule OliWeb.Live.Common.FilteredOptionPicker do
         }
       end)
 
-    {:ok, table_model} = TableModel.new(page_options, assigns.selected_values, assigns.label)
+    {:ok, table_model} =
+      TableModel.new(
+        page_options,
+        assigns.selected_values,
+        assigns.label,
+        assigns.on_toggle
+      )
+
     assigns = assign(assigns, :table_model, table_model)
 
     ~H"""
@@ -110,7 +117,7 @@ defmodule OliWeb.Live.Common.FilteredOptionPicker.TableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
-  def new(options, selected_values, label) do
+  def new(options, selected_values, label, on_toggle) do
     rows =
       Enum.map(options, fn option ->
         value = to_string(Map.fetch!(option, :value))
@@ -123,6 +130,8 @@ defmodule OliWeb.Live.Common.FilteredOptionPicker.TableModel do
           selected: value in selected_values
         }
       end)
+
+    table_data = %{on_toggle: on_toggle}
 
     column_specs =
       [
@@ -149,7 +158,8 @@ defmodule OliWeb.Live.Common.FilteredOptionPicker.TableModel do
       rows: rows,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: :value
+      id_field: :value,
+      data: table_data
     )
   end
 
@@ -178,9 +188,10 @@ defmodule OliWeb.Live.Common.FilteredOptionPicker.TableModel do
     <input
       type="checkbox"
       checked={@row.selected}
-      tabindex="-1"
-      aria-hidden="true"
-      class="pointer-events-none h-5 w-5 rounded-[3px] border-2 border-Border-border-default bg-Surface-surface-background"
+      aria-label={"Select #{@row.label}"}
+      phx-click={@on_toggle}
+      phx-value-id={@row.value}
+      class="h-5 w-5 rounded-[3px] border-2 border-Border-border-default bg-Surface-surface-background"
     />
     """
   end

@@ -1397,6 +1397,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   end
 
   defp configure_intervention(view, project, alternatives_resource_id, algorithm) do
+    other_group = insert_alternatives_group(project, nil, "Other Decision Point")
+
     intervention =
       insert_project_page(project, "Intervention", false, %{
         "model" => [
@@ -1413,6 +1415,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
                 ]
               }
             ]
+          },
+          %{
+            "type" => "alternatives",
+            "id" => "other-placement",
+            "alternatives_id" => other_group.resource_id,
+            "children" => []
           }
         ]
       })
@@ -1478,6 +1486,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     assert has_element?(
              view,
              "#experiment-option-picker-table tr[phx-value-id='placement-a']"
+           )
+
+    refute has_element?(
+             view,
+             "#experiment-option-picker-table tr[phx-value-id='other-placement']"
            )
 
     assert has_element?(view, "#experiment-option-picker-table", "Alternative Content")

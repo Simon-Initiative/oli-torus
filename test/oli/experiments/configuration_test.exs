@@ -174,6 +174,41 @@ defmodule Oli.Experiments.ConfigurationTest do
     assert message == "Alternatives placements cannot be nested within another Alternatives"
   end
 
+  test "distinguishes a top-level placement for another Alternatives group from nesting" do
+    scope = project_scope()
+    group = alternatives_revision(scope.project_id, "Experiment Group")
+    other_group = alternatives_revision(scope.project_id, "Other Group")
+    page = page_revision(scope.project_id, "Intervention", false)
+    decision_point = point(group, page, "placement")
+
+    ensure_root_placement!(page, other_group.resource_id, "placement")
+
+    assert {:error, %ExperimentError{message: message}} =
+             Experiments.create_experiment(graph_request(scope, [decision_point]))
+
+    assert message ==
+             "intervention placement must reference the decision point Alternatives group"
+  end
+
+  test "distinguishes a missing Alternatives placement from nesting" do
+    scope = project_scope()
+    group = alternatives_revision(scope.project_id, "Experiment Group")
+    page = page_revision(scope.project_id, "Intervention", false)
+    decision_point = point(group, page, "existing-placement")
+
+    decision_point =
+      put_in(
+        decision_point,
+        [:interventions, Access.at(0), :content_element_id],
+        "removed-placement"
+      )
+
+    assert {:error, %ExperimentError{message: message}} =
+             Experiments.create_experiment(graph_request(scope, [decision_point]))
+
+    assert message == "intervention placement was not found on the selected page"
+  end
+
   test "requires explicit draft reconciliation and preserves non-draft history" do
     scope = project_scope()
     group = alternatives_revision(scope.project_id, "Group")

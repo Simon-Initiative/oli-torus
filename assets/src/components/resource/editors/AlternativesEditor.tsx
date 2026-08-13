@@ -111,7 +111,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
                 {...props}
                 contentItem={reconciledActiveOption}
                 index={[...index, activeOptionIndex]}
-                parents={[...parents, reconciledActiveOption]}
+                parents={[...parents, contentItem]}
                 onEdit={onEditAlternative}
               />
             </>

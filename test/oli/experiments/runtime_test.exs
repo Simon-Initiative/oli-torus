@@ -460,7 +460,7 @@ defmodule Oli.Experiments.RuntimeTest do
       %{scope: scope, revision: revision} =
         active_experiment_with_conditions(
           algorithm: :thompson_sampling,
-          policy_config: %{"guardrails" => %{"warm_up_assignments" => 1}}
+          warm_up_assignments: 1
         )
 
       assert {:ok, %AssignmentDecision{status: :assigned}} =
@@ -474,7 +474,7 @@ defmodule Oli.Experiments.RuntimeTest do
       %{scope: scope, revision: revision, definition: definition, decision_point: decision_point} =
         active_experiment_with_conditions(
           algorithm: :thompson_sampling,
-          policy_config: %{"guardrails" => %{"fixed_control_allocation" => 0.5}}
+          fixed_control_allocation: 0.5
         )
 
       assert {:ok, %AssignmentDecision{condition_code: "a"}} =
@@ -488,7 +488,7 @@ defmodule Oli.Experiments.RuntimeTest do
       } =
         active_experiment_with_conditions(
           algorithm: :thompson_sampling,
-          policy_config: %{"guardrails" => %{"max_condition_share" => 0.5}}
+          max_condition_share: 0.5
         )
 
       condition_a = Repo.get_by!(Condition, experiment_id: cap_definition.id, condition_code: "a")
@@ -501,13 +501,49 @@ defmodule Oli.Experiments.RuntimeTest do
       assert decision_point.id
     end
 
+    test "serializes concurrent guardrail assignments" do
+      %{scope: scope, revision: revision, decision_point: decision_point} =
+        active_experiment_with_conditions(
+          algorithm: :thompson_sampling,
+          fixed_control_allocation: 0.5
+        )
+
+      add_condition_mappings!(decision_point)
+      page = insert(:resource)
+      intervention = insert_intervention!(decision_point, page.id, "serialized-placement")
+      second_scope = sibling_runtime_scope(scope)
+
+      results =
+        [scope, second_scope]
+        |> Enum.map(fn assignment_scope ->
+          Task.async(fn ->
+            request =
+              intervention_request(
+                assignment_scope,
+                revision,
+                intervention,
+                page.id,
+                ["a", "b"]
+              )
+
+            Experiments.assign_page_conditions([request])
+          end)
+        end)
+        |> Enum.map(&Task.await(&1, 5_000))
+
+      assert Enum.sort(
+               for {:ok, %{"serialized-placement" => decision}} <- results,
+                   do: decision.condition_code
+             ) == ["a", "b"]
+    end
+
     test "reports imbalance guardrail flag without blocking sticky fallback" do
       attach_telemetry([[:oli, :experiments, :assignment, :guardrail]])
 
       %{scope: scope, revision: revision, definition: definition, decision_point: decision_point} =
         active_experiment_with_conditions(
           algorithm: :thompson_sampling,
-          policy_config: %{"guardrails" => %{"imbalance_threshold" => 0.5}}
+          imbalance_threshold: 0.5
         )
 
       condition_a = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "a")
@@ -911,7 +947,6 @@ defmodule Oli.Experiments.RuntimeTest do
 
     deploy_revision(scope, revision)
     algorithm = Keyword.get(opts, :algorithm, :weighted_random)
-    policy_config = Keyword.get(opts, :policy_config, %{})
 
     {:ok, definition} =
       Experiments.create_experiment(%CreateExperimentRequest{
@@ -931,13 +966,12 @@ defmodule Oli.Experiments.RuntimeTest do
         alternatives_resource_id: revision.resource_id,
         decision_point_key: decision_point_key(revision),
         algorithm: active.algorithm,
-        prior_alpha: get_in(policy_config, ["priors", "default", "alpha"]) || 1.0,
-        prior_beta: get_in(policy_config, ["priors", "default", "beta"]) || 1.0,
-        warm_up_assignments: get_in(policy_config, ["guardrails", "warm_up_assignments"]) || 0,
-        max_condition_share: get_in(policy_config, ["guardrails", "max_condition_share"]) || 1.0,
-        fixed_control_allocation:
-          get_in(policy_config, ["guardrails", "fixed_control_allocation"]),
-        imbalance_threshold: get_in(policy_config, ["guardrails", "imbalance_threshold"]) || 1.0
+        prior_alpha: Keyword.get(opts, :prior_alpha, 1.0),
+        prior_beta: Keyword.get(opts, :prior_beta, 1.0),
+        warm_up_assignments: Keyword.get(opts, :warm_up_assignments, 0),
+        max_condition_share: Keyword.get(opts, :max_condition_share, 1.0),
+        fixed_control_allocation: Keyword.get(opts, :fixed_control_allocation),
+        imbalance_threshold: Keyword.get(opts, :imbalance_threshold, 1.0)
       })
       |> Repo.insert!()
 

@@ -237,7 +237,7 @@ Guardrails:
 
 ## Phase 9: Final Verification, Review, and Rollout Readiness
 
-- Goal: Demonstrate complete requirement coverage, migration safety, performance bounds, security/privacy posture, compatibility, and operational readiness before rollout (FR-001 through FR-033).
+- Goal: Demonstrate complete requirement coverage, migration safety, performance bounds, security/privacy posture, compatibility, and operational readiness before rollout (FR-001 through FR-034).
 - Tasks:
   - [ ] Run the full targeted suite followed by broader experiment, delivery, attempt, publication, interop, analytics, LiveView, and scenario suites warranted by changed files.
   - [ ] Apply `mix format`, compile with warnings treated according to repository CI, and run frontend lint/format/tests for touched assets.
@@ -254,7 +254,7 @@ Guardrails:
   - [ ] Produce a traceability report showing implementation and test evidence for every FR/AC pair.
   - Command(s): `mix format`; `mix compile`; `mix test <all affected suites>`; `cd assets && yarn test <affected suites>`; `cd assets && yarn lint`; `cd assets && yarn format`; `python3 <skills_root>/requirements/scripts/requirements_trace.py <work_item_dir> --action master_validate --stage implementation_complete`; `python3 <skills_root>/validate/scripts/validate_work_item.py <work_item_dir> --check all`
 - Definition of Done:
-  - All FR-001 through FR-033 and AC-001 through AC-033 have passing proof; every phase has completed focused code review; the integrated implementation passes final review; no legacy single-point compatibility layer remains; migrations and rollback are safe; performance and privacy guardrails hold; operational and deployment notes are ready.
+  - All FR-001 through FR-034 and AC-001 through AC-034 have passing proof; every phase has completed focused code review; the integrated implementation passes final review; no legacy single-point compatibility layer remains; migrations and rollback are safe; performance and privacy guardrails hold; operational and deployment notes are ready.
 - Gate:
   - Gate I — the entire work item validates at implementation-complete stage and is approved as one deployable unit without a feature flag, historical rewrite, legacy single-point compatibility layer, or unapproved external-system mutation. This is the only release boundary.
 - Dependencies:
@@ -280,7 +280,7 @@ Guardrails:
 - Phase 6 proves AC-004, AC-017, AC-021, AC-028, AC-029, AC-030, AC-032, and the UI portions of AC-033 through context, LiveView, component, accessibility, and JSON Schema tests.
 - Phase 7 proves AC-023, AC-024, AC-025, AC-026, AC-031, and the interop/evidence portions of AC-033 through migration, compatibility, export/ingest, analytics, privacy, and telemetry tests.
 - Phase 8 supplies workflow-level proof for AC-005, AC-007, AC-009, AC-010, AC-013, AC-014, AC-016, AC-021, AC-022, and AC-023.
-- Phase 9 confirms that AC-001 through AC-033 each has linked implementation and passing test evidence before rollout.
+- Phase 9 confirms that AC-001 through AC-034 each has linked implementation and passing test evidence before rollout.
 
 ## Phase Gate Summary
 

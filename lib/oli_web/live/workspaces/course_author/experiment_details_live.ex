@@ -1552,13 +1552,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   end
 
   defp build_picker(socket, "placement_element", point_index, intervention_index) do
-    with %{page_resource_id: page_resource_id} <-
+    with %{alternatives_resource_id: alternatives_resource_id, interventions: interventions} <-
            get_in(socket.assigns.graph_draft, [
              :decision_points,
-             Access.at(point_index),
-             :interventions,
-             Access.at(intervention_index)
+             Access.at(point_index)
            ]),
+         %{page_resource_id: page_resource_id} <- Enum.at(interventions, intervention_index),
          true <- is_integer(page_resource_id),
          {:ok, options} <-
            ABExperiments.list_page_alternatives_elements(
@@ -1571,7 +1570,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          label: "A/B Test Alternatives",
          description: "Elements are listed in the order they appear on the page",
          options: Enum.map(options, &describe_element_option/1),
-         filter: &experiment_alternatives_element?/1,
+         filter: &experiment_alternatives_element?(&1, alternatives_resource_id),
          description_key: :description,
          position_key: :position,
          selection_mode: :single,
@@ -1588,8 +1587,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp build_picker(_socket, _kind, _point_index, _intervention_index),
     do: {:error, :invalid_picker}
 
-  defp experiment_alternatives_element?(option),
-    do: option.type == "alternatives" and option.experiment_controlled?
+  defp experiment_alternatives_element?(option, alternatives_resource_id),
+    do:
+      option.type == "alternatives" and option.experiment_controlled? and
+        option.alternatives_resource_id == alternatives_resource_id
 
   defp describe_element_option(option) do
     option

@@ -425,6 +425,7 @@ defmodule Oli.Experiments do
            label: id,
            position: position,
            type: placement["type"],
+           alternatives_resource_id: placement["alternatives_id"],
            content: placement["children"] || [],
            experiment_controlled?: MapSet.member?(experiment_ids, placement["alternatives_id"])
          }
@@ -1604,6 +1605,7 @@ defmodule Oli.Experiments do
       scope
       |> batch_assignment_rows(page_resource_id, content_element_ids)
       |> ensure_batch_policy_states()
+      |> lock_batch_assignment_decisions()
 
     decision_point_ids = rows |> Enum.map(& &1.decision_point.id) |> Enum.uniq()
     counts = batch_assignment_counts(decision_point_ids)
@@ -1699,6 +1701,20 @@ defmodule Oli.Experiments do
     Enum.map(rows, fn row ->
       %{row | policy_state: Map.fetch!(states, row.decision_point.id)}
     end)
+  end
+
+  defp lock_batch_assignment_decisions(rows) do
+    decision_point_ids =
+      rows
+      |> Enum.map(& &1.decision_point.id)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    Enum.each(decision_point_ids, fn decision_point_id ->
+      Repo.query!("SELECT pg_advisory_xact_lock($1)", [decision_point_id])
+    end)
+
+    rows
   end
 
   defp batch_assignment_counts([]), do: %{}
@@ -4426,6 +4442,9 @@ defmodule Oli.Experiments do
 
     algorithm = Map.get(point, :algorithm, :weighted_random)
 
+    placement_validation =
+      validate_experiment_placements(interventions, scope, alternatives_resource_id)
+
     cond do
       interventions == [] ->
         :ok
@@ -4439,11 +4458,8 @@ defmodule Oli.Experiments do
       ) ->
         invalid_condition("intervention page is not compatible with the experiment project")
 
-      Enum.any?(
-        interventions,
-        &(not valid_experiment_placement?(&1, scope, alternatives_resource_id))
-      ) ->
-        invalid_condition("Alternatives placements cannot be nested within another Alternatives")
+      placement_validation != :ok ->
+        placement_validation
 
       algorithm == :thompson_sampling ->
         validate_adaptive_bindings(interventions, scope)
@@ -4492,28 +4508,64 @@ defmodule Oli.Experiments do
 
   defp valid_project_page?(_scope, _resource_id, _require_graded?), do: false
 
-  defp valid_experiment_placement?(intervention, scope, alternatives_resource_id) do
+  defp validate_experiment_placements(interventions, scope, alternatives_resource_id) do
+    Enum.reduce_while(interventions, :ok, fn intervention, :ok ->
+      case validate_experiment_placement(intervention, scope, alternatives_resource_id) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp validate_experiment_placement(intervention, scope, alternatives_resource_id) do
     page_resource_id = Map.get(intervention, :page_resource_id)
     content_element_id = Map.get(intervention, :content_element_id)
 
     case AuthoringResolver.from_resource_id(scope.project_slug, page_resource_id) do
       %Revision{content: %{"model" => model}} when is_list(model) ->
-        valid = Oli.Resources.PageContent.alternatives_placements(%{"model" => model})
+        content = %{"model" => model}
 
-        Enum.any?(valid, fn
-          %{
-            "type" => "alternatives",
-            "id" => ^content_element_id,
-            "alternatives_id" => ^alternatives_resource_id
-          } ->
-            true
+        case Enum.find(
+               Oli.Resources.PageContent.alternatives_placements(content),
+               &(Map.get(&1, "id") == content_element_id)
+             ) do
+          %{"alternatives_id" => ^alternatives_resource_id} ->
+            :ok
 
-          _ ->
-            false
-        end)
+          %{"alternatives_id" => placement_alternatives_resource_id} ->
+            invalid_condition(
+              "intervention placement must reference the decision point Alternatives group",
+              %{
+                content_element_id: content_element_id,
+                expected_alternatives_resource_id: alternatives_resource_id,
+                placement_alternatives_resource_id: placement_alternatives_resource_id
+              }
+            )
+
+          nil ->
+            invalid_missing_or_nested_placement(content, content_element_id)
+        end
 
       _ ->
-        false
+        invalid_condition("intervention placement was not found on the selected page")
+    end
+  end
+
+  defp invalid_missing_or_nested_placement(content, content_element_id) do
+    nested? =
+      content
+      |> Oli.Resources.PageContent.flat_filter(fn element ->
+        Map.get(element, "type") == "alternatives" and
+          Map.get(element, "id") == content_element_id
+      end)
+      |> Enum.any?()
+
+    case nested? do
+      true ->
+        invalid_condition("Alternatives placements cannot be nested within another Alternatives")
+
+      false ->
+        invalid_condition("intervention placement was not found on the selected page")
     end
   end
 

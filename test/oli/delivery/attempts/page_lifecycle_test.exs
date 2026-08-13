@@ -488,6 +488,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       |> add_automatic_activity(:attempt2, :activity_d, :attempt_2d, @content_automatic)
     end
 
+    @tag capture_log: true
     test "finalization results in correct end state for resource attempts", %{
       project: project,
       section: section,
