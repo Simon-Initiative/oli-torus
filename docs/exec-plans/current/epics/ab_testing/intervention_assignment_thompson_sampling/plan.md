@@ -240,19 +240,19 @@ Guardrails:
 
 - Goal: Record the earlier FR-001 through FR-034 integrated checkpoint. This phase no longer establishes release readiness; Phase 16 and Gate P supersede it.
 - Tasks:
-  - [ ] Run the full targeted suite followed by broader experiment, delivery, attempt, publication, interop, analytics, LiveView, and scenario suites warranted by changed files.
-  - [ ] Apply `mix format`, compile with warnings treated according to repository CI, and run frontend lint/format/tests for touched assets.
-  - [ ] Repeat PostgreSQL and ClickHouse forward/rollback schema verification in dependency order and confirm no Alternatives content backfill or forced republication is required; experiment-row preservation is excluded.
-  - [ ] Re-measure negative and positive delivery query counts, assignment/reward boundedness, concurrency behavior, and policy snapshot queries against Phase 1 baselines.
-  - [ ] Review changes using `.review/security.md` and `.review/performance.md` always, plus `.review/elixir.md`, `.review/ui.md`, `.review/typescript.md`, and `.review/requirements.md` when applicable; resolve all blocking findings.
-  - [ ] Verify AppSignal event names/dimensions and prepare dashboard/alert and coordinated QA deployment/rollback notes.
-  - [ ] Reconcile PRD/FDD/plan/requirements proof artifacts if implementation drift occurred, then run harness requirement and work-item validation.
-  - [ ] Superseded by Phase 14: remove nested point request/report shapes and prove all callers use the singular experiment contract.
-  - [ ] If Jira updates are desired, draft the exact tickets/comments for separate user approval before running any `jira` write command; read back and verify formatting after approved writes.
+  - [x] Run the full targeted suite followed by broader experiment, delivery, attempt, publication, interop, analytics, LiveView, and scenario suites warranted by changed files.
+  - [x] Apply `mix format`, compile with warnings treated according to repository CI, and run frontend lint/format/tests for touched assets.
+  - [x] Repeat PostgreSQL and ClickHouse forward/rollback schema verification in dependency order and confirm no Alternatives content backfill or forced republication is required; experiment-row preservation is excluded.
+  - [x] Re-measure negative and positive delivery query counts, assignment/reward boundedness, concurrency behavior, and policy snapshot queries against Phase 1 baselines.
+  - [x] Review changes using `.review/security.md` and `.review/performance.md` always, plus `.review/elixir.md`, `.review/ui.md`, `.review/typescript.md`, and `.review/requirements.md` when applicable; resolve all blocking findings.
+  - [x] Verify AppSignal event names/dimensions and prepare dashboard/alert and coordinated QA deployment/rollback notes.
+  - [x] Reconcile PRD/FDD/plan/requirements proof artifacts if implementation drift occurred, then run harness requirement and work-item validation.
+  - [x] Superseded by Phase 14: remove nested point request/report shapes and prove all callers use the singular experiment contract.
+  - [x] If Jira updates are desired, draft the exact tickets/comments for separate user approval before running any `jira` write command; no Jira update was requested or performed.
 - Testing Tasks:
-  - [ ] Run targeted and relevant aggregate backend/LiveView/scenario tests, schema fixtures, migration verification, and frontend tests.
-  - [ ] Confirm tests that intentionally emit logs use `@tag capture_log: true` or `capture_log/1` and that normal output is clean.
-  - [ ] Produce a traceability report showing implementation and test evidence for every FR/AC pair.
+  - [x] Run targeted and relevant aggregate backend/LiveView/scenario tests, schema fixtures, migration verification, and frontend tests.
+  - [x] Confirm tests that intentionally emit logs use `@tag capture_log: true` or `capture_log/1` and that normal output is clean.
+  - [x] Produce a traceability report showing implementation and test evidence for every FR/AC pair.
   - Command(s): `mix format`; `mix compile`; `mix test <all affected suites>`; `cd assets && yarn test <affected suites>`; `cd assets && yarn lint`; `cd assets && yarn format`; `python3 <skills_root>/requirements/scripts/requirements_trace.py <work_item_dir> --action master_validate --stage implementation_complete`; `python3 <skills_root>/validate/scripts/validate_work_item.py <work_item_dir> --check all`
 - Definition of Done:
   - Historical FR-001 through FR-034 verification is recorded; canonical completion remains pending through Phase 16.
