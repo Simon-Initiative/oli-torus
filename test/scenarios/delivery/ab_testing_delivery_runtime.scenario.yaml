@@ -248,7 +248,7 @@
     page: "AB Runtime Later Intervention"
 
 - hook:
-    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_posterior_reuse_and_point_isolation/1"
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_posterior_reuse_and_experiment_isolation/1"
 
 - assert:
     progress:

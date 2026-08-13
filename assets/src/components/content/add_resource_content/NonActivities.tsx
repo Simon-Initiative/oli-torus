@@ -246,7 +246,7 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
         additionalControls={
           <ManageAlternativesLink
             linkHref={`/workspaces/course_author/${projectSlug}/experiments`}
-            linkText="Manage Experiment-Controlled Alternatives"
+            linkText="Manage Decision Points"
           />
         }
         onFetchOptions={() =>

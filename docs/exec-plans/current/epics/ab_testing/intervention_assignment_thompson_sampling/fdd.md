@@ -39,8 +39,8 @@ This design requires replacing the pre-release decision-point and mapping storag
 
 - What we know:
   - `Oli.Experiments` already owns experiment lifecycle, assignment, policy state, reward persistence, validation, telemetry, and public authoring/runtime APIs.
-  - Existing schemas under `lib/oli/experiments/schemas/` still model a decision-point hierarchy that this design will collapse into the experiment definition, experiment-owned conditions, interventions, assignments, and one JSON policy state.
-  - `Oli.Resources.Alternatives` resolves strategy from the loaded Alternatives Group, while `DecisionPointStrategy` prepares delivery decisions and evidence.
+  - Experiment persistence is singular: the definition owns its Alternatives Group, conditions, interventions, assignments, and one JSON policy state; the obsolete decision-point schemas have been removed.
+  - `Oli.Resources.Alternatives` resolves strategy from the loaded Alternatives Group, while `ExperimentControlledStrategy` prepares delivery decisions and evidence.
   - `Oli.Delivery.Experiments.PageDecisions` discovers placement group references from attempt-pinned page content and loads group revisions through `DeliveryResolver`.
   - `RewardHandoffWorker` already provides asynchronous post-commit processing, but `RewardHandoff` currently derives full-credit rewards from activity attempts rather than finalized scored-page attempts.
   - `ExperimentsLive`, `ExperimentDetailsLive`, and `AlternativesLive` own the current authoring UI. Group management logic is duplicated and currently writes `upgrade_decision_point` on the Experiments page.
@@ -336,12 +336,12 @@ Analytics storage:
 
 - Change: Removed the decision-point algorithm column and derive the policy from the owning experiment in authoring, activation, assignment, reward, and policy-state paths.
 - Reason: Persisting the same immutable policy on both the experiment and every decision point creates an avoidable consistency invariant.
-- Evidence: Generated reversible migration, `DecisionPoint` schema, `Oli.Experiments` queries and policy dispatch, plus focused configuration/runtime tests.
-- Impact: Experiment definitions are the sole persisted policy source; decision points retain only policy-specific parameters and policy state retains its algorithm identity.
+- Evidence: Generated reversible migration, singular experiment-owned schemas, `Oli.Experiments` queries and policy dispatch, plus focused configuration/runtime tests.
+- Impact: Experiment definitions are the sole persisted policy source and policy state retains its algorithm identity.
 
 ### 2026-08-13 - Make assignment policy experiment-scoped
 
-- Change: The experiment definition is authoritative for assignment algorithm across all decision points.
+- Change: The experiment definition is authoritative for assignment algorithm across all interventions.
 - Reason: Policy selection is an experiment-wide semantic choice; per-point selectors permitted incoherent mixed-policy experiments.
 - Evidence: `Oli.Experiments` graph validation/insertion and experiment-details form parsing.
 - Impact: Authoring exposes policy selection only during experiment creation; a follow-up removes redundant decision-point persistence.

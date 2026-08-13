@@ -78,7 +78,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       </div>
 
       <div :if={Enum.empty?(@decision_point_candidates)} class="alert alert-info">
-        Create an A/B decision point before adding an A/B Testing experiment.
+        Create a Decision Point before adding an A/B Testing experiment.
       </div>
 
       <%= if @experiment_error && !@show_create_experiment do %>
@@ -90,12 +90,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       <% end %>
 
       <%= if Enum.empty?(@visible_ab_experiments) do %>
-        <div>
-          <%= if Enum.empty?(@ab_experiments) do %>
-            No A/B Testing experiments have been created yet.
-          <% else %>
-            No experiments to display
-          <% end %>
+        <div id="ab-experiments-empty-state">
+          No A/B Testing experiments to display
         </div>
       <% else %>
         <div id="ab-experiments-table-scroll" class="overflow-x-auto">
@@ -130,22 +126,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         </div>
       <% end %>
 
-      <section class="mt-10" aria-labelledby="decision-points-heading">
+      <section class="mt-10" aria-labelledby="experiment-alternatives-heading">
         <div class="mb-3">
-          <h3 id="decision-points-heading" class="h4 mb-0">
-            Experiment-Controlled Alternatives
+          <h3 id="experiment-alternatives-heading" class="h4 mb-0">
+            Decision Points
           </h3>
         </div>
         <%= if Enum.empty?(@decision_points) do %>
           <div>
-            No experiment-controlled alternatives groups have been created yet.
+            No Decision Points have been created yet.
           </div>
         <% else %>
           <AlternativesGroupManager.group_card
             :for={decision_point <- @decision_points}
             group={decision_point}
             item_label="Condition"
-            empty_item_label="There are no conditions in this group"
+            empty_item_label="There are no conditions in this Decision Point"
             create_item_event="show_new_condition_form"
             delete_group_event="show_delete_decision_point_modal"
           >
@@ -160,7 +156,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
           </AlternativesGroupManager.group_card>
         <% end %>
         <div class="d-flex justify-content-start mt-3">
-          <button class="btn btn-outline-primary" phx-click="show_create_decision_point">
+          <button class="btn btn-outline-primary" phx-click="show_create_experiment_alternatives">
             <i class="fa fa-plus"></i> New Decision Point
           </button>
         </div>
@@ -401,11 +397,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               </div>
             </div>
             <div class="form-group">
-              <label for="experiment_decision_point">A/B decision point</label>
+              <label for="experiment_alternatives_resource">
+                Decision Point
+              </label>
               <select
-                id="experiment_decision_point"
+                id="experiment_alternatives_resource"
                 class="form-control"
-                name="experiment[decision_point]"
+                name="experiment[alternatives_resource_id]"
                 required
               >
                 <option
@@ -581,7 +579,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply, assign(socket, section_participation: nil)}
   end
 
-  def handle_event("show_create_decision_point", _params, socket) do
+  def handle_event("show_create_experiment_alternatives", _params, socket) do
     modal = %{
       id: "create_decision_point_modal",
       title: "Create Decision Point",
@@ -591,7 +589,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       field_name: "name",
       field_label: "Name",
       field_value: "",
-      placeholder: "Enter a name for the decision point",
+      placeholder: "Enter a name for the Decision Point",
       hidden_fields: []
     }
 
@@ -774,13 +772,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     with [] <- Publishing.find_alternatives_group_references_in_pages(resource_id, publication_id),
          {:ok, false} <-
-           ABExperiments.decision_point_in_use?(resource_id, authoring_scope(socket)) do
+           ABExperiments.experiment_group_in_use?(resource_id, authoring_scope(socket)) do
       decision_point = find_group(decision_points, resource_id)
 
       modal = %{
         id: "delete_decision_point_modal",
         title: "Delete Decision Point",
-        message: "Are you sure you want to delete this decision point?",
+        message: "Are you sure you want to delete this Decision Point?",
         item_name: decision_point.title,
         on_delete: "delete_decision_point",
         values: %{resource_id: resource_id}
@@ -791,13 +789,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       [_ | _] ->
         show_error(
           socket,
-          "This decision point cannot be deleted because it is used by project content."
+          "This Decision Point cannot be deleted because it is used by project content."
         )
 
       {:ok, true} ->
         show_error(
           socket,
-          "This decision point cannot be deleted because it is used by an active experiment"
+          "This Decision Point cannot be deleted because it is used by an active experiment"
         )
 
       {:error, _} ->
@@ -813,7 +811,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     with [] <- Publishing.find_alternatives_group_references_in_pages(resource_id, publication_id),
          {:ok, false} <-
-           ABExperiments.decision_point_in_use?(resource_id, authoring_scope(socket)),
+           ABExperiments.experiment_group_in_use?(resource_id, authoring_scope(socket)),
          {:ok, deleted} <- ResourceEditor.delete(project.slug, resource_id, ctx.author) do
       Subscriber.unsubscribe_to_new_revisions_in_project(resource_id, project.slug)
 
@@ -830,13 +828,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       [_ | _] ->
         show_error(
           socket,
-          "This decision point cannot be deleted because it is used by project content."
+          "This Decision Point cannot be deleted because it is used by project content."
         )
 
       {:ok, true} ->
         show_error(
           socket,
-          "This decision point cannot be deleted because it is used by an active experiment"
+          "This Decision Point cannot be deleted because it is used by an active experiment"
         )
 
       {:error, _} ->
@@ -1211,7 +1209,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       end
 
     candidates =
-      case ABExperiments.list_available_decision_points(scope) do
+      case ABExperiments.list_available_alternatives(scope) do
         {:ok, candidates} -> candidates
         {:error, _error} -> []
       end
@@ -1248,16 +1246,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     }
   end
 
-  defp selected_candidate(candidates, %{"decision_point" => resource_id}) do
+  defp selected_candidate(candidates, %{"alternatives_resource_id" => resource_id}) do
     resource_id = ensure_integer(resource_id)
 
     case Enum.find(candidates, &(&1.alternatives_resource_id == resource_id)) do
-      nil -> {:error, "Select an alternatives group."}
+      nil -> {:error, "Select a Decision Point."}
       candidate -> {:ok, candidate}
     end
   end
 
-  defp selected_candidate(_candidates, _params), do: {:error, "Select an alternatives group."}
+  defp selected_candidate(_candidates, _params), do: {:error, "Select a Decision Point."}
 
   defp create_request(scope, candidate, params) do
     with {:ok, algorithm} <- parse_algorithm(params["algorithm"]),
@@ -1273,11 +1271,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          slug: params["slug"],
          name: params["name"],
          algorithm: algorithm,
+         alternatives_resource_id: candidate.alternatives_resource_id,
+         prior_alpha: policy_fields.prior_alpha,
+         prior_beta: policy_fields.prior_beta,
+         warm_up_assignments: policy_fields.warm_up_assignments,
+         max_condition_share: policy_fields.max_condition_share,
+         fixed_control_allocation: policy_fields.fixed_control_allocation,
+         imbalance_threshold: policy_fields.imbalance_threshold,
+         reward_source: policy_fields.reward_source,
          section_ids: section_ids,
          conditions: [
            %{
              client_ref: "condition-a",
              label: Map.get(candidate.option_labels, option_a, option_a),
+             option_id: option_a,
              weight: weight_a,
              active: true,
              position: 0
@@ -1285,40 +1292,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            %{
              client_ref: "condition-b",
              label: Map.get(candidate.option_labels, option_b, option_b),
+             option_id: option_b,
              weight: weight_b,
              active: true,
              position: 1
            }
          ],
-         decision_points: [
-           %{
-             alternatives_resource_id: candidate.alternatives_resource_id,
-             decision_point_key: candidate.decision_point_key,
-             title: candidate.title,
-             algorithm: algorithm,
-             prior_alpha: policy_fields.prior_alpha,
-             prior_beta: policy_fields.prior_beta,
-             warm_up_assignments: policy_fields.warm_up_assignments,
-             max_condition_share: policy_fields.max_condition_share,
-             fixed_control_allocation: policy_fields.fixed_control_allocation,
-             imbalance_threshold: policy_fields.imbalance_threshold,
-             reward_source: policy_fields.reward_source,
-             mappings: [
-               %{
-                 condition_ref: "condition-a",
-                 option_id: option_a,
-                 weight: weight_a,
-                 position: 0
-               },
-               %{condition_ref: "condition-b", option_id: option_b, weight: weight_b, position: 1}
-             ],
-             interventions: []
-           }
-         ]
+         interventions: []
        }}
     else
       {:error, message} -> {:error, message}
-      _ -> {:error, "The selected alternatives group needs at least two options."}
+      _ -> {:error, "The selected Decision Point needs at least two conditions."}
     end
   end
 

@@ -4,259 +4,260 @@ defmodule Oli.Experiments.PersistenceTest do
   import Oli.Factory
 
   alias Oli.Experiments.Schemas.{
-    AcceptedReward,
     Assignment,
-    AssessmentBinding,
     Condition,
-    DecisionPoint,
-    DecisionPointCondition,
     ExperimentDefinition,
     Intervention,
     PolicyState
   }
 
   @removed_tables ~w(
+    experiment_decision_points
+    experiment_decision_point_conditions
     experiment_exposures
     experiment_outcomes
     experiment_rewards
     experiment_policy_updates
   )
 
-  describe "experiment definition changeset" do
-    test "requires the owned definition fields and validates enums" do
-      changeset = ExperimentDefinition.changeset(%ExperimentDefinition{}, %{})
+  @removed_decision_point_columns ~w(
+    experiment_assignments
+    experiment_conditions
+    experiment_interventions
+    experiment_policy_states
+  )
 
-      refute changeset.valid?
-      assert %{project_id: ["can't be blank"]} = errors_on(changeset)
+  describe "singular experiment schema" do
+    test "places group and policy ownership directly on the experiment" do
+      columns = columns_for("experiment_definitions")
 
-      changeset =
-        ExperimentDefinition.changeset(%ExperimentDefinition{}, %{
-          project_id: 1,
-          slug: "ab-test",
-          name: "A/B Test",
-          state: :unknown,
-          assignment_unit: :user,
-          algorithm: :unsupported
-        })
+      for column <- ~w(
+            alternatives_resource_id
+            algorithm
+            prior_alpha
+            prior_beta
+            warm_up_assignments
+            max_condition_share
+            fixed_control_allocation
+            imbalance_threshold
+            reward_source
+          ) do
+        assert column in columns
+      end
 
-      refute changeset.valid?
-
-      assert %{
-               state: ["is invalid"],
-               assignment_unit: ["is invalid"],
-               algorithm: ["is invalid"]
-             } = errors_on(changeset)
+      indexes = indexes_for("experiment_definitions")
+      assert "experiment_definitions_current_alternatives_idx" in indexes
+      assert "experiment_definitions_group_lookup_idx" in indexes
     end
 
-    test "persists definition scope and prevents duplicate UUIDs and project slugs" do
-      project = insert(:project)
-
-      definition =
-        %ExperimentDefinition{}
-        |> ExperimentDefinition.changeset(%{
-          project_id: project.id,
-          slug: "ab-test",
-          name: "A/B Test",
-          algorithm: :weighted_random
-        })
-        |> Repo.insert!()
-
-      assert {:error, changeset} =
-               %ExperimentDefinition{}
-               |> ExperimentDefinition.changeset(%{
-                 project_id: insert(:project).id,
-                 slug: "different-slug",
-                 name: "Different Experiment",
-                 uuid: definition.uuid,
-                 algorithm: :weighted_random
-               })
-               |> Repo.insert()
-
-      assert %{uuid: ["has already been taken"]} = errors_on(changeset)
-
-      assert {:error, changeset} =
-               %ExperimentDefinition{}
-               |> ExperimentDefinition.changeset(%{
-                 project_id: project.id,
-                 slug: definition.slug,
-                 name: "Duplicate Slug",
-                 algorithm: :weighted_random
-               })
-               |> Repo.insert()
-
-      assert %{slug: ["has already been taken"]} = errors_on(changeset)
-    end
-  end
-
-  describe "experiment-scoped arm changesets" do
-    test "enforces mapping bijection and intervention identity constraint names" do
-      mapping =
-        DecisionPointCondition.changeset(%DecisionPointCondition{}, %{
-          decision_point_id: 1,
-          condition_id: 2,
-          option_id: "control",
-          weight: 1.0,
-          position: 0
-        })
-
-      intervention =
-        Intervention.changeset(%Intervention{}, %{
-          decision_point_id: 1,
-          page_resource_id: 2,
-          content_element_id: "placement-1"
-        })
-
-      assert mapping.valid?
-      assert intervention.valid?
-
-      assert Enum.any?(
-               mapping.constraints,
-               &(&1.constraint == "experiment_decision_point_conditions_condition_idx")
-             )
-
-      assert Enum.any?(
-               mapping.constraints,
-               &(&1.constraint == "experiment_decision_point_conditions_option_idx")
-             )
-
-      assert Enum.any?(
-               intervention.constraints,
-               &(&1.constraint == "experiment_interventions_identity_idx")
-             )
-    end
-
-    test "validates assessment thresholds and accepted reward values" do
-      binding =
-        AssessmentBinding.changeset(%AssessmentBinding{}, %{
-          intervention_id: 1,
-          assessment_page_resource_id: 2,
-          reward_threshold: Decimal.new("1.01")
-        })
-
-      reward =
-        AcceptedReward.changeset(%AcceptedReward{}, %{
-          assessment_binding_id: 1,
-          assignment_id: 2,
-          enrollment_id: 3,
-          resource_attempt_id: 4,
-          reward: 2,
-          normalized_score: Decimal.new("0.5")
-        })
-
-      assert %{reward_threshold: ["must be less than or equal to 1"]} = errors_on(binding)
-      assert %{reward: ["is invalid"]} = errors_on(reward)
-
-      above_range =
-        AcceptedReward.changeset(%AcceptedReward{}, %{
-          assessment_binding_id: 1,
-          assignment_id: 2,
-          enrollment_id: 3,
-          resource_attempt_id: 4,
-          reward: 1,
-          normalized_score: Decimal.new("1.01")
-        })
-
-      assert %{normalized_score: ["must be less than or equal to 1"]} =
-               errors_on(above_range)
-    end
-  end
-
-  describe "retained runtime persistence" do
-    test "persists assignment policy only on the experiment definition" do
-      columns =
-        Ecto.Adapters.SQL.query!(
-          Repo,
-          "SELECT column_name FROM information_schema.columns WHERE table_name IN ('experiment_definitions', 'experiment_decision_points') AND column_name = 'algorithm' ORDER BY table_name",
+    test "removes the decision-point hierarchy and all decision-point foreign keys" do
+      tables =
+        Repo.query!(
+          "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
           []
         ).rows
+        |> List.flatten()
 
-      assert columns == [["algorithm"]]
-      assert DecisionPoint.__schema__(:virtual_fields) |> Enum.member?(:algorithm)
+      for table <- @removed_tables do
+        refute table in tables
+      end
+
+      for table <- @removed_decision_point_columns do
+        refute "decision_point_id" in columns_for(table)
+      end
     end
 
-    test "persists definition graph, assignment runtime state, and policy state" do
+    test "installs final experiment-scoped identities and composite foreign keys" do
+      assert "experiment_conditions_experiment_option_idx" in indexes_for("experiment_conditions")
+      assert "experiment_interventions_identity_idx" in indexes_for("experiment_interventions")
+
+      assert "experiment_assignments_intervention_sticky_idx" in indexes_for(
+               "experiment_assignments"
+             )
+
+      assert "experiment_assignments_runtime_lookup_idx" in indexes_for("experiment_assignments")
+      assert "experiment_policy_states_unique_idx" in indexes_for("experiment_policy_states")
+
+      assignment_constraints = constraints_for("experiment_assignments")
+
+      assert "experiment_assignments_intervention_experiment_fkey" in assignment_constraints
+      assert "experiment_assignments_condition_experiment_fkey" in assignment_constraints
+    end
+
+    test "persists one experiment-owned mapping, intervention assignment, and policy state" do
       project = insert(:project)
       section = insert(:section, base_project: project)
       user = insert(:user)
       enrollment = insert(:enrollment, section: section, user: user)
-      revision = insert(:revision)
+      alternatives = insert(:revision)
+      page = insert(:revision)
 
-      definition =
+      experiment =
         %ExperimentDefinition{}
         |> ExperimentDefinition.changeset(%{
           project_id: project.id,
-          section_id: section.id,
-          slug: "retained-runtime",
-          name: "Retained runtime",
+          alternatives_resource_id: alternatives.resource_id,
+          slug: "singular-runtime",
+          name: "Singular runtime",
           algorithm: :thompson_sampling
-        })
-        |> Repo.insert!()
-
-      decision_point =
-        %DecisionPoint{}
-        |> DecisionPoint.changeset(%{
-          experiment_id: definition.id,
-          alternatives_resource_id: revision.resource_id,
-          decision_point_key: "alternatives:#{revision.resource_id}"
         })
         |> Repo.insert!()
 
       condition =
         %Condition{}
         |> Condition.changeset(%{
-          experiment_id: definition.id,
-          decision_point_id: decision_point.id,
-          condition_code: "a",
-          label: "A",
+          experiment_id: experiment.id,
+          condition_code: "control",
+          option_id: "control-option",
+          label: "Control",
           weight: 1.0
+        })
+        |> Repo.insert!()
+
+      intervention =
+        %Intervention{}
+        |> Intervention.changeset(%{
+          experiment_id: experiment.id,
+          page_resource_id: page.resource_id,
+          content_element_id: "placement-1"
         })
         |> Repo.insert!()
 
       assignment =
         %Assignment{}
         |> Assignment.changeset(%{
-          experiment_id: definition.id,
-          decision_point_id: decision_point.id,
+          experiment_id: experiment.id,
           condition_id: condition.id,
+          intervention_id: intervention.id,
           section_id: section.id,
           enrollment_id: enrollment.id,
           user_id: user.id,
-          assigned_by_policy: "weighted_random",
+          assigned_by_policy: "thompson_sampling",
           policy_version: "v1",
           assignment_key: "assignment:#{System.unique_integer([:positive])}",
           assigned_at: DateTime.utc_now() |> DateTime.truncate(:second),
-          runtime_event_state: %{
-            "rewards" => %{"reward-key" => %{"id" => 2}}
-          }
+          runtime_event_state: %{"exposure" => "pending"}
         })
         |> Repo.insert!()
 
       policy_state =
         %PolicyState{}
         |> PolicyState.changeset(%{
-          experiment_id: definition.id,
-          decision_point_id: decision_point.id,
+          experiment_id: experiment.id,
           algorithm: :thompson_sampling,
           algorithm_version: "thompson_sampling:v2",
-          state: %{},
-          reward_success_count: 1,
+          state: %{"control" => %{"alpha" => 1.0, "beta" => 1.0}},
+          reward_success_count: 0,
           reward_failure_count: 0,
           assignment_count: 1
         })
         |> Repo.insert!()
 
-      assert assignment.runtime_event_state["rewards"]["reward-key"]["id"] == 2
-      assert policy_state.reward_success_count == 1
+      assert assignment.intervention_id == intervention.id
+      assert assignment.runtime_event_state == %{"exposure" => "pending"}
+      assert policy_state.experiment_id == experiment.id
     end
 
-    test "final native experiment migration does not create event-history tables" do
+    test "rejects cross-experiment assignment relationships" do
+      first = singular_experiment_fixture("first")
+      second = singular_experiment_fixture("second")
+      section = insert(:section, base_project: first.project)
+      user = insert(:user)
+      enrollment = insert(:enrollment, section: section, user: user)
+
+      assert {:error, changeset} =
+               %Assignment{}
+               |> Assignment.changeset(%{
+                 experiment_id: first.experiment.id,
+                 condition_id: first.condition.id,
+                 intervention_id: second.intervention.id,
+                 section_id: section.id,
+                 enrollment_id: enrollment.id,
+                 user_id: user.id,
+                 assigned_by_policy: "weighted_random",
+                 assignment_key: "cross-experiment",
+                 assigned_at: DateTime.utc_now() |> DateTime.truncate(:second)
+               })
+               |> Repo.insert()
+
+      assert "does not belong to the selected experiment" in errors_on(changeset).intervention_id
+    end
+
+    test "defines reversible ClickHouse decision-point removal as standalone statements" do
       migration =
-        File.read!("priv/repo/migrations/20260625120000_create_experiment_tables.exs")
+        File.read!(
+          "priv/clickhouse/migrations/20260813180000_remove_experiment_decision_point_attribution.sql"
+        )
 
-      for table <- @removed_tables do
-        refute migration =~ "create table(:#{table})"
-        refute migration =~ "references(:#{table}"
-      end
+      assert migration =~ "-- +goose Up"
+      assert migration =~ "DROP COLUMN IF EXISTS decision_point_id;"
+      assert migration =~ "DROP COLUMN IF EXISTS decision_point_key;"
+      assert migration =~ "-- +goose Down"
+      assert migration =~ "ADD COLUMN IF NOT EXISTS decision_point_id Nullable(UInt64)"
+      assert migration =~ "ADD COLUMN IF NOT EXISTS decision_point_key Nullable(String)"
+      refute migration =~ "StatementBegin"
     end
+  end
+
+  defp singular_experiment_fixture(suffix) do
+    project = insert(:project)
+    alternatives = insert(:revision)
+    page = insert(:revision)
+
+    experiment =
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: project.id,
+        alternatives_resource_id: alternatives.resource_id,
+        slug: "singular-#{suffix}",
+        name: "Singular #{suffix}",
+        algorithm: :weighted_random
+      })
+      |> Repo.insert!()
+
+    condition =
+      %Condition{}
+      |> Condition.changeset(%{
+        experiment_id: experiment.id,
+        condition_code: "control",
+        option_id: "control-option",
+        label: "Control"
+      })
+      |> Repo.insert!()
+
+    intervention =
+      %Intervention{}
+      |> Intervention.changeset(%{
+        experiment_id: experiment.id,
+        page_resource_id: page.resource_id,
+        content_element_id: "placement-#{suffix}"
+      })
+      |> Repo.insert!()
+
+    %{project: project, experiment: experiment, condition: condition, intervention: intervention}
+  end
+
+  defp columns_for(table) do
+    Repo.query!(
+      "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1",
+      [table]
+    ).rows
+    |> List.flatten()
+  end
+
+  defp indexes_for(table) do
+    Repo.query!(
+      "SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND tablename = $1",
+      [table]
+    ).rows
+    |> List.flatten()
+  end
+
+  defp constraints_for(table) do
+    Repo.query!(
+      "SELECT constraint_name FROM information_schema.table_constraints WHERE table_schema = 'public' AND table_name = $1",
+      [table]
+    ).rows
+    |> List.flatten()
   end
 end

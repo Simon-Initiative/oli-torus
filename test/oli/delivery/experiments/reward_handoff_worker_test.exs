@@ -8,7 +8,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
 
   alias Oli.Experiments.Schemas.{
     AssessmentBinding,
-    DecisionPoint,
     ExperimentDefinition,
     ExperimentSection,
     Intervention
@@ -73,6 +72,8 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
 
     resource_attempt = insert(:resource_attempt, resource_access: resource_access)
 
+    alternatives = insert(:revision)
+
     experiment =
       %ExperimentDefinition{}
       |> ExperimentDefinition.changeset(%{
@@ -80,7 +81,8 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
         slug: "worker-enqueue-#{System.unique_integer([:positive])}",
         name: "Worker enqueue",
         state: :active,
-        algorithm: :thompson_sampling
+        algorithm: :thompson_sampling,
+        alternatives_resource_id: alternatives.resource_id
       })
       |> Repo.insert!()
 
@@ -91,22 +93,10 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
     })
     |> Repo.insert!()
 
-    alternatives = insert(:revision)
-
-    decision_point =
-      %DecisionPoint{}
-      |> DecisionPoint.changeset(%{
-        experiment_id: experiment.id,
-        alternatives_resource_id: alternatives.resource_id,
-        decision_point_key: "worker-point",
-        algorithm: :thompson_sampling
-      })
-      |> Repo.insert!()
-
     intervention =
       %Intervention{}
       |> Intervention.changeset(%{
-        decision_point_id: decision_point.id,
+        experiment_id: experiment.id,
         page_resource_id: alternatives.resource_id,
         content_element_id: "worker-placement"
       })

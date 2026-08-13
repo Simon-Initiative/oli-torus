@@ -5,14 +5,13 @@ defmodule Oli.Resources.AlternativesTest do
   import Oli.Utils.Seeder.Utils
   import ExUnit.CaptureLog
 
-  alias Oli.Experiments
   alias Oli.Utils.Seeder
   alias Oli.Resources.Alternatives
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Delivery.ExtrinsicState
   alias Oli.Delivery.Metrics
-  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint}
+  alias Oli.Experiments.Scope
+  alias Oli.Experiments.Schemas.{Assignment, Condition, ExperimentDefinition, ExperimentSection}
 
   @select_all_el %{
     "type" => "alternatives",
@@ -684,7 +683,11 @@ defmodule Oli.Resources.AlternativesTest do
         }
       )
 
+    page_revision =
+      insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
+
     insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+    insert(:project_resource, project_id: project.id, resource_id: page_revision.resource_id)
 
     insert(:section_project_publication,
       section: section,
@@ -696,6 +699,12 @@ defmodule Oli.Resources.AlternativesTest do
       publication: publication,
       resource: revision.resource,
       revision: revision
+    )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision
     )
 
     insert(:section_resource,
@@ -730,6 +739,8 @@ defmodule Oli.Resources.AlternativesTest do
         section_slug: section.slug,
         mode: :delivery,
         project_slug: project.slug,
+        page_resource_id: page_revision.resource_id,
+        page_revision_id: page_revision.id,
         alternative_groups_by_id: %{
           alternatives_id => %{
             id: alternatives_id,
@@ -742,6 +753,7 @@ defmodule Oli.Resources.AlternativesTest do
       },
       element: %{
         "type" => "alternatives",
+        "id" => "native-alternatives-placement",
         "alternatives_id" => alternatives_id,
         "children" =>
           Enum.map(children, fn value ->
@@ -769,36 +781,38 @@ defmodule Oli.Resources.AlternativesTest do
   end
 
   defp create_native_experiment(%Scope{} = scope, revision, condition_code) do
-    {:ok, definition} =
-      Experiments.create_experiment(%CreateExperimentRequest{
-        scope: scope,
+    definition =
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: scope.project_id,
         slug: "runtime-#{System.unique_integer([:positive])}",
         name: "Runtime experiment",
-        algorithm: :weighted_random
-      })
-
-    {:ok, active} =
-      Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
-
-    decision_point =
-      %DecisionPoint{}
-      |> DecisionPoint.changeset(%{
-        experiment_id: active.id,
-        alternatives_resource_id: revision.resource_id,
-        decision_point_key: "alternatives:#{revision.resource_id}"
+        state: :active,
+        algorithm: :weighted_random,
+        alternatives_resource_id: revision.resource_id
       })
       |> Repo.insert!()
 
-    %Condition{}
-    |> Condition.changeset(%{
-      experiment_id: active.id,
-      decision_point_id: decision_point.id,
-      condition_code: condition_code,
-      label: condition_code,
-      weight: 1.0,
-      position: 0
-    })
+    %ExperimentSection{}
+    |> ExperimentSection.changeset(%{experiment_id: definition.id, section_id: scope.section_id})
     |> Repo.insert!()
+
+    for {code, option_id, weight, position} <- [
+          {condition_code, condition_code, 1.0, 0},
+          {"other", "alt-b", 0.0, 1}
+        ] do
+      %Condition{}
+      |> Condition.changeset(%{
+        experiment_id: definition.id,
+        condition_code: code,
+        label: code,
+        option_id: option_id,
+        weight: weight,
+        active: true,
+        position: position
+      })
+      |> Repo.insert!()
+    end
   end
 
   defp native_options do

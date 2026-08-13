@@ -1,4 +1,4 @@
-defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
+defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
   import Ecto.Query, warn: false
 
   alias Oli.Experiments.{
@@ -74,7 +74,7 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
   def fallback_classified_delivery_decisions(_placements), do: {%{}, []}
 
   @doc """
-  Uses A/B testing assignment for a delivery decision point and falls back to the
+  Uses A/B testing assignment for a delivered Alternatives Group and falls back to the
   first option when no active experiment applies.
   """
   def select(
@@ -199,7 +199,6 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       scope: scope,
       alternatives_resource_id: decision_point.id,
       alternatives_revision_id: decision_point.revision_id,
-      decision_point_key: decision_point_key(decision_point.id),
       page_resource_id: context.page_resource_id,
       page_revision_id: context.page_revision_id,
       content_element_id: Map.get(element, "id"),
@@ -212,7 +211,6 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       scope: scope,
       alternatives_resource_id: decision_point.id,
       alternatives_revision_id: decision_point.revision_id,
-      decision_point_key: decision_point_key(decision_point.id),
       page_resource_id: context.page_resource_id,
       page_revision_id: context.page_revision_id,
       content_element_id: Map.get(element, "id"),
@@ -303,7 +301,6 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       scope: scope,
       alternatives_resource_id: group.id,
       alternatives_revision_id: group.revision_id,
-      decision_point_key: decision_point_key(group.id),
       page_resource_id: context.page_resource_id,
       page_revision_id: context.page_revision_id,
       content_element_id: element["id"],
@@ -311,12 +308,11 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     }
   end
 
-  defp prepared_assignment(%AssignmentDecision{status: :assigned} = decision, group) do
+  defp prepared_assignment(%AssignmentDecision{status: :assigned} = decision, _group) do
     %{
       status: :assigned,
       condition_code: decision.condition_code,
-      option_id: decision.option_id,
-      decision_point_key: decision_point_key(group.id)
+      option_id: decision.option_id
     }
   end
 
@@ -432,9 +428,6 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
         limit: 1
     )
   end
-
-  defp decision_point_key(alternatives_resource_id),
-    do: "alternatives:#{alternatives_resource_id}"
 
   defp scoped_publication_id(section_id, alternatives_resource_id, true),
     do: publication_id(section_id, alternatives_resource_id)

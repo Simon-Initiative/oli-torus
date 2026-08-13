@@ -93,7 +93,6 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
       attribution_type: "reward",
       key: "assessment_reward:#{evidence.reward.id}",
       experiment_id: evidence.assignment.experiment_id,
-      decision_point_id: evidence.assignment.decision_point_id,
       condition_id: evidence.assignment.condition_id,
       condition_code: evidence.condition_code,
       assignment_id: evidence.assignment.id,

@@ -9,40 +9,45 @@ defmodule Oli.Experiments.ConfigurationTest do
   alias Oli.Repo
   alias Oli.Resources.ResourceType
 
-  test "creates one atomic graph with shared stable conditions and multiple decision points" do
+  test "creates one atomic singular experiment configuration" do
     scope = project_scope()
     group_a = alternatives_revision(scope.project_id, "Group A")
-    group_b = alternatives_revision(scope.project_id, "Group B")
     page_a = page_revision(scope.project_id, "Intervention A", false)
-    page_b = page_revision(scope.project_id, "Intervention B", false)
 
     assert {:ok, definition} =
              Experiments.create_experiment(
-               graph_request(scope, [
-                 point(group_a, page_a, "placement-a"),
-                 point(group_b, page_b, "placement-b")
-               ])
+               graph_request(scope, [point(group_a, page_a, "placement-a")])
              )
 
     assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)
     assert Enum.map(view.conditions, & &1.condition_code) == ["control", "control-2"]
-    assert length(view.decision_points) == 2
-    assert length(view.mappings) == 4
-    assert length(view.interventions) == 2
-    assert Enum.uniq(Enum.map(view.mappings, & &1.condition_id)) |> length() == 2
+    assert view.definition.alternatives_resource_id == group_a.resource_id
+    assert length(view.interventions) == 1
 
     [control, variant] = view.conditions
 
     update = %Oli.Experiments.UpdateExperimentRequest{
       scope: scope,
       conditions: [
-        %{id: control.id, label: "Baseline", active: true, position: 0},
-        %{id: variant.id, label: "Variant", active: true, position: 1}
+        %{
+          id: control.id,
+          label: "Baseline",
+          option_id: "alt-a",
+          weight: 1.0,
+          active: true,
+          position: 0
+        },
+        %{
+          id: variant.id,
+          label: "Variant",
+          option_id: "alt-b",
+          weight: 1.0,
+          active: true,
+          position: 1
+        }
       ],
-      decision_points: [
-        persisted_point(group_a, page_a, "placement-a", control.id, variant.id),
-        persisted_point(group_b, page_b, "placement-b", control.id, variant.id)
-      ]
+      alternatives_resource_id: group_a.resource_id,
+      interventions: [%{page_resource_id: page_a.resource_id, content_element_id: "placement-a"}]
     }
 
     assert {:ok, _updated} = Experiments.update_experiment(definition.id, update)
@@ -67,11 +72,10 @@ defmodule Oli.Experiments.ConfigurationTest do
       point(group, intervention_page, "placement")
       |> put_in([:mappings], [%{condition_ref: "control", option_id: "alt-a"}])
 
-    assert {:error, %ExperimentError{message: message, details: details}} =
+    assert {:error, %ExperimentError{message: message}} =
              Experiments.create_experiment(graph_request(scope, [incomplete]))
 
-    assert message == "decision point must map every condition exactly once"
-    assert details.decision_point_key == "alternatives:#{group.resource_id}"
+    assert message == "condition mappings must use every group alternative exactly once"
 
     malformed_weight =
       point(group, intervention_page, "placement")
@@ -80,7 +84,7 @@ defmodule Oli.Experiments.ConfigurationTest do
     assert {:error, %ExperimentError{message: weight_message}} =
              Experiments.create_experiment(graph_request(scope, [malformed_weight]))
 
-    assert weight_message == "decision point mapping weights must be numeric"
+    assert weight_message == "condition weights must be numeric"
 
     adaptive =
       point(group, intervention_page, "placement")
@@ -189,7 +193,7 @@ defmodule Oli.Experiments.ConfigurationTest do
              Experiments.create_experiment(graph_request(scope, [decision_point]))
 
     assert message ==
-             "intervention placement must reference the decision point Alternatives group"
+             "intervention placement must reference the experiment Alternatives Group"
   end
 
   test "distinguishes a missing Alternatives placement from nesting" do
@@ -240,8 +244,26 @@ defmodule Oli.Experiments.ConfigurationTest do
     # Recreate the complete graph, then leave draft. Structural history is frozen.
     update = %Oli.Experiments.UpdateExperimentRequest{
       scope: scope,
-      conditions: graph_conditions(),
-      decision_points: [point(group, page, "placement")]
+      alternatives_resource_id: group.resource_id,
+      conditions: [
+        %{
+          client_ref: "control",
+          label: "Control",
+          option_id: "alt-a",
+          weight: 1.0,
+          active: true,
+          position: 0
+        },
+        %{
+          client_ref: "variant",
+          label: "Control",
+          option_id: "alt-b",
+          weight: 1.0,
+          active: true,
+          position: 1
+        }
+      ],
+      interventions: [%{page_resource_id: page.resource_id, content_element_id: "placement"}]
     }
 
     assert {:ok, _definition} = Experiments.update_experiment(definition.id, update)
@@ -316,7 +338,6 @@ defmodule Oli.Experiments.ConfigurationTest do
   test "persists inclusive Thompson thresholds at both boundaries" do
     scope = project_scope()
     group_a = alternatives_revision(scope.project_id, "Adaptive A")
-    group_b = alternatives_revision(scope.project_id, "Adaptive B")
     page_a = page_revision(scope.project_id, "Placement A", false)
     page_b = page_revision(scope.project_id, "Placement B", false)
     assessment_a = page_revision(scope.project_id, "Assessment A", true)
@@ -331,14 +352,10 @@ defmodule Oli.Experiments.ConfigurationTest do
       })
     end
 
-    request =
-      %{
-        graph_request(scope, [
-          adaptive_point.(group_a, page_a, assessment_a, "a", Decimal.new(0)),
-          adaptive_point.(group_b, page_b, assessment_b, "b", Decimal.new(1))
-        ])
-        | algorithm: :thompson_sampling
-      }
+    first = adaptive_point.(group_a, page_a, assessment_a, "a", Decimal.new(0))
+    second = adaptive_point.(group_a, page_b, assessment_b, "b", Decimal.new(1))
+    configuration = %{first | interventions: first.interventions ++ second.interventions}
+    request = %{graph_request(scope, [configuration]) | algorithm: :thompson_sampling}
 
     assert {:ok, definition} = Experiments.create_experiment(request)
     assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)
@@ -352,14 +369,34 @@ defmodule Oli.Experiments.ConfigurationTest do
              Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
   end
 
-  defp graph_request(scope, decision_points) do
+  defp graph_request(scope, [configuration]) do
+    mappings = Map.new(configuration.mappings, &{&1.condition_ref, &1})
+
+    conditions =
+      Enum.map(graph_conditions(), fn condition ->
+        mapping = Map.get(mappings, condition.client_ref, %{})
+
+        Map.merge(condition, %{
+          option_id: Map.get(mapping, :option_id),
+          weight: Map.get(mapping, :weight, 1.0)
+        })
+      end)
+
     %CreateExperimentRequest{
       scope: scope,
       slug: "experiment-#{System.unique_integer([:positive])}",
       name: "Experiment",
       algorithm: :weighted_random,
-      conditions: graph_conditions(),
-      decision_points: decision_points
+      alternatives_resource_id: configuration.alternatives_resource_id,
+      prior_alpha: Map.get(configuration, :prior_alpha, 1.0),
+      prior_beta: Map.get(configuration, :prior_beta, 1.0),
+      warm_up_assignments: Map.get(configuration, :warm_up_assignments, 0),
+      max_condition_share: Map.get(configuration, :max_condition_share, 1.0),
+      fixed_control_allocation: Map.get(configuration, :fixed_control_allocation),
+      imbalance_threshold: Map.get(configuration, :imbalance_threshold, 1.0),
+      reward_source: Map.get(configuration, :reward_source, "assessment_page:normalized_score"),
+      conditions: conditions,
+      interventions: configuration.interventions
     }
   end
 
@@ -403,14 +440,6 @@ defmodule Oli.Experiments.ConfigurationTest do
     page
     |> Ecto.Changeset.change(content: content)
     |> Repo.update!()
-  end
-
-  defp persisted_point(group, page, element_id, control_id, variant_id) do
-    point(group, page, element_id)
-    |> Map.put(:mappings, [
-      %{condition_id: control_id, option_id: "alt-a", weight: 1.0, position: 0},
-      %{condition_id: variant_id, option_id: "alt-b", weight: 1.0, position: 1}
-    ])
   end
 
   defp project_scope do

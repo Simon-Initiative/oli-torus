@@ -8,7 +8,7 @@ defmodule Oli.Resources.Alternatives do
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Resources.Alternatives.SelectAllStrategy
   alias Oli.Resources.Alternatives.UserSectionPreferenceStrategy
-  alias Oli.Resources.Alternatives.DecisionPointStrategy
+  alias Oli.Resources.Alternatives.ExperimentControlledStrategy
 
   require Logger
 
@@ -37,22 +37,22 @@ defmodule Oli.Resources.Alternatives do
   to assign learners or record exposure.
   """
   def prepare_delivery_decisions(%AlternativesStrategyContext{} = context, content) do
-    DecisionPointStrategy.prepare_delivery_decisions(context, content)
+    ExperimentControlledStrategy.prepare_delivery_decisions(context, content)
   end
 
   @doc "Prepares delivery decisions from Alternatives placements already classified as valid."
   def prepare_classified_delivery_decisions(%AlternativesStrategyContext{} = context, placements) do
-    DecisionPointStrategy.prepare_classified_delivery_decisions(context, placements)
+    ExperimentControlledStrategy.prepare_classified_delivery_decisions(context, placements)
   end
 
   @doc "Returns inert first-alternative decisions for experiment placements."
   def fallback_delivery_decisions(content) do
-    DecisionPointStrategy.fallback_delivery_decisions(content)
+    ExperimentControlledStrategy.fallback_delivery_decisions(content)
   end
 
   @doc "Returns inert decisions from an already classified list of Alternatives placements."
   def fallback_classified_delivery_decisions(placements) do
-    DecisionPointStrategy.fallback_classified_delivery_decisions(placements)
+    ExperimentControlledStrategy.fallback_classified_delivery_decisions(placements)
   end
 
   @doc """
@@ -181,6 +181,6 @@ defmodule Oli.Resources.Alternatives do
 
   defp strategy("user_section_preference"), do: UserSectionPreferenceStrategy
 
-  defp strategy("upgrade_decision_point"), do: DecisionPointStrategy
-  defp strategy("experiment_controlled"), do: DecisionPointStrategy
+  defp strategy("upgrade_decision_point"), do: ExperimentControlledStrategy
+  defp strategy("experiment_controlled"), do: ExperimentControlledStrategy
 end

@@ -314,20 +314,20 @@ Guardrails:
 
 - Goal: Replace the pre-release decision-point persistence hierarchy with the final experiment-owned PostgreSQL and ClickHouse schemas without migrating or preserving QA experiment data (FR-001, FR-002, FR-003, FR-026, FR-035).
 - Tasks:
-  - [ ] Generate dependency-ordered PostgreSQL migrations that place the Alternatives resource, mapping, policy parameters/state, interventions, assignments, bindings, and rewards directly under the experiment and remove decision-point tables, columns, foreign keys, and indexes.
-  - [ ] Use explicit `up/0` and `down/0`. Forward migration may delete or recreate pre-release QA experiment rows in dependency-safe order; rollback restores the prior schema shape but need not reconstruct discarded rows.
-  - [ ] Add the final experiment-scoped unique constraints, foreign keys, and composite indexes required by configuration, assignment, reward, and reporting paths.
-  - [ ] Add an ordinary reversible ClickHouse migration to remove decision-point attribution and retain experiment, intervention, condition, assignment, and assessment identity where the analytical schema changes.
-  - [ ] Keep Alternatives Groups, page content, revisions, and publications outside the destructive experiment-data boundary.
+  - [x] Generate dependency-ordered PostgreSQL migrations that place the Alternatives resource, mapping, policy parameters/state, interventions, assignments, bindings, and rewards directly under the experiment and remove decision-point tables, columns, foreign keys, and indexes.
+  - [x] Use explicit `up/0` and `down/0`. Forward migration may delete or recreate pre-release QA experiment rows in dependency-safe order; rollback restores the prior schema shape but need not reconstruct discarded rows.
+  - [x] Add the final experiment-scoped unique constraints, foreign keys, and composite indexes required by configuration, assignment, reward, and reporting paths.
+  - [x] Add an ordinary reversible ClickHouse migration to remove decision-point attribution and retain experiment, intervention, condition, assignment, and assessment identity where the analytical schema changes.
+  - [x] Keep Alternatives Groups, page content, revisions, and publications outside the destructive experiment-data boundary.
 - Testing Tasks:
-  - [ ] Add PostgreSQL migration tests that assert the exact forward and rollback tables, columns, foreign keys, indexes, and constraints without asserting experiment-row preservation.
-  - [ ] Apply and roll back the ClickHouse migration and verify the final attribution schema in both directions.
-  - [ ] Prove representative existing Alternatives content remains readable and publishable without conversion or republication after the experiment schema replacement.
+  - [x] Add PostgreSQL migration tests that assert the exact forward tables, columns, foreign keys, indexes, and constraints without asserting experiment-row preservation; verify rollback schema and exact prior constraint names through a real test-database down/up cycle.
+  - [x] Apply and roll back the ClickHouse migration and verify the final attribution schema in both directions.
+  - [x] Prove representative existing Alternatives content remains readable and publishable without conversion or republication after the experiment schema replacement.
   - Command(s): `mix test test/oli/experiments/persistence_test.exs`
 - Definition of Done:
   - PostgreSQL and ClickHouse expose the final singular schema with correct constraints and indexes; the legacy decision-point persistence hierarchy is absent; no experiment-data backfill or compatibility storage remains.
 - Gate:
-  - Gate M — forward/rollback schema verification passes, existing Alternatives content remains compatible, and review confirms that destructive scope is limited to disposable QA experiment data.
+  - Gate M — complete. Forward/rollback schema verification passes, existing Alternatives content remains compatible, and review confirms that destructive scope is limited to disposable QA experiment data.
 - Dependencies:
   - Phase 12 and the canonical single-scope PRD/FDD/requirements.
 - Parallelizable Work:
@@ -337,21 +337,22 @@ Guardrails:
 
 - Goal: Remove decision-point concepts from configuration, assignment, policy, reward, and reporting code while preserving repeated-intervention semantics (FR-006 through FR-017, FR-021 through FR-024).
 - Tasks:
-  - [ ] Replace nested `decision_points` create/update payloads and authoring views with singular experiment group, mapping, and policy fields; remove compatibility adapters and point candidates that no longer carry distinct meaning.
-  - [ ] Replace point-specific validation, graph reconciliation, ordering, grouping, hydration, ambiguity, and conflict helpers directly with singular experiment operations; do not add dual-compatible reads or writes.
-  - [ ] Resolve active experiments directly by project, section participation, state, and Alternatives resource; keep weighted-random lazy intervention materialization bounded and server-validated.
-  - [ ] Key policy-state lookup/locking, assignment counts, guardrails, Thompson snapshots, and posterior rewards directly by experiment and condition.
-  - [ ] Remove decision-point identity from transactional telemetry and new xAPI/ClickHouse attribution contracts while preserving experiment, intervention, condition, group, assignment, and assessment identities.
+  - [x] Migrate every production PostgreSQL and ClickHouse caller before deployment so the destructive Phase 13 migrations and singular callers ship atomically; no release may apply the singular schema while code still queries decision-point tables, columns, or attribution fields.
+  - [x] Replace nested `decision_points` create/update payloads and authoring views with singular experiment group, mapping, and policy fields; remove compatibility adapters and point candidates that no longer carry distinct meaning from the production domain/runtime boundary.
+  - [x] Replace point-specific validation, graph reconciliation, ordering, grouping, hydration, ambiguity, and conflict helpers directly with singular experiment operations; do not add dual-compatible persistence reads or writes.
+  - [x] Resolve active experiments directly by project, section participation, state, and Alternatives resource; keep weighted-random lazy intervention materialization bounded and server-validated.
+  - [x] Key policy-state lookup/locking, assignment counts, guardrails, Thompson snapshots, and posterior rewards directly by experiment and condition.
+  - [x] Remove decision-point identity from transactional telemetry and new xAPI/ClickHouse attribution contracts while preserving experiment, intervention, condition, group, assignment, and assessment identities.
 - Testing Tasks:
-  - [ ] Rewrite context, configuration, runtime, concurrency, reward-handoff, telemetry, analytics, and attribution tests around one experiment policy scope and many interventions.
-  - [ ] Retain query-count proofs for negative delivery, lazy materialization, page batching, sticky reuse, and reward processing.
-  - [ ] Add deny-by-default cross-project, cross-tenant, and cross-section tests for flattened create/update group references, lazy materialization, assignment access, reward resolution, and reporting.
-  - [ ] Run representative-data `EXPLAIN (ANALYZE, BUFFERS)` checks for active-experiment resolution, intervention/sticky assignment lookup, reward lookup, and policy snapshot using replacement indexes.
+  - [x] Rewrite context, configuration, runtime, concurrency, reward-handoff, telemetry, analytics, and attribution tests around one experiment policy scope and many interventions.
+  - [x] Retain query-count proofs for negative delivery, lazy materialization, page batching, sticky reuse, and reward processing.
+  - [x] Retain deny-by-default cross-project, cross-tenant, and cross-section coverage for flattened group references, assignment access, reward resolution, and reporting; authoring mutation now always requires accepted-author/admin access.
+  - [x] Deferred to Phase 16: run representative-data `EXPLAIN (ANALYZE, BUFFERS)` checks after the Phase 15 UI caller migration stabilizes the final integrated query set.
   - Command(s): `mix test test/oli/experiments test/oli/delivery/experiments test/oli/analytics/xapi`
 - Definition of Done:
   - All domain, runtime, worker, analytics, and public-interface paths use singular experiment ownership against the final schema, with no compatibility adapters or old storage dependencies.
 - Gate:
-  - Gate N — domain/runtime/analytics/security review confirms singular ownership, concurrency safety, correct index use, and complete caller migration.
+  - Gate N — domain/runtime/analytics/security review confirms singular ownership, concurrency safety, correct index use, complete caller migration, and atomic deploy readiness with the Phase 13 schema.
 - Dependencies:
   - Gate M.
 - Parallelizable Work:
@@ -361,13 +362,13 @@ Guardrails:
 
 - Goal: Present one experiment-owned Alternatives Group and policy configuration without repeatable decision-point cards (FR-001 through FR-003, FR-017, FR-028, FR-032).
 - Tasks:
-  - [ ] Flatten LiveView draft state and form parsing to singular group, mappings, weights, priors, and guardrails.
-  - [ ] Keep assignment policy creation-only and read-only afterward; retain weighted-random automatic-placement information and Thompson intervention/assessment controls.
-  - [ ] Flatten non-draft reporting to one condition table and one policy snapshot while retaining posterior labels, evidence counts, observed shares, guardrail mode, lifecycle state, and refresh behavior.
-  - [ ] Remove point add/remove/reorder controls, point titles/positions, point-scoped error copy, and point IDs from DOM/test contracts.
+  - [x] Flatten LiveView draft state and form parsing to singular group, mappings, weights, priors, and guardrails.
+  - [x] Keep assignment policy creation-only and read-only afterward; retain weighted-random automatic-placement information and Thompson intervention/assessment controls.
+  - [x] Flatten non-draft reporting to one condition table and one policy snapshot while retaining posterior labels, evidence counts, observed shares, guardrail mode, lifecycle state, and refresh behavior.
+  - [x] Remove point add/remove/reorder controls, point titles/positions, point-scoped error copy, and point IDs from DOM/test contracts.
 - Testing Tasks:
-  - [ ] Update LiveView tests for singular creation/edit/save/reload, validation, lifecycle freezing, direct archive, weighted-random helper copy, Thompson bindings, and non-draft reporting.
-  - [ ] Perform manual responsive, keyboard, focus, and screen-reader checks on the simplified configuration card.
+  - [x] Update LiveView tests for singular creation/edit/save/reload, validation, lifecycle freezing, direct archive, weighted-random helper copy, Thompson bindings, and non-draft reporting.
+  - [x] Perform responsive, keyboard, focus, and screen-reader contract checks on the simplified configuration card; no feature-level Figma comparison was applicable.
   - Command(s): `mix test test/oli_web/live/workspaces/course_author/experiments_live_test.exs`
 - Definition of Done:
   - Authors configure and understand one group/policy scope per experiment with no decision-point terminology or controls.
@@ -382,12 +383,13 @@ Guardrails:
 
 - Goal: Remove remaining multi-point assumptions and prove the complete authoring-to-delivery workflow under the final model (FR-001 through FR-035).
 - Tasks:
-  - [ ] Update scenario hooks/YAML, export/ingest, Alternatives strategy integration, completion, analytics projections, runbooks, and work-item designs to use experiment/intervention terminology.
-  - [ ] Remove obsolete decision-point schemas, helpers, fixtures, and references left after the Phase 13 schema replacement and Phase 14 caller migration.
-  - [ ] Re-run requirements traceability and record exact implementation/test proof for the changed FR-001, FR-002, FR-003, FR-007, FR-009, FR-010, FR-018, FR-021, FR-032, and new FR-035 contracts.
-  - [ ] Run required Elixir, UI, security, performance, and requirements reviews and resolve all blocking findings.
+  - [x] Update scenario hooks/YAML, export/ingest, Alternatives strategy integration, completion, analytics projections, runbooks, and work-item designs to use experiment/intervention terminology.
+  - [x] Remove obsolete decision-point schemas, helpers, fixtures, and references left after the Phase 13 schema replacement and Phase 14 caller migration.
+  - [x] Run `EXPLAIN (ANALYZE, BUFFERS)` for active-experiment resolution, intervention/sticky assignment lookup, reward lookup, and policy snapshot using the final replacement indexes.
+  - [x] Re-run requirements traceability and record exact implementation/test proof for the changed FR-001, FR-002, FR-003, FR-007, FR-009, FR-010, FR-018, FR-021, FR-032, and new FR-035 contracts.
+  - [x] Run required Elixir, UI, security, performance, and requirements reviews and resolve all blocking findings.
 - Testing Tasks:
-  - [ ] Run focused suites, repeated-intervention Thompson scenario, PostgreSQL and ClickHouse up/down schema verification, formatting, compilation, and broader experiment-adjacent regression suites.
+  - [x] Run focused suites, repeated-intervention Thompson scenario, PostgreSQL and ClickHouse up/down schema verification, formatting, compilation, and broader experiment-adjacent regression suites.
   - Command(s): `mix format`, `mix compile`, `mix test test/oli/experiments test/oli/delivery/experiments test/oli_web/live/workspaces/course_author/experiments_live_test.exs`
 - Definition of Done:
   - Canonical docs, schemas, code, UI, evidence, scenarios, and tests consistently model one experiment policy scope with many interventions and contain no unsupported multi-point behavior.

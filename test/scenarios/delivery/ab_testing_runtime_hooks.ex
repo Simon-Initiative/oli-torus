@@ -25,7 +25,6 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     AcceptedReward,
     Assignment,
     Condition,
-    DecisionPoint,
     ExperimentDefinition,
     ExperimentSection,
     PolicyState
@@ -153,7 +152,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     end
   end
 
-  def assert_posterior_reuse_and_point_isolation(%ExecutionState{} = state) do
+  def assert_posterior_reuse_and_experiment_isolation(%ExecutionState{} = state) do
     with {:ok, scope} <- scope_for(state, @project_name, @section_name, @student_name),
          {:ok, adaptive_revision} <-
            named_alternatives_revision(state, @project_name, @adaptive_group_title) do
@@ -195,7 +194,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
       state
     else
       {:error, reason} ->
-        flunk("assert_posterior_reuse_and_point_isolation failed: #{inspect(reason)}")
+        flunk("assert_posterior_reuse_and_experiment_isolation failed: #{inspect(reason)}")
     end
   end
 
@@ -212,7 +211,6 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
         scope: scope,
         alternatives_resource_id: alternatives_revision.resource_id,
         alternatives_revision_id: alternatives_revision.id,
-        decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
         page_resource_id: page_revision.resource_id,
         page_revision_id: page_revision.id,
         content_element_id: id,
@@ -228,10 +226,8 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
 
   defp intervention_assignments(scope) do
     from(assignment in Assignment,
-      join: decision_point in DecisionPoint,
-      on: decision_point.id == assignment.decision_point_id,
       join: experiment in ExperimentDefinition,
-      on: experiment.id == decision_point.experiment_id,
+      on: experiment.id == assignment.experiment_id,
       where:
         assignment.section_id == ^scope.section_id and
           assignment.user_id == ^scope.user_id and
@@ -289,7 +285,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
            revision_by_title(Map.fetch!(state.projects, @project_name), @later_intervention_title),
          {:ok, later_assessment_revision} <-
            revision_by_title(Map.fetch!(state.projects, @project_name), @later_assessment_title),
-         {:ok, definition} <-
+         {:ok, weighted_definition} <-
            Experiments.create_experiment(%CreateExperimentRequest{
              scope: authoring_scope(scope, state),
              slug: "scenario-delivery-runtime",
@@ -301,88 +297,82 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
                  client_ref: @condition_code,
                  label: "Condition A",
                  active: true,
-                 position: 0
+                 position: 0,
+                 option_id: @option_id,
+                 weight: 1.0
                },
                %{
                  client_ref: @option_b_id,
                  label: "Condition B",
                  active: true,
-                 position: 1
+                 position: 1,
+                 option_id: @option_b_id,
+                 weight: 1.0
                }
              ],
-             decision_points: [
+             alternatives_resource_id: alternatives_revision.resource_id,
+             interventions: [
                %{
-                 alternatives_resource_id: alternatives_revision.resource_id,
-                 decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
-                 title: "Scenario delivery runtime decision point",
-                 algorithm: :weighted_random,
-                 mappings: [
-                   %{
-                     condition_ref: @condition_code,
-                     option_id: @option_id,
-                     weight: 1.0,
-                     position: 0
-                   },
-                   %{
-                     condition_ref: @option_b_id,
-                     option_id: @option_b_id,
-                     weight: 1.0,
-                     position: 1
-                   }
-                 ],
-                 interventions: [
-                   %{
-                     page_resource_id: page_revision.resource_id,
-                     content_element_id: "scenario-ab-alternatives"
-                   },
-                   %{
-                     page_resource_id: page_revision.resource_id,
-                     content_element_id: "scenario-ab-alternatives-2"
-                   }
-                 ]
+                 page_resource_id: page_revision.resource_id,
+                 content_element_id: "scenario-ab-alternatives"
                },
                %{
-                 alternatives_resource_id: adaptive_revision.resource_id,
-                 decision_point_key: "alternatives:#{adaptive_revision.resource_id}",
-                 title: "Scenario adaptive decision point",
-                 algorithm: :thompson_sampling,
-                 mappings: [
-                   %{
-                     condition_ref: @condition_code,
-                     option_id: @option_id,
-                     weight: 1.0,
-                     position: 0
-                   },
-                   %{
-                     condition_ref: @option_b_id,
-                     option_id: @option_b_id,
-                     weight: 1.0,
-                     position: 1
-                   }
-                 ],
-                 interventions: [
-                   %{
-                     page_resource_id: page_revision.resource_id,
-                     content_element_id: "scenario-ts-alternatives",
-                     assessment_binding: %{
-                       assessment_page_resource_id: assessment_revision.resource_id,
-                       reward_threshold: Decimal.new("1.0")
-                     }
-                   },
-                   %{
-                     page_resource_id: later_revision.resource_id,
-                     content_element_id: "scenario-ts-alternatives-later",
-                     assessment_binding: %{
-                       assessment_page_resource_id: later_assessment_revision.resource_id,
-                       reward_threshold: Decimal.new("1.0")
-                     }
-                   }
-                 ]
+                 page_resource_id: page_revision.resource_id,
+                 content_element_id: "scenario-ab-alternatives-2"
                }
              ]
            }),
          {:ok, _active} <-
-           Experiments.activate_experiment(definition.id, %LifecycleRequest{
+           Experiments.activate_experiment(weighted_definition.id, %LifecycleRequest{
+             scope: authoring_scope(scope, state)
+           }),
+         {:ok, adaptive_definition} <-
+           Experiments.create_experiment(%CreateExperimentRequest{
+             scope: authoring_scope(scope, state),
+             slug: "scenario-adaptive-runtime",
+             name: "Scenario adaptive runtime",
+             algorithm: :thompson_sampling,
+             section_ids: [scope.section_id],
+             alternatives_resource_id: adaptive_revision.resource_id,
+             conditions: [
+               %{
+                 client_ref: @condition_code,
+                 label: "Condition A",
+                 active: true,
+                 position: 0,
+                 option_id: @option_id,
+                 weight: 1.0
+               },
+               %{
+                 client_ref: @option_b_id,
+                 label: "Condition B",
+                 active: true,
+                 position: 1,
+                 option_id: @option_b_id,
+                 weight: 1.0
+               }
+             ],
+             interventions: [
+               %{
+                 page_resource_id: page_revision.resource_id,
+                 content_element_id: "scenario-ts-alternatives",
+                 assessment_binding: %{
+                   assessment_page_resource_id: assessment_revision.resource_id,
+                   reward_threshold: Decimal.new("1.0")
+                 }
+               },
+               %{
+                 page_resource_id: later_revision.resource_id,
+                 content_element_id: "scenario-ts-alternatives-later",
+                 assessment_binding: %{
+                   assessment_page_resource_id: later_assessment_revision.resource_id,
+                   reward_threshold: Decimal.new("1.0")
+                 }
+               }
+             ]
+           }),
+         {:ok, _active} <-
+           Experiments.activate_experiment(adaptive_definition.id, %LifecycleRequest{
              scope: authoring_scope(scope, state)
            }) do
       state
@@ -490,11 +480,9 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
          experiment_id when not is_nil(experiment_id) <-
            Repo.one(
              from(experiment in Oli.Experiments.Schemas.ExperimentDefinition,
-               join: decision_point in DecisionPoint,
-               on: decision_point.experiment_id == experiment.id,
                where:
                  experiment.project_id == ^scope.project_id and
-                   decision_point.alternatives_resource_id == ^alternatives_revision.resource_id,
+                   experiment.alternatives_resource_id == ^alternatives_revision.resource_id,
                select: experiment.id
              )
            ) do
@@ -962,12 +950,12 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
 
   defp assignment_query(%Scope{} = scope, alternatives_revision) do
     from(assignment in Assignment,
-      join: decision_point in DecisionPoint,
-      on: decision_point.id == assignment.decision_point_id,
+      join: experiment in ExperimentDefinition,
+      on: experiment.id == assignment.experiment_id,
       where:
         assignment.section_id == ^scope.section_id and
           assignment.user_id == ^scope.user_id and
-          decision_point.alternatives_resource_id == ^alternatives_revision.resource_id
+          experiment.alternatives_resource_id == ^alternatives_revision.resource_id
     )
   end
 
@@ -990,11 +978,11 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
 
   defp policy_state_query(%Scope{} = scope, alternatives_revision) do
     from(policy_state in PolicyState,
-      join: decision_point in DecisionPoint,
-      on: decision_point.id == policy_state.decision_point_id,
+      join: experiment in ExperimentDefinition,
+      on: experiment.id == policy_state.experiment_id,
       where:
         policy_state.experiment_id in subquery(scoped_experiment_ids(scope)) and
-          decision_point.alternatives_resource_id == ^alternatives_revision.resource_id
+          experiment.alternatives_resource_id == ^alternatives_revision.resource_id
     )
   end
 

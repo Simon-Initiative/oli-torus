@@ -6,7 +6,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Locks
   alias Oli.ScopedFeatureFlags.Rollouts
-  alias Oli.Experiments.Schemas.{DecisionPoint, ExperimentDefinition, Intervention}
+  alias Oli.Experiments.Schemas.{ExperimentDefinition, Intervention}
 
   describe "container editing" do
     setup do
@@ -191,16 +191,8 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
           project_id: project.id,
           slug: "identity-boundaries",
           name: "Identity boundaries",
-          algorithm: :weighted_random
-        })
-        |> Repo.insert!()
-
-      decision_point =
-        %DecisionPoint{}
-        |> DecisionPoint.changeset(%{
-          experiment_id: experiment.id,
-          alternatives_resource_id: alternatives_resource.id,
-          decision_point_key: "alternatives:#{alternatives_resource.id}"
+          algorithm: :weighted_random,
+          alternatives_resource_id: alternatives_resource.id
         })
         |> Repo.insert!()
 
@@ -234,7 +226,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       intervention =
         %Intervention{}
         |> Intervention.changeset(%{
-          decision_point_id: decision_point.id,
+          experiment_id: experiment.id,
           page_resource_id: page_revision.resource_id,
           content_element_id: placement_id
         })
@@ -250,7 +242,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
                page_revision.resource_id
 
       refute Repo.get_by(Intervention,
-               decision_point_id: decision_point.id,
+               experiment_id: experiment.id,
                page_resource_id: duplicate.resource_id,
                content_element_id: placement_id
              )

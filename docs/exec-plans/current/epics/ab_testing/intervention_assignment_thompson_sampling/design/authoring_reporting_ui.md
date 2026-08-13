@@ -10,7 +10,7 @@
 ## Implementation Surface
 
 - Surface: `liveview/heex` by default. Use LiveComponents for reusable stateful feature controls; introduce React only if repository inspection shows a materially better existing reusable client-side component or an interaction that LiveView cannot support cleanly.
-- Target user flow: Strategy-specific Alternatives Group management on the Alternatives and Experiments routes; multi-decision-point experiment configuration; lifecycle-aware read-only views; bounded posterior reporting after draft.
+- Target user flow: Strategy-specific Alternatives Group management on the Alternatives and Experiments routes; one experiment-owned group and policy configuration; lifecycle-aware read-only views; bounded posterior reporting after draft.
 - Responsive considerations: Use familiar responsive card, grid, stacked-form, and horizontally scrollable table patterns. Tables/cards must remain legible at narrow widths, dense condition metrics need a clear stacking/overflow treatment, and action controls must not obscure lifecycle state.
 - Interaction/state considerations: draft edit/validation, loading and empty states, lifecycle confirmations, paused-versus-guardrail distinctions, explicit refresh, expandable alpha/beta details, keyboard-accessible tabs, and monitoring warnings.
 
@@ -39,7 +39,7 @@
 
 ## Component Reuse Plan
 
-- Existing components/patterns to reuse: the current Experiments decision-point/group editor as the interaction baseline, shared modal/confirmation behavior, existing status badges, form feedback, paged section table, and accessible disclosure patterns.
+- Existing components/patterns to reuse: the current Experiments group editor as the interaction baseline, shared modal/confirmation behavior, existing status badges, form feedback, paged section table, and accessible disclosure patterns.
 - Components to extend: extract a shared Alternatives Group management component parameterized by strategy, labels, permissions, and creation behavior; keep experiment graph configuration and posterior report feature-local.
 - Proposed extractions: only demonstrated cross-feature primitive gaps should move to `lib/oli_web/components/design_tokens/` and be cataloged under `/dev/design_tokens`; link a canonical design-system source when one exists.
 - States that must be supported: empty, loading/refreshing, validation error, draft editable, active/paused read-only structure, completed/archived frozen report, weighted-random metric omission, warm-up/fixed-control/traffic-cap modes, assignment imbalance warning, and lifecycle pause distinct from guardrail configuration.
@@ -55,6 +55,6 @@
 
 - Unmapped colors or tokens: none currently; use existing semantic light/dark tokens.
 - Missing design states: resolve responsive treatment, metric density, warning hierarchy, and empty/loading layouts through common Torus patterns during implementation.
-- Ambiguous interactions: choose the smallest conventional interaction for decision-point creation/reorder, mapping, threshold editing, refresh feedback, and posterior-detail disclosure; avoid custom interaction models unless required by accessibility or complexity.
+- Ambiguous interactions: choose the smallest conventional interaction for group mapping, threshold editing, refresh feedback, and posterior-detail disclosure; avoid custom interaction models unless required by accessibility or complexity.
 - Reuse/extraction decisions needing confirmation: decide from concrete reuse found during implementation, defaulting domain-specific compositions to feature-local LiveComponents.
 - Anything else that should be confirmed before coding: no feature-level design approval is required. Implement the minimum UI and forms needed to expose the specified functionality, support light and dark mode, then run the application and iteratively test and refine usability, responsive behavior, accessibility, and visual consistency before completing the UI phase.

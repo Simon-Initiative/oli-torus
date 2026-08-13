@@ -7,7 +7,6 @@ defmodule Oli.Experiments.RuntimeTest do
 
   alias Oli.Experiments.{
     AssignmentDecision,
-    CreateExperimentRequest,
     ExposureReceipt,
     LifecycleRequest,
     OutcomeReceipt,
@@ -21,8 +20,7 @@ defmodule Oli.Experiments.RuntimeTest do
   alias Oli.Experiments.Schemas.{
     Assignment,
     Condition,
-    DecisionPoint,
-    DecisionPointCondition,
+    ExperimentDefinition,
     ExperimentSection,
     Intervention,
     PolicyState
@@ -122,7 +120,7 @@ defmodule Oli.Experiments.RuntimeTest do
                Experiments.assign_condition(request)
 
       intervention = Repo.one!(Intervention)
-      assert intervention.decision_point_id == decision_point.id
+      assert intervention.experiment_id == decision_point.id
       assert intervention.page_resource_id == page.id
       assert intervention.content_element_id == "discovered-placement"
 
@@ -183,7 +181,7 @@ defmodule Oli.Experiments.RuntimeTest do
 
           assert Repo.aggregate(
                    from(intervention in Intervention,
-                     where: intervention.decision_point_id == ^decision_point.id
+                     where: intervention.experiment_id == ^decision_point.id
                    ),
                    :count,
                    :id
@@ -191,7 +189,7 @@ defmodule Oli.Experiments.RuntimeTest do
 
           assert Repo.aggregate(
                    from(assignment in Assignment,
-                     where: assignment.decision_point_id == ^decision_point.id
+                     where: assignment.experiment_id == ^decision_point.id
                    ),
                    :count,
                    :id
@@ -403,12 +401,12 @@ defmodule Oli.Experiments.RuntimeTest do
     test "batch rollback emits no assignment evidence for earlier placements" do
       attach_telemetry([[:oli, :experiments, :telemetry, :assignment_decided]])
       {context, _elements} = batch_delivery_fixture(2)
-      decision_point = Repo.one!(DecisionPoint)
+      experiment = Repo.one!(Oli.Experiments.Schemas.ExperimentDefinition)
 
       revision =
         Repo.one!(
           from revision in Oli.Resources.Revision,
-            where: revision.resource_id == ^decision_point.alternatives_resource_id
+            where: revision.resource_id == ^experiment.alternatives_resource_id
         )
 
       interventions = Repo.all(from intervention in Intervention, order_by: intervention.id)
@@ -533,8 +531,8 @@ defmodule Oli.Experiments.RuntimeTest do
       assert Repo.aggregate(Assignment, :count, :id) == 0
     end
 
-    test "matches an active decision point after compatible alternatives revision changes" do
-      %{scope: scope, revision: revision, decision_point: decision_point} =
+    test "matches an active experiment after compatible alternatives revision changes" do
+      %{scope: scope, revision: revision} =
         active_experiment_with_conditions()
 
       updated_revision =
@@ -568,7 +566,6 @@ defmodule Oli.Experiments.RuntimeTest do
       assert {:ok, %AssignmentDecision{status: :assigned} = assignment} =
                Experiments.assign_condition(assign_request(scope, updated_revision, ["a", "b"]))
 
-      assert assignment.decision_point_id == decision_point.id
       assert assignment.condition_code in ["a", "b"]
       assert Repo.aggregate(Assignment, :count, :id) == 1
     end
@@ -615,7 +612,7 @@ defmodule Oli.Experiments.RuntimeTest do
     end
 
     test "applies fixed-control and traffic-cap guardrails before Thompson Sampling" do
-      %{scope: scope, revision: revision, definition: definition, decision_point: decision_point} =
+      %{scope: scope, revision: revision, definition: definition} =
         active_experiment_with_conditions(
           algorithm: :thompson_sampling,
           fixed_control_allocation: 0.5
@@ -636,13 +633,20 @@ defmodule Oli.Experiments.RuntimeTest do
         )
 
       condition_a = Repo.get_by!(Condition, experiment_id: cap_definition.id, condition_code: "a")
-      insert_assignment!(cap_definition, cap_dp, condition_a, valid_scope())
+      cap_intervention = Repo.get_by!(Intervention, experiment_id: cap_definition.id)
+
+      insert_assignment!(
+        cap_definition,
+        cap_intervention,
+        condition_a,
+        sibling_runtime_scope(cap_scope)
+      )
 
       assert {:ok, %AssignmentDecision{condition_code: "b"}} =
                Experiments.assign_condition(assign_request(cap_scope, cap_revision, ["a", "b"]))
 
       assert definition.id
-      assert decision_point.id
+      assert cap_dp.id
     end
 
     test "serializes concurrent guardrail assignments" do
@@ -684,14 +688,15 @@ defmodule Oli.Experiments.RuntimeTest do
     test "reports imbalance guardrail flag without blocking sticky fallback" do
       attach_telemetry([[:oli, :experiments, :assignment, :guardrail]])
 
-      %{scope: scope, revision: revision, definition: definition, decision_point: decision_point} =
+      %{scope: scope, revision: revision, definition: definition} =
         active_experiment_with_conditions(
           algorithm: :thompson_sampling,
           imbalance_threshold: 0.5
         )
 
       condition_a = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "a")
-      insert_assignment!(definition, decision_point, condition_a, valid_scope())
+      intervention = Repo.get_by!(Intervention, experiment_id: definition.id)
+      insert_assignment!(definition, intervention, condition_a, sibling_runtime_scope(scope))
 
       assert {:ok, %AssignmentDecision{condition_code: "a"}} =
                Experiments.assign_condition(assign_request(scope, revision, ["a"]))
@@ -721,14 +726,13 @@ defmodule Oli.Experiments.RuntimeTest do
         scope: bad_scope,
         revision: bad_revision,
         definition: bad_definition,
-        decision_point: bad_decision_point
+        decision_point: _bad_experiment
       } =
         active_experiment_with_conditions(algorithm: :thompson_sampling)
 
       %PolicyState{}
       |> PolicyState.changeset(%{
         experiment_id: bad_definition.id,
-        decision_point_id: bad_decision_point.id,
         algorithm: :thompson_sampling,
         algorithm_version: "thompson_sampling:v2",
         state: %{"a" => %{"successes" => "bad"}},
@@ -748,87 +752,19 @@ defmodule Oli.Experiments.RuntimeTest do
       assert {:error, %{type: :invalid_condition}} =
                Experiments.assign_condition(assign_request(scope, revision, ["missing"]))
     end
-
-    test "fails safely and emits diagnostics when multiple active experiments match" do
-      attach_telemetry([[:oli, :experiments, :assignment, :ambiguous_match]])
-
-      %{scope: scope, revision: revision} = active_experiment_with_conditions()
-
-      {:ok, second_definition} =
-        Experiments.create_experiment(%CreateExperimentRequest{
-          scope: scope,
-          slug: "ambiguous-runtime",
-          name: "Persisted ambiguous experiment",
-          algorithm: :weighted_random
-        })
-
-      {:ok, second_active} =
-        Experiments.activate_experiment(second_definition.id, %LifecycleRequest{scope: scope})
-
-      project = Repo.get!(Oli.Authoring.Course.Project, scope.project_id)
-      institution = Repo.get!(Oli.Institutions.Institution, scope.institution_id)
-      publication = Repo.get!(Oli.Publishing.Publications.Publication, scope.publication_id)
-      other_section = insert(:section, institution: institution, base_project: project)
-
-      insert(:section_project_publication,
-        section: other_section,
-        project: project,
-        publication: publication
-      )
-
-      from(experiment_section in ExperimentSection,
-        where: experiment_section.experiment_id == ^second_active.id
-      )
-      |> Repo.update_all(set: [section_id: other_section.id])
-
-      second_decision_point =
-        %DecisionPoint{}
-        |> DecisionPoint.changeset(%{
-          experiment_id: second_active.id,
-          alternatives_resource_id: revision.resource_id,
-          decision_point_key: decision_point_key(revision)
-        })
-        |> Repo.insert!()
-
-      for {code, position} <- [{"a", 0}, {"b", 1}] do
-        %Condition{}
-        |> Condition.changeset(%{
-          experiment_id: second_active.id,
-          decision_point_id: second_decision_point.id,
-          condition_code: code,
-          label: code,
-          weight: 1.0,
-          position: position
-        })
-        |> Repo.insert!()
-      end
-
-      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
-               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
-
-      assert Repo.aggregate(Assignment, :count, :id) == 0
-
-      assert_receive {:telemetry, [:oli, :experiments, :assignment, :ambiguous_match],
-                      %{count: 1, sampled_match_count: 2},
-                      %{
-                        experiment_ids: experiment_ids,
-                        truncated?: false,
-                        project_id: project_id,
-                        section_id: section_id,
-                        alternatives_resource_id: alternatives_resource_id,
-                        decision_point_key: decision_point_key
-                      }}
-
-      assert length(experiment_ids) == 2
-      assert project_id == scope.project_id
-      assert section_id == scope.section_id
-      assert alternatives_resource_id == revision.resource_id
-      assert decision_point_key == "alternatives:#{revision.resource_id}"
-    end
   end
 
   # Implementation proof: AC-004, AC-005, AC-006
   describe "runtime evidence commands" do
+    test "assigned-condition lookup requires placement identity" do
+      %{scope: scope, revision: revision} = active_experiment_with_conditions()
+      request = assign_request(scope, revision, ["a", "b"])
+      assert {:ok, %AssignmentDecision{status: :assigned}} = Experiments.assign_condition(request)
+
+      assert {:error, %{type: :persistence_error}} =
+               Experiments.assigned_condition(%{request | page_resource_id: nil})
+    end
+
     test "deselection blocks sticky reuse and all later evidence while retaining history" do
       %{scope: scope, revision: revision, definition: definition} =
         active_experiment_with_conditions(algorithm: :thompson_sampling)
@@ -1092,24 +1028,15 @@ defmodule Oli.Experiments.RuntimeTest do
     deploy_revision(scope, revision)
     algorithm = Keyword.get(opts, :algorithm, :weighted_random)
 
-    {:ok, definition} =
-      Experiments.create_experiment(%CreateExperimentRequest{
-        scope: scope,
+    active =
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: scope.project_id,
         slug: "runtime-#{System.unique_integer([:positive])}",
         name: "Runtime experiment",
-        algorithm: algorithm
-      })
-
-    {:ok, active} =
-      Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
-
-    decision_point =
-      %DecisionPoint{}
-      |> DecisionPoint.changeset(%{
-        experiment_id: active.id,
+        state: :active,
+        algorithm: algorithm,
         alternatives_resource_id: revision.resource_id,
-        decision_point_key: decision_point_key(revision),
-        algorithm: active.algorithm,
         prior_alpha: Keyword.get(opts, :prior_alpha, 1.0),
         prior_beta: Keyword.get(opts, :prior_beta, 1.0),
         warm_up_assignments: Keyword.get(opts, :warm_up_assignments, 0),
@@ -1119,20 +1046,28 @@ defmodule Oli.Experiments.RuntimeTest do
       })
       |> Repo.insert!()
 
+    %ExperimentSection{}
+    |> ExperimentSection.changeset(%{experiment_id: active.id, section_id: scope.section_id})
+    |> Repo.insert!()
+
     for {code, position} <- [{"a", 0}, {"b", 1}] do
       %Condition{}
       |> Condition.changeset(%{
         experiment_id: active.id,
-        decision_point_id: decision_point.id,
         condition_code: code,
         label: code,
+        option_id: code,
         weight: 1.0,
         position: position
       })
       |> Repo.insert!()
     end
 
-    %{scope: scope, revision: revision, definition: active, decision_point: decision_point}
+    if algorithm == :thompson_sampling do
+      insert_intervention!(active, revision.resource_id, "placement")
+    end
+
+    %{scope: scope, revision: revision, definition: active, decision_point: active}
   end
 
   defp alternatives_revision do
@@ -1156,38 +1091,23 @@ defmodule Oli.Experiments.RuntimeTest do
       scope: scope,
       alternatives_resource_id: revision.resource_id,
       alternatives_revision_id: revision.id,
-      decision_point_key: decision_point_key(revision),
+      page_resource_id: revision.resource_id,
+      content_element_id: "placement",
       available_condition_codes: condition_codes
     }
   end
 
-  defp insert_intervention!(decision_point, page_resource_id, content_element_id) do
+  defp insert_intervention!(experiment, page_resource_id, content_element_id) do
     %Intervention{}
     |> Intervention.changeset(%{
-      decision_point_id: decision_point.id,
+      experiment_id: experiment.id,
       page_resource_id: page_resource_id,
       content_element_id: content_element_id
     })
     |> Repo.insert!()
   end
 
-  defp add_condition_mappings!(decision_point) do
-    Condition
-    |> where([condition], condition.decision_point_id == ^decision_point.id)
-    |> order_by([condition], asc: condition.position)
-    |> Repo.all()
-    |> Enum.each(fn condition ->
-      %DecisionPointCondition{}
-      |> DecisionPointCondition.changeset(%{
-        decision_point_id: decision_point.id,
-        condition_id: condition.id,
-        option_id: condition.condition_code,
-        weight: condition.weight,
-        position: condition.position
-      })
-      |> Repo.insert!()
-    end)
-  end
+  defp add_condition_mappings!(_experiment), do: :ok
 
   defp batch_delivery_fixture(placement_count) do
     %{scope: scope, revision: revision, decision_point: decision_point} =
@@ -1274,8 +1194,6 @@ defmodule Oli.Experiments.RuntimeTest do
     end
   end
 
-  defp decision_point_key(revision), do: "alternatives:#{revision.resource_id}"
-
   defp valid_scope do
     institution = insert(:institution)
     project = insert(:project)
@@ -1289,10 +1207,13 @@ defmodule Oli.Experiments.RuntimeTest do
     )
 
     user = insert(:user)
+    author = insert(:author)
+    insert(:author_project, author_id: author.id, project_id: project.id, status: :accepted)
     enrollment = insert(:enrollment, section: section, user: user)
 
     %Scope{
       institution_id: institution.id,
+      author_id: author.id,
       project_id: project.id,
       publication_id: publication.id,
       section_id: section.id,
@@ -1355,11 +1276,11 @@ defmodule Oli.Experiments.RuntimeTest do
     assert byte_size(hash) == 64
   end
 
-  defp insert_assignment!(definition, decision_point, condition, scope) do
+  defp insert_assignment!(definition, intervention, condition, scope) do
     %Assignment{}
     |> Assignment.changeset(%{
       experiment_id: definition.id,
-      decision_point_id: decision_point.id,
+      intervention_id: intervention.id,
       condition_id: condition.id,
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,

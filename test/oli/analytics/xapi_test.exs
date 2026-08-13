@@ -6,8 +6,16 @@ defmodule Oli.Analytics.XAPITest do
   alias Oli.Analytics.XAPI
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Experiments
-  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, DecisionPointCondition}
+  alias Oli.Experiments.{LifecycleRequest, Scope}
+
+  alias Oli.Experiments.Schemas.{
+    Assignment,
+    Condition,
+    ExperimentDefinition,
+    ExperimentSection,
+    Intervention
+  }
+
   alias Oli.Resources.ResourceType
 
   @experiment_attributions_key "http://oli.cmu.edu/extensions/experiment_attributions"
@@ -110,46 +118,6 @@ defmodule Oli.Analytics.XAPITest do
       refute_receive :assignment_query
     end
 
-    test "matches media branches by condition code when the option id is absent" do
-      %{user: user, resource_attempt: resource_attempt, assignment: assignment} =
-        setup_video_experiment_context()
-
-      DecisionPointCondition
-      |> Repo.get_by!(
-        decision_point_id: assignment.decision_point_id,
-        condition_id: assignment.condition_id
-      )
-      |> Repo.delete!()
-
-      Condition
-      |> Repo.get!(assignment.condition_id)
-      |> Condition.changeset(%{option_id: nil, condition_code: "alt-a"})
-      |> Repo.update!()
-
-      assert {:ok, %StatementBundle{} = bundle} =
-               XAPI.construct_bundle(
-                 %{
-                   "category" => "video",
-                   "event_type" => "played",
-                   "host_name" => "http://example.edu",
-                   "key" => %{"page_attempt_guid" => resource_attempt.attempt_guid},
-                   "video_url" => "https://example.edu/video.mp4",
-                   "video_title" => "Example video",
-                   "video_length" => 60,
-                   "video_play_time" => 0,
-                   "content_element_id" => "video-in-selected-branch"
-                 },
-                 user.id
-               )
-
-      assert [%{"assignment_id" => assignment_id}] =
-               bundle
-               |> statement_from_bundle()
-               |> get_in(["context", "extensions", @experiment_attributions_key])
-
-      assert assignment_id == assignment.id
-    end
-
     test "returns only the assignment matching the media branch" do
       %{
         user: user,
@@ -160,54 +128,40 @@ defmodule Oli.Analytics.XAPITest do
         scope: scope
       } = setup_video_experiment_context()
 
-      unrelated_revision =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_alternatives(),
-          content: %{"options" => [%{"id" => "other", "name" => "Other"}]}
-        )
-
-      unrelated_decision_point =
-        %DecisionPoint{}
-        |> DecisionPoint.changeset(%{
-          experiment_id: experiment.id,
-          alternatives_resource_id: unrelated_revision.resource_id,
-          decision_point_key: "alternatives:#{unrelated_revision.resource_id}",
-          position: 1
-        })
-        |> Repo.insert!()
-
       unrelated_condition =
         %Condition{}
         |> Condition.changeset(%{
           experiment_id: experiment.id,
           condition_code: "other",
           label: "Other",
+          option_id: "other",
           weight: 1.0,
           position: 0
         })
         |> Repo.insert!()
 
-      %DecisionPointCondition{}
-      |> DecisionPointCondition.changeset(%{
-        decision_point_id: unrelated_decision_point.id,
-        condition_id: unrelated_condition.id,
-        option_id: "other",
-        weight: 1.0,
-        position: 0
-      })
-      |> Repo.insert!()
+      matching_intervention = Repo.get!(Intervention, matching_assignment.intervention_id)
+
+      unrelated_intervention =
+        %Intervention{}
+        |> Intervention.changeset(%{
+          experiment_id: experiment.id,
+          page_resource_id: matching_intervention.page_resource_id,
+          content_element_id: "unrelated-placement"
+        })
+        |> Repo.insert!()
 
       %Assignment{}
       |> Assignment.changeset(%{
         experiment_id: experiment.id,
-        decision_point_id: unrelated_decision_point.id,
+        intervention_id: unrelated_intervention.id,
         condition_id: unrelated_condition.id,
         section_id: section.id,
         enrollment_id: scope.enrollment_id,
         user_id: user.id,
         assigned_by_policy: "weighted_random",
         policy_version: "weighted_random:v1",
-        assignment_key: "#{experiment.id}:#{unrelated_decision_point.id}:#{scope.enrollment_id}",
+        assignment_key: "#{experiment.id}:#{unrelated_intervention.id}:#{scope.enrollment_id}",
         assigned_at: DateTime.utc_now(),
         runtime_event_state: %{}
       })
@@ -465,7 +419,7 @@ defmodule Oli.Analytics.XAPITest do
       enrollment_id: enrollment.id
     }
 
-    assignment = create_assignment(scope, alternatives_revision)
+    assignment = create_assignment(scope, alternatives_revision, page_revision)
 
     Oli.Delivery.Sections.SectionResourceDepot.process_table_creation(section.id)
 
@@ -481,45 +435,42 @@ defmodule Oli.Analytics.XAPITest do
     }
   end
 
-  defp create_assignment(%Scope{} = scope, alternatives_revision) do
-    {:ok, definition} =
-      Experiments.create_experiment(%CreateExperimentRequest{
-        scope: scope,
+  defp create_assignment(%Scope{} = scope, alternatives_revision, page_revision) do
+    definition =
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: scope.project_id,
         slug: "media-#{System.unique_integer([:positive])}",
         name: "Media experiment",
-        algorithm: :weighted_random
-      })
-
-    {:ok, active} =
-      Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
-
-    decision_point =
-      %DecisionPoint{}
-      |> DecisionPoint.changeset(%{
-        experiment_id: active.id,
-        alternatives_resource_id: alternatives_revision.resource_id,
-        decision_point_key: "alternatives:#{alternatives_revision.resource_id}"
+        state: :active,
+        algorithm: :weighted_random,
+        alternatives_resource_id: alternatives_revision.resource_id
       })
       |> Repo.insert!()
 
-    condition =
+    %ExperimentSection{}
+    |> ExperimentSection.changeset(%{experiment_id: definition.id, section_id: scope.section_id})
+    |> Repo.insert!()
+
+    for {code, option_id, weight, position} <- [{"condition-a", "alt-a", 1.0, 0}] do
       %Condition{}
       |> Condition.changeset(%{
-        experiment_id: active.id,
-        condition_code: "condition-a",
-        label: "Condition A",
-        weight: 1.0,
-        position: 0
+        experiment_id: definition.id,
+        condition_code: code,
+        label: code,
+        option_id: option_id,
+        weight: weight,
+        active: true,
+        position: position
       })
       |> Repo.insert!()
+    end
 
-    %DecisionPointCondition{}
-    |> DecisionPointCondition.changeset(%{
-      decision_point_id: decision_point.id,
-      condition_id: condition.id,
-      option_id: "alt-a",
-      weight: 1.0,
-      position: 0
+    %Intervention{}
+    |> Intervention.changeset(%{
+      experiment_id: definition.id,
+      page_resource_id: page_revision.resource_id,
+      content_element_id: "alternatives-placement"
     })
     |> Repo.insert!()
 
@@ -528,7 +479,9 @@ defmodule Oli.Analytics.XAPITest do
         scope: scope,
         alternatives_resource_id: alternatives_revision.resource_id,
         alternatives_revision_id: alternatives_revision.id,
-        decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
+        page_resource_id: page_revision.resource_id,
+        page_revision_id: page_revision.id,
+        content_element_id: "alternatives-placement",
         available_condition_codes: ["alt-a"]
       })
 

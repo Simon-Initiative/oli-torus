@@ -17,7 +17,6 @@ defmodule Oli.Experiments.XAPI.Attributions do
 
   alias Oli.Experiments.Schemas.Assignment
   alias Oli.Experiments.Schemas.Condition
-  alias Oli.Experiments.Schemas.DecisionPoint
   alias Oli.Experiments.Schemas.ExperimentDefinition, as: ExperimentDefinitionSchema
 
   @extension_base "http://oli.cmu.edu/extensions/"
@@ -90,14 +89,12 @@ defmodule Oli.Experiments.XAPI.Attributions do
       attribution_type: "assignment",
       experiment_id: decision.experiment_id,
       experiment_uuid: experiment_uuid(assignment, experiment),
-      decision_point_id: decision.decision_point_id,
       condition_id: decision.condition_id,
       condition_code: decision.condition_code,
       assignment_id: decision.assignment_id,
       assignment_key: assignment_value(assignment, :assignment_key),
       alternatives_resource_id: request.alternatives_resource_id,
       alternatives_revision_id: request.alternatives_revision_id,
-      decision_point_key: request.decision_point_key,
       assigned_by_policy: assignment_value(assignment, :assigned_by_policy),
       algorithm: assignment_value(assignment, :assigned_by_policy),
       policy_version: assignment_value(assignment, :policy_version),
@@ -179,7 +176,6 @@ defmodule Oli.Experiments.XAPI.Attributions do
       role: "policy_update",
       attribution_type: "policy_update",
       experiment_id: map_value(reward, :experiment_id),
-      decision_point_id: map_value(reward, :decision_point_id),
       condition_id: map_value(reward, :condition_id),
       condition_code: condition.condition_code,
       policy_update_key: map_value(update, :key),
@@ -212,8 +208,6 @@ defmodule Oli.Experiments.XAPI.Attributions do
       intervention_id: assignment.intervention_id,
       experiment_id: assignment.experiment_id,
       experiment_uuid: experiment_uuid(assignment),
-      decision_point_id: assignment.decision_point_id,
-      decision_point_key: decision_point_key(assignment),
       condition_id: assignment.condition_id,
       condition_code: condition_code(assignment),
       section_id: assignment.section_id,
@@ -276,13 +270,6 @@ defmodule Oli.Experiments.XAPI.Attributions do
     do: condition_code
 
   defp condition_code(_assignment), do: nil
-
-  defp decision_point_key(%Assignment{
-         decision_point: %DecisionPoint{decision_point_key: decision_point_key}
-       }),
-       do: decision_point_key
-
-  defp decision_point_key(_assignment), do: nil
 
   defp map_value(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
 

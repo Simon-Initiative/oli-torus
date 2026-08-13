@@ -16,8 +16,6 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
     AssessmentBinding,
     Assignment,
     Condition,
-    DecisionPoint,
-    DecisionPointCondition,
     ExperimentDefinition,
     ExperimentSection,
     Intervention,
@@ -394,6 +392,8 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
         out_of: Keyword.fetch!(opts, :out_of)
       )
 
+    alternatives = insert(:revision)
+
     experiment =
       %ExperimentDefinition{}
       |> ExperimentDefinition.changeset(%{
@@ -401,7 +401,8 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
         slug: "assessment-reward-#{System.unique_integer([:positive])}",
         name: "Assessment reward",
         state: :active,
-        algorithm: :thompson_sampling
+        algorithm: :thompson_sampling,
+        alternatives_resource_id: alternatives.resource_id
       })
       |> Repo.insert!()
 
@@ -409,23 +410,12 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
     |> ExperimentSection.changeset(%{experiment_id: experiment.id, section_id: section.id})
     |> Repo.insert!()
 
-    alternatives = insert(:revision)
-
-    decision_point =
-      %DecisionPoint{}
-      |> DecisionPoint.changeset(%{
-        experiment_id: experiment.id,
-        alternatives_resource_id: alternatives.resource_id,
-        decision_point_key: "point-a",
-        algorithm: :thompson_sampling
-      })
-      |> Repo.insert!()
-
     condition =
       %Condition{}
       |> Condition.changeset(%{
         experiment_id: experiment.id,
         condition_code: "condition-a",
+        option_id: "option-a",
         label: "Condition A",
         weight: 1.0,
         position: 0
@@ -437,31 +427,17 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       |> Condition.changeset(%{
         experiment_id: experiment.id,
         condition_code: "condition-b",
+        option_id: "option-b",
         label: "Condition B",
         weight: 1.0,
         position: 1
       })
       |> Repo.insert!()
 
-    for {condition, option_id, position} <- [
-          {condition, "option-a", 0},
-          {condition_b, "option-b", 1}
-        ] do
-      %DecisionPointCondition{}
-      |> DecisionPointCondition.changeset(%{
-        decision_point_id: decision_point.id,
-        condition_id: condition.id,
-        option_id: option_id,
-        weight: 1.0,
-        position: position
-      })
-      |> Repo.insert!()
-    end
-
     intervention =
       %Intervention{}
       |> Intervention.changeset(%{
-        decision_point_id: decision_point.id,
+        experiment_id: experiment.id,
         page_resource_id: alternatives.resource_id,
         content_element_id: "placement-a"
       })
@@ -480,7 +456,6 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       %PolicyState{}
       |> PolicyState.changeset(%{
         experiment_id: experiment.id,
-        decision_point_id: decision_point.id,
         algorithm: :thompson_sampling,
         algorithm_version: "thompson_sampling:v2",
         state: %{
@@ -514,7 +489,6 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
           %Assignment{}
           |> Assignment.changeset(%{
             experiment_id: experiment.id,
-            decision_point_id: decision_point.id,
             condition_id: condition.id,
             intervention_id: intervention.id,
             section_id: section.id,
@@ -537,7 +511,7 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       binding: binding,
       condition: condition,
       condition_b: condition_b,
-      decision_point: decision_point,
+      decision_point: experiment,
       experiment: experiment,
       page_revision: page_revision,
       publication: publication,
@@ -579,7 +553,7 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
     intervention =
       %Intervention{}
       |> Intervention.changeset(%{
-        decision_point_id: context.decision_point.id,
+        experiment_id: context.experiment.id,
         page_resource_id: context.decision_point.alternatives_resource_id,
         content_element_id: "placement-#{System.unique_integer([:positive])}"
       })
@@ -597,7 +571,6 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
     %Assignment{}
     |> Assignment.changeset(%{
       experiment_id: context.experiment.id,
-      decision_point_id: context.decision_point.id,
       condition_id: context.condition.id,
       intervention_id: intervention.id,
       section_id: context.resource_access.section_id,

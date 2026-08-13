@@ -18,7 +18,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
   alias Oli.Experiments.Schemas.{
     Assignment,
     Condition,
-    DecisionPoint,
     ExperimentDefinition,
     PolicyState
   }
@@ -39,17 +38,16 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert attribution["project_id"] == 100
     assert attribution["section_id"] == 300
     assert attribution["publication_id"] == 200
-    assert attribution["decision_point_id"] == 20
     assert attribution["alternatives_resource_id"] == 700
     assert attribution["alternatives_revision_id"] == 701
     assert attribution["condition_id"] == 30
     assert attribution["condition_code"] == "a"
-    assert attribution["assignment_key"] == "10:20:500"
+    assert attribution["assignment_key"] == "10:60:500"
     assert attribution["enrollment_id"] == 500
     refute Map.has_key?(attribution, "user_id")
     assert attribution["algorithm"] == "weighted_random"
     assert attribution["policy_version"] == "weighted_random"
-    assert attribution["key"] == "10:20:500"
+    assert attribution["key"] == "10:60:500"
   end
 
   test "builds exposure, outcome, reward, and policy update attribution evidence" do
@@ -80,7 +78,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert exposure["attribution_type"] == "exposure"
     refute Map.has_key?(exposure, "exposure_id")
     assert exposure["experiment_uuid"] == @experiment_uuid
-    assert exposure["decision_point_key"] == "alternatives:700"
     assert exposure["condition_code"] == "a"
     assert exposure["content_revision_id"] == 701
 
@@ -88,7 +85,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert outcome["attribution_type"] == "outcome"
     refute Map.has_key?(outcome, "outcome_id")
     assert outcome["experiment_uuid"] == @experiment_uuid
-    assert outcome["decision_point_key"] == "alternatives:700"
     assert outcome["condition_code"] == "a"
     assert outcome["activity_attempt_id"] == 800
     assert outcome["resource_attempt_id"] == 801
@@ -102,7 +98,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     refute Map.has_key?(reward, "outcome_id")
     assert reward["outcome_key"] == "outcome:40"
     assert reward["experiment_uuid"] == @experiment_uuid
-    assert reward["decision_point_key"] == "alternatives:700"
     assert reward["condition_code"] == "a"
     assert reward["reward_source"] == "activity_attempt:full_credit"
     assert reward["reward_value"] == 1.0
@@ -112,7 +107,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert policy_update["policy_update_key"] == "policy_update:reward:40"
     assert policy_update["reward_key"] == "reward:40"
     assert policy_update["policy_state_id"] == 91
-    assert policy_update["decision_point_key"] == "alternatives:700"
     assert policy_update["algorithm"] == "thompson_sampling"
     assert policy_update["algorithm_version"] == "thompson_sampling:v2"
     assert byte_size(policy_update["previous_policy_state_hash"]) == 64
@@ -213,7 +207,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       scope: scope(),
       alternatives_resource_id: 700,
       alternatives_revision_id: 701,
-      decision_point_key: "alternatives:700",
       available_condition_codes: ["a", "b"]
     }
   end
@@ -222,7 +215,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     %AssignmentDecision{
       status: :assigned,
       experiment_id: 10,
-      decision_point_id: 20,
       condition_id: 30,
       condition_code: "a",
       assignment_id: 40,
@@ -234,18 +226,17 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     %Assignment{
       id: 40,
       experiment_id: 10,
-      decision_point_id: 20,
+      intervention_id: 60,
       condition_id: 30,
       section_id: 300,
       enrollment_id: 500,
       user_id: 400,
       assigned_by_policy: "weighted_random",
       policy_version: "weighted_random",
-      assignment_key: "10:20:500",
+      assignment_key: "10:60:500",
       assigned_at: timestamp(),
       experiment: experiment(),
-      condition: %Condition{condition_code: "a"},
-      decision_point: %DecisionPoint{decision_point_key: "alternatives:700"}
+      condition: %Condition{condition_code: "a"}
     }
   end
 
@@ -316,7 +307,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     %{
       assignment_id: 40,
       experiment_id: 10,
-      decision_point_id: 20,
       condition_id: 30,
       reward_value: 1.0,
       reward_source: "activity_attempt:full_credit",
@@ -343,7 +333,6 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     %PolicyState{
       id: 91,
       experiment_id: 10,
-      decision_point_id: 20,
       algorithm: :thompson_sampling,
       algorithm_version: "thompson_sampling:v2"
     }

@@ -21,8 +21,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
     AssessmentBinding,
     Assignment,
     Condition,
-    DecisionPoint,
-    DecisionPointCondition,
     ExperimentDefinition,
     ExperimentSection,
     Intervention,
@@ -34,7 +32,7 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
 
   The first attempt in canonical `(attempt_number, id)` order governs eligibility.
   Pending attempts block later attempts, and accepted rewards are claimed and applied
-  to the decision-point posterior in one transaction.
+  to the experiment posterior in one transaction.
   """
   @spec record_evaluated_resource_attempt(integer()) :: :ok | {:error, term()}
   def record_evaluated_resource_attempt(resource_attempt_id)
@@ -67,11 +65,9 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
       on: binding.assessment_page_resource_id == resource_access.resource_id,
       join: intervention in Intervention,
       on: intervention.id == binding.intervention_id,
-      join: decision_point in DecisionPoint,
-      on: decision_point.id == intervention.decision_point_id,
       join: experiment in ExperimentDefinition,
       on:
-        experiment.id == decision_point.experiment_id and
+        experiment.id == intervention.experiment_id and
           experiment.algorithm == :thompson_sampling and experiment.state == :active and
           experiment.project_id == section.base_project_id,
       join: experiment_section in ExperimentSection,
@@ -149,14 +145,25 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
     from(binding in AssessmentBinding,
       join: intervention in Intervention,
       on: intervention.id == binding.intervention_id,
-      join: decision_point in DecisionPoint,
-      on: decision_point.id == intervention.decision_point_id,
       join: experiment in ExperimentDefinition,
-      on: experiment.id == decision_point.experiment_id,
+      on: experiment.id == intervention.experiment_id,
       join: experiment_section in ExperimentSection,
       on:
         experiment_section.experiment_id == experiment.id and
           experiment_section.section_id == ^context.section_id,
+      left_join: assignment in Assignment,
+      on:
+        assignment.intervention_id == binding.intervention_id and
+          assignment.enrollment_id == ^context.enrollment_id and
+          assignment.experiment_id == experiment.id and
+          assignment.section_id == ^context.section_id and
+          assignment.user_id == ^context.user_id,
+      left_join: condition in Condition,
+      on: condition.id == assignment.condition_id and condition.experiment_id == experiment.id,
+      left_join: accepted_reward in AcceptedReward,
+      on:
+        accepted_reward.assessment_binding_id == binding.id and
+          accepted_reward.enrollment_id == ^context.enrollment_id,
       where:
         binding.assessment_page_resource_id == ^context.resource_access.resource_id and
           experiment.project_id == ^context.project_id and experiment.state == :active and
@@ -164,7 +171,10 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
       select: %{
         binding: %{binding | intervention: intervention},
         experiment_id: experiment.id,
-        decision_point_id: decision_point.id
+        project_id: experiment.project_id,
+        assignment: assignment,
+        condition: condition,
+        accepted_reward: accepted_reward
       }
     )
     |> Repo.all()
@@ -211,29 +221,13 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   defp accept_assessment_reward(context, binding_context, resource_attempt, normalized_score) do
     binding = binding_context.binding
 
-    case Repo.get_by(AcceptedReward,
-           assessment_binding_id: binding.id,
-           enrollment_id: context.enrollment_id
-         ) do
+    case binding_context.accepted_reward do
       %AcceptedReward{} = reward ->
         {:ok, {:duplicate, reward}}
 
       nil ->
         Repo.transaction(fn ->
-          assignment =
-            Repo.one(
-              from(assignment in Assignment,
-                where:
-                  assignment.intervention_id == ^binding.intervention_id and
-                    assignment.enrollment_id == ^context.enrollment_id and
-                    assignment.experiment_id == ^binding_context.experiment_id and
-                    assignment.decision_point_id == ^binding_context.decision_point_id and
-                    assignment.section_id == ^context.section_id and
-                    assignment.user_id == ^context.user_id
-              )
-            )
-
-          case assignment do
+          case binding_context.assignment do
             nil ->
               {:skipped, :missing_assignment}
 
@@ -241,8 +235,9 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
               accept_locked_reward(
                 binding,
                 assignment,
+                binding_context.condition,
                 binding_context.experiment_id,
-                binding_context.decision_point_id,
+                binding_context.project_id,
                 context.enrollment_id,
                 resource_attempt,
                 normalized_score
@@ -255,8 +250,9 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   defp accept_locked_reward(
          binding,
          assignment,
+         condition,
          experiment_id,
-         decision_point_id,
+         project_id,
          enrollment_id,
          resource_attempt,
          normalized_score
@@ -266,7 +262,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
         from(policy_state in PolicyState,
           where:
             policy_state.experiment_id == ^experiment_id and
-              policy_state.decision_point_id == ^decision_point_id and
               policy_state.algorithm == :thompson_sampling,
           lock: "FOR UPDATE"
         )
@@ -283,19 +278,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
         {:duplicate, reward}
 
       nil ->
-        condition =
-          Repo.one!(
-            from(condition in Condition,
-              join: mapping in DecisionPointCondition,
-              on:
-                mapping.condition_id == condition.id and
-                  mapping.decision_point_id == ^decision_point_id,
-              where:
-                condition.id == ^assignment.condition_id and
-                  condition.experiment_id == ^experiment_id
-            )
-          )
-
         reward =
           if Decimal.compare(normalized_score, binding.reward_threshold) in [:eq, :gt],
             do: 1,
@@ -329,8 +311,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
             policy_state.reward_failure_count + if(reward == 0, do: 1, else: 0)
         })
         |> Repo.update!()
-
-        project_id = experiment_project_id(experiment_id)
 
         publication_id = current_publication_id(assignment.section_id, project_id)
 
@@ -379,15 +359,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
     state
     |> Map.get(condition_code, %{})
     |> Map.take(["posterior_alpha", "posterior_beta"])
-  end
-
-  defp experiment_project_id(experiment_id) do
-    Repo.one!(
-      from(experiment in ExperimentDefinition,
-        where: experiment.id == ^experiment_id,
-        select: experiment.project_id
-      )
-    )
   end
 
   defp current_publication_id(section_id, project_id) do

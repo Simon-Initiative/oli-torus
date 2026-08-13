@@ -14,6 +14,14 @@ defmodule Oli.Experiments.ExperimentDefinition do
     :state,
     :assignment_unit,
     :algorithm,
+    :alternatives_resource_id,
+    :prior_alpha,
+    :prior_beta,
+    :warm_up_assignments,
+    :max_condition_share,
+    :fixed_control_allocation,
+    :imbalance_threshold,
+    :reward_source,
     :started_at,
     :ended_at
   ]

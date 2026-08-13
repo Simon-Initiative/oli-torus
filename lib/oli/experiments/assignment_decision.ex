@@ -6,7 +6,6 @@ defmodule Oli.Experiments.AssignmentDecision do
   defstruct [
     :status,
     :experiment_id,
-    :decision_point_id,
     :condition_id,
     :condition_code,
     :option_id,

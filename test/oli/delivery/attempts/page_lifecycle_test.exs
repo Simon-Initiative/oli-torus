@@ -15,8 +15,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     Assignment,
     AssessmentBinding,
     Condition,
-    DecisionPoint,
-    DecisionPointCondition,
     ExperimentDefinition,
     ExperimentSection,
     Intervention
@@ -329,7 +327,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
           slug: "explicit-start-alternatives",
           name: "Explicit start Alternatives",
           state: :active,
-          algorithm: :weighted_random
+          algorithm: :weighted_random,
+          alternatives_resource_id: alternatives_revision.resource_id
         })
         |> Repo.insert!()
 
@@ -337,20 +336,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       |> ExperimentSection.changeset(%{experiment_id: experiment.id, section_id: section.id})
       |> Repo.insert!()
 
-      decision_point =
-        %DecisionPoint{}
-        |> DecisionPoint.changeset(%{
-          experiment_id: experiment.id,
-          alternatives_resource_id: alternatives_revision.resource_id,
-          decision_point_key: "alternatives:#{alternatives_revision.resource_id}",
-          algorithm: :weighted_random
-        })
-        |> Repo.insert!()
-
       intervention =
         %Intervention{}
         |> Intervention.changeset(%{
-          decision_point_id: decision_point.id,
+          experiment_id: experiment.id,
           page_resource_id: revision.resource_id,
           content_element_id: "placement"
         })
@@ -360,28 +349,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
         %Condition{}
         |> Condition.changeset(%{
           experiment_id: experiment.id,
-          decision_point_id: decision_point.id,
           condition_code: "variant",
           label: "Variant",
+          option_id: "variant",
           weight: 1.0,
           position: 1
         })
         |> Repo.insert!()
 
-      %DecisionPointCondition{}
-      |> DecisionPointCondition.changeset(%{
-        decision_point_id: decision_point.id,
-        condition_id: variant.id,
-        option_id: "variant",
-        weight: 1.0,
-        position: 1
-      })
-      |> Repo.insert!()
-
       %Assignment{}
       |> Assignment.changeset(%{
         experiment_id: experiment.id,
-        decision_point_id: decision_point.id,
         condition_id: variant.id,
         intervention_id: intervention.id,
         section_id: section.id,
@@ -424,7 +402,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
 
       assert [attribution] = state.resource_attempt.experiment_attributions
       assert attribution["experiment_id"] == experiment.id
-      assert attribution["decision_point_id"] == decision_point.id
+      assert attribution["intervention_id"] == intervention.id
       assert attribution["condition_id"] == variant.id
       assert attribution["assignment_id"]
 
@@ -784,6 +762,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   end
 
   defp add_assessment_binding(project, section, assessment_page_resource_id) do
+    alternatives = Factory.insert(:revision)
+
     experiment =
       %ExperimentDefinition{}
       |> ExperimentDefinition.changeset(%{
@@ -791,7 +771,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
         slug: "page-finalization-reward-#{System.unique_integer([:positive])}",
         name: "Page finalization reward",
         state: :active,
-        algorithm: :thompson_sampling
+        algorithm: :thompson_sampling,
+        alternatives_resource_id: alternatives.resource_id
       })
       |> Repo.insert!()
 
@@ -799,22 +780,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     |> ExperimentSection.changeset(%{experiment_id: experiment.id, section_id: section.id})
     |> Repo.insert!()
 
-    alternatives = Factory.insert(:revision)
-
-    decision_point =
-      %DecisionPoint{}
-      |> DecisionPoint.changeset(%{
-        experiment_id: experiment.id,
-        alternatives_resource_id: alternatives.resource_id,
-        decision_point_key: "page-finalization-point",
-        algorithm: :thompson_sampling
-      })
-      |> Repo.insert!()
-
     intervention =
       %Intervention{}
       |> Intervention.changeset(%{
-        decision_point_id: decision_point.id,
+        experiment_id: experiment.id,
         page_resource_id: alternatives.resource_id,
         content_element_id: "page-finalization-placement"
       })
