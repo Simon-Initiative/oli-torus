@@ -670,20 +670,21 @@ test.describe('transition planner — combineFeedback branches (DeckLayoutFooter
   const nav = (target: string, correct = true) => event(correct, [navTo(target)]);
   const fb = (correct = true) => event(correct, [feedback()]);
 
-  test('the planner is TOTAL over malformed wire shapes — it degrades, never throws', () => {
-    // a live journal now refuses these bodies, but the planner also replays
-    // CAPTURED dumps, where an older serialization can still carry them: an
-    // exception here would escape auditRun instead of becoming a violation
-    const malformed: unknown[] = [
-      [null],
-      [{ params: { actions: {} } }],
-      [{ params: { actions: 'nope' } }],
-      [{ params: { actions: [null, 'x'] } }],
-      ['not-an-event'],
-      {},
-      null,
-    ];
-    malformed.forEach((results) => {
+  // a live journal now refuses these bodies, but the planner also replays
+  // CAPTURED dumps, where an older serialization can still carry them: an
+  // exception here would escape auditRun instead of becoming a violation.
+  // W-U7/W-U9: one named test per shape, so a deleted shape is a missing test.
+  const MALFORMED_PLANNER_SHAPES: Array<[string, unknown]> = [
+    ['a result list carrying null', [null]],
+    ['actions as an object', [{ params: { actions: {} } }]],
+    ['actions as a string', [{ params: { actions: 'nope' } }]],
+    ['actions carrying null and a bare string', [{ params: { actions: [null, 'x'] } }]],
+    ['a bare string in place of an event', ['not-an-event']],
+    ['results as an object', {}],
+    ['results null', null],
+  ];
+  MALFORMED_PLANNER_SHAPES.forEach(([label, results]) => {
+    test(`the planner degrades, never throws: ${label}`, () => {
       const arg = results as Parameters<typeof planTransition>[0];
       expect(() => selectProcessedEvents(arg, true)).not.toThrow();
       expect(planTransition(arg, null, true)).toEqual({ kind: 'none' });
@@ -1838,8 +1839,17 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
     expect(codes(auditRun(manifest(), runRecord, snapshot))).toEqual([]);
   });
 
-  test('every disqualifying final-step target: prev, first, last, explicit id (§8)', () => {
-    for (const target of ['prev', 'first', 'last', 'q:7']) {
+  /**
+   * W-U7/W-U9 (§1 SUITE, named-test arm): each disqualifying target is its OWN
+   * discovered identity. Inside one test these were a cardinality-bearing inner
+   * loop — deleting a case shrank coverage invisibly, because `--list` reports
+   * the loop as a single entry. As named tests a deleted case is a MISSING TEST,
+   * which the frozen suite inventory already catches, so no separate expected-set
+   * artifact and no emitter-independence audit are needed.
+   */
+  const DISQUALIFYING_FINAL_TARGETS = ['prev', 'first', 'last', 'q:7'];
+  DISQUALIFYING_FINAL_TARGETS.forEach((target) => {
+    test(`a disqualifying final-step target is rejected: ${target} (§8)`, () => {
       const c = new AdaptiveJournalCore(() => 1_000);
       c.setRunCorrelation(CORR);
       const v0 = c.issueFence('q:1');
@@ -1872,7 +1882,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
         ),
         `target ${target}`,
       ).toBe(true);
-    }
+    });
   });
 
   test('a rotation whose mint postdates the second check is not the measured rotation (§3.4)', () => {
@@ -2211,92 +2221,98 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
     expect(codes(found)).not.toContain('plan-illegal');
   });
 
-  test('a rotation whose first response is MALFORMED is not the legal `none` half (§3.4)', () => {
-    // `none` is legal for the rotation's first check, so a malformed shape that
-    // normalized to an empty action list would slip into that licence. The
-    // planner is total by design (it must never throw inside a replay), so the
-    // refusal has to happen at classification — twice, independently: the
-    // journal refuses to resolve it live, and the ORACLE refuses to treat it as
-    // usable when auditing a capture the live guard never saw.
-    // scalar poison is the easy half; OBJECT-SHAPED poison is what a shallow
-    // "truthy and typeof object" check waves through, and every one of these
-    // fields is read by the planner the audit replays
-    const malformedBodies = [
-      { correct: false, results: [null] },
-      { correct: false, results: [{ params: { actions: {} } }] },
-      { correct: false, results: [{ params: { actions: ['x'] } }] },
-      { correct: false, results: [{}] },
-      { correct: false, results: [[]] },
-      { correct: false, results: [{ params: [] }] },
-      { correct: false, results: [{ params: { correct: 'yes', actions: [] } }] },
-      { correct: false, results: [{ params: { correct: false, actions: [{}] } }] },
-      { correct: false, results: [{ params: { correct: false, actions: [{ type: 7 }] } }] },
-      // an EMPTY list satisfies every per-member rule vacuously, then plans
-      // `none` — the engine substitutes [defaultWrong] rather than emitting it
-      { correct: false, results: [] },
-      // a mutation `applyState` cannot dispatch: it fails silently, so a
-      // TERMINAL result leaves no later check to expose the lost update
-      {
-        correct: false,
-        results: [
-          {
-            params: {
-              correct: false,
-              actions: [
-                {
-                  type: 'mutateState',
-                  params: { target: 'variables.x', operator: 'nope', value: 1 },
-                },
-              ],
-            },
+  /**
+   * W-U7/W-U9 (§1 SUITE, named-test arm): one DISCOVERED identity per malformed
+   * body. The title carries the shape itself, so deleting a case removes a test
+   * and editing one renames it — both caught by the frozen suite inventory,
+   * with no separate expected-set artifact and no emitter-independence audit.
+   */
+  // `none` is legal for the rotation's first check, so a malformed shape that
+  // normalized to an empty action list would slip into that licence. The
+  // planner is total by design (it must never throw inside a replay), so the
+  // refusal has to happen at classification — twice, independently: the
+  // journal refuses to resolve it live, and the ORACLE refuses to treat it as
+  // usable when auditing a capture the live guard never saw.
+  // scalar poison is the easy half; OBJECT-SHAPED poison is what a shallow
+  // "truthy and typeof object" check waves through, and every one of these
+  // fields is read by the planner the audit replays
+  const MALFORMED_ROTATION_BODIES = [
+    { correct: false, results: [null] },
+    { correct: false, results: [{ params: { actions: {} } }] },
+    { correct: false, results: [{ params: { actions: ['x'] } }] },
+    { correct: false, results: [{}] },
+    { correct: false, results: [[]] },
+    { correct: false, results: [{ params: [] }] },
+    { correct: false, results: [{ params: { correct: 'yes', actions: [] } }] },
+    { correct: false, results: [{ params: { correct: false, actions: [{}] } }] },
+    { correct: false, results: [{ params: { correct: false, actions: [{ type: 7 }] } }] },
+    // an EMPTY list satisfies every per-member rule vacuously, then plans
+    // `none` — the engine substitutes [defaultWrong] rather than emitting it
+    { correct: false, results: [] },
+    // a mutation `applyState` cannot dispatch: it fails silently, so a
+    // TERMINAL result leaves no later check to expose the lost update
+    {
+      correct: false,
+      results: [
+        {
+          params: {
+            correct: false,
+            actions: [
+              {
+                type: 'mutateState',
+                params: { target: 'variables.x', operator: 'nope', value: 1 },
+              },
+            ],
           },
-        ],
-      },
-      {
-        correct: false,
-        results: [
-          {
-            params: {
-              correct: false,
-              actions: [{ type: 'mutateState', params: { target: '', operator: '=', value: 1 } }],
-            },
+        },
+      ],
+    },
+    {
+      correct: false,
+      results: [
+        {
+          params: {
+            correct: false,
+            actions: [{ type: 'mutateState', params: { target: '', operator: '=', value: 1 } }],
           },
-        ],
-      },
-      {
-        correct: false,
-        results: [
-          {
-            params: {
-              correct: false,
-              actions: [
-                {
-                  type: 'mutateState',
-                  params: { target: 'variables.x', operator: 'bind to', value: 3 },
-                },
-              ],
-            },
+        },
+      ],
+    },
+    {
+      correct: false,
+      results: [
+        {
+          params: {
+            correct: false,
+            actions: [
+              {
+                type: 'mutateState',
+                params: { target: 'variables.x', operator: 'bind to', value: 3 },
+              },
+            ],
           },
-        ],
-      },
-      // HOLLOW, not malformed-typed: the product always emits these, and every
-      // one of them normalizes to the rotation's licensed `none`
-      { correct: false },
-      {
-        correct: false,
-        results: [{ params: { correct: false, actions: [{ type: 'feedback' }] } }],
-      },
-      {
-        correct: false,
-        results: [{ params: { correct: false, actions: [{ type: 'feedback', params: {} }] } }],
-      },
-      {
-        correct: false,
-        results: [{ params: { correct: false, actions: [{ type: 'navigation', params: {} }] } }],
-      },
-    ];
+        },
+      ],
+    },
+    // HOLLOW, not malformed-typed: the product always emits these, and every
+    // one of them normalizes to the rotation's licensed `none`
+    { correct: false },
+    {
+      correct: false,
+      results: [{ params: { correct: false, actions: [{ type: 'feedback' }] } }],
+    },
+    {
+      correct: false,
+      results: [{ params: { correct: false, actions: [{ type: 'feedback', params: {} }] } }],
+    },
+    {
+      correct: false,
+      results: [{ params: { correct: false, actions: [{ type: 'navigation', params: {} }] } }],
+    },
+  ];
 
-    malformedBodies.forEach((body, i) => {
+  MALFORMED_ROTATION_BODIES.forEach((body, i) => {
+    test(`a malformed first rotation response is not the legal \`none\` half (§3.4) #${i + 1}: ${JSON.stringify(body).slice(0, 70)}`, () => {
       const c = new AdaptiveJournalCore(() => 1_000);
       c.setRunCorrelation(CORR);
       const v0 = c.issueFence('n:1');
@@ -2330,26 +2346,31 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
     });
   });
 
-  test('the OUTER evaluation body is validated, and its duplicated verdict reconciled', () => {
-    // `record.actions?.results` answers `undefined` for an ARRAY body, so a
-    // predicate starting there would pass the whole malformed body on the
-    // strength of the recorder-derived `record.correct` alone
-    const poisons: Array<(r: { actions: unknown; correct: boolean | null }) => void> = [
-      (r) => (r.actions = [] as never),
-      (r) => (r.actions = 'nope' as never),
-      (r) => ((r.actions as { correct: unknown }).correct = 'no'),
-      // the recorder DERIVED record.correct from actions.correct; disagreement
-      // means the capture was edited between them
-      (r) => ((r.actions as { correct: unknown }).correct = true),
-      // outer and inner verdicts individually boolean but CONTRADICTORY: the
-      // audit reads the outer, the footer's event selection reads the inner
-      (r) => {
-        const results = (r.actions as { results: Array<{ params: { correct: boolean } }> }).results;
-        results[0].params.correct = true;
-      },
-    ];
+  /**
+   * W-U7/W-U9 (§1 SUITE, named-test arm): one DISCOVERED identity per capture
+   * poison. The title carries the mutator's own source, so editing a poison
+   * renames its test and deleting one removes it.
+   */
+  // `record.actions?.results` answers `undefined` for an ARRAY body, so a
+  // predicate starting there would pass the whole malformed body on the
+  // strength of the recorder-derived `record.correct` alone
+  const CAPTURE_POISONS: Array<(r: { actions: unknown; correct: boolean | null }) => void> = [
+    (r) => (r.actions = [] as never),
+    (r) => (r.actions = 'nope' as never),
+    (r) => ((r.actions as { correct: unknown }).correct = 'no'),
+    // the recorder DERIVED record.correct from actions.correct; disagreement
+    // means the capture was edited between them
+    (r) => ((r.actions as { correct: unknown }).correct = true),
+    // outer and inner verdicts individually boolean but CONTRADICTORY: the
+    // audit reads the outer, the footer's event selection reads the inner
+    (r) => {
+      const results = (r.actions as { results: Array<{ params: { correct: boolean } }> }).results;
+      results[0].params.correct = true;
+    },
+  ];
 
-    poisons.forEach((poison, i) => {
+  CAPTURE_POISONS.forEach((poison, i) => {
+    test(`the OUTER evaluation body is validated and its duplicated verdict reconciled #${i + 1}: ${String(poison).replace(/\s+/g, ' ').slice(0, 70)}`, () => {
       const c = new AdaptiveJournalCore(() => 1_000);
       c.setRunCorrelation(CORR);
       const v0 = c.issueFence('n:1');
@@ -2436,82 +2457,82 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
     expect(codes(found), formatViolations(found)).toContain('evaluation-unusable');
   });
 
-  test('the wire refuses every malformed evaluation shape, including object shells', () => {
-    const c = new AdaptiveJournalCore(() => 1_000);
-    // the RAW response body, not the fixture's re-wrapped one: these tests are
-    // about the exact bytes the server can put on the wire
-    const fireRaw = (guid: string, body: unknown): number => {
-      const handle = openEval(c, guid, []);
+  /**
+   * W-U7/W-U9 (§1 SUITE, named-test arm): one DISCOVERED identity per refused
+   * wire shape. The RAW response body, not the fixture's re-wrapped one —
+   * these are about the exact bytes the server can put on the wire.
+   */
+  const REFUSED_WIRE_BODIES = [
+    { actions: { correct: false, results: [null] } },
+    { actions: { correct: false, results: [{ params: { actions: {} } }] } },
+    { actions: { correct: false, results: [{ params: { actions: [7] } }] } },
+    { actions: { correct: false, results: [{}] } },
+    { actions: { correct: false, results: [[]] } },
+    { actions: { correct: false, results: [{ params: [] }] } },
+    { actions: { correct: false, results: [{ params: { correct: 'yes' } }] } },
+    { actions: { correct: false, results: [{ params: { actions: [{ type: 7 }] } }] } },
+    {
+      actions: { correct: false, results: [{ params: { correct: false, actions: [] } }] },
+      llm_feedback: { text: 7 },
+    },
+    {
+      actions: { correct: false, results: [{ params: { correct: false, actions: [] } }] },
+      llm_feedback: {},
+    },
+    // contradictory verdicts: the engine filters events to the folded
+    // verdict, so a mixed list never comes off a real server
+    { actions: { correct: false, results: [{ params: { correct: true, actions: [] } }] } },
+    { actions: { correct: true, results: [{ params: { correct: false, actions: [] } }] } },
+    // hollow list, and a silently-failing mutation alongside TERMINAL
+    // navigation — the ordering with no later check to expose it
+    { actions: { correct: false, results: [] } },
+    {
+      actions: {
+        correct: true,
+        results: [
+          {
+            params: {
+              correct: true,
+              actions: [
+                {
+                  type: 'mutateState',
+                  params: { target: 'variables.x', operator: 'nope', value: 1 },
+                },
+                { type: 'navigation', params: { target: 'endOfLesson' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    // hollow product fields: `results` is never optional (rules-engine.ts:577),
+    // and a RECOGNIZED action must carry what the footer dereferences
+    { actions: { correct: false } },
+    {
+      actions: {
+        correct: false,
+        results: [{ params: { correct: false, actions: [{ type: 'feedback' }] } }],
+      },
+    },
+    {
+      actions: {
+        correct: false,
+        results: [{ params: { correct: false, actions: [{ type: 'navigation', params: {} }] } }],
+      },
+    },
+    // `type: success` must not launder an evaluation-shaped malformed member
+    // into an informational finalize — that erases it from every audit
+    { type: 'success', actions: { correct: false, results: [null] } },
+  ];
+
+  REFUSED_WIRE_BODIES.forEach((body, i) => {
+    test(`the wire refuses a malformed evaluation shape #${i + 1}: ${JSON.stringify(body).slice(0, 70)}`, () => {
+      const c = new AdaptiveJournalCore(() => 1_000);
+      const handle = openEval(c, `a-${i}`, []);
       c.ingestResponse(handle, 200);
       c.ingestResponseBody(handle, JSON.stringify(body));
-      return handle;
-    };
-    const refused = [
-      { actions: { correct: false, results: [null] } },
-      { actions: { correct: false, results: [{ params: { actions: {} } }] } },
-      { actions: { correct: false, results: [{ params: { actions: [7] } }] } },
-      { actions: { correct: false, results: [{}] } },
-      { actions: { correct: false, results: [[]] } },
-      { actions: { correct: false, results: [{ params: [] }] } },
-      { actions: { correct: false, results: [{ params: { correct: 'yes' } }] } },
-      { actions: { correct: false, results: [{ params: { actions: [{ type: 7 }] } }] } },
-      {
-        actions: { correct: false, results: [{ params: { correct: false, actions: [] } }] },
-        llm_feedback: { text: 7 },
-      },
-      {
-        actions: { correct: false, results: [{ params: { correct: false, actions: [] } }] },
-        llm_feedback: {},
-      },
-      // contradictory verdicts: the engine filters events to the folded
-      // verdict, so a mixed list never comes off a real server
-      { actions: { correct: false, results: [{ params: { correct: true, actions: [] } }] } },
-      { actions: { correct: true, results: [{ params: { correct: false, actions: [] } }] } },
-      // hollow list, and a silently-failing mutation alongside TERMINAL
-      // navigation — the ordering with no later check to expose it
-      { actions: { correct: false, results: [] } },
-      {
-        actions: {
-          correct: true,
-          results: [
-            {
-              params: {
-                correct: true,
-                actions: [
-                  {
-                    type: 'mutateState',
-                    params: { target: 'variables.x', operator: 'nope', value: 1 },
-                  },
-                  { type: 'navigation', params: { target: 'endOfLesson' } },
-                ],
-              },
-            },
-          ],
-        },
-      },
-      // hollow product fields: `results` is never optional (rules-engine.ts:577),
-      // and a RECOGNIZED action must carry what the footer dereferences
-      { actions: { correct: false } },
-      {
-        actions: {
-          correct: false,
-          results: [{ params: { correct: false, actions: [{ type: 'feedback' }] } }],
-        },
-      },
-      {
-        actions: {
-          correct: false,
-          results: [{ params: { correct: false, actions: [{ type: 'navigation', params: {} }] } }],
-        },
-      },
-      // `type: success` must not launder an evaluation-shaped malformed member
-      // into an informational finalize — that erases it from every audit
-      { type: 'success', actions: { correct: false, results: [null] } },
-    ];
-    refused.forEach((body, i) => {
-      const h = fireRaw(`a-${i}`, body);
-      expect(c.records()[h].resolution, `body ${i}`).toBe('unresolved');
-      expect(c.records()[h].actions, `body ${i}`).toBeNull();
+      expect(c.records()[handle].resolution, `body ${i}`).toBe('unresolved');
+      expect(c.records()[handle].actions, `body ${i}`).toBeNull();
     });
   });
 
