@@ -18,9 +18,23 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     end
   end
 
+  defmodule FakeAnalyticsProvider do
+    def health_summary, do: Oli.Analytics.ClickhouseAnalytics.health_summary()
+
+    def admin_capabilities,
+      do: Application.fetch_env!(:oli, :clickhouse_analytics_test_capabilities)
+  end
+
   setup :verify_on_exit!
   setup :set_mox_global
-  setup [:admin_conn, :enable_clickhouse_feature, :stub_clickhouse_config, :stub_phase_four_env]
+
+  setup [
+    :admin_conn,
+    :enable_clickhouse_feature,
+    :stub_clickhouse_config,
+    :stub_analytics_provider,
+    :stub_phase_four_env
+  ]
 
   test "shows setup card first, enabled when available, and hides dangerous operations",
        %{conn: conn} do
@@ -246,11 +260,54 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     :ok
   end
 
+  defp stub_analytics_provider(_) do
+    original_provider = Application.get_env(:oli, :clickhouse_analytics_provider)
+    original_capabilities = Application.get_env(:oli, :clickhouse_analytics_test_capabilities)
+
+    Application.put_env(:oli, :clickhouse_analytics_provider, FakeAnalyticsProvider)
+
+    Application.put_env(
+      :oli,
+      :clickhouse_analytics_test_capabilities,
+      {:error, "ClickHouse capabilities were not stubbed"}
+    )
+
+    on_exit(fn ->
+      restore_env(:clickhouse_analytics_provider, original_provider)
+      restore_env(:clickhouse_analytics_test_capabilities, original_capabilities)
+    end)
+
+    :ok
+  end
+
   defp stub_clickhouse_http(%{
          database_exists: database_exists,
          raw_events_exists: raw_events_exists,
          pending_migrations: pending_migrations
        }) do
+    initialized = database_exists
+
+    Application.put_env(
+      :oli,
+      :clickhouse_analytics_test_capabilities,
+      {:ok,
+       %{
+         reachable: true,
+         database_exists: database_exists,
+         table_exists: raw_events_exists,
+         initialized: initialized,
+         setup_enabled: not initialized,
+         pending_migration_count: pending_migrations,
+         migrate_up_enabled: initialized and pending_migrations > 0,
+         migrate_down_enabled: initialized,
+         allowed_operations:
+           if(initialized,
+             do: [:migrate_up, :migrate_down],
+             else: [:setup]
+           )
+       }}
+    )
+
     stub(MockHTTP, :post, fn url, body, _headers, _opts ->
       query_params = URI.parse(url).query |> URI.decode_query()
 
@@ -332,9 +389,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
           String.contains?(body, "FROM system.tables") ->
         exists =
           cond do
-            String.contains?(body, "name = 'raw_events'") -> raw_events_exists
-            String.contains?(body, "name = 'goose_db_version'") -> pending_migrations == 0
-            true -> false
+            String.contains?(body, "name = 'raw_events'") ->
+              raw_events_exists
+
+            String.contains?(body, "name = 'goose_db_version'") ->
+              pending_migrations == 0
+
+            true ->
+              false
           end
 
         Jason.encode!(%{"data" => [%{"exists" => if(exists, do: 1, else: 0)}]})
@@ -343,13 +405,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
         Jason.encode!(%{
           "data" => [
             %{
-              "version_id" =>
-                case pending_migrations do
-                  0 -> "20260811190000"
-                  1 -> "20260714120000"
-                  2 -> "20260326213833"
-                  _ -> nil
-                end
+              "version_id" => nil
             }
           ]
         })

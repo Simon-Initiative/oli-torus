@@ -143,7 +143,7 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
         %{
           "children" => children,
           "alternatives_id" => alternatives_id
-        }
+        } = element
       ) do
     decision_point = Map.get(by_id, alternatives_id)
 
@@ -151,7 +151,7 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
          {%Scope{} = scope, decision_point} <-
            scoped_decision_point(context, decision_point, false),
          {:ok, %AssignmentDecision{status: :assigned} = decision} <-
-           assigned_condition(scope, decision_point, context, %{}),
+           assigned_condition(scope, decision_point, context, element),
          selections when selections != [] <-
            select_matching_assignment(children, decision_point, decision) do
       selections

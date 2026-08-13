@@ -12,6 +12,7 @@ defmodule Oli.Delivery.SectionsExperimentsTest do
 
   test "has_experiment?/1 uses section participation as its source of truth" do
     project = insert(:project)
+    alternatives_resource = insert(:resource)
     participating_section = insert(:section, base_project: project)
     ordinary_section = insert(:section, base_project: project)
 
@@ -21,7 +22,8 @@ defmodule Oli.Delivery.SectionsExperimentsTest do
         project_id: project.id,
         slug: "section-experiment-guard",
         name: "Section experiment guard",
-        algorithm: :weighted_random
+        algorithm: :weighted_random,
+        alternatives_resource_id: alternatives_resource.id
       })
       |> Repo.insert!()
 
