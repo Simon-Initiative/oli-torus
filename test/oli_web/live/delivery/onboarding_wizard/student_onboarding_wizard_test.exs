@@ -89,7 +89,6 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       refute render(view) =~ "This custom title is not displayed"
       refute has_element?(view, "#onboarding-welcome-subtitle")
       refute has_element?(view, "#onboarding-welcome-description")
-
       assert has_element?(
                view,
                "p",
