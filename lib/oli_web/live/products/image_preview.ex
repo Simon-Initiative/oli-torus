@@ -187,7 +187,7 @@ defmodule OliWeb.Products.ImagePreview do
   attr :section, :map, required: true
   attr :ctx, :map, required: true
   attr :context, :atom, required: true
-  attr :id_prefix, :string, required: true
+  attr :id_prefix, :string, default: "image-preview"
   attr :course_picker_model, :any, default: nil
 
   def preview_content(%{context: :my_course} = assigns) do
@@ -392,6 +392,8 @@ defmodule OliWeb.Products.ImagePreview do
   end
 
   def preview_content(%{context: :student_welcome} = assigns) do
+    assigns = assign_new(assigns, :id_prefix, fn -> "image-preview" end)
+
     ~H"""
     <div
       class="relative h-[628px] w-[1200px] overflow-hidden text-gray-900 dark:text-white"
