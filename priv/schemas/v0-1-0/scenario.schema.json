@@ -763,6 +763,19 @@
               "archived"
             ]
           },
+          "reaction": {
+            "type": "string",
+            "enum": [
+              "like"
+            ]
+          },
+          "reaction_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reacted_by": {
+            "type": "string"
+          },
           "contains_discussions": {
             "$ref": "#/definitions/booleanLike"
           },
@@ -771,6 +784,73 @@
           },
           "anonymous_posting": {
             "$ref": "#/definitions/booleanLike"
+          }
+        }
+      },
+      "annotationAssertion": {
+        "type": "object",
+        "required": [
+          "post"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "post": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string"
+          },
+          "page": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "approved",
+              "deleted",
+              "archived"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "public"
+            ]
+          },
+          "annotation_type": {
+            "type": "string",
+            "enum": [
+              "none",
+              "point",
+              "range"
+            ]
+          },
+          "block_id": {
+            "type": "string"
+          },
+          "reply_to": {
+            "type": "string"
+          },
+          "reaction": {
+            "type": "string",
+            "enum": [
+              "like"
+            ]
+          },
+          "reaction_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reacted_by": {
+            "type": "string"
           }
         }
       },
@@ -1338,6 +1418,9 @@
           "discussion": {
             "$ref": "#/definitions/discussionAssertion"
           },
+          "annotation": {
+            "$ref": "#/definitions/annotationAssertion"
+          },
           "instructor_dashboard_summary": {
             "$ref": "#/definitions/instructorDashboardSummaryAssertion"
           },
@@ -1407,6 +1490,9 @@
           },
           "discussion": {
             "$ref": "#/definitions/discussionAssertion"
+          },
+          "annotation": {
+            "$ref": "#/definitions/annotationAssertion"
           },
           "instructor_dashboard_summary": {
             "$ref": "#/definitions/instructorDashboardSummaryAssertion"
@@ -3699,6 +3785,9 @@
                 ],
                 "additionalProperties": false,
                 "properties": {
+                  "name": {
+                    "type": "string"
+                  },
                   "student": {
                     "type": "string"
                   },
@@ -3710,6 +3799,52 @@
                   },
                   "body": {
                     "type": "string"
+                  },
+                  "reply_to": {
+                    "type": "string"
+                  },
+                  "block_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "post_reaction"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "post_reaction": {
+                "type": "object",
+                "required": [
+                  "post",
+                  "student",
+                  "reaction",
+                  "action"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "post": {
+                    "type": "string"
+                  },
+                  "student": {
+                    "type": "string"
+                  },
+                  "reaction": {
+                    "type": "string",
+                    "enum": [
+                      "like"
+                    ]
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "add",
+                      "remove"
+                    ]
                   }
                 }
               }

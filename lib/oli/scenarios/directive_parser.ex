@@ -42,6 +42,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     DiscussionModerationDirective,
     DiscussionDeleteDirective,
     ClassNoteDirective,
+    PostReactionDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
     StudentExceptionDirective,
@@ -96,6 +97,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     "discussion_moderation",
     "discussion_delete",
     "class_note",
+    "post_reaction",
     "complete_scored_page",
     "certificate_action",
     "use",
@@ -924,15 +926,39 @@ defmodule Oli.Scenarios.DirectiveParser do
   end
 
   defp parse_directive(%{"class_note" => class_note_data}) do
-    allowed_attrs = ["student", "section", "page", "body"]
+    allowed_attrs = ["name", "student", "section", "page", "body", "reply_to", "block_id"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, class_note_data, "class_note") do
       :ok ->
         %ClassNoteDirective{
+          name: class_note_data["name"],
           student: class_note_data["student"],
           section: class_note_data["section"],
           page: class_note_data["page"],
-          body: class_note_data["body"]
+          body: class_note_data["body"],
+          reply_to: class_note_data["reply_to"],
+          block_id: class_note_data["block_id"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"post_reaction" => reaction_data}) do
+    allowed_attrs = ["post", "student", "reaction", "action"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           reaction_data,
+           "post_reaction"
+         ) do
+      :ok ->
+        %PostReactionDirective{
+          post: reaction_data["post"],
+          student: reaction_data["student"],
+          reaction: parse_post_reaction(reaction_data["reaction"]),
+          action: parse_post_reaction_action(reaction_data["action"])
         }
 
       {:error, msg} ->
@@ -1149,6 +1175,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       "activity_objectives",
       "insights",
       "discussion",
+      "annotation",
       "instructor_dashboard_summary",
       "instructor_dashboard_progress",
       "instructor_dashboard_student_support",
@@ -1177,6 +1204,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         parse_activity_objectives_assertion(assert_data["activity_objectives"]),
       insights: parse_insights_assertion(assert_data["insights"]),
       discussion: parse_discussion_assertion(assert_data["discussion"]),
+      annotation: parse_annotation_assertion(assert_data["annotation"]),
       instructor_dashboard_summary:
         parse_instructor_dashboard_assertion(
           :instructor_dashboard_summary,
@@ -1485,11 +1513,40 @@ defmodule Oli.Scenarios.DirectiveParser do
           student: data["student"],
           visible: parse_optional_boolean(data["visible"], "visible"),
           status: parse_optional_post_status(data["status"]),
+          reaction: parse_optional_post_reaction(data["reaction"]),
+          reaction_count: parse_optional_integer(data["reaction_count"]),
+          reacted_by: data["reacted_by"],
           contains_discussions:
             parse_optional_boolean(data["contains_discussions"], "contains_discussions"),
           auto_accept: parse_optional_boolean(data["auto_accept"], "auto_accept"),
           anonymous_posting:
             parse_optional_boolean(data["anonymous_posting"], "anonymous_posting")
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_annotation_assertion(nil), do: nil
+
+  defp parse_annotation_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:annotation, data) do
+      :ok ->
+        %{
+          post: data["post"],
+          section: data["section"],
+          page: data["page"],
+          body: data["body"],
+          author: data["author"],
+          status: parse_optional_post_status(data["status"]),
+          visibility: parse_optional_post_visibility(data["visibility"]),
+          annotation_type: parse_optional_annotation_type(data["annotation_type"]),
+          block_id: data["block_id"],
+          reply_to: data["reply_to"],
+          reaction: parse_optional_post_reaction(data["reaction"]),
+          reaction_count: parse_optional_integer(data["reaction_count"]),
+          reacted_by: data["reacted_by"]
         }
 
       {:error, msg} ->
@@ -2477,6 +2534,49 @@ defmodule Oli.Scenarios.DirectiveParser do
       "deleted" -> :deleted
       "archived" -> :archived
       other -> raise "Invalid discussion post status '#{other}'"
+    end
+  end
+
+  defp parse_optional_post_visibility(nil), do: nil
+
+  defp parse_optional_post_visibility(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "private" -> :private
+      "public" -> :public
+      other -> raise "Invalid annotation visibility '#{other}'. Expected private or public"
+    end
+  end
+
+  defp parse_optional_annotation_type(nil), do: nil
+
+  defp parse_optional_annotation_type(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "none" -> :none
+      "point" -> :point
+      "range" -> :range
+      other -> raise "Invalid annotation type '#{other}'. Expected none, point, or range"
+    end
+  end
+
+  defp parse_post_reaction(nil), do: raise("post_reaction requires a reaction")
+
+  defp parse_post_reaction(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "like" -> :like
+      other -> raise "Invalid post reaction '#{other}'. Expected like"
+    end
+  end
+
+  defp parse_optional_post_reaction(nil), do: nil
+  defp parse_optional_post_reaction(value), do: parse_post_reaction(value)
+
+  defp parse_post_reaction_action(nil), do: raise("post_reaction requires an action")
+
+  defp parse_post_reaction_action(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "add" -> :add
+      "remove" -> :remove
+      other -> raise "Invalid post_reaction action '#{other}'. Expected add or remove"
     end
   end
 

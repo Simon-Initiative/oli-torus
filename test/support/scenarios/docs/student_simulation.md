@@ -15,6 +15,8 @@ This document covers directives for simulating student interactions and tracking
 - [wait](#wait) - Pause for real elapsed time
 - [discussion_post](#discussion_post) - Create learner discussion contributions
 - [class_note](#class_note) - Create learner public class notes
+- [post_reaction](#post_reaction) - Add or remove collaboration post reactions
+- [annotation assertions](#annotation-assertions) - Assert notes, replies, and reactions
 - [complete_scored_page](#complete_scored_page) - Record scored-page completion
 - [certificate_action](#certificate_action) - Apply instructor certificate decisions
 - [certificate](#certificate) - Configure certificate settings
@@ -444,6 +446,7 @@ Use `assert.discussion` to verify course discussion configuration, named post st
 - `anonymous_posting`
 - named post `status`: `submitted`, `approved`, `deleted`, or `archived`
 - named post `visible` for a specific student
+- named post `reaction`, `reaction_count`, and `reacted_by`
 
 ### Example
 ```yaml
@@ -454,6 +457,9 @@ Use `assert.discussion` to verify course discussion configuration, named post st
       student: "bob"
       status: "approved"
       visible: true
+      reaction: "like"
+      reaction_count: 1
+      reacted_by: "bob"
 ```
 
 ---
@@ -463,18 +469,82 @@ Use `assert.discussion` to verify course discussion configuration, named post st
 Creates a learner public class note on a page in a section and then evaluates certificate qualification synchronously.
 
 ### Parameters
+- `name`: Optional scenario-local name used by replies, reactions, and assertions
 - `student`: Name of the student user (required)
 - `section`: Name of the section (required)
 - `page`: Title of the page being annotated (required)
 - `body`: Note body text (required)
+- `reply_to`: Optional name of a parent annotation; the reply must use the same section and page
+- `block_id`: Optional content block identifier; creates a point annotation. Replies inherit their parent's block identifier and reject a conflicting value.
 
 ### Example
 ```yaml
 - class_note:
+    name: "important_idea"
     student: "alice"
     section: "my_section"
     page: "Lesson 1"
+    block_id: "paragraph-1"
     body: "Important idea here"
+
+- class_note:
+    name: "important_idea_reply"
+    student: "bob"
+    section: "my_section"
+    page: "Lesson 1"
+    reply_to: "important_idea"
+    body: "I agree."
+```
+
+---
+
+## post_reaction
+
+Deterministically adds or removes a reaction on a named class note or discussion post. Repeating the same action is idempotent.
+
+### Parameters
+- `post`: Scenario-local name of a class note or discussion post (required)
+- `student`: Name of the reacting scenario user (required)
+- `reaction`: Reaction type; currently `like` (required)
+- `action`: `add` or `remove` (required)
+
+### Example
+```yaml
+- post_reaction:
+    post: "important_idea_reply"
+    student: "alice"
+    reaction: "like"
+    action: "add"
+```
+
+---
+
+## annotation assertions
+
+Use `assert.annotation` to verify a named class note or reply. Only supplied fields are checked.
+
+### Supported checks
+- `section` and `page`
+- `body` and `author`
+- `status` and `visibility`
+- `annotation_type` and `block_id`
+- `reply_to`
+- `reaction`, `reaction_count`, and `reacted_by`
+
+### Example
+```yaml
+- assert:
+    annotation:
+      post: "important_idea_reply"
+      section: "my_section"
+      page: "Lesson 1"
+      author: "bob"
+      annotation_type: "point"
+      block_id: "paragraph-1"
+      reply_to: "important_idea"
+      reaction: "like"
+      reaction_count: 1
+      reacted_by: "alice"
 ```
 
 ---

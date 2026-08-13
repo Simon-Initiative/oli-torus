@@ -7,7 +7,7 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
 
   alias Oli.Repo
   alias Oli.Resources.Collaboration
-  alias Oli.Resources.Collaboration.Post
+  alias Oli.Resources.Collaboration.{Post, UserReactionPost}
   alias Oli.Scenarios.DirectiveTypes.{AssertDirective, VerificationResult}
   alias Oli.Scenarios.Directives.Assert.Helpers
   alias Oli.Scenarios.Engine
@@ -16,8 +16,9 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
       when is_map(discussion_data) do
     with {:ok, section} <- Helpers.get_section(state, discussion_data.section),
          {:ok, student} <- maybe_get_student(state, discussion_data.student),
+         {:ok, reacting_user} <- maybe_get_student(state, discussion_data.reacted_by),
          {:ok, post} <- maybe_get_post(state, discussion_data.post),
-         verification_result <- verify(section, student, post, discussion_data) do
+         verification_result <- verify(section, student, reacting_user, post, discussion_data) do
       {:ok, state, verification_result}
     else
       {:error, reason} ->
@@ -39,9 +40,10 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
     end
   end
 
-  defp verify(section, student, post, discussion_data) do
+  defp verify(section, student, reacting_user, post, discussion_data) do
     section = Repo.preload(section, :root_section_resource)
     config = section.root_section_resource && section.root_section_resource.collab_space_config
+    reaction = discussion_data.reaction || :like
 
     checks =
       [
@@ -58,7 +60,9 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
         ),
         check_post_scope(section, post),
         compare_field(post && post.status, discussion_data.status, "status"),
-        check_visibility(section, student, post, discussion_data.visible)
+        check_visibility(section, student, post, discussion_data.visible),
+        check_reaction_count(post, reaction, discussion_data.reaction_count),
+        check_reacted_by(post, reacting_user, reaction, discussion_data.reacted_by)
       ]
       |> Enum.reject(&(&1 == :ok))
 
@@ -130,5 +134,25 @@ defmodule Oli.Scenarios.Directives.Assert.DiscussionAssertion do
             (p.status in [:approved, :archived, :deleted] or
                (p.status == :submitted and p.user_id == ^student.id))
     )
+  end
+
+  defp check_reaction_count(_post, _reaction, nil), do: :ok
+  defp check_reaction_count(nil, _reaction, _expected), do: "post is required for reaction checks"
+
+  defp check_reaction_count(post, reaction, expected) do
+    actual =
+      UserReactionPost
+      |> where([r], r.post_id == ^post.id and r.reaction == ^reaction)
+      |> Repo.aggregate(:count)
+
+    compare_field(actual, expected, "reaction_count")
+  end
+
+  defp check_reacted_by(_post, _user, _reaction, nil), do: :ok
+  defp check_reacted_by(nil, _user, _reaction, _name), do: "post is required for reaction checks"
+
+  defp check_reacted_by(post, user, reaction, _name) do
+    actual = not is_nil(Collaboration.get_reaction(post.id, user.id, reaction))
+    compare_field(actual, true, "reacted_by")
   end
 end

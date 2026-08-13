@@ -82,6 +82,14 @@ export const itemImageCaption = (item: GroupingItem): string => {
   return item.text.trim();
 };
 
+/** Returns learner-facing screen-reader text without exposing the CAPI label unnecessarily. */
+export const itemAccessibleText = (item: GroupingItem): string => {
+  if (item.type === 'image') {
+    return item.alt?.trim() || itemImageCaption(item) || item.label?.trim() || '';
+  }
+  return itemDisplayText(item);
+};
+
 /** Ensure image items always carry an explicit `text` value for redux lodash merge saves. */
 export const normalizeGroupingItemForSave = (item: GroupingItem): GroupingItem => {
   if (item.type !== 'image') {
