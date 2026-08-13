@@ -1514,9 +1514,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       {:ok,
        %{
          title: "Choose intervention page",
-         label: "Unscored page",
+         label: "Page",
          options: options,
-         filter: fn option -> not option.graded end,
+         filter: fn _option -> true end,
          description_key: nil,
          position_key: nil,
          selection_mode: :single,

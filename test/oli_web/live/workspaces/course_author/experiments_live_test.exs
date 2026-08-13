@@ -1443,7 +1443,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
              "#experiment-option-picker-table tr[phx-value-id='#{intervention.resource_id}']"
            )
 
-    refute has_element?(
+    assert has_element?(
              view,
              "#experiment-option-picker-table tr[phx-value-id='#{assessment.resource_id}']"
            )
