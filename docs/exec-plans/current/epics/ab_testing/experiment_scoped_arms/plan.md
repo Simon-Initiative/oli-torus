@@ -192,17 +192,17 @@ Guardrails:
 
 - Goal: Round-trip group-owned strategy and repeated placements while exporting privacy-safe, retryable experiment evidence and telemetry (FR-023, FR-024, FR-025, FR-031, FR-033).
 - Tasks:
-  - [ ] Extend project export to include every referenced Alternatives Group's canonical strategy, stable option identities/labels, and required content exactly once while preserving repeated placement-local content.
-  - [ ] Update ingest to create/normalize groups before rewiring every `alternatives_id`; ignore placement strategy, default strategy-less legacy groups to `user_section_preference`, and canonicalize imported `upgrade_decision_point` groups.
-  - [ ] Extend assignment, exposure, assessment, reward, disposition, and policy-update evidence with intervention, binding, attempt, threshold/score where permitted, publication/revision snapshot, and before/after policy context.
-  - [ ] Dispatch detailed reward evidence and latency telemetry only after the PostgreSQL reward transaction commits; retry evidence delivery independently without reapplying posterior mutation.
-  - [ ] Add bounded telemetry for relevance, binding resolution, assignment creation/reuse/conflict/fallback, sampling mode, reward outcomes, posterior updates, queue/transaction latency, evidence dispatch, and migration anomalies.
-  - [ ] Verify that logs, telemetry, xAPI, ClickHouse, and retry/outbox payloads exclude raw responses, free-form content, email/name, and unnecessary learner identity.
-  - [ ] Define AppSignal dashboard/alert follow-up for fallback/error rate, queue-to-update latency, skip/duplicate reasons, update failure, imbalance, and migration anomalies; keep environment changes outside this code plan unless separately authorized.
+  - [x] Extend project export to include every referenced Alternatives Group's canonical strategy, stable option identities/labels, and required content exactly once while preserving repeated placement-local content.
+  - [x] Update ingest to create/normalize groups before rewiring every `alternatives_id`; ignore placement strategy, default strategy-less legacy groups to `user_section_preference`, and canonicalize imported `upgrade_decision_point` groups.
+  - [x] Extend assignment, exposure, assessment, reward, disposition, and policy-update evidence with intervention, binding, attempt, threshold/score where permitted, revision snapshot, and before/after policy context. Exact attempt-time publication attribution is deferred until required; the host statement uses current deployment context.
+  - [x] Dispatch detailed reward evidence and latency telemetry only after the PostgreSQL reward transaction commits; retry evidence delivery independently without reapplying posterior mutation.
+  - [x] Add bounded telemetry for relevance, binding resolution, assignment creation/reuse/conflict/fallback, sampling mode, reward outcomes, posterior updates, queue/transaction latency, evidence dispatch, and migration anomalies.
+  - [x] Verify that logs, telemetry, xAPI, ClickHouse, and retry/outbox payloads exclude raw responses, free-form content, email/name, and unnecessary learner identity.
+  - [x] Define AppSignal dashboard/alert follow-up for fallback/error rate, queue-to-update latency, skip/duplicate reasons, update failure, imbalance, and migration anomalies; keep environment changes outside this code plan unless separately authorized.
 - Testing Tasks:
-  - [ ] Add end-to-end export/ingest tests for both strategies, repeated placements, local content, ID rewiring, strategy-less legacy groups, alias canonicalization, and ignored missing/matching/conflicting/unknown element strategies.
-  - [ ] Test evidence completeness, after-commit ordering, retry behavior, runtime-source separation, bounded telemetry cardinality, and privacy exclusions.
-  - [ ] Test that legacy revisions/publications remain byte-for-byte untouched and usable while new exports emit canonical strategy.
+  - [x] Add end-to-end export/ingest tests for both strategies, repeated placements, local content, ID rewiring, strategy-less legacy groups, alias canonicalization, and ignored missing/matching/conflicting/unknown element strategies.
+  - [x] Test evidence completeness, after-commit ordering, retry behavior, runtime-source separation, bounded telemetry cardinality, and privacy exclusions.
+  - [x] Test that legacy revisions/publications remain byte-for-byte untouched and usable while new exports emit canonical strategy.
   - Command(s): `mix test <interop, xAPI, ClickHouse adapter, telemetry, and compatibility tests>`
 - Definition of Done:
   - Interop preserves group semantics and repeated placements across round trips; operational signals and detailed evidence are complete, bounded, private, and never become runtime read dependencies.

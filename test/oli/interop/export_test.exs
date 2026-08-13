@@ -26,6 +26,45 @@ defmodule Oli.Interop.ExportTest do
   describe "export" do
     setup [:setup_project_with_survey, :setup_export]
 
+    test "exports canonical group-owned alternatives strategies", %{project: project} do
+      resource = insert(:resource)
+      insert(:project_resource, project_id: project.id, resource_id: resource.id)
+
+      revision =
+        insert(:revision,
+          resource: resource,
+          resource_type_id: Resources.ResourceType.id_for_alternatives(),
+          title: "Experiment group",
+          deleted: false,
+          content: %{
+            "strategy" => "upgrade_decision_point",
+            "options" => [%{"id" => "control", "name" => "Control"}]
+          }
+        )
+
+      publication = Oli.Publishing.project_working_publication(project.slug)
+
+      insert(:published_resource,
+        publication: publication,
+        resource: resource,
+        revision: revision
+      )
+
+      export =
+        project
+        |> Export.export()
+        |> unzip_to_memory()
+        |> Map.new()
+
+      {:ok, group_json} = Jason.decode(Map.fetch!(export, ~c"#{resource.id}.json"))
+
+      assert group_json["content"]["strategy"] == "experiment_controlled"
+
+      assert group_json["content"]["options"] == [
+               %{"id" => "control", "name" => "Control"}
+             ]
+    end
+
     test "project export preserves student surveys", %{project: project, export: export} do
       {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
 

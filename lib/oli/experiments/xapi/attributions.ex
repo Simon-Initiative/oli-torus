@@ -142,6 +142,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
       key: receipt.key,
       recorded_at: format_timestamp(receipt.recorded_at)
     })
+    |> Map.merge(detailed_evidence(request.metadata))
     |> attribution_with_scope(request.scope)
     |> reject_nil_values()
     |> normalize_attribution()
@@ -160,6 +161,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
       key: receipt.key,
       recorded_at: format_timestamp(receipt.recorded_at)
     })
+    |> Map.merge(detailed_evidence(request.metadata))
     |> attribution_with_scope(request.scope)
     |> reject_nil_values()
     |> normalize_attribution()
@@ -189,6 +191,10 @@ defmodule Oli.Experiments.XAPI.Attributions do
       policy_update_reason: map_value(update, :update_reason),
       previous_policy_state_hash: state_hash(map_value(update, :previous_state)),
       next_policy_state_hash: state_hash(map_value(update, :next_state)),
+      previous_policy_context:
+        condition_policy_context(map_value(update, :previous_state), condition.condition_code),
+      next_policy_context:
+        condition_policy_context(map_value(update, :next_state), condition.condition_code),
       key:
         map_value(update, :key) ||
           "policy_update:#{map_value(reward, :key)}",
@@ -203,6 +209,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
     %{
       assignment_id: assignment.id,
       assignment_key: assignment.assignment_key,
+      intervention_id: assignment.intervention_id,
       experiment_id: assignment.experiment_id,
       experiment_uuid: experiment_uuid(assignment),
       decision_point_id: assignment.decision_point_id,
@@ -211,7 +218,6 @@ defmodule Oli.Experiments.XAPI.Attributions do
       condition_code: condition_code(assignment),
       section_id: assignment.section_id,
       enrollment_id: assignment.enrollment_id,
-      user_id: assignment.user_id,
       assigned_by_policy: assignment.assigned_by_policy,
       algorithm: assignment.assigned_by_policy,
       policy_version: assignment.policy_version
@@ -236,7 +242,6 @@ defmodule Oli.Experiments.XAPI.Attributions do
       project_id: scope.project_id,
       publication_id: scope.publication_id,
       section_id: scope.section_id,
-      user_id: scope.user_id,
       enrollment_id: scope.enrollment_id
     })
   end
@@ -280,6 +285,37 @@ defmodule Oli.Experiments.XAPI.Attributions do
   defp decision_point_key(_assignment), do: nil
 
   defp map_value(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
+
+  @detailed_evidence_keys ~w(
+    intervention_id intervention_key assessment_binding_id assessment_page_resource_id
+    resource_attempt_id disposition reward_threshold normalized_score page_revision_id
+  )
+
+  defp detailed_evidence(metadata) when is_map(metadata) do
+    metadata
+    |> normalize_attribution()
+    |> Map.take(@detailed_evidence_keys)
+  end
+
+  defp detailed_evidence(_metadata), do: %{}
+
+  defp condition_policy_context(state, condition_code) when is_map(state) do
+    state
+    |> Map.get(condition_code)
+    |> case do
+      context when is_map(context) ->
+        context
+        |> normalize_attribution()
+        |> Map.take(
+          ~w(posterior_alpha posterior_beta assignment_count reward_success_count reward_failure_count)
+        )
+
+      _ ->
+        nil
+    end
+  end
+
+  defp condition_policy_context(_state, _condition_code), do: nil
 
   defp decimal_to_number(%Decimal{} = decimal), do: Decimal.to_float(decimal)
   defp decimal_to_number(value), do: value

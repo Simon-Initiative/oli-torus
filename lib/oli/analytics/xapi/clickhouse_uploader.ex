@@ -396,6 +396,16 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
             attribution_value(attribution, "assigned_by_policy"),
         policy_version: attribution_value(attribution, "policy_version"),
         content_revision_id: attribution_value(attribution, "content_revision_id"),
+        intervention_id: attribution_value(attribution, "intervention_id"),
+        intervention_key: attribution_value(attribution, "intervention_key"),
+        assessment_binding_id: attribution_value(attribution, "assessment_binding_id"),
+        assessment_page_resource_id:
+          attribution_value(attribution, "assessment_page_resource_id"),
+        resource_attempt_id: attribution_value(attribution, "resource_attempt_id"),
+        disposition: attribution_value(attribution, "disposition"),
+        reward_threshold: attribution_value(attribution, "reward_threshold"),
+        normalized_score: attribution_value(attribution, "normalized_score"),
+        page_revision_id: attribution_value(attribution, "page_revision_id"),
         reward_value:
           attribution_value(attribution, "reward_value") ||
             get_in(result, ["score", "raw"]),
@@ -654,6 +664,15 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       algorithm,
       policy_version,
       content_revision_id,
+      intervention_id,
+      intervention_key,
+      assessment_binding_id,
+      assessment_page_resource_id,
+      resource_attempt_id,
+      disposition,
+      reward_threshold,
+      normalized_score,
+      page_revision_id,
       reward_value,
       reward_source
     ) VALUES
@@ -683,6 +702,15 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(attribution[:algorithm]),
       escape_value(attribution[:policy_version]),
       escape_value(attribution[:content_revision_id]),
+      escape_value(attribution[:intervention_id]),
+      escape_value(attribution[:intervention_key]),
+      escape_value(attribution[:assessment_binding_id]),
+      escape_value(attribution[:assessment_page_resource_id]),
+      escape_value(attribution[:resource_attempt_id]),
+      escape_value(attribution[:disposition]),
+      escape_value(attribution[:reward_threshold]),
+      escape_value(attribution[:normalized_score]),
+      escape_value(attribution[:page_revision_id]),
       escape_value(attribution[:reward_value]),
       escape_value(attribution[:reward_source])
     ]
@@ -696,7 +724,20 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   defp escape_value(nil), do: "NULL"
-  defp escape_value(value) when is_binary(value), do: "'#{String.replace(value, "'", "\\'")}'"
+
+  defp escape_value(value) when is_binary(value) do
+    escaped =
+      value
+      |> String.replace("\\", "\\\\")
+      |> String.replace("'", "\\'")
+      |> String.replace("\0", "\\0")
+      |> String.replace("\n", "\\n")
+      |> String.replace("\r", "\\r")
+      |> String.replace("\t", "\\t")
+
+    "'#{escaped}'"
+  end
+
   defp escape_value(value) when is_number(value), do: to_string(value)
   defp escape_value(value) when is_boolean(value), do: if(value, do: "1", else: "0")
   defp escape_value(value), do: "'#{inspect(value)}'"

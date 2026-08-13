@@ -162,7 +162,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         project_id, publication_id, enrollment_id, experiment_role, attribution_type, experiment_id, experiment_uuid, decision_point_id,
         decision_point_key, condition_id, condition_code, assignment_id, assignment_key,
         algorithm, policy_version,
-        content_revision_id, reward_value, reward_source
+        content_revision_id, intervention_id, intervention_key, assessment_binding_id,
+        assessment_page_resource_id, resource_attempt_id, disposition, reward_threshold,
+        normalized_score, page_revision_id, reward_value, reward_source
     )
     SELECT
         lower(hex(SHA256(json))) AS raw_event_hash,
@@ -193,6 +195,15 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         coalesce(nullIf(JSON_VALUE(#{attribution}, '$.algorithm'), ''), nullIf(JSON_VALUE(#{attribution}, '$.assigned_by_policy'), '')) AS algorithm,
         nullIf(JSON_VALUE(#{attribution}, '$.policy_version'), '') AS policy_version,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.content_revision_id'), '')) AS content_revision_id,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.intervention_id'), '')) AS intervention_id,
+        nullIf(JSON_VALUE(#{attribution}, '$.intervention_key'), '') AS intervention_key,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.assessment_binding_id'), '')) AS assessment_binding_id,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.assessment_page_resource_id'), '')) AS assessment_page_resource_id,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.resource_attempt_id'), '')) AS resource_attempt_id,
+        nullIf(JSON_VALUE(#{attribution}, '$.disposition'), '') AS disposition,
+        toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_threshold'), '')) AS reward_threshold,
+        toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.normalized_score'), '')) AS normalized_score,
+        toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.page_revision_id'), '')) AS page_revision_id,
         coalesce(
           toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_value'), '')),
           toFloat64OrNull(#{json_value_or_null("$.result.score.raw")})

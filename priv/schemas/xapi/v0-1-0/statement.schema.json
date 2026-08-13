@@ -126,6 +126,39 @@
         "policy_version": {
           "type": "string"
         },
+        "intervention_id": {
+          "type": "integer"
+        },
+        "intervention_key": {
+          "type": "string"
+        },
+        "assessment_binding_id": {
+          "type": "integer"
+        },
+        "assessment_page_resource_id": {
+          "type": "integer"
+        },
+        "resource_attempt_id": {
+          "type": "integer"
+        },
+        "disposition": {
+          "type": "string"
+        },
+        "reward_threshold": {
+          "type": "number"
+        },
+        "normalized_score": {
+          "type": "number"
+        },
+        "page_revision_id": {
+          "type": "integer"
+        },
+        "previous_policy_context": {
+          "type": "object"
+        },
+        "next_policy_context": {
+          "type": "object"
+        },
         "algorithm_version": {
           "type": "string"
         },

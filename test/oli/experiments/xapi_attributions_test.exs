@@ -46,7 +46,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert attribution["condition_code"] == "a"
     assert attribution["assignment_key"] == "10:20:500"
     assert attribution["enrollment_id"] == 500
-    assert attribution["user_id"] == 400
+    refute Map.has_key?(attribution, "user_id")
     assert attribution["algorithm"] == "weighted_random"
     assert attribution["policy_version"] == "weighted_random"
     assert attribution["key"] == "10:20:500"
@@ -170,7 +170,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     end
   end
 
-  test "attribution payloads exclude learner names, raw responses, and full policy state" do
+  test "attribution payloads exclude learner identity, raw responses, and unbounded policy state" do
     policy_update =
       Attributions.policy_update_evidence(policy_update(), reward(),
         assignment: assignment(),
@@ -184,8 +184,17 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     refute encoded =~ "Ada"
     refute encoded =~ "Lovelace"
     refute encoded =~ "student response"
-    refute encoded =~ "posterior_alpha"
-    refute encoded =~ "posterior_beta"
+    refute encoded =~ "user_id"
+
+    assert policy_update["previous_policy_context"] == %{
+             "posterior_alpha" => 1.0,
+             "posterior_beta" => 1.0
+           }
+
+    assert policy_update["next_policy_context"] == %{
+             "posterior_alpha" => 2.0,
+             "posterior_beta" => 1.0
+           }
   end
 
   defp scope do

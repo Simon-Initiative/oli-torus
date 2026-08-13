@@ -129,6 +129,12 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
              "SHA256(concat(lower(hex(SHA256(json))), ':', JSON_VALUE(attribution, '$.key')))"
 
     assert sql =~ "AS experiment_uuid"
+    assert sql =~ "AS intervention_id"
+    assert sql =~ "AS assessment_binding_id"
+    assert sql =~ "AS resource_attempt_id"
+    assert sql =~ "AS reward_threshold"
+    assert sql =~ "AS normalized_score"
+    assert sql =~ "AS page_revision_id"
     refute sql =~ "key_hash"
     assert sql =~ "JSON_VALUE(attribution, '$.key')"
     refute sql =~ "outcome_id"

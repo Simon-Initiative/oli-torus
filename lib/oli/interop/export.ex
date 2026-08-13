@@ -3,6 +3,7 @@ defmodule Oli.Interop.Export do
 
   alias Oli.Publishing
   alias Oli.Resources.ResourceType
+  alias Oli.Resources.Alternatives, as: AlternativesStrategy
   alias Oli.Activities
   alias Oli.Authoring.MediaLibrary
   alias Oli.Authoring.MediaLibrary.ItemOptions
@@ -414,11 +415,20 @@ defmodule Oli.Interop.Export do
         title: r.title,
         tags: transform_tags(r),
         unresolvedReferences: [],
-        content: r.content,
+        content: canonical_alternatives_content(r.content),
         objectives: []
       }
       |> entry("#{r.resource_id}.json")
     end)
+  end
+
+  defp canonical_alternatives_content(content) when is_map(content) do
+    strategy = Map.get(content, "strategy", "user_section_preference")
+
+    case AlternativesStrategy.normalize_strategy(strategy) do
+      {:ok, canonical} -> Map.put(content, "strategy", canonical)
+      {:error, :unsupported_strategy} -> Map.put(content, "strategy", strategy)
+    end
   end
 
   def products(project) do

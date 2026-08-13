@@ -130,6 +130,23 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
               "condition_code" => "condition-a",
               "assignment_id" => 404,
               "assignment_key" => "101:202:505",
+              "intervention_id" => 606,
+              "intervention_key" => "7001:placement-a",
+              "assessment_binding_id" => 707,
+              "assessment_page_resource_id" => 7001,
+              "resource_attempt_id" => 808,
+              "disposition" => "accepted",
+              "reward_threshold" => 0.75,
+              "normalized_score" => 1.0,
+              "page_revision_id" => 909,
+              "previous_policy_context" => %{
+                "posterior_alpha" => 1.0,
+                "posterior_beta" => 1.0
+              },
+              "next_policy_context" => %{
+                "posterior_alpha" => 2.0,
+                "posterior_beta" => 1.0
+              },
               "key" => "rollup-key"
             }
           ]

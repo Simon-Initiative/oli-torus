@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
   import Ecto.Query
 
   alias Oli.Delivery.Experiments.RewardHandoff
+  alias Oli.Delivery.Experiments.EvidenceDispatchWorker
   alias Oli.Delivery.Experiments.RewardHandoffWorker
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Experiments.Policies.ThompsonSampling
@@ -39,6 +40,17 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       assert policy_state.reward_failure_count == 0
       assert policy_state.state["condition-a"]["posterior_alpha"] == 2.0
       assert policy_state.state["condition-a"]["posterior_beta"] == 1.0
+
+      assert_enqueued(
+        worker: EvidenceDispatchWorker,
+        args: %{
+          "accepted_reward_id" => reward.id,
+          "disposition" => "accepted",
+          "project_id" => context.experiment.project_id,
+          "publication_id" => context.publication.id,
+          "page_revision_id" => context.page_revision.id
+        }
+      )
     end
 
     test "records a failure below a binding-specific threshold and accepts threshold zero" do
@@ -151,6 +163,48 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       assert policy_state.state["condition-a"]["successes"] == 1
     end
 
+    test "dispatches committed reward evidence without mutating the posterior again" do
+      context = setup_context(score: 1.0, out_of: 1.0, threshold: "0.75")
+      parent = self()
+      handler_id = "reward-evidence-dispatch-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :experiments, :delivery_reward, :evidence_dispatch, :completed],
+        fn _, measurements, metadata, _ ->
+          send(parent, {:evidence_dispatch, measurements, metadata})
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert :ok = RewardHandoff.record_evaluated_resource_attempt(context.resource_attempt.id)
+      reward = Repo.one!(AcceptedReward)
+      state_after_reward = Repo.get!(PolicyState, context.policy_state.id).state
+
+      assert :ok =
+               perform_job(EvidenceDispatchWorker, %{
+                 "accepted_reward_id" => reward.id,
+                 "disposition" => "accepted",
+                 "project_id" => context.experiment.project_id,
+                 "publication_id" => context.publication.id,
+                 "page_revision_id" => context.page_revision.id,
+                 "previous_policy_context" => %{
+                   "posterior_alpha" => 1.0,
+                   "posterior_beta" => 1.0
+                 },
+                 "next_policy_context" => %{
+                   "posterior_alpha" => 2.0,
+                   "posterior_beta" => 1.0
+                 }
+               })
+
+      assert Repo.get!(PolicyState, context.policy_state.id).state == state_after_reward
+      assert_receive {:evidence_dispatch, %{count: 1, duration_ms: duration}, %{status: :ok}}
+      assert duration >= 0
+    end
+
     test "concurrent replay serializes to one claim and one posterior update" do
       context = setup_context(score: 1.0, out_of: 1.0)
       parent = self()
@@ -208,6 +262,7 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       assert policy_state.state == invalid_state
       assert policy_state.reward_success_count == 0
       assert policy_state.reward_failure_count == 0
+      refute_enqueued(worker: EvidenceDispatchWorker)
     end
 
     test "worker retry succeeds after a transient processing failure" do
@@ -307,6 +362,20 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
     page_revision = insert(:revision, graded: true)
+
+    publication = insert(:publication, project: project)
+
+    insert(:section_project_publication,
+      section: section,
+      project: project,
+      publication: publication
+    )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision
+    )
 
     resource_access =
       insert(:resource_access,
@@ -471,6 +540,7 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       decision_point: decision_point,
       experiment: experiment,
       page_revision: page_revision,
+      publication: publication,
       policy_state: policy_state,
       resource_access: resource_access,
       resource_attempt: resource_attempt,
@@ -482,6 +552,12 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
     user = insert(:user)
     enrollment = insert(:enrollment, section: context.section, user: user)
     page_revision = insert(:revision, graded: true)
+
+    insert(:published_resource,
+      publication: context.publication,
+      resource: page_revision.resource,
+      revision: page_revision
+    )
 
     resource_access =
       insert(:resource_access,

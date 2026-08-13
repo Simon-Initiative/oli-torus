@@ -202,6 +202,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       assert query =~ "'11111111-2222-3333-4444-555555555555'"
       assert query =~ "'condition-a'"
       assert query =~ "policy_version"
+      assert query =~ "intervention_id"
+      assert query =~ "'page-77:placement\\\\\\'a\\nline'"
+      assert query =~ "assessment_binding_id"
+      assert query =~ "resource_attempt_id"
+      assert query =~ "'accepted'"
+      assert query =~ "0.75"
+      assert query =~ "page_revision_id"
       refute query =~ sha256("reward-key")
       refute query =~ "'reward-key'"
       assert query =~ "'activity_attempt:full_credit'"
@@ -587,6 +594,15 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
               "enrollment_id" => 505,
               "algorithm" => "thompson_sampling",
               "policy_version" => "thompson_sampling:v2",
+              "intervention_id" => 707,
+              "intervention_key" => "page-77:placement\\'a\nline",
+              "assessment_binding_id" => 808,
+              "assessment_page_resource_id" => 909,
+              "resource_attempt_id" => 1001,
+              "disposition" => "accepted",
+              "reward_threshold" => 0.75,
+              "normalized_score" => 1.0,
+              "page_revision_id" => 1101,
               "key" => "reward-key",
               "reward_source" => "activity_attempt:full_credit"
             }
