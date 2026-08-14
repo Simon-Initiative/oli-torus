@@ -18,6 +18,13 @@ Use this runbook to:
 The metrics contain only bounded status tags. They do not contain user, section, experiment,
 resource, or resource-attempt identifiers.
 
+## Delivery Guarantee
+
+Scored-page evaluation and insertion of the `RewardHandoffWorker` job occur in the same PostgreSQL
+transaction. If Oban cannot persist the job, evaluation rolls back and the finalization operation can
+be retried; an evaluated attempt cannot commit without its relevant reward-handoff job. Worker
+execution remains asynchronous and idempotent after commit.
+
 ## Prerequisites
 
 - AppSignal is active and `APPSIGNAL_PUSH_API_KEY` is configured for the environment.

@@ -69,7 +69,7 @@ Web and delivery modules remain adapters:
 - `ExperimentsLive` composes experiment listing/configuration with a shared group-management component configured for `:experiment_controlled`. The shared component is extracted from the current Experiments `Decision Points` Alternatives Groups editor, whose more polished presentation and interaction model is the UX baseline.
 - `AlternativesLive` adopts that Experiments-derived component configured for `:user_section_preference`, replacing its less-polished group editor while retaining its route, Learner Choice filtering, labels, and permissions.
 - `PageDecisions` performs the relevance gate, classifies Alternatives with one content-tree traversal, derives `(page_resource_id, element_id)` for valid placements, and calls one page-level assignment API for experiment-controlled groups.
-- `RewardHandoffWorker` receives finalized resource-attempt IDs after the scoring transaction commits and delegates to `Rewards`.
+- `RewardHandoffWorker` jobs are persisted in the same transaction that evaluates a scored resource attempt and execute only after that transaction commits; enqueue failure rolls back evaluation so finalization remains retryable.
 - xAPI/ClickHouse adapters emit evidence after the PostgreSQL transaction; retryable evidence delivery does not change accepted reward state.
 
 ### 4.2 State & Data Flow
@@ -93,7 +93,7 @@ Delivery assignment flow:
 
 Reward flow:
 
-1. Final scored-page evaluation commits independently, then enqueues the resource-attempt ID.
+1. Final scored-page evaluation and insertion of the resource-attempt handoff job commit atomically; only graded attempts reaching `evaluated` run the relevance check, and enqueue failure rolls back evaluation.
 2. The worker finds assessment bindings for the scored page and same section/project, ordered by the existing attempt sequence.
 3. For each binding/enrollment, the earliest eligible attempt governs: pending blocks later attempts; the first successfully finalized attempt proceeds; later attempts and reevaluations become bounded skips.
 4. The worker resolves the assignment for the bound intervention. Missing assignment records a skip and does not create one.
@@ -258,7 +258,7 @@ Analytics storage:
 - Schema replacement could leave stale constraints or incomplete rollback behavior: verify the exact PostgreSQL and ClickHouse schema, indexes, foreign keys, and constraints after forward and rollback migrations. Do not add row-mapping logic for disposable QA experiments.
 - JSON policy state permits malformed data: centralize encode/decode validation, lock on update, fail closed, and test corrupt-state behavior.
 - Same-page element copy behavior may retain IDs: audit those entry points and add identity contract tests before binding activation is enabled. Do not regenerate the complete content tree during page duplication.
-- Page-level assessment rewards touch broader attempt lifecycle code: enqueue only after commit and keep eligibility/scoring resolution in a narrow experiment adapter.
+- Page-level assessment rewards touch broader attempt lifecycle code: persist the handoff job in the evaluation transaction and keep eligibility/scoring resolution in a narrow experiment adapter.
 - Multiple placements can create N+1 delivery work: batch binding and assignment reads for a page and enforce query-count tests.
 - Extracting the Experiments editor could accidentally broaden edits or regress its polished UX: treat the current Experiments `Decision Points` editor as the behavioral and visual baseline, extract before adapting, parameterize only strategy/labels/capabilities, and retain domain authorization, deletion safeguards, accessible reorder behavior, and immutable option identity checks on both surfaces.
 - Posterior metrics can be mistaken for allocation: label `Estimated success probability`, separate observed share, show evidence counts, and never expose next-assignment probability.

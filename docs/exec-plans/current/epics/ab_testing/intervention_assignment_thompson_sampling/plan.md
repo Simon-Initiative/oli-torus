@@ -142,7 +142,7 @@ Guardrails:
 
 - Goal: Convert the first eligible finalized scored-page attempt into exactly one condition reward without blocking submission or corrupting posterior state (FR-011 through FR-016).
 - Tasks:
-  - [x] Enqueue `RewardHandoffWorker` only after scored-page evaluation commits, passing only trusted resource-attempt identity and server scope.
+  - [x] Persist `RewardHandoffWorker` atomically in the scored-page evaluation transaction, passing only trusted resource-attempt identity and server scope; an enqueue failure rolls back evaluation for safe retry.
   - [x] Resolve relevant bindings, enrollment, normalized overall score, canonical attempt order, and the first eligible finalized attempt server-side; keep an earlier pending attempt as a blocker.
   - [x] Resolve only the persisted assignment for the bound intervention; record a bounded skip when absent and never infer or create a retroactive assignment.
   - [x] In one transaction, lock the decision-point policy row, claim the unique binding/source reward, calculate `normalized_score >= threshold`, update only the assigned condition posterior and accepted counts, and persist compact before/after context.
@@ -167,7 +167,7 @@ Guardrails:
 - Goal: Deliver consistent strategy-specific group management, full draft configuration, bounded non-draft policy reporting, and the final Alternatives placement schema (FR-004, FR-017, FR-021, FR-028 through FR-030, FR-032, FR-033).
 - Tasks:
   - [x] Extract the existing Experiments group editor into a shared LiveComponent retaining cards, option management, reorder behavior, validation, deletion safeguards, permissions, and accessible controls.
-  - [x] Configure `AlternativesLive` for `user_section_preference` with Learner Choice labels and filtering; configure `ExperimentsLive` for canonical `experiment_controlled`, rename the section to `Experiment-Controlled Alternatives`, and retain experiment listing/configuration.
+  - [x] Configure `AlternativesLive` for `user_section_preference` with Learner Choice labels and filtering; configure `ExperimentsLive` for canonical `experiment_controlled`, retain the author-facing `Decision Points` section label, and retain experiment listing/configuration.
   - [x] Make each creation surface assign strategy implicitly, remove type selectors and inline placement-content editing, and prohibit strategy/option-identity mutation.
   - [x] Implement multi-decision-point draft forms for mappings, policies, priors/weights, guardrails, interventions, scored pages, thresholds, validation errors, and lifecycle read-only states using approved design guidance.
   - [x] Implement `policy_snapshot/2` as bounded PostgreSQL reads and render non-draft Thompson metrics: estimated success probability, accepted success/failure counts, observed assignment count/share, update time, expandable alpha/beta, effective guardrail mode/progress/affected conditions, imbalance warning, and lifecycle pause/end state.

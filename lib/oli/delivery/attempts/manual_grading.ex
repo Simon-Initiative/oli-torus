@@ -501,7 +501,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   defp enqueue_reward(resource_attempt_id, section_id) do
     case Experiments.RewardHandoffWorker.maybe_enqueue(resource_attempt_id, section_id) do
       :ok -> :ok
-      {:error, reason} -> Logger.warning("Assessment reward enqueue failed: #{inspect(reason)}")
+      {:error, reason} -> Repo.rollback({:reward_handoff_enqueue_failed, reason})
     end
   end
 

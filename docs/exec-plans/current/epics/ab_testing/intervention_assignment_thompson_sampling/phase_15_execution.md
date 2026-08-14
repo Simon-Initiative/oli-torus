@@ -9,7 +9,7 @@ Phase: `15 - Simplify Authoring and Reporting UI`
 - [x] Removed point add/remove controls, point titles, point-scoped copy, and point identifiers from the details DOM contract.
 - [x] Kept assignment policy creation-only and structural configuration read-only after draft.
 - [x] Flattened Thompson reporting to one experiment condition table and one policy snapshot.
-- [x] Renamed the project group-management surface to `Experiment-Controlled Alternatives` and updated creation/configuration copy.
+- [x] Retained the author-facing `Decision Points` label for the project experiment-controlled group-management surface and kept creation/configuration copy consistent.
 
 ## Verification
 

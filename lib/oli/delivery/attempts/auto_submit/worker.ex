@@ -70,7 +70,7 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
                   :ok
 
                 {:error, reason} ->
-                  Logger.warning("Assessment reward enqueue failed: #{inspect(reason)}")
+                  Oli.Repo.rollback({:reward_handoff_enqueue_failed, reason})
               end
 
               Oli.Delivery.Snapshots.Worker.perform_now(part_attempt_guids, section_slug)

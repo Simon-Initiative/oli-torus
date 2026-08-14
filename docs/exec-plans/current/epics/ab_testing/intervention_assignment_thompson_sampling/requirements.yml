@@ -160,7 +160,7 @@ requirements:
 - title: Keep strategy-specific Alternatives management surfaces
   description: The Alternatives page must manage only Learner Choice groups, while
     the project Experiments page must retain a co-located group-management section
-    renamed Experiment-Controlled Alternatives that manages only experiment-controlled
+    labeled Decision Points that manages only experiment-controlled
     groups. Both routes and experiment listing and configuration behavior must remain,
     the surfaces must share reusable implementation where practical, and neither surface
     may mix group types or edit placement-local page content inline.

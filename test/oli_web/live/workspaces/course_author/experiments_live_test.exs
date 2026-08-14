@@ -1090,6 +1090,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "#experiment-warm_up_assignments[value='0']")
       assert has_element?(details_view, "#experiment-max_condition_share[value='1.0']")
       assert has_element?(details_view, "label[for='condition-0-weight']", "Warm-up weight")
+
+      assert has_element?(
+               details_view,
+               "#condition-0-weight-help[data-tooltip*='do not need to sum to 1'][data-tooltip*='2:1']"
+             )
+
+      assert has_element?(details_view, "#condition-0-weight[min='0.0001'][step='any']")
       refute has_element?(details_view, "#experiment-configuration pre")
 
       details_view
@@ -1231,6 +1238,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(details_view, "#condition-row-0 #condition-0-option")
       assert has_element?(details_view, "#condition-row-0 #condition-0-active")
       assert has_element?(details_view, "#condition-row-0 #condition-0-weight")
+      assert has_element?(details_view, "label[for='condition-0-weight']", "Weight")
+
+      assert has_element?(
+               details_view,
+               "#condition-0-weight-help[data-tooltip*='1 / 1 is an even split']"
+             )
+
       refute has_element?(details_view, "#experiment-policy-configuration h4", "Decision Point 1")
       refute has_element?(details_view, "#experiment-assignment-policy")
       assert has_element?(details_view, "#experiment-details-grid", "Weighted random")

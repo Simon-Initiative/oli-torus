@@ -327,12 +327,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                     </div>
                     <div>
                       <label for={"condition-#{condition_index}-weight"}>
-                        {condition_weight_label(@experiment.algorithm)}
+                        <.technical_term
+                          id={"condition-#{condition_index}-weight-help"}
+                          label={condition_weight_label(@experiment.algorithm)}
+                          help="Weights are relative and do not need to sum to 1. For example, 1 / 1 is an even split and 2 / 1 is approximately a 2:1 split."
+                        />
                       </label>
                       <input
                         id={"condition-#{condition_index}-weight"}
                         type="number"
-                        min="0"
+                        min="0.0001"
                         step="any"
                         class="form-control disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                         name={"configuration[conditions][#{condition_index}][weight]"}

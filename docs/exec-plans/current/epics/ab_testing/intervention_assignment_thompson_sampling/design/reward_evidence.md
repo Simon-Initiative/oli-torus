@@ -2,7 +2,7 @@
 
 ## Scope
 
-This slice owns scored-page eligibility, post-commit reward handoff, atomic posterior updates, idempotency, detailed evidence dispatch, and operational telemetry in Phase 5 and the evidence portion of Phase 7.
+This slice owns scored-page eligibility, transactional reward handoff persistence, atomic posterior updates, idempotency, detailed evidence dispatch, and operational telemetry in Phase 5 and the evidence portion of Phase 7.
 
 ## Authoritative Attempt Contract
 
@@ -15,9 +15,9 @@ For a binding/enrollment, inspect eligible resource attempts in canonical order.
 
 ## Handoff Boundary
 
-The current implementation enqueues activity-attempt work inside automatic activity rollup paths and has no equivalent hook when manual grading transitions a resource attempt to evaluated. Replace this with one post-commit helper called after the transaction that first persists the resource attempt as evaluated. Its trusted payload is the resource-attempt identity plus server-derived scope, never client-selected assignment, score, or condition data.
+Automatic finalization, manual grading, and auto-submit use one helper while the transaction that persists the resource attempt as evaluated is still open. The helper inserts the Oban job in that same transaction, so evaluation and handoff persistence commit or roll back together. Its trusted payload is the resource-attempt identity plus server-derived scope, never client-selected assignment, score, or condition data.
 
-Automatic finalization and manual-grading completion use the same helper. A rollback enqueues nothing; a page with multiple activities enqueues one resource-attempt job.
+All evaluation paths use the same helper. Only graded attempts reaching `evaluated` run the relevance query. A rollback enqueues nothing, an enqueue failure rolls back evaluation for safe retry, and a page with multiple activities enqueues one resource-attempt job.
 
 ## Reward Transaction
 

@@ -251,8 +251,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             impl = determine_page_impl(resource_attempt.revision.graded)
 
             case impl.finalize(context) do
-              {:ok, results} ->
-                {results, resource_attempt.id, resource_access.section_id}
+              {:ok, %FinalizationSummary{} = results} ->
+                maybe_enqueue_reward(
+                  resource_attempt.revision.graded,
+                  results.lifecycle_state,
+                  resource_attempt.id,
+                  resource_access.section_id
+                )
+
+                results
 
               {:error, error} ->
                 Repo.rollback(error)
@@ -262,29 +269,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
     case result do
       {:ok,
-       {
-         %FinalizationSummary{
-           graded: graded,
-           lifecycle_state: lifecycle_state,
-           part_attempt_guids: part_attempt_guids
-         } = finalization_summary,
-         resource_attempt_id,
-         section_id
-       }} ->
+       %FinalizationSummary{
+         graded: graded,
+         part_attempt_guids: part_attempt_guids
+       } = finalization_summary} ->
         if graded do
           Snapshots.queue_or_create_snapshot(part_attempt_guids, section_slug)
-        end
-
-        if lifecycle_state == :evaluated do
-          case Experiments.RewardHandoffWorker.maybe_enqueue(resource_attempt_id, section_id) do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Logger.warning(
-                "A/B testing reward handoff was not enqueued after page finalization: #{inspect(%{resource_attempt_id: resource_attempt_id, reason: reason})}"
-              )
-          end
         end
 
         {:ok, finalization_summary}
@@ -301,6 +291,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
       _ -> Oli.Delivery.Attempts.PageLifecycle.Ungraded
     end
   end
+
+  defp maybe_enqueue_reward(true, :evaluated, resource_attempt_id, section_id) do
+    case Experiments.RewardHandoffWorker.maybe_enqueue(resource_attempt_id, section_id) do
+      :ok -> :ok
+      {:error, reason} -> Repo.rollback({:reward_handoff_enqueue_failed, reason})
+    end
+  end
+
+  defp maybe_enqueue_reward(_graded, _lifecycle_state, _resource_attempt_id, _section_id),
+    do: :ok
 
   @doc """
   Determines whether a particular user can access the resource attempt represented by

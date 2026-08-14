@@ -484,9 +484,8 @@ Group creation remains contextual and does not present a strategy selector:
 
 - The Alternatives page lists and creates only Learner Choice groups with
   `user_section_preference`.
-- The project Experiments page retains a co-located group-management section, renamed from
-  `Decision Points` to `Experiment-Controlled Alternatives`, which lists and creates only groups
-  with canonical `experiment_controlled`.
+- The project Experiments page retains a co-located group-management section labeled
+  `Decision Points`, which lists and creates only groups with canonical `experiment_controlled`.
 
 The two surfaces should share group-management components and domain operations where practical,
 but they do not combine both group types into one author-facing list. Group strategy is immutable
@@ -508,7 +507,7 @@ Experiment configuration references existing experiment-controlled groups and ow
 bindings, condition mappings, policy configuration, and assessment bindings. It does not edit page
 content inline.
 
-The project Experiments route and its co-located Experiment-Controlled Alternatives management
+The project Experiments route and its co-located Decision Points management
 section remain. That section manages reusable group identities and options, while actual decision
 points remain the experiment bindings of groups to conditions and policies. Local alternative
 content editing stays in the standard page content editor for both group types.
