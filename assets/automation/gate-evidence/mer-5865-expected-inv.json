@@ -1371,7 +1371,7 @@
   },
   "additive_step_4": {
     "note": "Each entry names the unit that added it. Compared as a SET against discovery; unexplained removal, rename or count change = RED.",
-    "count": 239,
+    "count": 250,
     "tests": [
       {
         "file": "torus/student_delivery/adaptive-family-registry.spec.ts",
@@ -2805,6 +2805,72 @@
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 3410,
         "title": "an ack stamped before the first response licenses no second evaluation (W-ST4)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 388,
+        "title": "a presence-only expectation fails manifest validation by name (W-M5)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 426,
+        "title": "a same-node props rewrite after the freeze changes nothing (W-S5)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 419,
+        "title": "an absent delivery element refuses correlation (W-S2 fixture half)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 403,
+        "title": "correlate freezes the server-rendered triple before the walk (W-S1)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 412,
+        "title": "hollow delivery props refuse correlation (W-S3)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 468,
+        "title": "no shipped-walker, ledger or projection acceptance reference remains",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 460,
+        "title": "the LotE spec imports the strict driver and audit, not the old walker",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "line": 935,
+        "title": "an absent archive directory is a loud build failure, never a vacuous pass (W-M2)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "line": 941,
+        "title": "the raw reader shares no runtime import with the modules it corroborates (W-M7)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "line": 562,
+        "title": "a screen missing from either account is a presence diff (W-D2)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "line": 545,
+        "title": "a single ledger tuple-field swap is a reported diff (W-D4)",
         "unit": "4d witness completion"
       }
     ],

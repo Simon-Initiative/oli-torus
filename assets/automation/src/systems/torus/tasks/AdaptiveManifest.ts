@@ -194,7 +194,13 @@ function validateExpectation(raw: unknown, at: string): void {
       fail(`${at}.min_count must be a positive integer`);
     }
   }
-  if (e.predicate !== undefined) validatePredicate(e.predicate, `${at}.predicate`);
+  // §6.3's presence-only scope is EMPTY under its resolved arm (a) — every
+  // authored expectation must declare what it proves. The oracle stays total
+  // over presence-only receipts; authoring one is refused here, by name.
+  if (e.predicate === undefined) {
+    fail(`${at} is presence-only (part_path_prefix without predicate) — outside §6.3's scope`);
+  }
+  validatePredicate(e.predicate, `${at}.predicate`);
 }
 
 /**

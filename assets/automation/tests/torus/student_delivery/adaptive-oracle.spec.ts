@@ -383,6 +383,14 @@ test.describe('manifest v2 validation', () => {
       value: [],
     };
     expect(() => validateAdaptiveManifest(empty)).toThrow(/empty condition argument/);
+  });
+
+  test('a presence-only expectation fails manifest validation by name (W-M5)', () => {
+    const presenceOnly = manifest();
+    presenceOnly.screens[1].expectations = [
+      { part_path_prefix: 'q:1|stage.dropdown.', min_count: 1 },
+    ] as never;
+    expect(() => validateAdaptiveManifest(presenceOnly)).toThrow(/presence-only/);
 
     const emptyAll = manifest();
     (emptyAll.screens[1].expectations![0] as { predicate: unknown }).predicate = { all: [] };

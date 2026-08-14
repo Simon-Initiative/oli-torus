@@ -1,8 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { AdaptiveDeckPO } from '@pom/delivery/AdaptiveDeckPO';
 import { JournalSnapshot } from '@tasks/AdaptiveJournal';
 import { AdaptiveManifest } from '@tasks/AdaptiveManifest';
 import { auditRun, formatViolations } from '@tasks/AdaptiveOracle';
+import { armStrictRun } from '@tasks/AdaptiveStrictDriver';
 import { evaluateGreenCapture } from '@tasks/AdaptiveShadowProjector';
 import { planTransition } from '@tasks/AdaptiveTransitionPlanner';
 
@@ -367,5 +370,110 @@ test.describe('strict driver — in-widget readiness fails closed', () => {
     );
     const deck = new AdaptiveDeckPO(page);
     expect(await deck.widgetButtonReady('buttonwidget')).toBe(true);
+  });
+});
+
+test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => {
+  const ORIGIN = 'http://localhost/api/v1';
+  const TRIPLE = { sectionSlug: 's-live', pageSlug: 'r-live', resourceAttemptGuid: 'g-live' };
+  const deliveryHtml = (props: unknown) =>
+    `<div data-react-class="Components.Delivery" data-react-props='${JSON.stringify(props)}'></div>`;
+
+  function postFinalization(
+    core: ReturnType<typeof armStrictRun>['journal'],
+    triple: { sectionSlug: string; pageSlug: string; resourceAttemptGuid: string },
+  ) {
+    const handle = core.ingestRequest({
+      method: 'POST',
+      url: `${ORIGIN}/page_lifecycle`,
+      postData: JSON.stringify({
+        action: 'finalize',
+        section_slug: triple.sectionSlug,
+        revision_slug: triple.pageSlug,
+        attempt_guid: triple.resourceAttemptGuid,
+      }),
+    }) as number;
+    core.ingestResponse(handle, 200);
+    core.ingestResponseBody(
+      handle,
+      JSON.stringify({ result: 'success', commandResult: 'success' }),
+    );
+  }
+
+  test('correlate freezes the server-rendered triple before the walk (W-S1)', async ({ page }) => {
+    await page.setContent(deliveryHtml(TRIPLE));
+    const strict = armStrictRun(page);
+    expect(await strict.correlate()).toBe(true);
+    postFinalization(strict.journal, TRIPLE);
+    expect(strict.journal.finalizationStatus()).toEqual({ kind: 'accepted' });
+    await strict.finish('bail');
+  });
+
+  test('hollow delivery props refuse correlation (W-S3)', async ({ page }) => {
+    await page.setContent(deliveryHtml({ sectionSlug: '', pageSlug: '', resourceAttemptGuid: '' }));
+    const strict = armStrictRun(page);
+    expect(await strict.correlate()).toBe(false);
+    await strict.finish('bail');
+  });
+
+  test('an absent delivery element refuses correlation (W-S2 fixture half)', async ({ page }) => {
+    await page.setContent('<main>no delivery component here</main>');
+    const strict = armStrictRun(page);
+    expect(await strict.correlate()).toBe(false);
+    await strict.finish('bail');
+  });
+
+  test('a same-node props rewrite after the freeze changes nothing (W-S5)', async ({ page }) => {
+    await page.setContent(deliveryHtml(TRIPLE));
+    const strict = armStrictRun(page);
+    expect(await strict.correlate()).toBe(true);
+    await page.evaluate(() => {
+      document
+        .querySelector('[data-react-class="Components.Delivery"]')!
+        .setAttribute(
+          'data-react-props',
+          JSON.stringify({
+            sectionSlug: 's-evil',
+            pageSlug: 'r-evil',
+            resourceAttemptGuid: 'g-evil',
+          }),
+        );
+    });
+    // a finalization matching the MUTATED render is rejected; the retained
+    // VALUE triple still accepts its own
+    postFinalization(strict.journal, {
+      sectionSlug: 's-evil',
+      pageSlug: 'r-evil',
+      resourceAttemptGuid: 'g-evil',
+    });
+    expect(strict.journal.finalizationStatus()).toEqual({
+      kind: 'rejected',
+      reason: 'uncorrelated',
+    });
+    await strict.finish('bail');
+  });
+});
+
+test.describe('the switched spec statically binds the strict entry point (W-W10/W-W12)', () => {
+  const loteSrc = fs.readFileSync(path.resolve(__dirname, 'lote-plate-tectonics.spec.ts'), 'utf8');
+
+  test('the LotE spec imports the strict driver and audit, not the old walker', () => {
+    expect(loteSrc).toMatch(
+      /import \{[^}]*armStrictRun[\s\S]*?\} from '@tasks\/AdaptiveStrictDriver'/,
+    );
+    expect(loteSrc).toContain('driveStrictLesson');
+    expect(loteSrc).toMatch(/auditRun.*from '@tasks\/AdaptiveOracle'/);
+  });
+
+  test('no shipped-walker, ledger or projection acceptance reference remains', () => {
+    [
+      'AdaptiveHappyPathTask',
+      'AdaptiveStrictContract',
+      'completeAdaptiveHappyPath',
+      'formatLedger',
+      'evaluateGreenCapture',
+    ].forEach((banned) =>
+      expect(loteSrc.includes(banned), `banned reference: ${banned}`).toBe(false),
+    );
   });
 });

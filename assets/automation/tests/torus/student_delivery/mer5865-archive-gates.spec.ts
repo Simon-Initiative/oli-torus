@@ -932,6 +932,29 @@ test('discovers adaptive pages without being told which resource to read', () =>
   expect(findAdaptivePages(dir)).toEqual([{ resourceId: PAGE_ID, title: 'Synthetic Deck' }]);
 });
 
+test('an absent archive directory is a loud build failure, never a vacuous pass (W-M2)', () => {
+  expect(() => findAdaptivePages(path.join(os.tmpdir(), 'mer5865-no-such-archive'))).toThrow(
+    /archive directory .* does not exist/,
+  );
+});
+
+test('the raw reader shares no runtime import with the modules it corroborates (W-M7)', () => {
+  // the independent leg's whole value is that a mutated shared helper cannot
+  // cancel out — type-only imports erase at runtime and share nothing
+  const readerSrc = fs.readFileSync(
+    path.resolve(__dirname, '../../../src/systems/torus/tasks/AdaptiveArchiveReader.ts'),
+    'utf8',
+  );
+  const runtimeImports = readerSrc
+    .split('\n')
+    .filter((l) => /^import /.test(l) && !/^import type /.test(l));
+  expect(
+    runtimeImports.filter((l) =>
+      /AdaptiveManifest|AdaptivePredicateEquivalence|AdaptiveOracle/.test(l),
+    ),
+  ).toEqual([]);
+});
+
 /* ---------------------- real archive (private artifacts) ------------------- */
 
 const archiveDir = process.env.MER5865_ARCHIVE_DIR;

@@ -4,9 +4,11 @@ import {
   ShadowDump,
   buildShadowInputs,
   driverEvidenceInventory,
+  compareProjections,
   evaluateGreenCapture,
   expectedDriverEvidence,
   isDriverEvidenceViolation,
+  projectFromJournal,
   runIdentity,
   validateBailEnvelope,
   validateGreenEnvelope,
@@ -535,4 +537,37 @@ test('the bail capture is poison-stamped and names the poisoned screen', () => {
   expect(
     violations.some((v) => v.code === 'verdict-not-correct' && v.screenId === bail.poisonFired),
   ).toBe(true);
+});
+
+test.describe('the comparison itself goes red, not silent (W-D2/W-D4)', () => {
+  const load = () => JSON.parse(fs.readFileSync(greens[0], 'utf8')) as ShadowDump;
+
+  test('a single ledger tuple-field swap is a reported diff (W-D4)', () => {
+    const manifest = loadValidatedManifest();
+    const dump = load();
+    const shadow = projectFromJournal(dump, manifest);
+    const gradedIndex = manifest.scenario.findIndex(
+      (step) => manifest.screens.find((s) => s.id === step.screen_ref)?.role === 'graded',
+    );
+    const ledger = (dump.ledger ?? []).map((e, i) =>
+      i === gradedIndex ? { ...e, verdict: !e.verdict } : e,
+    );
+    const diffs = compareProjections(ledger, shadow, []);
+    expect(
+      diffs.some((d) => d.index === gradedIndex && d.field === 'verdict'),
+      JSON.stringify(diffs.slice(0, 3)),
+    ).toBe(true);
+  });
+
+  test('a screen missing from either account is a presence diff (W-D2)', () => {
+    const manifest = loadValidatedManifest();
+    const dump = load();
+    const shadow = projectFromJournal(dump, manifest);
+    const truncated = (dump.ledger ?? []).slice(0, -1);
+    const shortSide = compareProjections(truncated, shadow, []);
+    expect(shortSide.some((d) => d.field === 'presence' && d.shipped === '(missing)')).toBe(true);
+
+    const emptyAccount = compareProjections([], shadow, []);
+    expect(emptyAccount.filter((d) => d.field === 'presence').length).toBe(shadow.length);
+  });
 });
