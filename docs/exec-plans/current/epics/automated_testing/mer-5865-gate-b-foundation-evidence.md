@@ -201,6 +201,32 @@ per-field rejection (no single navigation-replacement test); W-S6 is the reviewe
 no-shared-helper check (the two correlation readers are duplicated inline `page.evaluate`
 bodies); W-W7a/W-W7d and the four §7 derivations remain reviewer-owned.
 
+## 4c. `adaptive-authoring.spec.ts:133` flake — DIAGNOSED with a trace-equipped failing run (§6.4)
+
+Reproduced 2026-08-14 on the first traced attempt (fail; a later same-day untraced attempt
+passed — the recorded retry §6.4 requires). **Measured mechanism, this occurrence:** the run
+died AFTER a fully successful authoring + publish — the failure screenshot shows the Publish
+page reading "Latest Publication: v0.2.0 … Published 7 seconds ago … no changes since the
+latest publication". The product created every screen and published them. What consumed the
+clock: `publishProject()`'s tail calls `Utils.modalDisappears()`, and the bootstrap
+`.modal-backdrop.fade.show` never left the DOM after `clickOk()` — the util's hidden-wait timed
+out, it reloaded the page (its logged "Restart page to remove modal shadow" fired), and the
+test's remaining budget died there. This refutes the "the editor does not create the screen"
+reading for this occurrence: the failure is SUITE-side (stuck bootstrap backdrop + unbounded
+budget consumption inside a 180s serial builder), not a product defect.
+
+Honest scope: the flake has at least two surface signatures — the recorded one
+(`BasicPracticePagePO.ts:399` waits 30s for `.flowchart-node` count) and this one (post-publish
+backdrop). Both live inside the same long serial builder where any stuck overlay wait starves
+whatever step the clock runs out on; the :399 signature was not itself reproduced under trace
+in this session. Also recorded: the Playwright trace artifacts for the failing attempt were
+themselves corrupted (`ENOENT … recording3.trace`) — the same traced-context corruption class
+the LotE spec header documents; the screenshot and error-context survived and carry the
+diagnosis. Suggested suite-side fix for the owner: bound `modalDisappears()`'s wait tightly and
+force-remove the backdrop the way `CurriculumPO`'s delete-modal path already does, instead of
+reloading. Owner: suite health (human-assigned); not a MER-5865 gate conjunct beyond §6.4's
+recorded retry, which this section supplies.
+
 ## 5. CONFORMANCE-MAP
 
 Committed at `gate-evidence/mer-5865-conformance-map.json`: 132 entries covering every §4

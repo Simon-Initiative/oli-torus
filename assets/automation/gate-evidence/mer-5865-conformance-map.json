@@ -5,7 +5,7 @@
     "gate": "GATE-B-FOUNDATION",
     "authored": "2026-08-14",
     "granularity": "subcase \u2014 every \u00a74 witness subcase (incl. the 60 named exit injections) maps to a discovered test, live evidence, or a named reviewer obligation; ID presence alone never satisfies an entry",
-    "replay": "ten-spec strict subset 516 passed 2026-08-14 with the private env; final stamps refreshed at the freeze revision",
+    "replay": "FREEZE REPLAY 2026-08-14: ten-spec strict subset 516/516 with the private env at the freeze revision; suite arithmetic 522 discovered = 516 subset + 4 adaptive-authoring (\u00a76.4 flake recorded with a traced diagnosis) + 2 excluded demo entries; per-entry stamps record the run that first exercised each mapping",
     "reviewer_note": "entries marked reviewer-owned are the four \u00a77 derivations plus per-entry static checks; an unexecuted reviewer conjunct is RED (\u00a75)"
   },
   "W-E0a": {
