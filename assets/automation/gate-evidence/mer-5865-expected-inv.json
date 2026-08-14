@@ -1371,7 +1371,7 @@
   },
   "additive_step_4": {
     "note": "Each entry names the unit that added it. Compared as a SET against discovery; unexplained removal, rename or count change = RED.",
-    "count": 72,
+    "count": 228,
     "tests": [
       {
         "file": "torus/student_delivery/adaptive-family-registry.spec.ts",
@@ -1804,13 +1804,967 @@
         "line": 966,
         "title": "the declared predicate is equivalent to the archive rule chain (B4-PRED)",
         "unit": "4b"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1143,
+        "title": "EVERY finalization-failure reason reaches a violation naming it",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-ACK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:538 deck.acknowledgeFeedback emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-BAD-DIRECTIVE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:452 resolved.validateDirective emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-BARRIER-TIMEOUT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:363 fail emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-CHECK-CLICK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:659 deck.submitCheck emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-CHECK-READY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:654 deck.waitForCheckEnabled emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-CLONE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:487 structuredClone emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-DETECT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:456 entry.detect emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-EVAL-TIMEOUT-ACK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:329 fail emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-EVAL-TIMEOUT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:329 fail emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-FEEDBACK-OPEN: src/systems/torus/tasks/AdaptiveStrictDriver.ts:533 deck.waitForFeedbackOpen emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-FENCE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:589 journal.issueFence emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-FIXTURE-INTERIOR: src/systems/torus/tasks/AdaptiveStrictDriver.ts:464 entry.answer emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-GATE-CAROUSEL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:421 deck.clickThroughCarousels emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-GATE-UNKNOWN: src/systems/torus/tasks/AdaptiveStrictDriver.ts:424 unknown gate emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-GATE-VIDEO: src/systems/torus/tasks/AdaptiveStrictDriver.ts:417 deck.playVideos emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-GRADED-NAV: src/systems/torus/tasks/AdaptiveStrictDriver.ts:506 deck.waitForScreenChange emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-IDENTITY-ENDED: src/systems/torus/tasks/AdaptiveStrictDriver.ts:580 deck.lessonEnded emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-IDENTITY-MISMATCH: src/systems/torus/tasks/AdaptiveStrictDriver.ts:583 identity mismatch emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-IDENTITY-READ: src/systems/torus/tasks/AdaptiveStrictDriver.ts:581 deck.readScreenIdentity emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-IDENTITY-READY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:579 deck.waitForDeckReady emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-INTERIOR-REGISTRY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:461 entry.ready emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-LESSON-END-READ: src/systems/torus/tasks/AdaptiveStrictDriver.ts:695 deck.lessonEnded emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-LESSON-END-WAIT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:501 deck.waitForLessonEnd emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-MEDIA-CAROUSEL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:410 deck.clickThroughCarousels emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-MEDIA: src/systems/torus/tasks/AdaptiveStrictDriver.ts:409 deck.playVideos emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-NO-ACTION: src/systems/torus/tasks/AdaptiveStrictDriver.ts:614 no declared action emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-NOTE-LESSON-END: src/systems/torus/tasks/AdaptiveStrictDriver.ts:695 journal.noteLessonEnd emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-NOW-QUIESCENCE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:281 now emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-OPERATIONS: src/systems/torus/tasks/AdaptiveStrictDriver.ts:600 resolveOperations emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-OPTIONS-NOW: src/systems/torus/tasks/AdaptiveStrictDriver.ts:686 options.now read emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-OPTIONS-SLEEP: src/systems/torus/tasks/AdaptiveStrictDriver.ts:685 options.sleep read emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-OPTIONS: src/systems/torus/tasks/AdaptiveStrictDriver.ts:684 options.timeouts read + spread emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-PART-INVENTORY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:439 deck.readPartInventory emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-PERMIT-ACK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:535 journal.issuePermit emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-PERMIT-CHECK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:656 journal.issuePermit emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-PERMIT-WIDGET: src/systems/torus/tasks/AdaptiveStrictDriver.ts:620 journal.issuePermit emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-PRETRY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:687 manifest.screens.map emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-QUIESCENCE-READ: src/systems/torus/tasks/AdaptiveStrictDriver.ts:283 journal.outstanding emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-READBACK-FENCE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:475 journal.issueReadbackFence emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-READBACK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:467 entry.readback emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-RECORDS-BARRIER: src/systems/torus/tasks/AdaptiveStrictDriver.ts:349 journal.records emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-RECORDS-EVAL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:309 journal.records emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-RECORDS-SWEEP: src/systems/torus/tasks/AdaptiveStrictDriver.ts:393 journal.records emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-SLEEP-POLL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:288 sleep emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-SLEEP-QUIESCENT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:285 sleep emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-STOP-NONE-PLAN: src/systems/torus/tasks/AdaptiveStrictDriver.ts:528 stop emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-STOP-NONGRADED: src/systems/torus/tasks/AdaptiveStrictDriver.ts:556 stop emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-STOP-RECHECK-KIND: src/systems/torus/tasks/AdaptiveStrictDriver.ts:563 stop emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-STOP-UNUSABLE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:322 stop emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-TRAFFIC-GRADED: src/systems/torus/tasks/AdaptiveStrictDriver.ts:672 fail emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-TRAFFIC-NAV: src/systems/torus/tasks/AdaptiveStrictDriver.ts:637 fail emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-UNDECLARED-SCREEN: src/systems/torus/tasks/AdaptiveStrictDriver.ts:578 undeclared screen emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-UNKNOWN-FAMILY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:447 resolveFamily emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-UNOWNED-PART: src/systems/torus/tasks/AdaptiveStrictDriver.ts:457 no owned part emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-WIDGET-CLICK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:628 deck.clickWidgetButton emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-WIDGET-NAV: src/systems/torus/tasks/AdaptiveStrictDriver.ts:634 deck.waitForScreenChange emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-WIDGET-READY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:615 deck.widgetButtonReady emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-WIDGET-UNCLICKABLE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:629 button not clickable emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-WIDGET-UNRENDERED: src/systems/torus/tasks/AdaptiveStrictDriver.ts:616 button never rendered emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 959,
+        "title": "W-E2-WIRE-COUNT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:284 journal.wireEventCount emits its pinned producer and no other",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1173,
+        "title": "a freeze timeout is positive evidence, not a silent bail",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1204,
+        "title": "a hand-built run record does not satisfy what an emitted one does",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1013,
+        "title": "a non-Error rejection is still typed at the boundary",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1075,
+        "title": "a stop site that also emitted a failure would double-count",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1182,
+        "title": "an open pre-completion window with its record SUPPRESSED still cannot audit clean",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1001,
+        "title": "call-edge identity is what makes a shared callee single-valued",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1060,
+        "title": "deleting the emitted failure loses the violation it carried",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 900,
+        "title": "each wrapped site pins the kind of its enclosing perform, re-read from source",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 819,
+        "title": "every inventoried site still cites the source line it claims",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 926,
+        "title": "every named witness exists, and every injected row names one",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1122,
+        "title": "every operation-failure kind produces a violation through auditRun",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 853,
+        "title": "every site pins exactly one producer \u2014 no unions, no placeholders",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1229,
+        "title": "no injection leaks into an uninjected run",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 872,
+        "title": "nothing above the outer boundary can execute caller code or a constructor",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1045,
+        "title": "the artifact rules on every driver-reachable PO method",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 951,
+        "title": "the identity amendment is recorded as proposed, not silently applied",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1217,
+        "title": "the inventory records the reviewer comparison and every round-9 disposition",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1033,
+        "title": "the production readiness primitive does NOT absorb a missing control",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1026,
+        "title": "the production waitForDeckReady absorbs its footer wait, by design",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 944,
+        "title": "the scope declares the fixture that is actually executed",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 832,
+        "title": "the site set equals the candidate set derived from the source (both directions)",
+        "unit": "4c piece 4"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-journal.spec.ts",
+        "line": 177,
+        "title": "a result list of the wrong shape is unusable, not an empty plan",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 1852,
+        "title": "a disqualifying final-step target is rejected: first (\u00a78)",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 1852,
+        "title": "a disqualifying final-step target is rejected: last (\u00a78)",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 1852,
+        "title": "a disqualifying final-step target is rejected: prev (\u00a78)",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 1852,
+        "title": "a disqualifying final-step target is rejected: q:7 (\u00a78)",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2539,
+        "title": "a genuinely bare-success response is still an informational finalize",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #10: {\"correct\":false,\"results\":[]}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #11: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #12: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #13: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #14: {\"correct\":false}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #15: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #16: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #17: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #1: {\"correct\":false,\"results\":[null]}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #2: {\"correct\":false,\"results\":[{\"params\":{\"actions\":{}}}]}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #3: {\"correct\":false,\"results\":[{\"params\":{\"actions\":[\"x\"]}}]}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #4: {\"correct\":false,\"results\":[{}]}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #5: {\"correct\":false,\"results\":[[]]}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #6: {\"correct\":false,\"results\":[{\"params\":[]}]}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #7: {\"correct\":false,\"results\":[{\"params\":{\"correct\":\"yes\",\"actions\":[]}}]",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #8: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{}]}",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2315,
+        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #9: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2409,
+        "title": "malformed LLM feedback is not a usable evaluation either (\u00a73.5)",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2373,
+        "title": "the OUTER evaluation body is validated and its duplicated verdict reconciled #1: r => r.actions = []",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2373,
+        "title": "the OUTER evaluation body is validated and its duplicated verdict reconciled #2: r => r.actions = 'nope'",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2373,
+        "title": "the OUTER evaluation body is validated and its duplicated verdict reconciled #3: r => r.actions.correct = 'no'",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2373,
+        "title": "the OUTER evaluation body is validated and its duplicated verdict reconciled #4: r => r.actions.correct = true",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2373,
+        "title": "the OUTER evaluation body is validated and its duplicated verdict reconciled #5: r => { const results = r.actions.results; results[0].params.correct = ",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 687,
+        "title": "the planner degrades, never throws: a bare string in place of an event",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 687,
+        "title": "the planner degrades, never throws: a result list carrying null",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 687,
+        "title": "the planner degrades, never throws: actions as a string",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 687,
+        "title": "the planner degrades, never throws: actions as an object",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 687,
+        "title": "the planner degrades, never throws: actions carrying null and a bare string",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 687,
+        "title": "the planner degrades, never throws: results as an object",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 687,
+        "title": "the planner degrades, never throws: results null",
+        "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #10: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"act",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #11: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"correct\":true,\"acti",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #12: {\"actions\":{\"correct\":true,\"results\":[{\"params\":{\"correct\":false,\"acti",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #13: {\"actions\":{\"correct\":false,\"results\":[]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #14: {\"actions\":{\"correct\":true,\"results\":[{\"params\":{\"correct\":true,\"actio",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #15: {\"actions\":{\"correct\":false}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #16: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"act",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #17: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"act",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #18: {\"type\":\"success\",\"actions\":{\"correct\":false,\"results\":[null]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #1: {\"actions\":{\"correct\":false,\"results\":[null]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #2: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"actions\":{}}}]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #3: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"actions\":[7]}}]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #4: {\"actions\":{\"correct\":false,\"results\":[{}]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #5: {\"actions\":{\"correct\":false,\"results\":[[]]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #6: {\"actions\":{\"correct\":false,\"results\":[{\"params\":[]}]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #7: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"correct\":\"yes\"}}]}}",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #8: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"actions\":[{\"type\":7",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 2529,
+        "title": "the wire refuses a malformed evaluation shape #9: {\"actions\":{\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"act",
+        "unit": "W-U7/W-U9 named tests (13fda67669)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 318,
+        "title": "a CAPI control that never renders fails readiness, not the answer",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 292,
+        "title": "a content screen driven to a re-check is rejected at that screen, not at the run",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 143,
+        "title": "a deferred save that lands before the readback fence times the barrier out",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 247,
+        "title": "a fault no operation named is reported as itself, on its own screen",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 269,
+        "title": "a malformed evaluation is refused by the replay path, not only on the wire",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 25,
+        "title": "a scripted lesson drives to an audit with zero violations",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 356,
+        "title": "a visible iframe without the control reads as not ready",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 129,
+        "title": "a withheld check control fails readiness before any permit is claimed",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 113,
+        "title": "a wrong-but-valid family resolution fails at the readback locus",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 97,
+        "title": "an unknown family aborts the step and claims no check permit",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 174,
+        "title": "an unsolicited evaluation is left unrecorded and the audit rejects it",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 156,
+        "title": "an unusable evaluation stops the walk on the journal record alone",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 62,
+        "title": "every recorded plan equals the planner replayed over its evaluation",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 36,
+        "title": "every stamp the run record claims is a journal issuance",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 202,
+        "title": "the check permit waits for the barrier save to COMMIT, not merely to start",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 330,
+        "title": "the driver reports an abort without ever declaring a verdict",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 228,
+        "title": "the first screen sweep covers its pre-entry evaluation",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 82,
+        "title": "the receipt restates the manifest contract, never a driver-derived one",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 364,
+        "title": "the same iframe with the control reads as ready",
+        "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 52,
+        "title": "visits cite the journal fence issued for their own screen",
+        "unit": "4c piece 3"
       }
-    ]
+    ],
+    "reconciled": {
+      "date": "2026-08-14",
+      "what": "pieces 2-4 and the W-U7/W-U9 conversion landed without updating this manifest; reconciled against full discovery (500 entries) during 4d. Attribution per adding commit via git log -S; generated identities attributed to the conversion commit."
+    }
   },
   "excluded_uncommitted": {
     "note": "Demo/tracker artifacts that NEVER reach a commit (spec HANDOFF). They appear in a local discovery run and must be classified, not silently counted.",
     "files": [
       "torus/student_delivery/mer5865-demo-oracle-contrast.spec.ts"
     ]
-  }
+  },
+  "justified_removals": [
+    {
+      "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+      "title": "every disqualifying final-step target: prev, first, last, explicit id (\u00a78)",
+      "was_in": "frozen",
+      "justification": "W-U7/W-U9 named-test conversion (13fda67669): the cardinality-bearing loop became four named tests (\"a disqualifying final-step target is rejected: prev/first/last/q:7 (\u00a78)\"), each carrying its case in its title so a deleted case is a missing test. Contract \u00a76.7 individually justified removal; the other four converted loops lived inside tests added after the frozen revision and never had artifact entries.",
+      "replacements": [
+        "a disqualifying final-step target is rejected: prev (\u00a78)",
+        "a disqualifying final-step target is rejected: first (\u00a78)",
+        "a disqualifying final-step target is rejected: last (\u00a78)",
+        "a disqualifying final-step target is rejected: q:7 (\u00a78)"
+      ]
+    }
+  ]
 }
