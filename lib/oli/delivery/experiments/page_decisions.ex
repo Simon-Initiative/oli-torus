@@ -50,6 +50,18 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
   @doc """
   Prepares delivery decisions from Alternatives placements already extracted from page content.
   """
+  def prepare_placements(
+        %Sections.Section{id: section_id, base_project_id: nil} = _section,
+        page,
+        user,
+        placements
+      )
+      when is_integer(section_id) do
+    section_id
+    |> then(&Sections.get_section_by(id: &1))
+    |> prepare_placements(page, user, placements)
+  end
+
   def prepare_placements(section, page, user, placements) when is_list(placements) do
     alternatives_resource_ids = alternatives_resource_ids(placements)
 

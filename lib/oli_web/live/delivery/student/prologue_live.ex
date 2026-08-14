@@ -26,6 +26,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
          :id,
          :slug,
          :title,
+         :institution_id,
+         :base_project_id,
          :brand,
          :lti_1p3_deployment,
          :resource_gating_index,

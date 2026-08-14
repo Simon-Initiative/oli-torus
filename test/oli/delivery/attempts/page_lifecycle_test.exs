@@ -12,7 +12,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   alias Oli.Delivery.Experiments.RewardHandoffWorker
 
   alias Oli.Experiments.Schemas.{
-    Assignment,
     AssessmentBinding,
     Condition,
     ExperimentDefinition,
@@ -243,7 +242,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
         Factory.insert(:revision,
           resource_type_id: Oli.Resources.ResourceType.id_for_alternatives(),
           content: %{
-            "strategy" => "experiment_controlled",
+            "strategy" => "upgrade_decision_point",
             "options" => [%{"id" => "control"}, %{"id" => "variant"}]
           }
         )
@@ -306,7 +305,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     end
 
     @tag isolation: "serializable"
-    test "explicit start scores and completes only the delivered alternative", %{
+    test "explicit start pins the newly assigned weighted alternative", %{
       activity_a: activity_a,
       activity_b: activity_b,
       alternatives_revision: alternatives_revision,
@@ -317,8 +316,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       Oli.Delivery.Sections.enroll(user.id, section.id, [
         Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
-
-      enrollment = Oli.Delivery.Sections.get_enrollment(section.slug, user.id)
 
       experiment =
         %ExperimentDefinition{}
@@ -345,6 +342,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
         })
         |> Repo.insert!()
 
+      %Condition{}
+      |> Condition.changeset(%{
+        experiment_id: experiment.id,
+        condition_code: "control",
+        label: "Control",
+        option_id: "control",
+        weight: 0.0,
+        position: 0
+      })
+      |> Repo.insert!()
+
       variant =
         %Condition{}
         |> Condition.changeset(%{
@@ -357,30 +365,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
         })
         |> Repo.insert!()
 
-      %Assignment{}
-      |> Assignment.changeset(%{
-        experiment_id: experiment.id,
-        condition_id: variant.id,
-        intervention_id: intervention.id,
-        section_id: section.id,
-        enrollment_id: enrollment.id,
-        user_id: user.id,
-        assigned_by_policy: "weighted_random",
-        assignment_key: "explicit-start-variant",
-        assigned_at: DateTime.utc_now(),
-        runtime_event_state: %{}
-      })
-      |> Repo.insert!()
-
       Core.track_access(revision.resource_id, section.id, user.id)
 
       effective_settings =
         Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
 
+      prologue_section = %{section | base_project_id: nil, institution_id: nil}
+
       activity_provider =
         Oli.Delivery.Experiments.ActivityProvider.for_page(
           &Oli.Delivery.ActivityProvider.provide/6,
-          section,
+          prologue_section,
           revision,
           user
         )
@@ -397,6 +392,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
 
       refute Map.has_key?(state.attempt_hierarchy, activity_a.revision.resource_id)
       assert Map.has_key?(state.attempt_hierarchy, activity_b.revision.resource_id)
+
+      assert [placement] = state.resource_attempt.content["model"]
+      assert [%{"value" => "variant"}] = placement["children"]
 
       assert state.resource_attempt.experiment_decisions["placement"].condition_code == "variant"
 
