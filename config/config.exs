@@ -269,7 +269,8 @@ config :oli, Oban,
     mailer: 10,
     certificate_pdf: 3,
     certificate_mailer: 3,
-    certificate_eligibility: 10
+    certificate_eligibility: 10,
+    automation_teardown: 1
   ]
 
 config :ex_money,

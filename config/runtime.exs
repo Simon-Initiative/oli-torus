@@ -741,7 +741,9 @@ if runtime_env == :prod do
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),
       mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10")),
       certificate_eligibility:
-        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10")),
+      automation_teardown:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_AUTOMATION_TEARDOWN", "1"))
     ]
 
   config :oli, Oli.Vault,
