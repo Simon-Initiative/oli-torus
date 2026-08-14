@@ -204,6 +204,11 @@ export class AdaptiveJournalCore {
     this.correlation = { ...correlation };
   }
 
+  /** The frozen triple, as a copy — for the fixture's setup-response anchor (B4-C4A). */
+  runCorrelation(): RunCorrelation | null {
+    return this.correlation === null ? null : { ...this.correlation };
+  }
+
   /** Entry stamp for a screen visit, issued from the journal's own seq domain. */
   issueFence(screenId: string): FenceStamp {
     if (this.journalState !== 'armed') {

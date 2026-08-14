@@ -207,6 +207,15 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
       if (!(await strict.correlate())) {
         throw new Error('strict run correlation unavailable before the walk (MER-5865)');
       }
+      // the section component is cross-anchored to the SETUP RESPONSE, the one
+      // identity leg the rendered page cannot supply about itself (B4-C4A)
+      const frozen = strict.journal.runCorrelation();
+      if (frozen?.sectionSlug !== seededCourse.section.slug) {
+        throw new Error(
+          `correlation section "${String(frozen?.sectionSlug)}" does not match the setup ` +
+            `response "${seededCourse.section.slug}" (B4-C4A anchor)`,
+        );
+      }
       if (shadow) {
         const correlated = await shadow.correlate();
         console.log(`[MER-5865 shadow] correlated=${correlated}`);
