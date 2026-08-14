@@ -165,7 +165,7 @@ defmodule Oli.Experiments.ConfigurationTest do
     assert {:error, %ExperimentError{}} = ActivationValidator.validate(malformed)
   end
 
-  test "prevents scope changes after assignments while allowing string-valued no-op updates" do
+  test "allows valid scope changes while the experiment remains a draft" do
     scope = project_scope()
     group = alternatives_revision(scope.project_id, "Assigned Scope")
     page = page_revision(scope.project_id, "Assigned Scope Page", false)
@@ -175,27 +175,6 @@ defmodule Oli.Experiments.ConfigurationTest do
              |> graph_request([point(group, page, "assigned-scope")])
              |> Map.put(:assignment_scope, :intervention)
              |> Experiments.create_experiment()
-
-    assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)
-    [condition | _] = view.conditions
-    [intervention] = view.interventions
-    section = insert(:section, base_project: Repo.get!(Project, scope.project_id))
-    user = insert(:user)
-    enrollment = insert(:enrollment, section: section, user: user)
-
-    %Oli.Experiments.Schemas.Assignment{}
-    |> Oli.Experiments.Schemas.Assignment.changeset(%{
-      experiment_id: definition.id,
-      condition_id: condition.id,
-      intervention_id: intervention.id,
-      section_id: section.id,
-      enrollment_id: enrollment.id,
-      user_id: user.id,
-      assigned_by_policy: "weighted_random",
-      assignment_key: "assigned-scope",
-      assigned_at: DateTime.utc_now() |> DateTime.truncate(:second)
-    })
-    |> Repo.insert!()
 
     assert {:error,
             %ExperimentError{
@@ -218,10 +197,7 @@ defmodule Oli.Experiments.ConfigurationTest do
                }
              )
 
-    assert {:error,
-            %ExperimentError{
-              message: "assignment scope cannot change after learner assignments exist"
-            }} =
+    assert {:ok, %{assignment_scope: :section_enrollment}} =
              Experiments.update_experiment(
                definition.id,
                %Oli.Experiments.UpdateExperimentRequest{

@@ -31,7 +31,7 @@ Assignments and exposures become explicitly separate identities. Assignment evid
 - Assumptions:
   - Enrollment IDs are section-specific, but `section_id` remains part of canonical identity and evidence for explicit scoping and auditability.
   - Experiment condition and option mappings are global to the experiment, so one assigned condition is valid at every compatible intervention.
-  - Existing context update behavior already limits structural experiment edits to draft; this design selects the stricter draft-only boundary for `assignment_scope` and additionally rejects a change if assignments exist.
+  - Existing context update behavior already limits structural experiment edits to draft; `assignment_scope` uses that lifecycle boundary and requires no separate assignment-existence query because runtime assignments can be created only after activation.
   - Pausing, completing, or archiving preserves assignments. An inactive experiment does not create or return assignments through learner delivery.
   - Existing experiment rows receive `intervention` through a database default; no assignment rows are rewritten or consolidated.
   - No feature flag is introduced for this work item.
@@ -74,7 +74,7 @@ Authoring flow:
 1. A new weighted-random experiment form defaults `assignment_scope` to `section_enrollment`; Thompson Sampling resolves to `intervention`.
 2. Weighted-random authors may select `section_enrollment`; Thompson Sampling does not offer an editable broader-scope choice.
 3. Create/update normalization converts accepted string input to the enum and rejects unknown values.
-4. Context validation checks the algorithm/scope matrix. Update additionally requires draft state and no existing assignments when changing the value.
+4. Context validation checks the algorithm/scope matrix. Updates require draft state, which is revalidated under the experiment lock before persistence.
 5. Activation revalidates the matrix under the existing experiment transaction/lock so an invalid persisted combination cannot become active.
 
 Single-placement delivery flow:
@@ -118,7 +118,7 @@ Exposure flow:
 - Intervention continues to own logical placement identity and remains required for every applicable placement, even when it does not own the canonical assignment.
 - Exposure owns the observation that a canonical assignment was rendered at one particular intervention and delivered revision.
 - Policy state owns aggregate assignment counts. A section-and-enrollment assignment contributes once regardless of how many interventions expose it.
-- Assignment scope is structural and editable only in draft before assignments exist. Activation, pause, completion, and archival never rewrite it.
+- Assignment scope is structural and editable only in draft. Activation, pause, completion, and archival never rewrite it.
 - Existing experiment and assignment rows remain intervention-scoped. Publication or page revision changes do not change either assignment identity.
 
 ### 4.4 Alternatives Considered
@@ -233,7 +233,7 @@ ClickHouse changes follow the existing ordinary migration mechanism and preserve
 - Context/configuration tests:
   - Create weighted-random experiments with default and explicit scopes, update draft scope, reject unauthorized updates, reject unknown values, and display the public DTO for AC-001.
   - Reject Thompson Sampling plus section-and-enrollment on create, update, activation, and malformed runtime state for AC-002.
-  - Reject scope changes outside draft and whenever assignments exist for AC-008.
+  - Reject scope changes outside draft for AC-008.
 - Runtime assignment tests:
   - Create one canonical null-intervention assignment and reuse it across two placements for AC-003 and AC-004.
   - Preserve independent intervention rows and possible different conditions for AC-005.

@@ -40,6 +40,7 @@ defmodule Oli.Experiments do
     PolicyState
   }
 
+  alias Oli.Experiments.AssignmentIdentity
   alias Oli.Experiments.Policies.{ThompsonSampling, WeightedRandom}
   alias Oli.Experiments.XAPI.Attributions
 
@@ -96,7 +97,6 @@ defmodule Oli.Experiments do
              request.algorithm || schema.algorithm,
              resolve_update_assignment_scope(request.assignment_scope, schema.assignment_scope)
            ),
-         :ok <- validate_assignment_scope_update(schema, request.assignment_scope),
          :ok <-
            validate_authoring_algorithm(
              request.algorithm || schema.algorithm,
@@ -697,7 +697,7 @@ defmodule Oli.Experiments do
       require_delivery: &require_delivery_scope/1,
       require_placement: &require_assignment_placement/1,
       resolve_revision: &resolve_delivery_revision/2,
-      existing_assignment: &existing_assignment_decision/2,
+      existing_assignment: &existing_assignment_decision/3,
       common_scope: &common_page_assignment_scope/1,
       validate_publication: &validate_publication/1,
       batch_assign: &batch_assign_page_conditions/2,
@@ -1184,8 +1184,13 @@ defmodule Oli.Experiments do
         &{&1.intervention.content_element_id, &1.experiment.alternatives_resource_id}
       )
 
-    {decisions, _counts, events} =
-      Enum.reduce(requests, {%{}, counts, []}, fn request, {decisions, current_counts, events} ->
+    # The batch rows are a snapshot taken before any assignment is inserted. Carry assignments
+    # created earlier in this reducer so later placements with the same identity can reuse them
+    # without selecting again or waiting for a uniqueness conflict.
+    {decisions, _counts, events, _assignments_by_identity} =
+      Enum.reduce(requests, {%{}, counts, [], %{}}, fn request,
+                                                       {decisions, current_counts, events,
+                                                        assignments_by_identity} ->
         matching_rows =
           Map.get(
             rows_by_placement,
@@ -1193,17 +1198,23 @@ defmodule Oli.Experiments do
             []
           )
 
-        case batch_assignment_decision(matching_rows, request, scope, current_counts) do
-          {:ok, decision, next_counts, event} ->
+        case batch_assignment_decision(
+               matching_rows,
+               request,
+               scope,
+               current_counts,
+               assignments_by_identity
+             ) do
+          {:ok, decision, next_counts, event, next_assignments_by_identity} ->
             {Map.put(decisions, request.content_element_id, decision), next_counts,
-             [event | events]}
+             [event | events], next_assignments_by_identity}
 
           {:fallback, reason} ->
             emit_batch_fallback(reason, matching_rows)
 
             {Map.put(decisions, request.content_element_id, %AssignmentDecision{
                status: :no_experiment
-             }), current_counts, events}
+             }), current_counts, events, assignments_by_identity}
 
           {:error, %ExperimentError{} = error} ->
             Repo.rollback(error)
@@ -1224,10 +1235,26 @@ defmodule Oli.Experiments do
       on:
         policy_state.experiment_id == experiment.id and
           policy_state.algorithm == experiment.algorithm,
-      left_join: assignment in Assignment,
+      # Keep the two identity shapes in separate joins so each predicate matches its partial
+      # sticky index. The selected row is collapsed to one `assignment` value after the query.
+      left_join: intervention_assignment in Assignment,
       on:
-        assignment.intervention_id == intervention.id and
-          assignment.enrollment_id == ^scope.enrollment_id,
+        experiment.assignment_scope == :intervention and
+          intervention_assignment.assignment_scope == :intervention and
+          intervention_assignment.experiment_id == experiment.id and
+          intervention_assignment.intervention_id == intervention.id and
+          intervention_assignment.section_id == ^scope.section_id and
+          intervention_assignment.enrollment_id == ^scope.enrollment_id and
+          intervention_assignment.user_id == ^scope.user_id,
+      left_join: section_enrollment_assignment in Assignment,
+      on:
+        experiment.assignment_scope == :section_enrollment and
+          section_enrollment_assignment.assignment_scope == :section_enrollment and
+          section_enrollment_assignment.experiment_id == experiment.id and
+          section_enrollment_assignment.section_id == ^scope.section_id and
+          section_enrollment_assignment.enrollment_id == ^scope.enrollment_id and
+          section_enrollment_assignment.user_id == ^scope.user_id and
+          is_nil(section_enrollment_assignment.intervention_id),
       where:
         intervention.page_resource_id == ^page_resource_id and
           intervention.content_element_id in ^content_element_ids and
@@ -1240,10 +1267,18 @@ defmodule Oli.Experiments do
         experiment: experiment,
         condition: condition,
         policy_state: policy_state,
-        assignment: assignment
+        intervention_assignment: intervention_assignment,
+        section_enrollment_assignment: section_enrollment_assignment
       }
     )
     |> Repo.all()
+    |> Enum.map(fn row ->
+      Map.put(
+        row,
+        :assignment,
+        row.intervention_assignment || row.section_enrollment_assignment
+      )
+    end)
   end
 
   defp ensure_batch_policy_states(rows) do
@@ -1291,58 +1326,81 @@ defmodule Oli.Experiments do
     |> Map.new()
   end
 
-  defp batch_assignment_decision([], _request, _scope, _counts),
+  defp batch_assignment_decision([], _request, _scope, _counts, _assignments_by_identity),
     do: {:fallback, :no_experiment}
 
-  defp batch_assignment_decision(rows, request, scope, counts) do
+  defp batch_assignment_decision(rows, request, scope, counts, assignments_by_identity) do
     first = hd(rows)
 
-    cond do
-      Enum.any?(rows, &(&1.experiment.id != first.experiment.id)) ->
-        {:fallback, :ambiguous_match}
+    with :ok <- validate_runtime_assignment_scope(first.experiment),
+         {:ok, identity} <- assignment_identity(first.experiment, first.intervention, scope) do
+      # Prefer an assignment created earlier in this transaction; the original query rows cannot
+      # contain it. Otherwise use the assignment that existed when the batch snapshot was loaded.
+      existing =
+        Map.get(assignments_by_identity, identity.map_key) ||
+          Enum.find_value(rows, & &1.assignment)
 
-      existing = Enum.find_value(rows, & &1.assignment) ->
-        condition = Enum.find(rows, &(&1.condition.id == existing.condition_id)).condition
-        decision = to_assignment_decision(existing, condition, true, condition.option_id)
-        event = batch_assignment_event(decision, request, existing, first, nil, true)
-        {:ok, decision, counts, event}
+      cond do
+        Enum.any?(rows, &(&1.experiment.id != first.experiment.id)) ->
+          {:fallback, :ambiguous_match}
 
-      true ->
-        conditions = Enum.map(rows, & &1.condition)
+        existing ->
+          conditions = Enum.map(rows, & &1.condition)
 
-        with :ok <- validate_batch_options(conditions, request.available_condition_codes),
-             {:ok, selection} <-
-               select_batch_condition(first, conditions, request, scope, counts),
-             {:ok, decision, assignment, inserted?} <-
-               insert_batch_assignment(first, selection, request, scope) do
-          next_counts =
-            case inserted? do
-              true ->
-                increment_batch_assignment_count(first)
+          with :ok <- validate_batch_options(conditions, request.available_condition_codes) do
+            case Enum.find(conditions, &(&1.id == existing.condition_id)) do
+              %Condition{} = condition ->
+                decision = to_assignment_decision(existing, condition, true, condition.option_id)
+                event = batch_assignment_event(decision, request, existing, first, nil, true)
 
-                Map.update(
-                  counts,
-                  {first.experiment.id, selection.condition.id},
-                  1,
-                  &(&1 + 1)
+                {:ok, decision, counts, event,
+                 Map.put(assignments_by_identity, identity.map_key, existing)}
+
+              nil ->
+                invalid_condition(
+                  "sticky assignment condition is unavailable at this intervention"
                 )
-
-              false ->
-                counts
             end
+          end
 
-          event =
-            batch_assignment_event(
-              decision,
-              request,
-              assignment,
-              first,
-              selection,
-              not inserted?
-            )
+        true ->
+          conditions = Enum.map(rows, & &1.condition)
 
-          {:ok, decision, next_counts, event}
-        end
+          with :ok <- validate_batch_options(conditions, request.available_condition_codes),
+               {:ok, selection} <-
+                 select_batch_condition(first, conditions, identity, counts),
+               {:ok, decision, assignment, inserted?} <-
+                 insert_batch_assignment(first, selection, identity, scope, conditions) do
+            next_counts =
+              case inserted? do
+                true ->
+                  increment_batch_assignment_count(first)
+
+                  Map.update(
+                    counts,
+                    {first.experiment.id, selection.condition.id},
+                    1,
+                    &(&1 + 1)
+                  )
+
+                false ->
+                  counts
+              end
+
+            event =
+              batch_assignment_event(
+                decision,
+                request,
+                assignment,
+                first,
+                selection,
+                not inserted?
+              )
+
+            {:ok, decision, next_counts, event,
+             Map.put(assignments_by_identity, identity.map_key, assignment)}
+          end
+      end
     end
   end
 
@@ -1359,7 +1417,7 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp select_batch_condition(first, conditions, _request, scope, counts) do
+  defp select_batch_condition(first, conditions, identity, counts) do
     experiment_counts =
       counts
       |> Enum.reduce(%{}, fn
@@ -1381,12 +1439,7 @@ defmodule Oli.Experiments do
 
     context = %{
       conditions: policy_conditions,
-      assignment_key:
-        assignment_key(
-          first.experiment.id,
-          first.intervention.id,
-          scope.enrollment_id
-        )
+      assignment_key: identity.assignment_key
     }
 
     case policy_module.assign(
@@ -1410,22 +1463,18 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp insert_batch_assignment(first, selection, _request, scope) do
+  defp insert_batch_assignment(first, selection, identity, scope, conditions) do
     attrs = %{
       experiment_id: first.experiment.id,
       condition_id: selection.condition.id,
-      intervention_id: first.intervention.id,
+      intervention_id: identity.intervention_id,
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,
       assigned_by_policy: Atom.to_string(first.experiment.algorithm),
       policy_version: selection.policy_assignment.policy_version,
-      assignment_key:
-        assignment_key(
-          first.experiment.id,
-          first.intervention.id,
-          scope.enrollment_id
-        ),
+      assignment_scope: identity.scope,
+      assignment_key: identity.assignment_key,
       assigned_at: now()
     }
 
@@ -1442,14 +1491,17 @@ defmodule Oli.Experiments do
       {:error, %Ecto.Changeset{} = changeset} ->
         case conflict?(changeset) do
           true ->
-            assignment =
-              Repo.get_by!(Assignment,
-                intervention_id: first.intervention.id,
-                enrollment_id: scope.enrollment_id
-              )
+            assignment = find_assignment!(identity)
 
-            condition = Repo.get!(Condition, assignment.condition_id)
-            {:ok, to_assignment_decision(assignment, condition, true), assignment, false}
+            case Enum.find(conditions, &(&1.id == assignment.condition_id)) do
+              %Condition{} = condition ->
+                {:ok, to_assignment_decision(assignment, condition, true), assignment, false}
+
+              nil ->
+                invalid_condition(
+                  "sticky assignment condition is unavailable at this intervention"
+                )
+            end
 
           false ->
             normalize_result({:error, changeset})
@@ -1480,12 +1532,20 @@ defmodule Oli.Experiments do
     if event.reused? do
       :telemetry.execute([:oli, :experiments, :assignment, :reuse], %{count: 1}, %{
         experiment_id: event.assignment.experiment_id,
+        assignment_scope: event.assignment.assignment_scope,
         algorithm: event.assignment.assigned_by_policy,
         algorithm_version: event.assignment.policy_version,
         selected_condition_id: event.assignment.condition_id,
         selected_condition_code: event.decision.condition_code,
         guardrail_action: :sticky_reuse
       })
+
+      if event.selection do
+        :telemetry.execute([:oli, :experiments, :assignment, :conflict], %{count: 1}, %{
+          experiment_id: event.assignment.experiment_id,
+          assignment_scope: event.assignment.assignment_scope
+        })
+      end
     else
       selection = event.selection
 
@@ -1505,12 +1565,8 @@ defmodule Oli.Experiments do
   end
 
   defp emit_batch_fallback(reason, rows) do
-    first = List.first(rows)
-
-    :telemetry.execute([:oli, :experiments, :assignment, :fallback], %{count: 1}, %{
-      reason: reason,
-      experiment_id: first && first.experiment.id
-    })
+    experiment = rows |> List.first() |> then(&(&1 && &1.experiment))
+    emit_assignment_fallback(reason, experiment)
   end
 
   defp do_assign_condition_for_current_project(request, scope) do
@@ -1536,11 +1592,7 @@ defmodule Oli.Experiments do
     do: invalid_request("assignment placement identity is required")
 
   defp nonparticipating_assignment_fallback(reason) do
-    :telemetry.execute(
-      [:oli, :experiments, :assignment, :fallback],
-      %{count: 1},
-      %{reason: reason}
-    )
+    emit_assignment_fallback(reason)
 
     {:ok, %AssignmentDecision{status: :no_experiment}}
   end
@@ -1640,11 +1692,7 @@ defmodule Oli.Experiments do
   end
 
   defp no_experiment_match do
-    :telemetry.execute(
-      [:oli, :experiments, :assignment, :fallback],
-      %{count: 1},
-      %{reason: :no_experiment}
-    )
+    emit_assignment_fallback(:no_experiment)
 
     {:ok, %{status: :no_experiment}}
   end
@@ -1708,15 +1756,14 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp select_condition(_experiment, _conditions, [], _scope, _intervention),
+  defp select_condition(_experiment, _conditions, [], _identity),
     do: invalid_condition("no condition codes supplied")
 
   defp select_condition(
          experiment,
          active_conditions,
          available_condition_codes,
-         scope,
-         intervention
+         identity
        ) do
     conditions =
       Enum.filter(active_conditions, fn condition ->
@@ -1725,14 +1772,7 @@ defmodule Oli.Experiments do
 
     case conditions do
       [] ->
-        :telemetry.execute(
-          [:oli, :experiments, :assignment, :fallback],
-          %{count: 1},
-          %{
-            reason: :invalid_condition,
-            experiment_id: experiment.id
-          }
-        )
+        emit_assignment_fallback(:invalid_condition, experiment)
 
         invalid_condition("no active experiment condition matches the available condition codes")
 
@@ -1749,12 +1789,7 @@ defmodule Oli.Experiments do
 
         policy_context = %{
           conditions: conditions,
-          assignment_key:
-            assignment_key(
-              experiment.id,
-              intervention && intervention.id,
-              scope.enrollment_id
-            )
+          assignment_key: identity.assignment_key
         }
 
         policy_module
@@ -1786,6 +1821,14 @@ defmodule Oli.Experiments do
             invalid_condition("policy could not assign a condition", %{reason: reason})
         end
     end
+  end
+
+  defp emit_assignment_fallback(reason, experiment \\ nil) do
+    :telemetry.execute([:oli, :experiments, :assignment, :fallback], %{count: 1}, %{
+      reason: reason,
+      experiment_id: experiment && experiment.id,
+      assignment_scope: experiment && experiment.assignment_scope
+    })
   end
 
   defp assignment_policy_for(
@@ -1917,6 +1960,7 @@ defmodule Oli.Experiments do
        ) do
     :telemetry.execute([:oli, :experiments, :assignment, :guardrail], %{count: 1}, %{
       experiment_id: experiment.id,
+      assignment_scope: experiment.assignment_scope,
       algorithm: experiment.algorithm,
       algorithm_version: policy_assignment.policy_version,
       selected_condition_id: condition && condition.id,
@@ -1941,53 +1985,48 @@ defmodule Oli.Experiments do
       Map.get(assignment_counts, condition.id, 0) / total > guardrails["imbalance_threshold"]
   end
 
-  defp existing_assignment_decision(request, scope) do
-    query =
-      from assignment in Assignment,
-        join: experiment in ExperimentDefinitionSchema,
-        as: :experiment,
-        on: experiment.id == assignment.experiment_id,
-        join: condition in Condition,
-        on: condition.id == assignment.condition_id,
-        where:
-          experiment.project_id == ^scope.project_id and
-            exists(participating_section_query(scope.section_id)) and
-            assignment.section_id == ^scope.section_id and
-            assignment.enrollment_id == ^scope.enrollment_id and
-            assignment.user_id == ^scope.user_id and
-            experiment.alternatives_resource_id == ^request.alternatives_resource_id and
-            (condition.option_id in ^request.available_condition_codes or
-               condition.condition_code in ^request.available_condition_codes),
-        order_by: [desc: assignment.id],
-        limit: 1,
-        select: {assignment, condition, condition.option_id}
+  defp existing_assignment_decision(request, scope, revision) do
+    with {:ok, match} <- active_experiment_match(request, scope, revision) do
+      case match do
+        %{status: :no_experiment} ->
+          {:ok, %AssignmentDecision{status: :no_experiment}}
 
-    query = maybe_filter_assignment_intervention(query, request)
+        %{experiment: experiment, intervention: intervention} ->
+          with :ok <- validate_runtime_assignment_scope(experiment),
+               {:ok, identity} <- assignment_identity(experiment, intervention, scope) do
+            case find_assignment(identity) do
+              %Assignment{} = assignment ->
+                case Enum.find(match.conditions, &(&1.id == assignment.condition_id)) do
+                  %Condition{} = condition ->
+                    case (condition.option_id || condition.condition_code) in request.available_condition_codes do
+                      true ->
+                        {:ok,
+                         to_assignment_decision(
+                           assignment,
+                           condition,
+                           true,
+                           condition.option_id
+                         )}
 
-    case Repo.one(query) do
-      {%Assignment{} = assignment, %Condition{} = condition, option_id} ->
-        {:ok, to_assignment_decision(assignment, condition, true, option_id)}
+                      false ->
+                        invalid_condition(
+                          "sticky assignment condition is unavailable at this intervention"
+                        )
+                    end
 
-      nil ->
-        {:ok, %AssignmentDecision{status: :no_experiment}}
+                  _ ->
+                    invalid_condition(
+                      "sticky assignment condition is unavailable at this intervention"
+                    )
+                end
+
+              nil ->
+                {:ok, %AssignmentDecision{status: :no_experiment}}
+            end
+          end
+      end
     end
   end
-
-  defp maybe_filter_assignment_intervention(
-         query,
-         %{page_resource_id: page_resource_id, content_element_id: content_element_id}
-       )
-       when is_integer(page_resource_id) and is_binary(content_element_id) do
-    from [assignment, _experiment, _condition] in query,
-      join: intervention in Intervention,
-      on: intervention.id == assignment.intervention_id,
-      where:
-        intervention.page_resource_id == ^page_resource_id and
-          intervention.content_element_id == ^content_element_id
-  end
-
-  defp maybe_filter_assignment_intervention(query, _request),
-    do: from(assignment in query, where: false)
 
   defp assign_or_reuse(%{status: :no_experiment}, _scope, _request),
     do: {:ok, %AssignmentDecision{status: :no_experiment}}
@@ -1995,64 +2034,114 @@ defmodule Oli.Experiments do
   defp assign_or_reuse(match, scope, request) do
     Repo.query!("SELECT pg_advisory_xact_lock($1)", [match.experiment.id])
 
-    case find_assignment(match, scope.enrollment_id) do
-      %Assignment{} = assignment ->
-        condition = Repo.get!(Condition, assignment.condition_id)
-        decision = to_assignment_decision(assignment, condition, true)
+    with :ok <- validate_runtime_assignment_scope(match.experiment),
+         {:ok, identity} <-
+           assignment_identity(match.experiment, Map.get(match, :intervention), scope) do
+      case find_assignment(identity) do
+        %Assignment{} = assignment ->
+          case Enum.find(match.conditions, &(&1.id == assignment.condition_id)) do
+            %Condition{} = condition ->
+              case (condition.option_id || condition.condition_code) in match.available_condition_codes do
+                true ->
+                  decision = to_assignment_decision(assignment, condition, true)
 
-        :telemetry.execute([:oli, :experiments, :assignment, :reuse], %{count: 1}, %{
-          experiment_id: match.experiment.id,
-          algorithm: match.experiment.algorithm,
-          algorithm_version: assignment.policy_version,
-          selected_condition_id: assignment.condition_id,
-          selected_condition_code: condition.condition_code,
-          guardrail_action: :sticky_reuse
-        })
+                  :telemetry.execute([:oli, :experiments, :assignment, :reuse], %{count: 1}, %{
+                    experiment_id: match.experiment.id,
+                    assignment_scope: identity.scope,
+                    algorithm: match.experiment.algorithm,
+                    algorithm_version: assignment.policy_version,
+                    selected_condition_id: assignment.condition_id,
+                    selected_condition_code: condition.condition_code,
+                    guardrail_action: :sticky_reuse
+                  })
 
-        Telemetry.emit(:assignment_decided, {decision, request}, assignment: assignment)
-        {:ok, decision}
+                  Telemetry.emit(:assignment_decided, {decision, request}, assignment: assignment)
+                  {:ok, decision}
 
-      nil ->
-        with {:ok, selection} <-
-               select_condition(
-                 match.experiment,
-                 match.conditions,
-                 match.available_condition_codes,
-                 scope,
-                 Map.get(match, :intervention)
-               ) do
-          create_assignment(Map.merge(match, selection), scope, request)
-        end
+                false ->
+                  invalid_condition(
+                    "sticky assignment condition is unavailable at this intervention"
+                  )
+              end
+
+            _ ->
+              invalid_condition("sticky assignment condition is unavailable at this intervention")
+          end
+
+        nil ->
+          with {:ok, selection} <-
+                 select_condition(
+                   match.experiment,
+                   match.conditions,
+                   match.available_condition_codes,
+                   identity
+                 ) do
+            create_assignment(Map.merge(match, selection), identity, scope, request)
+          end
+      end
     end
   end
 
-  defp find_assignment(%{intervention: %Intervention{id: intervention_id}}, enrollment_id) do
-    Repo.one(
-      from assignment in Assignment,
-        where:
-          assignment.intervention_id == ^intervention_id and
-            assignment.enrollment_id == ^enrollment_id
+  defp validate_runtime_assignment_scope(
+         %ExperimentDefinitionSchema{
+           algorithm: algorithm,
+           assignment_scope: scope
+         } = experiment
+       ) do
+    case AssignmentIdentity.validate_scope(experiment) do
+      :ok ->
+        :ok
+
+      {:error, %ExperimentError{}} = error ->
+        :telemetry.execute(
+          [:oli, :experiments, :assignment, :invalid_configuration],
+          %{count: 1},
+          %{algorithm: algorithm, assignment_scope: scope}
+        )
+
+        error
+    end
+  end
+
+  defp assignment_identity(experiment, intervention, scope) do
+    # Keep persistence lookup, deterministic policy input, and transaction-local reuse derived
+    # from the same identity. Intervention assignments include the placement; canonical
+    # section/enrollment assignments deliberately omit it so all experiment placements agree.
+    AssignmentIdentity.derive(experiment, intervention, scope)
+  end
+
+  defp find_assignment(%{scope: :intervention} = identity) do
+    Repo.get_by(Assignment,
+      experiment_id: identity.experiment_id,
+      intervention_id: identity.intervention_id,
+      enrollment_id: identity.enrollment_id,
+      assignment_scope: :intervention
     )
   end
 
-  defp find_assignment(%{experiment: _experiment}, _enrollment_id), do: nil
+  defp find_assignment(%{scope: :section_enrollment} = identity) do
+    Repo.get_by(Assignment,
+      experiment_id: identity.experiment_id,
+      section_id: identity.section_id,
+      enrollment_id: identity.enrollment_id,
+      assignment_scope: :section_enrollment
+    )
+  end
 
-  defp create_assignment(match, scope, request) do
+  defp find_assignment!(identity), do: find_assignment(identity) || Repo.rollback(:not_found)
+
+  defp create_assignment(match, identity, scope, request) do
     attrs = %{
       experiment_id: match.experiment.id,
       condition_id: match.condition.id,
-      intervention_id: Map.get(match, :intervention) && match.intervention.id,
+      intervention_id: identity.intervention_id,
       section_id: scope.section_id,
       enrollment_id: scope.enrollment_id,
       user_id: scope.user_id,
       assigned_by_policy: Atom.to_string(match.experiment.algorithm),
       policy_version: match.policy_assignment.policy_version,
-      assignment_key:
-        assignment_key(
-          match.experiment.id,
-          Map.get(match, :intervention) && match.intervention.id,
-          scope.enrollment_id
-        ),
+      assignment_scope: identity.scope,
+      assignment_key: identity.assignment_key,
       assigned_at: now()
     }
 
@@ -2073,30 +2162,39 @@ defmodule Oli.Experiments do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         if conflict?(changeset) do
-          assignment =
-            find_assignment(match, scope.enrollment_id)
+          assignment = find_assignment!(identity)
 
-          condition = Repo.get!(Condition, assignment.condition_id)
-          decision = to_assignment_decision(assignment, condition, true)
+          :telemetry.execute([:oli, :experiments, :assignment, :conflict], %{count: 1}, %{
+            experiment_id: match.experiment.id,
+            assignment_scope: identity.scope
+          })
 
-          Telemetry.emit(:assignment_decided, {decision, request},
-            assignment: assignment,
-            experiment: match.experiment
-          )
+          case Enum.find(match.conditions, &(&1.id == assignment.condition_id)) do
+            %Condition{} = condition ->
+              case (condition.option_id || condition.condition_code) in match.available_condition_codes do
+                true ->
+                  decision = to_assignment_decision(assignment, condition, true)
 
-          {:ok, decision}
+                  Telemetry.emit(:assignment_decided, {decision, request},
+                    assignment: assignment,
+                    experiment: match.experiment
+                  )
+
+                  {:ok, decision}
+
+                false ->
+                  invalid_condition(
+                    "sticky assignment condition is unavailable at this intervention"
+                  )
+              end
+
+            nil ->
+              invalid_condition("sticky assignment condition is unavailable at this intervention")
+          end
         else
           normalize_result({:error, changeset})
         end
     end
-  end
-
-  defp assignment_key(experiment_id, nil, enrollment_id) do
-    "#{experiment_id}:#{enrollment_id}"
-  end
-
-  defp assignment_key(experiment_id, intervention_id, enrollment_id) do
-    "#{experiment_id}:#{intervention_id}:#{enrollment_id}"
   end
 
   defp increment_assignment_count(experiment) do
@@ -2930,43 +3028,7 @@ defmodule Oli.Experiments do
   defp resolve_update_assignment_scope(nil, persisted_scope), do: persisted_scope
   defp resolve_update_assignment_scope(scope, _persisted_scope), do: scope
 
-  defp validate_assignment_scope_update(_schema, nil), do: :ok
-
-  defp validate_assignment_scope_update(
-         %ExperimentDefinitionSchema{assignment_scope: scope} = schema,
-         requested_scope
-       ) do
-    case normalize_assignment_scope(requested_scope) do
-      ^scope -> :ok
-      _scope -> :changed
-    end
-    |> case do
-      :ok -> :ok
-      :changed -> validate_assignment_scope_change_has_no_assignments(schema)
-    end
-  end
-
-  defp validate_assignment_scope_change_has_no_assignments(schema) do
-    case Repo.exists?(
-           from assignment in Assignment, where: assignment.experiment_id == ^schema.id
-         ) do
-      false -> :ok
-      true -> invalid_condition("assignment scope cannot change after learner assignments exist")
-    end
-  end
-
-  defp validate_locked_update(schema, request) do
-    with :ok <- validate_update_state(schema, request),
-         :ok <- validate_assignment_scope_update(schema, request.assignment_scope) do
-      :ok
-    end
-  end
-
-  defp normalize_assignment_scope(:intervention), do: :intervention
-  defp normalize_assignment_scope("intervention"), do: :intervention
-  defp normalize_assignment_scope(:section_enrollment), do: :section_enrollment
-  defp normalize_assignment_scope("section_enrollment"), do: :section_enrollment
-  defp normalize_assignment_scope(scope), do: scope
+  defp validate_locked_update(schema, request), do: validate_update_state(schema, request)
 
   defp validate_immutable_algorithm(_schema, nil), do: :ok
 

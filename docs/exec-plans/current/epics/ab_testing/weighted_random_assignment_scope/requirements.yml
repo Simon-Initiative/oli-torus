@@ -36,9 +36,10 @@ requirements:
     even when it reuses an experiment-level assignment.
 - id: FR-008
   title: Enforce lifecycle-safe scope changes
-  description: Assignment scope must not change after experiment activation or assignment
-    creation, and existing experiments and assignments must retain intervention-scoped
-    behavior without backfill or consolidation.
+  description: Assignment scope may change only while an experiment remains in draft
+    and must be immutable after the experiment transitions out of draft. Existing
+    experiments and assignments must retain intervention-scoped behavior without backfill
+    or consolidation.
 - id: FR-009
   title: Gate assignment by section participation
   description: New assignment and sticky reuse for either scope must occur only for
@@ -100,7 +101,7 @@ acceptance_criteria:
     containing each encountered intervention ID.
 - id: AC-008
   requirement: FR-008
-  description: Scope changes are rejected after activation or assignment creation,
+  description: Scope changes are rejected after the experiment transitions out of draft,
     and preexisting experiments continue to resolve their intervention-scoped assignments
     without migration.
 - id: AC-009

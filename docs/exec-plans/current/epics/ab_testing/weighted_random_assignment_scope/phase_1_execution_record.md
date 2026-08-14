@@ -40,13 +40,15 @@ Rollback posture: `down/0` deliberately raises when any `section_enrollment` ass
 ## Review Loop
 
 - Round 1 findings: assignment-scope update races, assignment/experiment scope mismatch, hot intervention lookup index regression, incomplete context-boundary and AC-013 proof.
-- Round 1 fixes: coordinated configuration updates with assignment advisory locks and locked-state revalidation; added a composite experiment/scope foreign key; retained the hot lookup index; expanded authorization, lifecycle, algorithm, assignment-existence, concurrency, and guarded-rollback tests.
+- Round 1 fixes: coordinated configuration updates with assignment advisory locks and locked-state revalidation; added a composite experiment/scope foreign key; retained the hot lookup index; expanded authorization, lifecycle, algorithm, concurrency, and guarded-rollback tests.
 - Round 2 findings: locked draft state needed revalidation after acquiring the transaction lock.
 - Round 2 fixes: added locked-state validation before either configuration update path writes. Final security, performance, and Elixir re-reviews reported no findings.
 
 Post-review product decision: new weighted-random requests that omit `assignment_scope` now resolve to `section_enrollment`; Thompson Sampling and existing persisted rows remain intervention-scoped.
 
 Default-change review: security, performance, Elixir, and requirements lenses were rerun. An invalid falsey scope fallback was found and fixed by defaulting only when the request value is `nil`; regression coverage now verifies invalid non-nil values are rejected.
+
+Post-phase simplification: assignment scope now relies exclusively on the locked draft-only update boundary. The redundant draft-assignment existence query and its artificial-state test were removed because runtime assignments cannot be created before activation.
 
 ## Done Definition
 

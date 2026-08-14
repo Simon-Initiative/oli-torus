@@ -24,7 +24,7 @@ Guardrails:
 ## Clarifications & Default Assumptions
 
 - `assignment_scope` is a new concept rather than a reinterpretation of `assignment_unit`; the assignment unit remains enrollment in both modes.
-- Assignment scope is structural: it may be changed only on a draft experiment with no assignments.
+- Assignment scope is structural: it may be changed only while an experiment remains in draft.
 - Experiment definitions and assignment rows both store scope. The assignment value is an immutable snapshot used by row constraints, indexed lookup, telemetry, and evidence.
 - Intervention-scoped assignment keys keep their current format. New section-and-enrollment keys use an explicit versioned format containing experiment, section, and enrollment.
 - Exposure requests add server-derived page resource and content-element identity. Their idempotency keys include placement identity so two interventions sharing one assignment cannot collide.
@@ -43,13 +43,13 @@ Guardrails:
   - [x] Decide and document the safe rollback precondition or allowed pre-release cleanup behavior for existing `section_enrollment` assignments; ensure `down/0` fails safely rather than fabricating intervention IDs.
   - [x] Extend `Schemas.ExperimentDefinition`, `Schemas.Assignment`, public `ExperimentDefinition`, `CreateExperimentRequest`, and `UpdateExperimentRequest` with typed scope fields and public API documentation.
   - [x] Add assignment changeset validation and named constraint mappings for both partial unique indexes and the scope/intervention row-shape check.
-  - [x] Add context normalization and validation for accepted scope values, defaulting, the weighted-random-only algorithm matrix, draft-only edits, and the no-existing-assignments rule.
+  - [x] Add context normalization and validation for accepted scope values, defaulting, the weighted-random-only algorithm matrix, and draft-only edits.
   - [x] Revalidate algorithm/scope compatibility during activation under the existing transaction and lock.
   - [x] Ensure public graph reads and configuration DTO construction return the stored scope.
 - Testing Tasks:
   - [x] Add persistence tests that inspect the new columns, defaults, constraints, partial indexes, nullable intervention foreign-key behavior, and both valid assignment shapes.
   - [x] Test duplicate intervention identities and duplicate section/enrollment identities independently, including database constraint names surfaced by changesets.
-  - [x] Add context tests for default and explicit weighted-random scopes, unknown scope, unauthorized update, non-draft update, assignments-exist update, and Thompson Sampling rejection on create/update/activation.
+  - [x] Add context tests for default and explicit weighted-random scopes, unknown scope, unauthorized update, non-draft update, and Thompson Sampling rejection on create/update/activation.
   - [x] Verify existing experiment and assignment fixtures read as intervention-scoped with unchanged assignment keys.
   - [x] Apply and roll back the migration in the repository's migration-test workflow, including the selected safe behavior when a canonical assignment exists.
   - Command(s): `mix test test/oli/experiments/persistence_test.exs test/oli/experiments/context_test.exs test/oli/experiments/configuration_test.exs`; `mix format`
@@ -67,23 +67,23 @@ Guardrails:
 
 - Goal: Implement one shared assignment-identity contract across single, read-only, and page-batch delivery paths for FR-003, FR-004, FR-005, FR-006, FR-009, FR-011, AC-003, AC-004, AC-005, AC-006, AC-009, and AC-011.
 - Tasks:
-  - [ ] Introduce a private assignment-identity value/helper inside `Oli.Experiments` that derives scope, lookup predicates, insert fields, and deterministic key input from an experiment, resolved intervention, and validated delivery scope.
-  - [ ] Preserve the current intervention assignment-key format and add an explicit versioned section-and-enrollment key containing experiment, section, and enrollment.
-  - [ ] Refactor `find_assignment`, assignment creation, uniqueness-conflict reload, and assignment-count increments to consume the derived identity rather than ad hoc intervention predicates.
-  - [ ] Update `existing_assignment_decision`/`assigned_condition` so lookup first resolves active experiment applicability and then filters by that experiment's configured identity; remove reliance on a broad latest matching assignment.
-  - [ ] Add a defensive runtime guard that rejects malformed Thompson Sampling plus `section_enrollment` persisted state before lookup or assignment.
-  - [ ] Update batch assignment rows to left-join the correct assignment identity for each experiment scope while retaining placement-specific intervention rows.
-  - [ ] Extend the batch reducer with a transaction-local canonical-assignment map so later same-experiment placements reuse a successful insert immediately.
-  - [ ] Keep sorted experiment advisory locks and partial unique indexes as concurrency boundaries; ensure conflicts reload by exact identity and do not increment counts.
-  - [ ] Preserve mapping validation: a sticky canonical condition unavailable at a later placement falls back as an invalid mapping and is never resampled.
-  - [ ] Add bounded `assignment_scope` metadata to assignment creation, reuse, conflict, fallback, and invalid-configuration telemetry.
+  - [x] Introduce an internal `Oli.Experiments.AssignmentIdentity` helper that derives scope, lookup predicates, insert fields, and deterministic key input from an experiment, resolved intervention, and validated delivery scope.
+  - [x] Preserve the current intervention assignment-key format and add an explicit versioned section-and-enrollment key containing experiment, section, and enrollment.
+  - [x] Refactor `find_assignment`, assignment creation, uniqueness-conflict reload, and assignment-count increments to consume the derived identity rather than ad hoc intervention predicates.
+  - [x] Update `existing_assignment_decision`/`assigned_condition` so lookup first resolves active experiment applicability and then filters by that experiment's configured identity; remove reliance on a broad latest matching assignment.
+  - [x] Add a defensive runtime guard that rejects malformed Thompson Sampling plus `section_enrollment` persisted state before lookup or assignment.
+  - [x] Update batch assignment rows to left-join the correct assignment identity for each experiment scope while retaining placement-specific intervention rows.
+  - [x] Extend the batch reducer with a transaction-local assignment-identity map so later same-experiment placements reuse a successful insert immediately.
+  - [x] Keep sorted experiment advisory locks and partial unique indexes as concurrency boundaries; ensure conflicts reload by exact identity and do not increment counts.
+  - [x] Preserve mapping validation: a sticky canonical condition unavailable at a later placement falls back as an invalid mapping and is never resampled.
+  - [x] Add bounded `assignment_scope` metadata to assignment creation, reuse, conflict, fallback, and invalid-configuration telemetry.
 - Testing Tasks:
-  - [ ] Add runtime tests for one null-intervention canonical assignment reused across two pages or placements, revisits, and allowed later weight changes.
-  - [ ] Preserve tests proving two intervention-scoped placements are independent and sticky.
-  - [ ] Test separate enrollments, the same user enrolled in separate sections, selected versus nonparticipating sections, stale participation, and unrelated projects.
-  - [ ] Race first encounters at different interventions for one section enrollment and assert one assignment row, one condition returned, and one policy-state assignment-count increment.
-  - [ ] Exercise `assign_condition/1`, `assigned_condition/1`, and `assign_page_conditions/1`, including multiple same-experiment placements, mixed experiments, conflict reload, and malformed persisted scope.
-  - [ ] Capture/query-inspect single and batch paths to prove indexed bounded lookups, no analytical-store/history access, and no per-placement assignment N+1.
+  - [x] Add runtime tests for one null-intervention canonical assignment reused across two pages or placements, revisits, and allowed later weight changes.
+  - [x] Preserve tests proving two intervention-scoped placements are independent and sticky.
+  - [x] Test separate enrollments, the same user enrolled in separate sections, selected versus nonparticipating sections, stale participation, and unrelated projects.
+  - [x] Race first encounters at different interventions for one section enrollment and assert one assignment row, one condition returned, and one policy-state assignment-count increment.
+  - [x] Exercise `assign_condition/1`, `assigned_condition/1`, and `assign_page_conditions/1`, including multiple same-experiment placements, mixed experiments, conflict reload, and malformed persisted scope.
+  - [x] Capture/query-inspect single and batch paths to prove indexed bounded lookups, no analytical-store/history access, and no per-placement assignment N+1.
   - Command(s): `mix test test/oli/experiments/runtime_test.exs test/oli/experiments/context_test.exs test/oli/resources/alternatives`; `mix format`; `mix compile`
 - Definition of Done:
   - Section-and-enrollment mode creates one canonical row and returns its condition at every eligible intervention; intervention mode remains unchanged; concurrency and batch behavior converge correctly.

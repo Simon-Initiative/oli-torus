@@ -103,7 +103,7 @@ Existing experiments retain intervention scope and their current assignments unc
 - Risk: Persisting one row per intervention with a shared random seed can diverge after weight changes. Mitigation: persist one canonical experiment-level assignment for section-and-enrollment scope.
 - Risk: Analytics may treat a missing assignment intervention ID as missing attribution. Mitigation: make assignment scope explicit and use exposure evidence for intervention-level traffic.
 - Risk: Concurrent first encounters at different interventions may create competing assignments. Mitigation: enforce experiment-section-enrollment uniqueness and reload the winning row after conflicts.
-- Risk: A scope change could invalidate existing sticky behavior. Mitigation: prevent assignment-scope changes after activation or assignment creation and retain intervention scope for existing experiments.
+- Risk: A scope change could invalidate sticky behavior. Mitigation: make assignment scope a draft-only setting that becomes immutable when the experiment transitions out of draft, before runtime assignment can begin.
 - Risk: Thompson Sampling rewards could be incorrectly attached to an experiment-level assignment. Mitigation: reject section-and-enrollment scope for Thompson Sampling at request, persistence, and activation boundaries.
 - Risk: Section identity could be inferred only indirectly from enrollment and become unclear in evidence. Mitigation: include section explicitly in the durable identity, constraints, and attribution metadata.
 
@@ -117,7 +117,7 @@ Existing experiments retain intervention scope and their current assignments unc
 
 - An enrollment belongs to exactly one section, but section remains explicit in assignment identity and evidence for auditability and tenant-safe queries.
 - Condition identities and option mappings are experiment-wide, so one canonical assigned condition can be rendered at every valid intervention in the experiment.
-- Assignment scope is immutable once the experiment is active or any assignment exists; later architecture work may choose the stricter draft-only edit boundary.
+- Assignment scope is editable only while the experiment is in draft and becomes immutable when the experiment transitions out of draft.
 - Pausing, completing, or archiving an experiment does not delete or alter existing assignments.
 - Section participation continues to determine whether an experiment is applicable before either new assignment or sticky reuse occurs.
 

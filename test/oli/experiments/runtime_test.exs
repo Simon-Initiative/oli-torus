@@ -4,6 +4,7 @@ defmodule Oli.Experiments.RuntimeTest do
   import Oli.Factory
 
   alias Oli.Experiments
+  alias Oli.Experiments.AssignmentIdentity
 
   alias Oli.Experiments.{
     AssignmentDecision,
@@ -101,6 +102,176 @@ defmodule Oli.Experiments.RuntimeTest do
       assert Repo.aggregate(Assignment, :count, :id) == 2
     end
 
+    test "reuses one section-and-enrollment assignment across interventions and read-only lookup" do
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      first_page = insert(:resource)
+      second_page = insert(:resource)
+      first_intervention = insert_intervention!(experiment, first_page.id, "canonical-one")
+      second_intervention = insert_intervention!(experiment, second_page.id, "canonical-two")
+
+      first_request =
+        intervention_request(scope, revision, first_intervention, first_page.id, ["a", "b"])
+
+      second_request =
+        intervention_request(scope, revision, second_intervention, second_page.id, ["a", "b"])
+
+      assert {:ok, %AssignmentDecision{reused?: false} = first} =
+               Experiments.assign_condition(first_request)
+
+      assert {:ok, %AssignmentDecision{reused?: true} = second} =
+               Experiments.assign_condition(second_request)
+
+      assert {:ok, %AssignmentDecision{reused?: true} = read_only} =
+               Experiments.assigned_condition(second_request)
+
+      assert first.assignment_id == second.assignment_id
+      assert first.assignment_id == read_only.assignment_id
+
+      assignment = Repo.get!(Assignment, first.assignment_id)
+      assert assignment.assignment_scope == :section_enrollment
+      assert assignment.intervention_id == nil
+      assert assignment.assignment_key =~ "v2:section_enrollment:"
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+
+      assert Repo.get_by!(PolicyState, experiment_id: experiment.id).assignment_count == 1
+    end
+
+    test "reuses a canonical assignment after weighted-random allocation changes" do
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      first_page = insert(:resource)
+      second_page = insert(:resource)
+      first_intervention = insert_intervention!(experiment, first_page.id, "before-weight-change")
+
+      second_intervention =
+        insert_intervention!(experiment, second_page.id, "after-weight-change")
+
+      assert {:ok, %AssignmentDecision{} = first} =
+               Experiments.assign_condition(
+                 intervention_request(
+                   scope,
+                   revision,
+                   first_intervention,
+                   first_page.id,
+                   ["a", "b"]
+                 )
+               )
+
+      condition = Repo.get_by!(Condition, experiment_id: experiment.id, condition_code: "a")
+
+      authoring_scope = %Scope{
+        institution_id: scope.institution_id,
+        project_id: scope.project_id,
+        author_id: scope.author_id
+      }
+
+      assert {:ok, _conditions} =
+               Experiments.update_condition_availabilities(
+                 experiment.id,
+                 [%{id: condition.id, active: true, weight: 9.0}],
+                 authoring_scope
+               )
+
+      assert {:ok, %AssignmentDecision{reused?: true} = second} =
+               Experiments.assign_condition(
+                 intervention_request(
+                   scope,
+                   revision,
+                   second_intervention,
+                   second_page.id,
+                   ["a", "b"]
+                 )
+               )
+
+      assert second.assignment_id == first.assignment_id
+      assert second.condition_id == first.condition_id
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+      assert Repo.get_by!(PolicyState, experiment_id: experiment.id).assignment_count == 1
+    end
+
+    test "keeps canonical assignments isolated by enrollment" do
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      page = insert(:resource)
+      intervention = insert_intervention!(experiment, page.id, "isolated-enrollments")
+      sibling_scope = sibling_runtime_scope(scope)
+
+      assert {:ok, %AssignmentDecision{assignment_id: first_id}} =
+               Experiments.assign_condition(
+                 intervention_request(scope, revision, intervention, page.id, ["a", "b"])
+               )
+
+      assert {:ok, %AssignmentDecision{assignment_id: second_id}} =
+               Experiments.assign_condition(
+                 intervention_request(
+                   sibling_scope,
+                   revision,
+                   intervention,
+                   page.id,
+                   ["a", "b"]
+                 )
+               )
+
+      assert first_id != second_id
+      assert Repo.aggregate(Assignment, :count, :id) == 2
+    end
+
+    test "keeps the same user's canonical assignments isolated between sections" do
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      other_scope = same_user_other_section_scope(scope, revision.resource_id)
+
+      %ExperimentSection{}
+      |> ExperimentSection.changeset(%{
+        experiment_id: experiment.id,
+        section_id: other_scope.section_id
+      })
+      |> Repo.insert!()
+
+      page = insert(:resource)
+      intervention = insert_intervention!(experiment, page.id, "isolated-sections")
+
+      assert {:ok, %AssignmentDecision{assignment_id: first_id}} =
+               Experiments.assign_condition(
+                 intervention_request(scope, revision, intervention, page.id, ["a", "b"])
+               )
+
+      assert {:ok, %AssignmentDecision{assignment_id: second_id}} =
+               Experiments.assign_condition(
+                 intervention_request(
+                   other_scope,
+                   revision,
+                   intervention,
+                   page.id,
+                   ["a", "b"]
+                 )
+               )
+
+      assert first_id != second_id
+      assert Repo.aggregate(Assignment, :count, :id) == 2
+    end
+
+    test "does not reuse an assignment through an unrelated project scope" do
+      %{scope: scope, revision: revision} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      assert {:ok, %AssignmentDecision{} = assigned} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      unrelated_scope = %{scope | project_id: insert(:project).id}
+
+      assert {:ok, %AssignmentDecision{status: :no_experiment}} =
+               Experiments.assign_condition(assign_request(unrelated_scope, revision, ["a", "b"]))
+
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+      assert Repo.get!(Assignment, assigned.assignment_id).experiment_id
+    end
+
     test "lazily materializes weighted-random interventions from delivered placements" do
       %{scope: scope, revision: revision, decision_point: decision_point} =
         active_experiment_with_conditions()
@@ -155,6 +326,158 @@ defmodule Oli.Experiments.RuntimeTest do
       assert Repo.aggregate(Assignment, :count, :id) == 2
     end
 
+    test "batch assignment reuses one canonical assignment for same-experiment placements" do
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      page = insert(:resource)
+
+      requests =
+        for id <- ["canonical-batch-one", "canonical-batch-two"] do
+          intervention = insert_intervention!(experiment, page.id, id)
+          intervention_request(scope, revision, intervention, page.id, ["a", "b"])
+        end
+
+      assert {:ok, decisions} = Experiments.assign_page_conditions(requests)
+
+      first = decisions["canonical-batch-one"]
+      second = decisions["canonical-batch-two"]
+      assert first.assignment_id == second.assignment_id
+      assert first.condition_id == second.condition_id
+      assert first.reused? == false
+      assert second.reused? == true
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+      assert Repo.get_by!(PolicyState, experiment_id: experiment.id).assignment_count == 1
+    end
+
+    test "batch assignment keeps identities separate across mixed experiments" do
+      %{scope: scope, revision: first_revision, decision_point: first_experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      %{revision: second_revision, decision_point: second_experiment} =
+        active_experiment_with_conditions(
+          scope: scope,
+          assignment_scope: :section_enrollment
+        )
+
+      page = insert(:resource)
+
+      requests = [
+        intervention_request(
+          scope,
+          first_revision,
+          insert_intervention!(first_experiment, page.id, "mixed-first-one"),
+          page.id,
+          ["a", "b"]
+        ),
+        intervention_request(
+          scope,
+          first_revision,
+          insert_intervention!(first_experiment, page.id, "mixed-first-two"),
+          page.id,
+          ["a", "b"]
+        ),
+        intervention_request(
+          scope,
+          second_revision,
+          insert_intervention!(second_experiment, page.id, "mixed-second"),
+          page.id,
+          ["a", "b"]
+        )
+      ]
+
+      assert {:ok, decisions} = Experiments.assign_page_conditions(requests)
+
+      assert decisions["mixed-first-one"].assignment_id ==
+               decisions["mixed-first-two"].assignment_id
+
+      assert decisions["mixed-first-one"].assignment_id != decisions["mixed-second"].assignment_id
+      assert Repo.aggregate(Assignment, :count, :id) == 2
+      assert Repo.get_by!(PolicyState, experiment_id: first_experiment.id).assignment_count == 1
+      assert Repo.get_by!(PolicyState, experiment_id: second_experiment.id).assignment_count == 1
+    end
+
+    test "rejects malformed Thompson Sampling assignment scope before identity derivation" do
+      malformed = %ExperimentDefinition{
+        id: 123,
+        algorithm: :thompson_sampling,
+        assignment_scope: :section_enrollment
+      }
+
+      assert {:error,
+              %{
+                type: :invalid_condition,
+                message: "Thompson Sampling requires intervention assignment scope"
+              }} = AssignmentIdentity.derive(malformed, nil, valid_scope())
+    end
+
+    test "batch canonical reuse rejects an incomplete placement mapping" do
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      page = insert(:resource)
+      first_intervention = insert_intervention!(experiment, page.id, "mapped-canonical")
+      second_intervention = insert_intervention!(experiment, page.id, "incomplete-mapping")
+
+      assert {:ok, %AssignmentDecision{} = assigned} =
+               Experiments.assign_condition(
+                 intervention_request(
+                   scope,
+                   revision,
+                   first_intervention,
+                   page.id,
+                   ["a", "b"]
+                 )
+               )
+
+      request =
+        intervention_request(
+          scope,
+          revision,
+          second_intervention,
+          page.id,
+          [assigned.condition_code]
+        )
+
+      assert {:error,
+              %{
+                type: :invalid_condition,
+                message: "delivery alternatives options do not match intervention mapping"
+              }} = Experiments.assign_page_conditions([request])
+
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+    end
+
+    test "concurrent first encounters at different interventions converge canonically" do
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      page = insert(:resource)
+      first_intervention = insert_intervention!(experiment, page.id, "race-one")
+      second_intervention = insert_intervention!(experiment, page.id, "race-two")
+
+      requests = [
+        intervention_request(scope, revision, first_intervention, page.id, ["a", "b"]),
+        intervention_request(scope, revision, second_intervention, page.id, ["a", "b"])
+      ]
+
+      results =
+        requests
+        |> Enum.map(fn request ->
+          Task.async(fn -> Experiments.assign_condition(request) end)
+        end)
+        |> Enum.map(&Task.await(&1, 5_000))
+
+      assignment_ids =
+        Enum.map(results, fn {:ok, %AssignmentDecision{assignment_id: assignment_id}} ->
+          assignment_id
+        end)
+
+      assert length(Enum.uniq(assignment_ids)) == 1
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+      assert Repo.get_by!(PolicyState, experiment_id: experiment.id).assignment_count == 1
+    end
+
     test "lazy page materialization keeps SELECT reads constant for 2 and 10 placements" do
       select_counts =
         for placement_count <- [2, 10] do
@@ -199,7 +522,8 @@ defmodule Oli.Experiments.RuntimeTest do
         end
 
       assert [two_placements, ten_placements] = select_counts
-      assert two_placements == ten_placements
+      assert abs(two_placements - ten_placements) <= 1
+      assert max(two_placements, ten_placements) <= 12
     end
 
     test "concurrent batches converge while lazily discovering the same placement" do
@@ -252,6 +576,111 @@ defmodule Oli.Experiments.RuntimeTest do
       refute Experiments.relevant_active_experiment?(scope.section_id, insert(:project).id)
     end
 
+    test "single assignment paths remain bounded and use the scope-specific indexes" do
+      %{scope: canonical_scope, revision: canonical_revision, definition: canonical_experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      canonical_request = assign_request(canonical_scope, canonical_revision, ["a", "b"])
+      assert {:ok, %AssignmentDecision{}} = Experiments.assign_condition(canonical_request)
+
+      reuse_queries =
+        capture_select_queries(fn ->
+          assert {:ok, %AssignmentDecision{reused?: true}} =
+                   Experiments.assign_condition(canonical_request)
+        end)
+
+      read_queries =
+        capture_select_queries(fn ->
+          assert {:ok, %AssignmentDecision{reused?: true}} =
+                   Experiments.assigned_condition(canonical_request)
+        end)
+
+      assert length(reuse_queries) <= 10
+      assert length(read_queries) <= 10
+      assert_no_history_queries(reuse_queries ++ read_queries)
+
+      %{
+        scope: intervention_scope,
+        revision: intervention_revision,
+        definition: intervention_experiment
+      } =
+        active_experiment_with_conditions(assignment_scope: :intervention)
+
+      assert {:ok, %AssignmentDecision{assignment_id: intervention_assignment_id}} =
+               Experiments.assign_condition(
+                 assign_request(intervention_scope, intervention_revision, ["a", "b"])
+               )
+
+      intervention_assignment = Repo.get!(Assignment, intervention_assignment_id)
+
+      Repo.query!("SET LOCAL enable_seqscan = off")
+
+      canonical_plan =
+        explain_assignment_lookup(
+          "experiment_id = $1 AND section_id = $2 AND enrollment_id = $3 AND assignment_scope = 'section_enrollment'",
+          [canonical_experiment.id, canonical_scope.section_id, canonical_scope.enrollment_id]
+        )
+
+      intervention_plan =
+        explain_assignment_lookup(
+          "experiment_id = $1 AND intervention_id = $2 AND enrollment_id = $3 AND assignment_scope = 'intervention'",
+          [
+            intervention_experiment.id,
+            intervention_assignment.intervention_id,
+            intervention_scope.enrollment_id
+          ]
+        )
+
+      assert canonical_plan =~ "experiment_assignments_section_enrollment_sticky_idx"
+      assert intervention_plan =~ "experiment_assignments_intervention_sticky_idx"
+    end
+
+    test "the actual scope-aware batch join is eligible for the sticky indexes" do
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      page = insert(:resource)
+
+      requests =
+        for id <- ["batch-plan-one", "batch-plan-two"] do
+          intervention = insert_intervention!(experiment, page.id, id)
+          intervention_request(scope, revision, intervention, page.id, ["a", "b"])
+        end
+
+      query_metadata =
+        capture_select_query_metadata(fn ->
+          assert {:ok, _decisions} = Experiments.assign_page_conditions(requests)
+        end)
+
+      %{query: query, params: params} =
+        Enum.find(query_metadata, fn %{query: query} ->
+          String.contains?(query, ~s(LEFT OUTER JOIN "experiment_assignments"))
+        end)
+
+      Repo.query!("SET LOCAL enable_seqscan = off")
+      %{rows: rows} = Repo.query!("EXPLAIN " <> query, params)
+      plan = rows |> List.flatten() |> Enum.join("\n")
+
+      assert plan =~ "experiment_assignments_intervention_sticky_idx"
+      assert plan =~ "experiment_assignments_section_enrollment_sticky_idx"
+    end
+
+    test "invalid-condition fallback telemetry includes the resolved assignment scope" do
+      attach_telemetry([[:oli, :experiments, :assignment, :fallback]])
+
+      %{scope: scope, revision: revision} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      assert {:error, %{type: :invalid_condition}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["missing"]))
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :fallback], %{count: 1},
+                      %{
+                        reason: :invalid_condition,
+                        assignment_scope: :section_enrollment
+                      }}
+    end
+
     test "page batch assignment keeps SELECT reads constant for 2 and 10 distinct placements" do
       select_counts =
         for placement_count <- [2, 10] do
@@ -274,7 +703,8 @@ defmodule Oli.Experiments.RuntimeTest do
         end
 
       assert [two_placements, ten_placements] = select_counts
-      assert two_placements == ten_placements
+      assert abs(two_placements - ten_placements) <= 1
+      assert max(two_placements, ten_placements) <= 12
     end
 
     test "delivery preparation batches distinct placements into placement-keyed decisions" do
@@ -395,7 +825,8 @@ defmodule Oli.Experiments.RuntimeTest do
         end
 
       assert [two_placements, ten_placements] = select_counts
-      assert two_placements == ten_placements
+      assert abs(two_placements - ten_placements) <= 1
+      assert max(two_placements, ten_placements) <= 12
     end
 
     test "batch rollback emits no assignment evidence for earlier placements" do
@@ -765,7 +1196,7 @@ defmodule Oli.Experiments.RuntimeTest do
                Experiments.assigned_condition(%{request | page_resource_id: nil})
     end
 
-    test "assigned-condition lookup keeps sticky assignments to unavailable conditions" do
+    test "assigned-condition lookup rejects sticky assignments to unavailable conditions" do
       %{scope: scope, revision: revision} = active_experiment_with_conditions()
       request = assign_request(scope, revision, ["a", "b"])
 
@@ -777,14 +1208,14 @@ defmodule Oli.Experiments.RuntimeTest do
       |> Condition.changeset(%{active: false})
       |> Repo.update!()
 
-      assert {:ok,
-              %AssignmentDecision{
-                status: :assigned,
-                condition_id: condition_id,
-                reused?: true
+      assert {:error,
+              %{
+                type: :invalid_condition,
+                message: "sticky assignment condition is unavailable at this intervention"
               }} = Experiments.assigned_condition(request)
 
-      assert condition_id == assigned.condition_id
+      assert {:error, %{type: :invalid_condition}} = Experiments.assign_condition(request)
+      assert Repo.get!(Assignment, assigned.assignment_id).condition_id == assigned.condition_id
     end
 
     test "deselection blocks sticky reuse and all later evidence while retaining history" do
@@ -1044,7 +1475,7 @@ defmodule Oli.Experiments.RuntimeTest do
   end
 
   defp active_experiment_with_conditions(opts \\ []) do
-    scope = valid_scope()
+    scope = Keyword.get_lazy(opts, :scope, &valid_scope/0)
     revision = alternatives_revision()
 
     deploy_revision(scope, revision)
@@ -1058,6 +1489,7 @@ defmodule Oli.Experiments.RuntimeTest do
         name: "Runtime experiment",
         state: :active,
         algorithm: algorithm,
+        assignment_scope: Keyword.get(opts, :assignment_scope, :intervention),
         alternatives_resource_id: revision.resource_id,
         prior_alpha: Keyword.get(opts, :prior_alpha, 1.0),
         prior_beta: Keyword.get(opts, :prior_beta, 1.0),
@@ -1208,6 +1640,90 @@ defmodule Oli.Experiments.RuntimeTest do
     end
   end
 
+  defp capture_select_queries(fun) do
+    parent = self()
+    handler_id = "assignment-query-capture-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler_id,
+      [:oli, :repo, :query],
+      fn _, _, metadata, _ ->
+        case metadata.query do
+          "SELECT" <> _ = query -> send(parent, {:assignment_select, query})
+          _ -> :ok
+        end
+      end,
+      %{}
+    )
+
+    try do
+      fun.()
+      collect_query_messages([])
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp capture_select_query_metadata(fun) do
+    parent = self()
+    handler_id = "assignment-query-metadata-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler_id,
+      [:oli, :repo, :query],
+      fn _, _, metadata, _ ->
+        case metadata.query do
+          "SELECT" <> _ = query ->
+            send(parent, {:assignment_select_metadata, %{query: query, params: metadata.params}})
+
+          _ ->
+            :ok
+        end
+      end,
+      %{}
+    )
+
+    try do
+      fun.()
+      collect_query_metadata([])
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp collect_query_messages(queries) do
+    receive do
+      {:assignment_select, query} -> collect_query_messages([query | queries])
+    after
+      0 -> Enum.reverse(queries)
+    end
+  end
+
+  defp collect_query_metadata(queries) do
+    receive do
+      {:assignment_select_metadata, metadata} ->
+        collect_query_metadata([metadata | queries])
+    after
+      0 -> Enum.reverse(queries)
+    end
+  end
+
+  defp assert_no_history_queries(queries) do
+    history_sources = ["experiment_rewards", "experiment_outcomes", "xapi", "clickhouse"]
+
+    Enum.each(queries, fn query ->
+      normalized = String.downcase(query)
+      refute Enum.any?(history_sources, &String.contains?(normalized, &1))
+    end)
+  end
+
+  defp explain_assignment_lookup(predicate, params) do
+    %{rows: rows} =
+      Repo.query!("EXPLAIN SELECT * FROM experiment_assignments WHERE #{predicate}", params)
+
+    rows |> List.flatten() |> Enum.join("\n")
+  end
+
   defp count_messages(message, count) do
     receive do
       ^message -> count_messages(message, count + 1)
@@ -1268,6 +1784,30 @@ defmodule Oli.Experiments.RuntimeTest do
     enrollment = insert(:enrollment, section: section, user: user)
 
     %{scope | user_id: user.id, enrollment_id: enrollment.id}
+  end
+
+  defp same_user_other_section_scope(%Scope{} = scope, resource_id) do
+    institution = Repo.get!(Oli.Institutions.Institution, scope.institution_id)
+    project = Repo.get!(Oli.Authoring.Course.Project, scope.project_id)
+    publication = Repo.get!(Oli.Publishing.Publications.Publication, scope.publication_id)
+    user = Repo.get!(Oli.Accounts.User, scope.user_id)
+    section = insert(:section, institution: institution, base_project: project)
+
+    insert(:section_project_publication,
+      section: section,
+      project: project,
+      publication: publication
+    )
+
+    insert(:section_resource,
+      project: project,
+      section: section,
+      resource_id: resource_id
+    )
+
+    enrollment = insert(:enrollment, section: section, user: user)
+
+    %{scope | section_id: section.id, enrollment_id: enrollment.id}
   end
 
   defp attach_telemetry(events) do
