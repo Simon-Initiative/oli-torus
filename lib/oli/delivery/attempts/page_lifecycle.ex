@@ -22,6 +22,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
     ResourceAttempt
   }
 
+  alias Oli.Delivery.Experiments
+
   alias Oli.Delivery.Attempts.PageLifecycle.{
     VisitContext,
     FinalizationContext,
@@ -249,8 +251,18 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             impl = determine_page_impl(resource_attempt.revision.graded)
 
             case impl.finalize(context) do
-              {:ok, results} -> results
-              {:error, error} -> Repo.rollback(error)
+              {:ok, %FinalizationSummary{} = results} ->
+                maybe_enqueue_reward(
+                  resource_attempt.revision.graded,
+                  results.lifecycle_state,
+                  resource_attempt.id,
+                  resource_access.section_id
+                )
+
+                results
+
+              {:error, error} ->
+                Repo.rollback(error)
             end
         end
       end)
@@ -279,6 +291,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
       _ -> Oli.Delivery.Attempts.PageLifecycle.Ungraded
     end
   end
+
+  defp maybe_enqueue_reward(true, :evaluated, resource_attempt_id, section_id) do
+    case Experiments.RewardHandoffWorker.maybe_enqueue(resource_attempt_id, section_id) do
+      :ok -> :ok
+      {:error, reason} -> Repo.rollback({:reward_handoff_enqueue_failed, reason})
+    end
+  end
+
+  defp maybe_enqueue_reward(_graded, _lifecycle_state, _resource_attempt_id, _section_id),
+    do: :ok
 
   @doc """
   Determines whether a particular user can access the resource attempt represented by

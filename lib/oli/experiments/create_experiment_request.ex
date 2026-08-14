@@ -11,11 +11,18 @@ defmodule Oli.Experiments.CreateExperimentRequest do
     :name,
     :description,
     :algorithm,
+    :alternatives_resource_id,
+    :prior_alpha,
+    :prior_beta,
+    :warm_up_assignments,
+    :max_condition_share,
+    :fixed_control_allocation,
+    :imbalance_threshold,
+    :reward_source,
     :section_ids,
-    :decision_point,
+    interventions: [],
     conditions: [],
-    assignment_unit: :enrollment,
-    policy_config: %{}
+    assignment_unit: :enrollment
   ]
 
   @type t :: %__MODULE__{
@@ -25,9 +32,16 @@ defmodule Oli.Experiments.CreateExperimentRequest do
           description: String.t() | nil,
           algorithm: :weighted_random | :thompson_sampling,
           section_ids: [integer()] | nil,
-          decision_point: map() | nil,
+          alternatives_resource_id: integer(),
+          prior_alpha: number() | nil,
+          prior_beta: number() | nil,
+          warm_up_assignments: non_neg_integer() | nil,
+          max_condition_share: number() | nil,
+          fixed_control_allocation: number() | nil,
+          imbalance_threshold: number() | nil,
+          reward_source: String.t() | nil,
+          interventions: [map()],
           conditions: [map()],
-          assignment_unit: :enrollment,
-          policy_config: map()
+          assignment_unit: :enrollment
         }
 end

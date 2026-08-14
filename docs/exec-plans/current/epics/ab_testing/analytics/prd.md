@@ -119,7 +119,7 @@ No feature flags present in this work item
 - The experiment xAPI and OLAP foundation is complete before analytics dashboards are built.
 - `experiment_attributions` is the MVP ClickHouse fact table; raw event details remain available through `raw_events` joins where necessary.
 - PostgreSQL event-history tables have been removed and are not an analytics fallback.
-- The existing `activity_attempt:full_credit` binary reward is the sole MVP outcome signal. Its technical reward-source label may be explained with fixed product copy, but there is no configurable metric display-name or statistic model in this slice.
+- The assessment binding's normalized scored-page result is thresholded into the sole MVP binary reward signal and identified by `assessment_page:normalized_score`. Its technical reward-source label may be explained with fixed product copy, but there is no configurable metric display-name or statistic model in this slice.
 - Charts and summaries are descriptive only. Arbitrary metric configuration, metric metadata/statistics, participant exclusion modeling, and statistical inference are follow-on work.
 - Thompson Sampling monitoring is limited to MVP policy evidence.
 

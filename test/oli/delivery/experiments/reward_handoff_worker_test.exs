@@ -5,43 +5,74 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
   import Oli.Factory
 
   alias Oli.Delivery.Experiments.RewardHandoffWorker
-  alias Oli.Experiments.Schemas.{ExperimentDefinition, ExperimentSection}
 
-  test "enqueues only one job per evaluated activity attempt" do
-    section = participating_section()
+  alias Oli.Experiments.Schemas.{
+    AssessmentBinding,
+    ExperimentDefinition,
+    ExperimentSection,
+    Intervention
+  }
 
-    assert :ok = RewardHandoffWorker.enqueue(123, section.id)
-    assert :ok = RewardHandoffWorker.enqueue(123, section.id)
+  test "enqueues only one job per evaluated resource attempt" do
+    %{section: section, resource_attempt: resource_attempt} = reward_context()
+
+    assert :ok = RewardHandoffWorker.maybe_enqueue(resource_attempt.id, section.id)
+    assert :ok = RewardHandoffWorker.maybe_enqueue(resource_attempt.id, section.id)
 
     assert [%Oban.Job{}] =
-             all_enqueued(worker: RewardHandoffWorker, args: %{"activity_attempt_ids" => [123]})
+             all_enqueued(
+               worker: RewardHandoffWorker,
+               args: %{"resource_attempt_id" => resource_attempt.id}
+             )
   end
 
-  test "normalizes a batch and treats missing activity attempts as a completed no-op" do
-    section = participating_section()
-
-    assert :ok = RewardHandoffWorker.enqueue([3, 1, 3, "invalid"], section.id)
-
-    assert_enqueued(
-      worker: RewardHandoffWorker,
-      args: %{"activity_attempt_ids" => [1, 3]}
-    )
-
-    assert :ok = perform_job(RewardHandoffWorker, %{"activity_attempt_ids" => [-1]})
-    assert :ok = perform_job(RewardHandoffWorker, %{"activity_attempt_ids" => [-2, -1]})
+  test "treats a missing resource attempt as a completed worker no-op" do
+    assert :ok = perform_job(RewardHandoffWorker, %{"resource_attempt_id" => -1})
   end
 
-  test "does not create a job when the section has no experiment" do
-    section = insert(:section)
+  test "does not create a job for an unrelated page or inactive experiment" do
+    %{experiment: experiment, section: section} = context = reward_context()
+    unrelated_attempt = insert(:resource_attempt, resource_access: context.unrelated_access)
 
-    assert :ok = RewardHandoffWorker.enqueue(123, section.id)
+    assert :ok = RewardHandoffWorker.maybe_enqueue(unrelated_attempt.id, section.id)
+    refute_enqueued(worker: RewardHandoffWorker)
 
+    experiment
+    |> ExperimentDefinition.changeset(%{state: :completed})
+    |> Repo.update!()
+
+    assert :ok = RewardHandoffWorker.maybe_enqueue(context.resource_attempt.id, section.id)
     refute_enqueued(worker: RewardHandoffWorker)
   end
 
-  defp participating_section do
+  test "does not create a job for an experiment from another project" do
+    %{experiment: experiment, section: section, resource_attempt: resource_attempt} =
+      reward_context()
+
+    experiment
+    |> ExperimentDefinition.changeset(%{project_id: insert(:project).id})
+    |> Repo.update!()
+
+    assert :ok = RewardHandoffWorker.maybe_enqueue(resource_attempt.id, section.id)
+    refute_enqueued(worker: RewardHandoffWorker)
+  end
+
+  defp reward_context do
     project = insert(:project)
     section = insert(:section, base_project: project)
+    user = insert(:user)
+    assessment_page = insert(:revision, graded: true)
+    unrelated_page = insert(:revision, graded: true)
+
+    resource_access =
+      insert(:resource_access, section: section, user: user, resource: assessment_page.resource)
+
+    unrelated_access =
+      insert(:resource_access, section: section, user: user, resource: unrelated_page.resource)
+
+    resource_attempt = insert(:resource_attempt, resource_access: resource_access)
+
+    alternatives = insert(:revision)
 
     experiment =
       %ExperimentDefinition{}
@@ -49,7 +80,9 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
         project_id: project.id,
         slug: "worker-enqueue-#{System.unique_integer([:positive])}",
         name: "Worker enqueue",
-        algorithm: :weighted_random
+        state: :active,
+        algorithm: :thompson_sampling,
+        alternatives_resource_id: alternatives.resource_id
       })
       |> Repo.insert!()
 
@@ -60,6 +93,28 @@ defmodule Oli.Delivery.Experiments.RewardHandoffWorkerTest do
     })
     |> Repo.insert!()
 
-    section
+    intervention =
+      %Intervention{}
+      |> Intervention.changeset(%{
+        experiment_id: experiment.id,
+        page_resource_id: alternatives.resource_id,
+        content_element_id: "worker-placement"
+      })
+      |> Repo.insert!()
+
+    %AssessmentBinding{}
+    |> AssessmentBinding.changeset(%{
+      intervention_id: intervention.id,
+      assessment_page_resource_id: assessment_page.resource_id,
+      reward_threshold: 1.0
+    })
+    |> Repo.insert!()
+
+    %{
+      experiment: experiment,
+      resource_attempt: resource_attempt,
+      section: section,
+      unrelated_access: unrelated_access
+    }
   end
 end

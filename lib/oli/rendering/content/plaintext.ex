@@ -320,20 +320,16 @@ defmodule Oli.Rendering.Content.Plaintext do
     case error do
       {:unsupported, error_id, _error_msg} ->
         [
-          "<div class=\"content unsupported\">Content element type '",
+          "[Unsupported content type: ",
           element["type"],
-          "' is not supported. Please contact support with issue ##{error_id}</div>\n"
+          " (issue ##{error_id})]"
         ]
 
       {:invalid, error_id, _error_msg} ->
-        [
-          "<div class=\"content invalid\">Content element is invalid. Please contact support with issue ##{error_id}</div>\n"
-        ]
+        ["[Invalid content (issue ##{error_id})]"]
 
       {_, error_id, _error_msg} ->
-        [
-          "<div class=\"content invalid\">An error occurred while rendering content . Please contact support with issue ##{error_id}</div>\n"
-        ]
+        ["[Content rendering error (issue ##{error_id})]"]
     end
   end
 end

@@ -3,12 +3,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   use Phoenix.HTML
 
   import Oli.Utils, only: [uuid: 0]
-  import OliWeb.Resources.AlternativesEditor.GroupOption
+  alias OliWeb.Workspaces.CourseAuthor.AlternativesGroupManager
 
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{CreateExperimentRequest, Scope}
+  alias Oli.Experiments.Policies.ThompsonSampling
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Resources.ResourceType
@@ -18,15 +19,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
   @alternatives_type_id ResourceType.id_for_alternatives()
-  @experiment_numeric_defaults %{
-    "weight_a" => "1",
-    "weight_b" => "1",
-    "prior_alpha" => "1",
-    "prior_beta" => "1",
-    "warm_up_assignments" => "0",
-    "max_condition_share" => "1"
-  }
-
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     project = socket.assigns.project
@@ -86,7 +78,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       </div>
 
       <div :if={Enum.empty?(@decision_point_candidates)} class="alert alert-info">
-        Create an A/B decision point before adding an A/B Testing experiment.
+        Create a Decision Point before adding an A/B Testing experiment.
       </div>
 
       <%= if @experiment_error && !@show_create_experiment do %>
@@ -98,12 +90,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       <% end %>
 
       <%= if Enum.empty?(@visible_ab_experiments) do %>
-        <div>
-          <%= if Enum.empty?(@ab_experiments) do %>
-            No A/B Testing experiments have been created yet.
-          <% else %>
-            No non-archived experiments to display.
-          <% end %>
+        <div id="ab-experiments-empty-state">
+          No A/B Testing experiments to display
         </div>
       <% else %>
         <div id="ab-experiments-table-scroll" class="overflow-x-auto">
@@ -138,26 +126,37 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         </div>
       <% end %>
 
-      <section class="mt-10" aria-labelledby="decision-points-heading">
+      <section class="mt-10" aria-labelledby="experiment-alternatives-heading">
         <div class="mb-3">
-          <h3 id="decision-points-heading" class="h4 mb-0">Decision Points</h3>
+          <h3 id="experiment-alternatives-heading" class="h4 mb-0">
+            Decision Points
+          </h3>
         </div>
         <%= if Enum.empty?(@decision_points) do %>
           <div>
-            No decision points have been created yet.
+            No Decision Points have been created yet.
           </div>
         <% else %>
-          <.decision_point_group
+          <AlternativesGroupManager.group_card
             :for={decision_point <- @decision_points}
             group={decision_point}
-            new_condition_name={Map.get(@new_condition_names, decision_point.resource_id, "")}
-            new_condition_form_open={
+            item_label="Condition"
+            empty_item_label="There are no conditions in this Decision Point"
+            create_item_event="show_new_condition_form"
+            delete_group_event="show_delete_decision_point_modal"
+          >
+            <:new_item_form :if={
               MapSet.member?(@open_new_condition_forms, decision_point.resource_id)
-            }
-          />
+            }>
+              <.new_condition_form
+                group={decision_point}
+                name={Map.get(@new_condition_names, decision_point.resource_id, "")}
+              />
+            </:new_item_form>
+          </AlternativesGroupManager.group_card>
         <% end %>
         <div class="d-flex justify-content-start mt-3">
-          <button class="btn btn-outline-primary" phx-click="show_create_decision_point">
+          <button class="btn btn-outline-primary" phx-click="show_create_experiment_alternatives">
             <i class="fa fa-plus"></i> New Decision Point
           </button>
         </div>
@@ -373,11 +372,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               <label for="experiment_slug">Slug</label>
               <input
                 id="experiment_slug"
-                class="form-control"
+                class={"form-control #{field_error_class(@experiment_field_errors, :slug)}"}
                 name="experiment[slug]"
                 value={@experiment_params["slug"]}
+                aria-invalid={field_invalid?(@experiment_field_errors, :slug)}
+                aria-describedby={field_error_id(@experiment_field_errors, :slug)}
                 required
               />
+              <%= if error = field_error(@experiment_field_errors, :slug) do %>
+                <div id="experiment_slug_error" class="mb-2 block text-sm text-red-600">
+                  {error}
+                </div>
+              <% end %>
               <div :if={@experiment_slug_suggestion} class="form-text">
                 Suggested slug:
                 <button
@@ -391,11 +397,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
               </div>
             </div>
             <div class="form-group">
-              <label for="experiment_decision_point">A/B decision point</label>
+              <label for="experiment_alternatives_resource">
+                Decision Point
+              </label>
               <select
-                id="experiment_decision_point"
+                id="experiment_alternatives_resource"
                 class="form-control"
-                name="experiment[decision_point]"
+                name="experiment[alternatives_resource_id]"
                 required
               >
                 <option
@@ -406,134 +414,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
                 </option>
               </select>
             </div>
-            <div class="form-group">
-              <label for="experiment_weight_a">First condition weight</label>
-              <input
-                id="experiment_weight_a"
-                class="form-control"
-                type="number"
-                min="0"
-                step="0.01"
-                name="experiment[weight_a]"
-                value={experiment_numeric_value(@experiment_params, "weight_a")}
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label for="experiment_weight_b">Second condition weight</label>
-              <input
-                id="experiment_weight_b"
-                class="form-control"
-                type="number"
-                min="0"
-                step="0.01"
-                name="experiment[weight_b]"
-                value={experiment_numeric_value(@experiment_params, "weight_b")}
-                required
-              />
-            </div>
-            <%= if @experiment_algorithm == "thompson_sampling" do %>
-              <h6 id="thompson-sampling-options" class="font-weight-bold">
-                Thompson Sampling Options
-              </h6>
-              <div class="form-group">
-                <label for="experiment_prior_alpha">Default prior successes</label>
-                <input
-                  id="experiment_prior_alpha"
-                  class={"form-control #{field_error_class(@experiment_field_errors, :prior_alpha)}"}
-                  type="number"
-                  min="0.0001"
-                  max="1000"
-                  step="0.0001"
-                  name="experiment[prior_alpha]"
-                  value={experiment_numeric_value(@experiment_params, "prior_alpha")}
-                  aria-invalid={field_invalid?(@experiment_field_errors, :prior_alpha)}
-                  aria-describedby={field_described_by(@experiment_field_errors, :prior_alpha)}
-                />
-                <small id="experiment_prior_alpha_help" class="form-text text-muted">
-                  Initial success evidence for each condition, from 0.0001 to 1000.
-                </small>
-                <%= if error = field_error(@experiment_field_errors, :prior_alpha) do %>
-                  <div id="experiment_prior_alpha_error" class="invalid-feedback d-block">
-                    {error}
-                  </div>
-                <% end %>
-              </div>
-              <div class="form-group">
-                <label for="experiment_prior_beta">Default prior failures</label>
-                <input
-                  id="experiment_prior_beta"
-                  class={"form-control #{field_error_class(@experiment_field_errors, :prior_beta)}"}
-                  type="number"
-                  min="0.0001"
-                  max="1000"
-                  step="0.0001"
-                  name="experiment[prior_beta]"
-                  value={experiment_numeric_value(@experiment_params, "prior_beta")}
-                  aria-invalid={field_invalid?(@experiment_field_errors, :prior_beta)}
-                  aria-describedby={field_described_by(@experiment_field_errors, :prior_beta)}
-                />
-                <small id="experiment_prior_beta_help" class="form-text text-muted">
-                  Initial failure evidence for each condition, from 0.0001 to 1000.
-                </small>
-                <%= if error = field_error(@experiment_field_errors, :prior_beta) do %>
-                  <div id="experiment_prior_beta_error" class="invalid-feedback d-block">
-                    {error}
-                  </div>
-                <% end %>
-              </div>
-              <div class="form-group">
-                <label for="experiment_warm_up_assignments">Warm-up assignments</label>
-                <input
-                  id="experiment_warm_up_assignments"
-                  class={"form-control #{field_error_class(@experiment_field_errors, :warm_up_assignments)}"}
-                  type="number"
-                  min="0"
-                  step="1"
-                  name="experiment[warm_up_assignments]"
-                  value={experiment_numeric_value(@experiment_params, "warm_up_assignments")}
-                  aria-invalid={field_invalid?(@experiment_field_errors, :warm_up_assignments)}
-                  aria-describedby={
-                    field_described_by(@experiment_field_errors, :warm_up_assignments)
-                  }
-                />
-                <small id="experiment_warm_up_assignments_help" class="form-text text-muted">
-                  Number of initial assignments served evenly before adaptive sampling.
-                </small>
-                <%= if error = field_error(@experiment_field_errors, :warm_up_assignments) do %>
-                  <div id="experiment_warm_up_assignments_error" class="invalid-feedback d-block">
-                    {error}
-                  </div>
-                <% end %>
-              </div>
-              <div class="form-group">
-                <label for="experiment_max_condition_share">
-                  Maximum traffic share per condition
-                </label>
-                <input
-                  id="experiment_max_condition_share"
-                  class={"form-control #{field_error_class(@experiment_field_errors, :max_condition_share)}"}
-                  type="number"
-                  min="0.01"
-                  max="1"
-                  step="0.01"
-                  name="experiment[max_condition_share]"
-                  value={experiment_numeric_value(@experiment_params, "max_condition_share")}
-                  aria-invalid={field_invalid?(@experiment_field_errors, :max_condition_share)}
-                  aria-describedby={
-                    field_described_by(@experiment_field_errors, :max_condition_share)
-                  }
-                />
-                <small id="experiment_max_condition_share_help" class="form-text text-muted">
-                  Highest allowed assignment share for one condition, from 0.01 to 1.0.
-                </small>
-                <%= if error = field_error(@experiment_field_errors, :max_condition_share) do %>
-                  <div id="experiment_max_condition_share_error" class="invalid-feedback d-block">
-                    {error}
-                  </div>
-                <% end %>
-              </div>
-            <% end %>
             <div class="d-flex justify-content-end gap-2">
               <button type="button" class="btn btn-link" phx-click="close_create_experiment">
                 Cancel
@@ -600,12 +480,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
          )}
 
       {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        field_errors = field_errors_for_experiment_error(error)
+
         {:noreply,
          assign(socket,
-           experiment_error: error.message,
+           experiment_error: experiment_error_message(error, field_errors),
            experiment_success: nil,
            experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
-           experiment_field_errors: field_errors_for_message(error.message),
+           experiment_field_errors: field_errors,
            experiment_params: params,
            experiment_slug_suggestion: suggested_experiment_slug(params["name"])
          )}
@@ -626,6 +508,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply,
      assign(socket,
        experiment_algorithm: Map.get(params, "algorithm", "weighted_random"),
+       experiment_error: nil,
        experiment_field_errors: %{},
        experiment_params: params,
        experiment_slug_suggestion: slug_suggestion
@@ -640,6 +523,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       suggestion ->
         {:noreply,
          assign(socket,
+           experiment_error: nil,
+           experiment_field_errors: %{},
            experiment_params: Map.put(socket.assigns.experiment_params, "slug", suggestion)
          )}
     end
@@ -694,7 +579,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     {:noreply, assign(socket, section_participation: nil)}
   end
 
-  def handle_event("show_create_decision_point", _params, socket) do
+  def handle_event("show_create_experiment_alternatives", _params, socket) do
     modal = %{
       id: "create_decision_point_modal",
       title: "Create Decision Point",
@@ -704,7 +589,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       field_name: "name",
       field_label: "Name",
       field_value: "",
-      placeholder: "Enter a name for the decision point",
+      placeholder: "Enter a name for the Decision Point",
       hidden_fields: []
     }
 
@@ -718,7 +603,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
            project.slug,
            ctx.author,
            @alternatives_type_id,
-           %{title: name, content: %{"options" => [], "strategy" => "upgrade_decision_point"}}
+           %{title: name, content: %{"options" => [], "strategy" => "experiment_controlled"}}
          ) do
       {:ok, decision_point} ->
         {:noreply,
@@ -887,13 +772,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     with [] <- Publishing.find_alternatives_group_references_in_pages(resource_id, publication_id),
          {:ok, false} <-
-           ABExperiments.decision_point_in_use?(resource_id, authoring_scope(socket)) do
+           ABExperiments.experiment_group_in_use?(resource_id, authoring_scope(socket)) do
       decision_point = find_group(decision_points, resource_id)
 
       modal = %{
         id: "delete_decision_point_modal",
         title: "Delete Decision Point",
-        message: "Are you sure you want to delete this decision point?",
+        message: "Are you sure you want to delete this Decision Point?",
         item_name: decision_point.title,
         on_delete: "delete_decision_point",
         values: %{resource_id: resource_id}
@@ -904,13 +789,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       [_ | _] ->
         show_error(
           socket,
-          "This decision point cannot be deleted because it is used by project content."
+          "This Decision Point cannot be deleted because it is used by project content."
         )
 
       {:ok, true} ->
         show_error(
           socket,
-          "This decision point cannot be deleted because it is used by an active experiment"
+          "This Decision Point cannot be deleted because it is used by an active experiment"
         )
 
       {:error, _} ->
@@ -926,7 +811,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     with [] <- Publishing.find_alternatives_group_references_in_pages(resource_id, publication_id),
          {:ok, false} <-
-           ABExperiments.decision_point_in_use?(resource_id, authoring_scope(socket)),
+           ABExperiments.experiment_group_in_use?(resource_id, authoring_scope(socket)),
          {:ok, deleted} <- ResourceEditor.delete(project.slug, resource_id, ctx.author) do
       Subscriber.unsubscribe_to_new_revisions_in_project(resource_id, project.slug)
 
@@ -943,13 +828,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       [_ | _] ->
         show_error(
           socket,
-          "This decision point cannot be deleted because it is used by project content."
+          "This Decision Point cannot be deleted because it is used by project content."
         )
 
       {:ok, true} ->
         show_error(
           socket,
-          "This decision point cannot be deleted because it is used by an active experiment"
+          "This Decision Point cannot be deleted because it is used by an active experiment"
         )
 
       {:error, _} ->
@@ -1173,7 +1058,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   def handle_info({:new_resource, revision, project_slug}, socket) do
     case revision.content["strategy"] do
-      "upgrade_decision_point" ->
+      strategy when strategy in ["experiment_controlled", "upgrade_decision_point"] ->
         unless revision.resource_id in socket.assigns.decision_point_subscriptions do
           Subscriber.subscribe_to_new_revisions_in_project(revision.resource_id, project_slug)
         end
@@ -1219,92 +1104,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   end
 
   attr :group, :any, required: true
-  attr :new_condition_name, :string, required: true
-  attr :new_condition_form_open, :boolean, required: true
+  attr :name, :string, required: true
 
-  defp decision_point_group(assigns) do
+  defp new_condition_form(assigns) do
     ~H"""
-    <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
-      <div class="d-flex flex-row align-items-center">
-        <div><b>{@group.title}</b></div>
-        <div class="flex-grow-1"></div>
-        <OliWeb.Common.Components.icon_button
-          class="mr-1"
-          icon="fa-solid fa-pencil"
-          on_click="show_edit_group_modal"
-          values={["phx-value-resource-id": @group.resource_id]}
-        />
+    <form
+      id={"new-condition-form-#{@group.resource_id}"}
+      class="mt-3"
+      phx-change="change_new_condition"
+      phx-submit="create_new_condition"
+    >
+      <input type="hidden" name="condition[resource_id]" value={@group.resource_id} />
+      <label
+        class="form-label"
+        for={"new-condition-input-#{@group.resource_id}"}
+      >
+        Condition name
+      </label>
+      <input
+        id={"new-condition-input-#{@group.resource_id}"}
+        type="text"
+        name="condition[name]"
+        value={@name}
+        class="form-control"
+        placeholder="Enter a new condition"
+        phx-hook="InputAutoSelect"
+        phx-keydown={JS.push("cancel_new_condition", value: %{resource_id: @group.resource_id})}
+        phx-key="Escape"
+      />
+      <div class="d-flex justify-content-end gap-2 mt-2">
         <button
-          class="btn btn-danger btn-sm mr-2"
-          phx-click="show_delete_decision_point_modal"
-          phx-value-resource-id={@group.resource_id}
-        >
-          Delete
-        </button>
-      </div>
-      <div class="mt-3">
-        <%= if Enum.empty?(@group.content["options"]) do %>
-          <div class="my-2 text-center">
-            <em>There are no conditions in this decision point</em>
-          </div>
-        <% else %>
-          <.option_list group={@group} show_actions={true} />
-        <% end %>
-        <button
-          :if={not @new_condition_form_open}
           type="button"
-          class="btn btn-link px-0 mt-3"
-          phx-click="show_new_condition_form"
+          class="btn btn-link"
+          phx-click="cancel_new_condition"
           phx-value-resource-id={@group.resource_id}
         >
-          <i class="fa fa-plus"></i> New Condition
+          Cancel
         </button>
-        <form
-          :if={@new_condition_form_open}
-          id={"new-condition-form-#{@group.resource_id}"}
-          class="mt-3"
-          phx-change="change_new_condition"
-          phx-submit="create_new_condition"
+        <button
+          type="submit"
+          class="btn btn-primary"
+          disabled={String.trim(@name) == ""}
         >
-          <input type="hidden" name="condition[resource_id]" value={@group.resource_id} />
-          <label
-            class="form-label"
-            for={"new-condition-input-#{@group.resource_id}"}
-          >
-            Condition name
-          </label>
-          <input
-            id={"new-condition-input-#{@group.resource_id}"}
-            type="text"
-            name="condition[name]"
-            value={@new_condition_name}
-            class="form-control"
-            placeholder="Enter a new condition"
-            phx-hook="InputAutoSelect"
-            phx-keydown={JS.push("cancel_new_condition", value: %{resource_id: @group.resource_id})}
-            phx-key="Escape"
-            onkeydown="if (event.key === 'Escape') { this.value = ''; }"
-          />
-          <div class="d-flex justify-content-end gap-2 mt-2">
-            <button
-              type="button"
-              class="btn btn-link"
-              phx-click="cancel_new_condition"
-              phx-value-resource-id={@group.resource_id}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              disabled={String.trim(@new_condition_name) == ""}
-            >
-              Create
-            </button>
-          </div>
-        </form>
+          Create
+        </button>
       </div>
-    </div>
+    </form>
     """
   end
 
@@ -1315,7 +1160,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       case ResourceEditor.list(project.slug, ctx.author, @alternatives_type_id) do
         {:ok, alternatives} ->
           alternatives
-          |> Enum.filter(&(&1.content["strategy"] == "upgrade_decision_point"))
+          |> Enum.filter(
+            &(&1.content["strategy"] in ["experiment_controlled", "upgrade_decision_point"])
+          )
           |> sort_decision_points()
 
         _error ->
@@ -1362,7 +1209,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       end
 
     candidates =
-      case ABExperiments.list_available_decision_points(scope) do
+      case ABExperiments.list_available_alternatives(scope) do
         {:ok, candidates} -> candidates
         {:error, _error} -> []
       end
@@ -1399,59 +1246,63 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     }
   end
 
-  defp selected_candidate(candidates, %{"decision_point" => resource_id}) do
+  defp selected_candidate(candidates, %{"alternatives_resource_id" => resource_id}) do
     resource_id = ensure_integer(resource_id)
 
     case Enum.find(candidates, &(&1.alternatives_resource_id == resource_id)) do
-      nil -> {:error, "Select an alternatives group."}
+      nil -> {:error, "Select a Decision Point."}
       candidate -> {:ok, candidate}
     end
   end
 
-  defp selected_candidate(_candidates, _params), do: {:error, "Select an alternatives group."}
+  defp selected_candidate(_candidates, _params), do: {:error, "Select a Decision Point."}
 
   defp create_request(scope, candidate, params) do
     with {:ok, algorithm} <- parse_algorithm(params["algorithm"]),
-         {:ok, weight_a} <- parse_weight(params["weight_a"]),
-         {:ok, weight_b} <- parse_weight(params["weight_b"]),
          {:ok, section_ids} <- parse_section_ids(params["section_ids"]),
-         {:ok, policy_config} <- policy_config(algorithm, params),
          [option_a, option_b | _rest] <- candidate.options do
+      weight_a = 1.0
+      weight_b = 1.0
+      policy_fields = default_policy_fields(algorithm)
+
       {:ok,
        %CreateExperimentRequest{
          scope: scope,
          slug: params["slug"],
          name: params["name"],
          algorithm: algorithm,
+         alternatives_resource_id: candidate.alternatives_resource_id,
+         prior_alpha: policy_fields.prior_alpha,
+         prior_beta: policy_fields.prior_beta,
+         warm_up_assignments: policy_fields.warm_up_assignments,
+         max_condition_share: policy_fields.max_condition_share,
+         fixed_control_allocation: policy_fields.fixed_control_allocation,
+         imbalance_threshold: policy_fields.imbalance_threshold,
+         reward_source: policy_fields.reward_source,
          section_ids: section_ids,
-         policy_config: policy_config,
-         decision_point: %{
-           alternatives_resource_id: candidate.alternatives_resource_id,
-           decision_point_key: candidate.decision_point_key,
-           title: candidate.title
-         },
          conditions: [
            %{
-             condition_code: option_a,
-             option_id: option_a,
+             client_ref: "condition-a",
              label: Map.get(candidate.option_labels, option_a, option_a),
+             option_id: option_a,
              weight: weight_a,
              active: true,
              position: 0
            },
            %{
-             condition_code: option_b,
-             option_id: option_b,
+             client_ref: "condition-b",
              label: Map.get(candidate.option_labels, option_b, option_b),
+             option_id: option_b,
              weight: weight_b,
              active: true,
              position: 1
            }
-         ]
+         ],
+         interventions: []
        }}
     else
       {:error, message} -> {:error, message}
-      _ -> {:error, "The selected alternatives group needs at least two options."}
+      _ -> {:error, "The selected Decision Point needs at least two conditions."}
     end
   end
 
@@ -1490,104 +1341,43 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
   defp parse_positive_integer(_value), do: {:error, "Invalid section or experiment selection."}
 
-  defp policy_config(:weighted_random, _params), do: {:ok, %{}}
+  defp default_policy_fields(algorithm) do
+    config = ThompsonSampling.default_policy_config()
 
-  defp policy_config(:thompson_sampling, params) do
-    with {:ok, prior_alpha} <- parse_positive_number(params["prior_alpha"], "Prior alpha"),
-         {:ok, prior_beta} <- parse_positive_number(params["prior_beta"], "Prior beta"),
-         {:ok, warm_up_assignments} <- parse_non_negative_integer(params["warm_up_assignments"]),
-         {:ok, max_condition_share} <-
-           parse_share(params["max_condition_share"], "Max condition share") do
-      {:ok,
-       %{
-         "reward_source" => "activity_attempt:full_credit",
-         "priors" => %{
-           "default" => %{"alpha" => prior_alpha, "beta" => prior_beta},
-           "conditions" => %{}
-         },
-         "guardrails" => %{
-           "manual_pause_enabled" => true,
-           "warm_up_assignments" => warm_up_assignments,
-           "max_condition_share" => max_condition_share,
-           "fixed_control_allocation" => nil,
-           "imbalance_threshold" => 1.0
-         }
-       }}
-    end
+    %{
+      prior_alpha: get_in(config, ["priors", "default", "alpha"]),
+      prior_beta: get_in(config, ["priors", "default", "beta"]),
+      warm_up_assignments: get_in(config, ["guardrails", "warm_up_assignments"]),
+      max_condition_share: get_in(config, ["guardrails", "max_condition_share"]),
+      fixed_control_allocation: get_in(config, ["guardrails", "fixed_control_allocation"]),
+      imbalance_threshold: get_in(config, ["guardrails", "imbalance_threshold"]),
+      reward_source:
+        if(algorithm == :thompson_sampling,
+          do: config["reward_source"],
+          else: "assessment_page:normalized_score"
+        )
+    }
   end
-
-  defp parse_weight(value) when is_binary(value) do
-    case parse_exact_float(value) do
-      {:ok, weight} when weight >= 0.0 -> {:ok, weight}
-      _ -> {:error, "Weights must be non-negative numbers."}
-    end
-  end
-
-  defp parse_weight(_value), do: {:error, "Weights must be non-negative numbers."}
-
-  defp parse_positive_number(value, label) when is_binary(value) do
-    case parse_exact_float(value) do
-      {:ok, number} when number >= 0.0001 and number <= 1000.0 -> {:ok, number}
-      _ -> {:error, "#{label} must be between 0.0001 and 1000."}
-    end
-  end
-
-  defp parse_positive_number(_value, label),
-    do: {:error, "#{label} must be between 0.0001 and 1000."}
-
-  defp parse_non_negative_integer(value) when is_binary(value) do
-    case parse_exact_integer(value) do
-      {:ok, number} when number >= 0 -> {:ok, number}
-      _ -> {:error, "Warm-up assignments must be a non-negative integer."}
-    end
-  end
-
-  defp parse_non_negative_integer(_value),
-    do: {:error, "Warm-up assignments must be a non-negative integer."}
-
-  defp parse_share(value, label) when is_binary(value) do
-    case parse_exact_float(value) do
-      {:ok, number} when number > 0.0 and number <= 1.0 -> {:ok, number}
-      _ -> {:error, "#{label} must be greater than 0 and at most 1."}
-    end
-  end
-
-  defp parse_share(_value, label), do: {:error, "#{label} must be greater than 0 and at most 1."}
-
-  defp parse_exact_float(value) do
-    value = String.trim(value)
-
-    case Float.parse(value) do
-      {number, ""} -> {:ok, number}
-      {_number, rest} when is_binary(rest) -> :error
-      :error -> :error
-    end
-  end
-
-  defp parse_exact_integer(value) do
-    value = String.trim(value)
-
-    case Integer.parse(value) do
-      {number, ""} -> {:ok, number}
-      {_number, rest} when is_binary(rest) -> :error
-      :error -> :error
-    end
-  end
-
-  defp field_errors_for_message("Prior alpha" <> _ = message), do: %{prior_alpha: message}
-  defp field_errors_for_message("Prior beta" <> _ = message), do: %{prior_beta: message}
-
-  defp field_errors_for_message("Warm-up assignments" <> _ = message),
-    do: %{warm_up_assignments: message}
-
-  defp field_errors_for_message("Max condition share" <> _ = message),
-    do: %{max_condition_share: message}
 
   defp field_errors_for_message(_message), do: %{}
 
-  defp experiment_numeric_value(params, key) do
-    Map.get(params, key, Map.fetch!(@experiment_numeric_defaults, key))
+  defp field_errors_for_experiment_error(%{type: type, details: %{errors: errors}} = error) do
+    case {type, Map.get(errors, :slug)} do
+      {:conflict, messages} when is_list(messages) ->
+        %{slug: "An experiment with this slug already exists in this project."}
+
+      {_type, [message | _rest]} ->
+        %{slug: "Slug #{message}."}
+
+      _ ->
+        field_errors_for_message(error.message)
+    end
   end
+
+  defp field_errors_for_experiment_error(error), do: field_errors_for_message(error.message)
+
+  defp experiment_error_message(_error, %{slug: _message}), do: nil
+  defp experiment_error_message(error, _field_errors), do: error.message
 
   defp field_error(errors, field), do: Map.get(errors, field)
   defp field_invalid?(errors, field), do: Map.has_key?(errors, field)
@@ -1595,12 +1385,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   defp field_error_class(errors, field),
     do: if(field_invalid?(errors, field), do: "is-invalid", else: "")
 
-  defp field_described_by(errors, field) do
-    field_id = "experiment_#{field}"
-
+  defp field_error_id(errors, field) do
     case field_invalid?(errors, field) do
-      true -> "#{field_id}_help #{field_id}_error"
-      false -> "#{field_id}_help"
+      true -> "experiment_#{field}_error"
+      false -> nil
     end
   end
 

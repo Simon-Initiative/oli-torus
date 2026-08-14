@@ -152,6 +152,16 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
     end
   end
 
+  describe "pending_migration_count/2" do
+    test "counts only versions newer than the applied version" do
+      versions = [20_260_326_213_833, 20_260_714_120_000, 20_260_811_190_000]
+
+      assert ClickhouseAnalytics.pending_migration_count(versions, 0) == 3
+      assert ClickhouseAnalytics.pending_migration_count(versions, 20_260_326_213_833) == 2
+      assert ClickhouseAnalytics.pending_migration_count(versions, 20_260_811_190_000) == 0
+    end
+  end
+
   describe "experiment query contracts" do
     test "event counts use scoped attribution columns and distinct attribution identities" do
       expect(MockHTTP, :post, fn _url, query, _headers, _opts ->

@@ -4,7 +4,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [uuid: 0]
-  import OliWeb.Common.Components
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
@@ -15,6 +14,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
   alias OliWeb.Components.ReorderableList
   alias OliWeb.Resources.AlternativesEditor.PreventDeletionModal
+  alias OliWeb.Workspaces.CourseAuthor.AlternativesGroupManager
 
   @alternatives_type_id ResourceType.id_for_alternatives()
 
@@ -57,68 +57,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
     {render_modal(assigns)}
 
     <div class="alternatives-groups container p-8">
-      <h2>Alternatives</h2>
+      <h2>Learner Choice Alternatives</h2>
+      <p>Manage reusable alternatives groups selected by each learner.</p>
       <div class="d-flex flex-row">
         <div class="flex-grow-1"></div>
         <button class="btn btn-primary" phx-click="show_create_modal">
-          <i class="fa fa-plus"></i> New Alternative
+          <i class="fa fa-plus" aria-hidden="true"></i> New Learner Choice Group
         </button>
       </div>
       <div class="d-flex flex-column my-4">
         <%= if Enum.count(@alternatives) > 0 do %>
           <%= for group <- @alternatives do %>
-            <.group group={group} />
+            <AlternativesGroupManager.group_card
+              group={group}
+              item_label="Option"
+              empty_item_label="There are no options in this group"
+              create_item_event="show_create_option_modal"
+              delete_group_event="show_delete_group_modal"
+              heading_level={3}
+            />
           <% end %>
         <% else %>
-          <div class="text-center"><em>There are no alternatives groups</em></div>
+          <div class="text-center"><em>There are no Learner Choice groups</em></div>
         <% end %>
-      </div>
-    </div>
-    """
-  end
-
-  attr(:editing_enabled, :boolean, default: true)
-  attr(:group, :any)
-
-  def group(assigns) do
-    ~H"""
-    <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
-      <div class="d-flex flex-row align-items-center">
-        <div>
-          <b>{@group.title}</b>
-        </div>
-        <div class="flex-grow-1"></div>
-        <.icon_button
-          :if={@editing_enabled}
-          class="mr-1"
-          icon="fa-solid fa-pencil"
-          on_click="show_edit_group_modal"
-          values={["phx-value-resource-id": @group.resource_id]}
-        />
-        <button
-          class="btn btn-danger btn-sm mr-2"
-          phx-click="show_delete_group_modal"
-          phx-value-resource_id={@group.resource_id}
-        >
-          Delete
-        </button>
-      </div>
-      <div class="mt-3">
-        <%= if Enum.count(@group.content["options"]) > 0 do %>
-          <.option_list group={@group} show_actions={@editing_enabled} />
-        <% else %>
-          <div class="my-2">
-            <div class="text-center"><em>There are no options in this group</em></div>
-          </div>
-        <% end %>
-        <button
-          :if={@editing_enabled}
-          class="btn btn-link btn-sm my-2"
-          phx-click="show_create_option_modal"
-          phx-value-resource_id={@group.resource_id}
-        >
-          <i class="fa fa-plus"></i> New Option
-        </button>
       </div>
     </div>
     """
@@ -181,7 +142,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
     {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
   end
 
-  def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
+  def handle_event("show_create_option_modal", params, socket) do
+    resource_id = params["resource_id"] || params["resource-id"]
+
     changeset =
       {%{id: uuid(), resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
       |> Ecto.Changeset.cast(%{}, [:id, :resource_id, :name])
@@ -299,11 +262,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
     end
   end
 
-  def handle_event(
-        "show_delete_group_modal",
-        %{"resource_id" => resource_id},
-        socket
-      ) do
+  def handle_event("show_delete_group_modal", params, socket) do
+    resource_id = params["resource_id"] || params["resource-id"]
     %{project: project, alternatives: alternatives} = socket.assigns
     resource_id = ensure_integer(resource_id)
 

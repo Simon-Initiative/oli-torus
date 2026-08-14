@@ -6,7 +6,6 @@ defmodule Oli.Experiments.ContextTest do
   alias Oli.Experiments
 
   alias Oli.Experiments.{
-    DecisionPointCandidate,
     CreateExperimentRequest,
     ExperimentDefinition,
     ExperimentAuthoringView,
@@ -17,7 +16,7 @@ defmodule Oli.Experiments.ContextTest do
     UpdateExperimentRequest
   }
 
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, PolicyState}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, Intervention, PolicyState}
   alias Oli.Authoring.Course.Project
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -26,16 +25,13 @@ defmodule Oli.Experiments.ContextTest do
   describe "create_experiment/1" do
     test "creates an experiment through the public context boundary" do
       scope = valid_scope()
+      alternatives = alternatives_revision(scope.project_id)
 
       assert {:ok, %ExperimentDefinition{} = definition} =
-               Experiments.create_experiment(%CreateExperimentRequest{
-                 scope: scope,
-                 slug: "ab-test",
-                 name: "A/B Test",
-                 description: "An A/B test",
-                 algorithm: :weighted_random,
-                 policy_config: %{"salt" => "stable"}
-               })
+               scope
+               |> graph_request(alternatives)
+               |> Map.put(:description, "An A/B test")
+               |> Experiments.create_experiment()
 
       assert definition.id
       assert definition.uuid
@@ -95,14 +91,14 @@ defmodule Oli.Experiments.ContextTest do
 
     test "normalizes persistence validation errors to public error structs" do
       scope = valid_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      request = graph_request(scope, alternatives)
 
       assert {:error, %ExperimentError{type: :persistence_error, details: %{errors: errors}}} =
-               Experiments.create_experiment(%CreateExperimentRequest{
-                 scope: scope,
-                 slug: "",
-                 name: "",
-                 algorithm: :weighted_random
-               })
+               request
+               |> Map.put(:slug, "")
+               |> Map.put(:name, "")
+               |> Experiments.create_experiment()
 
       assert %{
                slug: ["can't be blank"],
@@ -110,45 +106,38 @@ defmodule Oli.Experiments.ContextTest do
              } =
                errors
     end
-
-    test "rejects malformed Thompson Sampling policy config without raising" do
-      scope = valid_scope()
-
-      for {policy_config, expected_message} <- [
-            {%{"priors" => "bad"}, "Thompson Sampling priors config must be a map"},
-            {%{"guardrails" => "bad"}, "Thompson Sampling guardrails config must be a map"},
-            {%{"priors" => %{"default" => "bad"}},
-             "Thompson Sampling default config must be a map"},
-            {%{"priors" => %{"conditions" => %{"a" => "bad"}}},
-             "Thompson Sampling per-condition prior config must be a map"}
-          ] do
-        assert {:error, %ExperimentError{type: :invalid_condition, message: ^expected_message}} =
-                 Experiments.create_experiment(%CreateExperimentRequest{
-                   scope: scope,
-                   slug: "bad-ts-#{System.unique_integer([:positive])}",
-                   name: "Bad Thompson Sampling",
-                   algorithm: :thompson_sampling,
-                   policy_config: policy_config
-                 })
-      end
-    end
   end
 
   describe "authoring graph APIs" do
+    test "rejects authoring graph and Alternatives discovery for non-collaborators" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+      outsider = insert(:author)
+      outsider_scope = %{scope | author_id: outsider.id}
+
+      assert {:error, %ExperimentError{type: :invalid_scope}} =
+               Experiments.get_experiment_authoring_view(definition.id, outsider_scope)
+
+      assert {:error, %ExperimentError{type: :invalid_scope}} =
+               Experiments.list_available_alternatives(outsider_scope)
+    end
+
     test "creates, lists, reads, activates, and archives a weighted random experiment graph" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
 
       refute Experiments.project_has_experiments?(scope.project_id)
 
-      assert {:ok, [%DecisionPointCandidate{} = candidate]} =
-               Experiments.list_available_decision_points(scope)
+      assert {:ok, [candidate]} = Experiments.list_available_alternatives(scope)
 
       assert candidate.alternatives_resource_id == alternatives.resource_id
       assert candidate.option_labels == %{"alt-a" => "A", "alt-b" => "B"}
 
+      request = %{graph_request(scope, alternatives) | interventions: []}
+
       assert {:ok, %ExperimentDefinition{} = definition} =
-               Experiments.create_experiment(graph_request(scope, alternatives))
+               Experiments.create_experiment(request)
 
       assert Experiments.project_has_experiments?(scope.project_id)
 
@@ -163,9 +152,9 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.get_experiment_authoring_view(definition.id, scope)
 
       assert view.definition.id == definition.id
-      assert [%{decision_point_key: decision_point_key}] = view.decision_points
-      assert decision_point_key == "alternatives:#{alternatives.resource_id}"
-      assert Enum.map(view.conditions, & &1.condition_code) == ["alt-a", "alt-b"]
+      assert view.definition.alternatives_resource_id == alternatives.resource_id
+      assert Enum.map(view.conditions, & &1.condition_code) == ["a", "b"]
+      assert view.interventions == []
       assert view.assignment_counts == %{}
 
       assert {:ok, %ExperimentDefinition{state: :active}} =
@@ -191,6 +180,7 @@ defmodule Oli.Experiments.ContextTest do
       scope = project_scope()
       delivery_scope = runtime_scope(scope)
       alternatives = alternatives_revision(scope.project_id)
+      selected_alternatives = alternatives_revision(scope.project_id)
 
       {:ok, unselected} =
         Experiments.create_experiment(graph_request(scope, alternatives))
@@ -198,7 +188,7 @@ defmodule Oli.Experiments.ContextTest do
       {:ok, selected} =
         Experiments.create_experiment(
           scope
-          |> graph_request(alternatives)
+          |> graph_request(selected_alternatives)
           |> Map.put(:section_ids, [delivery_scope.section_id])
         )
 
@@ -268,6 +258,20 @@ defmodule Oli.Experiments.ContextTest do
       assert message == "active condition weights must have a positive total"
     end
 
+    test "rejects changing the assignment policy after creation" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.update_experiment(definition.id, %UpdateExperimentRequest{
+                 scope: scope,
+                 algorithm: :thompson_sampling
+               })
+
+      assert message == "assignment policy cannot be changed after experiment creation"
+    end
+
     test "rejects learner preference alternatives as experiment decision points" do
       scope = project_scope()
       alternatives = learner_preference_alternatives_revision(scope.project_id)
@@ -275,39 +279,74 @@ defmodule Oli.Experiments.ContextTest do
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
                Experiments.create_experiment(graph_request(scope, alternatives))
 
-      assert message == "selected alternatives group is not an A/B Testing decision point"
+      assert message == "selected Alternatives Group is not experiment-controlled"
     end
 
     test "creates and activates a Thompson Sampling experiment with normalized adaptive config" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
-      request = %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
+      assessment = graded_page_revision(scope.project_id)
+
+      request =
+        graph_request(scope, alternatives)
+        |> Map.put(:algorithm, :thompson_sampling)
+        |> Map.update!(:interventions, fn [intervention] ->
+          [
+            Map.put(intervention, :assessment_binding, %{
+              assessment_page_resource_id: assessment.resource_id,
+              reward_threshold: Decimal.new(1)
+            })
+          ]
+        end)
 
       assert {:ok, %ExperimentDefinition{} = definition} = Experiments.create_experiment(request)
 
       assert definition.algorithm == :thompson_sampling
-      assert definition.policy_config["reward_source"] == "activity_attempt:full_credit"
-      assert definition.policy_config["priors"]["default"] == %{"alpha" => 1.0, "beta" => 1.0}
-      assert definition.policy_config["guardrails"]["manual_pause_enabled"]
+
+      {:ok, authoring_view} = Experiments.get_experiment_authoring_view(definition.id, scope)
+      assert authoring_view.definition.reward_source == "assessment_page:normalized_score"
+      assert authoring_view.definition.prior_alpha == 1.0
+      assert authoring_view.definition.prior_beta == 1.0
 
       policy_state = Repo.get_by!(PolicyState, experiment_id: definition.id)
       assert policy_state.algorithm == :thompson_sampling
       assert policy_state.algorithm_version == "thompson_sampling:v2"
-      assert policy_state.prior_config == definition.policy_config["priors"]
-      assert policy_state.state["alt-a"]["posterior_alpha"] == 1.0
-      assert policy_state.state["alt-b"]["posterior_beta"] == 1.0
+
+      assert policy_state.state["a"]["posterior_alpha"] == 1.0
+      assert policy_state.state["b"]["posterior_beta"] == 1.0
+
+      assert {:ok, []} = Experiments.policy_snapshot(definition.id, scope)
 
       assert {:ok, %ExperimentDefinition{state: :active}} =
                Experiments.activate_experiment(definition.id, lifecycle(scope))
+
+      assert {:ok, snapshot} = Experiments.policy_snapshot(definition.id, scope)
+      assert Enum.map(snapshot, & &1.condition_code) == ["a", "b"]
+      assert Enum.all?(snapshot, &(&1.estimated_success_probability == 0.5))
+      assert Enum.all?(snapshot, &(&1.assignment_count == 0 and &1.assignment_share == 0.0))
+      assert Enum.all?(snapshot, &(&1.effective_mode == :thompson_sampling))
     end
 
     test "rejects invalid Thompson Sampling priors and guardrails" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
+      assessment = graded_page_revision(scope.project_id)
+
+      request =
+        graph_request(scope, alternatives)
+        |> Map.put(:algorithm, :thompson_sampling)
+        |> Map.update!(:interventions, fn [intervention] ->
+          [
+            Map.put(intervention, :assessment_binding, %{
+              assessment_page_resource_id: assessment.resource_id,
+              reward_threshold: Decimal.new(1)
+            })
+          ]
+        end)
 
       invalid_prior =
-        %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
-        |> Map.put(:policy_config, %{"priors" => %{"default" => %{"alpha" => 0.0, "beta" => 1.0}}})
+        request
+        |> Map.put(:prior_alpha, 0.0)
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
                Experiments.create_experiment(invalid_prior)
@@ -315,8 +354,8 @@ defmodule Oli.Experiments.ContextTest do
       assert message == "Thompson Sampling prior alpha must be between 0.0001 and 1000"
 
       invalid_guardrail =
-        %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
-        |> Map.put(:policy_config, %{"guardrails" => %{"max_condition_share" => 2.0}})
+        request
+        |> Map.put(:max_condition_share, 2.0)
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
                Experiments.create_experiment(invalid_guardrail)
@@ -325,19 +364,51 @@ defmodule Oli.Experiments.ContextTest do
                "Thompson Sampling max condition share must be greater than 0 and at most 1"
     end
 
-    test "blocks assigned condition deletion and deactivation" do
+    test "allows condition availability changes after launch without invalidating assignments" do
       scope = project_scope()
       alternatives = alternatives_revision(scope.project_id)
-      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+
+      alternatives =
+        alternatives
+        |> Ecto.Changeset.change(
+          content: %{
+            "strategy" => "upgrade_decision_point",
+            "options" => [
+              %{"id" => "alt-a", "name" => "A"},
+              %{"id" => "alt-b", "name" => "B"},
+              %{"id" => "alt-c", "name" => "C"}
+            ]
+          }
+        )
+        |> Repo.update!()
+
+      conditions = [
+        %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 1.0, active: true},
+        %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 1.0, active: true},
+        %{condition_code: "alt-c", option_id: "alt-c", label: "C", weight: 1.0, active: true}
+      ]
+
+      {:ok, definition} =
+        Experiments.create_experiment(graph_request(scope, alternatives, conditions))
+
       {:ok, _active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
-      condition = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "alt-a")
-      decision_point = Repo.get_by!(DecisionPoint, experiment_id: definition.id)
+      condition = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "a")
+      intervention = Repo.get_by!(Intervention, experiment_id: definition.id)
       runtime_scope = runtime_scope(scope)
+
+      assert {:ok, _conditions} =
+               Experiments.update_condition_availabilities(
+                 definition.id,
+                 [%{id: condition.id, active: true, weight: 3.0}],
+                 scope
+               )
+
+      assert Repo.get!(Condition, condition.id).weight == 3.0
 
       %Assignment{}
       |> Assignment.changeset(%{
         experiment_id: definition.id,
-        decision_point_id: decision_point.id,
+        intervention_id: intervention.id,
         condition_id: condition.id,
         section_id: runtime_scope.section_id,
         enrollment_id: runtime_scope.enrollment_id,
@@ -349,26 +420,47 @@ defmodule Oli.Experiments.ContextTest do
       })
       |> Repo.insert!()
 
-      {:ok, paused} = Experiments.pause_experiment(definition.id, lifecycle(scope))
+      assert {:ok, %{active: false}} =
+               Experiments.update_condition_availability(
+                 definition.id,
+                 condition.id,
+                 false,
+                 scope
+               )
 
-      update = %UpdateExperimentRequest{
-        scope: scope,
-        name: paused.name,
-        decision_point: %{
-          alternatives_resource_id: alternatives.resource_id,
-          decision_point_key: "alternatives:#{alternatives.resource_id}",
-          title: alternatives.title
-        },
-        conditions: [
-          %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 1.0, active: false},
-          %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 1.0, active: true}
-        ]
-      }
+      assert Repo.get!(Assignment, Repo.one!(Assignment).id).condition_id == condition.id
+
+      second = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "b")
+
+      assert {:ok, %{active: false}} =
+               Experiments.update_condition_availability(
+                 definition.id,
+                 second.id,
+                 false,
+                 scope
+               )
+
+      third = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "c")
 
       assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
-               Experiments.update_experiment(definition.id, update)
+               Experiments.update_condition_availability(
+                 definition.id,
+                 third.id,
+                 false,
+                 scope
+               )
 
-      assert message =~ "learner assignments already exist"
+      assert message == "experiments require at least one active condition"
+
+      {:ok, _completed} = Experiments.complete_experiment(definition.id, lifecycle(scope))
+
+      assert {:error, %ExperimentError{type: :invalid_state}} =
+               Experiments.update_condition_availability(
+                 definition.id,
+                 condition.id,
+                 true,
+                 scope
+               )
     end
   end
 
@@ -500,9 +592,10 @@ defmodule Oli.Experiments.ContextTest do
       first_section = runtime_scope(scope)
       second_section = runtime_scope(scope)
       alternatives = alternatives_revision(scope.project_id)
+      second_alternatives = alternatives_revision(scope.project_id)
 
       {:ok, first} = Experiments.create_experiment(graph_request(scope, alternatives))
-      {:ok, second} = Experiments.create_experiment(graph_request(scope, alternatives))
+      {:ok, second} = Experiments.create_experiment(graph_request(scope, second_alternatives))
       authoring_scope = %{scope | author_id: author.id}
 
       assert {:ok, %ExperimentSectionParticipation{selected_ids: []}} =
@@ -646,16 +739,14 @@ defmodule Oli.Experiments.ContextTest do
                Experiments.update_experiment(
                  definition.id,
                  %UpdateExperimentRequest{
-                   scope: scope,
+                   scope: %Scope{author_id: scope.author_id, project_id: scope.project_id},
                    name: "Updated name",
-                   description: "Updated description",
-                   policy_config: %{"salt" => "new"}
+                   description: "Updated description"
                  }
                )
 
       assert updated.name == "Updated name"
       assert updated.description == "Updated description"
-      assert updated.policy_config == %{"salt" => "new"}
       refute private_schema?(updated)
     end
 
@@ -687,7 +778,10 @@ defmodule Oli.Experiments.ContextTest do
       assert {:error, %ExperimentError{type: :invalid_state}} =
                Experiments.update_experiment(
                  definition.id,
-                 %UpdateExperimentRequest{scope: scope, name: "Too late"}
+                 %UpdateExperimentRequest{
+                   scope: %Scope{author_id: scope.author_id, project_id: scope.project_id},
+                   name: "Too late"
+                 }
                )
     end
   end
@@ -715,6 +809,19 @@ defmodule Oli.Experiments.ContextTest do
 
       assert {:ok, %ExperimentDefinition{state: :archived}} =
                Experiments.archive_experiment(completed.id, lifecycle(scope))
+    end
+
+    test "resumes a paused legacy experiment without revalidating immutable interventions" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+      {:ok, active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
+      {:ok, paused} = Experiments.pause_experiment(active.id, lifecycle(scope))
+
+      Repo.delete_all(Ecto.Query.where(Intervention, experiment_id: ^definition.id))
+
+      assert {:ok, %ExperimentDefinition{state: :active}} =
+               Experiments.activate_experiment(paused.id, lifecycle(scope))
     end
 
     test "rejects invalid lifecycle transitions" do
@@ -747,36 +854,23 @@ defmodule Oli.Experiments.ContextTest do
     test "allows only one active experiment per stable decision point" do
       scope = project_scope()
       first_section = runtime_scope(scope)
-      second_section = runtime_scope(scope)
       alternatives = alternatives_revision(scope.project_id)
       other_alternatives = alternatives_revision(scope.project_id)
 
-      create_experiment = fn decision_point, section_ids ->
-        scope
-        |> graph_request(decision_point)
-        |> Map.put(:section_ids, section_ids)
-        |> Experiments.create_experiment()
-        |> elem(1)
-      end
-
-      first = create_experiment.(alternatives, [first_section.section_id])
-      same_point_other_section = create_experiment.(alternatives, [second_section.section_id])
-      same_point_no_sections = create_experiment.(alternatives, [])
-      different_point = create_experiment.(other_alternatives, [second_section.section_id])
-
-      different_key =
+      request =
         scope
         |> graph_request(alternatives)
-        |> Map.update!(:decision_point, fn decision_point ->
-          Map.put(
-            decision_point,
-            :decision_point_key,
-            "secondary:#{alternatives.resource_id}"
-          )
-        end)
-        |> Map.put(:section_ids, [second_section.section_id])
-        |> Experiments.create_experiment()
-        |> elem(1)
+        |> Map.put(:section_ids, [first_section.section_id])
+
+      assert {:ok, first} = Experiments.create_experiment(request)
+
+      second_request =
+        Map.put(request, :slug, "second-draft-#{System.unique_integer([:positive])}")
+
+      assert {:ok, second} = Experiments.create_experiment(second_request)
+
+      assert {:ok, different} =
+               Experiments.create_experiment(graph_request(scope, other_alternatives))
 
       assert {:ok, %{state: :active}} =
                Experiments.activate_experiment(first.id, lifecycle(scope))
@@ -784,48 +878,23 @@ defmodule Oli.Experiments.ContextTest do
       assert {:error,
               %ExperimentError{
                 type: :conflict,
-                message: "another active experiment already targets this decision point",
-                details: %{
-                  alternatives_resource_id: alternatives_resource_id,
-                  decision_point_key: decision_point_key
-                }
-              }} =
-               Experiments.activate_experiment(same_point_other_section.id, lifecycle(scope))
-
-      assert alternatives_resource_id == alternatives.resource_id
-      assert decision_point_key == "alternatives:#{alternatives.resource_id}"
-
-      assert {:error, %ExperimentError{type: :conflict}} =
-               Experiments.activate_experiment(same_point_no_sections.id, lifecycle(scope))
+                message: "Decision Point is already used by an active experiment"
+              }} = Experiments.activate_experiment(second.id, lifecycle(scope))
 
       assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(different_point.id, lifecycle(scope))
-
-      assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(different_key.id, lifecycle(scope))
+               Experiments.activate_experiment(different.id, lifecycle(scope))
 
       assert {:ok, %{state: :paused}} =
                Experiments.pause_experiment(first.id, lifecycle(scope))
 
       assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(same_point_other_section.id, lifecycle(scope))
+               Experiments.activate_experiment(second.id, lifecycle(scope))
 
-      assert {:error, %ExperimentError{type: :conflict}} =
-               Experiments.activate_experiment(same_point_no_sections.id, lifecycle(scope))
-
-      assert {:ok, %{state: :completed}} =
-               Experiments.complete_experiment(same_point_other_section.id, lifecycle(scope))
+      assert {:ok, %{state: :paused}} =
+               Experiments.pause_experiment(second.id, lifecycle(scope))
 
       assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(same_point_no_sections.id, lifecycle(scope))
-
-      assert {:ok, %{state: :archived}} =
-               Experiments.archive_experiment(same_point_no_sections.id, lifecycle(scope))
-
-      after_archive = create_experiment.(alternatives, [first_section.section_id])
-
-      assert {:ok, %{state: :active}} =
-               Experiments.activate_experiment(after_archive.id, lifecycle(scope))
+               Experiments.activate_experiment(first.id, lifecycle(scope))
     end
 
     test "rejects competing activation requests for the same stable decision point" do
@@ -834,15 +903,17 @@ defmodule Oli.Experiments.ContextTest do
       alternatives = alternatives_revision(scope.project_id)
 
       experiments =
-        for _index <- 1..2 do
+        1..2
+        |> Enum.map(fn index ->
           request =
             scope
             |> graph_request(alternatives)
+            |> Map.put(:slug, "competing-activation-#{index}")
             |> Map.put(:section_ids, [section.section_id])
 
           assert {:ok, experiment} = Experiments.create_experiment(request)
           experiment
-        end
+        end)
 
       results =
         experiments
@@ -854,6 +925,44 @@ defmodule Oli.Experiments.ContextTest do
       assert Enum.count(results, &match?({:ok, %{state: :active}}, &1)) == 1
       assert Enum.count(results, &match?({:error, %ExperimentError{type: :conflict}}, &1)) == 1
     end
+
+    test "rejects activation when another project uses the same active decision point" do
+      first_scope = project_scope()
+      second_scope = project_scope()
+      section = runtime_scope(first_scope)
+      alternatives = alternatives_revision(first_scope.project_id)
+
+      insert(:project_resource,
+        project_id: second_scope.project_id,
+        resource_id: alternatives.resource_id
+      )
+
+      attach_revision_to_project_publications(second_scope.project_id, alternatives)
+
+      first_request =
+        first_scope
+        |> graph_request(alternatives)
+        |> Map.put(:section_ids, [section.section_id])
+
+      second_request =
+        second_scope
+        |> graph_request(alternatives)
+        |> Map.put(:slug, "shared-resource-other-project")
+
+      assert {:ok, first} = Experiments.create_experiment(first_request)
+      assert {:ok, second} = Experiments.create_experiment(second_request)
+
+      assert {:ok, %{state: :active}} =
+               Experiments.activate_experiment(first.id, lifecycle(first_scope))
+
+      assert {:error,
+              %ExperimentError{
+                type: :conflict,
+                details: %{alternatives_resource_id: resource_id}
+              }} = Experiments.activate_experiment(second.id, lifecycle(second_scope))
+
+      assert resource_id == alternatives.resource_id
+    end
   end
 
   describe "public response shapes" do
@@ -864,7 +973,10 @@ defmodule Oli.Experiments.ContextTest do
       {:ok, updated} =
         Experiments.update_experiment(
           definition.id,
-          %UpdateExperimentRequest{scope: scope, name: "Public response"}
+          %UpdateExperimentRequest{
+            scope: %Scope{author_id: scope.author_id, project_id: scope.project_id},
+            name: "Public response"
+          }
         )
 
       {:ok, active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
@@ -878,6 +990,8 @@ defmodule Oli.Experiments.ContextTest do
   defp valid_scope do
     institution = insert(:institution)
     project = insert(:project)
+    author = insert(:author)
+    insert(:author_project, author_id: author.id, project_id: project.id, status: :accepted)
     publication = insert(:publication, project: project)
     section = insert(:section, institution: institution, base_project: project)
 
@@ -893,6 +1007,7 @@ defmodule Oli.Experiments.ContextTest do
     %Scope{
       institution_id: institution.id,
       project_id: project.id,
+      author_id: author.id,
       publication_id: publication.id,
       section_id: section.id,
       user_id: user.id,
@@ -903,17 +1018,19 @@ defmodule Oli.Experiments.ContextTest do
   defp project_scope do
     institution = insert(:institution)
     project = insert(:project)
+    author = insert(:author)
+    insert(:author_project, author_id: author.id, project_id: project.id, status: :accepted)
 
     %Scope{
       institution_id: institution.id,
-      project_id: project.id
+      project_id: project.id,
+      author_id: author.id
     }
   end
 
   defp authorized_project_scope do
     scope = project_scope()
-    author = insert(:author)
-    insert(:author_project, author_id: author.id, project_id: scope.project_id)
+    author = Repo.get!(Oli.Accounts.Author, scope.author_id)
     {scope, author}
   end
 
@@ -935,6 +1052,7 @@ defmodule Oli.Experiments.ContextTest do
     %Scope{
       institution_id: project_scope.institution_id,
       project_id: project_scope.project_id,
+      author_id: project_scope.author_id,
       publication_id: publication.id,
       section_id: section.id,
       user_id: user.id,
@@ -1024,33 +1142,96 @@ defmodule Oli.Experiments.ContextTest do
   end
 
   defp graph_request(scope, alternatives, conditions \\ nil) do
+    section_ids = if scope.section_id, do: [scope.section_id], else: []
+    scope = %Scope{author_id: scope.author_id, project_id: scope.project_id}
+
+    page =
+      scope.project_id
+      |> page_revision()
+      |> Ecto.Changeset.change(
+        content: %{
+          "model" => [
+            %{
+              "type" => "alternatives",
+              "id" => "placement",
+              "alternatives_id" => alternatives.resource_id,
+              "children" => []
+            }
+          ]
+        }
+      )
+      |> Repo.update!()
+
+    conditions =
+      conditions ||
+        [
+          %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 1.0, active: true},
+          %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 1.0, active: true}
+        ]
+
+    normalized_conditions =
+      Enum.map(conditions, fn condition ->
+        condition
+        |> Map.put(:client_ref, condition.condition_code)
+        |> Map.delete(:condition_code)
+      end)
+
     %CreateExperimentRequest{
       scope: scope,
       slug: "ab-test-#{System.unique_integer([:positive])}",
       name: "A/B Test",
       algorithm: :weighted_random,
-      decision_point: %{
-        alternatives_resource_id: alternatives.resource_id,
-        decision_point_key: "alternatives:#{alternatives.resource_id}",
-        title: alternatives.title
-      },
-      conditions:
-        conditions ||
-          [
-            %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 1.0, active: true},
-            %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 1.0, active: true}
-          ]
+      section_ids: section_ids,
+      alternatives_resource_id: alternatives.resource_id,
+      conditions: normalized_conditions,
+      interventions: [%{page_resource_id: page.resource_id, content_element_id: "placement"}]
     }
   end
 
+  defp page_revision(project_id) do
+    resource = insert(:resource)
+    insert(:project_resource, project_id: project_id, resource_id: resource.id)
+
+    revision =
+      insert(:revision, %{
+        resource: resource,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Experiment placement",
+        content: %{"model" => []}
+      })
+
+    attach_revision_to_project_publications(project_id, revision)
+    revision
+  end
+
+  defp graded_page_revision(project_id) do
+    resource = insert(:resource)
+    insert(:project_resource, project_id: project_id, resource_id: resource.id)
+
+    revision =
+      insert(:revision, %{
+        resource: resource,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Experiment assessment",
+        graded: true,
+        content: %{"model" => []}
+      })
+
+    attach_revision_to_project_publications(project_id, revision)
+    revision
+  end
+
   defp create_definition!(scope) do
+    alternatives = alternatives_revision(scope.project_id)
+    authoring_scope = %Scope{author_id: scope.author_id, project_id: scope.project_id}
+
+    request =
+      authoring_scope
+      |> graph_request(alternatives)
+      |> Map.put(:section_ids, if(scope.section_id, do: [scope.section_id], else: []))
+
     assert {:ok, definition} =
-             Experiments.create_experiment(%CreateExperimentRequest{
-               scope: scope,
-               slug: "ab-test-#{System.unique_integer([:positive])}",
-               name: "A/B Test",
-               algorithm: :weighted_random
-             })
+             Experiments.create_experiment(request)
 
     definition
   end

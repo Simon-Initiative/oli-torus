@@ -13,7 +13,12 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
     Scope
   }
 
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
+  alias Oli.Experiments.Schemas.{
+    Assignment,
+    Condition,
+    ExperimentDefinition
+  }
+
   alias Oli.Experiments.XAPI.Attributions
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
@@ -103,9 +108,9 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
         option_id = branch.option_id
 
         dynamic(
-          [decision_point: decision_point, condition: condition],
+          [experiment: experiment, condition: condition],
           ^branch_filter or
-            (decision_point.alternatives_resource_id == ^alternatives_resource_id and
+            (experiment.alternatives_resource_id == ^alternatives_resource_id and
                (condition.option_id == ^option_id or condition.condition_code == ^option_id))
         )
       end)
@@ -115,9 +120,6 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       join: experiment in ExperimentDefinition,
       as: :experiment,
       on: experiment.id == assignment.experiment_id,
-      join: decision_point in DecisionPoint,
-      as: :decision_point,
-      on: decision_point.id == assignment.decision_point_id,
       join: condition in Condition,
       as: :condition,
       on: condition.id == assignment.condition_id,
@@ -132,7 +134,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       preload: [experiment: experiment],
       select: %{
         assignment: assignment,
-        decision_point: decision_point,
+        experiment: experiment,
         condition: condition,
         section_slug: section.slug
       },
@@ -147,7 +149,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
     resource_ids =
       assignments
-      |> Enum.map(& &1.decision_point.alternatives_resource_id)
+      |> Enum.map(& &1.experiment.alternatives_resource_id)
       |> Enum.uniq()
 
     revisions_by_resource =
@@ -162,18 +164,17 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   defp media_attribution(
          %{
            assignment: %Assignment{} = assignment,
-           decision_point: %DecisionPoint{} = decision_point,
+           experiment: %ExperimentDefinition{} = experiment,
            condition: %Condition{} = condition
          },
          %Context{} = context,
          revisions_by_resource
        ) do
-    revision = Map.get(revisions_by_resource, decision_point.alternatives_resource_id)
+    revision = Map.get(revisions_by_resource, experiment.alternatives_resource_id)
 
     decision = %AssignmentDecision{
       status: :assigned,
       experiment_id: assignment.experiment_id,
-      decision_point_id: assignment.decision_point_id,
       condition_id: assignment.condition_id,
       condition_code: condition.condition_code,
       assignment_id: assignment.id,
@@ -182,9 +183,8 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
     request = %AssignConditionRequest{
       scope: scope(context, assignment),
-      alternatives_resource_id: decision_point.alternatives_resource_id,
+      alternatives_resource_id: experiment.alternatives_resource_id,
       alternatives_revision_id: revision && revision.id,
-      decision_point_key: decision_point.decision_point_key,
       available_condition_codes: [condition.condition_code]
     }
 

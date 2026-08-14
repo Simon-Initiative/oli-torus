@@ -4,9 +4,10 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
   """
 
   alias Oli.Delivery.Sections
+  alias Oli.Experiments
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Resources.PageContent
+  alias Oli.Resources.Alternatives.AlternativesStrategyContext
 
   @empty %{
     alternative_groups_by_id: %{},
@@ -14,55 +15,118 @@ defmodule Oli.Delivery.Experiments.PageDecisions do
     experiment_attributions: []
   }
 
-  def prepare(section, page_context) do
-    content = attempt_content(page_context)
-    alternatives_resource_ids = alternatives_resource_ids(content)
+  def prepare(_section, %{resource_attempts: []}), do: @empty
 
-    with true <- alternatives_resource_ids != [],
-         groups <- alternatives_groups(section.slug, alternatives_resource_ids) do
-      by_id = Map.new(groups, fn group -> {group.id, group} end)
-
-      {project_slug, enrollment} =
-        Sections.get_alternatives_render_context(section.id, page_context.user.id)
-
-      context = %AlternativesStrategyContext{
-        enrollment_id: enrollment && enrollment.id,
-        user: page_context.user,
-        institution_id: section.institution_id,
-        project_id: section.base_project_id,
-        section_id: section.id,
-        section_slug: section.slug,
-        mode: :delivery,
-        project_slug: project_slug,
-        activity_resource_ids: activity_resource_ids(page_context.activities),
-        alternative_groups_by_id: by_id
-      }
-
-      {decisions, attributions} =
-        Oli.Resources.Alternatives.prepare_delivery_decisions(context, content)
-
-      %{
+  def prepare(_section, %{
         alternative_groups_by_id: by_id,
         experiment_decisions: decisions,
         experiment_attributions: attributions
-      }
-    else
-      _ -> @empty
+      })
+      when is_map(by_id) and is_map(decisions) and is_list(attributions) do
+    %{
+      alternative_groups_by_id: by_id,
+      experiment_decisions: decisions,
+      experiment_attributions: attributions
+    }
+  end
+
+  def prepare(section, page_context) do
+    content = attempt_content(page_context)
+    prepare_content(section, page_context.page, page_context.user, content)
+  end
+
+  @doc """
+  Prepares delivery decisions from server-resolved page content before a new attempt
+  hierarchy is created.
+
+  This entry point lets activity realization use the same persisted experiment choice
+  as rendering and completion.
+  """
+  def prepare_content(section, page, user, content) do
+    placements = PageContent.alternatives_placements(content)
+    prepare_placements(section, page, user, placements)
+  end
+
+  @doc """
+  Prepares delivery decisions from Alternatives placements already extracted from page content.
+  """
+  def prepare_placements(
+        %Sections.Section{id: section_id, base_project_id: nil} = _section,
+        page,
+        user,
+        placements
+      )
+      when is_integer(section_id) do
+    section_id
+    |> then(&Sections.get_section_by(id: &1))
+    |> prepare_placements(page, user, placements)
+  end
+
+  def prepare_placements(section, page, user, placements) when is_list(placements) do
+    alternatives_resource_ids = alternatives_resource_ids(placements)
+
+    case alternatives_resource_ids do
+      [] ->
+        @empty
+
+      _ids ->
+        case Experiments.relevant_active_experiment?(section.id, section.base_project_id) do
+          true ->
+            prepare_active(section, page, user, placements, alternatives_resource_ids)
+
+          false ->
+            inert_decisions(section.slug, placements, alternatives_resource_ids)
+        end
     end
   end
 
-  defp activity_resource_ids(activity_map) when is_map(activity_map), do: Map.keys(activity_map)
-  defp activity_resource_ids(_activity_map), do: []
+  defp prepare_active(section, page, user, placements, alternatives_resource_ids) do
+    groups = alternatives_groups(section.slug, alternatives_resource_ids)
+    by_id = Map.new(groups, fn group -> {group.id, group} end)
 
-  defp alternatives_resource_ids(%{"model" => _model} = content) do
-    content
-    |> PageContent.flat_filter(&(Map.get(&1, "type") == "alternatives"))
+    {project_slug, enrollment} =
+      Sections.get_alternatives_render_context(section.id, user.id)
+
+    context = %AlternativesStrategyContext{
+      enrollment_id: enrollment && enrollment.id,
+      user: user,
+      institution_id: section.institution_id,
+      project_id: section.base_project_id,
+      section_id: section.id,
+      section_slug: section.slug,
+      mode: :delivery,
+      project_slug: project_slug,
+      page_resource_id: page.resource_id,
+      page_revision_id: page.id,
+      alternative_groups_by_id: by_id
+    }
+
+    {decisions, attributions} =
+      Oli.Resources.Alternatives.prepare_classified_delivery_decisions(context, placements)
+
+    %{
+      alternative_groups_by_id: by_id,
+      experiment_decisions: decisions,
+      experiment_attributions: attributions
+    }
+  end
+
+  defp inert_decisions(section_slug, all_placements, alternatives_resource_ids) do
+    groups = alternatives_groups(section_slug, alternatives_resource_ids)
+    by_id = Map.new(groups, fn group -> {group.id, group} end)
+
+    {decisions, []} =
+      Oli.Resources.Alternatives.fallback_classified_delivery_decisions(all_placements)
+
+    %{@empty | alternative_groups_by_id: by_id, experiment_decisions: decisions}
+  end
+
+  defp alternatives_resource_ids(placements) do
+    placements
     |> Enum.map(&Map.get(&1, "alternatives_id"))
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
   end
-
-  defp alternatives_resource_ids(_content), do: []
 
   defp alternatives_groups(section_slug, resource_ids) do
     section_slug

@@ -1,14 +1,11 @@
 defmodule Oli.Delivery.AttemptsTest do
   use Oli.DataCase
 
-  import ExUnit.CaptureLog
-
   alias Oli.Delivery.Attempts.Core, as: Attempts
 
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.{Hierarchy, VisitContext, AttemptState}
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
-
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}
@@ -17,55 +14,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
   import Oli.Factory
 
-  describe "reward handoff after client evaluation" do
-    test "enqueues only successful activity-attempt updates" do
-      parent = self()
-
-      enqueue = fn id, section_id ->
-        send(parent, {:enqueued, id, section_id})
-        :ok
-      end
-
-      assert {:error, :invalid_update} =
-               ApplyClientEvaluation.enqueue_reward_after_update(
-                 {:error, :invalid_update},
-                 7,
-                 enqueue
-               )
-
-      refute_received {:enqueued, _, _}
-
-      updated_attempt = %{id: 42}
-
-      assert {:ok, ^updated_attempt} =
-               ApplyClientEvaluation.enqueue_reward_after_update(
-                 {:ok, updated_attempt},
-                 7,
-                 enqueue
-               )
-
-      assert_received {:enqueued, 42, 7}
-    end
-
-    test "preserves a successful update when reward enqueueing fails" do
-      updated_attempt = %{id: 42}
-
-      log =
-        capture_log(fn ->
-          assert {:ok, ^updated_attempt} =
-                   ApplyClientEvaluation.enqueue_reward_after_update(
-                     {:ok, updated_attempt},
-                     7,
-                     fn _activity_attempt_id, _section_id -> {:error, :forced_failure} end
-                   )
-        end)
-
-      assert log =~ "A/B testing reward handoff failed after client evaluation"
-      assert log =~ "activity_attempt_id: 42"
-      assert log =~ "section_id: 7"
-      assert log =~ "reason: :forced_failure"
-    end
-
+  describe "activity attempt context" do
     test "loads the activity attempt, section, parts, revision, and activity type in one query" do
       section = insert(:section)
       user = insert(:user)

@@ -4,6 +4,13 @@ defmodule OliWeb.Common.Components do
   """
   use Phoenix.Component
 
+  attr :class, :string, default: nil
+  attr :icon, :string, required: true
+  attr :on_click, :string, required: true
+  attr :values, :list, default: []
+  attr :aria_label, :string, required: true
+
+  @doc "Renders an icon-only button with optional accessible labeling."
   def icon_button(assigns) do
     assigns =
       assigns
@@ -23,7 +30,9 @@ defmodule OliWeb.Common.Components do
       )
 
     ~H"""
-    <button class={@class} phx-click={@on_click} {@values}><i class={@icon}></i></button>
+    <button class={@class} phx-click={@on_click} aria-label={@aria_label} {@values}>
+      <i class={@icon} aria-hidden="true"></i>
+    </button>
     """
   end
 end

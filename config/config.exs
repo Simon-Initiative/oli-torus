@@ -145,6 +145,8 @@ config :oli, :xapi_upload_pipeline,
   uploader_module: Oli.Analytics.XAPI.S3Uploader,
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_OUTPUT_DIR", "./xapi_output")
 
+config :oli, :xapi_host_name, "localhost"
+
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
     nil -> Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator
