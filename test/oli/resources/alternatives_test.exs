@@ -3,14 +3,15 @@ defmodule Oli.Resources.AlternativesTest do
 
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
+  import ExUnit.CaptureLog
 
-  alias Oli.Experiments
   alias Oli.Utils.Seeder
   alias Oli.Resources.Alternatives
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Delivery.ExtrinsicState
-  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
+  alias Oli.Delivery.Metrics
+  alias Oli.Experiments.Scope
+  alias Oli.Experiments.Schemas.{Assignment, Condition, ExperimentDefinition, ExperimentSection}
 
   @select_all_el %{
     "type" => "alternatives",
@@ -108,6 +109,235 @@ defmodule Oli.Resources.AlternativesTest do
       }
     ]
   }
+
+  describe "normalize_strategy/1" do
+    test "normalizes the legacy experiment alias and accepts the canonical strategy" do
+      assert {:ok, "experiment_controlled"} =
+               Alternatives.normalize_strategy("upgrade_decision_point")
+
+      assert {:ok, "experiment_controlled"} =
+               Alternatives.normalize_strategy("experiment_controlled")
+    end
+
+    test "fails closed for unsupported strategies" do
+      assert {:error, :unsupported_strategy} = Alternatives.normalize_strategy("unknown")
+    end
+  end
+
+  describe "apply_experiment_decisions/3" do
+    test "keeps only each persisted root selection for activity realization" do
+      content = %{
+        "model" => [
+          experiment_placement("placement-a", 10, %{
+            "control" => [activity_reference(101)],
+            "variant" => [activity_reference(102), activity_reference(103)]
+          }),
+          experiment_placement("placement-b", 20, %{
+            "control" => [activity_reference(201), activity_reference(202)],
+            "variant" => [activity_reference(203)]
+          }),
+          activity_reference(999)
+        ]
+      }
+
+      groups = %{
+        10 => %{strategy: "experiment_controlled"},
+        20 => %{strategy: "upgrade_decision_point"}
+      }
+
+      decisions = %{
+        "placement-a" => %{status: :assigned, option_id: "variant"},
+        "placement-b" => %{status: :assigned, option_id: "control"}
+      }
+
+      selected = Alternatives.apply_experiment_decisions(content, groups, decisions)
+
+      assert activity_ids(selected) == [102, 103, 201, 202, 999]
+    end
+
+    test "uses the first local branch for an applicable experiment placement without assignment" do
+      content = %{
+        "model" => [
+          experiment_placement("placement", 10, %{
+            "control" => [activity_reference(101)],
+            "variant" => [activity_reference(102)]
+          })
+        ]
+      }
+
+      selected =
+        Alternatives.apply_experiment_decisions(
+          content,
+          %{10 => %{strategy: "experiment_controlled"}},
+          %{"placement" => %{status: :no_experiment}}
+        )
+
+      assert activity_ids(selected) == [101]
+    end
+
+    test "applies experiment decisions inside ordinary containers" do
+      placement =
+        experiment_placement("nested-in-group", 10, %{
+          "control" => [activity_reference(101)],
+          "variant" => [activity_reference(102)]
+        })
+
+      content = %{
+        "model" => [%{"type" => "group", "id" => "group", "children" => [placement]}]
+      }
+
+      selected =
+        Alternatives.apply_experiment_decisions(
+          content,
+          %{10 => %{strategy: "experiment_controlled"}},
+          %{"nested-in-group" => %{status: :assigned, option_id: "variant"}}
+        )
+
+      assert activity_ids(selected) == [102]
+    end
+
+    test "fails closed to the first branch for Alternatives nested within Alternatives" do
+      nested =
+        experiment_placement("nested", 10, %{
+          "control" => [activity_reference(101)],
+          "variant" => [activity_reference(102)]
+        })
+
+      content = %{
+        "model" => [
+          experiment_placement("learner-choice", 20, %{
+            "one" => [%{"type" => "group", "id" => "group", "children" => [nested]}]
+          })
+        ]
+      }
+
+      parent = self()
+
+      log =
+        capture_log(fn ->
+          selected =
+            Alternatives.apply_experiment_decisions(
+              content,
+              %{
+                10 => %{strategy: "experiment_controlled"},
+                20 => %{strategy: "user_section_preference"}
+              },
+              %{"nested" => %{status: :assigned, option_id: "variant"}}
+            )
+
+          send(parent, {:selected, selected})
+        end)
+
+      assert_receive {:selected, selected}
+      assert log =~ "Rendering invalid Alternatives placement nested within Alternatives"
+
+      [outer] = selected["model"]
+      [outer_branch] = outer["children"]
+      [group] = outer_branch["children"]
+      [collapsed_nested] = group["children"]
+      assert length(collapsed_nested["children"]) == 1
+      assert activity_ids(selected) == [101]
+    end
+
+    test "visible activities alone drive partial and exact 100 percent page completion" do
+      section = insert(:section)
+      user = insert(:user)
+      page_revision = insert(:revision, full_progress_pct: 100)
+
+      activity_revisions =
+        Map.new(1..7, fn id ->
+          revision = insert(:revision)
+          {id, revision}
+        end)
+
+      content = %{
+        "model" => [
+          experiment_placement("placement-a", 10, %{
+            "control" => [activity_reference(activity_revisions[1].resource_id)],
+            "variant" => [
+              activity_reference(activity_revisions[2].resource_id),
+              activity_reference(activity_revisions[3].resource_id)
+            ]
+          }),
+          experiment_placement("placement-b", 20, %{
+            "control" => [
+              activity_reference(activity_revisions[4].resource_id),
+              activity_reference(activity_revisions[5].resource_id)
+            ],
+            "variant" => [activity_reference(activity_revisions[6].resource_id)]
+          }),
+          activity_reference(activity_revisions[7].resource_id)
+        ]
+      }
+
+      groups = %{
+        10 => %{strategy: "experiment_controlled"},
+        20 => %{strategy: "experiment_controlled"}
+      }
+
+      selected =
+        Alternatives.apply_experiment_decisions(content, groups, %{
+          "placement-a" => %{status: :assigned, option_id: "variant"},
+          "placement-b" => %{status: :assigned, option_id: "control"}
+        })
+
+      selected_ids = activity_ids(selected)
+
+      refute activity_revisions[1].resource_id in selected_ids
+      refute activity_revisions[6].resource_id in selected_ids
+
+      resource_access =
+        insert(:resource_access,
+          user: user,
+          section: section,
+          resource: page_revision.resource,
+          progress: 0.0
+        )
+
+      resource_attempt =
+        insert(:resource_attempt,
+          resource_access: resource_access,
+          revision: page_revision,
+          content: selected
+        )
+
+      revisions_by_resource_id =
+        Map.new(activity_revisions, fn {_key, revision} -> {revision.resource_id, revision} end)
+
+      attempts =
+        Enum.map(selected_ids, fn resource_id ->
+          revision = Map.fetch!(revisions_by_resource_id, resource_id)
+
+          insert(:activity_attempt,
+            resource_attempt: resource_attempt,
+            revision: revision,
+            resource: revision.resource,
+            scoreable: true,
+            lifecycle_state: :active
+          )
+        end)
+
+      [first, second | remaining] = attempts
+
+      Enum.each([first, second], fn attempt ->
+        attempt
+        |> Ecto.Changeset.change(lifecycle_state: :evaluated)
+        |> Repo.update!()
+      end)
+
+      assert {:ok, :updated} = Metrics.update_page_progress(first)
+      assert_in_delta Repo.reload(resource_access).progress, 0.4, 0.0001
+
+      Enum.each(remaining, fn attempt ->
+        attempt
+        |> Ecto.Changeset.change(lifecycle_state: :evaluated)
+        |> Repo.update!()
+      end)
+
+      assert {:ok, :updated} = Metrics.update_page_progress(List.last(attempts))
+      assert Repo.reload(resource_access).progress == 1.0
+    end
+  end
 
   describe "alternatives" do
     setup do
@@ -350,131 +580,6 @@ defmodule Oli.Resources.AlternativesTest do
              ]
     end
 
-    test "renders assigned native decision point condition and records exposure" do
-      %{context: context, element: element} = native_decision_point_setup()
-
-      {decisions, attributions} =
-        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
-
-      assert [
-               %{alternative: %{"value" => "alt-a"}, hidden: false},
-               %{alternative: %{"value" => "alt-b"}, hidden: true}
-             ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
-
-      assignment = Repo.one!(Assignment)
-      experiment = Repo.get!(ExperimentDefinition, assignment.experiment_id)
-      condition = Repo.get!(Condition, assignment.condition_id)
-      decision_point = Repo.get!(DecisionPoint, assignment.decision_point_id)
-      [exposure] = attributions
-
-      assert assignment.section_id == context.section_id
-      assert exposure["experiment_uuid"] == experiment.uuid
-      assert exposure["decision_point_key"] == decision_point.decision_point_key
-      assert exposure["condition_code"] == condition.condition_code
-      assert exposure["publication_id"] == context.publication_id
-      assert exposure["key"] =~ ":assignment:#{assignment.id}"
-      assert exposure["role"] == "exposure"
-    end
-
-    test "renders assigned native decision point condition for an institutionless open/free section" do
-      %{context: context, element: element} =
-        native_decision_point_setup(section_institution?: false)
-
-      {decisions, _attributions} =
-        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
-
-      assert [
-               %{alternative: %{"value" => "alt-a"}, hidden: false},
-               %{alternative: %{"value" => "alt-b"}, hidden: true}
-             ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
-
-      assignment = Repo.one!(Assignment)
-
-      assert context.institution_id == nil
-      assert assignment.section_id == context.section_id
-      assert assignment.enrollment_id == context.enrollment_id
-    end
-
-    test "reuses sticky native assignment on repeat delivery selection" do
-      %{context: context, element: element} = native_decision_point_setup()
-
-      {decisions, first_attributions} =
-        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
-
-      {repeat_decisions, repeat_attributions} =
-        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
-
-      Alternatives.select(%{context | experiment_decisions: decisions}, element)
-      Alternatives.select(%{context | experiment_decisions: repeat_decisions}, element)
-
-      assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert length(first_attributions ++ repeat_attributions) == 2
-    end
-
-    test "does not expose nested native decision point in an unselected branch" do
-      %{context: context, element: parent_element} = native_decision_point_setup()
-
-      project = Repo.get!(Oli.Authoring.Course.Project, context.project_id)
-      child_revision = insert(:revision)
-
-      insert(:project_resource, project_id: project.id, resource_id: child_revision.resource_id)
-
-      scope = %Scope{
-        institution_id: context.institution_id,
-        project_id: context.project_id,
-        publication_id: context.publication_id,
-        section_id: context.section_id,
-        user_id: context.user.id,
-        enrollment_id: context.enrollment_id
-      }
-
-      create_native_experiment(scope, child_revision, "nested-alt")
-
-      child_alternatives_id = child_revision.resource_id
-
-      child_element = %{
-        "type" => "alternatives",
-        "alternatives_id" => child_alternatives_id,
-        "children" => [
-          alternative_child("nested-alt"),
-          alternative_child("nested-other")
-        ]
-      }
-
-      parent_element =
-        put_in(parent_element, ["children"], [
-          alternative_child("alt-a"),
-          %{
-            "type" => "alternative",
-            "value" => "alt-b",
-            "children" => [child_element]
-          }
-        ])
-
-      context = %{
-        context
-        | alternative_groups_by_id:
-            Map.put(context.alternative_groups_by_id, child_alternatives_id, %{
-              id: child_alternatives_id,
-              revision_id: child_revision.id,
-              title: "Nested decision point",
-              options: [
-                %{"id" => "nested-alt", "name" => "nested condition"},
-                %{"id" => "nested-other", "name" => "nested other condition"}
-              ],
-              strategy: "upgrade_decision_point"
-            })
-      }
-
-      {decisions, attributions} =
-        Alternatives.prepare_delivery_decisions(context, page_content_with(parent_element))
-
-      assert Map.has_key?(decisions, parent_element["alternatives_id"])
-      refute Map.has_key?(decisions, child_alternatives_id)
-      assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert length(attributions) == 1
-    end
-
     test "review mode renders the originally assigned native decision point condition without exposure" do
       %{context: context, element: element} =
         native_decision_point_setup(children: ["alt-b", "alt-a"])
@@ -516,61 +621,55 @@ defmodule Oli.Resources.AlternativesTest do
       assert Repo.aggregate(Assignment, :count, :id) == 0
     end
 
-    test "renders first option when no native experiment matches" do
-      %{context: context, element: element} = native_decision_point_setup(active?: false)
+    test "preview modes return every branch without assignment or exposure state" do
+      %{context: context, element: element} = native_decision_point_setup([])
 
-      {decisions, attributions} =
-        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
-
-      assert [
-               %{alternative: %{"value" => "alt-a"}, hidden: false},
-               %{alternative: %{"value" => "alt-b"}, hidden: true}
-             ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
+      for mode <- [:author_preview, :instructor_preview] do
+        assert [
+                 %{alternative: %{"value" => "alt-a"}, hidden: false},
+                 %{alternative: %{"value" => "alt-b"}, hidden: false}
+               ] = Alternatives.select(%{context | mode: mode}, element)
+      end
 
       assert Repo.aggregate(Assignment, :count, :id) == 0
-      assert attributions == []
-    end
-
-    @tag capture_log: true
-    test "renders first option without exposure when assigned condition is not renderable" do
-      %{context: context, element: element} =
-        native_decision_point_setup(options: [%{"id" => "missing-alt", "name" => "condition-a"}])
-
-      {decisions, attributions} =
-        Alternatives.prepare_delivery_decisions(context, page_content_with(element))
-
-      assert [
-               %{alternative: %{"value" => "alt-a"}, hidden: false},
-               %{alternative: %{"value" => "alt-b"}, hidden: true}
-             ] = Alternatives.select(%{context | experiment_decisions: decisions}, element)
-
-      assert Repo.aggregate(Assignment, :count, :id) == 1
-      assert attributions == []
     end
   end
 
-  defp page_content_with(element), do: %{"model" => [element]}
+  defp experiment_placement(id, alternatives_id, branches) do
+    %{
+      "type" => "alternatives",
+      "id" => id,
+      "alternatives_id" => alternatives_id,
+      "children" =>
+        Enum.map(branches, fn {value, children} ->
+          %{
+            "type" => "alternative",
+            "id" => "#{id}-#{value}",
+            "value" => value,
+            "children" => children
+          }
+        end)
+    }
+  end
 
-  defp native_decision_point_setup(opts \\ []) do
+  defp activity_reference(id), do: %{"type" => "activity-reference", "activity_id" => id}
+
+  defp activity_ids(content) do
+    content
+    |> Oli.Resources.PageContent.flat_filter(&(&1["type"] == "activity-reference"))
+    |> Enum.map(& &1["activity_id"])
+  end
+
+  defp native_decision_point_setup(opts) do
     active? = Keyword.get(opts, :active?, true)
     options = Keyword.get(opts, :options, native_options())
-    section_institution? = Keyword.get(opts, :section_institution?, true)
     children = Keyword.get(opts, :children, ["alt-a", "alt-b"])
 
     institution = insert(:institution)
     project = insert(:project)
     publication = insert(:publication, project: project)
 
-    section =
-      if section_institution? do
-        insert(:section, institution: institution, base_project: project)
-      else
-        insert(:section,
-          institution: nil,
-          base_project: project,
-          open_and_free: true
-        )
-      end
+    section = insert(:section, institution: institution, base_project: project)
 
     user = insert(:user)
     enrollment = insert(:enrollment, section: section, user: user)
@@ -584,7 +683,11 @@ defmodule Oli.Resources.AlternativesTest do
         }
       )
 
+    page_revision =
+      insert(:revision, resource_type_id: Oli.Resources.ResourceType.id_for_page())
+
     insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+    insert(:project_resource, project_id: project.id, resource_id: page_revision.resource_id)
 
     insert(:section_project_publication,
       section: section,
@@ -596,6 +699,12 @@ defmodule Oli.Resources.AlternativesTest do
       publication: publication,
       resource: revision.resource,
       revision: revision
+    )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision
     )
 
     insert(:section_resource,
@@ -630,6 +739,8 @@ defmodule Oli.Resources.AlternativesTest do
         section_slug: section.slug,
         mode: :delivery,
         project_slug: project.slug,
+        page_resource_id: page_revision.resource_id,
+        page_revision_id: page_revision.id,
         alternative_groups_by_id: %{
           alternatives_id => %{
             id: alternatives_id,
@@ -642,6 +753,7 @@ defmodule Oli.Resources.AlternativesTest do
       },
       element: %{
         "type" => "alternatives",
+        "id" => "native-alternatives-placement",
         "alternatives_id" => alternatives_id,
         "children" =>
           Enum.map(children, fn value ->
@@ -669,36 +781,38 @@ defmodule Oli.Resources.AlternativesTest do
   end
 
   defp create_native_experiment(%Scope{} = scope, revision, condition_code) do
-    {:ok, definition} =
-      Experiments.create_experiment(%CreateExperimentRequest{
-        scope: scope,
+    definition =
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: scope.project_id,
         slug: "runtime-#{System.unique_integer([:positive])}",
         name: "Runtime experiment",
-        algorithm: :weighted_random
-      })
-
-    {:ok, active} =
-      Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
-
-    decision_point =
-      %DecisionPoint{}
-      |> DecisionPoint.changeset(%{
-        experiment_id: active.id,
-        alternatives_resource_id: revision.resource_id,
-        decision_point_key: "alternatives:#{revision.resource_id}"
+        state: :active,
+        algorithm: :weighted_random,
+        alternatives_resource_id: revision.resource_id
       })
       |> Repo.insert!()
 
-    %Condition{}
-    |> Condition.changeset(%{
-      experiment_id: active.id,
-      decision_point_id: decision_point.id,
-      condition_code: condition_code,
-      label: condition_code,
-      weight: 1.0,
-      position: 0
-    })
+    %ExperimentSection{}
+    |> ExperimentSection.changeset(%{experiment_id: definition.id, section_id: scope.section_id})
     |> Repo.insert!()
+
+    for {code, option_id, weight, position} <- [
+          {condition_code, condition_code, 1.0, 0},
+          {"other", "alt-b", 0.0, 1}
+        ] do
+      %Condition{}
+      |> Condition.changeset(%{
+        experiment_id: definition.id,
+        condition_code: code,
+        label: code,
+        option_id: option_id,
+        weight: weight,
+        active: true,
+        position: position
+      })
+      |> Repo.insert!()
+    end
   end
 
   defp native_options do

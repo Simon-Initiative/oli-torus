@@ -17,13 +17,11 @@ defmodule Oli.Experiments.Policies.ThompsonSampling do
 
   def default_policy_config do
     %{
-      "reward_source" => "activity_attempt:full_credit",
+      "reward_source" => "assessment_page:normalized_score",
       "priors" => %{
-        "default" => %{"alpha" => @default_prior_alpha, "beta" => @default_prior_beta},
-        "conditions" => %{}
+        "default" => %{"alpha" => @default_prior_alpha, "beta" => @default_prior_beta}
       },
       "guardrails" => %{
-        "manual_pause_enabled" => true,
         "warm_up_assignments" => 0,
         "max_condition_share" => 1.0,
         "fixed_control_allocation" => nil,
@@ -135,39 +133,26 @@ defmodule Oli.Experiments.Policies.ThompsonSampling do
     end
   end
 
-  defp normalize_priors(policy_config, condition_state, condition_code) do
+  defp normalize_priors(policy_config, condition_state, _condition_code) do
     with {:ok, {default_alpha, default_beta}} <- default_priors(policy_config),
-         {:ok, {configured_alpha, configured_beta}} <-
-           configured_condition_priors(policy_config, condition_code, default_alpha, default_beta),
          {:ok, prior_alpha} <-
-           positive_number(condition_state, "prior_alpha", configured_alpha),
-         {:ok, prior_beta} <- positive_number(condition_state, "prior_beta", configured_beta) do
+           positive_number(condition_state, "prior_alpha", default_alpha),
+         {:ok, prior_beta} <- positive_number(condition_state, "prior_beta", default_beta) do
       {:ok, {prior_alpha, prior_beta}}
     end
   end
 
   defp default_priors(policy_config) do
-    default_config =
-      policy_config
-      |> Map.get("priors", %{})
-      |> Map.get("default", %{})
+    priors = Map.get(policy_config, "priors", %{})
+    default_config = Map.get(priors, "default", %{})
 
-    with {:ok, alpha} <- positive_number(default_config, "alpha", @default_prior_alpha),
+    with true <- Map.get(priors, "conditions", %{}) == %{},
+         {:ok, alpha} <- positive_number(default_config, "alpha", @default_prior_alpha),
          {:ok, beta} <- positive_number(default_config, "beta", @default_prior_beta) do
       {:ok, {alpha, beta}}
-    end
-  end
-
-  defp configured_condition_priors(policy_config, condition_code, default_alpha, default_beta) do
-    condition_config =
-      policy_config
-      |> Map.get("priors", %{})
-      |> Map.get("conditions", %{})
-      |> Map.get(condition_code, %{})
-
-    with {:ok, alpha} <- positive_number(condition_config, "alpha", default_alpha),
-         {:ok, beta} <- positive_number(condition_config, "beta", default_beta) do
-      {:ok, {alpha, beta}}
+    else
+      false -> {:error, :condition_priors_not_supported}
+      error -> error
     end
   end
 

@@ -8,14 +8,12 @@ defmodule Oli.Experiments.AnalyticsTest do
   alias Oli.Experiments.{
     AnalyticsQuery,
     AssignmentDecision,
-    CreateExperimentRequest,
-    LifecycleRequest,
     RecordExposureRequest,
     RecordRewardRequest,
     Scope
   }
 
-  alias Oli.Experiments.Schemas.{Condition, DecisionPoint}
+  alias Oli.Experiments.Schemas.{Condition, ExperimentDefinition, ExperimentSection, Intervention}
 
   describe "analytics reads" do
     test "returns scoped summary, counts, and policy snapshots" do
@@ -58,20 +56,14 @@ defmodule Oli.Experiments.AnalyticsTest do
       assert {:ok,
               [
                 %{
-                  algorithm: :thompson_sampling,
-                  algorithm_version: "thompson_sampling:v2",
+                  algorithm: :weighted_random,
+                  algorithm_version: "weighted_random",
                   assignment_count: 1,
-                  reward_success_count: 1,
-                  prior_config: %{"default" => %{"alpha" => 1.0, "beta" => 1.0}},
-                  guardrail_state: %{
-                    "manual_pause_enabled" => true,
-                    "assignment_count" => 1,
-                    "reward_count" => 1
-                  }
+                  reward_success_count: 0
                 } = snapshot
               ]} = Experiments.policy_state_snapshot(query)
 
-      assert snapshot.state[assignment.condition_code]["posterior_alpha"] == 2.0
+      assert snapshot.state == %{}
       refute Map.has_key?(snapshot, :policy_config)
     end
 
@@ -118,38 +110,42 @@ defmodule Oli.Experiments.AnalyticsTest do
       resource_id: revision.resource_id
     )
 
-    {:ok, definition} =
-      Experiments.create_experiment(%CreateExperimentRequest{
-        scope: scope,
+    active =
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: scope.project_id,
         slug: "analytics-#{System.unique_integer([:positive])}",
         name: "Analytics experiment",
-        algorithm: :thompson_sampling
-      })
-
-    {:ok, active} =
-      Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
-
-    decision_point =
-      %DecisionPoint{}
-      |> DecisionPoint.changeset(%{
-        experiment_id: active.id,
-        alternatives_resource_id: revision.resource_id,
-        decision_point_key: decision_point_key(revision)
+        state: :active,
+        algorithm: :weighted_random,
+        alternatives_resource_id: revision.resource_id
       })
       |> Repo.insert!()
+
+    %ExperimentSection{}
+    |> ExperimentSection.changeset(%{experiment_id: active.id, section_id: scope.section_id})
+    |> Repo.insert!()
 
     for {code, position} <- [{"a", 0}, {"b", 1}] do
       %Condition{}
       |> Condition.changeset(%{
         experiment_id: active.id,
-        decision_point_id: decision_point.id,
         condition_code: code,
         label: code,
+        option_id: code,
         weight: 1.0,
         position: position
       })
       |> Repo.insert!()
     end
+
+    %Intervention{}
+    |> Intervention.changeset(%{
+      experiment_id: active.id,
+      page_resource_id: revision.resource_id,
+      content_element_id: "placement"
+    })
+    |> Repo.insert!()
 
     %{scope: scope, revision: revision, definition_id: active.id}
   end
@@ -159,12 +155,11 @@ defmodule Oli.Experiments.AnalyticsTest do
       scope: scope,
       alternatives_resource_id: revision.resource_id,
       alternatives_revision_id: revision.id,
-      decision_point_key: decision_point_key(revision),
+      page_resource_id: revision.resource_id,
+      content_element_id: "placement",
       available_condition_codes: condition_codes
     }
   end
-
-  defp decision_point_key(revision), do: "alternatives:#{revision.resource_id}"
 
   defp valid_scope do
     institution = insert(:institution)
@@ -179,9 +174,12 @@ defmodule Oli.Experiments.AnalyticsTest do
     )
 
     user = insert(:user)
+    author = insert(:author)
+    insert(:author_project, author_id: author.id, project_id: project.id, status: :accepted)
     enrollment = insert(:enrollment, section: section, user: user)
 
     %Scope{
+      author_id: author.id,
       institution_id: institution.id,
       project_id: project.id,
       publication_id: publication.id,

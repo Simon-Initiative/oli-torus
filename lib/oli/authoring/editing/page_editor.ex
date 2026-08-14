@@ -165,9 +165,13 @@ defmodule Oli.Authoring.Editing.PageEditor do
   defp feature_enabled_for_strategy?("upgrade_decision_point", project),
     do: project.experiments_enabled
 
+  defp feature_enabled_for_strategy?("experiment_controlled", project),
+    do: project.experiments_enabled
+
   defp feature_enabled_for_strategy?(_strategy, project), do: project.alternatives_enabled
 
   defp feature_for_strategy("upgrade_decision_point"), do: {:feature_disabled, :experiments}
+  defp feature_for_strategy("experiment_controlled"), do: {:feature_disabled, :experiments}
   defp feature_for_strategy(_strategy), do: {:feature_disabled, :alternatives}
 
   defp possibly_release_lock(previous, project, publication, resource, author, update) do

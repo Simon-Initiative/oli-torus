@@ -118,6 +118,35 @@ defmodule Oli.Resources.PageContent do
   end
 
   @doc """
+  Finds supported Alternatives placements in content order.
+
+  Placements may occur at any depth inside ordinary containers. Traversal stops at each
+  Alternatives boundary because an Alternatives placement nested beneath it is invalid
+  and must not participate in discovery, assignment, or exposure.
+  """
+  def alternatives_placements(%{"model" => model}) when is_list(model) do
+    model
+    |> find_alternatives([])
+    |> Enum.reverse()
+  end
+
+  def alternatives_placements(_content), do: []
+
+  defp find_alternatives(elements, acc) when is_list(elements) do
+    Enum.reduce(elements, acc, fn element, acc ->
+      find_alternatives(element, acc)
+    end)
+  end
+
+  defp find_alternatives(%{"type" => "alternatives"} = element, acc), do: [element | acc]
+
+  defp find_alternatives(%{"children" => children}, acc)
+       when is_list(children),
+       do: find_alternatives(children, acc)
+
+  defp find_alternatives(_element, acc), do: acc
+
+  @doc """
   Maps the content elements of page content, preserving the as-is structure. Implemented as a
   convenience function, over top of map_reduce.
   """

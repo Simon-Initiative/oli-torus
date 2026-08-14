@@ -137,8 +137,20 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     versions = available_migration_versions()
 
     with {:ok, applied_version} <- fetch_applied_migration_version(database) do
-      {:ok, Enum.count(versions, &(&1 > applied_version))}
+      {:ok, pending_migration_count(versions, applied_version)}
     end
+  end
+
+  @doc """
+  Counts migration versions newer than the latest applied version.
+
+  This pure boundary keeps migration-state calculation independent from how available and
+  applied versions are discovered.
+  """
+  @spec pending_migration_count([integer()], integer()) :: non_neg_integer()
+  def pending_migration_count(versions, applied_version)
+      when is_list(versions) and is_integer(applied_version) do
+    Enum.count(versions, &(&1 > applied_version))
   end
 
   defp fetch_applied_migration_version(database) do

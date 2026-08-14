@@ -10,7 +10,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Experiments.RewardHandoffWorker
+
+  alias Oli.Experiments.Schemas.{
+    AssessmentBinding,
+    Condition,
+    ExperimentDefinition,
+    ExperimentSection,
+    Intervention
+  }
+
   alias Oli.Activities.Model.{Part}
+  alias Oli.Factory
   alias Oli.Repo
 
   @content_automatic_by_default %{
@@ -211,6 +221,214 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     end
   end
 
+  describe "starting attempts with Alternatives" do
+    setup [:setup_tags]
+
+    setup do
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{}, :user1)
+        |> Seeder.add_activity(
+          %{title: "control", content: @content_automatic, scope: "embedded"},
+          :activity_a
+        )
+        |> Seeder.add_activity(
+          %{title: "variant", content: @content_automatic, scope: "embedded"},
+          :activity_b
+        )
+
+      alternatives_revision =
+        Factory.insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_alternatives(),
+          content: %{
+            "strategy" => "upgrade_decision_point",
+            "options" => [%{"id" => "control"}, %{"id" => "variant"}]
+          }
+        )
+
+      page_content = %{
+        "model" => [
+          %{
+            "type" => "alternatives",
+            "id" => "placement",
+            "alternatives_id" => alternatives_revision.resource_id,
+            "children" => [
+              %{
+                "type" => "alternative",
+                "value" => "control",
+                "children" => [
+                  %{
+                    "type" => "activity-reference",
+                    "activity_id" => map.activity_a.revision.resource_id
+                  }
+                ]
+              },
+              %{
+                "type" => "alternative",
+                "value" => "variant",
+                "children" => [
+                  %{
+                    "type" => "activity-reference",
+                    "activity_id" => map.activity_b.revision.resource_id
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+
+      map =
+        map
+        |> Seeder.add_page(%{title: "graded page", graded: true, content: page_content}, :page)
+        |> Seeder.create_section_resources()
+
+      Factory.insert(:project_resource,
+        project_id: map.project.id,
+        resource_id: alternatives_revision.resource_id
+      )
+
+      Factory.insert(:published_resource,
+        publication: map.publication,
+        resource: alternatives_revision.resource,
+        revision: alternatives_revision
+      )
+
+      Factory.insert(:section_resource,
+        section: map.section,
+        project: map.project,
+        resource_id: alternatives_revision.resource_id
+      )
+
+      Map.put(map, :alternatives_revision, alternatives_revision)
+    end
+
+    @tag isolation: "serializable"
+    test "explicit start pins the newly assigned weighted alternative", %{
+      activity_a: activity_a,
+      activity_b: activity_b,
+      alternatives_revision: alternatives_revision,
+      page: %{revision: revision},
+      section: section,
+      user1: user
+    } do
+      Oli.Delivery.Sections.enroll(user.id, section.id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
+      ])
+
+      experiment =
+        %ExperimentDefinition{}
+        |> ExperimentDefinition.changeset(%{
+          project_id: section.base_project_id,
+          slug: "explicit-start-alternatives",
+          name: "Explicit start Alternatives",
+          state: :active,
+          algorithm: :weighted_random,
+          alternatives_resource_id: alternatives_revision.resource_id
+        })
+        |> Repo.insert!()
+
+      %ExperimentSection{}
+      |> ExperimentSection.changeset(%{experiment_id: experiment.id, section_id: section.id})
+      |> Repo.insert!()
+
+      intervention =
+        %Intervention{}
+        |> Intervention.changeset(%{
+          experiment_id: experiment.id,
+          page_resource_id: revision.resource_id,
+          content_element_id: "placement"
+        })
+        |> Repo.insert!()
+
+      %Condition{}
+      |> Condition.changeset(%{
+        experiment_id: experiment.id,
+        condition_code: "control",
+        label: "Control",
+        option_id: "control",
+        weight: 0.0,
+        position: 0
+      })
+      |> Repo.insert!()
+
+      variant =
+        %Condition{}
+        |> Condition.changeset(%{
+          experiment_id: experiment.id,
+          condition_code: "variant",
+          label: "Variant",
+          option_id: "variant",
+          weight: 1.0,
+          position: 1
+        })
+        |> Repo.insert!()
+
+      Core.track_access(revision.resource_id, section.id, user.id)
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+
+      prologue_section = %{section | base_project_id: nil, institution_id: nil}
+
+      activity_provider =
+        Oli.Delivery.Experiments.ActivityProvider.for_page(
+          &Oli.Delivery.ActivityProvider.provide/6,
+          prologue_section,
+          revision,
+          user
+        )
+
+      assert {:ok, %AttemptState{} = state} =
+               PageLifecycle.start(
+                 revision.slug,
+                 section.slug,
+                 UUID.uuid4(),
+                 user,
+                 effective_settings,
+                 activity_provider
+               )
+
+      refute Map.has_key?(state.attempt_hierarchy, activity_a.revision.resource_id)
+      assert Map.has_key?(state.attempt_hierarchy, activity_b.revision.resource_id)
+
+      assert [placement] = state.resource_attempt.content["model"]
+      assert [%{"value" => "variant"}] = placement["children"]
+
+      assert state.resource_attempt.experiment_decisions["placement"].condition_code == "variant"
+
+      assert [attribution] = state.resource_attempt.experiment_attributions
+      assert attribution["experiment_id"] == experiment.id
+      assert attribution["intervention_id"] == intervention.id
+      assert attribution["condition_id"] == variant.id
+      assert attribution["assignment_id"]
+
+      {activity_attempt, _part_attempts} =
+        Map.fetch!(state.attempt_hierarchy, activity_b.revision.resource_id)
+
+      {:ok, _activity_attempt} =
+        Core.update_activity_attempt(activity_attempt, %{
+          lifecycle_state: :evaluated,
+          score: 1.0,
+          out_of: 1.0
+        })
+
+      assert {:ok, %FinalizationSummary{resource_access: resource_access}} =
+               PageLifecycle.finalize(
+                 section.slug,
+                 state.resource_attempt.attempt_guid,
+                 UUID.uuid4()
+               )
+
+      resource_attempt = Core.get_resource_attempt(id: state.resource_attempt.id)
+
+      assert resource_attempt.score == 1.0
+      assert resource_attempt.out_of == 1.0
+      assert resource_access.progress == 1.0
+    end
+  end
+
   describe "browsing manual graded attempts" do
     setup do
       Seeder.base_project_with_resource2()
@@ -246,17 +464,36 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       |> add_automatic_activity(:attempt2, :activity_d, :attempt_2d, @content_automatic)
     end
 
+    @tag capture_log: true
     test "finalization results in correct end state for resource attempts", %{
+      project: project,
       section: section,
       attempt1: attempt1,
       attempt2: attempt2
     } do
       datashop_session_id_user1 = UUID.uuid4()
 
+      assessment_page_resource_id =
+        Repo.get!(Oli.Delivery.Attempts.Core.ResourceAccess, attempt1.resource_access_id).resource_id
+
+      add_assessment_binding(project, section, assessment_page_resource_id)
+
       {:ok, %FinalizationSummary{resource_access: resource_access1}} =
         PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
 
-      refute_enqueued(worker: RewardHandoffWorker)
+      assert_enqueued(
+        worker: RewardHandoffWorker,
+        args: %{"resource_attempt_id" => attempt1.id}
+      )
+
+      assert {:error, {:already_submitted}} =
+               PageLifecycle.finalize(
+                 section.slug,
+                 attempt1.attempt_guid,
+                 datashop_session_id_user1
+               )
+
+      assert [_job] = all_enqueued(worker: RewardHandoffWorker)
 
       {:ok, %FinalizationSummary{resource_access: resource_access2}} =
         PageLifecycle.finalize(section.slug, attempt2.attempt_guid, datashop_session_id_user1)
@@ -520,5 +757,42 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       assert is_nil(resource_attempt.out_of)
       assert resource_access.progress == 1.0
     end
+  end
+
+  defp add_assessment_binding(project, section, assessment_page_resource_id) do
+    alternatives = Factory.insert(:revision)
+
+    experiment =
+      %ExperimentDefinition{}
+      |> ExperimentDefinition.changeset(%{
+        project_id: project.id,
+        slug: "page-finalization-reward-#{System.unique_integer([:positive])}",
+        name: "Page finalization reward",
+        state: :active,
+        algorithm: :thompson_sampling,
+        alternatives_resource_id: alternatives.resource_id
+      })
+      |> Repo.insert!()
+
+    %ExperimentSection{}
+    |> ExperimentSection.changeset(%{experiment_id: experiment.id, section_id: section.id})
+    |> Repo.insert!()
+
+    intervention =
+      %Intervention{}
+      |> Intervention.changeset(%{
+        experiment_id: experiment.id,
+        page_resource_id: alternatives.resource_id,
+        content_element_id: "page-finalization-placement"
+      })
+      |> Repo.insert!()
+
+    %AssessmentBinding{}
+    |> AssessmentBinding.changeset(%{
+      intervention_id: intervention.id,
+      assessment_page_resource_id: assessment_page_resource_id,
+      reward_threshold: 1.0
+    })
+    |> Repo.insert!()
   end
 end

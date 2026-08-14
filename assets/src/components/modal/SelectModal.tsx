@@ -89,11 +89,11 @@ export const SelectModal = function <T extends Option>({
       });
 
       $(currentModal).on('hide.bs.modal', (event: JQuery.Event) => {
-        if (submittingRef.current) event.preventDefault();
+        if (mounted.current && submittingRef.current) event.preventDefault();
       });
 
       $(currentModal).on('hidden.bs.modal', () => {
-        if (submittingRef.current) return;
+        if (!mounted.current || submittingRef.current) return;
 
         onCancelRef.current();
         // Return focus to the element that triggered the modal

@@ -412,20 +412,25 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   end
 
   defp load_dashboard_async(socket) do
+    analytics_provider = analytics_provider()
+
     socket
     |> assign_async(:health_summary, fn ->
-      case ClickhouseAnalytics.health_summary() do
+      case analytics_provider.health_summary() do
         {:ok, summary} -> {:ok, %{health_summary: summary}}
         {:error, reason} -> {:error, reason}
       end
     end)
     |> assign_async(:clickhouse_capabilities, fn ->
-      case ClickhouseAnalytics.admin_capabilities() do
+      case analytics_provider.admin_capabilities() do
         {:ok, capabilities} -> {:ok, %{clickhouse_capabilities: capabilities}}
         {:error, reason} -> {:error, reason}
       end
     end)
   end
+
+  defp analytics_provider,
+    do: Application.get_env(:oli, :clickhouse_analytics_provider, ClickhouseAnalytics)
 
   defp breadcrumbs do
     OliWeb.Admin.AdminView.breadcrumb() ++

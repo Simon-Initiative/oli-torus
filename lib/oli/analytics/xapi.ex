@@ -52,6 +52,10 @@ defmodule Oli.Analytics.XAPI do
 
   def emit(category, event), do: emit(category, [event])
 
+  @doc "Returns the configured public hostname used as the xAPI actor account home page."
+  @spec host_name() :: String.t()
+  def host_name, do: Application.fetch_env!(:oli, :xapi_host_name)
+
   defp extract_context(event) do
     section_id = event["context"]["extensions"]["http://oli.cmu.edu/extensions/section_id"]
 

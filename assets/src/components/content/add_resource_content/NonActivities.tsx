@@ -12,6 +12,7 @@ import {
   createDefaultStructuredContent,
   createGroup,
   createReport,
+  hasAncestorOfType,
 } from 'data/content/resource';
 import {
   ResourceContent,
@@ -22,6 +23,14 @@ import {
 import * as Persistence from 'data/persistence/resource';
 import { ActivityWithReportOption } from 'data/persistence/resource';
 import { ResourceChoice } from './ResourceChoice';
+
+const EXPERIMENT_STRATEGIES: ReadonlySet<Persistence.AlternativesGroup['strategy']> = new Set([
+  'experiment_controlled',
+  'upgrade_decision_point',
+]);
+
+export const isExperimentStrategy = (strategy: Persistence.AlternativesGroup['strategy']) =>
+  EXPERIMENT_STRATEGIES.has(strategy);
 
 interface Props {
   index: number[];
@@ -42,6 +51,8 @@ export const NonActivities: React.FC<Props> = ({
   featureFlags,
   resourceContext,
 }) => {
+  const hasAlternativesAncestor = hasAncestorOfType(parents, 'alternatives');
+
   return (
     <div className="d-flex flex-column">
       <div className="resource-choice-header">Content types</div>
@@ -108,7 +119,7 @@ export const NonActivities: React.FC<Props> = ({
           disabled={false}
           onClick={() => addReport(onAddItem, index, resourceContext.projectSlug)}
         />
-        {resourceContext.alternativesEnabled && (
+        {!hasAlternativesAncestor && resourceContext.alternativesEnabled && (
           <ResourceChoice
             icon="window-restore"
             label="Alt"
@@ -121,7 +132,7 @@ export const NonActivities: React.FC<Props> = ({
             onClick={() => addAlternatives(onAddItem, index, resourceContext.projectSlug)}
           />
         )}
-        {resourceContext.experimentsEnabled && (
+        {!hasAlternativesAncestor && resourceContext.experimentsEnabled && (
           <ResourceChoice
             icon="vial"
             label="A/B Test"
@@ -207,9 +218,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
               return result.alternatives
-                .filter(
-                  (a: Persistence.AlternativesGroup) => a.strategy !== 'upgrade_decision_point',
-                )
+                .filter((a: Persistence.AlternativesGroup) => !isExperimentStrategy(a.strategy))
                 .map((a) => ({ value: a.id, title: a.title }));
             } else {
               throw result.message;
@@ -218,10 +227,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         }
         onDone={(alternativesId: string | number) => {
           window.oliDispatch(modalActions.dismiss());
-          onAddItem(
-            createAlternatives(Number(alternativesId), 'user_section_preference', Immutable.List()),
-            index,
-          );
+          onAddItem(createAlternatives(Number(alternativesId), Immutable.List()), index);
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,
@@ -239,17 +245,15 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
         description="Select an A/B decision point"
         additionalControls={
           <ManageAlternativesLink
-            linkHref={`/workspaces/course_author/${projectSlug}/alternatives`}
-            linkText="Manage A/B Decision Points"
+            linkHref={`/workspaces/course_author/${projectSlug}/experiments`}
+            linkText="Manage Decision Points"
           />
         }
         onFetchOptions={() =>
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
               return result.alternatives
-                .filter(
-                  (a: Persistence.AlternativesGroup) => a.strategy === 'upgrade_decision_point',
-                )
+                .filter((a: Persistence.AlternativesGroup) => isExperimentStrategy(a.strategy))
                 .map((a) => ({ value: a.id, title: a.title }));
             } else {
               throw result.message;
@@ -264,7 +268,7 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
           }
 
           const experiment = result.alternatives.find(
-            (a) => a.id === Number(alternativesId) && a.strategy === 'upgrade_decision_point',
+            (a) => a.id === Number(alternativesId) && isExperimentStrategy(a.strategy),
           );
 
           if (!experiment) {
@@ -272,14 +276,7 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
           }
 
           const children = experiment.options.map((option) => createAlternative(option.id));
-          onAddItem(
-            createAlternatives(
-              Number(experiment.id),
-              'upgrade_decision_point',
-              Immutable.List(children),
-            ),
-            index,
-          );
+          onAddItem(createAlternatives(Number(experiment.id), Immutable.List(children)), index);
           window.oliDispatch(modalActions.dismiss());
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}

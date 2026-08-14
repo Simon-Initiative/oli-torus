@@ -228,6 +228,21 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       group_map = %{old_group => new_group_id}
       result = Rewiring.rewire_alternatives_groups(content, group_map)
       assert result["alternatives_id"] == new_group_id
+      refute Map.has_key?(result, "group")
+    end
+
+    test "ignores placement-local strategy while rewiring the group" do
+      content = %{
+        "type" => "alternatives",
+        "group" => "old_group",
+        "strategy" => "unknown-placement-value"
+      }
+
+      result = Rewiring.rewire_alternatives_groups(content, %{"old_group" => 42})
+
+      assert result["alternatives_id"] == 42
+      refute Map.has_key?(result, "group")
+      refute Map.has_key?(result, "strategy")
     end
 
     test "leaves unmapped alternatives group references unchanged" do

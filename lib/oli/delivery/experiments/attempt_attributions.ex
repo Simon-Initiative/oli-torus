@@ -15,7 +15,7 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
     Scope
   }
 
-  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint, ExperimentDefinition}
+  alias Oli.Experiments.Schemas.{Assignment, Condition, ExperimentDefinition}
   alias Oli.Experiments.XAPI.Attributions
   alias Oli.Repo
 
@@ -156,10 +156,6 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
         on:
           condition.id == assignment.condition_id and
             condition.experiment_id == experiment.id,
-        join: decision_point in DecisionPoint,
-        on:
-          decision_point.id == assignment.decision_point_id and
-            decision_point.experiment_id == experiment.id,
         where:
           experiment.project_id == ^attempt_group.context.project_id and
             assignment.section_id == ^attempt_group.context.section_id and
@@ -172,8 +168,7 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
             ),
         preload: [
           experiment: experiment,
-          condition: condition,
-          decision_point: decision_point
+          condition: condition
         ]
       )
       |> Repo.all()

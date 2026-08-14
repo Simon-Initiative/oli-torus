@@ -6,6 +6,9 @@
     root:
       children:
         - page: "AB Runtime Practice"
+        - page: "AB Runtime Assessment"
+        - page: "AB Runtime Later Intervention"
+        - page: "AB Runtime Later Assessment"
 
 - create_activity:
     project: "ab_runtime_project"
@@ -67,6 +70,36 @@
         - type: activity_reference
           virtual_id: "runtime_mcq"
 
+- edit_page:
+    project: "ab_runtime_project"
+    page: "AB Runtime Assessment"
+    content: |
+      title: "AB Runtime Assessment"
+      graded: true
+      blocks:
+        - type: activity_reference
+          virtual_id: "runtime_mcq"
+
+- edit_page:
+    project: "ab_runtime_project"
+    page: "AB Runtime Later Intervention"
+    content: |
+      title: "AB Runtime Later Intervention"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Later adaptive intervention"
+
+- edit_page:
+    project: "ab_runtime_project"
+    page: "AB Runtime Later Assessment"
+    content: |
+      title: "AB Runtime Later Assessment"
+      graded: true
+      blocks:
+        - type: activity_reference
+          virtual_id: "runtime_mcq"
+
 - hook:
     function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.wrap_activity_in_alternatives/1"
 
@@ -94,6 +127,15 @@
     role: "student"
 
 - user:
+    name: "ab_runtime_student_b"
+    type: "student"
+
+- enroll:
+    user: "ab_runtime_student_b"
+    section: "ab_runtime_section"
+    role: "student"
+
+- user:
     name: "ab_runtime_unselected_student"
     type: "student"
 
@@ -105,13 +147,21 @@
 - hook:
     function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.activate_native_experiment/1"
 
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assign_distinct_sticky_conditions/1"
+
 - view_practice_page:
     student: "ab_runtime_student"
     section: "ab_runtime_section"
     page: "AB Runtime Practice"
 
 - hook:
-    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_assignment_and_exposure/1"
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_two_learners_have_distinct_sticky_assignments/1"
+
+- view_practice_page:
+    student: "ab_runtime_student_b"
+    section: "ab_runtime_section"
+    page: "AB Runtime Practice"
 
 - view_practice_page:
     student: "ab_runtime_unselected_student"
@@ -127,7 +177,7 @@
     page: "AB Runtime Practice"
 
 - hook:
-    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_assignment_and_exposure/1"
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_two_learners_have_distinct_sticky_assignments/1"
 
 - answer_question:
     student: "ab_runtime_student"
@@ -151,17 +201,61 @@
       response: "b"
       answerable: false
 
-- hook:
-    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.record_reward/1"
+- answer_question:
+    student: "ab_runtime_student_b"
+    section: "ab_runtime_section"
+    page: "AB Runtime Practice"
+    activity_virtual_id: "runtime_mcq"
+    response: "b"
+
+- assert:
+    progress:
+      section: "ab_runtime_section"
+      student: "ab_runtime_student"
+      page: "AB Runtime Practice"
+      progress: 1.0
+
+- view_practice_page:
+    student: "ab_runtime_student"
+    section: "ab_runtime_section"
+    page: "AB Runtime Assessment"
+
+- answer_question:
+    student: "ab_runtime_student"
+    section: "ab_runtime_section"
+    page: "AB Runtime Assessment"
+    activity_virtual_id: "runtime_mcq"
+    response: "b"
 
 - hook:
-    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_reward_is_idempotent/1"
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.process_assessment_reward/1"
+
+- view_practice_page:
+    student: "ab_runtime_student_b"
+    section: "ab_runtime_section"
+    page: "AB Runtime Assessment"
+
+- answer_question:
+    student: "ab_runtime_student_b"
+    section: "ab_runtime_section"
+    page: "AB Runtime Assessment"
+    activity_virtual_id: "runtime_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "ab_runtime_student"
+    section: "ab_runtime_section"
+    page: "AB Runtime Later Intervention"
 
 - hook:
-    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.deselect_participating_section/1"
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_posterior_reuse_and_experiment_isolation/1"
 
-- hook:
-    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_deselection_fallback_retains_history/1"
+- assert:
+    progress:
+      section: "ab_runtime_section"
+      student: "ab_runtime_student_b"
+      page: "AB Runtime Practice"
+      progress: 1.0
 
 - project:
     name: "ab_runtime_fallback_project"

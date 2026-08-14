@@ -144,3 +144,36 @@ test('prevents modal dismissal while submitting', async () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();
   });
 });
+
+test('allows Bootstrap cleanup when a successful submission unmounts the modal', async () => {
+  let resolveSelection: () => void = () => {};
+  const pendingSelection = new Promise<void>((resolve) => {
+    resolveSelection = resolve;
+  });
+  const onCancel = jest.fn();
+
+  const { unmount } = render(
+    <SelectModal
+      title="Choose an option"
+      description="Options"
+      onFetchOptions={() => Promise.resolve(options)}
+      onDone={() => pendingSelection}
+      onCancel={onCancel}
+    />,
+  );
+
+  fireEvent.change(await screen.findByRole('combobox'), { target: { value: 'one' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Select' }));
+
+  unmount();
+
+  const preventDefault = jest.fn();
+  act(() => modalHandlers.get('hide.bs.modal')?.({ preventDefault }));
+
+  expect(preventDefault).not.toHaveBeenCalled();
+
+  await act(async () => resolveSelection());
+
+  act(() => modalHandlers.get('hidden.bs.modal')?.({}));
+  expect(onCancel).not.toHaveBeenCalled();
+});

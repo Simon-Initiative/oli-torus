@@ -59,7 +59,7 @@ defmodule Oli.Experiments.PolicyTest do
       assert update.counters == %{reward_success_count: 1, reward_failure_count: 0}
     end
 
-    test "accepts valid custom priors from policy config" do
+    test "rejects removed per-condition prior overrides" do
       policy_config = %{
         "priors" => %{
           "default" => %{"alpha" => 2.0, "beta" => 3.0},
@@ -67,22 +67,11 @@ defmodule Oli.Experiments.PolicyTest do
         }
       }
 
-      assert {:ok, update} =
+      assert {:error, :condition_priors_not_supported} =
                ThompsonSampling.record_reward(policy_config, %{}, %{
                  condition_code: "b",
                  reward_value: 0.0
                })
-
-      assert update.next_state["b"] == %{
-               "prior_alpha" => 5.0,
-               "prior_beta" => 7.0,
-               "successes" => 0,
-               "failures" => 1,
-               "posterior_alpha" => 5.0,
-               "posterior_beta" => 8.0
-             }
-
-      assert update.counters == %{reward_success_count: 0, reward_failure_count: 1}
     end
 
     test "rejects invalid priors" do
@@ -172,6 +161,43 @@ defmodule Oli.Experiments.PolicyTest do
 
       assert assignment.condition_code == "a"
       assert assignment.metadata == %{posterior_sample: 0.8}
+    end
+
+    test "shares one committed point snapshot across interventions without leaking to other points" do
+      {:ok, update} =
+        ThompsonSampling.record_reward(%{}, %{}, %{
+          condition_code: "a",
+          reward_value: 1.0
+        })
+
+      sampler = fn alpha, beta, code ->
+        send(self(), {:sampled, code, alpha, beta})
+        if code == "a", do: 0.9, else: 0.1
+      end
+
+      for assignment_key <- ["point-1:intervention-1", "point-1:intervention-2"] do
+        assert {:ok, %{condition_code: "a"}} =
+                 ThompsonSampling.assign(%{}, update.next_state, %{
+                   conditions: conditions(),
+                   assignment_key: assignment_key,
+                   beta_sampler: sampler
+                 })
+
+        assert_receive {:sampled, "a", 2.0, 1.0}
+        assert_receive {:sampled, "b", 1.0, 1.0}
+      end
+
+      for assignment_key <- ["point-2:intervention-1", "experiment-2:point-1"] do
+        assert {:ok, _assignment} =
+                 ThompsonSampling.assign(%{}, %{}, %{
+                   conditions: conditions(),
+                   assignment_key: assignment_key,
+                   beta_sampler: sampler
+                 })
+
+        assert_receive {:sampled, "a", 1.0, 1.0}
+        assert_receive {:sampled, "b", 1.0, 1.0}
+      end
     end
 
     test "updates only the assigned condition posterior" do

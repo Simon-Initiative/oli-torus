@@ -241,7 +241,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   @decorate transaction_event("Graded.finalize_activity_and_part_attempts")
   defp finalize_activity_and_part_attempts(
          resource_attempt,
-         section_id,
+         _section_id,
          datashop_session_id,
          effective_settings
        ) do
@@ -257,13 +257,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  datashop_session_id,
                  effective_settings
                ),
-             {:ok, activity_attempt_ids} <-
+             {:ok, _activity_attempt_ids} <-
                Persistence.bulk_update_activity_attempts(
                  Enum.join(activity_attempt_values, ", "),
                  activity_attempt_params
                ) do
-          Oli.Delivery.Experiments.RewardHandoffWorker.enqueue(activity_attempt_ids, section_id)
-
           {:ok, part_attempt_guids}
         else
           error -> error

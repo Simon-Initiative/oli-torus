@@ -6,6 +6,7 @@ defmodule Oli.Rendering.Alternatives do
 
   alias Oli.Rendering.Context
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
+  alias Oli.Resources.Alternatives, as: ResourceAlternatives
   alias Oli.Resources.Alternatives.Selection
 
   @callback alternative(%Context{}, %Selection{}) :: [any()]
@@ -64,7 +65,7 @@ defmodule Oli.Rendering.Alternatives do
       },
       element
     )
-    |> render_selected_alternatives(context, writer)
+    |> render_selected_alternatives(context, element, writer, by_id)
     |> maybe_render_preference_selector(context, element, writer, by_id)
   end
 
@@ -80,7 +81,36 @@ defmodule Oli.Rendering.Alternatives do
     end
   end
 
-  defp render_selected_alternatives(selected_alternatives, %Context{} = context, writer) do
+  defp render_selected_alternatives(
+         selected_alternatives,
+         %Context{mode: mode} = context,
+         element,
+         Oli.Rendering.Alternatives.Html = writer,
+         by_id
+       )
+       when mode in [:author_preview, :instructor_preview] do
+    strategy = Map.get(by_id, element["alternatives_id"]).strategy
+
+    case ResourceAlternatives.normalize_strategy(strategy) do
+      {:ok, "user_section_preference"} ->
+        render_alternatives(selected_alternatives, context, writer)
+
+      _ ->
+        writer.preview_alternatives(context, element, selected_alternatives)
+    end
+  end
+
+  defp render_selected_alternatives(
+         selected_alternatives,
+         %Context{} = context,
+         _element,
+         writer,
+         _by_id
+       ) do
+    render_alternatives(selected_alternatives, context, writer)
+  end
+
+  defp render_alternatives(selected_alternatives, %Context{} = context, writer) do
     selected_alternatives
     |> Enum.flat_map(fn alternative ->
       writer.alternative(
@@ -99,8 +129,10 @@ defmodule Oli.Rendering.Alternatives do
        ) do
     # IGNORE the strategy that is on the element in the page and
     # instead look up the strategy using the id from the alternatives resources
-    case Map.get(by_id, element["alternatives_id"]).strategy do
-      "user_section_preference" ->
+    strategy = Map.get(by_id, element["alternatives_id"]).strategy
+
+    case ResourceAlternatives.normalize_strategy(strategy) do
+      {:ok, "user_section_preference"} ->
         [writer.preference_selector(context, element) | rendered]
 
       _ ->

@@ -113,7 +113,6 @@ defmodule Oli.Experiments.Telemetry do
       |> Map.take([
         "role",
         "experiment_id",
-        "decision_point_id",
         "condition_id",
         "condition_code",
         "section_id",

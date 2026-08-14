@@ -40,6 +40,14 @@ runtime_env =
       end
   end
 
+# Resolve the xAPI actor account home page at runtime so releases can configure it
+# without recompilation. XAPI_HOST_NAME may differ from the web endpoint hostname;
+# otherwise use HOST and retain localhost for development/test environments where
+# neither variable is present.
+config :oli,
+       :xapi_host_name,
+       System.get_env("XAPI_HOST_NAME") || System.get_env("HOST") || "localhost"
+
 # Appsignal client key is required for appsignal integration
 config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 

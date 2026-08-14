@@ -26,6 +26,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
          :id,
          :slug,
          :title,
+         :institution_id,
+         :base_project_id,
          :brand,
          :lti_1p3_deployment,
          :resource_gating_index,
@@ -556,7 +558,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
 
   def do_start_attempt(socket, section, user, revision, effective_settings) do
     datashop_session_id = socket.assigns.datashop_session_id
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+    activity_provider =
+      Oli.Delivery.Experiments.ActivityProvider.for_page(
+        &Oli.Delivery.ActivityProvider.provide/6,
+        section,
+        revision,
+        user
+      )
 
     # We must check gating conditions here to account for gates that activated after
     # the prologue page was rendered, and for malicious/deliberate attempts to start an attempt via

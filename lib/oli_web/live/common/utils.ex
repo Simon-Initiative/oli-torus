@@ -314,7 +314,9 @@ defmodule OliWeb.Common.Utils do
     context = %Context{}
 
     rendered =
-      Content.render(context, content, Content.Plaintext)
+      content
+      |> normalize_plaintext_content()
+      |> then(&Content.render(context, &1, Content.Plaintext))
       |> IO.iodata_to_binary()
       |> String.trim()
 
@@ -325,6 +327,22 @@ defmodule OliWeb.Common.Utils do
   end
 
   def extract_text_from_content(_), do: "No text available"
+
+  defp normalize_plaintext_content(content) when is_list(content),
+    do: Enum.flat_map(content, &normalize_plaintext_element/1)
+
+  defp normalize_plaintext_element(%{"type" => type, "children" => children})
+       when type in ["alternatives", "alternative"] and is_list(children),
+       do: normalize_plaintext_content(children)
+
+  defp normalize_plaintext_element(%{"type" => "activity-reference"}),
+    do: [%{"text" => "[Activity]"}]
+
+  defp normalize_plaintext_element(%{"children" => children} = element)
+       when is_list(children),
+       do: [Map.put(element, "children", normalize_plaintext_content(children))]
+
+  defp normalize_plaintext_element(element), do: [element]
 
   @doc """
   Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in a tag.

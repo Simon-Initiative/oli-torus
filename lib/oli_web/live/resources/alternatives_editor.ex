@@ -100,6 +100,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
           icon="fa-solid fa-pencil"
           on_click="show_edit_group_modal"
           values={["phx-value-resource-id": @group.resource_id]}
+          aria_label={"Edit #{@group.title}"}
         />
         <button
           :if={@source == :alternatives}

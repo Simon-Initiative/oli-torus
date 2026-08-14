@@ -10,6 +10,8 @@ defmodule Oli.Resources.Alternatives.AlternativesStrategyContext do
             section_id: nil,
             section_slug: nil,
             project_slug: nil,
+            page_resource_id: nil,
+            page_revision_id: nil,
             activity_resource_ids: [],
             # mode set from the render context
             # e.g. :delivery, :review, :author_preview, :instructor_preview
@@ -18,6 +20,6 @@ defmodule Oli.Resources.Alternatives.AlternativesStrategyContext do
             # map of resource ids to alternative details
             alternative_groups_by_id: nil,
 
-            # precomputed delivery decisions keyed by alternatives resource id
+            # precomputed delivery decisions keyed by stable placement element id
             experiment_decisions: %{}
 end
