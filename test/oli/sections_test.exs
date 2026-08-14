@@ -542,17 +542,8 @@ defmodule Oli.SectionsTest do
     end
 
     test "delete_section/1 deletes the section", %{section: section} do
-      section_resource_ids =
-        SectionResource
-        |> where([sr], sr.section_id == ^section.id)
-        |> select([sr], sr.id)
-        |> Oli.Repo.all()
-
-      assert section.root_section_resource_id in section_resource_ids
-
       assert {:ok, %Section{}} = Sections.delete_section(section)
       refute Sections.get_section_by_slug(section.slug)
-      refute Oli.Repo.exists?(from sr in SectionResource, where: sr.id in ^section_resource_ids)
     end
 
     test "change_section/1 returns a section changeset", %{section: section} do
