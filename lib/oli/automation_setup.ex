@@ -15,7 +15,6 @@ defmodule Oli.AutomationSetup do
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Authoring.MediaLibrary.MediaItem
   alias Oli.Delivery.Sections.SectionsProjectsPublications
-  alias Oli.Delivery.Sections.Section
   alias Oli.Resources.Resource
 
   alias Ecto.Multi
@@ -102,21 +101,8 @@ defmodule Oli.AutomationSetup do
       resource_ids = for r <- project.resources, do: r.id
       publication_ids = for p <- project.publications, do: p.id
 
-      project_sections =
-        from(s in Section, where: s.base_project_id == ^project.id)
-
       result =
         Multi.new()
-        # Full-course archives can contain delivery sections in addition to the
-        # section created by automation setup. Release every section owned by
-        # this disposable project before revision deletion cascades into its
-        # section_resources.
-        |> Multi.update_all(
-          :clear_project_section_roots,
-          project_sections,
-          set: [root_section_resource_id: nil]
-        )
-        |> Multi.delete_all(:project_sections, project_sections)
         # Delete section/publication pins before deleting publications. Sections created by automation
         # usually clear these via section deletion, but projects may still have pinned publications from
         # additional or stale section mappings.
@@ -180,16 +166,9 @@ defmodule Oli.AutomationSetup do
       _ -> %{success: false, message: "Unknown Reason"}
     end
   rescue
-    e in [Ecto.ConstraintError, Postgrex.Error] ->
+    e in Ecto.ConstraintError ->
       Logger.error("Could not delete automation test project: #{Exception.message(e)}")
-
-      # A late database error can be reported after the project was already
-      # removed. Teardown is outcome-based: only report failure when the
-      # requested project still exists.
-      case Repo.exists?(from p in Project, where: p.slug == ^slug) do
-        true -> %{success: false, message: "Could not delete project"}
-        false -> %{success: true}
-      end
+      %{success: false, message: "Could not delete project"}
   end
 
   def teardown_section(nil) do
