@@ -660,7 +660,9 @@ export class AdaptiveJournalCore {
     if (record.wireClass === 'creation') {
       const parsed = parseJson(body) as { attemptState?: { attemptGuid?: unknown } } | null;
       const minted = parsed?.attemptState?.attemptGuid;
-      record.mintedGuid = typeof minted === 'string' ? minted : null;
+      // an EMPTY minted guid confers nothing (W-J13): '' would satisfy the
+      // attribution edge's null check and let a hollow creation extend lineage
+      record.mintedGuid = typeof minted === 'string' && minted !== '' ? minted : null;
       return;
     }
     if (record.wireClass === 'page-finalization') {

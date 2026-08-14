@@ -73,7 +73,7 @@ function mint(
   c: AdaptiveJournalCore,
   targetGuid: string,
   mintedGuid: string,
-  opts: { status?: number; parsed?: boolean; respond?: boolean } = {},
+  opts: { status?: number; parsed?: boolean; respond?: boolean; raw?: string } = {},
 ): number {
   const handle = c.ingestRequest({
     method: 'POST',
@@ -85,9 +85,11 @@ function mint(
   c.ingestResponse(handle, opts.status ?? 200);
   c.ingestResponseBody(
     handle,
-    opts.parsed === false
-      ? JSON.stringify({})
-      : JSON.stringify({ attemptState: { attemptGuid: mintedGuid } }),
+    opts.raw !== undefined
+      ? opts.raw
+      : opts.parsed === false
+        ? JSON.stringify({})
+        : JSON.stringify({ attemptState: { attemptGuid: mintedGuid } }),
   );
   return handle;
 }
@@ -263,6 +265,42 @@ test.describe('attempt lineage', () => {
     const { attributed } = attribute(sealed(c), [v1]);
     expect(attributed[underFailed].lineage).toBe('violation');
     expect(attributed[underUnparsed].lineage).toBe('violation');
+  });
+
+  test('a creation whose response fails to parse confers nothing, even with an apparent GUID in the bytes (W-J12)', () => {
+    const c = journal();
+    const v1 = visit(c, 'q:1', 'attempt-1');
+    const broken = mint(c, 'attempt-1', 'attempt-1d', {
+      raw: '{"attemptState":{"attemptGuid":"attempt-1d"',
+    });
+    const underBroken = fireEvaluation(c, 'attempt-1d', ['q:1|stage.x']);
+
+    const snapshot = sealed(c);
+    expect(snapshot.records[broken].mintedGuid).toBeNull();
+    const { attributed } = attribute(snapshot, [v1]);
+    expect(attributed[underBroken].lineage).toBe('violation');
+  });
+
+  test('an empty-string minted GUID records as null and can extend no lineage (W-J13)', () => {
+    const c = journal();
+    visit(c, 'q:1', 'attempt-1');
+    const empty = mint(c, 'attempt-1', '', { raw: '{"attemptState":{"attemptGuid":""}}' });
+
+    // the attribution edge requires candidateGuid === mintedGuid, so null is
+    // the only value that structurally confers nothing to every candidate
+    expect(sealed(c).records[empty].mintedGuid).toBeNull();
+  });
+
+  test('a hollow creation — response present, body empty — confers nothing (W-J15)', () => {
+    const c = journal();
+    const v1 = visit(c, 'q:1', 'attempt-1');
+    const hollow = mint(c, 'attempt-1', 'attempt-1f', { raw: '' });
+    const underHollow = fireEvaluation(c, 'attempt-1f', ['q:1|stage.x']);
+
+    const snapshot = sealed(c);
+    expect(snapshot.records[hollow].mintedGuid).toBeNull();
+    const { attributed } = attribute(snapshot, [v1]);
+    expect(attributed[underHollow].lineage).toBe('violation');
   });
 
   test('an owned evaluation under a foreign attempt is a violation, not silently owned', () => {

@@ -1371,7 +1371,7 @@
   },
   "additive_step_4": {
     "note": "Each entry names the unit that added it. Compared as a SET against discovery; unexplained removal, rename or count change = RED.",
-    "count": 228,
+    "count": 239,
     "tests": [
       {
         "file": "torus/student_delivery/adaptive-family-registry.spec.ts",
@@ -2740,6 +2740,72 @@
         "line": 52,
         "title": "visits cite the journal fence issued for their own screen",
         "unit": "4c piece 3"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-attribution.spec.ts",
+        "line": 270,
+        "title": "a creation whose response fails to parse confers nothing, even with an apparent GUID in the bytes (W-J12)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-attribution.spec.ts",
+        "line": 294,
+        "title": "a hollow creation \u2014 response present, body empty \u2014 confers nothing (W-J15)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-attribution.spec.ts",
+        "line": 284,
+        "title": "an empty-string minted GUID records as null and can extend no lineage (W-J13)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 3338,
+        "title": "a check permit issued after the evaluation request licenses nothing (W-ST3)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 3272,
+        "title": "a claimed permit the journal never issued is refused on the whole tuple (W-R4)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 3305,
+        "title": "a deleted visit breaks route cardinality (W-R1)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 3285,
+        "title": "a journal-issued permit claimed for the wrong screen is refused (W-R4)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 3314,
+        "title": "a mint that predates the first rotation evaluation is not the measured rotation (W-J10, \u00a73.4)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 3296,
+        "title": "a receipt citing a readback fence the journal never issued is refused (W-R4)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 3405,
+        "title": "an ack after the first response licenses the graded re-check (W-ST4)",
+        "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 3410,
+        "title": "an ack stamped before the first response licenses no second evaluation (W-ST4)",
+        "unit": "4d witness completion"
       }
     ],
     "reconciled": {

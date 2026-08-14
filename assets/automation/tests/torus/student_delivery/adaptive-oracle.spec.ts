@@ -3267,3 +3267,147 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
     expect(() => validateAdaptiveManifest(good)).not.toThrow();
   });
 });
+
+test.describe('B4-STAMP claim side and the remaining fence orders', () => {
+  test('a claimed permit the journal never issued is refused on the whole tuple (W-R4)', () => {
+    const { snapshot, runRecord } = buildRun();
+    const forged: Permit = { kind: 'check-click', screenId: 'q:1', stepIndex: 1, seq: 999 };
+    const found = auditRun(
+      manifest(),
+      { ...runRecord, permits: [...runRecord.permits, forged] },
+      snapshot,
+    );
+    expect(
+      found.some((v) => v.code === 'permit-mismatch' && v.facts.detail === 'not-journal-issued'),
+    ).toBe(true);
+  });
+
+  test('a journal-issued permit claimed for the wrong screen is refused (W-R4)', () => {
+    const { snapshot, runRecord } = buildRun();
+    const relabeled = runRecord.permits.map((p) =>
+      p.kind === 'check-click' && p.screenId === 'q:1' ? { ...p, screenId: 'c:1' } : p,
+    );
+    const found = auditRun(manifest(), { ...runRecord, permits: relabeled }, snapshot);
+    expect(
+      found.some((v) => v.code === 'permit-mismatch' && v.facts.detail === 'not-journal-issued'),
+    ).toBe(true);
+  });
+
+  test('a receipt citing a readback fence the journal never issued is refused (W-R4)', () => {
+    const { snapshot, runRecord } = buildRun();
+    const receipts = [{ ...RECEIPT_Q1, readbackCompletedSeq: 999 }];
+    const found = auditRun(manifest(), { ...runRecord, receipts }, snapshot);
+    expect(
+      found.some((v) => v.code === 'receipt-mismatch' && v.facts.detail === 'not-journal-issued'),
+    ).toBe(true);
+  });
+
+  test('a deleted visit breaks route cardinality (W-R1)', () => {
+    const { snapshot, runRecord } = buildRun();
+    const visits = runRecord.visits.filter((v) => v.screenId !== 'q:1');
+    const found = auditRun(manifest(), { ...runRecord, visits }, snapshot);
+    expect(found.some((v) => v.code === 'route-shape' && v.facts.detail === 'count-mismatch')).toBe(
+      true,
+    );
+  });
+
+  test('a mint that predates the first rotation evaluation is not the measured rotation (W-J10, §3.4)', () => {
+    const c = new AdaptiveJournalCore(() => 1_000);
+    c.setRunCorrelation(CORR);
+    const v0 = c.issueFence('n:1');
+    const navPermit = c.issuePermit('widget-button', 'n:1', 0);
+    fireMint(c, 'a-n1', 'a-n1b'); // too early — before the rotation it claims to serve
+    fireEval(c, 'a-n1', [], { correct: false, results: [event(false, [feedback()])] });
+    fireEval(c, 'a-n1b', [], { correct: true, results: [event(true, [navTo('next')])] });
+    c.beginSeal();
+    c.finishSeal();
+    const runRecord: RunRecord = {
+      visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
+      permits: [navPermit],
+      receipts: [],
+      operationFailures: [],
+      plans: [],
+    };
+    const m = manifest({
+      screens: [MANIFEST.screens[0]],
+      scenario: [{ screen_ref: 'n:1', expected_verdict: 'correct' }],
+    });
+    expect(codes(auditRun(m, runRecord, c.snapshot()))).toContain('navigation-sequence');
+  });
+
+  test('a check permit issued after the evaluation request licenses nothing (W-ST3)', () => {
+    const c = new AdaptiveJournalCore(() => 1_000);
+    c.setRunCorrelation(CORR);
+    const v0 = c.issueFence('q:1');
+    const gradedEval = fireEval(
+      c,
+      'a-q1',
+      [{ path: 'q:1|stage.dropdown.selectedItem', value: 'Basalt' }],
+      { correct: true, results: [event(true, [navTo('next')])] },
+    );
+    // journal-issued, so the claim side accepts it — but it postdates the
+    // request it would have to license
+    const latePermit = c.issuePermit('check-click', 'q:1', 0);
+    c.noteLessonEnd();
+    acceptFinalization(c);
+    c.markFrozenAccepted();
+    const runRecord: RunRecord = {
+      visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
+      permits: [latePermit],
+      receipts: [{ ...RECEIPT_Q1, stepIndex: 0 }],
+      operationFailures: [],
+      plans: [recordedPlanFor(c, gradedEval, 0)],
+    };
+    const m = manifest({
+      screens: [MANIFEST.screens[1]],
+      scenario: [{ screen_ref: 'q:1', expected_verdict: 'correct' }],
+    });
+    expect(codes(auditRun(m, runRecord, c.snapshot()))).toContain('evaluation-no-causal-edge');
+  });
+
+  /** Graded re-check rotation: first evaluation plans feedback with no queued
+   * target (ack kind `recheck`), the ack permit's position against the FIRST
+   * response decides whether the SECOND evaluation is licensed (§3.5). */
+  function recheckRun(ackAt: 'between' | 'after') {
+    const c = new AdaptiveJournalCore(() => 1_000);
+    c.setRunCorrelation(CORR);
+    const v0 = c.issueFence('q:1');
+    const checkPermit = c.issuePermit('check-click', 'q:1', 0);
+    const first = openEval(c, 'a-q1', [
+      { path: 'q:1|stage.dropdown.selectedItem', value: 'Basalt' },
+    ]);
+    const ackBetween = ackAt === 'between' ? c.issuePermit('feedback-ack', 'q:1', 0) : null;
+    settleEval(c, first, { correct: true, results: [event(true, [feedback()])] });
+    const ackAfter = ackAt === 'after' ? c.issuePermit('feedback-ack', 'q:1', 0) : null;
+    const second = fireEval(
+      c,
+      'a-q1',
+      [{ path: 'q:1|stage.dropdown.selectedItem', value: 'Basalt' }],
+      { correct: true, results: [event(true, [navTo('next')])] },
+    );
+    c.noteLessonEnd();
+    acceptFinalization(c);
+    c.markFrozenAccepted();
+    const runRecord: RunRecord = {
+      visits: [{ screenId: 'q:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-q1', resourceId: 1 }],
+      permits: [checkPermit, (ackBetween ?? ackAfter) as Permit],
+      receipts: [{ ...RECEIPT_Q1, stepIndex: 0 }],
+      operationFailures: [],
+      plans: [recordedPlanFor(c, first, 0), recordedPlanFor(c, second, 0)],
+    };
+    const m = manifest({
+      screens: [MANIFEST.screens[1]],
+      scenario: [{ screen_ref: 'q:1', expected_verdict: 'correct' }],
+    });
+    return auditRun(m, runRecord, c.snapshot());
+  }
+
+  test('an ack after the first response licenses the graded re-check (W-ST4)', () => {
+    const found = recheckRun('after');
+    expect(formatViolations(found)).toBe('auditRun: no violations');
+  });
+
+  test('an ack stamped before the first response licenses no second evaluation (W-ST4)', () => {
+    expect(codes(recheckRun('between'))).toContain('evaluation-no-causal-edge');
+  });
+});
