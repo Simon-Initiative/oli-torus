@@ -13,6 +13,7 @@ defmodule Oli.Experiments.ExperimentDefinition do
     :description,
     :state,
     :assignment_unit,
+    :assignment_scope,
     :algorithm,
     :alternatives_resource_id,
     :prior_alpha,

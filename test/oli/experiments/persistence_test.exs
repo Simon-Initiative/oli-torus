@@ -2,6 +2,7 @@ defmodule Oli.Experiments.PersistenceTest do
   use Oli.DataCase
 
   import Oli.Factory
+  import Ecto.Query
 
   alias Oli.Experiments.Schemas.{
     Assignment,
@@ -28,6 +29,186 @@ defmodule Oli.Experiments.PersistenceTest do
   )
 
   describe "singular experiment schema" do
+    test "persists assignment scope defaults and database constraints" do
+      assert "assignment_scope" in columns_for("experiment_definitions")
+      assert "assignment_scope" in columns_for("experiment_assignments")
+
+      assert "experiment_definitions_assignment_scope_check" in constraints_for(
+               "experiment_definitions"
+             )
+
+      assert "experiment_definitions_algorithm_assignment_scope_check" in constraints_for(
+               "experiment_definitions"
+             )
+
+      assignment_constraints = constraints_for("experiment_assignments")
+      assert "experiment_assignments_assignment_scope_check" in assignment_constraints
+      assert "experiment_assignments_scope_identity_check" in assignment_constraints
+      assert "experiment_assignments_experiment_scope_fkey" in assignment_constraints
+
+      assert "experiment_assignments_section_enrollment_sticky_idx" in indexes_for(
+               "experiment_assignments"
+             )
+
+      assert "experiment_assignments_intervention_lookup_idx" in indexes_for(
+               "experiment_assignments"
+             )
+    end
+
+    test "restricts Thompson Sampling definitions to intervention scope" do
+      project = insert(:project)
+      alternatives = insert(:revision)
+
+      assert {:error, changeset} =
+               %ExperimentDefinition{}
+               |> ExperimentDefinition.changeset(%{
+                 project_id: project.id,
+                 alternatives_resource_id: alternatives.resource_id,
+                 slug: "invalid-thompson-scope",
+                 name: "Invalid Thompson scope",
+                 algorithm: :thompson_sampling,
+                 assignment_scope: :section_enrollment
+               })
+               |> Repo.insert()
+
+      assert "section-and-enrollment scope is available only for weighted random experiments" in errors_on(
+               changeset
+             ).assignment_scope
+    end
+
+    test "supports both assignment identity shapes and enforces their uniqueness independently" do
+      fixture = singular_experiment_fixture("intervention-assignment-scope")
+
+      canonical_fixture =
+        singular_experiment_fixture("canonical-assignment-scope", :section_enrollment)
+
+      section = insert(:section, base_project: fixture.project)
+      first_user = insert(:user)
+      first_enrollment = insert(:enrollment, section: section, user: first_user)
+      second_user = insert(:user)
+      second_enrollment = insert(:enrollment, section: section, user: second_user)
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      intervention_assignment =
+        assignment_attrs(fixture, section, first_enrollment, first_user, now)
+        |> then(&Assignment.changeset(%Assignment{}, &1))
+        |> Repo.insert!()
+
+      assert intervention_assignment.assignment_scope == :intervention
+
+      canonical_attrs =
+        assignment_attrs(canonical_fixture, section, second_enrollment, second_user, now)
+        |> Map.merge(%{
+          intervention_id: nil,
+          assignment_scope: :section_enrollment,
+          assignment_key: "canonical-assignment"
+        })
+
+      canonical_assignment =
+        %Assignment{}
+        |> Assignment.changeset(canonical_attrs)
+        |> Repo.insert!()
+
+      assert canonical_assignment.intervention_id == nil
+      assert canonical_assignment.assignment_scope == :section_enrollment
+
+      assert {:error, duplicate_changeset} =
+               %Assignment{}
+               |> Assignment.changeset(%{canonical_attrs | assignment_key: "canonical-duplicate"})
+               |> Repo.insert()
+
+      assert "has already been taken" in errors_on(duplicate_changeset).experiment_id
+
+      assert {:error, invalid_shape_changeset} =
+               %Assignment{}
+               |> Assignment.changeset(%{
+                 canonical_attrs
+                 | enrollment_id: first_enrollment.id,
+                   user_id: first_user.id,
+                   assignment_key: "invalid-shape",
+                   intervention_id: canonical_fixture.intervention.id
+               })
+               |> Repo.insert()
+
+      assert "must match the configured assignment scope" in errors_on(invalid_shape_changeset).intervention_id
+
+      mismatched_scope_attrs =
+        assignment_attrs(fixture, section, second_enrollment, second_user, now)
+        |> Map.merge(%{
+          intervention_id: nil,
+          assignment_scope: :section_enrollment,
+          assignment_key: "mismatched-experiment-scope"
+        })
+
+      assert {:error, mismatched_scope_changeset} =
+               %Assignment{}
+               |> Assignment.changeset(mismatched_scope_attrs)
+               |> Repo.insert()
+
+      assert "does not match the experiment assignment scope" in errors_on(
+               mismatched_scope_changeset
+             ).assignment_scope
+
+      concurrent_user = insert(:user)
+      concurrent_enrollment = insert(:enrollment, section: section, user: concurrent_user)
+
+      concurrent_attrs =
+        assignment_attrs(
+          canonical_fixture,
+          section,
+          concurrent_enrollment,
+          concurrent_user,
+          now
+        )
+        |> Map.merge(%{intervention_id: nil, assignment_scope: :section_enrollment})
+
+      concurrent_results =
+        1..2
+        |> Enum.map(fn suffix ->
+          Task.async(fn ->
+            %Assignment{}
+            |> Assignment.changeset(%{
+              concurrent_attrs
+              | assignment_key: "concurrent-canonical-#{suffix}"
+            })
+            |> Repo.insert()
+          end)
+        end)
+        |> Enum.map(&Task.await(&1, 5_000))
+
+      assert Enum.count(concurrent_results, &match?({:ok, %Assignment{}}, &1)) == 1
+      assert Enum.count(concurrent_results, &match?({:error, %Ecto.Changeset{}}, &1)) == 1
+
+      assert Repo.aggregate(
+               from(assignment in Assignment,
+                 where:
+                   assignment.experiment_id == ^canonical_fixture.experiment.id and
+                     assignment.section_id == ^section.id and
+                     assignment.enrollment_id == ^concurrent_enrollment.id
+               ),
+               :count,
+               :id
+             ) == 1
+
+      migration =
+        File.read!("priv/repo/migrations/20260814143803_add_weighted_random_assignment_scope.exs")
+
+      rollback_guard =
+        ~r/execute """\n(?<sql>.*?)\n    """/s
+        |> Regex.scan(migration, capture: :all_names)
+        |> List.flatten()
+        |> Enum.find(&String.contains?(&1, "cannot roll back assignment scope"))
+
+      assert {:error, :expected_rollback_guard} =
+               Repo.transaction(fn ->
+                 assert_raise Postgrex.Error, ~r/cannot roll back assignment scope/, fn ->
+                   Repo.query!(rollback_guard)
+                 end
+
+                 Repo.rollback(:expected_rollback_guard)
+               end)
+    end
+
     test "places group and policy ownership directly on the experiment" do
       columns = columns_for("experiment_definitions")
 
@@ -199,7 +380,7 @@ defmodule Oli.Experiments.PersistenceTest do
     end
   end
 
-  defp singular_experiment_fixture(suffix) do
+  defp singular_experiment_fixture(suffix, assignment_scope \\ :intervention) do
     project = insert(:project)
     alternatives = insert(:revision)
     page = insert(:revision)
@@ -211,7 +392,8 @@ defmodule Oli.Experiments.PersistenceTest do
         alternatives_resource_id: alternatives.resource_id,
         slug: "singular-#{suffix}",
         name: "Singular #{suffix}",
-        algorithm: :weighted_random
+        algorithm: :weighted_random,
+        assignment_scope: assignment_scope
       })
       |> Repo.insert!()
 
@@ -235,6 +417,20 @@ defmodule Oli.Experiments.PersistenceTest do
       |> Repo.insert!()
 
     %{project: project, experiment: experiment, condition: condition, intervention: intervention}
+  end
+
+  defp assignment_attrs(fixture, section, enrollment, user, now) do
+    %{
+      experiment_id: fixture.experiment.id,
+      condition_id: fixture.condition.id,
+      intervention_id: fixture.intervention.id,
+      section_id: section.id,
+      enrollment_id: enrollment.id,
+      user_id: user.id,
+      assigned_by_policy: "weighted_random",
+      assignment_key: "assignment-#{System.unique_integer([:positive])}",
+      assigned_at: now
+    }
   end
 
   defp columns_for(table) do

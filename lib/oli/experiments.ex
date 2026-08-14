@@ -92,6 +92,12 @@ defmodule Oli.Experiments do
          :ok <- validate_update_state(schema, request),
          :ok <- validate_immutable_algorithm(schema, request.algorithm),
          :ok <-
+           validate_assignment_scope(
+             request.algorithm || schema.algorithm,
+             resolve_update_assignment_scope(request.assignment_scope, schema.assignment_scope)
+           ),
+         :ok <- validate_assignment_scope_update(schema, request.assignment_scope),
+         :ok <-
            validate_authoring_algorithm(
              request.algorithm || schema.algorithm,
              structural_configuration_change?(request)
@@ -2140,6 +2146,7 @@ defmodule Oli.Experiments do
       request,
       section_ids,
       &get_or_create_policy_state/1,
+      &validate_locked_update/2,
       &normalize_transaction_result/1
     )
   end
@@ -2614,7 +2621,8 @@ defmodule Oli.Experiments do
       fixed_control_allocation: request.fixed_control_allocation,
       imbalance_threshold: request.imbalance_threshold || 1.0,
       reward_source: request.reward_source || "assessment_page:normalized_score",
-      assignment_unit: request.assignment_unit
+      assignment_unit: request.assignment_unit,
+      assignment_scope: resolve_assignment_scope(request.assignment_scope, request.algorithm)
     }
   end
 
@@ -2627,6 +2635,7 @@ defmodule Oli.Experiments do
       :description,
       :algorithm,
       :assignment_unit,
+      :assignment_scope,
       :alternatives_resource_id,
       :prior_alpha,
       :prior_beta,
@@ -2893,6 +2902,72 @@ defmodule Oli.Experiments do
 
   defp validate_authoring_algorithm(_algorithm, _structural_configuration_change?), do: :ok
 
+  defp validate_assignment_scope(algorithm, scope)
+       when scope in [:intervention, "intervention"] and
+              algorithm in [:weighted_random, :thompson_sampling],
+       do: :ok
+
+  defp validate_assignment_scope(:weighted_random, scope)
+       when scope in [:section_enrollment, "section_enrollment"],
+       do: :ok
+
+  defp validate_assignment_scope(:thompson_sampling, scope)
+       when scope in [:section_enrollment, "section_enrollment"],
+       do:
+         invalid_condition(
+           "section-and-enrollment scope is available only for weighted random experiments"
+         )
+
+  defp validate_assignment_scope(_algorithm, _scope),
+    do: invalid_condition("assignment scope must be intervention or section_enrollment")
+
+  defp default_assignment_scope(:weighted_random), do: :section_enrollment
+  defp default_assignment_scope(_algorithm), do: :intervention
+
+  defp resolve_assignment_scope(nil, algorithm), do: default_assignment_scope(algorithm)
+  defp resolve_assignment_scope(scope, _algorithm), do: scope
+
+  defp resolve_update_assignment_scope(nil, persisted_scope), do: persisted_scope
+  defp resolve_update_assignment_scope(scope, _persisted_scope), do: scope
+
+  defp validate_assignment_scope_update(_schema, nil), do: :ok
+
+  defp validate_assignment_scope_update(
+         %ExperimentDefinitionSchema{assignment_scope: scope} = schema,
+         requested_scope
+       ) do
+    case normalize_assignment_scope(requested_scope) do
+      ^scope -> :ok
+      _scope -> :changed
+    end
+    |> case do
+      :ok -> :ok
+      :changed -> validate_assignment_scope_change_has_no_assignments(schema)
+    end
+  end
+
+  defp validate_assignment_scope_change_has_no_assignments(schema) do
+    case Repo.exists?(
+           from assignment in Assignment, where: assignment.experiment_id == ^schema.id
+         ) do
+      false -> :ok
+      true -> invalid_condition("assignment scope cannot change after learner assignments exist")
+    end
+  end
+
+  defp validate_locked_update(schema, request) do
+    with :ok <- validate_update_state(schema, request),
+         :ok <- validate_assignment_scope_update(schema, request.assignment_scope) do
+      :ok
+    end
+  end
+
+  defp normalize_assignment_scope(:intervention), do: :intervention
+  defp normalize_assignment_scope("intervention"), do: :intervention
+  defp normalize_assignment_scope(:section_enrollment), do: :section_enrollment
+  defp normalize_assignment_scope("section_enrollment"), do: :section_enrollment
+  defp normalize_assignment_scope(scope), do: scope
+
   defp validate_immutable_algorithm(_schema, nil), do: :ok
 
   defp validate_immutable_algorithm(%ExperimentDefinitionSchema{algorithm: algorithm}, algorithm),
@@ -2905,27 +2980,33 @@ defmodule Oli.Experiments do
     do: validate_configuration_request(request, scope, request.algorithm)
 
   defp validate_configuration_request(request, scope, algorithm) do
-    case structural_configuration_change?(request) do
-      false ->
-        :ok
-
-      true ->
-        with :ok <- validate_authoring_conditions(request.conditions),
-             {:ok, revision} <-
-               resolve_authoring_revision(scope.project_slug, request.alternatives_resource_id),
-             :ok <- validate_experiment_controlled_revision(revision),
-             :ok <- validate_singular_mapping(revision, request.conditions),
-             :ok <-
-               validate_interventions(
-                 request.interventions || [],
-                 scope,
-                 request.alternatives_resource_id,
-                 algorithm
-               ),
-             :ok <-
-               PolicyConfiguration.validate(algorithm, PolicyConfiguration.from_attrs(request)) do
+    with :ok <-
+           validate_assignment_scope(
+             algorithm,
+             resolve_assignment_scope(Map.get(request, :assignment_scope), algorithm)
+           ) do
+      case structural_configuration_change?(request) do
+        false ->
           :ok
-        end
+
+        true ->
+          with :ok <- validate_authoring_conditions(request.conditions),
+               {:ok, revision} <-
+                 resolve_authoring_revision(scope.project_slug, request.alternatives_resource_id),
+               :ok <- validate_experiment_controlled_revision(revision),
+               :ok <- validate_singular_mapping(revision, request.conditions),
+               :ok <-
+                 validate_interventions(
+                   request.interventions || [],
+                   scope,
+                   request.alternatives_resource_id,
+                   algorithm
+                 ),
+               :ok <-
+                 PolicyConfiguration.validate(algorithm, PolicyConfiguration.from_attrs(request)) do
+            :ok
+          end
+      end
     end
   end
 
@@ -3376,6 +3457,7 @@ defmodule Oli.Experiments do
       description: schema.description,
       state: schema.state,
       assignment_unit: schema.assignment_unit,
+      assignment_scope: schema.assignment_scope,
       algorithm: schema.algorithm,
       alternatives_resource_id: schema.alternatives_resource_id,
       prior_alpha: schema.prior_alpha,

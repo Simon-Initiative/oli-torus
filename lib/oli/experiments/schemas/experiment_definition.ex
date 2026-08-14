@@ -11,10 +11,12 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
 
   @states [:draft, :active, :paused, :completed, :archived]
   @assignment_units [:enrollment]
+  @assignment_scopes [:intervention, :section_enrollment]
   @algorithms [:weighted_random, :thompson_sampling]
 
   def states, do: @states
   def assignment_units, do: @assignment_units
+  def assignment_scopes, do: @assignment_scopes
   def algorithms, do: @algorithms
 
   schema "experiment_definitions" do
@@ -24,6 +26,7 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     field :description, :string
     field :state, Ecto.Enum, values: @states, default: :draft
     field :assignment_unit, Ecto.Enum, values: @assignment_units, default: :enrollment
+    field :assignment_scope, Ecto.Enum, values: @assignment_scopes, default: :intervention
     field :algorithm, Ecto.Enum, values: @algorithms
     field :prior_alpha, :float, default: 1.0
     field :prior_beta, :float, default: 1.0
@@ -55,6 +58,7 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
       :description,
       :state,
       :assignment_unit,
+      :assignment_scope,
       :algorithm,
       :alternatives_resource_id,
       :prior_alpha,
@@ -75,6 +79,7 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
       :name,
       :state,
       :assignment_unit,
+      :assignment_scope,
       :algorithm,
       :alternatives_resource_id,
       :prior_alpha,
@@ -108,6 +113,13 @@ defmodule Oli.Experiments.Schemas.ExperimentDefinition do
     |> unique_constraint(:slug, name: :experiment_definitions_project_slug_idx)
     |> unique_constraint(:alternatives_resource_id,
       name: :experiment_definitions_active_alternatives_idx
+    )
+    |> check_constraint(:assignment_scope,
+      name: :experiment_definitions_assignment_scope_check
+    )
+    |> check_constraint(:assignment_scope,
+      name: :experiment_definitions_algorithm_assignment_scope_check,
+      message: "section-and-enrollment scope is available only for weighted random experiments"
     )
   end
 

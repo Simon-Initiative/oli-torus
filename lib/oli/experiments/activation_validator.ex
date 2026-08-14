@@ -24,7 +24,8 @@ defmodule Oli.Experiments.ActivationValidator do
       )
       |> Repo.all()
 
-    with {:ok, revisions} <- activation_revisions(schema),
+    with :ok <- validate_assignment_scope(schema),
+         {:ok, revisions} <- activation_revisions(schema),
          :ok <- validate_experiment_strategies(revisions),
          :ok <- validate_minimum_active_conditions(conditions),
          :ok <- validate_positive_active_weight(conditions),
@@ -34,6 +35,18 @@ defmodule Oli.Experiments.ActivationValidator do
       :ok
     end
   end
+
+  defp validate_assignment_scope(%ExperimentDefinition{
+         algorithm: :thompson_sampling,
+         assignment_scope: scope
+       })
+       when scope != :intervention,
+       do:
+         invalid_condition(
+           "section-and-enrollment scope is available only for weighted random experiments"
+         )
+
+  defp validate_assignment_scope(_experiment), do: :ok
 
   defp active_conditions(experiment_id) do
     Repo.all(

@@ -5,7 +5,15 @@ defmodule Oli.Experiments.ConfigurationTest do
 
   alias Oli.Authoring.Course.Project
   alias Oli.Experiments
-  alias Oli.Experiments.{CreateExperimentRequest, ExperimentError, LifecycleRequest, Scope}
+
+  alias Oli.Experiments.{
+    ActivationValidator,
+    CreateExperimentRequest,
+    ExperimentError,
+    LifecycleRequest,
+    Scope
+  }
+
   alias Oli.Repo
   alias Oli.Resources.ResourceType
 
@@ -60,6 +68,167 @@ defmodule Oli.Experiments.ConfigurationTest do
              Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
 
     assert active.state == :active
+  end
+
+  test "defaults weighted random to section-and-enrollment scope and saves intervention scope" do
+    scope = project_scope()
+    group = alternatives_revision(scope.project_id, "Assignment Scope")
+    page = page_revision(scope.project_id, "Assignment Scope Page", false)
+    request = graph_request(scope, [point(group, page, "assignment-scope")])
+
+    assert {:ok, %{assignment_scope: :section_enrollment} = default_definition} =
+             Experiments.create_experiment(request)
+
+    assert {:ok, %{assignment_scope: :intervention} = definition} =
+             request
+             |> Map.put(:slug, "section-scope-#{System.unique_integer([:positive])}")
+             |> Map.put(:assignment_scope, :intervention)
+             |> Experiments.create_experiment()
+
+    assert {:ok, %{assignment_scope: :section_enrollment}} =
+             Experiments.update_experiment(
+               definition.id,
+               %Oli.Experiments.UpdateExperimentRequest{
+                 scope: scope,
+                 assignment_scope: :section_enrollment
+               }
+             )
+
+    unauthorized_scope = %{scope | author_id: nil}
+
+    assert {:error, %ExperimentError{type: :invalid_scope}} =
+             Experiments.update_experiment(
+               definition.id,
+               %Oli.Experiments.UpdateExperimentRequest{
+                 scope: unauthorized_scope,
+                 assignment_scope: :intervention
+               }
+             )
+
+    assert {:ok, %{state: :active}} =
+             Experiments.activate_experiment(default_definition.id, %LifecycleRequest{
+               scope: scope
+             })
+
+    assert {:error, %ExperimentError{type: :invalid_state}} =
+             Experiments.update_experiment(
+               default_definition.id,
+               %Oli.Experiments.UpdateExperimentRequest{
+                 scope: scope,
+                 assignment_scope: :intervention
+               }
+             )
+  end
+
+  test "rejects invalid and Thompson Sampling section-and-enrollment scopes" do
+    scope = project_scope()
+    group = alternatives_revision(scope.project_id, "Invalid Assignment Scope")
+    page = page_revision(scope.project_id, "Invalid Assignment Scope Page", false)
+    request = graph_request(scope, [point(group, page, "invalid-assignment-scope")])
+
+    assert {:error,
+            %ExperimentError{
+              message: "assignment scope must be intervention or section_enrollment"
+            }} =
+             Experiments.create_experiment(%{request | assignment_scope: :unknown})
+
+    assert {:error,
+            %ExperimentError{
+              message: "assignment scope must be intervention or section_enrollment"
+            }} =
+             Experiments.create_experiment(%{request | assignment_scope: false})
+
+    assert {:error,
+            %ExperimentError{
+              message:
+                "section-and-enrollment scope is available only for weighted random experiments"
+            }} =
+             Experiments.create_experiment(%{
+               request
+               | algorithm: :thompson_sampling,
+                 assignment_scope: :section_enrollment
+             })
+
+    malformed =
+      %Oli.Experiments.Schemas.ExperimentDefinition{}
+      |> Oli.Experiments.Schemas.ExperimentDefinition.changeset(%{
+        project_id: scope.project_id,
+        alternatives_resource_id: group.resource_id,
+        slug: "activation-scope-#{System.unique_integer([:positive])}",
+        name: "Activation scope",
+        algorithm: :weighted_random,
+        assignment_scope: :section_enrollment
+      })
+      |> Repo.insert!()
+      |> Map.put(:algorithm, :thompson_sampling)
+
+    assert {:error, %ExperimentError{}} = ActivationValidator.validate(malformed)
+  end
+
+  test "prevents scope changes after assignments while allowing string-valued no-op updates" do
+    scope = project_scope()
+    group = alternatives_revision(scope.project_id, "Assigned Scope")
+    page = page_revision(scope.project_id, "Assigned Scope Page", false)
+
+    assert {:ok, definition} =
+             scope
+             |> graph_request([point(group, page, "assigned-scope")])
+             |> Map.put(:assignment_scope, :intervention)
+             |> Experiments.create_experiment()
+
+    assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)
+    [condition | _] = view.conditions
+    [intervention] = view.interventions
+    section = insert(:section, base_project: Repo.get!(Project, scope.project_id))
+    user = insert(:user)
+    enrollment = insert(:enrollment, section: section, user: user)
+
+    %Oli.Experiments.Schemas.Assignment{}
+    |> Oli.Experiments.Schemas.Assignment.changeset(%{
+      experiment_id: definition.id,
+      condition_id: condition.id,
+      intervention_id: intervention.id,
+      section_id: section.id,
+      enrollment_id: enrollment.id,
+      user_id: user.id,
+      assigned_by_policy: "weighted_random",
+      assignment_key: "assigned-scope",
+      assigned_at: DateTime.utc_now() |> DateTime.truncate(:second)
+    })
+    |> Repo.insert!()
+
+    assert {:error,
+            %ExperimentError{
+              message: "assignment scope must be intervention or section_enrollment"
+            }} =
+             Experiments.update_experiment(
+               definition.id,
+               %Oli.Experiments.UpdateExperimentRequest{
+                 scope: scope,
+                 assignment_scope: false
+               }
+             )
+
+    assert {:ok, %{assignment_scope: :intervention}} =
+             Experiments.update_experiment(
+               definition.id,
+               %Oli.Experiments.UpdateExperimentRequest{
+                 scope: scope,
+                 assignment_scope: "intervention"
+               }
+             )
+
+    assert {:error,
+            %ExperimentError{
+              message: "assignment scope cannot change after learner assignments exist"
+            }} =
+             Experiments.update_experiment(
+               definition.id,
+               %Oli.Experiments.UpdateExperimentRequest{
+                 scope: scope,
+                 assignment_scope: :section_enrollment
+               }
+             )
   end
 
   test "returns structured errors for incomplete mappings and incompatible assessment bindings" do
@@ -357,12 +526,26 @@ defmodule Oli.Experiments.ConfigurationTest do
     request = %{graph_request(scope, [configuration]) | algorithm: :thompson_sampling}
 
     assert {:ok, definition} = Experiments.create_experiment(request)
+    assert definition.assignment_scope == :intervention
     assert {:ok, view} = Experiments.get_experiment_authoring_view(definition.id, scope)
 
     assert view.assessment_bindings
            |> Enum.map(& &1.reward_threshold)
            |> Enum.map(&Decimal.to_string/1)
            |> Enum.sort() == ["0.00000", "1.00000"]
+
+    assert {:error,
+            %ExperimentError{
+              message:
+                "section-and-enrollment scope is available only for weighted random experiments"
+            }} =
+             Experiments.update_experiment(
+               definition.id,
+               %Oli.Experiments.UpdateExperimentRequest{
+                 scope: scope,
+                 assignment_scope: :section_enrollment
+               }
+             )
 
     assert {:ok, %{state: :active}} =
              Experiments.activate_experiment(definition.id, %LifecycleRequest{scope: scope})
