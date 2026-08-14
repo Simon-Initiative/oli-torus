@@ -1,0 +1,3079 @@
+{
+  "_meta": {
+    "artifact": "CONFORMANCE-MAP (contract \u00a71 SUITE, r4-B3 hardened r5-B3) \u2014 bidirectional over \u00a73 row IDs and \u00a74 witness subcase IDs",
+    "contract": "docs/exec-plans/current/epics/automated_testing/mer-5865-step4-driver-swap-contract.md (v6 + A1)",
+    "gate": "GATE-B-FOUNDATION",
+    "authored": "2026-08-14",
+    "granularity": "subcase \u2014 every \u00a74 witness subcase (incl. the 60 named exit injections) maps to a discovered test, live evidence, or a named reviewer obligation; ID presence alone never satisfies an entry",
+    "replay": "ten-spec strict subset 516 passed 2026-08-14 with the private env; final stamps refreshed at the freeze revision",
+    "reviewer_note": "entries marked reviewer-owned are the four \u00a77 derivations plus per-entry static checks; an unexecuted reviewer conjunct is RED (\u00a75)"
+  },
+  "W-E0a": {
+    "row": "B4-EXIT-SCOPE",
+    "owner": "gate-B reviewer",
+    "status": "PENDING-REVIEWER",
+    "what": "reviewer derives the source universe from the real switched entry point + fixture dependency/call graph at the gate revision and compares bidirectionally with artifact scope.declared",
+    "red_condition": "any reachable file whose failure crosses the boundary absent from declared scope",
+    "status_class": "reviewer-owned"
+  },
+  "W-E0b": {
+    "row": "B4-EXIT-SCOPE",
+    "owner": "gate-B reviewer",
+    "status": "PENDING-REVIEWER",
+    "what": "reverse direction: declared scope names a file absent from the derived universe",
+    "status_class": "reviewer-owned"
+  },
+  "W-E1": {
+    "row": "B4-EXIT-INV",
+    "writer_leg": [
+      {
+        "row": "B4-EXIT-INV",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "the site set equals the candidate set derived from the source (both directions)"
+        },
+        "mutation_parameters": {
+          "derivation": "spec re-derives candidate exit sites from the driver source and compares as a SET, both directions"
+        },
+        "expected_locus": "inventory completeness check",
+        "observed_locus": "set equality asserted in-test",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      },
+      {
+        "row": "B4-EXIT-INV",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "every inventoried site still cites the source line it claims"
+        },
+        "mutation_parameters": {
+          "derivation": "each site.source_line re-read from the file at site.caller"
+        },
+        "expected_locus": "stale-line red",
+        "observed_locus": "byte comparison asserted",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      },
+      {
+        "row": "B4-EXIT-INV",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "every site pins exactly one producer \u2014 no unions, no placeholders"
+        },
+        "mutation_parameters": {
+          "mutation": "a planted union producer turns this red (mutation-tested 2026-08-13)"
+        },
+        "expected_locus": "producer uniqueness",
+        "observed_locus": "regex + legend check",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      }
+    ],
+    "reviewer_leg": {
+      "owner": "gate-B reviewer",
+      "status": "PENDING-REVIEWER",
+      "what": "reviewer-derived site list vs artifact, either direction (contract \u00a77 obligation 2)"
+    },
+    "status_class": "mapped"
+  },
+  "W-E2-NOW-QUIESCENCE": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-NOW-QUIESCENCE",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-NOW-QUIESCENCE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:281 now emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:281",
+          "kind": "throw",
+          "callee": "now",
+          "origin": "awaitQuiescence",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-QUIESCENCE-READ": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-QUIESCENCE-READ",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-QUIESCENCE-READ: src/systems/torus/tasks/AdaptiveStrictDriver.ts:283 journal.outstanding emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:283",
+          "kind": "throw",
+          "callee": "journal.outstanding",
+          "origin": "awaitQuiescence",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-WIRE-COUNT": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-WIRE-COUNT",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-WIRE-COUNT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:284 journal.wireEventCount emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:284",
+          "kind": "throw",
+          "callee": "journal.wireEventCount",
+          "origin": "awaitQuiescence",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-SLEEP-QUIESCENT": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-SLEEP-QUIESCENT",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-SLEEP-QUIESCENT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:285 sleep emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:285",
+          "kind": "rejecting-await",
+          "callee": "sleep",
+          "origin": "awaitQuiescence",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-SLEEP-POLL": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-SLEEP-POLL",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-SLEEP-POLL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:288 sleep emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:288",
+          "kind": "rejecting-await",
+          "callee": "sleep",
+          "origin": "awaitQuiescence",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-RECORDS-EVAL": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-RECORDS-EVAL",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-RECORDS-EVAL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:309 journal.records emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:309",
+          "kind": "throw",
+          "callee": "journal.records",
+          "origin": "awaitEvaluation",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-STOP-UNUSABLE": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-STOP-UNUSABLE",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-STOP-UNUSABLE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:322 stop emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:322",
+          "kind": "failure-path-return",
+          "callee": "stop",
+          "origin": "awaitEvaluation",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer JR emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-EVAL-TIMEOUT-ACK": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-EVAL-TIMEOUT-ACK",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-EVAL-TIMEOUT-ACK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:329 fail emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:329",
+          "kind": "failure-path-return",
+          "callee": "fail",
+          "origin": "awaitEvaluation@ack",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(ack-no-effect) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-EVAL-TIMEOUT": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-EVAL-TIMEOUT",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-EVAL-TIMEOUT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:329 fail emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:329",
+          "kind": "failure-path-return",
+          "callee": "fail",
+          "origin": "awaitEvaluation@check",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(check-click-no-effect) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-RECORDS-BARRIER": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-RECORDS-BARRIER",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-RECORDS-BARRIER: src/systems/torus/tasks/AdaptiveStrictDriver.ts:349 journal.records emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:349",
+          "kind": "throw",
+          "callee": "journal.records",
+          "origin": "awaitSavedBarrier",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-BARRIER-TIMEOUT": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-BARRIER-TIMEOUT",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-BARRIER-TIMEOUT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:363 fail emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:363",
+          "kind": "failure-path-return",
+          "callee": "fail",
+          "origin": "awaitSavedBarrier",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(barrier-timeout) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-RECORDS-SWEEP": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-RECORDS-SWEEP",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-RECORDS-SWEEP: src/systems/torus/tasks/AdaptiveStrictDriver.ts:393 journal.records emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:393",
+          "kind": "throw",
+          "callee": "journal.records",
+          "origin": "recordObservedPlans",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-MEDIA": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-MEDIA",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-MEDIA: src/systems/torus/tasks/AdaptiveStrictDriver.ts:409 deck.playVideos emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:409",
+          "kind": "rejecting-await",
+          "callee": "deck.playVideos",
+          "origin": "runGates",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(readiness-timeout) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-MEDIA-CAROUSEL": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-MEDIA-CAROUSEL",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-MEDIA-CAROUSEL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:410 deck.clickThroughCarousels emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:410",
+          "kind": "rejecting-await",
+          "callee": "deck.clickThroughCarousels",
+          "origin": "runGates",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(readiness-timeout) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-GATE-VIDEO": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-GATE-VIDEO",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-GATE-VIDEO: src/systems/torus/tasks/AdaptiveStrictDriver.ts:417 deck.playVideos emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:417",
+          "kind": "rejecting-await",
+          "callee": "deck.playVideos",
+          "origin": "runGates",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(gate-unsatisfied) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-GATE-CAROUSEL": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-GATE-CAROUSEL",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-GATE-CAROUSEL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:421 deck.clickThroughCarousels emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:421",
+          "kind": "rejecting-await",
+          "callee": "deck.clickThroughCarousels",
+          "origin": "runGates",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(gate-unsatisfied) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-GATE-UNKNOWN": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-GATE-UNKNOWN",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-GATE-UNKNOWN: src/systems/torus/tasks/AdaptiveStrictDriver.ts:424 unknown gate emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:424",
+          "kind": "throw",
+          "callee": "unknown gate",
+          "origin": "runGates",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(gate-unsatisfied) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-PART-INVENTORY": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-PART-INVENTORY",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-PART-INVENTORY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:439 deck.readPartInventory emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:439",
+          "kind": "rejecting-await",
+          "callee": "deck.readPartInventory",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(answer-failed) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-UNKNOWN-FAMILY": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-UNKNOWN-FAMILY",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-UNKNOWN-FAMILY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:447 resolveFamily emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:447",
+          "kind": "throw",
+          "callee": "resolveFamily",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(answer-failed) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-BAD-DIRECTIVE": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-BAD-DIRECTIVE",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-BAD-DIRECTIVE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:452 resolved.validateDirective emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:452",
+          "kind": "throw",
+          "callee": "resolved.validateDirective",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(answer-failed) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-DETECT": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-DETECT",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-DETECT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:456 entry.detect emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:456",
+          "kind": "throw",
+          "callee": "entry.detect",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(answer-failed) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-UNOWNED-PART": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-UNOWNED-PART",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-UNOWNED-PART: src/systems/torus/tasks/AdaptiveStrictDriver.ts:457 no owned part emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:457",
+          "kind": "throw",
+          "callee": "no owned part",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(answer-failed) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-INTERIOR-REGISTRY": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-INTERIOR-REGISTRY",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-INTERIOR-REGISTRY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:461 entry.ready emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:461",
+          "kind": "rejecting-await",
+          "callee": "entry.ready",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(readiness-timeout) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-FIXTURE-INTERIOR": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-FIXTURE-INTERIOR",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-FIXTURE-INTERIOR: src/systems/torus/tasks/AdaptiveStrictDriver.ts:464 entry.answer emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:464",
+          "kind": "rejecting-await",
+          "callee": "entry.answer",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(answer-failed) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-READBACK": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-READBACK",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-READBACK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:467 entry.readback emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:467",
+          "kind": "rejecting-await",
+          "callee": "entry.readback",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(readback-failed) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-READBACK-FENCE": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-READBACK-FENCE",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-READBACK-FENCE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:475 journal.issueReadbackFence emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:475",
+          "kind": "throw",
+          "callee": "journal.issueReadbackFence",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-CLONE": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-CLONE",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-CLONE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:487 structuredClone emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:487",
+          "kind": "throw",
+          "callee": "structuredClone",
+          "origin": "answerScreen",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-LESSON-END-WAIT": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-LESSON-END-WAIT",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-LESSON-END-WAIT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:501 deck.waitForLessonEnd emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:501",
+          "kind": "rejecting-await",
+          "callee": "deck.waitForLessonEnd",
+          "origin": "awaitTransition",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(navigation-timeout) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-GRADED-NAV": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-GRADED-NAV",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-GRADED-NAV: src/systems/torus/tasks/AdaptiveStrictDriver.ts:506 deck.waitForScreenChange emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:506",
+          "kind": "rejecting-await",
+          "callee": "deck.waitForScreenChange",
+          "origin": "awaitTransition",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(navigation-timeout) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-STOP-NONE-PLAN": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-STOP-NONE-PLAN",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-STOP-NONE-PLAN: src/systems/torus/tasks/AdaptiveStrictDriver.ts:528 stop emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:528",
+          "kind": "failure-path-return",
+          "callee": "stop",
+          "origin": "followPlan",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer RP emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-FEEDBACK-OPEN": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-FEEDBACK-OPEN",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-FEEDBACK-OPEN: src/systems/torus/tasks/AdaptiveStrictDriver.ts:533 deck.waitForFeedbackOpen emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:533",
+          "kind": "rejecting-await",
+          "callee": "deck.waitForFeedbackOpen",
+          "origin": "followPlan",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(feedback-never-opened) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-PERMIT-ACK": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-PERMIT-ACK",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-PERMIT-ACK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:535 journal.issuePermit emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:535",
+          "kind": "throw",
+          "callee": "journal.issuePermit",
+          "origin": "followPlan",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-ACK": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-ACK",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-ACK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:538 deck.acknowledgeFeedback emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:538",
+          "kind": "rejecting-await",
+          "callee": "deck.acknowledgeFeedback",
+          "origin": "followPlan",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(ack-no-effect) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-STOP-NONGRADED": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-STOP-NONGRADED",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-STOP-NONGRADED: src/systems/torus/tasks/AdaptiveStrictDriver.ts:556 stop emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:556",
+          "kind": "failure-path-return",
+          "callee": "stop",
+          "origin": "followPlan",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer CE emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-STOP-RECHECK-KIND": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-STOP-RECHECK-KIND",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-STOP-RECHECK-KIND: src/systems/torus/tasks/AdaptiveStrictDriver.ts:563 stop emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:563",
+          "kind": "failure-path-return",
+          "callee": "stop",
+          "origin": "followPlan",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer RP emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-UNDECLARED-SCREEN": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-UNDECLARED-SCREEN",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-UNDECLARED-SCREEN: src/systems/torus/tasks/AdaptiveStrictDriver.ts:578 undeclared screen emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:578",
+          "kind": "throw",
+          "callee": "undeclared screen",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-IDENTITY-READY": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-IDENTITY-READY",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-IDENTITY-READY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:579 deck.waitForDeckReady emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:579",
+          "kind": "rejecting-await",
+          "callee": "deck.waitForDeckReady",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-IDENTITY-ENDED": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-IDENTITY-ENDED",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-IDENTITY-ENDED: src/systems/torus/tasks/AdaptiveStrictDriver.ts:580 deck.lessonEnded emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:580",
+          "kind": "rejecting-await",
+          "callee": "deck.lessonEnded",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-IDENTITY-READ": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-IDENTITY-READ",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-IDENTITY-READ: src/systems/torus/tasks/AdaptiveStrictDriver.ts:581 deck.readScreenIdentity emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:581",
+          "kind": "rejecting-await",
+          "callee": "deck.readScreenIdentity",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-IDENTITY-MISMATCH": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-IDENTITY-MISMATCH",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-IDENTITY-MISMATCH: src/systems/torus/tasks/AdaptiveStrictDriver.ts:583 identity mismatch emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:583",
+          "kind": "throw",
+          "callee": "identity mismatch",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-FENCE": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-FENCE",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-FENCE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:589 journal.issueFence emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:589",
+          "kind": "throw",
+          "callee": "journal.issueFence",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-OPERATIONS": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-OPERATIONS",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-OPERATIONS: src/systems/torus/tasks/AdaptiveStrictDriver.ts:600 resolveOperations emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:600",
+          "kind": "throw",
+          "callee": "resolveOperations",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-NO-ACTION": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-NO-ACTION",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-NO-ACTION: src/systems/torus/tasks/AdaptiveStrictDriver.ts:614 no declared action emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:614",
+          "kind": "throw",
+          "callee": "no declared action",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(widget-button-unavailable) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-WIDGET-READY": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-WIDGET-READY",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-WIDGET-READY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:615 deck.widgetButtonReady emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:615",
+          "kind": "rejecting-await",
+          "callee": "deck.widgetButtonReady",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(widget-button-unavailable) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-WIDGET-UNRENDERED": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-WIDGET-UNRENDERED",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-WIDGET-UNRENDERED: src/systems/torus/tasks/AdaptiveStrictDriver.ts:616 button never rendered emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:616",
+          "kind": "throw",
+          "callee": "button never rendered",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(widget-button-unavailable) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-PERMIT-WIDGET": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-PERMIT-WIDGET",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-PERMIT-WIDGET: src/systems/torus/tasks/AdaptiveStrictDriver.ts:620 journal.issuePermit emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:620",
+          "kind": "throw",
+          "callee": "journal.issuePermit",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-WIDGET-CLICK": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-WIDGET-CLICK",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-WIDGET-CLICK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:628 deck.clickWidgetButton emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:628",
+          "kind": "rejecting-await",
+          "callee": "deck.clickWidgetButton",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(widget-button-unavailable) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-WIDGET-UNCLICKABLE": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-WIDGET-UNCLICKABLE",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-WIDGET-UNCLICKABLE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:629 button not clickable emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:629",
+          "kind": "throw",
+          "callee": "button not clickable",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(widget-button-unavailable) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-WIDGET-NAV": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-WIDGET-NAV",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-WIDGET-NAV: src/systems/torus/tasks/AdaptiveStrictDriver.ts:634 deck.waitForScreenChange emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:634",
+          "kind": "rejecting-await",
+          "callee": "deck.waitForScreenChange",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(navigation-timeout) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-TRAFFIC-NAV": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-TRAFFIC-NAV",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-TRAFFIC-NAV: src/systems/torus/tasks/AdaptiveStrictDriver.ts:637 fail emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:637",
+          "kind": "failure-path-return",
+          "callee": "fail",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(traffic-unsettled) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-CHECK-READY": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-CHECK-READY",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-CHECK-READY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:654 deck.waitForCheckEnabled emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:654",
+          "kind": "rejecting-await",
+          "callee": "deck.waitForCheckEnabled",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(readiness-timeout) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-PERMIT-CHECK": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-PERMIT-CHECK",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-PERMIT-CHECK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:656 journal.issuePermit emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:656",
+          "kind": "throw",
+          "callee": "journal.issuePermit",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-CHECK-CLICK": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-CHECK-CLICK",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-CHECK-CLICK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:659 deck.submitCheck emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:659",
+          "kind": "rejecting-await",
+          "callee": "deck.submitCheck",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(check-click-no-effect) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-TRAFFIC-GRADED": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-TRAFFIC-GRADED",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-TRAFFIC-GRADED: src/systems/torus/tasks/AdaptiveStrictDriver.ts:672 fail emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:672",
+          "kind": "failure-path-return",
+          "callee": "fail",
+          "origin": "runStep",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(traffic-unsettled) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-OPTIONS": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-OPTIONS",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-OPTIONS: src/systems/torus/tasks/AdaptiveStrictDriver.ts:684 options.timeouts read + spread emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:684",
+          "kind": "throw",
+          "callee": "options.timeouts read + spread",
+          "origin": "outer",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-OPTIONS-SLEEP": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-OPTIONS-SLEEP",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-OPTIONS-SLEEP: src/systems/torus/tasks/AdaptiveStrictDriver.ts:685 options.sleep read emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:685",
+          "kind": "throw",
+          "callee": "options.sleep read",
+          "origin": "outer",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-OPTIONS-NOW": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-OPTIONS-NOW",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-OPTIONS-NOW: src/systems/torus/tasks/AdaptiveStrictDriver.ts:686 options.now read emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:686",
+          "kind": "throw",
+          "callee": "options.now read",
+          "origin": "outer",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-PRETRY": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-PRETRY",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-PRETRY: src/systems/torus/tasks/AdaptiveStrictDriver.ts:687 manifest.screens.map emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:687",
+          "kind": "throw",
+          "callee": "manifest.screens.map",
+          "origin": "outer",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(identity-unresolved) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-LESSON-END-READ": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-LESSON-END-READ",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-LESSON-END-READ: src/systems/torus/tasks/AdaptiveStrictDriver.ts:695 deck.lessonEnded emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:695",
+          "kind": "rejecting-await",
+          "callee": "deck.lessonEnded",
+          "origin": "outer",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E2-NOTE-LESSON-END": {
+    "row": "B4-EXIT-EM",
+    "witness": "W-E2-NOTE-LESSON-END",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 494 passed",
+      "date": "2026-08-14"
+    },
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "W-E2-NOTE-LESSON-END: src/systems/torus/tasks/AdaptiveStrictDriver.ts:695 journal.noteLessonEnd emits its pinned producer and no other",
+        "mutation": {
+          "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:695",
+          "kind": "throw",
+          "callee": "journal.noteLessonEnd",
+          "origin": "outer",
+          "injection": "per the spec CASES entry named by this witness (fault injected at the named call edge)"
+        },
+        "expected_locus": "pinned producer OF(driver-internal) emitted before any boundary/seal, and no other",
+        "observed_locus": "asserted by the named test: exactly the pinned producer in runRecord/journal before seal"
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E3": {
+    "row": "B4-EXIT-EM",
+    "tests": [
+      {
+        "row": "B4-EXIT-EM",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "deleting the emitted failure loses the violation it carried"
+        },
+        "mutation_parameters": {
+          "mutation": "operationFailures emptied on an otherwise identical runRecord"
+        },
+        "expected_locus": "emission red (the violation disappears \u2014 emission is load-bearing)",
+        "observed_locus": "auditRun count 1 -> 0",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      },
+      {
+        "row": "B4-EXIT-EM",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "a stop site that also emitted a failure would double-count"
+        },
+        "mutation_parameters": {
+          "mutation": "a stop-class exit given a synthetic failure record"
+        },
+        "expected_locus": "emission red",
+        "observed_locus": "double-count asserted",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E4": {
+    "row": "B4-EXIT-MAP",
+    "tests": [
+      {
+        "row": "B4-EXIT-MAP",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "every operation-failure kind produces a violation through auditRun"
+        },
+        "mutation_parameters": {
+          "cases": "every OperationFailureKind member"
+        },
+        "expected_locus": ">=1 positive violation each",
+        "observed_locus": "per-kind violation asserted",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      },
+      {
+        "row": "B4-EXIT-MAP",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "EVERY finalization-failure reason reaches a violation naming it"
+        },
+        "mutation_parameters": {
+          "cases": "every completed-failure reason"
+        },
+        "expected_locus": ">=1 positive violation each",
+        "observed_locus": "per-reason violation asserted",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      },
+      {
+        "row": "B4-EXIT-MAP",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "a freeze timeout is positive evidence, not a silent bail"
+        },
+        "mutation_parameters": {
+          "case": "freeze_timeout set"
+        },
+        "expected_locus": "freeze-timeout violation",
+        "observed_locus": "asserted",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E5": {
+    "row": "B4-EXIT-MAP",
+    "tests": [
+      {
+        "row": "B4-EXIT-MAP",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "an open pre-completion window with its record SUPPRESSED still cannot audit clean"
+        },
+        "mutation_parameters": {
+          "mutation": "open-window pre-completion seal, record suppressed"
+        },
+        "expected_locus": "zero-positive boundary clause",
+        "observed_locus": "non-clean audit asserted",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-E6": {
+    "row": "B4-EXIT-EM",
+    "tests": [
+      {
+        "row": "B4-EXIT-EM",
+        "test": {
+          "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+          "title": "a hand-built run record does not satisfy what an emitted one does"
+        },
+        "mutation_parameters": {
+          "mutation": "records hand-built instead of emitted"
+        },
+        "expected_locus": "rejected: emission provenance required",
+        "observed_locus": "asserted",
+        "replay": {
+          "result": "passed",
+          "run": "ten-spec subset 494 passed",
+          "date": "2026-08-14"
+        }
+      }
+    ],
+    "status_class": "mapped"
+  },
+  "W-J1": {
+    "row": "B4-C3/B4-C15",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a green three-screen run audits to zero violations",
+        "mutation": "none (positive), accepted freeze",
+        "expected_locus": "accept"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "records live traffic and takes the accepted freeze",
+        "mutation": "none (positive), live traffic",
+        "expected_locus": "accept"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "a scripted lesson drives to an audit with zero violations",
+        "mutation": "none (positive), real driver",
+        "expected_locus": "accept"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J2": {
+    "row": "B4-C3",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "no snapshot of an armed journal",
+        "mutation": "freeze deleted; snapshot requested on armed journal",
+        "expected_locus": "snapshot() throws \u2014 auditRun unreachable without a terminal snapshot"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J3": {
+    "row": "B4-C3",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "a missing finalization takes the completed-failure freeze",
+        "mutation": "no finalization POST at all",
+        "expected_locus": "completed-failure freeze, finalizationFailure reason missing"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "EVERY finalization-failure reason reaches a violation naming it",
+        "mutation": "each of the 5 reasons via enterTerminalization",
+        "expected_locus": "terminal-obligation violation per reason"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "completed-failure freeze terminalizes outstanding requests",
+        "mutation": "outstanding eval, no acceptance",
+        "expected_locus": "freeze precondition + reason missing"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J4a": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "each wrong correlation field \u00d7 each response shape rejects as uncorrelated",
+        "mutation": "section_slug wrong \u00d7 4 response shapes",
+        "expected_locus": "finalizationStatus rejected/uncorrelated"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J4b": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "each wrong correlation field \u00d7 each response shape rejects as uncorrelated",
+        "mutation": "revision_slug wrong \u00d7 4 response shapes",
+        "expected_locus": "rejected/uncorrelated"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J4c": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "each wrong correlation field \u00d7 each response shape rejects as uncorrelated",
+        "mutation": "attempt_guid wrong \u00d7 4 response shapes",
+        "expected_locus": "rejected/uncorrelated"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J5": {
+    "row": "B4-C4A",
+    "tests": [],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "PARTIAL: the both-sides section swap is caught by the SPEC-SIDE anchor (lote spec: correlate() must succeed on the server-rendered props BEFORE the walk; freeze acceptance then binds the finalization to that frozen triple). A consistent both-sides swap has no offline fixture; live evidence: 4 accepted runs each bound finalization to its own pre-walk triple. Flagged for the gate reviewer.",
+    "status_class": "mapped"
+  },
+  "W-J6": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "each wrong correlation field \u00d7 each response shape rejects as uncorrelated",
+        "mutation": "per-field finalization substitution vs the PRE-SET triple",
+        "expected_locus": "rejected/uncorrelated"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "The fixture-frozen-BEFORE-driver-acts ordering is the spec side (correlate precedes driveStrictLesson, statically visible); the journal side rejects any finalization diverging from the frozen triple.",
+    "status_class": "mapped"
+  },
+  "W-J7": {
+    "row": "B4-C3",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "a correlated finalization rejects by its own defect",
+        "mutation": "result success flipped to error on a correlated finalization",
+        "expected_locus": "rejected/failed"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J8": {
+    "row": "B4-FIN1",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "already_submitted outranks even an accepting success/success shape",
+        "mutation": "already_submitted without commandResult failure",
+        "expected_locus": "rejected/already_submitted"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "crossed duplicate rejections resolve by rank, not by response order",
+        "mutation": "already_submitted \u00d7 deadline both orders",
+        "expected_locus": "rank stable"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a completed-failure freeze surfaces the finalization defect as a terminal obligation",
+        "mutation": "enterTerminalization(already_submitted)",
+        "expected_locus": "terminal-obligation reason already_submitted"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J9": {
+    "row": "B4-C5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "a mint that responds AFTER the evaluation confers nothing",
+        "mutation": "mint response completes after its consuming evaluation",
+        "expected_locus": "lineage violation"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a rotation whose mint postdates the second check is not the measured rotation (\u00a73.4)",
+        "mutation": "fireMint moved after the second eval",
+        "expected_locus": "navigation-sequence"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J10": {
+    "row": "B4-C5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a mint that predates the first rotation evaluation is not the measured rotation (W-J10, \u00a73.4)",
+        "mutation": "fireMint before the first rotation evaluation",
+        "expected_locus": "navigation-sequence"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "gap closed 2026-08-14",
+    "status_class": "mapped"
+  },
+  "W-J11": {
+    "row": "B4-C5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "failed and unparsed mints confer nothing",
+        "mutation": "non-2xx creation (status 500) with apparent GUID in body; consuming eval present",
+        "expected_locus": "lineage violation"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J12": {
+    "row": "B4-C5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "a creation whose response fails to parse confers nothing, even with an apparent GUID in the bytes (W-J12)",
+        "mutation": "invalid-JSON creation body containing the guid text; consuming eval present",
+        "expected_locus": "mintedGuid null + lineage violation"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "gap closed 2026-08-14",
+    "status_class": "mapped"
+  },
+  "W-J13": {
+    "row": "B4-C5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "failed and unparsed mints confer nothing",
+        "mutation": "2xx creation with body {} \u2014 ABSENT guid; consuming eval present",
+        "expected_locus": "lineage violation"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "an empty-string minted GUID records as null and can extend no lineage (W-J13)",
+        "mutation": "2xx creation with attemptGuid \"\" \u2014 EMPTY guid",
+        "expected_locus": "mintedGuid records null (journal fix, mutation-tested: pre-fix code fails this test)"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "empty-guid arm required a journal fix (2026-08-14)",
+    "status_class": "mapped"
+  },
+  "W-J14": {
+    "row": "B4-C5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a split rotation without its causal mint is rejected as one whole sequence",
+        "mutation": "no creation record at all, second evaluation present",
+        "expected_locus": "navigation-sequence + lineage"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a PRE-ENTRY split rotation cannot bypass the sequence rule (\u00a78)",
+        "mutation": "same deletion, first half pre-fence",
+        "expected_locus": "navigation-sequence + lineage"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "an owned evaluation under a foreign attempt is a violation, not silently owned",
+        "mutation": "eval under foreign guid, no mint",
+        "expected_locus": "lineage violation"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-J15": {
+    "row": "B4-C5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "a hollow creation \u2014 response present, body empty \u2014 confers nothing (W-J15)",
+        "mutation": "2xx creation with EMPTY body string; consuming eval present",
+        "expected_locus": "mintedGuid null + lineage violation"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "distinct hollowing mutation added 2026-08-14 (previously shared W-J13 mutation)",
+    "status_class": "mapped"
+  },
+  "W-R1": {
+    "row": "B4-C8",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a deleted visit breaks route cardinality (W-R1)",
+        "mutation": "graded visit removed from runRecord.visits",
+        "expected_locus": "route-shape/count-mismatch"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "gap closed 2026-08-14",
+    "status_class": "mapped"
+  },
+  "W-R2": {
+    "row": "B4-C8",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "visit stamps must cite real fences, for their own screen, in order",
+        "mutation": "visit order swap; screen relabel; fabricated entrySeq",
+        "expected_locus": "attribute() throws per mutation"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "a pathless evaluation is owned by its window and lineage-checked the same way",
+        "mutation": "ownership crosses window under same guid",
+        "expected_locus": "lineage violation, not silent re-own"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-R3": {
+    "row": "\u00a73.4",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "an evaluation with no licensing permit at all is edge-less",
+        "mutation": "check-click permit never issued",
+        "expected_locus": "evaluation-no-causal-edge"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-R4": {
+    "row": "B4-STAMP",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a claimed permit the journal never issued is refused on the whole tuple (W-R4)",
+        "mutation": "forged permit seq 999 added to claims",
+        "expected_locus": "permit-mismatch/not-journal-issued"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a journal-issued permit claimed for the wrong screen is refused (W-R4)",
+        "mutation": "real permit relabeled to another screen",
+        "expected_locus": "permit-mismatch/not-journal-issued"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a receipt citing a readback fence the journal never issued is refused (W-R4)",
+        "mutation": "receipt readbackCompletedSeq 999",
+        "expected_locus": "receipt-mismatch/not-journal-issued"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "every stamp the run record claims is a journal issuance",
+        "mutation": "positive containment on a real driver run",
+        "expected_locus": "accept"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "runtime half; the type-level half is the API shape (no method accepts a seq) \u2014 static, cited in evidence. gap closed 2026-08-14",
+    "status_class": "mapped"
+  },
+  "W-R5": {
+    "row": "\u00a73.5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a graded step without a receipt is a violation",
+        "mutation": "receipts deleted",
+        "expected_locus": "receipt-missing"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-ST1": {
+    "row": "B4-STAMP",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "a fence and a request racing it have one strict order \u2014 both orderings",
+        "mutation": "request-then-fence and fence-then-request",
+        "expected_locus": "strict seq order both ways"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "pre-entry traffic is owned by the FIRST visit and flagged",
+        "mutation": "eval before first fence",
+        "expected_locus": "preEntry true, owned"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "pre-entry traffic on a NON-navigation first screen is illegal; legal on navigation",
+        "mutation": "pre-fence eval + permit on graded vs navigation",
+        "expected_locus": "pre-entry-illegal present/absent"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-ST2": {
+    "row": "\u00a73.5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a save inside the barrier window satisfies it; mid-gesture or missing saves fail",
+        "mutation": "same journal, receipt cites earlier vs later readback fence",
+        "expected_locus": "saved-barrier red on mid-gesture, green inside window"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-ST3": {
+    "row": "\u00a73.4",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a check permit issued after the evaluation request licenses nothing (W-ST3)",
+        "mutation": "journal-issued permit postdating the eval request",
+        "expected_locus": "evaluation-no-causal-edge"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "gap closed 2026-08-14",
+    "status_class": "mapped"
+  },
+  "W-ST4": {
+    "row": "\u00a73.4/\u00a73.5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "an ack stamped between request and response fulfils nothing",
+        "mutation": "real ack between eval request and response",
+        "expected_locus": "obligation-unfulfilled/no-ack"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "the same ack after the response fulfils the feedback plan",
+        "mutation": "same fixture, ack after response",
+        "expected_locus": "violation absent"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "an ack after the first response licenses the graded re-check (W-ST4)",
+        "mutation": "recheck rotation, ack after first response",
+        "expected_locus": "auditRun: no violations (fully clean)"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "an ack stamped before the first response licenses no second evaluation (W-ST4)",
+        "mutation": "same fixture, ack before first response",
+        "expected_locus": "evaluation-no-causal-edge on the second evaluation"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "note": "licensing edge closed 2026-08-14",
+    "status_class": "mapped"
+  },
+  "W-ST5": {
+    "row": "\u00a73.5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a save inside the barrier window satisfies it; mid-gesture or missing saves fail",
+        "mutation": "save precedes cited readback fence",
+        "expected_locus": "saved-barrier"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "a deferred save that lands before the readback fence times the barrier out",
+        "mutation": "live driver, save during gesture",
+        "expected_locus": "barrier-timeout operation failure"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-ST6": {
+    "row": "\u00a73.5",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a save still in flight at click-time cannot satisfy the barrier (\u00a73.5)",
+        "mutation": "save open at check-permit issuance, response after",
+        "expected_locus": "saved-barrier"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "the check permit waits for the barrier save to COMMIT, not merely to start",
+        "mutation": "live driver ordering",
+        "expected_locus": "save.responseSeq < permit.seq and clean audit"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 505 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-S1": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "correlate freezes the server-rendered triple before the walk (W-S1)",
+        "mutation": "none (positive): Delivery props rendered, correlate() true, matching finalization accepted",
+        "expected_locus": "accept"
+      }
+    ],
+    "live_evidence": "canary + 3 fresh-seed runs: correlate() true before every walk, freeze accepted against the frozen triple",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped+live-evidence"
+  },
+  "W-S2": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "an absent delivery element refuses correlation (W-S2 fixture half)",
+        "mutation": "no Components.Delivery element",
+        "expected_locus": "correlate() false \u2014 the spec throws before the walk"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "the envelope authenticates the finalization and save statuses (r6)",
+        "mutation": "capture correlation deleted",
+        "expected_locus": "envelope red: no delivery-props run correlation"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-S3": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "hollow delivery props refuse correlation (W-S3)",
+        "mutation": "props element present, all three fields empty strings",
+        "expected_locus": "correlate() false"
+      }
+    ],
+    "note": "gap closed 2026-08-14",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-S4": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "correlation is one-time, armed-only, and stored by copy",
+        "mutation": "re-freeze attempt after capture",
+        "expected_locus": "setRunCorrelation throws already-set"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "each wrong correlation field \u00d7 each response shape rejects as uncorrelated",
+        "mutation": "finalization matching a LATER render",
+        "expected_locus": "rejected/uncorrelated"
+      }
+    ],
+    "note": "post-snapshot navigation replacement composes from one-time freeze + by-copy retention + per-field rejection",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-S5": {
+    "row": "B4-C4A",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "a same-node props rewrite after the freeze changes nothing (W-S5)",
+        "mutation": "data-react-props attribute rewritten after correlate; finalization matches the MUTATED render",
+        "expected_locus": "rejected/uncorrelated \u2014 retained VALUE triple unchanged"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-journal.spec.ts",
+        "title": "correlation is one-time, armed-only, and stored by copy",
+        "mutation": "caller mutates the object it passed",
+        "expected_locus": "original triple still accepted"
+      }
+    ],
+    "note": "DOM-attribute arm closed 2026-08-14",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-S6": {
+    "row": "B4-C4A",
+    "reviewer": "static no-shared-helper check: the correlation readers are duplicated inline page.evaluate bodies (AdaptiveStrictDriver armStrictRun correlate; AdaptiveShadowCapture correlate) \u2014 no shared helper/alias exists to mutate; reviewer verifies from source",
+    "status_class": "reviewer-owned"
+  },
+  "W-W1": {
+    "row": "B4-CORE-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "every recorded plan equals the planner replayed over its evaluation",
+        "mutation": "none (positive) through the real driveStrictLesson",
+        "expected_locus": "plans \u2261 replay"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a usable evaluation with NO recorded plan is a divergence under a full audit",
+        "mutation": "plan record deleted (bypass shape)",
+        "expected_locus": "plan-divergence/missing-recorded-plan"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W2": {
+    "row": "B4-CORE-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a recorded plan that disagrees with the replay is a divergence",
+        "mutation": "recorded plan substituted (terminal for navigate)",
+        "expected_locus": "plan-divergence"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "recorded-plan inventory: duplicates, misattribution and unmatched records (\u00a73.5)",
+        "mutation": "duplicate/unused/missing plan records",
+        "expected_locus": "plan-divergence details"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W3a": {
+    "row": "B4-CORE-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a deleted visit breaks route cardinality (W-R1)",
+        "mutation": "attribution bypass shape: visit gone",
+        "expected_locus": "route-shape/count-mismatch"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "visits cite the journal fence issued for their own screen",
+        "mutation": "none (positive) through the real driver",
+        "expected_locus": "fence-cited visits"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W3b": {
+    "row": "B4-CORE-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-attribution.spec.ts",
+        "title": "visit stamps must cite real fences, for their own screen, in order",
+        "mutation": "reorder / relabel / fabricated entrySeq",
+        "expected_locus": "attribute() throws per mutation"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W4": {
+    "row": "B4-CORE-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "an evaluation with no licensing permit at all is edge-less",
+        "mutation": "permit bypass",
+        "expected_locus": "evaluation-no-causal-edge"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "a withheld check control fails readiness before any permit is claimed",
+        "mutation": "driver-side: control withheld",
+        "expected_locus": "readiness-timeout, no permit claimed"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W5": {
+    "row": "B4-CORE-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a permit naming another screen, duplicates and wrong-role permits are violations",
+        "mutation": "wrong screen / duplicate / wrong role",
+        "expected_locus": "permit-mismatch details"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a check permit issued after the evaluation request licenses nothing (W-ST3)",
+        "mutation": "wrong position",
+        "expected_locus": "evaluation-no-causal-edge"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W6": {
+    "row": "B4-VERDICT-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "an unusable evaluation stops the walk on the journal record alone",
+        "mutation": "driver aborts, audit still yields violations",
+        "expected_locus": "audit red independent of driver flag"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "the driver reports an abort without ever declaring a verdict",
+        "mutation": "outcome shape has no verdict field",
+        "expected_locus": "no flag for a boundary to read"
+      }
+    ],
+    "live_evidence": "canary 1/2 (readiness/barrier reds): spec went red on auditRun violations with the driver outcome never consulted",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped+live-evidence"
+  },
+  "W-W7a": {
+    "row": "B4-VERDICT-S",
+    "reviewer": "reviewer derives the boundary data-flow inventory at the gate revision; writer declaration in mer-5865-gate-b-foundation-evidence.md \u00a71 (post-consult amendment applied: completion-text assertion removed)",
+    "status_class": "reviewer-owned"
+  },
+  "W-W7b": {
+    "row": "B4-VERDICT-S",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "the LotE spec imports the strict driver and audit, not the old walker",
+        "mutation": "static: source read",
+        "expected_locus": "entry-point binding"
+      }
+    ],
+    "note": "shape witness: boundary is violations.length===0 over the unmodified auditRun result + flavor===accepted; no transformation present (spec source, consult-verified 2026-08-14)",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W7c": {
+    "row": "B4-VERDICT-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "every operation-failure kind produces a violation through auditRun",
+        "mutation": "every OperationFailureKind alone",
+        "expected_locus": ">=1 violation per class"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "title": "EVERY finalization-failure reason reaches a violation naming it",
+        "mutation": "every reason",
+        "expected_locus": "terminal-obligation per reason"
+      }
+    ],
+    "note": "with the pure length-zero boundary, any class reaching auditRun reaches the verdict; per-class filtering is structurally absent (W-W7b)",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W7d": {
+    "row": "B4-VERDICT-L",
+    "reviewer": "one subcase per dependency the reviewer discovers in W-W7a; flavor dependency: violations assertion precedes and is independent (evidence doc \u00a71)",
+    "status_class": "reviewer-owned"
+  },
+  "W-W8": {
+    "row": "B4-REG-S",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-family-registry.spec.ts",
+        "title": "unknown family / absent version / unknown version / absent mode / unknown mode / mode on mode-less family / ambiguity pair",
+        "mutation": "each key defect",
+        "expected_locus": "throw by name"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W9": {
+    "row": "B4-REG-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "a wrong-but-valid family resolution fails at the readback locus",
+        "mutation": "valid registry key, wrong entry, MAN green",
+        "expected_locus": "readback-failed at q:1"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W10": {
+    "row": "B4-ENTRY-S",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "the LotE spec imports the strict driver and audit, not the old walker",
+        "mutation": "static source read of the switched spec",
+        "expected_locus": "import witness"
+      }
+    ],
+    "note": "gap closed 2026-08-14",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-W11": {
+    "row": "B4-ENTRY-L",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "every stamp the run record claims is a journal issuance",
+        "mutation": "positive containment through the real driver",
+        "expected_locus": "claimed \u2286 issued"
+      }
+    ],
+    "live_evidence": "canary runRecord: 42 journal-issued permits, 22 fences, 19 readback fences (strict evidence dump)",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped+live-evidence"
+  },
+  "W-W12": {
+    "row": "B4-C16",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-strict-run.spec.ts",
+        "title": "no shipped-walker, ledger or projection acceptance reference remains",
+        "mutation": "static ban-list scan of the switched spec",
+        "expected_locus": "static red on any banned reference"
+      }
+    ],
+    "note": "gap closed 2026-08-14; armShadowCapture import is the DIFF capture leg, never on the accepting path (consult-visible)",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-X1": {
+    "row": "B4-C12b",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "every green capture audits clean in scope, with only classified deltas",
+        "mutation": "none (positive): >=2 real captures",
+        "expected_locus": "distinct run identities"
+      }
+    ],
+    "live_evidence": "four accepted runs: identity triples pairwise distinct on every component (sectionSlug/revisionSlug/attemptGuid from each accepted page-finalization; evidence doc \u00a73)",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped+live-evidence"
+  },
+  "W-X2": {
+    "row": "B4-C12b",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "the envelope rejects a green capture with any mandatory evidence removed",
+        "mutation": "creation records removed",
+        "expected_locus": "runIdentity null \u2014 identity vanishes with the mint"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-X3": {
+    "row": "B4-C12b",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "the envelope rejects a green capture with any mandatory evidence removed",
+        "mutation": "same capture loaded twice",
+        "expected_locus": "identical identity detected \u2014 distinctness assertion basis"
+      }
+    ],
+    "live_evidence": "shared-component case across live runs: pairwise comparison over the four dumps (all distinct)",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped+live-evidence"
+  },
+  "W-D1": {
+    "row": "B4-DIFF",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "every green capture audits clean in scope, with only classified deltas",
+        "mutation": "none (positive)",
+        "expected_locus": "in-scope 0, unexplained 0, intentional exact, inventory pinned"
+      }
+    ],
+    "live_evidence": "all four SWAPPED greens: inScope 0, driverEvidence exactly 65, identical class split (\u00a76.1 retirement; evidence doc \u00a73)",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped+live-evidence"
+  },
+  "W-D2": {
+    "row": "B4-DIFF",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "a screen missing from either account is a presence diff (W-D2)",
+        "mutation": "ledger truncated / empty account",
+        "expected_locus": "presence diffs, union length"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "the envelope rejects a green capture with any mandatory evidence removed",
+        "mutation": "ledger removed entirely",
+        "expected_locus": "envelope red: no shipped ledger"
+      }
+    ],
+    "note": "comparison-red direction closed 2026-08-14",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-D3": {
+    "row": "B4-DIFF",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "a screen missing from either account is a presence diff (W-D2)",
+        "mutation": "empty account arm",
+        "expected_locus": "presence diff per shadow step"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-D4": {
+    "row": "B4-DIFF",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "title": "a single ledger tuple-field swap is a reported diff (W-D4)",
+        "mutation": "one graded verdict flipped in the shipped account",
+        "expected_locus": "verdict diff at that index"
+      }
+    ],
+    "note": "gap closed 2026-08-14",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-M1": {
+    "row": "B4-MAN/BIJ/PRED",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "the manifest passes B4-MAN and B4-BIJ against the raw archive",
+        "mutation": "none (positive, private archive)",
+        "expected_locus": "gates pass"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "the declared predicate is equivalent to the archive rule chain (B4-PRED)",
+        "mutation": "none; contract-fixed screen",
+        "expected_locus": "equivalence resolves"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "accepts a manifest the raw archive corroborates end to end",
+        "mutation": "none (synthetic)",
+        "expected_locus": "no throw"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "reader derives inventory, parts, rules and route from the raw archive alone",
+        "mutation": "none",
+        "expected_locus": "exact equality"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-M2": {
+    "row": "B4-MAN/BIJ",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "an absent archive directory is a loud build failure, never a vacuous pass (W-M2)",
+        "mutation": "nonexistent archive dir",
+        "expected_locus": "reader throws by name"
+      }
+    ],
+    "note": "gap closed 2026-08-14. The private-env SKIP is suite-membership only: the gate replay runs WITH env, and absence inside a build is loud",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-M3": {
+    "row": "B4-MAN/BIJ",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "reader rejects a rule hollowed of its conditions block",
+        "mutation": "conditions deleted from an activity rule",
+        "expected_locus": "reader red: no conditions block"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-M4": {
+    "row": "B4-BIJ",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "rejects a rule reference with no covering grading expectation",
+        "mutation": "covering expectation dropped",
+        "expected_locus": "validateRouteCoverage red"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a SAME-SCREEN rule reference without a covering expectation fails the build (\u00a73.6b)",
+        "mutation": "same-screen ref uncovered",
+        "expected_locus": "same locus"
+      },
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "graded screens need expectations; dependencies must name manifest screens",
+        "mutation": "expectations deleted",
+        "expected_locus": "schema red"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-M5": {
+    "row": "B4-PRED",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "a presence-only expectation fails manifest validation by name (W-M5)",
+        "mutation": "part_path_prefix without predicate",
+        "expected_locus": "manifest validation by name (\u00a76.3 scope empty under arm (a))"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "rejects a presence-only expectation as unprovable",
+        "mutation": "same shape at the equivalence gate",
+        "expected_locus": "second, independent red"
+      }
+    ],
+    "note": "locus implemented 2026-08-14 per the contract row",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-M6": {
+    "row": "B4-PRED",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/adaptive-oracle.spec.ts",
+        "title": "predicates fail validation by NAME: unknown operator, type mismatch, empty argument",
+        "mutation": "unknown op / mistyped / empty arg / empty all",
+        "expected_locus": "schema rejection by name"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "refuses an operator this checker does not wire rather than falling back",
+        "mutation": "archive-side unknown operator",
+        "expected_locus": "equivalence red"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-M7": {
+    "row": "B4-PRED",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "the raw reader shares no runtime import with the modules it corroborates (W-M7)",
+        "mutation": "static: runtime-import scan of the reader",
+        "expected_locus": "type-only imports erase \u2014 nothing shared to mutate"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "a selection whose encodings preprocess to different facts is refused",
+        "mutation": "divergent encodings forged",
+        "expected_locus": "equivalence red"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "the archive leg is preprocessed end to end, not just by the exported helper",
+        "mutation": "none (positive pinning the preprocessing seam)",
+        "expected_locus": "state counts exact"
+      }
+    ],
+    "note": "static half closed 2026-08-14",
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  },
+  "W-M8": {
+    "row": "B4-MAN",
+    "tests": [
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "rejects a family the archive renders no part for",
+        "mutation": "family transform",
+        "expected_locus": "raw-archive comparison red"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "rejects a capi family whose archive major differs from the declared version",
+        "mutation": "version transform",
+        "expected_locus": "major mismatch red"
+      },
+      {
+        "file": "tests/torus/student_delivery/mer5865-archive-gates.spec.ts",
+        "title": "rejects an mcq mode the archive contradicts",
+        "mutation": "mode transform (declared + inferred branches + reverse)",
+        "expected_locus": "mode contradiction red"
+      }
+    ],
+    "replay": {
+      "result": "passed",
+      "run": "ten-spec subset 516 passed",
+      "date": "2026-08-14"
+    },
+    "status_class": "mapped"
+  }
+}
