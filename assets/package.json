@@ -64,6 +64,7 @@
     "dnd-kit-sortable-tree": "^0.1.73",
     "epoq": "npm:epoq-january-fix",
     "file-loader": "^6.2.0",
+    "gifuct-js": "^2.1.2",
     "immer": "^9.0.5",
     "immutable": "^4.3.9",
     "is-hotkey": "^0.1.6",
