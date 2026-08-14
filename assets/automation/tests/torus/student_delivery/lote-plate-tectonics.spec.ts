@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { test } from '@fixture/my-fixture';
 import { setRuntimeConfig } from '@core/runtimeConfig';
 import { expect } from '@playwright/test';
@@ -11,26 +12,29 @@ import {
   teardownAutomationCourse,
 } from '@tasks/AutomationSetupTask';
 import { fetchTestAsset, fetchTestArchiveToTempFile } from '@tasks/AutomationAssetsTask';
-import { completeAdaptiveHappyPathStrict, StrictLessonAnswers } from '@tasks/AdaptiveHappyPathTask';
+import { FreezeFlavor } from '@tasks/AdaptiveJournal';
+import { AdaptiveManifest, validateAdaptiveManifest } from '@tasks/AdaptiveManifest';
+import { Violation, auditRun, formatViolations } from '@tasks/AdaptiveOracle';
+import { StrictRunOutcome, armStrictRun, driveStrictLesson } from '@tasks/AdaptiveStrictDriver';
 import { armPoison, armShadowCapture } from '@tasks/AdaptiveShadowCapture';
-import { formatLedger, validateManifest } from '@tasks/AdaptiveStrictContract';
 
 /**
- * MER-5674: Adaptive Lesson — Living on the Edge: Plate Tectonics.
+ * MER-5674 / MER-5865: Adaptive Lesson — Living on the Edge: Plate Tectonics.
  *
  * Imports the full Living on the Edge course archive, creates an
  * open-and-free section with a learner, and drives the 22-screen adaptive
- * lesson through the STRICT driver: a per-screen manifest declares every
- * screen's identity, role and answers; each graded screen is answered from
- * its own directives, submitted with exactly one click, and proven through
- * the evaluation request/response — submitted payload correlated against
- * the key, server verdict actions.correct === true, and an ordered
- * full-coverage ledger asserted at the end. Reaching the lesson end proves
- * nothing on its own; the ledger is the pass condition.
+ * lesson through the strict verification framework (MER-5865): the journal is
+ * armed on the page before any deck traffic, the run's identity triple is
+ * frozen from the server-rendered Delivery props before the driver acts, the
+ * driver answers every screen from the manifest's v2 operations through the
+ * family registry and records — it never judges — and the verdict is
+ * `auditRun`'s alone over the frozen journal: the run passes if and only if
+ * the journal froze on an accepted finalization and the audit reports zero
+ * violations. Reaching the lesson end proves nothing on its own.
  *
  * All course content — the lesson title and every correct answer — lives in
- * a PRIVATE answers JSON that must not be committed (course IP + answer
- * keys). Both the course zip and the answers JSON live in the playwright
+ * a PRIVATE manifest JSON that must not be committed (course IP + answer
+ * keys). Both the course zip and the manifest live in the playwright
  * assets bucket and are fetched through the server. The archive download
  * uses plain fetch (not the Playwright request context) and lands on disk:
  * with trace:'on', a multi-MB buffer flowing through Playwright's traced
@@ -45,8 +49,8 @@ import { formatLedger, validateManifest } from '@tasks/AdaptiveStrictContract';
  *     /admin/api_keys), exported as PLAYWRIGHT_AUTOMATION_API_KEY — never
  *     reuse a value that appears in this repo.
  *   - The private assets seeded once in your playwright assets bucket:
- *     mer-5674/living-on-the-edge-course.zip and mer-5674/answers.json
- *     (strict per-screen manifest shape — see StrictLessonAnswers).
+ *     mer-5674/living-on-the-edge-course.zip and mer-5674/answers-strict.json
+ *     ({ lesson, screens, scenario } — the v2 manifest with a lesson block).
  *   - PLAYWRIGHT_BASE_URL=http://127.0.0.1 — NOT localhost: the plain-fetch
  *     archive download resolves localhost to ::1 and dies with ECONNREFUSED
  *     (reproduced 2026-07-30).
@@ -55,13 +59,16 @@ import { formatLedger, validateManifest } from '@tasks/AdaptiveStrictContract';
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 const archiveKey = 'mer-5674/living-on-the-edge-course.zip';
-const answersKey = 'mer-5674/answers.json';
+const answersKey = 'mer-5674/answers-strict.json';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 const EXPECTED_LESSON = /Plate Tectonics/i;
 const EXPECTED_SCREENS = 22;
 
+type LessonLocator = { title: string; search_term: string };
+
 let seededCourse: AutomationSetupResponse | null = null;
-let answers: StrictLessonAnswers | null = null;
+let manifest: AdaptiveManifest | null = null;
+let lesson: LessonLocator | null = null;
 let archiveTempDir: string | null = null;
 
 setRuntimeConfig({
@@ -88,20 +95,27 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
     archiveTempDir = archive.tempDir;
 
     const answersBuffer = await answersPromise;
-    const parsed = JSON.parse(answersBuffer.toString('utf8')) as StrictLessonAnswers;
+    const parsed = JSON.parse(answersBuffer.toString('utf8')) as {
+      lesson?: Partial<LessonLocator>;
+    };
 
-    const screens = validateManifest(parsed.screens);
-    if (screens.length !== EXPECTED_SCREENS) {
+    const validated = validateAdaptiveManifest(parsed);
+    if (validated.screens.length !== EXPECTED_SCREENS) {
       throw new Error(
-        `Manifest declares ${screens.length} screens, expected ${EXPECTED_SCREENS} (MER-5674)`,
+        `Manifest declares ${validated.screens.length} screens, expected ${EXPECTED_SCREENS} (MER-5674)`,
       );
     }
-    if (!EXPECTED_LESSON.test(parsed.lesson.title)) {
+    const locator = parsed.lesson;
+    if (!locator?.title || !locator.search_term) {
+      throw new Error('The strict answers file must carry a complete lesson block (MER-5674)');
+    }
+    if (!EXPECTED_LESSON.test(locator.title)) {
       throw new Error(
-        `Answer key targets "${parsed.lesson.title}", expected ${EXPECTED_LESSON} (MER-5674)`,
+        `Answer key targets "${locator.title}", expected ${EXPECTED_LESSON} (MER-5674)`,
       );
     }
-    answers = parsed;
+    manifest = validated;
+    lesson = locator as LessonLocator;
 
     seededCourse = await importArchiveAndCreateSection(request, archive.filePath, {
       baseUrl,
@@ -145,31 +159,35 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
     }
   });
 
-  test('student completes the plate tectonics happy path with a strict ledger', async ({
+  test('student completes the plate tectonics happy path with zero audit violations', async ({
     page,
   }) => {
     test.setTimeout(900_000); // 22 screens with server-side rule evaluation per check
 
-    if (!seededCourse || !answers) {
-      throw new Error('Automation setup did not produce seeded course data and answers');
+    if (!seededCourse || !manifest || !lesson) {
+      throw new Error('Automation setup did not produce seeded course data and a manifest');
     }
 
-    // MER-5865 step 3: PASSIVE shadow capture — journal armed beside the
-    // shipped walker, zero behavior change; raw dumps are PRIVATE (answer
-    // values), written only to the dir named by the env var
+    // MER-5865 step 3 harness, kept armed beside the strict journal: its
+    // capture feeds the swap differential (gate-B DIFF); raw dumps are
+    // PRIVATE (answer values), written only to the dir named by the env var
     const shadowDir = process.env.MER5865_SHADOW_DIR;
     const shadow = shadowDir ? await armShadowCapture(page) : null;
+    const strict = armStrictRun(page);
 
     let poison: { fired(): boolean } | null = null;
-    let ledger: Awaited<ReturnType<typeof completeAdaptiveHappyPathStrict>> | null = null;
+    let outcome: StrictRunOutcome | null = null;
+    let flavor: FreezeFlavor | 'sealed' | null = null;
+    let violations: Violation[] | null = null;
     // ONE failure boundary owns EVERYTHING after arming (gate-B0 r4 N1,
-    // r5 N1, r6 N1): any failure — poison arming, navigation, login,
-    // correlation, the walk, or the completion assertion — seals and dumps
+    // r5 N1, r6 N1): any failure before the journal is terminal — poison
+    // arming, navigation, login, correlation — seals both journals and dumps
     // the bail capture exactly once before rethrowing, so no armed run ends
-    // without a terminal snapshot
+    // without a terminal snapshot. The walk itself never throws: the driver
+    // returns an outcome and every abort surfaces as audit violations below.
     try {
-      // step-3 bail run: poison one graded screen's submission in flight —
-      // the shipped walker must bail there; only legal with the shadow armed
+      // bail run: poison one graded screen's submission in flight — the
+      // strict path must go red there; only legal with the shadow armed
       if (shadow && process.env.MER5865_POISON_SCREEN) {
         poison = await armPoison(page, process.env.MER5865_POISON_SCREEN);
       }
@@ -179,42 +197,78 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
       await new HomeTask(page).login('student');
       await adaptiveLesson.openFromOutline(
         seededCourse.section.slug,
-        answers.lesson.title,
-        answers.lesson.search_term,
+        lesson.title,
+        lesson.search_term,
       );
+
+      // B4-C4A (normative): the run's identity triple is frozen from the
+      // server-rendered Delivery props immediately after opening the intended
+      // page, BEFORE the driver acts; a run without it carries no correlation
+      if (!(await strict.correlate())) {
+        throw new Error('strict run correlation unavailable before the walk (MER-5865)');
+      }
       if (shadow) {
         const correlated = await shadow.correlate();
         console.log(`[MER-5865 shadow] correlated=${correlated}`);
       }
 
-      ledger = await completeAdaptiveHappyPathStrict(page, adaptiveLesson.deck, answers);
-      console.log(`[MER-5674] strict ledger:\n${formatLedger(ledger)}`);
+      outcome = await driveStrictLesson(adaptiveLesson.deck, manifest, strict.journal);
 
-      await expect(page.getByText(new RegExp(answers.lesson.completion_text, 'i'))).toBeVisible({
-        timeout: 30_000,
-      });
-    } catch (walkError) {
+      // the journal decides the freeze: an unfinished walk never noted the
+      // lesson end, so this seals; a finished one awaits the finalization
+      flavor = await strict.finish('green');
+      const snapshot = strict.snapshot();
+      violations = auditRun(manifest, outcome.runRecord, snapshot);
+
+      // evidence lands BEFORE the verdict so a red run still leaves its trail
+      if (shadowDir) {
+        const file = path.join(shadowDir, `lote-strict-${Date.now()}.json`);
+        await fs.writeFile(
+          file,
+          JSON.stringify({ outcome, flavor, snapshot, violations }, null, 2),
+        );
+        console.log(`[MER-5865 strict] run evidence: ${file}`);
+      }
       if (shadow && shadowDir) {
-        const flavor = await shadow.finish('bail');
+        const shadowFlavor = await shadow.finish(outcome.kind === 'completed' ? 'green' : 'bail');
+        const file = await shadow.dump(
+          shadowDir,
+          outcome.kind === 'completed' ? 'lote-green' : 'lote-bail',
+          {
+            outcome: outcome.kind === 'completed' ? 'green' : 'bail',
+            flavor: shadowFlavor,
+            walkError: outcome.kind === 'aborted' ? outcome.cause : null,
+            poisonFired: poison?.fired() ? process.env.MER5865_POISON_SCREEN : null,
+          },
+        );
+        console.log(`[MER-5865 shadow] capture (${shadowFlavor}): ${file}`);
+      }
+    } catch (armError) {
+      if (flavor === null) await strict.finish('bail').catch(() => {});
+      if (shadow && shadowDir) {
+        const shadowFlavor = await shadow.finish('bail');
         const file = await shadow.dump(shadowDir, 'lote-bail', {
           outcome: 'bail',
-          flavor,
-          walkError: (walkError as Error).message,
+          flavor: shadowFlavor,
+          walkError: (armError as Error).message,
           poisonFired: poison?.fired() ? process.env.MER5865_POISON_SCREEN : null,
         });
-        console.log(`[MER-5865 shadow] bail capture (${flavor}): ${file}`);
+        console.log(`[MER-5865 shadow] bail capture (${shadowFlavor}): ${file}`);
       }
-      throw walkError;
+      throw armError;
     }
 
-    if (shadow && shadowDir) {
-      const flavor = await shadow.finish('green');
-      const file = await shadow.dump(shadowDir, 'lote-green', {
-        outcome: 'green',
-        flavor,
-        ledger,
-      });
-      console.log(`[MER-5865 shadow] green capture (${flavor}): ${file}`);
+    if (flavor === null || violations === null) {
+      throw new Error(
+        'the strict run produced no audit inputs (unreachable: the boundary rethrew)',
+      );
     }
+
+    // THE VERDICT BOUNDARY (B4-VERDICT-S/L, B4-C15): the UNMODIFIED auditRun
+    // result over the frozen journal — exactly zero violations — under the
+    // journal's own accepted freeze. The driver's outcome flag is never an
+    // input; an aborted walk reaches this same audit and reports as itself.
+    expect(violations.length, formatViolations(violations)).toBe(0);
+    expect(flavor).toBe('accepted');
   });
 });
