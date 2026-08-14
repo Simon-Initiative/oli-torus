@@ -1,0 +1,130 @@
+work_item: weighted_random_assignment_scope
+requirements:
+- id: FR-001
+  title: Configure weighted-random assignment scope
+  description: Authorized authors must be able to configure a weighted-random experiment
+    to assign independently per intervention or once per experiment, participating
+    section, and enrollment, with intervention scope as the default.
+- id: FR-002
+  title: Restrict experiment-level scope to weighted random
+  description: Section-and-enrollment assignment scope must be accepted only for weighted-random
+    experiments, while Thompson Sampling must remain intervention-scoped at request,
+    persistence, activation, and delivery boundaries.
+- id: FR-003
+  title: Persist one canonical experiment assignment
+  description: In section-and-enrollment scope, the first eligible encounter must
+    persist exactly one condition assignment identified by experiment, section, and
+    enrollment and not owned by a single intervention.
+- id: FR-004
+  title: Reuse the condition across interventions
+  description: Every later eligible intervention in the same experiment and participating
+    section must reuse the enrollment's canonical condition without resampling or
+    creating another assignment.
+- id: FR-005
+  title: Preserve intervention-scoped behavior
+  description: In intervention scope, each intervention must remain an independent
+    sticky assignment opportunity identified by experiment, intervention, and enrollment.
+- id: FR-006
+  title: Resolve concurrent first encounters
+  description: Concurrent first encounters at the same or different interventions
+    must converge on one canonical section-and-enrollment assignment when that scope
+    is enabled, and assignment counts must increase only for the winning insert.
+- id: FR-007
+  title: Preserve intervention-specific exposures
+  description: Assignment evidence must identify the configured assignment scope,
+    while every rendered intervention must emit exposure evidence for its actual intervention
+    even when it reuses an experiment-level assignment.
+- id: FR-008
+  title: Enforce lifecycle-safe scope changes
+  description: Assignment scope must not change after experiment activation or assignment
+    creation, and existing experiments and assignments must retain intervention-scoped
+    behavior without backfill or consolidation.
+- id: FR-009
+  title: Gate assignment by section participation
+  description: New assignment and sticky reuse for either scope must occur only for
+    an eligible participating section; nonparticipating delivery must use established
+    deterministic fallback without experiment evidence.
+- id: FR-010
+  title: Expose scope through authoring and details
+  description: Weighted-random authoring must provide accessible plain-language scope
+    choices and experiment details must display the saved scope without implying cross-section
+    or cross-enrollment stickiness.
+- id: FR-011
+  title: Keep runtime operations bounded
+  description: Scope-aware single and batched assignment paths must use indexed PostgreSQL
+    lookups and uniqueness constraints without scanning assignment history, reward
+    history, xAPI, or ClickHouse.
+- id: FR-012
+  title: Preserve scoped evidence and analytics meaning
+  description: Runtime attribution, xAPI, ClickHouse projections, and assignment reporting
+    must distinguish canonical assignments from intervention exposures and support
+    experiment-level assignment evidence without an intervention ID.
+- id: FR-013
+  title: Use production-safe schema migrations
+  description: PostgreSQL changes must use a conventionally generated Ecto migration
+    with explicit up and down functions, dependency-safe constraints and partial uniqueness
+    indexes, and verified forward and rollback schema behavior.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: A new weighted-random experiment defaults to intervention scope, and
+    an authorized author can save section-and-enrollment scope while an unauthorized
+    author cannot change it.
+- id: AC-002
+  requirement: FR-002
+  description: Create, update, activation, and delivery validation reject a Thompson
+    Sampling experiment configured with section-and-enrollment scope.
+- id: AC-003
+  requirement: FR-003
+  description: A learner's first eligible encounter in section-and-enrollment mode
+    creates one assignment keyed by experiment, section, and enrollment with no owning
+    intervention.
+- id: AC-004
+  requirement: FR-004
+  description: The same learner receives the persisted condition at two or more interventions
+    in the experiment, including after revisits and configured-weight changes that
+    are otherwise permitted.
+- id: AC-005
+  requirement: FR-005
+  description: In intervention mode, the same learner can receive independently selected
+    sticky conditions at two different interventions.
+- id: AC-006
+  requirement: FR-006
+  description: Concurrent first encounters at different interventions create one section-and-enrollment
+    assignment, return its condition to every caller, and increment the canonical
+    assignment count once.
+- id: AC-007
+  requirement: FR-007
+  description: Reusing one experiment-level assignment at two interventions emits
+    assignment evidence with section-enrollment scope and separate exposure evidence
+    containing each encountered intervention ID.
+- id: AC-008
+  requirement: FR-008
+  description: Scope changes are rejected after activation or assignment creation,
+    and preexisting experiments continue to resolve their intervention-scoped assignments
+    without migration.
+- id: AC-009
+  requirement: FR-009
+  description: A participating enrollment receives or reuses its scoped assignment,
+    while an enrollment in an unselected or ineligible section receives fallback content
+    and emits no experiment assignment or exposure evidence.
+- id: AC-010
+  requirement: FR-010
+  description: LiveView tests verify the weighted-random selector, default, help text,
+    saved scope, details display, validation feedback, and the absence or disabled
+    state of experiment-level scope for Thompson Sampling.
+- id: AC-011
+  requirement: FR-011
+  description: Query inspection or targeted performance tests show indexed bounded
+    assignment operations for single and batched pages with no analytical-store or
+    history scans.
+- id: AC-012
+  requirement: FR-012
+  description: Analytics contract tests count one canonical participant assignment
+    and multiple intervention exposures without treating a null assignment intervention
+    ID as missing attribution.
+- id: AC-013
+  requirement: FR-013
+  description: The generated migration applies and rolls back successfully, enforces
+    both assignment uniqueness shapes, and rejects duplicate canonical assignments
+    under concurrent insertion.
