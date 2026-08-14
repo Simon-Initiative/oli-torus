@@ -206,7 +206,7 @@
     }
   ],
   "prospective": {
-    "reason": "armStrictRun has no routed live caller at this revision; the first routed caller (step 4d) owes the attach/correlate/freeze/seal/detach proof. Round 9 accepted the deferral.",
+    "reason": "AUTHORED (round 9, accepted): armStrictRun had no routed live caller; the first routed caller (4d) owed the attach/correlate/freeze/seal/detach proof. DISCHARGED 2026-08-14: lote-plate-tectonics.spec.ts is the routed caller. Lifecycle witnesses: adaptive-strict-run.spec.ts 'armStrictRun — the fixture-frozen correlation (B4-C4A)' (attach + correlate positive/hollow/absent/rewrite, finish('bail') seal+detach on every path), plus five live runs (4 accepted freezes, 1 sealed bail). These sites stay OUTSIDE the driveStrictLesson inventory: a fault here crosses the SPEC's own boundary, whose producer is the spec's single failure boundary (seal + private bail dump + test red), never a silent green.",
     "sites": [
       {
         "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:105",
