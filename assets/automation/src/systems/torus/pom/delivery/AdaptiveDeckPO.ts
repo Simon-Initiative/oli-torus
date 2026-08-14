@@ -164,6 +164,9 @@ export class AdaptiveDeckPO {
     srcFragment: string,
     selector: string,
     timeout = 15_000,
+    // 'attached' is for controls that are hidden BY DESIGN (jQuery-UI
+    // selectmenu keeps the native <select> as an invisible backing store)
+    state: 'attached' | 'visible' = 'visible',
   ): Promise<boolean> {
     const iframe = this.page.locator(`iframe[src*="${srcFragment}"]`).first();
     if (!(await iframe.isVisible({ timeout: 10_000 }).catch(() => false))) return false;
@@ -173,7 +176,7 @@ export class AdaptiveDeckPO {
       .first()
       .locator(selector)
       .first()
-      .waitFor({ state: 'visible', timeout })
+      .waitFor({ state, timeout })
       .then(
         () => true,
         () => false,

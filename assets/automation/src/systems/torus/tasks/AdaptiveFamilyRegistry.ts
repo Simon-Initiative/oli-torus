@@ -145,6 +145,15 @@ function capiEntry(
     ): Promise<void>;
     readbackKeys(raw: Record<string, unknown>): string[];
     readySelector?(raw: Record<string, unknown>): string | undefined;
+    /** 'attached' for families whose declared control is a hidden backing store */
+    readyState?: 'attached' | 'visible';
+    /**
+     * A family may only declare a saved barrier when save-on-change is a fact
+     * of every instance: the §3.5 barrier is a strengthening, never the
+     * license, and a widget that snapshots state into the check payload
+     * without a state save makes the committed-save wait unsatisfiable.
+     */
+    noSavedBarrier?: boolean;
   },
 ): FamilyEntry {
   const entry: FamilyEntry = {
@@ -159,7 +168,13 @@ function capiEntry(
       // fail CLOSED on the declared control: `widgetFrame` swallows its
       // ready-selector timeout, so a frame it returns proves only that the
       // iframe is visible — never that the control the answer needs exists
-      if (!(await deck.widgetControlReady(`/${family}/`, selector ?? 'body'))) {
+      const ready = await deck.widgetControlReady(
+        `/${family}/`,
+        selector ?? 'body',
+        undefined,
+        spec.readyState ?? 'visible',
+      );
+      if (!ready) {
         throw new Error(`family "${family}": widget frame for part "${part.id}" not ready`);
       }
     },
@@ -172,7 +187,7 @@ function capiEntry(
       };
     },
     expectedPayload: (part) => [{ part_path_prefix: capiClusterPrefix(part) }],
-    savedBarrier: (part) => [capiClusterPrefix(part)],
+    savedBarrier: (part) => (spec.noSavedBarrier ? [] : [capiClusterPrefix(part)]),
   };
   return entry;
 }
@@ -323,6 +338,10 @@ const fillInTheBlanks = capiEntry('spr-widget-fill-in-the-blanks', '2', {
   },
   readbackKeys: (raw) => Object.keys(raw.values as Record<string, string>),
   readySelector: (raw) => String(raw.ready_selector),
+  // the widget wraps each <select> in a jQuery-UI selectmenu, so the declared
+  // control EXISTS as a hidden backing store and is never Playwright-visible;
+  // a visible-state wait fails closed on every live screen (canary 2026-08-14)
+  readyState: 'attached',
 });
 
 const matching = capiEntry('spr-widget-matching', '2', {
@@ -380,6 +399,14 @@ const generalDragDrop = capiEntry('spr-widget-general-drag-drop', '6', {
     }
   },
   readbackKeys: (raw) => (raw.placements as Array<{ item: string }>).map((p) => p.item),
+  // LIVE-DERIVED (LotE q:1516194083316:719, capture seq 83/85): a sim-hosted
+  // instance of this family commits NO state save before the check — the drop
+  // state travels in the evaluation payload itself and the only post-answer
+  // save arrived after the verdict, 403. The family therefore cannot promise
+  // save-on-change, and a committed-save barrier would be unsatisfiable on
+  // such screens. Answer evidence stays fully audited: the §3.5 local matcher
+  // checks the submitted payload against the manifest expectations.
+  noSavedBarrier: true,
 });
 
 const ENTRIES: ReadonlyArray<FamilyEntry> = [

@@ -52,28 +52,28 @@
       },
       {
         "method": "readScreenIdentity",
-        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:299,:305",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:302,:305",
         "degraded": "partial identity / []",
         "consumer": "driver :583 comparison",
         "ruling": "CONSUMED — a mismatch throws inside the identity perform."
       },
       {
         "method": "readPartInventory",
-        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:339,:345,:373",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:342,:345,:373",
         "degraded": "[]",
         "consumer": "driver :456/:457 detect",
         "ruling": "CONSUMED — an empty inventory owns no part and fails typed as answer-failed."
       },
       {
         "method": "playVideos",
-        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:838,:859,:907",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:841,:859,:907",
         "degraded": "0",
         "consumer": "driver :409 (media) and :417 (gate)",
         "ruling": "SPLIT: on the gate edge 0 is consumed and throws gate-unsatisfied; on the media edge nothing asserts, which is deliberate — driving media cannot manufacture evidence. Justified exclusion for the media edge ONLY."
       },
       {
         "method": "submitCheck / acknowledgeFeedback",
-        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:191,:200",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:194,:200",
         "degraded": "false from isVisible",
         "consumer": "the method’s own throw two lines later",
         "ruling": "CONSUMED — the catch feeds a guard that raises."
@@ -87,7 +87,7 @@
       },
       {
         "method": "waitForScreenChange / waitForLessonEnd",
-        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:231",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:234",
         "degraded": "null identity keeps the loop waiting",
         "consumer": "the loop’s own deadline throw",
         "ruling": "CONSUMED as navigation-timeout."
@@ -101,7 +101,7 @@
       },
       {
         "method": "widgetFrame",
-        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:733,:750",
+        "catch_at": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:736,:750",
         "degraded": "null/undefined; the ready-selector timeout is swallowed by design",
         "consumer": "nothing — which is why widgetControlReady exists",
         "ruling": "DELIBERATE ABSORPTION. Justified exclusion, and the reason piece 3 added the fail-closed readiness primitive."
@@ -160,7 +160,7 @@
         "reason": "see interior_collapse.per_method — deliberate, screens without a footer"
       },
       {
-        "site": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:733,:750 widgetFrame",
+        "site": "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts:736,:750 widgetFrame",
         "reason": "see interior_collapse.per_method — the swallow widgetControlReady exists to defeat"
       },
       {
