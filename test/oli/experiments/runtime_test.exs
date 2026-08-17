@@ -707,9 +707,9 @@ defmodule Oli.Experiments.RuntimeTest do
       assert max(two_placements, ten_placements) <= 12
     end
 
-    test "delivery preparation batches distinct placements into placement-keyed decisions" do
+    test "canonical delivery emits distinct placement exposures for one participant assignment" do
       %{scope: scope, revision: revision, decision_point: decision_point} =
-        active_experiment_with_conditions()
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
 
       add_condition_mappings!(decision_point)
       page = insert(:resource)
@@ -749,11 +749,20 @@ defmodule Oli.Experiments.RuntimeTest do
         }
       }
 
-      {decisions, _attributions} =
+      {decisions, attributions} =
         Alternatives.prepare_delivery_decisions(context, %{"model" => elements})
 
       assert Map.keys(decisions) |> Enum.sort() == ["placement-1", "placement-2"]
-      assert Repo.aggregate(Assignment, :count, :id) == 2
+      assert Repo.aggregate(Assignment, :count, :id) == 1
+
+      assert [first_exposure, second_exposure] = attributions
+      assert first_exposure["assignment_id"] == second_exposure["assignment_id"]
+      assert first_exposure["assignment_scope"] == "section_enrollment"
+      assert second_exposure["assignment_scope"] == "section_enrollment"
+      assert first_exposure["intervention_id"] != second_exposure["intervention_id"]
+      assert first_exposure["intervention_key"] == "#{page.id}:placement-1"
+      assert second_exposure["intervention_key"] == "#{page.id}:placement-2"
+      assert first_exposure["key"] != second_exposure["key"]
     end
 
     test "delivery preparation discovers experiment placements inside ordinary containers" do
@@ -1244,6 +1253,8 @@ defmodule Oli.Experiments.RuntimeTest do
                  key: "after-deselection",
                  scope: scope,
                  assignment_id: assignment.assignment_id,
+                 page_resource_id: revision.resource_id,
+                 content_element_id: "placement",
                  content_revision_id: revision.id
                })
 
@@ -1283,8 +1294,108 @@ defmodule Oli.Experiments.RuntimeTest do
                  key: "mismatched-exposure:#{assignment.assignment_id}",
                  scope: scope,
                  assignment_id: assignment.assignment_id,
+                 page_resource_id: revision.resource_id,
+                 content_element_id: "placement",
                  content_revision_id: other_revision.id
                })
+    end
+
+    test "rejects missing, forged, and cross-experiment exposure placements in single and batch APIs" do
+      %{scope: scope, revision: revision, definition: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      page = insert(:resource)
+      valid_intervention = insert_intervention!(experiment, page.id, "valid-exposure")
+
+      {:ok, assignment} =
+        Experiments.assign_condition(
+          intervention_request(
+            scope,
+            revision,
+            valid_intervention,
+            page.id,
+            ["a", "b"]
+          )
+        )
+
+      valid_request = %RecordExposureRequest{
+        key: "assignment:#{assignment.assignment_id}:placement:#{page.id}:valid-exposure",
+        scope: scope,
+        assignment_id: assignment.assignment_id,
+        page_resource_id: page.id,
+        content_element_id: "valid-exposure",
+        content_revision_id: revision.id
+      }
+
+      assert {:error, %{type: :persistence_error}} =
+               Experiments.record_exposure(%{valid_request | content_element_id: nil})
+
+      assert {:error, %{type: :persistence_error}} =
+               Experiments.record_page_exposures([
+                 %{valid_request | content_element_id: nil}
+               ])
+
+      assert {:error, %{type: :invalid_condition}} =
+               Experiments.record_exposure(%{
+                 valid_request
+                 | key: "forged-placement",
+                   content_element_id: "not-an-intervention"
+               })
+
+      %{definition: other_experiment, revision: other_revision} =
+        active_experiment_with_conditions(scope: scope, assignment_scope: :section_enrollment)
+
+      other_intervention =
+        insert_intervention!(other_experiment, page.id, "other-experiment-placement")
+
+      cross_experiment_request = %{
+        valid_request
+        | key: "cross-experiment-placement",
+          content_element_id: "other-experiment-placement"
+      }
+
+      assert {:error, %{type: :invalid_condition}} =
+               Experiments.record_exposure(cross_experiment_request)
+
+      assert {:error, %{type: :invalid_condition}} =
+               Experiments.record_page_exposures([valid_request, cross_experiment_request])
+
+      {:ok, other_assignment} =
+        Experiments.assign_condition(
+          intervention_request(
+            scope,
+            other_revision,
+            other_intervention,
+            page.id,
+            ["a", "b"]
+          )
+        )
+
+      other_valid_request = %{
+        cross_experiment_request
+        | assignment_id: other_assignment.assignment_id,
+          content_revision_id: other_revision.id
+      }
+
+      placement_queries =
+        capture_select_queries(fn ->
+          assert {:ok, [_first, _second]} =
+                   Experiments.record_page_exposures([valid_request, other_valid_request])
+        end)
+
+      placement_query =
+        Enum.find(placement_queries, &String.contains?(&1, ~s(FROM "experiment_interventions")))
+
+      assert placement_query =~ " OR "
+      refute placement_query =~ " IN ("
+
+      outside_project_request = %{valid_request | scope: valid_scope()}
+
+      assert {:error, %{type: :invalid_scope}} =
+               Experiments.record_exposure(outside_project_request)
+
+      assert {:error, %{type: :invalid_scope}} =
+               Experiments.record_page_exposures([outside_project_request])
     end
 
     test "records exposure and outcome without runtime state and reward idempotently" do
@@ -1305,6 +1416,8 @@ defmodule Oli.Experiments.RuntimeTest do
         key: "exposure:#{assignment.assignment_id}",
         scope: scope,
         assignment_id: assignment.assignment_id,
+        page_resource_id: revision.resource_id,
+        content_element_id: "placement",
         content_revision_id: revision.id
       }
 
@@ -1372,6 +1485,8 @@ defmodule Oli.Experiments.RuntimeTest do
         key: "shared-key",
         scope: scope,
         assignment_id: assignment.assignment_id,
+        page_resource_id: revision.resource_id,
+        content_element_id: "placement",
         content_revision_id: revision.id
       }
 
@@ -1391,6 +1506,8 @@ defmodule Oli.Experiments.RuntimeTest do
         key: "failed-xapi-exposure:#{assignment.assignment_id}",
         scope: scope,
         assignment_id: assignment.assignment_id,
+        page_resource_id: revision.resource_id,
+        content_element_id: "placement",
         content_revision_id: revision.id
       }
 

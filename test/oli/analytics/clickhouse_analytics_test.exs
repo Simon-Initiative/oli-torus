@@ -174,6 +174,7 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
         assert query =~ "experiment_uuid = '11111111-2222-3333-4444-555555555555'"
         assert query =~ "attribution_type"
         assert query =~ "attribution_type = 'outcome'"
+        assert query =~ "assignment_scope = 'section_enrollment'"
         assert query =~ "countDistinct(attribution_hash)"
         {:ok, %{status_code: 200, body: ~s({"data":[]})}}
       end)
@@ -184,8 +185,25 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
                  %{
                    experiment_id: 40,
                    experiment_uuid: "11111111-2222-3333-4444-555555555555",
-                   attribution_type: "outcome"
+                   attribution_type: "outcome",
+                   assignment_scope: :section_enrollment
                  }
+               )
+    end
+
+    test "invalid assignment scope filters cannot be interpolated into ClickHouse SQL" do
+      injection = "section_enrollment\\' OR 1 = 1 --"
+
+      expect(MockHTTP, :post, fn _url, query, _headers, _opts ->
+        assert query =~ "false"
+        refute query =~ injection
+        {:ok, %{status_code: 200, body: ~s({"data":[]})}}
+      end)
+
+      assert {:ok, _response} =
+               ExperimentClickHouseAnalytics.experiment_event_counts(
+                 %Scope{project_id: 10, section_id: 20, publication_id: 30},
+                 %{assignment_scope: injection}
                )
     end
   end

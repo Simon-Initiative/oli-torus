@@ -16,24 +16,32 @@ defmodule Oli.Experiments.RuntimeEvidence do
       request = %{request | scope: scope}
 
       Repo.transaction(fn ->
-        {assignment, alternatives_resource_id} =
+        {assignment, experiment} =
           deps.scoped_with_experiment.(request.assignment_id, scope)
 
-        case validate_exposure_revision(alternatives_resource_id, request) do
-          :ok -> {assignment, Map.put(runtime_event(request), "reused", false)}
+        with :ok <- validate_exposure_revision(experiment.alternatives_resource_id, request),
+             {:ok, intervention} <- deps.resolve_exposure_intervention.(assignment, request) do
+          {assignment, intervention, Map.put(runtime_event(request), "reused", false)}
+        else
           {:error, %ExperimentError{} = error} -> Repo.rollback(error)
         end
       end)
       |> deps.normalize.()
       |> case do
-        {:ok, {assignment, event}} ->
+        {:ok, {assignment, intervention, event}} ->
           receipt = exposure_receipt(assignment, event)
 
           :telemetry.execute([:oli, :experiments, :exposure, :recorded], %{count: 1}, %{
-            experiment_id: assignment.experiment_id
+            experiment_id: assignment.experiment_id,
+            intervention_id: intervention.id,
+            assignment_scope: assignment.assignment_scope
           })
 
-          Telemetry.emit(:exposure_recorded, {receipt, request}, assignment: assignment)
+          Telemetry.emit(:exposure_recorded, {receipt, request},
+            assignment: assignment,
+            intervention: intervention
+          )
+
           {:ok, receipt}
 
         {:error, %ExperimentError{}} = error ->
@@ -144,6 +152,8 @@ defmodule Oli.Experiments.RuntimeEvidence do
     %{
       "assignment_id" => request.assignment_id,
       "key" => request.key,
+      "page_resource_id" => request.page_resource_id,
+      "content_element_id" => request.content_element_id,
       "content_revision_id" => request.content_revision_id,
       "publication_id" => request.scope && request.scope.publication_id,
       "recorded_at" => request.exposed_at || now()

@@ -117,6 +117,8 @@ defmodule Oli.Experiments.Telemetry do
         "condition_code",
         "section_id",
         "publication_id",
+        "assignment_scope",
+        "intervention_id",
         "algorithm",
         "algorithm_version",
         "policy_version"

@@ -99,24 +99,24 @@ Guardrails:
 
 - Goal: Preserve intervention-specific observation evidence for canonical experiment assignments and keep analytics semantics correct for FR-007, FR-012, AC-007, and AC-012.
 - Tasks:
-  - [ ] Extend `RecordExposureRequest` with documented required `page_resource_id` and `content_element_id` fields derived from resolved delivery content.
-  - [ ] Update single and page-batch exposure callers in `ExperimentControlledStrategy` to pass placement identity.
-  - [ ] Change exposure idempotency keys to include stable placement identity plus assignment ID, preventing collisions when one assignment is exposed at several interventions.
-  - [ ] Resolve and validate exposure intervention by assignment experiment, page resource, and content-element identity inside `Oli.Experiments`; reject cross-experiment, missing, or forged placements.
-  - [ ] Refactor single and batch exposure validation to share the same placement-resolution contract and remain bounded.
-  - [ ] Add `assignment_scope` to assignment attribution. For section-and-enrollment assignment evidence, omit `intervention_id` rather than inventing ownership.
-  - [ ] Merge the resolved encountered `intervention_id` and stable `intervention_key` into every exposure attribution independently of assignment ownership.
-  - [ ] Update runtime event/outbox state only as required for reliable retry of the enriched exposure contract.
-  - [ ] Add `assignment_scope` to the existing ClickHouse experiment-attribution schema/uploader/query path using ordinary forward/rollback ClickHouse migration conventions and compatible defaults for old evidence.
-  - [ ] Audit analytics counts and fixtures so canonical assignment rows represent participants and intervention exposure events represent traffic; do not infer missing attribution from a null assignment intervention.
-  - [ ] Add exposure-specific telemetry metadata for resolved intervention and assignment scope without learner responses or unnecessary identity.
+  - [x] Extend `RecordExposureRequest` with documented required `page_resource_id` and `content_element_id` fields derived from resolved delivery content.
+  - [x] Update single and page-batch exposure callers in `ExperimentControlledStrategy` to pass placement identity.
+  - [x] Change exposure idempotency keys to include stable placement identity plus assignment ID, preventing collisions when one assignment is exposed at several interventions.
+  - [x] Resolve and validate exposure intervention by assignment experiment, page resource, and content-element identity inside `Oli.Experiments`; reject cross-experiment, missing, or forged placements.
+  - [x] Refactor single and batch exposure validation to share the same placement-resolution contract and remain bounded.
+  - [x] Add `assignment_scope` to assignment attribution. For section-and-enrollment assignment evidence, omit `intervention_id` rather than inventing ownership.
+  - [x] Merge the resolved encountered `intervention_id` and stable `intervention_key` into every exposure attribution independently of assignment ownership.
+  - [x] Update runtime event/outbox state only as required for reliable retry of the enriched exposure contract.
+  - [x] Add `assignment_scope` to the existing ClickHouse experiment-attribution schema/uploader/query path using ordinary forward/rollback ClickHouse migration conventions and compatible defaults for old evidence.
+  - [x] Audit analytics counts and fixtures so canonical assignment rows represent participants and intervention exposure events represent traffic; do not infer missing attribution from a null assignment intervention.
+  - [x] Add exposure-specific telemetry metadata for resolved intervention and assignment scope without learner responses or unnecessary identity.
 - Testing Tasks:
-  - [ ] Test that two placements sharing one canonical assignment generate distinct exposure keys and evidence with distinct intervention IDs.
-  - [ ] Test assignment evidence with `section_enrollment`, explicit section/enrollment, and no intervention ownership.
-  - [ ] Test forged, missing, cross-project, and cross-experiment exposure placement rejection for single and batch APIs.
-  - [ ] Update xAPI attribution, ClickHouse uploader, query-builder, and analytics fixtures for explicit scope and nullable assignment intervention.
-  - [ ] Assert one canonical participant assignment and multiple intervention exposures are counted correctly.
-  - [ ] Verify ClickHouse migration forward/rollback behavior and compatibility with evidence that predates `assignment_scope`.
+  - [x] Test that two placements sharing one canonical assignment generate distinct exposure keys and evidence with distinct intervention IDs.
+  - [x] Test assignment evidence with `section_enrollment`, explicit section/enrollment, and no intervention ownership.
+  - [x] Test forged, missing, cross-project, and cross-experiment exposure placement rejection for single and batch APIs.
+  - [x] Update xAPI attribution, ClickHouse uploader, query-builder, and analytics fixtures for explicit scope and nullable assignment intervention.
+  - [x] Assert one canonical participant assignment and multiple intervention exposures are counted correctly.
+  - [x] Verify ClickHouse migration forward/rollback behavior and compatibility with evidence that predates `assignment_scope`.
   - Command(s): `mix test test/oli/experiments test/oli/analytics test/oli/resources/alternatives`; `mix format`; `mix compile`
 - Definition of Done:
   - Assignment evidence describes canonical scope, exposure evidence always identifies the encountered intervention, placement keys cannot collide, and ClickHouse consumers preserve participant/exposure meaning.

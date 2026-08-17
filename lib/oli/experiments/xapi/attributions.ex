@@ -18,6 +18,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
   alias Oli.Experiments.Schemas.Assignment
   alias Oli.Experiments.Schemas.Condition
   alias Oli.Experiments.Schemas.ExperimentDefinition, as: ExperimentDefinitionSchema
+  alias Oli.Experiments.Schemas.Intervention
 
   @extension_base "http://oli.cmu.edu/extensions/"
   @experiment_attributions_key "#{@extension_base}experiment_attributions"
@@ -93,6 +94,8 @@ defmodule Oli.Experiments.XAPI.Attributions do
       condition_code: decision.condition_code,
       assignment_id: decision.assignment_id,
       assignment_key: assignment_value(assignment, :assignment_key),
+      assignment_scope: assignment_value(assignment, :assignment_scope),
+      intervention_id: assignment_value(assignment, :intervention_id),
       alternatives_resource_id: request.alternatives_resource_id,
       alternatives_revision_id: request.alternatives_revision_id,
       assigned_by_policy: assignment_value(assignment, :assigned_by_policy),
@@ -110,12 +113,15 @@ defmodule Oli.Experiments.XAPI.Attributions do
 
   def exposure_attribution(%ExposureReceipt{} = receipt, %RecordExposureRequest{} = request, opts) do
     assignment = Keyword.fetch!(opts, :assignment)
+    intervention = Keyword.fetch!(opts, :intervention)
 
     assignment_attrs(assignment)
     |> Map.merge(%{
       role: "exposure",
       attribution_type: "exposure",
       content_revision_id: request.content_revision_id,
+      intervention_id: intervention.id,
+      intervention_key: intervention_key(intervention),
       key: receipt.key,
       recorded_at: format_timestamp(receipt.recorded_at)
     })
@@ -205,6 +211,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
     %{
       assignment_id: assignment.id,
       assignment_key: assignment.assignment_key,
+      assignment_scope: assignment.assignment_scope,
       intervention_id: assignment.intervention_id,
       experiment_id: assignment.experiment_id,
       experiment_uuid: experiment_uuid(assignment),
@@ -270,6 +277,10 @@ defmodule Oli.Experiments.XAPI.Attributions do
     do: condition_code
 
   defp condition_code(_assignment), do: nil
+
+  defp intervention_key(%Intervention{} = intervention) do
+    "#{intervention.page_resource_id}:#{intervention.content_element_id}"
+  end
 
   defp map_value(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
 

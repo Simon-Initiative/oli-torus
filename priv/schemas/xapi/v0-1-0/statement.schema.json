@@ -120,6 +120,12 @@
         "assignment_key": {
           "type": "string"
         },
+        "assignment_scope": {
+          "enum": [
+            "intervention",
+            "section_enrollment"
+          ]
+        },
         "algorithm": {
           "type": "string"
         },

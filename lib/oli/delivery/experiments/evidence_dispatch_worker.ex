@@ -97,6 +97,7 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
       condition_code: evidence.condition_code,
       assignment_id: evidence.assignment.id,
       assignment_key: evidence.assignment.assignment_key,
+      assignment_scope: evidence.assignment.assignment_scope,
       intervention_id: evidence.intervention.id,
       intervention_key:
         "#{evidence.intervention.page_resource_id}:#{evidence.intervention.content_element_id}",

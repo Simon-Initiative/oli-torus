@@ -19,6 +19,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     Assignment,
     Condition,
     ExperimentDefinition,
+    Intervention,
     PolicyState
   }
 
@@ -50,10 +51,30 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert attribution["key"] == "10:60:500"
   end
 
+  test "canonical assignment evidence carries scope without inventing intervention ownership" do
+    canonical_assignment = %{
+      assignment()
+      | assignment_scope: :section_enrollment,
+        intervention_id: nil,
+        assignment_key: "v2:section_enrollment:10:300:500"
+    }
+
+    attribution =
+      Attributions.assignment_attribution(assignment_decision(false), assign_request(),
+        assignment: canonical_assignment
+      )
+
+    assert attribution["assignment_scope"] == "section_enrollment"
+    assert attribution["section_id"] == 300
+    assert attribution["enrollment_id"] == 500
+    refute Map.has_key?(attribution, "intervention_id")
+  end
+
   test "builds exposure, outcome, reward, and policy update attribution evidence" do
     [exposure] =
       Attributions.attributions_for_page_view(exposure_receipt(), exposure_request(),
-        assignment: assignment()
+        assignment: assignment(),
+        intervention: intervention()
       )
 
     [outcome] =
@@ -80,6 +101,9 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     assert exposure["experiment_uuid"] == @experiment_uuid
     assert exposure["condition_code"] == "a"
     assert exposure["content_revision_id"] == 701
+    assert exposure["assignment_scope"] == "intervention"
+    assert exposure["intervention_id"] == 60
+    assert exposure["intervention_key"] == "702:placement-a"
 
     assert outcome["role"] == "outcome"
     assert outcome["attribution_type"] == "outcome"
@@ -120,7 +144,8 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
     attribution =
       Attributions.exposure_attribution(exposure_receipt(), exposure_request(),
-        assignment: assignment()
+        assignment: assignment(),
+        intervention: intervention()
       )
 
     statement = Attributions.attach_attributions(statement, [attribution])
@@ -156,7 +181,8 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
 
     exposure =
       Attributions.exposure_attribution(exposure_receipt(), exposure_request(),
-        assignment: assignment()
+        assignment: assignment(),
+        intervention: intervention()
       )
 
     assert_raise ArgumentError, fn ->
@@ -245,7 +271,18 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
       key: "exposure:40",
       scope: scope(),
       assignment_id: 40,
+      page_resource_id: 702,
+      content_element_id: "placement-a",
       content_revision_id: 701
+    }
+  end
+
+  defp intervention do
+    %Intervention{
+      id: 60,
+      experiment_id: 10,
+      page_resource_id: 702,
+      content_element_id: "placement-a"
     }
   end
 

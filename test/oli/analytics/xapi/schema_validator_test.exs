@@ -130,6 +130,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
               "condition_code" => "condition-a",
               "assignment_id" => 404,
               "assignment_key" => "101:202:505",
+              "assignment_scope" => "section_enrollment",
               "intervention_id" => 606,
               "intervention_key" => "7001:placement-a",
               "assessment_binding_id" => 707,

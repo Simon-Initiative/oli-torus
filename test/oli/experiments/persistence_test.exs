@@ -378,6 +378,22 @@ defmodule Oli.Experiments.PersistenceTest do
       assert migration =~ "ADD COLUMN IF NOT EXISTS decision_point_key Nullable(String)"
       refute migration =~ "StatementBegin"
     end
+
+    test "defines reversible ClickHouse assignment scope with an old-evidence default" do
+      migration =
+        File.read!(
+          "priv/clickhouse/migrations/20260814120000_add_experiment_assignment_scope.sql"
+        )
+
+      assert migration =~ "-- +goose Up"
+
+      assert migration =~
+               "ADD COLUMN IF NOT EXISTS assignment_scope LowCardinality(String) DEFAULT 'intervention'"
+
+      assert migration =~ "-- +goose Down"
+      assert migration =~ "DROP COLUMN IF EXISTS assignment_scope;"
+      refute migration =~ "StatementBegin"
+    end
   end
 
   defp singular_experiment_fixture(suffix, assignment_scope \\ :intervention) do

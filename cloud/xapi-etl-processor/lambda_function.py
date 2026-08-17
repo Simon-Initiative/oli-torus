@@ -1179,11 +1179,29 @@ def transform_experiment_attributions(
                 "condition_code": _safe_str(attribution.get("condition_code")),
                 "assignment_id": _safe_int(attribution.get("assignment_id")),
                 "assignment_key": _safe_str(attribution.get("assignment_key")),
+                "assignment_scope": _safe_str(
+                    attribution.get("assignment_scope") or "intervention"
+                ),
                 "algorithm": _safe_str(
                     attribution.get("algorithm") or attribution.get("assigned_by_policy")
                 ),
                 "policy_version": _safe_str(attribution.get("policy_version")),
                 "content_revision_id": _safe_int(attribution.get("content_revision_id")),
+                "intervention_id": _safe_int(attribution.get("intervention_id")),
+                "intervention_key": _safe_str(attribution.get("intervention_key")),
+                "assessment_binding_id": _safe_int(
+                    attribution.get("assessment_binding_id")
+                ),
+                "assessment_page_resource_id": _safe_int(
+                    attribution.get("assessment_page_resource_id")
+                ),
+                "resource_attempt_id": _safe_int(
+                    attribution.get("resource_attempt_id")
+                ),
+                "disposition": _safe_str(attribution.get("disposition")),
+                "reward_threshold": _safe_float(attribution.get("reward_threshold")),
+                "normalized_score": _safe_float(attribution.get("normalized_score")),
+                "page_revision_id": _safe_int(attribution.get("page_revision_id")),
                 "reward_value": _safe_float(
                     attribution.get("reward_value") or _get_nested(result, ["score", "raw"])
                 ),

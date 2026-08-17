@@ -99,7 +99,9 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
            maybe_record_exposure(
              decision,
              scope,
-             decision_point
+             decision_point,
+             context.page_resource_id,
+             Map.get(alternatives_element, "id")
            ) do
       selections
     else
@@ -221,13 +223,16 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
   defp maybe_record_exposure(
          %AssignmentDecision{assignment_id: assignment_id},
          %Scope{} = scope,
-         decision_point
+         decision_point,
+         page_resource_id,
+         content_element_id
        ) do
     request = %RecordExposureRequest{
-      key:
-        "alternatives:#{decision_point.id}:#{decision_point.revision_id}:assignment:#{assignment_id}",
+      key: exposure_key(assignment_id, page_resource_id, content_element_id),
       scope: scope,
       assignment_id: assignment_id,
+      page_resource_id: page_resource_id,
+      content_element_id: content_element_id,
       content_revision_id: decision_point.revision_id
     }
 
@@ -272,7 +277,14 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
         with {%Scope{} = scope, _group} <- scoped_decision_point(context, first_group),
              requests <- Enum.map(placements, &batch_request(&1, context, scope, by_id)),
              {:ok, assigned} <- Oli.Experiments.assign_page_conditions(requests),
-             exposure_requests <- batch_exposure_requests(placements, assigned, scope, by_id),
+             exposure_requests <-
+               batch_exposure_requests(
+                 placements,
+                 assigned,
+                 scope,
+                 context.page_resource_id,
+                 by_id
+               ),
              {:ok, attributions} <- Oli.Experiments.record_page_exposures(exposure_requests) do
           decisions =
             Enum.reduce(placements, %{}, fn element, decisions ->
@@ -318,7 +330,7 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
 
   defp prepared_assignment(_decision, _group), do: %{status: :no_experiment}
 
-  defp batch_exposure_requests(placements, assigned, scope, by_id) do
+  defp batch_exposure_requests(placements, assigned, scope, page_resource_id, by_id) do
     Enum.flat_map(placements, fn element ->
       group = Map.fetch!(by_id, element["alternatives_id"])
 
@@ -326,9 +338,11 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
         %AssignmentDecision{status: :assigned, assignment_id: assignment_id} ->
           [
             %RecordExposureRequest{
-              key: "alternatives:#{group.id}:#{group.revision_id}:assignment:#{assignment_id}",
+              key: exposure_key(assignment_id, page_resource_id, element["id"]),
               scope: scope,
               assignment_id: assignment_id,
+              page_resource_id: page_resource_id,
+              content_element_id: element["id"],
               content_revision_id: group.revision_id
             }
           ]
@@ -337,6 +351,13 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
           []
       end
     end)
+  end
+
+  # Exposure identity belongs to the rendered placement, not the Alternatives group. Including
+  # the assignment preserves retry idempotency while page/element identity keeps two placements
+  # that share one canonical assignment from collapsing into a single observation.
+  defp exposure_key(assignment_id, page_resource_id, content_element_id) do
+    "assignment:#{assignment_id}:placement:#{page_resource_id}:#{content_element_id}"
   end
 
   defp prepared_decision(

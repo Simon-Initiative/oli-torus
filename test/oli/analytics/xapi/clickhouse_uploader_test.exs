@@ -202,6 +202,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       assert query =~ "'11111111-2222-3333-4444-555555555555'"
       assert query =~ "'condition-a'"
       assert query =~ "policy_version"
+      assert query =~ "assignment_scope"
+      assert query =~ "'intervention'"
       assert query =~ "intervention_id"
       assert query =~ "'page-77:placement\\\\\\'a\\nline'"
       assert query =~ "assessment_binding_id"

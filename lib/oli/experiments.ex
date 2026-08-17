@@ -712,20 +712,34 @@ defmodule Oli.Experiments do
   def record_page_exposures([%Oli.Experiments.RecordExposureRequest{} | _] = requests) do
     with {:ok, scope} <- common_exposure_scope(requests),
          {:ok, assignments} <- batch_exposure_assignments(requests, scope),
-         {:ok, revisions} <- batch_exposure_revisions(requests, assignments) do
+         {:ok, revisions} <- batch_exposure_revisions(requests, assignments),
+         {:ok, interventions} <- batch_exposure_interventions(requests, assignments) do
       attributions =
         Enum.flat_map(requests, fn request ->
           assignment = Map.fetch!(assignments, request.assignment_id)
           _revision = Map.fetch!(revisions, request.content_revision_id)
+
+          intervention =
+            Map.fetch!(interventions, exposure_intervention_key(assignment, request))
+
           event = Map.put(runtime_event(request), "reused", false)
           receipt = exposure_receipt(assignment, event)
 
           :telemetry.execute([:oli, :experiments, :exposure, :recorded], %{count: 1}, %{
-            experiment_id: assignment.experiment_id
+            experiment_id: assignment.experiment_id,
+            intervention_id: intervention.id,
+            assignment_scope: assignment.assignment_scope
           })
 
-          Telemetry.emit(:exposure_recorded, {receipt, request}, assignment: assignment)
-          Attributions.attributions_for_page_view(receipt, request, assignment: assignment)
+          Telemetry.emit(:exposure_recorded, {receipt, request},
+            assignment: assignment,
+            intervention: intervention
+          )
+
+          Attributions.attributions_for_page_view(receipt, request,
+            assignment: assignment,
+            intervention: intervention
+          )
         end)
 
       {:ok, attributions}
@@ -787,6 +801,7 @@ defmodule Oli.Experiments do
   defp runtime_evidence_dependencies do
     %{
       scoped_with_experiment: &get_scoped_assignment_with_experiment!/2,
+      resolve_exposure_intervention: &resolve_exposure_intervention/2,
       scoped_assignment: &get_scoped_assignment!/3,
       record_policy_reward: &record_policy_reward/3,
       emit_policy_update: &emit_policy_update/1,
@@ -1105,10 +1120,14 @@ defmodule Oli.Experiments do
 
   defp common_exposure_scope([first | rest]) do
     with {:ok, scope} <- validate_delivery_participation_scope(first.scope),
-         true <- Enum.all?(rest, &(&1.scope == first.scope)) do
+         true <-
+           Enum.all?(rest, fn request ->
+             request.scope == first.scope and
+               request.page_resource_id == first.page_resource_id
+           end) do
       {:ok, scope}
     else
-      false -> invalid_scope("page exposure requests must share one scope")
+      false -> invalid_scope("page exposure requests must share one scope and page")
       {:error, %ExperimentError{} = error} -> {:error, error}
     end
   end
@@ -1161,6 +1180,91 @@ defmodule Oli.Experiments do
       true -> {:ok, revisions}
       false -> invalid_condition("page exposure revision does not match its experiment")
     end
+  end
+
+  defp batch_exposure_interventions(requests, assignments) do
+    with {:ok, keys} <- exposure_intervention_keys(requests, assignments) do
+      predicate =
+        Enum.reduce(keys, dynamic(false), fn
+          {experiment_id, page_resource_id, content_element_id}, predicate ->
+            dynamic(
+              [intervention],
+              ^predicate or
+                (intervention.experiment_id == ^experiment_id and
+                   intervention.page_resource_id == ^page_resource_id and
+                   intervention.content_element_id == ^content_element_id)
+            )
+        end)
+
+      # Exact placement predicates preserve the intervention identity index and avoid loading the
+      # Cartesian superset produced by independent experiment/page/element IN lists.
+      interventions =
+        from(intervention in Intervention,
+          where: ^predicate,
+          select:
+            struct(intervention, [
+              :id,
+              :experiment_id,
+              :page_resource_id,
+              :content_element_id
+            ])
+        )
+        |> Repo.all()
+        |> Map.new(fn intervention ->
+          {{intervention.experiment_id, intervention.page_resource_id,
+            intervention.content_element_id}, intervention}
+        end)
+
+      case Enum.all?(keys, &Map.has_key?(interventions, &1)) do
+        true ->
+          {:ok, interventions}
+
+        false ->
+          invalid_condition("one or more exposure placements do not belong to their experiment")
+      end
+    end
+  end
+
+  defp exposure_intervention_keys(requests, assignments) do
+    Enum.reduce_while(requests, {:ok, []}, fn request, {:ok, keys} ->
+      assignment = Map.fetch!(assignments, request.assignment_id)
+
+      case exposure_intervention_key(assignment, request) do
+        {_experiment_id, page_resource_id, content_element_id} = key
+        when is_integer(page_resource_id) and is_binary(content_element_id) and
+               content_element_id != "" ->
+          {:cont, {:ok, [key | keys]}}
+
+        _key ->
+          {:halt, invalid_request("exposure placement identity is required")}
+      end
+    end)
+  end
+
+  defp resolve_exposure_intervention(%Assignment{} = assignment, request) do
+    case exposure_intervention_key(assignment, request) do
+      {experiment_id, page_resource_id, content_element_id}
+      when is_integer(page_resource_id) and is_binary(content_element_id) and
+             content_element_id != "" ->
+        case Repo.get_by(Intervention,
+               experiment_id: experiment_id,
+               page_resource_id: page_resource_id,
+               content_element_id: content_element_id
+             ) do
+          %Intervention{} = intervention ->
+            {:ok, intervention}
+
+          nil ->
+            invalid_condition("exposure placement does not belong to the assignment experiment")
+        end
+
+      _key ->
+        invalid_request("exposure placement identity is required")
+    end
+  end
+
+  defp exposure_intervention_key(%Assignment{} = assignment, request) do
+    {assignment.experiment_id, request.page_resource_id, request.content_element_id}
   end
 
   defp batch_assign_page_conditions(requests, scope) do
@@ -2208,6 +2312,8 @@ defmodule Oli.Experiments do
     %{
       "assignment_id" => request.assignment_id,
       "key" => request.key,
+      "page_resource_id" => request.page_resource_id,
+      "content_element_id" => request.content_element_id,
       "content_revision_id" => request.content_revision_id,
       "publication_id" => request.scope && request.scope.publication_id,
       "recorded_at" => request.exposed_at || now()
@@ -2492,7 +2598,7 @@ defmodule Oli.Experiments do
       {:ok, query} ->
         case Repo.one(query) do
           %Assignment{experiment: %ExperimentDefinitionSchema{} = experiment} = assignment ->
-            {assignment, experiment.alternatives_resource_id}
+            {assignment, experiment}
 
           nil ->
             scoped_assignment_not_found!(assignment_id)
