@@ -358,6 +358,47 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       refute render(view) =~ "Cancelled condition"
     end
 
+    test "dismissed condition errors stay dismissed after subsequent actions", %{
+      view: _view,
+      conn: conn,
+      admin: admin,
+      project: project,
+      publication: publication
+    } do
+      decision_point = insert_legacy_experiment(publication, admin)
+      [first_condition, second_condition] = decision_point.content["options"]
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      view
+      |> element(
+        "button[phx-click='show_edit_option_modal'][phx-value-option-id='#{first_condition["id"]}']"
+      )
+      |> render_click()
+
+      view
+      |> form("#edit_modal-form", %{
+        "params" => %{
+          "id" => first_condition["id"],
+          "resource_id" => decision_point.resource_id,
+          "name" => second_condition["name"]
+        }
+      })
+      |> render_submit()
+
+      error_message = "duplicate options have been found"
+      assert has_element?(view, ".alert-danger", error_message)
+
+      view
+      |> element(".alert-danger button[phx-click='lv:clear-flash'][phx-value-key='error']")
+      |> render_click()
+
+      view
+      |> element("#show-archived-experiments")
+      |> render_click()
+
+      refute has_element?(view, ".alert-danger", error_message)
+    end
+
     test "deletes a decision point after confirmation", %{
       view: _view,
       conn: conn,

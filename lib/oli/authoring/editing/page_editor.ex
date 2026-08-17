@@ -9,7 +9,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   require Logger
 
   alias Oli.Authoring.{Locks, Course}
-  alias Oli.Resources.{Collaboration, Revision}
+  alias Oli.Resources.{Collaboration, Revision, ResourceType}
   alias Oli.Resources
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
@@ -26,6 +26,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Resources.ContentMigrator
   alias Oli.Features
+
+  @alternatives_type_id ResourceType.id_for_alternatives()
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -124,17 +126,60 @@ defmodule Oli.Authoring.Editing.PageEditor do
         previous_alternatives = alternatives_by_identity(previous_content)
         updated_alternatives = alternatives_by_identity(updated_content)
 
-        updated_alternatives
-        |> Enum.reject(fn {identity, count} ->
-          Map.get(previous_alternatives, identity, 0) >= count
-        end)
-        |> Enum.reduce_while(:ok, fn {{_id, strategy}, _count}, :ok ->
+        added_alternatives =
+          Enum.reject(updated_alternatives, fn {identity, count} ->
+            Map.get(previous_alternatives, identity, 0) >= count
+          end)
+
+        validate_added_alternatives(added_alternatives, project)
+    end
+  end
+
+  defp validate_added_alternatives([], _project), do: :ok
+
+  defp validate_added_alternatives(added_alternatives, project) do
+    resource_ids = Enum.map(added_alternatives, &elem(&1, 0))
+
+    case Enum.all?(resource_ids, &(is_integer(&1) and &1 > 0)) do
+      true -> validate_added_alternatives_resources(added_alternatives, resource_ids, project)
+      false -> {:error, {:not_found}}
+    end
+  end
+
+  defp validate_added_alternatives_resources(added_alternatives, resource_ids, project) do
+    strategies_by_resource_id =
+      project.slug
+      |> AuthoringResolver.from_resource_id(resource_ids)
+      |> Enum.reduce(%{}, fn
+        %Revision{
+          resource_id: resource_id,
+          resource_type_id: @alternatives_type_id,
+          content: content
+        },
+        strategies
+        when is_map(content) ->
+          Map.put(
+            strategies,
+            resource_id,
+            Map.get(content, "strategy", "user_section_preference")
+          )
+
+        _revision, strategies ->
+          strategies
+      end)
+
+    Enum.reduce_while(added_alternatives, :ok, fn {resource_id, _count}, :ok ->
+      case Map.fetch(strategies_by_resource_id, resource_id) do
+        {:ok, strategy} ->
           case feature_enabled_for_strategy?(strategy, project) do
             true -> {:cont, :ok}
             false -> {:halt, {:error, feature_for_strategy(strategy)}}
           end
-        end)
-    end
+
+        :error ->
+          {:halt, {:error, {:not_found}}}
+      end
+    end)
   end
 
   defp alternatives_by_identity(%{"model" => model}) when is_list(model) do
@@ -144,7 +189,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   defp alternatives_by_identity(_content), do: %{}
 
   defp collect_alternatives(%{"type" => "alternatives"} = content, counts) do
-    identity = {Map.get(content, "id"), Map.get(content, "strategy")}
+    identity = Map.get(content, "alternatives_id")
     counts = Map.update(counts, identity, 1, &(&1 + 1))
 
     collect_child_alternatives(content, counts)

@@ -4,6 +4,7 @@ defmodule OliWeb.Api.ResourceControllerTest do
   import Oli.Factory
 
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing
   alias Oli.Utils.Time
 
@@ -70,6 +71,17 @@ defmodule OliWeb.Api.ResourceControllerTest do
           experiments_enabled: true
         })
 
+      {:ok, alternatives_group} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          Oli.Resources.ResourceType.id_for_alternatives(),
+          %{
+            title: "Alternatives Group",
+            content: %{"options" => [], "strategy" => "user_section_preference"}
+          }
+        )
+
       project.slug
       |> Publishing.project_working_publication()
       |> then(&Publishing.get_published_resource!(&1.id, page.resource_id))
@@ -87,8 +99,7 @@ defmodule OliWeb.Api.ResourceControllerTest do
                 %{
                   "type" => "alternatives",
                   "id" => "new-alternatives",
-                  "strategy" => "user_section_preference",
-                  "alternatives_id" => 123,
+                  "alternatives_id" => alternatives_group.resource_id,
                   "children" => []
                 }
               ]
