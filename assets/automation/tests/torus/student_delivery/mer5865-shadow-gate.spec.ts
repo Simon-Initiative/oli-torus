@@ -10,6 +10,7 @@ import {
   isDriverEvidenceViolation,
   projectFromJournal,
   runIdentity,
+  validateSwappedGreenEnvelope,
   validateBailEnvelope,
   validateGreenEnvelope,
 } from '@tasks/AdaptiveShadowProjector';
@@ -569,5 +570,88 @@ test.describe('the comparison itself goes red, not silent (W-D2/W-D4)', () => {
 
     const emptyAccount = compareProjections([], shadow, []);
     expect(emptyAccount.filter((d) => d.field === 'presence').length).toBe(shadow.length);
+  });
+});
+
+/* ------------------- SWAPPED runs (B4-DIFF under §6.1) --------------------- */
+
+const swappedGreens = process.env.MER5865_SWAPPED_GREEN_DUMPS?.split(',') ?? [];
+
+test.describe('swapped-run differential — the retired account replaced by the live audit', () => {
+  test.skip(swappedGreens.length < 2, 'MER5865_SWAPPED_GREEN_DUMPS (>= 2) not provided');
+
+  type Triple = { sectionSlug: string; revisionSlug: string; attemptGuid: string };
+  const finalizationTriple = (dump: ShadowDump): Triple | null => {
+    const fin = dump.snapshot.records.find(
+      (r) =>
+        (r as { wireClass?: string }).wireClass === 'page-finalization' &&
+        (r as { finalization?: Triple | null }).finalization,
+    ) as { finalization?: Triple & { result?: string } } | undefined;
+    return fin?.finalization ?? null;
+  };
+  const distinctOnEveryComponent = (triples: Triple[]): boolean =>
+    (['sectionSlug', 'revisionSlug', 'attemptGuid'] as const).every(
+      (k) => new Set(triples.map((t) => t[k])).size === triples.length,
+    );
+
+  test('every swapped green audits clean; the retired inventory is exact (W-D1, §6.1)', () => {
+    const manifest = loadValidatedManifest();
+    const perDump: Array<Record<string, number>> = [];
+    for (const file of swappedGreens) {
+      const dump = JSON.parse(fs.readFileSync(file, 'utf8')) as ShadowDump;
+      expect(validateSwappedGreenEnvelope(dump, manifest), file).toEqual([]);
+      const { inScope, driverEvidence, diffs } = evaluateGreenCapture(dump, manifest);
+      console.log(
+        `[swapped-gate] ${file.split('/').pop()}: in-scope=${inScope.length} ` +
+          `driver-evidence=${driverEvidence.length} diffs=${diffs.length}`,
+      );
+      expect(formatViolations(inScope), file).toBe('auditRun: no violations');
+      // EVERY diff must be the retired account itself (the ledger side absent
+      // wholesale) — any other class is an unmapped DIFF difference = RED
+      diffs.forEach((d) =>
+        expect(`${d.field}|${d.shipped}`, `${file} diff ${JSON.stringify(d)}`).toBe(
+          'presence|(missing)',
+        ),
+      );
+      expect(diffs.length, file).toBe(manifest.scenario.length);
+      // the retired classes, pinned per step/screen/seq exactly as the old
+      // account's 65 — the §6.1 mapping is what discharges them live
+      const expected = expectedDriverEvidence(dump, manifest);
+      expect(Object.fromEntries(driverEvidenceInventory(driverEvidence)), file).toEqual(
+        Object.fromEntries(expected),
+      );
+      perDump.push(stripSeqCounts(driverEvidenceInventory(driverEvidence)));
+    }
+    for (let i = 1; i < perDump.length; i++) {
+      expect(perDump[i], `swapped green ${i} vs 0 class counts`).toEqual(perDump[0]);
+    }
+  });
+
+  test('swapped runs are pairwise distinct on EVERY identity component (W-X1)', () => {
+    const triples = swappedGreens.map((f) => {
+      const t = finalizationTriple(JSON.parse(fs.readFileSync(f, 'utf8')) as ShadowDump);
+      expect(t, `${f} carries no accepted finalization triple`).not.toBeNull();
+      return t as Triple;
+    });
+    expect(distinctOnEveryComponent(triples)).toBe(true);
+  });
+
+  test('a swapped capture smuggling a shipped ledger is rejected (W-D2 inverse, executed)', () => {
+    const manifest = loadValidatedManifest();
+    const dump = JSON.parse(fs.readFileSync(swappedGreens[0], 'utf8')) as ShadowDump;
+    expect(validateSwappedGreenEnvelope(dump, manifest)).toEqual([]);
+    const smuggled = { ...dump, ledger: [] as never[] };
+    const problems = validateSwappedGreenEnvelope(smuggled, manifest);
+    expect(problems.some((p) => p.includes('retired account must be absent'))).toBe(true);
+  });
+
+  test('a pair sharing ONE identity component is rejected by the same comparison (W-X3)', () => {
+    const dump = JSON.parse(fs.readFileSync(swappedGreens[0], 'utf8')) as ShadowDump;
+    const a = finalizationTriple(dump) as Triple;
+    // same section, different revision/attempt: whole-identity uniqueness
+    // would pass this pair; per-component distinctness must not
+    const b: Triple = { ...a, revisionSlug: 'someone-elses-rev', attemptGuid: 'someone-elses' };
+    expect(distinctOnEveryComponent([a, b])).toBe(false);
+    expect(new Set([JSON.stringify(a), JSON.stringify(b)]).size).toBe(2);
   });
 });

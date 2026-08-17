@@ -1110,3 +1110,39 @@ test.describe('journal recorder on a live page', () => {
     }
   });
 });
+
+test.describe('recorder attach is fail-atomic (gate-B round-2 blocker 8)', () => {
+  type Listener = { event: string; fn: unknown };
+  const hostilePage = (failOnCall: number) => {
+    const installed: Listener[] = [];
+    let calls = 0;
+    return {
+      installed,
+      on(event: string, fn: unknown) {
+        calls += 1;
+        if (calls >= failOnCall) throw new Error('injected fault at page.on');
+        installed.push({ event, fn });
+      },
+      off(event: string, fn: unknown) {
+        const i = installed.findIndex((l) => l.event === event && l.fn === fn);
+        if (i >= 0) installed.splice(i, 1);
+      },
+    };
+  };
+
+  test('a fault on the second listener removes the first and leaves nothing armed', () => {
+    const page = hostilePage(2);
+    const recorder = new AdaptiveJournalRecorder(page as never);
+    expect(() => recorder.attach()).toThrow(/injected fault at page.on/);
+    expect(page.installed).toEqual([]);
+    // the recorder is NOT half-attached: a later attach must be legal
+    expect(() => recorder.attach()).toThrow(/injected fault at page.on/);
+  });
+
+  test('a fault on the third listener removes the first two', () => {
+    const page = hostilePage(3);
+    const recorder = new AdaptiveJournalRecorder(page as never);
+    expect(() => recorder.attach()).toThrow(/injected fault at page.on/);
+    expect(page.installed).toEqual([]);
+  });
+});

@@ -485,7 +485,7 @@ export type Driven = {
 export async function driveScripted(args: {
   screens?: ScriptedScreen[];
   manifest?: AdaptiveManifest;
-  beforeStart?: (deck: ScriptedDeck, core: AdaptiveJournalCore) => void;
+  beforeStart?: (deck: ScriptedDeck, core: AdaptiveJournalCore, clock: Clock) => void;
   wrapDeck?: (deck: ScriptedDeck) => object;
   /** driver options, merged over the test clock — the seam for the :684-:686
    * option-read edges, where the OBJECT ITSELF may be hostile */
@@ -495,7 +495,7 @@ export async function driveScripted(args: {
   const core = new AdaptiveJournalCore(clock.now);
   core.setRunCorrelation(CORR);
   const deck = new ScriptedDeck(core, args.screens ?? SCREENS(), clock);
-  if (args.beforeStart) args.beforeStart(deck, core);
+  if (args.beforeStart) args.beforeStart(deck, core, clock);
   const driven = args.wrapDeck ? args.wrapDeck(deck) : deck;
   const base = { sleep: clock.sleep, now: clock.now, log: () => undefined };
   let options = base;

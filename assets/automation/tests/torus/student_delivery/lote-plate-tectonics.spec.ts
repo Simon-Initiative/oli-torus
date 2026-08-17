@@ -1,10 +1,7 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import { test } from '@fixture/my-fixture';
 import { setRuntimeConfig } from '@core/runtimeConfig';
 import { expect } from '@playwright/test';
-import { HomeTask } from '@tasks/HomeTask';
-import { AdaptiveLessonTask } from '@tasks/AdaptiveLessonTask';
 import {
   AutomationSetupResponse,
   buildAutomationLoginData,
@@ -12,11 +9,9 @@ import {
   teardownAutomationCourse,
 } from '@tasks/AutomationSetupTask';
 import { fetchTestAsset, fetchTestArchiveToTempFile } from '@tasks/AutomationAssetsTask';
-import { FreezeFlavor } from '@tasks/AdaptiveJournal';
 import { AdaptiveManifest, validateAdaptiveManifest } from '@tasks/AdaptiveManifest';
-import { Violation, auditRun, formatViolations } from '@tasks/AdaptiveOracle';
-import { StrictRunOutcome, armStrictRun, driveStrictLesson } from '@tasks/AdaptiveStrictDriver';
-import { armPoison, armShadowCapture } from '@tasks/AdaptiveShadowCapture';
+import { formatViolations } from '@tasks/AdaptiveOracle';
+import { runGatedLote } from '@tasks/AdaptiveStrictGatedRun';
 
 /**
  * MER-5674 / MER-5865: Adaptive Lesson — Living on the Edge: Plate Tectonics.
@@ -105,6 +100,11 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
         `Manifest declares ${validated.screens.length} screens, expected ${EXPECTED_SCREENS} (MER-5674)`,
       );
     }
+    if (validated.expected_total_score === undefined) {
+      throw new Error(
+        'The strict manifest must declare expected_total_score — a fully-correct run must prove its final score (MER-5865)',
+      );
+    }
     const locator = parsed.lesson;
     if (!locator?.title || !locator.search_term) {
       throw new Error('The strict answers file must carry a complete lesson block (MER-5674)');
@@ -168,110 +168,20 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
       throw new Error('Automation setup did not produce seeded course data and a manifest');
     }
 
-    // MER-5865 step 3 harness, kept armed beside the strict journal: its
-    // capture feeds the swap differential (gate-B DIFF); raw dumps are
-    // PRIVATE (answer values), written only to the dir named by the env var
-    const shadowDir = process.env.MER5865_SHADOW_DIR;
-    const shadow = shadowDir ? await armShadowCapture(page) : null;
-    const strict = armStrictRun(page);
-
-    let poison: { fired(): boolean } | null = null;
-    let outcome: StrictRunOutcome | null = null;
-    let flavor: FreezeFlavor | 'sealed' | null = null;
-    let violations: Violation[] | null = null;
-    // ONE failure boundary owns EVERYTHING after arming (gate-B0 r4 N1,
-    // r5 N1, r6 N1): any failure before the journal is terminal — poison
-    // arming, navigation, login, correlation — seals both journals and dumps
-    // the bail capture exactly once before rethrowing, so no armed run ends
-    // without a terminal snapshot. The walk itself never throws: the driver
-    // returns an outcome and every abort surfaces as audit violations below.
-    try {
-      // bail run: poison one graded screen's submission in flight — the
-      // strict path must go red there; only legal with the shadow armed
-      if (shadow && process.env.MER5865_POISON_SCREEN) {
-        poison = await armPoison(page, process.env.MER5865_POISON_SCREEN);
-      }
-      const adaptiveLesson = new AdaptiveLessonTask(page);
-
-      await page.goto('/');
-      await new HomeTask(page).login('student');
-      await adaptiveLesson.openFromOutline(
-        seededCourse.section.slug,
-        lesson.title,
-        lesson.search_term,
-      );
-
-      // B4-C4A (normative): the run's identity triple is frozen from the
-      // server-rendered Delivery props immediately after opening the intended
-      // page, BEFORE the driver acts; a run without it carries no correlation
-      if (!(await strict.correlate())) {
-        throw new Error('strict run correlation unavailable before the walk (MER-5865)');
-      }
-      // the section component is cross-anchored to the SETUP RESPONSE, the one
-      // identity leg the rendered page cannot supply about itself (B4-C4A)
-      const frozen = strict.journal.runCorrelation();
-      if (frozen?.sectionSlug !== seededCourse.section.slug) {
-        throw new Error(
-          `correlation section "${String(frozen?.sectionSlug)}" does not match the setup ` +
-            `response "${seededCourse.section.slug}" (B4-C4A anchor)`,
-        );
-      }
-      if (shadow) {
-        const correlated = await shadow.correlate();
-        console.log(`[MER-5865 shadow] correlated=${correlated}`);
-      }
-
-      outcome = await driveStrictLesson(adaptiveLesson.deck, manifest, strict.journal);
-
-      // the journal decides the freeze: an unfinished walk never noted the
-      // lesson end, so this seals; a finished one awaits the finalization
-      flavor = await strict.finish('green');
-      const snapshot = strict.snapshot();
-      violations = auditRun(manifest, outcome.runRecord, snapshot);
-
-      // evidence lands BEFORE the verdict so a red run still leaves its trail
-      if (shadowDir) {
-        const file = path.join(shadowDir, `lote-strict-${Date.now()}.json`);
-        await fs.writeFile(
-          file,
-          JSON.stringify({ outcome, flavor, snapshot, violations }, null, 2),
-        );
-        console.log(`[MER-5865 strict] run evidence: ${file}`);
-      }
-      if (shadow && shadowDir) {
-        const shadowFlavor = await shadow.finish(outcome.kind === 'completed' ? 'green' : 'bail');
-        const file = await shadow.dump(
-          shadowDir,
-          outcome.kind === 'completed' ? 'lote-green' : 'lote-bail',
-          {
-            outcome: outcome.kind === 'completed' ? 'green' : 'bail',
-            flavor: shadowFlavor,
-            walkError: outcome.kind === 'aborted' ? outcome.cause : null,
-            poisonFired: poison?.fired() ? process.env.MER5865_POISON_SCREEN : null,
-          },
-        );
-        console.log(`[MER-5865 shadow] capture (${shadowFlavor}): ${file}`);
-      }
-    } catch (armError) {
-      if (flavor === null) await strict.finish('bail').catch(() => {});
-      if (shadow && shadowDir) {
-        const shadowFlavor = await shadow.finish('bail');
-        const file = await shadow.dump(shadowDir, 'lote-bail', {
-          outcome: 'bail',
-          flavor: shadowFlavor,
-          walkError: (armError as Error).message,
-          poisonFired: poison?.fired() ? process.env.MER5865_POISON_SCREEN : null,
-        });
-        console.log(`[MER-5865 shadow] bail capture (${shadowFlavor}): ${file}`);
-      }
-      throw armError;
-    }
-
-    if (flavor === null || violations === null) {
-      throw new Error(
-        'the strict run produced no audit inputs (unreachable: the boundary rethrew)',
-      );
-    }
+    // THE ONE FAILURE BOUNDARY lives in runGatedLote (fault-injected per exit
+    // site offline — gate-B round 5): arming, poison, navigation, login,
+    // correlation, the anchor, the walk, the freeze, the audit and both
+    // PRIVATE evidence dumps all execute inside it; any fault seals the
+    // strict journal, attempts the shadow bail dump and rethrows unchanged.
+    const result = await runGatedLote(page, {
+      sectionSlug: seededCourse.section.slug,
+      lessonTitle: lesson.title,
+      searchTerm: lesson.search_term,
+      manifest,
+      shadowDir: process.env.MER5865_SHADOW_DIR ?? null,
+      poisonScreen: process.env.MER5865_POISON_SCREEN ?? null,
+    });
+    const { flavor, violations } = result;
 
     // THE VERDICT BOUNDARY (B4-VERDICT-S/L, B4-C15): the UNMODIFIED auditRun
     // result over the frozen journal — exactly zero violations — under the

@@ -1,13 +1,20 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import ts from 'typescript';
+
 import { expect, test } from '@playwright/test';
 import { AdaptiveDeckPO } from '@pom/delivery/AdaptiveDeckPO';
-import { AdaptiveJournalCore, FinalizationFailureReason } from '@tasks/AdaptiveJournal';
+import {
+  AdaptiveJournalCore,
+  FinalizationFailureReason,
+  JournalRecord,
+} from '@tasks/AdaptiveJournal';
 import { AdaptiveManifest } from '@tasks/AdaptiveManifest';
 import { OperationFailure, RunRecord, auditRun } from '@tasks/AdaptiveOracle';
 
 import {
+  Clock,
   MANIFEST,
   SCREENS,
   ScriptedDeck,
@@ -174,6 +181,8 @@ type Case = {
   callee: string;
   at: 'deck' | 'core' | 'shape';
   inj?: Injection;
+  /** custom core/deck preparation when faultCore's fixed shapes cannot reach the edge */
+  prep?: (deck: ScriptedDeck, core: AdaptiveJournalCore, clock: Clock) => void;
   screens?: () => ScriptedScreen[];
   manifest?: () => AdaptiveManifest;
   options?: Record<string, unknown>;
@@ -198,6 +207,66 @@ const gatedManifest = (gate: string): AdaptiveManifest => {
   (m.screens[1].operations ?? []).unshift({ id: 'op.gate', kind: 'gate', gate } as never);
   return m;
 };
+
+/** q:2's save lands mid-gesture, so the barrier loop never satisfies (:359 false). */
+const midGestureSave = () => {
+  const s = SCREENS();
+  s[2].deferredSave = { paths: s[2].deferredSave!.paths, delayMs: 0 };
+  return s;
+};
+
+/**
+ * A clock-edge fault gated on the BARRIER screen being current, delegating to
+ * the real scripted clock otherwise so deck timers keep firing. `nth` counts
+ * only calls made while q:2 is current: for `now`, call 1 is the step-2 settle
+ * deadline (:281) and call 2 is the barrier deadline (:346); the mid-gesture
+ * screens push the loop so call 3 is the deadline recheck (:362). For `sleep`,
+ * call 1 is the step-2 settle (:285) and call 2 the barrier poll (:370).
+ */
+function barrierClockCase(
+  witness: string,
+  site: string,
+  which: 'now' | 'sleep',
+  nth: number,
+  screens: (() => ScriptedScreen[]) | undefined,
+): Case[] {
+  const ref: { deck: ScriptedDeck | null; clock: Clock | null; calls: number } = {
+    deck: null,
+    clock: null,
+    calls: 0,
+  };
+  const impl =
+    which === 'now'
+      ? () => {
+          if (ref.deck?.currentId === 'q:2') {
+            ref.calls += 1;
+            if (ref.calls >= nth) throw new Error(`injected fault at ${which} on q:2`);
+          }
+          return (ref.clock as Clock).now();
+        }
+      : async (ms: number) => {
+          if (ref.deck?.currentId === 'q:2') {
+            ref.calls += 1;
+            if (ref.calls >= nth) throw new Error(`injected fault at ${which} on q:2`);
+          }
+          await (ref.clock as Clock).sleep(ms);
+        };
+  return [
+    {
+      witness,
+      site: `${DRIVER_REL}${site}`,
+      callee: which,
+      at: 'shape',
+      screens,
+      prep: (deck, _core, clock) => {
+        ref.deck = deck;
+        ref.clock = clock;
+      },
+      options: { [which]: impl },
+      failures: [OF('driver-internal', 'q:2', 2)],
+    },
+  ];
+}
 
 const CASES: Case[] = [
   // --- boundary-region initialisation (round-9 blocker 2) -------------------
@@ -811,6 +880,175 @@ const CASES: Case[] = [
     inj: { method: 'noteLessonEnd' },
     failures: [OF('driver-internal', 'c:1', 3)],
   },
+  // --- round-10 blocker 3: the 13 formerly waived edges, injected AT-SITE ----
+  {
+    witness: 'W-E2-QUIESCENCE-RECHECK',
+    site: `${DRIVER_REL}:286`,
+    callee: 'journal.outstanding',
+    at: 'core',
+    // the SECOND outstanding read of the pass — the settle recheck, not :283.
+    // step-0's quiescence runs with the NEXT screen already current
+    inj: { method: 'outstanding', onScreen: 'q:1', onCall: 2 },
+    failures: [OF('driver-internal', 'n:1', 0)],
+  },
+  {
+    witness: 'W-E2-WIRE-RECOUNT',
+    site: `${DRIVER_REL}:286`,
+    callee: 'journal.wireEventCount',
+    at: 'core',
+    inj: { method: 'wireEventCount', onScreen: 'q:1', onCall: 2 },
+    failures: [OF('driver-internal', 'n:1', 0)],
+  },
+  {
+    witness: 'W-E2-NOW-QUIESCENCE-DEADLINE',
+    site: `${DRIVER_REL}:290`,
+    callee: 'now',
+    at: 'core',
+    // busy branch so the loop reaches the deadline check: outstanding lies once
+    inj: { method: 'outstanding', onScreen: 'q:1', returns: 1 },
+    options: { now: raisesOnCall(2) },
+    failures: [OF('driver-internal', 'n:1', 0)],
+  },
+  {
+    witness: 'W-E2-NOW-EVAL',
+    site: `${DRIVER_REL}:306`,
+    callee: 'now',
+    at: 'shape',
+    // call 1 is the n:1 quiescence deadline; call 2 opens awaitEvaluation
+    options: { now: raisesOnCall(2) },
+    failures: [OF('driver-internal', 'q:1', 1)],
+  },
+  {
+    witness: 'W-E2-NOW-EVAL-DEADLINE',
+    site: `${DRIVER_REL}:328`,
+    callee: 'now',
+    at: 'shape',
+    screens: () => {
+      const s = SCREENS();
+      s[1].checks = [];
+      return s;
+    },
+    options: { now: raisesOnCall(3) },
+    failures: [OF('driver-internal', 'q:1', 1)],
+  },
+  {
+    witness: 'W-E2-SLEEP-EVAL-POLL',
+    site: `${DRIVER_REL}:336`,
+    callee: 'sleep',
+    at: 'shape',
+    screens: () => {
+      const s = SCREENS();
+      s[1].checks = [];
+      return s;
+    },
+    options: { sleep: raisesOnCall(2) },
+    failures: [OF('driver-internal', 'q:1', 1)],
+  },
+  ...barrierClockCase('W-E2-NOW-BARRIER', ':346', 'now', 2, undefined),
+  {
+    witness: 'W-E2-SUBMITTED-PATHS',
+    site: `${DRIVER_REL}:359`,
+    callee: 'submittedPaths',
+    at: 'core',
+    // a record whose partInputs ACCESS throws — the fault raises during the
+    // argument evaluation of submittedPaths(r.partInputs) on this line
+    inj: {
+      method: 'records',
+      onScreen: 'q:2',
+      returns: [
+        {
+          wireClass: 'save',
+          terminal: 'completed',
+          status: 200,
+          responseSeq: 1,
+          requestSeq: 99_999,
+          get partInputs(): never {
+            throw new Error('injected fault at partInputs access');
+          },
+        },
+      ],
+    },
+    failures: [OF('driver-internal', 'q:2', 2)],
+  },
+  ...barrierClockCase('W-E2-NOW-BARRIER-DEADLINE', ':362', 'now', 3, midGestureSave),
+  ...barrierClockCase('W-E2-SLEEP-BARRIER-POLL', ':370', 'sleep', 2, midGestureSave),
+  {
+    witness: 'W-E2-PLAN-ARG',
+    site: `${DRIVER_REL}:379`,
+    callee: 'planTransition',
+    at: 'shape',
+    // the record passes `usable` untouched; its llmFeedback ACCESS throws, so
+    // the fault raises during planTransition's argument evaluation on :379
+    prep: (deck, core) => {
+      const bag = core as unknown as { records(): JournalRecord[] };
+      const orig = bag.records.bind(core);
+      bag.records = () =>
+        orig().map((r) =>
+          deck.currentId === 'q:1' && r.wireClass === 'eval-candidate'
+            ? new Proxy(r, {
+                get(t, prop, recv) {
+                  if (prop === 'llmFeedback') throw new Error('injected fault at llmFeedback');
+                  return Reflect.get(t, prop, recv);
+                },
+              })
+            : r,
+        );
+    },
+    // the step-0 SWEEP records the nav evaluation's plan first, so the
+    // poisoned llmFeedback access raises at :379 during step 0
+    failures: [OF('driver-internal', 'n:1', 0)],
+  },
+  {
+    witness: 'W-E2-SAVED-BARRIER-PART',
+    site: `${DRIVER_REL}:469`,
+    callee: 'entry.savedBarrier',
+    at: 'shape',
+    // the part's id ACCESS throws only on the read AFTER readback's — the one
+    // capiClusterPrefix performs inside entry.savedBarrier on this line
+    prep: (deck) => {
+      const d = deck as unknown as { readPartInventory(): Promise<unknown[]> };
+      const orig = d.readPartInventory.bind(deck);
+      d.readPartInventory = async () => {
+        const parts = (await orig()) as Array<{ type: string; id: string }>;
+        if (deck.currentId !== 'q:2') return parts;
+        let idReads = 0;
+        return parts.map((p) =>
+          p.type === 'janus-capi-iframe'
+            ? new Proxy(p, {
+                get(t, prop, recv) {
+                  if (prop === 'id') {
+                    idReads += 1;
+                    if (idReads >= 2) throw new Error('injected fault at part.id access');
+                  }
+                  return Reflect.get(t, prop, recv);
+                },
+              })
+            : p,
+        );
+      };
+    },
+    failures: [OF('driver-internal', 'q:2', 2)],
+  },
+  {
+    witness: 'W-E2-MAP-ITERATOR',
+    site: `${DRIVER_REL}:687`,
+    callee: 'new Map',
+    at: 'shape',
+    // screens.map returns an iterable whose element is NOT an entry object, so
+    // the Map CONSTRUCTOR itself throws — refuting the round-9 waiver
+    manifest: () =>
+      ({
+        scenario: MANIFEST.scenario,
+        screens: {
+          map: () => ({
+            *[Symbol.iterator]() {
+              yield 42;
+            },
+          }),
+        },
+      }) as unknown as AdaptiveManifest,
+    failures: IU0,
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -961,7 +1199,7 @@ test.describe('per-site fault injection — B4-EXIT-EM (W-E2)', () => {
         screens: c.screens ? c.screens() : SCREENS(),
         manifest: c.manifest ? c.manifest() : MANIFEST,
         wrapDeck: c.at === 'deck' && c.inj ? wrapDeck(c.inj) : undefined,
-        beforeStart: c.at === 'core' && c.inj ? faultCore(c.inj) : undefined,
+        beforeStart: c.prep ?? (c.at === 'core' && c.inj ? faultCore(c.inj) : undefined),
         options: c.options,
       });
       const { outcome, runRecord, core } = driven;
@@ -1231,5 +1469,304 @@ test.describe('exit inventory — the frozen run stays green', () => {
     expect(outcome.kind).toBe('completed');
     expect(runRecord.operationFailures).toEqual([]);
     expect(auditRun(MANIFEST, runRecord, freeze(core))).toEqual([]);
+  });
+});
+
+test.describe('routed layer — injectable boundary, contract-kind AST, bidirectional (W-E0a, rounds 2-5)', () => {
+  const MODULE_REL = 'src/systems/torus/tasks/AdaptiveStrictGatedRun.ts';
+  const SPEC_REL = 'tests/torus/student_delivery/lote-plate-tectonics.spec.ts';
+  const ROUTED = ARTIFACT as unknown as {
+    routed_layer: {
+      module_sites: Array<{
+        line: number;
+        callee: string;
+        kind: string;
+        region: string;
+        producer: string;
+      }>;
+      module_non_exit_closure: Array<{
+        line: number;
+        callee: string;
+        kind: string;
+        region: string;
+      }>;
+      spec_residual_sites: Array<{
+        line: number;
+        callee: string;
+        kind: string;
+        region: string;
+        producer: string;
+      }>;
+      spec_residual_non_exit_closure: Array<{
+        line: number;
+        callee: string;
+        kind: string;
+        region: string;
+      }>;
+    };
+  };
+  const NON_EXIT = [
+    'locally-handled await (non-exit; recorded for closure)',
+    'return (success path; recorded for closure)',
+  ];
+
+  type RoutedRow = { line: number; callee: string; kind: string; region: string };
+
+  /** Contract-kind derivation shared by both targets (hardened per round 5's
+   * probes: argless .catch and .then(ok, undefined) do NOT handle; awaited
+   * parenthesized/ternary branches classify; returns/finally recorded). */
+  function derive(
+    rel: string,
+    target: 'module' | 'spec',
+  ): { rows: RoutedRow[]; catchClause: ts.CatchClause | null } {
+    const text = fs.readFileSync(path.join(AUTOMATION, rel), 'utf8');
+    const sf = ts.createSourceFile('t.ts', text, ts.ScriptTarget.ES2020, true);
+    const lineOf = (n: ts.Node) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+    const endOf = (n: ts.Node) => sf.getLineAndCharacterOfPosition(n.getEnd()).line + 1;
+
+    let body: ts.Node | null = null;
+    if (target === 'module') {
+      const findFn = (node: ts.Node): void => {
+        if (ts.isFunctionDeclaration(node) && node.name?.text === 'runGatedLote') {
+          body = node.body ?? null;
+          return;
+        }
+        ts.forEachChild(node, findFn);
+      };
+      findFn(sf);
+    } else {
+      const findTest = (node: ts.Node): void => {
+        if (
+          ts.isCallExpression(node) &&
+          node.expression.getText(sf) === 'test' &&
+          node.arguments[0]?.getText(sf).includes('student completes the plate tectonics')
+        ) {
+          body = (node.arguments[1] as ts.ArrowFunction).body;
+          return;
+        }
+        ts.forEachChild(node, findTest);
+      };
+      findTest(sf);
+    }
+    if (!body) throw new Error(`${target} body not found in ${rel}`);
+    const root: ts.Node = body;
+
+    let tryStmt: ts.TryStatement | null = null;
+    const findTry = (node: ts.Node): void => {
+      if (ts.isTryStatement(node) && !tryStmt) {
+        tryStmt = node;
+        return;
+      }
+      ts.forEachChild(node, findTry);
+    };
+    findTry(root);
+    const found: ts.TryStatement | null = tryStmt;
+
+    const bodyStart = lineOf(root);
+    const bodyEnd = endOf(root);
+    const regions = found
+      ? {
+          tryStart: lineOf(found.tryBlock),
+          tryEnd: endOf(found.tryBlock),
+          catchStart: lineOf(found.catchClause as ts.CatchClause),
+          catchEnd: endOf(found.catchClause as ts.CatchClause),
+        }
+      : null;
+    const regionOf = (l: number): string | null => {
+      if (!regions) return l >= bodyStart && l <= bodyEnd ? 'body' : null;
+      if (l >= regions.catchStart && l <= regions.catchEnd) return 'catch';
+      if (l >= regions.tryStart && l <= regions.tryEnd) return 'try';
+      if (l >= bodyStart && l < regions.tryStart) return 'pre';
+      if (l > regions.catchEnd && l <= bodyEnd) return 'post';
+      return null;
+    };
+
+    const consumed = new Set<ts.Node>();
+    const rows: RoutedRow[] = [];
+    const push = (n: ts.Node, callee: string, kind: string) => {
+      const region = regionOf(lineOf(n));
+      if (region) rows.push({ line: lineOf(n), callee, kind, region });
+    };
+
+    const markThrows = (node: ts.Node): void => {
+      if (ts.isThrowStatement(node) && node.expression) {
+        push(node, `throw ${node.expression.getText(sf).split('\n')[0].slice(0, 60)}`, 'throw');
+        const absorb = (inner: ts.Node): void => {
+          consumed.add(inner);
+          ts.forEachChild(inner, absorb);
+        };
+        absorb(node.expression);
+      }
+      ts.forEachChild(node, markThrows);
+    };
+    markThrows(root);
+
+    const isRealHandler = (arg: ts.Expression): boolean =>
+      ts.isArrowFunction(arg) || ts.isFunctionExpression(arg);
+    const markAwaits = (node: ts.Node): void => {
+      if (ts.isAwaitExpression(node)) {
+        let inner: ts.Expression | null = node.expression;
+        let handled = false;
+        for (;;) {
+          if (!inner) break;
+          consumed.add(inner);
+          if (
+            ts.isCallExpression(inner) &&
+            ts.isPropertyAccessExpression(inner.expression) &&
+            ((inner.expression.name.text === 'catch' &&
+              inner.arguments.length >= 1 &&
+              isRealHandler(inner.arguments[0])) ||
+              (inner.expression.name.text === 'then' &&
+                inner.arguments.length === 2 &&
+                isRealHandler(inner.arguments[1])))
+          ) {
+            handled = true;
+            inner = inner.expression.expression;
+            continue;
+          }
+          if (
+            ts.isCallExpression(inner) &&
+            ts.isPropertyAccessExpression(inner.expression) &&
+            (inner.expression.name.text === 'catch' || inner.expression.name.text === 'then')
+          ) {
+            inner = inner.expression.expression;
+            continue;
+          }
+          if (ts.isParenthesizedExpression(inner)) {
+            inner = inner.expression;
+            continue;
+          }
+          if (ts.isConditionalExpression(inner)) {
+            [inner.whenTrue, inner.whenFalse].forEach((branch) => {
+              let b: ts.Expression = branch;
+              while (ts.isParenthesizedExpression(b)) b = b.expression;
+              if (ts.isCallExpression(b) || ts.isNewExpression(b)) {
+                consumed.add(b);
+                push(
+                  b,
+                  b.expression!.getText(sf).replace(/\s+/g, ''),
+                  handled
+                    ? 'locally-handled await (non-exit; recorded for closure)'
+                    : 'rejecting await without local handler',
+                );
+              }
+            });
+            inner = null;
+            break;
+          }
+          break;
+        }
+        if (inner && (ts.isCallExpression(inner) || ts.isNewExpression(inner))) {
+          push(
+            inner,
+            inner.expression!.getText(sf).replace(/\s+/g, ''),
+            handled
+              ? 'locally-handled await (non-exit; recorded for closure)'
+              : 'rejecting await without local handler',
+          );
+        }
+      }
+      ts.forEachChild(node, markAwaits);
+    };
+    markAwaits(root);
+
+    if (found) {
+      const cc = found.catchClause as ts.CatchClause;
+      push(cc, `catch (${cc.variableDeclaration?.getText(sf) ?? ''})`, 'catch branch');
+      if (found.finallyBlock) push(found.finallyBlock, 'finally', 'finally/cleanup failure');
+    }
+    const markReturns = (node: ts.Node): void => {
+      if (ts.isReturnStatement(node)) {
+        const l = lineOf(node);
+        const inCatch = regions !== null && l >= regions.catchStart && l <= regions.catchEnd;
+        push(
+          node,
+          `return ${node.expression ? node.expression.getText(sf).split('\n')[0].slice(0, 40) : ''}`,
+          inCatch ? 'failure-path early return' : 'return (success path; recorded for closure)',
+        );
+      }
+      ts.forEachChild(node, markReturns);
+    };
+    markReturns(root);
+
+    const walk = (node: ts.Node): void => {
+      if ((ts.isCallExpression(node) || ts.isNewExpression(node)) && !consumed.has(node)) {
+        push(
+          node,
+          ts.isNewExpression(node)
+            ? `new ${node.expression.getText(sf)}`
+            : node.expression.getText(sf).replace(/\s+/g, ''),
+          'throw',
+        );
+      }
+      ts.forEachChild(node, walk);
+    };
+    walk(root);
+
+    rows.sort((a, b) => a.line - b.line || a.callee.localeCompare(b.callee));
+    return { rows, catchClause: found ? (found.catchClause as ts.CatchClause) : null };
+  }
+
+  const key = (r: RoutedRow) => `${r.line}|${r.callee}|${r.kind}|${r.region}`;
+
+  test('the module EXIT table equals the contract-kind derivation, both directions (W-E0a)', () => {
+    const all = derive(MODULE_REL, 'module').rows;
+    const derivedExits = all.filter((r) => !NON_EXIT.includes(r.kind)).map(key);
+    const derivedClosure = all.filter((r) => NON_EXIT.includes(r.kind)).map(key);
+    expect(ROUTED.routed_layer.module_sites.map(key).sort()).toEqual(derivedExits.sort());
+    expect(ROUTED.routed_layer.module_non_exit_closure.map(key).sort()).toEqual(
+      derivedClosure.sort(),
+    );
+    // every EXIT row pins exactly one producer, named for its region
+    ROUTED.routed_layer.module_sites.forEach((r) => {
+      expect(typeof r.producer, `${r.callee} at :${r.line} has no producer`).toBe('string');
+      expect(r.producer.length).toBeGreaterThan(10);
+    });
+  });
+
+  test('the spec residual equals its derivation, both directions, and arms nothing', () => {
+    const derivation = derive(SPEC_REL, 'spec');
+    const derived = derivation.rows.filter((r) => !NON_EXIT.includes(r.kind)).map(key);
+    const declared = ROUTED.routed_layer.spec_residual_sites.map(key);
+    expect([...declared].sort()).toEqual([...derived].sort());
+    ROUTED.routed_layer.spec_residual_sites.forEach((r) => {
+      expect(typeof r.producer).toBe('string');
+    });
+    derivation.rows.forEach((r) => {
+      expect(r.callee, `spec residual arms: ${r.callee}`).not.toMatch(/^arm[A-Z]|^new Adaptive/);
+      expect(r.kind).not.toBe('catch branch');
+    });
+    // the ONLY awaited exit in the spec is the boundary call itself
+    const awaits = derivation.rows.filter((r) => r.kind.startsWith('rejecting await'));
+    expect(awaits.map((r) => r.callee)).toEqual(['runGatedLote']);
+  });
+
+  test('the module catch rethrows the SAME error and guards every cleanup await', () => {
+    const { rows, catchClause } = derive(MODULE_REL, 'module');
+    expect(catchClause).not.toBeNull();
+    const cc = catchClause as ts.CatchClause;
+    const statements = cc.block.statements;
+    const last = statements[statements.length - 1];
+    expect(ts.isThrowStatement(last), 'the catch must END on the rethrow').toBe(true);
+    expect((last as ts.ThrowStatement).expression.getText()).toBe('boundaryError');
+    rows
+      .filter((r) => r.region === 'catch' && r.kind.startsWith('rejecting await'))
+      .forEach((r) => {
+        throw new Error(`unguarded cleanup await in the module catch: ${r.callee} at :${r.line}`);
+      });
+    const interior = rows
+      .filter((r) => r.region === 'catch' && r.kind === 'throw' && !r.callee.startsWith('throw '))
+      .map((r) => r.callee);
+    interior.forEach((callee) =>
+      expect(
+        ['failureText', 'poison?.fired', 'deps.log', 'deps.warn', 'quietly'].includes(callee),
+        `catch-interior call outside the allowlist: ${callee}`,
+      ).toBe(true),
+    );
+    // the logging handlers themselves must be quietly()-wrapped (total by
+    // construction — round-6 blocker 11)
+    const catchText = catchClause!.getText();
+    expect(catchText).toContain('quietly(() =>');
+    expect(catchText.match(/quietly\(/g)!.length).toBeGreaterThanOrEqual(2);
   });
 });

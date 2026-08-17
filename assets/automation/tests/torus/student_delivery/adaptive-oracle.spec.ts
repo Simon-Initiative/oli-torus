@@ -129,13 +129,17 @@ function openEval(
 function settleEval(
   c: AdaptiveJournalCore,
   handle: number,
-  body: { correct: boolean; results: ResultEvent[]; llm?: { text: string } },
+  body: { correct: boolean; results: ResultEvent[]; llm?: { text: string }; score?: number },
 ): number {
   c.ingestResponse(handle, 200);
   c.ingestResponseBody(
     handle,
     JSON.stringify({
-      actions: { correct: body.correct, results: body.results },
+      actions: {
+        correct: body.correct,
+        results: body.results,
+        ...(body.score !== undefined ? { score: body.score } : {}),
+      },
       llm_feedback: body.llm ?? null,
     }),
   );
@@ -146,7 +150,7 @@ function fireEval(
   c: AdaptiveJournalCore,
   guid: string,
   parts: Array<{ path: string; value: unknown; partGuid?: string }>,
-  body: { correct: boolean; results: ResultEvent[]; llm?: { text: string } },
+  body: { correct: boolean; results: ResultEvent[]; llm?: { text: string }; score?: number },
 ): number {
   return settleEval(c, openEval(c, guid, parts), body);
 }
@@ -222,6 +226,8 @@ function buildRun(
     earlyAckPermit?: boolean;
     receipts?: StepReceipt[] | null;
     omitPlans?: boolean;
+    /** wire-reported score on the graded evaluation's actions body */
+    gradedScore?: number;
   } = {},
 ): { snapshot: JournalSnapshot; runRecord: RunRecord; earlyAck: Permit | null } {
   const c = new AdaptiveJournalCore(() => 1_000);
@@ -251,6 +257,7 @@ function buildRun(
   const gradedEval = fireEval(c, 'a-q1', gradedParts, {
     correct: poison.gradedVerdict ?? true,
     results: [event(poison.gradedVerdict ?? true, [navTo('next')])],
+    score: poison.gradedScore,
   });
   if (poison.duplicateGradedEval) {
     fireEval(c, 'a-q1', gradedParts, { correct: true, results: [event(true, [navTo('next')])] });
@@ -311,6 +318,15 @@ const codes = (violations: ReturnType<typeof auditRun>) => violations.map((v) =>
 test.describe('manifest v2 validation', () => {
   test('accepts the fixture manifest', () => {
     expect(() => validateAdaptiveManifest(manifest())).not.toThrow();
+    expect(() => validateAdaptiveManifest(manifest({ expected_total_score: 90 }))).not.toThrow();
+  });
+
+  test('rejects a malformed expected_total_score', () => {
+    for (const bad of [-1, Number.NaN, Number.POSITIVE_INFINITY, '90' as never]) {
+      expect(() => validateAdaptiveManifest(manifest({ expected_total_score: bad }))).toThrow(
+        /expected_total_score must be a finite non-negative number/,
+      );
+    }
   });
 
   test('rejects duplicate ids, dangling refs, cross-screen refs and duplicate refs', () => {
@@ -410,6 +426,25 @@ test.describe('manifest v2 validation', () => {
     expect(() => validateRouteCoverage(facts(['n:1', 'n:1', 'q:1', 'c:1']), m)).toThrow(
       /duplicate/,
     );
+  });
+
+  test('the authored totalScore anchors expected_total_score — both directions', () => {
+    // archive declares it, manifest agrees → clean
+    expect(() =>
+      validateRouteCoverage(ARCHIVE_FACTS({ total_score: 90 }), manifest({ expected_total_score: 90 })),
+    ).not.toThrow();
+    // archive declares it, manifest silent → the anchor is mandatory
+    expect(() => validateRouteCoverage(ARCHIVE_FACTS({ total_score: 90 }), manifest())).toThrow(
+      /declares no expected_total_score/,
+    );
+    // archive declares it, manifest contradicts → red naming both numbers
+    expect(() =>
+      validateRouteCoverage(ARCHIVE_FACTS({ total_score: 90 }), manifest({ expected_total_score: 91 })),
+    ).toThrow(/expected_total_score=91 contradicts the archive's authored totalScore=90/);
+    // archive silent → hand-declared values are not anchored here
+    expect(() =>
+      validateRouteCoverage(ARCHIVE_FACTS(), manifest({ expected_total_score: 91 })),
+    ).not.toThrow();
   });
 
   test('the scenario must end at the archive-proven last navigable entry (§3.5)', () => {
@@ -841,6 +876,60 @@ test.describe('auditRun over a driven journal', () => {
     };
     const found = auditRun(m, runRecord, c.snapshot());
     expect(codes(found)).toContain('obligation-unfulfilled');
+  });
+});
+
+test.describe('score-total rule — the grading pipeline pointed correctly, end to end', () => {
+  test('an accepted run summing to the declared expected total audits clean', () => {
+    const { snapshot, runRecord } = buildRun({ gradedScore: 5 });
+    expect(codes(auditRun(manifest({ expected_total_score: 5 }), runRecord, snapshot))).toEqual([]);
+  });
+
+  test('a run total differing from the declared expected total is a violation', () => {
+    const { snapshot, runRecord } = buildRun({ gradedScore: 4 });
+    const found = auditRun(manifest({ expected_total_score: 5 }), runRecord, snapshot);
+    expect(codes(found)).toContain('score-total-mismatch');
+    const v = found.find((x) => x.code === 'score-total-mismatch');
+    expect(v?.facts.count).toBe(4);
+    expect(v?.facts.expectedCount).toBe(5);
+    expect(formatViolations(found)).toContain(
+      'run total score 4 ≠ manifest expected_total_score 5',
+    );
+  });
+
+  test('all verdicts true with no wire score at all is exactly the case the rule exists for', () => {
+    const { snapshot, runRecord } = buildRun();
+    expect(codes(auditRun(manifest({ expected_total_score: 5 }), runRecord, snapshot))).toContain(
+      'score-total-mismatch',
+    );
+  });
+
+  test('an undeclared expected total keeps the rule inert', () => {
+    const { snapshot, runRecord } = buildRun({ gradedScore: 4 });
+    expect(codes(auditRun(manifest(), runRecord, snapshot))).toEqual([]);
+  });
+
+  test('a sealed run never reaches the score rule — a partial sum decides nothing', () => {
+    const c = new AdaptiveJournalCore(() => 1_000);
+    c.setRunCorrelation(CORR);
+    const v0 = c.issueFence('n:1');
+    const permit = c.issuePermit('widget-button', 'n:1', 0);
+    fireEval(c, 'a-n1', [], {
+      correct: true,
+      results: [event(true, [navTo('next')])],
+      score: 1,
+    });
+    c.beginSeal();
+    c.finishSeal();
+    const runRecord: RunRecord = {
+      visits: [{ screenId: 'n:1', entrySeq: v0.seq, renderedAttemptGuid: 'a-n1', resourceId: 1 }],
+      permits: [permit],
+      receipts: [],
+      operationFailures: [],
+    };
+    const found = codes(auditRun(manifest({ expected_total_score: 99 }), runRecord, c.snapshot()));
+    expect(found).not.toContain('score-total-mismatch');
+    expect(found.length).toBeGreaterThan(0);
   });
 });
 

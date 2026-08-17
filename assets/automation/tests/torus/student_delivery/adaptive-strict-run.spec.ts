@@ -5,6 +5,10 @@ import { AdaptiveDeckPO } from '@pom/delivery/AdaptiveDeckPO';
 import { JournalSnapshot } from '@tasks/AdaptiveJournal';
 import { AdaptiveManifest } from '@tasks/AdaptiveManifest';
 import { auditRun, formatViolations } from '@tasks/AdaptiveOracle';
+import { armShadowCapture, makeShadowStamp } from '@tasks/AdaptiveShadowCapture';
+import { AdaptiveJournalRecorder } from '@tasks/AdaptiveJournal';
+import { RunVisit } from '@tasks/AdaptiveOracle';
+import { assertSetupAnchor, failureText } from '@tasks/AdaptiveStrictAnchor';
 import { armStrictRun } from '@tasks/AdaptiveStrictDriver';
 import { evaluateGreenCapture } from '@tasks/AdaptiveShadowProjector';
 import { planTransition } from '@tasks/AdaptiveTransitionPlanner';
@@ -423,21 +427,44 @@ test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => 
     await strict.finish('bail');
   });
 
+  test('the setup anchor rejects a CONSISTENT both-sides section swap (W-J5)', async ({ page }) => {
+    const EVIL = { sectionSlug: 's-evil', pageSlug: 'r-evil', resourceAttemptGuid: 'g-evil' };
+    await page.setContent(deliveryHtml(EVIL));
+    const strict = armStrictRun(page);
+    expect(await strict.correlate()).toBe(true);
+    // both sides agree on the foreign section, so the journal's own freeze
+    // binding is satisfied — only the setup-response anchor can tell
+    postFinalization(strict.journal, EVIL);
+    expect(strict.journal.finalizationStatus()).toEqual({ kind: 'accepted' });
+    expect(() => assertSetupAnchor(strict.journal, TRIPLE.sectionSlug)).toThrow(
+      /does not match the setup/,
+    );
+    await strict.finish('bail');
+  });
+
+  test('the setup anchor accepts the section the setup response issued (W-J5 green arm)', async ({
+    page,
+  }) => {
+    await page.setContent(deliveryHtml(TRIPLE));
+    const strict = armStrictRun(page);
+    expect(await strict.correlate()).toBe(true);
+    expect(() => assertSetupAnchor(strict.journal, TRIPLE.sectionSlug)).not.toThrow();
+    await strict.finish('bail');
+  });
+
   test('a same-node props rewrite after the freeze changes nothing (W-S5)', async ({ page }) => {
     await page.setContent(deliveryHtml(TRIPLE));
     const strict = armStrictRun(page);
     expect(await strict.correlate()).toBe(true);
     await page.evaluate(() => {
-      document
-        .querySelector('[data-react-class="Components.Delivery"]')!
-        .setAttribute(
-          'data-react-props',
-          JSON.stringify({
-            sectionSlug: 's-evil',
-            pageSlug: 'r-evil',
-            resourceAttemptGuid: 'g-evil',
-          }),
-        );
+      document.querySelector('[data-react-class="Components.Delivery"]')!.setAttribute(
+        'data-react-props',
+        JSON.stringify({
+          sectionSlug: 's-evil',
+          pageSlug: 'r-evil',
+          resourceAttemptGuid: 'g-evil',
+        }),
+      );
     });
     // a finalization matching the MUTATED render is rejected; the retained
     // VALUE triple still accepts its own
@@ -457,23 +484,174 @@ test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => 
 test.describe('the switched spec statically binds the strict entry point (W-W10/W-W12)', () => {
   const loteSrc = fs.readFileSync(path.resolve(__dirname, 'lote-plate-tectonics.spec.ts'), 'utf8');
 
-  test('the LotE spec imports the strict driver and audit, not the old walker', () => {
+  const gatedSrc = fs.readFileSync(
+    path.resolve(__dirname, '../../../src/systems/torus/tasks/AdaptiveStrictGatedRun.ts'),
+    'utf8',
+  );
+
+  test('the LotE spec binds the gated boundary, which binds the strict entry point', () => {
     expect(loteSrc).toMatch(
-      /import \{[^}]*armStrictRun[\s\S]*?\} from '@tasks\/AdaptiveStrictDriver'/,
+      /import \{[^}]*runGatedLote[\s\S]*?\} from '@tasks\/AdaptiveStrictGatedRun'/,
     );
-    expect(loteSrc).toContain('driveStrictLesson');
-    expect(loteSrc).toMatch(/auditRun.*from '@tasks\/AdaptiveOracle'/);
+    expect(gatedSrc).toMatch(
+      /import \{[\s\S]*?armStrictRun[\s\S]*?\} from '@tasks\/AdaptiveStrictDriver'/,
+    );
+    expect(gatedSrc).toContain('driveStrictLesson');
+    expect(gatedSrc).toMatch(/auditRun.*from '@tasks\/AdaptiveOracle'/);
   });
 
   test('no shipped-walker, ledger or projection acceptance reference remains', () => {
+    // the full C16 class: the old walker, its contract, AND every projection/
+    // ledger acceptance surface (round-6 blocker 12 widened the list)
     [
       'AdaptiveHappyPathTask',
       'AdaptiveStrictContract',
       'completeAdaptiveHappyPath',
       'formatLedger',
+      'AdaptiveShadowProjector',
       'evaluateGreenCapture',
-    ].forEach((banned) =>
-      expect(loteSrc.includes(banned), `banned reference: ${banned}`).toBe(false),
-    );
+      'projectFromJournal',
+      'compareProjections',
+      'driverEvidenceInventory',
+      'expectedDriverEvidence',
+      'validateGreenEnvelope',
+      'validateSwappedGreenEnvelope',
+      'isDriverEvidenceViolation',
+      'CapturedLedgerEntry',
+      'ledger',
+    ].forEach((banned) => {
+      expect(loteSrc.includes(banned), `banned in the spec: ${banned}`).toBe(false);
+      expect(gatedSrc.includes(banned), `banned in the boundary module: ${banned}`).toBe(false);
+    });
+  });
+
+  test('the verdict boundary keeps its exact two assertion shapes (W-W7b static)', () => {
+    expect(
+      loteSrc.match(/expect\(violations\.length, formatViolations\(violations\)\)\.toBe\(0\)/g)!
+        .length,
+    ).toBe(1);
+    expect(loteSrc.match(/expect\(flavor\)\.toBe\('accepted'\)/g)!.length).toBe(1);
+    // and nothing between the boundary call and the assertions transforms them
+    expect(loteSrc).toContain('const { flavor, violations } = result;');
+  });
+});
+
+test.describe('the spec catch is total over unknown thrown values (gate-B round-2 blocker 8)', () => {
+  test('failureText never throws and never loses the cause', () => {
+    expect(failureText(new Error('real'))).toBe('real');
+    expect(failureText(null)).toBe('non-Error rejection: null');
+    expect(failureText(undefined)).toBe('non-Error rejection: undefined');
+    expect(failureText('a string reason')).toBe('non-Error rejection: a string reason');
+    const unstringifiable = {
+      toString() {
+        throw new Error('hostile toString');
+      },
+    };
+    expect(failureText(unstringifiable)).toBe('non-Error rejection: (unstringifiable value)');
+  });
+});
+
+test.describe('armShadowCapture arms nothing on failure (gate-B round-3 blocker 9)', () => {
+  type Stub = {
+    exposed: string[];
+    initScripts: number;
+    listeners: string[];
+    exposeBinding(name: string, fn: unknown): Promise<void>;
+    addInitScript(fn: unknown): Promise<void>;
+    on(event: string, fn: unknown): void;
+    off(event: string, fn: unknown): void;
+  };
+  const stubPage = (failAt: 'init-script' | 'listeners' | null): Stub => ({
+    exposed: [],
+    initScripts: 0,
+    listeners: [],
+    async exposeBinding(name: string) {
+      this.exposed.push(name);
+    },
+    async addInitScript() {
+      if (failAt === 'init-script') throw new Error('injected fault at addInitScript');
+      this.initScripts += 1;
+    },
+    on(event: string) {
+      if (failAt === 'listeners') throw new Error('injected fault at page.on');
+      this.listeners.push(event);
+    },
+    off(event: string, fn: unknown) {
+      void fn;
+      const i = this.listeners.indexOf(event);
+      if (i >= 0) this.listeners.splice(i, 1);
+    },
+  });
+
+  test('an init-script fault rejects with NO listeners ever installed', async () => {
+    const page = stubPage('init-script');
+    await expect(armShadowCapture(page as never)).rejects.toThrow(/injected fault/);
+    // the irreversible binding is installed but inert (it stamps into a core
+    // nothing ever reads); the DETACHABLE surface was never armed
+    expect(page.listeners).toEqual([]);
+  });
+
+  test('an attach fault after binding + init script leaves no listeners behind', async () => {
+    const page = stubPage('listeners');
+    await expect(armShadowCapture(page as never)).rejects.toThrow(/injected fault/);
+    expect(page.listeners).toEqual([]);
+    expect(page.exposed).toEqual(['__mer5865ShadowStamp']);
+    expect(page.initScripts).toBe(1);
+  });
+
+  test('the binding guard is EXECUTED: a stamp before liveness observes nothing', async ({
+    page,
+  }) => {
+    const recorder = new AdaptiveJournalRecorder(page);
+    const visits: RunVisit[] = [];
+    const live = false;
+    const stamp = makeShadowStamp(recorder, visits, () => live);
+    stamp(null, { id: 'q:1', resourceId: 1, attemptGuid: 'a-1' });
+    expect(visits).toEqual([]);
+    // the core issued NO fence: sealing now yields a snapshot with zero fences
+    recorder.core.beginSeal();
+    recorder.core.finishSeal();
+    expect(recorder.core.snapshot().fences).toEqual([]);
+  });
+
+  test('the same stamp AFTER liveness records the journal-fenced visit once', async ({ page }) => {
+    const recorder = new AdaptiveJournalRecorder(page);
+    const visits: RunVisit[] = [];
+    let live = true;
+    const stamp = makeShadowStamp(recorder, visits, () => live);
+    stamp(null, { id: 'q:1', resourceId: 1, attemptGuid: 'a-1' });
+    stamp(null, { id: 'q:1', resourceId: 1, attemptGuid: 'a-1' }); // duplicate suppressed
+    live = false;
+    stamp(null, { id: 'q:2', resourceId: 2, attemptGuid: 'a-2' }); // post-detach ignored
+    expect(visits.length).toBe(1);
+    recorder.core.beginSeal();
+    recorder.core.finishSeal();
+    const fences = recorder.core.snapshot().fences;
+    expect(fences.length).toBe(1);
+    expect(fences[0].screenId).toBe('q:1');
+  });
+
+  test('end-to-end: the binding installed by a healthy arm goes silent after finish', async ({
+    page,
+  }) => {
+    const stub = stubPage(null);
+    const exposedFns: Array<(s: unknown, raw: unknown) => void> = [];
+    stub.exposeBinding = async (_name: string, fn: unknown) => {
+      exposedFns.push(fn as (s: unknown, raw: unknown) => void);
+    };
+    const handle = await armShadowCapture(stub as never);
+    exposedFns[0](null, { id: 'q:1', resourceId: 1, attemptGuid: 'a-1' });
+    expect(handle.visits.length).toBe(1);
+    await handle.finish('bail');
+    exposedFns[0](null, { id: 'q:2', resourceId: 2, attemptGuid: 'a-2' });
+    expect(handle.visits.length).toBe(1);
+  });
+
+  test('the healthy order arms the recorder LAST and detaches on finish', async () => {
+    const page = stubPage(null);
+    const handle = await armShadowCapture(page as never);
+    expect(page.listeners.length).toBe(3);
+    await handle.finish('bail');
+    expect(page.listeners).toEqual([]);
   });
 });
