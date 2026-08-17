@@ -161,6 +161,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         show_more_opts={false}
         card_header_text="Learning Objectives"
         card_body_text={card_body_text(assigns)}
+        card_body_text_class="mt-1 mb-4 text-Text-text-high"
       >
         <Filter.render
           change="change_search"
@@ -204,11 +205,11 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
   defp card_body_text(assigns) do
     ~H"""
-    Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
-    <br /> Refer to the
+    Learning objectives define the knowledge and skills students should demonstrate throughout your course. Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages. Refer to the
     <a
-      class="external"
+      class="external text-Text-text-button hover:text-Text-text-button"
       href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
+      rel="noopener"
       target="_blank"
     >
       CMU Eberly Center guide on learning objectives
