@@ -913,9 +913,19 @@ export class AdaptiveJournalRecorder {
 
   attach() {
     if (this.attached) throw new Error('journal recorder is already attached');
-    this.page.on('request', this.onRequest);
-    this.page.on('response', this.onResponse);
-    this.page.on('requestfailed', this.onRequestFailed);
+    // FAIL-ATOMIC (gate-B round-2 blocker 8): a partial registration must not
+    // strand listeners no handle can ever detach — on any fault, everything
+    // installed so far is removed before the error crosses the boundary
+    try {
+      this.page.on('request', this.onRequest);
+      this.page.on('response', this.onResponse);
+      this.page.on('requestfailed', this.onRequestFailed);
+    } catch (e) {
+      this.page.off('request', this.onRequest);
+      this.page.off('response', this.onResponse);
+      this.page.off('requestfailed', this.onRequestFailed);
+      throw e;
+    }
     this.attached = true;
   }
 

@@ -107,6 +107,13 @@ export type AdaptiveManifest = {
   scenario: ScenarioStep[];
   /** off-route screens, explicitly classified — never silent (§3.8) */
   exclusions?: ManifestExclusion[];
+  /**
+   * The score a fully-correct run must land on. When declared, the oracle
+   * sums every evaluation's wire-reported score over an ACCEPTED run and
+   * refuses a mismatch — all-verdicts-true does not by itself prove the
+   * grading pipeline pointed correctly.
+   */
+  expected_total_score?: number;
 };
 
 const fail = (msg: string): never => {
@@ -219,6 +226,12 @@ export function validateAdaptiveManifest(raw: unknown): AdaptiveManifest {
   }
   if (!Array.isArray(manifest.scenario) || manifest.scenario.length === 0) {
     fail('scenario must be a non-empty array');
+  }
+  if (manifest.expected_total_score !== undefined) {
+    const s = manifest.expected_total_score;
+    if (typeof s !== 'number' || !Number.isFinite(s) || s < 0) {
+      fail('expected_total_score must be a finite non-negative number');
+    }
   }
 
   const screens = manifest.screens as Array<Record<string, unknown>>;
@@ -383,6 +396,12 @@ export function validateAdaptiveManifest(raw: unknown): AdaptiveManifest {
 export type ArchiveFacts = {
   /** reachable screen inventory from the archive's transition graph */
   screen_ids: string[];
+  /**
+   * the page's AUTHORED total score (content.custom.totalScore). When the
+   * archive declares it, the manifest's expected_total_score must exist and
+   * equal it — the score anchor is the ingested content, never hand-typed.
+   */
+  total_score?: number;
   /** the archive-selected route's ENTRY screen — the scenario must start here */
   route_start_id: string;
   /**
@@ -469,6 +488,18 @@ const coveredByExpectation = (ref: string, expectations: GradingExpectation[]): 
  *    cannot lean on the verdict for the rest.
  */
 export function validateRouteCoverage(facts: ArchiveFacts, manifest: AdaptiveManifest): void {
+  if (facts.total_score !== undefined) {
+    if (manifest.expected_total_score === undefined) {
+      fail(
+        `the archive authors totalScore=${facts.total_score} but the manifest declares no expected_total_score`,
+      );
+    }
+    if (manifest.expected_total_score !== facts.total_score) {
+      fail(
+        `manifest expected_total_score=${manifest.expected_total_score} contradicts the archive's authored totalScore=${facts.total_score}`,
+      );
+    }
+  }
   const declared = new Set(manifest.screens.map((s) => s.id));
   const archive = new Set(facts.screen_ids);
   if (archive.size !== facts.screen_ids.length) {

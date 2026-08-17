@@ -119,6 +119,7 @@ export type ViolationCode =
   | 'pre-entry-illegal'
   | 'terminal-obligation'
   | 'freeze-timeout'
+  | 'score-total-mismatch'
   | 'seal-without-evidence'
   | 'request-failed'
   | 'operation-failure';
@@ -934,6 +935,23 @@ export function auditRun(
           reason: snapshot.finalizationFailure?.reason ?? 'unknown',
         }),
       );
+    }
+    // a fully-correct run must land on the score the manifest declares: every
+    // verdict can be true and the pointing still wrong — this closes the
+    // grading pipeline end to end. ACCEPTED runs only: a partial sum from an
+    // unfinished walk decides nothing.
+    if (manifest.expected_total_score !== undefined && snapshot.freezeFlavor === 'accepted') {
+      const observedTotal = snapshot.records
+        .filter((r) => r.resolution === 'evaluation' && r.actions !== null)
+        .reduce((sum, r) => sum + (r.actions?.score ?? 0), 0);
+      if (observedTotal !== manifest.expected_total_score) {
+        violations.push(
+          violation('score-total-mismatch', null, null, {
+            count: observedTotal,
+            expectedCount: manifest.expected_total_score,
+          }),
+        );
+      }
     }
   }
 
@@ -1919,6 +1937,8 @@ const TEMPLATES: Record<ViolationCode, (f: ViolationFacts) => string> = {
       : 'frozen run without the deck lesson-end signal',
   'freeze-timeout': (f) =>
     `accepted finalization but traffic never quiesced (outstanding at expiry: ${String(f.outstanding)})`,
+  'score-total-mismatch': (f) =>
+    `run total score ${String(f.count)} ≠ manifest expected_total_score ${String(f.expectedCount)}`,
   'seal-without-evidence': () =>
     'sealed run carries no failure evidence — an ordinary bail cannot audit clean (§3.2)',
   'request-failed': (f) =>

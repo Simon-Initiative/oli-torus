@@ -60,6 +60,8 @@ export type RawArchivePage = {
   resourceId: number;
   title: string;
   screens: RawScreen[];
+  /** the page's authored total score (content.custom.totalScore), when declared */
+  totalScore?: number;
 };
 
 const fail = (msg: string): never => {
@@ -221,6 +223,11 @@ export function readArchivePage(dir: string, pageResourceId: number): RawArchive
   if (!Array.isArray(model) || model.length !== 1 || !isPlainObject(model[0])) {
     return fail(`page ${pageResourceId} does not carry exactly one deck group`);
   }
+  const pageCustom = isPlainObject(content.custom) ? content.custom : {};
+  const totalScore = pageCustom.totalScore;
+  if (totalScore !== undefined && (typeof totalScore !== 'number' || !Number.isFinite(totalScore))) {
+    return fail(`page ${pageResourceId} custom.totalScore is not a finite number`);
+  }
   const children = (model[0] as Record<string, unknown>).children;
   if (!Array.isArray(children) || children.length === 0) {
     return fail(`page ${pageResourceId} deck group has no children`);
@@ -253,7 +260,12 @@ export function readArchivePage(dir: string, pageResourceId: number): RawArchive
     };
   });
 
-  return { resourceId: pageResourceId, title: String(doc.title ?? ''), screens };
+  return {
+    resourceId: pageResourceId,
+    title: String(doc.title ?? ''),
+    screens,
+    ...(totalScore !== undefined ? { totalScore: totalScore as number } : {}),
+  };
 }
 
 export type McqSpec = { choiceCount: number; mode: 'radio' | 'checkboxes' };
@@ -478,6 +490,7 @@ export function deriveArchiveFacts(page: RawArchivePage): ArchiveFacts {
   return {
     screen_ids: page.screens.map((s) => s.id),
     route_start_id: page.screens[0].id,
+    ...(page.totalScore !== undefined ? { total_score: page.totalScore } : {}),
     resource_ids: resourceIds,
     last_navigable_id: lastNavigableScreenId(page),
     route_successors: successors,

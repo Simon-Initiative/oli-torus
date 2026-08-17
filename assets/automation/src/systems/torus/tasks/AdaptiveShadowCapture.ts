@@ -20,7 +20,7 @@ import { RunVisit } from '@tasks/AdaptiveOracle';
  * PRIVATE shadow dir only, never the repository.
  */
 
-type ShadowIdentity = { id: string; resourceId: number; attemptGuid: string };
+export type ShadowIdentity = { id: string; resourceId: number; attemptGuid: string };
 
 /** Raw dumps carry answer values: any destination inside a git repository is
  * refused up front (gate-B0 r4 N2) — the contract is enforced, not advisory.
@@ -102,16 +102,19 @@ export async function armPoison(page: Page, screenPrefix: string): Promise<{ fir
   return { fired: () => fired };
 }
 
-export async function armShadowCapture(page: Page): Promise<ShadowHandle> {
-  const recorder = new AdaptiveJournalRecorder(page);
-  const visits: RunVisit[] = [];
-  let correlation: {
-    sectionSlug: string;
-    revisionSlug: string;
-    resourceAttemptGuid: string;
-  } | null = null;
-
-  await page.exposeBinding('__mer5865ShadowStamp', (_source, raw: ShadowIdentity) => {
+/**
+ * The page-binding stamp handler, GUARDED by liveness (gate-B round-4, B9):
+ * until the arm completes — and again after detach — a stamp observes NOTHING,
+ * so the Playwright-irreversible binding install is inert by EXECUTION, not by
+ * an unreachability argument. Exported so the guard is unit-executable.
+ */
+export function makeShadowStamp(
+  recorder: AdaptiveJournalRecorder,
+  visits: RunVisit[],
+  isLive: () => boolean,
+): (source: unknown, raw: ShadowIdentity) => void {
+  return (_source, raw) => {
+    if (!isLive()) return;
     const last = visits[visits.length - 1];
     if (last && last.screenId === raw.id && last.renderedAttemptGuid === raw.attemptGuid) return;
     const fence = recorder.core.issueFence(raw.id);
@@ -121,7 +124,30 @@ export async function armShadowCapture(page: Page): Promise<ShadowHandle> {
       renderedAttemptGuid: raw.attemptGuid,
       resourceId: raw.resourceId,
     });
-  });
+  };
+}
+
+export async function armShadowCapture(page: Page): Promise<ShadowHandle> {
+  const recorder = new AdaptiveJournalRecorder(page);
+  const visits: RunVisit[] = [];
+  let correlation: {
+    sectionSlug: string;
+    revisionSlug: string;
+    resourceAttemptGuid: string;
+  } | null = null;
+
+  // FAIL-TOTALITY (gate-B rounds 3-4, B9). Playwright can never UNinstall an
+  // exposed binding or an init script, so both are LIVENESS-GATED instead:
+  // the binding checks `live` on every stamp (executed guard, unit-witnessed)
+  // and the init script only optional-chains the binding. `live` turns true
+  // ONLY after every arming step — including the fail-atomic
+  // recorder.attach(), which runs last — has succeeded, and turns false again
+  // at detach, so a partially armed or finished capture observes nothing.
+  let live = false;
+  await page.exposeBinding(
+    '__mer5865ShadowStamp',
+    makeShadowStamp(recorder, visits, () => live),
+  );
 
   await page.addInitScript(() => {
     const readIdentity = () => {
@@ -181,6 +207,7 @@ export async function armShadowCapture(page: Page): Promise<ShadowHandle> {
   });
 
   recorder.attach();
+  live = true;
 
   return {
     recorder,
@@ -223,8 +250,9 @@ export async function armShadowCapture(page: Page): Promise<ShadowHandle> {
         await recorder.seal();
         return 'sealed';
       } finally {
-        // the terminal snapshot is immutable — the page listeners must not
-        // outlive it (gate-B0 N4)
+        // the terminal snapshot is immutable — neither the page listeners nor
+        // the irreversible binding may observe past it (gate-B0 N4; round-4 B9)
+        live = false;
         try {
           recorder.detach();
         } catch {

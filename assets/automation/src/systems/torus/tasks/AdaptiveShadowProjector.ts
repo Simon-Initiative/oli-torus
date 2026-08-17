@@ -652,3 +652,23 @@ export function evaluateGreenCapture(
   const diffs = compareProjections(dump.ledger ?? [], shadow, inScope);
   return { inScope, driverEvidence, diffs };
 }
+
+/**
+ * SWAPPED-run green envelope (B4-DIFF under §6.1 retirement): the strict spec
+ * produces no shipped ledger — that account is retired, and a swapped capture
+ * CARRYING one is laundering, not evidence. Every other green-envelope
+ * obligation stands unchanged; only the ledger-presence complaint is replaced
+ * by its inverse.
+ */
+export function validateSwappedGreenEnvelope(
+  dump: ShadowDump,
+  manifest: AdaptiveManifest,
+): string[] {
+  const problems = validateGreenEnvelope(dump, manifest).filter(
+    (p) => !p.startsWith('green capture has no shipped ledger'),
+  );
+  if (Array.isArray(dump.ledger)) {
+    problems.push('swapped capture carries a shipped ledger — the retired account must be absent');
+  }
+  return problems;
+}
