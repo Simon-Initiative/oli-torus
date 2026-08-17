@@ -111,21 +111,26 @@
   "scope": {
     "declared": [
       "src/systems/torus/tasks/AdaptiveStrictDriver.ts — entry and outer boundary; enumerated site-by-site below",
-      "tests/torus/student_delivery/adaptiveStrictDeck.ts — ROUND-9 BLOCKER 1: the fixture implementation actually passed to the real driver by driveScripted; faults from its methods cross the driver's outer boundary",
+      "tests/torus/student_delivery/lote-plate-tectonics.spec.ts — THE ROUTED CALLER (thin since the round-5 refactor): setup/teardown fixtures, the null guards, ONE awaited runGatedLote call and the two verdict assertions. It arms nothing and holds no catch; its exits are the spec_residual_sites table (TEST-RED producers). Its task-layer setup dependencies (AutomationSetupTask, AutomationAssetsTask, runtimeConfig) fail in beforeAll — nothing armed, framework red.",
+      "src/systems/torus/tasks/AdaptiveStrictGatedRun.ts — THE ROUTED FAILURE BOUNDARY (round-5/6): arming (shadow + strict + poison), navigation, login, correlation, the setup anchor, the walk, the freeze, the audit and both private evidence dumps execute inside its single try/catch; every external edge is an injectable dep (defaults = the real implementations, Object.frozen). Its exits are the module_sites table, each activated per-site in adaptive-gated-run.spec.ts. Its dependency modules (HomeTask, AdaptiveLessonTask) fail through the same catch.",
+      "src/systems/torus/tasks/AdaptiveShadowCapture.ts — the ROUTED differential-capture leg (gate-B round-2 blocker 2): armed, correlated, finished and dumped INSIDE the routed spec’s try boundary; every exit is owned by the spec catch. Enumerated under routed_layer below.",
+      "src/systems/torus/tasks/AdaptiveStrictAnchor.ts — the setup-response anchor (B4-C4A, W-J5): throws pre-walk inside the spec boundary; red/green arms witnessed in adaptive-strict-run.spec.ts",
+      "tests/torus/student_delivery/adaptiveStrictDeck.ts — ROUND-9 BLOCKER 1: the fixture implementation actually passed to the real driver by driveScripted in the OFFLINE harness; faults from its methods cross the driver's outer boundary. NOT on the routed live path — the live deck implementation is AdaptiveDeckPO, declared below; the fixture stays in scope because the injection evidence executes through it.",
       "src/systems/torus/tasks/AdaptiveFamilyRegistry.ts — resolver and all six entries (interior, pinned by :447-:469)",
       "src/systems/torus/pom/delivery/AdaptiveDeckPO.ts — production primitives (interior, pinned by :409-:659, qualified by interior_collapse above)",
       "src/systems/torus/tasks/AdaptiveManifest.ts — runtime resolveOperations path (pinned by :600)",
       "src/systems/torus/tasks/AdaptiveTransitionPlanner.ts — online planner path (pinned by :379)",
-      "src/systems/torus/tasks/AdaptiveJournal.ts — core stamps/scans and prospective recorder lifecycle"
+      "src/systems/torus/tasks/AdaptiveJournal.ts — core stamps/scans and the recorder lifecycle (armed by the routed caller inside its boundary; see the discharged deferral below)",
+      "src/systems/torus/tasks/AdaptiveOracle.ts — the routed auditRun call only (routed_layer row); the rest of the module is the judge, excluded with reason above"
     ],
     "exclusions": [
       {
-        "file": "AdaptiveOracle.ts",
-        "reason": "post-walk judge — it reads the run record and frozen journal AFTER the walk; its rejections are the EXIT-MAP reference, not exit sites"
+        "file": "AdaptiveOracle.ts (all but the routed auditRun call)",
+        "reason": "the oracle is the post-walk judge and the EXIT-MAP reference — its rejections are verdicts, not exit sites. Its ONE routed edge, the spec’s auditRun call, IS in scope: enumerated in routed_layer (post-freeze, inside the try; a throw there crosses the spec catch)."
       },
       {
-        "file": "AdaptiveShadowCapture.ts / AdaptiveShadowProjector.ts",
-        "reason": "differential harness over captures; no edge from the driver"
+        "file": "AdaptiveShadowProjector.ts",
+        "reason": "NO ROUTED EDGE (verified: the routed spec imports only armPoison/armShadowCapture/ShadowHandle, and AdaptiveShadowCapture imports fs/path/Page/AdaptiveJournalRecorder/RunVisit — never the projector). Consumed only by the offline gate specs and the strict-run replay comparison."
       },
       {
         "file": "AdaptiveArchiveReader.ts / AdaptiveArchiveGates.ts / AdaptivePredicateEquivalence.ts",
@@ -206,7 +211,7 @@
     }
   ],
   "prospective": {
-    "reason": "AUTHORED (round 9, accepted): armStrictRun had no routed live caller; the first routed caller (4d) owed the attach/correlate/freeze/seal/detach proof. DISCHARGED 2026-08-14: lote-plate-tectonics.spec.ts is the routed caller. Lifecycle witnesses: adaptive-strict-run.spec.ts 'armStrictRun — the fixture-frozen correlation (B4-C4A)' (attach + correlate positive/hollow/absent/rewrite, finish('bail') seal+detach on every path), plus five live runs (4 accepted freezes, 1 sealed bail). These sites stay OUTSIDE the driveStrictLesson inventory: a fault here crosses the SPEC's own boundary, whose producer is the spec's single failure boundary (seal + private bail dump + test red), never a silent green.",
+    "reason": "AUTHORED (round 9, accepted): armStrictRun had no routed live caller; the first routed caller (4d) owed the attach/correlate/freeze/seal/detach proof. DISCHARGED 2026-08-14, REVISED after gate-B round-10 blocker 2: the arming call now executes INSIDE lote-plate-tectonics.spec.ts's single try boundary (a recorder constructor or attach failure lands in the spec catch with nothing armed — no orphan state, test red), and the handle's later lifecycle exits (correlate, lessonEndNoted, seal both arms, snapshot, detach) are owned by the same boundary. Lifecycle witnesses: adaptive-strict-run.spec.ts 'armStrictRun — the fixture-frozen correlation (B4-C4A)' (attach + correlate positive/hollow/absent/rewrite + both setup-anchor arms, finish('bail') seal+detach on every path), plus the live runs (accepted freezes and sealed bails). These sites are the driver-side half of the ROUTED LAYER (see routed_layer): they stay OUTSIDE the driveStrictLesson site table: a fault here crosses the SPEC's boundary, whose producer is the spec's catch (seal + private bail dump + test red), never a silent green.",
     "sites": [
       {
         "site": "src/systems/torus/tasks/AdaptiveStrictDriver.ts:105",
@@ -353,8 +358,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-QUIESCENCE-RECHECK",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -367,8 +373,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-WIRE-RECOUNT",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -395,8 +402,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-NOW-QUIESCENCE-DEADLINE",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -409,8 +417,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-NOW-EVAL",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -451,8 +460,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-NOW-EVAL-DEADLINE",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -493,8 +503,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-SLEEP-EVAL-POLL",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -507,8 +518,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-NOW-BARRIER",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -535,8 +547,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-SUBMITTED-PATHS",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -549,8 +562,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-NOW-BARRIER-DEADLINE",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -577,8 +591,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-SLEEP-BARRIER-POLL",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -591,8 +606,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-PLAN-ARG",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -927,8 +943,9 @@
       "class": "unwrapped",
       "producer": "OF(driver-internal)",
       "injection": {
-        "status": "not-injected",
-        "reason": "a repeat of an injected edge in the same poll body: same callee, same producer, same enclosing function, distinguished only by which branch of the poll ran"
+        "status": "injected",
+        "witness": "W-E2-SAVED-BARRIER-PART",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -1893,8 +1910,9 @@
       "class": "unwrapped",
       "producer": "OF(identity-unresolved)",
       "injection": {
-        "status": "not-injected",
-        "reason": "NOT FAULTABLE through the public surface: the map callback always returns a two-element array, so the constructor’s only failure mode is a patched global. Moved inside the boundary anyway (round-9 blocker 2), so it can no longer exit above the record."
+        "status": "injected",
+        "witness": "W-E2-MAP-ITERATOR",
+        "note": "formerly waived; injected at-site after gate-B round-10 blocker 3 (2026-08-14)"
       }
     },
     {
@@ -2135,5 +2153,737 @@
         "witness": "W-E2-NOTE-LESSON-END"
       }
     }
-  ]
+  ],
+  "routed_layer": {
+    "row": "B4-EXIT-SCOPE (routed half)",
+    "authored": "2026-08-16, rebuilt after gate-B round 5 (injectable boundary: runGatedLote)",
+    "derivation": "TypeScript AST over runGatedLote’s body (module_sites) and the gated test body (spec_residual_sites), contract kinds: ThrowStatements (argument constructors absorbed); catch branch; finally/cleanup (none present — classifier active); returns recorded for closure (success path vs failure-path early return by region); awaited chains are exits only WITHOUT a local handler — a handler must be a FUNCTION LITERAL (arrow or function expression) in a .catch or a two-armed .then rejection slot — argless .catch(), .then(ok, undefined) and identifier-valued slots do NOT handle; awaited parenthesized/ternary shapes unwrap and classify each branch; remaining calls/constructors are potential throws. The witness re-derives both tables each run, both directions. EXIT ROWS carry per-site producers by region; locally-handled awaits and success returns are recorded SEPARATELY under non_exit_closure (they are not contract exit kinds), so the sites tables are exactly the contract exit universe.",
+    "region_owners": {
+      "module try": "spec-catch equivalent: runGatedLote’s own catch — seal (when armed and not yet frozen), guarded bail dump with failureText, unconditional identical rethrow",
+      "module catch": "guarded-cleanup: every cleanup await individually guarded; even dump-argument evaluation (poison.fired) is guarded; the original error always rethrows",
+      "spec body": "test-red: pre-arming guards (nothing armed) or post-boundary verdict assertions (journal frozen and evidence dumped inside runGatedLote before return)"
+    },
+    "fail_totality": [
+      "AdaptiveJournalRecorder.attach() is fail-atomic (hostile-page witnesses).",
+      "armShadowCapture arms the detachable recorder LAST; the two Playwright-irreversible installs (binding, init script) precede it and are inert without it — binding stamps into a core nothing reads, the init script optional-chains the binding (fault-injection witnesses: init-script fault and attach fault both reject with zero listeners installed).",
+      "The spec catch is fail-total: finish faults still attempt the dump, dump faults are reported via failureText without replacing the cause, and the rethrow is unconditional (AST witness: last catch statement is the rethrow; every catch-region await is guard-wrapped)."
+    ],
+    "witness": "adaptive-exit-inventory.spec.ts routed-layer describe (bidirectional set equality on both tables) + adaptive-gated-run.spec.ts (per-site activation)",
+    "catch_interior_allowlist": "the catch-region `throw` rows are exactly {failureText, poison?.fired, console.log, console.warn, throw armError}: failureText is TOTAL (unit-witnessed over hostile values), poison?.fired reads a closure boolean, console methods are the logging sink; a new catch-interior call shows up as a set inequality and must justify itself here.",
+    "structure": "The routed failure boundary was EXTRACTED into src/systems/torus/tasks/AdaptiveStrictGatedRun.ts (runGatedLote) so every routed exit is fault-injectable OFFLINE — the round-5 refusal of the writer position is discharged by execution, not argument. The spec is now a thin caller: one awaited runGatedLote call, the two verdict assertions, and guards.",
+    "module_sites": [
+      {
+        "line": 105,
+        "callee": "deps.armShadowCapture",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 106,
+        "callee": "deps.armStrictRun",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 110,
+        "callee": "deps.armPoison",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 112,
+        "callee": "deps.makeLessonTask",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 114,
+        "callee": "page.goto",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 115,
+        "callee": "deps.makeHomeTask",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 115,
+        "callee": "deps.makeHomeTask(page).login",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 116,
+        "callee": "adaptiveLesson.openFromOutline",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 121,
+        "callee": "strict.correlate",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 122,
+        "callee": "throw new Error('strict run correlation unavailable before the wal",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 126,
+        "callee": "deps.assertSetupAnchor",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 128,
+        "callee": "shadow.correlate",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 129,
+        "callee": "deps.log",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 132,
+        "callee": "deps.driveStrictLesson",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 136,
+        "callee": "strict.finish",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 137,
+        "callee": "strict.snapshot",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 138,
+        "callee": "deps.audit",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 142,
+        "callee": "deps.now",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 142,
+        "callee": "path.join",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 143,
+        "callee": "deps.writeFile",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 145,
+        "callee": "JSON.stringify",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 147,
+        "callee": "deps.log",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 150,
+        "callee": "shadow.finish",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 151,
+        "callee": "shadow.dump",
+        "kind": "rejecting await without local handler",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 158,
+        "callee": "poison?.fired",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 161,
+        "callee": "deps.log",
+        "kind": "throw",
+        "region": "try",
+        "producer": "SPEC-CATCH: runGatedLote’s catch — seal when armed-and-unfrozen (frozen journal KEPT when the fault postdates the green freeze), guarded bail dump with the total failureText cause, identical-object rethrow"
+      },
+      {
+        "line": 164,
+        "callee": "catch (boundaryError)",
+        "kind": "catch branch",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      },
+      {
+        "line": 176,
+        "callee": "poison?.fired",
+        "kind": "throw",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      },
+      {
+        "line": 184,
+        "callee": "failureText",
+        "kind": "throw",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      },
+      {
+        "line": 189,
+        "callee": "deps.log",
+        "kind": "throw",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      },
+      {
+        "line": 189,
+        "callee": "quietly",
+        "kind": "throw",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      },
+      {
+        "line": 191,
+        "callee": "quietly",
+        "kind": "throw",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      },
+      {
+        "line": 192,
+        "callee": "deps.warn",
+        "kind": "throw",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      },
+      {
+        "line": 192,
+        "callee": "failureText",
+        "kind": "throw",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      },
+      {
+        "line": 196,
+        "callee": "throw boundaryError",
+        "kind": "throw",
+        "region": "catch",
+        "producer": "GUARDED-CLEANUP: each cleanup step individually guarded (rejecting seal/finish/dump and hostile fired()/log/warn all witnessed); the original error always crosses"
+      }
+    ],
+    "spec_residual_sites": [
+      {
+        "line": 165,
+        "callee": "test.setTimeout",
+        "kind": "throw",
+        "region": "body",
+        "producer": "TEST-RED: pre-arming guards or post-boundary verdict assertions (the residual spec cannot arm)"
+      },
+      {
+        "line": 168,
+        "callee": "throw new Error('Automation setup did not produce seeded course da",
+        "kind": "throw",
+        "region": "body",
+        "producer": "TEST-RED: pre-arming guards or post-boundary verdict assertions (the residual spec cannot arm)"
+      },
+      {
+        "line": 176,
+        "callee": "runGatedLote",
+        "kind": "rejecting await without local handler",
+        "region": "body",
+        "producer": "TEST-RED: pre-arming guards or post-boundary verdict assertions (the residual spec cannot arm)"
+      },
+      {
+        "line": 190,
+        "callee": "expect",
+        "kind": "throw",
+        "region": "body",
+        "producer": "TEST-RED: pre-arming guards or post-boundary verdict assertions (the residual spec cannot arm)"
+      },
+      {
+        "line": 190,
+        "callee": "expect(violations.length,formatViolations(violations)).toBe",
+        "kind": "throw",
+        "region": "body",
+        "producer": "TEST-RED: pre-arming guards or post-boundary verdict assertions (the residual spec cannot arm)"
+      },
+      {
+        "line": 190,
+        "callee": "formatViolations",
+        "kind": "throw",
+        "region": "body",
+        "producer": "TEST-RED: pre-arming guards or post-boundary verdict assertions (the residual spec cannot arm)"
+      },
+      {
+        "line": 191,
+        "callee": "expect",
+        "kind": "throw",
+        "region": "body",
+        "producer": "TEST-RED: pre-arming guards or post-boundary verdict assertions (the residual spec cannot arm)"
+      },
+      {
+        "line": 191,
+        "callee": "expect(flavor).toBe",
+        "kind": "throw",
+        "region": "body",
+        "producer": "TEST-RED: pre-arming guards or post-boundary verdict assertions (the residual spec cannot arm)"
+      }
+    ],
+    "exit_em_discharge": "Round-5 refusal DISCHARGED: every module exit site is activated per-site in adaptive-gated-run.spec.ts (28 tests) through the REAL boundary with hostile deps — asserting the pinned producer (seal when armed-and-unfrozen, frozen-journal-kept when the fault postdates the green freeze, bail dump with the total failureText cause, identical-object rethrow) AND no other (no green evidence on any failure path). The catch’s own cleanup faults are injected too: a rejecting seal, a rejecting bail finish, a rejecting bail dump and a hostile poison.fired() each leave the ORIGINAL error crossing the boundary. The former exit_em_position is withdrawn.",
+    "module_non_exit_closure": [
+      {
+        "line": 163,
+        "callee": "return { outcome, flavor, snapshot, violations ",
+        "kind": "return (success path; recorded for closure)",
+        "region": "try"
+      },
+      {
+        "line": 169,
+        "callee": "strict.finish",
+        "kind": "locally-handled await (non-exit; recorded for closure)",
+        "region": "catch"
+      },
+      {
+        "line": 171,
+        "callee": "shadow.finish",
+        "kind": "locally-handled await (non-exit; recorded for closure)",
+        "region": "catch"
+      },
+      {
+        "line": 180,
+        "callee": "shadow.dump",
+        "kind": "locally-handled await (non-exit; recorded for closure)",
+        "region": "catch"
+      }
+    ],
+    "spec_residual_non_exit_closure": [],
+    "handler_totality": "the catch’s .then logging handlers are quietly()-wrapped function literals — total by construction, witnessed by the two round-6 displacement injections (hostile deps.log at the success handler, hostile deps.warn on a rejecting dump: the ORIGINAL error crosses in both).",
+    "row_activation_map": {
+      "module": [
+        {
+          "line": 105,
+          "callee": "deps.armShadowCapture",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "armShadowCapture rejects: nothing armed, nothing sealed, original rethrown",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 106,
+          "callee": "deps.armStrictRun",
+          "kind": "throw",
+          "activation": {
+            "test": "armStrictRun throws: shadow already armed, its bail dump still lands",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 110,
+          "callee": "deps.armPoison",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "armPoison rejects: both armed, both producers fire",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 112,
+          "callee": "deps.makeLessonTask",
+          "kind": "throw",
+          "activation": {
+            "test": "makeLessonTask faults: seal + bail dump + identical rethrow",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 114,
+          "callee": "page.goto",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "page.goto rejects: seal + bail dump + identical rethrow",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 115,
+          "callee": "deps.makeHomeTask",
+          "kind": "throw",
+          "activation": {
+            "test": "makeHomeTask faults: seal + bail dump + identical rethrow",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 115,
+          "callee": "deps.makeHomeTask(page).login",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "login rejects at its own site",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 116,
+          "callee": "adaptiveLesson.openFromOutline",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "openFromOutline rejects at its own site",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 121,
+          "callee": "strict.correlate",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "a rejecting correlate carries its own error through",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 122,
+          "callee": "throw new Error('strict run correlation unavailable before the wal",
+          "kind": "throw",
+          "activation": {
+            "test": "a correlate returning false is the module’s own typed throw",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 126,
+          "callee": "deps.assertSetupAnchor",
+          "kind": "throw",
+          "activation": {
+            "test": "assertSetupAnchor faults: seal + bail dump + identical rethrow",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 128,
+          "callee": "shadow.correlate",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "shadow.correlate rejects at its own site",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 129,
+          "callee": "deps.log",
+          "kind": "throw",
+          "activation": {
+            "test": "a hostile normal-path log (correlated line) is a typed boundary fault",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 132,
+          "callee": "deps.driveStrictLesson",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "driveStrictLesson faults: seal + bail dump + identical rethrow",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 136,
+          "callee": "strict.finish",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "strict.finish(green) rejects: catch seals via the guarded bail arm",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 137,
+          "callee": "strict.snapshot",
+          "kind": "throw",
+          "activation": {
+            "test": "strict.snapshot throws at its own site",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 138,
+          "callee": "deps.audit",
+          "kind": "throw",
+          "activation": {
+            "test": "audit faults: frozen journal kept + bail dump + identical rethrow",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 142,
+          "callee": "deps.now",
+          "kind": "throw",
+          "activation": {
+            "test": "now faults: frozen journal kept + bail dump + identical rethrow",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 142,
+          "callee": "path.join",
+          "kind": "throw",
+          "activation": {
+            "test": "a non-string shadowDir makes path.join throw at its own site",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 143,
+          "callee": "deps.writeFile",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "writeFile faults: frozen journal kept + bail dump + identical rethrow",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 145,
+          "callee": "JSON.stringify",
+          "kind": "throw",
+          "activation": {
+            "test": "a snapshot whose serialization throws faults at JSON.stringify",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 147,
+          "callee": "deps.log",
+          "kind": "throw",
+          "activation": {
+            "test": "a hostile normal-path log (evidence line) faults after the freeze",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 150,
+          "callee": "shadow.finish",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "green-path shadow.finish rejects: bail dump still lands",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 151,
+          "callee": "shadow.dump",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "test": "green-path shadow.dump rejects: the CATCH dump still lands with the cause",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 158,
+          "callee": "poison?.fired",
+          "kind": "throw",
+          "activation": {
+            "test": "a green-path poison.fired() throw is a boundary fault, typed and sealed",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 161,
+          "callee": "deps.log",
+          "kind": "throw",
+          "activation": {
+            "test": "a hostile capture-log (green dump line) faults after the green dump",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 164,
+          "callee": "catch (boundaryError)",
+          "kind": "catch branch",
+          "activation": {
+            "witness": "the catch branch is the pinned producer — activated by EVERY injection above; its shape is the AST catch witness"
+          }
+        },
+        {
+          "line": 176,
+          "callee": "poison?.fired",
+          "kind": "throw",
+          "activation": {
+            "test": "a hostile poison.fired() in the catch cannot displace the original",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 184,
+          "callee": "failureText",
+          "kind": "throw",
+          "activation": {
+            "witness": "failureText never throws and never loses the cause (adaptive-strict-run.spec.ts) — total by construction, executed over hostile values"
+          }
+        },
+        {
+          "line": 189,
+          "callee": "deps.log",
+          "kind": "throw",
+          "activation": {
+            "test": "a hostile deps.log at the catch SUCCESS handler cannot displace",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 189,
+          "callee": "quietly",
+          "kind": "throw",
+          "activation": {
+            "witness": "quietly is the totality wrapper itself; its executed witnesses are the two round-6 displacement injections"
+          }
+        },
+        {
+          "line": 191,
+          "callee": "quietly",
+          "kind": "throw",
+          "activation": {
+            "witness": "quietly is the totality wrapper itself; its executed witnesses are the two round-6 displacement injections"
+          }
+        },
+        {
+          "line": 192,
+          "callee": "deps.warn",
+          "kind": "throw",
+          "activation": {
+            "test": "a hostile deps.warn on a rejecting bail dump cannot displace",
+            "file": "tests/torus/student_delivery/adaptive-gated-run.spec.ts"
+          }
+        },
+        {
+          "line": 192,
+          "callee": "failureText",
+          "kind": "throw",
+          "activation": {
+            "witness": "failureText never throws and never loses the cause (adaptive-strict-run.spec.ts) — total by construction, executed over hostile values"
+          }
+        },
+        {
+          "line": 196,
+          "callee": "throw boundaryError",
+          "kind": "throw",
+          "activation": {
+            "witness": "the identical-object rethrow — asserted by rejects.toBe(fault) in every injection test"
+          }
+        }
+      ],
+      "spec_residual": [
+        {
+          "line": 165,
+          "callee": "test.setTimeout",
+          "kind": "throw",
+          "activation": {
+            "witness": "pre-arming region: nothing armed, no evidence owed; a throw is the framework red (TEST-RED producer)"
+          }
+        },
+        {
+          "line": 168,
+          "callee": "throw new Error('Automation setup did not produce seeded course da",
+          "kind": "throw",
+          "activation": {
+            "witness": "pre-arming region: nothing armed, no evidence owed; a throw is the framework red (TEST-RED producer)"
+          }
+        },
+        {
+          "line": 176,
+          "callee": "runGatedLote",
+          "kind": "rejecting await without local handler",
+          "activation": {
+            "witness": "activated by every module injection: the rejection crosses to the caller and the test is red (rejects.toBe in 30+ tests); live: the canary/poison red runs"
+          }
+        },
+        {
+          "line": 190,
+          "callee": "expect",
+          "kind": "throw",
+          "activation": {
+            "witness": "the verdict assertions themselves — activated live by the canary-1/canary-2 red runs (auditRun violations failed the expect) and offline by W-W6/W-W7c fixtures through auditRun"
+          }
+        },
+        {
+          "line": 190,
+          "callee": "expect(violations.length,formatViolations(violations)).toBe",
+          "kind": "throw",
+          "activation": {
+            "witness": "the verdict assertions themselves — activated live by the canary-1/canary-2 red runs (auditRun violations failed the expect) and offline by W-W6/W-W7c fixtures through auditRun"
+          }
+        },
+        {
+          "line": 190,
+          "callee": "formatViolations",
+          "kind": "throw",
+          "activation": {
+            "witness": "the verdict assertions themselves — activated live by the canary-1/canary-2 red runs (auditRun violations failed the expect) and offline by W-W6/W-W7c fixtures through auditRun"
+          }
+        },
+        {
+          "line": 191,
+          "callee": "expect",
+          "kind": "throw",
+          "activation": {
+            "witness": "the verdict assertions themselves — activated live by the canary-1/canary-2 red runs (auditRun violations failed the expect) and offline by W-W6/W-W7c fixtures through auditRun"
+          }
+        },
+        {
+          "line": 191,
+          "callee": "expect(flavor).toBe",
+          "kind": "throw",
+          "activation": {
+            "witness": "the verdict assertions themselves — activated live by the canary-1/canary-2 red runs (auditRun violations failed the expect) and offline by W-W6/W-W7c fixtures through auditRun"
+          }
+        }
+      ],
+      "note": "every EXIT row maps to the test(s) that activate THAT site through the real boundary, or to its named structural/live witness; the map is regenerated with the tables"
+    }
+  }
 }

@@ -4,7 +4,7 @@
   "_frozen_revision": "f9f9982874",
   "_captured": "2026-08-11",
   "_deviation": "Captured AFTER units 4a/4b landed rather than before. Sound because the frozen half is read from the immutable revision f9f9982874, never from the working tree, and step-4 additions enter only through additive_step_4. Stated for the gate-B reviewer rather than silently.",
-  "_owed": "W-U7/W-U9: cardinality-bearing inner loops (adaptive-oracle.spec.ts:1799 disqualify targets) are ONE discovery identity each and are NOT covered by this artifact - they need a runtime case inventory compared against a pre-build expected set sharing no helper with the emitter.",
+  "_owed": "RESOLVED 2026-08-13/14: the W-U7/W-U9 inner-loop cases became NAMED tests (each title carries its case), so this artifact covers them as ordinary file+title identities; the one converted frozen title is recorded under justified_removals. Historical text preserved in git history.",
   "frozen": {
     "scopes": [
       "adaptive-",
@@ -45,12 +45,12 @@
       {
         "file": "torus/student_delivery/adaptive-attribution.spec.ts",
         "line": 121,
-        "title": "traffic during a transition stays with the old screen \u2014 the stamp is the boundary"
+        "title": "traffic during a transition stays with the old screen — the stamp is the boundary"
       },
       {
         "file": "torus/student_delivery/adaptive-attribution.spec.ts",
         "line": 131,
-        "title": "payload prefixes NEVER decide ownership \u2014 a foreign prefix stays in its window"
+        "title": "payload prefixes NEVER decide ownership — a foreign prefix stays in its window"
       },
       {
         "file": "torus/student_delivery/adaptive-attribution.spec.ts",
@@ -115,12 +115,12 @@
       {
         "file": "torus/student_delivery/adaptive-attribution.spec.ts",
         "line": 327,
-        "title": "a manifest-screen prefix that is not a declared dependency is contamination \u2014 even as an ancestor"
+        "title": "a manifest-screen prefix that is not a declared dependency is contamination — even as an ancestor"
       },
       {
         "file": "torus/student_delivery/adaptive-attribution.spec.ts",
         "line": 338,
-        "title": "an unknown prefix is a violation \u2014 no blanket tolerance of non-manifest prefixes"
+        "title": "an unknown prefix is a violation — no blanket tolerance of non-manifest prefixes"
       },
       {
         "file": "torus/student_delivery/adaptive-attribution.spec.ts",
@@ -135,7 +135,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 106,
-        "title": "rejects every mismatched method \u00d7 URL row, not just non-journal URLs"
+        "title": "rejects every mismatched method × URL row, not just non-journal URLs"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -150,7 +150,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 151,
-        "title": "a PUT with an unusable response stays an unresolved candidate \u2014 fail-closed"
+        "title": "a PUT with an unusable response stays an unresolved candidate — fail-closed"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -190,7 +190,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 247,
-        "title": "each wrong correlation field \u00d7 each response shape rejects as uncorrelated"
+        "title": "each wrong correlation field × each response shape rejects as uncorrelated"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -220,7 +220,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 337,
-        "title": "an accepted finalization wins outright \u2014 even over a response-less duplicate in flight"
+        "title": "an accepted finalization wins outright — even over a response-less duplicate in flight"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -235,7 +235,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 357,
-        "title": "an unreadable response outranks correlation \u2014 the record cannot be judged at all"
+        "title": "an unreadable response outranks correlation — the record cannot be judged at all"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -245,7 +245,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 397,
-        "title": "accepted-freeze requires lesson end, acceptance and zero outstanding \u2014 in order"
+        "title": "accepted-freeze requires lesson end, acceptance and zero outstanding — in order"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -260,12 +260,12 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 437,
-        "title": "every reason \u00d7 response-less finalization terminalization \u00d7 post-freeze arrival (\u00a78)"
+        "title": "every reason × response-less finalization terminalization × post-freeze arrival (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 470,
-        "title": "an accepted duplicate crossed with a categorical rejection \u2014 both response orders (\u00a78)"
+        "title": "an accepted duplicate crossed with a categorical rejection — both response orders (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -280,7 +280,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 522,
-        "title": "frozen is terminal: no new traffic, fences, freezes or seals \u2014 both flavors"
+        "title": "frozen is terminal: no new traffic, fences, freezes or seals — both flavors"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -295,7 +295,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 566,
-        "title": "records() and fences() hand out clones \u2014 retained references cannot poison a snapshot"
+        "title": "records() and fences() hand out clones — retained references cannot poison a snapshot"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -305,7 +305,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 606,
-        "title": "the stamp issueFence returns is a copy \u2014 mutating it cannot rewrite the journal"
+        "title": "the stamp issueFence returns is a copy — mutating it cannot rewrite the journal"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -335,7 +335,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 693,
-        "title": "a fence and a request racing it have one strict order \u2014 both orderings"
+        "title": "a fence and a request racing it have one strict order — both orderings"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -355,7 +355,7 @@
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
         "line": 824,
-        "title": "a categorical duplicate settling DURING the accepted drain flips the run to completed-failure (\u00a78)"
+        "title": "a categorical duplicate settling DURING the accepted drain flips the run to completed-failure (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-journal.spec.ts",
@@ -430,52 +430,52 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 392,
-        "title": "the scenario must end at the archive-proven last navigable entry (\u00a73.5)"
+        "title": "the scenario must end at the archive-proven last navigable entry (§3.5)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 399,
-        "title": "the scenario must start at the archive-selected route entry \u2014 a suffix cannot hide its head (\u00a73.8)"
+        "title": "the scenario must start at the archive-selected route entry — a suffix cannot hide its head (§3.8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 415,
-        "title": "every scenario EDGE is archive-proven \u2014 a permuted middle fails (\u00a73.8)"
+        "title": "every scenario EDGE is archive-proven — a permuted middle fails (§3.8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 438,
-        "title": "both dependency-proof maps are TOTAL over the inventory \u2014 absent keys fail closed (\u00a73.6b)"
+        "title": "both dependency-proof maps are TOTAL over the inventory — absent keys fail closed (§3.6b)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 453,
-        "title": "combine_feedback is pinned by the archive facts \u2014 totality and exact equality (gate-B0 r5 M2)"
+        "title": "combine_feedback is pinned by the archive facts — totality and exact equality (gate-B0 r5 M2)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 480,
-        "title": "correct_plan is pinned by the archive facts \u2014 totality and exact equality (gate-B0 r7 M3)"
+        "title": "correct_plan is pinned by the archive facts — totality and exact equality (gate-B0 r7 M3)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 506,
-        "title": "LLM-capable screens fail the build closed \u2014 their plan kind is not archive-determined (gate-B0 r8 M2)"
+        "title": "LLM-capable screens fail the build closed — their plan kind is not archive-determined (gate-B0 r8 M2)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 521,
-        "title": "archive rule references demand a declared dependency even when none is declared (\u00a73.6b)"
+        "title": "archive rule references demand a declared dependency even when none is declared (§3.6b)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 533,
-        "title": "declared dependencies must belong to the archive effective set \u2014 bidirectional (\u00a73.6b)"
+        "title": "declared dependencies must belong to the archive effective set — bidirectional (§3.6b)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 577,
-        "title": "operation refs omitted expand to every local operation in definition order (\u00a73.8)"
+        "title": "operation refs omitted expand to every local operation in definition order (§3.8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -585,7 +585,7 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 679,
-        "title": "ALL results otherwise \u2014 first navigates but every result is correct"
+        "title": "ALL results otherwise — first navigates but every result is correct"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -690,22 +690,22 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 975,
-        "title": "a fresh attempt mint alone shifts the lineage \u2014 the stale save cannot pass"
+        "title": "a fresh attempt mint alone shifts the lineage — the stale save cannot pass"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 994,
-        "title": "a mutation inside the check request\u2192response window is rejected as unstable"
+        "title": "a mutation inside the check request→response window is rejected as unstable"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1023,
-        "title": "the newest save of a part attempt REPLACES its response \u2014 never a per-path merge"
+        "title": "the newest save of a part attempt REPLACES its response — never a per-path merge"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1040,
-        "title": "multiple part attempts for one part_id FAIL CLOSED \u2014 the wire cannot prove row order (\u00a73.6)"
+        "title": "multiple part attempts for one part_id FAIL CLOSED — the wire cannot prove row order (§3.6)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -715,7 +715,7 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1094,
-        "title": "an owned unresolved candidate is a violation on a sealed run \u2014 fail-closed"
+        "title": "an owned unresolved candidate is a violation on a sealed run — fail-closed"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -800,7 +800,7 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1536,
-        "title": "redaction canary: reports built from a poisoned journal never leak the values (\u00a78)"
+        "title": "redaction canary: reports built from a poisoned journal never leak the values (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -810,27 +810,27 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1616,
-        "title": "a CONTENT step never licenses a second evaluation, ack or not (\u00a73.5)"
+        "title": "a CONTENT step never licenses a second evaluation, ack or not (§3.5)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1652,
-        "title": "a delayed save from an OLDER part attempt cannot resurrect it \u2014 fail closed (\u00a73.6)"
+        "title": "a delayed save from an OLDER part attempt cannot resurrect it — fail closed (§3.6)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1667,
-        "title": "recorded-plan inventory: duplicates, misattribution and unmatched records (\u00a73.5)"
+        "title": "recorded-plan inventory: duplicates, misattribution and unmatched records (§3.5)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1688,
-        "title": "a first-step permit stamped before the identity fence is outside its window (\u00a73.4)"
+        "title": "a first-step permit stamped before the identity fence is outside its window (§3.4)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1731,
-        "title": "navigation evaluations REQUIRE a recorded plan on a full audit (\u00a73.5)"
+        "title": "navigation evaluations REQUIRE a recorded plan on a full audit (§3.5)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -840,57 +840,57 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1748,
-        "title": "a non-final navigate plan must target the scenario successor (\u00a73.5)"
+        "title": "a non-final navigate plan must target the scenario successor (§3.5)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1798,
-        "title": "every disqualifying final-step target: prev, first, last, explicit id (\u00a78)"
+        "title": "every disqualifying final-step target: prev, first, last, explicit id (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1835,
-        "title": "a rotation whose mint postdates the second check is not the measured rotation (\u00a73.4)"
+        "title": "a rotation whose mint postdates the second check is not the measured rotation (§3.4)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1860,
-        "title": "an LLM-feedback plan carries a real ack obligation through auditRun (\u00a78)"
+        "title": "an LLM-feedback plan carries a real ack obligation through auditRun (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1909,
-        "title": "wrong-lineage prior state is caught THROUGH auditRun: alien saves prove nothing (\u00a78)"
+        "title": "wrong-lineage prior state is caught THROUGH auditRun: alien saves prove nothing (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1972,
-        "title": "\u00a73.2 matrix: a CLOSED sealed window still draws absence conclusions; seal_incomplete never does"
+        "title": "§3.2 matrix: a CLOSED sealed window still draws absence conclusions; seal_incomplete never does"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2025,
-        "title": "production contains refuses non-string scalar inputs; notContains inherits the negation (\u00a73.8)"
+        "title": "production contains refuses non-string scalar inputs; notContains inherits the negation (§3.8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2038,
-        "title": "a closed sealed window with a FAILED candidate is settled \u2014 absence conclusions apply (\u00a73.2)"
+        "title": "a closed sealed window with a FAILED candidate is settled — absence conclusions apply (§3.2)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2075,
-        "title": "permits, plans and receipts naming a step with no visit are violations (\u00a73.5 domain)"
+        "title": "permits, plans and receipts naming a step with no visit are violations (§3.5 domain)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2096,
-        "title": "a duplicate local operation id fails manifest validation (\u00a78)"
+        "title": "a duplicate local operation id fails manifest validation (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2102,
-        "title": "a PRE-ENTRY split rotation cannot bypass the sequence rule (\u00a78)"
+        "title": "a PRE-ENTRY split rotation cannot bypass the sequence rule (§8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -900,12 +900,12 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2150,
-        "title": "a rotation whose first plan is `none` is LEGAL \u2014 shadow-measured: the deck returns an empty-actions result (\u00a73.4)"
+        "title": "a rotation whose first plan is `none` is LEGAL — shadow-measured: the deck returns an empty-actions result (§3.4)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2178,
-        "title": "receipt inventory: duplicates on a graded step and receipts on non-graded steps (\u00a73.5)"
+        "title": "receipt inventory: duplicates on a graded step and receipts on non-graded steps (§3.5)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -915,47 +915,47 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2213,
-        "title": "a save still in flight at click-time cannot satisfy the barrier (\u00a73.5)"
+        "title": "a save still in flight at click-time cannot satisfy the barrier (§3.5)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2266,
-        "title": "a SAME-SCREEN rule reference without a covering expectation fails the build (\u00a73.6b)"
+        "title": "a SAME-SCREEN rule reference without a covering expectation fails the build (§3.6b)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2278,
-        "title": "permit role allowlist binds both directions; widget-button duplicates are violations (\u00a73.4)"
+        "title": "permit role allowlist binds both directions; widget-button duplicates are violations (§3.4)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2321,
-        "title": "a save with 2xx headers that then FAILS proves nothing \u2014 barrier, prior state, and reported (\u00a73.5)"
+        "title": "a save with 2xx headers that then FAILS proves nothing — barrier, prior state, and reported (§3.5)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2396,
-        "title": "sibling attempt mints FORK the lineage \u2014 cross-screen matching fails closed (\u00a73.6)"
+        "title": "sibling attempt mints FORK the lineage — cross-screen matching fails closed (§3.6)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2464,
-        "title": "a fully audited navigation window REQUIRES its widget-button permit (\u00a73.4)"
+        "title": "a fully audited navigation window REQUIRES its widget-button permit (§3.4)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2497,
-        "title": "operation-failure attribution is validated: domain, nullability, derived screens (\u00a73.2)"
+        "title": "operation-failure attribution is validated: domain, nullability, derived screens (§3.2)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2522,
-        "title": "an evaluation-only dependency commits state through its PUT \u2014 no save required (\u00a73.6)"
+        "title": "an evaluation-only dependency commits state through its PUT — no save required (§3.6)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2583,
-        "title": "a later PUT commit REPLACES an earlier PATCH state; overlapping commits are ambiguous (\u00a73.6)"
+        "title": "a later PUT commit REPLACES an earlier PATCH state; overlapping commits are ambiguous (§3.6)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
@@ -965,52 +965,52 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2662,
-        "title": "a resolved failure naming a VALID screen of another step is contradictory (\u00a73.2)"
+        "title": "a resolved failure naming a VALID screen of another step is contradictory (§3.2)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2684,
-        "title": "a non-boolean combine_feedback cannot reach planning (\u00a73.8)"
+        "title": "a non-boolean combine_feedback cannot reach planning (§3.8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2693,
-        "title": "resolved failures anchor to the OBSERVED visit, not the scenario (\u00a73.2)"
+        "title": "resolved failures anchor to the OBSERVED visit, not the scenario (§3.2)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2722,
-        "title": "a resolved failure for an in-scenario step with NO visit is contradictory (\u00a73.2)"
+        "title": "a resolved failure for an in-scenario step with NO visit is contradictory (§3.2)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2741,
-        "title": "a stray feedback-ack with NO usable first evaluation is unused (\u00a73.4)"
+        "title": "a stray feedback-ack with NO usable first evaluation is unused (§3.4)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2776,
-        "title": "a screen resource_id contradicting the archive fails the build (\u00a73.8)"
+        "title": "a screen resource_id contradicting the archive fails the build (§3.8)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2796,
-        "title": "a sealed snapshot with NO failure evidence carries the \u00a73.2 sentinel"
+        "title": "a sealed snapshot with NO failure evidence carries the §3.2 sentinel"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2820,
-        "title": "same-cardinality key replacement inside the check window is UNSTABLE (\u00a73.6)"
+        "title": "same-cardinality key replacement inside the check window is UNSTABLE (§3.6)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2858,
-        "title": "path-only entries are never committed state (\u00a73.6)"
+        "title": "path-only entries are never committed state (§3.6)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2875,
-        "title": "answer operations with non-string version/mode fail the build (\u00a73.6 registry keys)"
+        "title": "answer operations with non-string version/mode fail the build (§3.6 registry keys)"
       },
       {
         "file": "torus/student_delivery/adaptive-strict-driver.spec.ts",
@@ -1371,7 +1371,7 @@
   },
   "additive_step_4": {
     "note": "Each entry names the unit that added it. Compared as a SET against discovery; unexplained removal, rename or count change = RED.",
-    "count": 250,
+    "count": 337,
     "tests": [
       {
         "file": "torus/student_delivery/adaptive-family-registry.spec.ts",
@@ -1472,7 +1472,7 @@
       {
         "file": "torus/student_delivery/adaptive-family-registry.spec.ts",
         "line": 156,
-        "title": "no candidate part yields null \u2014 a legal cross-screen screen (\u00a73.6)",
+        "title": "no candidate part yields null — a legal cross-screen screen (§3.6)",
         "unit": "4a"
       },
       {
@@ -1568,7 +1568,7 @@
       {
         "file": "torus/student_delivery/mer5865-archive-gates.spec.ts",
         "line": 364,
-        "title": "every selection is enumerated under both \u00a73.8 encodings",
+        "title": "every selection is enumerated under both §3.8 encodings",
         "unit": "4b"
       },
       {
@@ -2240,7 +2240,7 @@
       {
         "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
         "line": 853,
-        "title": "every site pins exactly one producer \u2014 no unions, no placeholders",
+        "title": "every site pins exactly one producer — no unions, no placeholders",
         "unit": "4c piece 4"
       },
       {
@@ -2306,25 +2306,25 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1852,
-        "title": "a disqualifying final-step target is rejected: first (\u00a78)",
+        "title": "a disqualifying final-step target is rejected: first (§8)",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1852,
-        "title": "a disqualifying final-step target is rejected: last (\u00a78)",
+        "title": "a disqualifying final-step target is rejected: last (§8)",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1852,
-        "title": "a disqualifying final-step target is rejected: prev (\u00a78)",
+        "title": "a disqualifying final-step target is rejected: prev (§8)",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 1852,
-        "title": "a disqualifying final-step target is rejected: q:7 (\u00a78)",
+        "title": "a disqualifying final-step target is rejected: q:7 (§8)",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
@@ -2336,109 +2336,109 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #10: {\"correct\":false,\"results\":[]}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #10: {\"correct\":false,\"results\":[]}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #11: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #11: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #12: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #12: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #13: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #13: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #14: {\"correct\":false}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #14: {\"correct\":false}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #15: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #15: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #16: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #16: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #17: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #17: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #1: {\"correct\":false,\"results\":[null]}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #1: {\"correct\":false,\"results\":[null]}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #2: {\"correct\":false,\"results\":[{\"params\":{\"actions\":{}}}]}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #2: {\"correct\":false,\"results\":[{\"params\":{\"actions\":{}}}]}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #3: {\"correct\":false,\"results\":[{\"params\":{\"actions\":[\"x\"]}}]}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #3: {\"correct\":false,\"results\":[{\"params\":{\"actions\":[\"x\"]}}]}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #4: {\"correct\":false,\"results\":[{}]}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #4: {\"correct\":false,\"results\":[{}]}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #5: {\"correct\":false,\"results\":[[]]}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #5: {\"correct\":false,\"results\":[[]]}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #6: {\"correct\":false,\"results\":[{\"params\":[]}]}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #6: {\"correct\":false,\"results\":[{\"params\":[]}]}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #7: {\"correct\":false,\"results\":[{\"params\":{\"correct\":\"yes\",\"actions\":[]}}]",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #7: {\"correct\":false,\"results\":[{\"params\":{\"correct\":\"yes\",\"actions\":[]}}]",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #8: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{}]}",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #8: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{}]}",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2315,
-        "title": "a malformed first rotation response is not the legal `none` half (\u00a73.4) #9: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
+        "title": "a malformed first rotation response is not the legal `none` half (§3.4) #9: {\"correct\":false,\"results\":[{\"params\":{\"correct\":false,\"actions\":[{\"ty",
         "unit": "W-U7/W-U9 named tests (13fda67669, generated identities)"
       },
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 2409,
-        "title": "malformed LLM feedback is not a usable evaluation either (\u00a73.5)",
+        "title": "malformed LLM feedback is not a usable evaluation either (§3.5)",
         "unit": "4c piece 3"
       },
       {
@@ -2750,7 +2750,7 @@
       {
         "file": "torus/student_delivery/adaptive-attribution.spec.ts",
         "line": 294,
-        "title": "a hollow creation \u2014 response present, body empty \u2014 confers nothing (W-J15)",
+        "title": "a hollow creation — response present, body empty — confers nothing (W-J15)",
         "unit": "4d witness completion"
       },
       {
@@ -2786,7 +2786,7 @@
       {
         "file": "torus/student_delivery/adaptive-oracle.spec.ts",
         "line": 3314,
-        "title": "a mint that predates the first rotation evaluation is not the measured rotation (W-J10, \u00a73.4)",
+        "title": "a mint that predates the first rotation evaluation is not the measured rotation (W-J10, §3.4)",
         "unit": "4d witness completion"
       },
       {
@@ -2872,6 +2872,528 @@
         "line": 545,
         "title": "a single ledger tuple-field swap is a reported diff (W-D4)",
         "unit": "4d witness completion"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-MAP-ITERATOR: src/systems/torus/tasks/AdaptiveStrictDriver.ts:687 new Map emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-NOW-BARRIER-DEADLINE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:362 now emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-NOW-BARRIER: src/systems/torus/tasks/AdaptiveStrictDriver.ts:346 now emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-NOW-EVAL-DEADLINE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:328 now emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-NOW-EVAL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:306 now emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-NOW-QUIESCENCE-DEADLINE: src/systems/torus/tasks/AdaptiveStrictDriver.ts:290 now emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-PLAN-ARG: src/systems/torus/tasks/AdaptiveStrictDriver.ts:379 planTransition emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-QUIESCENCE-RECHECK: src/systems/torus/tasks/AdaptiveStrictDriver.ts:286 journal.outstanding emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-SAVED-BARRIER-PART: src/systems/torus/tasks/AdaptiveStrictDriver.ts:469 entry.savedBarrier emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-SLEEP-BARRIER-POLL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:370 sleep emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-SLEEP-EVAL-POLL: src/systems/torus/tasks/AdaptiveStrictDriver.ts:336 sleep emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-SUBMITTED-PATHS: src/systems/torus/tasks/AdaptiveStrictDriver.ts:359 submittedPaths emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1195,
+        "title": "W-E2-WIRE-RECOUNT: src/systems/torus/tasks/AdaptiveStrictDriver.ts:286 journal.wireEventCount emits its pinned producer and no other",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 442,
+        "title": "the setup anchor accepts the section the setup response issued (W-J5 green arm)",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 427,
+        "title": "the setup anchor rejects a CONSISTENT both-sides section swap (W-J5)",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "line": 639,
+        "title": "a pair sharing ONE identity component is rejected by the same comparison (W-X3)",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "line": 597,
+        "title": "every swapped green audits clean; the retired inventory is exact (W-D1, §6.1)",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "line": 630,
+        "title": "swapped runs are pairwise distinct on EVERY identity component (W-X1)",
+        "unit": "gate-B round-10 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1498,
+        "title": "every routed-layer exit sits inside the try region",
+        "unit": "gate-B round-2 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1514,
+        "title": "the catch seals, dumps with a total cause extraction, and rethrows",
+        "unit": "gate-B round-2 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1485,
+        "title": "the try opens before any arming and the catch is the single downstream owner",
+        "unit": "gate-B round-2 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-journal.spec.ts",
+        "line": 1133,
+        "title": "a fault on the second listener removes the first and leaves nothing armed",
+        "unit": "gate-B round-2 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-journal.spec.ts",
+        "line": 1142,
+        "title": "a fault on the third listener removes the first two",
+        "unit": "gate-B round-2 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 506,
+        "title": "failureText never throws and never loses the cause",
+        "unit": "gate-B round-2 fixes"
+      },
+      {
+        "file": "torus/student_delivery/mer5865-shadow-gate.spec.ts",
+        "line": 639,
+        "title": "a swapped capture smuggling a shipped ledger is rejected (W-D2 inverse, executed)",
+        "unit": "gate-B round-2 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1590,
+        "title": "the artifact routed set equals the AST-derived set, both directions (W-E0a)",
+        "unit": "gate-B round-3 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1604,
+        "title": "the catch rethrows unconditionally and guards every cleanup await",
+        "unit": "gate-B round-3 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1596,
+        "title": "the pre-try region arms nothing and awaits nothing",
+        "unit": "gate-B round-3 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 561,
+        "title": "an attach fault after binding + init script leaves no listeners behind",
+        "unit": "gate-B round-3 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 553,
+        "title": "an init-script fault rejects with NO listeners ever installed",
+        "unit": "gate-B round-3 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 569,
+        "title": "the healthy order arms the recorder LAST and detaches on finish",
+        "unit": "gate-B round-3 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1624,
+        "title": "the artifact routed set equals the contract-kind derivation, both directions (W-E0a)",
+        "unit": "gate-B round-4 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1641,
+        "title": "the catch rethrows unconditionally, guards every await, and its interior is the allowlist",
+        "unit": "gate-B round-4 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1630,
+        "title": "the pre-try region is exactly the declared allowlist",
+        "unit": "gate-B round-4 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 603,
+        "title": "end-to-end: the binding installed by a healthy arm goes silent after finish",
+        "unit": "gate-B round-4 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 571,
+        "title": "the binding guard is EXECUTED: a stamp before liveness observes nothing",
+        "unit": "gate-B round-4 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 586,
+        "title": "the same stamp AFTER liveness records the journal-fenced visit once",
+        "unit": "gate-B round-4 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1704,
+        "title": "the module catch rethrows the SAME error and guards every cleanup await",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1684,
+        "title": "the module table equals the contract-kind derivation, both directions (W-E0a)",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1690,
+        "title": "the spec residual equals its derivation, both directions, and arms nothing",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 364,
+        "title": "a correlate returning false is the module’s own typed throw",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 406,
+        "title": "a hostile log is an exit owned by the same catch",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 549,
+        "title": "a hostile poison.fired() in the catch cannot displace the original",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 530,
+        "title": "a rejecting bail dump is WARNED, never a displacement",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 490,
+        "title": "a rejecting bail seal cannot displace the original error",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 509,
+        "title": "a rejecting bail shadow.finish still attempts the dump (flavor sealed)",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 377,
+        "title": "a rejecting correlate carries its own error through",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 201,
+        "title": "an aborted walk still freezes, audits and dumps a BAIL capture",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 242,
+        "title": "armPoison rejects: both armed, both producers fire",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 222,
+        "title": "armShadowCapture rejects: nothing armed, nothing sealed, original rethrown",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 232,
+        "title": "armStrictRun throws: shadow already armed, its bail dump still lands",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 321,
+        "title": "assertSetupAnchor faults: seal + bail dump + identical rethrow",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 321,
+        "title": "audit faults: frozen journal kept + bail dump + identical rethrow",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 321,
+        "title": "driveStrictLesson faults: seal + bail dump + identical rethrow",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 464,
+        "title": "green-path shadow.dump rejects: the CATCH dump still lands with the cause",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 447,
+        "title": "green-path shadow.finish rejects: bail dump still lands",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 337,
+        "title": "login rejects at its own site",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 321,
+        "title": "makeHomeTask faults: seal + bail dump + identical rethrow",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 321,
+        "title": "makeLessonTask faults: seal + bail dump + identical rethrow",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 321,
+        "title": "now faults: frozen journal kept + bail dump + identical rethrow",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 350,
+        "title": "openFromOutline rejects at its own site",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 328,
+        "title": "page.goto rejects: seal + bail dump + identical rethrow",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 391,
+        "title": "shadow.correlate rejects at its own site",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 416,
+        "title": "strict.finish(green) rejects: catch seals via the guarded bail arm",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 433,
+        "title": "strict.snapshot throws at its own site",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 181,
+        "title": "the healthy run returns EXACTLY what deps.audit produced (identity)",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 192,
+        "title": "without a shadow dir, neither capture nor evidence write happens",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 321,
+        "title": "writeFile faults: frozen journal kept + bail dump + identical rethrow",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 492,
+        "title": "the LotE spec binds the gated boundary, which binds the strict entry point",
+        "unit": "gate-B round-5 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+        "line": 1712,
+        "title": "the module EXIT table equals the contract-kind derivation, both directions (W-E0a)",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 629,
+        "title": "a green-path poison.fired() throw is a boundary fault, typed and sealed",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 700,
+        "title": "a hostile capture-log (green dump line) faults after the green dump",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 590,
+        "title": "a hostile deps.log at the catch SUCCESS handler cannot displace",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 604,
+        "title": "a hostile deps.warn on a rejecting bail dump cannot displace",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 677,
+        "title": "a hostile normal-path log (correlated line) is a typed boundary fault",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 688,
+        "title": "a hostile normal-path log (evidence line) faults after the freeze",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 648,
+        "title": "a non-string shadowDir makes path.join throw at its own site",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 657,
+        "title": "a snapshot whose serialization throws faults at JSON.stringify",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-gated-run.spec.ts",
+        "line": 625,
+        "title": "the exported defaults are frozen — no mutable outer boundary state",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+        "line": 528,
+        "title": "the verdict boundary keeps its exact two assertion shapes (W-W7b static)",
+        "unit": "gate-B round-6 fixes"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 324,
+        "title": "rejects a malformed expected_total_score",
+        "unit": "score-total rule (post-round-6, user-directed contract completion)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 864,
+        "title": "an accepted run summing to the declared expected total audits clean",
+        "unit": "score-total rule (post-round-6, user-directed contract completion)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 869,
+        "title": "a run total differing from the declared expected total is a violation",
+        "unit": "score-total rule (post-round-6, user-directed contract completion)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 888,
+        "title": "an undeclared expected total keeps the rule inert",
+        "unit": "score-total rule (post-round-6, user-directed contract completion)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 893,
+        "title": "a sealed run never reaches the score rule — a partial sum decides nothing",
+        "unit": "score-total rule (post-round-6, user-directed contract completion)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 881,
+        "title": "all verdicts true with no wire score at all is exactly the case the rule exists for",
+        "unit": "score-total rule (post-round-6, user-directed contract completion)"
+      },
+      {
+        "file": "torus/student_delivery/adaptive-oracle.spec.ts",
+        "line": 431,
+        "title": "the authored totalScore anchors expected_total_score — both directions",
+        "unit": "score-total rule (post-round-6, user-directed contract completion)"
       }
     ],
     "reconciled": {
@@ -2882,21 +3404,88 @@
   "excluded_uncommitted": {
     "note": "Demo/tracker artifacts that NEVER reach a commit (spec HANDOFF). They appear in a local discovery run and must be classified, not silently counted.",
     "files": [
-      "torus/student_delivery/mer5865-demo-oracle-contrast.spec.ts"
+      "torus/student_delivery/mer5865-demo-oracle-contrast.spec.ts",
+      "torus/student_delivery/mer5865-demo-lote-both-oracles.spec.ts"
     ]
   },
   "justified_removals": [
     {
       "file": "torus/student_delivery/adaptive-oracle.spec.ts",
-      "title": "every disqualifying final-step target: prev, first, last, explicit id (\u00a78)",
+      "title": "every disqualifying final-step target: prev, first, last, explicit id (§8)",
       "was_in": "frozen",
-      "justification": "W-U7/W-U9 named-test conversion (13fda67669): the cardinality-bearing loop became four named tests (\"a disqualifying final-step target is rejected: prev/first/last/q:7 (\u00a78)\"), each carrying its case in its title so a deleted case is a missing test. Contract \u00a76.7 individually justified removal; the other four converted loops lived inside tests added after the frozen revision and never had artifact entries.",
+      "justification": "W-U7/W-U9 named-test conversion (13fda67669): the cardinality-bearing loop became four named tests (\"a disqualifying final-step target is rejected: prev/first/last/q:7 (§8)\"), each carrying its case in its title so a deleted case is a missing test. Contract §6.7 individually justified removal; the other four converted loops lived inside tests added after the frozen revision and never had artifact entries.",
       "replacements": [
-        "a disqualifying final-step target is rejected: prev (\u00a78)",
-        "a disqualifying final-step target is rejected: first (\u00a78)",
-        "a disqualifying final-step target is rejected: last (\u00a78)",
-        "a disqualifying final-step target is rejected: q:7 (\u00a78)"
+        "a disqualifying final-step target is rejected: prev (§8)",
+        "a disqualifying final-step target is rejected: first (§8)",
+        "a disqualifying final-step target is rejected: last (§8)",
+        "a disqualifying final-step target is rejected: q:7 (§8)"
       ]
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the try opens before any arming and the catch is the single downstream owner",
+      "was_in": "additive_step_4",
+      "justification": "gate-B round-3 blocker 2: the substring-based structural test was REPLACED by the AST-derived bidirectional witness set (reviewer-recommended guardrail); the replacement titles are in the same additive manifest under unit gate-B round-3 fixes"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "every routed-layer exit sits inside the try region",
+      "was_in": "additive_step_4",
+      "justification": "gate-B round-3 blocker 2: the substring-based structural test was REPLACED by the AST-derived bidirectional witness set (reviewer-recommended guardrail); the replacement titles are in the same additive manifest under unit gate-B round-3 fixes"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the catch seals, dumps with a total cause extraction, and rethrows",
+      "was_in": "additive_step_4",
+      "justification": "gate-B round-3 blocker 2: the substring-based structural test was REPLACED by the AST-derived bidirectional witness set (reviewer-recommended guardrail); the replacement titles are in the same additive manifest under unit gate-B round-3 fixes"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the artifact routed set equals the AST-derived set, both directions (W-E0a)",
+      "was_in": "additive_step_4",
+      "justification": "round-4 B2: replaced by the contract-kind derivation witness (same file, unit gate-B round-4 fixes)"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the catch rethrows unconditionally and guards every cleanup await",
+      "was_in": "additive_step_4",
+      "justification": "round-4 B2: replaced by the catch witness with the closed interior allowlist"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the pre-try region arms nothing and awaits nothing",
+      "was_in": "additive_step_4",
+      "justification": "round-4 B2: replaced by the exact pre-boundary allowlist witness"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the artifact routed set equals the contract-kind derivation, both directions (W-E0a)",
+      "was_in": "additive_step_4",
+      "justification": "round-5: superseded by the injectable-boundary witnesses (module table + spec residual, unit gate-B round-5 fixes)"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the catch rethrows unconditionally, guards every await, and its interior is the allowlist",
+      "was_in": "additive_step_4",
+      "justification": "round-5: the catch moved into runGatedLote; its witness is the module-catch AST test plus 28 executed injections"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the pre-try region is exactly the declared allowlist",
+      "was_in": "additive_step_4",
+      "justification": "round-5: the thin spec has no try; the residual-table witness asserts no arming and the single awaited exit"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-strict-run.spec.ts",
+      "title": "the LotE spec imports the strict driver and audit, not the old walker",
+      "was_in": "additive_step_4",
+      "justification": "round-5 refactor: replaced by \"the LotE spec binds the gated boundary, which binds the strict entry point\" — the binding is now two-hop (spec → runGatedLote → strict driver/audit), asserted on both hops (unit gate-B round-5 fixes)"
+    },
+    {
+      "file": "torus/student_delivery/adaptive-exit-inventory.spec.ts",
+      "title": "the module table equals the contract-kind derivation, both directions (W-E0a)",
+      "was_in": "additive_step_4",
+      "justification": "round-6: retitled to \"the module EXIT table equals...\" when the sites/closure split landed (same witness, stronger shape)"
     }
   ]
 }
