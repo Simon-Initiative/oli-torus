@@ -36,6 +36,7 @@ defmodule OliWeb.AuthorAuthTest do
     test "redirects to the configured path", %{conn: conn, author: author} do
       conn = conn |> put_session(:author_return_to, "/hello") |> AuthorAuth.log_in_author(author)
       assert redirected_to(conn) == "/hello"
+      refute get_session(conn, :author_return_to)
     end
 
     test "ignores an unsafe configured session path", %{conn: conn, author: author} do

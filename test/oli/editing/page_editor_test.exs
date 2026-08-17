@@ -3,7 +3,7 @@ defmodule Oli.EditingTest do
 
   alias Oli.Resources
   alias Oli.Resources.Revision
-  alias Oli.Authoring.Editing.{PageEditor, ActivityEditor}
+  alias Oli.Authoring.Editing.{PageEditor, ActivityEditor, ResourceEditor}
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
@@ -93,6 +93,7 @@ defmodule Oli.EditingTest do
              project: project
            } do
         {:ok, project} = Course.update_project(project, unquote(Macro.escape(project_settings)))
+        group = create_alternatives_group(project, author, unquote(strategy))
 
         content = %{
           "version" => "0.1.0",
@@ -100,8 +101,7 @@ defmodule Oli.EditingTest do
             %{
               "type" => "alternatives",
               "id" => "new-alternatives",
-              "strategy" => unquote(strategy),
-              "alternatives_id" => 123,
+              "alternatives_id" => group.resource_id,
               "children" => []
             }
           ]
@@ -117,6 +117,42 @@ defmodule Oli.EditingTest do
       end
     end
 
+    test "edit/4 uses the referenced Alternatives resource strategy for feature validation", %{
+      author: author,
+      revision1: revision1,
+      project: project
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: false,
+          experiments_enabled: true
+        })
+
+      decision_point = create_alternatives_group(project, author, "experiment_controlled")
+
+      content = %{
+        "version" => "0.1.0",
+        "model" => [
+          %{
+            "type" => "alternatives",
+            "id" => "new-decision-point",
+            "alternatives_id" => decision_point.resource_id,
+            "children" => []
+          }
+        ]
+      }
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               PageEditor.edit(project.slug, revision1.slug, author.email, %{
+                 "content" => content
+               })
+
+      refute get_in(updated_revision.content, ["model", Access.at(0), "strategy"])
+    end
+
     test "edit/4 rejects newly inserted alternatives nested in child-bearing content", %{
       author: author,
       revision1: revision1,
@@ -128,6 +164,8 @@ defmodule Oli.EditingTest do
           experiments_enabled: true
         })
 
+      group = create_alternatives_group(project, author, "user_section_preference")
+
       content = %{
         "version" => "0.1.0",
         "model" => [
@@ -138,8 +176,7 @@ defmodule Oli.EditingTest do
               %{
                 "type" => "alternatives",
                 "id" => "nested-alternatives",
-                "strategy" => "user_section_preference",
-                "alternatives_id" => 123,
+                "alternatives_id" => group.resource_id,
                 "children" => []
               }
             ]
@@ -167,14 +204,15 @@ defmodule Oli.EditingTest do
           experiments_enabled: false
         })
 
+      group = create_alternatives_group(project, author, "user_section_preference")
+
       content = %{
         "version" => "0.1.0",
         "model" => [
           %{
             "type" => "alternatives",
             "id" => "existing-alternatives",
-            "strategy" => "user_section_preference",
-            "alternatives_id" => 123,
+            "alternatives_id" => group.resource_id,
             "children" => []
           }
         ]
@@ -735,5 +773,20 @@ defmodule Oli.EditingTest do
       assert hd(result).parentIds == nil
       assert hd(result).title == objective1_title
     end
+  end
+
+  defp create_alternatives_group(project, author, strategy) do
+    {:ok, revision} =
+      ResourceEditor.create(
+        project.slug,
+        author,
+        Oli.Resources.ResourceType.id_for_alternatives(),
+        %{
+          title: "Alternatives Group",
+          content: %{"options" => [], "strategy" => strategy}
+        }
+      )
+
+    revision
   end
 end
