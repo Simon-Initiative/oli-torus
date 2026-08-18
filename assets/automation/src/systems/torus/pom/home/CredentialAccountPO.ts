@@ -1,0 +1,94 @@
+import { expect, Page } from '@playwright/test';
+
+export type CredentialAccountType = 'author' | 'user';
+
+type AccountDetails = {
+  email: string;
+  familyName: string;
+  givenName: string;
+  password: string;
+};
+
+export class CredentialAccountPO {
+  constructor(
+    private readonly page: Page,
+    private readonly type: CredentialAccountType,
+  ) {}
+
+  async register(account: AccountDetails) {
+    await this.page.goto(`/${this.pathSegment()}/register`);
+
+    const form = this.page.locator('#registration_form');
+    await form.locator(`input[name="${this.formName()}[email]"]`).fill(account.email);
+    await form.locator(`input[name="${this.formName()}[given_name]"]`).fill(account.givenName);
+    await form.locator(`input[name="${this.formName()}[family_name]"]`).fill(account.familyName);
+    await form.locator(`input[name="${this.formName()}[password]"]`).fill(account.password);
+    await form
+      .locator(`input[name="${this.formName()}[password_confirmation]"]`)
+      .fill(account.password);
+
+    await form.getByRole('button', { name: 'Create account', exact: true }).click();
+    await this.page.waitForURL(`/${this.pathSegment()}/confirm`);
+  }
+
+  async confirm(url: string) {
+    await this.page.goto(url);
+    await this.page.getByRole('button', { name: 'Confirm', exact: true }).click();
+    await this.page.waitForURL(`/${this.pathSegment()}/log_in`);
+    await expect(this.page.getByText('Email successfully confirmed.')).toBeVisible();
+  }
+
+  async requestPasswordReset(email: string) {
+    await this.page.goto(`/${this.pathSegment()}/reset_password`);
+
+    const form = this.page.locator('#reset_password_form');
+    await form.locator(`input[name="${this.formName()}[email]"]`).fill(email);
+    await form.getByRole('button', { name: 'Send password reset instructions' }).click();
+    await this.page.waitForURL(this.resetRequestDestination());
+  }
+
+  async resetPassword(url: string, password: string) {
+    await this.page.goto(url);
+
+    const form = this.page.locator('#reset_password_form');
+    await form.locator(`input[name="${this.formName()}[password]"]`).fill(password);
+    await form.locator(`input[name="${this.formName()}[password_confirmation]"]`).fill(password);
+    await form.getByRole('button', { name: 'Reset Password', exact: true }).click();
+    await this.page.waitForURL(`/${this.pathSegment()}/log_in`);
+    await expect(this.page.getByText('Password reset successfully.')).toBeVisible();
+  }
+
+  async login(email: string, password: string) {
+    await this.page.goto(`/${this.pathSegment()}/log_in`);
+
+    const form = this.page.locator('#login_form');
+    await form.locator(`input[name="${this.formName()}[email]"]`).fill(email);
+    await form.locator(`input[name="${this.formName()}[password]"]`).fill(password);
+    await form.getByRole('button', { name: 'Sign in', exact: true }).click();
+  }
+
+  async expectLoginFailure() {
+    await this.page.waitForURL(`/${this.pathSegment()}/log_in`);
+    await expect(this.page.getByText('Invalid email or password')).toBeVisible();
+  }
+
+  async expectLoginSuccess() {
+    await this.page.waitForURL(this.destinationPath());
+  }
+
+  private formName() {
+    return this.type;
+  }
+
+  private pathSegment() {
+    return this.type === 'author' ? 'authors' : 'users';
+  }
+
+  private destinationPath() {
+    return this.type === 'author' ? '/workspaces/course_author' : '/workspaces/student';
+  }
+
+  private resetRequestDestination() {
+    return this.type === 'author' ? '/authors/log_in' : '/';
+  }
+}

@@ -84,11 +84,16 @@ non-existent registration feature.
 existing Playwright token, and a browser test has a deterministic path to
 wait for a Local-adapter email.
 
-### Phase 2: Self-service lifecycle coverage
+### Phase 2: Self-service lifecycle coverage — complete
 
 - Add credential-account page objects or focused task helpers.
 - Add complete Author and independent-learner browser flows: registration,
   confirmation, login, reset, old-password rejection, and new-password login.
+- Generate a unique recipient per flow, select the message by recipient and
+  subject, and extract only the expected account-action URL (rather than an
+  unrelated link such as the email logo).
+- Preconfigure cookie consent in the test browser context so an unrelated
+  consent modal cannot obscure the credential-flow controls.
 
 **Exit criterion:** both self-service account types complete their lifecycle
 against a Playwright environment without a real inbox or external reCAPTCHA.
