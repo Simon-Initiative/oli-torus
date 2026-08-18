@@ -96,19 +96,19 @@ ls dist/
 Publish the layer and note the returned ARN:
 
 ```bash
-LAYER_NAME=xapi-etl-processor-deps
+LAYER_NAME=oli-xapi-etl-processor-layers
 aws lambda publish-layer-version \
   --layer-name "$LAYER_NAME" \
-  --compatible-runtimes python3.11 \
+  --compatible-runtimes python3.12 \
   --zip-file fileb://dist/xapi-etl-processor-layer.zip
 
 # If the layer archive exceeds the direct upload limit (~70 MB), stage it in S3:
-S3_BUCKET=my-layer-artifacts
+S3_BUCKET=oli-xapi-etl-processor-layers
 S3_DEPS_LAYER_KEY=lambda/xapi-etl-processor-layer.zip
 aws s3 cp dist/xapi-etl-processor-layer.zip s3://$S3_BUCKET/$S3_DEPS_LAYER_KEY
 aws lambda publish-layer-version \
   --layer-name "$LAYER_NAME" \
-  --compatible-runtimes python3.11 \
+  --compatible-runtimes python3.12 \
   --content S3Bucket=$S3_BUCKET,S3Key=$S3_DEPS_LAYER_KEY
 
 # Optionally add permissions for other accounts
@@ -253,7 +253,7 @@ environment.
 
 ### 5. Deploy the Lambda function
 
-1. Create a Lambda function (Python 3.11 runtime recommended).
+1. Create a Lambda function using the Python 3.12 runtime.
 2. Upload the deployment package created above or point to the S3 artifact.
 3. Set the handler to `lambda_function.lambda_handler`.
 4. Start with memory `1024 MB` and timeout `60s`, then tune after observing
@@ -390,7 +390,7 @@ drop or disable the old user after validation.
 
 ## Local tests
 
-Install dev dependencies and run the unit tests (Python 3.11 recommended so
+Install dev dependencies and run the unit tests (Python 3.12 recommended so
 `pyarrow` wheels are available):
 
 ```bash
