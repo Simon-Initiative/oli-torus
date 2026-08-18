@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { RichLabelField } from 'components/parts/common/RichLabelField';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import guid from 'utils/guid';
 import { htmlToPlainText, normalizeRichLabelForStorage } from 'utils/richOptionLabel';
 import { useToggle } from '../../../../../components/hooks/useToggle';

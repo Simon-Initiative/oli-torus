@@ -86,12 +86,7 @@ export const itemImageCaption = (item: GroupingItem): string => {
 /** Returns learner-facing screen-reader text without exposing the CAPI label unnecessarily. */
 export const itemAccessibleText = (item: GroupingItem): string => {
   if (item.type === 'image') {
-    return (
-      item.alt?.trim() ||
-      htmlToPlainText(itemImageCaption(item)) ||
-      item.label?.trim() ||
-      ''
-    );
+    return item.alt?.trim() || htmlToPlainText(itemImageCaption(item)) || item.label?.trim() || '';
   }
   return htmlToPlainText(itemDisplayText(item));
 };
