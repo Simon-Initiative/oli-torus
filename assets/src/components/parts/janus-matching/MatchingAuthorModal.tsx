@@ -367,7 +367,6 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
                 disabled={mode !== 'manage'}
                 aria-label="Column 1 title"
               />
-              <span className="mam-col-badge">Col 1</span>
             </div>
             <div className="mam-items">{column1Items.map((item) => renderItem(1, item))}</div>
             {mode === 'manage' && (
@@ -386,7 +385,6 @@ const MatchingAuthorModal: React.FC<MatchingAuthorModalProps> = ({
                 disabled={mode !== 'manage'}
                 aria-label="Column 2 title"
               />
-              <span className="mam-col-badge">Col 2</span>
             </div>
             <div className="mam-items">{column2Items.map((item) => renderItem(2, item))}</div>
             {mode === 'manage' && (

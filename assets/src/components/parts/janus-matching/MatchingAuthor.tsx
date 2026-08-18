@@ -95,7 +95,6 @@ const MatchingAuthor: React.FC<AuthorPartComponentProps<MatchingModel>> = (props
             {showTitles && (
               <header className="matching-column-header">
                 <span>{columnTitle(model.column1Title, 'Column 1')}</span>
-                <span className="matching-column-badge">Col 1</span>
               </header>
             )}
             <div className="matching-items">
@@ -124,7 +123,6 @@ const MatchingAuthor: React.FC<AuthorPartComponentProps<MatchingModel>> = (props
             {showTitles && (
               <header className="matching-column-header">
                 <span>{columnTitle(model.column2Title, 'Column 2')}</span>
-                <span className="matching-column-badge">Col 2</span>
               </header>
             )}
             <div className="matching-items">

@@ -41,6 +41,8 @@ export interface MatchingModel extends JanusAbsolutePositioned, JanusCustomCss {
   customCss?: string;
   showHints?: boolean;
   showCorrect?: boolean;
+  // shuffle both columns independently for the learner when true
+  randomize?: boolean;
 }
 
 const manageDataProperties: JSONSchema7Object = {
@@ -93,6 +95,12 @@ export const schema: JSONSchema7Object = {
     description: 'When enabled, marks correct/incorrect matches with visual feedback',
     default: false,
   },
+  randomize: {
+    title: 'Randomize Order For Learner',
+    type: 'boolean',
+    description: 'When enabled, shuffles items in both columns independently for the learner',
+    default: true,
+  },
 };
 
 export const simpleSchema: JSONSchema7Object = {
@@ -121,6 +129,12 @@ export const simpleSchema: JSONSchema7Object = {
     description: 'When enabled, marks correct/incorrect matches with visual feedback',
     default: false,
   },
+  randomize: {
+    title: 'Randomize Order For Learner',
+    type: 'boolean',
+    description: 'When enabled, shuffles items in both columns independently for the learner',
+    default: true,
+  },
 };
 
 export const uiSchema = {
@@ -138,7 +152,14 @@ export const uiSchema = {
 };
 
 export const simpleUiSchema = {
-  'ui:order': ['manageItems', 'themeColor', 'showColumnTitles', 'showHints', 'customCss'],
+  'ui:order': [
+    'manageItems',
+    'themeColor',
+    'showColumnTitles',
+    'showHints',
+    'randomize',
+    'customCss',
+  ],
   ...manageDataUiSchema,
   themeColor: {
     'ui:widget': 'ColorPicker',
@@ -163,6 +184,7 @@ export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
   adaptivity.correct = CapiVariableTypes.BOOLEAN;
   adaptivity.showCorrect = CapiVariableTypes.BOOLEAN;
   adaptivity.showHints = CapiVariableTypes.BOOLEAN;
+  adaptivity.randomize = CapiVariableTypes.BOOLEAN;
   adaptivity.matchCount = CapiVariableTypes.NUMBER;
 
   const column1Items: MatchingItem[] = currentModel?.custom?.column1Items || [];
@@ -238,6 +260,7 @@ export const createSchema = (): Partial<MatchingModel> => {
     height: DEFAULT_MATCHING_MIN_HEIGHT,
     showHints: false,
     showCorrect: false,
+    randomize: true,
     column1Items,
     column2Items,
     correctMatches: {

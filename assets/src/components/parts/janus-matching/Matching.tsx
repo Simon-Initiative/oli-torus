@@ -16,6 +16,7 @@ import {
   matchingThemeStyles,
   normalizeMatchingItemsForSave,
   restoreMatches,
+  shuffleItems,
 } from './matching-util';
 import { MatchingMatches, MatchingModel } from './schema';
 
@@ -47,6 +48,7 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
   const [showCorrect, setShowCorrect] = useState<boolean>(false);
   const [showHints, setShowHints] = useState<boolean>(false);
   const [userModified, setUserModified] = useState<boolean>(false);
+  const [randomize, setRandomize] = useState<boolean>(true);
 
   const id: string = props.id;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -55,10 +57,12 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : true;
     const dShowHints = typeof pModel.showHints === 'boolean' ? pModel.showHints : false;
     const dShowCorrect = typeof pModel.showCorrect === 'boolean' ? pModel.showCorrect : false;
+    const dRandomize = typeof pModel.randomize === 'boolean' ? pModel.randomize : true;
 
     setEnabled(dEnabled);
     setShowHints(dShowHints);
     setShowCorrect(dShowCorrect);
+    setRandomize(dRandomize);
 
     const initResult = await props.onInit({
       id,
@@ -70,6 +74,7 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
           userModified: false,
           showCorrect: dShowCorrect,
           showHints: dShowHints,
+          randomize: dRandomize,
         },
       ),
     });
@@ -90,6 +95,18 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
       nextShowCorrect = sShowCorrect;
       setShowCorrect(sShowCorrect);
     }
+
+    const sRandomize = snapshot[`stage.${id}.randomize`];
+    const nextRandomize = sRandomize !== undefined ? parseBool(sRandomize) : dRandomize;
+    setRandomize(nextRandomize);
+
+    const column1Items = nextRandomize
+      ? shuffleItems(pModel.column1Items || [])
+      : [...(pModel.column1Items || [])];
+    const column2Items = nextRandomize
+      ? shuffleItems(pModel.column2Items || [])
+      : [...(pModel.column2Items || [])];
+    setModel({ ...pModel, column1Items, column2Items });
 
     if (nextShowCorrect) {
       setMatches(correctMatchesSnapshot(pModel));
@@ -188,7 +205,13 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
   const saveState = useCallback(
     (
       nextMatches: MatchingMatches,
-      flags: { enabled: boolean; userModified: boolean; showCorrect: boolean; showHints: boolean },
+      flags: {
+        enabled: boolean;
+        userModified: boolean;
+        showCorrect: boolean;
+        showHints: boolean;
+        randomize: boolean;
+      },
     ) => {
       props.onSave({
         id: `${id}`,
@@ -205,9 +228,9 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
       }
       setMatches(next);
       setUserModified(true);
-      saveState(next, { enabled, userModified: true, showCorrect, showHints });
+      saveState(next, { enabled, userModified: true, showCorrect, showHints, randomize });
     },
-    [enabled, showCorrect, showHints, saveState],
+    [enabled, showCorrect, showHints, randomize, saveState],
   );
 
   const applyStateChanges = useCallback(
@@ -232,11 +255,12 @@ const Matching: React.FC<PartComponentProps<MatchingModel>> = (props) => {
             userModified,
             showCorrect: true,
             showHints,
+            randomize,
           });
         }
       }
     },
-    [id, model, enabled, userModified, showHints, saveState],
+    [id, model, enabled, userModified, showHints, randomize, saveState],
   );
 
   useEffect(() => {
