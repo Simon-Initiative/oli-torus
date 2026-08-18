@@ -182,12 +182,12 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
 
             {type === 'text' ? (
               <div className="mie-field">
-                <label className="mie-label" htmlFor="mie-text">
+                <label className="mie-label" id="mie-text-label">
                   Text
                 </label>
                 <span className="mie-hint">Content shown on the item card</span>
                 <RichLabelField
-                  id="mie-text"
+                  labelledBy="mie-text-label"
                   inline
                   value={text}
                   onChange={(next) => {
@@ -223,14 +223,14 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
                   </div>
                 </div>
                 <div className="mie-field">
-                  <label className="mie-label" htmlFor="mie-image-text">
+                  <label className="mie-label" id="mie-image-text-label">
                     Caption
                   </label>
                   <span className="mie-hint">
                     Optional caption shown above the image on the item card
                   </span>
                   <RichLabelField
-                    id="mie-image-text"
+                    labelledBy="mie-image-text-label"
                     inline
                     value={text}
                     onChange={(next) => {

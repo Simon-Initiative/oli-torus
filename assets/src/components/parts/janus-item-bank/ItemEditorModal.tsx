@@ -162,12 +162,12 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
 
             {type === 'text' ? (
               <div className="iem-field">
-                <label className="iem-label" htmlFor="iem-text">
+                <label className="iem-label" id="iem-text-label">
                   Text
                 </label>
                 <span className="iem-hint">Content shown on the item card</span>
                 <RichLabelField
-                  id="iem-text"
+                  labelledBy="iem-text-label"
                   inline
                   value={text}
                   onChange={(next) => {
@@ -203,14 +203,14 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                   </div>
                 </div>
                 <div className="iem-field">
-                  <label className="iem-label" htmlFor="iem-image-text">
+                  <label className="iem-label" id="iem-image-text-label">
                     Text
                   </label>
                   <span className="iem-hint">
                     Optional caption shown above the image on the item card
                   </span>
                   <RichLabelField
-                    id="iem-image-text"
+                    labelledBy="iem-image-text-label"
                     inline
                     value={text}
                     onChange={(next) => {

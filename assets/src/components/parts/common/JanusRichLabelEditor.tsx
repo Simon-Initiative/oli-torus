@@ -13,7 +13,7 @@ export const JANUS_RICH_LABEL_QUILL_MODULES = {
 };
 
 export interface JanusRichLabelEditorProps {
-  id?: string;
+  labelledBy?: string;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
@@ -26,7 +26,7 @@ export interface JanusRichLabelEditorProps {
  * Used directly in forms or wrapped by JanusRichLabelEditorModal.
  */
 export const JanusRichLabelEditor: React.FC<JanusRichLabelEditorProps> = ({
-  id,
+  labelledBy,
   value,
   onChange,
   disabled = false,
@@ -49,9 +49,12 @@ export const JanusRichLabelEditor: React.FC<JanusRichLabelEditorProps> = ({
   const modules = useMemo(() => JANUS_RICH_LABEL_QUILL_MODULES, []);
 
   return (
-    <div className={`janus-rich-label-editor-quill${className ? ` ${className}` : ''}`}>
+    <div
+      className={`janus-rich-label-editor-quill${className ? ` ${className}` : ''}`}
+      role="group"
+      aria-labelledby={labelledBy}
+    >
       <ReactQuill
-        id={id}
         theme="snow"
         value={value}
         onChange={onChange}

@@ -9,6 +9,7 @@ import {
 
 export interface RichLabelFieldProps {
   id?: string;
+  labelledBy?: string;
   value: string;
   onChange: (value: string) => void;
   onBlur?: (value: string) => void;
@@ -40,6 +41,7 @@ const previewStyle: React.CSSProperties = {
  */
 export const RichLabelField: React.FC<RichLabelFieldProps> = ({
   id,
+  labelledBy,
   value,
   onChange,
   onBlur,
@@ -79,7 +81,7 @@ export const RichLabelField: React.FC<RichLabelFieldProps> = ({
     return (
       <div className={className}>
         <JanusRichLabelEditor
-          id={id}
+          labelledBy={labelledBy}
           value={currentValue}
           onChange={onChange}
           disabled={disabled}
