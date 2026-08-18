@@ -5,7 +5,7 @@ defmodule OliWeb.AuthorRegistrationLive do
 
   alias Oli.Accounts
   alias Oli.Accounts.Author
-  alias Oli.Utils.Recaptcha
+  alias Oli.Recaptcha
 
   def render(assigns) do
     ~H"""

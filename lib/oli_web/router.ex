@@ -354,6 +354,8 @@ defmodule OliWeb.Router do
       pipe_through [:api]
 
       post "/scenario-yaml", PlaywrightScenarioController, :run
+      get "/emails", PlaywrightMailboxController, :index
+      get "/emails/:id", PlaywrightMailboxController, :show
     end
 
     scope "/test", OliWeb do
