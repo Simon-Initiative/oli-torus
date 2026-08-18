@@ -41,6 +41,7 @@ defmodule Oli.Rendering.Alternatives do
         writer
       ) do
     by_id = alternative_groups_by_id || load_alternative_groups_by_id(groups_fn)
+    context = %Context{context | alternative_groups_by_id: by_id}
 
     enrollment_id =
       case enrollment do
