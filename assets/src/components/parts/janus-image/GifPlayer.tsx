@@ -26,6 +26,17 @@ const playPauseButtonStyle: CSSProperties = {
   color: '#fff',
   cursor: 'pointer',
   padding: 0,
+  zIndex: 1,
+};
+
+const skeletonOverlayStyle: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  borderRadius: 4,
+  background: 'linear-gradient(90deg, rgba(229,231,235,0.9) 0%, rgba(243,244,246,0.95) 50%, rgba(229,231,235,0.9) 100%)',
+  backgroundSize: '200% 100%',
+  animation: 'janus-image-gif-skeleton 1.2s ease-in-out infinite',
+  pointerEvents: 'none',
 };
 
 const GifPlayer: React.FC<GifPlayerProps> = ({
@@ -65,6 +76,13 @@ const GifPlayer: React.FC<GifPlayerProps> = ({
       data-janus-type={dataJanusType}
       data-testid="janus-image-gif"
     >
+      {status === 'loading' && <span aria-hidden="true" style={skeletonOverlayStyle} />}
+      <style type="text/css">{`
+        @keyframes janus-image-gif-skeleton {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
       <canvas
         ref={canvasRef}
         data-testid="janus-image-gif-canvas"
