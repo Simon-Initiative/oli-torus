@@ -181,6 +181,9 @@ class LambdaFunctionTests(TestCase):
             insert_mock.call_args_list[1].kwargs["table"],
             "experiment_attributions",
         )
+        attribution_columns = insert_mock.call_args_list[1].kwargs["columns"]
+        self.assertNotIn("decision_point_id", attribution_columns)
+        self.assertNotIn("decision_point_key", attribution_columns)
 
     def test_rejects_statements_exceeding_attribution_limit(self):
         raw_line, statement = self._experiment_attributed_part_attempt_fixture()
@@ -347,6 +350,8 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(rows[0]["attribution_type"], "reward")
         self.assertEqual(rows[0]["experiment_id"], 101)
         self.assertEqual(rows[0]["experiment_uuid"], "11111111-2222-3333-4444-555555555555")
+        self.assertNotIn("decision_point_id", rows[0])
+        self.assertNotIn("decision_point_key", rows[0])
         self.assertEqual(rows[0]["condition_code"], "condition-a")
         self.assertEqual(rows[0]["reward_value"], 1.0)
         self.assertEqual(rows[0]["reward_source"], "activity_attempt:full_credit")

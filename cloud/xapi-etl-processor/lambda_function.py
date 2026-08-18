@@ -185,7 +185,7 @@ EXPERIMENT_ATTRIBUTION_INSERT_COLUMNS: List[str] = [
     "raw_event_hash", "attribution_hash", "source_file", "source_etag", "source_line",
     "host_event_type", "timestamp", "section_id", "project_id", "publication_id",
     "enrollment_id", "experiment_role", "attribution_type", "experiment_id",
-    "experiment_uuid", "decision_point_id", "decision_point_key", "condition_id",
+    "experiment_uuid", "condition_id",
     "condition_code", "assignment_id", "assignment_key", "algorithm", "policy_version",
     "content_revision_id", "reward_value", "reward_source", "intervention_id",
     "intervention_key", "assessment_binding_id", "assessment_page_resource_id",
@@ -1050,12 +1050,12 @@ def _get_experiment_attribution_type_map() -> Dict[str, "pa.DataType"]:
     string_columns = {
         "raw_event_hash", "attribution_hash", "source_file", "source_etag",
         "host_event_type", "experiment_role", "attribution_type", "experiment_uuid",
-        "decision_point_key", "condition_code", "assignment_key", "algorithm",
+        "condition_code", "assignment_key", "algorithm",
         "policy_version", "reward_source", "intervention_key", "disposition",
     }
     uint64_columns = {
         "section_id", "project_id", "publication_id", "enrollment_id", "experiment_id",
-        "decision_point_id", "condition_id", "assignment_id", "content_revision_id",
+        "condition_id", "assignment_id", "content_revision_id",
         "intervention_id", "assessment_binding_id", "assessment_page_resource_id",
         "resource_attempt_id", "page_revision_id",
     }
@@ -1315,8 +1315,6 @@ def transform_experiment_attributions(
                 "attribution_type": _safe_str(attribution.get("attribution_type")),
                 "experiment_id": _safe_int(attribution.get("experiment_id")),
                 "experiment_uuid": _safe_str(attribution.get("experiment_uuid")),
-                "decision_point_id": _safe_int(attribution.get("decision_point_id")),
-                "decision_point_key": _safe_str(attribution.get("decision_point_key")),
                 "condition_id": _safe_int(attribution.get("condition_id")),
                 "condition_code": _safe_str(attribution.get("condition_code")),
                 "assignment_id": _safe_int(attribution.get("assignment_id")),
