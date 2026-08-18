@@ -67,9 +67,7 @@ export const RichLabelField: React.FC<RichLabelFieldProps> = ({
     [onBlur, onChange],
   );
 
-  const handlePlainChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handlePlainChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(e.target.value);
   };
 
