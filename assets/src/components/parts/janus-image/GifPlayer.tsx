@@ -33,7 +33,8 @@ const skeletonOverlayStyle: CSSProperties = {
   position: 'absolute',
   inset: 0,
   borderRadius: 4,
-  background: 'linear-gradient(90deg, rgba(229,231,235,0.9) 0%, rgba(243,244,246,0.95) 50%, rgba(229,231,235,0.9) 100%)',
+  background:
+    'linear-gradient(90deg, rgba(229,231,235,0.9) 0%, rgba(243,244,246,0.95) 50%, rgba(229,231,235,0.9) 100%)',
   backgroundSize: '200% 100%',
   animation: 'janus-image-gif-skeleton 1.2s ease-in-out infinite',
   pointerEvents: 'none',
