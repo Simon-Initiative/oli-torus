@@ -128,20 +128,23 @@ defmodule Oli.Experiments.ConfigurationTest do
 
     assert {:error,
             %ExperimentError{
-              message: "assignment scope must be intervention or section_enrollment"
+              message: "assignment scope must be intervention or section_enrollment",
+              details: %{field: :assignment_scope}
             }} =
              Experiments.create_experiment(%{request | assignment_scope: :unknown})
 
     assert {:error,
             %ExperimentError{
-              message: "assignment scope must be intervention or section_enrollment"
+              message: "assignment scope must be intervention or section_enrollment",
+              details: %{field: :assignment_scope}
             }} =
              Experiments.create_experiment(%{request | assignment_scope: false})
 
     assert {:error,
             %ExperimentError{
               message:
-                "section-and-enrollment scope is available only for weighted random experiments"
+                "section-and-enrollment scope is available only for weighted random experiments",
+              details: %{field: :assignment_scope}
             }} =
              Experiments.create_experiment(%{
                request

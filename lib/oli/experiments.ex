@@ -3119,11 +3119,16 @@ defmodule Oli.Experiments do
        when scope in [:section_enrollment, "section_enrollment"],
        do:
          invalid_condition(
-           "section-and-enrollment scope is available only for weighted random experiments"
+           "section-and-enrollment scope is available only for weighted random experiments",
+           %{field: :assignment_scope}
          )
 
   defp validate_assignment_scope(_algorithm, _scope),
-    do: invalid_condition("assignment scope must be intervention or section_enrollment")
+    do:
+      invalid_condition(
+        "assignment scope must be intervention or section_enrollment",
+        %{field: :assignment_scope}
+      )
 
   defp default_assignment_scope(:weighted_random), do: :section_enrollment
   defp default_assignment_scope(_algorithm), do: :intervention

@@ -132,18 +132,18 @@ Guardrails:
 
 - Goal: Expose the weighted-random assignment-scope choice through the existing course-author LiveViews for FR-001, FR-002, FR-008, FR-010, AC-001, AC-002, AC-008, and AC-010.
 - Tasks:
-  - [ ] Add form state and parameter parsing for `assignment_scope` to experiment creation and draft editing in the existing Experiments/Experiment Details LiveViews.
-  - [ ] Use an established accessible radio-group or equivalent form primitive with the two required plain-language choices and help explaining experiment-wide reuse within one participating section.
-  - [ ] Default new weighted-random forms to section-and-enrollment scope and preserve saved values on validation errors and edit reload.
-  - [ ] Hide or render non-editable intervention scope for Thompson Sampling; never rely on UI behavior as the domain validation boundary.
-  - [ ] Display the saved scope on experiment details for every lifecycle state without implying cross-section, cross-enrollment, or guaranteed allocation behavior.
-  - [ ] Surface context lifecycle and algorithm/scope errors adjacent to the control using existing error patterns.
-  - [ ] Preserve current Tailwind/component conventions and responsive behavior; do not introduce new Bootstrap or dedicated stylesheet styling.
-  - [ ] Add `assignment_scope` to any form/configuration serialization helpers and test factories used by these LiveViews.
+  - [x] Add form state and parameter parsing for `assignment_scope` to experiment creation and draft editing in the existing Experiments/Experiment Details LiveViews.
+  - [x] Use an established accessible radio-group or equivalent form primitive with the two required plain-language choices and help explaining experiment-wide reuse within one participating section.
+  - [x] Default new weighted-random forms to section-and-enrollment scope and preserve saved values on validation errors and edit reload.
+  - [x] Hide or render non-editable intervention scope for Thompson Sampling; never rely on UI behavior as the domain validation boundary.
+  - [x] Display the saved scope on experiment details for every lifecycle state without implying cross-section, cross-enrollment, or guaranteed allocation behavior.
+  - [x] Surface context lifecycle and algorithm/scope errors adjacent to the control using existing error patterns.
+  - [x] Preserve current Tailwind/component conventions and responsive behavior; do not introduce new Bootstrap or dedicated stylesheet styling.
+  - [x] Add `assignment_scope` to any form/configuration serialization helpers and test factories used by these LiveViews.
 - Testing Tasks:
-  - [ ] Add LiveView tests for selector semantics, labels/help, default, explicit save, edit reload, validation-state preservation, unauthorized mutation, draft-only editability, and details display.
-  - [ ] Verify Thompson Sampling cannot submit section-and-enrollment scope through forged parameters and its UI does not offer an enabled invalid choice.
-  - [ ] Verify keyboard-operable semantic controls, associated help/error text, visible focus via existing primitives, responsive rendering assumptions, and no color-only distinction.
+  - [x] Add LiveView tests for selector semantics, labels/help, default, explicit save, edit reload, validation-state preservation, unauthorized mutation, draft-only editability, and details display.
+  - [x] Verify Thompson Sampling cannot submit section-and-enrollment scope through forged parameters and its UI does not offer an enabled invalid choice.
+  - [x] Verify keyboard-operable semantic controls, associated help/error text, visible focus via existing primitives, responsive rendering assumptions, and no color-only distinction.
   - Command(s): `mix test test/oli_web/live/workspaces/course_author/experiments_live_test.exs test/oli_web/live/workspaces/course_author/experiment_details_live_test.exs`; `mix format`; `mix compile`
 - Definition of Done:
   - Authorized authors can understand, select, save, and inspect weighted-random scope; invalid or immutable states are clear and the domain remains authoritative.
