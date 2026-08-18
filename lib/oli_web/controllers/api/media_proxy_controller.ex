@@ -54,7 +54,8 @@ defmodule OliWeb.Api.MediaProxyController do
 
   defp parse_url(url) do
     case URI.parse(String.trim(url)) do
-      %URI{scheme: scheme, host: host} = uri when scheme in ["http", "https"] and is_binary(host) and host != "" ->
+      %URI{scheme: scheme, host: host} = uri
+      when scheme in ["http", "https"] and is_binary(host) and host != "" ->
         {:ok, uri}
 
       _ ->
