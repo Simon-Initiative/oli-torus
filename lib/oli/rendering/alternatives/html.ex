@@ -49,6 +49,7 @@ defmodule Oli.Rendering.Alternatives.Html do
 
     [
       ~s|<div id="preview-alternatives-#{placement_id}" phx-hook="PreviewAlternativesTabs">|,
+      preview_notice(context, element, :tabs),
       ~s|<div role="tablist" aria-label="Alternative content options">|,
       tabs,
       "</div>",
@@ -123,7 +124,41 @@ defmodule Oli.Rendering.Alternatives.Html do
         id: "alternatives-selector-#{alternatives_id}"
       )
 
-    preference_selector
+    [
+      preview_notice(context, %{"alternatives_id" => alternatives_id}, :preference),
+      preference_selector
+    ]
+  end
+
+  defp preview_notice(%Context{mode: mode} = context, element, presentation)
+       when mode in [:author_preview, :instructor_preview] do
+    strategy =
+      (context.alternative_groups_by_id || %{})
+      |> Map.get(element["alternatives_id"], %{})
+      |> Map.get(:strategy)
+
+    message = preview_notice_message(strategy, presentation)
+
+    ~s|<div data-preview-alternatives-notice class="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100">#{message}</div>|
+  end
+
+  defp preview_notice(_context, _element, _presentation), do: ""
+
+  defp preview_notice_message(strategy, :tabs)
+       when strategy in ["experiment_controlled", "upgrade_decision_point"] do
+    "Preview each alternative using the tabs below to switch between them. The experiment policy assigns one alternative to each learner, and that assignment stays with the learner for this intervention."
+  end
+
+  defp preview_notice_message("user_section_preference", :preference) do
+    "Preview each alternative by selecting it from the list below. A learner's selection will be stored as their preference for the section."
+  end
+
+  defp preview_notice_message(_strategy, :tabs) do
+    "Preview each alternative using the tabs below to switch between them. In delivery, this group's policy determines which content is shown."
+  end
+
+  defp preview_notice_message(_strategy, :preference) do
+    "Preview mode lets you test each preference. In delivery, the learner's preference determines which alternative is shown."
   end
 
   defp user_section_preference(
