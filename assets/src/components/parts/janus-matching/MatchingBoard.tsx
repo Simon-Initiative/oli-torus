@@ -83,7 +83,9 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
   const stageRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const liveRegionRef = useRef<HTMLSpanElement>(null);
-  const instructionsIdRef = useRef(`matching-instructions-${Math.random().toString(36).slice(2, 9)}`);
+  const instructionsIdRef = useRef(
+    `matching-instructions-${Math.random().toString(36).slice(2, 9)}`,
+  );
   const instructionsId = instructionsIdRef.current;
   const isMobile = useIsMobileMatching();
 
@@ -242,15 +244,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
-  }, [
-    applyToggle,
-    clearSelection,
-    column1Items,
-    column2Items,
-    draggingFromId,
-    enabled,
-    isMobile,
-  ]);
+  }, [applyToggle, clearSelection, column1Items, column2Items, draggingFromId, enabled, isMobile]);
 
   useEffect(() => {
     if (!selectedCol1Id || draggingFromId) {
@@ -427,7 +421,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
     <div
       className={`matching-stage${isMobile ? ' matching-stage--mobile' : ''}`}
       ref={stageRef}
-      onFocusOut={(e) => {
+      onBlur={(e) => {
         const next = e.relatedTarget as Node | null;
         if (next && e.currentTarget.contains(next)) {
           return;

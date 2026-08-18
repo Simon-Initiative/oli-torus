@@ -61,8 +61,7 @@ export const genId = (prefix: string): string => {
 export const itemDisplayText = (item: MatchingItem): string =>
   (item.text && item.text.trim().length > 0 ? item.text : item.label) || '';
 
-export const MATCHING_INSTRUCTIONS =
-  'Select an item, then choose a match from the other column.';
+export const MATCHING_INSTRUCTIONS = 'Select an item, then choose a match from the other column.';
 
 export const itemImageCaption = (item: MatchingItem): string => {
   if (item.type !== 'image' || item.text == null) {
@@ -86,7 +85,7 @@ export const itemAccessibleName = (item: MatchingItem): string => {
   return itemDisplayText(item);
 };
 
-export const shuffleItems = <T,>(input: T[]): T[] => {
+export const shuffleItems = <T>(input: T[]): T[] => {
   const arr = [...input];
   for (let i = arr.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
