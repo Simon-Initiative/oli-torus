@@ -14,6 +14,27 @@ interface UseGifPlayerOptions {
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
+async function loadGifBytes(src: string): Promise<ArrayBuffer> {
+  try {
+    const direct = await fetch(src, { mode: 'cors', credentials: 'omit' });
+    if (direct.ok) {
+      return direct.arrayBuffer();
+    }
+  } catch {
+    // Fall through to same-origin proxy for external hosts without CORS
+  }
+
+  const proxied = await fetch(`/api/v1/media/proxy?url=${encodeURIComponent(src)}`, {
+    credentials: 'include',
+  });
+
+  if (!proxied.ok) {
+    throw new Error(`GIF fetch failed with status ${proxied.status}`);
+  }
+
+  return proxied.arrayBuffer();
+}
+
 export function useGifPlayer(src: string, options: UseGifPlayerOptions = {}) {
   const { autoPlay = true, respectReducedMotion = true } = options;
 
@@ -123,9 +144,7 @@ export function useGifPlayer(src: string, options: UseGifPlayerOptions = {}) {
 
     (async () => {
       try {
-        const res = await fetch(src, { mode: 'cors', credentials: 'omit' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const buffer = await res.arrayBuffer();
+        const buffer = await loadGifBytes(src);
         if (cancelled) return;
 
         const gif = parseGIF(buffer);
