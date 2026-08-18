@@ -21,7 +21,7 @@ async function loadGifBytes(src: string): Promise<ArrayBuffer> {
       return direct.arrayBuffer();
     }
   } catch {
-    // Fall through to same-origin proxy for external hosts without CORS.
+    // Fall through to same-origin proxy for external hosts without CORS
   }
 
   const proxied = await fetch(`/api/v1/media/proxy?url=${encodeURIComponent(src)}`, {
