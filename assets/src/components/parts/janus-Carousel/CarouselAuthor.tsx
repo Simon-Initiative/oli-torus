@@ -7,6 +7,7 @@ import 'swiper/css/scrollbar';
 import 'swiper/css/zoom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { sanitizeRichLabelHtml } from 'utils/richOptionLabel';
 import './Carousel.css';
 import { CarouselModel } from './schema';
 
@@ -49,7 +50,10 @@ const CarouselAuthor: React.FC<AuthorPartComponentProps<CarouselModel>> = (props
             <SwiperSlide key={index} zoom={true}>
               <figure className="swiper-zoom-container">
                 <img style={imgStyles} src={image.url} alt={image.alt ? image.alt : undefined} />
-                <figcaption>{image.caption}</figcaption>
+                <figcaption
+                  className="janus-rich-label"
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(image.caption || '') }}
+                />
               </figure>
             </SwiperSlide>
           ))}

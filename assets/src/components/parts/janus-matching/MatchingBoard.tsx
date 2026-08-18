@@ -8,7 +8,7 @@ import {
   columnTitle,
   isLinkCorrect,
   isPairMatched,
-  itemDisplayText,
+  itemAccessibleText,
   itemLabel,
   toggleMatch,
 } from './matching-util';
@@ -348,7 +348,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     .join(' ')}
                   tabIndex={enabled ? tabIndex : -1}
                   disabled={!enabled}
-                  aria-label={`${itemLabel(item, index)}. ${itemDisplayText(
+                  aria-label={`${itemLabel(item, index)}. ${itemAccessibleText(
                     item,
                   )}. Press Enter to select and choose a match.`}
                   aria-pressed={selected}
@@ -411,7 +411,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     .join(' ')}
                   tabIndex={enabled ? tabIndex : -1}
                   disabled={!enabled}
-                  aria-label={`${itemLabel(item, index)}. ${itemDisplayText(
+                  aria-label={`${itemLabel(item, index)}. ${itemAccessibleText(
                     item,
                   )}. Press Enter to match with the selected item.`}
                   onClick={() => {
