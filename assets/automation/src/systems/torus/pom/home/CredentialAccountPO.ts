@@ -27,12 +27,14 @@ export class CredentialAccountPO {
       .locator(`input[name="${this.formName()}[password_confirmation]"]`)
       .fill(account.password);
 
+    await this.acceptCookieConsentIfVisible();
     await form.getByRole('button', { name: 'Create account', exact: true }).click();
     await this.page.waitForURL(`/${this.pathSegment()}/confirm`);
   }
 
   async confirm(url: string) {
     await this.page.goto(url);
+    await this.acceptCookieConsentIfVisible();
     await this.page.getByRole('button', { name: 'Confirm', exact: true }).click();
     await this.page.waitForURL(`/${this.pathSegment()}/log_in`);
     await expect(this.page.getByText('Email successfully confirmed.')).toBeVisible();
@@ -43,6 +45,7 @@ export class CredentialAccountPO {
 
     const form = this.page.locator('#reset_password_form');
     await form.locator(`input[name="${this.formName()}[email]"]`).fill(email);
+    await this.acceptCookieConsentIfVisible();
     await form.getByRole('button', { name: 'Send password reset instructions' }).click();
     await this.page.waitForURL(this.resetRequestDestination());
   }
@@ -53,6 +56,7 @@ export class CredentialAccountPO {
     const form = this.page.locator('#reset_password_form');
     await form.locator(`input[name="${this.formName()}[password]"]`).fill(password);
     await form.locator(`input[name="${this.formName()}[password_confirmation]"]`).fill(password);
+    await this.acceptCookieConsentIfVisible();
     await form.getByRole('button', { name: 'Reset Password', exact: true }).click();
     await this.page.waitForURL(`/${this.pathSegment()}/log_in`);
     await expect(this.page.getByText('Password reset successfully.')).toBeVisible();
@@ -64,6 +68,7 @@ export class CredentialAccountPO {
     const form = this.page.locator('#login_form');
     await form.locator(`input[name="${this.formName()}[email]"]`).fill(email);
     await form.locator(`input[name="${this.formName()}[password]"]`).fill(password);
+    await this.acceptCookieConsentIfVisible();
     await form.getByRole('button', { name: 'Sign in', exact: true }).click();
   }
 
@@ -90,5 +95,15 @@ export class CredentialAccountPO {
 
   private resetRequestDestination() {
     return this.type === 'author' ? '/authors/log_in' : '/';
+  }
+
+  private async acceptCookieConsentIfVisible() {
+    const consent = this.page.locator('#cookie_consent_display');
+    const acceptButton = consent.getByRole('button', { name: 'Accept', exact: true });
+
+    if (await acceptButton.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await acceptButton.click({ force: true });
+      await expect(consent).toBeHidden();
+    }
   }
 }

@@ -35,7 +35,6 @@ async function exerciseSelfServiceLifecycle(
   const newPassword = `Reset-${suffix}-password`;
   const account = new CredentialAccountPO(page, type);
 
-  await setCookieConsent(context);
   await account.register({
     email,
     givenName: 'Playwright',
@@ -51,7 +50,6 @@ async function exerciseSelfServiceLifecycle(
   });
 
   await context.clearCookies();
-  await setCookieConsent(context);
   await account.confirm(
     extractAccountLink(confirmation.html_body, confirmation.text_body, type, 'confirm'),
   );
@@ -60,7 +58,6 @@ async function exerciseSelfServiceLifecycle(
   await account.expectLoginSuccess();
 
   await context.clearCookies();
-  await setCookieConsent(context);
   await account.requestPasswordReset(email);
 
   const reset = await waitForMailboxEmail(request, {
@@ -80,16 +77,6 @@ async function exerciseSelfServiceLifecycle(
 
   await account.login(email, newPassword);
   await account.expectLoginSuccess();
-}
-
-function setCookieConsent(context: BrowserContext) {
-  return context.addCookies([
-    {
-      name: '_cky_opt_in',
-      value: 'true',
-      url: baseUrl,
-    },
-  ]);
 }
 
 function extractAccountLink(

@@ -92,8 +92,8 @@ wait for a Local-adapter email.
 - Generate a unique recipient per flow, select the message by recipient and
   subject, and extract only the expected account-action URL (rather than an
   unrelated link such as the email logo).
-- Preconfigure cookie consent in the test browser context so an unrelated
-  consent modal cannot obscure the credential-flow controls.
+- Dismiss the cookie-consent modal when it is present before a credential-flow
+  action, so an unrelated asynchronous UI overlay cannot obscure its control.
 
 **Exit criterion:** both self-service account types complete their lifecycle
 against a Playwright environment without a real inbox or external reCAPTCHA.
