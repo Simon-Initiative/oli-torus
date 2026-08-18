@@ -9,7 +9,7 @@ import {
   RESPONSIVE_GROUPING_MIN_HEIGHT,
 } from './schema';
 
-// Zone id used to represent the item bank (distinct from any category id).
+// Zone id used to represent the item bank (distinct from any category id)
 export const BANK_ID = 'bank';
 export const BANK_LABEL = 'Item Bank';
 
