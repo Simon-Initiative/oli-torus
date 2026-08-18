@@ -146,15 +146,15 @@ defmodule Oli.Rendering.Alternatives.Html do
 
   defp preview_notice_message(strategy, :tabs)
        when strategy in ["experiment_controlled", "upgrade_decision_point"] do
-    "Preview mode shows every alternative. Use the tabs to switch between them. In delivery, the experiment policy selects one alternative for each learner, and that assignment stays with the learner for this intervention."
+    "Preview each alternative using the tabs below to switch between them. The experiment policy assigns one alternative to each learner, and that assignment stays with the learner for this intervention."
   end
 
   defp preview_notice_message("user_section_preference", :preference) do
-    "Preview mode lets you test each preference. In delivery, each learner's preference determines which alternative they see."
+    "Preview each alternative by selecting it from the list below. A learner's selection will be stored as their preference for the section."
   end
 
   defp preview_notice_message(_strategy, :tabs) do
-    "Preview mode shows every alternative. Use the tabs to switch between them. In delivery, this group's policy determines which content is shown."
+    "Preview each alternative using the tabs below to switch between them. In delivery, this group's policy determines which content is shown."
   end
 
   defp preview_notice_message(_strategy, :preference) do

@@ -270,7 +270,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
       assert html =~ "Control copy"
       assert html =~ "Treatment copy"
-      assert html =~ "the experiment policy selects one alternative for each learner"
+      assert html =~ "experiment policy assigns one alternative to each learner"
       assert has_element?(view, ~s|[phx-hook="PreviewAlternativesTabs"]|)
 
       {:ok, _alternatives_revision} =
@@ -290,7 +290,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
              )
 
       assert render(preference_view) =~
-               "preference determines which alternative they see"
+               "stored as their preference for the section"
     end
 
     test "back link falls back to preview schedule request_path when return_to is absent", %{

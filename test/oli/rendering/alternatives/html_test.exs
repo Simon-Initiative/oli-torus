@@ -230,9 +230,10 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
       assert rendered =~ ~s|phx-hook="PreviewAlternativesTabs"|
       assert rendered =~ "Alternative 1"
       assert rendered =~ "Alternative 2"
+      assert rendered =~ "Preview each alternative using the tabs below to switch between them"
 
       assert rendered =~
-               "the experiment policy selects one alternative for each learner"
+               "experiment policy assigns one alternative to each learner"
 
       assert rendered =~ "assignment stays with the learner for this intervention"
       refute rendered =~ "AlternativesPreferenceSelector"
@@ -283,7 +284,8 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
 
       assert rendered =~ "AlternativesPreferenceSelector"
       assert rendered =~ "alternatives-selector-1"
-      assert rendered =~ "preference determines which alternative they see"
+      assert rendered =~ "Preview each alternative by selecting it from the list below"
+      assert rendered =~ "stored as their preference for the section"
       refute rendered =~ ~s|phx-hook="PreviewAlternativesTabs"|
       refute rendered =~ ~s|role="tablist"|
     end
