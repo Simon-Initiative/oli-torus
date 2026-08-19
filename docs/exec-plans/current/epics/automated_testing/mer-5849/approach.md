@@ -94,6 +94,19 @@ wait for a Local-adapter email.
   unrelated link such as the email logo).
 - Dismiss the cookie-consent modal when it is present before a credential-flow
   action, so an unrelated asynchronous UI overlay cannot obscure its control.
+- Wait for the confirm/reset LiveViews' post-submit redirect using
+  `waitUntil: 'commit'` rather than the default `'load'`. These redirects are
+  pushed by LiveView over the existing WebSocket
+  (`Phoenix.LiveView.redirect/2`, a cross-document navigation), and Chrome did
+  not reliably report the resulting `load` event to Playwright even though the
+  navigation and render completed; waiting for `'commit'` avoids depending on
+  that event.
+- When simulating an anonymous confirmation or reset-password click (i.e. not
+  as the just-registered, auto-logged-in account), clear only the session
+  cookie (`context.clearCookies({ name: '_oli_key' })`) instead of every
+  cookie. Clearing all cookies also discarded the cookie-consent choice,
+  re-triggering the consent modal on the next navigation and racing with the
+  credential-flow submit it was meant to protect.
 
 **Exit criterion:** both self-service account types complete their lifecycle
 against a Playwright environment without a real inbox or external reCAPTCHA.
@@ -130,6 +143,18 @@ production systems.
 - **Environment drift:** verify the routes are present only when the existing
   Playwright compile-time flag is enabled and run the suite only against the
   dedicated CI deployment.
+- **`PLAYWRIGHT_BASE_URL` must match the server's `HOST`:** Playwright resolves
+  every relative `page.goto(...)` against `PLAYWRIGHT_BASE_URL`, but the
+  server builds the absolute confirmation/reset links embedded in emails from
+  `HOST` (`config/dev.exs:108`, inherited by `config/playwright.exs`). If the
+  two values name different hosts (e.g. `PLAYWRIGHT_BASE_URL=127.0.0.1` with
+  `HOST=localhost`), the browser reaches the emailed link on an origin it has
+  never visited, so no cookie set earlier in the flow (including the
+  cookie-consent choice) is present there. The consent modal then has to
+  mount fresh, asynchronously, on that page, racing the credential-flow
+  submit and intermittently blocking it — reproducible headed or in `--ui`
+  mode, not just headless. Keep `PLAYWRIGHT_BASE_URL` and `HOST` set to the
+  same hostname for any local or CI Playwright run.
 - **Role drift:** assert role-specific post-login destinations for admin and
   instructor, not merely successful authentication.
 

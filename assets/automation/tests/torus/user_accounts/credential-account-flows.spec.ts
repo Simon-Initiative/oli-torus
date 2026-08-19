@@ -49,7 +49,10 @@ async function exerciseSelfServiceLifecycle(
     token: scenarioToken,
   });
 
-  await context.clearCookies();
+  // Clear only the session cookie so the confirmation/reset links are followed
+  // anonymously, without wiping the cookie-consent choice and re-triggering
+  // the consent modal on the next navigation.
+  await context.clearCookies({ name: '_oli_key' });
   await account.confirm(
     extractAccountLink(confirmation.html_body, confirmation.text_body, type, 'confirm'),
   );
@@ -57,7 +60,10 @@ async function exerciseSelfServiceLifecycle(
   await account.login(email, initialPassword);
   await account.expectLoginSuccess();
 
-  await context.clearCookies();
+  // Clear only the session cookie so the confirmation/reset links are followed
+  // anonymously, without wiping the cookie-consent choice and re-triggering
+  // the consent modal on the next navigation.
+  await context.clearCookies({ name: '_oli_key' });
   await account.requestPasswordReset(email);
 
   const reset = await waitForMailboxEmail(request, {

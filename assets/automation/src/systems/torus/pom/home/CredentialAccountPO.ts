@@ -36,7 +36,7 @@ export class CredentialAccountPO {
     await this.page.goto(url);
     await this.acceptCookieConsentIfVisible();
     await this.page.getByRole('button', { name: 'Confirm', exact: true }).click();
-    await this.page.waitForURL(`/${this.pathSegment()}/log_in`);
+    await this.page.waitForURL(`/${this.pathSegment()}/log_in`, { waitUntil: 'commit' });
     await expect(this.page.getByText('Email successfully confirmed.')).toBeVisible();
   }
 
@@ -58,7 +58,7 @@ export class CredentialAccountPO {
     await form.locator(`input[name="${this.formName()}[password_confirmation]"]`).fill(password);
     await this.acceptCookieConsentIfVisible();
     await form.getByRole('button', { name: 'Reset Password', exact: true }).click();
-    await this.page.waitForURL(`/${this.pathSegment()}/log_in`);
+    await this.page.waitForURL(`/${this.pathSegment()}/log_in`, { waitUntil: 'commit' });
     await expect(this.page.getByText('Password reset successfully.')).toBeVisible();
   }
 
