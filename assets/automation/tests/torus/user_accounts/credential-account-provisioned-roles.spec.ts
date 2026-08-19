@@ -9,7 +9,7 @@ const scenarioToken = process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 const scenarioPath = path.resolve(__dirname, './playwright_credential_roles.yaml');
 const seededPassword = 'changeme123456';
 
-test.describe('credential-based account flows - provisioned roles', () => {
+test.describe('credential-based account flows - provisioned roles @pr', () => {
   test.describe.configure({ timeout: 120_000 });
 
   test('system admin author credential lifecycle', async ({

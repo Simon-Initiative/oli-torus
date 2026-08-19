@@ -6,7 +6,7 @@ import { APIRequestContext, BrowserContext, Page } from '@playwright/test';
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 const scenarioToken = process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 
-test.describe('credential-based account flows', () => {
+test.describe('credential-based account flows @pr', () => {
   test.describe.configure({ timeout: 120_000 });
 
   test('author self-service lifecycle', async ({ context, page, request }, testInfo) => {

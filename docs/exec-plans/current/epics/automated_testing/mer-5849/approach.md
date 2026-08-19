@@ -150,12 +150,59 @@ against a Playwright environment without a real inbox or external reCAPTCHA.
 credential reset behavior without pretending that they have self-service
 registration flows.
 
-### Phase 4: CI/CD integration and operational closure
+### Phase 4: CI/CD integration and operational closure — complete
 
-- Configure a dedicated CI job to start an isolated Torus instance with the
-  Local adapter, wait for readiness, and run only this suite.
-- Retain Playwright artifacts and server logs on failure.
-- Document required environment variables and the separation from Nightly.
+- Added `.github/workflows/pr-playwright.yml`, triggered on `pull_request` to
+  the same branches as the main `build.yml` CI (`master`, `hotfix-*`,
+  `prerelease-*`, `nextgen-ux`). It starts an ephemeral
+  `pgvector/pgvector:pg18` service-container database (destroyed with the
+  runner, satisfying the ticket's "reset the CI test database after the run"
+  without an explicit teardown step), compiles and boots Torus under
+  `MIX_ENV=playwright`, polls `/` until ready, then runs every `@pr`-tagged
+  test. Named and worded generically on purpose (no MER-5849/credential
+  wording in the workflow file itself): it is meant to be the durable,
+  reusable home for any future Playwright test that can run against a bare,
+  freshly created database, not a one-off tied to this ticket.
+  `HOST` and `PLAYWRIGHT_BASE_URL` are both set to `localhost` — see the
+  Phase 2 note above on why they must match.
+- `PLAYWRIGHT_SCENARIO_TOKEN` is a fixed, non-secret string
+  (`ci-ephemeral-token`) rather than a GitHub secret: the instance it protects
+  is unreachable outside the job and destroyed when it ends, so the token has
+  no value to protect beyond this one run.
+- On completion (success or failure), the job uploads the Playwright
+  report/trace/test-results (as `nightly-playwright.yml` already does) *and*
+  the Torus server's stdout/stderr, redirected to a file when the server is
+  started — nightly-playwright does not need this because it targets an
+  already-running, separately-logged deployment.
+- Test selection uses an explicit Playwright tag, `@pr`, applied to both
+  `credential-account-flows.spec.ts` and
+  `credential-account-provisioned-roles.spec.ts` describe blocks, run via
+  `npx playwright test --grep @pr`. This mirrors the existing `@nightly`/
+  `@smoke` tagging convention (single lowercase word naming *when/where* a
+  test runs, not what it tests) rather than inventing a new mechanism, and is
+  the semantic inverse of `@nightly` the ticket asked about, extensible to
+  future non-nightly, non-smoke suites without editing the workflow file.
+- **Rejected:** reusing the "Plasma" per-PR preview deployment
+  (`build-preview-image.yml`, `plasma.oli.cmu.edu`) that a ticket comment
+  suggested investigating. Plasma's actual deployment step is reconciled by
+  Argo CD in a private GitOps repository not present in this codebase, and
+  every Plasma preview is currently built as a shared, human-reviewable
+  `MIX_ENV=prod` image (real AWS SES mailer, no scenario/mailbox routes) —
+  changing that for all previews to get this suite's `MIX_ENV=playwright`
+  behavior is out of this repo's reach and out of this ticket's scope. A
+  fully self-contained job satisfies the ticket's own step-by-step "CI/CD
+  Integration" section without depending on that external infrastructure.
+- **Deferred, not built:** flipping test selection from opt-in (`@pr`) to
+  opt-out (`--grep-invert "@nightly|@smoke"`, so any newly added spec runs
+  here by default) is mechanically possible but not done. Several existing
+  suites under `assets/automation/tests/torus/` (LTI external tool, course
+  authoring, Google Docs import, Canvas) assume a persistent, pre-seeded
+  environment and real third-party credentials that this minimal, empty
+  ephemeral instance does not provide; inverting the grep today would run
+  them here and fail them for environment reasons unrelated to real bugs.
+  Doing this safely later requires first auditing and tagging (e.g.
+  `@requires-persistent-env`) every suite that cannot run against a bare
+  ephemeral instance.
 
 **Exit criterion:** pull-request or equivalent CI can run the suite on an
 ephemeral Playwright deployment without touching persistent staging or
