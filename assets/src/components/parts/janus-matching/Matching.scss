@@ -125,23 +125,12 @@
   .matching-column-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding-bottom: 8px;
     border-bottom: 1px solid #e2e8f0;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     color: #334155;
-  }
-
-  .matching-column-badge {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #94a3b8;
-    background: #f1f5f9;
-    border-radius: 6px;
-    padding: 2px 6px;
   }
 
   .matching-items {
@@ -218,8 +207,57 @@
     min-width: 0;
   }
 
-  .matching-item-content {
+  .matching-hint {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    box-sizing: border-box;
+
+    svg {
+      display: block;
+      width: 12px;
+      height: 12px;
+    }
+
+    &--correct {
+      background: #22c55e;
+    }
+
+    &--incorrect {
+      background: #ef4444;
+    }
+  }
+
+  .matching-hint__bang {
     font-size: 13px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .matching-pair-badge {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .matching-item-content {
+    font-size: 16px;
     font-weight: 500;
     color: #fff;
     word-break: break-word;
@@ -254,6 +292,8 @@
 
   .matching-item-label {
     display: block;
+    font-size: 16px;
+    font-weight: 500;
     color: #fff;
 
     &.janus-rich-label {
@@ -288,8 +328,21 @@
 }
 
 @media (max-width: 640px) {
+  .matching .matching-stage {
+    padding: 12px;
+  }
+
   .matching .matching-columns {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .matching .matching-lines,
+  .matching-stage--mobile .matching-lines {
+    display: none;
+  }
+
+  .matching .matching-item {
+    padding: 12px;
   }
 }

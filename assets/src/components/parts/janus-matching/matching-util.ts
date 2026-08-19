@@ -62,6 +62,8 @@ export const genId = (prefix: string): string => {
 export const itemDisplayText = (item: MatchingItem): string =>
   (item.text && item.text.trim().length > 0 ? item.text : item.label) || '';
 
+export const MATCHING_INSTRUCTIONS = 'Select an item, then choose a match from the other column.';
+
 export const itemImageCaption = (item: MatchingItem): string => {
   if (item.type !== 'image' || item.text == null) {
     return '';
@@ -75,6 +77,47 @@ export const itemAccessibleText = (item: MatchingItem): string => {
     return item.alt?.trim() || htmlToPlainText(itemImageCaption(item)) || item.label?.trim() || '';
   }
   return htmlToPlainText(itemDisplayText(item));
+};
+
+export const shuffleItems = <T>(input: T[]): T[] => {
+  const arr = [...input];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+export type MatchPairNumbers = Record<string, number>;
+
+export const buildMatchPairNumbers = (
+  matches: MatchingMatches,
+  column1Items: MatchingItem[],
+): MatchPairNumbers => {
+  const numbers: MatchPairNumbers = {};
+  let next = 1;
+  column1Items.forEach((item) => {
+    const targets = matches[item.id] || [];
+    if (targets.length === 0) {
+      return;
+    }
+    const pair = next;
+    next += 1;
+    numbers[item.id] = pair;
+    targets.forEach((col2Id) => {
+      numbers[col2Id] = pair;
+    });
+  });
+  return numbers;
+};
+
+const PAIR_HUE_STEP = 137.508;
+
+export const pairColorForNumber = (pairNumber: number): string => {
+  const n = Math.max(1, Math.floor(pairNumber));
+  const hue = ((n - 1) * PAIR_HUE_STEP) % 360;
+  const lightness = 38 + ((n - 1) % 3) * 5;
+  return `hsl(${hue.toFixed(1)} 72% ${lightness}%)`;
 };
 
 export const itemLabel = (item: MatchingItem, index: number): string =>
@@ -252,6 +295,7 @@ export const buildResponses = (
     userModified: boolean;
     showCorrect: boolean;
     showHints: boolean;
+    randomize: boolean;
   },
 ) => {
   const responses: Array<{ key: string; type: CapiVariableTypes; value: any }> = [
@@ -260,6 +304,7 @@ export const buildResponses = (
     { key: 'correct', type: CapiVariableTypes.BOOLEAN, value: computeCorrect(model, matches) },
     { key: 'showCorrect', type: CapiVariableTypes.BOOLEAN, value: flags.showCorrect },
     { key: 'showHints', type: CapiVariableTypes.BOOLEAN, value: flags.showHints },
+    { key: 'randomize', type: CapiVariableTypes.BOOLEAN, value: flags.randomize },
     { key: 'matchCount', type: CapiVariableTypes.NUMBER, value: countMatches(matches) },
   ];
 

@@ -3,13 +3,16 @@ import MatchingItemContent from './MatchingItemContent';
 import MatchingLines from './MatchingLines';
 import {
   DrawnLine,
+  MATCHING_INSTRUCTIONS,
   areDrawnLinesEqual,
   buildDrawnLines,
+  buildMatchPairNumbers,
   columnTitle,
   isLinkCorrect,
   isPairMatched,
   itemAccessibleText,
   itemLabel,
+  pairColorForNumber,
   toggleMatch,
 } from './matching-util';
 import { DEFAULT_MATCHING_THEME, MatchingItem, MatchingMatches, MatchingModel } from './schema';
@@ -24,6 +27,53 @@ export interface MatchingBoardProps {
 
 type FocusZone = 'col1' | 'col2';
 
+const MOBILE_MEDIA = '(max-width: 640px)';
+
+const useIsMobileMatching = (): boolean => {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia(MOBILE_MEDIA).matches : false,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia(MOBILE_MEDIA);
+    const onChange = () => setIsMobile(media.matches);
+    onChange();
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
+
+  return isMobile;
+};
+
+const MatchingHintIcon: React.FC<{ type: 'correct' | 'incorrect' }> = ({ type }) => (
+  <span className={`matching-hint matching-hint--${type}`} aria-hidden="true">
+    {type === 'correct' ? (
+      <svg viewBox="0 0 12 12" width="12" height="12" focusable="false" aria-hidden="true">
+        <path
+          d="M2.5 6.25 4.75 8.5 9.5 3.75"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ) : (
+      <span className="matching-hint__bang">!</span>
+    )}
+  </span>
+);
+
+const MatchingPairBadge: React.FC<{ pairNumber: number }> = ({ pairNumber }) => (
+  <span
+    className="matching-pair-badge"
+    style={{ background: pairColorForNumber(pairNumber) }}
+    aria-hidden="true"
+  >
+    {pairNumber}
+  </span>
+);
+
 const MatchingBoard: React.FC<MatchingBoardProps> = ({
   model,
   matches,
@@ -34,6 +84,11 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
   const stageRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const liveRegionRef = useRef<HTMLSpanElement>(null);
+  const instructionsIdRef = useRef(
+    `matching-instructions-${Math.random().toString(36).slice(2, 9)}`,
+  );
+  const instructionsId = instructionsIdRef.current;
+  const isMobile = useIsMobileMatching();
 
   const [lines, setLines] = useState<DrawnLine[]>([]);
   const [draft, setDraft] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(
@@ -48,6 +103,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
   const column2Items = model.column2Items || [];
   const showTitles = model.showColumnTitles !== false;
   const themeColor = model.themeColor || DEFAULT_MATCHING_THEME;
+  const pairNumbers = isMobile ? buildMatchPairNumbers(matches, column1Items) : {};
 
   const announce = useCallback((message: string) => {
     if (!liveRegionRef.current) {
@@ -59,6 +115,13 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
         liveRegionRef.current.textContent = '';
       }
     }, 600);
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedCol1Id(null);
+    setFocusZone('col1');
+    setDraggingFromId(null);
+    setDraft(null);
   }, []);
 
   const focusItem = useCallback((itemId: string) => {
@@ -75,7 +138,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
   }, []);
 
   const redrawLines = useCallback(() => {
-    if (!stageRef.current) {
+    if (!stageRef.current || isMobile) {
       setLines((prev) => (prev.length === 0 ? prev : []));
       return;
     }
@@ -92,7 +155,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       };
     });
     setLines((prev) => (areDrawnLinesEqual(prev, next) ? prev : next));
-  }, [matches]);
+  }, [isMobile, matches]);
 
   useLayoutEffect(() => {
     redrawLines();
@@ -110,8 +173,10 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       onMatchesChange(next);
       announce(
         wasMatched
-          ? `Removed match between ${itemLabel(col1Item, 0)} and ${itemLabel(col2Item, 0)}`
-          : `Matched ${itemLabel(col1Item, 0)} with ${itemLabel(col2Item, 0)}`,
+          ? `Removed match between ${itemAccessibleText(col1Item)} and ${itemAccessibleText(
+              col2Item,
+            )}`
+          : `Matched ${itemAccessibleText(col1Item)} with ${itemAccessibleText(col2Item)}`,
       );
       return next;
     },
@@ -127,7 +192,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
   };
 
   const startDrag = (col1Id: string, clientX: number, clientY: number) => {
-    if (!enabled) {
+    if (!enabled || isMobile) {
       return;
     }
     const el = itemRefs.current[col1Id];
@@ -147,7 +212,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
   };
 
   useEffect(() => {
-    if (!draggingFromId) {
+    if (!draggingFromId || isMobile) {
       return;
     }
 
@@ -171,7 +236,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       }
       setDraggingFromId(null);
       setDraft(null);
-      setFocusZone('col1');
+      clearSelection();
     };
 
     window.addEventListener('pointermove', onMove);
@@ -180,10 +245,37 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
-  }, [applyToggle, column1Items, column2Items, draggingFromId, enabled]);
+  }, [applyToggle, clearSelection, column1Items, column2Items, draggingFromId, enabled, isMobile]);
+
+  useEffect(() => {
+    if (!selectedCol1Id || draggingFromId) {
+      return;
+    }
+
+    const onPointerDown = (e: PointerEvent) => {
+      const stage = stageRef.current;
+      if (!stage) {
+        return;
+      }
+      if (e.target instanceof Node && stage.contains(e.target)) {
+        return;
+      }
+      clearSelection();
+    };
+
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => window.removeEventListener('pointerdown', onPointerDown);
+  }, [clearSelection, draggingFromId, selectedCol1Id]);
 
   const handleCol1KeyDown = (e: React.KeyboardEvent, item: MatchingItem, index: number) => {
     if (!enabled) {
+      return;
+    }
+
+    if (e.key === 'Escape' && selectedCol1Id) {
+      e.preventDefault();
+      clearSelection();
+      announce('Selection cancelled');
       return;
     }
 
@@ -191,7 +283,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       e.preventDefault();
       setSelectedCol1Id(item.id);
       setFocusZone('col2');
-      announce(`Selected ${itemLabel(item, index)}. Choose a match from column 2.`);
+      announce(`Selected ${itemAccessibleText(item)}. Choose a match from column 2.`);
       const firstCol2 = column2Items[0];
       if (firstCol2) {
         requestAnimationFrame(() => focusItem(firstCol2.id));
@@ -217,8 +309,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
     if (e.key === 'Escape') {
       e.preventDefault();
       const col1Id = selectedCol1Id;
-      setSelectedCol1Id(null);
-      setFocusZone('col1');
+      clearSelection();
       announce('Selection cancelled');
       requestAnimationFrame(() => focusItem(col1Id));
       return;
@@ -240,8 +331,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
         return;
       }
       applyToggle(col1Item, item);
-      setSelectedCol1Id(null);
-      setFocusZone('col1');
+      clearSelection();
       requestAnimationFrame(() => focusItem(col1Item.id));
       return;
     }
@@ -254,6 +344,31 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
           : Math.max(0, index - 1);
       focusItem(column2Items[nextIndex].id);
     }
+  };
+
+  const completeCol2Match = (item: MatchingItem) => {
+    if (!enabled) {
+      return;
+    }
+    if (selectedCol1Id) {
+      const col1Item = column1Items.find((i) => i.id === selectedCol1Id);
+      if (!col1Item) {
+        return;
+      }
+      applyToggle(col1Item, item);
+      clearSelection();
+      requestAnimationFrame(() => focusItem(col1Item.id));
+      return;
+    }
+    if (!isMobile || !itemHasMatch(item.id, 2)) {
+      return;
+    }
+    const ownerId = Object.keys(matches).find((c1) => (matches[c1] || []).includes(item.id));
+    const col1Item = ownerId ? column1Items.find((i) => i.id === ownerId) : undefined;
+    if (!col1Item) {
+      return;
+    }
+    applyToggle(col1Item, item);
   };
 
   const itemHasMatch = (itemId: string, col: 1 | 2) => {
@@ -283,6 +398,17 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
     return allCorrect ? 'is-correct' : 'is-incorrect';
   };
 
+  const hintTypeForItem = (itemId: string, col: 1 | 2): 'correct' | 'incorrect' | null => {
+    const hintClass = itemHintClass(itemId, col);
+    if (hintClass === 'is-correct') {
+      return 'correct';
+    }
+    if (hintClass === 'is-incorrect') {
+      return 'incorrect';
+    }
+    return null;
+  };
+
   const lineClassName = (line: DrawnLine): string => {
     if (!showHints) {
       return '';
@@ -293,24 +419,45 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
   };
 
   return (
-    <div className="matching-stage" ref={stageRef}>
-      <MatchingLines
-        lines={lines}
-        draft={draft}
-        themeColor={themeColor}
-        getLineClassName={lineClassName}
-        onLineClick={
-          enabled
-            ? (line) => {
-                const col1Item = column1Items.find((i) => i.id === line.col1Id);
-                const col2Item = column2Items.find((i) => i.id === line.col2Id);
-                if (col1Item && col2Item) {
-                  applyToggle(col1Item, col2Item);
-                }
-              }
-            : undefined
+    <div
+      className={`matching-stage${isMobile ? ' matching-stage--mobile' : ''}`}
+      ref={stageRef}
+      onBlur={(e) => {
+        const next = e.relatedTarget as Node | null;
+        if (next && e.currentTarget.contains(next)) {
+          return;
         }
-      />
+        requestAnimationFrame(() => {
+          const active = document.activeElement;
+          if (active && stageRef.current?.contains(active)) {
+            return;
+          }
+          clearSelection();
+        });
+      }}
+    >
+      {!isMobile && (
+        <MatchingLines
+          lines={lines}
+          draft={draft}
+          themeColor={themeColor}
+          getLineClassName={lineClassName}
+          onLineClick={
+            enabled
+              ? (line) => {
+                  const col1Item = column1Items.find((i) => i.id === line.col1Id);
+                  const col2Item = column2Items.find((i) => i.id === line.col2Id);
+                  if (col1Item && col2Item) {
+                    applyToggle(col1Item, col2Item);
+                  }
+                }
+              : undefined
+          }
+        />
+      )}
+      <p id={instructionsId} className="matching-sr-only">
+        {MATCHING_INSTRUCTIONS}
+      </p>
       <div className="matching-columns">
         <section
           className="matching-column"
@@ -319,13 +466,14 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
           {showTitles && (
             <header className="matching-column-header">
               <span>{columnTitle(model.column1Title, 'Column 1')}</span>
-              <span className="matching-column-badge">Col 1</span>
             </header>
           )}
           <div className="matching-items" role="list">
             {column1Items.map((item, index) => {
               const selected = selectedCol1Id === item.id;
               const tabIndex = focusZone === 'col1' || !selectedCol1Id ? 0 : -1;
+              const hintType = hintTypeForItem(item.id, 1);
+              const pairNumber = pairNumbers[item.id];
               return (
                 <button
                   key={item.id}
@@ -351,13 +499,21 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                   aria-label={`${itemLabel(item, index)}. ${itemAccessibleText(
                     item,
                   )}. Press Enter to select and choose a match.`}
+                  aria-describedby={instructionsId}
                   aria-pressed={selected}
                   onPointerDown={(e) => {
-                    if (!enabled || e.button !== 0) {
+                    if (!enabled || e.button !== 0 || isMobile) {
                       return;
                     }
                     e.preventDefault();
                     startDrag(item.id, e.clientX, e.clientY);
+                  }}
+                  onClick={() => {
+                    if (!enabled || !isMobile) {
+                      return;
+                    }
+                    setSelectedCol1Id((prev) => (prev === item.id ? null : item.id));
+                    setFocusZone('col1');
                   }}
                   onKeyDown={(e) => handleCol1KeyDown(e, item, index)}
                   onFocus={() => {
@@ -368,7 +524,9 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     setFocusedItemId((prev) => (prev === item.id ? null : prev));
                   }}
                 >
-                  <div className="matching-item-body">
+                  {pairNumber ? <MatchingPairBadge pairNumber={pairNumber} /> : null}
+                  {hintType ? <MatchingHintIcon type={hintType} /> : null}
+                  <div className="matching-item-body" aria-hidden="true">
                     <MatchingItemContent item={item} />
                   </div>
                 </button>
@@ -384,12 +542,13 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
           {showTitles && (
             <header className="matching-column-header">
               <span>{columnTitle(model.column2Title, 'Column 2')}</span>
-              <span className="matching-column-badge">Col 2</span>
             </header>
           )}
           <div className="matching-items" role="list">
             {column2Items.map((item, index) => {
               const tabIndex = focusZone === 'col2' && selectedCol1Id ? 0 : -1;
+              const hintType = hintTypeForItem(item.id, 2);
+              const pairNumber = pairNumbers[item.id];
               return (
                 <button
                   key={item.id}
@@ -402,7 +561,9 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                   }}
                   className={[
                     'matching-item',
-                    enabled && selectedCol1Id ? 'is-interactive' : '',
+                    enabled && (selectedCol1Id || (isMobile && itemHasMatch(item.id, 2)))
+                      ? 'is-interactive'
+                      : '',
                     focusedItemId === item.id ? 'is-focused' : '',
                     itemHasMatch(item.id, 2) ? 'is-matched' : '',
                     itemHintClass(item.id, 2),
@@ -414,19 +575,8 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                   aria-label={`${itemLabel(item, index)}. ${itemAccessibleText(
                     item,
                   )}. Press Enter to match with the selected item.`}
-                  onClick={() => {
-                    if (!enabled || !selectedCol1Id) {
-                      return;
-                    }
-                    const col1Item = column1Items.find((i) => i.id === selectedCol1Id);
-                    if (!col1Item) {
-                      return;
-                    }
-                    applyToggle(col1Item, item);
-                    setSelectedCol1Id(null);
-                    setFocusZone('col1');
-                    requestAnimationFrame(() => focusItem(col1Item.id));
-                  }}
+                  aria-describedby={instructionsId}
+                  onClick={() => completeCol2Match(item)}
                   onKeyDown={(e) => handleCol2KeyDown(e, item, index)}
                   onFocus={() => {
                     setFocusedItemId(item.id);
@@ -435,7 +585,9 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     setFocusedItemId((prev) => (prev === item.id ? null : prev));
                   }}
                 >
-                  <div className="matching-item-body">
+                  {pairNumber ? <MatchingPairBadge pairNumber={pairNumber} /> : null}
+                  {hintType ? <MatchingHintIcon type={hintType} /> : null}
+                  <div className="matching-item-body" aria-hidden="true">
                     <MatchingItemContent item={item} />
                   </div>
                 </button>
