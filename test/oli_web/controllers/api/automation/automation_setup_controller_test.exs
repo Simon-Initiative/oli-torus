@@ -3,6 +3,9 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   alias OliWeb.Api.AutomationSetupController
   alias Oli.Resources.Revision
   alias Oli.Accounts
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Resources.Resource
   import Oli.Utils
@@ -73,10 +76,14 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       {:ok, user} = validate_user(educator_email, educator_pass, :user)
       assert user.name == "Test Educator"
       assert user.id == educator_id
+      assert user.email_verified
+      assert user.email_confirmed_at
 
       {:ok, user} = validate_user(learner_email, learner_pass, :user)
       assert user.name == "Test Learner"
       assert user.id == learner_id
+      assert user.email_verified
+      assert user.email_confirmed_at
 
       {:ok, project} =
         Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil("Project not found")
@@ -84,6 +91,25 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       section = Oli.Delivery.Sections.get_section_by(slug: section_slug)
       assert section.id == section_id
       assert section.title == "Automation test section"
+
+      publication = Repo.one!(from p in Publication, where: p.project_id == ^project.id, limit: 1)
+
+      imported_section =
+        insert(:section,
+          title: "Section imported with the project archive",
+          base_project: project
+        )
+
+      {:ok, imported_section} =
+        Sections.create_section_resources(imported_section, publication)
+
+      assert imported_section.root_section_resource_id
+
+      insert(:section_project_publication,
+        section: insert(:section),
+        project: project,
+        publication: publication
+      )
 
       assert project_title == "Unit Test Project"
       assert project.title == "Unit Test Project"
@@ -125,6 +151,12 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       refute Oli.Authoring.Course.get_project_by_slug(project_slug)
 
       refute Oli.Delivery.Sections.get_section_by(slug: section_slug)
+      refute Oli.Delivery.Sections.get_section_by(slug: imported_section.slug)
+
+      refute Repo.exists?(
+               from spp in SectionsProjectsPublications,
+                 where: spp.project_id == ^project_id or spp.publication_id == ^publication.id
+             )
 
       # Make sure we cleaned up all the records
       assert revision_count_before == Repo.one(from r in Revision, select: count(r.id))

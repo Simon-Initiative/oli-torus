@@ -134,6 +134,7 @@ const CheckAllThatApply = () => {
     projectSlug: projectSlug,
   });
   const isInstructorPreview = mode === 'instructor_preview';
+  const readOnly = !editMode || isInstructorPreview;
 
   return (
     <ControlledTabs isInstructorPreview={isInstructorPreview}>
@@ -174,7 +175,7 @@ const CheckAllThatApply = () => {
           onSelect={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
           isEvaluated={false}
           context={writerContext}
-          disabled={isInstructorPreview}
+          disabled={readOnly}
           multiSelect
         />
         <SimpleFeedback partId={model.authoring.parts[0].id} />
@@ -194,7 +195,7 @@ const CheckAllThatApply = () => {
           addTargetedResponse={() => dispatch(CATAActions.addTargetedFeedback())}
           unselectedIcon={<Checkbox.Unchecked />}
           selectedIcon={<Checkbox.Checked />}
-          disabled={isInstructorPreview}
+          disabled={readOnly}
           multiSelect
         />
       </TabbedNavigation.Tab>

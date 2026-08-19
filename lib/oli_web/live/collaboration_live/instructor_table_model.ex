@@ -3,7 +3,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
 
   alias OliWeb.CollaborationLive.AdminTableModel
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Common.FormatDateTime
 
   def new(rows, ctx, opts \\ [is_listing: true]) do
@@ -121,14 +121,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
           <% end %>
         </p>
         <.link
-          href={
-            Routes.page_delivery_path(
-              OliWeb.Endpoint,
-              :page_preview,
-              @section_slug,
-              @page_revision_slug
-            )
-          }
+          href={PreviewRoutes.lesson_path(@section_slug, @page_revision_slug)}
           class="torus-button primary"
         >
           View
@@ -144,7 +137,7 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
         _
       ) do
     route_path =
-      Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, page_revision_slug)
+      PreviewRoutes.lesson_path(section_slug, page_revision_slug)
 
     SortableTableModel.render_link_column(assigns, title, route_path)
   end

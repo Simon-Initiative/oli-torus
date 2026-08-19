@@ -5,6 +5,7 @@ Products are reusable templates created from projects that can be used to spawn 
 ## Table of Contents
 - [Overview](#overview)
 - [product](#product) - Create product templates
+- [institution_discount](#institution_discount) - Attach institution-specific discounts to products
 - [Using Products](#using-products)
 - [Product Workflows](#product-workflows)
 
@@ -29,6 +30,13 @@ Creates a product (blueprint) from a project.
 - `name`: Internal identifier for the product (required)
 - `title`: Display title for the product
 - `from`: Source project name (required)
+- `requires_payment`: Whether the product is paywalled
+- `payment_options`: `direct`, `deferred`, or `direct_and_deferred`
+- `pay_by_institution`: Whether learners are institution-funded
+- `amount`: Money map with `amount` and optional `currency`
+- `has_grace_period`: Whether paywall grace period is enabled
+- `grace_period_days`: Number of grace days when enabled
+- `grace_period_strategy`: `relative_to_section` or `relative_to_student`
 
 ### Basic Example
 
@@ -62,6 +70,59 @@ Creates a product (blueprint) from a project.
     name: "summer_2024"
     title: "Summer 2024"
     from: "standard_template"
+```
+
+### Paywall Example
+
+```yaml
+- product:
+    name: "paid_template"
+    title: "Paid Course Template"
+    from: "master_course"
+    requires_payment: true
+    payment_options: "direct"
+    amount:
+      amount: 25
+      currency: "USD"
+    has_grace_period: false
+```
+
+---
+
+## institution_discount
+
+Creates or updates an institution-specific discount for a product.
+
+### Parameters
+- `institution`: Scenario institution name (required)
+- `product`: Scenario product name (required)
+- `type`: `percentage` or `fixed_amount` (defaults to `percentage`)
+- `percentage`: Discount percentage when `type` is `percentage`
+- `amount`: Money map when `type` is `fixed_amount`
+- `bypass_paywall`: Optional bypass flag
+
+### Example
+
+```yaml
+- institution:
+    name: "partner_school"
+    country_code: "US"
+    institution_email: "admin@partner.edu"
+    institution_url: "https://partner.edu"
+
+- product:
+    name: "paid_template"
+    from: "master_course"
+    requires_payment: true
+    amount:
+      amount: 25
+      currency: "USD"
+
+- institution_discount:
+    institution: "partner_school"
+    product: "paid_template"
+    type: "percentage"
+    percentage: 20
 ```
 
 ---

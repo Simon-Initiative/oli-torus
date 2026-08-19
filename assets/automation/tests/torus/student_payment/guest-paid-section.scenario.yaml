@@ -1,0 +1,41 @@
+# Scenario: paid section seed for anonymous or guest learner restrictions.
+
+- project:
+    name: 'student_payment_guest_paid_section_project'
+    title: 'Student Payment Guest Paid Section ${RUN_ID}'
+    root:
+      children:
+        - page: 'Paid Course Page'
+
+- edit_page:
+    project: 'student_payment_guest_paid_section_project'
+    page: 'Paid Course Page'
+    content: |
+      title: "Paid Course Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Paid course content for the guest restriction case."
+
+- publish:
+    to: 'student_payment_guest_paid_section_project'
+    description: 'Initial publication for guest paid-section coverage'
+
+- product:
+    name: 'student_payment_guest_paid_section_product'
+    title: 'Student Payment Guest Paid Section Product ${RUN_ID}'
+    from: 'student_payment_guest_paid_section_project'
+    requires_payment: true
+    payment_options: 'direct_and_deferred'
+    amount:
+      amount: 25
+      currency: 'USD'
+    has_grace_period: false
+
+- section:
+    name: 'student_payment_guest_paid_section'
+    title: 'Student Payment Guest Paid Section ${RUN_ID}'
+    from: 'student_payment_guest_paid_section_product'
+
+- hook:
+    function: "Oli.Scenarios.StudentPayment.Hooks.create_enrolled_guest/1"

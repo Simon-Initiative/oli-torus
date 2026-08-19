@@ -213,6 +213,28 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
       assert Map.get(result.state, :error_injected) != nil
       assert map_size(result.state.projects) == 1
     end
+
+    test "hook reloads a scenarios module when a newly added function is missing from the loaded version" do
+      yaml = """
+      - hook:
+          function: "Oli.Scenarios.StudentPayment.Hooks.create_payment_code/1"
+      """
+
+      directives = DirectiveParser.parse_yaml!(yaml)
+
+      result =
+        Engine.execute(directives,
+          params: %{
+            "payment_code_product_name" => "missing_product_for_reload_check"
+          }
+        )
+
+      assert length(result.errors) == 1
+      [{_directive, error_msg}] = result.errors
+
+      refute error_msg =~
+               "Function Elixir.Oli.Scenarios.StudentPayment.Hooks.create_payment_code/1 not found"
+    end
   end
 
   describe "custom hook module" do
@@ -225,6 +247,14 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
       def transform_state(%ExecutionState{} = state) do
         # Add a transformation marker
         Map.put(state, :transformed, true)
+      end
+
+      def assert_params(%ExecutionState{} = state) do
+        if state.params["project_slug"] != "playwright-project" do
+          raise "Expected project_slug param"
+        end
+
+        state
       end
     end
 
@@ -243,6 +273,19 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
       assert result.errors == []
       assert Map.get(result.state, :custom_flag) == :executed
       assert Map.get(result.state, :transformed) == true
+    end
+
+    test "scenario params are available to hooks" do
+      yaml = """
+      - hook:
+          function: "Oli.Scenarios.Directives.HookHandlerTest.TestHooks.assert_params/1"
+      """
+
+      directives = DirectiveParser.parse_yaml!(yaml)
+      result = Engine.execute(directives, params: %{"project_slug" => "playwright-project"})
+
+      assert result.errors == []
+      assert result.state.params["project_slug"] == "playwright-project"
     end
   end
 end

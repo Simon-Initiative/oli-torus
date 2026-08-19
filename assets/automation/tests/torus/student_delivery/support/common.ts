@@ -4,9 +4,9 @@ import { expect, type Page } from '@playwright/test';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import { TYPE_USER, type TypeUser } from '@pom/types/type-user';
 
-export const baseUrl = 'http://localhost';
+export const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
 export const defaultPassword = 'changeme123456';
-export const scenarioToken = 'my-token';
+export const scenarioToken = process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 
 export type StudentDeliveryScenarioOutputs = {
   sections?: Record<string, string>;
@@ -85,17 +85,61 @@ export async function openStudentDeliveryPractice(
   sectionSlug: string,
   activityTitle: string,
 ) {
+  await homeTask.login('student');
+  await openStudentDeliveryPracticeForLoggedInStudent(page, sectionSlug, activityTitle);
+}
+
+export async function openStudentDeliveryPracticeForLoggedInStudent(
+  page: Page,
+  sectionSlug: string,
+  activityTitle: string,
+) {
   const studentCourse = new StudentCoursePO(page);
 
-  await homeTask.login('student');
   await page.goto(learnPath(sectionSlug), { waitUntil: 'load' });
   await studentCourse.goToCourseIfPrompted();
 
   const practiceButton = page.getByText('Practice', { exact: true }).first();
-  await expect(practiceButton).toBeVisible();
-  await practiceButton.click();
 
-  await expect(page.getByText(activityTitle).first()).toBeVisible();
+  await expect(
+    practiceButton.or(studentCourse.courseContentReady(activityTitle)).first(),
+  ).toBeVisible();
+
+  if (await practiceButton.isVisible()) {
+    await practiceButton.click();
+    await expect(page.getByText(activityTitle).first()).toBeVisible();
+    return;
+  }
+
+  await studentCourse.openPage(activityTitle);
+}
+
+export async function waitForMainLiveView(page: Page) {
+  await page.waitForFunction(
+    () => document.querySelector('[data-phx-main]')?.classList.contains('phx-connected'),
+    undefined,
+    { timeout: 15_000 },
+  );
+}
+
+export async function waitForOptionalMainLiveView(page: Page, timeout = 15_000) {
+  const deadline = Date.now() + timeout;
+
+  while (Date.now() < deadline) {
+    const connected = await page
+      .evaluate(() =>
+        document.querySelector('[data-phx-main]')?.classList.contains('phx-connected'),
+      )
+      .catch(() => false);
+
+    if (connected) {
+      return true;
+    }
+
+    await page.waitForTimeout(250);
+  }
+
+  return false;
 }
 
 function learnPath(sectionSlug: string) {

@@ -11,10 +11,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Revision
+  alias Oli.Rendering.Activity.PreviewCustomization
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.{PreviewPageContext, PreviewRoutes}
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Delivery.Student.Lesson.Annotations
@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         {:ok,
          redirect(socket,
            to:
-             PreviewRoutes.page_path(
+             PreviewRoutes.adaptive_page_path(
                section.slug,
                revision_slug,
                adaptive_redirect_params(params)
@@ -39,7 +39,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         {:ok,
          redirect(socket,
            to:
-             PreviewRoutes.page_path(
+             PreviewRoutes.adaptive_page_path(
                section.slug,
                revision.slug,
                adaptive_redirect_params(params)
@@ -74,8 +74,19 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     <div
       id="instructor-preview-lesson"
       data-preview-mode={@preview_mode}
+      data-preview-customization-copy={Jason.encode!(PreviewCustomization.copy())}
       phx-hook="InstructorPreviewCustomization"
     >
+      <span
+        id="preview-customization-status"
+        class="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        phx-update="ignore"
+        data-preview-customization-status
+      >
+      </span>
       <.scripts scripts={@scripts} user_token={assigns[:user_token]} />
 
       <Layouts.instructor_preview_header return_context={@instructor_preview_return} />
@@ -150,8 +161,19 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     <div
       id="instructor-preview-lesson"
       data-preview-mode={@preview_mode}
+      data-preview-customization-copy={Jason.encode!(PreviewCustomization.copy())}
       phx-hook="InstructorPreviewCustomization"
     >
+      <span
+        id="preview-customization-status"
+        class="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        phx-update="ignore"
+        data-preview-customization-status
+      >
+      </span>
       <.scripts scripts={@scripts} user_token={assigns[:user_token]} />
 
       <Layouts.instructor_preview_header return_context={@instructor_preview_return} />
@@ -1108,11 +1130,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   defp preview_visual_state("remove"), do: "removed"
   defp preview_visual_state(_action), do: "default"
 
-  defp preview_status_pill("remove"), do: %{kind: "removed", label: "Removed"}
+  defp preview_status_pill("remove"), do: PreviewCustomization.removed_status_pill()
   defp preview_status_pill(_action), do: nil
 
-  defp preview_next_actions("remove"), do: [%{kind: "restore", label: "Restore"}]
-  defp preview_next_actions(_action), do: [%{kind: "remove", label: "Remove"}]
+  defp preview_next_actions("remove"), do: [PreviewCustomization.action("restore")]
+  defp preview_next_actions(_action), do: [PreviewCustomization.action("remove")]
 
   defp client_preview_customization_target(%{
          kind: :embedded_activity,

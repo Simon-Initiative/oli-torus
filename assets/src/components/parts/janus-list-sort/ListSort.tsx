@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBool } from 'utils/common';
+import { htmlToPlainText, sanitizeRichLabelHtml } from 'utils/richOptionLabel';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -9,6 +10,12 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import './ListSort.scss';
+import {
+  LIST_SORT_INSTRUCTIONS,
+  buildFocusAnnouncement,
+  buildItemAccessibleName,
+  buildPositionAnnouncement,
+} from './list-sort-helper';
 import { correctOrderItems, isItemInCorrectPosition, itemBarStyle } from './list-sort-util';
 import { DEFAULT_LIST_SORT_BAR_COLOR, ListSortItem, ListSortModel } from './schema';
 
@@ -55,6 +62,19 @@ const shuffle = <T,>(input: T[]): T[] => {
   return arr;
 };
 
+const isSelectKey = (e: React.KeyboardEvent) => {
+  const key = e.key;
+  const keyCode = e.keyCode ?? (e as React.KeyboardEvent & { which?: number }).which;
+  return (
+    key === 'Enter' ||
+    key === ' ' ||
+    key === 'Space' ||
+    key === 'Spacebar' ||
+    keyCode === 13 ||
+    keyCode === 32
+  );
+};
+
 const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const [_state, setState] = useState<unknown>([]);
   const [model, setModel] = useState<Partial<ListSortModel>>({});
@@ -63,6 +83,8 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const id: string = props.id;
 
   const [items, setItems] = useState<ListSortItem[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [enabled, setEnabled] = useState(true);
@@ -73,9 +95,62 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
 
   const correctIdsRef = React.useRef<string[]>([]);
   const itemsRef = React.useRef<ListSortItem[]>([]);
+  const itemRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+  const liveRegionRef = React.useRef<HTMLSpanElement>(null);
+  const pendingFocusIndexRef = React.useRef<number | null>(null);
+  const skipBlurDeselectRef = React.useRef(false);
+  const skipFocusAnnounceRef = React.useRef(false);
+  const keyboardHandledRef = React.useRef(false);
+
+  const instructionsId = `${id}-list-sort-instructions`;
+
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+
+  useEffect(() => {
+    if (pendingFocusIndexRef.current === null) {
+      return;
+    }
+    const focusIndex = pendingFocusIndexRef.current;
+    const el = itemRefs.current[focusIndex];
+    if (el) {
+      skipBlurDeselectRef.current = true;
+      skipFocusAnnounceRef.current = true;
+      setFocusedIndex(focusIndex);
+      el.focus();
+    }
+    pendingFocusIndexRef.current = null;
+  }, [items]);
+
+  const announce = useCallback((message: string) => {
+    if (!liveRegionRef.current) {
+      return;
+    }
+    liveRegionRef.current.textContent = message;
+    setTimeout(() => {
+      if (liveRegionRef.current) {
+        liveRegionRef.current.textContent = '';
+      }
+    }, 500);
+  }, []);
+
+  const toggleSelection = useCallback((index: number) => {
+    setSelectedIndex((prev) => (prev === index ? null : index));
+  }, []);
+
+  const handleSelectActivation = useCallback(
+    (index: number, e: { preventDefault: () => void; stopPropagation: () => void }) => {
+      e.preventDefault();
+      e.stopPropagation();
+      keyboardHandledRef.current = true;
+      toggleSelection(index);
+      setTimeout(() => {
+        keyboardHandledRef.current = false;
+      }, 0);
+    },
+    [toggleSelection],
+  );
 
   const isCorrect = useCallback(
     (current: ListSortItem[]) =>
@@ -94,7 +169,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
           {
             key: 'currentItemList',
             type: CapiVariableTypes.ARRAY,
-            value: current.map((i) => i.text),
+            value: current.map((i) => htmlToPlainText(i.text)),
           },
         ],
       });
@@ -114,7 +189,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
             {
               key: 'currentItemList',
               type: CapiVariableTypes.ARRAY,
-              value: correct.map((i) => i.text),
+              value: correct.map((i) => htmlToPlainText(i.text)),
             },
             { key: 'showAnswer', type: CapiVariableTypes.BOOLEAN, value: true },
           ],
@@ -158,7 +233,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
           {
             key: 'currentItemList',
             type: CapiVariableTypes.ARRAY,
-            value: initialItems.map((i) => i.text),
+            value: initialItems.map((i) => htmlToPlainText(i.text)),
           },
           { key: 'customCss', type: CapiVariableTypes.STRING, value: dCustomCss },
         ],
@@ -194,9 +269,9 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       } else {
         const sCurrentItemList = snapshot[`stage.${id}.currentItemList`];
         if (Array.isArray(sCurrentItemList) && sCurrentItemList.length) {
-          const byText = new Map(listItems.map((item) => [item.text, item]));
+          const byText = new Map(listItems.map((item) => [htmlToPlainText(item.text), item]));
           const restored = sCurrentItemList
-            .map((text: string) => byText.get(text))
+            .map((text: string) => byText.get(htmlToPlainText(String(text ?? ''))))
             .filter((item): item is ListSortItem => !!item);
           if (restored.length === listItems.length) {
             setItems(restored);
@@ -338,11 +413,60 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
 
   const interactive = enabled && !showAnswer;
 
+  const onListKeyDownCapture = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!interactive || focusedIndex === null) {
+        return;
+      }
+      if (isSelectKey(e)) {
+        handleSelectActivation(focusedIndex, e);
+      }
+    },
+    [interactive, focusedIndex, handleSelectActivation],
+  );
+
+  const onItemClick = useCallback(
+    (index: number) => (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!interactive || e.detail !== 0) {
+        return;
+      }
+      if (keyboardHandledRef.current) {
+        return;
+      }
+      toggleSelection(index);
+    },
+    [interactive, toggleSelection],
+  );
+
+  useEffect(() => {
+    if (!interactive) {
+      setSelectedIndex(null);
+      setFocusedIndex(null);
+    }
+  }, [interactive]);
+
+  const moveItem = useCallback(
+    (fromIndex: number, toIndex: number): number | null => {
+      const current = itemsRef.current;
+      if (toIndex < 0 || toIndex >= current.length) {
+        return null;
+      }
+      const next = Array.from(current);
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      setItems(next);
+      saveState(next);
+      return toIndex;
+    },
+    [saveState],
+  );
+
   const onDragStart = useCallback(
     (index: number) => (e: React.DragEvent<HTMLDivElement>) => {
       if (!interactive) {
         return;
       }
+      setSelectedIndex(null);
       setDraggingIndex(index);
       e.dataTransfer.effectAllowed = 'move';
     },
@@ -371,36 +495,112 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     [interactive, draggingIndex],
   );
 
-  const onDragEnd = useCallback(() => {
-    if (draggingIndex !== null) {
-      saveState(itemsRef.current);
-    }
-    setDraggingIndex(null);
-    setHoveredIndex(null);
-  }, [draggingIndex, saveState]);
+  const onDragEnd = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      const finalIndex = draggingIndex;
+      if (finalIndex !== null) {
+        saveState(itemsRef.current);
+        const total = itemsRef.current.length;
+        announce(buildPositionAnnouncement(finalIndex, total));
+      }
+      setDraggingIndex(null);
+      setHoveredIndex(null);
+      e.currentTarget.draggable = false;
+    },
+    [draggingIndex, saveState, announce],
+  );
+
+  const onItemMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (interactive) {
+        e.currentTarget.draggable = true;
+      }
+    },
+    [interactive],
+  );
+
+  const onItemMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (draggingIndex === null) {
+        e.currentTarget.draggable = false;
+      }
+    },
+    [draggingIndex],
+  );
+
+  const onItemFocus = useCallback(
+    (index: number, text: string, isSelected: boolean) => () => {
+      setFocusedIndex(index);
+      if (!interactive) {
+        return;
+      }
+      if (skipFocusAnnounceRef.current) {
+        skipFocusAnnounceRef.current = false;
+        return;
+      }
+      announce(buildFocusAnnouncement(index, itemsRef.current.length, text, isSelected));
+    },
+    [interactive, announce],
+  );
+
+  const onItemBlur = useCallback(
+    (index: number) => () => {
+      if (skipBlurDeselectRef.current) {
+        skipBlurDeselectRef.current = false;
+        return;
+      }
+      if (selectedIndex === index) {
+        setSelectedIndex(null);
+      }
+      setFocusedIndex(null);
+    },
+    [selectedIndex],
+  );
 
   const onItemKeyDown = useCallback(
     (index: number) => (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!interactive || !e.getModifierState('Shift')) {
+      if (!interactive) {
         return;
       }
+
+      if (isSelectKey(e)) {
+        if (keyboardHandledRef.current) {
+          return;
+        }
+        handleSelectActivation(index, e);
+        return;
+      }
+
+      if (e.key === 'Escape' && selectedIndex !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex(null);
+        return;
+      }
+
+      if (selectedIndex === null) {
+        return;
+      }
+
       if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
         return;
       }
-      const current = itemsRef.current;
-      const target = e.key === 'ArrowUp' ? index - 1 : index + 1;
-      if (target < 0 || target >= current.length) {
+
+      const target = e.key === 'ArrowUp' ? selectedIndex - 1 : selectedIndex + 1;
+      const newIndex = moveItem(selectedIndex, target);
+      if (newIndex === null) {
         return;
       }
+
       e.preventDefault();
       e.stopPropagation();
-      const next = Array.from(current);
-      const [moved] = next.splice(index, 1);
-      next.splice(target, 0, moved);
-      setItems(next);
-      saveState(next);
+      setSelectedIndex(newIndex);
+      setFocusedIndex(newIndex);
+      skipFocusAnnounceRef.current = true;
+      pendingFocusIndexRef.current = newIndex;
+      announce(buildPositionAnnouncement(newIndex, itemsRef.current.length));
     },
-    [interactive, saveState],
+    [interactive, selectedIndex, moveItem, announce, handleSelectActivation],
   );
 
   const containerStyle: CSSProperties = {
@@ -420,10 +620,32 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   return ready ? (
     <div data-janus-type={tagName} className={rootClass} style={containerStyle}>
       {customCss ? <style>{customCss}</style> : null}
-      {showHeaderFooter && <div className="list-sort__header">{headerLabel}</div>}
-      <div className="list-sort__items" role="list">
+      {showHeaderFooter && (
+        <div
+          className="list-sort__header janus-rich-label"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(headerLabel) }}
+        />
+      )}
+      <span id={instructionsId} className="sr-only">
+        {LIST_SORT_INSTRUCTIONS}
+      </span>
+      <span
+        ref={liveRegionRef}
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      />
+      <div
+        className="list-sort__items"
+        role="listbox"
+        aria-label="Sortable list"
+        onKeyDownCapture={onListKeyDownCapture}
+      >
         {items.map((item, index) => {
           const isDragging = draggingIndex === index;
+          const isSelected = selectedIndex === index;
+          const isFocused = focusedIndex === index;
           const isHovered = hoveredIndex === index && draggingIndex !== index;
           const inCorrectSlot = isItemInCorrectPosition(item.id, index, correctIdsRef.current);
           const hintClass = showHints
@@ -434,31 +656,49 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
           return (
             <div
               key={item.id}
+              ref={(el) => {
+                itemRefs.current[index] = el;
+              }}
               className={`list-sort__item ${isDragging ? 'list-sort__item--dragging' : ''} ${
                 isHovered ? 'list-sort__item--hovered' : ''
+              } ${isSelected ? 'list-sort__item--selected' : ''} ${
+                isFocused ? 'list-sort__item--focused' : ''
               }`}
               style={itemBarStyle(barColor, index, items.length)}
-              draggable={interactive}
+              draggable={false}
+              onMouseDown={onItemMouseDown}
+              onMouseUp={onItemMouseUp}
               onDragStart={onDragStart(index)}
               onDragOver={onDragOver(index)}
               onDragEnd={onDragEnd}
               onDrop={(e) => e.preventDefault()}
+              onClick={onItemClick(index)}
               onKeyDown={onItemKeyDown(index)}
+              onFocus={onItemFocus(index, item.text, isSelected)}
+              onBlur={onItemBlur(index)}
               tabIndex={interactive ? 0 : undefined}
-              role="listitem"
-              aria-label={item.text}
-              aria-grabbed={isDragging}
+              role="option"
+              aria-label={buildItemAccessibleName(item.text)}
+              aria-selected={interactive ? isSelected : undefined}
             >
               <span className="list-sort__bar" aria-hidden="true" />
               <div className={`list-sort__text ${hintClass}`}>
                 {showHints && <HintBadge type={inCorrectSlot ? 'correct' : 'incorrect'} />}
-                <span className="list-sort__text-label">{item.text}</span>
+                <span
+                  className="list-sort__text-label janus-rich-label"
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(item.text) }}
+                />
               </div>
             </div>
           );
         })}
       </div>
-      {showHeaderFooter && <div className="list-sort__footer">{footerLabel}</div>}
+      {showHeaderFooter && (
+        <div
+          className="list-sort__footer janus-rich-label"
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(footerLabel) }}
+        />
+      )}
     </div>
   ) : null;
 };

@@ -5,11 +5,12 @@ defmodule OliWeb.PlaywrightScenarioController do
 
   alias Oli.Scenarios
   alias Oli.Scenarios.RuntimeOpts
+  alias OliWeb.PlaywrightAuth
 
   @max_yaml_bytes 100_000
 
   def run(conn, _params) do
-    with :ok <- authorize(conn),
+    with :ok <- PlaywrightAuth.authorize(conn),
          {:ok, yaml, params} <- extract_payload(conn),
          {:ok, result} <- execute_yaml(yaml, params) do
       json(conn, %{
@@ -41,18 +42,6 @@ defmodule OliWeb.PlaywrightScenarioController do
       {:error, reason} ->
         Logger.error("Playwright scenario execution failed: #{inspect(reason)}")
         send_resp(conn, :internal_server_error, "scenario_failed")
-    end
-  end
-
-  defp authorize(conn) do
-    token = scenario_token()
-
-    with [provided] <- get_req_header(conn, "x-playwright-scenario-token"),
-         false <- is_nil(token),
-         true <- provided == token do
-      :ok
-    else
-      _ -> {:error, :unauthorized}
     end
   end
 
@@ -91,7 +80,7 @@ defmodule OliWeb.PlaywrightScenarioController do
 
     result =
       interpolated
-      |> Scenarios.execute_yaml(RuntimeOpts.build())
+      |> Scenarios.execute_yaml(RuntimeOpts.build(params: params))
 
     if Scenarios.has_errors?(result) do
       {:error, {:scenario_failed, result}}
@@ -115,7 +104,7 @@ defmodule OliWeb.PlaywrightScenarioController do
     state = result.state
 
     %{
-      params: params,
+      params: Map.merge(params, state.params || %{}),
       projects: map_entities(state.projects, fn built -> built.project.slug end),
       sections: map_entities(state.sections, fn section -> section.slug end),
       products: map_entities(state.products, fn product -> product.slug end),
@@ -135,9 +124,5 @@ defmodule OliWeb.PlaywrightScenarioController do
     fun.(entity)
   rescue
     _ -> nil
-  end
-
-  defp scenario_token do
-    Application.get_env(:oli, :playwright_scenario_token)
   end
 end

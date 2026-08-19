@@ -1,6 +1,8 @@
 defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
   use OliWeb, :live_view
 
+  require Logger
+
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
 
@@ -12,8 +14,6 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
   alias OliWeb.Icons
 
   @limit 25
-  @sort_by :name
-  @sort_order :asc
   @default_options %PlatformExternalTools.BrowseOptions{
     text_search: "",
     include_disabled: true,
@@ -32,24 +32,16 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
   end
 
   def mount(_, _session, socket) do
-    tools =
-      PlatformExternalTools.browse_platform_external_tools(
-        %Paging{offset: 0, limit: @limit},
-        %Sorting{field: @sort_by, direction: @sort_order},
-        @default_options
-      )
-
-    total_count = SortableTableModel.determine_total(tools)
-
-    {:ok, table_model} = TableModel.new(tools, socket.assigns.ctx)
+    {:ok, table_model} = TableModel.new([], socket.assigns.ctx)
 
     {:ok,
      assign(socket,
        title: "Manage LTI 1.3 External Tools",
        breadcrumbs: set_breadcrumbs(),
-       total_count: total_count,
+       total_count: 0,
        table_model: table_model,
        limit: @limit,
+       offset: 0,
        options: @default_options
      )}
   end
@@ -75,17 +67,31 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
       )
+      |> Enum.map(&Map.put(&1, :usage_count, :loading))
 
     table_model = Map.put(table_model, :rows, tools)
     total_count = SortableTableModel.determine_total(tools)
 
-    {:noreply,
-     assign(socket,
-       offset: offset,
-       options: options,
-       table_model: table_model,
-       total_count: total_count
-     )}
+    socket =
+      assign(socket,
+        offset: offset,
+        options: options,
+        table_model: table_model,
+        total_count: total_count
+      )
+      |> load_usage_counts_async(tools)
+
+    {:noreply, socket}
+  end
+
+  def handle_async(:usage_counts, {:ok, usage_counts}, socket) do
+    {:noreply, put_usage_counts(socket, usage_counts)}
+  end
+
+  def handle_async(:usage_counts, {:exit, reason}, socket) do
+    Logger.warning("Failed to load LTI external tool usage counts: #{inspect(reason)}")
+
+    {:noreply, put_usage_counts(socket, :unknown)}
   end
 
   def render(assigns) do
@@ -174,4 +180,53 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
        replace: true
      )}
   end
+
+  defp load_usage_counts_async(socket, tools) do
+    platform_instance_ids = Enum.map(tools, & &1.id)
+    socket = cancel_async(socket, :usage_counts)
+
+    case platform_instance_ids do
+      [] ->
+        socket
+
+      platform_instance_ids ->
+        start_async(socket, :usage_counts, fn ->
+          Appsignal.instrument(
+            "OliWeb.Admin.ExternalTools.ExternalToolsView#load_usage_counts",
+            fn ->
+              PlatformExternalTools.count_sections_by_platform_instance_ids(platform_instance_ids)
+            end
+          )
+        end)
+    end
+  end
+
+  defp put_usage_counts(socket, usage_counts) do
+    table_model = socket.assigns.table_model
+
+    rows =
+      Enum.map(table_model.rows, fn tool ->
+        usage_count =
+          case usage_counts do
+            %{} -> Map.get(usage_counts, tool.id, 0)
+            :unknown -> :unknown
+          end
+
+        Map.put(tool, :usage_count, usage_count)
+      end)
+
+    table_model =
+      table_model
+      |> Map.put(:rows, rows)
+      |> maybe_sort_by_usage_count()
+
+    assign(socket, table_model: table_model)
+  end
+
+  defp maybe_sort_by_usage_count(
+         %SortableTableModel{sort_by_spec: %{name: :usage_count}} = table_model
+       ),
+       do: SortableTableModel.sort(table_model)
+
+  defp maybe_sort_by_usage_count(table_model), do: table_model
 end

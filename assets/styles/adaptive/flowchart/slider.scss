@@ -17,15 +17,11 @@ janus-slider label {
 }
 
 janus-slider .slider input::-webkit-slider-runnable-track {
-  position: relative;
-  top: -10px;
   background: $primary;
   height: 5px;
 }
 
 janus-slider .slider input::-moz-range-track {
-  position: relative;
-  top: -10px;
   background: $primary;
   height: 5px;
 }
@@ -57,7 +53,7 @@ janus-slider input[type='range'] {
     background-color: $primary;
   }
   &::-moz-range-track {
-    background-color: $lightForeground !important;
+    background-color: $primary !important;
   }
 
   &::-webkit-slider-thumb {

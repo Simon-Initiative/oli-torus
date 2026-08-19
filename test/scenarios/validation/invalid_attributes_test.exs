@@ -4,6 +4,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
   alias Oli.Scenarios.DirectiveParser
 
   describe "directive attribute validation" do
+    test "post_reaction directive with unknown attribute fails" do
+      yaml = """
+      - post_reaction:
+          post: "note"
+          student: "student"
+          reaction: "like"
+          action: "add"
+          emoji: "thumbs_up"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'post_reaction' directive: \["emoji"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "project directive with unknown attribute fails" do
       yaml = """
       - project:
@@ -37,6 +54,31 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "section directive rejects an invalid assistant_enabled value" do
+      yaml = """
+      - section:
+          name: "test_section"
+          assistant_enabled: "enabled"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid boolean for assistant_enabled: enabled/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "section directive rejects an empty assistant service config name" do
+      yaml = """
+      - section:
+          name: "test_section"
+          assistant_enabled: true
+          assistant_service_config: "  "
+      """
+
+      assert_raise RuntimeError, ~r/Invalid non-empty string for assistant_service_config/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
     test "clone directive with extra attributes fails" do
       yaml = """
       - clone:
@@ -52,6 +94,63 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    fn ->
                      DirectiveParser.parse_yaml!(yaml)
                    end
+    end
+
+    test "institution_discount directive with unknown attribute fails" do
+      yaml = """
+      - institution_discount:
+          institution: "school"
+          product: "product_1"
+          type: "percentage"
+          percentage: 10
+          expires_on: "2026-01-01"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'institution_discount' directive: \["expires_on"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "payment_options rejects unrelated existing atoms" do
+      yaml = """
+      - product:
+          name: "product_1"
+          title: "Product 1"
+          payment_options: "@atom(author)"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid payment_options '@atom\(author\)'/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "grace_period_strategy rejects unrelated existing atoms" do
+      yaml = """
+      - product:
+          name: "product_1"
+          title: "Product 1"
+          payment_options: "direct"
+          grace_period_strategy: "@atom(author)"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid grace_period_strategy '@atom\(author\)'/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
+    end
+
+    test "institution discount type rejects unrelated existing atoms" do
+      yaml = """
+      - institution_discount:
+          institution: "school"
+          product: "product_1"
+          type: "@atom(author)"
+      """
+
+      assert_raise RuntimeError, ~r/Invalid discount type '@atom\(author\)'/, fn ->
+        DirectiveParser.parse_yaml!(yaml)
+      end
     end
 
     test "user directive with misspelled attribute fails" do
@@ -167,6 +266,68 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    fn ->
                      DirectiveParser.parse_yaml!(yaml)
                    end
+    end
+
+    test "request_hint directive with unknown attribute fails" do
+      yaml = """
+      - request_hint:
+          student: "student1"
+          section: "section1"
+          page: "Practice"
+          activity_virtual_id: "question"
+          hint_index: 1
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'request_hint' directive: \["hint_index"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
+    test "reset_activity directive with unknown attribute fails" do
+      yaml = """
+      - reset_activity:
+          student: "student1"
+          section: "section1"
+          page: "Practice"
+          activity_virtual_id: "question"
+          preserve_response: true
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'reset_activity' directive: \["preserve_response"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
+    test "insights assertion with unknown expected metric fails" do
+      yaml = """
+      - assert:
+          insights:
+            project: "demo"
+            resource_type: "page"
+            page: "Practice"
+            expected:
+              average_score: 0.5
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'insights expected' directive: \["average_score"\]/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
+    end
+
+    test "insights assertion requires one target matching its resource type" do
+      yaml = """
+      - assert:
+          insights:
+            project: "demo"
+            resource_type: "activity"
+            page: "Practice"
+            expected:
+              num_attempts: 1
+      """
+
+      assert_raise RuntimeError,
+                   ~r/insights resource target does not match resource_type activity/,
+                   fn -> DirectiveParser.parse_yaml!(yaml) end
     end
 
     test "page_objectives assertion with unknown attribute fails" do
@@ -442,6 +603,7 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           from: "test"
           type: "enrollable"
           registration_open: true
+          assistant_enabled: true
 
       - user:
           name: "testuser"

@@ -7,6 +7,7 @@ defmodule OliWeb.PageDeliveryView do
   alias Oli.Delivery.Sections.DisplayLabels
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Common.Utils
 
   import Oli.Utils, only: [value_or: 2]
@@ -36,7 +37,7 @@ defmodule OliWeb.PageDeliveryView do
   end
 
   def previous_url(conn, %{"slug" => slug} = previous_page, preview_mode, section_slug) do
-    Routes.page_delivery_path(conn, action(preview_mode, previous_page), section_slug, slug)
+    page_path(conn, preview_mode, previous_page, section_slug, slug)
   end
 
   def previous_title(%{"title" => title}) do
@@ -48,7 +49,7 @@ defmodule OliWeb.PageDeliveryView do
   end
 
   def next_url(conn, %{"slug" => slug} = next_page, preview_mode, section_slug) do
-    Routes.page_delivery_path(conn, action(preview_mode, next_page), section_slug, slug)
+    page_path(conn, preview_mode, next_page, section_slug, slug)
   end
 
   def next_title(%{"title" => title}) do
@@ -107,6 +108,21 @@ defmodule OliWeb.PageDeliveryView do
         :page
     end
   end
+
+  def page_path(_conn, true, false, section_slug, slug),
+    do: PreviewRoutes.lesson_path(section_slug, slug)
+
+  def page_path(_conn, true, %{"type" => "page"}, section_slug, slug),
+    do: PreviewRoutes.lesson_path(section_slug, slug)
+
+  def page_path(conn, preview_mode, revision_or_is_container, section_slug, slug),
+    do:
+      Routes.page_delivery_path(
+        conn,
+        action(preview_mode, revision_or_is_container),
+        section_slug,
+        slug
+      )
 
   def container?(%HierarchyNode{revision: %{resource_type_id: resource_type_id}}),
     do: ResourceType.get_type_by_id(resource_type_id) == "container"

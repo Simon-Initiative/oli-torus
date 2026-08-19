@@ -1,0 +1,57 @@
+# Shared setup for delivery scheduling scenarios.
+
+- project:
+    name: "scheduling_source"
+    title: "Scheduling Source Project"
+    root:
+      children:
+        - page: "Scheduled Quiz"
+
+- edit_page:
+    project: "scheduling_source"
+    page: "Scheduled Quiz"
+    content: |
+      title: "Scheduled Quiz"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "scheduled_quiz_q1"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is 3 + 3?"
+            choices:
+              - id: "a"
+                body_md: "5"
+                score: 0
+              - id: "b"
+                body_md: "6"
+                score: 1
+
+- publish:
+    to: "scheduling_source"
+    description: "Initial scheduled quiz page"
+
+- section:
+    name: "scheduling_section"
+    title: "Scheduling Section"
+    from: "scheduling_source"
+
+- user:
+    name: "instructor_1"
+    type: "instructor"
+    email: "scheduling_instructor@test.edu"
+
+- user:
+    name: "student_1"
+    type: "student"
+    email: "scheduling_student@test.edu"
+
+- enroll:
+    user: "instructor_1"
+    section: "scheduling_section"
+    role: "instructor"
+
+- enroll:
+    user: "student_1"
+    section: "scheduling_section"
+    role: "student"

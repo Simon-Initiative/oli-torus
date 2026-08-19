@@ -106,6 +106,38 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "admin_title3"
           ]
 
+        :discussion ->
+          [
+            "section",
+            "post",
+            "student",
+            "visible",
+            "status",
+            "reaction",
+            "reaction_count",
+            "reacted_by",
+            "contains_discussions",
+            "auto_accept",
+            "anonymous_posting"
+          ]
+
+        :annotation ->
+          [
+            "post",
+            "section",
+            "page",
+            "body",
+            "author",
+            "status",
+            "visibility",
+            "annotation_type",
+            "block_id",
+            "reply_to",
+            "reaction",
+            "reaction_count",
+            "reacted_by"
+          ]
+
         :gating ->
           [
             "gate",
@@ -194,6 +226,89 @@ defmodule Oli.Scenarios.DirectiveValidator do
 
         :activity_objectives ->
           ["project", "activity_virtual_id", "expected"]
+
+        :instructor_dashboard_summary ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "metrics",
+            "total_students",
+            "scope_label",
+            "course_title",
+            "cards",
+            "available_slots",
+            "missing_slots"
+          ]
+
+        :instructor_dashboard_progress ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "axis_label",
+            "class_size",
+            "completion_threshold",
+            "y_axis_mode",
+            "items",
+            "series",
+            "series_all",
+            "empty_state"
+          ]
+
+        :instructor_dashboard_student_support ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "totals",
+            "buckets",
+            "parameters",
+            "default_bucket_id",
+            "has_activity_data",
+            "has_activity_data?",
+            "bucket_priority"
+          ]
+
+        :instructor_dashboard_challenging_objectives ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "state",
+            "has_objectives",
+            "row_count",
+            "rows",
+            "rows_by_title",
+            "scope_label",
+            "course_title"
+          ]
+
+        :instructor_dashboard_assessments ->
+          [
+            "section",
+            "scope",
+            "tolerance",
+            "total_rows",
+            "has_assessments",
+            "has_assessments?",
+            "rows",
+            "rows_by_title"
+          ]
+
+        :insights ->
+          [
+            "project",
+            "sections",
+            "resource_type",
+            "page",
+            "activity_virtual_id",
+            "objective",
+            "part_id",
+            "expected",
+            "exists",
+            "tolerance"
+          ]
 
         _ ->
           []

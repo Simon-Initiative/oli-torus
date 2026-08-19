@@ -13,9 +13,11 @@ defmodule Oli.Scenarios.Directives.MediaHandler do
         Engine.get_project(state, project_name) ||
           raise "Project '#{project_name}' not found in scenario state"
 
+      current_dir = Map.get(state, :current_dir)
+
       resolved_path =
-        if Path.type(path) == :relative and state.current_dir do
-          Path.join(state.current_dir, path)
+        if Path.type(path) == :relative and current_dir do
+          Path.join(current_dir, path)
         else
           path
         end

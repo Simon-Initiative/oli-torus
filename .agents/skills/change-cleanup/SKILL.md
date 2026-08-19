@@ -98,6 +98,23 @@ Evaluate the changed surface for the following:
    - Search beyond the current edit loop when needed.
    - Confirm duplication with codebase facts before proposing consolidation.
 
+9. Stale added files and orphaned entrypoints
+   - For every file added by the branch, identify how it is reached from an active root:
+     application code, tests, scripts, workflows, config, docs that are meant to be executed,
+     or a documented convention used by an existing runner.
+   - Search by path, basename, exported module/class/function names, and any string-based
+     references the file introduces. This is required for dynamic systems where static imports
+     are not enough, such as YAML scenario hooks, workflow paths, reflection-based module names,
+     route/action names, or generated-file conventions.
+   - If an added file is only referenced by another added file, continue tracing that chain until
+     it reaches an active root. If the chain has no active root, classify the files as stale
+     iteration residue.
+   - For tests and scenario assets, verify that the relevant runner, spec, workflow, or documented
+     command actually invokes the new file. A scenario fixture, hook, or support module should not
+     remain only because it could be useful later.
+   - Prefer proposing deletion when a whole added file belongs to an abandoned setup path and
+     removing it does not affect the active branch behavior. Keep the evidence in the finding.
+
 ## Workflow
 
 1. Determine the mode before starting the cleanup pass.
@@ -118,8 +135,12 @@ Evaluate the changed surface for the following:
 
 3. Build context from facts.
    - Inspect the diff against the base branch.
+   - List added, modified, deleted, and renamed files separately so newly added files can be
+     checked for an active entrypoint instead of only reviewed internally.
    - Read the changed code.
    - Search nearby modules or components when checking for duplication, helper reuse, or better module placement.
+   - For added files, trace usage from each file to an active root before deciding that the file
+     belongs in the branch.
    - Do not guess about usage, duplication, or business intent.
 
 4. Classify findings before proposing edits.
@@ -128,6 +149,15 @@ Evaluate the changed surface for the following:
    - the affected code unit
    - whether it is definitely actionable, needs user input, or should be left alone
    - whether it requires touching a file outside the diff
+
+5. After applying approved cleanup changes, always include a suggested commit
+   message in the final response.
+   - Use the format `"[TICKET-ID] Commit message"`.
+   - Derive `TICKET-ID` from the branch name, changed docs, PR/ticket context,
+     or previously established conversation context.
+   - If no ticket id can be found, use `"[TICKET-ID]"` literally and mention
+     that the placeholder should be replaced.
+   - Keep the message concise and specific to the cleanup performed.
 
 ## Mode Behavior
 
@@ -241,6 +271,9 @@ Use this mode for a rule-by-rule walkthrough with the user before making any edi
 - Do not add docs, specs, or comments to unchanged code just because a file changed.
 - Do not expand cleanup into unrelated repo-wide refactors.
 - Do not remove assigns, attrs, props, or helper code unless usage has been checked.
+- Do not keep an added file solely because it is internally valid or referenced by another
+  unrooted added file. It must have an active caller, runner, workflow, config entry, or documented
+  convention that is in scope for the branch.
 - Do not introduce comments with ticket IDs, person names, or ephemeral discussion context.
 - Do not create speculative abstraction layers.
 - Keep summaries concise and only go deep on the current finding or rule under discussion.

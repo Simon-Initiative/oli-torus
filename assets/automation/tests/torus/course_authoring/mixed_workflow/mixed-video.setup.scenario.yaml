@@ -1,0 +1,84 @@
+- user:
+    name: 'workflow_author'
+    type: 'author'
+    email: 'author${RUN_ID}@example.com'
+    given_name: 'Playwright'
+    family_name: 'Author'
+    password: 'changeme123456'
+
+- user:
+    name: 'workflow_student'
+    type: 'student'
+    email: 'student${RUN_ID}@example.com'
+    given_name: 'Jane'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- project:
+    name: 'workflow_authoring_project'
+    title: 'Mixed Workflow ${RUN_ID}'
+    root:
+      children:
+        - page: 'Mixed Workflow Page'
+        - page: 'Mixed Workflow Link Target'
+
+- edit_page:
+    project: 'workflow_authoring_project'
+    page: 'Mixed Workflow Page'
+    content: |
+      title: "Mixed Workflow Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Base content for mixed workflow coverage."
+        - type: prose
+          body_md: "Video lifecycle support paragraph."
+
+- edit_page:
+    project: 'workflow_authoring_project'
+    page: 'Mixed Workflow Link Target'
+    content: |
+      title: "Mixed Workflow Link Target"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Target page for the mixed workflow internal-link test."
+
+- media:
+    project: 'workflow_authoring_project'
+    path: 'assets/automation/tests/resources/media_files/video-test-01.mp4'
+    mime: 'video/mp4'
+
+- media:
+    project: 'workflow_authoring_project'
+    path: 'assets/automation/tests/resources/media_files/img-mock-05-16-2025.jpg'
+    mime: 'image/jpeg'
+
+- media:
+    project: 'workflow_authoring_project'
+    path: 'assets/automation/tests/resources/media_files/audio-test-01.mp3'
+    mime: 'audio/mpeg'
+
+- media:
+    project: 'workflow_authoring_project'
+    path: 'assets/automation/tests/torus/course_authoring/mixed_workflow/video-test-captions.vtt'
+    mime: 'text/vtt'
+
+- publish:
+    to: 'workflow_authoring_project'
+    description: 'Initial mixed workflow publication'
+
+- section:
+    name: 'workflow_delivery_section'
+    title: 'Mixed Workflow Section ${RUN_ID}'
+    from: 'workflow_authoring_project'
+    type: 'enrollable'
+    registration_open: true
+
+- enroll:
+    user: 'workflow_student'
+    section: 'workflow_delivery_section'
+    role: 'student'
+
+- hook:
+    function: 'Oli.Scenarios.Features.MixedContentHooks.capture_workflow_page_revision_slug/1'

@@ -795,6 +795,80 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "/research_consent?user_return_to=%2Fsections%2F#{section.slug}"
     end
 
+    test "not redirected to research consent form when section institution has consent disabled (MER-5717)",
+         context do
+      {:ok, conn: conn, user: student} = user_conn(context)
+
+      {:ok, _user} = Accounts.update_user(student, %{research_opt_out: nil})
+
+      institution = insert(:institution, research_consent: :no_form)
+
+      section =
+        insert(:section,
+          open_and_free: true,
+          institution: institution,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, ~p"/sections/#{section.slug}")
+
+      assert redirect_path == "/sections/#{section.slug}/welcome"
+      refute redirect_path =~ "research_consent"
+    end
+
+    test "LTI section redirects to research consent when its institution requires it (MER-5717)",
+         context do
+      {:ok, conn: conn, user: student} = user_conn(context, %{independent_learner: false})
+
+      {:ok, _user} = Accounts.update_user(student, %{research_opt_out: nil})
+
+      institution = insert(:institution, research_consent: :oli_form)
+      deployment = insert(:lti_deployment, institution: institution)
+
+      section =
+        insert(:section,
+          type: :enrollable,
+          open_and_free: false,
+          institution: institution,
+          lti_1p3_deployment: deployment
+        )
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, ~p"/sections/#{section.slug}")
+
+      assert redirect_path =~ "/research_consent"
+    end
+
+    test "LTI section does not redirect to research consent when its institution disables it",
+         context do
+      {:ok, conn: conn, user: student} = user_conn(context, %{independent_learner: false})
+
+      {:ok, _user} = Accounts.update_user(student, %{research_opt_out: nil})
+
+      institution = insert(:institution, research_consent: :no_form)
+      deployment = insert(:lti_deployment, institution: institution)
+
+      section =
+        insert(:section,
+          type: :enrollable,
+          open_and_free: false,
+          institution: institution,
+          lti_1p3_deployment: deployment
+        )
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      result = live(conn, ~p"/sections/#{section.slug}")
+
+      refute match?({:error, {:redirect, %{to: "/research_consent" <> _}}}, result)
+    end
+
     test "redirected to section welcome view when student has opted in or out of research consent",
          context do
       {:ok, conn: conn, user: student} = user_conn(context)

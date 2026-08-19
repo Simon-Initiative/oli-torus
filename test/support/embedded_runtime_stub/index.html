@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Embedded Runtime Stub</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f5f7fa;
+        color: #1f2933;
+      }
+
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 24px;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 24px;
+      }
+
+      p {
+        margin: 0 0 12px;
+        line-height: 1.5;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 18px 0;
+      }
+
+      button {
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 14px;
+        background: #2563eb;
+        color: #ffffff;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      button:hover {
+        background: #1d4ed8;
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.7;
+      }
+
+      .result {
+        margin-top: 16px;
+        padding: 16px;
+        border: 1px solid #d9e2ec;
+        border-radius: 10px;
+        background: #f8fafc;
+      }
+
+      .result h2 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .result p {
+        margin-bottom: 8px;
+      }
+
+      pre {
+        margin: 0;
+        padding: 12px;
+        border-radius: 8px;
+        background: #0f172a;
+        color: #e2e8f0;
+        font-size: 12px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 8px 12px;
+        margin: 16px 0 0;
+      }
+
+      dt {
+        font-weight: 700;
+      }
+
+      dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .status {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #e3fcec;
+        color: #127a43;
+        font-size: 14px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="status">Ready</span>
+      <h1>Embedded runtime stub loaded</h1>
+      <p>
+        This local fallback page exists so embedded delivery can launch a
+        deterministic runtime in environments where the legacy superactivity
+        assets are not provisioned through object storage or proxy routing.
+      </p>
+      <dl>
+        <dt>Attempt GUID</dt>
+        <dd id="attempt-guid">unknown</dd>
+        <dt>Attempt Number</dt>
+        <dd id="attempt-number">1</dd>
+        <dt>Mode</dt>
+        <dd id="activity-mode">unknown</dd>
+        <dt>Resource Type</dt>
+        <dd id="resource-type">unknown</dd>
+        <dt>Server URL</dt>
+        <dd id="server-url">unknown</dd>
+      </dl>
+      <div class="controls">
+        <button id="start-attempt" type="button">Start Attempt</button>
+        <button id="write-file-record" type="button">Write File Record</button>
+        <button id="load-file-record" type="button">Load File Record</button>
+        <button id="score-attempt" type="button">Score Attempt</button>
+        <button id="end-attempt" type="button">End Attempt</button>
+      </div>
+      <section class="result" aria-label="stub results">
+        <h2>Stub Results</h2>
+        <p id="command-status">Idle</p>
+        <p id="loaded-record-status">No file loaded yet.</p>
+        <pre id="loaded-record"></pre>
+        <pre id="last-response"></pre>
+      </section>
+    </main>
+    <script>
+      (function () {
+        var frame = window.frameElement;
+        var root = document.documentElement;
+        var fileName = "playwright-save.xml";
+        var fileRecordData = "<state><value>saved-from-stub</value></state>";
+
+        if (!frame) {
+          root.setAttribute("data-embedded-stub", "missing-frame");
+          return;
+        }
+
+        var dataset = frame.dataset || {};
+        var commandStatus = document.getElementById("command-status");
+        var loadedRecord = document.getElementById("loaded-record");
+        var loadedRecordStatus = document.getElementById(
+          "loaded-record-status"
+        );
+        var lastResponse = document.getElementById("last-response");
+        var attemptGuidNode = document.getElementById("attempt-guid");
+        var attemptNumberNode = document.getElementById("attempt-number");
+
+        var current = {
+          attemptGuid:
+            dataset.activitycontextguid || dataset.activityguid || "unknown",
+          attemptNumber: "1",
+          activityMode: dataset.activitymode || dataset.mode || "unknown",
+          resourceType: dataset.resourcetypeid || "unknown",
+          serverUrl: dataset.superactivityserver || "unknown",
+          userGuid: dataset.userguid || "unknown",
+        };
+
+        var fields = {
+          "attempt-guid": current.attemptGuid,
+          "attempt-number": current.attemptNumber,
+          "activity-mode": dataset.activitymode || dataset.mode || "unknown",
+          "resource-type": dataset.resourcetypeid || "unknown",
+          "server-url": current.serverUrl,
+        };
+
+        Object.keys(fields).forEach(function (id) {
+          var target = document.getElementById(id);
+          if (target) {
+            target.textContent = fields[id];
+          }
+        });
+
+        function setStatus(text) {
+          if (commandStatus) {
+            commandStatus.textContent = text;
+          }
+        }
+
+        function setLoadedRecordStatus(text) {
+          if (loadedRecordStatus) {
+            loadedRecordStatus.textContent = text;
+          }
+        }
+
+        function setResponse(text) {
+          if (lastResponse) {
+            lastResponse.textContent = text;
+          }
+        }
+
+        function setLoadedRecord(text) {
+          if (loadedRecord) {
+            loadedRecord.textContent = text;
+          }
+        }
+
+        function updateAttemptDisplay() {
+          if (attemptGuidNode) {
+            attemptGuidNode.textContent = current.attemptGuid;
+          }
+
+          if (attemptNumberNode) {
+            attemptNumberNode.textContent = current.attemptNumber;
+          }
+        }
+
+        function parseXml(text) {
+          return new DOMParser().parseFromString(text, "text/xml");
+        }
+
+        function extractCurrentAttempt(text) {
+          var xml = parseXml(text);
+          var history = xml.querySelector("attempt_history");
+          return history ? history.getAttribute("current_attempt") : null;
+        }
+
+        function setBusy(button, busy) {
+          if (!button) {
+            return;
+          }
+
+          button.disabled = busy;
+        }
+
+        async function postCommand(button, commandName, params) {
+          setBusy(button, true);
+          setStatus("Running " + commandName + "...");
+
+          try {
+            var payload = new URLSearchParams();
+            payload.set("commandName", commandName);
+            payload.set("activityContextGuid", current.attemptGuid);
+
+            Object.keys(params || {}).forEach(function (key) {
+              var value = params[key];
+
+              if (value !== undefined && value !== null) {
+                payload.set(key, String(value));
+              }
+            });
+
+            var response = await fetch(current.serverUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/x-www-form-urlencoded;charset=UTF-8",
+              },
+              body: payload.toString(),
+            });
+
+            var text = await response.text();
+            setResponse(text);
+
+            if (!response.ok) {
+              setStatus(commandName + " failed: " + response.status);
+              return;
+            }
+
+            var currentAttempt = extractCurrentAttempt(text);
+
+            if (currentAttempt) {
+              current.attemptNumber = currentAttempt;
+              updateAttemptDisplay();
+            }
+
+            setStatus(commandName + " succeeded");
+            return text;
+          } catch (error) {
+            setStatus(commandName + " failed: " + error.message);
+            setResponse(String(error));
+          } finally {
+            setBusy(button, false);
+          }
+        }
+
+        document
+          .getElementById("start-attempt")
+          .addEventListener("click", async function (event) {
+            await postCommand(event.currentTarget, "startAttempt", {});
+          });
+
+        document
+          .getElementById("write-file-record")
+          .addEventListener("click", async function (event) {
+            var text = await postCommand(
+              event.currentTarget,
+              "writeFileRecord",
+              {
+                byteEncoding: "utf8",
+                fileName: fileName,
+                fileRecordData: fileRecordData,
+                resourceTypeID: current.resourceType,
+                mimeType: "xml",
+                userGuid: current.userGuid,
+                attemptNumber: current.attemptNumber,
+              }
+            );
+
+            if (text) {
+              setLoadedRecordStatus("Saved file record to Torus.");
+            }
+          });
+
+        document
+          .getElementById("load-file-record")
+          .addEventListener("click", async function (event) {
+            var text = await postCommand(
+              event.currentTarget,
+              "loadFileRecord",
+              {
+                fileName: fileName,
+                userGuid: current.userGuid,
+                attemptNumber: current.attemptNumber,
+              }
+            );
+
+            if (text) {
+              setLoadedRecordStatus("Loaded file record from Torus.");
+              setLoadedRecord(text);
+            }
+          });
+
+        document
+          .getElementById("score-attempt")
+          .addEventListener("click", async function (event) {
+            await postCommand(event.currentTarget, "scoreAttempt", {
+              scoreValue: "0.75",
+              scoreId: "percent",
+            });
+          });
+
+        document
+          .getElementById("end-attempt")
+          .addEventListener("click", async function (event) {
+            await postCommand(event.currentTarget, "endAttempt", {});
+          });
+
+        root.setAttribute("data-embedded-stub", "ready");
+      })();
+    </script>
+  </body>
+</html>

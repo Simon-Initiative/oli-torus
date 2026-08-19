@@ -451,6 +451,20 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
+    test "cannot access removed instructor preview prologue route", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      conn = get(conn, "/sections/#{section.slug}/preview/prologue/#{page_3.slug}")
+
+      assert html_response(conn, 404) =~ "Not Found"
+    end
+
     test "can not access when not enrolled to course", %{
       conn: conn,
       section: section,

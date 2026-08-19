@@ -2,6 +2,7 @@ import React, { PropsWithChildren, ReactNode, useCallback, useEffect, useState }
 import { Popover, PopoverAlign, PopoverPosition } from 'react-tiny-popover';
 import { Editor } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
+import { getEditMode } from 'components/editing/elements/utils';
 import { useMousedown } from 'components/misc/resizable/useMousedown';
 import { positionRect } from 'data/content/utils';
 
@@ -21,7 +22,8 @@ export const HoverContainer = (props: PropsWithChildren<Props>) => {
 
   const mousedown = useMousedown();
   const [position, setPosition] = useState(offscreenRect);
-  const isOpen = typeof props.isOpen === 'function' ? props.isOpen(editor) : props.isOpen;
+  const requestedOpen = typeof props.isOpen === 'function' ? props.isOpen(editor) : props.isOpen;
+  const isOpen = getEditMode(editor) && requestedOpen;
 
   useEffect(() => {
     if (!isOpen) setPosition(offscreenRect);

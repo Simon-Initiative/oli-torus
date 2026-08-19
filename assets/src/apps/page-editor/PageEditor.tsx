@@ -21,14 +21,18 @@ import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { ActivityEditContext } from 'data/content/activity';
 import { guaranteeValididty } from 'data/content/bank';
 import { ActivityEditorMap } from 'data/content/editors';
+import {
+  reconcileLearningObjectivesContent,
+  reconcileLearningObjectivesInPageContent,
+} from 'data/content/learningObjectives';
 import { Objective } from 'data/content/objective';
 import {
   ActivityMap,
   ActivityReference,
   EditorType,
+  ResolvedLearningObjective,
   ResourceContent,
   ResourceContext,
-  StructuredContent,
   getResourceContentName,
 } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
@@ -64,6 +68,7 @@ type EditorUpdate = {
   title: string;
   content: PageEditorContent;
   objectives: Immutable.List<ResourceId>;
+  learningObjectives: ResolvedLearningObjective[];
 };
 
 type PageEditorState = {
@@ -74,6 +79,7 @@ type PageEditorState = {
   content: PageEditorContent;
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
   objectives: Immutable.List<ResourceId>;
+  learningObjectives: ResolvedLearningObjective[];
   allObjectives: Immutable.List<Objective>;
   allTags: Immutable.List<Tag>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
@@ -146,6 +152,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   previewRequestedListener: any;
   pageOptionsFlushRequestedListener: any;
   editorsRef: React.RefObject<HTMLDivElement> = React.createRef();
+  pendingLearningObjectivesReconciliationSave = false;
 
   constructor(props: PageEditorProps) {
     super(props);
@@ -168,6 +175,13 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       resourceId: String(props.resourceId),
     });
 
+    const reconciledContent = reconcileLearningObjectivesInPageContent(
+      PageEditorContent.fromPersistence(content),
+      props.learningObjectives,
+    );
+
+    this.pendingLearningObjectivesReconciliationSave = reconciledContent.changed;
+
     this.state = {
       activityContexts,
       messages: [],
@@ -177,7 +191,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       resourceSlug: props.resourceSlug,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
-      content: PageEditorContent.fromPersistence(content),
+      learningObjectives: props.learningObjectives || [],
+      content: reconciledContent.content,
       persistence: 'idle',
       allObjectives: arrangeObjectives(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
@@ -208,15 +223,21 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         (persistence) => this.setState({ persistence }),
       )
       .then((editMode) => {
-        this.setState({ editMode });
-        this.pushTitleLockState(editMode);
-        if (editMode) {
-          this.initActivityPersistence();
-          this.windowUnloadListener = registerUnload(this.persistence);
-        } else if (this.persistence.getLockResult().type === 'not_acquired') {
-          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
-          this.editingLockedMessage(notAcquired.user);
-        }
+        this.setState({ editMode }, () => {
+          this.pushTitleLockState(editMode);
+          if (editMode) {
+            this.initActivityPersistence();
+            this.windowUnloadListener = registerUnload(this.persistence);
+
+            if (this.pendingLearningObjectivesReconciliationSave) {
+              this.pendingLearningObjectivesReconciliationSave = false;
+              this.save();
+            }
+          } else if (this.persistence.getLockResult().type === 'not_acquired') {
+            const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
+            this.editingLockedMessage(notAcquired.user);
+          }
+        });
       });
 
     this.titleUpdatedListener = (event: Event) => {
@@ -593,15 +614,12 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       resourceSlug: state.resourceSlug,
       graded: state.graded,
       title: state.title,
+      learningObjectives: state.learningObjectives,
     };
 
     const onEdit = (content: PageEditorContent) => this.update({ content });
 
-    const onAddItem = (
-      c: StructuredContent | ActivityReference,
-      index: number[],
-      a?: ActivityEditContext,
-    ) => {
+    const onAddItem = (c: ResourceContent, index: number[], a?: ActivityEditContext) => {
       this.update({
         content: this.state.content.insertAt(index, c),
       });
@@ -619,6 +637,24 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
         this.setState({ activityContexts: this.state.activityContexts.set(a.activitySlug, a) });
       }
+    };
+
+    const onRefreshLearningObjectives = (
+      contentId: string,
+      learningObjectives: ResolvedLearningObjective[],
+    ) => {
+      const contentItem = this.state.content.find(contentId);
+
+      if (contentItem === undefined || contentItem.type !== 'learning_objectives') {
+        return;
+      }
+
+      const reconciled = reconcileLearningObjectivesContent(contentItem, learningObjectives);
+
+      this.update({
+        content: this.state.content.updateContentItem(contentId, reconciled.content),
+        learningObjectives,
+      });
     };
 
     const onDuplicateActivity = (origContext: ActivityEditContext) => {
@@ -718,6 +754,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                       onPostUndoable={this.onPostUndoable}
                       content={this.state.content}
                       onAddItem={onAddItem}
+                      onRefreshLearningObjectives={onRefreshLearningObjectives}
                       resourceContext={resourceContext}
                       onDuplicate={onDuplicateActivity}
                     />

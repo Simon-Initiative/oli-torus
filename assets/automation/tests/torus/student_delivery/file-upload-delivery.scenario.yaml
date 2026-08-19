@@ -1,0 +1,182 @@
+# Scenario: Seed published courses for File Upload delivery automation.
+# File upload is manually graded (gradingApproach: manual): submitting stores the
+# response and shows a "received" notice rather than correct/incorrect feedback.
+# Two single-page projects are seeded (mirroring the single-page navigation the shared
+# delivery helper expects): a normal one, and a tiny-max-size one to exercise the
+# client-side oversize guard without any storage backend. Sections isolate attempts.
+
+- project:
+    name: 'file_upload_delivery_project'
+    title: 'File Upload Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'File Upload Practice'
+
+- create_activity:
+    project: 'file_upload_delivery_project'
+    title: 'File Upload Question'
+    virtual_id: 'file_upload'
+    type: 'oli_file_upload'
+    content_format: 'json'
+    content:
+      activityType: 'oli_file_upload'
+      stem:
+        id: 'file_upload_stem'
+        content:
+          - type: 'p'
+            id: 'file_upload_stem_p'
+            children:
+              - text: 'Upload your work.'
+      fileSpec:
+        maxCount: 1
+        accept: ''
+        maxSizeInBytes: 10485760
+      authoring:
+        transformations: []
+        previewText: ''
+        parts:
+          - id: '1'
+            scoringStrategy: 'average'
+            gradingApproach: 'manual'
+            responses:
+              - id: 'file_upload_response'
+                rule: 'input like {.*}'
+                score: 0
+                feedback:
+                  id: 'file_upload_feedback'
+                  content:
+                    - type: 'p'
+                      id: 'file_upload_feedback_p'
+                      children:
+                        - text: 'Your submission was received.'
+            hints: []
+
+- edit_page:
+    project: 'file_upload_delivery_project'
+    page: 'File Upload Practice'
+    content: |
+      title: "File Upload Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "file_upload"
+
+- publish:
+    to: 'file_upload_delivery_project'
+    description: 'Initial File Upload delivery publication'
+
+- project:
+    name: 'file_upload_oversize_project'
+    title: 'File Upload Oversize Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'File Upload Practice'
+
+- create_activity:
+    project: 'file_upload_oversize_project'
+    title: 'File Upload Oversize Question'
+    virtual_id: 'file_upload_oversize'
+    type: 'oli_file_upload'
+    content_format: 'json'
+    content:
+      activityType: 'oli_file_upload'
+      stem:
+        id: 'file_upload_oversize_stem'
+        content:
+          - type: 'p'
+            id: 'file_upload_oversize_stem_p'
+            children:
+              - text: 'Upload your work (small files only).'
+      fileSpec:
+        maxCount: 1
+        accept: ''
+        maxSizeInBytes: 10
+      authoring:
+        transformations: []
+        previewText: ''
+        parts:
+          - id: '1'
+            scoringStrategy: 'average'
+            gradingApproach: 'manual'
+            responses:
+              - id: 'file_upload_oversize_response'
+                rule: 'input like {.*}'
+                score: 0
+                feedback:
+                  id: 'file_upload_oversize_feedback'
+                  content:
+                    - type: 'p'
+                      id: 'file_upload_oversize_feedback_p'
+                      children:
+                        - text: 'Your submission was received.'
+            hints: []
+
+- edit_page:
+    project: 'file_upload_oversize_project'
+    page: 'File Upload Practice'
+    content: |
+      title: "File Upload Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "file_upload_oversize"
+
+- publish:
+    to: 'file_upload_oversize_project'
+    description: 'Initial File Upload oversize publication'
+
+- section:
+    name: 'file_upload_delivery_section'
+    title: 'File Upload Delivery Course ${RUN_ID}'
+    from: 'file_upload_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'file_upload_delivery_section_disabled'
+    title: 'File Upload Delivery Course ${RUN_ID} - Disabled'
+    from: 'file_upload_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'file_upload_delivery_section_restore'
+    title: 'File Upload Delivery Course ${RUN_ID} - Restore'
+    from: 'file_upload_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'file_upload_delivery_section_oversize'
+    title: 'File Upload Oversize Course ${RUN_ID}'
+    from: 'file_upload_oversize_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'file_upload_delivery_student'
+    type: 'student'
+    email: 'file-upload-delivery-student${RUN_ID}@example.com'
+    given_name: 'File'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'file_upload_delivery_student'
+    section: 'file_upload_delivery_section'
+    role: 'student'
+
+- enroll:
+    user: 'file_upload_delivery_student'
+    section: 'file_upload_delivery_section_disabled'
+    role: 'student'
+
+- enroll:
+    user: 'file_upload_delivery_student'
+    section: 'file_upload_delivery_section_restore'
+    role: 'student'
+
+- enroll:
+    user: 'file_upload_delivery_student'
+    section: 'file_upload_delivery_section_oversize'
+    role: 'student'

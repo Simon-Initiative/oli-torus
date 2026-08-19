@@ -1,0 +1,250 @@
+# Scenario: Course summary, progress, and student support
+#
+# This scenario creates distinct learner behavior patterns at course scope:
+# one learner completes all practice pages correctly, one completes one unit,
+# one struggles through partial work, and one has no activity. It verifies the
+# top summary progress card, the course progress tile, and student support
+# bucket counts/default ordering for those patterns.
+
+- use:
+    file: "base.scenario.yaml"
+
+# Excelling student: completes every practice page correctly.
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+    activity_virtual_id: "foundations_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+    activity_virtual_id: "foundations_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+    activity_virtual_id: "foundations_lesson_3_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+    activity_virtual_id: "applications_lesson_1_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+    activity_virtual_id: "applications_lesson_2_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+
+- answer_question:
+    student: "student_excelling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+    activity_virtual_id: "applications_lesson_3_mcq"
+    response: "a"
+
+# On-track student: completes one unit correctly.
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+    activity_virtual_id: "foundations_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+    activity_virtual_id: "foundations_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+
+- answer_question:
+    student: "student_on_track"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+    activity_virtual_id: "foundations_lesson_3_mcq"
+    response: "b"
+
+# Struggling student: completes every practice page incorrectly.
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 1"
+    activity_virtual_id: "foundations_lesson_1_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 2"
+    activity_virtual_id: "foundations_lesson_2_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Foundations Lesson 3"
+    activity_virtual_id: "foundations_lesson_3_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 1"
+    activity_virtual_id: "applications_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 2"
+    activity_virtual_id: "applications_lesson_2_mcq"
+    response: "a"
+
+- view_practice_page:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+
+- answer_question:
+    student: "student_struggling"
+    section: "instructor_dashboard_section"
+    page: "Applications Lesson 3"
+    activity_virtual_id: "applications_lesson_3_mcq"
+    response: "b"
+
+- dashboard_analytics_ready:
+    section: "instructor_dashboard_section"
+
+- assert:
+    instructor_dashboard_progress:
+      section: "instructor_dashboard_section"
+      axis_label: "Course Units"
+      class_size: 4
+      items:
+        "Foundations Unit":
+          completed_count: 3
+          completed_percent: 75.0
+        "Applications Unit":
+          completed_count: 2
+          completed_percent: 50.0
+        "Assessments":
+          completed_count: 0
+          completed_percent: 0.0
+
+- assert:
+    instructor_dashboard_student_support:
+      section: "instructor_dashboard_section"
+      has_activity_data: true
+      totals:
+        total_students: 4
+        active_students: 4
+        inactive_students: 0
+      default_bucket_id: "struggling"
+      bucket_priority:
+        - "struggling"
+        - "on_track"
+        - "excelling"
+        - "not_enough_information"
+      buckets:
+        struggling:
+          count: 1
+          student_names: ["Sam Struggling"]
+        on_track:
+          count: 1
+          student_names: ["Olivia On Track"]
+        excelling:
+          count: 1
+          student_names: ["Eli Excelling"]
+        not_enough_information:
+          count: 1
+          student_names: ["Nina No Data"]
+
+- assert:
+    instructor_dashboard_summary:
+      section: "instructor_dashboard_section"
+      tolerance: 0.1
+      total_students: 4
+      cards:
+        average_student_progress:
+          status: "ready"
+          value_number: 53.6

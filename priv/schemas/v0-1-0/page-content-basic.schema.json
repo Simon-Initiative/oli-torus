@@ -9,7 +9,38 @@
       "const": "0.1.0"
     },
     "model": {
-      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-group.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-survey.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-alternatives.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-break.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/learning-objectives.schema.json"
+          }
+        ]
+      }
     }
   },
   "required": [

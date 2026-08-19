@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>CAPI Stub Sim</title>
+  </head>
+  <body>
+    <div id="status">stub-sim loaded</div>
+    <script>
+      // Test stub speaking the CAPI postMessage protocol implemented by
+      // assets/src/components/parts/janus-capi-iframe/ExternalActivity.tsx.
+      // Driven from Playwright via window.__capiSend / window.__capiHandshake;
+      // every message received from the host is appended to window.__capiLog.
+
+      const REQUEST_TOKEN = 'stub-request-token';
+      const AUTH_TOKEN = 'stub-auth-token';
+
+      const TYPES = {
+        HANDSHAKE_REQUEST: 1,
+        HANDSHAKE_RESPONSE: 2,
+        ON_READY: 3,
+        VALUE_CHANGE: 4,
+        CONFIG_CHANGE: 5,
+        CHECK_REQUEST: 7,
+        CHECK_COMPLETE_RESPONSE: 8,
+        GET_DATA_REQUEST: 9,
+        GET_DATA_RESPONSE: 10,
+        SET_DATA_REQUEST: 11,
+        SET_DATA_RESPONSE: 12,
+        INITIAL_SETUP_COMPLETE: 14,
+        CHECK_START_RESPONSE: 15,
+        RESIZE_PARENT_CONTAINER_REQUEST: 18,
+        RESIZE_PARENT_CONTAINER_RESPONSE: 19,
+      };
+
+      window.__capiLog = [];
+      window.__capiTypes = TYPES;
+
+      window.addEventListener('message', (evnt) => {
+        let data;
+        try {
+          data = JSON.parse(evnt.data);
+        } catch (e) {
+          return;
+        }
+        window.__capiLog.push(data);
+        document.getElementById('status').textContent =
+          'last received type ' + data.type + ' (total ' + window.__capiLog.length + ')';
+      });
+
+      const envelope = (type, values, handshakeOverrides) =>
+        JSON.stringify({
+          handshake: Object.assign(
+            { requestToken: REQUEST_TOKEN, authToken: AUTH_TOKEN, config: {} },
+            handshakeOverrides || {},
+          ),
+          options: {},
+          type,
+          values: values === undefined ? {} : values,
+        });
+
+      // Send a CAPI message to the host. values/handshakeOverrides optional.
+      window.__capiSend = (type, values, handshakeOverrides) => {
+        window.parent.postMessage(envelope(type, values, handshakeOverrides), '*');
+      };
+
+      // Send a raw (possibly malformed) string to the host.
+      window.__capiSendRaw = (raw) => {
+        window.parent.postMessage(raw, '*');
+      };
+
+      // Convenience: full handshake start.
+      window.__capiHandshake = () => {
+        window.__capiSend(TYPES.HANDSHAKE_REQUEST);
+      };
+
+      // Convenience: variable value helper. vars = { key: {type, value, allowedValues?} }
+      window.__capiValueChange = (vars) => {
+        window.__capiSend(TYPES.VALUE_CHANGE, vars);
+      };
+
+      window.__capiReceived = (type) =>
+        window.__capiLog.filter((m) => m.type === type);
+    </script>
+  </body>
+</html>

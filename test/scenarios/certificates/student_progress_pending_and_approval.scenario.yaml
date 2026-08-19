@@ -39,6 +39,10 @@
     title: "Certificate Progress Section"
     from: "certificate_progress_product"
 
+- discussion_config:
+    section: "certificate_progress_section"
+    enabled: true
+
 - user:
     name: "certificate_instructor"
     type: "instructor"

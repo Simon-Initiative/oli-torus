@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PartComponentProps } from 'components/parts/types/parts';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import {
@@ -7,7 +7,12 @@ import {
 } from 'apps/delivery/components/NotificationContext';
 import { parseBoolean } from 'utils/common';
 import { FlashcardFlipState, FlashcardsView } from './FlashcardsView';
-import { FlashcardsModel } from './schema';
+import {
+  FlashcardsModel,
+  resolveCardHeightForLayout,
+  resolveContainerWidth,
+  withFlashcardsLayoutDimensions,
+} from './schema';
 
 type PrimitiveChanges = Record<string, string | number | boolean>;
 
@@ -29,12 +34,14 @@ const buildFlipResponses = (
 ];
 
 const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
-  const { id, model, onInit, onReady, onSave } = props;
+  const { id, model, onInit, onReady, onSave, onResize } = props;
+  const capiEnabled = model.capiEnabled !== false;
   const [ready, setReady] = useState(false);
   const [flipAllSignal, setFlipAllSignal] = useState(0);
+  const lastAutoLayoutKeyRef = useRef('');
 
   useEffect(() => {
-    if (!props.notify) return;
+    if (!capiEnabled || !props.notify) return;
 
     const handleChanges = (changes: PrimitiveChanges) => {
       const flipAll = changes[`stage.${id}.flipAllCards`];
@@ -60,7 +67,7 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
       stateUnsub();
       contextUnsub();
     };
-  }, [props.notify, id]);
+  }, [capiEnabled, props.notify, id]);
 
   useEffect(() => {
     let mounted = true;
@@ -69,11 +76,13 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
       try {
         await onInit({
           id,
-          responses: buildFlipResponses({
-            flippedCards: [],
-            hasCardBeenFlipped: false,
-            allCardsFlipped: false,
-          }),
+          responses: capiEnabled
+            ? buildFlipResponses({
+                flippedCards: [],
+                hasCardBeenFlipped: false,
+                allCardsFlipped: false,
+              })
+            : [],
         });
         if (!mounted) {
           return;
@@ -92,7 +101,50 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
     return () => {
       mounted = false;
     };
-  }, [id, onInit, onReady]);
+  }, [capiEnabled, id, onInit, onReady]);
+
+  useEffect(() => {
+    if (!ready || typeof onResize !== 'function') {
+      return;
+    }
+
+    const containerWidth = resolveContainerWidth(model.width, model.responsiveLayoutWidth);
+    const layoutModel = withFlashcardsLayoutDimensions(model, containerWidth);
+    const cardCount = model.cards?.length ?? 0;
+    const cardHeight = resolveCardHeightForLayout(model, containerWidth, cardCount);
+    const hostHeight =
+      typeof model.height === 'number' && model.height > 0 ? model.height : layoutModel.height;
+    const layoutKey = [
+      cardCount,
+      model.width,
+      model.minCardsPerRow,
+      model.maxCardsPerRow,
+      cardHeight,
+      hostHeight,
+    ].join(':');
+
+    if (layoutKey === lastAutoLayoutKeyRef.current) {
+      return;
+    }
+
+    lastAutoLayoutKeyRef.current = layoutKey;
+
+    const styleChanges: Record<string, { value: number }> = {};
+    const width =
+      typeof model.width === 'number' ? model.width : parseInt(String(model.width ?? ''), 10);
+
+    if (Number.isFinite(width) && width > 0) {
+      styleChanges.width = { value: width };
+    }
+
+    if (typeof hostHeight === 'number') {
+      styleChanges.height = { value: hostHeight };
+    }
+
+    styleChanges.cardHeight = { value: cardHeight };
+
+    void onResize({ id, settings: styleChanges });
+  }, [id, model, onResize, ready]);
 
   const handleFlipStateChange = useCallback(
     (state: FlashcardFlipState) => {
@@ -109,7 +161,7 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
       model={model}
       cssBundle="delivery"
       flipAllSignal={flipAllSignal}
-      onFlipStateChange={handleFlipStateChange}
+      onFlipStateChange={capiEnabled ? handleFlipStateChange : undefined}
     />
   ) : null;
 };

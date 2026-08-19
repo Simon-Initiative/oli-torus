@@ -13,6 +13,8 @@ defmodule OliWeb.Common.FilterBox do
     default: "Select a curriculum source to create your course section."
   )
 
+  attr(:card_body_text_class, :string, default: "mt-1 mb-4")
+
   attr(:show_sort, :boolean, default: true)
   attr(:show_more_opts, :boolean, default: true)
   attr(:sort, :any, default: nil)
@@ -22,7 +24,7 @@ defmodule OliWeb.Common.FilterBox do
     <div class="mb-3 w-full">
       <h2 id="header_id" class="pb-2">{@card_header_text}</h2>
       <div>
-        <p class="mt-1 mb-4">{@card_body_text}</p>
+        <p class={@card_body_text_class}>{@card_body_text}</p>
         <div class="filter-opts flex flex-wrap items-center gap-2">
           <div class="w-full">
             {render_slot(@inner_block)}

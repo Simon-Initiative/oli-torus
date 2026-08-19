@@ -57,34 +57,52 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     end
   end
 
-  defp build_where_by(%BrowseInsightsOptions{
+  defp build_where_by(%BrowseInsightsOptions{} = options) do
+    options
+    |> section_filter()
+    |> maybe_filter_resource(options.resource_id)
+    |> maybe_filter_part(options.part_id)
+  end
+
+  defp section_filter(%BrowseInsightsOptions{
          project_id: project_id,
+         resource_type_id: resource_type_id,
+         section_ids: []
+       }) do
+    dynamic(
+      [s, pub, pr, _],
+      s.project_id == ^project_id and
+        s.resource_id == pr.resource_id and
+        is_nil(pub.published) and
+        s.resource_type_id == ^resource_type_id and
+        s.section_id == -1 and
+        s.user_id == -1
+    )
+  end
+
+  defp section_filter(%BrowseInsightsOptions{
          resource_type_id: resource_type_id,
          section_ids: section_ids
        }) do
-    case section_ids do
-      [] ->
-        dynamic(
-          [s, pub, pr, _],
-          s.project_id == ^project_id and
-            s.resource_id == pr.resource_id and
-            is_nil(pub.published) and
-            s.resource_type_id == ^resource_type_id and
-            s.section_id == -1 and
-            s.user_id == -1
-        )
-
-      section_ids ->
-        dynamic(
-          [s, pub, pr, _],
-          s.resource_id == pr.resource_id and
-            is_nil(pub.published) and
-            s.resource_type_id == ^resource_type_id and
-            s.section_id in ^section_ids and
-            s.user_id == -1
-        )
-    end
+    dynamic(
+      [s, pub, pr, _],
+      s.resource_id == pr.resource_id and
+        is_nil(pub.published) and
+        s.resource_type_id == ^resource_type_id and
+        s.section_id in ^section_ids and
+        s.user_id == -1
+    )
   end
+
+  defp maybe_filter_resource(where_by, nil), do: where_by
+
+  defp maybe_filter_resource(where_by, resource_id),
+    do: dynamic([s, _pub, _pr, _rev], ^where_by and s.resource_id == ^resource_id)
+
+  defp maybe_filter_part(where_by, nil), do: where_by
+
+  defp maybe_filter_part(where_by, part_id),
+    do: dynamic([s, _pub, _pr, _rev], ^where_by and s.part_id == ^part_id)
 
   defmacro safe_div_fragment(numerator, denominator) do
     quote do
@@ -133,14 +151,25 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
          %Sorting{} = sorting,
          options
        ) do
-    total_count = get_total_count(query, options)
+    case objective_resource_type?(options) do
+      true ->
+        query
+        |> add_non_activity_select(0, options)
+        |> add_non_activity_order_by(sorting, options)
+        |> Repo.all()
+        |> filter_deleted_objectives()
+        |> apply_paging(%Paging{limit: limit, offset: offset})
 
-    query
-    |> add_non_activity_select(total_count, options)
-    |> add_non_activity_order_by(sorting, options)
-    |> limit(^limit)
-    |> offset(^offset)
-    |> Repo.all()
+      false ->
+        total_count = get_total_count(query, options)
+
+        query
+        |> add_non_activity_select(total_count, options)
+        |> add_non_activity_order_by(sorting, options)
+        |> limit(^limit)
+        |> offset(^offset)
+        |> Repo.all()
+    end
   end
 
   defp add_activity_row_select(query, adaptive_activity_type_id) do
@@ -281,6 +310,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           id: s.id,
           total_count: fragment("?::int", ^total_count),
           title: rev.title,
+          deleted: rev.deleted,
           resource_id: s.resource_id,
           slug: rev.slug,
           part_id: s.part_id,
@@ -314,6 +344,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           s.resource_id,
           s.part_id,
           rev.title,
+          rev.deleted,
           rev.slug,
           rev.activity_type_id
         ])
@@ -322,6 +353,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           total_count: fragment("?::int", ^total_count),
           resource_id: s.resource_id,
           title: rev.title,
+          deleted: rev.deleted,
           slug: rev.slug,
           part_id: s.part_id,
           activity_type_id: rev.activity_type_id,
@@ -488,5 +520,19 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       [] -> query
       _section_ids -> query |> group_by([s, _, _, _], [s.resource_id, s.part_id])
     end
+  end
+
+  defp objective_resource_type?(%BrowseInsightsOptions{resource_type_id: resource_type_id}) do
+    resource_type_id == ResourceType.get_id_by_type("objective")
+  end
+
+  defp filter_deleted_objectives(rows), do: Enum.reject(rows, & &1.deleted)
+
+  defp apply_paging(rows, %Paging{limit: limit, offset: offset}) do
+    total_count = length(rows)
+
+    rows
+    |> Enum.slice(offset, limit)
+    |> Enum.map(&Map.put(&1, :total_count, total_count))
   end
 end

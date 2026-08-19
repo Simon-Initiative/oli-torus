@@ -207,6 +207,49 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "show_research_consent" do
+    setup %{conn: conn} do
+      Oli.Delivery.update_system_research_consent_form_setting(:oli_form)
+      user = insert(:user, independent_learner: true, research_opt_out: nil)
+      {:ok, conn: log_in_user(conn, user), user: user}
+    end
+
+    defp direct_section(institution) do
+      insert(:section,
+        open_and_free: true,
+        institution: institution,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
+      )
+    end
+
+    test "renders the form when the return-to section requires consent", %{conn: conn} do
+      section = direct_section(insert(:institution, research_consent: :oli_form))
+
+      conn =
+        get(conn, ~p"/research_consent?user_return_to=/sections/#{section.slug}")
+
+      assert html_response(conn, 200) =~ "Consent"
+    end
+
+    test "redirects away when the return-to section institution disables consent (MER-5717)", %{
+      conn: conn
+    } do
+      section = direct_section(insert(:institution, research_consent: :no_form))
+
+      conn =
+        get(conn, ~p"/research_consent?user_return_to=/sections/#{section.slug}")
+
+      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+    end
+
+    test "falls back to the global setting for a non-section return path", %{conn: conn} do
+      conn = get(conn, ~p"/research_consent?user_return_to=/not/a/section")
+
+      assert html_response(conn, 200) =~ "Consent"
+    end
+  end
+
   describe "download_course_content_info" do
     setup [:setup_lti_session, :create_project_with_units_and_modules]
 

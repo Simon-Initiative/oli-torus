@@ -243,25 +243,70 @@ defmodule Oli.Delivery do
   end
 
   @doc """
-  Returns true if the user is required to provide research consent
-  """
-  def user_research_consent_required?(nil), do: false
+  Returns true if the user is required to provide research consent.
 
-  def user_research_consent_required?(%User{independent_learner: true}) do
-    # Direct delivery users
-    case get_system_research_consent_form_setting() do
-      :oli_form -> true
-      _ -> false
+  When a section is provided and it is associated with an institution, that
+  institution's research consent setting is authoritative. Otherwise the
+  decision falls back to the user-level behavior: the global platform setting
+  for direct delivery users, and the user's institution for LTI users.
+  """
+  def user_research_consent_required?(user, section \\ nil)
+
+  def user_research_consent_required?(nil, _section), do: false
+
+  def user_research_consent_required?(user, %Section{institution_id: institution_id})
+      when not is_nil(institution_id) do
+    case research_consent_for_institution(institution_id) do
+      nil -> user_research_consent_required?(user, nil)
+      research_consent -> research_consent_required?(research_consent)
     end
   end
 
-  def user_research_consent_required?(user) do
+  def user_research_consent_required?(%User{independent_learner: true}, _section) do
+    # Direct delivery users with no section institution fall back to the platform setting
+    research_consent_required?(get_system_research_consent_form_setting())
+  end
+
+  def user_research_consent_required?(user, _section) do
     # LTI users
     case Institutions.get_institution_by_lti_user(user) do
-      %Institution{research_consent: :oli_form} -> true
-      _ -> false
+      %Institution{research_consent: research_consent} ->
+        research_consent_required?(research_consent)
+
+      _ ->
+        false
     end
   end
+
+  @doc """
+  Returns true if research consent is required for the section identified by the
+  given return-to slug, resolving the section's institution setting in a single
+  query.
+
+  Falls back to the user-level policy when the slug is nil, unknown, or the
+  section has no associated institution.
+  """
+  def user_research_consent_required_for_slug?(nil, _slug), do: false
+
+  def user_research_consent_required_for_slug?(user, nil),
+    do: user_research_consent_required?(user, nil)
+
+  def user_research_consent_required_for_slug?(user, slug) do
+    case Sections.get_section_research_consent_by_slug(slug) do
+      {institution_id, research_consent} when not is_nil(institution_id) ->
+        research_consent_required?(research_consent)
+
+      _ ->
+        user_research_consent_required?(user, nil)
+    end
+  end
+
+  defp research_consent_for_institution(institution_id) do
+    Repo.one(from(i in Institution, where: i.id == ^institution_id, select: i.research_consent))
+  end
+
+  defp research_consent_required?(:oli_form), do: true
+  defp research_consent_required?(_), do: false
 
   # ------------------------------------------------------------
   # Delivery Settings

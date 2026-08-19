@@ -3,6 +3,7 @@ defmodule Oli.Rendering.Content.Plaintext do
   Implements the Plaintext writer for Oli content rendering.
   This was written quickly for simplicity. It leaves a trailing space at the end of the final string.
   """
+  alias Oli.Rendering.Content.LearningObjectives
   alias Oli.Rendering.Context
 
   @behaviour Oli.Rendering.Content
@@ -310,6 +311,10 @@ defmodule Oli.Rendering.Content.Plaintext do
 
   def selection(%Context{} = _context, _, _selection) do
     ["[Activity Bank Selection]"]
+  end
+
+  def learning_objectives(%Context{} = context, _next, element) do
+    LearningObjectives.plaintext(context, element)
   end
 
   def page_link(%Context{} = _context, _, %{"title" => title, "ref" => ref, "purpose" => purpose}) do

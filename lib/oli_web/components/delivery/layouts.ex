@@ -67,7 +67,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
       id="header"
       class={[
         "sticky w-full py-2.5 h-14 flex flex-row gap-6 bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-        if(@preview_mode, do: "top-20 z-[60]", else: "top-0 z-50")
+        if(assigns[:preview_mode] == true,
+          do: "top-20 z-[60]",
+          else: "top-0 z-50"
+        )
       ]}
     >
       <.link
@@ -1307,16 +1310,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
             class="hidden lg:flex grow shrink basis-0 min-w-0 h-10 justify-end items-center z-10"
             role="next_page"
           >
-            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 w-0 flex-1 min-w-0 text-right dark:text-white text-xs font-normal overflow-hidden whitespace-nowrap">
-              {maybe_add_icon(@next_page, @pages_progress)}
-              <span
-                class="block w-0 min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
-                title={@next_page["title"]}
-              >
-                {@next_page["title"]}
-              </span>
-            </div>
-            <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
+            <div class="px-2 lg:px-6 py-2 rounded flex items-center justify-end gap-6 min-w-0">
+              <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center min-w-0 text-right dark:text-white text-xs font-normal overflow-hidden whitespace-nowrap">
+                {maybe_add_icon(@next_page, @pages_progress)}
+                <span
+                  class="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"
+                  title={@next_page["title"]}
+                >
+                  {@next_page["title"]}
+                </span>
+              </div>
               <.link
                 aria-label="next"
                 href={
@@ -1382,8 +1385,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
             navigation_params
             |> Map.take(["return_to"])
             |> Map.put("request_path", preview_request_path)
+            |> Map.put("preview_mode", true)
 
-          OliWeb.Delivery.Instructor.PreviewRoutes.lesson_path(
+          Utils.lesson_live_path(
             section_slug,
             slug,
             preview_navigation_params

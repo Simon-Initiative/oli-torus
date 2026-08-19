@@ -304,7 +304,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
            target_student.id
          ) do
       {:ok, _} ->
-        send(self(), {:put_flash, :info, "Enrollment successfully transfered"})
+        send(self(), {:put_flash, :info, "Enrollment successfully transferred"})
         {:noreply, socket}
 
       {:error, _} ->

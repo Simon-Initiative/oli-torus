@@ -94,9 +94,7 @@ export class ProjectTask {
 
   @step('Publish project')
   async publishProject(description?: string) {
-    if (description) {
-      await this.publishP.fillDescription(description);
-    }
+    await this.publishP.fillDescription(description ?? 'Automated publish').catch(() => void 0);
 
     const autoPush = await this.publishP.autoPushIsChecked();
     if (!autoPush && autoPush != null) {

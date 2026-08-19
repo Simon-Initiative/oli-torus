@@ -1,7 +1,104 @@
 defmodule OliWeb.Delivery.Student.UtilsTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
+  alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.PostProcessing
+  alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Resources
   alias OliWeb.Delivery.Student.Utils
+
+  describe "build_html/3" do
+    test "renders Learning Objectives elements with objectives from the current container" do
+      %{section: section, resources: resources, revisions: revisions, project: project} =
+        create_full_project_with_objectives()
+
+      author = hd(project.authors)
+      user = insert(:user)
+
+      {:ok, _enrollment} =
+        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} =
+        Resources.update_revision(revisions.page_revision_2, %{
+          author_id: author.id,
+          content: learning_objectives_content(),
+          activity_refs: [resources.act_resource_y.id, resources.act_resource_z.id]
+        })
+
+      PostProcessing.apply(section, :related_activities)
+      SectionResourceDepot.process_table_creation(section.id)
+
+      page_context =
+        PageContext.create_for_visit(section, revisions.page_revision_2.slug, user, UUID.uuid4())
+
+      html =
+        Utils.build_html(
+          %{
+            section: section,
+            page_context: page_context,
+            request_path: nil,
+            selected_view: nil
+          },
+          :delivery,
+          is_liveview: true
+        )
+        |> IO.iodata_to_binary()
+
+      assert html =~ "Learning Objectives"
+      assert html =~ "Objective C"
+      assert html =~ "Objective C1"
+      assert html =~ "Objective D"
+    end
+
+    test "renders Learning Objectives Summary recommendation links in LiveView delivery" do
+      %{section: section, resources: resources, revisions: revisions, project: project} =
+        create_full_project_with_objectives()
+
+      author = hd(project.authors)
+      user = insert(:user)
+
+      {:ok, _enrollment} =
+        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} =
+        Resources.update_revision(revisions.page_revision_2, %{
+          author_id: author.id,
+          content: learning_objectives_summary_content(resources),
+          activity_refs: [resources.act_resource_y.id, resources.act_resource_z.id]
+        })
+
+      PostProcessing.apply(section, :related_activities)
+      SectionResourceDepot.process_table_creation(section.id)
+
+      page_context =
+        PageContext.create_for_visit(section, revisions.page_revision_2.slug, user, UUID.uuid4())
+
+      html =
+        Utils.build_html(
+          %{
+            section: section,
+            page_context: page_context,
+            request_path: nil,
+            selected_view: nil
+          },
+          :delivery,
+          is_liveview: true
+        )
+        |> IO.iodata_to_binary()
+
+      assert html =~ "Learning Objective Summary"
+      assert html =~ "Review"
+      assert html =~ "Practice"
+      assert html =~ "Page 1"
+      assert html =~ "Page 3"
+      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_1?|
+      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_3?|
+    end
+  end
 
   describe "week_range/2" do
     test "calculates the correct week range based on week number and start date" do
@@ -241,7 +338,27 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
                preview_mode: true,
                request_path: "/sections/math/preview"
              ) ==
-               "/sections/math/preview/page/intro?request_path=%2Fsections%2Fmath%2Fpreview"
+               "/sections/math/preview/lesson/intro?request_path=%2Fsections%2Fmath%2Fpreview"
+
+      assert Utils.prologue_live_path("math", "intro",
+               preview_mode: true,
+               request_path: "/sections/math/preview/learn"
+             ) ==
+               "/sections/math/preview/lesson/intro?request_path=%2Fsections%2Fmath%2Fpreview%2Flearn"
+
+      assert Utils.lesson_live_path("math", "intro",
+               preview_mode: true,
+               request_path: "/sections/math/preview/learn",
+               return_to: "/sections/math/instructor_dashboard/overview/course_content"
+             ) ==
+               "/sections/math/preview/lesson/intro?return_to=%2Fsections%2Fmath%2Finstructor_dashboard%2Foverview%2Fcourse_content&request_path=%2Fsections%2Fmath%2Fpreview%2Flearn"
+
+      assert Utils.prologue_live_path("math", "intro",
+               preview_mode: true,
+               request_path: "/sections/math/preview/learn",
+               return_to: "/sections/math/instructor_dashboard/overview/course_content"
+             ) ==
+               "/sections/math/preview/lesson/intro?return_to=%2Fsections%2Fmath%2Finstructor_dashboard%2Foverview%2Fcourse_content&request_path=%2Fsections%2Fmath%2Fpreview%2Flearn"
 
       assert Utils.learn_live_path("math", request_path: "/sections/math") ==
                "/sections/math/learn?request_path=%2Fsections%2Fmath"
@@ -263,5 +380,40 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       assert Utils.practice_live_path("math", preview_mode: true) ==
                "/sections/math/preview/practice"
     end
+  end
+
+  defp learning_objectives_content do
+    %{
+      "model" => [
+        %{
+          "type" => "learning_objectives",
+          "id" => "lo-introduction",
+          "mode" => "introduction",
+          "include_sub_objectives" => true,
+          "learning_objectives" => []
+        }
+      ]
+    }
+  end
+
+  defp learning_objectives_summary_content(resources) do
+    %{
+      "model" => [
+        %{
+          "type" => "learning_objectives",
+          "id" => "lo-summary",
+          "mode" => "summary",
+          "include_sub_objectives" => true,
+          "learning_objectives" => [
+            %{
+              "resource_id" => resources.obj_resource_c.id,
+              "enabled" => true,
+              "revisit_pages" => [resources.page_resource_1.id],
+              "practice_pages" => [resources.page_resource_3.id]
+            }
+          ]
+        }
+      ]
+    }
   end
 end

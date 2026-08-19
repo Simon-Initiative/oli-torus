@@ -4,6 +4,8 @@ import gleam/list
 import gleam/string
 import math/equality/types
 
+const tolerance_boundary_relative_epsilon = 0.000000000001
+
 /// Evaluate the standard/basic page numeric comparison family. This is kept out
 /// of the expression parser because Number inputs historically accept scalar
 /// numeric answers, not full math expressions with variables or operators.
@@ -381,15 +383,35 @@ fn values_equal(
   case tolerance {
     types.NoTolerance -> submitted_value == expected_value
     types.AbsoluteTolerance(value) ->
-      absolute_difference(submitted_value, expected_value) <=. value
+      within_tolerance_window(
+        absolute_difference(submitted_value, expected_value),
+        value,
+      )
     types.RelativeTolerance(value) ->
-      absolute_difference(submitted_value, expected_value)
-      <=. relative_window(submitted_value, expected_value, value)
+      within_tolerance_window(
+        absolute_difference(submitted_value, expected_value),
+        relative_window(submitted_value, expected_value, value),
+      )
     types.AbsoluteOrRelativeTolerance(absolute, relative) ->
-      absolute_difference(submitted_value, expected_value) <=. absolute
-      || absolute_difference(submitted_value, expected_value)
-      <=. relative_window(submitted_value, expected_value, relative)
+      within_tolerance_window(
+        absolute_difference(submitted_value, expected_value),
+        absolute,
+      )
+      || within_tolerance_window(
+        absolute_difference(submitted_value, expected_value),
+        relative_window(submitted_value, expected_value, relative),
+      )
   }
+}
+
+/// Decimal authoring values such as `1.5 +/- 0.1` can parse to binary floats
+/// where an exact boundary lands a few ULPs outside the authored tolerance.
+/// Keep authored positive tolerance windows inclusive without changing exact
+/// no-tolerance comparisons.
+fn within_tolerance_window(difference: Float, window: Float) -> Bool {
+  difference <=. window
+  || window >. 0.0
+  && difference <=. window +. window *. tolerance_boundary_relative_epsilon
 }
 
 /// Use the tolerance diagnostic only when a tolerance was part of the author

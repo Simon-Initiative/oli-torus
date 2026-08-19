@@ -20,8 +20,18 @@ Creates a course section from a project, product, or as a standalone section.
 - `name`: Internal identifier for the section (required)
 - `title`: Display title for the section
 - `from`: Source project or product name (optional for standalone)
+- `institution`: Scenario institution name to assign explicitly to the section
 - `type`: Section type - `enrollable` (default) or `open_and_free`
 - `registration_open`: Whether registration is open (default: true)
+- `assistant_enabled`: Whether the Dot AI assistant is available in the section (default: false)
+- `assistant_service_config`: Optional named GenAI service configuration to use for Dot in this section; requires `assistant_enabled: true`
+- `requires_payment`: Whether the section is paywalled
+- `payment_options`: `direct`, `deferred`, or `direct_and_deferred`
+- `pay_by_institution`: Whether learners are institution-funded
+- `amount`: Money map with `amount` and optional `currency`
+- `has_grace_period`: Whether paywall grace period is enabled
+- `grace_period_days`: Number of grace days when enabled
+- `grace_period_strategy`: `relative_to_section` or `relative_to_student`
 - `start_date`: Optional ISO8601 section start datetime
 - `end_date`: Optional ISO8601 section end datetime
 
@@ -63,6 +73,32 @@ Creates a course section from a project, product, or as a standalone section.
 - section:
     name: "custom_section"
     title: "Custom Built Section"
+```
+
+#### Section with Dot Enabled
+```yaml
+- section:
+    name: "dot_section"
+    title: "Course with Dot"
+    from: "source_project"
+    assistant_enabled: true
+    assistant_service_config: "nightly-dot-service"
+```
+
+#### Section-Level Paywall Override
+```yaml
+- institution:
+    name: "partner_school"
+
+- section:
+    name: "paid_section"
+    title: "Paid Section"
+    from: "paid_template"
+    institution: "partner_school"
+    payment_options: "deferred"
+    has_grace_period: true
+    grace_period_days: 7
+    grace_period_strategy: "relative_to_section"
 ```
 
 ---

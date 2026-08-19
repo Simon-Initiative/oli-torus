@@ -236,30 +236,7 @@ defmodule Oli.Lti.PlatformExternalTools do
           query
       end
 
-    platform_instances = Repo.all(query)
-
-    platform_instances_usage_count =
-      platform_instances
-      |> Enum.map(& &1.id)
-      |> get_sections_grouped_by_platform_instance_ids()
-      |> Enum.map(fn {id, sections} -> {id, length(sections)} end)
-      |> Enum.into(%{})
-
-    platform_instances =
-      platform_instances
-      |> Enum.map(fn p ->
-        Map.put(
-          p,
-          :usage_count,
-          Map.get(platform_instances_usage_count, p.id, 0)
-        )
-      end)
-
-    if field == :usage_count do
-      Enum.sort_by(platform_instances, & &1.usage_count, direction)
-    else
-      platform_instances
-    end
+    Repo.all(query)
   end
 
   @doc """
@@ -390,37 +367,24 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Fetches all sections that include LTI activities registered under the given list of
-  `platform_instance_ids`, and groups them by platform ID.
+  Counts the distinct sections that use each of the given LTI platform instances.
 
-  ## Example
-
-      iex> get_sections_grouped_by_platform_instance_ids([id1, id2])
-      %{
-        ^id1 => [%Section{...}, ...],
-        ^id2 => [%Section{...}]
-      }
-
-  Returns a map of `platform_instance_id => list_of_sections`.
+  The aggregation is performed by PostgreSQL and returns a map of
+  `platform_instance_id => section_count`. Platform instances without usage are
+  omitted from the map.
   """
-  @spec get_sections_grouped_by_platform_instance_ids([integer()]) ::
-          %{integer() => [Section.t()]}
-  def get_sections_grouped_by_platform_instance_ids(platform_instance_ids) do
-    from(ar in ActivityRegistration,
-      join: d in assoc(ar, :lti_external_tool_activity_deployment),
+  @spec count_sections_by_platform_instance_ids([integer()]) ::
+          %{integer() => non_neg_integer()}
+  def count_sections_by_platform_instance_ids(platform_instance_ids) do
+    from(d in LtiExternalToolActivityDeployment,
       join: sr in SectionResource,
-      on: sr.activity_type_id == ar.id,
-      join: s in Section,
-      on: sr.section_id == s.id,
+      on: sr.activity_type_id == d.activity_registration_id,
       where: d.platform_instance_id in ^platform_instance_ids,
-      select: {d.platform_instance_id, s},
-      distinct: true
+      group_by: d.platform_instance_id,
+      select: {d.platform_instance_id, count(sr.section_id, :distinct)}
     )
     |> Repo.all()
-    |> Enum.group_by(
-      fn {platform_instance_id, _section} -> platform_instance_id end,
-      fn {_platform_instance_id, section} -> section end
-    )
+    |> Map.new()
   end
 
   @doc """

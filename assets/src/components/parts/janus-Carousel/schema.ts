@@ -54,6 +54,9 @@ export const uiSchema = {
       url: {
         'ui:widget': 'TorusImageBrowser',
       },
+      caption: {
+        'ui:widget': 'RichLabelWidget',
+      },
     },
   },
 };

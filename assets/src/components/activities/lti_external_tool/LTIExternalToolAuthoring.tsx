@@ -16,8 +16,9 @@ import { LTIExternalToolSchema } from './schema';
 const store = configureStore();
 
 const LTIExternalTool: React.FC = () => {
-  const { model, projectSlug, authoringContext, activityId, onEdit } =
+  const { model, editMode, mode, projectSlug, authoringContext, activityId, onEdit } =
     useAuthoringElementContext<LTIExternalToolSchema>();
+  const isInstructorPreview = mode === 'instructor_preview';
 
   const activityIdStr = activityId ? `${activityId}` : undefined;
 
@@ -62,7 +63,7 @@ const LTIExternalTool: React.FC = () => {
                 id={`open-in-new-tab-${activityIdStr}`}
                 value={model.openInNewTab}
                 onChange={(value) => onEdit({ ...model, openInNewTab: value })}
-                editMode={true}
+                editMode={editMode && !isInstructorPreview}
               />
             </div>
             <div className="text-gray-500 my-4">

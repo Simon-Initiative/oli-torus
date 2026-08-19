@@ -1,0 +1,209 @@
+# Scenario: Challenging objectives with subobjectives
+#
+# This scenario verifies that the Challenging Objectives panel preserves
+# hierarchy when a low-proficiency subobjective needs instructor attention. The
+# assertion checks the parent row and its nested subobjective child.
+
+- project:
+    name: "challenging_subobjectives_project"
+    title: "Challenging Subobjectives"
+    objectives:
+      - Apply complex strategies:
+        - Select a strategy
+        - Review a result
+    root:
+      children:
+        - container: "Strategy Unit"
+          children:
+            - page: "Strategy Lesson 1"
+            - page: "Strategy Lesson 2"
+            - page: "Strategy Lesson 3"
+
+- edit_page:
+    project: "challenging_subobjectives_project"
+    page: "Strategy Lesson 1"
+    objectives:
+      - "Select a strategy"
+    content: |
+      title: "Strategy Lesson 1"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "strategy_lesson_1_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Strategy Check 1"
+            objectives: ["Select a strategy"]
+            stem_md: "Which first step is most useful?"
+            choices:
+              - id: "a"
+                body_md: "Choose a strategy based on the problem"
+                score: 1
+              - id: "b"
+                body_md: "Guess without reading"
+
+- edit_page:
+    project: "challenging_subobjectives_project"
+    page: "Strategy Lesson 2"
+    objectives:
+      - "Select a strategy"
+    content: |
+      title: "Strategy Lesson 2"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "strategy_lesson_2_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Strategy Check 2"
+            objectives: ["Select a strategy"]
+            stem_md: "Which behavior supports strategy selection?"
+            choices:
+              - id: "a"
+                body_md: "Compare possible approaches"
+                score: 1
+              - id: "b"
+                body_md: "Repeat the same incorrect approach"
+
+- edit_page:
+    project: "challenging_subobjectives_project"
+    page: "Strategy Lesson 3"
+    objectives:
+      - "Select a strategy"
+    content: |
+      title: "Strategy Lesson 3"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "strategy_lesson_3_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Strategy Check 3"
+            objectives: ["Select a strategy"]
+            stem_md: "What helps when solving a new problem?"
+            choices:
+              - id: "a"
+                body_md: "Pick an approach intentionally"
+                score: 1
+              - id: "b"
+                body_md: "Ignore the problem context"
+
+- publish:
+    to: "challenging_subobjectives_project"
+    description: "Challenging subobjectives publication"
+
+- section:
+    name: "challenging_subobjectives_section"
+    title: "Challenging Subobjectives Section"
+    from: "challenging_subobjectives_project"
+
+- user:
+    name: "subobjective_student_one"
+    type: "student"
+    email: "subobjective_one@example.edu"
+    given_name: "Ari"
+    family_name: "Subobjective"
+
+- user:
+    name: "subobjective_student_two"
+    type: "student"
+    email: "subobjective_two@example.edu"
+    given_name: "Blair"
+    family_name: "Subobjective"
+
+- enroll:
+    user: "subobjective_student_one"
+    section: "challenging_subobjectives_section"
+    role: "student"
+
+- enroll:
+    user: "subobjective_student_two"
+    section: "challenging_subobjectives_section"
+    role: "student"
+
+- view_practice_page:
+    student: "subobjective_student_one"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 1"
+
+- answer_question:
+    student: "subobjective_student_one"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 1"
+    activity_virtual_id: "strategy_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "subobjective_student_one"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 2"
+
+- answer_question:
+    student: "subobjective_student_one"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 2"
+    activity_virtual_id: "strategy_lesson_2_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "subobjective_student_one"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 3"
+
+- answer_question:
+    student: "subobjective_student_one"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 3"
+    activity_virtual_id: "strategy_lesson_3_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "subobjective_student_two"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 1"
+
+- answer_question:
+    student: "subobjective_student_two"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 1"
+    activity_virtual_id: "strategy_lesson_1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "subobjective_student_two"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 2"
+
+- answer_question:
+    student: "subobjective_student_two"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 2"
+    activity_virtual_id: "strategy_lesson_2_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "subobjective_student_two"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 3"
+
+- answer_question:
+    student: "subobjective_student_two"
+    section: "challenging_subobjectives_section"
+    page: "Strategy Lesson 3"
+    activity_virtual_id: "strategy_lesson_3_mcq"
+    response: "b"
+
+- dashboard_analytics_ready:
+    section: "challenging_subobjectives_section"
+
+- assert:
+    instructor_dashboard_challenging_objectives:
+      section: "challenging_subobjectives_section"
+      state: "populated"
+      rows_by_title:
+        "Apply complex strategies":
+          has_children: true
+          children:
+            - title: "Select a strategy"
+              row_type: "subobjective"
+              proficiency_label: "Low"

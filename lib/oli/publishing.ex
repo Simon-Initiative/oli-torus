@@ -1429,15 +1429,17 @@ defmodule Oli.Publishing do
     WHERE
       revisions.id IN (SELECT revision_id
       FROM published_resources
-       WHERE publication_id = #{publication_id})
+       WHERE publication_id = $1)
        AND (
-         (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{resource_id}]')
+         (revisions.resource_type_id = $2 AND revisions.objectives->part @> jsonb_build_array($3::bigint))
          OR
-         (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{resource_id}]')
+         (revisions.resource_type_id = $4 AND revisions.objectives->'attached' @> jsonb_build_array($3::bigint))
        )
+       AND revisions.deleted IS FALSE
     """
 
-    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    {:ok, %{rows: results}} =
+      Ecto.Adapters.SQL.query(Oli.Repo, sql, [publication_id, activity_id, resource_id, page_id])
 
     results
     |> Enum.map(fn [scope, id, resource_id, title, slug, part] ->
@@ -1486,6 +1488,7 @@ defmodule Oli.Publishing do
           WHERE publication_id = $1)
         AND
           (revision.resource_type_id = $2 OR revision.resource_type_id = $3)
+        AND revision.deleted IS FALSE
         AND jsonb_array_length(revision.objectives->part) > 0;
     """
 
