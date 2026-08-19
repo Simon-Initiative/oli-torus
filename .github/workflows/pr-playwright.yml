@@ -69,6 +69,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      # Provides sane, non-secret defaults (e.g. CLOAK_VAULT_KEY) the same
+      # way nightly-scenarios does, so this job doesn't have to hand-list
+      # every variable the app reads at boot.
+      - name: Configure
+        run: cp oli.example.env oli.env
+
       - name: Setup BEAM toolchain
         uses: erlef/setup-beam@v1
         with:
@@ -110,7 +116,7 @@ jobs:
         run: mix deps.compile
 
       - name: Compile (MIX_ENV=playwright)
-        run: mix compile --warnings-as-errors
+        run: set -a && source oli.env && mix compile --warnings-as-errors
 
       - name: Create and migrate the ephemeral database
         run: |
@@ -126,7 +132,11 @@ jobs:
         run: npx playwright install --with-deps chrome
 
       - name: Start Torus (MIX_ENV=playwright)
-        run: nohup mix phx.server > /tmp/torus-server.log 2>&1 &
+        run: |
+          set -a
+          source oli.env
+          set +a
+          nohup mix phx.server > /tmp/torus-server.log 2>&1 &
 
       - name: Wait for Torus to be ready
         run: |
