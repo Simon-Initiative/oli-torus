@@ -105,6 +105,9 @@ describe('Learning Objectives insert menu', () => {
 
     const objectivesChoice = screen.getByRole('button', { name: 'Objectives' });
 
+    expect(objectivesChoice.querySelector('.resource-choice-icon svg')).toBeInTheDocument();
+    expect(objectivesChoice.querySelector('.resource-choice-icon')).not.toHaveClass('fa-bullseye');
+
     fireEvent.focus(objectivesChoice);
 
     expect(onSetTip).toHaveBeenCalledWith('Render a learning objective introduction or summary');

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import * as Immutable from 'immutable';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
+import { LearningObjectivesIcon } from 'components/misc/icons/Icons';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
 import { modalActions } from 'actions/modal';
@@ -98,7 +99,7 @@ export const NonActivities: React.FC<Props> = ({
         />
         {canInsert(createDefaultLearningObjectivesContent(), parents) && (
           <ResourceChoice
-            icon="bullseye"
+            icon={<LearningObjectivesIcon />}
             label="Objectives"
             onHoverStart={() => onSetTip('Render a learning objective introduction or summary')}
             onHoverEnd={() => onResetTip()}

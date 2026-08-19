@@ -173,13 +173,11 @@ export const OutlineGroup = ({
 };
 
 interface IconProps {
-  iconName: string;
+  iconName?: string;
 }
 
-export const Icon = ({ iconName }: IconProps) => (
-  <div className={styles.icon}>
-    <i className={classNames(iconName, 'la-lg')}></i>
-  </div>
+export const Icon = ({ iconName, children }: PropsWithChildren<IconProps>) => (
+  <div className={styles.icon}>{children || <i className={classNames(iconName, 'la-lg')}></i>}</div>
 );
 
 interface ExpandToggleProps {

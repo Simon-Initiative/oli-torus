@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { LearningObjectivesIcon } from 'components/misc/icons/Icons';
 import { Option, SelectModal } from 'components/modal/SelectModal';
 import { modalActions } from 'actions/modal';
 import {
@@ -486,7 +487,9 @@ export const LearningObjectivesOutlineItem = (props: LearningObjectivesOutlineIt
 
   return (
     <OutlineItem {...props}>
-      <Icon iconName="fas fa-bullseye" />
+      <Icon>
+        <LearningObjectivesIcon width={20} height={20} />
+      </Icon>
       <Description title="Learning Objectives">
         {contentItem.mode === 'summary' ? 'Summary' : 'Introduction'}
       </Description>
