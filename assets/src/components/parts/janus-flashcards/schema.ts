@@ -26,6 +26,7 @@ export interface FlashcardItem {
   id: string;
   frontNodes?: MarkupTree[];
   backNodes?: MarkupTree[];
+  themeColor?: string;
 }
 
 export const MIN_CARDS_PER_ROW = 1;
