@@ -908,7 +908,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(
                details_view,
-               "#experiment-assignment-scope-help[phx-hook='GlobalTooltip'][data-tooltip*='keeps the same condition across all interventions']"
+               "button#experiment-assignment-scope-help[type='button'][phx-hook='GlobalTooltip'][data-tooltip*='keeps the same condition across all interventions'][class*='focus-visible:ring-2']"
+             )
+
+      assert has_element?(
+               details_view,
+               "label[for='condition-0-weight'] span#condition-0-weight-help[role='img']"
+             )
+
+      refute has_element?(
+               details_view,
+               "label[for='condition-0-weight'] button#condition-0-weight-help"
              )
 
       refute has_element?(details_view, "#experiment-assignment-scope > p")

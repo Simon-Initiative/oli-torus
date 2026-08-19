@@ -203,7 +203,7 @@ ClickHouse changes follow the existing ordinary migration mechanism and preserve
 - Assignment exists but selected condition is unavailable in a placement: retain current mapping-compatibility failure and deterministic fallback; never resample a different condition.
 - Exposure placement does not belong to the assignment's experiment: reject exposure with bounded invalid-condition telemetry; do not emit incorrectly attributed evidence.
 - Exposure sink failure: log/telemetry and existing retry behavior apply without changing the assignment or learner-visible selection.
-- Rollback with section-and-enrollment rows present: the `down/0` migration must either fail explicitly until such rows are absent or remove only pre-release feature rows under an explicitly documented deployment policy; it must never fabricate intervention ownership. Migration tests establish the selected safe behavior before release.
+- Rollback with section-and-enrollment rows present: the PostgreSQL `down/0` migration fails explicitly until such rows are absent and never fabricates intervention ownership. Production rollback is therefore roll-forward-only after canonical assignment evidence exists; deleting canonical production evidence is not part of the normal rollback procedure.
 
 ## 11. Observability
 
@@ -265,6 +265,14 @@ ClickHouse changes follow the existing ordinary migration mechanism and preserve
 - Existing xAPI rows without `assignment_scope` are interpreted as intervention-scoped where reporting needs a default; new evidence emits the explicit field.
 - Rollback does not promise conversion of canonical experiment-level assignments to intervention-level assignments. The release procedure must validate the documented rollback precondition before reversing the schema.
 
+### Release And Rollback Procedure
+
+1. Before deployment, confirm the PostgreSQL migration is pending and deploy it before application code that can create `section_enrollment` assignments. Existing experiment and assignment rows receive the `intervention` default without a data rewrite.
+2. Apply the additive ClickHouse migration before or with application rollout. Older producers and historical rows remain compatible because `assignment_scope` defaults to `intervention`; new producers then send the explicit scope.
+3. Before any PostgreSQL rollback, run `SELECT count(*) FROM experiment_assignments WHERE assignment_scope = 'section_enrollment';`. The required result is zero.
+4. When the count is zero, roll back application producers first, then the PostgreSQL migration, and finally the ClickHouse column. The ClickHouse column may remain during a roll-forward recovery because it is additive and defaulted.
+5. When the count is nonzero, do not run the PostgreSQL `down/0` migration. Roll forward with a corrected application/schema release. Removing canonical production evidence requires a separately reviewed data-retention and analytics-impact procedure and is not authorized by this work item.
+
 ## 15. Risks & Mitigations
 
 - Shared assignment but colliding exposure keys: include stable page/element placement identity in every exposure key and validate it against the assignment's experiment.
@@ -280,7 +288,7 @@ ClickHouse changes follow the existing ordinary migration mechanism and preserve
 
 - No unresolved question blocks planning or implementation.
 - During implementation, choose the exact existing form-control primitive and final reviewed copy for the two radio choices; preserve the PRD semantics and accessibility requirements.
-- Before production rollout, choose and document the safe `down/0` precondition for environments containing section-and-enrollment assignments. This is an operational migration decision, not a product-semantics question.
+- The production rollback precondition and ordering are recorded in Section 14: PostgreSQL rollback requires zero `section_enrollment` assignments, and environments with canonical evidence roll forward.
 - The earlier `intervention_assignment_thompson_sampling` documentation names course-wide sticky assignment as a non-goal and independent intervention assignment as universal behavior. A documentation-reconciliation task must update that wording to describe intervention scope as mandatory for Thompson Sampling and optional for weighted random, whose new default is section-and-enrollment scope.
 
 ## 17. References

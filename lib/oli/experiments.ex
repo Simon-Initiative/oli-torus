@@ -1645,7 +1645,7 @@ defmodule Oli.Experiments do
       })
 
       if event.selection do
-        :telemetry.execute([:oli, :experiments, :assignment, :conflict], %{count: 1}, %{
+        Telemetry.emit(:assignment_conflict, %{
           experiment_id: event.assignment.experiment_id,
           assignment_scope: event.assignment.assignment_scope
         })
@@ -2268,7 +2268,7 @@ defmodule Oli.Experiments do
         if conflict?(changeset) do
           assignment = find_assignment!(identity)
 
-          :telemetry.execute([:oli, :experiments, :assignment, :conflict], %{count: 1}, %{
+          Telemetry.emit(:assignment_conflict, %{
             experiment_id: match.experiment.id,
             assignment_scope: identity.scope
           })

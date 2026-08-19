@@ -449,6 +449,12 @@ defmodule Oli.Experiments.RuntimeTest do
     end
 
     test "concurrent first encounters at different interventions converge canonically" do
+      attach_telemetry([
+        [:oli, :experiments, :assignment, :reuse],
+        [:oli, :experiments, :assignment, :conflict],
+        [:oli, :experiments, :telemetry, :assignment_decided]
+      ])
+
       %{scope: scope, revision: revision, decision_point: experiment} =
         active_experiment_with_conditions(assignment_scope: :section_enrollment)
 
@@ -476,6 +482,60 @@ defmodule Oli.Experiments.RuntimeTest do
       assert length(Enum.uniq(assignment_ids)) == 1
       assert Repo.aggregate(Assignment, :count, :id) == 1
       assert Repo.get_by!(PolicyState, experiment_id: experiment.id).assignment_count == 1
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :reuse], %{count: 1},
+                      %{
+                        experiment_id: experiment_id,
+                        assignment_scope: :section_enrollment,
+                        guardrail_action: :sticky_reuse
+                      }}
+
+      assert experiment_id == experiment.id
+
+      for _ <- 1..2 do
+        assert_receive {:telemetry, [:oli, :experiments, :telemetry, :assignment_decided],
+                        %{count: 1},
+                        %{
+                          "role" => "assignment",
+                          "experiment_id" => ^experiment_id,
+                          "assignment_scope" => "section_enrollment",
+                          "key_hash" => key_hash
+                        } = metadata}
+
+        assert byte_size(key_hash) == 64
+        refute Map.has_key?(metadata, "user_id")
+        refute Map.has_key?(metadata, "enrollment_id")
+      end
+
+      refute_receive {:telemetry, [:oli, :experiments, :assignment, :conflict], _, _}
+    end
+
+    test "invalid persisted Thompson scope emits bounded invalid-configuration telemetry" do
+      attach_telemetry([[:oli, :experiments, :assignment, :invalid_configuration]])
+
+      %{scope: scope, revision: revision, decision_point: experiment} =
+        active_experiment_with_conditions(assignment_scope: :section_enrollment)
+
+      insert_intervention!(experiment, revision.resource_id, "placement")
+
+      Repo.query!(
+        "ALTER TABLE experiment_definitions DROP CONSTRAINT experiment_definitions_algorithm_assignment_scope_check"
+      )
+
+      from(definition in ExperimentDefinition, where: definition.id == ^experiment.id)
+      |> Repo.update_all(set: [algorithm: :thompson_sampling])
+
+      assert {:error, %{type: :invalid_condition}} =
+               Experiments.assign_condition(assign_request(scope, revision, ["a", "b"]))
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :invalid_configuration],
+                      %{count: 1},
+                      %{
+                        algorithm: :thompson_sampling,
+                        assignment_scope: :section_enrollment
+                      } = metadata}
+
+      assert map_size(metadata) == 2
     end
 
     test "lazy page materialization keeps SELECT reads constant for 2 and 10 placements" do
@@ -681,6 +741,24 @@ defmodule Oli.Experiments.RuntimeTest do
                       }}
     end
 
+    test "conflict telemetry has a bounded scope-aware event shape" do
+      attach_telemetry([[:oli, :experiments, :assignment, :conflict]])
+
+      assert :ok =
+               Oli.Experiments.Telemetry.emit(:assignment_conflict, %{
+                 experiment_id: 42,
+                 assignment_scope: :section_enrollment
+               })
+
+      assert_receive {:telemetry, [:oli, :experiments, :assignment, :conflict], %{count: 1},
+                      %{
+                        experiment_id: 42,
+                        assignment_scope: :section_enrollment
+                      } = metadata}
+
+      assert map_size(metadata) == 2
+    end
+
     test "page batch assignment keeps SELECT reads constant for 2 and 10 distinct placements" do
       select_counts =
         for placement_count <- [2, 10] do
@@ -708,6 +786,11 @@ defmodule Oli.Experiments.RuntimeTest do
     end
 
     test "canonical delivery emits distinct placement exposures for one participant assignment" do
+      attach_telemetry([
+        [:oli, :experiments, :exposure, :recorded],
+        [:oli, :experiments, :telemetry, :exposure_recorded]
+      ])
+
       %{scope: scope, revision: revision, decision_point: decision_point} =
         active_experiment_with_conditions(assignment_scope: :section_enrollment)
 
@@ -763,6 +846,27 @@ defmodule Oli.Experiments.RuntimeTest do
       assert first_exposure["intervention_key"] == "#{page.id}:placement-1"
       assert second_exposure["intervention_key"] == "#{page.id}:placement-2"
       assert first_exposure["key"] != second_exposure["key"]
+
+      for intervention_id <- [
+            first_exposure["intervention_id"],
+            second_exposure["intervention_id"]
+          ] do
+        assert_receive {:telemetry, [:oli, :experiments, :exposure, :recorded], %{count: 1},
+                        %{
+                          experiment_id: experiment_id,
+                          intervention_id: ^intervention_id,
+                          assignment_scope: :section_enrollment
+                        } = exposure_metadata}
+
+        assert experiment_id == decision_point.id
+        assert map_size(exposure_metadata) == 3
+
+        assert_operational_event(:exposure_recorded, "exposure", %{
+          "experiment_id" => decision_point.id,
+          "assignment_scope" => "section_enrollment",
+          "intervention_id" => intervention_id
+        })
+      end
     end
 
     test "delivery preparation discovers experiment placements inside ordinary containers" do
@@ -1468,10 +1572,27 @@ defmodule Oli.Experiments.RuntimeTest do
 
       assert reused_reward.key == reward.key
 
-      assert_receive {:telemetry, [:oli, :experiments, :exposure, :recorded], %{count: 1}, _}
+      assert_receive {:telemetry, [:oli, :experiments, :exposure, :recorded], %{count: 1},
+                      %{
+                        experiment_id: exposure_experiment_id,
+                        intervention_id: exposure_intervention_id,
+                        assignment_scope: :intervention
+                      } = exposure_metadata}
+
+      assert map_size(exposure_metadata) == 3
       assert_receive {:telemetry, [:oli, :experiments, :reward, :recorded], %{count: 1}, _}
-      assert_operational_event(:assignment_decided, "assignment")
-      assert_operational_event(:exposure_recorded, "exposure")
+
+      assert_operational_event(:assignment_decided, "assignment", %{
+        "experiment_id" => exposure_experiment_id,
+        "assignment_scope" => "intervention"
+      })
+
+      assert_operational_event(:exposure_recorded, "exposure", %{
+        "experiment_id" => exposure_experiment_id,
+        "assignment_scope" => "intervention",
+        "intervention_id" => exposure_intervention_id
+      })
+
       assert_operational_event(:outcome_recorded, "outcome")
       assert_operational_event(:reward_recorded, "reward")
       assert_duplicate_skip("reward")
@@ -1943,9 +2064,13 @@ defmodule Oli.Experiments.RuntimeTest do
     on_exit(fn -> :telemetry.detach(handler_id) end)
   end
 
-  defp assert_operational_event(event, role) do
+  defp assert_operational_event(event, role, expected_metadata \\ %{}) do
     assert_receive {:telemetry, [:oli, :experiments, :telemetry, ^event], %{count: 1},
-                    %{"role" => ^role}}
+                    %{"role" => ^role} = metadata}
+
+    assert Map.take(metadata, Map.keys(expected_metadata)) == expected_metadata
+    refute Map.has_key?(metadata, "user_id")
+    refute Map.has_key?(metadata, "enrollment_id")
   end
 
   defp assert_duplicate_skip(event_type) do

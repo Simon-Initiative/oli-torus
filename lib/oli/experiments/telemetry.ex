@@ -81,6 +81,22 @@ defmodule Oli.Experiments.Telemetry do
     skipped_duplicate("reward", receipt.key, request.scope)
   end
 
+  def emit(
+        :assignment_conflict,
+        %{experiment_id: experiment_id, assignment_scope: assignment_scope},
+        _opts
+      )
+      when is_integer(experiment_id) and
+             assignment_scope in [:intervention, :section_enrollment] do
+    :telemetry.execute(
+      [:oli, :experiments, :assignment, :conflict],
+      %{count: 1},
+      %{experiment_id: experiment_id, assignment_scope: assignment_scope}
+    )
+
+    :ok
+  end
+
   def emit(:policy_updated, {%{} = update, %{} = reward}, opts) do
     emit_operational(:policy_updated, Attributions.policy_update_evidence(update, reward, opts))
   end

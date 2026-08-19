@@ -399,6 +399,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                           id={"condition-#{condition_index}-weight-help"}
                           label={condition_weight_label(@experiment.algorithm)}
                           help="Weights are relative and do not need to sum to 1. For example, 1 / 1 is an even split and 2 / 1 is approximately a 2:1 split."
+                          element="span"
                         />
                       </label>
                       <input
@@ -1220,6 +1221,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           id={"experiment-#{@key}-help"}
           label={@label}
           help={@help}
+          element="span"
         />
         <span :if={is_nil(@help)}>{@label}</span>
       </label>
@@ -1242,24 +1244,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   attr :id, :string, required: true
   attr :label, :string, required: true
   attr :help, :string, required: true
+  attr :element, :string, values: ["button", "span"], default: "button"
 
   defp technical_term(assigns) do
     ~H"""
     <span class="inline-flex items-center gap-1">
       <span>{@label}</span>
-      <span
+      <.dynamic_tag
+        tag_name={@element}
+        type={if @element == "button", do: "button"}
         id={@id}
-        class="inline-flex cursor-help text-gray-500 dark:text-gray-400"
+        class={[
+          "inline-flex cursor-help text-gray-500 dark:text-gray-400",
+          @element == "button" &&
+            "rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
+        ]}
         phx-hook="GlobalTooltip"
         data-tooltip={@help}
         data-tooltip-style="body"
         data-tooltip-stop-propagation="true"
-        tabindex="0"
-        role="img"
+        tabindex={if @element == "span", do: "0"}
+        role={if @element == "span", do: "img"}
         aria-label={"About #{@label}: #{@help}"}
       >
         <.icon name="fa-solid fa-circle-info" class="h-3.5 w-3.5" />
-      </span>
+      </.dynamic_tag>
     </span>
     """
   end

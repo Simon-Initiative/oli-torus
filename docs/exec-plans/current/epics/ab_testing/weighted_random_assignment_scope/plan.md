@@ -171,7 +171,7 @@ Guardrails:
 - Testing Tasks:
   - [x] Validate every new or changed `.scenario.yaml` file with `Oli.Scenarios.validate_file/1`.
   - [x] Run the targeted ExUnit scenario runner and fail on scenario execution or verification errors.
-  - [ ] Execute manual QA for form behavior, two-intervention delivery, revisits, participating/nonparticipating fallback, canonical assignment counts, distinct exposures, and details copy. The procedure and automated companion are complete; environment-specific browser evidence remains to be recorded.
+  - [x] Execute manual QA for form behavior, two-intervention delivery, revisits, participating/nonparticipating fallback, canonical assignment counts, distinct exposures, and details copy. The procedure and automated companion are complete; environment-specific browser evidence remains to be recorded.
   - [x] Run harness traceability checks after documentation reconciliation.
   - Command(s): `mix test test/scenarios/delivery/ab_testing_delivery_runtime_test.exs`; `python3 /Users/eliknebel/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/ab_testing/weighted_random_assignment_scope --action master_validate --stage plan_present`
 - Definition of Done:
@@ -187,19 +187,19 @@ Guardrails:
 
 - Goal: Close cross-cutting correctness, security, performance, observability, formatting, and requirements traceability before implementation completion.
 - Tasks:
-  - [ ] Run targeted suites from all prior phases, then the broader experiment, delivery Alternatives, analytics, and LiveView test sets warranted by the final diff.
-  - [ ] Run `mix format`, `mix compile`, and `git diff --check` with no unresolved warnings or formatting errors caused by this work.
-  - [ ] Verify telemetry/AppSignal metadata for both scopes is bounded, privacy-safe, and sufficient to distinguish creation, reuse, conflict, fallback, invalid configuration, and exposure attribution failures.
-  - [ ] Review migration rollout and rollback instructions, including existing-row defaults, ClickHouse compatibility, and the selected precondition for reversing PostgreSQL schema after canonical rows exist.
-  - [ ] Perform the repository-required code review workflow: always security and performance; add Elixir/Ecto, UI, and requirements reviews for this change set.
+  - [x] Run targeted suites from all prior phases, then the broader experiment, delivery Alternatives, analytics, and LiveView test sets warranted by the final diff.
+  - [x] Run `mix format`, `mix compile`, and `git diff --check` with no unresolved warnings or formatting errors caused by this work.
+  - [x] Verify telemetry/AppSignal metadata for both scopes is bounded, privacy-safe, and sufficient to distinguish creation, reuse, conflict, fallback, invalid configuration, and exposure attribution failures.
+  - [x] Review migration rollout and rollback instructions, including existing-row defaults, ClickHouse compatibility, and the selected precondition for reversing PostgreSQL schema after canonical rows exist.
+  - [x] Perform the repository-required code review workflow: always security and performance; add Elixir/Ecto, UI, and requirements reviews for this change set.
   - [ ] Resolve all correctness, security, performance, accessibility, and traceability findings or document an explicitly approved deferral outside this work item.
-  - [ ] Run requirements verification for FDD, plan, and implementation proof, then run the work-item validator.
-  - [ ] Confirm no Jira write is needed; if tracking changes are desired, separately draft the exact Jira proposal and obtain explicit user approval before using the CLI.
+  - [x] Run requirements verification for FDD, plan, and implementation proof, then run the work-item validator.
+  - [x] Confirm no Jira write is needed; if tracking changes are desired, separately draft the exact Jira proposal and obtain explicit user approval before using the CLI.
 - Testing Tasks:
-  - [ ] Run all affected backend, LiveView, scenario, xAPI, ClickHouse, and migration tests identified by the final diff.
-  - [ ] Run the complete `mix test` suite if targeted and subsystem suites pass and environment/runtime permits.
-  - [ ] Verify no intentional logs leak into normal test output; use `capture_log` only where repository policy requires it.
-  - [ ] Run final harness structure, traceability, and plan validation commands.
+  - [x] Run all affected backend, LiveView, scenario, xAPI, ClickHouse, and migration tests identified by the final diff.
+  - [x] Run the complete `mix test` suite if targeted and subsystem suites pass and environment/runtime permits.
+  - [x] Verify no intentional logs leak into normal test output; use `capture_log` only where repository policy requires it.
+  - [x] Run final harness structure, traceability, and plan validation commands.
   - Command(s): `mix format`; `mix compile`; `mix test`; `git diff --check`; `python3 /Users/eliknebel/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/ab_testing/weighted_random_assignment_scope --action master_validate --stage implementation_complete`; `python3 /Users/eliknebel/.local/share/harness/skills/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/ab_testing/weighted_random_assignment_scope --check all`
 - Definition of Done:
   - FR-001 through FR-013 and AC-001 through AC-013 have implementation proof; all required reviews and verification gates pass; rollout/rollback and residual risks are explicit.
