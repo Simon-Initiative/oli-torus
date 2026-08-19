@@ -118,10 +118,15 @@ jobs:
       - name: Compile (MIX_ENV=playwright)
         run: set -a && source oli.env && mix compile --warnings-as-errors
 
-      - name: Create and migrate the ephemeral database
-        run: |
-          mix ecto.create
-          mix ecto.migrate
+      # mix.exs's ecto.setup alias runs create, migrate, and
+      # priv/repo/seeds.exs. Seeding is required, not optional: the
+      # `system_roles` rows an Author's system_role_id foreign key points
+      # at (ids 1/2) are only ever inserted by seeds.exs, not by any
+      # migration - a fresh database with no seed data can migrate cleanly
+      # and still reject every author insert with a foreign_key_constraint
+      # error.
+      - name: Create, migrate, and seed the ephemeral database
+        run: set -a && source oli.env && mix ecto.setup
 
       - name: Install frontend dependencies
         working-directory: assets
