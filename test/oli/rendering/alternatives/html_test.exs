@@ -12,6 +12,41 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
       %{author: author}
     end
 
+    test "tags delivered alternative branches with their group id", %{author: author} do
+      element = %{
+        "type" => "alternatives",
+        "id" => "preference-placement",
+        "alternatives_id" => 23,
+        "children" => [
+          %{"type" => "alternative", "value" => "a", "children" => []},
+          %{"type" => "alternative", "value" => "b", "children" => []}
+        ]
+      }
+
+      rendered =
+        Alternatives.render(
+          %Context{
+            user: author,
+            activity_map: %{},
+            alternatives_groups_fn: fn ->
+              {:ok, [%{id: 23, strategy: "select_all", options: []}]}
+            end,
+            alternatives_selector_fn: &Oli.Resources.Alternatives.SelectAllStrategy.select/2,
+            mode: :delivery
+          },
+          element,
+          Alternatives.Html
+        )
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered =~
+               ~s|class="alternative alternative-a" data-alternatives-id="23"|
+
+      assert rendered =~
+               ~s|class="alternative alternative-b" data-alternatives-id="23"|
+    end
+
     test "renders well-formed survey properly", %{author: author} do
       activity_map = %{
         1 => %ActivitySummary{

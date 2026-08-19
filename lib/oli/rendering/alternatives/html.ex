@@ -67,11 +67,12 @@ defmodule Oli.Rendering.Alternatives.Html do
             "value" => value,
             "children" => children
           },
-          hidden: hidden
+          hidden: hidden,
+          alternatives_id: alternatives_id
         }
       ) do
     [
-      ~s|<div class="alternative alternative-#{value}#{maybe_hidden(hidden)}">|,
+      ~s|<div class="alternative alternative-#{value}#{maybe_hidden(hidden)}" data-alternatives-id="#{alternatives_id}">|,
       Elements.render(context, children, Elements.Html),
       "</div>"
     ]
