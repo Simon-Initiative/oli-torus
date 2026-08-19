@@ -123,6 +123,17 @@ jobs:
           mix ecto.create
           mix ecto.migrate
 
+      - name: Install frontend dependencies
+        working-directory: assets
+        run: yarn install --frozen-lockfile
+
+      # Watchers are disabled for MIX_ENV=playwright (config/playwright.exs),
+      # so the JS/CSS bundles the app serves must be built once, upfront,
+      # rather than relying on the dev watcher process to build them live.
+      - name: Build frontend assets
+        working-directory: assets
+        run: yarn run deploy
+
       - name: Install Playwright dependencies
         working-directory: assets/automation
         run: npm ci

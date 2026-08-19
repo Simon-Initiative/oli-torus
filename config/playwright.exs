@@ -15,6 +15,7 @@ config :oli, Oli.Repo, database: System.get_env("DB_NAME", "oli_playwright")
 
 config :oli, OliWeb.Endpoint,
   code_reloader: false,
-  live_reload: []
+  live_reload: [],
+  watchers: []
 
 config :oli, Oli.Mailer, adapter: Swoosh.Adapters.Local
