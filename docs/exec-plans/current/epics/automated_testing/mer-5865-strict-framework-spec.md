@@ -502,7 +502,7 @@ accepted by the executor in the framework's initial scope.** Skeletal shape now,
 ### 3.9 Round-4 findings — recovered and mapped
 
 List recovered verbatim from the 2026-07-31 session transcript (design-pass blocker 8). Rounds
-5–9 (2026-08-03, `reviews/mer-5674-round-{5..9}.md`) already resolved two of them in shipped
+5–9 already resolved two of them in shipped
 code. Full mapping:
 
 | # | Finding (2026-07-31) | Fate |

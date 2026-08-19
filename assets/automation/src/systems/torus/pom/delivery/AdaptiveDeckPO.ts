@@ -664,28 +664,50 @@ export class AdaptiveDeckPO {
   }
 
   /**
-   * Fill short-text, blot and (opt-in) multi-line janus inputs. extraSelectors:
-   * see scanScreen's extraTextInputSelectors — same opt-in contract.
+   * Fill short-text, blot and (opt-in) multi-line janus inputs, returning how
+   * many controls were filled.
+   *
+   * extraSelectors: see scanScreen's extraTextInputSelectors — same opt-in
+   * contract; a control class not named here is never touched.
+   *
+   * verify: read every value back and fail if it did not register. Callers that
+   * assert the submitted payload downstream may leave it off and tolerate a
+   * refused fill; callers whose only evidence is this call must turn it on, or a
+   * no-op fill counts as success.
    */
-  async fillTextInputs(value: string, usernameValue?: string, extraSelectors: string[] = []) {
+  async fillTextInputs(
+    value: string,
+    usernameValue?: string,
+    extraSelectors: string[] = [],
+    verify = false,
+  ) {
     const selector = ['.short-text-input input', '.text-input-blot input', ...extraSelectors].join(
       ', ',
     );
     const inputs = await this.interactableParts(selector);
+    let filled = 0;
     for (const input of inputs) {
       const isUsername = await input
         .evaluate((element) => element.id === 'username')
         .catch(() => false);
-      await input
-        .fill(isUsername ? (usernameValue ?? value) : value, ACTION_TIMEOUT)
-        .catch(() => undefined);
+      const target = isUsername ? (usernameValue ?? value) : value;
+      if (verify) {
+        await input.fill(target, ACTION_TIMEOUT);
+        const readback = await input.inputValue().catch(() => '');
+        if (readback !== target) {
+          throw new Error(`text input ${filled + 1}/${inputs.length}: value did not register`);
+        }
+      } else {
+        await input.fill(target, ACTION_TIMEOUT).catch(() => undefined);
+      }
+      filled += 1;
     }
 
     // the text parts save through a 250ms debounce with no observable signal,
     // so a submit fired immediately would evaluate the previous value
-    if (inputs.length > 0) await this.page.waitForTimeout(400);
+    if (filled > 0) await this.page.waitForTimeout(400);
 
-    return inputs.length;
+    return filled;
   }
 
   // -------------------------------------------- part-scoped registry surface

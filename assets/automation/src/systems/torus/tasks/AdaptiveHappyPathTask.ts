@@ -641,7 +641,15 @@ async function performDirective(deck: AdaptiveDeckPO, screenId: string, d: Answe
       return;
     }
     case 'text_input': {
-      if ((await deck.fillTextInputs(d.value)) === 0) {
+      // this path accepts janus-multi-line-text parts, so the textarea selector
+      // is opted in explicitly — the deck's default covers single-line only
+      const filled = await deck.fillTextInputs(
+        d.value,
+        undefined,
+        ['.long-text-input textarea'],
+        true,
+      );
+      if (filled === 0) {
         throw new Error(`screen "${screenId}": no text inputs found`);
       }
       return;
