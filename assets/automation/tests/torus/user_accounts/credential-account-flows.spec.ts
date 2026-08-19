@@ -1,4 +1,4 @@
-import { waitForMailboxEmail } from '@core/mailbox';
+import { extractAccountLink, waitForMailboxEmail } from '@core/mailbox';
 import { test } from '@fixture/my-fixture';
 import { CredentialAccountPO, CredentialAccountType } from '@pom/home/CredentialAccountPO';
 import { APIRequestContext, BrowserContext, Page } from '@playwright/test';
@@ -54,7 +54,7 @@ async function exerciseSelfServiceLifecycle(
   // the consent modal on the next navigation.
   await context.clearCookies({ name: '_oli_key' });
   await account.confirm(
-    extractAccountLink(confirmation.html_body, confirmation.text_body, type, 'confirm'),
+    extractAccountLink(confirmation.html_body, confirmation.text_body, segment(type), 'confirm'),
   );
 
   await account.login(email, initialPassword);
@@ -74,7 +74,7 @@ async function exerciseSelfServiceLifecycle(
   });
 
   await account.resetPassword(
-    extractAccountLink(reset.html_body, reset.text_body, type, 'reset_password'),
+    extractAccountLink(reset.html_body, reset.text_body, segment(type), 'reset_password'),
     newPassword,
   );
 
@@ -85,20 +85,6 @@ async function exerciseSelfServiceLifecycle(
   await account.expectLoginSuccess();
 }
 
-function extractAccountLink(
-  htmlBody: string | null,
-  textBody: string | null,
-  type: CredentialAccountType,
-  action: 'confirm' | 'reset_password',
-) {
-  const segment = type === 'author' ? 'authors' : 'users';
-  const path = `/${segment}/${action}/`;
-  const source = [htmlBody, textBody].filter(Boolean).join(' ');
-  const match = source.match(new RegExp(`https?:\\/\\/[^\\s"'<]+${path}[^\\s"'<]+`));
-
-  if (!match) {
-    throw new Error(`Expected an account ${action} URL for ${type} in the email.`);
-  }
-
-  return match[0].replace(/&amp;/g, '&');
+function segment(type: CredentialAccountType): 'authors' | 'users' {
+  return type === 'author' ? 'authors' : 'users';
 }

@@ -62,8 +62,8 @@ export class CredentialAccountPO {
     await expect(this.page.getByText('Password reset successfully.')).toBeVisible();
   }
 
-  async login(email: string, password: string) {
-    await this.page.goto(`/${this.pathSegment()}/log_in`);
+  async login(email: string, password: string, loginPath?: string) {
+    await this.page.goto(loginPath ?? `/${this.pathSegment()}/log_in`);
 
     const form = this.page.locator('#login_form');
     await form.locator(`input[name="${this.formName()}[email]"]`).fill(email);
@@ -77,8 +77,12 @@ export class CredentialAccountPO {
     await expect(this.page.getByText('Invalid email or password')).toBeVisible();
   }
 
-  async expectLoginSuccess() {
-    await this.page.waitForURL(this.destinationPath());
+  async expectLoginSuccess(destination?: string) {
+    await this.page.waitForURL(destination ?? this.destinationPath());
+  }
+
+  async expectAccountLabel(label: string) {
+    await expect(this.page.locator('[role="account label"]')).toHaveText(label);
   }
 
   private formName() {

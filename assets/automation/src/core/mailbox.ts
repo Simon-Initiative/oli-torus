@@ -81,3 +81,20 @@ async function getMailboxEmail(
 function authHeaders(token: string) {
   return { 'x-playwright-scenario-token': token };
 }
+
+export function extractAccountLink(
+  htmlBody: string | null,
+  textBody: string | null,
+  segment: 'authors' | 'users',
+  action: 'confirm' | 'reset_password',
+): string {
+  const path = `/${segment}/${action}/`;
+  const source = [htmlBody, textBody].filter(Boolean).join(' ');
+  const match = source.match(new RegExp(`https?:\\/\\/[^\\s"'<]+${path}[^\\s"'<]+`));
+
+  if (!match) {
+    throw new Error(`Expected an account ${action} URL under ${path} in the email.`);
+  }
+
+  return match[0].replace(/&amp;/g, '&');
+}

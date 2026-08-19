@@ -111,11 +111,40 @@ wait for a Local-adapter email.
 **Exit criterion:** both self-service account types complete their lifecycle
 against a Playwright environment without a real inbox or external reCAPTCHA.
 
-### Phase 3: Provisioned-role credential coverage
+### Phase 3: Provisioned-role credential coverage — complete
 
-- Add scenario YAML bootstrap for a system admin and an instructor.
-- Add browser login/reset coverage for both and assert their role-specific
-  post-login destinations.
+- Seed a system admin Author (`system_role: system_admin`) and an instructor
+  User (`type: instructor`, `can_create_sections: true`) via the existing
+  scenario-YAML mechanism
+  (`assets/automation/tests/torus/user_accounts/playwright_credential_roles.yaml`),
+  reusing `seedScenario`/`/test/scenario-yaml` rather than factories or direct
+  database writes. Seeded accounts are pre-confirmed
+  (`email_verified` defaults to `true`), so no confirmation step is exercised
+  for these roles — only login, reset, old-password rejection, and
+  new-password login.
+- Cover both roles in
+  `assets/automation/tests/torus/user_accounts/credential-account-provisioned-roles.spec.ts`,
+  reusing `CredentialAccountPO` from Phase 2 rather than the older
+  `HomeTask`/`LoginPO` role-picker stack.
+- Assert the role-specific destination and an account-menu role label
+  (`[role="account label"]`, e.g. "Admin"/"Instructor") after each successful
+  login, not just a successful authentication.
+- A plain `/users/log_in` submission always redirects to
+  `/workspaces/student`, even for a `can_create_sections: true` user: the
+  redirect target is computed before `current_user` is assigned onto the
+  `conn` (`lib/oli_web/user_auth.ex:23-41`). Reaching `/workspaces/instructor`
+  requires logging in through `/instructors/log_in`, whose form action embeds
+  `request_path=/workspaces/instructor` directly
+  (`lib/oli_web/live/user_login_live.ex:47`). `CredentialAccountPO.login`
+  therefore takes an optional `loginPath` override used only for the
+  instructor case; the system-admin Author already lands on the regular
+  `/workspaces/course_author` via `/authors/log_in`, distinguished only by the
+  "Admin" account-menu label.
+- Do not run both credential-flow spec files concurrently against the same
+  Playwright server/`test-results` directory (e.g. one from a terminal, one
+  from `--ui`); a single observed hang and a single unrelated trace-file
+  `ENOENT` both coincided with concurrent runs and did not reproduce across
+  22 clean, sequential runs.
 
 **Exit criterion:** Authoring and Delivery privileged roles prove their
 credential reset behavior without pretending that they have self-service
