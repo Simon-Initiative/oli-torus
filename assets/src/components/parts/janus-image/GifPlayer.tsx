@@ -72,7 +72,13 @@ const GifPlayer: React.FC<GifPlayerProps> = ({
   return (
     <span
       className={className}
-      style={{ position: 'relative', display: 'inline-block', lineHeight: 0, ...style }}
+      style={{
+        position: 'relative',
+        display: 'block',
+        maxWidth: '100%',
+        lineHeight: 0,
+        ...style,
+      }}
       onClick={onClick}
       data-janus-type={dataJanusType}
       data-testid="janus-image-gif"
@@ -86,11 +92,12 @@ const GifPlayer: React.FC<GifPlayerProps> = ({
       `}</style>
       <canvas
         ref={canvasRef}
+        className="janus-image-gif-canvas"
         data-testid="janus-image-gif-canvas"
         role={decorative ? 'presentation' : 'img'}
         aria-label={decorative ? undefined : alt}
         aria-hidden={decorative || undefined}
-        style={{ width: '100%', height: '100%', display: 'block' }}
+        style={{ width: '100%', height: 'auto', display: 'block' }}
       />
       {status === 'ready' && (
         <button
