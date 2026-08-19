@@ -272,6 +272,14 @@
   .matching-item-caption {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.9);
+
+    &.janus-rich-label {
+      p,
+      div {
+        margin: 0;
+        display: inline;
+      }
+    }
   }
 
   .matching-item-image {
@@ -287,6 +295,14 @@
     font-size: 16px;
     font-weight: 500;
     color: #fff;
+
+    &.janus-rich-label {
+      p,
+      div {
+        margin: 0;
+        display: inline;
+      }
+    }
   }
 
   .matching-empty-hint {

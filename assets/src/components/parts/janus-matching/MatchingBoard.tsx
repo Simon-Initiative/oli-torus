@@ -10,7 +10,8 @@ import {
   columnTitle,
   isLinkCorrect,
   isPairMatched,
-  itemAccessibleName,
+  itemAccessibleText,
+  itemLabel,
   pairColorForNumber,
   toggleMatch,
 } from './matching-util';
@@ -172,10 +173,10 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       onMatchesChange(next);
       announce(
         wasMatched
-          ? `Removed match between ${itemAccessibleName(col1Item)} and ${itemAccessibleName(
+          ? `Removed match between ${itemAccessibleText(col1Item)} and ${itemAccessibleText(
               col2Item,
             )}`
-          : `Matched ${itemAccessibleName(col1Item)} with ${itemAccessibleName(col2Item)}`,
+          : `Matched ${itemAccessibleText(col1Item)} with ${itemAccessibleText(col2Item)}`,
       );
       return next;
     },
@@ -282,7 +283,7 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
       e.preventDefault();
       setSelectedCol1Id(item.id);
       setFocusZone('col2');
-      announce(`Selected ${itemAccessibleName(item)}. Choose a match from column 2.`);
+      announce(`Selected ${itemAccessibleText(item)}. Choose a match from column 2.`);
       const firstCol2 = column2Items[0];
       if (firstCol2) {
         requestAnimationFrame(() => focusItem(firstCol2.id));
@@ -495,7 +496,9 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     .join(' ')}
                   tabIndex={enabled ? tabIndex : -1}
                   disabled={!enabled}
-                  aria-label={itemAccessibleName(item)}
+                  aria-label={`${itemLabel(item, index)}. ${itemAccessibleText(
+                    item,
+                  )}. Press Enter to select and choose a match.`}
                   aria-describedby={instructionsId}
                   aria-pressed={selected}
                   onPointerDown={(e) => {
@@ -569,7 +572,9 @@ const MatchingBoard: React.FC<MatchingBoardProps> = ({
                     .join(' ')}
                   tabIndex={enabled ? tabIndex : -1}
                   disabled={!enabled}
-                  aria-label={itemAccessibleName(item)}
+                  aria-label={`${itemLabel(item, index)}. ${itemAccessibleText(
+                    item,
+                  )}. Press Enter to match with the selected item.`}
                   aria-describedby={instructionsId}
                   onClick={() => completeCol2Match(item)}
                   onKeyDown={(e) => handleCol2KeyDown(e, item, index)}

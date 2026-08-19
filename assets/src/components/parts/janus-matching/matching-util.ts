@@ -1,5 +1,6 @@
 import { CSSProperties } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { htmlToPlainText } from '../../../utils/richOptionLabel';
 import {
   DEFAULT_MATCHING_MIN_HEIGHT,
   DEFAULT_MATCHING_THEME,
@@ -70,19 +71,12 @@ export const itemImageCaption = (item: MatchingItem): string => {
   return item.text.trim();
 };
 
-export const itemAccessibleName = (item: MatchingItem): string => {
+/** Plain learner-facing text for aria-labels and announcements. */
+export const itemAccessibleText = (item: MatchingItem): string => {
   if (item.type === 'image') {
-    const alt = (item.alt || '').trim();
-    if (alt) {
-      return alt;
-    }
-    const caption = itemImageCaption(item);
-    if (caption) {
-      return caption;
-    }
-    return 'Image';
+    return item.alt?.trim() || htmlToPlainText(itemImageCaption(item)) || item.label?.trim() || '';
   }
-  return itemDisplayText(item);
+  return htmlToPlainText(itemDisplayText(item));
 };
 
 export const shuffleItems = <T>(input: T[]): T[] => {

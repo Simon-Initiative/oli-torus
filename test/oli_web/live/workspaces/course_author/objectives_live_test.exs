@@ -184,6 +184,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, "#objectives-table")
+
+      assert has_element?(
+               view,
+               "p.text-Text-text-high",
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
+             )
+
+      assert has_element?(
+               view,
+               "p",
+               "Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages."
+             )
+
+      assert has_element?(
+               view,
+               ~s|a.external.text-Text-text-button[href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"][rel="noopener"][target="_blank"]|,
+               "CMU Eberly Center guide on learning objectives"
+             )
+
+      assert has_element?(
+               view,
+               "p",
+               "to learn more about the importance of attaching learning objectives to pages and activities."
+             )
+
       assert has_element?(view, "p", "None exist")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
