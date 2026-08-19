@@ -1,7 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { RichLabelField } from 'components/parts/common/RichLabelField';
 import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import guid from 'utils/guid';
+import { htmlToPlainText, normalizeRichLabelForStorage } from 'utils/richOptionLabel';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 
@@ -127,6 +129,11 @@ const modalStyles = `
   font-size: 0.875rem;
   font-weight: 500;
   padding: 8px 0;
+  min-width: 0;
+}
+.lsi-input-row {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .lsi-input:focus {
   outline: none;
@@ -208,8 +215,11 @@ export const ListSortItemsEditor: React.FC<Props> = ({ id, value, onChange, onBl
 
   const onSave = useCallback(() => {
     const cleaned = draftItems
-      .map((i) => ({ id: i.id || `item-${guid()}`, text: i.text }))
-      .filter((i) => i.text.trim().length > 0);
+      .map((i) => ({
+        id: i.id || `item-${guid()}`,
+        text: normalizeRichLabelForStorage(i.text || ''),
+      }))
+      .filter((i) => htmlToPlainText(i.text).length > 0);
     closeEditor();
     onChange(cleaned);
     setTimeout(() => onBlur(id, cleaned), 0);
@@ -255,8 +265,7 @@ export const ListSortItemsEditor: React.FC<Props> = ({ id, value, onChange, onBl
   }, []);
 
   const editText = useCallback(
-    (index: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const text = e.target.value;
+    (index: number) => (text: string) => {
       setDraftItems((prev) => prev.map((item, i) => (i === index ? { ...item, text } : item)));
     },
     [],
@@ -306,14 +315,14 @@ export const ListSortItemsEditor: React.FC<Props> = ({ id, value, onChange, onBl
                       <GripIcon />
                     </span>
                     <span className="lsi-index">{index + 1}</span>
-                    <input
-                      type="text"
-                      className="lsi-input"
+                    <RichLabelField
+                      className="lsi-input-row"
+                      inputClassName="lsi-input"
+                      rowClassName="flex align-items-center gap-1"
                       value={item.text}
                       onChange={editText(index)}
                       placeholder="Enter item name..."
-                      draggable={false}
-                      onDragStart={(e) => e.stopPropagation()}
+                      modalTitle="Edit list item"
                     />
                     <button
                       type="button"

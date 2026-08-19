@@ -300,6 +300,14 @@
       font-weight: 500;
       color: #fff;
       word-break: break-word;
+
+      &.janus-rich-label {
+        p,
+        div {
+          margin: 0;
+          display: inline;
+        }
+      }
     }
 
     .matching-item-content--image {
@@ -311,6 +319,14 @@
     .matching-item-caption {
       font-size: 11px;
       color: rgba(255, 255, 255, 0.9);
+
+      &.janus-rich-label {
+        p,
+        div {
+          margin: 0;
+          display: inline;
+        }
+      }
     }
 
     .matching-item-image {
@@ -407,6 +423,27 @@
 .matching-item-editor {
   .mie-field {
     margin-bottom: 16px;
+  }
+
+  .janus-rich-label-editor-quill {
+    width: 100%;
+
+    .ql-toolbar.ql-snow {
+      border-radius: 6px 6px 0 0;
+    }
+
+    .ql-container.ql-snow {
+      border-radius: 0 0 6px 6px;
+      min-height: 120px;
+    }
+
+    .ql-editor {
+      min-height: 100px;
+
+      p {
+        margin: 0;
+      }
+    }
   }
 
   .mie-label {

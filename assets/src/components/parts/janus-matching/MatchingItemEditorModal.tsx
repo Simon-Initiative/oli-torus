@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { AdvancedAuthoringModal } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import { MediaPickerModal } from '../../../apps/authoring/components/Modal/MediaPickerModal';
+import { htmlToPlainText, normalizeRichLabelForStorage } from '../../../utils/richOptionLabel';
+import { RichLabelField } from '../common/RichLabelField';
 import './MatchingAuthorModal.scss';
 import { genId } from './matching-util';
 import { MatchingItem, MatchingItemType } from './schema';
@@ -57,7 +59,7 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
 
   const handleSave = useCallback(() => {
     const trimmedLabel = label.trim();
-    const trimmedText = text.trim();
+    const normalizedText = normalizeRichLabelForStorage(text);
     const trimmedAlt = alt.trim();
     const links = Math.max(1, Math.min(10, Number(maxLinks) || 1));
 
@@ -72,7 +74,7 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
     }
 
     if (type === 'text') {
-      if (!trimmedText) {
+      if (!htmlToPlainText(normalizedText)) {
         setError('Text is required.');
         return;
       }
@@ -87,11 +89,11 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
       label: trimmedLabel,
       maxLinks: links,
       ...(type === 'text'
-        ? { text: trimmedText }
+        ? { text: normalizedText }
         : {
             imageSrc: imageSrc.trim(),
             alt: trimmedAlt,
-            text: '',
+            text: normalizedText,
           }),
     };
 
@@ -180,20 +182,18 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
 
             {type === 'text' ? (
               <div className="mie-field">
-                <label className="mie-label" htmlFor="mie-text">
+                <label className="mie-label" id="mie-text-label">
                   Text
                 </label>
                 <span className="mie-hint">Content shown on the item card</span>
-                <textarea
-                  id="mie-text"
-                  className="form-control"
-                  rows={3}
+                <RichLabelField
+                  labelledBy="mie-text-label"
+                  inline
                   value={text}
-                  onChange={(e) => {
-                    setText(e.target.value);
+                  onChange={(next) => {
+                    setText(next);
                     setError('');
                   }}
-                  placeholder="Enter item text…"
                 />
               </div>
             ) : (
@@ -202,7 +202,11 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
                   <label className="mie-label">Image</label>
                   <div className="mie-image-row">
                     {imageSrc ? (
-                      <img className="mie-image-preview" src={imageSrc} alt={alt || label} />
+                      <img
+                        className="mie-image-preview"
+                        src={imageSrc}
+                        alt={alt || htmlToPlainText(text) || label}
+                      />
                     ) : (
                       <div className="mie-image-placeholder">No image selected</div>
                     )}
@@ -217,6 +221,23 @@ const MatchingItemEditorModal: React.FC<MatchingItemEditorModalProps> = ({
                       Choose image
                     </button>
                   </div>
+                </div>
+                <div className="mie-field">
+                  <label className="mie-label" id="mie-image-text-label">
+                    Caption
+                  </label>
+                  <span className="mie-hint">
+                    Optional caption shown above the image on the item card
+                  </span>
+                  <RichLabelField
+                    labelledBy="mie-image-text-label"
+                    inline
+                    value={text}
+                    onChange={(next) => {
+                      setText(next);
+                      setError('');
+                    }}
+                  />
                 </div>
                 <div className="mie-field">
                   <label className="mie-label" htmlFor="mie-alt">

@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { AdvancedAuthoringModal } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import { MediaPickerModal } from '../../../apps/authoring/components/Modal/MediaPickerModal';
+import { htmlToPlainText, normalizeRichLabelForStorage } from '../../../utils/richOptionLabel';
+import { RichLabelField } from '../common/RichLabelField';
 import './ItemBankAuthorModal.scss';
 import { genId } from './grouping-util';
 import { GroupingItem, GroupingItemType } from './schema';
@@ -55,7 +57,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
 
   const handleSave = useCallback(() => {
     const trimmedLabel = label.trim();
-    const trimmedText = text.trim();
+    const normalizedText = normalizeRichLabelForStorage(text);
     const trimmedAlt = alt.trim();
 
     if (!trimmedLabel) {
@@ -69,7 +71,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
     }
 
     if (type === 'text') {
-      if (!trimmedText) {
+      if (!htmlToPlainText(normalizedText)) {
         setError('Text is required.');
         return;
       }
@@ -83,11 +85,11 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
       type,
       label: trimmedLabel,
       ...(type === 'text'
-        ? { text: trimmedText }
+        ? { text: normalizedText }
         : {
             imageSrc: imageSrc.trim(),
             alt: trimmedAlt,
-            text: trimmedText,
+            text: normalizedText,
           }),
     };
 
@@ -160,20 +162,18 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
 
             {type === 'text' ? (
               <div className="iem-field">
-                <label className="iem-label" htmlFor="iem-text">
+                <label className="iem-label" id="iem-text-label">
                   Text
                 </label>
                 <span className="iem-hint">Content shown on the item card</span>
-                <textarea
-                  id="iem-text"
-                  className="form-control"
-                  rows={3}
+                <RichLabelField
+                  labelledBy="iem-text-label"
+                  inline
                   value={text}
-                  onChange={(e) => {
-                    setText(e.target.value);
+                  onChange={(next) => {
+                    setText(next);
                     setError('');
                   }}
-                  placeholder="Enter item text…"
                 />
               </div>
             ) : (
@@ -185,7 +185,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                       <img
                         className="iem-image-preview"
                         src={imageSrc}
-                        alt={alt.trim() || text.trim() || label.trim()}
+                        alt={alt.trim() || htmlToPlainText(text) || label.trim()}
                       />
                     ) : (
                       <div className="iem-image-placeholder">No image selected</div>
@@ -203,22 +203,20 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                   </div>
                 </div>
                 <div className="iem-field">
-                  <label className="iem-label" htmlFor="iem-image-text">
+                  <label className="iem-label" id="iem-image-text-label">
                     Text
                   </label>
                   <span className="iem-hint">
                     Optional caption shown above the image on the item card
                   </span>
-                  <input
-                    id="iem-image-text"
-                    type="text"
-                    className="form-control"
+                  <RichLabelField
+                    labelledBy="iem-image-text-label"
+                    inline
                     value={text}
-                    onChange={(e) => {
-                      setText(e.target.value);
+                    onChange={(next) => {
+                      setText(next);
                       setError('');
                     }}
-                    placeholder="Enter caption text…"
                   />
                 </div>
                 <div className="iem-field">

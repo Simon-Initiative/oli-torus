@@ -29,6 +29,14 @@
     padding: 8px 0 0;
   }
 
+  .janus-rich-label {
+    p,
+    div {
+      margin: 0;
+      line-height: inherit;
+    }
+  }
+
   &__items {
     display: flex;
     flex-direction: column;

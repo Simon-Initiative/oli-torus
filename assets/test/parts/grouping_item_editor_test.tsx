@@ -11,6 +11,29 @@ jest.mock('../../src/apps/authoring/components/AdvancedAuthoringModal', () => {
   };
 });
 
+jest.mock('../../src/components/parts/common/RichLabelField', () => {
+  const mockReact = jest.requireActual('react');
+  return {
+    RichLabelField: ({
+      id,
+      value,
+      onChange,
+      labelledBy,
+    }: {
+      id?: string;
+      value: string;
+      onChange: (v: string) => void;
+      labelledBy?: string;
+    }) =>
+      mockReact.createElement('input', {
+        id,
+        value,
+        'aria-labelledby': labelledBy,
+        onChange: (e: { target: { value: string } }) => onChange(e.target.value),
+      }),
+  };
+});
+
 jest.mock('../../src/apps/authoring/components/Modal/MediaPickerModal', () => {
   const mockReact = jest.requireActual('react');
   return {
