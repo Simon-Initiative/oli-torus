@@ -1,11 +1,10 @@
 import path from 'node:path';
 import { extractAccountLink, waitForMailboxEmail } from '@core/mailbox';
+import { getBaseUrl, getScenarioToken } from '@core/runtimeConfig';
 import { test } from '@fixture/my-fixture';
 import { CredentialAccountPO, CredentialAccountType } from '@pom/home/CredentialAccountPO';
 import { APIRequestContext, BrowserContext, Page } from '@playwright/test';
 
-const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const scenarioToken = process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 const scenarioPath = path.resolve(__dirname, './playwright_credential_roles.yaml');
 const seededPassword = 'changeme123456';
 
@@ -78,7 +77,6 @@ async function exerciseProvisionedRoleLifecycle({
   page: Page;
   request: APIRequestContext;
 }) {
-  const segment = type === 'author' ? 'authors' : 'users';
   const newPassword = `Reset-${Date.now()}-${type}-password`;
   const account = new CredentialAccountPO(page, type);
 
@@ -86,21 +84,18 @@ async function exerciseProvisionedRoleLifecycle({
   await account.expectLoginSuccess(destination);
   await account.expectAccountLabel(accountLabel);
 
-  // Clear only the session cookie so the reset link is followed anonymously,
-  // without wiping the cookie-consent choice and re-triggering the consent
-  // modal on the next navigation.
-  await context.clearCookies({ name: '_oli_key' });
+  await account.clearSessionCookie(context);
   await account.requestPasswordReset(email);
 
   const reset = await waitForMailboxEmail(request, {
-    baseUrl,
+    baseUrl: getBaseUrl(),
     recipient: email,
     subject: 'Reset password',
-    token: scenarioToken,
+    token: getScenarioToken(),
   });
 
   await account.resetPassword(
-    extractAccountLink(reset.html_body, reset.text_body, segment, 'reset_password'),
+    extractAccountLink(reset.html_body, reset.text_body, account.pathSegment(), 'reset_password'),
     newPassword,
   );
 

@@ -1,4 +1,4 @@
-import { expect, Page } from '@playwright/test';
+import { BrowserContext, expect, Page } from '@playwright/test';
 
 export type CredentialAccountType = 'author' | 'user';
 
@@ -85,12 +85,19 @@ export class CredentialAccountPO {
     await expect(this.page.locator('[role="account label"]')).toHaveText(label);
   }
 
-  private formName() {
-    return this.type;
+  // Clears only the session cookie so a confirmation/reset link is followed
+  // anonymously, without wiping the cookie-consent choice and re-triggering
+  // the consent modal on the next navigation.
+  async clearSessionCookie(context: BrowserContext) {
+    await context.clearCookies({ name: '_oli_key' });
   }
 
-  private pathSegment() {
+  pathSegment(): 'authors' | 'users' {
     return this.type === 'author' ? 'authors' : 'users';
+  }
+
+  private formName() {
+    return this.type;
   }
 
   private destinationPath() {

@@ -1,10 +1,8 @@
 import { extractAccountLink, waitForMailboxEmail } from '@core/mailbox';
+import { getBaseUrl, getScenarioToken } from '@core/runtimeConfig';
 import { test } from '@fixture/my-fixture';
 import { CredentialAccountPO, CredentialAccountType } from '@pom/home/CredentialAccountPO';
 import { APIRequestContext, BrowserContext, Page } from '@playwright/test';
-
-const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const scenarioToken = process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 
 test.describe('credential-based account flows @pr', () => {
   test.describe.configure({ timeout: 120_000 });
@@ -43,38 +41,37 @@ async function exerciseSelfServiceLifecycle(
   });
 
   const confirmation = await waitForMailboxEmail(request, {
-    baseUrl,
+    baseUrl: getBaseUrl(),
     recipient: email,
     subject: 'Confirm your email',
-    token: scenarioToken,
+    token: getScenarioToken(),
   });
 
-  // Clear only the session cookie so the confirmation/reset links are followed
-  // anonymously, without wiping the cookie-consent choice and re-triggering
-  // the consent modal on the next navigation.
-  await context.clearCookies({ name: '_oli_key' });
+  await account.clearSessionCookie(context);
   await account.confirm(
-    extractAccountLink(confirmation.html_body, confirmation.text_body, segment(type), 'confirm'),
+    extractAccountLink(
+      confirmation.html_body,
+      confirmation.text_body,
+      account.pathSegment(),
+      'confirm',
+    ),
   );
 
   await account.login(email, initialPassword);
   await account.expectLoginSuccess();
 
-  // Clear only the session cookie so the confirmation/reset links are followed
-  // anonymously, without wiping the cookie-consent choice and re-triggering
-  // the consent modal on the next navigation.
-  await context.clearCookies({ name: '_oli_key' });
+  await account.clearSessionCookie(context);
   await account.requestPasswordReset(email);
 
   const reset = await waitForMailboxEmail(request, {
-    baseUrl,
+    baseUrl: getBaseUrl(),
     recipient: email,
     subject: 'Reset password',
-    token: scenarioToken,
+    token: getScenarioToken(),
   });
 
   await account.resetPassword(
-    extractAccountLink(reset.html_body, reset.text_body, segment(type), 'reset_password'),
+    extractAccountLink(reset.html_body, reset.text_body, account.pathSegment(), 'reset_password'),
     newPassword,
   );
 
@@ -83,8 +80,4 @@ async function exerciseSelfServiceLifecycle(
 
   await account.login(email, newPassword);
   await account.expectLoginSuccess();
-}
-
-function segment(type: CredentialAccountType): 'authors' | 'users' {
-  return type === 'author' ? 'authors' : 'users';
 }
