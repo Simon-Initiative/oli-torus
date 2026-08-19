@@ -29,7 +29,7 @@ export class CredentialAccountPO {
 
     await this.acceptCookieConsentIfVisible();
     await form.getByRole('button', { name: 'Create account', exact: true }).click();
-    await this.page.waitForURL(`/${this.pathSegment()}/confirm`);
+    await this.page.waitForURL(`/${this.pathSegment()}/confirm`, { waitUntil: 'commit' });
   }
 
   async confirm(url: string) {

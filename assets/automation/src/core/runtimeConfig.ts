@@ -51,7 +51,7 @@ export function hasRuntimeBaseUrl(): boolean {
 }
 
 export function getScenarioToken(): string {
-  return runtimeConfig.scenarioToken || 'my-token';
+  return runtimeConfig.scenarioToken || process.env.PLAYWRIGHT_SCENARIO_TOKEN || 'my-token';
 }
 
 export function shouldAutoCloseBrowser(): boolean {
