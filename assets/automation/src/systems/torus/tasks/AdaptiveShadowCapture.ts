@@ -23,11 +23,11 @@ import { RunVisit } from '@tasks/AdaptiveOracle';
 export type ShadowIdentity = { id: string; resourceId: number; attemptGuid: string };
 
 /** Raw dumps carry answer values: any destination inside a git repository is
- * refused up front (gate-B0 r4 N2) — the contract is enforced, not advisory.
+ * refused up front — the contract is enforced, not advisory.
  * The destination directory is CREATED FIRST, then fully resolved with
  * realpath and validated, and that resolved path is the one written to
- * (r5/r6 N2): a symlink anywhere in the requested chain is flattened before
- * the `.git` scan. LIMIT (r7 N1): validation and write still use pathnames —
+ *: a symlink anywhere in the requested chain is flattened before
+ * the `.git` scan. LIMIT: validation and write still use pathnames —
  * a concurrent actor replacing a validated ancestor with a symlink between
  * the scan and the write can redirect the dump; a handle-based no-follow
  * write is owed before any capture on a shared/untrusted machine. */
@@ -103,7 +103,7 @@ export async function armPoison(page: Page, screenPrefix: string): Promise<{ fir
 }
 
 /**
- * The page-binding stamp handler, GUARDED by liveness (gate-B round-4, B9):
+ * The page-binding stamp handler, GUARDED by liveness:
  * until the arm completes — and again after detach — a stamp observes NOTHING,
  * so the Playwright-irreversible binding install is inert by EXECUTION, not by
  * an unreachability argument. Exported so the guard is unit-executable.
@@ -136,7 +136,7 @@ export async function armShadowCapture(page: Page): Promise<ShadowHandle> {
     resourceAttemptGuid: string;
   } | null = null;
 
-  // FAIL-TOTALITY (gate-B rounds 3-4, B9). Playwright can never UNinstall an
+  // FAIL-TOTALITY. Playwright can never UNinstall an
   // exposed binding or an init script, so both are LIVENESS-GATED instead:
   // the binding checks `live` on every stamp (executed guard, unit-witnessed)
   // and the init script only optional-chains the binding. `live` turns true
@@ -251,7 +251,7 @@ export async function armShadowCapture(page: Page): Promise<ShadowHandle> {
         return 'sealed';
       } finally {
         // the terminal snapshot is immutable — neither the page listeners nor
-        // the irreversible binding may observe past it (gate-B0 N4; round-4 B9)
+        // the irreversible binding may observe past it
         live = false;
         try {
           recorder.detach();
@@ -265,7 +265,7 @@ export async function armShadowCapture(page: Page): Promise<ShadowHandle> {
       const file = path.join(target, `${label}-${Date.now()}.json`);
       // correlation rides along from the delivery props — the independent
       // SOURCE (DOM, not wire) the green envelope pins the finalization
-      // against (gate-B0 r6 M1)
+      // against
       await fs.writeFile(
         file,
         JSON.stringify(

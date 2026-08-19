@@ -15,7 +15,7 @@ import {
 } from './AdaptiveArchiveReader';
 
 /**
- * Exhaustive predicate equivalence (B4-PRED): over a screen's whole finite
+ * Exhaustive predicate equivalence: over a screen's whole finite
  * graded input space, the archive's own rule chain and the manifest's declared
  * grading predicate must return the same verdict on EVERY state.
  *

@@ -123,7 +123,6 @@ That is the difference between a test that can fail for the reason it exists and
 
 ## Related
 
-- `mer-5674-driver-decision.md` — §2 (what the old driver could not detect), §4 (options and
-  dominance arguments), the CODEX REVIEW ROUND 1/2 sections, and the full catalogue of defects the
+- `mer-5865-strict-framework-spec.md` — §3 (the architecture that detects it), §4 (per-lesson
+  dominance arguments) and the full catalogue of defects the
   strict oracle surfaced.
-- `mer-5674-followups.md` — FU-2 (a rules-worker error path returning 500) was found by these runs.

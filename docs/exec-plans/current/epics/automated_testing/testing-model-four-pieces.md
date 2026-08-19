@@ -3,7 +3,7 @@
 **Working notes.** The conceptual model behind the adaptive-lesson testing design, worked out in
 conversation 2026-08-02. Companion to
 [`adaptive-lesson-terminology.md`](./adaptive-lesson-terminology.md) (definitions) and
-[`SESSION-FINDINGS-2026-07-31.md`](./SESSION-FINDINGS-2026-07-31.md) (discoveries).
+the strict framework spec.
 
 ---
 
@@ -132,7 +132,7 @@ Derived from the six lessons actually in flight, not from theory:
 Not every family in every course — **the three lessons whose archives are in our bucket**: Plate
 Tectonics, Greenhouse Molecules, Dazzling d-Orbitals. Their union is 18 family+version entries,
 6 of which are verified (all from Plate Tectonics' strict runs). See §3f of
-`SESSION-FINDINGS-2026-07-31.md` for the per-family breakdown.
+the family registry for the per-family breakdown.
 
 Bio Beyond, HW and Infiniscope archives are not in the bucket and belong to other engineers'
 tickets. Do not build for their families until someone needs them.
@@ -163,5 +163,3 @@ error in the tool *or* in the hand map — both worth knowing.
 
 - [`adaptive-lesson-terminology.md`](./adaptive-lesson-terminology.md) — definitions and measured counts
 - [`lesson-completion-is-not-an-oracle.md`](./lesson-completion-is-not-an-oracle.md) — why the old assertion was insufficient
-- [`SESSION-FINDINGS-2026-07-31.md`](./SESSION-FINDINGS-2026-07-31.md) — the epic landscape and open decisions
-- [`mer-5674-driver-decision.md`](./mer-5674-driver-decision.md) — the ticket's history and review rounds

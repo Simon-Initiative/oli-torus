@@ -381,7 +381,7 @@ test.describe('strict walk orchestration', () => {
   test('fails wrong-then-right across attempts when no fresh attempt was minted between them', async ({
     page,
   }) => {
-    // the round-7 window: second check starts after the first response but
+    // the window under test: the second check starts after the first response but
     // the rotation artifact never happened — without an observed mint whose
     // guid the second check uses, the pair is not the measured rotation
     await expect(

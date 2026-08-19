@@ -216,6 +216,4 @@ and uses a different body shape.
 ## Related
 
 - [`testing-model-four-pieces.md`](./testing-model-four-pieces.md) — the mental model: map, registry, driver, oracle, and what belongs in each
-- [`mer-5674-driver-decision.md`](./mer-5674-driver-decision.md) — the driver refactor decision, build plan and review rounds
 - [`lesson-completion-is-not-an-oracle.md`](./lesson-completion-is-not-an-oracle.md) — why reaching the last screen proves nothing
-- [`mer-5674-followups.md`](./mer-5674-followups.md) — deferred items

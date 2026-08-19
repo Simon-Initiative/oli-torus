@@ -31,10 +31,10 @@ import {
 } from '@tasks/AdaptiveTransitionPlanner';
 
 /**
- * Strict driver (spec §3.1–§3.6; gate-B contract rows B4-ENTRY/CORE/REG/STAMP).
+ * Strict driver (spec §3.1–§3.6; the strict contract rows).
  *
  * It DRIVES and it RECORDS; it never judges. Every fence, permit and
- * readback stamp comes from the journal's own monotonic domain (B4-STAMP: the
+ * readback stamp comes from the journal's own monotonic domain (the
  * driver chooses WHEN to ask and nothing else), every answer comes from the
  * family registry resolved by name, every transition comes from the shared
  * planner the oracle replays offline, and the run's verdict is `auditRun`'s
@@ -90,7 +90,7 @@ export type StrictRunOutcome =
 export type StrictRunHandle = {
   journal: AdaptiveJournalCore;
   recorder: AdaptiveJournalRecorder;
-  /** freezes the run's identity from the server-rendered Delivery props (§3.2, B4-C4A) */
+  /** freezes the run's identity from the server-rendered Delivery props */
   correlate(): Promise<boolean>;
   finish(outcome: 'green' | 'bail'): Promise<FreezeFlavor | 'sealed'>;
   snapshot(): JournalSnapshot;
@@ -99,7 +99,7 @@ export type StrictRunHandle = {
 /**
  * Arm the journal on a page BEFORE the deck loads. The correlation reader is
  * this module's own DOM read, sharing no helper with the wire records it
- * authenticates (B4-C4A independence).
+ * authenticates ( independence).
  */
 export function armStrictRun(page: Page): StrictRunHandle {
   const recorder = new AdaptiveJournalRecorder(page);

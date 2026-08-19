@@ -11,13 +11,12 @@ import { failureText } from '@tasks/AdaptiveStrictAnchor';
 import { Violation } from '@tasks/AdaptiveOracle';
 
 /**
- * Per-site fault injection over the routed failure boundary (gate-B round 5:
- * the EXIT-EM writer position was refused — every routed exit site must be
- * ACTIVATED and prove its pinned producer, and no other, through the real
- * boundary). `runGatedLote` is that boundary; every external edge is a dep,
+ * Per-site fault injection over the routed failure boundary: every routed exit
+ * site is ACTIVATED and proves its pinned producer, and no other, through the
+ * real boundary. `runGatedLote` is that boundary; every external edge is a dep,
  * so each site is injected offline and asserted on three facts:
  *   1. the ORIGINAL error object crosses the boundary (identity, never a
- *      replacement — the round-3/4 displacement class);
+ *      replacement — the displacement class);
  *   2. an armed strict journal is SEALED (finish('bail')) before the rethrow;
  *   3. an armed shadow capture attempts its bail dump with the total
  *      failureText cause — and a fault BEFORE arming produces neither.
@@ -329,7 +328,7 @@ test.describe('gated run — per-site fault injection (EXIT-EM, routed layer)', 
     ],
   ];
   midwalkSites.forEach(([name, over, frozen]) => {
-    test(`${name} faults: ${frozen ? 'frozen journal kept' : 'seal'} + bail dump + identical rethrow`, async () => {
+    test(`${name} faults: ${frozen ? 'frozen journal kept': 'seal'} + bail dump + identical rethrow`, async () => {
       const h = harness(over);
       await expect(run(h)).rejects.toBe(fault);
       expectBailProducer(h, fault, {
@@ -499,7 +498,7 @@ test.describe('gated run — per-site fault injection (EXIT-EM, routed layer)', 
   });
 });
 
-test.describe('gated run — the catch itself is fail-total (round-3 B9, executed per site)', () => {
+test.describe('gated run — the catch is fail-total: every cleanup step is guarded, per site', () => {
   const fault = new Error('the original boundary error');
   const cleanupFault = new Error('a cleanup fault that must NOT displace the original');
 
@@ -583,7 +582,7 @@ test.describe('gated run — the catch itself is fail-total (round-3 B9, execute
   });
 });
 
-test.describe('gated run — logging can NEVER displace the original (round-6 blocker 11)', () => {
+test.describe('gated run — logging can NEVER displace the original error', () => {
   const fault = new Error('the original boundary error');
   const loggingFault = new Error('hostile logging sink');
 
@@ -642,7 +641,7 @@ test.describe('gated run — logging can NEVER displace the original (round-6 bl
   });
 });
 
-test.describe('gated run — the remaining routed edges, at-site (round-6 EXIT-EM completion)', () => {
+test.describe('gated run — the remaining routed edges, injected at their own site', () => {
   const fault = new Error('injected routed fault');
 
   test('a non-string shadowDir makes path.join throw at its own site', async () => {

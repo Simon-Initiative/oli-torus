@@ -40,7 +40,7 @@ export type PageFinalizationFields = {
 /**
  * The `actions` body a check evaluation returns. Declared HERE because the
  * journal is what parses it off the wire — importing it from the walker
- * contract `B4-DEL` deletes would leave the core depending on a deleted file.
+ * contract `` deletes would leave the core depending on a deleted file.
  */
 export type CheckActions = {
   correct: boolean;
@@ -86,7 +86,7 @@ export type JournalRecord = {
 export type FenceStamp = { seq: number; screenId: string; at: number };
 
 /**
- * B4-STAMP: the permit kinds the driver may request. Declared HERE, in the
+ * the permit kinds the driver may request. Declared HERE, in the
  * journal's own domain, rather than imported from the oracle — the issuer is
  * the authority on what it can issue, and the oracle's audited `Permit` type
  * is structurally compatible on purpose.
@@ -94,7 +94,7 @@ export type FenceStamp = { seq: number; screenId: string; at: number };
 export type IssuedPermitKind = 'check-click' | 'feedback-ack' | 'widget-button';
 
 /**
- * B4-STAMP (MATERIAL): permits and readback-completed fences come from the
+ * permits and readback-completed fences come from the
  * journal's monotonic domain, so they are strictly ordered against every wire
  * event. NO issuance method accepts a seq — the driver chooses WHEN to ask and
  * nothing else. `at` is informational; ordering is `seq` alone.
@@ -138,7 +138,7 @@ export type JournalSnapshot = {
   postSealMarkers: number;
   fences: FenceStamp[];
   /**
-   * B4-STAMP: what the journal ACTUALLY issued. The audit compares the
+   * what the journal ACTUALLY issued. The audit compares the
    * driver's runRecord against these — journal issuance alone would still let a
    * driver hand the oracle a permit it never obtained (contract threats 1/3).
    */
@@ -204,7 +204,7 @@ export class AdaptiveJournalCore {
     this.correlation = { ...correlation };
   }
 
-  /** The frozen triple, as a copy — for the fixture's setup-response anchor (B4-C4A). */
+  /** The frozen triple, as a copy — for the fixture's setup-response anchor. */
   runCorrelation(): RunCorrelation | null {
     return this.correlation === null ? null : { ...this.correlation };
   }
@@ -221,7 +221,7 @@ export class AdaptiveJournalCore {
   }
 
   /**
-   * B4-STAMP: issue a permit for one step. Armed-only, like every other stamp —
+   * issue a permit for one step. Armed-only, like every other stamp —
    * a permit minted against a sealing/sealed/frozen journal would sit outside
    * the audited order. Returns a COPY so a retained reference cannot rewrite
    * the issued record after the seal.
@@ -239,7 +239,7 @@ export class AdaptiveJournalCore {
   }
 
   /**
-   * B4-STAMP: the readback-completed fence — `savedBarrier`'s lower bound
+   * the readback-completed fence — `savedBarrier`'s lower bound
    * (§3.5). Same domain as the wire events it bounds, so "the save landed after
    * readback finished" is a comparison of two journal seqs, never of clocks.
    */
@@ -665,7 +665,7 @@ export class AdaptiveJournalCore {
     if (record.wireClass === 'creation') {
       const parsed = parseJson(body) as { attemptState?: { attemptGuid?: unknown } } | null;
       const minted = parsed?.attemptState?.attemptGuid;
-      // an EMPTY minted guid confers nothing (W-J13): '' would satisfy the
+      // an EMPTY minted guid confers nothing: '' would satisfy the
       // attribution edge's null check and let a hollow creation extend lineage
       record.mintedGuid = typeof minted === 'string' && minted !== '' ? minted : null;
       return;
@@ -913,7 +913,7 @@ export class AdaptiveJournalRecorder {
 
   attach() {
     if (this.attached) throw new Error('journal recorder is already attached');
-    // FAIL-ATOMIC (gate-B round-2 blocker 8): a partial registration must not
+    // FAIL-ATOMIC: a partial registration must not
     // strand listeners no handle can ever detach — on any fault, everything
     // installed so far is removed before the error crosses the boundary
     try {

@@ -6,8 +6,8 @@ import {
 } from '../../../src/systems/torus/tasks/AdaptiveFamilyRegistry';
 
 /**
- * Registry contract matrix (spec §3.6; gate-B contract rows B4-REG-S and the
- * part-scoping half of B4-REG-L). Resolution is fail-closed BY NAME: every
+ * Registry contract matrix (spec §3.6; the strict contract rowsand the
+ * part-scoping half of ). Resolution is fail-closed BY NAME: every
  * rejection below names the key dimension that failed.
  */
 

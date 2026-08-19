@@ -22,7 +22,7 @@ import {
 } from '@tasks/AdaptivePredicateEquivalence';
 
 /**
- * MER-5865 step-4 unit 4b — B4-MAN / B4-BIJ / B4-PRED build gates.
+ * MER-5865 step-4 unit 4b —  /  /  build gates.
  *
  * Every fixture here is SYNTHETIC: the repo carries no archive content and no
  * answer values. The real-archive half runs only when the private artifacts
@@ -346,7 +346,7 @@ test('reader refuses an answer-dependent plan kind', () => {
   expect(() => correctPlanKind(page.screens[1])).toThrow(/answer-dependent/);
 });
 
-/* ------------------------ B4-PRED: exhaustive equivalence ------------------ */
+/* ------------------------ exhaustive equivalence ------------------ */
 
 const pickStates = (page: RawArchivePage) => mcqStatesFromArchive(page.screens[1], 'Pick');
 
@@ -549,7 +549,7 @@ test('refuses a condition value carrying a janus-script expression', async () =>
   ).rejects.toThrow(/janus-script expression/);
 });
 
-/* --------------------------- B4-MAN: registry metadata --------------------- */
+/* --------------------------- registry metadata --------------------- */
 
 test('accepts registry metadata that the raw archive corroborates', () => {
   const page = readArchivePage(archive(baseScreens()), PAGE_ID);
@@ -631,7 +631,7 @@ test('rejects a capi family the archive serves from no iframe', () => {
   expect(() => validateRegistryMetadata(manifest, page)).toThrow(/no capi iframe on that screen/);
 });
 
-/* --------------------------- B4-BIJ: archive coverage ---------------------- */
+/* --------------------------- archive coverage ---------------------- */
 
 test('accepts a manifest the raw archive corroborates end to end', () => {
   const page = readArchivePage(archive(baseScreens()), PAGE_ID);
@@ -932,13 +932,13 @@ test('discovers adaptive pages without being told which resource to read', () =>
   expect(findAdaptivePages(dir)).toEqual([{ resourceId: PAGE_ID, title: 'Synthetic Deck' }]);
 });
 
-test('an absent archive directory is a loud build failure, never a vacuous pass (W-M2)', () => {
+test('an absent archive directory is a loud build failure, never a vacuous pass', () => {
   expect(() => findAdaptivePages(path.join(os.tmpdir(), 'mer5865-no-such-archive'))).toThrow(
     /archive directory .* does not exist/,
   );
 });
 
-test('the raw reader shares no runtime import with the modules it corroborates (W-M7)', () => {
+test('the raw reader shares no runtime import with the modules it corroborates', () => {
   // the independent leg's whole value is that a mutated shared helper cannot
   // cancel out — type-only imports erase at runtime and share nothing
   const readerSrc = fs.readFileSync(
@@ -962,7 +962,7 @@ const archivePage = process.env.MER5865_ARCHIVE_PAGE;
 const manifestPath = process.env.MER5865_MANIFEST;
 
 /**
- * B4-PRED's witness is FIXED BY THE CONTRACT (§6.3), not chosen at run time: the
+ * 's witness is FIXED BY THE CONTRACT (§6.3), not chosen at run time: the
  * divergent-rules screen is the one whose arm had to be decided, so a
  * caller-selected screen could prove some other convenient MCQ and report the
  * named gate green while this one stayed untested. Absence or mismatch is red.
@@ -973,7 +973,7 @@ const PRED_PART = 'Metacognition';
 test.describe('raw archive', () => {
   test.skip(!archiveDir || !archivePage || !manifestPath, 'private archive not provided');
 
-  test('the manifest passes B4-MAN and B4-BIJ against the raw archive', () => {
+  test('the manifest passes  and  against the raw archive', () => {
     const page = readArchivePage(archiveDir as string, parseInt(archivePage as string, 10));
     expect(findAdaptivePages(archiveDir as string).map((p) => p.resourceId)).toContain(
       page.resourceId,
@@ -986,7 +986,7 @@ test.describe('raw archive', () => {
     console.log(`[archive-gates] ${page.screens.length} screens corroborated from "${page.title}"`);
   });
 
-  test('the declared predicate is equivalent to the archive rule chain (B4-PRED)', async () => {
+  test('the declared predicate is equivalent to the archive rule chain', async () => {
     const page = readArchivePage(archiveDir as string, parseInt(archivePage as string, 10));
     const manifest = validateAdaptiveManifest(
       JSON.parse(fs.readFileSync(manifestPath as string, 'utf8')),

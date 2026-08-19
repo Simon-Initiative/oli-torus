@@ -267,7 +267,7 @@ test.describe('attempt lineage', () => {
     expect(attributed[underUnparsed].lineage).toBe('violation');
   });
 
-  test('a creation whose response fails to parse confers nothing, even with an apparent GUID in the bytes (W-J12)', () => {
+  test('a creation whose response fails to parse confers nothing, even with an apparent GUID in the bytes', () => {
     const c = journal();
     const v1 = visit(c, 'q:1', 'attempt-1');
     const broken = mint(c, 'attempt-1', 'attempt-1d', {
@@ -281,7 +281,7 @@ test.describe('attempt lineage', () => {
     expect(attributed[underBroken].lineage).toBe('violation');
   });
 
-  test('an empty-string minted GUID records as null and can extend no lineage (W-J13)', () => {
+  test('an empty-string minted GUID records as null and can extend no lineage', () => {
     const c = journal();
     visit(c, 'q:1', 'attempt-1');
     const empty = mint(c, 'attempt-1', '', { raw: '{"attemptState":{"attemptGuid":""}}' });
@@ -291,7 +291,7 @@ test.describe('attempt lineage', () => {
     expect(sealed(c).records[empty].mintedGuid).toBeNull();
   });
 
-  test('a hollow creation — response present, body empty — confers nothing (W-J15)', () => {
+  test('a hollow creation — response present, body empty — confers nothing', () => {
     const c = journal();
     const v1 = visit(c, 'q:1', 'attempt-1');
     const hollow = mint(c, 'attempt-1', 'attempt-1f', { raw: '' });

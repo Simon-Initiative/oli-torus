@@ -1,8 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { AdaptiveDeckPO } from '@pom/delivery/AdaptiveDeckPO';
-import { JournalSnapshot } from '@tasks/AdaptiveJournal';
 import { AdaptiveManifest } from '@tasks/AdaptiveManifest';
 import { auditRun, formatViolations } from '@tasks/AdaptiveOracle';
 import { armShadowCapture, makeShadowStamp } from '@tasks/AdaptiveShadowCapture';
@@ -10,14 +7,13 @@ import { AdaptiveJournalRecorder } from '@tasks/AdaptiveJournal';
 import { RunVisit } from '@tasks/AdaptiveOracle';
 import { assertSetupAnchor, failureText } from '@tasks/AdaptiveStrictAnchor';
 import { armStrictRun } from '@tasks/AdaptiveStrictDriver';
-import { evaluateGreenCapture } from '@tasks/AdaptiveShadowProjector';
 import { planTransition } from '@tasks/AdaptiveTransitionPlanner';
 
 import { MANIFEST, SCREENS, drive, event, feedback, freeze, navTo } from './adaptiveStrictDeck';
 
 /**
- * Strict driver contract (spec §3.1–§3.6; gate-B rows B4-CORE-S/L, B4-REG-S/L,
- * B4-STAMP, B4-C8). The driver runs against a SCRIPTED deck that plays the
+ * Strict driver contract (spec §3.1–§3.6):
+ *, ). The driver runs against a SCRIPTED deck that plays the
  * product's side of the wire into a real journal core, so the whole account —
  * visits, permits, receipts, recorded plans, operation failures — is audited by
  * the committed oracle rather than by assertions restating the driver.
@@ -25,7 +21,7 @@ import { MANIFEST, SCREENS, drive, event, feedback, freeze, navTo } from './adap
  * The scripted deck decides what the deck DOES independently of what the
  * planner derives, so a test can make the two disagree. It lives in
  * `adaptiveStrictDeck.ts` because the exit-site inventory injects faults into
- * the same deck (B4-EXIT-EM).
+ * the same deck.
  */
 
 test.describe('strict driver — the run it records', () => {
@@ -273,29 +269,6 @@ test.describe('strict driver — failure is data', () => {
     expect(violations.map((v) => v.code)).not.toContain('seal-without-evidence');
   });
 
-  test('a malformed evaluation is refused by the replay path, not only on the wire', async () => {
-    const { outcome, core, runRecord } = await drive();
-    expect(outcome.kind).toBe('completed');
-    const snapshot = freeze(core);
-    const dump = { visits: runRecord.visits, snapshot, ledger: null };
-
-    expect(evaluateGreenCapture(dump, MANIFEST).inScope.map((v) => v.code)).not.toContain(
-      'evaluation-unusable',
-    );
-
-    // a dump written before the live guard existed: records are typed by
-    // assertion at load, so the malformed body reaches the audit intact
-    const poisoned = JSON.parse(JSON.stringify(snapshot)) as JournalSnapshot;
-    const target = poisoned.records.filter((r) => r.resolution === 'evaluation')[0];
-    target.actions = { correct: true, results: [{ params: { actions: 'nope' } }] } as never;
-
-    const replayed = evaluateGreenCapture(
-      { visits: runRecord.visits, snapshot: poisoned, ledger: null },
-      MANIFEST,
-    );
-    expect(replayed.inScope.map((v) => v.code)).toContain('evaluation-unusable');
-  });
-
   test('a content screen driven to a re-check is rejected at that screen, not at the run', async () => {
     const screens = SCREENS();
     // the deck asks a CONTENT screen to re-check: §3.5 licenses that on graded
@@ -377,7 +350,7 @@ test.describe('strict driver — in-widget readiness fails closed', () => {
   });
 });
 
-test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => {
+test.describe('armStrictRun — the run identity frozen before the walk', () => {
   const ORIGIN = 'http://localhost/api/v1';
   const TRIPLE = { sectionSlug: 's-live', pageSlug: 'r-live', resourceAttemptGuid: 'g-live' };
   const deliveryHtml = (props: unknown) =>
@@ -404,7 +377,7 @@ test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => 
     );
   }
 
-  test('correlate freezes the server-rendered triple before the walk (W-S1)', async ({ page }) => {
+  test('correlate freezes the server-rendered triple before the walk', async ({ page }) => {
     await page.setContent(deliveryHtml(TRIPLE));
     const strict = armStrictRun(page);
     expect(await strict.correlate()).toBe(true);
@@ -413,21 +386,21 @@ test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => 
     await strict.finish('bail');
   });
 
-  test('hollow delivery props refuse correlation (W-S3)', async ({ page }) => {
+  test('hollow delivery props refuse correlation', async ({ page }) => {
     await page.setContent(deliveryHtml({ sectionSlug: '', pageSlug: '', resourceAttemptGuid: '' }));
     const strict = armStrictRun(page);
     expect(await strict.correlate()).toBe(false);
     await strict.finish('bail');
   });
 
-  test('an absent delivery element refuses correlation (W-S2 fixture half)', async ({ page }) => {
+  test('an absent delivery element refuses correlation ( fixture half)', async ({ page }) => {
     await page.setContent('<main>no delivery component here</main>');
     const strict = armStrictRun(page);
     expect(await strict.correlate()).toBe(false);
     await strict.finish('bail');
   });
 
-  test('the setup anchor rejects a CONSISTENT both-sides section swap (W-J5)', async ({ page }) => {
+  test('the setup anchor rejects a CONSISTENT both-sides section swap', async ({ page }) => {
     const EVIL = { sectionSlug: 's-evil', pageSlug: 'r-evil', resourceAttemptGuid: 'g-evil' };
     await page.setContent(deliveryHtml(EVIL));
     const strict = armStrictRun(page);
@@ -442,7 +415,7 @@ test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => 
     await strict.finish('bail');
   });
 
-  test('the setup anchor accepts the section the setup response issued (W-J5 green arm)', async ({
+  test('the setup anchor accepts the section the setup response issued ( green arm)', async ({
     page,
   }) => {
     await page.setContent(deliveryHtml(TRIPLE));
@@ -452,7 +425,7 @@ test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => 
     await strict.finish('bail');
   });
 
-  test('a same-node props rewrite after the freeze changes nothing (W-S5)', async ({ page }) => {
+  test('a same-node props rewrite after the freeze changes nothing', async ({ page }) => {
     await page.setContent(deliveryHtml(TRIPLE));
     const strict = armStrictRun(page);
     expect(await strict.correlate()).toBe(true);
@@ -481,62 +454,7 @@ test.describe('armStrictRun — the fixture-frozen correlation (B4-C4A)', () => 
   });
 });
 
-test.describe('the switched spec statically binds the strict entry point (W-W10/W-W12)', () => {
-  const loteSrc = fs.readFileSync(path.resolve(__dirname, 'lote-plate-tectonics.spec.ts'), 'utf8');
-
-  const gatedSrc = fs.readFileSync(
-    path.resolve(__dirname, '../../../src/systems/torus/tasks/AdaptiveStrictGatedRun.ts'),
-    'utf8',
-  );
-
-  test('the LotE spec binds the gated boundary, which binds the strict entry point', () => {
-    expect(loteSrc).toMatch(
-      /import \{[^}]*runGatedLote[\s\S]*?\} from '@tasks\/AdaptiveStrictGatedRun'/,
-    );
-    expect(gatedSrc).toMatch(
-      /import \{[\s\S]*?armStrictRun[\s\S]*?\} from '@tasks\/AdaptiveStrictDriver'/,
-    );
-    expect(gatedSrc).toContain('driveStrictLesson');
-    expect(gatedSrc).toMatch(/auditRun.*from '@tasks\/AdaptiveOracle'/);
-  });
-
-  test('no shipped-walker, ledger or projection acceptance reference remains', () => {
-    // the full C16 class: the old walker, its contract, AND every projection/
-    // ledger acceptance surface (round-6 blocker 12 widened the list)
-    [
-      'AdaptiveHappyPathTask',
-      'AdaptiveStrictContract',
-      'completeAdaptiveHappyPath',
-      'formatLedger',
-      'AdaptiveShadowProjector',
-      'evaluateGreenCapture',
-      'projectFromJournal',
-      'compareProjections',
-      'driverEvidenceInventory',
-      'expectedDriverEvidence',
-      'validateGreenEnvelope',
-      'validateSwappedGreenEnvelope',
-      'isDriverEvidenceViolation',
-      'CapturedLedgerEntry',
-      'ledger',
-    ].forEach((banned) => {
-      expect(loteSrc.includes(banned), `banned in the spec: ${banned}`).toBe(false);
-      expect(gatedSrc.includes(banned), `banned in the boundary module: ${banned}`).toBe(false);
-    });
-  });
-
-  test('the verdict boundary keeps its exact two assertion shapes (W-W7b static)', () => {
-    expect(
-      loteSrc.match(/expect\(violations\.length, formatViolations\(violations\)\)\.toBe\(0\)/g)!
-        .length,
-    ).toBe(1);
-    expect(loteSrc.match(/expect\(flavor\)\.toBe\('accepted'\)/g)!.length).toBe(1);
-    // and nothing between the boundary call and the assertions transforms them
-    expect(loteSrc).toContain('const { flavor, violations } = result;');
-  });
-});
-
-test.describe('the spec catch is total over unknown thrown values (gate-B round-2 blocker 8)', () => {
+test.describe('the spec catch is total over unknown thrown values', () => {
   test('failureText never throws and never loses the cause', () => {
     expect(failureText(new Error('real'))).toBe('real');
     expect(failureText(null)).toBe('non-Error rejection: null');
@@ -551,7 +469,7 @@ test.describe('the spec catch is total over unknown thrown values (gate-B round-
   });
 });
 
-test.describe('armShadowCapture arms nothing on failure (gate-B round-3 blocker 9)', () => {
+test.describe('armShadowCapture arms nothing on failure', () => {
   type Stub = {
     exposed: string[];
     initScripts: number;

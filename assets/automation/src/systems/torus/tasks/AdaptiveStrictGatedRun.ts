@@ -17,19 +17,17 @@ import { HomeTask } from '@tasks/HomeTask';
 
 /**
  * The routed spec's ONE failure boundary, extracted so every exit is
- * fault-injectable OFFLINE (gate-B round-5: the EXIT-EM writer position was
- * refused — per-site injection through the real boundary is the required
- * evidence, and this module is what makes that evidence cheap).
+ * fault-injectable OFFLINE: per-site injection through the real boundary is the
+ * evidence that each exit behaves as specified.
  *
- * It owns EVERYTHING from arming to the evidence dumps (gate-B0 r4/r5/r6 N1;
- * round-10 blocker 2; round-3 blocker 9): a fault ANYWHERE inside — arming,
+ * It owns EVERYTHING from arming to the evidence dumps: a fault ANYWHERE inside — arming,
  * poison, navigation, login, correlation, the anchor, the walk, the freeze,
  * the audit, either dump — seals the strict journal (bail), attempts the
  * shadow bail dump with a total cause extraction, and rethrows the ORIGINAL
  * error. It never judges: the caller owns the verdict assertions, and
  * `violations` is returned as EXACTLY the object `deps.audit` produced
  * (identity-witnessed) so the verdict boundary stays the unmodified auditRun
- * result (B4-VERDICT-S).
+ * result.
  */
 
 export type GatedRunInputs = {
@@ -66,7 +64,7 @@ export type GatedRunDeps = {
 };
 
 /** Logging is never evidence: a hostile sink must not become a boundary exit
- * or displace the original error (gate-B round-6 blocker 11). */
+ * or displace the original error. */
 const quietly = (fn: () => void): void => {
   try {
     fn();
@@ -115,14 +113,14 @@ export async function runGatedLote(
     await deps.makeHomeTask(page).login('student');
     await adaptiveLesson.openFromOutline(inputs.sectionSlug, inputs.lessonTitle, inputs.searchTerm);
 
-    // B4-C4A (normative): the run's identity triple is frozen from the
+    // the run's identity triple is frozen from the
     // server-rendered Delivery props immediately after opening the intended
     // page, BEFORE the driver acts; a run without it carries no correlation
     if (!(await strict.correlate())) {
       throw new Error('strict run correlation unavailable before the walk (MER-5865)');
     }
     // the section component is cross-anchored to the SETUP RESPONSE, the one
-    // identity leg the rendered page cannot supply about itself (B4-C4A)
+    // identity leg the rendered page cannot supply about itself
     deps.assertSetupAnchor(strict.journal, inputs.sectionSlug);
     if (shadow) {
       const correlated = await shadow.correlate();
@@ -162,7 +160,7 @@ export async function runGatedLote(
     }
     return { outcome, flavor, snapshot, violations };
   } catch (boundaryError) {
-    // FAIL-TOTAL CLEANUP (round-3 blocker 9): every cleanup step is
+    // FAIL-TOTAL CLEANUP: every cleanup step is
     // individually guarded so a finish fault still attempts the dump, a dump
     // fault is reported without replacing the cause, and the ORIGINAL error
     // always crosses the boundary — the rethrow is unconditional.

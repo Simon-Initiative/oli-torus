@@ -1111,7 +1111,7 @@ test.describe('journal recorder on a live page', () => {
   });
 });
 
-test.describe('recorder attach is fail-atomic (gate-B round-2 blocker 8)', () => {
+test.describe('recorder attach is fail-atomic: a partial attach removes its own listeners', () => {
   type Listener = { event: string; fn: unknown };
   const hostilePage = (failOnCall: number) => {
     const installed: Listener[] = [];

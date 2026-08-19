@@ -45,9 +45,10 @@ import { runGatedLote } from '@tasks/AdaptiveStrictGatedRun';
  *     reuse a value that appears in this repo.
  *   - The private assets seeded once in your playwright assets bucket:
  *     mer-5674/living-on-the-edge-course.zip and mer-5674/answers-strict.json
- *     ({ lesson, screens, scenario } — the v2 manifest with a lesson block).
+ *     ({ lesson, expected_total_score, screens, scenario } — the v2 manifest
+ *     with a lesson block and the authored total score).
  *   - PLAYWRIGHT_BASE_URL=http://127.0.0.1 — NOT localhost: the plain-fetch
- *     archive download resolves localhost to ::1 and dies with ECONNREFUSED
+ *     archive download resolves localhost to::1 and dies with ECONNREFUSED
  *     (reproduced 2026-07-30).
  *
  * Then: npx playwright test lote-plate-tectonics
@@ -169,7 +170,7 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
     }
 
     // THE ONE FAILURE BOUNDARY lives in runGatedLote (fault-injected per exit
-    // site offline — gate-B round 5): arming, poison, navigation, login,
+    // site offline
     // correlation, the anchor, the walk, the freeze, the audit and both
     // PRIVATE evidence dumps all execute inside it; any fault seals the
     // strict journal, attempts the shadow bail dump and rethrows unchanged.
@@ -183,7 +184,7 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
     });
     const { flavor, violations } = result;
 
-    // THE VERDICT BOUNDARY (B4-VERDICT-S/L, B4-C15): the UNMODIFIED auditRun
+    // THE VERDICT BOUNDARY (L, ): the UNMODIFIED auditRun
     // result over the frozen journal — exactly zero violations — under the
     // journal's own accepted freeze. The driver's outcome flag is never an
     // input; an aborted walk reaches this same audit and reports as itself.

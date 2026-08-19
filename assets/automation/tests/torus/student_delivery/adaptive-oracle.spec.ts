@@ -236,7 +236,7 @@ function buildRun(
   // issued before ANY identity fence exists — genuinely outside every window
   const earlyAck = poison.earlyAckPermit ? c.issuePermit('feedback-ack', 'n:1', 0) : null;
   const v0 = c.issueFence('n:1');
-  // B4-STAMP: permits are journal issuances taken AT the moment the driver
+  // permits are journal issuances taken AT the moment the driver
   // would act, so their order against the wire events is the journal's, not a
   // back-dated arithmetic seq. Issue before the evaluation it licenses.
   const navPermit = c.issuePermit('widget-button', 'n:1', 0);
@@ -401,7 +401,7 @@ test.describe('manifest v2 validation', () => {
     expect(() => validateAdaptiveManifest(empty)).toThrow(/empty condition argument/);
   });
 
-  test('a presence-only expectation fails manifest validation by name (W-M5)', () => {
+  test('a presence-only expectation fails manifest validation by name', () => {
     const presenceOnly = manifest();
     presenceOnly.screens[1].expectations = [
       { part_path_prefix: 'q:1|stage.dropdown.', min_count: 1 },
@@ -508,7 +508,7 @@ test.describe('manifest v2 validation', () => {
     );
   });
 
-  test('combine_feedback is pinned by the archive facts — totality and exact equality (gate-B0 r5 M2)', () => {
+  test('combine_feedback is pinned by the archive facts — totality and exact equality', () => {
     const m = manifest();
     const missingKey = ARCHIVE_FACTS();
     delete (missingKey.combine_feedback as Record<string, boolean>)['q:1'];
@@ -535,7 +535,7 @@ test.describe('manifest v2 validation', () => {
     ).not.toThrow();
   });
 
-  test('correct_plan is pinned by the archive facts — totality and exact equality (gate-B0 r7 M3)', () => {
+  test('correct_plan is pinned by the archive facts — totality and exact equality', () => {
     const m = manifest();
     const missingKey = ARCHIVE_FACTS();
     delete (missingKey.correct_plan_kinds as Record<string, string>)['q:1'];
@@ -561,7 +561,7 @@ test.describe('manifest v2 validation', () => {
     ).toThrow(/screen "q:1" declares correct_plan navigation, the archive proves feedback/);
   });
 
-  test('LLM-capable screens fail the build closed — their plan kind is not archive-determined (gate-B0 r8 M2)', () => {
+  test('LLM-capable screens fail the build closed — their plan kind is not archive-determined', () => {
     const m = manifest();
     const missingKey = ARCHIVE_FACTS();
     delete (missingKey.llm_feedback_capable as Record<string, boolean>)['q:1'];
@@ -716,7 +716,7 @@ test.describe('transition planner — combineFeedback branches (DeckLayoutFooter
   // a live journal now refuses these bodies, but the planner also replays
   // CAPTURED dumps, where an older serialization can still carry them: an
   // exception here would escape auditRun instead of becoming a violation.
-  // W-U7/W-U9: one named test per shape, so a deleted shape is a missing test.
+  // /one named test per shape, so a deleted shape is a missing test.
   const MALFORMED_PLANNER_SHAPES: Array<[string, unknown]> = [
     ['a result list carrying null', [null]],
     ['actions as an object', [{ params: { actions: {} } }]],
@@ -859,7 +859,7 @@ test.describe('auditRun over a driven journal', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_widget_button_navEval = c.issuePermit('widget-button', 'n:1', 0);
     fireEval(c, 'a-n1', [], {
       correct: true,
@@ -1012,7 +1012,7 @@ test.describe('savedBarrier temporal audit and distinct-path min_count', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
-    // B4-STAMP: the readback-completed stamp is a journal issuance, not a
+    // the readback-completed stamp is a journal issuance, not a
     // driver-chosen number — the barrier's lower bound is only meaningful if
     // the journal ordered it against the save it must precede
     const readbackSeq = c.issueReadbackFence('q:1', 0).seq;
@@ -1196,7 +1196,7 @@ test.describe('committed prior state (§3.6)', () => {
     expect(state.get('q:1|stage.sim.B')).toBeUndefined();
     expect(state.get('q:1|stage.other.C')).toBe(9);
 
-    // ...and the crossed ordering — newer guid first, older guid's delayed
+    //...and the crossed ordering — newer guid first, older guid's delayed
     // save afterwards — is exactly as unprovable, same refusal
     const crossed = new AdaptiveJournalCore(() => 1_000);
     fireSave(crossed, 'a-dep', [{ path: 'q:1|stage.sim.B', value: 7, partGuid: 'pa-sim-2' }]);
@@ -1298,7 +1298,7 @@ test.describe('sealed and freeze-failure audits', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_widget_button_navEval = c.issuePermit('widget-button', 'n:1', 0);
     fireEval(c, 'a-n1', [], {
       correct: true,
@@ -1324,7 +1324,7 @@ test.describe('sealed and freeze-failure audits', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-1 witnesses (§8 rows surfaced by review)
+// additional rule-row witnesses (§8 rows surfaced by review)
 // ---------------------------------------------------------------------------
 
 test.describe('recorded plan vs replay (§3.5 replay agreement)', () => {
@@ -1352,7 +1352,7 @@ test.describe('obligations are bounded by the RESPONSE that created the plan (§
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     // the evaluation is staged by hand here (not via fireEval) so the
     // 'between' ack can be a REAL issuance taken after the request and before
@@ -1401,7 +1401,7 @@ test.describe('saved-barrier absence is gated by the §3.2 matrix', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
@@ -1570,7 +1570,7 @@ test.describe('cross-screen grading THROUGH auditRun (§3.6)', () => {
 
 test.describe('remaining §8 rows', () => {
   test('every operation-failure union member maps to its violation', () => {
-    // Authored HERE, never imported from the source (W-U9: the expected set
+    // Authored HERE, never imported from the source (the expected set
     // shares no constant, array or helper with the emitter) — but typed as a
     // TOTAL map, so adding a union member fails type-check until this matrix
     // lists it. A stale enumeration is the failure mode this shape removes.
@@ -1609,7 +1609,7 @@ test.describe('remaining §8 rows', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
@@ -1741,7 +1741,7 @@ test.describe('remaining §8 rows', () => {
     // contains.ts:79-96 — an EMPTY submission can never satisfy an exclusion
     expect(evaluatePredicate({ op: 'notContainsAnyOf', value: [1, 2] }, '')).toBe(false);
     expect(evaluatePredicate({ op: 'notContainsAnyOf', value: [1, 2] }, undefined)).toBe(false);
-    // ...and its string branch is case-SENSITIVE, unlike containsAnyOf's
+    //...and its string branch is case-SENSITIVE, unlike containsAnyOf's
     expect(evaluatePredicate({ op: 'notContainsAnyOf', value: ['abc'] }, 'ABC')).toBe(true);
     // engine-default-operators.js:34-48 — validator on parseFloat, comparison on the raw fact
     expect(evaluatePredicate({ op: 'greaterThan', value: 3 }, '5abc')).toBe(false);
@@ -1753,15 +1753,15 @@ test.describe('remaining §8 rows', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-2 witnesses
+// cardinality, ordering and inventory witnesses
 // ---------------------------------------------------------------------------
 
-test.describe('round-2: cardinality, ordering and inventory', () => {
+test.describe('cardinality, ordering and inventory', () => {
   test('a CONTENT step never licenses a second evaluation, ack or not (§3.5)', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('c:1');
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_check_click_first = c.issuePermit('check-click', 'c:1', 0);
     const first = fireEval(c, 'a-c1', [], {
       correct: true,
@@ -1839,7 +1839,7 @@ test.describe('round-2: cardinality, ordering and inventory', () => {
   });
 });
 
-test.describe('round-2: navigation plan evidence and route targets', () => {
+test.describe('navigation plan evidence and route targets', () => {
   function navFrozenRun(withPlan: boolean, mutate?: (p: { plan: unknown }) => void) {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
@@ -1892,7 +1892,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
@@ -1901,7 +1901,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
       { correct: true, results: [event(true, [navTo('x:9')])] },
     );
     const v1 = c.issueFence('c:1');
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_check_click_contentEval = c.issuePermit('check-click', 'c:1', 1);
     const contentEval = fireEval(c, 'a-c1', [], {
       correct: true,
@@ -1937,7 +1937,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
   });
 
   /**
-   * W-U7/W-U9 (§1 SUITE, named-test arm): each disqualifying target is its OWN
+   * / (§1 SUITE, named-test arm): each disqualifying target is its OWN
    * discovered identity. Inside one test these were a cardinality-bearing inner
    * loop — deleting a case shrank coverage invisibly, because `--list` reports
    * the loop as a single entry. As named tests a deleted case is a MISSING TEST,
@@ -1950,7 +1950,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
       const c = new AdaptiveJournalCore(() => 1_000);
       c.setRunCorrelation(CORR);
       const v0 = c.issueFence('q:1');
-      // B4-STAMP: journal-issued at the moment the driver would act
+      // journal-issued at the moment the driver would act
       const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
       const gradedEval = fireEval(
         c,
@@ -2007,7 +2007,7 @@ test.describe('round-2: navigation plan evidence and route targets', () => {
   });
 });
 
-test.describe('round-2: matrix rows through auditRun', () => {
+test.describe('failure-state matrix rows through auditRun', () => {
   test('an LLM-feedback plan carries a real ack obligation through auditRun (§8)', () => {
     const build = (withAck: boolean) => {
       const c = new AdaptiveJournalCore(() => 1_000);
@@ -2115,7 +2115,7 @@ test.describe('round-2: matrix rows through auditRun', () => {
       const c = new AdaptiveJournalCore(() => 1_000);
       c.setRunCorrelation(CORR);
       const v0 = c.issueFence('q:1');
-      // B4-STAMP: journal-issued at the moment the driver would act
+      // journal-issued at the moment the driver would act
       const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
       const gradedEval = fireEval(
         c,
@@ -2172,10 +2172,10 @@ test.describe('round-2: matrix rows through auditRun', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-3 witnesses
+// settlement and domain-sweep witnesses
 // ---------------------------------------------------------------------------
 
-test.describe('round-3: settlement, domain sweep and remaining §8 rows', () => {
+test.describe('settlement, domain sweep and the remaining rule rows', () => {
   test('a closed sealed window with a FAILED candidate is settled — absence conclusions apply (§3.2)', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
@@ -2279,16 +2279,16 @@ test.describe('round-3: settlement, domain sweep and remaining §8 rows', () => 
     // operator ERROR shapes stay fail-closed under BOTH polarities
     expect(evaluatePredicate({ op: 'contains', value: ['x'] }, 5)).toBe(false);
     expect(evaluatePredicate({ op: 'notContains', value: ['x'] }, 5)).toBe(false);
-    // ...while the legal string branch still negates normally
+    //...while the legal string branch still negates normally
     expect(evaluatePredicate({ op: 'notContains', value: 'lava' }, 'magma')).toBe(true);
   });
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-4 witnesses
+// rotation legality and operator-port witnesses
 // ---------------------------------------------------------------------------
 
-test.describe('round-4: rotation plan legality, receipt inventory, operator ports', () => {
+test.describe('rotation plan legality, receipt inventory, operator ports', () => {
   test('a rotation whose first plan is `none` is LEGAL — shadow-measured: the deck returns an empty-actions result (§3.4)', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
@@ -2319,7 +2319,7 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
   });
 
   /**
-   * W-U7/W-U9 (§1 SUITE, named-test arm): one DISCOVERED identity per malformed
+   * / (§1 SUITE, named-test arm): one DISCOVERED identity per malformed
    * body. The title carries the shape itself, so deleting a case removes a test
    * and editing one renames it — both caught by the frozen suite inventory,
    * with no separate expected-set artifact and no emitter-independence audit.
@@ -2444,7 +2444,7 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
   });
 
   /**
-   * W-U7/W-U9 (§1 SUITE, named-test arm): one DISCOVERED identity per capture
+   * / (§1 SUITE, named-test arm): one DISCOVERED identity per capture
    * poison. The title carries the mutator's own source, so editing a poison
    * renames its test and deleting one removes it.
    */
@@ -2555,7 +2555,7 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
   });
 
   /**
-   * W-U7/W-U9 (§1 SUITE, named-test arm): one DISCOVERED identity per refused
+   * / (§1 SUITE, named-test arm): one DISCOVERED identity per refused
    * wire shape. The RAW response body, not the fixture's re-wrapped one —
    * these are about the exact bytes the server can put on the wire.
    */
@@ -2672,16 +2672,16 @@ test.describe('round-4: rotation plan legality, receipt inventory, operator port
     // error here, fail-closed under BOTH polarities
     expect(evaluatePredicate({ op: 'equal', value: true }, null)).toBe(false);
     expect(evaluatePredicate({ op: 'notEqual', value: true }, null)).toBe(false);
-    // ...while a null fact against a STRING condition legally compares false
+    //...while a null fact against a STRING condition legally compares false
     expect(evaluatePredicate({ op: 'notEqual', value: 'x' }, null)).toBe(true);
   });
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-5 witnesses
+// barrier-order and permit-allowlist witnesses
 // ---------------------------------------------------------------------------
 
-test.describe('round-5: barrier commit order, unconditional coverage, permit allowlist', () => {
+test.describe('barrier commit order, unconditional coverage, permit allowlist', () => {
   test('a save still in flight at click-time cannot satisfy the barrier (§3.5)', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
@@ -2788,10 +2788,10 @@ test.describe('round-5: barrier commit order, unconditional coverage, permit all
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-7 witnesses
+// terminal-commit and causal-tip witnesses
 // ---------------------------------------------------------------------------
 
-test.describe('round-7: terminal commit proofs, causal tips, permit and attribution evidence', () => {
+test.describe('terminal commit proofs, causal tips, permit and attribution evidence', () => {
   test('a save with 2xx headers that then FAILS proves nothing — barrier, prior state, and reported (§3.5)', () => {
     // barrier path
     const c = new AdaptiveJournalCore(() => 1_000);
@@ -2812,7 +2812,7 @@ test.describe('round-7: terminal commit proofs, causal tips, permit and attribut
     }) as number;
     c.ingestResponse(save, 200); // headers seen...
     c.ingestRequestFailed(save); // ...then the request dies before the body
-    // B4-STAMP: journal-issued at the moment the driver would act
+    // journal-issued at the moment the driver would act
     const permit_check_click_gradedEval = c.issuePermit('check-click', 'q:1', 0);
     const gradedEval = fireEval(
       c,
@@ -2988,10 +2988,10 @@ test.describe('round-7: terminal commit proofs, causal tips, permit and attribut
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-8 witnesses
+// commit-shape and attribution witnesses
 // ---------------------------------------------------------------------------
 
-test.describe('round-8: PUT commits, presence-only counts, exact failure attribution', () => {
+test.describe('PUT commits, presence-only counts, exact failure attribution', () => {
   test('an evaluation-only dependency commits state through its PUT — no save required (§3.6)', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
@@ -3103,7 +3103,7 @@ test.describe('round-8: PUT commits, presence-only counts, exact failure attribu
     expect(overlapping.state.get('q:1|stage.sim.Correct')).toBeUndefined();
   });
 
-  test('presence-only prefix expectations count DISTINCT paths against min_count (R4-SF3)', () => {
+  test('presence-only prefix expectations count DISTINCT paths against min_count', () => {
     const presence = { part_path_prefix: 'q:1|stage.fib', min_count: 2 };
     const m = manifest();
     m.screens[1].expectations = [presence];
@@ -3149,10 +3149,10 @@ test.describe('round-8: PUT commits, presence-only counts, exact failure attribu
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-9 witnesses
+// schema-boundary and permit-accounting witnesses
 // ---------------------------------------------------------------------------
 
-test.describe('round-9: schema boundary, visit-anchored attribution, complete permit accounting', () => {
+test.describe('schema boundary, visit-anchored attribution, complete permit accounting', () => {
   test('a non-boolean combine_feedback cannot reach planning (§3.8)', () => {
     const bad = manifest();
     (bad.screens[1] as { combine_feedback?: unknown }).combine_feedback = 'yes';
@@ -3243,10 +3243,10 @@ test.describe('round-9: schema boundary, visit-anchored attribution, complete pe
 });
 
 // ---------------------------------------------------------------------------
-// checkpoint A round-10 witnesses
+// archive-identity and seal-sentinel witnesses
 // ---------------------------------------------------------------------------
 
-test.describe('round-10: archive identity, seal sentinel, stability keys, schema keys', () => {
+test.describe('archive identity, seal sentinel, stability keys, schema keys', () => {
   test('a screen resource_id contradicting the archive fails the build (§3.8)', () => {
     const m = manifest();
     expect(() =>
@@ -3284,7 +3284,7 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
     const found = auditRun(manifest(), runRecord, c.snapshot());
     expect(codes(found)).toEqual(['seal-without-evidence']);
 
-    // ...and any real positive evidence suppresses the sentinel
+    //...and any real positive evidence suppresses the sentinel
     const stamped: RunRecord = {
       ...runRecord,
       operationFailures: [{ kind: 'readiness-timeout', screenId: 'n:1', expectedStepIndex: 0 }],
@@ -3365,8 +3365,8 @@ test.describe('round-10: archive identity, seal sentinel, stability keys, schema
   });
 });
 
-test.describe('B4-STAMP claim side and the remaining fence orders', () => {
-  test('a claimed permit the journal never issued is refused on the whole tuple (W-R4)', () => {
+test.describe('journal-issued stamps on the claim side, and the remaining fence orders', () => {
+  test('a claimed permit the journal never issued is refused on the whole tuple', () => {
     const { snapshot, runRecord } = buildRun();
     const forged: Permit = { kind: 'check-click', screenId: 'q:1', stepIndex: 1, seq: 999 };
     const found = auditRun(
@@ -3379,7 +3379,7 @@ test.describe('B4-STAMP claim side and the remaining fence orders', () => {
     ).toBe(true);
   });
 
-  test('a journal-issued permit claimed for the wrong screen is refused (W-R4)', () => {
+  test('a journal-issued permit claimed for the wrong screen is refused', () => {
     const { snapshot, runRecord } = buildRun();
     const relabeled = runRecord.permits.map((p) =>
       p.kind === 'check-click' && p.screenId === 'q:1' ? { ...p, screenId: 'c:1' } : p,
@@ -3390,7 +3390,7 @@ test.describe('B4-STAMP claim side and the remaining fence orders', () => {
     ).toBe(true);
   });
 
-  test('a receipt citing a readback fence the journal never issued is refused (W-R4)', () => {
+  test('a receipt citing a readback fence the journal never issued is refused', () => {
     const { snapshot, runRecord } = buildRun();
     const receipts = [{ ...RECEIPT_Q1, readbackCompletedSeq: 999 }];
     const found = auditRun(manifest(), { ...runRecord, receipts }, snapshot);
@@ -3399,7 +3399,7 @@ test.describe('B4-STAMP claim side and the remaining fence orders', () => {
     ).toBe(true);
   });
 
-  test('a deleted visit breaks route cardinality (W-R1)', () => {
+  test('a deleted visit breaks route cardinality', () => {
     const { snapshot, runRecord } = buildRun();
     const visits = runRecord.visits.filter((v) => v.screenId !== 'q:1');
     const found = auditRun(manifest(), { ...runRecord, visits }, snapshot);
@@ -3408,7 +3408,7 @@ test.describe('B4-STAMP claim side and the remaining fence orders', () => {
     );
   });
 
-  test('a mint that predates the first rotation evaluation is not the measured rotation (W-J10, §3.4)', () => {
+  test('a mint that predates the first rotation evaluation is not the measured rotation', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('n:1');
@@ -3432,7 +3432,7 @@ test.describe('B4-STAMP claim side and the remaining fence orders', () => {
     expect(codes(auditRun(m, runRecord, c.snapshot()))).toContain('navigation-sequence');
   });
 
-  test('a check permit issued after the evaluation request licenses nothing (W-ST3)', () => {
+  test('a check permit issued after the evaluation request licenses nothing', () => {
     const c = new AdaptiveJournalCore(() => 1_000);
     c.setRunCorrelation(CORR);
     const v0 = c.issueFence('q:1');
@@ -3499,12 +3499,12 @@ test.describe('B4-STAMP claim side and the remaining fence orders', () => {
     return auditRun(m, runRecord, c.snapshot());
   }
 
-  test('an ack after the first response licenses the graded re-check (W-ST4)', () => {
+  test('an ack after the first response licenses the graded re-check', () => {
     const found = recheckRun('after');
     expect(formatViolations(found)).toBe('auditRun: no violations');
   });
 
-  test('an ack stamped before the first response licenses no second evaluation (W-ST4)', () => {
+  test('an ack stamped before the first response licenses no second evaluation', () => {
     expect(codes(recheckRun('between'))).toContain('evaluation-no-causal-edge');
   });
 });

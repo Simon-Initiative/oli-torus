@@ -15,8 +15,7 @@ import {
 } from './AdaptiveArchiveReader';
 
 /**
- * Build gates that judge the manifest against the RAW archive (B4-MAN,
- * B4-BIJ). The completeness half reuses the committed `validateRouteCoverage`
+ * Build gates that judge the manifest against the RAW archive ( * ). The completeness half reuses the committed `validateRouteCoverage`
  * — the gate is right, its INPUT was the extractor's own JSON; here the same
  * gate runs on facts derived by the independent reader, so extractor and
  * manifest can no longer agree with each other about the archive.
@@ -107,7 +106,7 @@ function assertOwnedPart(entry: FamilyEntry, operation: AnswerOperation, screen:
  * `multipleSelection` decides radio vs checkboxes. Without this the two
  * `janus-mcq@1` entries corroborate the SAME part, so a manifest could swap
  * mode — driving and reading back the wrong interaction contract — while
- * B4-MAN stayed green.
+ *  stayed green.
  */
 function assertModeMatchesArchive(
   entry: FamilyEntry,
@@ -127,7 +126,7 @@ function assertModeMatchesArchive(
 }
 
 /**
- * B4-MAN: every answer operation's family+version(+mode) resolves through the
+ * every answer operation's family+version(+mode) resolves through the
  * registry by name, its directive passes the family's own validator, and the
  * resolved entry agrees with the raw archive's part types and widget srcs.
  */
@@ -175,7 +174,7 @@ export function validateRegistryMetadata(manifest: AdaptiveManifest, page: RawAr
 }
 
 /**
- * B4-BIJ: archive↔map↔scenario completeness against the raw archive. The
+ * archive↔map↔scenario completeness against the raw archive. The
  * committed coverage gate carries bijection, route edges, endpoints, resource
  * identity, combine_feedback, correct_plan and rule-reference coverage; added
  * here are the two claims it cannot make because `ArchiveFacts` does not carry

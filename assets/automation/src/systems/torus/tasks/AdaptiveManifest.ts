@@ -64,7 +64,7 @@ export type LocalOperation = AnswerOperation | GateOperation;
 /**
  * What the evaluation payload must satisfy. `part_path` suffix-matches one
  * submitted path; `part_path_prefix` quantifies over a cluster —
- * `min_count` counts DISTINCT satisfied paths (R4-SF3: array entries could
+ * `min_count` counts DISTINCT satisfied paths (array entries could
  * satisfy a count with one duplicated blank).
  */
 export type GradingExpectation =
@@ -81,7 +81,7 @@ export type ScreenDefinition = {
   /** archive-derived plan kind of the enabled correct rules' actions —
    * `feedback` when any correct action shows feedback (planTransition
    * precedence), else `navigation`, else `none`. Pins the plan-dependent
-   * driver-evidence classes to the ARCHIVE (gate-B0 r7 M3). */
+   * driver-evidence classes to the ARCHIVE. */
   correct_plan?: CorrectPlanKind;
   /** ancestor chain for provenance, nearest first — non-manifest layer parents */
   layer_parents?: string[];
@@ -442,7 +442,7 @@ export type ArchiveFacts = {
    * archive's combineFeedback flag. The flag flips the footer-normative
    * planner branch on BOTH replay consumers (projection + expected driver
    * evidence), so a manifest that loses it must fail the build, not feed a
-   * common-mode default into the comparison (gate-B0 r5 M2).
+   * common-mode default into the comparison.
    */
   combine_feedback: Record<string, boolean>;
   /**
@@ -451,7 +451,7 @@ export type ArchiveFacts = {
    * planTransition precedence). The expected driver-evidence inventory's
    * plan-dependent classes derive from THIS map, never from the captured
    * response — a common-mode journal/ledger plan substitution cannot shrink
-   * the multiset (gate-B0 r7 M3).
+   * the multiset.
    */
   correct_plan_kinds: Record<string, CorrectPlanKind>;
   /**
@@ -462,7 +462,7 @@ export type ArchiveFacts = {
    * response). Runtime llmFeedback OUTRANKS authored actions in
    * planTransition, so an LLM-capable screen's plan kind is NOT
    * archive-determined: the coverage gate fails closed on any true value
-   * until an independent runtime reference pins the outcome (gate-B0 r8 M2).
+   * until an independent runtime reference pins the outcome.
    */
   llm_feedback_capable: Record<string, boolean>;
 };
@@ -594,7 +594,7 @@ export function validateRouteCoverage(facts: ArchiveFacts, manifest: AdaptiveMan
   // combine_feedback is EXACT per screen — an absent manifest flag means
   // false and must match the archive's explicit false, so a dropped flag on
   // a combining screen fails here instead of defaulting both replay
-  // consumers to the same wrong branch (gate-B0 r5 M2)
+  // consumers to the same wrong branch
   for (const screen of manifest.screens) {
     if (!!screen.combine_feedback !== facts.combine_feedback[screen.id]) {
       fail(
@@ -606,7 +606,7 @@ export function validateRouteCoverage(facts: ArchiveFacts, manifest: AdaptiveMan
 
   // correct_plan is EXACT per screen and REQUIRED once the facts carry it —
   // the plan-dependent driver-evidence classes derive from this manifest
-  // field, so a missing or drifted value must fail the build (gate-B0 r7 M3)
+  // field, so a missing or drifted value must fail the build
   for (const screen of manifest.screens) {
     if (screen.correct_plan !== facts.correct_plan_kinds[screen.id]) {
       fail(
@@ -618,7 +618,7 @@ export function validateRouteCoverage(facts: ArchiveFacts, manifest: AdaptiveMan
 
   // an LLM-capable screen's runtime plan kind is not archive-determined
   // (llmFeedback outranks authored actions in planTransition) — fail closed
-  // until an independent runtime reference exists (gate-B0 r8 M2)
+  // until an independent runtime reference exists
   for (const id of Object.keys(facts.llm_feedback_capable)) {
     if (facts.llm_feedback_capable[id]) {
       fail(

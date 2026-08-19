@@ -487,7 +487,7 @@ export async function driveScripted(args: {
   manifest?: AdaptiveManifest;
   beforeStart?: (deck: ScriptedDeck, core: AdaptiveJournalCore, clock: Clock) => void;
   wrapDeck?: (deck: ScriptedDeck) => object;
-  /** driver options, merged over the test clock — the seam for the :684-:686
+  /** driver options, merged over the test clock — the seam for the:684-:686
    * option-read edges, where the OBJECT ITSELF may be hostile */
   options?: Record<string, unknown>;
 }): Promise<Driven> {

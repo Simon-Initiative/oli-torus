@@ -104,7 +104,7 @@ function ownJanusPart(
 /**
  * CAPI ownership is by widget identity in the iframe src: `/<family>/` plus the
  * declared MAJOR. A registry entry resolved to the wrong family therefore fails
- * here instead of driving someone else's widget (B4-REG-L).
+ * here instead of driving someone else's widget.
  */
 function ownCapiPart(entry: FamilyEntry, parts: PartInventory): PartInventoryEntry | null {
   const candidates = parts.filter(
@@ -422,7 +422,7 @@ const describeKey = (key: FamilyKey) =>
   `${key.family}@${key.version ?? '<no version>'}${key.mode ? `:${key.mode}` : ''}`;
 
 /**
- * Fail-closed resolution by name (§3.6, B4-REG-S): an unknown family, an
+ * Fail-closed resolution by name: an unknown family, an
  * unknown or absent version, an unknown mode, or a key matching several entries
  * throws — resolution never falls back to a "closest" entry.
  */

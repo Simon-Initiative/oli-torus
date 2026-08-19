@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { ArchiveFacts, CorrectPlanKind, ScreenRole } from './AdaptiveManifest';
 
 /**
- * Independent reader of the EXTRACTED COURSE ARCHIVE (B4-MAN/B4-BIJ/B4-PRED).
+ * Independent reader of the EXTRACTED COURSE ARCHIVE.
  * The offline extractor that authors the manifest and the archive-facts JSON is
  * the leg under judgment; this parser is the breaking leg, so it shares no
  * code, constant, helper or intermediate file with it — it reads the archive's
@@ -128,7 +128,7 @@ function readConditionNode(raw: unknown, at: string): RawConditionNode {
 function readRule(raw: unknown, at: string): RawRule {
   if (!isPlainObject(raw)) return fail(`${at} is not a rule object`);
   const conditions = raw.conditions;
-  // W-M3: an archive whose rules carry no conditions block is not evidence of
+  // an archive whose rules carry no conditions block is not evidence of
   // an unconditional rule, it is a truncated archive — fail, never default
   if (!isPlainObject(conditions) || !('all' in conditions || 'any' in conditions)) {
     return fail(`${at} ("${String(raw.name)}") has no conditions block`);
@@ -414,7 +414,7 @@ const isPartStatePath = (fact: string): boolean => {
 /**
  * Navigation screens drive the deck through an in-widget button; the deck never
  * asserts their verdict (§3.5), so their correct rules are not
- * grading-expectation material (gate-B0 r3 M1, shadow-gate-evidence.md:117).
+ * grading-expectation material.
  * BOTH measured shapes count (§3.3): LotE's Cover is a CAPI buttonwidget, while
  * d-orbitals' Title and greenhouse's Welcome Screen are janus-navigation-button
  * parts. A navigation screen may still carry a stage-conditioned correct rule,
@@ -428,7 +428,7 @@ const isNavigationScreen = (screen: RawScreen): boolean =>
   );
 
 /**
- * Role, derived from the ARCHIVE alone (round-2 disposition): a navigation part
+ * Role, derived from the ARCHIVE alone: a navigation part
  * makes the screen navigation; otherwise an enabled correct rule conditioned on
  * part state makes it graded; otherwise content. Role is the switch that arms
  * the oracle's receipt/verdict/payload checks (`AdaptiveOracle.ts` enters them
@@ -465,7 +465,7 @@ export const llmFeedbackCapable = (screen: RawScreen): boolean =>
 /**
  * The archive facts the committed `validateRouteCoverage` gate consumes,
  * derived HERE from the raw archive — the same gate, run against an input the
- * extractor did not produce (B4-BIJ).
+ * extractor did not produce.
  */
 export function deriveArchiveFacts(page: RawArchivePage): ArchiveFacts {
   const successors = routeSuccessors(page);

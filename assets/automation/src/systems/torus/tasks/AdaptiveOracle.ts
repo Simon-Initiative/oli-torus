@@ -445,7 +445,7 @@ export function auditRun(
     }
   }
 
-  // ---- B4-STAMP: every runRecord permit must BE a journal issuance ----------
+  // ---- every runRecord permit must BE a journal issuance ----------
   // The journal owning the seq domain is not enough on its own: without this
   // comparison a driver could hand the oracle a permit it never obtained, or
   // re-label an issued one, and the causal-edge audit below would license it
@@ -1146,7 +1146,7 @@ function partIdOf(path: string): string {
   return m ? m[1] : local;
 }
 
-/** Distinct satisfied PATHS — one duplicated blank can never satisfy min_count (R4-SF3). */
+/** Distinct satisfied PATHS — one duplicated blank can never satisfy min_count. */
 function expectationSatisfied(pairs: SubmittedPair[], e: GradingExpectation): boolean {
   if ('part_path' in e) {
     const atPath = pairs.filter((p) => p.path === e.part_path || p.path.endsWith(e.part_path));
@@ -1154,7 +1154,7 @@ function expectationSatisfied(pairs: SubmittedPair[], e: GradingExpectation): bo
   }
   const underPrefix = pairs.filter((p) => p.path.includes(e.part_path_prefix));
   if (e.predicate === undefined) {
-    // presence-only expectations still count DISTINCT paths (R4-SF3):
+    // presence-only expectations still count DISTINCT paths:
     // repeated entries for one path can never satisfy a declared min_count
     return new Set(underPrefix.map((p) => p.path)).size >= (e.min_count ?? 1);
   }
