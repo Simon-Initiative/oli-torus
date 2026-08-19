@@ -39,7 +39,7 @@ requirements:
     and placed content-element ID, while revision and publication IDs remain delivered-snapshot
     evidence rather than logical identity.
   id: FR-006
-- title: Assign independently and stickily per intervention
+- title: Assign Thompson Sampling independently and stickily per intervention
   description: Assignment identity must include section enrollment, experiment,
     and intervention instance so first encounters at different instances sample independently
     and revisits reuse the persisted assignment.

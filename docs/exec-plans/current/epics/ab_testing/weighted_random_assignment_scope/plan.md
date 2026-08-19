@@ -159,21 +159,21 @@ Guardrails:
 
 - Goal: Prove the real authoring-to-delivery workflow and reconcile the epic's prior universal intervention-scope wording for all requirements, especially AC-003 through AC-012.
 - Tasks:
-  - [ ] Inspect current `Oli.Scenarios` experiment directives before authoring scenario coverage.
-  - [ ] Use the repo-local `build_scenario` workflow to add or update a concise scenario with an experiment-controlled group, two placements, participating and nonparticipating sections, multiple enrollments, publication, delivery, revisits, and both weighted-random scopes.
-  - [ ] If the existing DSL cannot configure assignment scope or verify durable assignment/exposure results, use `extend_scenario` to add the smallest reusable directive/assertion support with infrastructure tests before building the scenario.
-  - [ ] Verify section-and-enrollment mode returns one condition and assignment ID across interventions while producing separate exposure attribution; verify intervention mode remains independently sticky.
-  - [ ] Verify a learner represented by separate enrollments in two sections receives independent canonical assignments.
-  - [ ] Update the A/B testing manual QA material with setup, expected persistence/evidence, fallback, concurrency/revisit observations, and cleanup notes for both scopes.
-  - [ ] Reconcile `intervention_assignment_thompson_sampling` PRD/FDD/requirements/plan language so intervention-scoped assignment remains mandatory for Thompson Sampling while this work item defines section-and-enrollment as the weighted-random default.
-  - [ ] Review other epic artifacts that state assignment is universally intervention-scoped and update only the conflicting durable documentation, preserving completed implementation history.
-  - [ ] Record implementation proof references for every AC in the execution record or plan completion updates expected by the harness workflow.
+  - [x] Inspect current `Oli.Scenarios` experiment directives before authoring scenario coverage.
+  - [x] Use the repo-local `build_scenario` workflow to add or update a concise scenario with an experiment-controlled group, two placements, participating and nonparticipating sections, multiple enrollments, publication, delivery, revisits, and both weighted-random scopes.
+  - [x] Confirm the existing `hook` extension can configure assignment scope and verify durable assignment/exposure results without adding one-off DSL support; `extend_scenario` was not required.
+  - [x] Verify section-and-enrollment mode returns one condition and assignment ID across interventions while producing separate exposure attribution; verify intervention mode remains independently sticky.
+  - [x] Verify a learner represented by separate enrollments in two sections receives independent canonical assignments.
+  - [x] Update the A/B testing manual QA material with setup, expected persistence/evidence, fallback, concurrency/revisit observations, and cleanup notes for both scopes.
+  - [x] Reconcile `intervention_assignment_thompson_sampling` PRD/FDD/requirements/plan language so intervention-scoped assignment remains mandatory for Thompson Sampling while this work item defines section-and-enrollment as the weighted-random default.
+  - [x] Review other epic artifacts that state assignment is universally intervention-scoped and update only the conflicting durable documentation, preserving completed implementation history.
+  - [x] Record implementation proof references for every AC in `phase_5_execution_record.md`.
 - Testing Tasks:
-  - [ ] Validate every new or changed `.scenario.yaml` file with `Oli.Scenarios.validate_file/1`.
-  - [ ] Run the targeted ExUnit scenario runner and fail on scenario execution or verification errors.
-  - [ ] Execute manual QA for form behavior, two-intervention delivery, revisits, participating/nonparticipating fallback, canonical assignment counts, distinct exposures, and details copy.
-  - [ ] Run harness traceability checks after documentation reconciliation.
-  - Command(s): `mix test test/scenarios/delivery/ab_testing_runtime_test.exs`; `python3 /Users/eliknebel/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/ab_testing/weighted_random_assignment_scope --action master_validate --stage plan_present`
+  - [x] Validate every new or changed `.scenario.yaml` file with `Oli.Scenarios.validate_file/1`.
+  - [x] Run the targeted ExUnit scenario runner and fail on scenario execution or verification errors.
+  - [ ] Execute manual QA for form behavior, two-intervention delivery, revisits, participating/nonparticipating fallback, canonical assignment counts, distinct exposures, and details copy. The procedure and automated companion are complete; environment-specific browser evidence remains to be recorded.
+  - [x] Run harness traceability checks after documentation reconciliation.
+  - Command(s): `mix test test/scenarios/delivery/ab_testing_delivery_runtime_test.exs`; `python3 /Users/eliknebel/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/ab_testing/weighted_random_assignment_scope --action master_validate --stage plan_present`
 - Definition of Done:
   - A real workflow proves both scopes and tenant/participation isolation, manual QA is reproducible, and the epic no longer contradicts the weighted-random exception.
 - Gate:

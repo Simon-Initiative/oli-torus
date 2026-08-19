@@ -1,7 +1,7 @@
 # Intervention-Scoped Assignment and Assessment-Driven Thompson Sampling - Product Requirements Document
 
 ## 1. Overview
-Extend native Torus experiments so one experiment governs repeated interventions that share condition identities and policy state while assigning each learner independently and stickily at every placed Alternatives instance. For Thompson Sampling, each intervention is paired with a distinct condition-neutral scored page whose first eligible finalized attempt contributes one binary reward to the assigned condition's shared experiment posterior.
+Extend native Torus experiments so one experiment governs repeated interventions that share condition identities and policy state. Thompson Sampling assigns each learner independently and stickily at every placed Alternatives instance, and each intervention is paired with a distinct condition-neutral scored page whose first eligible finalized attempt contributes one binary reward to the assigned condition's shared experiment posterior. Weighted random supports either intervention scope or section-and-enrollment scope; new weighted-random experiments default to section-and-enrollment scope.
 
 ## 2. Background & Problem Statement
 The current native experiment model inserts a decision-point layer between the experiment and the reusable Alternatives Group even though the approved workflow has one group and one policy scope per experiment. Multiple decision points in the current implementation behave as independently optimized sub-experiments rather than coordinated exposure locations. Torus already represents repeated exposure locations as interventions, so it needs separate identities for one experiment-owned group and policy, placed intervention instances, per-instance assignments, and assessment bindings—not an additional N-point policy hierarchy.
@@ -10,8 +10,8 @@ The current native experiment model inserts a decision-point layer between the e
 ### Goals
 - Support exactly one reusable experiment-controlled Alternatives Group and one policy/posterior scope per experiment.
 - Preserve stable experiment conditions and map them bijectively to stable group alternatives.
-- Make every placed group instance a separate sticky assignment opportunity while pooling its accepted rewards into the experiment posterior.
-- Support weighted-random assignment per intervention and non-contextual Beta-Bernoulli Thompson Sampling with assessment-driven binary rewards.
+- Make every Thompson Sampling placement a separate sticky assignment opportunity while pooling its accepted rewards into the experiment posterior.
+- Support weighted-random assignment either per intervention or once per participating section enrollment, and non-contextual Beta-Bernoulli Thompson Sampling only per intervention with assessment-driven binary rewards.
 - Preserve existing Alternatives content, normal publication behavior, and learner completion semantics. Preserve experiment history created under the final singular schema; preservation of pre-release QA experiment rows is a non-goal.
 - Keep group management contextual: the Alternatives page manages Learner Choice groups, while the Experiments page retains a co-located `Decision Points` section for experiment-controlled groups.
 - Make the Alternatives Group the sole authority for selection strategy, assigned implicitly by the management surface where the group is created.
@@ -19,9 +19,9 @@ The current native experiment model inserts a decision-point layer between the e
 - Provide configuration, evidence, telemetry, lifecycle controls, and referential constraints suitable for safe authoring and delivery.
 
 ### Non-Goals
-- Course-wide sticky assignment as a configurable mode.
+- User-wide, institution-wide, project-wide, or cross-section sticky assignment.
 - Sharing policy state across experiments.
-- Multiple independently assigned decision points, factorial experiments, or coordinated experiment-level assignment across placements.
+- Multiple independently optimized decision points, factorial experiments, or coordinated assignment across separate experiments.
 - Contextual, hierarchical, factorial, continuous-reward, calibrated-difficulty, or learner-specific bandit models.
 - Reusing one assessment binding across interventions, correcting accepted experiment rewards, or guaranteeing allocation percentages.
 - Renaming existing `Alt` or `A/B Test` insertion commands, changing section participation, or adding cross-page element movement.
@@ -71,7 +71,7 @@ Requirements are found in requirements.yml
 - `priv/schemas/v0-1-0/content-alternatives.schema.json` must describe the completed placement contract: `alternatives_id` is the required group reference, element-level `strategy` is not required or authoritative, and legacy elements that retain a strategy value remain schema-compatible without migration.
 - The page-content schema permits Alternatives at any depth in ordinary content but rejects an Alternatives descendant anywhere beneath another Alternatives placement. The rule is structural and does not depend on group strategy metadata.
 - Project export must serialize every referenced Alternatives Group with its authoritative strategy, stable option identities and labels, and other required group content. Ingest must recreate the group with that strategy before rewiring every placement to the new resource ID.
-- Assignment uniqueness is scoped by section enrollment, experiment, and intervention instance.
+- Thompson Sampling assignment uniqueness is scoped by section enrollment, experiment, and intervention instance. Weighted-random uniqueness follows its explicit `assignment_scope`: the same intervention identity or one canonical experiment/section/enrollment identity.
 - Thompson Sampling state consists of one Beta posterior per experiment condition, defaulting to `Beta(1, 1)` unless configured otherwise.
 - The experiment details page must read the current bounded PostgreSQL policy-state snapshot for posterior display; it must not scan rewards or query xAPI or ClickHouse. Values must be current when the page is loaded or explicitly refreshed, and completed or archived experiments display their frozen final state.
 - Each Thompson Sampling intervention has exactly one binding to a distinct scored page and threshold in `[0.0, 1.0]`; weighted random requires no assessment binding.
@@ -97,7 +97,7 @@ Existing Alternatives Groups, placements, revisions, publications, and page cont
 ## 12. Telemetry & Success Metrics
 - Emit bounded signals for assignment creation and reuse, sampling and selection, deterministic fallback, concurrency resolution, binding resolution, accepted and duplicate rewards, skipped rewards with bounded reasons, posterior updates, evaluation-to-update latency, and migration anomalies.
 - Include stable experiment, intervention, condition, algorithm, assessment-binding, publication, and before/after policy context where appropriate.
-- Success means revisits are stable, separate interventions assign independently, every accepted reward updates the correct shared condition posterior exactly once, completion reflects only displayed content, and operators can diagnose failures and latency in AppSignal.
+- Success means Thompson Sampling revisits are stable and separate interventions assign independently; weighted-random behavior follows its configured scope; every accepted Thompson reward updates the correct shared condition posterior exactly once; completion reflects only displayed content; and operators can diagnose failures and latency in AppSignal.
 
 ## 13. Risks & Mitigations
 - Incorrect attribution could bias every later assignment: use explicit bindings, stable intervention identity, persisted assignments, atomic claims, and idempotency constraints.
