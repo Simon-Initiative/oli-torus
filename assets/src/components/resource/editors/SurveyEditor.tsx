@@ -39,6 +39,7 @@ export const SurveyEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onRefreshLearningObjectives,
   onDuplicate,
 }: SurveyEditorProps) => {
   const onEditChild = (child: ResourceContent) => {
@@ -69,6 +70,7 @@ export const SurveyEditor = ({
               resourceContext={resourceContext}
               featureFlags={featureFlags}
               onAddItem={onAddItem}
+              onRefreshLearningObjectives={onRefreshLearningObjectives}
             />
             {createEditor({
               resourceContext,
@@ -94,6 +96,7 @@ export const SurveyEditor = ({
               onRegisterNewObjective,
               onRegisterNewTag,
               onAddItem,
+              onRefreshLearningObjectives,
               onDuplicate,
             })}
           </div>
@@ -107,6 +110,7 @@ export const SurveyEditor = ({
         resourceContext={resourceContext}
         featureFlags={featureFlags}
         onAddItem={onAddItem}
+        onRefreshLearningObjectives={onRefreshLearningObjectives}
         onRegisterNewObjective={onRegisterNewObjective}
       />
     </SurveyBlock>

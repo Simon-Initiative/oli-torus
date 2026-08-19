@@ -6,6 +6,7 @@
     "pw": "npx playwright test",
     "test-config": "npm run pw config.spec.ts",
     "test-config:headed": "npm run test-config -- --headed",
+    "test-dot-smoke": "npm run pw dot-chatbot.spec.ts",
     "test-useraccounts": "npm run pw user-accounts.spec",
     "test-all": "npm run pw user-accounts.spec course-authoring.spec.ts",
     "show-report": "npx playwright show-report",
@@ -27,6 +28,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "js-yaml": "^4.3.0",
     "typescript-eslint": "^8.33.0",
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
     "prettier": "^3.3.3"

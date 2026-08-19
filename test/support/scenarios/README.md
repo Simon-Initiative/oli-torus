@@ -118,6 +118,8 @@ All directives are documented in detail in the linked documentation files.
 | | `wait` | Pause scenario execution for real elapsed time | [student_simulation.md](docs/student_simulation.md#wait) |
 | | `discussion_post` | Create a discussion contribution for a learner | [student_simulation.md](docs/student_simulation.md#discussion_post) |
 | | `class_note` | Create a public class note for a learner on a page | [student_simulation.md](docs/student_simulation.md#class_note) |
+| | `post_reaction` | Add or remove a reaction on a named collaboration post | [student_simulation.md](docs/student_simulation.md#post_reaction) |
+| | `assert.annotation` | Assert annotation scope, reply relationships, and reactions | [student_simulation.md](docs/student_simulation.md#annotation-assertions) |
 | | `complete_scored_page` | Record a scored-page completion for a learner | [student_simulation.md](docs/student_simulation.md#complete_scored_page) |
 | | `certificate_action` | Apply instructor certificate approve/deny actions | [student_simulation.md](docs/student_simulation.md#certificate_action) |
 | | `assert.prologue` | Assert learner prologue state for a graded page | [student_simulation.md](docs/student_simulation.md#prologue-assertions) |

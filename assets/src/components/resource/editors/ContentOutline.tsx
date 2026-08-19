@@ -22,6 +22,7 @@ import { AlternativeOutlineItem, AlternativesOutlineItem } from './AlternativesE
 import { ContentBreakOutlineItem } from './ContentBreak';
 import { ContentOutlineItem } from './ContentEditor';
 import styles from './ContentOutline.modules.scss';
+import { LearningObjectivesOutlineItem } from './LearningObjectivesEditor';
 import { OutlineItemError, UnknownItem } from './OutlineItem';
 import { PurposeGroupOutlineItem } from './PurposeGroupEditor';
 import { SurveyOutlineItem } from './SurveyEditor';
@@ -74,20 +75,25 @@ export const ContentOutline = ({
 
   // adjust the height of the content outline when the window is resized
   useEffect(() => {
-    const handleResize = throttle(() => setHeight(calculateOutlineHeight(scrollPos)), 200);
+    const updateHeight = () =>
+      setHeight(calculateOutlineHeight(document.documentElement.scrollTop));
+    const handleResize = throttle(updateHeight, 200);
     window.addEventListener('resize', handleResize);
 
     const handleScroll = throttle(() => {
-      setScrollPos(document.documentElement.scrollTop);
-      setHeight(calculateOutlineHeight(document.documentElement.scrollTop));
+      const nextScrollPos = document.documentElement.scrollTop;
+      setScrollPos(nextScrollPos);
+      setHeight(calculateOutlineHeight(nextScrollPos));
     }, 200);
     document.addEventListener('scroll', handleScroll);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('scroll', handleScroll);
+      handleResize.cancel();
+      handleScroll.cancel();
     };
-  }, [scrollPos]);
+  }, []);
 
   // register keydown handlers
   const isShiftArrowDown = isHotkey('shift+down');
@@ -305,6 +311,9 @@ const OutlineItem = ({
 
     case 'selection':
       return <SelectionOutlineItem {...props} contentItem={contentItem} />;
+
+    case 'learning_objectives':
+      return <LearningObjectivesOutlineItem {...props} contentItem={contentItem} />;
 
     case 'activity-reference':
       const activity = props.activityContexts.get(

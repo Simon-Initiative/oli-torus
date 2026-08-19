@@ -1,5 +1,10 @@
 import { ProjectSlug, ResourceSlug } from 'data/types';
-import { AlternativesStrategy, AttachedObjectives, PageContent } from '../content/resource';
+import {
+  AlternativesStrategy,
+  AttachedObjectives,
+  PageContent,
+  ResolvedLearningObjective,
+} from '../content/resource';
 import { makeRequest } from './common';
 
 export type ResourceUpdate = {
@@ -57,6 +62,24 @@ export function pages(project: ProjectSlug, current?: string) {
   };
 
   return makeRequest<PagesReceived>(params);
+}
+
+export type LearningObjectivesReceived = {
+  type: 'success';
+  learningObjectives: ResolvedLearningObjective[];
+};
+
+// Requests the current container-scoped Learning Objectives for a page editor.
+export function learningObjectives(project: ProjectSlug, resource: ResourceSlug) {
+  const encodedProject = encodeURIComponent(project);
+  const encodedResource = encodeURIComponent(resource);
+
+  const params = {
+    method: 'GET',
+    url: `/project/${encodedProject}/resource/${encodedResource}/learning_objectives`,
+  };
+
+  return makeRequest<LearningObjectivesReceived>(params);
 }
 
 export type AlternativesGroupOption = { id: string; name: string };

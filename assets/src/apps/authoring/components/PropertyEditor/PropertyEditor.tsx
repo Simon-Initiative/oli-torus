@@ -16,6 +16,7 @@ import { ListSortItemsEditor } from './custom/ListSortItemsEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
 import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
+import { MatchingManageEditor } from './custom/MatchingManageEditor';
 import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
 import { OptionsCustomErrorFeedbackAuthoring } from './custom/OptionsCustomErrorFeedbackAuthoring';
 import { PopupIconSelector } from './custom/PopupIconSelector';
@@ -72,6 +73,7 @@ const widgets: any = {
   IframeSourceEditor: IframeSourceEditor,
   RichLabelWidget: RichLabelWidget,
   ItemBankManageEditor: ItemBankManageEditor,
+  MatchingManageEditor: MatchingManageEditor,
 };
 
 /**

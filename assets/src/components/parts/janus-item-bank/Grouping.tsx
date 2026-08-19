@@ -291,6 +291,7 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
     >
       {customCss ? <style>{customCss}</style> : null}
       <GroupingBoard
+        id={id}
         model={model as GroupingModel}
         placements={placements}
         onMove={handleMove}

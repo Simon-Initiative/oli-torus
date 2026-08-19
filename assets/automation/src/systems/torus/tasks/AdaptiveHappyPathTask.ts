@@ -18,6 +18,45 @@ import {
   resolveManifestScreen,
   validateManifest,
 } from '@tasks/AdaptiveStrictContract';
+import {
+  answerMoonScreen,
+  ClarityMcq,
+  MoonAnswers,
+  ReflectorFitb,
+} from '@tasks/lessons/PhasesOfTheMoonTask';
+
+/**
+ * Shared "happy path" driver for adaptive lesson delivery specs.
+ *
+ * `completeAdaptiveHappyPath` loops over the deck's screens and answers each
+ * one generically, using only the per-lesson `LessonAnswers` config and the
+ * reusable `AdaptiveDeckPO` methods (widgets, MCQs, dropdowns, FITB, text
+ * inputs, carousels, videos...). Every spec under
+ * tests/torus/student_delivery/ that covers an adaptive lesson (e.g.
+ * real-chem-greenhouse-molecules, real-chem-dazzling-d-orbitals,
+ * phases-of-the-moon) drives its course through this SAME function.
+ *
+ * ## Usage: extend generically, isolate what can't be generic
+ *
+ * - New interaction shape needed by a lesson? First try to express it as an
+ *   optional `LessonAnswers` field + a generic, parameterized addition to
+ *   this file or AdaptiveDeckPO.ts, with a default that preserves existing
+ *   lessons' behavior unchanged. This is how `native_dropdowns`,
+ *   `mcq.radios`, `page_buttons`, and `navigation_actions` already work:
+ *   generic engine, per-lesson config.
+ * - Truly one-off logic (hardcoded UI copy, a specific widget's DOM
+ *   structure, a specific simulator's controls) that no other lesson would
+ *   plausibly reuse? Do not inline it here behind an `if (key.<lesson>)`.
+ *   Put it in its own module under
+ *   `assets/automation/src/systems/torus/tasks/lessons/<lesson-name>.ts`,
+ *   exporting a single `answer<Lesson>Screen(page, deck, key, scan)`-shaped
+ *   function that `answerCurrentScreen` calls once, early, when that
+ *   lesson's optional config key is present (see `key.moon` ->
+ *   `answerMoonScreen` as the reference example).
+ * - Changing an existing generic method's signature or `LessonAnswers`
+ *   field? Update every spec that already uses it — don't leave other
+ *   lessons silently relying on the old shape.
+ */
 
 type GroupingWidget = { src_fragment: string; placements: Array<{ item: string; group: string }> };
 type CustomDnDWidget = {
@@ -25,13 +64,19 @@ type CustomDnDWidget = {
   detect: string;
   placements: Array<{ item: string; zone: string }>;
 };
+type NavigationAction = { container: string | null; name: string };
 
 /**
  * Every widget family is optional: a lesson declares only the kinds it
  * actually contains, instead of carrying placeholder entries for the rest.
  */
 export type LessonAnswers = {
-  lesson: { title: string; search_term: string; completion_text: string };
+  lesson: {
+    title: string;
+    outline_title?: string;
+    search_term: string;
+    completion_text: string;
+  };
   widgets: {
     grouping?: GroupingWidget | GroupingWidget[];
     ordering?: { src_fragment: string; order: string[] };
@@ -57,6 +102,15 @@ export type LessonAnswers = {
     checkboxes: string[];
   };
   text_input_value: string;
+  username_value?: string;
+  /** Extra CSS selectors scanScreen/fillTextInputs should also treat as text inputs. */
+  extra_text_input_selectors?: string[];
+  navigation_actions?: NavigationAction[];
+  page_buttons?: string[];
+  // Phases of the Moon extension fields — see tasks/lessons/PhasesOfTheMoonTask.ts.
+  moon?: MoonAnswers;
+  reflector_fitb?: ReflectorFitb[];
+  clarity_mcq?: ClarityMcq;
 };
 
 export type StrictLessonAnswers = {
@@ -748,7 +802,7 @@ export async function completeAdaptiveHappyPath(
 ) {
   let stuckCount = 0;
 
-  for (let step = 0; step < 60; step += 1) {
+  for (let step = 0; step < 120; step += 1) {
     if (await deck.lessonEnded()) {
       console.log(`Lesson end reached at step ${step}`);
       return;
@@ -759,10 +813,10 @@ export async function completeAdaptiveHappyPath(
 
     let label: string;
     try {
-      label = await answerCurrentScreen(deck, key);
+      label = await answerCurrentScreen(page, deck, key);
       for (let poll = 0; poll < 3 && label.startsWith('content screen'); poll += 1) {
         await page.waitForTimeout(1_200);
-        label = await answerCurrentScreen(deck, key);
+        label = await answerCurrentScreen(page, deck, key);
       }
     } catch (e) {
       label = `answer error: ${(e as Error).message.split('\n')[0].slice(0, 100)}`;
@@ -802,8 +856,17 @@ export async function completeAdaptiveHappyPath(
   throw new Error('Exceeded max steps without reaching the lesson end');
 }
 
-async function answerCurrentScreen(deck: AdaptiveDeckPO, key: LessonAnswers): Promise<string> {
-  const scan = await deck.scanScreen();
+async function answerCurrentScreen(
+  page: Page,
+  deck: AdaptiveDeckPO,
+  key: LessonAnswers,
+): Promise<string> {
+  // Only lessons that declare one of these fields opt into the Moon
+  // extension — everything else here stays generic for every other lesson.
+  const usesMoonExtension = !!(key.moon || key.reflector_fitb || key.clarity_mcq);
+  if (usesMoonExtension) await deck.closeModalIfPresent();
+
+  const scan = await deck.scanScreen(key.extra_text_input_selectors ?? []);
   const hasIframe = (fragment: string) => scan.iframes.some((src) => src.includes(fragment));
   const re = (source: string) => new RegExp(source, 'i');
 
@@ -811,6 +874,17 @@ async function answerCurrentScreen(deck: AdaptiveDeckPO, key: LessonAnswers): Pr
   const frameSelects = key.widgets.frame_selects ?? [];
   const customDnd = key.widgets.custom_dnd ?? [];
   const groupings = grouping ? (Array.isArray(grouping) ? grouping : [grouping]) : [];
+
+  for (const button of key.page_buttons ?? []) {
+    if (await deck.clickPageButton(button)) return `page button (${button})`;
+  }
+
+  let moonControlsActivated = false;
+  if (usesMoonExtension) {
+    const moonResult = await answerMoonScreen(page, deck, key, scan);
+    if (moonResult.label) return moonResult.label;
+    moonControlsActivated = moonResult.controlsActivated;
+  }
 
   for (const dnd of customDnd) {
     if (hasIframe(dnd.src_fragment)) {
@@ -902,10 +976,22 @@ async function answerCurrentScreen(deck: AdaptiveDeckPO, key: LessonAnswers): Pr
   }
 
   if (scan.textInputs > 0) {
-    await deck.fillTextInputs(key.text_input_value);
+    await deck.fillTextInputs(
+      key.text_input_value,
+      key.username_value,
+      key.extra_text_input_selectors ?? [],
+    );
     parts.push('text input');
   }
 
+  for (const action of key.navigation_actions ?? []) {
+    if (await deck.clickNavigationButton(action.container, action.name)) {
+      parts.push(`navigation button (${action.name})`);
+      break;
+    }
+  }
+
+  if (moonControlsActivated) parts.push('Moon controls');
   if (parts.length > 0) return parts.join(' + ');
 
   for (const fragment of key.widgets.in_widget_buttons ?? []) {

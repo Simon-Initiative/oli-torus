@@ -10,6 +10,7 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     :content,
     :objectives,
     :allObjectives,
+    :learningObjectives,
     :allTags,
     :editorMap,
     :activities,
