@@ -320,7 +320,7 @@ Choose the dataset that matches the research question:
   attribution.
 - Use `experiment_attributions` for evidence tied to assignments, exposures, selected-branch
   outcomes, rewards, and media interactions.
-- Join a host to its attribution with
+- Join a raw event to its attribution with
   `raw_events.event_hash = experiment_attributions.raw_event_hash`.
 - Use the transactional assignment store for an authoritative allocation population.
 - Use S3 xAPI when the bounded source attribution contains fields not projected into ClickHouse,
@@ -333,7 +333,7 @@ the distinction among score, normalized score, reward, and missing reward.
 
 - [ ] Scope every query by section, project, experiment, and time.
 - [ ] Use `enrollment_id` as the pseudonymous participant identity.
-- [ ] Choose one canonical host level when rollups could duplicate logical evidence.
+- [ ] Choose one canonical xAPI statement type when rollups could duplicate logical evidence.
 - [ ] Keep `NULL`, `0.0`, and `1.0` distinct.
 - [ ] State how repeated attempts are reduced or retained.
 - [ ] Separate section-wide outcomes from selected-branch causal attribution.

@@ -87,20 +87,39 @@ The attribution above has no `reward_value`. In ClickHouse it becomes `NULL`, no
 
 ## Event-to-record mapping
 
-| Application event | Common xAPI host | Attribution type | Host role | Notes |
+| Application event | Common xAPI statement type | Attribution type | Statement role | Notes |
 | --- | --- | --- | --- | --- |
-| Condition assigned during page preparation | No dedicated xAPI host | — | — | The assignment is persisted in PostgreSQL. Assignment telemetry is operational only; it does not itself create an S3 or ClickHouse row. |
+| Condition assigned during page preparation | No dedicated xAPI statement | — | — | The assignment is persisted in PostgreSQL. Assignment telemetry is operational only; it does not itself create an S3 or ClickHouse row. |
 | Selected experiment content shown | `page_viewed` | `exposure` | `exposure` | Includes `content_revision_id`, actual intervention, and exposure time. |
 | Evaluated part attempt | `part_attempt` | `outcome` | `outcome` | Direct evidence; includes score and attempt identity. |
-| Evaluated activity attempt | `activity_attempt` | `outcome` | `rollup` | Same outcome evidence rolled up to the activity host. |
-| Evaluated page attempt | `page_attempt` | `outcome` | `rollup` | Same outcome evidence rolled up to the page host. |
-| Thompson reward recorded | part/activity/page attempt or dedicated assessment evidence host | `reward` | `reward` or `rollup` | Includes explicit `reward_value`, `reward_source`, and `outcome_key`. |
-| Thompson posterior updated | No dedicated xAPI host | — | — | The update is persisted by the experiment runtime and emits bounded operational telemetry. The ClickHouse schema can represent `policy_update`, but the current telemetry path does not create an xAPI row. |
-| Video played, paused, seeked, or completed in selected content | video host | `assignment` | `media_interaction` | Creates the currently supported assignment-attribution row and ties the interaction to the selected assignment/intervention. It is not an outcome or reward. |
+| Evaluated activity attempt | `activity_attempt` | `outcome` | `rollup` | Same outcome evidence attached to the activity statement. |
+| Evaluated page attempt | `page_attempt` | `outcome` | `rollup` | Same outcome evidence attached to the page statement. |
+| Thompson reward recorded | part/activity/page attempt or dedicated assessment evidence statement | `reward` | `reward` or `rollup` | Includes explicit `reward_value`, `reward_source`, and `outcome_key`. |
+| Thompson posterior updated | No dedicated xAPI statement | — | — | The update is persisted by the experiment runtime and emits bounded operational telemetry. The ClickHouse schema can represent `policy_update`, but the current telemetry path does not create an xAPI row. |
+| Video played, paused, seeked, or completed in selected content | video statement | `assignment` | `media_interaction` | Creates the currently supported assignment-attribution row and ties the interaction to the selected assignment/intervention. It is not an outcome or reward. |
 
-The `role` answers “how is this evidence used on this host?” The `attribution_type` answers “what
+The `role` answers “how is this evidence used on this xAPI statement?” The `attribution_type` answers “what
 kind of evidence is this?” A rolled-up activity or page therefore has `role = 'rollup'` and
 `attribution_type = 'outcome'` or `'reward'`.
+
+### Direct evidence and rollup copies
+
+One evaluated part can produce three related xAPI statements:
+
+| xAPI statement type | `experiment_role` | `attribution_type` | Interpretation |
+| --- | --- | --- | --- |
+| `part_attempt` | `outcome` | `outcome` | Direct outcome evidence created by the evaluated part. |
+| `activity_attempt` | `rollup` | `outcome` | The same logical outcome attached to its parent activity statement. |
+| `page_attempt` | `rollup` | `outcome` | The same logical outcome attached to its parent page statement. |
+
+Rewards follow the same pattern: the direct statement uses `experiment_role = 'reward'`, while
+copies on parent statements use `experiment_role = 'rollup'`; all retain
+`attribution_type = 'reward'`.
+
+Rollups support analysis at the activity or page level without claiming that the parent evaluation
+created a new outcome or reward. Choose one xAPI statement type or the applicable direct role before counting
+evidence. Each attached ClickHouse row has its own `attribution_hash`, so counting distinct
+`attribution_hash` values does not collapse a direct row and its rollup copies into one logical event.
 
 ## Key formats
 
@@ -145,7 +164,7 @@ on the first colon if parsing is unavoidable.
 
 ### Attribution `key`
 
-Every attribution payload has a `key`. ClickHouse combines it with the host event hash to derive
+Every attribution payload has a `key`. ClickHouse combines it with the raw event hash to derive
 `attribution_hash`.
 
 Common outcome key:
@@ -192,21 +211,21 @@ The most useful experiment-analysis columns are:
 
 | Column | Meaning |
 | --- | --- |
-| `event_hash` | Stable hash of the exact source statement bytes; primary host join key. |
+| `event_hash` | Stable hash of the exact source statement bytes; primary raw-event join key. |
 | `event_version` | Replacement/version timestamp used by `ReplacingMergeTree`. |
 | `timestamp` | Event occurrence time from xAPI. |
 | `inserted_at` | ClickHouse ingestion time. |
 | `source_file`, `source_etag`, `source_line` | S3/Lambda provenance when available; nullable for direct ingestion. |
-| `event_type` | Normalized host type: for example `page_viewed`, `activity_attempt`, `page_attempt`, `part_attempt`, or `video`. |
+| `event_type` | Normalized xAPI statement type: for example `page_viewed`, `activity_attempt`, `page_attempt`, `part_attempt`, or `video`. |
 | `verb_id` | Full xAPI verb URI. |
 | `section_id`, `project_id`, `publication_id` | Delivery and content scope. |
 | `enrollment_id` | Pseudonymous participant identity; nullable for historical or non-attempt events. |
 | `activity_attempt_guid`, `activity_attempt_number` | Activity-attempt identity and sequence. |
 | `page_attempt_guid`, `page_attempt_number` | Parent page-attempt identity and sequence. |
 | `activity_id`, `activity_revision_id` | Activity resource and revision identity. |
-| `score`, `out_of`, `scaled_score` | Host attempt performance. |
+| `score`, `out_of`, `scaled_score` | Attempt performance from the xAPI statement. |
 | `success`, `completion` | xAPI result flags. |
-| `page_id`, video columns, part-attempt columns | Host-specific context; nullable for other hosts. |
+| `page_id`, video columns, part-attempt columns | Statement-specific context; nullable for other statement types. |
 
 The source S3 statement can contain the full xAPI actor and sensitive learner account information.
 ClickHouse does not project the full actor: `raw_events.user_id` comes from xAPI
@@ -220,13 +239,13 @@ and research approvals.
 | Column | Meaning |
 | --- | --- |
 | `raw_event_hash` | Join to `raw_events.event_hash`. |
-| `attribution_hash` | Stable identity for one attribution attached to one host. |
+| `attribution_hash` | Stable identity for one attribution attached to one raw event. |
 | `event_version`, `inserted_at` | Replacement and ingestion timestamps. |
 | `source_file`, `source_etag`, `source_line` | Source-object provenance when available. |
-| `host_event_type` | Normalized type of the xAPI host statement. |
-| `timestamp` | Host event timestamp. |
+| `host_event_type` | Normalized type of the containing xAPI statement. The column name is retained for schema compatibility. |
+| `timestamp` | Containing xAPI statement timestamp. |
 | `section_id`, `project_id`, `publication_id`, `enrollment_id` | Scoped experiment context. |
-| `experiment_role` | Host role: `assignment`, `exposure`, `outcome`, `reward`, `policy_update`, `rollup`, or `media_interaction`. |
+| `experiment_role` | Statement role: `assignment`, `exposure`, `outcome`, `reward`, `policy_update`, `rollup`, or `media_interaction`. |
 | `attribution_type` | Evidence type: `assignment`, `exposure`, `outcome`, `reward`, or `policy_update`. |
 | `experiment_id`, `experiment_uuid` | Internal and portable experiment identities. |
 | `condition_id`, `condition_code` | Assigned condition identities. Prefer code for readable output and ID for stable joins within one database. |

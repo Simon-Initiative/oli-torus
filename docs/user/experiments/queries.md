@@ -11,7 +11,7 @@ cost.
 ## Evidenced assignment balance by condition
 
 Count unique intervention- or enrollment-scoped assignments that have at least one successfully
-ingested attribution row, not host rows:
+ingested attribution row, not raw-event rows:
 
 ```sql
 SELECT
@@ -32,8 +32,8 @@ ORDER BY condition_code, assignment_scope;
 
 Assignment identity is repeated on exposure, outcome, reward, and media-attribution rows.
 `uniqExact(assignment_id)` therefore measures distinct **evidenced assignments in ClickHouse** and
-prevents repeated host evidence from inflating counts. It is not the authoritative allocation
-population: an assignment persisted in PostgreSQL can be absent when no attributed host was
+prevents repeated attribution evidence from inflating counts. It is not the authoritative allocation
+population: an assignment persisted in PostgreSQL can be absent when no attributed xAPI statement was
 successfully emitted and ingested. Use the transactional experiment-assignment store for a complete
 allocation audit.
 
@@ -160,8 +160,11 @@ GROUP BY a.condition_code
 ORDER BY a.condition_code;
 ```
 
-Filtering to `host_event_type = 'activity_attempt'` avoids counting the same logical evidence again
-on part and page rollups. Choose one canonical host level for each analysis.
+Filtering to `host_event_type = 'activity_attempt'` chooses the rollup attached to the activity
+statement and avoids also counting the direct part evidence and the rollup attached to the page
+statement. Choose one canonical xAPI statement type for each analysis.
+`countDistinct(attribution_hash)` alone does not deduplicate across statement types,
+because each attached attribution row has its own hash.
 
 ## Thompson Sampling reward summary
 
@@ -186,8 +189,9 @@ ORDER BY condition_code;
 ```
 
 `experiment_role = 'reward'` selects the canonical direct reward evidence, including part-attempt
-rewards and page-hosted assessment-reward handoffs, while excluding activity/page rollup copies.
-Do not replace missing rewards with host scores. `NULL`, `0.0`, and `1.0` have distinct meanings.
+rewards and assessment-reward handoffs attached to page statements, while excluding activity/page
+rollup copies. Do not replace missing rewards with xAPI statement scores. `NULL`, `0.0`, and `1.0`
+have distinct meanings.
 
 ## Reward latency after outcome
 
@@ -303,10 +307,7 @@ GROUP BY experiment_id, condition_code
 ORDER BY rows DESC;
 ```
 
-Historical rows created before the correction may contain host-score fallbacks. Restrict audits by
-`event_version` or ingestion date when separating historical behavior from current behavior.
-
-### Attributed hosts missing raw rows
+### Attributed xAPI statements missing raw rows
 
 ```sql
 SELECT count() AS orphan_attributions

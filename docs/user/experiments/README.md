@@ -19,9 +19,9 @@ Use the companion documents for details:
 
 Native experiment data has two independent layers:
 
-1. **[Host events](glossary.md#host-event)** describe what happened in the course: a page was viewed, a video was played, or
+1. **[xAPI statements](glossary.md#xapi-statement)** describe what happened in the course: a page was viewed, a video was played, or
    an attempt was evaluated. Every supported xAPI statement becomes a row in `raw_events`.
-2. **[Experiment attribution](glossary.md#attribution)** describes the experiment evidence attached to that host event: an
+2. **[Experiment attribution](glossary.md#attribution)** describes the experiment evidence attached to that xAPI statement: an
    assignment, exposure, outcome, reward, or policy update. Each attribution object becomes a row
    in `experiment_attributions`.
 
@@ -69,8 +69,8 @@ into ClickHouse by the backfill tooling.
 
 Researchers normally work with two tables:
 
-- `raw_events`: one normalized row per xAPI host statement.
-- `experiment_attributions`: zero or more normalized attribution rows per host statement.
+- `raw_events`: one normalized row per xAPI statement.
+- `experiment_attributions`: zero or more normalized attribution rows per xAPI statement.
 
 Both are [`ReplacingMergeTree`](glossary.md#replacingmergetree) tables. For reproducible analysis over recently replayed or replaced
 data, use [`FINAL`](glossary.md#final) or an equivalent latest-version aggregation where the additional cost is
@@ -93,7 +93,7 @@ Important distinctions:
 - `experiment_attributions.normalized_score` is an explicitly supplied normalized assessment
   result when that evidence exists.
 - `experiment_attributions.reward_value` is explicit experiment-policy reward evidence. It is
-  `NULL` when no reward was supplied and is never inferred from the host attempt score.
+  `NULL` when no reward was supplied and is never inferred from the xAPI statement's attempt score.
 - A valid reward of `0.0` is different from `NULL`: zero is observed failure/no credit; null means
   no reward evidence.
 
@@ -115,7 +115,7 @@ but exact attempt-time publication provenance is a known limitation tracked sepa
 3. Use `enrollment_id` as the participant key.
 4. Use `raw_events` for the complete evaluated-activity outcome stream.
 5. Use `experiment_attributions` for assignment, exposure, outcome, reward, and policy evidence.
-6. Join attribution to its host through `raw_event_hash`; join section-wide outcomes to durable
+6. Join attribution to its raw event through `raw_event_hash`; join section-wide outcomes to durable
    assignment evidence by section, project, enrollment, and event time when branch attribution is
    not required.
 7. Keep `NULL` distinct from zero, especially for `reward_value`, scores, and denominators.
@@ -125,7 +125,7 @@ but exact attempt-time publication provenance is a known limitation tracked sepa
 ## Known limitations
 
 - Older statements may predate newer nullable columns such as `enrollment_id`; nulls are expected.
-- Attribution is optional and fails safe. A valid host event can have no experiment attribution.
+- Attribution is optional and fails safe. A valid xAPI statement can have no experiment attribution.
 - Attempt and media attribution require evidence that the learner received the selected branch.
 - The current compatibility analysis uses the most recent applicable assignment evidence at or
   before the outcome timestamp; it does not infer condition from mutable authoring content.

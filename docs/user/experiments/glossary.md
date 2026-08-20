@@ -58,19 +58,19 @@ The entity assigned to a condition. Native experiments currently use the section
 
 ### Attribution
 
-Bounded experiment evidence attached to an xAPI host statement. Attribution describes the
+Bounded experiment evidence attached to an xAPI statement. Attribution describes the
 experiment, condition, assignment, scope, and evidence type without embedding realized content,
 raw responses, or full learner identity.
 
 ### Attribution hash
 
-An opaque SHA-256 identifier for one attribution attached to one host event. It is derived from the
+An opaque SHA-256 identifier for one attribution attached to one raw event. It is derived from the
 raw event hash and the attribution key and is used for deduplication and joins.
 
 ### Attribution type
 
 The kind of evidence represented by an attribution: `assignment`, `exposure`, `outcome`, `reward`,
-or `policy_update`. This differs from the host-specific experiment role.
+or `policy_update`. This differs from the xAPI-statement-specific experiment role.
 
 ## B
 
@@ -141,7 +141,7 @@ in two sections has two enrollment IDs. It is linkable restricted data, not anon
 ### Event hash
 
 An opaque SHA-256 identifier derived from the exact persisted xAPI statement bytes. It identifies a
-raw host event and joins `raw_events` to `experiment_attributions`.
+raw event and joins `raw_events` to `experiment_attributions`.
 
 ### Event version
 
@@ -150,7 +150,7 @@ same primary key.
 
 ### Experiment role
 
-How attribution evidence is used on a particular host statement. Direct evidence uses roles such as
+How attribution evidence is used on a particular xAPI statement. Direct evidence uses roles such as
 `assignment`, `exposure`, `outcome`, `reward`, or `policy_update`; copied evidence can use `rollup`,
 and video attribution uses `media_interaction`. The role can differ from `attribution_type`.
 
@@ -195,18 +195,6 @@ condition.
 A configured constraint or warning around adaptive allocation, such as warm-up assignments,
 maximum condition share, fixed-control allocation, or imbalance threshold.
 
-## H
-
-### Host event
-
-The underlying xAPI statement describing course activity, such as a page view, evaluated attempt,
-or video interaction. Host events exist independently of optional experiment attribution.
-
-### Host event type
-
-The normalized host category stored on attribution rows, such as `page_viewed`, `activity_attempt`,
-`page_attempt`, `part_attempt`, or `video`.
-
 ## I
 
 ### Idempotency
@@ -240,7 +228,7 @@ A text format containing one complete JSON document per line. Torus stores xAPI 
 
 ### Lambda ingestion
 
-The S3-to-SQS-to-AWS-Lambda path that reads xAPI JSONL, normalizes host and attribution rows, and
+The S3-to-SQS-to-AWS-Lambda path that reads xAPI JSONL, normalizes raw-event and attribution rows, and
 writes them to ClickHouse.
 
 ## M
@@ -260,7 +248,7 @@ intervention. Its attribution type is `assignment`; it is not an outcome or rewa
 ### Normalized score
 
 An explicitly calculated score on a common scale, used by assessment reward evidence. It is
-distinct from a host event's raw `score` and from the policy's binary `reward_value`.
+distinct from an xAPI statement's raw `score` and from the policy's binary `reward_value`.
 
 ### Null reward
 
@@ -307,7 +295,7 @@ embedded in xAPI attribution payloads.
 ### Policy update
 
 A change to adaptive policy state after reward processing. The current runtime persists the update
-and emits bounded operational telemetry; it does not create a dedicated xAPI host statement.
+and emits bounded operational telemetry; it does not create a dedicated xAPI statement.
 
 ### Policy version
 
@@ -333,7 +321,7 @@ sections through section publication.
 
 ### Raw event
 
-The normalized ClickHouse representation of one xAPI host statement. It is stored in `raw_events`
+The normalized ClickHouse representation of one xAPI statement. It is stored in `raw_events`
 whether or not experiment attribution exists.
 
 ### Realized content
@@ -378,8 +366,13 @@ See [Experiment role](#experiment-role).
 ### Rollup
 
 The experiment role used when direct part-attempt outcome or reward evidence is copied to its
-activity- or page-attempt host. Rollups allow host-level analysis but can duplicate one logical
-piece of evidence across several statements.
+activity- or page-attempt xAPI statement. Rollups allow statement-level analysis but can duplicate
+one logical piece of evidence across several statements. `rollup` describes where the evidence is attached;
+`attribution_type` still describes what it means. For example, a copied outcome has
+`experiment_role = 'rollup'` and `attribution_type = 'outcome'`.
+
+Do not count a direct row and its activity/page rollups as separate outcomes or rewards. Select one
+xAPI statement type for the analysis, or filter to the applicable direct role.
 
 ## S
 
@@ -460,3 +453,9 @@ information. ClickHouse projects only the account identifiers `raw_events.user_i
 
 A URI-keyed field used to add Torus-specific context to an xAPI statement. Experiment evidence is
 stored under `http://oli.cmu.edu/extensions/experiment_attributions`.
+
+### xAPI statement
+
+A JSON record describing one learning event, such as a page view, evaluated attempt, or video
+interaction. An xAPI statement exists independently of optional experiment attribution. In
+ClickHouse, its normalized representation is a [raw event](#raw-event).
