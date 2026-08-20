@@ -858,7 +858,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(archived_index_view, "#ab-experiments-table", "Archived")
     end
 
-    test "configures weighted-random assignment scope and preserves it in details", %{
+    test "configures weighted-random assignment scope and shows UUID in details", %{
       conn: conn,
       project: project
     } do
@@ -889,11 +889,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
           ~p"/workspaces/course_author/#{project.slug}/experiments/#{experiment.id}"
         )
 
-      assert has_element?(
-               details_view,
-               "#experiment-details-grid",
-               "Same condition within each participating course section"
-             )
+      assert has_element?(details_view, "#experiment-details-grid", "Experiment UUID")
+      assert has_element?(details_view, "#experiment-details-grid", experiment.uuid)
+      refute has_element?(details_view, "#experiment-details-grid", "Assignment unit")
+      refute has_element?(details_view, "#experiment-details-grid", "Assignment scope")
 
       assert has_element?(
                details_view,
@@ -978,7 +977,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
                "#experiment-assignment-scope input.disabled\\:opacity-50[disabled]"
              )
 
-      assert has_element?(
+      refute has_element?(
                details_view,
                "#experiment-details-grid",
                "Independent at each intervention"

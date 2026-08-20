@@ -164,17 +164,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             class="mb-6 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
           >
             <.detail_item label="Slug" value={@experiment.slug} monospace />
+            <.detail_item label="Experiment UUID" value={@experiment.uuid} monospace />
             <.detail_item
               label="Assignment policy"
               value={format_algorithm(@experiment.algorithm)}
-            />
-            <.detail_item
-              label="Assignment unit"
-              value={display_value(@experiment.assignment_unit)}
-            />
-            <.detail_item
-              label="Assignment scope"
-              value={format_assignment_scope(@experiment.assignment_scope)}
             />
             <.detail_item
               label="Status"
@@ -2145,11 +2138,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp format_algorithm(:weighted_random), do: "Weighted random"
   defp format_algorithm(:thompson_sampling), do: "Thompson Sampling"
   defp format_algorithm(value), do: display_value(value)
-
-  defp format_assignment_scope(:section_enrollment),
-    do: "Same condition within each participating course section"
-
-  defp format_assignment_scope(:intervention), do: "Independent at each intervention"
 
   defp format_state(value), do: display_value(value)
 
