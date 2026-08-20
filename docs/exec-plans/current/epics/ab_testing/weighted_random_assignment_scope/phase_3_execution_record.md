@@ -19,7 +19,7 @@ Phase: `3 - Placement-Specific Exposure, xAPI, And ClickHouse Contracts`
 - [x] Data or interface changes
   - `RecordExposureRequest` requires `page_resource_id` and `content_element_id`.
   - xAPI schema, Elixir/Python ClickHouse uploaders, backfill SQL, query filters, and fixtures carry `assignment_scope`.
-  - `priv/clickhouse/migrations/20260814120000_add_experiment_assignment_scope.sql` adds a reversible low-cardinality scope column with an `intervention` default for older evidence.
+  - `priv/clickhouse/migrations/20260714120000_add_experiment_columns_to_raw_events.sql` creates the unreleased attribution table with a low-cardinality assignment-scope column and an `intervention` default.
 - [x] Access-control or safety checks
   - Assignment scope validation remains project/section/enrollment/user scoped before placement lookup.
   - Missing, forged, cross-project, and cross-experiment placements fail closed in single and batch APIs.
