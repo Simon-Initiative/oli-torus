@@ -280,9 +280,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   defp transform_activity_attempt_event(event, event_hash) do
+    result = event["result"] || %{}
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
-    result = event["result"] || %{}
 
     event
     |> raw_event_base(event_hash, "activity_attempt")
@@ -368,8 +368,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
          host_event_type: host_event_type,
          timestamp: timestamp
        }) do
-    result = event["result"] || %{}
-
     event
     |> experiment_attributions()
     |> Enum.map(fn attribution ->
@@ -406,9 +404,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         reward_threshold: attribution_value(attribution, "reward_threshold"),
         normalized_score: attribution_value(attribution, "normalized_score"),
         page_revision_id: attribution_value(attribution, "page_revision_id"),
-        reward_value:
-          attribution_value(attribution, "reward_value") ||
-            get_in(result, ["score", "raw"]),
+        reward_value: attribution_value(attribution, "reward_value"),
         reward_source: attribution_value(attribution, "reward_source")
       }
     end)

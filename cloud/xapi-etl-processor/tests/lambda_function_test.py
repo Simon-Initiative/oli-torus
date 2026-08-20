@@ -356,7 +356,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(rows[0]["assignment_scope"], "intervention")
         self.assertIsNone(rows[0]["intervention_id"])
         self.assertIsNone(rows[0]["intervention_key"])
-        self.assertEqual(rows[0]["reward_value"], 1.0)
+        self.assertIsNone(rows[0]["reward_value"])
         self.assertEqual(rows[0]["reward_source"], "activity_attempt:full_credit")
         self.assertNotIn("video_url", rows[0])
         self.assertNotIn("activity_attempt_guid", rows[0])
@@ -908,7 +908,13 @@ class LambdaFunctionTests(TestCase):
             "etag": "etag", "line_number": 1,
         }
         raw = lambda_function.transform_xapi_statement(event, **source)
-        attribution = lambda_function.transform_experiment_attributions(event, **source)[0]
+        attributions = lambda_function.transform_experiment_attributions(event, **source)
+        attribution = next(
+            row for row in attributions if row["attribution_type"] == "outcome"
+        )
+        reward = next(
+            row for row in attributions if row["attribution_type"] == "reward"
+        )
 
         expected_raw = {
             "section_id": 2001, "project_id": 1001, "publication_id": 3001,
@@ -927,6 +933,9 @@ class LambdaFunctionTests(TestCase):
 
         self.assertEqual({key: raw[key] for key in expected_raw}, expected_raw)
         self.assertEqual({key: attribution[key] for key in expected_attribution}, expected_attribution)
+        self.assertIsNone(attribution["reward_value"])
+        self.assertEqual(reward["reward_value"], 0.0)
+        self.assertEqual(reward["reward_source"], "activity_attempt:no_credit")
 
     def test_transform_xapi_statement_preserves_verb_id_and_canonical_video_fields(self):
         shared_context_extensions = {

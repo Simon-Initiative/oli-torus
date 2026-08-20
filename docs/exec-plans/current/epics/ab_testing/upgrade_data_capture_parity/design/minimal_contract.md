@@ -24,7 +24,9 @@ The minimum identity fields are experiment, condition, assignment, enrollment, a
 algorithm, and policy version. Intervention-scoped evidence also carries the actual intervention.
 Attempt outcomes carry stable activity/resource-attempt identity, activity resource identity,
 score, denominator, and observation time. Thompson reward evidence retains its outcome key, reward
-key, source, and value. Payloads must not include user IDs, names, email addresses, LMS identifiers,
+key, source, and explicit value. Attribution projection must leave `reward_value` null when the
+payload does not contain a reward; it must not infer reward from the host attempt score. Payloads
+must not include user IDs, names, email addresses, LMS identifiers,
 raw responses, realized content, or unbounded policy state.
 
 Persisted realized attempt content or the server-resolved deployed revision proves selected branch

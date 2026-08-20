@@ -118,6 +118,9 @@ state rather than being rewritten at ingestion.
 
 - Direct upload, Lambda, and replay/backfill use the same small field mapping for required activity
   and attribution columns.
+- Attribution `reward_value` is projected only from an explicit attribution payload value. Missing
+  reward evidence remains null; the host result score is preserved separately in `raw_events` and
+  is never used as a reward fallback.
 - Hashing remains based on the exact persisted statement bytes where the existing pipeline requires
   it for deduplication and joins.
 - Historical events without new raw columns remain accepted with nulls.
@@ -158,6 +161,19 @@ Implementation and verification preserve traceability for AC-001, AC-002, AC-003
 AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012, AC-013, and AC-014.
 
 ## Decision Log
+
+### 2026-08-20 - Keep Attempt Scores Separate From Experiment Rewards
+- Change: Removed the direct-upload, Lambda, and replay/backfill fallback that copied a host
+  statement's raw score into a missing attribution `reward_value`.
+- Reason: `raw_events.score` and `raw_events.out_of` describe observed attempt performance, while
+  `experiment_attributions.reward_value` describes an explicit reward supplied to an experiment
+  policy. Treating a weighted-random outcome score as reward evidence conflated these semantics.
+- Evidence: Manual inspection of weighted-random `outcome` and `rollup/outcome` rows showed
+  `reward_value = 1.0` with no reward source or reward attribution; the producer correctly emits no
+  weighted-random reward.
+- Impact: Outcome, assignment, and exposure rows without explicit rewards project null
+  `reward_value`. Explicit Thompson reward and policy-update values remain unchanged across direct
+  upload, Lambda, and replay/backfill.
 
 ### 2026-08-19 - Replace Universal Resolver With Producer-Specific Enrichment
 - Change: Replaced the generic event-provenance/resolution architecture with focused attempt and

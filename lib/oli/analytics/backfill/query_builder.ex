@@ -204,10 +204,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_threshold'), '')) AS reward_threshold,
         toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.normalized_score'), '')) AS normalized_score,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.page_revision_id'), '')) AS page_revision_id,
-        coalesce(
-          toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_value'), '')),
-          toFloat64OrNull(#{json_value_or_null("$.result.score.raw")})
-        ) AS reward_value,
+        toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_value'), '')) AS reward_value,
         nullIf(JSON_VALUE(#{attribution}, '$.reward_source'), '') AS reward_source
     FROM #{s3_source}
     ARRAY JOIN JSONExtractArrayRaw(json, 'context.extensions."http://oli.cmu.edu/extensions/experiment_attributions"') AS #{attribution}

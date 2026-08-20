@@ -277,6 +277,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
             ] do
           assert query =~ value
         end
+
+        assert query =~ ~r/901, NULL, NULL, NULL, NULL, NULL, NULL\)/
+        assert query =~ ~r/901, NULL, NULL, NULL, NULL, 0\.0, 'activity_attempt:no_credit'\)/
       end
 
       {:ok, %{status_code: 200, body: ""}}

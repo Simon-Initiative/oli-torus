@@ -92,6 +92,8 @@ experiment-runtime changes.
   - [x] Update direct upload, Lambda, and replay/backfill mappings from the shared minimal contract.
     Extend the PR #6784 Lambda baseline rather than duplicating its attribution parsing/insertion
     fixes.
+  - [x] Keep explicit experiment rewards separate from host attempt scores; project missing
+    attribution `reward_value` as null across all three paths.
   - [x] Keep raw host projection independent from attribution validation and insertion.
   - [x] Preserve historical rows with null new columns; do not populate data in the migration.
 - Testing:

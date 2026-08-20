@@ -82,6 +82,19 @@ branch reconciliation pending.
   defects. Requirements review requested this concrete traceability table.
 - Round 2 fixes: recorded representative implementation and test proof for AC-001 through AC-014.
 
+## 2026-08-20 Reward Projection Follow-Up
+
+- Manual analytics inspection found weighted-random outcome rows whose missing reward was populated
+  from the host attempt score.
+- Removed that fallback from direct upload, Lambda transformation, and replay/backfill. Only an
+  explicit attribution payload value now populates `experiment_attributions.reward_value`.
+- Extended the shared parity statement with both a scored outcome lacking reward evidence and an
+  explicit `0.0` reward. Direct, Lambda, and replay tests prove null and zero remain distinct.
+- Verification: affected Elixir suites passed with 70 tests, 0 failures, 1 excluded; the Lambda
+  suite passed with 24 tests; formatting, compilation, diff checks, and work-item validation passed.
+- Security, performance, and Elixir reviews found no remaining defects after the explicit-zero
+  coverage was added.
+
 ## Branch Reconciliation Gate
 
 - [ ] Reconcile onto updated `hotfix-v0.34.1` and inspect the final-base diff.

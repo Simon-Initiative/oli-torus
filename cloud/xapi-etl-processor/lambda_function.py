@@ -1290,7 +1290,6 @@ def transform_experiment_attributions(
     etag: Optional[str],
     line_number: int,
 ) -> List[Dict[str, Any]]:
-    result = statement.get("result") or {}
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
     host_event_type = _determine_event_type(
         _safe_str(_get_nested(statement, ["verb", "id"])),
@@ -1346,11 +1345,7 @@ def transform_experiment_attributions(
                 "reward_threshold": _safe_float(attribution.get("reward_threshold")),
                 "normalized_score": _safe_float(attribution.get("normalized_score")),
                 "page_revision_id": _safe_int(attribution.get("page_revision_id")),
-                "reward_value": _safe_float(
-                    attribution.get("reward_value")
-                    if attribution.get("reward_value") is not None
-                    else _get_nested(result, ["score", "raw"])
-                ),
+                "reward_value": _safe_float(attribution.get("reward_value")),
                 "reward_source": _safe_str(attribution.get("reward_source")),
                 "intervention_id": _safe_int(attribution.get("intervention_id")),
                 "intervention_key": _safe_str(attribution.get("intervention_key")),

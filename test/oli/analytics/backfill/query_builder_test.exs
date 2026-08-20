@@ -142,6 +142,13 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
     assert sql =~ "AS reward_threshold"
     assert sql =~ "AS normalized_score"
     assert sql =~ "AS page_revision_id"
+
+    assert sql =~
+             "toFloat64OrNull(nullIf(JSON_VALUE(attribution, '$.reward_value'), '')) AS reward_value"
+
+    refute sql =~
+             ~r/coalesce\(\s*toFloat64OrNull\(nullIf\(JSON_VALUE\(attribution, '\$\.reward_value'\).*result\.score\.raw/s
+
     refute sql =~ "key_hash"
     assert sql =~ "JSON_VALUE(attribution, '$.key')"
     refute sql =~ "outcome_id"
@@ -161,6 +168,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
 
     statement = fixture_path |> File.read!() |> Jason.decode!()
     extensions = get_in(statement, ["context", "extensions"])
+    attributions = extensions["http://oli.cmu.edu/extensions/experiment_attributions"]
 
     raw_sql =
       QueryBuilder.insert_sql(
@@ -194,5 +202,15 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
       assert attribution_sql =~ "$.#{field}"
       assert attribution_sql =~ "AS #{field}"
     end
+
+    assert Enum.any?(attributions, fn attribution ->
+             attribution["attribution_type"] == "outcome" and
+               not Map.has_key?(attribution, "reward_value")
+           end)
+
+    assert Enum.any?(attributions, fn attribution ->
+             attribution["attribution_type"] == "reward" and
+               attribution["reward_value"] == 0.0
+           end)
   end
 end

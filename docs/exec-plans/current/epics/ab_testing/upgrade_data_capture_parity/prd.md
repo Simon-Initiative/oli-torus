@@ -64,6 +64,8 @@ Requirements and acceptance criteria are maintained in `requirements.yml`.
   selected branch preserved in realized content.
 - `score` and `out_of` are stored without compatibility normalization. The compatibility query
   computes correctness and applies the documented v0.33.0 zero/error fallback.
+- `reward_value` represents explicit experiment-policy reward evidence only. Attempt scores remain
+  in `raw_events.score` and must not be copied into attribution reward fields.
 - Condition is obtained from durable assignment/exposure evidence keyed by section and enrollment;
   it is not inferred from current mutable authoring content.
 - Existing assignment-scope semantics remain unchanged: weighted random supports intervention and
