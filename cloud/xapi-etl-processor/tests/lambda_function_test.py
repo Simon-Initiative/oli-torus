@@ -65,6 +65,7 @@ class LambdaFunctionTests(TestCase):
             "LAMBDA_TIMEOUT_SAFETY_MARGIN_MS",
             "CLICKHOUSE_TIMEOUT_SECONDS",
             "MAX_MESSAGES_PER_INVOCATION_TO_PROCESS",
+            "MAX_EXPERIMENT_ATTRIBUTIONS_PER_STATEMENT",
         ]:
             self.addCleanup(lambda name=env_var: os.environ.pop(name, None))
 
@@ -76,6 +77,9 @@ class LambdaFunctionTests(TestCase):
         return lambda_function.pa.Table.from_pylist(
             [{"event_hash": f"hash-{index}", "source_line": index + 1} for index in range(row_count)]
         )
+
+    def _event_tables_with_rows(self, row_count):
+        return self._table_with_rows(row_count), None
 
     def _experiment_attributed_part_attempt_fixture(self):
         raw_line = next(
@@ -145,6 +149,65 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(args[1], 1)
         self.assertIn("timeout_seconds", kwargs)
         self.assertIn("insert_token", kwargs)
+
+    def test_lambda_handler_inserts_experiment_attributions_with_raw_events(self):
+        raw_line, _statement = self._experiment_attributed_part_attempt_fixture()
+        event = {"Records": [self._message("msg-1")]}
+        self.mock_s3.get_object.return_value = {
+            "Body": FakeBody([raw_line.decode("utf-8")]),
+            "ETag": '"etag-value"',
+        }
+
+        with mock.patch.object(lambda_function, "insert_into_clickhouse") as insert_mock:
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "CLICKHOUSE_DATABASE": "db",
+                    "CLICKHOUSE_TABLE": "raw_events",
+                    "TARGET_ROWS_PER_INSERT": "10",
+                },
+                clear=False,
+            ):
+                result = lambda_function.lambda_handler(
+                    event, FakeContext(remaining_time_ms=60000)
+                )
+
+        self.assertEqual(result["batchItemFailures"], [])
+        self.assertEqual(insert_mock.call_count, 2)
+        self.assertEqual(insert_mock.call_args_list[0].args[1], 1)
+        self.assertEqual(insert_mock.call_args_list[0].kwargs["table"], "raw_events")
+        self.assertEqual(insert_mock.call_args_list[1].args[1], 1)
+        self.assertEqual(
+            insert_mock.call_args_list[1].kwargs["table"],
+            "experiment_attributions",
+        )
+        attribution_columns = insert_mock.call_args_list[1].kwargs["columns"]
+        self.assertNotIn("decision_point_id", attribution_columns)
+        self.assertNotIn("decision_point_key", attribution_columns)
+
+    def test_rejects_statements_exceeding_attribution_limit(self):
+        raw_line, statement = self._experiment_attributed_part_attempt_fixture()
+        attribution = statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ][0]
+        statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ] = [attribution, attribution]
+
+        with mock.patch.dict(
+            os.environ,
+            {"MAX_EXPERIMENT_ATTRIBUTIONS_PER_STATEMENT": "1"},
+            clear=False,
+        ):
+            with self.assertRaisesRegex(ValueError, "exceeds configured maximum 1"):
+                lambda_function.transform_experiment_attributions(
+                    statement,
+                    raw_bytes=raw_line,
+                    bucket="bucket",
+                    key="events/file.jsonl",
+                    etag='"etag"',
+                    line_number=1,
+                )
 
     def test_lambda_handler_respects_dry_run(self):
         body = json.dumps(
@@ -287,6 +350,8 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(rows[0]["attribution_type"], "reward")
         self.assertEqual(rows[0]["experiment_id"], 101)
         self.assertEqual(rows[0]["experiment_uuid"], "11111111-2222-3333-4444-555555555555")
+        self.assertNotIn("decision_point_id", rows[0])
+        self.assertNotIn("decision_point_key", rows[0])
         self.assertEqual(rows[0]["condition_code"], "condition-a")
         self.assertEqual(rows[0]["reward_value"], 1.0)
         self.assertEqual(rows[0]["reward_source"], "activity_attempt:full_credit")
@@ -301,6 +366,36 @@ class LambdaFunctionTests(TestCase):
         self.assertNotIn("reward_id", rows[0])
         self.assertNotIn("previous_policy_state_hash", rows[0])
         self.assertNotIn("next_policy_state_hash", rows[0])
+
+        attribution = statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ][0]
+        attribution.update(
+            {
+                "intervention_id": 14,
+                "intervention_key": "807288:3765579404",
+                "assessment_binding_id": 3,
+                "assessment_page_resource_id": 807288,
+                "resource_attempt_id": 7936916,
+                "disposition": "accepted",
+                "reward_threshold": 1,
+                "normalized_score": 0,
+                "page_revision_id": 1955463,
+            }
+        )
+        evidence_row = lambda_function.transform_experiment_attributions(
+            statement,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )[0]
+        self.assertEqual(evidence_row["intervention_id"], 14)
+        self.assertEqual(evidence_row["assessment_page_resource_id"], 807288)
+        self.assertEqual(evidence_row["resource_attempt_id"], 7936916)
+        self.assertEqual(evidence_row["normalized_score"], 0.0)
+        self.assertEqual(evidence_row["page_revision_id"], 1955463)
 
         statement["context"]["extensions"][
             "http://oli.cmu.edu/extensions/experiment_attributions"
@@ -461,8 +556,8 @@ class LambdaFunctionTests(TestCase):
             with mock.patch.object(lambda_function, "_sqs_client") as sqs_mock:
                 with mock.patch.object(
                     lambda_function,
-                    "build_arrow_table_from_s3_objects",
-                    side_effect=[self._table_with_rows(2), self._table_with_rows(2)],
+                    "build_arrow_tables_from_s3_objects",
+                    side_effect=[self._event_tables_with_rows(2), self._event_tables_with_rows(2)],
                 ):
                     with mock.patch.object(
                         lambda_function,
@@ -501,11 +596,11 @@ class LambdaFunctionTests(TestCase):
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
+            "build_arrow_tables_from_s3_objects",
             side_effect=[
-                self._table_with_rows(2),
-                self._table_with_rows(2),
-                self._table_with_rows(2),
+                self._event_tables_with_rows(2),
+                self._event_tables_with_rows(2),
+                self._event_tables_with_rows(2),
             ],
         ):
             with mock.patch.object(lambda_function, "insert_into_clickhouse", side_effect=capture_insert):
@@ -532,11 +627,11 @@ class LambdaFunctionTests(TestCase):
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
+            "build_arrow_tables_from_s3_objects",
             side_effect=[
-                self._table_with_rows(2),
-                self._table_with_rows(2),
-                self._table_with_rows(2),
+                self._event_tables_with_rows(2),
+                self._event_tables_with_rows(2),
+                self._event_tables_with_rows(2),
             ],
         ):
             with mock.patch.object(
@@ -564,11 +659,11 @@ class LambdaFunctionTests(TestCase):
 
         def prepare_then_exhaust_time(_refs):
             context.remaining_time_ms = 500
-            return self._table_with_rows(2)
+            return self._event_tables_with_rows(2)
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
+            "build_arrow_tables_from_s3_objects",
             side_effect=prepare_then_exhaust_time,
         ):
             with mock.patch.object(lambda_function, "insert_into_clickhouse") as insert_mock:
@@ -596,8 +691,8 @@ class LambdaFunctionTests(TestCase):
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
-            return_value=self._table_with_rows(2),
+            "build_arrow_tables_from_s3_objects",
+            return_value=self._event_tables_with_rows(2),
         ):
             with mock.patch.object(
                 lambda_function,
@@ -636,8 +731,8 @@ class LambdaFunctionTests(TestCase):
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
-            return_value=self._table_with_rows(2),
+            "build_arrow_tables_from_s3_objects",
+            return_value=self._event_tables_with_rows(2),
         ):
             with mock.patch.object(lambda_function, "insert_into_clickhouse") as insert_mock:
                 with mock.patch.dict(
