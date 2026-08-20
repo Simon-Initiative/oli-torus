@@ -396,7 +396,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
                "to learn more about the importance of attaching learning objectives to pages and activities."
              )
 
-      assert has_element?(view, "button", "Create new Objective")
+      assert has_element?(view, "button", "New Objective")
     end
 
     test "experiments menu is shown correctly", %{
