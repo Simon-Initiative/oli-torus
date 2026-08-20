@@ -12,7 +12,11 @@ defmodule Oli.PublishingTest do
   alias Oli.Authoring.Editing.{PageEditor, ObjectiveEditor, ActivityEditor}
   alias Oli.Activities
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Publishing
+  alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Publishing.PublishedResource
   alias Oli.Publishing.Publications.Publication
   alias Oli.Resources
@@ -45,6 +49,73 @@ defmodule Oli.PublishingTest do
       )
 
     revision
+  end
+
+  describe "learning-model parameter publication resolution" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "delivery resolves the published Revision after authoring advances", %{
+      project: project,
+      publication: publication,
+      author: author
+    } do
+      published_parameters = activity_parameters("part-1", -0.4)
+      authoring_parameters = activity_parameters("part-1", 0.8)
+
+      %{resource: resource, revision: published_revision} =
+        Oli.Seeder.create_activity(
+          %{
+            title: "Parameterized Activity",
+            content: %{"authoring" => %{"parts" => [%{"id" => "part-1"}]}},
+            learning_model_parameters: published_parameters
+          },
+          publication,
+          project,
+          author
+        )
+
+      assert {:ok, published_publication} =
+               Publishing.publish_project(project, "parameterized publication", author.id)
+
+      assert {:ok, section} =
+               Sections.create_section_from_source(
+                 %{
+                   title: "Pinned Parameter Section",
+                   context_id: UUID.uuid4(),
+                   base_project_id: project.id,
+                   publisher_id: project.publisher_id
+                 },
+                 project
+               )
+
+      assert {:ok, section} =
+               Sections.create_section_resources(section, published_publication)
+
+      assert {:ok, authoring_revision} =
+               Resources.create_revision_from_previous(published_revision, %{
+                 learning_model_parameters: authoring_parameters
+               })
+
+      working_publication = Publishing.project_working_publication(project.slug)
+
+      assert {:ok, _mapping} =
+               working_publication.id
+               |> Publishing.get_published_resource!(resource.id)
+               |> Publishing.update_published_resource(%{revision_id: authoring_revision.id})
+
+      resolved_for_authoring = AuthoringResolver.from_resource_id(project.slug, resource.id)
+      resolved_for_delivery = DeliveryResolver.from_resource_id(section.slug, resource.id)
+
+      assert resolved_for_authoring.id == authoring_revision.id
+      assert resolved_for_authoring.learning_model_parameters == authoring_parameters
+      assert resolved_for_delivery.id == published_revision.id
+      assert resolved_for_delivery.learning_model_parameters == published_parameters
+
+      assert Resources.get_revision!(published_revision.id).learning_model_parameters ==
+               published_parameters
+    end
   end
 
   describe "create_resource_batch tests" do
@@ -1569,5 +1640,17 @@ defmodule Oli.PublishingTest do
                }
              ]
     end
+  end
+
+  defp activity_parameters(part_id, beta_difficulty) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts: %{part_id => %PartParameters{beta_difficulty: beta_difficulty}}
+      }
+    }
   end
 end

@@ -1,6 +1,8 @@
 defmodule Oli.Interop.Ingest.Processor.Products do
   alias Oli.Interop.Ingest.State
   alias Oli.Publishing.ChangeTracker
+  alias Oli.LearningModel.ModelVersion
+  alias Oli.Repo
 
   def process(
         %State{
@@ -20,8 +22,8 @@ defmodule Oli.Interop.Ingest.Processor.Products do
           Oli.Publishing.publish_project(project, "Initial publication", state.author.id)
 
           # Create each product, all the while tracking any newly created containers in the container map
-          Enum.reduce_while(products, {:ok, state}, fn {_, product}, {:ok, state} ->
-            case create_product(state, product) do
+          Enum.reduce_while(products, {:ok, state}, fn {archive_id, product}, {:ok, state} ->
+            case create_product(state, archive_id, product) do
               {:ok, state} -> {:cont, {:ok, state}}
               {:error, e} -> {:halt, {:error, e}}
             end
@@ -29,12 +31,33 @@ defmodule Oli.Interop.Ingest.Processor.Products do
       end
 
     case result do
-      {:ok, state} -> state
-      {:error, e} -> %{state | force_rollback: e}
+      {:ok, state} ->
+        state
+
+      {:error, e} ->
+        error_state = %{state | errors: [e | state.errors]}
+        Repo.rollback(error_state)
     end
   end
 
-  defp create_product(
+  defp create_product(%State{project: project} = state, archive_id, product) do
+    case ModelVersion.decode_archive(
+           Map.get(product, "learningModelVersion"),
+           project.learning_model_version
+         ) do
+      {:ok, learning_model_version} ->
+        do_create_product(state, product, learning_model_version)
+
+      {:error, _reason} ->
+        value = Map.get(product, "learningModelVersion")
+        archive_file = State.archive_source_file(state, archive_id)
+
+        {:error,
+         "Invalid learningModelVersion in #{archive_file}.json: expected \"naive\", \"lkt_aoa\", or null; got #{inspect(value, limit: 3, printable_limit: 80)}"}
+    end
+  end
+
+  defp do_create_product(
          %State{
            root_revision: root_revision,
            legacy_to_resource_id_map: legacy_to_resource_id_map,
@@ -42,7 +65,8 @@ defmodule Oli.Interop.Ingest.Processor.Products do
            project: project,
            author: author
          } = state,
-         product
+         product,
+         learning_model_version
        ) do
     hierarchy_definition = Map.put(%{}, root_revision.resource_id, [])
 
@@ -101,7 +125,8 @@ defmodule Oli.Interop.Ingest.Processor.Products do
       "pay_by_institution" => Map.get(product, "payByInstitution"),
       "grace_period_days" => Map.get(product, "gracePeriodDays"),
       "amount" => Map.get(product, "amount"),
-      "certificate_enabled" => Map.get(product, "certificateEnabled", false)
+      "certificate_enabled" => Map.get(product, "certificateEnabled", false),
+      "learning_model_version" => learning_model_version
     }
 
     {certificate_params, new_product_attrs} =
@@ -123,12 +148,13 @@ defmodule Oli.Interop.Ingest.Processor.Products do
 
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
     # to mirror the product JSON.
-    case Oli.Delivery.Sections.Blueprint.create_blueprint(
+    case Oli.Delivery.Sections.Blueprint.create_blueprint_from_archive(
            project.slug,
            product["title"],
            custom_labels,
            hierarchy_definition,
-           new_product_attrs
+           new_product_attrs,
+           learning_model_version
          ) do
       {:ok, blueprint} ->
         maybe_add_certificate(certificate_params, blueprint, %{

@@ -713,6 +713,7 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
       retake_mode: source_revision.retake_mode,
       assessment_mode: source_revision.assessment_mode,
       parameters: source_revision.parameters,
+      learning_model_parameters: source_revision.learning_model_parameters,
       legacy: embed_to_struct(source_revision.legacy, Legacy),
       explanation_strategy:
         embed_to_struct(source_revision.explanation_strategy, ExplanationStrategy),

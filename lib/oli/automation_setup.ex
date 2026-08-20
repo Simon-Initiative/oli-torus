@@ -254,15 +254,18 @@ defmodule Oli.AutomationSetup do
       end
 
     {:ok, section} =
-      Oli.Delivery.Sections.create_section(%{
-        title: "Automation test section",
-        context_id: UUID.uuid4(),
-        start_date: Timex.now(),
-        end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
-        base_project_id: project.id,
-        open_and_free: true,
-        customizations: customizations
-      })
+      Oli.Delivery.Sections.create_section_from_source(
+        %{
+          title: "Automation test section",
+          context_id: UUID.uuid4(),
+          start_date: Timex.now(),
+          end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
+          base_project_id: project.id,
+          open_and_free: true,
+          customizations: customizations
+        },
+        project
+      )
 
     Oli.Delivery.Sections.create_section_resources(section, publication)
 

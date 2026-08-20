@@ -39,7 +39,7 @@ defmodule Oli.Utils.Seeder.Section do
       })
 
     {:ok, section} =
-      Sections.create_section(attrs)
+      Sections.create_section_from_source(attrs, project)
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(publication)
 

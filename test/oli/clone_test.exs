@@ -9,10 +9,15 @@ defmodule Oli.CloneTest do
   alias Oli.Authoring.Locks
   alias Oli.Authoring.MediaLibrary
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.Family
   alias Oli.Authoring.Clone
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Delivery.Sections
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
+  alias Oli.Publishing.PublishedResource
+  alias Oli.Resources
 
   describe "need for new revision checks" do
     setup do
@@ -166,6 +171,59 @@ defmodule Oli.CloneTest do
       assert project.family_id != duplicated.family_id
       assert duplicated.project_id == project.id
       assert duplicated.publisher_id == project.publisher_id
+    end
+
+    test "clone_project/2 preserves learning model selection", %{
+      project: project,
+      author2: author2
+    } do
+      project =
+        project
+        |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Repo.update!()
+
+      assert {:ok, duplicated} = Clone.clone_project(project.slug, author2)
+      assert duplicated.learning_model_version == :lkt_aoa
+    end
+
+    test "clone_project/2 shares exact parameterized published Revisions", %{
+      project: project,
+      publication: publication,
+      author: author,
+      author2: author2
+    } do
+      parameters = activity_parameters("part-1", -0.6)
+
+      %{resource: resource, revision: revision} =
+        Oli.Seeder.create_activity(
+          %{
+            title: "Parameterized Activity",
+            content: %{"authoring" => %{"parts" => [%{"id" => "part-1"}]}},
+            learning_model_parameters: parameters
+          },
+          publication,
+          project,
+          author
+        )
+
+      assert {:ok, duplicated_project} = Clone.clone_project(project.slug, author2)
+
+      duplicated_publication =
+        Publishing.project_working_publication(duplicated_project.slug)
+
+      duplicated_mapping =
+        Repo.one!(
+          from(pr in PublishedResource,
+            where:
+              pr.publication_id == ^duplicated_publication.id and
+                pr.resource_id == ^resource.id,
+            preload: [:revision]
+          )
+        )
+
+      assert duplicated_mapping.revision_id == revision.id
+      assert duplicated_mapping.revision.learning_model_parameters == parameters
+      assert Resources.get_revision!(revision.id).learning_model_parameters == parameters
     end
 
     test "clone_project/2 copies required survey", %{project: project, duplicated: duplicated} do
@@ -326,5 +384,17 @@ defmodule Oli.CloneTest do
       refute author2_edit_revision.id == duplicated_revision.id
       refute base_revision.content == some_new_content["content"]
     end
+  end
+
+  defp activity_parameters(part_id, beta_difficulty) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts: %{part_id => %PartParameters{beta_difficulty: beta_difficulty}}
+      }
+    }
   end
 end

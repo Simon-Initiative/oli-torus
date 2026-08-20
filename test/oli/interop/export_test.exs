@@ -8,6 +8,11 @@ defmodule Oli.Interop.ExportTest do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
+  alias Oli.Authoring.Course.Project
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.V2.{ActivityParameters, LearningObjectiveParameters, PartParameters}
+  alias Oli.Publishing
+  alias Oli.Repo
 
   import Oli.Factory
 
@@ -59,6 +64,108 @@ defmodule Oli.Interop.ExportTest do
       assert project_json["encouragingSubtitle"] == "Subtitle test"
     end
 
+    test "project and Product exports include their persisted learning model selections", %{
+      project: project,
+      section: section,
+      export: export
+    } do
+      project_json = Jason.decode!(Map.fetch!(export, ~c"_project.json"))
+      product_json = Jason.decode!(Map.fetch!(export, ~c"_product-#{section.id}.json"))
+
+      assert project_json["learningModelVersion"] == "naive"
+      assert product_json["learningModelVersion"] == "naive"
+      assert project.learning_model_version == :naive
+      assert section.learning_model_version == :naive
+    end
+
+    test "round trip preserves divergent selections and typed LO/activity parameters", %{
+      project: project,
+      section: exported_product,
+      author: author
+    } do
+      project =
+        project
+        |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Repo.update!()
+
+      objective_parameters = learning_objective_parameters(-0.42)
+
+      activity_parameters =
+        activity_parameters(%{"part-1" => 0.0, "part-2" => 0.37})
+
+      objective_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          title: "Parameterized Objective",
+          learning_model_parameters: objective_parameters
+        })
+
+      activity_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          activity_type_id: Oli.Activities.get_registration_by_slug("oli_multiple_choice").id,
+          title: "Parameterized Activity",
+          content: activity_content(["part-1", "part-2"]),
+          learning_model_parameters: activity_parameters
+        })
+
+      publication = Publishing.project_working_publication(project.slug)
+
+      Enum.each([objective_revision, activity_revision], fn revision ->
+        insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      entries = project |> Export.export() |> unzip_to_memory()
+      archive = Map.new(entries)
+
+      project_json = Jason.decode!(Map.fetch!(archive, ~c"_project.json"))
+      product_json = Jason.decode!(Map.fetch!(archive, ~c"_product-#{exported_product.id}.json"))
+
+      objective_json =
+        Jason.decode!(
+          Map.fetch!(archive, String.to_charlist("#{objective_revision.resource_id}.json"))
+        )
+
+      activity_json =
+        Jason.decode!(
+          Map.fetch!(archive, String.to_charlist("#{activity_revision.resource_id}.json"))
+        )
+
+      assert project_json["learningModelVersion"] == "lkt_aoa"
+      assert product_json["learningModelVersion"] == "naive"
+      assert objective_json["learningModelParameters"]["payload"]["beta_lo"] == -0.42
+
+      assert activity_json["learningModelParameters"]["payload"]["parts"]["part-1"][
+               "beta_difficulty"
+             ] == 0.0
+
+      assert {:ok, imported_project} = Oli.Interop.Ingest.process(entries, author)
+      assert imported_project.learning_model_version == :lkt_aoa
+
+      imported_product =
+        Sections.get_section_by(base_project_id: imported_project.id, type: :blueprint)
+
+      assert imported_product.learning_model_version == :naive
+
+      [imported_objective] =
+        Publishing.get_unpublished_revisions_by_type(imported_project.slug, "objective")
+        |> Enum.filter(&(&1.title == "Parameterized Objective"))
+
+      [imported_activity] =
+        Publishing.get_unpublished_revisions_by_type(imported_project.slug, "activity")
+        |> Enum.filter(&(&1.title == "Parameterized Activity"))
+
+      assert imported_objective.learning_model_parameters == objective_parameters
+      assert imported_activity.learning_model_parameters == activity_parameters
+    end
+
     test "carry over products and their settings", %{section: section, export: export} do
       product_id = section.id
 
@@ -79,6 +186,41 @@ defmodule Oli.Interop.ExportTest do
       assert product_json["amount"]["amount"] == "33.50"
       assert product_json["amount"]["currency"] == "USD"
       assert product_json["requiresPayment"] == section.requires_payment
+    end
+
+    test "Product export query count is independent of Product count", %{
+      project: project,
+      section: section
+    } do
+      one_product_query_count = repo_query_count(fn -> Export.products(project) end)
+
+      section = Repo.preload(section, section_project_publications: :publication)
+      [section_project_publication] = section.section_project_publications
+      publication = section_project_publication.publication
+
+      second_product =
+        insert(:section, %{
+          base_project: project,
+          status: :active,
+          type: :blueprint,
+          title: "Second Product"
+        })
+
+      insert(:section_project_publication, %{
+        project: project,
+        section: second_product,
+        publication: publication
+      })
+
+      insert(:section_resource, %{
+        project: project,
+        section: second_product,
+        resource_id: publication.root_resource_id
+      })
+
+      two_product_query_count = repo_query_count(fn -> Export.products(project) end)
+
+      assert two_product_query_count == one_product_query_count
     end
 
     test "export and import a project", ctx do
@@ -935,6 +1077,64 @@ defmodule Oli.Interop.ExportTest do
       |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
     {:ok, export: export}
+  end
+
+  defp learning_objective_parameters(beta_lo) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :learning_objective,
+      payload: %LearningObjectiveParameters{beta_lo: beta_lo}
+    }
+  end
+
+  defp activity_parameters(parts) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts:
+          Map.new(parts, fn {part_id, beta_difficulty} ->
+            {part_id, %PartParameters{beta_difficulty: beta_difficulty}}
+          end)
+      }
+    }
+  end
+
+  defp activity_content(part_ids) do
+    %{"authoring" => %{"parts" => Enum.map(part_ids, &%{"id" => &1})}}
+  end
+
+  defp repo_query_count(fun) do
+    handler_id = "interop-export-query-count-#{System.unique_integer([:positive])}"
+    parent = self()
+
+    :ok =
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _event, _measurements, _metadata, _config -> send(parent, :repo_query) end,
+        nil
+      )
+
+    try do
+      fun.()
+    after
+      :telemetry.detach(handler_id)
+    end
+
+    collect_repo_queries(0)
+  end
+
+  defp collect_repo_queries(count) do
+    receive do
+      :repo_query -> collect_repo_queries(count + 1)
+    after
+      0 -> count
+    end
   end
 
   defp setup_project_with_survey(_) do

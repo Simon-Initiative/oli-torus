@@ -4,6 +4,7 @@ defmodule Oli.Authoring.Course.Project do
 
   alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Branding.CustomLabels
+  alias Oli.LearningModel.ModelVersion
   alias Oli.Utils.Slug
 
   @derive {Phoenix.Param, key: :slug}
@@ -26,6 +27,7 @@ defmodule Oli.Authoring.Course.Project do
     field(:latest_datashop_snapshot_url, :string)
     field(:latest_datashop_snapshot_timestamp, :utc_datetime)
     field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v2)
+    field(:learning_model_version, Ecto.Enum, values: ModelVersion.values(), default: :naive)
     field(:allow_transfer_payment_codes, :boolean, default: false)
     field(:welcome_title, :map, default: %{})
 
@@ -103,6 +105,7 @@ defmodule Oli.Authoring.Course.Project do
     |> cast_embed(:customizations, required: false)
     |> validate_required([:title, :version, :family_id, :publisher_id])
     |> foreign_key_constraint(:publisher_id)
+    |> check_constraint(:learning_model_version, name: :projects_learning_model_version_check)
     |> Slug.update_never("projects")
   end
 
@@ -127,6 +130,19 @@ defmodule Oli.Authoring.Course.Project do
     ])
     |> validate_required([:title, :version, :family_id, :publisher_id])
     |> foreign_key_constraint(:publisher_id)
+    |> check_constraint(:learning_model_version, name: :projects_learning_model_version_check)
     |> Slug.update_never("projects")
+  end
+
+  @doc """
+  Casts learning-model selection at trusted domain boundaries.
+
+  Do not use this function with unfiltered user or form parameters.
+  """
+  def trusted_learning_model_changeset(project_or_changeset, attrs) do
+    project_or_changeset
+    |> cast(attrs, [:learning_model_version])
+    |> validate_required([:learning_model_version])
+    |> check_constraint(:learning_model_version, name: :projects_learning_model_version_check)
   end
 end

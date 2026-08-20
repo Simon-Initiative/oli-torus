@@ -29,17 +29,21 @@ defmodule Oli.Authoring.Clone do
              }),
            {:ok, customizations, attributes} <- copy_attributes(base_project),
            {:ok, cloned_project} <-
-             Course.create_project(%{
-               title: base_project.title <> new_project_title_suffix,
-               version: "1.0.0",
-               family_id: cloned_family.id,
-               project_id: base_project.id,
-               publisher_id: base_project.publisher_id,
-               required_survey_resource_id: base_project.required_survey_resource_id,
-               customizations: customizations,
-               attributes: attributes,
-               analytics_version: :v2
-             }),
+             Course.create_project_from_source(
+               %{
+                 title: base_project.title <> new_project_title_suffix,
+                 version: "1.0.0",
+                 family_id: cloned_family.id,
+                 project_id: base_project.id,
+                 publisher_id: base_project.publisher_id,
+                 required_survey_resource_id: base_project.required_survey_resource_id,
+                 customizations: customizations,
+                 attributes: attributes,
+                 analytics_version: :v2,
+                 learning_model_version: base_project.learning_model_version
+               },
+               base_project
+             ),
            {:ok, _} <- Collaborators.add_collaborator(author, cloned_project),
            base_root_container <- AuthoringResolver.root_container(base_project.slug),
            {:ok, cloned_publication} <-
