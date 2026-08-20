@@ -21,6 +21,7 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
     AssessmentBinding,
     Assignment,
     Condition,
+    ExperimentDefinition,
     Intervention
   }
 
@@ -32,8 +33,8 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
     started_at = System.monotonic_time()
 
     result =
-      with {:ok, evidence} <- load_evidence(reward_id),
-           :ok <- dispatch(evidence, args) do
+      with {:ok, evidence, statement} <- prepare_dispatch(reward_id, args),
+           :ok <- dispatch(evidence, statement) do
         :ok
       end
 
@@ -54,6 +55,14 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
     end
   end
 
+  @doc false
+  def prepare_dispatch(reward_id, args) do
+    with {:ok, evidence} <- load_evidence(reward_id) do
+      attribution = build_attribution(evidence, args)
+      {:ok, evidence, build_statement(evidence, attribution, args)}
+    end
+  end
+
   defp load_evidence(reward_id) do
     query =
       from(reward in AcceptedReward,
@@ -61,6 +70,8 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
         on: assignment.id == reward.assignment_id,
         join: condition in Condition,
         on: condition.id == assignment.condition_id,
+        join: experiment in ExperimentDefinition,
+        on: experiment.id == assignment.experiment_id,
         join: binding in AssessmentBinding,
         on: binding.id == reward.assessment_binding_id,
         join: intervention in Intervention,
@@ -73,6 +84,7 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
         select: %{
           reward: reward,
           assignment: assignment,
+          experiment_uuid: experiment.uuid,
           condition_code: condition.condition_code,
           binding: binding,
           intervention: intervention,
@@ -87,17 +99,48 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
     end
   end
 
-  defp dispatch(evidence, args) do
-    attribution = %{
+  defp build_statement(evidence, attribution, args) do
+    context = %Context{
+      user_id: evidence.assignment.user_id,
+      host_name: Oli.Analytics.XAPI.host_name(),
+      section_id: evidence.assignment.section_id,
+      enrollment_id: evidence.assignment.enrollment_id,
+      project_id: args["project_id"],
+      publication_id: args["publication_id"]
+    }
+
+    context
+    |> PageAttemptEvaluated.new(
+      Map.put(evidence.attempt, :resource_id, evidence.page_resource_id)
+    )
+    |> Attributions.attach_attributions([attribution])
+  end
+
+  defp dispatch(evidence, statement) do
+    %StatementBundle{
+      body: Oli.Analytics.Common.to_jsonlines([statement]),
+      bundle_id: "experiment-assessment-reward-#{evidence.reward.id}",
+      partition_id: evidence.assignment.section_id,
+      category: :attempt_evaluated,
+      partition: :section
+    }
+    |> Oli.Analytics.XAPI.emit()
+  end
+
+  defp build_attribution(evidence, args) do
+    %{
       role: "reward",
       attribution_type: "reward",
       key: "assessment_reward:#{evidence.reward.id}",
       experiment_id: evidence.assignment.experiment_id,
+      experiment_uuid: evidence.experiment_uuid,
       condition_id: evidence.assignment.condition_id,
       condition_code: evidence.condition_code,
       assignment_id: evidence.assignment.id,
       assignment_key: evidence.assignment.assignment_key,
       assignment_scope: evidence.assignment.assignment_scope,
+      algorithm: evidence.assignment.assigned_by_policy,
+      policy_version: evidence.assignment.policy_version,
       intervention_id: evidence.intervention.id,
       intervention_key:
         "#{evidence.intervention.page_resource_id}:#{evidence.intervention.content_element_id}",
@@ -111,34 +154,12 @@ defmodule Oli.Delivery.Experiments.EvidenceDispatchWorker do
       reward_source: "assessment_page:normalized_score",
       page_revision_id: args["page_revision_id"],
       project_id: args["project_id"],
+      publication_id: args["publication_id"],
       section_id: evidence.assignment.section_id,
+      enrollment_id: evidence.assignment.enrollment_id,
       previous_policy_context: args["previous_policy_context"],
       next_policy_context: args["next_policy_context"]
     }
-
-    context = %Context{
-      user_id: evidence.assignment.user_id,
-      host_name: Oli.Analytics.XAPI.host_name(),
-      section_id: evidence.assignment.section_id,
-      project_id: args["project_id"],
-      publication_id: args["publication_id"]
-    }
-
-    statement =
-      context
-      |> PageAttemptEvaluated.new(
-        Map.put(evidence.attempt, :resource_id, evidence.page_resource_id)
-      )
-      |> Attributions.attach_attributions([attribution])
-
-    %StatementBundle{
-      body: Oli.Analytics.Common.to_jsonlines([statement]),
-      bundle_id: "experiment-assessment-reward-#{evidence.reward.id}",
-      partition_id: evidence.assignment.section_id,
-      category: :attempt_evaluated,
-      partition: :section
-    }
-    |> Oli.Analytics.XAPI.emit()
   end
 
   defp emit_dispatch_telemetry(result, started_at) do
