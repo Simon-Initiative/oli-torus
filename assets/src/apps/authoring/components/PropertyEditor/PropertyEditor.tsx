@@ -16,6 +16,7 @@ import { ListSortItemsEditor } from './custom/ListSortItemsEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
 import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
+import { AccordionManageEditor } from './custom/AccordionManageEditor';
 import { MatchingManageEditor } from './custom/MatchingManageEditor';
 import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
 import { OptionsCustomErrorFeedbackAuthoring } from './custom/OptionsCustomErrorFeedbackAuthoring';
@@ -74,6 +75,7 @@ const widgets: any = {
   RichLabelWidget: RichLabelWidget,
   ItemBankManageEditor: ItemBankManageEditor,
   MatchingManageEditor: MatchingManageEditor,
+  AccordionManageEditor: AccordionManageEditor,
 };
 
 /**
