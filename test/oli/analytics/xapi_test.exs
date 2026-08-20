@@ -54,6 +54,9 @@ defmodule Oli.Analytics.XAPITest do
       assert attribution["attribution_type"] == "assignment"
       assert attribution["experiment_id"] == experiment.id
       assert attribution["assignment_id"] == assignment.id
+      assert is_integer(attribution["intervention_id"])
+      assert attribution["intervention_key"] =~ ":alternatives-placement"
+      refute Map.has_key?(attribution, "user_id")
     end
 
     test "does not attach attributions when video is outside the assigned alternatives branch" do
@@ -71,6 +74,46 @@ defmodule Oli.Analytics.XAPITest do
             "video_length" => 60,
             "video_play_time" => 0,
             "content_element_id" => "video-in-unselected-branch"
+          },
+          user.id
+        )
+
+      refute bundle
+             |> statement_from_bundle()
+             |> get_in(["context", "extensions", @experiment_attributions_key])
+    end
+
+    test "does not reuse an intervention-scoped media assignment at another placement" do
+      %{
+        user: user,
+        resource_attempt: resource_attempt,
+        page_revision: page_revision,
+        experiment: experiment
+      } = setup_video_experiment_context()
+
+      %Intervention{}
+      |> Intervention.changeset(%{
+        experiment_id: experiment.id,
+        page_resource_id: page_revision.resource_id,
+        content_element_id: "other-placement"
+      })
+      |> Repo.insert!()
+
+      content = put_in(resource_attempt.content, ["model", Access.at(0), "id"], "other-placement")
+      Repo.update!(Ecto.Changeset.change(resource_attempt, content: content))
+
+      {:ok, %StatementBundle{} = bundle} =
+        XAPI.construct_bundle(
+          %{
+            "category" => "video",
+            "event_type" => "played",
+            "host_name" => "http://example.edu",
+            "key" => %{"page_attempt_guid" => resource_attempt.attempt_guid},
+            "video_url" => "https://example.edu/video.mp4",
+            "video_title" => "Example video",
+            "video_length" => 60,
+            "video_play_time" => 0,
+            "content_element_id" => "video-in-selected-branch"
           },
           user.id
         )
@@ -493,6 +536,7 @@ defmodule Oli.Analytics.XAPITest do
       "model" => [
         %{
           "type" => "alternatives",
+          "id" => "alternatives-placement",
           "alternatives_id" => alternatives_resource_id,
           "children" => [
             %{

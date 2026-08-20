@@ -58,25 +58,25 @@ experiment-runtime changes.
 - Goal: Add correct attribution to existing attempt and media host statements without changing host
   emission or experiment runtime behavior (FR-002, FR-003, FR-005, FR-008).
 - Tasks:
-  - [ ] Extend `Oli.Delivery.Experiments.AttemptAttributions` with one focused selected-branch query
+  - [x] Extend `Oli.Delivery.Experiments.AttemptAttributions` with one focused selected-branch query
     using persisted `resource_attempts.content` from the experiment-aware delivery path. Treat the
     pruned Alternatives placement only as evidence of the branch received; resolve experiment,
     assignment, condition, and intervention identity from durable scoped records.
-  - [ ] Fail safe with no attribution for historical or nonstandard attempts where the persisted
+  - [x] Fail safe with no attribution for historical or nonstandard attempts where the persisted
     realized-content guarantee cannot be established.
-  - [ ] Resolve matching assignment, condition, scope, and actual intervention for part outcomes and
+  - [x] Resolve matching assignment, condition, scope, and actual intervention for part outcomes and
     activity/page rollups.
-  - [ ] Preserve the existing Thompson outcome/reward/policy construction and add weighted-random
+  - [x] Preserve the existing Thompson outcome/reward/policy construction and add weighted-random
     outcomes without creating rewards.
-  - [ ] Reconcile `MediaAttributions` around one content traversal and one tailored scoped assignment
+  - [x] Reconcile `MediaAttributions` around one content traversal and one tailored scoped assignment
     query for attempt and deployed-revision paths.
-  - [ ] Keep the existing attribution roles; do not add generic interaction or navigation/nested
+  - [x] Keep the existing attribution roles; do not add generic interaction or navigation/nested
     contracts.
-  - [ ] Ensure every producer builds and retains its host statement before optional enrichment.
-  - [ ] Add only focused bounded failure logging/telemetry needed to diagnose enrichment failure.
+  - [x] Ensure every producer builds and retains its host statement before optional enrichment.
+  - [x] Add only focused bounded failure logging/telemetry needed to diagnose enrichment failure.
 - Testing:
-  - [ ] Cover AC-002 through AC-005, AC-008, AC-009, and AC-014.
-  - [ ] Assert no assignment query for pages without a relevant experiment-controlled placement.
+  - [x] Cover AC-002 through AC-005, AC-008, AC-009, and AC-014.
+  - [x] Assert no assignment query for pages without a relevant experiment-controlled placement.
   - Command: `mix test test/oli/delivery/experiments test/oli/analytics/xapi_test.exs`
 - Gate B: Existing attempt/media producers are correct, host-safe, scoped, and regression-tested.
 
