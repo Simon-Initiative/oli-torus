@@ -8,7 +8,7 @@ specific to Torus unless noted otherwise.
 ### Activation
 
 The transition from `draft` to `active`. Activation validates the experiment configuration,
-Decision Point, condition mappings, participating-section deployments, and algorithm-specific
+Decision Point, condition mappings, participating-section publications, and algorithm-specific
 requirements. Resuming a paused experiment is not activation and does not rerun this validation.
 
 ### Algorithm
@@ -126,13 +126,6 @@ zero, missing-value, and invalid-division fallback applied by the analysis query
 The author-facing name for an experiment-controlled Alternatives Group. It defines the available
 options and can be placed on one or more pages.
 
-### Deployment
-
-Publication of course content into a learner-facing section. Experiment activation checks the
-deployed Alternatives revision in each participating section. When the documentation discusses an
-LMS or authentication context instead, it names that context explicitly rather than calling it a
-deployment.
-
 ### Direct ingestion
 
 An xAPI ingestion mode that writes normalized rows directly to ClickHouse instead of relying on the
@@ -160,6 +153,12 @@ same primary key.
 How attribution evidence is used on a particular host statement. Direct evidence uses roles such as
 `assignment`, `exposure`, `outcome`, `reward`, or `policy_update`; copied evidence can use `rollup`,
 and video attribution uses `media_interaction`. The role can differ from `attribution_type`.
+
+### Experiment slug
+
+A short, human-readable label for an experiment. A slug is unique only within its project in a
+particular Torus instance. It is not a portable or globally unique experiment identifier. Use the
+experiment UUID when correlating exports or data across Torus instances.
 
 ### Evidenced assignment
 
@@ -296,7 +295,7 @@ For native experiment analysis, one section enrollment identified by `enrollment
 
 ### Participating section
 
-A course section selected to take part in an experiment. Its deployed content must contain the
+A course section selected to take part in an experiment. Its published content must contain the
 experiment's Decision Point before activation.
 
 ### Policy state
@@ -327,7 +326,8 @@ outcomes before observed rewards are added.
 
 ### Publication
 
-An immutable snapshot of authored project content. Publications are deployed to course sections.
+An immutable snapshot of authored project content. Publications are made available to course
+sections through section publication.
 
 ## R
 
@@ -397,6 +397,11 @@ distinct from normalized score and reward value.
 
 A learner-facing course offering created from published content.
 
+### Section publication
+
+The published course content made available to a learner-facing section. Experiment activation
+checks the published Alternatives revision available in each participating section.
+
 ### Section-enrollment scope
 
 See [Assignment scope](#assignment-scope).
@@ -418,7 +423,8 @@ posterior from explicit binary reward evidence. It uses intervention assignment 
 ### UUID
 
 A portable experiment identifier suitable for cross-environment exports. The numeric experiment ID
-is the local database identifier.
+is the local database identifier. Unlike the experiment slug, the UUID does not depend on the
+project or Torus instance for uniqueness.
 
 ### UpGrade-compatible analysis
 

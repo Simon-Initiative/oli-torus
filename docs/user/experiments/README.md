@@ -54,9 +54,9 @@ section/42/page_viewed/2026-08-20T13-44-10Z_D4E5F6.jsonl
 section/42/video/2026-08-20T13-46-31Z_G7H8I9.jsonl
 ```
 
-The bucket name is deployment-specific. Access to source xAPI must be controlled because the S3
-statement can contain the full xAPI actor, including sensitive learner account information, and may
-also contain responses or feedback. ClickHouse does not project the full actor: its actor-related
+The bucket name is specific to the Torus instance. Access to source xAPI must be controlled because
+the S3 statement can contain the full xAPI actor, including sensitive learner account information,
+and may also contain responses or feedback. ClickHouse does not project the full actor: its actor-related
 columns are limited to the account identifiers `raw_events.user_id` and `raw_events.home_page`.
 ClickHouse response and feedback columns can still contain sensitive learner data and require the
 applicable approval. The `experiment_attributions` extension deliberately excludes names, email
@@ -104,7 +104,7 @@ person enrolled in two sections has two different enrollment IDs. Do not join ex
 the xAPI actor account unless a separately approved research protocol explicitly requires it.
 
 Always scope analysis by at least `section_id` and `project_id`. Include `experiment_id` or
-`experiment_uuid` for experiment-specific work. `publication_id` is useful for deployment context,
+`experiment_uuid` for experiment-specific work. `publication_id` identifies the section publication,
 but exact attempt-time publication provenance is a known limitation tracked separately.
 
 ## Recommended analysis workflow

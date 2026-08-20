@@ -17,7 +17,7 @@ Related references:
 ```text
 Plan
   → author a Decision Point and conditions
-  → publish and deploy the content
+  → publish the content to sections
   → create a draft experiment
   → configure policy, participation, and interventions
   → validate and start
@@ -114,7 +114,7 @@ assignment for the new experiment. Assignments from an earlier experiment are no
 the experiment itself is part of assignment identity. The new assignment is then reused according
 to that experiment's configured assignment scope.
 
-## 3. Publish and deploy the content
+## 3. Publish the content to sections
 
 Experiments associate learner content according to the Torus publication model. Learners receive
 content according to the currently pinned publication for their section and experiment analytics
@@ -124,13 +124,14 @@ Before activation:
 
 1. Publish the project containing the Decision Point and intervention pages.
 2. Update that publication in every intended participating section.
-3. Confirm the Decision Point is present in each section's deployed content.
-4. Confirm every active condition maps to an option in the deployed Decision Point.
-5. For Thompson Sampling, confirm every intervention page and scored assessment page is deployed.
+3. Confirm the Decision Point is present in each section's published content.
+4. Confirm every active condition maps to an option in the published Decision Point.
+5. For Thompson Sampling, confirm every intervention page and scored assessment page is included
+   in the section publication.
 
 Activation fails when the selected Alternatives resource is missing from a participating section,
 is not experiment-controlled, has fewer than two active conditions, has no positive active weight,
-or has condition-to-option mappings that do not match deployed content.
+or has condition-to-option mappings that do not match published section content.
 
 ## 4. Create the draft experiment
 
@@ -139,13 +140,15 @@ From the course-author **Experiments** page:
 1. Select **Create Experiment**.
 2. Choose **Weighted random** or **Thompson Sampling** as the assignment policy.
 3. Enter a researcher-readable name.
-4. Enter a project-unique slug.
+4. Enter a short, researcher-readable slug. Treat this as a label, not a portable experiment
+   identifier. It is unique only within the current project in the current Torus instance.
 5. Select the Decision Point.
 6. Select **Create**.
 
 The experiment begins in `draft`. Creation also gives it a stable UUID. Use `experiment_uuid` in
 cross-environment exports when available; use `experiment_id` for joins within the current Torus
-database.
+database. Use the experiment slug for readable labels and filtering only; the same slug can exist
+in another project or Torus instance.
 
 ## 5. Configure the draft
 
@@ -209,8 +212,8 @@ Torus compares its normalized score with the threshold and records an explicit b
 Use this checklist with both the course author and researcher:
 
 - [ ] The research protocol and participating sections are approved.
-- [ ] The project is published and intended sections have the current deployment.
-- [ ] Every condition maps to the correct deployed option.
+- [ ] The project is published and intended sections have the current section publication.
+- [ ] Every condition maps to the correct published option.
 - [ ] At least two conditions are active and total active weight is positive.
 - [ ] Assignment scope matches the research design.
 - [ ] Thompson priors and guardrails are documented.
@@ -226,7 +229,7 @@ Selecting **Start** runs activation validation. Fix validation errors instead of
 An active experiment participates in delivery assignment. At a high level:
 
 1. A learner enters an eligible participating section.
-2. Torus resolves the deployed Decision Point.
+2. Torus resolves the Decision Point from the section publication.
 3. Torus creates or reuses a sticky assignment for the configured scope.
 4. The selected condition determines which option is realized.
 5. Rendering records exposure evidence.
@@ -242,7 +245,7 @@ ClickHouse records created at each step.
 
 Monitor operational health separately from research results:
 
-- participating-section and deployed-content consistency;
+- participating-section and published-content consistency;
 - evidenced assignments and exposures by condition;
 - missing or delayed xAPI ingestion;
 - attributed outcomes versus the complete raw activity stream;
@@ -266,7 +269,7 @@ investigation, or planned enrollment suspension.
 
 A paused experiment can be resumed with **Resume** or ended with **Complete**. Resume does not rerun
 the draft activation validator, so manually repeat the relevant preflight checks—especially section
-deployment, condition availability, and weights—before resuming. Record pause and resume timestamps
+publication, condition availability, and weights—before resuming. Record pause and resume timestamps
 in the analysis notes because exposure and outcome activity may not be uniform across the pause
 boundary.
 
@@ -336,7 +339,8 @@ the distinction among score, normalized score, reward, and missing reward.
 - [ ] Separate section-wide outcomes from selected-branch causal attribution.
 - [ ] Report assignment scope and policy version.
 - [ ] For Thompson Sampling, account for adaptive allocation in the statistical method.
-- [ ] Document publication, deployment, pause, configuration-change, and cutoff times.
+- [ ] Document project publication, section publication, pause, configuration-change, and cutoff
+      times.
 - [ ] Apply the approved privacy and retention rules to S3 and exported data.
 
 Start with the [ClickHouse Query Cookbook](queries.md), then adapt only the fields and joins needed
