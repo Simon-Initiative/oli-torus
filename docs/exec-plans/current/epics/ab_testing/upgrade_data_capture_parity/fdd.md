@@ -2,13 +2,15 @@
 
 ## 1. Executive Summary
 
-Implement two small, independent data paths:
+Implement three small, independent data paths:
 
 - Focused producer enrichment attaches existing experiment attribution shapes to evaluated
   attempt and media xAPI statements when scoped assignment plus selected-branch content proves the
   relationship.
 - Raw activity projection preserves every evaluated activity needed for v0.33.0 UpGrade-compatible
   analysis, whether or not the event has experiment attribution.
+- Initial assignment emission creates one dedicated xAPI statement and one normalized assignment
+  attribution row when a condition assignment is first persisted.
 
 The design intentionally avoids a public universal resolver. Producer-specific modules operate on
 authoritative data they already own and return an empty attribution list on no match or safe
@@ -22,6 +24,8 @@ failure. The host statement is always built and emitted independently.
 - `Oli.Analytics.XAPI.construct_bundle/2` and
   `Oli.Delivery.Experiments.MediaAttributions` own video/media statement enrichment.
 - `Oli.Experiments.XAPI.Attributions` owns the existing wire shape and host-role transformations.
+- The experiment assignment runtime owns the new-assignment boundary and must emit only after a
+  successful insert, never when a sticky assignment is reused.
 - `Oli.Analytics.XAPI.ClickhouseUploader`, the Python Lambda, and backfill/replay own analytical
   projection.
 
@@ -116,6 +120,49 @@ state rather than being rewritten at ingestion.
 
 ## 5. Projection And Replay
 
+### 5.1 Initial assignment statement and attribution
+
+When condition assignment returns a newly persisted assignment (`reused? = false`), the runtime
+emits one dedicated condition-assignment xAPI statement. A reused sticky assignment emits no
+statement. The statement timestamp is the persisted `experiment_assignments.assigned_at`, not the
+time at which a later page view or outcome happens.
+
+The statement uses the xAPI verb
+`http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned`, with the English display value
+`experiment condition assigned`. In ClickHouse it is normalized to `raw_events.event_type =
+'experiment_condition_assigned'`. Its attribution row uses the dedicated statement's `raw_event_hash`; a
+`page_viewed` or other statement that triggered assignment resolution is not treated as the parent
+raw event.
+
+Its `experiment_attributions` extension contains exactly one object with:
+
+- `experiment_role = 'assignment'`;
+- `attribution_type = 'assignment'`;
+- `experiment_id` and `experiment_uuid`;
+- `condition_id` and `condition_code`;
+- `assignment_id`, `assignment_key`, and `assignment_scope`;
+- `intervention_id` for intervention-scoped assignments and no intervention ID for
+  section-enrollment-scoped assignments;
+- `section_id`, `project_id`, and `enrollment_id`;
+- `algorithm` and `policy_version`;
+- `assigned_at`, copied exactly from the persisted assignment.
+
+The assignment attribution does not contain `user_id`, actor email, LMS identity, realized content,
+response, or policy-state payloads. Like existing server-built xAPI statements, the statement actor
+uses the bounded Torus user ID. The attribution payload and normalized assignment record use
+`enrollment_id` as participant identity.
+
+Direct upload, Lambda, and replay/backfill recognize the assignment statement and project the same
+assignment fields. `experiment_attributions.assigned_at` is nullable for all other attribution
+types and historical rows. Existing raw-event and attribution hashes provide deduplication for
+replayed statements.
+
+The normalized rows record the initial condition-assignment event independently of exposure,
+outcome, reward, and media evidence. This phase uses the existing xAPI delivery behavior. A
+transactional outbox, reconciliation process, and historical assignment backfill are deferred.
+
+### 5.2 Existing projection behavior
+
 - Direct upload, Lambda, and replay/backfill use the same small field mapping for required activity
   and attribution columns.
 - Attribution `reward_value` is projected only from an explicit attribution payload value. Missing
@@ -145,6 +192,9 @@ state rather than being rewritten at ingestion.
 - Raw parity: every evaluated activity remains projected with enrollment, score, denominator, and
   evaluation time regardless of attribution.
 - Cross-path parity: direct, Lambda, and replay/backfill normalize the same required fields.
+- Assignment emission: new weighted-random and Thompson assignments emit one row; sticky reuse
+  emits none; intervention and section-enrollment scopes project the correct nullable intervention
+  identity and exact `assigned_at`.
 - Compatibility proof: expected v0.33.0 enrollment/condition/timestamp/correctness rows.
 
 ## 8. Deferred Work
@@ -159,8 +209,28 @@ state rather than being rewritten at ingestion.
 
 Implementation and verification preserve traceability for AC-001, AC-002, AC-003, AC-004,
 AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012, AC-013, and AC-014.
+The condition-assignment event extension adds AC-015 and AC-016.
 
 ## Decision Log
+
+### 2026-08-20 - Namespace The Assignment Event Type
+- Change: Standardized the verb URI and raw-event type on `experiment_condition_assigned`.
+- Reason: The unqualified name could be confused with non-experiment condition assignment.
+- Evidence: The dedicated experiment assignment producer and ClickHouse consumer contract.
+- Impact: All producer and ingestion mappings use the namespaced value; the human-readable xAPI
+  display is `experiment condition assigned`.
+
+### 2026-08-20 - Emit A Dedicated Initial Assignment Statement
+- Change: Added a dedicated `experiment_condition_assigned` xAPI statement and normalized assignment
+  attribution row at the successful new-assignment boundary, with `assigned_at` copied from
+  PostgreSQL and `raw_event_hash` linked to that statement.
+- Reason: Reusing the first later attribution timestamp would represent observation time rather
+  than assignment time and would omit learners without later evidence.
+- Evidence: `experiment_assignments.assigned_at`, `AssignmentDecision.reused?`, and the historical
+  separation between UpGrade assignment and mark/log calls.
+- Impact: Adds the condition-assignment verb and raw-event type, assignment statement recognition,
+  and nullable `assigned_at` projection across direct, Lambda, and replay paths. Durable
+  delivery/reconciliation remains deferred.
 
 ### 2026-08-20 - Keep Attempt Scores Separate From Experiment Rewards
 - Change: Removed the direct-upload, Lambda, and replay/backfill fallback that copied a host

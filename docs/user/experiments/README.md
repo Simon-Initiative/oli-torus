@@ -52,6 +52,7 @@ For delivery data, this commonly resembles:
 section/42/attempt_evaluated/2026-08-20T13-45-02Z_A1B2C3.jsonl
 section/42/page_viewed/2026-08-20T13-44-10Z_D4E5F6.jsonl
 section/42/video/2026-08-20T13-46-31Z_G7H8I9.jsonl
+section/42/experiment_condition_assigned/2026-08-20T13-43-55Z_J1K2L3.jsonl
 ```
 
 The bucket name is specific to the Torus instance. Access to source xAPI must be controlled because
@@ -110,8 +111,8 @@ but exact attempt-time publication provenance is a known limitation tracked sepa
 ## Recommended analysis workflow
 
 1. Select the section, project, experiment, and analysis time range.
-2. Inspect evidenced-assignment and exposure counts before calculating outcomes; use the
-   transactional assignment store when a complete allocation audit is required.
+2. Inspect initial condition-assignment and exposure counts before calculating outcomes; use the
+   transactional assignment store when delivery completeness must be audited.
 3. Use `enrollment_id` as the participant key.
 4. Use `raw_events` for the complete evaluated-activity outcome stream.
 5. Use `experiment_attributions` for assignment, exposure, outcome, reward, and policy evidence.

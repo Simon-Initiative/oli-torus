@@ -20,6 +20,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     "http://id.tincanapi.com/verb/viewed",
     "http://adlnet.gov/expapi/verbs/experienced"
   ]
+  @experiment_condition_assigned_verb "http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned"
 
   @experiment_attributions_extension "http://oli.cmu.edu/extensions/experiment_attributions"
   @event_processing_chunk_size 500
@@ -232,15 +233,32 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     end
   end
 
+  defp is_experiment_condition_assigned_event?(event),
+    do: get_in(event, ["verb", "id"]) == @experiment_condition_assigned_verb
+
   # Transform an xAPI event to the unified raw_events table format
   defp transform_to_raw_event(event, event_hash) do
     cond do
-      is_video_event?(event) -> transform_video_event(event, event_hash)
-      is_activity_attempt_event?(event) -> transform_activity_attempt_event(event, event_hash)
-      is_page_attempt_event?(event) -> transform_page_attempt_event(event, event_hash)
-      is_page_viewed_event?(event) -> transform_page_viewed_event(event, event_hash)
-      is_part_attempt_event?(event) -> transform_part_attempt_event(event, event_hash)
-      true -> nil
+      is_experiment_condition_assigned_event?(event) ->
+        raw_event_base(event, event_hash, "experiment_condition_assigned")
+
+      is_video_event?(event) ->
+        transform_video_event(event, event_hash)
+
+      is_activity_attempt_event?(event) ->
+        transform_activity_attempt_event(event, event_hash)
+
+      is_page_attempt_event?(event) ->
+        transform_page_attempt_event(event, event_hash)
+
+      is_page_viewed_event?(event) ->
+        transform_page_viewed_event(event, event_hash)
+
+      is_part_attempt_event?(event) ->
+        transform_part_attempt_event(event, event_hash)
+
+      true ->
+        nil
     end
   end
 
@@ -393,6 +411,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
           attribution_value(attribution, "algorithm") ||
             attribution_value(attribution, "assigned_by_policy"),
         policy_version: attribution_value(attribution, "policy_version"),
+        assigned_at: attribution_value(attribution, "assigned_at"),
         content_revision_id: attribution_value(attribution, "content_revision_id"),
         intervention_id: attribution_value(attribution, "intervention_id"),
         intervention_key: attribution_value(attribution, "intervention_key"),
@@ -664,6 +683,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       assignment_scope,
       algorithm,
       policy_version,
+      assigned_at,
       content_revision_id,
       intervention_id,
       intervention_key,
@@ -701,6 +721,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(attribution[:assignment_scope]),
       escape_value(attribution[:algorithm]),
       escape_value(attribution[:policy_version]),
+      escape_value(attribution[:assigned_at]),
       escape_value(attribution[:content_revision_id]),
       escape_value(attribution[:intervention_id]),
       escape_value(attribution[:intervention_key]),

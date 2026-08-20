@@ -101,6 +101,7 @@ defmodule Oli.Experiments.XAPI.Attributions do
       assigned_by_policy: assignment_value(assignment, :assigned_by_policy),
       algorithm: assignment_value(assignment, :assigned_by_policy),
       policy_version: assignment_value(assignment, :policy_version),
+      assigned_at: format_timestamp(assignment_value(assignment, :assigned_at)),
       key:
         assignment_value(assignment, :assignment_key) ||
           "assignment:#{decision.assignment_id}",

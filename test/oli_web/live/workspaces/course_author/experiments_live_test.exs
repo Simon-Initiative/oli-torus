@@ -758,7 +758,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_click()
 
       assert has_element?(details_view, "#experiment-configuration", "Active")
-      assert has_element?(details_view, "#experiment-status-detail .badge-success", "Active")
+      assert has_element?(details_view, "#experiment-status-detail .badge-primary", "Active")
       refute has_element?(details_view, "#experiment-policy-report")
       assert has_element?(details_view, "#condition-0-label[disabled]")
       assert has_element?(details_view, "#condition-0-option[disabled]")

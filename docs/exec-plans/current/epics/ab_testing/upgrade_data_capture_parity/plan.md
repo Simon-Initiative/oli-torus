@@ -25,10 +25,11 @@ diff contains no PR #6784 or PR #6786 patch-equivalent changes.
 
 ## Scope
 
-Deliver two independent outcomes:
+Deliver three independent outcomes:
 
 1. Restore experiment attribution on concrete existing non-`page_viewed` producers.
 2. Reconstruct the v0.33.0 UpGrade section-wide evaluated-activity dataset from analytics storage.
+3. Emit one initial condition-assignment event that does not depend on later learner evidence.
 
 Do not gate raw activity capture on causal attribution. Do not introduce a universal resolver,
 speculative producers, generic interaction roles, broad diagnostics, UI/export work, or unrelated
@@ -103,7 +104,7 @@ experiment-runtime changes.
   - Command: `python3 -m pytest cloud/xapi-etl-processor/tests`
 - Gate C: Attributed and unattributed evaluated activities produce equivalent complete raw rows.
 
-## Phase 4: Compatibility Proof And Final Verification
+## Phase 4: Compatibility Proof
 
 - Goal: Prove the two feature goals end to end without expanding scope (FR-007).
 - Tasks:
@@ -116,8 +117,6 @@ experiment-runtime changes.
   - [x] Verify exact current-deployment publication behavior remains documented as the MER-5889
     limitation rather than changing it here.
   - [x] Run required security, performance, Elixir, and requirements reviews.
-  - [ ] After PRs #6784 and #6786 land, reconcile this branch onto updated `hotfix-v0.34.1` using the
-    branch strategy above and inspect the complete final-base diff.
   - [x] Run formatting, affected suites, `git diff --check`, requirements traceability, and harness
     validation.
 - Testing:
@@ -125,8 +124,37 @@ experiment-runtime changes.
   - Command: `mix format`
   - Command: `git diff --check`
 - Gate D: Both the non-page attribution proof and v0.33.0 compatibility dataset pass independently.
-  The branch is based on current `hotfix-v0.34.1`, contains no duplicate prerequisite patches, and
-  is ready for a clean PR targeting that branch.
+
+## Phase 5: Capture Initial Condition-Assignment Events
+
+- Goal: Capture one ClickHouse condition-assignment event per newly persisted assignment without
+  conflating assignment with later exposure or sticky reuse (FR-009).
+- Tasks:
+  - [x] Emit a dedicated condition-assignment xAPI statement only when assignment persistence
+    succeeds with `reused? = false`; do not emit on sticky reuse.
+  - [x] Use xAPI verb `http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned` with display value
+    `experiment condition assigned`, normalize it as `raw_events.event_type = 'experiment_condition_assigned'`, and link
+    its attribution through that statement's `raw_event_hash`, never a triggering page view.
+  - [x] Set the statement timestamp and attribution `assigned_at` from the exact persisted
+    assignment value.
+  - [x] Include experiment, condition, assignment, scope, section, project, enrollment, algorithm,
+    and policy-version identity; include `intervention_id` only for intervention scope.
+  - [x] Project the assignment statement consistently through direct upload, Lambda, and
+    replay/backfill, including a nullable attribution `assigned_at` column.
+  - [x] Keep the assignment attribution payload free of direct learner identity, LMS identity, responses,
+    realized content, and policy-state blobs.
+  - [x] Update researcher documentation and queries to explain the dedicated initial
+    condition-assignment event and distinguish it from later exposure and outcome evidence.
+  - [ ] After PRs #6784 and #6786 land, reconcile this branch onto updated `hotfix-v0.34.1` using the
+    branch strategy above and inspect the complete final-base diff.
+- Testing:
+  - [x] Cover AC-015 and AC-016 for both assignment scopes and supported policies.
+  - [x] Prove sticky reuse emits no additional assignment statement or attribution row.
+  - [x] Compare assignment projection across direct upload, Lambda, and replay/backfill.
+  - [x] Rerun every earlier phase gate, formatting, `git diff --check`, requirements traceability,
+    harness validation, and applicable reviews.
+- Gate E: ClickHouse captures the dedicated initial condition-assignment event, earlier parity gates
+  remain green, and the reconciled branch contains only MER-5885 work.
 
 ## Deferred Follow-Ups
 
@@ -135,8 +163,28 @@ experiment-runtime changes.
 - Broad operational diagnostic SQL and allocation monitoring.
 - Exact attempt-time publication provenance (MER-5889).
 - User-facing dataset export and statistical analysis.
+- Transactional assignment outbox, delivery reconciliation, and historical assignment backfill.
 
 ## Decision Log
+
+### 2026-08-20 - Namespace The Condition-Assignment Event
+- Change: Renamed the Phase 5 xAPI verb and normalized event type to
+  `experiment_condition_assigned`.
+- Reason: The name should distinguish native experiment assignment from other possible Torus
+  condition-assignment concepts.
+- Evidence: Phase 5 producer, schema, projection, and researcher-query boundaries.
+- Impact: Phase 5 verification uses the namespaced value consistently; no compatibility path for
+  the unreleased name is retained.
+
+### 2026-08-20 - Add A Fifth Phase For Initial Assignment Records
+- Change: Added a phase that emits and projects one dedicated `experiment_condition_assigned` xAPI statement
+  and linked attribution only for a newly persisted condition assignment.
+- Reason: ClickHouse currently observes assignments only through later evidence, while UpGrade
+  captured the initial assignment separately.
+- Evidence: Historical UpGrade `/api/assign` behavior, current `experiment_assignments.assigned_at`,
+  and the `AssignmentDecision.reused?` boundary.
+- Impact: Gate E now covers the assignment verb, raw-event type, attribution linkage, AC-015,
+  AC-016, and final reruns. Durable delivery and reconciliation remain deferred.
 
 ### 2026-08-19 - Replace Seven-Phase Universal Attribution Plan
 - Change: Replaced the prior seven-phase plan with four phases centered on concrete producer

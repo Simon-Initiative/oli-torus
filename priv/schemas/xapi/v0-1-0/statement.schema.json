@@ -30,6 +30,9 @@
     },
     {
       "$ref": "#/$defs/videoCompleted"
+    },
+    {
+      "$ref": "#/$defs/conditionAssigned"
     }
   ],
   "$defs": {
@@ -130,6 +133,9 @@
           "type": "string"
         },
         "policy_version": {
+          "type": "string"
+        },
+        "assigned_at": {
           "type": "string"
         },
         "intervention_id": {
@@ -511,6 +517,79 @@
         "contextActivities",
         "extensions"
       ],
+      "additionalProperties": false
+    },
+    "conditionAssigned": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": ["id", "display"],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string"},
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {"$ref": "#/$defs/langString"},
+                "type": {
+                  "const": "http://oli.cmu.edu/extensions/types/condition_assignment"
+                }
+              },
+              "required": ["name", "type"],
+              "additionalProperties": false
+            },
+            "objectType": {"const": "Activity"}
+          },
+          "required": ["id", "definition", "objectType"],
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "extensions": {
+              "type": "object",
+              "properties": {
+                "http://oli.cmu.edu/extensions/section_id": {"type": "integer"},
+                "http://oli.cmu.edu/extensions/project_id": {"type": "integer"},
+                "http://oli.cmu.edu/extensions/publication_id": {"type": "integer"},
+                "http://oli.cmu.edu/extensions/enrollment_id": {"type": "integer"},
+                "http://oli.cmu.edu/extensions/experiment_attributions": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1,
+                  "items": {"$ref": "#/$defs/experimentAttribution"}
+                }
+              },
+              "required": [
+                "http://oli.cmu.edu/extensions/section_id",
+                "http://oli.cmu.edu/extensions/project_id",
+                "http://oli.cmu.edu/extensions/enrollment_id",
+                "http://oli.cmu.edu/extensions/experiment_attributions"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": ["extensions"],
+          "additionalProperties": false
+        },
+        "timestamp": {"type": "string"}
+      },
+      "required": ["actor", "verb", "object", "context", "timestamp"],
       "additionalProperties": false
     },
     "activityAttemptEvaluated": {

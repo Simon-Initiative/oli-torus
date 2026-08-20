@@ -187,7 +187,8 @@ EXPERIMENT_ATTRIBUTION_INSERT_COLUMNS: List[str] = [
     "raw_event_type", "timestamp", "section_id", "project_id", "publication_id",
     "enrollment_id", "experiment_role", "attribution_type", "experiment_id",
     "experiment_uuid", "condition_id",
-    "condition_code", "assignment_id", "assignment_key", "algorithm", "policy_version",
+    "condition_code", "assignment_id", "assignment_key", "assignment_scope", "algorithm", "policy_version",
+    "assigned_at",
     "content_revision_id", "reward_value", "reward_source", "intervention_id",
     "intervention_key", "assessment_binding_id", "assessment_page_resource_id",
     "resource_attempt_id", "disposition", "reward_threshold", "normalized_score",
@@ -889,14 +890,15 @@ def normalize_table_schema(table: pa.Table) -> pa.Table:
 
 def normalize_experiment_attribution_table_schema(table: pa.Table) -> pa.Table:
     """Apply the ClickHouse experiment_attributions projection and types."""
-    timestamp_idx = table.schema.get_field_index("timestamp")
-    if timestamp_idx != -1 and pa.types.is_string(table.column(timestamp_idx).type):
-        converted = _coerce_iso8601_timestamp_column(table.column(timestamp_idx))
-        table = table.set_column(
-            timestamp_idx,
-            table.schema.field(timestamp_idx).with_type(converted.type),
-            converted,
-        )
+    for column_name in ("timestamp", "assigned_at"):
+        timestamp_idx = table.schema.get_field_index(column_name)
+        if timestamp_idx != -1 and pa.types.is_string(table.column(timestamp_idx).type):
+            converted = _coerce_iso8601_timestamp_column(table.column(timestamp_idx))
+            table = table.set_column(
+                timestamp_idx,
+                table.schema.field(timestamp_idx).with_type(converted.type),
+                converted,
+            )
     return _project_table(
         table,
         EXPERIMENT_ATTRIBUTION_INSERT_COLUMNS,
@@ -1052,7 +1054,7 @@ def _get_experiment_attribution_type_map() -> Dict[str, "pa.DataType"]:
     string_columns = {
         "raw_event_hash", "attribution_hash", "source_file", "source_etag",
         "raw_event_type", "experiment_role", "attribution_type", "experiment_uuid",
-        "condition_code", "assignment_key", "algorithm",
+        "condition_code", "assignment_key", "assignment_scope", "algorithm",
         "policy_version", "reward_source", "intervention_key", "disposition",
     }
     uint64_columns = {
@@ -1067,6 +1069,7 @@ def _get_experiment_attribution_type_map() -> Dict[str, "pa.DataType"]:
         {
             "source_line": pa.uint32(),
             "timestamp": pa.timestamp("ms", tz="UTC"),
+            "assigned_at": pa.timestamp("ms", tz="UTC"),
             "reward_value": pa.float64(),
             "reward_threshold": pa.float64(),
             "normalized_score": pa.float64(),
@@ -1246,6 +1249,9 @@ def transform_xapi_statement(
 
 
 def _determine_event_type(verb_id: str, object_type: str) -> str:
+    if verb_id == "http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned":
+        return "experiment_condition_assigned"
+
     verb_id = verb_id or ""
     object_type = object_type or ""
 
@@ -1329,6 +1335,7 @@ def transform_experiment_attributions(
                     attribution.get("algorithm") or attribution.get("assigned_by_policy")
                 ),
                 "policy_version": _safe_str(attribution.get("policy_version")),
+                "assigned_at": _safe_str(attribution.get("assigned_at")),
                 "content_revision_id": _safe_int(attribution.get("content_revision_id")),
                 "intervention_id": _safe_int(attribution.get("intervention_id")),
                 "intervention_key": _safe_str(attribution.get("intervention_key")),

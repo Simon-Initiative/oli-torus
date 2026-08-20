@@ -17,6 +17,10 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
                     "../../../support/fixtures/upgrade_data_capture_parity_statement.json",
                     __DIR__
                   )
+  @condition_assignment_fixture Path.expand(
+                                  "../../../support/fixtures/experiment_condition_assignment_statement.json",
+                                  __DIR__
+                                )
 
   setup :verify_on_exit!
 
@@ -292,6 +296,43 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       refute query =~ "video_url"
       refute query =~ "activity_attempt_guid"
       refute query =~ "content_element_id"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload projects dedicated condition assignment statements and persisted assigned_at" do
+    # AC-015 / AC-016: direct upload preserves the dedicated assignment event contract.
+    raw_statement = File.read!(@condition_assignment_fixture) |> String.trim_trailing()
+    raw_event_hash = sha256(raw_statement)
+    attribution_hash = sha256("#{raw_event_hash}:v2:intervention:10:60:500")
+
+    bundle = %StatementBundle{
+      body: raw_statement,
+      category: :experiment_condition_assigned,
+      bundle_id: "assignment"
+    }
+
+    expect(MockHTTP, :post, 2, fn _url, query, _headers ->
+      assert query =~ "'experiment_condition_assigned'"
+
+      case query =~ "INSERT INTO analytics.experiment_attributions" do
+        true ->
+          assert query =~ "assigned_at"
+          assert query =~ "'2026-08-20T15:04:05Z'"
+          assert query =~ "'assignment'"
+          assert query =~ "'thompson_sampling'"
+          assert query =~ "'thompson_sampling:v2'"
+          assert query =~ raw_event_hash
+          assert query =~ attribution_hash
+
+        false ->
+          assert query =~ "INSERT INTO analytics.raw_events"
+          assert query =~ ~r/VALUES\s*\('[^']+', '400',/s
+          assert query =~ raw_event_hash
+      end
+
       {:ok, %{status_code: 200, body: ""}}
     end)
 

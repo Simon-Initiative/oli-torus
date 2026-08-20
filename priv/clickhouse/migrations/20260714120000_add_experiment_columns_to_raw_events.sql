@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS experiment_attributions (
     assignment_scope LowCardinality(String) DEFAULT 'intervention',
     algorithm Nullable(String),
     policy_version Nullable(String),
+    assigned_at Nullable(DateTime64(3)),
 
     content_revision_id Nullable(UInt64),
     intervention_id Nullable(UInt64),

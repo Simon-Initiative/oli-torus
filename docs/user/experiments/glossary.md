@@ -402,7 +402,8 @@ See [Assignment scope](#assignment-scope).
 ### Sticky assignment
 
 An assignment that is reused for subsequent eligible delivery rather than recalculated. Changing a
-condition's availability does not rewrite existing assignments.
+condition's availability does not rewrite existing assignments. A newly persisted assignment emits
+one `experiment_condition_assigned` xAPI statement; sticky reuse does not emit another.
 
 ## T
 

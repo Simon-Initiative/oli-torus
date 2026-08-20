@@ -89,7 +89,7 @@ The attribution above has no `reward_value`. In ClickHouse it becomes `NULL`, no
 
 | Application event | Common xAPI statement type | Attribution type | Statement role | Notes |
 | --- | --- | --- | --- | --- |
-| Condition assigned during page preparation | No dedicated xAPI statement | — | — | The assignment is persisted in PostgreSQL. Assignment telemetry is operational only; it does not itself create an S3 or ClickHouse row. |
+| Condition assigned during page preparation | `experiment_condition_assigned` | `assignment` | `assignment` | Emitted once when a new sticky assignment is persisted. Reusing the assignment emits no new statement. The statement and attribution timestamps use the persisted `assigned_at`. |
 | Selected experiment content shown | `page_viewed` | `exposure` | `exposure` | Includes `content_revision_id`, actual intervention, and exposure time. |
 | Evaluated part attempt | `part_attempt` | `outcome` | `outcome` | Direct evidence; includes score and attempt identity. |
 | Evaluated activity attempt | `activity_attempt` | `outcome` | `rollup` | Same outcome evidence attached to the activity statement. |
@@ -251,6 +251,7 @@ and research approvals.
 | `condition_id`, `condition_code` | Assigned condition identities. Prefer code for readable output and ID for stable joins within one database. |
 | `assignment_id`, `assignment_key`, `assignment_scope` | Assignment identity and scope. |
 | `algorithm`, `policy_version` | Allocation algorithm and version. |
+| `assigned_at` | Exact persisted assignment time for a dedicated initial condition-assignment row; null for other attribution types. |
 | `content_revision_id` | Revision shown for exposure evidence; normally null on outcomes. |
 | `intervention_id`, `intervention_key` | Concrete placement/intervention identity. |
 | `resource_attempt_id` | Related page/resource attempt when supplied. |

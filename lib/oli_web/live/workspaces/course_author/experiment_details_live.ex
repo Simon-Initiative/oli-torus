@@ -2163,7 +2163,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   defp format_state(value), do: display_value(value)
 
-  defp status_badge_class(:active), do: "badge-success"
+  defp status_badge_class(:active), do: "badge-primary"
   defp status_badge_class(:completed), do: "badge-success"
   defp status_badge_class(_state), do: "badge-secondary"
 

@@ -2,25 +2,30 @@
 
 ## 1. Overview
 
-Restore two missing analytics capabilities for native experiments:
+Restore three missing analytics capabilities for native experiments:
 
 1. Existing non-`page_viewed` xAPI producers carry experiment attribution when a persisted
    assignment and selected Alternatives branch establish the relationship.
 2. Analytics preserve the section-wide evaluated-activity dataset previously sent to UpGrade in
    Torus v0.33.0: enrollment, assigned condition, evaluation timestamp, score, denominator, and
    derivable correctness.
+3. ClickHouse receives one analytical condition-assignment record when a learner is initially
+   assigned to a condition, independently of later exposure, outcome, reward, or media evidence.
 
 These capabilities are independent. An evaluated activity must remain in the section-wide stream
-even when it has no causal experiment attribution.
+even when it has no causal experiment attribution, and an initial assignment must remain
+analytically distinct from later evidence that reuses it.
 
 ## 2. Historical Behavior And Problem
 
 In v0.33.0, `Oli.Delivery.Experiments.LogWorker` logged every evaluated activity attempt in an
 experiment-enabled section. It used the section enrollment as the participant identifier and sent
-continuous correctness derived from `score / out_of`. Native experiments already emit assignment
-and exposure evidence on page views, but attribution on other existing xAPI statements is
-incomplete and the ClickHouse activity stream does not yet guarantee every field needed to
-reconstruct the former dataset.
+continuous correctness derived from `score / out_of`. UpGrade also persisted condition assignment
+through its assignment API before later exposure and outcome logging. Native experiments persist the
+authoritative assignment in PostgreSQL, but ClickHouse currently sees an assignment only after a
+later evidenced event. Attribution on other existing xAPI statements is also incomplete, and the
+ClickHouse activity stream does not yet guarantee every field needed to reconstruct the former
+dataset.
 
 ## 3. Goals
 
@@ -30,6 +35,8 @@ reconstruct the former dataset.
   deployed page revision for resource-only media events.
 - Preserve every applicable evaluated activity in the raw analytics stream, regardless of branch
   membership or whether attribution succeeds.
+- Emit exactly one condition-assignment xAPI statement and linked assignment attribution record
+  when a new condition assignment is persisted.
 - Reconstruct enrollment, condition, evaluation timestamp, score, denominator, and correctness
   from supported analytics data.
 - Keep direct upload, Lambda ingestion, and replay/backfill consistent for the fields required by
@@ -47,6 +54,8 @@ reconstruct the former dataset.
 - Statistical analysis, causal inference, or arbitrary UpGrade query-language parity.
 - Stronger xAPI delivery guarantees or correction of the existing asynchronous publication lookup;
   exact attempt-time publication remains tracked separately by MER-5889.
+- A transactional outbox, delivery reconciliation, or assignment backfill mechanism. Assignment
+  records use the existing xAPI delivery behavior in this scope.
 - A broad operational diagnostics suite beyond existing pipeline signals and focused failure logs.
 
 ## 5. Functional Requirements
@@ -60,6 +69,16 @@ Requirements and acceptance criteria are maintained in `requirements.yml`.
 - `raw_events` activity-attempt rows are the complete section-wide outcome stream.
 - `experiment_attributions` is an optional causal overlay. Its absence never excludes a raw
   activity-attempt row.
+- A newly persisted condition assignment emits one dedicated xAPI statement normalized in
+  `raw_events` as `event_type = 'experiment_condition_assigned'`. Its linked attribution has
+  `experiment_role = 'assignment'` and `attribution_type = 'assignment'`. Reuse of an existing
+  sticky assignment emits no new assignment record.
+- The condition-assignment attribution references the dedicated statement through its
+  `raw_event_hash`; it does not reference a `page_viewed` statement that may have triggered
+  assignment resolution.
+- The assignment record carries experiment, condition, assignment, scope, section, project,
+  enrollment, algorithm, policy version, and the exact persisted `assigned_at`; it carries
+  `intervention_id` only for intervention-scoped assignments.
 - A non-page host statement receives attribution only when the scoped assignment agrees with the
   selected branch preserved in realized content.
 - `score` and `out_of` are stored without compatibility normalization. The compatibility query
@@ -85,6 +104,8 @@ Requirements and acceptance criteria are maintained in `requirements.yml`.
 ## 8. Verification Strategy
 
 - Producer tests prove attributed and unattributed behavior for attempt and media statements.
+- Assignment tests prove a newly persisted assignment emits one assignment record, sticky reuse
+  emits none, and both assignment scopes preserve their required identities.
 - Regression tests prove Thompson outcome/reward/policy evidence remains unchanged.
 - Projection tests prove all ingestion paths preserve the required raw activity and attribution
   fields.
@@ -96,10 +117,33 @@ Requirements and acceptance criteria are maintained in `requirements.yml`.
 ## 9. Definition Of Done
 
 - Both focused producer attribution and section-wide outcome parity pass independently.
+- ClickHouse contains one condition-assignment event for each newly persisted assignment emitted
+  through the supported xAPI path, without requiring exposure, outcome, reward, or media rows.
 - The compatibility dataset does not require mutable authoring content or direct learner identity.
 - Existing experiment runtime behavior and ordinary xAPI host statements remain intact.
 
 ## Decision Log
+
+### 2026-08-20 - Namespace Condition Assignment As An Experiment Event
+- Change: Renamed the assignment statement and normalized raw-event type from
+  `condition_assigned` to `experiment_condition_assigned`.
+- Reason: The event records assignment within the native experiment system, not every kind of
+  condition assignment that Torus may support.
+- Evidence: The feature-specific producer, attribution, and researcher query contract.
+- Impact: Producer, schema, direct upload, Lambda, replay/backfill, fixtures, queries, and
+  documentation use the namespaced value before production release; no data migration is needed.
+
+### 2026-08-20 - Capture Initial Condition-Assignment Events
+- Change: Added one dedicated `experiment_condition_assigned` xAPI statement and linked assignment attribution
+  for every newly persisted condition assignment, including the exact persisted assignment time
+  and bounded assignment identity.
+- Reason: UpGrade captured assignments independently of later evidence, while the native
+  ClickHouse model currently observes an assignment only when later evidence occurs.
+- Evidence: Historical `Oli.Delivery.Experiments.assign/1` and `mark/2` separated assignment from
+  exposure; current `experiment_assignments` persists `assigned_at` and sticky assignment identity.
+- Impact: Adds a third product outcome and new acceptance criteria. The assignment attribution is
+  linked to its dedicated raw event rather than a triggering page view; sticky reuse remains
+  silent, and stronger delivery/reconciliation guarantees remain out of scope.
 
 ### 2026-08-19 - Separate Attribution From UpGrade Outcome Parity
 - Change: Reduced the feature to focused non-page producer attribution plus an unconditional

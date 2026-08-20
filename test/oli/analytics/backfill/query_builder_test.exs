@@ -116,6 +116,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
   end
 
   test "extracts attribution-level rows when target table is experiment_attributions" do
+    # AC-016: replay projects the dedicated assignment event type and timestamp.
     run = %BackfillRun{
       target_table: "analytics.experiment_attributions",
       s3_pattern: "s3://bucket/section/**/*.jsonl",
@@ -148,6 +149,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
     assert sql =~ "AS reward_threshold"
     assert sql =~ "AS normalized_score"
     assert sql =~ "AS page_revision_id"
+    assert sql =~ "'http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned'"
+    assert sql =~ "'experiment_condition_assigned'"
+    assert sql =~ "AS assigned_at"
 
     assert sql =~
              "toFloat64OrNull(nullIf(JSON_VALUE(attribution, '$.reward_value'), '')) AS reward_value"
@@ -218,5 +222,53 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
              attribution["attribution_type"] == "reward" and
                attribution["reward_value"] == 0.0
            end)
+  end
+
+  test "replay maps the canonical condition assignment contract" do
+    fixture_path =
+      Path.expand(
+        "../../../support/fixtures/experiment_condition_assignment_statement.json",
+        __DIR__
+      )
+
+    statement = fixture_path |> File.read!() |> Jason.decode!()
+
+    [attribution] =
+      get_in(statement, [
+        "context",
+        "extensions",
+        "http://oli.cmu.edu/extensions/experiment_attributions"
+      ])
+
+    raw_sql =
+      QueryBuilder.insert_sql(
+        %BackfillRun{
+          target_table: "analytics.raw_events",
+          s3_pattern: "s3://bucket/assignment.jsonl",
+          format: "JSONAsString"
+        },
+        @creds
+      )
+
+    attribution_sql =
+      QueryBuilder.insert_sql(
+        %BackfillRun{
+          target_table: "analytics.experiment_attributions",
+          s3_pattern: "s3://bucket/assignment.jsonl",
+          format: "JSONAsString"
+        },
+        @creds
+      )
+
+    assert raw_sql =~ "http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned"
+    assert raw_sql =~ "'experiment_condition_assigned'"
+    assert attribution_sql =~ "lower(hex(SHA256(json))) AS raw_event_hash"
+
+    for field <-
+          ~w(experiment_id experiment_uuid condition_id condition_code assignment_id assignment_key assignment_scope algorithm policy_version assigned_at section_id project_id publication_id enrollment_id intervention_id) do
+      assert Map.has_key?(attribution, field)
+      assert attribution_sql =~ "$.#{field}"
+      assert attribution_sql =~ "AS #{field}"
+    end
   end
 end

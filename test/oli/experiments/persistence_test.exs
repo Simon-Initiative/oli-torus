@@ -378,6 +378,7 @@ defmodule Oli.Experiments.PersistenceTest do
       assert migration =~ "intervention_id Nullable(UInt64)"
       assert migration =~ "assessment_binding_id Nullable(UInt64)"
       assert migration =~ "normalized_score Nullable(Float64)"
+      assert migration =~ "assigned_at Nullable(DateTime64(3))"
       assert migration =~ "ADD COLUMN IF NOT EXISTS enrollment_id Nullable(UInt64)"
       refute migration =~ "decision_point_id"
       refute migration =~ "decision_point_key"

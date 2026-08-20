@@ -8,10 +8,10 @@ Because both tables use `ReplacingMergeTree`, the examples use `FINAL` for simpl
 For large production analyses, consider an equivalent latest-version strategy after measuring the
 cost.
 
-## Evidenced assignment balance by condition
+## Initial condition assignments by condition
 
-Count unique intervention- or enrollment-scoped assignments that have at least one successfully
-ingested attribution row, not raw-event rows:
+Count dedicated initial condition-assignment events. Each newly persisted sticky assignment emits
+one such row; later reuse does not emit another:
 
 ```sql
 SELECT
@@ -23,28 +23,29 @@ FROM experiment_attributions FINAL
 WHERE section_id = 2001
   AND project_id = 1001
   AND experiment_id = 101
-  AND assignment_id IS NOT NULL
+  AND experiment_role = 'assignment'
+  AND attribution_type = 'assignment'
+  AND raw_event_type = 'experiment_condition_assigned'
   AND timestamp >= toDateTime64('2026-08-01 00:00:00', 3)
   AND timestamp <  toDateTime64('2026-09-01 00:00:00', 3)
 GROUP BY condition_code, assignment_scope
 ORDER BY condition_code, assignment_scope;
 ```
 
-Assignment identity is repeated on exposure, outcome, reward, and media-attribution rows.
-`uniqExact(assignment_id)` therefore measures distinct **evidenced assignments in ClickHouse** and
-prevents repeated attribution evidence from inflating counts. It is not the authoritative allocation
-population: an assignment persisted in PostgreSQL can be absent when no attributed xAPI statement was
-successfully emitted and ingested. Use the transactional experiment-assignment store for a complete
-allocation audit.
+`uniqExact(assignment_id)` protects the result from replay duplicates. These records use the
+existing xAPI delivery path, so PostgreSQL remains authoritative if delivery or ingestion fails.
 
 ## Assignment exposure funnel
 
 ```sql
 SELECT
     condition_code,
-    uniqExact(assignment_id) AS evidenced_assignments,
+    uniqExactIf(
+      assignment_id,
+      attribution_type = 'assignment' AND raw_event_type = 'experiment_condition_assigned'
+    ) AS assigned,
     uniqExactIf(assignment_id, attribution_type = 'exposure') AS exposed_assignments,
-    exposed_assignments / nullIf(evidenced_assignments, 0) AS assignment_exposure_rate
+    exposed_assignments / nullIf(assigned, 0) AS assignment_exposure_rate
 FROM experiment_attributions FINAL
 WHERE section_id = 2001
   AND project_id = 1001

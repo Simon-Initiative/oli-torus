@@ -79,6 +79,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
             AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/types/page'),
           'page_viewed',
 
+          #{json_value_or_null("$.verb.id")} = 'http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned',
+          'experiment_condition_assigned',
+
           (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
             AND (#{json_value_or_null("$.object.definition.type")} = 'http://adlnet.gov/expapi/activities/question'),
           'part_attempt',
@@ -159,7 +162,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         inserted_at, raw_event_type, timestamp, section_id,
         project_id, publication_id, enrollment_id, experiment_role, attribution_type, experiment_id, experiment_uuid,
         condition_id, condition_code, assignment_id, assignment_key, assignment_scope,
-        algorithm, policy_version,
+        algorithm, policy_version, assigned_at,
         content_revision_id, intervention_id, intervention_key, assessment_binding_id,
         assessment_page_resource_id, resource_attempt_id, disposition, reward_threshold,
         normalized_score, page_revision_id, reward_value, reward_source
@@ -191,6 +194,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         coalesce(nullIf(JSON_VALUE(#{attribution}, '$.assignment_scope'), ''), 'intervention') AS assignment_scope,
         coalesce(nullIf(JSON_VALUE(#{attribution}, '$.algorithm'), ''), nullIf(JSON_VALUE(#{attribution}, '$.assigned_by_policy'), '')) AS algorithm,
         nullIf(JSON_VALUE(#{attribution}, '$.policy_version'), '') AS policy_version,
+        parseDateTime64BestEffortOrNull(nullIf(JSON_VALUE(#{attribution}, '$.assigned_at'), ''), 3) AS assigned_at,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.content_revision_id'), '')) AS content_revision_id,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.intervention_id'), '')) AS intervention_id,
         nullIf(JSON_VALUE(#{attribution}, '$.intervention_key'), '') AS intervention_key,
@@ -243,6 +247,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
       (#{json_value_or_null("$.verb.id")} = 'http://id.tincanapi.com/verb/viewed')
         AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/types/page'),
       'page_viewed',
+      #{json_value_or_null("$.verb.id")} = 'http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned',
+      'experiment_condition_assigned',
       (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
         AND (#{json_value_or_null("$.object.definition.type")} = 'http://adlnet.gov/expapi/activities/question'),
       'part_attempt',

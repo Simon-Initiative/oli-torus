@@ -959,6 +959,26 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(reward["reward_value"], 0.0)
         self.assertEqual(reward["reward_source"], "activity_attempt:no_credit")
 
+    def test_condition_assignment_projects_as_dedicated_raw_and_attribution_rows(self):
+        # AC-016: Lambda preserves the dedicated assignment event contract.
+        fixture_path = Path(__file__).parents[3] / "test" / "support" / "fixtures" / "experiment_condition_assignment_statement.json"
+        raw_bytes = fixture_path.read_bytes().rstrip(b"\n")
+        event = json.loads(raw_bytes)
+        source = {"raw_bytes": raw_bytes, "bucket": "bucket", "key": "assignment.jsonl", "etag": "etag", "line_number": 1}
+
+        raw = lambda_function.transform_xapi_statement(event, **source)
+        [attribution] = lambda_function.transform_experiment_attributions(event, **source)
+
+        self.assertEqual(raw["event_type"], "experiment_condition_assigned")
+        self.assertEqual(attribution["raw_event_type"], "experiment_condition_assigned")
+        self.assertEqual(attribution["experiment_role"], "assignment")
+        self.assertEqual(attribution["assignment_scope"], "intervention")
+        self.assertEqual(attribution["algorithm"], "thompson_sampling")
+        self.assertEqual(attribution["policy_version"], "thompson_sampling:v2")
+        self.assertEqual(attribution["assigned_at"], "2026-08-20T15:04:05Z")
+        self.assertEqual(raw["event_hash"], hashlib.sha256(raw_bytes).hexdigest())
+        self.assertEqual(attribution["raw_event_hash"], raw["event_hash"])
+
     def test_transform_xapi_statement_preserves_verb_id_and_canonical_video_fields(self):
         shared_context_extensions = {
             "http://oli.cmu.edu/extensions/section_id": 2161,
