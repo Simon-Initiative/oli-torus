@@ -17083,6 +17083,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 138px;
 }
 
+.h-\[15px\] {
+  height: 15px;
+}
+
 .h-\[160px\] {
   height: 160px;
 }
@@ -17125,6 +17129,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[23em\] {
   height: 23em;
+}
+
+.h-\[23px\] {
+  height: 23px;
 }
 
 .h-\[242px\] {
@@ -17484,6 +17492,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 20rem;
 }
 
+.min-h-\[22\.5px\] {
+  min-height: 22.5px;
+}
+
 .min-h-\[22px\] {
   min-height: 22px;
 }
@@ -17834,6 +17846,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[12px\] {
   width: 12px;
+}
+
+.w-\[13px\] {
+  width: 13px;
 }
 
 .w-\[150px\] {
@@ -18684,6 +18700,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .translate-y-full {
   --tw-translate-y: 100%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.translate-y-px {
+  --tw-translate-y: 1px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -21712,6 +21733,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke-width: 2.3;
 }
 
+.stroke-\[3\] {
+  stroke-width: 3;
+}
+
 .object-contain {
   -o-object-fit: contain;
      object-fit: contain;
@@ -21954,6 +21979,11 @@ table.table-striped tbody tr:nth-child(even) {
 .px-\[11px\] {
   padding-left: 11px;
   padding-right: 11px;
+}
+
+.px-\[13px\] {
+  padding-left: 13px;
+  padding-right: 13px;
 }
 
 .px-\[15px\] {
@@ -22523,6 +22553,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-top: 15px;
 }
 
+.pt-\[17px\] {
+  padding-top: 17px;
+}
+
 .pt-\[27px\] {
   padding-top: 27px;
 }
@@ -22682,6 +22716,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .text-\[16px\] {
   font-size: 16px;
+}
+
+.text-\[17px\] {
+  font-size: 17px;
 }
 
 .text-\[18px\] {
@@ -22873,6 +22911,14 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 18px;
 }
 
+.leading-\[19\.25px\] {
+  line-height: 19.25px;
+}
+
+.leading-\[19\.5px\] {
+  line-height: 19.5px;
+}
+
 .leading-\[20px\] {
   line-height: 20px;
 }
@@ -22881,8 +22927,16 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 21px;
 }
 
+.leading-\[22\.5px\] {
+  line-height: 22.5px;
+}
+
 .leading-\[24px\] {
   line-height: 24px;
+}
+
+.leading-\[25\.5px\] {
+  line-height: 25.5px;
 }
 
 .leading-\[25px\] {
@@ -23999,6 +24053,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_2px_10px_rgba\(0\2c 50\2c 99\2c 0\.10\)\] {
   --tw-shadow: 0px 2px 10px rgba(0,50,99,0.10);
   --tw-shadow-colored: 0px 2px 10px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_2px_2\.5px_rgba\(0\2c 50\2c 99\2c 0\.05\)\] {
+  --tw-shadow: 0px 2px 2.5px rgba(0,50,99,0.05);
+  --tw-shadow-colored: 0px 2px 2.5px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -29494,6 +29554,14 @@ Not supports in Firefox and IE */
   color: #FFFFFF;
 }
 
+.hover\:text-Icon-icon-danger:hover {
+  color: #CE2C31;
+}
+
+.dark .hover\:text-Icon-icon-danger:hover {
+  color: #FF8787;
+}
+
 .hover\:text-Icon-icon-accent-orange-bold:hover {
   color: #FA8D3E;
 }
@@ -29708,6 +29776,14 @@ Not supports in Firefox and IE */
 
 .dark .active\:text-Text-text-button-hover:active {
   color: #99CCFF;
+}
+
+.active\:text-Icon-icon-active:active {
+  color: #353740;
+}
+
+.dark .active\:text-Icon-icon-active:active {
+  color: #FFFFFF;
 }
 
 .enabled\:bg-Fill-Buttons-fill-primary:enabled {
@@ -34538,6 +34614,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .sm\:gap-9 {
     gap: 2.25rem;
+  }
+
+  .sm\:self-auto {
+    align-self: auto;
   }
 
   .sm\:justify-self-end {
