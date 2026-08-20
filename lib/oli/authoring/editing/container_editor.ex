@@ -570,7 +570,9 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
            [],
            "embedded",
            activity_revision.title,
-           activity_revision.objectives
+           activity_revision.objectives,
+           activity_revision.tags,
+           activity_revision.learning_model_parameters
          ) do
       {:ok, {revision, _}} ->
         {:ok,

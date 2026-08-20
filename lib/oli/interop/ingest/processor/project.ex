@@ -2,6 +2,8 @@ defmodule Oli.Interop.Ingest.Processor.Project do
   alias Oli.Interop.Ingest.State
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Resources.ResourceType
+  alias Oli.LearningModel.ModelVersion
+  alias Oli.Repo
 
   def process(
         %State{
@@ -24,14 +26,31 @@ defmodule Oli.Interop.Ingest.Processor.Project do
           title
       end
 
+    learning_model_version =
+      case ModelVersion.decode_archive(
+             Map.get(project_details, "learningModelVersion"),
+             :naive
+           ) do
+        {:ok, learning_model_version} ->
+          learning_model_version
+
+        {:error, _reason} ->
+          rollback_invalid_model_version(state, "_project.json", project_details)
+      end
+
     {:ok, %{project: project, publication: publication, resource_revision: root_revision}} =
-      Oli.Authoring.Course.create_project(title, author, %{
-        description: Map.get(project_details, "description"),
-        legacy_svn_root: Map.get(project_details, "svnRoot"),
-        attributes: Map.get(project_details, "attributes"),
-        welcome_title: Map.get(project_details, "welcomeTitle"),
-        encouraging_subtitle: Map.get(project_details, "encouragingSubtitle")
-      })
+      Oli.Authoring.Course.create_project_from_archive(
+        title,
+        author,
+        learning_model_version,
+        %{
+          description: Map.get(project_details, "description"),
+          legacy_svn_root: Map.get(project_details, "svnRoot"),
+          attributes: Map.get(project_details, "attributes"),
+          welcome_title: Map.get(project_details, "welcomeTitle"),
+          encouraging_subtitle: Map.get(project_details, "encouragingSubtitle")
+        }
+      )
 
     # create alternatives groups
     {:ok, legacy_to_resource_id_map} =
@@ -65,5 +84,14 @@ defmodule Oli.Interop.Ingest.Processor.Project do
         root_revision: root_revision,
         legacy_to_resource_id_map: legacy_to_resource_id_map
     }
+  end
+
+  defp rollback_invalid_model_version(state, file, resource) do
+    value = Map.get(resource, "learningModelVersion")
+
+    error =
+      "Invalid learningModelVersion in #{file}: expected \"naive\", \"lkt_aoa\", or null; got #{inspect(value, limit: 3, printable_limit: 80)}"
+
+    Repo.rollback(%{state | errors: [error | state.errors]})
   end
 end

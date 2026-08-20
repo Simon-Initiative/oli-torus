@@ -4,6 +4,8 @@ defmodule Oli.Publishing.UniqueIdsTest do
   import Oli.Utils.Seeder.Utils
 
   alias Oli.Repo
+  alias Oli.LearningModel.{Parameters, PartIds}
+  alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Utils.Seeder
   alias Oli.Resources
   alias Oli.Publishing.PublishedResource
@@ -122,6 +124,14 @@ defmodule Oli.Publishing.UniqueIdsTest do
       assert %Oli.Resources.Revision{ids_added: false} =
                Resources.get_revision!(scored_page2_activity.id)
 
+      part_id = unscored_page1_activity.content |> PartIds.for_content() |> Enum.sort() |> hd()
+      parameters = activity_parameters(part_id, -0.75)
+
+      {:ok, _parameterized_activity} =
+        Resources.update_revision(unscored_page1_activity, %{
+          learning_model_parameters: parameters
+        })
+
       # publish the project
       {:ok, published} = Oli.Publishing.publish_project(project, "initial publish", author.id)
 
@@ -136,7 +146,8 @@ defmodule Oli.Publishing.UniqueIdsTest do
       assert %Oli.Publishing.PublishedResource{
                revision: %Oli.Resources.Revision{
                  resource_id: ^unscored_page1_activity_resource_id,
-                 ids_added: true
+                 ids_added: true,
+                 learning_model_parameters: ^parameters
                }
              } = get_published_resource(published.id, unscored_page1_activity_resource_id)
 
@@ -188,5 +199,17 @@ defmodule Oli.Publishing.UniqueIdsTest do
         where: p.publication_id == ^publication_id and p.resource_id == ^resource_id,
         preload: [:revision]
     )
+  end
+
+  defp activity_parameters(part_id, beta_difficulty) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts: %{part_id => %PartParameters{beta_difficulty: beta_difficulty}}
+      }
+    }
   end
 end

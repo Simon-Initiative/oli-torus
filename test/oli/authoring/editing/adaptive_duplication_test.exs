@@ -4,10 +4,13 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
   alias Oli.Activities
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Authoring.Editing.AdaptiveDuplication
+  alias Oli.LearningModel.{Parameters, PartIds}
+  alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.PublishedResource
   alias Oli.Repo
+  alias Oli.Resources
   alias Oli.Resources.Revision
   alias Oli.ScopedFeatureFlags.Rollouts
   alias Oli.Seeder
@@ -114,16 +117,28 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
           {"Screen C", screen_content("screen-c")}
         ]
         |> Enum.map(fn {title, content} ->
-          Seeder.create_activity(
-            %{
-              title: title,
-              activity_type_id: Activities.get_registration_by_slug("oli_adaptive").id,
-              content: content
-            },
-            publication,
-            project,
-            author
-          ).revision
+          content = with_tracked_part(content)
+
+          revision =
+            Seeder.create_activity(
+              %{
+                title: title,
+                activity_type_id: Activities.get_registration_by_slug("oli_adaptive").id,
+                content: content
+              },
+              publication,
+              project,
+              author
+            ).revision
+
+          part_id = revision.content |> PartIds.for_content() |> Enum.sort() |> hd()
+
+          {:ok, revision} =
+            Resources.update_revision(revision, %{
+              learning_model_parameters: activity_parameters(part_id, -0.25)
+            })
+
+          revision
         end)
 
       original_project_resource_count = count_project_resources(project.id)
@@ -154,6 +169,10 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
         assert duplicated_revision.objectives == source_revision.objectives
         assert duplicated_revision.activity_type_id == source_revision.activity_type_id
         assert duplicated_revision.resource_type_id == source_revision.resource_type_id
+
+        assert duplicated_revision.learning_model_parameters ==
+                 source_revision.learning_model_parameters
+
         assert duplicated_revision.author_id == author.id
         assert duplicated_revision.previous_revision_id == nil
       end)
@@ -632,5 +651,25 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
       :count,
       :id
     )
+  end
+
+  defp activity_parameters(part_id, beta_difficulty) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts: %{part_id => %PartParameters{beta_difficulty: beta_difficulty}}
+      }
+    }
+  end
+
+  defp with_tracked_part(content) do
+    tracked_part = %{"id" => "tracked-part", "type" => "janus-mcq"}
+
+    content
+    |> update_in(["authoring", "parts"], &(&1 ++ [tracked_part]))
+    |> update_in(["partsLayout"], &(&1 ++ [tracked_part]))
   end
 end

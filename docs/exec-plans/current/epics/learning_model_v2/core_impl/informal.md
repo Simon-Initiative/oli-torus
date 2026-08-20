@@ -77,6 +77,8 @@ logit(P(correct)) =
 
 The item coefficient is the difficulty value for the evaluated activity part. The same part coefficient is used for every LO targeted by that part.
 
+`gamma` and `rho` come from the startup-loaded LKT-AOA application configuration and default to `0.1` and `1.0`, respectively.
+
 `attempt_count` is per learner/LO opportunity. A part targeting three LOs contributes one opportunity to each of the three corresponding states.
 
 After calculating `p = P(correct)`, update the running AOA without reading prior attempts:
@@ -118,7 +120,7 @@ The state stores both the count and calculated confidence:
 confidence = 1 - exp(-unique_activity_part_count / k)
 ```
 
-`k` is the startup-loaded `confidence_saturation` value from the LKT-AOA application configuration.
+`k` is the startup-loaded `confidence_saturation` value from the LKT-AOA application configuration and defaults to `3.0`.
 
 ## Prior activity/part evidence
 

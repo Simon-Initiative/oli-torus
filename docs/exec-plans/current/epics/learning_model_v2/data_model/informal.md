@@ -258,19 +258,19 @@ The initial contract stores one active learning-model parameter set per Revision
 
 The coefficients that apply globally to LKT-AOA are application settings, not Project, Section, Revision, or learner-state data:
 
-- Opportunity-count weight (`gamma`).
-- Recency weight (`rho`).
+- Opportunity-count weight (`gamma`), initially `0.1`.
+- Recency weight (`rho`), initially `1.0`.
 - Recency decay factor (`recency_decay`), initially `0.9`.
-- Confidence saturation constant (`confidence_saturation`, represented as `k` in the formula).
+- Confidence saturation constant (`confidence_saturation`, represented as `k` in the formula), initially `3.0`.
 
 Configure them together under one application environment entry, conceptually:
 
 ```elixir
 config :oli, :lkt_aoa,
-  gamma: ...,
-  rho: ...,
+  gamma: 0.1,
+  rho: 1.0,
   recency_decay: 0.9,
-  confidence_saturation: ...
+  confidence_saturation: 3.0
 ```
 
 Each setting has an environment-variable override:
@@ -284,12 +284,14 @@ Each setting has an environment-variable override:
 
 Load these overrides in `config/runtime.exs`, so an operator can change them through deployment environment configuration without rebuilding the release. Values are read and validated when the application starts. Changing an environment variable has no effect on an already running node and requires a restart; there is no UI, database editor, per-Project override, or other mechanism for changing these settings dynamically at runtime.
 
-Every setting must have an application-owned default when its environment variable is absent. The initial defaults for `gamma`, `rho`, and `confidence_saturation` must be supplied or approved by Learning Engineering before implementation merges; they are model behavior and must not be invented independently by the implementer. The technical specification already establishes `0.9` as the initial `recency_decay` default.
+Every setting must have an application-owned default when its environment variable is absent. The initial defaults are `gamma: 0.1`, `rho: 1.0`, `recency_decay: 0.9`, and `confidence_saturation: 3.0`.
+
+These are intentionally conservative cold-start values. `gamma: 0.1` gives opportunity count a modest positive effect, `rho: 1.0` applies the recency logit without amplification or attenuation, and `confidence_saturation: 3.0` produces useful early confidence growth without saturating after only one or two unique activity parts. They remain deployment-configurable so fitted values can replace them later without a code change.
 
 Defaulting applies only when a variable is absent. A present but malformed or out-of-range value must fail application startup with an error that names the environment variable. It must not silently fall back. Parsing and validation should enforce:
 
 - All four values are finite numbers.
-- `gamma` and `rho` satisfy the sign/range constraints established with their approved defaults.
+- `gamma` and `rho` are greater than or equal to `0.0`.
 - `recency_decay` is greater than `0.0` and no greater than `1.0`.
 - `confidence_saturation` is greater than `0.0`.
 

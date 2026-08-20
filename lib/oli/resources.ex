@@ -312,6 +312,19 @@ defmodule Oli.Resources do
   end
 
   def create_revision_from_previous(previous_revision, attrs) do
+    attrs = convert_strings_to_atoms(attrs)
+    content = Map.get(attrs, :content, previous_revision.content)
+
+    learning_model_parameters =
+      if Map.has_key?(attrs, :learning_model_parameters) do
+        Map.get(attrs, :learning_model_parameters)
+      else
+        Oli.LearningModel.Parameters.Validation.reconcile_inherited_parts(
+          previous_revision.learning_model_parameters,
+          content
+        )
+      end
+
     attrs =
       Map.merge(
         %{
@@ -345,6 +358,7 @@ defmodule Oli.Resources do
           retake_mode: previous_revision.retake_mode,
           assessment_mode: previous_revision.assessment_mode,
           parameters: previous_revision.parameters,
+          learning_model_parameters: learning_model_parameters,
           legacy: previous_revision.legacy |> convert_legacy,
           tags: previous_revision.tags,
           explanation_strategy: previous_revision.explanation_strategy,
@@ -354,9 +368,8 @@ defmodule Oli.Resources do
           full_progress_pct: previous_revision.full_progress_pct,
           activity_refs: previous_revision.activity_refs
         },
-        convert_strings_to_atoms(attrs)
+        attrs
       )
-      |> Map.merge(convert_strings_to_atoms(attrs))
 
     create_revision(attrs)
   end

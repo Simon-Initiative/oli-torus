@@ -27,6 +27,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Publishing.Publications.Publication
   alias Oli.Authoring.Broadcaster
   alias Oli.Resources.ContentMigrator
+  alias Oli.LearningModel.Parameters.Validation, as: ParameterValidation
   alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
   alias ExAws.S3
 
@@ -644,22 +645,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   # Creates a new activity revision and updates the publication mapping
   defp create_new_revision(previous, publication, activity, author_id) do
     {:ok, revision} =
-      Resources.create_revision(%{
-        resource_type_id: previous.resource_type_id,
-        content: previous.content,
-        objectives: previous.objectives,
-        deleted: previous.deleted,
-        slug: previous.slug,
-        title: previous.title,
-        author_id: author_id,
-        resource_id: previous.resource_id,
-        primary_resource_id: previous.primary_resource_id,
-        scoring_strategy_id: previous.scoring_strategy_id,
-        previous_revision_id: previous.id,
-        activity_type_id: previous.activity_type_id,
-        scope: previous.scope,
-        tags: previous.tags
-      })
+      Resources.create_revision_from_previous(previous, %{author_id: author_id})
 
     Publishing.get_published_resource!(publication.id, activity.id)
     |> Publishing.update_published_resource(%{revision_id: revision.id})
@@ -682,6 +668,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   # Applies the update to the revision, converting any objective slugs back to ids
   defp update_revision(revision, update, project_id, project_page_targets \\ nil) do
+    explicit_learning_model_parameters? =
+      Map.has_key?(update, "learning_model_parameters") or
+        Map.has_key?(update, :learning_model_parameters)
+
     objectives =
       if Map.has_key?(update, "objectives"),
         do: Map.get(update, "objectives"),
@@ -731,6 +721,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         |> sync_objectives_to_parts(update, parts)
         |> maybe_update_scoring_strategy()
 
+      update =
+        reconcile_implicit_learning_model_parameters(
+          revision,
+          update,
+          explicit_learning_model_parameters?
+        )
+
       # do not allow resource_id, if present, to be editable.  resource_id is only allowed to be
       # present in bulk update situations so that the server knows which resource we are editing
       update = Map.delete(update, "resource_id")
@@ -745,6 +742,30 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       end
     else
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp reconcile_implicit_learning_model_parameters(
+         _revision,
+         update,
+         true
+       ),
+       do: update
+
+  defp reconcile_implicit_learning_model_parameters(revision, update, false) do
+    case Map.fetch(update, "content") do
+      {:ok, content} ->
+        Map.put(
+          update,
+          "learning_model_parameters",
+          ParameterValidation.reconcile_inherited_parts(
+            revision.learning_model_parameters,
+            content
+          )
+        )
+
+      :error ->
+        update
     end
   end
 
@@ -1534,7 +1555,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         scope \\ "embedded",
         title \\ nil,
         objective_map \\ %{},
-        tags \\ []
+        tags \\ [],
+        learning_model_parameters \\ nil
       ) do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
@@ -1551,7 +1573,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              model,
              title,
              tags,
-             objective_map
+             objective_map,
+             learning_model_parameters
            ) do
       case Transformers.apply_transforms([activity]) do
         [{:ok, nil}] -> {:ok, {activity, content}}
@@ -1639,7 +1662,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          model,
          title,
          tags,
-         objective_map
+         objective_map,
+         learning_model_parameters \\ nil
        ) do
     Repo.transaction(fn ->
       with {:ok, activity_type} <-
@@ -1656,7 +1680,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                  content: model,
                  scope: scope,
                  activity_type_id: activity_type.id,
-                 tags: tags
+                 tags: tags,
+                 learning_model_parameters: learning_model_parameters
                },
                Oli.Resources.ResourceType.id_for_activity()
              ),

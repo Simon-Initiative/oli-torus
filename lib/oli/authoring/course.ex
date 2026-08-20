@@ -1068,11 +1068,43 @@ defmodule Oli.Authoring.Course do
     |> Repo.insert()
   end
 
+  @doc """
+  Creates a Project whose learning-model selection is copied from a trusted source Project.
+
+  The source value takes precedence over any value present in `attrs`.
+  """
+  def create_project_from_source(attrs, %Project{} = source_project) do
+    %Project{}
+    |> Project.changeset(attrs)
+    |> Project.trusted_learning_model_changeset(%{
+      learning_model_version: source_project.learning_model_version
+    })
+    |> Repo.insert()
+  end
+
   def create_project(title, author, additional_attrs \\ %{}) do
+    do_create_project(title, author, additional_attrs, nil)
+  end
+
+  @doc """
+  Creates a Project from a validated archive learning-model selection.
+
+  This is a trusted import boundary; ordinary Project creation remains pinned to
+  the application default and ignores learning-model attributes.
+  """
+  def create_project_from_archive(title, author, learning_model_version, additional_attrs \\ %{})
+      when learning_model_version in [:naive, :lkt_aoa] do
+    do_create_project(title, author, additional_attrs, learning_model_version)
+  end
+
+  defp do_create_project(title, author, additional_attrs, learning_model_version) do
     Repo.transaction(fn ->
       with {:ok, project_family} <- create_family(default_family(title)),
            {:ok, project} <-
-             create_project(default_project(title, project_family, additional_attrs)),
+             create_project_with_learning_model(
+               default_project(title, project_family, additional_attrs),
+               learning_model_version
+             ),
            {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
            {:ok, %{resource: resource, revision: resource_revision}} <-
              initial_resource_setup(author, project),
@@ -1091,6 +1123,17 @@ defmodule Oli.Authoring.Course do
         {:error, error} -> Repo.rollback(error)
       end
     end)
+  end
+
+  defp create_project_with_learning_model(attrs, nil), do: create_project(attrs)
+
+  defp create_project_with_learning_model(attrs, learning_model_version) do
+    %Project{}
+    |> Project.changeset(attrs)
+    |> Project.trusted_learning_model_changeset(%{
+      learning_model_version: learning_model_version
+    })
+    |> Repo.insert()
   end
 
   defp default_project(title, family, additional_attrs) do

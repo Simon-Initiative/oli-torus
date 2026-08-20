@@ -12,6 +12,12 @@
 # General application configuration
 import Config
 
+config :oli, :lkt_aoa,
+  gamma: 0.1,
+  rho: 1.0,
+  recency_decay: 0.9,
+  confidence_saturation: 3.0
+
 # Ensure caption files uploaded through the media library keep their WebVTT mime type.
 config :mime, :types, %{
   "text/vtt" => ["vtt"]

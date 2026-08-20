@@ -289,7 +289,8 @@ defmodule OliWeb.OpenAndFreeController do
 
   defp create_from_publication(conn, publication, section_params) do
     Repo.transaction(fn ->
-      with {:ok, section} <- Sections.create_section(section_params),
+      with {:ok, section} <-
+             Sections.create_section_from_source(section_params, publication.project),
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),

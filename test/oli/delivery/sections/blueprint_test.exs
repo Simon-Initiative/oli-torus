@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   import Ecto.Query, warn: false
 
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Sections
@@ -94,6 +95,44 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
 
       assert sr_page_blueprint.feedback_scheduled_date ==
                sr_page_duplicate.feedback_scheduled_date
+    end
+
+    test "copies the immediate source model and ignores an attrs override" do
+      %{project: project, publication: publication} = Seeder.base_project_with_resource2()
+
+      project =
+        project
+        |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Repo.update!()
+
+      {:ok, source_section} =
+        Sections.create_section_from_source(
+          %{
+            title: "LKT source Section",
+            registration_open: true,
+            context_id: UUID.uuid4(),
+            base_project_id: project.id,
+            publisher_id: project.publisher_id
+          },
+          project
+        )
+
+      {:ok, source_section} = Sections.create_section_resources(source_section, publication)
+
+      assert {:ok, blueprint} =
+               Blueprint.duplicate(source_section, %{learning_model_version: :naive})
+
+      assert blueprint.type == :blueprint
+      assert blueprint.learning_model_version == :lkt_aoa
+
+      assert {:ok, enrollable_section} =
+               Blueprint.duplicate(blueprint, %{
+                 type: :enrollable,
+                 learning_model_version: :naive
+               })
+
+      assert enrollable_section.type == :enrollable
+      assert enrollable_section.learning_model_version == :lkt_aoa
     end
   end
 
@@ -641,6 +680,24 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
 
       assert length(section_project_publications) == 1
       assert Enum.at(section_project_publications, 0).project_id == project.id
+    end
+
+    test "copies and pins the Project learning model", %{project: project, author: author} do
+      project =
+        project
+        |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Repo.update!()
+
+      {:ok, _publication} = Publishing.publish_project(project, "initial publication", author.id)
+      {:ok, blueprint} = Blueprint.create_blueprint(project.slug, "LKT Blueprint", %{})
+
+      assert blueprint.learning_model_version == :lkt_aoa
+
+      project
+      |> Project.trusted_learning_model_changeset(%{learning_model_version: :naive})
+      |> Repo.update!()
+
+      assert Repo.reload!(blueprint).learning_model_version == :lkt_aoa
     end
 
     test "creates blueprint with default values when attrs not provided", %{

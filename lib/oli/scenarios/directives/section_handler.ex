@@ -117,7 +117,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       |> base_section_attrs(state)
       |> Map.put(:base_project_id, built_project.project.id)
 
-    {:ok, section} = Sections.create_section(attrs)
+    {:ok, section} = Sections.create_section_from_source(attrs, built_project.project)
     {:ok, section} = Sections.create_section_resources(section, publication)
     section
   end
@@ -166,7 +166,7 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       |> base_section_attrs(state)
       |> Map.put(:base_project_id, project.id)
 
-    {:ok, section} = Sections.create_section(section_attrs)
+    {:ok, section} = Sections.create_section_from_source(section_attrs, project)
     {:ok, section} = Sections.create_section_resources(section, publication)
     section
   end

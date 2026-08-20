@@ -3,7 +3,10 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources
   alias Oli.Authoring.Locks
   alias Oli.ScopedFeatureFlags.Rollouts
 
@@ -225,6 +228,16 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
           "An embedded activity"
         )
 
+      {:ok, activity_revision} =
+        Resources.update_revision(activity_revision, %{
+          learning_model_parameters: activity_parameters("1", -0.35)
+        })
+
+      {:ok, activity_revision2} =
+        Resources.update_revision(activity_revision2, %{
+          learning_model_parameters: activity_parameters("1", 0.6)
+        })
+
       page = %{
         objectives: %{"attached" => [obj1.resource.id]},
         children: [],
@@ -295,6 +308,9 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
       assert created_activity.objectives["1"] == activity_revision.objectives["1"]
 
+      assert created_activity.learning_model_parameters ==
+               activity_revision.learning_model_parameters
+
       # The nested activity
       activity_reference2 =
         duplicated_page_revision.content["model"]
@@ -308,6 +324,9 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference2["activity_id"]})
 
       assert created_activity2.objectives["1"] == activity_revision2.objectives["1"]
+
+      assert created_activity2.learning_model_parameters ==
+               activity_revision2.learning_model_parameters
     end
 
     test "duplicate_page/4 preserves the order of two activities in a basic page", %{
@@ -472,5 +491,17 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       assert duplicated_page_revision.title == "#{simple_adaptive_revision.title} (copy)"
       assert duplicated_page_revision.content == simple_adaptive_revision.content
     end
+  end
+
+  defp activity_parameters(part_id, beta_difficulty) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts: %{part_id => %PartParameters{beta_difficulty: beta_difficulty}}
+      }
+    }
   end
 end

@@ -40,6 +40,10 @@ runtime_env =
       end
   end
 
+{lkt_aoa_config, lkt_aoa_sources} = Oli.LearningModel.Config.load_from_env!()
+Oli.LearningModel.Config.log_effective(lkt_aoa_config, lkt_aoa_sources)
+config :oli, :lkt_aoa, Oli.LearningModel.Config.to_keyword(lkt_aoa_config)
+
 # Appsignal client key is required for appsignal integration
 config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
