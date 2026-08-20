@@ -126,7 +126,7 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
       ),
       string_clause("attribution_type", Map.get(filters, :attribution_type)),
       assignment_scope_clause(Map.get(filters, :assignment_scope)),
-      string_clause("host_event_type", Map.get(filters, :host_event_type))
+      string_clause("raw_event_type", Map.get(filters, :raw_event_type))
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" AND ")

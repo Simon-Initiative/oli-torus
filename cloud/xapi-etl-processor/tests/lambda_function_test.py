@@ -345,7 +345,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["event_hash"], FIXTURE_EVENT_HASH)
         self.assertEqual(rows[0]["raw_event_hash"], FIXTURE_EVENT_HASH)
         self.assertEqual(rows[0]["attribution_hash"], FIXTURE_ATTRIBUTION_HASH)
-        self.assertEqual(rows[0]["host_event_type"], "part_attempt")
+        self.assertEqual(rows[0]["raw_event_type"], "part_attempt")
         self.assertEqual(rows[0]["experiment_role"], "reward")
         self.assertEqual(rows[0]["attribution_type"], "reward")
         self.assertEqual(rows[0]["experiment_id"], 101)

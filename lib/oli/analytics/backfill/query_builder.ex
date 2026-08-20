@@ -159,7 +159,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
     INSERT INTO #{target_table} (
         raw_event_hash, attribution_hash, event_version, source_file, source_etag, source_line,
-        inserted_at, host_event_type, timestamp, section_id,
+        inserted_at, raw_event_type, timestamp, section_id,
         project_id, publication_id, enrollment_id, experiment_role, attribution_type, experiment_id, experiment_uuid,
         condition_id, condition_code, assignment_id, assignment_key, assignment_scope,
         algorithm, policy_version,
@@ -177,7 +177,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           - min(rowNumberInAllBlocks()) OVER (PARTITION BY _path)
           + 1 AS source_line,
         now() AS inserted_at,
-        #{host_event_type_sql()} AS host_event_type,
+        #{raw_event_type_sql()} AS raw_event_type,
         parseDateTime64BestEffortOrNull(#{json_value_or_null("$.timestamp")}, 3) AS timestamp,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.section_id'), '')) AS section_id,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.project_id'), '')) AS project_id,
@@ -227,7 +227,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
   end
 
-  defp host_event_type_sql do
+  defp raw_event_type_sql do
     """
     multiIf(
       #{json_value_or_null("$.verb.id")} IN (

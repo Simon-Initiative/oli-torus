@@ -121,6 +121,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
 
     assert sql =~ "INSERT INTO analytics.experiment_attributions"
     assert sql =~ "raw_event_hash"
+    assert sql =~ "raw_event_type"
     assert sql =~ "ARRAY JOIN JSONExtractArrayRaw"
     assert sql =~ "http://oli.cmu.edu/extensions/experiment_attributions"
     assert sql =~ "AS experiment_role"

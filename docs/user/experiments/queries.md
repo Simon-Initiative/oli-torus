@@ -150,7 +150,7 @@ WHERE a.section_id = 2001
   AND a.project_id = 1001
   AND a.experiment_id = 101
   AND a.attribution_type = 'outcome'
-  AND a.host_event_type = 'activity_attempt'
+  AND a.raw_event_type = 'activity_attempt'
   AND r.score IS NOT NULL
   AND r.out_of IS NOT NULL
   AND r.out_of != 0
@@ -160,7 +160,7 @@ GROUP BY a.condition_code
 ORDER BY a.condition_code;
 ```
 
-Filtering to `host_event_type = 'activity_attempt'` chooses the rollup attached to the activity
+Filtering to `raw_event_type = 'activity_attempt'` chooses the rollup attached to the activity
 statement and avoids also counting the direct part evidence and the rollup attached to the page
 statement. Choose one canonical xAPI statement type for each analysis.
 `countDistinct(attribution_hash)` alone does not deduplicate across statement types,
@@ -208,7 +208,7 @@ outcomes AS
       AND project_id = 1001
       AND experiment_id = 101
       AND attribution_type = 'outcome'
-      AND host_event_type = 'activity_attempt'
+      AND raw_event_type = 'activity_attempt'
       AND timestamp >= toDateTime64('2026-08-01 00:00:00', 3)
       AND timestamp <  toDateTime64('2026-09-01 00:00:00', 3)
     GROUP BY assignment_id, raw_event_hash

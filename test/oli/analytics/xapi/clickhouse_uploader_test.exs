@@ -181,7 +181,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     assert {:ok, 2} = ClickHouseUploader.upload(bundle)
   end
 
-  test "upload maps host statement experiment attribution arrays into attribution table rows" do
+  test "upload maps xAPI statement experiment attribution arrays into attribution table rows" do
     statement = attributed_part_attempt_statement()
 
     bundle = %StatementBundle{
@@ -202,6 +202,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     expect(MockHTTP, :post, fn _url, query, _headers ->
       assert query =~ "INSERT INTO analytics.experiment_attributions"
       assert query =~ "raw_event_hash"
+      assert query =~ "raw_event_type"
       assert query =~ "experiment_role"
       assert query =~ "attribution_type"
       assert query =~ "'reward'"

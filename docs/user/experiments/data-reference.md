@@ -242,7 +242,7 @@ and research approvals.
 | `attribution_hash` | Stable identity for one attribution attached to one raw event. |
 | `event_version`, `inserted_at` | Replacement and ingestion timestamps. |
 | `source_file`, `source_etag`, `source_line` | Source-object provenance when available. |
-| `host_event_type` | Normalized type of the containing xAPI statement. The column name is retained for schema compatibility. |
+| `raw_event_type` | Normalized type of the containing xAPI statement; matches `raw_events.event_type`. |
 | `timestamp` | Containing xAPI statement timestamp. |
 | `section_id`, `project_id`, `publication_id`, `enrollment_id` | Scoped experiment context. |
 | `experiment_role` | Statement role: `assignment`, `exposure`, `outcome`, `reward`, `policy_update`, `rollup`, or `media_interaction`. |

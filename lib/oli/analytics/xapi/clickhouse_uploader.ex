@@ -115,7 +115,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     %{
       event: event,
       event_hash: event_hash,
-      host_event_type: if(raw_event, do: raw_event.event_type, else: "unknown"),
+      raw_event_type: if(raw_event, do: raw_event.event_type, else: "unknown"),
       raw_event: raw_event,
       timestamp: parse_timestamp(event["timestamp"])
     }
@@ -365,7 +365,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   defp transform_experiment_attributions(%{
          event: event,
          event_hash: raw_hash,
-         host_event_type: host_event_type,
+         raw_event_type: raw_event_type,
          timestamp: timestamp
        }) do
     event
@@ -374,7 +374,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       %{
         raw_event_hash: raw_hash,
         attribution_hash: attribution_hash(raw_hash, attribution),
-        host_event_type: host_event_type,
+        raw_event_type: raw_event_type,
         timestamp: timestamp,
         section_id: attribution_value(attribution, "section_id"),
         project_id: attribution_value(attribution, "project_id"),
@@ -643,7 +643,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     INSERT INTO #{experiment_attributions_table()} (
       raw_event_hash,
       attribution_hash,
-      host_event_type,
+      raw_event_type,
       timestamp,
       section_id,
       project_id,
@@ -680,7 +680,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     [
       escape_value(attribution[:raw_event_hash]),
       escape_value(attribution[:attribution_hash]),
-      escape_value(attribution[:host_event_type]),
+      escape_value(attribution[:raw_event_type]),
       escape_value(attribution[:timestamp]),
       escape_value(attribution[:section_id]),
       escape_value(attribution[:project_id]),

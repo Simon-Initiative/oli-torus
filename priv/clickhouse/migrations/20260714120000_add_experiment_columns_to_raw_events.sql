@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS experiment_attributions (
     source_etag Nullable(String),
     source_line Nullable(UInt32),
 
-    host_event_type LowCardinality(String),
+    raw_event_type LowCardinality(String),
     timestamp DateTime64(3),
     section_id Nullable(UInt64),
     project_id Nullable(UInt64),

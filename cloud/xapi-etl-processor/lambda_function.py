@@ -184,7 +184,7 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
 
 EXPERIMENT_ATTRIBUTION_INSERT_COLUMNS: List[str] = [
     "raw_event_hash", "attribution_hash", "source_file", "source_etag", "source_line",
-    "host_event_type", "timestamp", "section_id", "project_id", "publication_id",
+    "raw_event_type", "timestamp", "section_id", "project_id", "publication_id",
     "enrollment_id", "experiment_role", "attribution_type", "experiment_id",
     "experiment_uuid", "condition_id",
     "condition_code", "assignment_id", "assignment_key", "algorithm", "policy_version",
@@ -1051,7 +1051,7 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
 def _get_experiment_attribution_type_map() -> Dict[str, "pa.DataType"]:
     string_columns = {
         "raw_event_hash", "attribution_hash", "source_file", "source_etag",
-        "host_event_type", "experiment_role", "attribution_type", "experiment_uuid",
+        "raw_event_type", "experiment_role", "attribution_type", "experiment_uuid",
         "condition_code", "assignment_key", "algorithm",
         "policy_version", "reward_source", "intervention_key", "disposition",
     }
@@ -1291,7 +1291,7 @@ def transform_experiment_attributions(
     line_number: int,
 ) -> List[Dict[str, Any]]:
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
-    host_event_type = _determine_event_type(
+    raw_event_type = _determine_event_type(
         _safe_str(_get_nested(statement, ["verb", "id"])),
         _safe_str(_get_nested(statement, ["object", "definition", "type"])),
     )
@@ -1308,7 +1308,7 @@ def transform_experiment_attributions(
                 "attribution_hash": hashlib.sha256(
                     f"{raw_hash}:{attribution_key}".encode("utf-8")
                 ).hexdigest(),
-                "host_event_type": host_event_type,
+                "raw_event_type": raw_event_type,
                 "timestamp": statement.get("timestamp"),
                 "section_id": _safe_int(attribution.get("section_id")),
                 "project_id": _safe_int(attribution.get("project_id")),
