@@ -898,6 +898,36 @@ class LambdaFunctionTests(TestCase):
         )
         self.assertIsNone(historical["enrollment_id"])
 
+    def test_shared_parity_statement_preserves_raw_and_attribution_contract(self):
+        fixture_path = Path(__file__).parents[3] / "test" / "support" / "fixtures" / "upgrade_data_capture_parity_statement.json"
+        raw_bytes = fixture_path.read_bytes()
+        event = json.loads(raw_bytes)
+
+        source = {
+            "raw_bytes": raw_bytes, "bucket": "bucket", "key": "parity.json",
+            "etag": "etag", "line_number": 1,
+        }
+        raw = lambda_function.transform_xapi_statement(event, **source)
+        attribution = lambda_function.transform_experiment_attributions(event, **source)[0]
+
+        expected_raw = {
+            "section_id": 2001, "project_id": 1001, "publication_id": 3001,
+            "enrollment_id": 501, "activity_attempt_guid": "activity-guid",
+            "activity_attempt_number": 2, "page_attempt_guid": "page-guid",
+            "page_attempt_number": 1, "activity_id": 8001,
+            "activity_revision_id": 8101, "score": 1.0, "out_of": 2.0,
+        }
+        expected_attribution = {
+            "experiment_role": "rollup", "attribution_type": "outcome",
+            "experiment_id": 101, "condition_id": 303, "condition_code": "condition-a",
+            "assignment_id": 404, "assignment_scope": "intervention",
+            "algorithm": "weighted_random", "policy_version": "weighted_random",
+            "enrollment_id": 501, "resource_attempt_id": 901,
+        }
+
+        self.assertEqual({key: raw[key] for key in expected_raw}, expected_raw)
+        self.assertEqual({key: attribution[key] for key in expected_attribution}, expected_attribution)
+
     def test_transform_xapi_statement_preserves_verb_id_and_canonical_video_fields(self):
         shared_context_extensions = {
             "http://oli.cmu.edu/extensions/section_id": 2161,

@@ -41,6 +41,71 @@ defmodule Oli.Analytics.XAPITest do
     assert attempt_group.context.enrollment_id == enrollment.id
   end
 
+  test "resolves one user's section enrollments as distinct analytical participants" do
+    user = insert(:user)
+    project = insert(:project)
+    publication = insert(:publication, project: project)
+    revision = insert(:revision)
+
+    contexts =
+      for _ <- 1..2 do
+        section = insert(:section)
+        enrollment = insert(:enrollment, section: section, user: user)
+
+        insert(:section_project_publication,
+          section: section,
+          project: project,
+          publication: publication
+        )
+
+        resource_access =
+          insert(:resource_access, section: section, user: user, resource: revision.resource)
+
+        resource_attempt =
+          insert(:resource_attempt, resource_access: resource_access, revision: revision)
+
+        attempt_group =
+          AttemptGroup.from_attempt_summary(
+            [{%{}, %{lifecycle_state: :active}, resource_attempt, resource_access, %{}}],
+            project.id,
+            "https://example.edu"
+          )
+
+        assert attempt_group.context.enrollment_id == enrollment.id
+        attempt_group.context
+      end
+
+    assert Enum.all?(contexts, &(&1.user_id == user.id))
+    assert contexts |> Enum.map(& &1.enrollment_id) |> Enum.uniq() |> length() == 2
+
+    Enum.each(contexts, fn context ->
+      statement =
+        Oli.Analytics.XAPI.Events.Attempt.ActivityAttemptEvaluated.new(
+          context,
+          %Oli.Delivery.Attempts.Core.ActivityAttempt{
+            attempt_guid: Ecto.UUID.generate(),
+            attempt_number: 1,
+            resource_id: revision.resource_id,
+            revision_id: revision.id,
+            score: 1.0,
+            out_of: 1.0,
+            date_evaluated: ~U[2026-08-19 12:00:00Z]
+          },
+          %{
+            attempt_guid: Ecto.UUID.generate(),
+            attempt_number: 1,
+            resource_id: revision.resource_id
+          }
+        )
+
+      extensions = get_in(statement, ["context", "extensions"])
+      assert extensions["http://oli.cmu.edu/extensions/enrollment_id"] == context.enrollment_id
+      refute Map.has_key?(extensions, "http://oli.cmu.edu/extensions/user_id")
+      refute Map.has_key?(extensions, "http://oli.cmu.edu/extensions/email")
+      refute Map.has_key?(extensions, "http://oli.cmu.edu/extensions/lms_id")
+    end)
+  end
+
   test "keeps evaluated-attempt context nullable without a section publication mapping" do
     user = insert(:user)
     section = insert(:section)

@@ -152,6 +152,11 @@ state rather than being rewritten at ingestion.
 - Exact attempt-time publication provenance (MER-5889).
 - User-facing export and statistical analysis.
 
+## Acceptance-Criteria Coverage
+
+Implementation and verification preserve traceability for AC-001, AC-002, AC-003, AC-004,
+AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012, AC-013, and AC-014.
+
 ## Decision Log
 
 ### 2026-08-19 - Replace Universal Resolver With Producer-Specific Enrichment

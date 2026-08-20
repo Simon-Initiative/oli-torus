@@ -154,4 +154,45 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
     refute sql =~ "activity_attempt_guid"
     refute sql =~ "content_element_id"
   end
+
+  test "replay maps every shared parity statement contract field" do
+    fixture_path =
+      Path.expand("../../../support/fixtures/upgrade_data_capture_parity_statement.json", __DIR__)
+
+    statement = fixture_path |> File.read!() |> Jason.decode!()
+    extensions = get_in(statement, ["context", "extensions"])
+
+    raw_sql =
+      QueryBuilder.insert_sql(
+        %BackfillRun{
+          target_table: "analytics.raw_events",
+          s3_pattern: "s3://bucket/parity.json",
+          format: "JSONAsString"
+        },
+        @creds
+      )
+
+    attribution_sql =
+      QueryBuilder.insert_sql(
+        %BackfillRun{
+          target_table: "analytics.experiment_attributions",
+          s3_pattern: "s3://bucket/parity.json",
+          format: "JSONAsString"
+        },
+        @creds
+      )
+
+    for field <-
+          ~w(section_id project_id publication_id enrollment_id activity_attempt_guid activity_attempt_number page_attempt_guid page_attempt_number activity_id activity_revision_id) do
+      assert Map.has_key?(extensions, "http://oli.cmu.edu/extensions/#{field}")
+      assert raw_sql =~ "http://oli.cmu.edu/extensions/#{field}"
+      assert raw_sql =~ "AS #{field}"
+    end
+
+    for field <-
+          ~w(experiment_id experiment_uuid condition_id condition_code assignment_id assignment_key assignment_scope algorithm policy_version enrollment_id resource_attempt_id) do
+      assert attribution_sql =~ "$.#{field}"
+      assert attribution_sql =~ "AS #{field}"
+    end
+  end
 end

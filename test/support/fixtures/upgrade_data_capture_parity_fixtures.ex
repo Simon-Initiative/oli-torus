@@ -87,6 +87,227 @@ defmodule Oli.Test.Support.UpgradeDataCaptureParityFixtures do
     ]
   end
 
+  @doc "Returns assignment/exposure evidence used by the v0.33.0 compatibility proof."
+  def compatibility_assignment_evidence do
+    [
+      evidence(501, "condition-a", "weighted_random", "intervention", ~U[2026-08-19 11:59:00Z],
+        attribution_hash: "tie-z"
+      ),
+      evidence(501, "loses-tie", "weighted_random", "intervention", ~U[2026-08-19 11:59:00Z],
+        attribution_hash: "tie-a"
+      ),
+      evidence(
+        502,
+        "condition-b",
+        "weighted_random",
+        "section_enrollment",
+        ~U[2026-08-19 11:59:30Z]
+      ),
+      evidence(503, "condition-c", "thompson_sampling", "intervention", ~U[2026-08-19 11:59:45Z]),
+      evidence(
+        501,
+        "wrong-project",
+        "weighted_random",
+        "intervention",
+        ~U[2026-08-19 11:59:59Z],
+        project_id: 9999
+      ),
+      evidence(501, "wrong-type", "weighted_random", "intervention", ~U[2026-08-19 11:59:58Z],
+        attribution_type: "outcome"
+      ),
+      evidence(501, nil, "weighted_random", "intervention", ~U[2026-08-19 11:59:59Z]),
+      evidence(
+        501,
+        "before-horizon",
+        "weighted_random",
+        "intervention",
+        ~U[2026-07-31 23:59:59Z]
+      ),
+      evidence(501, "after-horizon", "weighted_random", "intervention", ~U[2026-08-20 00:00:01Z]),
+      evidence(
+        nil,
+        "missing-enrollment",
+        "weighted_random",
+        "intervention",
+        ~U[2026-08-19 11:59:59Z]
+      ),
+      evidence(
+        501,
+        "missing-project",
+        "weighted_random",
+        "intervention",
+        ~U[2026-08-19 11:59:59Z],
+        project_id: nil
+      )
+    ]
+  end
+
+  @doc "Returns section-wide evaluated activities for the compatibility join proof."
+  def compatibility_activity_events do
+    [
+      activity_event(
+        501,
+        8001,
+        "attempt-501-a",
+        "event-1",
+        ~U[2026-08-19 12:00:00Z],
+        1.0,
+        2.0,
+        :in_branch
+      ),
+      activity_event(
+        501,
+        8001,
+        "attempt-501-a",
+        "event-2",
+        ~U[2026-08-19 12:05:00Z],
+        2.0,
+        2.0,
+        :in_branch
+      ),
+      activity_event(
+        501,
+        8002,
+        "attempt-501-b",
+        "event-3",
+        ~U[2026-08-19 12:06:00Z],
+        1.0,
+        4.0,
+        :out_of_branch
+      ),
+      activity_event(
+        502,
+        8003,
+        "attempt-502-a",
+        "event-4",
+        ~U[2026-08-19 12:07:00Z],
+        3.0,
+        4.0,
+        :out_of_branch
+      ),
+      activity_event(
+        503,
+        8004,
+        "attempt-503-a",
+        "event-5",
+        ~U[2026-08-19 12:08:00Z],
+        1.0,
+        0.0,
+        :in_branch
+      ),
+      activity_event(
+        503,
+        8005,
+        "attempt-503-b",
+        "event-6",
+        ~U[2026-08-19 12:09:00Z],
+        nil,
+        2.0,
+        :out_of_branch
+      )
+    ]
+  end
+
+  defp evidence(
+         enrollment_id,
+         condition,
+         algorithm,
+         assignment_scope,
+         timestamp,
+         opts \\ []
+       ) do
+    %{
+      section_id: 2001,
+      project_id: Keyword.get(opts, :project_id, 1001),
+      enrollment_id: enrollment_id,
+      condition: condition,
+      algorithm: algorithm,
+      assignment_scope: assignment_scope,
+      attribution_type: Keyword.get(opts, :attribution_type, "assignment"),
+      evidence_source: :exposure,
+      timestamp: timestamp,
+      event_version: Keyword.get(opts, :event_version, timestamp),
+      attribution_hash: Keyword.get(opts, :attribution_hash, condition || "nil-condition")
+    }
+  end
+
+  @doc "Returns edge rows that the compatibility query must exclude."
+  def compatibility_excluded_activity_events do
+    [
+      activity_event(
+        504,
+        8006,
+        "attempt-no-evidence",
+        "excluded-1",
+        ~U[2026-08-19 12:10:00Z],
+        1.0,
+        1.0,
+        :out_of_branch
+      ),
+      activity_event(
+        501,
+        8007,
+        "attempt-before-evidence",
+        "excluded-2",
+        ~U[2026-08-19 11:58:00Z],
+        1.0,
+        1.0,
+        :in_branch
+      ),
+      activity_event(
+        501,
+        8008,
+        "attempt-wrong-verb",
+        "excluded-3",
+        ~U[2026-08-19 12:11:00Z],
+        1.0,
+        1.0,
+        :in_branch,
+        "activity_attempt",
+        "http://adlnet.gov/expapi/verbs/answered"
+      ),
+      activity_event(
+        501,
+        8009,
+        "attempt-wrong-type",
+        "excluded-4",
+        ~U[2026-08-19 12:12:00Z],
+        1.0,
+        1.0,
+        :in_branch,
+        "page_attempt"
+      )
+    ]
+  end
+
+  defp activity_event(
+         enrollment_id,
+         activity_id,
+         attempt_guid,
+         event_hash,
+         timestamp,
+         score,
+         out_of,
+         branch_relationship,
+         event_type \\ "activity_attempt",
+         verb_id \\ "http://adlnet.gov/expapi/verbs/evaluated"
+       ) do
+    %{
+      section_id: 2001,
+      project_id: 1001,
+      enrollment_id: enrollment_id,
+      activity_id: activity_id,
+      activity_attempt_guid: attempt_guid,
+      event_hash: event_hash,
+      timestamp: timestamp,
+      score: score,
+      out_of: out_of,
+      branch_relationship: branch_relationship,
+      event_type: event_type,
+      verb_id: verb_id
+    }
+  end
+
   defp fixture(name, statement), do: %{name: name, statement: statement}
 
   defp attributed_part_attempt_statement do

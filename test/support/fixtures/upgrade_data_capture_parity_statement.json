@@ -1,0 +1,38 @@
+{
+  "actor": {"account": {"homePage": "https://torus.example.edu", "name": "123"}, "objectType": "Agent"},
+  "verb": {"id": "http://adlnet.gov/expapi/verbs/completed"},
+  "object": {"id": "https://torus.example.edu/activity_attempt/activity-guid", "definition": {"type": "http://oli.cmu.edu/extensions/activity_attempt"}, "objectType": "Activity"},
+  "context": {"extensions": {
+    "http://oli.cmu.edu/extensions/section_id": 2001,
+    "http://oli.cmu.edu/extensions/project_id": 1001,
+    "http://oli.cmu.edu/extensions/publication_id": 3001,
+    "http://oli.cmu.edu/extensions/enrollment_id": 501,
+    "http://oli.cmu.edu/extensions/activity_attempt_guid": "activity-guid",
+    "http://oli.cmu.edu/extensions/activity_attempt_number": 2,
+    "http://oli.cmu.edu/extensions/page_attempt_guid": "page-guid",
+    "http://oli.cmu.edu/extensions/page_attempt_number": 1,
+    "http://oli.cmu.edu/extensions/activity_id": 8001,
+    "http://oli.cmu.edu/extensions/activity_revision_id": 8101,
+    "http://oli.cmu.edu/extensions/experiment_attributions": [{
+      "key": "outcome:assignment-404:activity-attempt-801",
+      "role": "rollup",
+      "attribution_type": "outcome",
+      "experiment_id": 101,
+      "experiment_uuid": "11111111-2222-3333-4444-555555555555",
+      "condition_id": 303,
+      "condition_code": "condition-a",
+      "assignment_id": 404,
+      "assignment_key": "v2:intervention:101:601:501",
+      "assignment_scope": "intervention",
+      "algorithm": "weighted_random",
+      "policy_version": "weighted_random",
+      "section_id": 2001,
+      "project_id": 1001,
+      "publication_id": 3001,
+      "enrollment_id": 501,
+      "resource_attempt_id": 901
+    }]
+  }},
+  "result": {"score": {"raw": 1.0, "max": 2.0, "scaled": 0.5}, "completion": true, "success": false},
+  "timestamp": "2026-08-19T12:00:00Z"
+}

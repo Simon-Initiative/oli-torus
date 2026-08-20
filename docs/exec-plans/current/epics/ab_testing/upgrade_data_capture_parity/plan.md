@@ -75,7 +75,7 @@ experiment-runtime changes.
   - [x] Ensure every producer builds and retains its host statement before optional enrichment.
   - [x] Add only focused bounded failure logging/telemetry needed to diagnose enrichment failure.
 - Testing:
-  - [x] Cover AC-002 through AC-005, AC-008, AC-009, and AC-014.
+  - [x] Cover AC-002, AC-003, AC-004, AC-005, AC-008, AC-009, and AC-014.
   - [x] Assert no assignment query for pages without a relevant experiment-controlled placement.
   - Command: `mix test test/oli/delivery/experiments test/oli/analytics/xapi_test.exs`
 - Gate B: Existing attempt/media producers are correct, host-safe, scoped, and regression-tested.
@@ -105,21 +105,21 @@ experiment-runtime changes.
 
 - Goal: Prove the two feature goals end to end without expanding scope (FR-007).
 - Tasks:
-  - [ ] Add a parameterized ClickHouse query or deterministic fixture join that reconstructs
+  - [x] Add a parameterized ClickHouse query or deterministic fixture join that reconstructs
     enrollment, condition, evaluation timestamp, and correctness.
-  - [ ] Apply the documented v0.33.0 zero/invalid-division fallback in the compatibility query, not
+  - [x] Apply the documented v0.33.0 zero/invalid-division fallback in the compatibility query, not
     during raw ingestion.
-  - [ ] Add focused workflow coverage for multiple enrollments, repeated evaluations, multiple
+  - [x] Add focused workflow coverage for multiple enrollments, repeated evaluations, multiple
     activities, in/out-of-branch outcomes, both weighted-random scopes, and Thompson Sampling.
-  - [ ] Verify exact current-deployment publication behavior remains documented as the MER-5889
+  - [x] Verify exact current-deployment publication behavior remains documented as the MER-5889
     limitation rather than changing it here.
-  - [ ] Run required security, performance, Elixir, and requirements reviews.
+  - [x] Run required security, performance, Elixir, and requirements reviews.
   - [ ] After PRs #6784 and #6786 land, reconcile this branch onto updated `hotfix-v0.34.1` using the
     branch strategy above and inspect the complete final-base diff.
-  - [ ] Run formatting, affected suites, `git diff --check`, requirements traceability, and harness
+  - [x] Run formatting, affected suites, `git diff --check`, requirements traceability, and harness
     validation.
 - Testing:
-  - [ ] Cover AC-012 and AC-013 and rerun all earlier phase gates.
+  - [x] Cover AC-012 and AC-013 and rerun all earlier phase gates.
   - Command: `mix format`
   - Command: `git diff --check`
 - Gate D: Both the non-page attribution proof and v0.33.0 compatibility dataset pass independently.

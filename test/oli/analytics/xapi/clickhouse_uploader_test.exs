@@ -13,6 +13,10 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
                 )
   @fixture_event_hash "1324eea1ad081cb5cbd2f7e8859bd5ba339b5b2bb9a28ced3c70d5f08bee062a"
   @fixture_attribution_hash "4ab96ee53f4775c80d5bc1471f4e6c1d2ee514d5a12e0b6c1df56c5a81bcb257"
+  @parity_fixture Path.expand(
+                    "../../../support/fixtures/upgrade_data_capture_parity_statement.json",
+                    __DIR__
+                  )
 
   setup :verify_on_exit!
 
@@ -227,6 +231,54 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       refute query =~ "video_url"
       refute query =~ "activity_attempt_guid"
       refute query =~ "content_element_id"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "direct projection preserves the shared parity statement's raw and attribution contract" do
+    raw_statement = @parity_fixture |> File.read!() |> Jason.decode!() |> Jason.encode!()
+
+    bundle = %StatementBundle{
+      body: raw_statement,
+      category: :attempt,
+      bundle_id: "parity-contract"
+    }
+
+    expect(MockHTTP, :post, 2, fn _url, query, _headers ->
+      if query =~ "INSERT INTO analytics.raw_events" do
+        for value <- [
+              "2001",
+              "1001",
+              "3001",
+              "501",
+              "'activity-guid'",
+              "2",
+              "'page-guid'",
+              "8001",
+              "8101",
+              "1.0",
+              "2.0"
+            ] do
+          assert query =~ value
+        end
+      else
+        for value <- [
+              "'rollup'",
+              "'outcome'",
+              "101",
+              "303",
+              "'condition-a'",
+              "404",
+              "'intervention'",
+              "'weighted_random'",
+              "901"
+            ] do
+          assert query =~ value
+        end
+      end
+
       {:ok, %{status_code: 200, body: ""}}
     end)
 
