@@ -22,6 +22,11 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
 
     assert sql =~ "lower(hex(SHA256(json))) AS event_hash"
 
+    assert sql =~ "publication_id, enrollment_id"
+
+    assert sql =~
+             "toUInt64OrNull(nullIf(JSON_VALUE(json, '$.context.extensions.\"http://oli.cmu.edu/extensions/enrollment_id\"'), '')) AS enrollment_id"
+
     assert sql =~
              "parseDateTime64BestEffortOrNull(nullIf(JSON_VALUE(json, '$.timestamp'), ''), 3) AS timestamp"
 

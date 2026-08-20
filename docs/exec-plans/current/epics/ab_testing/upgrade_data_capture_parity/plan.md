@@ -85,18 +85,18 @@ experiment-runtime changes.
 - Goal: Make every evaluated activity reconstructable independently of causal attribution
   (FR-001, FR-004, FR-006).
 - Tasks:
-  - [ ] Add enrollment identity to the server-built activity-attempt xAPI context without adding
+  - [x] Add enrollment identity to the server-built activity-attempt xAPI context without adding
     direct learner identity.
-  - [ ] Add only the nullable raw-event columns required for enrollment, stable attempt identity,
+  - [x] Add only the nullable raw-event columns required for enrollment, stable attempt identity,
     evaluation time, score, denominator, and raw-event hash.
-  - [ ] Update direct upload, Lambda, and replay/backfill mappings from the shared minimal contract.
+  - [x] Update direct upload, Lambda, and replay/backfill mappings from the shared minimal contract.
     Extend the PR #6784 Lambda baseline rather than duplicating its attribution parsing/insertion
     fixes.
-  - [ ] Keep raw host projection independent from attribution validation and insertion.
-  - [ ] Preserve historical rows with null new columns; do not populate data in the migration.
+  - [x] Keep raw host projection independent from attribution validation and insertion.
+  - [x] Preserve historical rows with null new columns; do not populate data in the migration.
 - Testing:
-  - [ ] Cover AC-001, AC-006, AC-007, AC-010, AC-011, and AC-014.
-  - [ ] Compare normalized required fields across all three projection paths.
+  - [x] Cover AC-001, AC-006, AC-007, AC-010, AC-011, and AC-014.
+  - [x] Compare normalized required fields across all three projection paths.
   - Command: `mix test test/oli/analytics/xapi test/oli/analytics/backfill`
   - Command: `python3 -m pytest cloud/xapi-etl-processor/tests`
 - Gate C: Attributed and unattributed evaluated activities produce equivalent complete raw rows.

@@ -143,6 +143,7 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "section_id",
     "project_id",
     "publication_id",
+    "enrollment_id",
     "timestamp",
     "event_type",
     "verb_id",
@@ -1006,6 +1007,7 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "section_id": pa.uint64(),
             "project_id": pa.uint64(),
             "publication_id": pa.uint64(),
+            "enrollment_id": pa.uint64(),
             "timestamp": pa.timestamp("ms", tz="UTC"),
             "event_type": pa.string(),
             "verb_id": pa.string(),
@@ -1116,6 +1118,7 @@ def transform_xapi_statement(
     section_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/section_id"))
     project_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/project_id"))
     publication_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/publication_id"))
+    enrollment_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/enrollment_id"))
 
     content_element_id = (
         result_extensions.get("content_element_id")
@@ -1182,6 +1185,7 @@ def transform_xapi_statement(
         "section_id": section_id,
         "project_id": project_id,
         "publication_id": publication_id,
+        "enrollment_id": enrollment_id,
         "timestamp": timestamp_raw,
         "event_type": event_type,
         "verb_id": verb_id,

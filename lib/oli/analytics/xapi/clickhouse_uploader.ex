@@ -131,6 +131,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       section_id: oli_extension(context_extensions, "section_id"),
       project_id: oli_extension(context_extensions, "project_id"),
       publication_id: oli_extension(context_extensions, "publication_id"),
+      enrollment_id: oli_extension(context_extensions, "enrollment_id"),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: event_type,
       verb_id: get_in(event, ["verb", "id"])
@@ -558,6 +559,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       section_id,
       project_id,
       publication_id,
+      enrollment_id,
       timestamp,
       event_type,
       verb_id,
@@ -602,6 +604,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(event[:section_id]),
       escape_value(event[:project_id]),
       escape_value(event[:publication_id]),
+      escape_value(event[:enrollment_id]),
       escape_value(event[:timestamp]),
       escape_value(event[:event_type]),
       escape_value(event[:verb_id]),

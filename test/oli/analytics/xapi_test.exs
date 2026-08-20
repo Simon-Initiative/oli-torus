@@ -5,6 +5,7 @@ defmodule Oli.Analytics.XAPITest do
 
   alias Oli.Analytics.XAPI
   alias Oli.Analytics.XAPI.StatementBundle
+  alias Oli.Analytics.Summary.AttemptGroup
   alias Oli.Experiments
   alias Oli.Experiments.{LifecycleRequest, Scope}
 
@@ -19,6 +20,50 @@ defmodule Oli.Analytics.XAPITest do
   alias Oli.Resources.ResourceType
 
   @experiment_attributions_key "http://oli.cmu.edu/extensions/experiment_attributions"
+
+  test "builds evaluated-attempt context with section enrollment identity" do
+    %{
+      project: project,
+      enrollment: enrollment,
+      resource_access: resource_access,
+      resource_attempt: resource_attempt
+    } = setup_video_experiment_context()
+
+    attempt_group =
+      AttemptGroup.from_attempt_summary(
+        [
+          {%{}, %{lifecycle_state: :active}, resource_attempt, resource_access, %{}}
+        ],
+        project.id,
+        "https://example.edu"
+      )
+
+    assert attempt_group.context.enrollment_id == enrollment.id
+  end
+
+  test "keeps evaluated-attempt context nullable without a section publication mapping" do
+    user = insert(:user)
+    section = insert(:section)
+    enrollment = insert(:enrollment, section: section, user: user)
+    project = insert(:project)
+    revision = insert(:revision)
+
+    resource_access =
+      insert(:resource_access, section: section, user: user, resource: revision.resource)
+
+    resource_attempt =
+      insert(:resource_attempt, resource_access: resource_access, revision: revision)
+
+    attempt_group =
+      AttemptGroup.from_attempt_summary(
+        [{%{}, %{lifecycle_state: :active}, resource_attempt, resource_access, %{}}],
+        project.id,
+        "https://example.edu"
+      )
+
+    assert attempt_group.context.enrollment_id == enrollment.id
+    assert is_nil(attempt_group.context.publication_id)
+  end
 
   describe "construct_bundle/2 video experiment attributions" do
     test "attaches media interaction attributions when video is in the assigned alternatives branch" do
@@ -468,7 +513,10 @@ defmodule Oli.Analytics.XAPITest do
 
     %{
       user: user,
+      project: project,
       section: section,
+      enrollment: enrollment,
+      resource_access: resource_access,
       page_revision: page_revision,
       resource_attempt: resource_attempt,
       experiment:

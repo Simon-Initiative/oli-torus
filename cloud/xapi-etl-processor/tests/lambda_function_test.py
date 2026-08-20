@@ -819,6 +819,7 @@ class LambdaFunctionTests(TestCase):
                     "http://oli.cmu.edu/extensions/project_id": 1719,
                     "http://oli.cmu.edu/extensions/publication_id": 8625,
                     "http://oli.cmu.edu/extensions/section_id": 2161,
+                    "http://oli.cmu.edu/extensions/enrollment_id": 7654,
                     "http://oli.cmu.edu/extensions/session_id": "70a20ff3-1373-4fe1-af64-59774295d22e",
                 }
             },
@@ -871,6 +872,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["event_type"], "part_attempt")
         self.assertEqual(transformed["user_id"], "15474")
         self.assertEqual(transformed["section_id"], 2161)
+        self.assertEqual(transformed["enrollment_id"], 7654)
         self.assertEqual(transformed["project_id"], 1719)
         self.assertEqual(transformed["publication_id"], 8625)
         self.assertEqual(transformed["session_id"], "70a20ff3-1373-4fe1-af64-59774295d22e")
@@ -883,6 +885,18 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["source_line"], 1)
         self.assertEqual(transformed["source_etag"], "etag")
         self.assertEqual(transformed["event_hash"], hashlib.sha256(raw_line).hexdigest())
+
+        del event["context"]["extensions"]["http://oli.cmu.edu/extensions/enrollment_id"]
+        historical_raw_line = json.dumps(event).encode("utf-8")
+        historical = lambda_function.transform_xapi_statement(
+            event,
+            raw_bytes=historical_raw_line,
+            bucket="bucket",
+            key="path/to/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+        self.assertIsNone(historical["enrollment_id"])
 
     def test_transform_xapi_statement_preserves_verb_id_and_canonical_video_fields(self):
         shared_context_extensions = {

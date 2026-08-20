@@ -116,6 +116,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
             "https://oli.cmu.edu/extensions/section_id" => 111,
             "https://oli.cmu.edu/extensions/project_id" => 222,
             "https://oli.cmu.edu/extensions/publication_id" => 333,
+            "https://oli.cmu.edu/extensions/enrollment_id" => 777,
             "https://oli.cmu.edu/extensions/activity_attempt_guid" => "activity-guid",
             "https://oli.cmu.edu/extensions/activity_attempt_number" => 4,
             "https://oli.cmu.edu/extensions/page_attempt_guid" => "page-guid",
@@ -166,6 +167,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     expect(MockHTTP, :post, fn _url, query, _headers ->
       assert query =~ "'http://adlnet.gov/expapi/verbs/answered'"
       assert query =~ "'activity-guid'"
+      assert query =~ ~r/publication_id,\s+enrollment_id/
+      assert query =~ "777"
       assert query =~ "'nice work'"
       assert query =~ "'http://adlnet.gov/expapi/verbs/experienced'"
       {:ok, %{status_code: 200, body: ""}}
