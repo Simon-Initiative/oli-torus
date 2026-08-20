@@ -25,6 +25,7 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   @adaptive_runtime_update_name "adaptive_runtime_update"
   @activity_attempt_guid_pattern ~r/\A[a-zA-Z0-9_-]+\z/
+  @watchdog_margin_ms 5_000
 
   defp realize_prompt_template(nil, _), do: ""
 
@@ -228,6 +229,9 @@ defmodule OliWeb.Dialogue.WindowLive do
       trigger_queue: [],
       active_message: nil,
       current_llm_metadata: nil,
+      engagement_id: nil,
+      watchdog_timer: nil,
+      watchdog_timeout_ms: watchdog_timeout_ms(dialogue),
       title: "Dot",
       current_user: Oli.Accounts.get_user!(user_id),
       height: 500,
@@ -706,10 +710,15 @@ defmodule OliWeb.Dialogue.WindowLive do
 
     persist_message(message, socket)
 
-    # This asynchronously engages the dialogue server with the new message
-    Server.engage(dialogue, message)
+    engagement_id = make_ref()
 
-    {:noreply, assign(socket, streaming: true, messages: messages, allow_submission?: false)}
+    # This asynchronously engages the dialogue server with the new message
+    Server.engage(dialogue, message, engagement_id)
+
+    {:noreply,
+     socket
+     |> assign(messages: messages)
+     |> start_streaming(engagement_id)}
   end
 
   def handle_event(
@@ -733,25 +742,29 @@ defmodule OliWeb.Dialogue.WindowLive do
   # If we encounter any type of error from the server, have DOT post a message indicating
   # that there was an error, and basically stop responding (until the user refreshes the page)
   def handle_info({:dialogue_server, {:error, _error}}, socket) do
-    messages = socket.assigns.messages
-
-    message =
-      Message.new(
-        :assistant,
-        "<span class='text-red-500'>Hmmm, we encountered a problem while processing your last message. Maybe try again later.</span>"
-      )
-
-    messages = messages ++ [message]
-
-    {:noreply,
-     assign(socket,
-       streaming: false,
-       messages: messages,
-       allow_submission?: true,
-       active_message: nil,
-       current_llm_metadata: nil
-     )}
+    {:noreply, fail_dialogue(socket)}
   end
+
+  def handle_info(
+        {:dialogue_server, engagement_id, event},
+        %{assigns: %{engagement_id: engagement_id}} = socket
+      ) do
+    handle_info({:dialogue_server, event}, socket)
+  end
+
+  def handle_info({:dialogue_server, _stale_engagement_id, _event}, socket),
+    do: {:noreply, socket}
+
+  def handle_info(
+        {:dialogue_timeout, engagement_id},
+        %{assigns: %{engagement_id: engagement_id}} = socket
+      ) do
+    Logger.error("Dialogue engagement timed out section_id=#{socket.assigns.section.id}")
+
+    {:noreply, fail_dialogue(socket)}
+  end
+
+  def handle_info({:dialogue_timeout, _stale_engagement_id}, socket), do: {:noreply, socket}
 
   def handle_info({:dialogue_server, {:llm_routing, metadata}}, socket) do
     {:noreply, assign(socket, current_llm_metadata: metadata)}
@@ -775,26 +788,35 @@ defmodule OliWeb.Dialogue.WindowLive do
     case socket.assigns.trigger_queue do
       [] ->
         {:noreply,
-         assign(socket,
+         socket
+         |> cancel_watchdog()
+         |> assign(
            streaming: false,
            allow_submission?: true,
            active_message: nil,
            current_llm_metadata: nil,
-           messages: socket.assigns.messages ++ [message]
+           messages: socket.assigns.messages ++ [message],
+           engagement_id: nil
          )}
 
       [trigger | rest] ->
         prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)
 
-        Server.engage(socket.assigns.dialogue, Message.new(:system, prompt))
+        Server.engage(
+          socket.assigns.dialogue,
+          Message.new(:system, prompt),
+          socket.assigns.engagement_id
+        )
 
         {:noreply,
-         assign(socket,
+         socket
+         |> assign(
            active_message: socket.assigns.active_message <> "\n\n",
            messages: socket.assigns.messages ++ [message],
            trigger_queue: rest,
            current_llm_metadata: nil
-         )}
+         )
+         |> start_streaming(socket.assigns.engagement_id)}
     end
   end
 
@@ -826,22 +848,44 @@ defmodule OliWeb.Dialogue.WindowLive do
         prompt = Triggers.assemble_trigger_prompt(trigger)
         message = Message.new(:system, prompt)
 
-        Server.engage(socket.assigns.dialogue, message)
+        engagement_id = make_ref()
+        Server.engage(socket.assigns.dialogue, message, engagement_id)
 
         socket =
           push_event(socket, "wakeup-dot", %{
             to: "#ai_bot_collapsed"
           })
 
-        {:noreply,
-         assign(socket,
-           streaming: true
-         )}
+        {:noreply, start_streaming(socket, engagement_id)}
     end
   end
 
   def handle_info(_item, socket) do
     {:noreply, socket}
+  end
+
+  defp fail_dialogue(socket) do
+    Server.cancel_engagement(socket.assigns.dialogue)
+    messages = socket.assigns.messages
+
+    message =
+      Message.new(
+        :assistant,
+        "<span class='text-red-500'>Hmmm, we encountered a problem while processing your last message. Maybe try again later.</span>"
+      )
+
+    messages = messages ++ [message]
+
+    socket
+    |> cancel_watchdog()
+    |> assign(
+      streaming: false,
+      messages: messages,
+      allow_submission?: true,
+      active_message: nil,
+      current_llm_metadata: nil,
+      engagement_id: nil
+    )
   end
 
   def persist_message(message, socket) do
@@ -937,4 +981,44 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   defp normalize_activity_attempt_guid(_), do: {:error, :invalid_activity_attempt_guid}
+
+  defp start_streaming(socket, engagement_id) do
+    socket = cancel_watchdog(socket)
+
+    timer =
+      Process.send_after(
+        self(),
+        {:dialogue_timeout, engagement_id},
+        socket.assigns.watchdog_timeout_ms
+      )
+
+    assign(socket,
+      streaming: true,
+      allow_submission?: false,
+      engagement_id: engagement_id,
+      watchdog_timer: timer
+    )
+  end
+
+  defp cancel_watchdog(%{assigns: %{watchdog_timer: nil}} = socket), do: socket
+
+  defp cancel_watchdog(socket) do
+    Process.cancel_timer(socket.assigns.watchdog_timer)
+    assign(socket, watchdog_timer: nil)
+  end
+
+  defp watchdog_timeout_ms(dialogue) do
+    recv_timeout =
+      dialogue
+      |> :sys.get_state()
+      |> then(& &1.configuration.service_config)
+      |> then(fn config ->
+        [config.primary_model, config.secondary_model, config.backup_model]
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&Map.get(&1, :recv_timeout, 60_000))
+      |> Enum.max(fn -> 60_000 end)
+
+    recv_timeout + Application.get_env(:oli, :dialogue_watchdog_margin_ms, @watchdog_margin_ms)
+  end
 end
