@@ -181,7 +181,6 @@
       "required": [
         "role",
         "attribution_type",
-        "decision_point_id",
         "condition_id",
         "condition_code",
         "assignment_id"

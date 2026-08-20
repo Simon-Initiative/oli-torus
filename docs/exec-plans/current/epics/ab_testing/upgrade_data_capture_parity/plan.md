@@ -38,19 +38,19 @@ experiment-runtime changes.
 
 - Goal: Establish one small producer and analysis contract before implementation.
 - Tasks:
-  - [ ] Inventory the exact existing attempt and media producers and their current attribution
+  - [x] Inventory the exact existing attempt and media producers and their current attribution
     behavior.
-  - [ ] Record the v0.33.0 `LogWorker` input/output semantics and correctness fallback as golden
+  - [x] Record the v0.33.0 `LogWorker` input/output semantics and correctness fallback as golden
     expected rows.
-  - [ ] Define the minimum attribution fields needed by existing roles and the minimum raw activity
+  - [x] Define the minimum attribution fields needed by existing roles and the minimum raw activity
     fields needed for compatibility analysis.
-  - [ ] Confirm how durable assignment/exposure evidence supplies condition for the compatibility
+  - [x] Confirm how durable assignment/exposure evidence supplies condition for the compatibility
     join without requiring branch attribution.
-  - [ ] Add focused fixtures for attributed attempt/media events, unattributed outcomes, both
+  - [x] Add focused fixtures for attributed attempt/media events, unattributed outcomes, both
     assignment scopes, Thompson evidence, and historical missing fields.
 - Testing:
-  - [ ] Validate fixtures against the existing xAPI schema and privacy allowlist.
-  - [ ] Prove the golden compatibility calculation matches v0.33.0 behavior.
+  - [x] Validate fixtures against the existing xAPI schema and privacy allowlist.
+  - [x] Prove the golden compatibility calculation matches v0.33.0 behavior.
 - Gate A: The contract contains no speculative producer, role, field, or diagnostic requirement.
 
 ## Phase 2: Restore Focused Non-Page Attribution
