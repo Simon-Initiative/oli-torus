@@ -898,6 +898,28 @@ class LambdaFunctionTests(TestCase):
         )
         self.assertIsNone(historical["enrollment_id"])
 
+    def test_transform_xapi_statement_does_not_project_actor_mbox_as_user_id(self):
+        event = {
+            "actor": {"mbox": "mailto:student@example.edu"},
+            "verb": {"id": "http://id.tincanapi.com/verb/viewed"},
+            "object": {
+                "definition": {"type": "http://oli.cmu.edu/extensions/types/page"}
+            },
+            "timestamp": "2026-08-20T13:17:58Z",
+        }
+        raw_line = json.dumps(event).encode("utf-8")
+
+        transformed = lambda_function.transform_xapi_statement(
+            event,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="path/to/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertIsNone(transformed["user_id"])
+
     def test_shared_parity_statement_preserves_raw_and_attribution_contract(self):
         fixture_path = Path(__file__).parents[3] / "test" / "support" / "fixtures" / "upgrade_data_capture_parity_statement.json"
         raw_bytes = fixture_path.read_bytes()

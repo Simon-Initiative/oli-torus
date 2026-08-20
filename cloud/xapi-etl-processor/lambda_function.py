@@ -1107,7 +1107,7 @@ def transform_xapi_statement(
     object_type = object_definition.get("type", "") or ""
     event_type = _determine_event_type(verb_id, object_type)
 
-    user_id = account.get("name") or actor.get("mbox")
+    user_id = account.get("name")
     if user_id is not None and not isinstance(user_id, str):
         user_id = str(user_id)
 

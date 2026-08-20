@@ -126,7 +126,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
     %{
       event_hash: event_hash,
-      user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
+      user_id: extract_account_user_id(event),
       home_page: get_in(event, ["actor", "account", "homePage"]),
       section_id: oli_extension(context_extensions, "section_id"),
       project_id: oli_extension(context_extensions, "project_id"),
@@ -497,9 +497,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp oli_extension(_, _), do: nil
 
-  defp safe_extract_email(nil), do: nil
-  defp safe_extract_email(mbox) when is_binary(mbox), do: String.replace(mbox, "mailto:", "")
-  defp safe_extract_email(_), do: nil
+  defp extract_account_user_id(event) do
+    case get_in(event, ["actor", "account", "name"]) do
+      account_name when is_binary(account_name) -> account_name
+      account_name when is_integer(account_name) -> Integer.to_string(account_name)
+      _ -> nil
+    end
+  end
 
   defp parse_timestamp(timestamp_str) when is_binary(timestamp_str) do
     case DateTime.from_iso8601(timestamp_str) do

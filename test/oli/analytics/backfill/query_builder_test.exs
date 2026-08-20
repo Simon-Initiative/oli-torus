@@ -30,6 +30,11 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
     assert sql =~
              "parseDateTime64BestEffortOrNull(nullIf(JSON_VALUE(json, '$.timestamp'), ''), 3) AS timestamp"
 
+    assert sql =~
+             "nullIf(JSON_VALUE(json, '$.actor.account.name'), '') AS user_id"
+
+    refute sql =~ "$.actor.mbox"
+
     refute sql =~ " AS event_id"
     refute sql =~ "JSONExtract(json, 'actor.account.name', 'Int64')"
     refute sql =~ "nullIf(JSON_VALUE(json, '$.statement.id'), '')"

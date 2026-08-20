@@ -181,6 +181,66 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     assert {:ok, 2} = ClickHouseUploader.upload(bundle)
   end
 
+  test "upload projects the actor account name as the raw event user id" do
+    statement = %{
+      "actor" => %{
+        "account" => %{
+          "homePage" => "https://proton.oli.cmu.edu",
+          "name" => 42
+        }
+      },
+      "verb" => %{"id" => "http://id.tincanapi.com/verb/viewed"},
+      "object" => %{
+        "definition" => %{"type" => "http://oli.cmu.edu/extensions/types/page"}
+      },
+      "context" => %{
+        "extensions" => %{
+          "http://oli.cmu.edu/extensions/section_id" => 1,
+          "http://oli.cmu.edu/extensions/project_id" => 2,
+          "http://oli.cmu.edu/extensions/publication_id" => 3,
+          "http://oli.cmu.edu/extensions/page_id" => 4
+        }
+      },
+      "timestamp" => "2026-08-20T13:17:58Z"
+    }
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :page_viewed,
+      bundle_id: "account-actor"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "INSERT INTO analytics.raw_events"
+      assert query =~ ~r/VALUES\s*\('[^']+', '42',/s
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload does not project an actor mbox when the account name is absent" do
+    statement =
+      video_statement("https://w3id.org/xapi/video/verbs/played", %{
+        "https://w3id.org/xapi/video/extensions/time" => 12.5
+      })
+      |> put_in(["actor"], %{"mbox" => "mailto:student@example.edu"})
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :video,
+      bundle_id: "mbox-actor"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ ~r/VALUES\s*\('[^']+', NULL, NULL,/s
+      refute query =~ "student@example.edu"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
   test "upload maps xAPI statement experiment attribution arrays into attribution table rows" do
     statement = attributed_part_attempt_statement()
 

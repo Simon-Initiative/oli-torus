@@ -48,10 +48,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           + 1 AS source_line,
         now() AS inserted_at,
 
-        coalesce(
-          #{json_value_or_null("$.actor.account.name")},
-          #{json_value_or_null("$.actor.mbox")}
-        ) AS user_id,
+        #{json_value_or_null("$.actor.account.name")} AS user_id,
 
         #{json_value_or_null("$.actor.account.homePage")} AS home_page,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/section_id\"")}) AS section_id,
