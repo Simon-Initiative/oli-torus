@@ -1,203 +1,93 @@
 work_item: upgrade_data_capture_parity
 requirements:
-- title: Preserve enrollment as the analysis unit
-  description: Use section enrollment as the pseudonymous participant identity across
-    assignment, attribution, outcome, and export-ready evidence, while keeping different
-    enrollments for the same user distinct.
-  id: FR-001
-- title: Preserve scope-aware durable assignments
-  description: Capture stable assignment identity, condition, timestamps, reuse state,
-    and assignment scope for intervention-scoped and section-and-enrollment-scoped
-    weighted random while retaining Thompson Sampling intervention scope.
-  id: FR-002
-- title: Capture intervention-specific exposures
-  description: Record an idempotent exposure only when an assigned alternative is
-    actually presented, joined to its assignment and carrying immutable intervention,
-    placement, publication, and revision provenance.
-  id: FR-003
-- title: Attribute supported selected-branch interactions
-  description: Attach canonical assignment-backed attribution to supported activity,
-    part, media, navigation, nested-content, and asynchronous events only when durable
-    provenance establishes containment in the learner's selected branch.
-  id: FR-004
-- title: Capture continuous evaluated outcomes
-  description: Preserve raw score, denominator, attempt identities and number, evaluation
-    time, enrollment, assignment, condition, and applicable branch provenance so continuous
-    correctness remains derivable.
-  id: FR-005
-- title: Preserve a section-wide compatibility stream
-  description: Capture joinable section-wide evaluated activities equivalent to the
-    v0.33.0 UpGrade hook from ClickHouse raw_events activity-attempt rows without
-    falsely marking out-of-branch outcomes as caused by an experiment; causal attribution
-    is supplied separately by experiment_attributions joined through raw_event_hash.
-  id: FR-006
-- title: Preserve Thompson Sampling semantics
-  description: Retain assessment eligibility, canonical finalized attempt selection,
-    binary reward normalization, idempotency, atomic posterior mutation, concurrency
-    safety, and independently identifiable reward and policy-update evidence.
-  id: FR-007
-- title: Define stable timing and join semantics
-  description: Document distinct assignment, exposure, host-event, evaluation, reward,
-    policy-update, and ingestion timestamps plus stable keys and query boundaries
-    for future compatibility export.
-  id: FR-008
-- title: Project one consistent analytics contract
-  description: Make xAPI validation, direct ingestion, Lambda ingestion, S3 replay,
-    backfill, and ClickHouse projection accept and produce matching bounded attribution
-    roles and fields.
-  id: FR-009
-- title: Make durable replay idempotent
-  description: Use stable event and attribution identities so replaying or backfilling
-    a statement that reached durable storage does not create duplicate logical rows.
-  id: FR-010
-- title: Preserve historical and content compatibility
-  description: Support canonical experiment-controlled and compatible historical UpGrade
-    decision-point groups using immutable provenance, additive schemas, and intervention-scope
-    defaults for old evidence.
-  id: FR-011
-- title: Protect privacy and tenant boundaries
-  description: Scope evidence by institution, project, section, and enrollment and
-    exclude direct learner identifiers, LMS identifiers, raw responses, free-form
-    content, and unbounded policy state.
-  id: FR-012
-- title: Provide data-quality diagnostics
-  description: Make missing or inconsistent assignment, exposure, attribution, reward
-    projection, ingestion, lag, path parity, and allocation conditions queryable or
-    operationally diagnosable with bounded telemetry.
-  id: FR-013
-- title: Prove export-ready UpGrade parity
-  description: Provide a repository-owned query or fixture that reconstructs the historical
-    enrollment, condition, timestamp, and continuous-correctness dataset from supported
-    analytics stores.
-  id: FR-014
+- id: FR-001
+  title: Preserve enrollment as the participant identity
+  description: Use section enrollment as the pseudonymous participant key for assignment and
+    evaluated-activity analysis, keeping separate section enrollments distinct.
+- id: FR-002
+  title: Attribute concrete non-page xAPI producers
+  description: Attach experiment attribution to existing evaluated attempt and media statements
+    only when scoped assignment and selected-branch content establish the relationship.
+- id: FR-003
+  title: Preserve ordinary host statements
+  description: Emit and project the non-page host statement when attribution is absent or safely
+    cannot be resolved.
+- id: FR-004
+  title: Capture every evaluated activity outcome
+  description: Preserve a section-wide raw activity-attempt stream with enrollment, attempt,
+    evaluation time, score, and denominator regardless of causal attribution.
+- id: FR-005
+  title: Preserve existing experiment runtime evidence
+  description: Retain assignment scopes and existing Thompson outcome, reward, policy-update,
+    idempotency, and concurrency semantics.
+- id: FR-006
+  title: Keep supported ingestion paths consistent
+  description: Project the required raw activity and attribution fields consistently through direct
+    upload, Lambda ingestion, and replay/backfill.
+- id: FR-007
+  title: Prove v0.33.0 analysis parity
+  description: Provide a repository-owned query or fixture that reconstructs enrollment, condition,
+    timestamp, and continuous correctness from supported analytics data.
+- id: FR-008
+  title: Protect scope and privacy
+  description: Resolve attribution from server-owned scoped data and exclude direct learner
+    identifiers, LMS identifiers, raw responses, and free-form content from new evidence.
 acceptance_criteria:
-- requirement: FR-001
-  description: One user enrolled in two sections is represented by two distinct pseudonymous
-    experimental participants and no export join requires name, email, or LMS identity.
-  id: AC-001
-- requirement: FR-002
-  description: Intervention-scoped assignments remain sticky per experiment/intervention/enrollment,
-    preserve their original assigned_at on reuse, and carry explicit assignment_scope.
-  id: AC-002
-- requirement: FR-002
-  description: A section-and-enrollment weighted-random experiment creates one canonical
-    assignment per experiment/section/enrollment, reuses it across eligible interventions,
-    and remains joinable with a null assignment-level intervention ID.
-  id: AC-003
-- requirement: FR-002
-  description: New weighted-random defaults, explicit intervention scope, existing
-    experiment behavior, historical evidence defaults, and Thompson Sampling intervention
-    scope match the MER-5883 contract.
-  id: AC-004
-- requirement: FR-003
-  description: Rendering a selected alternative creates one logical exposure with
-    correct assignment, intervention, placement, publication, revision, selected-option,
-    and exposed_at provenance.
-  id: AC-005
-- requirement: FR-003
-  description: Reusing one section-and-enrollment assignment at multiple interventions
-    preserves separate intervention-specific exposures without creating extra assignments.
-  id: AC-006
-- requirement: FR-004
-  description: Supported activity, part, media, navigation, and nested-content interactions
-    inside the selected branch carry the applicable canonical experiment attribution
-    or attributions.
-  id: AC-007
-- requirement: FR-004
-  description: Equivalent events outside the selected branch carry no experiment attribution,
-    and multiple decision points attach only relationships demonstrated by content
-    provenance.
-  id: AC-008
-- requirement: FR-004
-  description: Attribution remains correct for asynchronously emitted events and historical
-    replay without consulting transient render state or the current mutable authoring
-    revision.
-  id: AC-009
-- requirement: FR-005
-  description: Relevant evaluated attempts preserve activity/resource/page and attempt
-    identities, attempt number, raw score, out_of, observed_at, enrollment, assignment,
-    condition, and applicable branch provenance.
-  id: AC-010
-- requirement: FR-005
-  description: Continuous correctness equivalent to score divided by out_of is available
-    for post-processing, with documented safe normalization for zero, invalid, or
-    missing denominators.
-  id: AC-011
-- requirement: FR-006
-  description: ClickHouse raw_events rows with event_type activity_attempt include
-    the section-wide evaluated activities v0.33.0 would have logged with stable enrollment,
-    section, attempt, score, denominator, evaluation-time, and raw_event_hash fields;
-    raw S3 xAPI remains the durable replay source and PostgreSQL summaries are not
-    the canonical compatibility source.
-  id: AC-012
-- requirement: FR-006
-  description: experiment_attributions joins to raw_events through raw_event_hash
-    as the causal overlay; an absent attribution does not exclude an applicable section-wide
-    activity outcome, and out-of-branch outcomes are not represented as causal decision-point
-    outcomes.
-  id: AC-013
-- requirement: FR-007
-  description: Thompson Sampling retains existing assessment eligibility, binary reward,
-    duplicate/later/reevaluated/replayed-attempt idempotency, atomic posterior update,
-    and concurrency guarantees.
-  id: AC-014
-- requirement: FR-007
-  description: Continuous outcome, accepted reward, and policy-update evidence remain
-    independently identifiable and joinable when one evaluated event produces all
-    applicable evidence.
-  id: AC-015
-- requirement: FR-007
-  description: Weighted-random experiments capture interactions and continuous outcomes
-    without requiring rewards or producing posterior updates.
-  id: AC-016
-- requirement: FR-008
-  description: Although export implementation is out of scope, future compatibility
-    semantics use the half-open per-assignment window assigned_at <= observed_at <
-    analysis_end, where analysis_end is the earliest experiment completion, archival,
-    or requested exclusive export end (falling back to the export execution cutoff);
-    pausing does not split the window, exposure does not gate section-wide outcomes,
-    and every event timestamp retains its documented meaning.
-  id: AC-017
-- requirement: FR-009
-  description: xAPI schema validation, direct upload, Lambda ingestion, S3 replay,
-    backfill, and ClickHouse queries project matching assignment_scope, attribution
-    roles, identities, values, and provenance.
-  id: AC-018
-- requirement: FR-009
-  description: ClickHouse preserves one raw host-event row per persisted statement,
-    one row per applicable attribution, and their raw_event_hash relationship using
-    additive bounded fields.
-  id: AC-019
-- requirement: FR-010
-  description: Replaying or backfilling a durably stored xAPI statement does not create
-    duplicate logical host-event or attribution evidence.
-  id: AC-020
-- requirement: FR-011
-  description: Canonical experiment_controlled and compatible historical upgrade_decision_point
-    groups receive equivalent attribution without content rewriting or republishing.
-  id: AC-021
-- requirement: FR-011
-  description: Historical statements and rows lacking assignment_scope remain accepted
-    and are interpreted as intervention-scoped when an analytics default is required.
-  id: AC-022
-- requirement: FR-012
-  description: Captured payloads, projected rows, queries, and telemetry contain no
-    learner names, emails, LMS identifiers, raw responses, free-form content, or unbounded
-    policy state and preserve tenant scope.
-  id: AC-023
-- requirement: FR-013
-  description: Assignment without exposure, exposure without later attributed evidence,
-    expected-but-missing outcome attribution, accepted reward without projection,
-    xAPI failures, ingestion lag, path disagreement, and assignment imbalance are
-    diagnosable.
-  id: AC-024
-- requirement: FR-014
-  description: A representative repository-owned query or fixture reconstructs the
-    v0.33.0 enrollment/condition/timestamp/correctness shape from analytics stores
-    without private PostgreSQL schema knowledge or mutable authoring content.
-  id: AC-025
-- requirement: FR-014
-  description: Automated coverage includes multiple enrollments, repeated page views,
-    multiple evaluated activities, multiple decision points, both in-branch and out-of-branch
-    events, both weighted-random scopes, and Thompson Sampling.
-  id: AC-026
+- id: AC-001
+  requirement: FR-001
+  description: The same user enrolled in two sections appears as two distinct analytical
+    participants without using name, email, or LMS identity.
+- id: AC-002
+  requirement: FR-002
+  description: In-branch evaluated part/activity/page statements carry the matching assignment,
+    condition, scope, actual intervention, and attempt identity.
+- id: AC-003
+  requirement: FR-002
+  description: In-branch attempt-based and resource-only media statements carry the existing
+    media-interaction assignment attribution.
+- id: AC-004
+  requirement: FR-002
+  description: Out-of-branch and unrelated events carry no experiment attribution, including pages
+    with multiple concrete decision points.
+- id: AC-005
+  requirement: FR-003
+  description: Missing assignments, unmatched content, or safe attribution failure never suppress
+    the ordinary host statement.
+- id: AC-006
+  requirement: FR-004
+  description: Every applicable evaluated activity produces a raw row with section, project,
+    enrollment, activity/attempt identity, evaluation timestamp, score, and denominator.
+- id: AC-007
+  requirement: FR-004
+  description: An activity outside a selected experimental branch remains present in the
+    section-wide outcome stream without being represented as causally experiment-attributed.
+- id: AC-008
+  requirement: FR-005
+  description: Both weighted-random assignment scopes retain their existing assignment and exposure
+    behavior, and weighted-random outcomes do not create rewards or policy updates.
+- id: AC-009
+  requirement: FR-005
+  description: Thompson Sampling preserves its existing outcome, accepted reward, policy update,
+    duplicate/replay idempotency, and concurrency behavior.
+- id: AC-010
+  requirement: FR-006
+  description: Direct upload, Lambda, and replay/backfill produce matching required raw activity and
+    attribution values for the same durable xAPI statement.
+- id: AC-011
+  requirement: FR-006
+  description: Historical statements lacking new fields remain accepted and project null values
+    without historical data mutation.
+- id: AC-012
+  requirement: FR-007
+  description: A repository-owned query or fixture emits enrollment, assigned condition, evaluation
+    timestamp, and correctness equivalent to the v0.33.0 score/out_of calculation and fallback.
+- id: AC-013
+  requirement: FR-007
+  description: The compatibility proof includes multiple enrollments, repeated evaluations,
+    multiple activities, in-branch and out-of-branch outcomes, both weighted-random scopes, and
+    Thompson Sampling.
+- id: AC-014
+  requirement: FR-008
+  description: Attribution lookup verifies project, section, user, and enrollment relationships and
+    new payloads contain no direct learner identity, LMS identifiers, raw responses, or free-form
+    content.
