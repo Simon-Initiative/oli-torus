@@ -149,6 +149,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
     render_click(element(view, "button[phx-value-kind=\"migrate_up\"]"))
     assert render(view) =~ "Confirm Migrate Up"
+    assert has_element?(view, "#clickhouse-operation-confirmation .max-w-lg")
 
     render_click(element(view, "button[phx-click=\"confirm_clickhouse_operation\"]"))
 
