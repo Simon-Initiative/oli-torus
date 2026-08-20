@@ -134,6 +134,7 @@ defmodule Oli.Analytics.XAPITest do
     test "attaches media interaction attributions when video is in the assigned alternatives branch" do
       %{
         user: user,
+        enrollment: enrollment,
         resource_attempt: resource_attempt,
         experiment: experiment,
         assignment: assignment
@@ -155,10 +156,11 @@ defmodule Oli.Analytics.XAPITest do
           user.id
         )
 
-      attributions =
-        bundle
-        |> statement_from_bundle()
-        |> get_in(["context", "extensions", @experiment_attributions_key])
+      statement = statement_from_bundle(bundle)
+      extensions = get_in(statement, ["context", "extensions"])
+      attributions = extensions[@experiment_attributions_key]
+
+      assert extensions["http://oli.cmu.edu/extensions/enrollment_id"] == enrollment.id
 
       assert [%{"role" => "media_interaction"} = attribution] = attributions
       assert attribution["attribution_type"] == "assignment"
@@ -387,7 +389,13 @@ defmodule Oli.Analytics.XAPITest do
     end
 
     test "attaches media interaction attributions for resource-only video events" do
-      %{user: user, section: section, page_revision: page_revision, assignment: assignment} =
+      %{
+        user: user,
+        section: section,
+        enrollment: enrollment,
+        page_revision: page_revision,
+        assignment: assignment
+      } =
         setup_video_experiment_context()
 
       section_resource =
@@ -427,6 +435,14 @@ defmodule Oli.Analytics.XAPITest do
                |> get_in(["context", "extensions", @experiment_attributions_key])
 
       assert assignment_id == assignment.id
+
+      assert bundle
+             |> statement_from_bundle()
+             |> get_in([
+               "context",
+               "extensions",
+               "http://oli.cmu.edu/extensions/enrollment_id"
+             ]) == enrollment.id
     end
 
     test "does not return page revision content for resource-only events without assignments" do

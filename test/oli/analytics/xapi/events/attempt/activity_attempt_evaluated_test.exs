@@ -4,6 +4,7 @@ defmodule Oli.Analytics.XAPI.Events.Attempt.ActivityAttemptEvaluatedTest do
   alias Oli.Analytics.XAPI.Events.Attempt.{
     ActivityAttemptEvaluated,
     PageAttemptEvaluated,
+    PageViewed,
     PartAttemptEvaluated
   }
 
@@ -108,5 +109,39 @@ defmodule Oli.Analytics.XAPI.Events.Attempt.ActivityAttemptEvaluatedTest do
       assert extensions["http://oli.cmu.edu/extensions/enrollment_id"] == 55
       refute Map.has_key?(extensions, "http://oli.cmu.edu/extensions/user_id")
     end
+  end
+
+  test "adds enrollment identity to page-viewed context" do
+    context = %Context{
+      user_id: 11,
+      host_name: "https://example.edu",
+      section_id: 22,
+      project_id: 33,
+      publication_id: 44,
+      enrollment_id: 55
+    }
+
+    page_details = %{
+      attempt_guid: "page-attempt-guid",
+      attempt_number: 1,
+      resource_id: 88,
+      timestamp: ~U[2026-08-20 13:17:58Z],
+      page_sub_type: "basic"
+    }
+
+    statement = PageViewed.new(context, page_details)
+    extensions = get_in(statement, ["context", "extensions"])
+
+    assert extensions["http://oli.cmu.edu/extensions/enrollment_id"] == 55
+    refute Map.has_key?(extensions, "http://oli.cmu.edu/extensions/user_id")
+
+    statement_without_enrollment =
+      PageViewed.new(%Context{context | enrollment_id: nil}, page_details)
+
+    assert get_in(statement_without_enrollment, [
+             "context",
+             "extensions",
+             "http://oli.cmu.edu/extensions/enrollment_id"
+           ]) == nil
   end
 end

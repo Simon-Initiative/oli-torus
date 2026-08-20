@@ -92,6 +92,8 @@ defmodule Oli.Analytics.XAPI do
       from p in Oli.Delivery.Attempts.Core.ResourceAttempt,
         join: a in Oli.Delivery.Attempts.Core.ResourceAccess,
         on: p.resource_access_id == a.id,
+        left_join: e in Oli.Delivery.Sections.Enrollment,
+        on: e.section_id == a.section_id and e.user_id == a.user_id,
         join: spp in Oli.Delivery.Sections.SectionsProjectsPublications,
         on: a.section_id == spp.section_id,
         join: sr in Oli.Delivery.Sections.SectionResource,
@@ -100,19 +102,20 @@ defmodule Oli.Analytics.XAPI do
         order_by: [desc: p.attempt_number],
         limit: 1,
         select:
-          {p.attempt_number, p.content, a.resource_id, a.section_id, a.user_id, sr.project_id,
-           spp.publication_id}
+          {p.attempt_number, p.content, a.resource_id, a.section_id, a.user_id, e.id,
+           sr.project_id, spp.publication_id}
 
     case Oli.Repo.one(query) do
       nil ->
         {:error, "page attempt not found"}
 
-      {page_attempt_number, page_content, page_id, section_id, ^expected_user_id, project_id,
-       publication_id} ->
+      {page_attempt_number, page_content, page_id, section_id, ^expected_user_id, enrollment_id,
+       project_id, publication_id} ->
         context = %Context{
           user_id: expected_user_id,
           host_name: host_name,
           section_id: section_id,
+          enrollment_id: enrollment_id,
           project_id: project_id,
           publication_id: publication_id
         }
@@ -208,18 +211,19 @@ defmodule Oli.Analytics.XAPI do
         where:
           e.section_id == ^section_id and e.user_id == ^expected_user_id and
             spp.project_id == ^section_resource.project_id,
-        select: spp.publication_id,
+        select: {e.id, spp.publication_id},
         limit: 1
 
     case Oli.Repo.one(query) do
       nil ->
         {:error, "section resource not found"}
 
-      publication_id ->
+      {enrollment_id, publication_id} ->
         context = %Context{
           user_id: expected_user_id,
           host_name: host_name,
           section_id: section_id,
+          enrollment_id: enrollment_id,
           project_id: section_resource.project_id,
           publication_id: publication_id
         }
