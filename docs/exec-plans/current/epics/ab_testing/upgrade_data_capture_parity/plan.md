@@ -8,20 +8,15 @@ References:
 ## Branch And Dependency Strategy
 
 - Final base/PR target: `hotfix-v0.34.1`.
-- Temporary base: [PR #6786](https://github.com/Simon-Initiative/oli-torus/pull/6786), whose current
-  unsquashed commits are ancestors of this branch.
-- Incorporated prerequisite: [PR #6784](https://github.com/Simon-Initiative/oli-torus/pull/6784),
-  whose two current ETL commits are carried on this branch.
-- Expected upstream result: both PRs are squash-merged independently into `hotfix-v0.34.1`, so their
-  resulting commit IDs will differ from the commits currently present here.
+- Reconciled prerequisite: [PR #6786](https://github.com/Simon-Initiative/oli-torus/pull/6786),
+  squash-merged as `539b3c98d5`.
+- Reconciled prerequisite: [PR #6784](https://github.com/Simon-Initiative/oli-torus/pull/6784),
+  squash-merged as `1c14fc71c9`.
 
-Work may proceed against this temporary baseline. Before opening the final PR, fetch the updated
-`hotfix-v0.34.1`, identify the two squash commits by PR, and rebuild/rebase this branch onto that
-updated target. Use `git range-diff`, `git cherry`, and file-level diffs to distinguish changes
-already supplied upstream from changes unique to MER-5885; do not blindly replay the prerequisite
-commits. Retain only MER-5885 documentation and implementation patches, resolve any overlapping ETL
-edits against the upstream PR #6784 result, rerun every affected test, and verify that the final PR
-diff contains no PR #6784 or PR #6786 patch-equivalent changes.
+The branch was rebuilt onto `539b3c98d5` after both prerequisite squash merges. `git range-diff`
+showed all 18 retained MER-5885 commits as patch-equivalent to their pre-reconciliation versions,
+with the two superseded PR #6784 commits omitted. The reconciled and pre-reconciliation trees were
+identical, and the final-base diff contains no PR #6784 or PR #6786 patch-equivalent changes.
 
 ## Scope
 
@@ -145,7 +140,7 @@ experiment-runtime changes.
     realized content, and policy-state blobs.
   - [x] Update researcher documentation and queries to explain the dedicated initial
     condition-assignment event and distinguish it from later exposure and outcome evidence.
-  - [ ] After PRs #6784 and #6786 land, reconcile this branch onto updated `hotfix-v0.34.1` using the
+  - [x] After PRs #6784 and #6786 land, reconcile this branch onto updated `hotfix-v0.34.1` using the
     branch strategy above and inspect the complete final-base diff.
 - Testing:
   - [x] Cover AC-015 and AC-016 for both assignment scopes and supported policies.

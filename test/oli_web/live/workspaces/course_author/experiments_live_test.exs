@@ -891,6 +891,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
         )
 
       assert has_element?(details_view, "#experiment-details-grid", "Experiment UUID")
+
+      assert has_element?(
+               details_view,
+               "#experiment-uuid-detail [tabindex='0'][aria-label='Experiment UUID: #{experiment.uuid}']"
+             )
+
       assert has_element?(details_view, "#experiment-details-grid", experiment.uuid)
 
       assert has_element?(

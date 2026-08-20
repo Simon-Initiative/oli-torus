@@ -6,11 +6,15 @@ defmodule Oli.Experiments.XAPI.ConditionAssignmentEmitter do
   alias Oli.Experiments.{AssignmentDecision, Scope}
   alias Oli.Experiments.Schemas.{Assignment, ExperimentDefinition}
 
+  @doc false
+  def emit(assignment, experiment, decision, scope, emit_bundle \\ &Oli.Analytics.XAPI.emit/1)
+
   def emit(
         %Assignment{} = assignment,
         %ExperimentDefinition{} = experiment,
         %AssignmentDecision{reused?: false} = decision,
-        %Scope{} = scope
+        %Scope{} = scope,
+        emit_bundle
       ) do
     statement = ExperimentConditionAssigned.new(assignment, experiment, decision, scope)
 
@@ -21,8 +25,8 @@ defmodule Oli.Experiments.XAPI.ConditionAssignmentEmitter do
       category: :experiment_condition_assigned,
       partition: :section
     }
-    |> Oli.Analytics.XAPI.emit()
+    |> emit_bundle.()
   end
 
-  def emit(_assignment, _experiment, _decision, _scope), do: :ok
+  def emit(_assignment, _experiment, _decision, _scope, _emit_bundle), do: :ok
 end

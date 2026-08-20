@@ -167,7 +167,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
             <.detail_item
               id="experiment-uuid-detail"
               intrinsic_width
-              value_class="overflow-x-auto whitespace-nowrap"
+              value_class="overflow-x-auto whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              value_tabindex="0"
+              value_aria_label={"Experiment UUID: #{@experiment.uuid}"}
               label="Experiment UUID"
               value={@experiment.uuid}
               monospace
@@ -1189,6 +1191,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   attr :id, :string, default: nil
   attr :class, :string, default: nil
   attr :value_class, :string, default: nil
+  attr :value_tabindex, :string, default: nil
+  attr :value_aria_label, :string, default: nil
   attr :intrinsic_width, :boolean, default: false
   attr :monospace, :boolean, default: false
   attr :badge, :boolean, default: false
@@ -1208,9 +1212,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
       <div class="text-muted small text-uppercase font-weight-bold mb-1 whitespace-nowrap dark:text-gray-400">
         {@label}
       </div>
-      <div :if={@monospace} class={["break-all font-monospace", @value_class]}>{@value}</div>
+      <div
+        :if={@monospace}
+        class={["break-all font-monospace", @value_class]}
+        tabindex={@value_tabindex}
+        aria-label={@value_aria_label}
+      >
+        {@value}
+      </div>
       <span :if={@badge} class={["badge", @badge_class]}>{@value}</span>
-      <div :if={not @monospace and not @badge} class={["break-words", @value_class]}>
+      <div
+        :if={not @monospace and not @badge}
+        class={["break-words", @value_class]}
+        tabindex={@value_tabindex}
+        aria-label={@value_aria_label}
+      >
         {@value}
       </div>
     </div>

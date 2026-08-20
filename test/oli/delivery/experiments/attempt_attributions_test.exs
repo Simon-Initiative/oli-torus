@@ -110,6 +110,40 @@ defmodule Oli.Delivery.Experiments.AttemptAttributionsTest do
     refute_receive {:query_source, "experiment_assignments"}
   end
 
+  test "queries each selected branch once when it contains multiple activities" do
+    %{attempt_group: attempt_group} = setup_attempt_context(:intervention)
+
+    content =
+      update_in(
+        attempt_group.resource_attempt.content,
+        ["model", Access.at(0), "children", Access.at(0), "children"],
+        fn children ->
+          children ++ [%{"type" => "activity-reference", "activity_id" => 8002}]
+        end
+      )
+
+    attempt_group = put_in(attempt_group.resource_attempt.content, content)
+    parent = self()
+    handler_id = "attempt-attribution-branch-query-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler_id,
+      [:oli, :repo, :query],
+      fn _, _, metadata, _ ->
+        if metadata.source == "experiment_assignments" do
+          send(parent, {:assignment_query, metadata.query})
+        end
+      end,
+      %{}
+    )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    AttemptAttributions.for_attempt_group(attempt_group)
+    assert_receive {:assignment_query, query}
+    assert length(Regex.scan(~r/alternatives_resource_id/, query)) == 2
+  end
+
   test "preserves Thompson outcome and accepted reward evidence" do
     %{attempt_group: attempt_group, assignment: assignment} =
       setup_attempt_context(:intervention, :thompson_sampling)

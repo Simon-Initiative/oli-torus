@@ -142,7 +142,9 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
     page_resource_id = attempt_group.resource_attempt.resource_id
 
     selected_filter =
-      Enum.reduce(selected_activities, dynamic(false), fn selected, filter ->
+      selected_activities
+      |> Enum.uniq_by(&{&1.alternatives_resource_id, &1.placement_id, &1.option_id})
+      |> Enum.reduce(dynamic(false), fn selected, filter ->
         dynamic(
           [experiment: experiment, condition: condition, intervention: intervention],
           ^filter or

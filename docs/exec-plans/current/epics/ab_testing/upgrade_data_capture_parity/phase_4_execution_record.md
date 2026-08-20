@@ -97,11 +97,10 @@ branch reconciliation pending.
 
 ## Branch Reconciliation Gate
 
-- [ ] Reconcile onto updated `hotfix-v0.34.1` and inspect the final-base diff.
+- [x] Reconcile onto updated `hotfix-v0.34.1` and inspect the final-base diff.
 
-Checked on 2026-08-19: PRs #6784 and #6786 are both still open and have no merge commit. The plan
-requires reconciliation only after both land, so this final external gate remains pending rather
-than replaying or duplicating their prerequisite patches.
+Completed on 2026-08-20 after PR #6784 squash commit `1c14fc71c9` and PR #6786 squash commit
+`539b3c98d5` landed. The final-base diff contains only MER-5885 work.
 
 ## Done Definition
 
@@ -109,4 +108,4 @@ than replaying or duplicating their prerequisite patches.
 - [x] Targeted tests pass
 - [x] Review completed when enabled
 - [x] Final verification and validation pass
-- [ ] External branch reconciliation gate passes
+- [x] External branch reconciliation gate passes
