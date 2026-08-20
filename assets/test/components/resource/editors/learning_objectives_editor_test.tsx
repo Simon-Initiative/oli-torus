@@ -55,7 +55,7 @@ const resourceContext = (learningObjectives: ResolvedLearningObjective[]): Resou
     allTags: [],
     activityContexts: [],
     optionalContentTypes: { ecl: false, triggers: false },
-  } as ResourceContext);
+  }) as ResourceContext;
 
 const defaultEditorProps = (contentItem: LearningObjectivesContent) => ({
   contentItem,
@@ -169,6 +169,45 @@ describe('LearningObjectivesEditor', () => {
     jest.restoreAllMocks();
   });
 
+  it('renders the Introduction description and base authoring panel', () => {
+    const props = defaultEditorProps(element());
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    expect(
+      screen.getByText(
+        'Learners will be introduced to the learning objectives attached to activities in the container you place this page (ex. entire course, unit, module, or section).',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Include sub-objectives')).toBeChecked();
+    expect(screen.getByText('What is proficiency and how is it estimated?')).toBeInTheDocument();
+  });
+
+  it('renders the Summary description and helper text', () => {
+    const props = defaultEditorProps(
+      element({
+        mode: 'summary',
+        learning_objectives: [
+          { resource_id: 1, enabled: true, revisit_pages: [], practice_pages: [] },
+          { resource_id: 2, enabled: true, revisit_pages: [], practice_pages: [] },
+        ],
+      }),
+    );
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    expect(
+      screen.getByText(
+        'Learners will receive a proficiency summary regarding the learning objectives attached to activities in the container you place this page (ex. entire course, unit, module, or section).',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Learners will see how their proficiency is on the objectives in this container. For objectives students have low and medium proficiency on, recommend pages to revisit and extra practice opportunities.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('changes mode without dropping advisory objective config', () => {
     const contentItem = element();
     const props = defaultEditorProps(contentItem);
@@ -191,7 +230,7 @@ describe('LearningObjectivesEditor', () => {
     });
   });
 
-  it('stores Include Sub-Objectives as element-local state and can hide children', () => {
+  it('stores Include sub-objectives as element-local state and can hide children', () => {
     const props = defaultEditorProps(element({ include_sub_objectives: false }));
 
     render(<LearningObjectivesEditor {...props} />);
@@ -199,7 +238,7 @@ describe('LearningObjectivesEditor', () => {
     expect(screen.getByText('Linear equations')).toBeInTheDocument();
     expect(screen.queryByText('Slope intercept form')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText('Include Sub-Objectives'));
+    fireEvent.click(screen.getByLabelText('Include sub-objectives'));
 
     expect(props.onEdit).toHaveBeenCalledWith({
       ...props.contentItem,
@@ -215,10 +254,15 @@ describe('LearningObjectivesEditor', () => {
     ]);
 
     render(<LearningObjectivesEditor {...props} />);
-    const titles = screen.getAllByRole('listitem').map((element) => element.textContent);
 
-    expect(titles).toEqual(expect.arrayContaining(['Linear equations', 'Slope intercept form']));
-    expect(titles.indexOf('Linear equations')).toBeLessThan(titles.indexOf('Slope intercept form'));
+    expect(screen.getByText('LO 1')).toBeInTheDocument();
+    expect(screen.getByText('Linear equations')).toBeInTheDocument();
+    expect(screen.getByText('Slope intercept form')).toBeInTheDocument();
+    expect(
+      screen
+        .getByText('Linear equations')
+        .compareDocumentPosition(screen.getByText('Slope intercept form')),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('renders every parent before a shared sub-objective', () => {
@@ -230,13 +274,22 @@ describe('LearningObjectivesEditor', () => {
     ]);
 
     render(<LearningObjectivesEditor {...props} />);
-    const titles = screen.getAllByRole('listitem').map((element) => element.textContent);
 
-    expect(titles).toEqual(
-      expect.arrayContaining(['Linear equations', 'Graphing equations', 'Shared strategy']),
-    );
-    expect(titles.indexOf('Linear equations')).toBeLessThan(titles.indexOf('Shared strategy'));
-    expect(titles.indexOf('Graphing equations')).toBeLessThan(titles.indexOf('Shared strategy'));
+    expect(screen.getByText('LO 1')).toBeInTheDocument();
+    expect(screen.getByText('LO 2')).toBeInTheDocument();
+    expect(screen.getByText('Linear equations')).toBeInTheDocument();
+    expect(screen.getByText('Graphing equations')).toBeInTheDocument();
+    expect(screen.getAllByText('Shared strategy')).toHaveLength(2);
+    expect(
+      screen
+        .getByText('Linear equations')
+        .compareDocumentPosition(screen.getAllByText('Shared strategy')[0]),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(
+      screen
+        .getByText('Graphing equations')
+        .compareDocumentPosition(screen.getAllByText('Shared strategy')[1]),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('updates objective enabled state without deleting the config row', () => {
@@ -406,5 +459,18 @@ describe('LearningObjectivesEditor', () => {
     expect(
       screen.getByRole('button', { name: 'Add practice pages for Linear equations' }),
     ).toBeDisabled();
+  });
+
+  it('places the empty learning objectives warning inside the base panel', () => {
+    const props = defaultEditorProps(element());
+    props.resourceContext = resourceContext([]);
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Warning');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'There are no learning objectives attached to activities in this container.',
+    );
+    expect(screen.getByText('What is proficiency and how is it estimated?')).toBeInTheDocument();
   });
 });
