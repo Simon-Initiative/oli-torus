@@ -49,8 +49,8 @@ defmodule Oli.Experiments.RuntimeAssignment do
     with {:ok, scope} <- deps.validate_scope.(request.scope),
          :ok <- deps.require_delivery.(scope),
          :ok <- deps.require_placement.(request),
-         {:ok, _revision} <- deps.resolve_revision.(request, scope),
-         {:ok, decision} <- deps.existing_assignment.(request, scope) do
+         {:ok, revision} <- deps.resolve_revision.(request, scope),
+         {:ok, decision} <- deps.existing_assignment.(request, scope, revision) do
       {:ok, decision}
     end
   end

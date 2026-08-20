@@ -46,7 +46,15 @@ defmodule Oli.Experiments.ConfigurationPersistence do
     end
   end
 
-  def update(schema, attrs, request, section_ids, policy_state_initializer, normalize) do
+  def update(
+        schema,
+        attrs,
+        request,
+        section_ids,
+        policy_state_initializer,
+        locked_update_validator,
+        normalize
+      ) do
     case structural_configuration_change?(request) do
       false ->
         update_definition(
@@ -54,13 +62,19 @@ defmodule Oli.Experiments.ConfigurationPersistence do
           attrs,
           request.section_ids,
           section_ids,
+          request,
+          locked_update_validator,
           normalize
         )
 
       true ->
         Repo.transaction(fn ->
+          Repo.query!("SELECT pg_advisory_xact_lock($1)", [schema.id])
+          locked = lock_experiment!(schema.id)
+          validate_locked_update!(locked, request, locked_update_validator)
+
           updated =
-            schema
+            locked
             |> ExperimentDefinition.changeset(attrs)
             |> Repo.update!()
 
@@ -289,10 +303,22 @@ defmodule Oli.Experiments.ConfigurationPersistence do
     |> normalize.()
   end
 
-  defp update_definition(schema, attrs, requested_section_ids, section_ids, normalize) do
+  defp update_definition(
+         schema,
+         attrs,
+         requested_section_ids,
+         section_ids,
+         request,
+         locked_update_validator,
+         normalize
+       ) do
     Repo.transaction(fn ->
+      Repo.query!("SELECT pg_advisory_xact_lock($1)", [schema.id])
+      locked = lock_experiment!(schema.id)
+      validate_locked_update!(locked, request, locked_update_validator)
+
       updated =
-        schema
+        locked
         |> ExperimentDefinition.changeset(attrs)
         |> Repo.update!()
 
@@ -300,6 +326,13 @@ defmodule Oli.Experiments.ConfigurationPersistence do
       Repo.preload(updated, :sections, force: true)
     end)
     |> normalize.()
+  end
+
+  defp validate_locked_update!(schema, request, validator) do
+    case validator.(schema, request) do
+      :ok -> :ok
+      {:error, %ExperimentError{} = error} -> Repo.rollback(error)
+    end
   end
 
   defp maybe_replace_experiment_sections!(_experiment_id, nil, _section_ids), do: :ok

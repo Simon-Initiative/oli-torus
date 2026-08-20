@@ -125,6 +125,7 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
         Map.get(filters, :experiment_role) || Map.get(filters, :role)
       ),
       string_clause("attribution_type", Map.get(filters, :attribution_type)),
+      assignment_scope_clause(Map.get(filters, :assignment_scope)),
       string_clause("host_event_type", Map.get(filters, :host_event_type))
     ]
     |> Enum.reject(&is_nil/1)
@@ -139,6 +140,19 @@ defmodule Oli.Experiments.ClickHouseAnalytics do
   defp string_clause(column, value) do
     "#{column} = '#{escape(value)}'"
   end
+
+  defp assignment_scope_clause(nil), do: nil
+
+  defp assignment_scope_clause(scope) when scope in [:intervention, "intervention"],
+    do: "assignment_scope = 'intervention'"
+
+  defp assignment_scope_clause(scope)
+       when scope in [:section_enrollment, "section_enrollment"],
+       do: "assignment_scope = 'section_enrollment'"
+
+  # Assignment scope is a closed persisted enum. An invalid filter must never reach the generic
+  # SQL string builder; an impossible predicate safely rejects it without interpolating input.
+  defp assignment_scope_clause(_scope), do: "false"
 
   defp escape(value) do
     value

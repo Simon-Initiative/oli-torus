@@ -22,7 +22,8 @@ defmodule Oli.Experiments.CreateExperimentRequest do
     :section_ids,
     interventions: [],
     conditions: [],
-    assignment_unit: :enrollment
+    assignment_unit: :enrollment,
+    assignment_scope: nil
   ]
 
   @type t :: %__MODULE__{
@@ -42,6 +43,7 @@ defmodule Oli.Experiments.CreateExperimentRequest do
           reward_source: String.t() | nil,
           interventions: [map()],
           conditions: [map()],
-          assignment_unit: :enrollment
+          assignment_unit: :enrollment,
+          assignment_scope: :intervention | :section_enrollment | nil
         }
 end

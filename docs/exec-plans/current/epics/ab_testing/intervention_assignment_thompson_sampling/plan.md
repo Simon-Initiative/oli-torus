@@ -439,6 +439,12 @@ Guardrails:
 
 ## Decision Log
 
+### 2026-08-19 - Clarify assignment scope by algorithm
+
+- Change: Reconciled the durable assignment contract with `weighted_random_assignment_scope`: Thompson Sampling remains intervention-scoped, while weighted random supports either intervention or section-and-enrollment scope and defaults new experiments to section-and-enrollment.
+- Reason: This plan originally described the then-universal intervention identity. The weighted-random exception must not weaken Thompson Sampling's intervention/assessment/reward identity.
+- Impact: Completed implementation history below remains intact; current configuration, runtime, scenario, and analytics verification interpret universal intervention-scope statements as Thompson-specific unless they explicitly describe legacy weighted-random behavior.
+
 ### 2026-08-13 - Replace QA experiment storage without backfill
 
 - Change: Replaced the expand/backfill, dual-compatible cutover, and later contraction sequence with a direct singular schema replacement followed by direct caller migration and final reconciliation.

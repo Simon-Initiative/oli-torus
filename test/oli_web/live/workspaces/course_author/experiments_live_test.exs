@@ -858,6 +858,163 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       assert has_element?(archived_index_view, "#ab-experiments-table", "Archived")
     end
 
+    test "configures weighted-random assignment scope and preserves it in details", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+      open_create_experiment(view)
+
+      refute has_element?(view, "#experiment-assignment-scope")
+      refute has_element?(view, "[name='experiment[assignment_scope]']")
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Scoped Study",
+          "slug" => "scoped-study",
+          "algorithm" => "weighted_random",
+          "alternatives_resource_id" => selected_decision_point_value(view)
+        }
+      })
+
+      experiment = Repo.get_by!(ExperimentDefinition, slug: "scoped-study")
+      assert experiment.assignment_scope == :section_enrollment
+
+      {:ok, details_view, _html} =
+        live(
+          conn,
+          ~p"/workspaces/course_author/#{project.slug}/experiments/#{experiment.id}"
+        )
+
+      assert has_element?(
+               details_view,
+               "#experiment-details-grid",
+               "Same condition within each participating course section"
+             )
+
+      assert has_element?(
+               details_view,
+               "#configuration_assignment_scope_section_enrollment[checked]:not([disabled])"
+             )
+
+      assert has_element?(
+               details_view,
+               "#experiment-assignment-scope legend",
+               "Condition Assignment Scope"
+             )
+
+      assert has_element?(
+               details_view,
+               "button#experiment-assignment-scope-help[type='button'][phx-hook='GlobalTooltip'][data-tooltip*='keeps the same condition across all interventions'][class*='focus-visible:ring-2']"
+             )
+
+      assert has_element?(
+               details_view,
+               "label[for='condition-0-weight'] span#condition-0-weight-help[role='img']"
+             )
+
+      refute has_element?(
+               details_view,
+               "label[for='condition-0-weight'] button#condition-0-weight-help"
+             )
+
+      refute has_element?(details_view, "#experiment-assignment-scope > p")
+      refute has_element?(details_view, "#experiment-assignment-scope.border")
+      refute has_element?(details_view, "#experiment-assignment-scope label.text-gray-500")
+
+      render_submit(details_view, "save_configuration", %{
+        "configuration" => %{"assignment_scope" => "invalid"}
+      })
+
+      assert has_element?(
+               details_view,
+               "#experiment-assignment-scope[aria-invalid='true'][aria-describedby*='experiment-assignment-scope-error']"
+             )
+
+      assert has_element?(
+               details_view,
+               "#experiment-assignment-scope-error.dark\\:text-red-400",
+               "is invalid"
+             )
+
+      refute has_element?(
+               details_view,
+               "#experiment-configuration-card > .card-body > [role='alert']"
+             )
+
+      details_view
+      |> form("#experiment-configuration-form", %{
+        "configuration" => %{"assignment_scope" => "intervention"}
+      })
+      |> render_change()
+
+      assert has_element?(details_view, "#configuration_assignment_scope_intervention[checked]")
+
+      details_view
+      |> form("#experiment-configuration-form")
+      |> render_submit()
+
+      assert Repo.get!(ExperimentDefinition, experiment.id).assignment_scope == :intervention
+
+      details_view
+      |> element("button[phx-click='start_experiment']", "Start")
+      |> render_click()
+
+      assert has_element?(
+               details_view,
+               "#configuration_assignment_scope_intervention[checked][disabled]"
+             )
+
+      assert has_element?(
+               details_view,
+               "#experiment-assignment-scope label.text-gray-500.cursor-not-allowed"
+             )
+
+      assert has_element?(
+               details_view,
+               "#experiment-assignment-scope input.disabled\\:opacity-50[disabled]"
+             )
+
+      assert has_element?(
+               details_view,
+               "#experiment-details-grid",
+               "Independent at each intervention"
+             )
+    end
+
+    test "keeps Thompson Sampling intervention-scoped and ignores forged create scope", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+      open_create_experiment(view)
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_change(%{"experiment" => %{"algorithm" => "thompson_sampling"}})
+
+      refute has_element?(view, "#experiment-assignment-scope")
+
+      render_submit(view, "create_experiment", %{
+        "experiment" => %{
+          "name" => "Invalid Adaptive Scope",
+          "slug" => "invalid-adaptive-scope",
+          "algorithm" => "thompson_sampling",
+          "assignment_scope" => "section_enrollment",
+          "alternatives_resource_id" => selected_decision_point_value(view)
+        }
+      })
+
+      refute has_element?(view, "#create-experiment-modal")
+
+      assert Repo.get_by!(ExperimentDefinition, slug: "invalid-adaptive-scope").assignment_scope ==
+               :intervention
+    end
+
     test "archives a draft experiment without starting it", %{conn: conn, project: project} do
       insert_alternatives_group(project)
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))

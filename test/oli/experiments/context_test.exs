@@ -389,7 +389,10 @@ defmodule Oli.Experiments.ContextTest do
       ]
 
       {:ok, definition} =
-        Experiments.create_experiment(graph_request(scope, alternatives, conditions))
+        scope
+        |> graph_request(alternatives, conditions)
+        |> Map.put(:assignment_scope, :intervention)
+        |> Experiments.create_experiment()
 
       {:ok, _active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
       condition = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "a")

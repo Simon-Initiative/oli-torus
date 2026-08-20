@@ -3,28 +3,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   alias Oli.Experiments, as: ABExperiments
   alias Oli.Experiments.{LifecycleRequest, Scope, UpdateExperimentRequest}
-
-  @configuration_types %{
-    algorithm: :any,
-    alternatives_resource_id: :integer,
-    conditions: {:array, :map},
-    interventions: {:array, :map},
-    prior_alpha: :float,
-    prior_beta: :float,
-    warm_up_assignments: :integer,
-    max_condition_share: :float,
-    fixed_control_allocation: :float,
-    imbalance_threshold: :float
-  }
-  @configuration_scalar_fields [
-    :alternatives_resource_id,
-    :prior_alpha,
-    :prior_beta,
-    :warm_up_assignments,
-    :max_condition_share,
-    :fixed_control_allocation,
-    :imbalance_threshold
-  ]
+  alias OliWeb.Workspaces.CourseAuthor.ExperimentConfigurationForm
 
   @page_size 10
 
@@ -69,6 +48,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
          decision_point_title: candidate && candidate.title,
          condition_options: candidate_options(candidate),
          configuration_error: nil,
+         configuration_field_errors: %{},
          configuration_success: nil,
          read_only: experiment.state in [:completed, :archived],
          page: 1,
@@ -193,6 +173,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
               value={display_value(@experiment.assignment_unit)}
             />
             <.detail_item
+              label="Assignment scope"
+              value={format_assignment_scope(@experiment.assignment_scope)}
+            />
+            <.detail_item
               label="Status"
               value={format_state(@experiment.state)}
               badge
@@ -245,6 +229,90 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                   type="hidden"
                   name="configuration[alternatives_resource_id]"
                   value={@configuration.alternatives_resource_id}
+                />
+                <fieldset
+                  :if={@configuration.algorithm == :weighted_random}
+                  id="experiment-assignment-scope"
+                  class="mb-6"
+                  aria-describedby={
+                    if configuration_field_error(
+                         @configuration_field_errors,
+                         :assignment_scope
+                       ),
+                       do: "experiment-assignment-scope-help experiment-assignment-scope-error",
+                       else: "experiment-assignment-scope-help"
+                  }
+                  aria-invalid={
+                    to_string(
+                      not is_nil(
+                        configuration_field_error(
+                          @configuration_field_errors,
+                          :assignment_scope
+                        )
+                      )
+                    )
+                  }
+                >
+                  <legend class="h6 mb-0 !font-medium">
+                    <.technical_term
+                      id="experiment-assignment-scope-help"
+                      label="Condition Assignment Scope"
+                      help="Choose whether each learner keeps the same condition across all interventions in a participating course section or is assigned separately at each intervention."
+                    />
+                  </legend>
+                  <div>
+                    <label class={[
+                      "flex min-h-11 items-start gap-2 py-2",
+                      @experiment.state != :draft &&
+                        "cursor-not-allowed text-gray-500 dark:text-gray-400"
+                    ]}>
+                      <input
+                        id="configuration_assignment_scope_section_enrollment"
+                        type="radio"
+                        name="configuration[assignment_scope]"
+                        value="section_enrollment"
+                        checked={@configuration.assignment_scope == :section_enrollment}
+                        disabled={@experiment.state != :draft}
+                        class="mt-1 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                      <span>Keep the same condition throughout the course section</span>
+                    </label>
+                    <label class={[
+                      "flex min-h-11 items-start gap-2 py-2",
+                      @experiment.state != :draft &&
+                        "cursor-not-allowed text-gray-500 dark:text-gray-400"
+                    ]}>
+                      <input
+                        id="configuration_assignment_scope_intervention"
+                        type="radio"
+                        name="configuration[assignment_scope]"
+                        value="intervention"
+                        checked={@configuration.assignment_scope == :intervention}
+                        disabled={@experiment.state != :draft}
+                        class="mt-1 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                      <span>Assign independently at each intervention</span>
+                    </label>
+                  </div>
+                  <p
+                    :if={
+                      error =
+                        configuration_field_error(
+                          @configuration_field_errors,
+                          :assignment_scope
+                        )
+                    }
+                    id="experiment-assignment-scope-error"
+                    class="mt-2 text-sm text-red-600 dark:text-red-400"
+                  >
+                    {error}
+                  </p>
+                </fieldset>
+                <input
+                  :if={@configuration.algorithm == :thompson_sampling}
+                  type="hidden"
+                  name="configuration[assignment_scope]"
+                  value="intervention"
                 />
                 <div :if={@configuration.algorithm == :weighted_random}>
                   <input
@@ -331,6 +399,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
                           id={"condition-#{condition_index}-weight-help"}
                           label={condition_weight_label(@experiment.algorithm)}
                           help="Weights are relative and do not need to sum to 1. For example, 1 / 1 is an even split and 2 / 1 is approximately a 2:1 split."
+                          element="span"
                         />
                       </label>
                       <input
@@ -1152,6 +1221,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
           id={"experiment-#{@key}-help"}
           label={@label}
           help={@help}
+          element="span"
         />
         <span :if={is_nil(@help)}>{@label}</span>
       </label>
@@ -1174,24 +1244,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   attr :id, :string, required: true
   attr :label, :string, required: true
   attr :help, :string, required: true
+  attr :element, :string, values: ["button", "span"], default: "button"
 
   defp technical_term(assigns) do
     ~H"""
     <span class="inline-flex items-center gap-1">
       <span>{@label}</span>
-      <span
+      <.dynamic_tag
+        tag_name={@element}
+        type={if @element == "button", do: "button"}
         id={@id}
-        class="inline-flex cursor-help text-gray-500 dark:text-gray-400"
+        class={[
+          "inline-flex cursor-help text-gray-500 dark:text-gray-400",
+          @element == "button" &&
+            "rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
+        ]}
         phx-hook="GlobalTooltip"
         data-tooltip={@help}
         data-tooltip-style="body"
         data-tooltip-stop-propagation="true"
-        tabindex="0"
-        role="img"
+        tabindex={if @element == "span", do: "0"}
+        role={if @element == "span", do: "img"}
         aria-label={"About #{@label}: #{@help}"}
       >
         <.icon name="fa-solid fa-circle-info" class="h-3.5 w-3.5" />
-      </span>
+      </.dynamic_tag>
     </span>
     """
   end
@@ -1290,6 +1367,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
     %{
       algorithm: definition.algorithm,
+      assignment_scope: definition.assignment_scope,
       alternatives_resource_id: definition.alternatives_resource_id,
       conditions: Enum.map(authoring_view.conditions, &condition_configuration/1),
       interventions: interventions,
@@ -1467,9 +1545,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     updated = fun.(current)
     baseline = socket.assigns.configuration_changeset.data
 
+    changeset = configuration_changeset(baseline, updated)
+
     assign(socket,
-      configuration_changeset: configuration_changeset(baseline, updated),
-      configuration_error: nil
+      configuration_changeset: changeset,
+      configuration_error: nil,
+      configuration_field_errors: configuration_field_errors_for_changeset(changeset)
     )
   end
 
@@ -1477,24 +1558,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
     do: Ecto.Changeset.apply_changes(socket.assigns.configuration_changeset)
 
   defp configuration_changeset(baseline, configuration) do
-    baseline = normalize_configuration(baseline)
+    baseline =
+      baseline |> normalize_configuration() |> ExperimentConfigurationForm.from_configuration()
+
     configuration = normalize_configuration(configuration)
 
-    {baseline, @configuration_types}
-    |> Ecto.Changeset.cast(
-      Map.take(configuration, @configuration_scalar_fields),
-      @configuration_scalar_fields
-    )
-    |> put_configuration_change(:algorithm, configuration.algorithm)
-    |> put_configuration_change(:conditions, configuration.conditions)
-    |> put_configuration_change(:interventions, configuration.interventions)
+    ExperimentConfigurationForm.changeset(baseline, configuration)
   end
 
-  defp configuration_dirty?(changeset), do: changeset.changes != %{}
-
-  defp put_configuration_change(changeset, field, value) do
-    Ecto.Changeset.put_change(changeset, field, value)
-  end
+  defp configuration_dirty?(changeset), do: changeset.valid? and changeset.changes != %{}
 
   defp normalize_configuration(configuration) do
     configuration
@@ -1586,14 +1658,35 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
            |> experiment_configuration()
            |> then(&configuration_changeset(&1, &1)),
          configuration_success: "Experiment configuration saved.",
-         configuration_error: nil
+         configuration_error: nil,
+         configuration_field_errors: %{}
        )}
     else
       {:error, %Oli.Experiments.ExperimentError{} = error} ->
-        {:noreply, assign(socket, configuration_error: error.message, configuration_success: nil)}
+        field_errors = configuration_field_errors_for_experiment_error(error)
+
+        {:noreply,
+         assign(socket,
+           configuration_error: if(field_errors == %{}, do: error.message, else: nil),
+           configuration_field_errors: field_errors,
+           configuration_success: nil
+         )}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         assign(socket,
+           configuration_error: nil,
+           configuration_field_errors: configuration_field_errors_for_changeset(changeset),
+           configuration_success: nil
+         )}
 
       {:error, message} when is_binary(message) ->
-        {:noreply, assign(socket, configuration_error: message, configuration_success: nil)}
+        {:noreply,
+         assign(socket,
+           configuration_error: message,
+           configuration_field_errors: %{},
+           configuration_success: nil
+         )}
 
       _ ->
         configuration_read_only(socket)
@@ -1651,7 +1744,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp configuration_request(socket, params) do
     algorithm = socket.assigns.experiment.algorithm
 
-    with {:ok, conditions} <- parse_conditions(params["conditions"]),
+    with {:ok, %{assignment_scope: assignment_scope}} <-
+           ExperimentConfigurationForm.cast_assignment_scope(params),
+         {:ok, conditions} <- parse_conditions(params["conditions"]),
          {:ok, resource_id} <- parse_positive_integer(params["alternatives_resource_id"]),
          {:ok, interventions} <- parse_interventions(params["interventions"], algorithm),
          {:ok, policy_fields} <- parse_policy_fields(params, algorithm) do
@@ -1659,6 +1754,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
        %UpdateExperimentRequest{
          scope: authoring_scope(socket),
          algorithm: algorithm,
+         assignment_scope: assignment_scope,
          alternatives_resource_id: resource_id,
          prior_alpha: policy_fields.prior_alpha,
          prior_beta: policy_fields.prior_beta,
@@ -1769,10 +1865,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         :error -> changes
       end
     end)
+    |> put_submitted(:assignment_scope, params["assignment_scope"])
     |> Map.put(:interventions, submitted_intervention_values(params["interventions"]))
   end
 
   defp submitted_configuration_changes(_params, algorithm), do: %{algorithm: algorithm}
+
+  defp configuration_field_errors_for_experiment_error(%{
+         details: %{field: field},
+         message: message
+       })
+       when is_atom(field),
+       do: %{field => message}
+
+  defp configuration_field_errors_for_experiment_error(_error), do: %{}
+
+  defp configuration_field_errors_for_changeset(changeset) do
+    ExperimentConfigurationForm.field_errors(changeset)
+  end
+
+  defp configuration_field_error(errors, field), do: Map.get(errors, field)
 
   defp submitted_condition_changes(params) when is_map(params) do
     submitted_indexed_changes(params, fn condition ->
@@ -2033,6 +2145,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp format_algorithm(:weighted_random), do: "Weighted random"
   defp format_algorithm(:thompson_sampling), do: "Thompson Sampling"
   defp format_algorithm(value), do: display_value(value)
+
+  defp format_assignment_scope(:section_enrollment),
+    do: "Same condition within each participating course section"
+
+  defp format_assignment_scope(:intervention), do: "Independent at each intervention"
 
   defp format_state(value), do: display_value(value)
 

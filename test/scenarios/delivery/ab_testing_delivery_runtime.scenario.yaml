@@ -117,6 +117,11 @@
     title: "AB Runtime Unselected Section"
     from: "ab_runtime_project"
 
+- section:
+    name: "ab_runtime_second_selected_section"
+    title: "AB Runtime Second Selected Section"
+    from: "ab_runtime_project"
+
 - user:
     name: "ab_runtime_student"
     type: "student"
@@ -124,6 +129,11 @@
 - enroll:
     user: "ab_runtime_student"
     section: "ab_runtime_section"
+    role: "student"
+
+- enroll:
+    user: "ab_runtime_student"
+    section: "ab_runtime_second_selected_section"
     role: "student"
 
 - user:
@@ -256,6 +266,9 @@
       student: "ab_runtime_student_b"
       page: "AB Runtime Practice"
       progress: 1.0
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.verify_weighted_random_section_enrollment_scope/1"
 
 - project:
     name: "ab_runtime_fallback_project"

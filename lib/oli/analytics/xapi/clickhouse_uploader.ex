@@ -389,6 +389,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         condition_code: attribution_value(attribution, "condition_code"),
         assignment_id: attribution_value(attribution, "assignment_id"),
         assignment_key: attribution_value(attribution, "assignment_key"),
+        assignment_scope: attribution_value(attribution, "assignment_scope") || "intervention",
         algorithm:
           attribution_value(attribution, "algorithm") ||
             attribution_value(attribution, "assigned_by_policy"),
@@ -657,6 +658,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       condition_code,
       assignment_id,
       assignment_key,
+      assignment_scope,
       algorithm,
       policy_version,
       content_revision_id,
@@ -693,6 +695,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(attribution[:condition_code]),
       escape_value(attribution[:assignment_id]),
       escape_value(attribution[:assignment_key]),
+      escape_value(attribution[:assignment_scope]),
       escape_value(attribution[:algorithm]),
       escape_value(attribution[:policy_version]),
       escape_value(attribution[:content_revision_id]),

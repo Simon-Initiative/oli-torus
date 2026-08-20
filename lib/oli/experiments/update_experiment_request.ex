@@ -21,6 +21,7 @@ defmodule Oli.Experiments.UpdateExperimentRequest do
     :reward_source,
     :section_ids,
     :assignment_unit,
+    :assignment_scope,
     :interventions,
     :conditions
   ]
@@ -33,6 +34,7 @@ defmodule Oli.Experiments.UpdateExperimentRequest do
           algorithm: :weighted_random | :thompson_sampling | nil,
           section_ids: [integer()] | nil,
           assignment_unit: :enrollment | nil,
+          assignment_scope: :intervention | :section_enrollment | nil,
           alternatives_resource_id: integer() | nil,
           prior_alpha: number() | nil,
           prior_beta: number() | nil,

@@ -9,12 +9,15 @@ defmodule Oli.Experiments.Schemas.Assignment do
   alias Oli.Delivery.Sections.{Enrollment, Section}
   alias Oli.Experiments.Schemas.{Condition, ExperimentDefinition, Intervention}
 
+  @assignment_scopes [:intervention, :section_enrollment]
+
   schema "experiment_assignments" do
     field :assigned_by_policy, :string
     field :policy_version, :string
     field :assignment_key, :string
     field :assigned_at, :utc_datetime
     field :runtime_event_state, :map, default: %{}
+    field :assignment_scope, Ecto.Enum, values: @assignment_scopes, default: :intervention
 
     belongs_to :experiment, ExperimentDefinition
     belongs_to :condition, Condition
@@ -39,12 +42,12 @@ defmodule Oli.Experiments.Schemas.Assignment do
       :policy_version,
       :assignment_key,
       :assigned_at,
-      :runtime_event_state
+      :runtime_event_state,
+      :assignment_scope
     ])
     |> validate_required([
       :experiment_id,
       :condition_id,
-      :intervention_id,
       :section_id,
       :enrollment_id,
       :user_id,
@@ -56,6 +59,10 @@ defmodule Oli.Experiments.Schemas.Assignment do
     |> validate_length(:assigned_by_policy, min: 1, max: 255)
     |> validate_length(:assignment_key, min: 1, max: 255)
     |> foreign_key_constraint(:experiment_id)
+    |> foreign_key_constraint(:assignment_scope,
+      name: :experiment_assignments_experiment_scope_fkey,
+      message: "does not match the experiment assignment scope"
+    )
     |> foreign_key_constraint(:condition_id)
     |> foreign_key_constraint(:intervention_id)
     |> foreign_key_constraint(:intervention_id,
@@ -69,8 +76,18 @@ defmodule Oli.Experiments.Schemas.Assignment do
     |> foreign_key_constraint(:section_id)
     |> foreign_key_constraint(:enrollment_id)
     |> foreign_key_constraint(:user_id)
-    |> unique_constraint([:intervention_id, :enrollment_id],
+    |> check_constraint(:assignment_scope,
+      name: :experiment_assignments_assignment_scope_check
+    )
+    |> check_constraint(:intervention_id,
+      name: :experiment_assignments_scope_identity_check,
+      message: "must match the configured assignment scope"
+    )
+    |> unique_constraint([:experiment_id, :intervention_id, :enrollment_id],
       name: :experiment_assignments_intervention_sticky_idx
+    )
+    |> unique_constraint([:experiment_id, :section_id, :enrollment_id],
+      name: :experiment_assignments_section_enrollment_sticky_idx
     )
     |> unique_constraint(:assignment_key, name: :experiment_assignments_key_idx)
   end

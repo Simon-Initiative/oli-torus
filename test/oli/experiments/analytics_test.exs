@@ -28,6 +28,8 @@ defmodule Oli.Experiments.AnalyticsTest do
           key: "analytics-exposure",
           scope: scope,
           assignment_id: assignment.assignment_id,
+          page_resource_id: revision.resource_id,
+          content_element_id: "placement",
           content_revision_id: revision.id
         })
 

@@ -94,7 +94,7 @@ defmodule Oli.Rendering.Alternatives do
 
     case ResourceAlternatives.normalize_strategy(strategy) do
       {:ok, "user_section_preference"} ->
-        render_alternatives(selected_alternatives, context, writer)
+        render_alternatives(selected_alternatives, context, element, writer)
 
       _ ->
         writer.preview_alternatives(context, element, selected_alternatives)
@@ -104,19 +104,19 @@ defmodule Oli.Rendering.Alternatives do
   defp render_selected_alternatives(
          selected_alternatives,
          %Context{} = context,
-         _element,
+         element,
          writer,
          _by_id
        ) do
-    render_alternatives(selected_alternatives, context, writer)
+    render_alternatives(selected_alternatives, context, element, writer)
   end
 
-  defp render_alternatives(selected_alternatives, %Context{} = context, writer) do
+  defp render_alternatives(selected_alternatives, %Context{} = context, element, writer) do
     selected_alternatives
-    |> Enum.flat_map(fn alternative ->
+    |> Enum.flat_map(fn %Selection{} = alternative ->
       writer.alternative(
         %Context{context | pagination_mode: "normal"},
-        alternative
+        %Selection{alternative | alternatives_id: element["alternatives_id"]}
       )
     end)
   end

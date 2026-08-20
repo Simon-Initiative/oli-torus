@@ -9,6 +9,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   alias Oli.Authoring.Course
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Experiments.RewardHandoff
+  alias Oli.Delivery.Experiments.PageDecisions
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Experiments
@@ -46,6 +47,7 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
   @student_name "ab_runtime_student"
   @second_student_name "ab_runtime_student_b"
   @unselected_section_name "ab_runtime_unselected_section"
+  @second_selected_section_name "ab_runtime_second_selected_section"
   @unselected_student_name "ab_runtime_unselected_student"
   @fallback_student_name "ab_runtime_fallback_student"
   @page_title "AB Runtime Practice"
@@ -291,7 +293,11 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
              slug: "scenario-delivery-runtime",
              name: "Scenario delivery runtime",
              algorithm: :weighted_random,
-             section_ids: [scope.section_id],
+             assignment_scope: :intervention,
+             section_ids: [
+               scope.section_id,
+               Map.fetch!(state.sections, @second_selected_section_name).id
+             ],
              conditions: [
                %{
                  client_ref: @condition_code,
@@ -378,6 +384,185 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
       state
     else
       {:error, reason} -> flunk("activate_native_experiment failed: #{inspect(reason)}")
+    end
+  end
+
+  @doc """
+  Replaces the completed intervention-scoped weighted experiment with the new default
+  scope and proves canonical assignment reuse, placement-specific exposure, revisits,
+  and enrollment isolation across two participating sections.
+  """
+  def verify_weighted_random_section_enrollment_scope(%ExecutionState{} = state) do
+    with {:ok, first_scope} <- scope_for(state, @project_name, @section_name, @student_name),
+         {:ok, second_scope} <-
+           scope_for(
+             state,
+             @project_name,
+             @second_selected_section_name,
+             @student_name
+           ),
+         {:ok, unselected_scope} <-
+           scope_for(
+             state,
+             @project_name,
+             @unselected_section_name,
+             @unselected_student_name
+           ),
+         {:ok, alternatives_revision} <- alternatives_revision(state, @project_name),
+         {:ok, first_page} <- delivery_page_revision(state, @project_name, @section_name),
+         {:ok, second_page} <-
+           delivery_page_revision(state, @project_name, @second_selected_section_name),
+         {:ok, unselected_page} <-
+           delivery_page_revision(state, @project_name, @unselected_section_name),
+         intervention_definition <-
+           Repo.one!(
+             from(experiment in ExperimentDefinition,
+               where:
+                 experiment.project_id == ^first_scope.project_id and
+                   experiment.alternatives_resource_id == ^alternatives_revision.resource_id and
+                   experiment.algorithm == :weighted_random and experiment.state == :active
+             )
+           ),
+         {:ok, _completed} <-
+           Experiments.complete_experiment(intervention_definition.id, %LifecycleRequest{
+             scope: authoring_scope(first_scope, state)
+           }),
+         {:ok, canonical_definition} <-
+           create_canonical_weighted_experiment(
+             state,
+             first_scope,
+             second_scope,
+             alternatives_revision
+           ),
+         {:ok, _active} <-
+           Experiments.activate_experiment(canonical_definition.id, %LifecycleRequest{
+             scope: authoring_scope(first_scope, state)
+           }),
+         {:ok, first_visit} <-
+           prepare_delivery_page(state, first_page, @section_name, @student_name),
+         {:ok, revisit} <-
+           prepare_delivery_page(state, first_page, @section_name, @student_name),
+         {:ok, second_section_visit} <-
+           prepare_delivery_page(
+             state,
+             second_page,
+             @second_selected_section_name,
+             @student_name
+           ),
+         {:ok, unselected_visit} <-
+           prepare_delivery_page(
+             state,
+             unselected_page,
+             @unselected_section_name,
+             @unselected_student_name
+           ) do
+      first_assignments = canonical_assignments(first_scope, canonical_definition.id)
+      second_assignments = canonical_assignments(second_scope, canonical_definition.id)
+
+      assert [first_assignment] = first_assignments
+      assert [second_assignment] = second_assignments
+      assert first_assignment.assignment_scope == :section_enrollment
+      assert is_nil(first_assignment.intervention_id)
+      refute first_assignment.id == second_assignment.id
+      refute first_assignment.enrollment_id == second_assignment.enrollment_id
+
+      first_exposures =
+        Enum.filter(
+          first_visit.experiment_attributions,
+          &(&1["experiment_id"] == canonical_definition.id)
+        )
+
+      assert length(first_exposures) == 2
+      assert Enum.uniq_by(first_exposures, & &1["intervention_id"]) |> length() == 2
+      assert Enum.all?(first_exposures, &(&1["assignment_scope"] == "section_enrollment"))
+      assert Enum.all?(first_exposures, &(&1["assignment_id"] == first_assignment.id))
+
+      revisit_exposures =
+        Enum.filter(
+          revisit.experiment_attributions,
+          &(&1["experiment_id"] == canonical_definition.id)
+        )
+
+      assert Enum.map(revisit_exposures, & &1["assignment_id"]) ==
+               Enum.map(first_exposures, & &1["assignment_id"])
+
+      second_section_exposures =
+        Enum.filter(
+          second_section_visit.experiment_attributions,
+          &(&1["experiment_id"] == canonical_definition.id)
+        )
+
+      assert length(second_section_exposures) == 2
+      assert Enum.all?(second_section_exposures, &(&1["assignment_id"] == second_assignment.id))
+
+      assert Enum.all?(
+               second_section_exposures,
+               &(&1["assignment_scope"] == "section_enrollment")
+             )
+
+      assert canonical_assignments(unselected_scope, canonical_definition.id) == []
+
+      refute Enum.any?(
+               unselected_visit.experiment_attributions,
+               &(&1["experiment_id"] == canonical_definition.id)
+             )
+
+      state
+    else
+      {:error, reason} ->
+        flunk("verify_weighted_random_section_enrollment_scope failed: #{inspect(reason)}")
+    end
+  end
+
+  defp create_canonical_weighted_experiment(
+         state,
+         first_scope,
+         second_scope,
+         alternatives_revision
+       ) do
+    Experiments.create_experiment(%CreateExperimentRequest{
+      scope: authoring_scope(first_scope, state),
+      slug: "scenario-section-enrollment-runtime",
+      name: "Scenario section and enrollment runtime",
+      algorithm: :weighted_random,
+      section_ids: [first_scope.section_id, second_scope.section_id],
+      alternatives_resource_id: alternatives_revision.resource_id,
+      conditions: [
+        %{
+          client_ref: @condition_code,
+          label: "Condition A",
+          active: true,
+          position: 0,
+          option_id: @option_id,
+          weight: 1.0
+        },
+        %{
+          client_ref: @option_b_id,
+          label: "Condition B",
+          active: true,
+          position: 1,
+          option_id: @option_b_id,
+          weight: 1.0
+        }
+      ]
+    })
+  end
+
+  defp canonical_assignments(scope, experiment_id) do
+    from(assignment in Assignment,
+      where:
+        assignment.experiment_id == ^experiment_id and
+          assignment.section_id == ^scope.section_id and
+          assignment.enrollment_id == ^scope.enrollment_id,
+      order_by: [asc: assignment.id]
+    )
+    |> Repo.all()
+  end
+
+  defp prepare_delivery_page(state, page_revision, section_name, student_name) do
+    with {:ok, section} <- fetch_section(state, section_name),
+         {:ok, user} <- fetch_user(state, student_name) do
+      {:ok, PageDecisions.prepare_content(section, page_revision, user, page_revision.content)}
     end
   end
 
@@ -921,6 +1106,9 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
     with {:ok, section} <- fetch_section(state, section_name),
          {:ok, user} <- fetch_user(state, student_name),
          {:ok, enrollment} <- enrollment(section.id, user.id) do
+      decisions =
+        PageDecisions.prepare_content(section, page_revision, user, page_revision.content)
+
       rendered_html =
         Page.render(
           %Context{
@@ -932,6 +1120,8 @@ defmodule Oli.Scenarios.Delivery.AbTestingRuntimeHooks do
             section_id: scope.section_id,
             section_slug: section.slug,
             mode: :delivery,
+            alternative_groups_by_id: decisions.alternative_groups_by_id,
+            experiment_decisions: decisions.experiment_decisions,
             alternatives_groups_fn: fn ->
               Resources.alternatives_groups(section.slug, DeliveryResolver)
             end,
