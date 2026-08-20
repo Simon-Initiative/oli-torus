@@ -758,6 +758,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> render_click()
 
       assert has_element?(details_view, "#experiment-configuration", "Active")
+      assert has_element?(details_view, "#experiment-status-detail .badge-success", "Active")
       refute has_element?(details_view, "#experiment-policy-report")
       assert has_element?(details_view, "#condition-0-label[disabled]")
       assert has_element?(details_view, "#condition-0-option[disabled]")
@@ -891,6 +892,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
       assert has_element?(details_view, "#experiment-details-grid", "Experiment UUID")
       assert has_element?(details_view, "#experiment-details-grid", experiment.uuid)
+
+      assert has_element?(
+               details_view,
+               "#experiment-details-grid.flex.flex-wrap.gap-x-12.gap-y-8"
+             )
+
+      assert has_element?(
+               details_view,
+               "#experiment-details-grid > [class~='sm:flex-[1_0_12rem]']"
+             )
+
+      assert has_element?(details_view, "#experiment-details-grid .whitespace-nowrap", "Slug")
+
+      assert has_element?(
+               details_view,
+               "#experiment-uuid-detail.overflow-hidden.px-4[class~='sm:flex-none']"
+             )
+
+      assert has_element?(
+               details_view,
+               "#experiment-uuid-detail .whitespace-nowrap",
+               experiment.uuid
+             )
+
       refute has_element?(details_view, "#experiment-details-grid", "Assignment unit")
       refute has_element?(details_view, "#experiment-details-grid", "Assignment scope")
 
