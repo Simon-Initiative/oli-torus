@@ -1,53 +1,32 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Actions do
   use Phoenix.Component
 
-  import OliWeb.Components.Common
-
   attr :slug, :string, required: true
 
   def actions(assigns) do
     ~H"""
-    <div class="flex flex-row-reverse p-2">
-      <.button
-        variant={:light}
-        size={:sm}
-        phx-click="display_new_sub_modal"
-        phx-value-slug={@slug}
-        class="ml-1"
-      >
-        <i class="fas fa-plus fa-lg"></i> Create new Sub-Objective
-      </.button>
-
-      <.button
-        variant={:light}
-        size={:sm}
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
         phx-click="display_add_existing_sub_modal"
         phx-value-slug={@slug}
-        class="ml-1"
+        class={button_class()}
       >
-        <i class="fas fa-plus fa-lg"></i> Add existing Sub-Objective
-      </.button>
-
-      <.button
-        variant={:light}
-        size={:sm}
-        phx-click="display_edit_modal"
+        Add Existing
+      </button>
+      <button
+        type="button"
+        phx-click="display_new_sub_modal"
         phx-value-slug={@slug}
-        class="ml-1"
+        class={button_class()}
       >
-        <i class="fas fa-i-cursor"></i> Reword
-      </.button>
-
-      <.button
-        variant={:danger}
-        size={:sm}
-        phx-click="display_delete_modal"
-        phx-value-slug={@slug}
-        class="ml-1"
-      >
-        <i class="fas fa-trash-alt fa-lg"></i> Remove
-      </.button>
+        Create New
+      </button>
     </div>
     """
+  end
+
+  defp button_class do
+    "inline-flex min-h-8 items-center justify-center rounded-md border border-Border-border-bold bg-Surface-surface-background px-6 py-2 text-sm font-semibold leading-4 text-Specially-Tokens-Text-text-button-secondary shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Surface-surface-secondary-hover hover:text-Specially-Tokens-Text-text-button-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
   end
 end

@@ -659,19 +659,32 @@ defmodule OliWeb.Icons do
 
   attr :width, :string, default: "24"
   attr :height, :string, default: "24"
-  attr :class, :string, default: "fill-black dark:fill-white"
+  attr :class, :any, default: "fill-black dark:fill-white"
+  attr :variant, :string, default: "filled"
+  attr :stroke_width, :string, default: "1.5"
 
   def chevron_down(assigns) do
     ~H"""
     <svg
       width={@width}
       height={@height}
-      viewBox="0 0 24 24"
+      viewBox={if @variant == "stroke", do: "0 0 9.5 5.5", else: "0 0 24 24"}
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
-      fill="currentColor"
+      fill={if @variant == "stroke", do: "none", else: "currentColor"}
     >
-      <path d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z" />
+      <path
+        :if={@variant == "stroke"}
+        d="M0.75 0.75L4.75 4.75L8.75 0.75"
+        stroke="currentColor"
+        stroke-width={@stroke_width}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        :if={@variant != "stroke"}
+        d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z"
+      />
     </svg>
     """
   end
@@ -776,35 +789,50 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: ""
+  attr :width, :string, default: "20"
+  attr :height, :string, default: "20"
+  attr :stroke_width, :string, default: "1.5"
+  attr :variant, :string, default: "default"
 
   def book(assigns) do
     ~H"""
     <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
+      width={@width}
+      height={@height}
+      viewBox={if @variant == "objective", do: "0 0 13 14", else: "0 0 20 20"}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
     >
       <path
+        :if={@variant == "objective"}
+        d="M0.994354 11.7192C0.994354 12.1363 1.16008 12.5364 1.45509 12.8315C1.75009 13.1264 2.1502 13.2921 2.56739 13.2921H12.0056V0.707867H2.56739C2.1502 0.707867 1.75009 0.873597 1.45509 1.1686C1.16008 1.4636 0.994354 1.86371 0.994354 2.28091V11.7192ZM0.994354 11.7192C0.994354 11.3019 1.16008 10.9018 1.45509 10.6069C1.75009 10.3118 2.1502 10.1461 2.56739 10.1461H12.0056M4.14043 3.85394H8.85954"
+        stroke="currentColor"
+        stroke-width={@stroke_width}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        :if={@variant != "objective"}
         d="M15.8327 3.33398V16.6673H5.83268C5.39065 16.6673 4.96673 16.4917 4.65417 16.1792C4.34161 15.8666 4.16602 15.4427 4.16602 15.0007V5.00065C4.16602 4.55862 4.34161 4.1347 4.65417 3.82214C4.96673 3.50958 5.39065 3.33398 5.83268 3.33398H15.8327Z"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
+        :if={@variant != "objective"}
         d="M15.8327 13.334H5.83268C5.39065 13.334 4.96673 13.5096 4.65417 13.8221C4.34161 14.1347 4.16602 14.5586 4.16602 15.0007"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
+        :if={@variant != "objective"}
         d="M7.49935 6.66724H12.4994"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
@@ -865,56 +893,74 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: ""
+  attr :width, :string, default: "20"
+  attr :height, :string, default: "20"
+  attr :stroke_width, :string, default: "1.5"
+  attr :variant, :string, default: "default"
 
   def clipboard(assigns) do
     ~H"""
     <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
+      width={@width}
+      height={@height}
+      viewBox={if @variant == "objective", do: "0 0 13 16", else: "0 0 20 20"}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
     >
       <path
+        :if={@variant == "objective"}
+        d="M4.07574 2.34344H2.45958C2.03095 2.34344 1.61987 2.51371 1.31679 2.81679C1.01369 3.11988 0.843418 3.53097 0.843418 3.95959V13.6565C0.843418 14.0852 1.01369 14.4963 1.31679 14.7993C1.61987 15.1024 2.03095 15.2727 2.45958 15.2727H10.5404C10.969 15.2727 11.3801 15.1024 11.6832 14.7993C11.9863 14.4963 12.1566 14.0852 12.1566 13.6565V3.95959C12.1566 3.53097 11.9863 3.11988 11.6832 2.81679C11.3801 2.51371 10.969 2.34344 10.5404 2.34344H8.92422M4.07574 2.34344C4.07574 1.9148 4.24602 1.50373 4.54911 1.20064C4.85219 0.897546 5.26327 0.727273 5.6919 0.727273H7.30807C7.73669 0.727273 8.14778 0.897546 8.45087 1.20064C8.75395 1.50373 8.92422 1.9148 8.92422 2.34344M4.07574 2.34344C4.07574 2.77206 4.24602 3.18315 4.54911 3.48624C4.85219 3.78932 5.26327 3.95959 5.6919 3.95959H7.30807C7.73669 3.95959 8.14778 3.78932 8.45087 3.48624C8.75395 3.18315 8.92422 2.77206 8.92422 2.34344M4.07574 8H4.08383M7.30807 8H8.92422M4.07574 11.2323H4.08383M7.30807 11.2323H8.92422"
+        stroke="currentColor"
+        stroke-width={@stroke_width}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        :if={@variant != "objective"}
         d="M7.49935 4.16699H5.83268C5.39065 4.16699 4.96673 4.34259 4.65417 4.65515C4.34161 4.96771 4.16602 5.39163 4.16602 5.83366V15.8337C4.16602 16.2757 4.34161 16.6996 4.65417 17.0122C4.96673 17.3247 5.39065 17.5003 5.83268 17.5003H14.166C14.608 17.5003 15.032 17.3247 15.3445 17.0122C15.6571 16.6996 15.8327 16.2757 15.8327 15.8337V5.83366C15.8327 5.39163 15.6571 4.96771 15.3445 4.65515C15.032 4.34259 14.608 4.16699 14.166 4.16699H12.4993"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
+        :if={@variant != "objective"}
         d="M7.5 4.16667C7.5 3.72464 7.6756 3.30072 7.98816 2.98816C8.30072 2.67559 8.72464 2.5 9.16667 2.5H10.8333C11.2754 2.5 11.6993 2.67559 12.0118 2.98816C12.3244 3.30072 12.5 3.72464 12.5 4.16667C12.5 4.60869 12.3244 5.03262 12.0118 5.34518C11.6993 5.65774 11.2754 5.83333 10.8333 5.83333H9.16667C8.72464 5.83333 8.30072 5.65774 7.98816 5.34518C7.6756 5.03262 7.5 4.60869 7.5 4.16667Z"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
+        :if={@variant != "objective"}
         d="M7.5 10H7.50833"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
+        :if={@variant != "objective"}
         d="M10.834 10H12.5007"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
+        :if={@variant != "objective"}
         d="M7.5 13.333H7.50833"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
+        :if={@variant != "objective"}
         d="M10.834 13.333H12.5007"
         stroke="currentColor"
-        stroke-width="1.5"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
       />
@@ -923,49 +969,66 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: "stroke-black dark:stroke-white"
+  attr :width, :string, default: "24"
+  attr :height, :string, default: "24"
+  attr :stroke_width, :string, default: "2"
+  attr :variant, :string, default: "default"
 
   def trash(assigns) do
     ~H"""
     <svg
       class={@class}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
+      width={@width}
+      height={@height}
+      viewBox={if @variant == "objective", do: "0 0 14 15", else: "0 0 24 24"}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M3 6H5H21"
-        stroke-width="2"
+        :if={@variant == "objective"}
+        d="M0.807351 3.37155H2.1835M2.1835 3.37155H13.1926M2.1835 3.37155V13.0046C2.1835 13.3695 2.32848 13.7196 2.58656 13.9776C2.84463 14.2357 3.19467 14.3807 3.55964 14.3807H10.4404C10.8053 14.3807 11.1553 14.2357 11.4135 13.9776C11.6715 13.7196 11.8165 13.3695 11.8165 13.0046V3.37155M4.24771 3.37155V1.99541C4.24771 1.63043 4.3927 1.28041 4.65077 1.02233C4.90885 0.764251 5.25888 0.619265 5.62385 0.619265H8.37615C8.74113 0.619265 9.09113 0.764251 9.34924 1.02233C9.60727 1.28041 9.75226 1.63043 9.75226 1.99541V3.37155M5.62385 6.81191V10.9403M8.37615 6.81191V10.9403"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke="currentColor"
       />
       <path
+        :if={@variant != "objective"}
         d="M3 6H5H21"
-        stroke-width="2"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke="currentColor"
       />
       <path
+        :if={@variant != "objective"}
+        d="M3 6H5H21"
+        stroke-width={@stroke_width}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke="currentColor"
+      />
+      <path
+        :if={@variant != "objective"}
         stroke="currentColor"
         d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6"
-        stroke-width="2"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke="currentColor"
       />
       <path
+        :if={@variant != "objective"}
         d="M10 11V17"
-        stroke-width="2"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke="currentColor"
       />
       <path
+        :if={@variant != "objective"}
         d="M14 11V17"
-        stroke-width="2"
+        stroke-width={@stroke_width}
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke="currentColor"
@@ -2476,22 +2539,39 @@ defmodule OliWeb.Icons do
   end
 
   attr :class, :string, default: "stroke-black dark:stroke-white"
+  attr :width, :string, default: "24"
+  attr :height, :string, default: "24"
+  attr :stroke_width, :string, default: "2"
+  attr :variant, :string, default: "default"
 
   def edit(assigns) do
     ~H"""
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
+      width={@width}
+      height={@height}
+      viewBox={if @variant == "objective", do: "0 0 14 14", else: "0 0 24 24"}
       fill="none"
       stroke="currentColor"
-      stroke-width="2"
+      stroke-width={@stroke_width}
       stroke-linecap="round"
       stroke-linejoin="round"
       class={@class}
     >
-      <path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" />
+      <path
+        :if={@variant == "objective"}
+        d="M2.87822 3.62771H2.12881C1.73131 3.62771 1.35008 3.78562 1.069 4.0667C0.787912 4.34778 0.630002 4.72901 0.630002 5.12652V11.8712C0.630002 12.2687 0.787912 12.6499 1.069 12.931C1.35008 13.2121 1.73131 13.37 2.12881 13.37H8.87346C9.27095 13.37 9.65223 13.2121 9.93329 12.931C10.2144 12.6499 10.3723 12.2687 10.3723 11.8712V11.1217M9.62291 2.1289L11.8711 4.37711M12.909 3.3167C13.2042 3.02155 13.37 2.62124 13.37 2.20383C13.37 1.78643 13.2042 1.38611 12.909 1.09097C12.6139 0.795817 12.2136 0.630002 11.7962 0.630002C11.3788 0.630002 10.9784 0.795817 10.6832 1.09097L4.37703 7.37474V9.62299H6.62525L12.909 3.3167Z"
+      />
+      <path :if={@variant != "objective"} stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path
+        :if={@variant != "objective"}
+        d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"
+      />
+      <path
+        :if={@variant != "objective"}
+        d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415"
+      />
+      <path :if={@variant != "objective"} d="M16 5l3 3" />
     </svg>
     """
   end
