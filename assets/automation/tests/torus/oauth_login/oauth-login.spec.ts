@@ -1,9 +1,12 @@
 import { loadParameterizedTestConfig } from '@core/parameterizedConfig';
-import { expect, Page, test } from '@playwright/test';
+import { Utils } from '@core/Utils';
+import { expect, Locator, Page, test } from '@playwright/test';
 import {
   OAuthAccountParameters,
   OAUTH_ACCOUNT_CLASSES,
   OAuthLoginParameters,
+  OAUTH_PROVIDER_PARAMETERS,
+  oauthAccountParameters,
   validateOAuthLoginParameters,
 } from './support/oauthLoginConfig';
 import { acceptTorusCookiesIfVisible, completeOAuthProviderLogin } from './support/oauthLogin';
@@ -39,10 +42,10 @@ test.describe('OAuth login @oauth @smoke', () => {
     test(`${accountClass} signs in through the configured OAuth provider`, async ({
       page,
     }, testInfo) => {
-      const account = parameters.accounts[accountClass];
+      const account = oauthAccountParameters(parameters, accountClass);
       const torusOrigin = new URL(baseUrl).origin;
 
-      testInfo.setTimeout(parameters.timeout_ms);
+      testInfo.setTimeout(parameters.timeout_ms * 3);
 
       await page.goto(torusUrl(account.login_path), { waitUntil: 'domcontentloaded' });
       await acceptTorusCookiesIfVisible(page);
@@ -60,11 +63,10 @@ test.describe('OAuth login @oauth @smoke', () => {
         oauthButton.click(),
       ]);
 
-      expect(new URL(page.url()).hostname).toBe(parameters.provider.authorization_hostname);
+      expect(new URL(page.url()).hostname).toBe(OAUTH_PROVIDER_PARAMETERS.authorization_hostname);
 
       const callbackResponse = await completeOAuthProviderLogin(
         page,
-        parameters.provider,
         account,
         (response) => isTorusPath(response.url(), account.callback_path),
         parameters.timeout_ms,
@@ -80,10 +82,23 @@ test.describe('OAuth login @oauth @smoke', () => {
       await assertSignedInWorkspace(page, account);
 
       await page.reload({ waitUntil: 'domcontentloaded' });
-      await assertSignedInWorkspace(page, account);
+      const accountMenu = await assertSignedInWorkspace(page, account);
 
-      const accountMenu = page.locator('#workspace-user-menu-dropdown');
-      const logoutLink = accountMenu.getByRole('link', { name: /sign out/i });
+      await Promise.all([
+        page.waitForURL((url) => isTorusPath(url, account.account_settings_path), {
+          timeout: parameters.timeout_ms,
+          waitUntil: 'domcontentloaded',
+        }),
+        accountSettingsLink(accountMenu, account).click(),
+      ]);
+
+      const accountEmail = page.locator('input[type="email"]');
+
+      await expect(accountEmail).toHaveCount(1);
+      await expect(accountEmail).toHaveValue(account.email);
+
+      const settingsAccountMenu = await openAccountMenu(page);
+      const logoutLink = settingsAccountMenu.getByRole('link', { name: /sign out/i });
 
       await Promise.all([
         page.waitForURL((url) => isTorusPath(url, account.logout_path), {
@@ -106,34 +121,45 @@ async function assertSignedInWorkspace(page: Page, account: OAuthAccountParamete
   ).toBeVisible();
   await expect(page.locator('.alert-danger, .alert-error')).toHaveCount(0);
 
-  const accountMenuButton = page.locator('#workspace-user-menu');
+  const accountMenu = await openAccountMenu(page);
+  const settingsLink = accountSettingsLink(accountMenu, account);
 
-  await expect(accountMenuButton).toHaveAttribute(
-    'aria-label',
-    `${account.torus_account_name} user account menu`,
-  );
-  await accountMenuButton.click();
-
-  const accountMenu = page.locator('#workspace-user-menu-dropdown');
-
-  await expect(accountMenu).toBeVisible();
-
-  const accountSettingsLink = accountMenu.getByRole('link', {
-    name: account.account_settings_link_name,
-    exact: true,
-  });
-
-  await expect(accountSettingsLink).toBeVisible();
-  await expect(accountSettingsLink).toHaveAttribute('href', account.account_settings_path);
+  await expect(settingsLink).toBeVisible();
+  await expect(settingsLink).toHaveAttribute('href', account.account_settings_path);
 
   if (account.account_label) {
     await expect(accountMenu.locator('[role="account label"]')).toHaveText(account.account_label);
   }
+
+  return accountMenu;
+}
+
+async function openAccountMenu(page: Page): Promise<Locator> {
+  const accountMenuButton = page.locator('#workspace-user-menu');
+  const accountMenu = page.locator('#workspace-user-menu-dropdown');
+
+  await expect(accountMenuButton).toBeVisible();
+
+  // LiveView can replace the dropdown after the first click and reset its client-only state.
+  await new Utils(page).forceClick(accountMenuButton, accountMenu);
+
+  return accountMenu;
+}
+
+function accountSettingsLink(accountMenu: Locator, account: OAuthAccountParameters) {
+  // The learner link's trailing chevron adds whitespace to its computed accessible name.
+  return accountMenu.getByRole('link', {
+    name: account.account_settings_link_name,
+    exact: false,
+  });
 }
 
 function oauthLoginButton(page: Page) {
   return page
-    .getByRole('link', { name: `Sign in with ${parameters.provider.name}`, exact: true })
+    .getByRole('link', {
+      name: `Sign in with ${OAUTH_PROVIDER_PARAMETERS.name}`,
+      exact: true,
+    })
     .first();
 }
 

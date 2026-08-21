@@ -1,15 +1,18 @@
 /**
- * Runtime parameter contracts and validation for the live OAuth login tests.
+ * Runtime parameter contracts and stable expectations for the live Google OAuth login tests.
  */
 
 export const OAUTH_ACCOUNT_CLASSES = ['learner', 'author'] as const;
 
 type OAuthAccountClass = (typeof OAUTH_ACCOUNT_CLASSES)[number];
 
-export type OAuthAccountParameters = {
+type OAuthAccountRuntimeParameters = {
   email: string;
   password: string;
-  torus_account_name: string;
+  account_label?: string;
+};
+
+type OAuthAccountExpectations = {
   login_path: string;
   authorization_path: string;
   callback_path: string;
@@ -17,25 +20,64 @@ export type OAuthAccountParameters = {
   workspace_heading: string;
   account_settings_link_name: string;
   account_settings_path: string;
-  account_label?: string;
   logout_path: string;
 };
 
+export type OAuthAccountParameters = OAuthAccountRuntimeParameters & OAuthAccountExpectations;
+
 export type OAuthLoginParameters = {
-  provider: {
-    name: string;
-    authorization_hostname: string;
-    selectors: {
-      email_input: string;
-      email_submit: string;
-      password_input: string;
-      password_submit: string;
-      consent_submit?: string;
-      error_message?: string;
-    };
-  };
-  accounts: Record<OAuthAccountClass, OAuthAccountParameters>;
+  accounts: Record<OAuthAccountClass, OAuthAccountRuntimeParameters>;
   timeout_ms: number;
+};
+
+export type OAuthProviderParameters = {
+  name: string;
+  authorization_hostname: string;
+  selectors: {
+    email_input: string;
+    email_submit: string;
+    password_input: string;
+    password_submit: string;
+    consent_submit?: string;
+    error_message?: string;
+  };
+};
+
+export const OAUTH_PROVIDER_PARAMETERS: OAuthProviderParameters = {
+  name: 'Google',
+  authorization_hostname: 'accounts.google.com',
+  selectors: {
+    email_input: 'input[name="identifier"], input#identifierId, input[aria-label="Email or phone"]',
+    email_submit: '#identifierNext',
+    password_input: 'input[type="password"]:not([aria-hidden="true"]):not([name="hiddenPassword"])',
+    password_submit: '#passwordNext',
+    consent_submit: 'button:has-text("Continue")',
+    error_message:
+      'text=/couldn.t find this account|wrong password|browser or app may not be secure|couldn.t sign you in/i',
+  },
+};
+
+const OAUTH_ACCOUNT_EXPECTATIONS: Record<OAuthAccountClass, OAuthAccountExpectations> = {
+  learner: {
+    login_path: '/users/log_in',
+    authorization_path: '/users/auth/google/new',
+    callback_path: '/users/auth/google/callback',
+    landing_path: '/workspaces/student',
+    workspace_heading: 'Courses available',
+    account_settings_link_name: 'Account Settings',
+    account_settings_path: '/users/settings',
+    logout_path: '/',
+  },
+  author: {
+    login_path: '/authors/log_in',
+    authorization_path: '/authors/auth/google/new',
+    callback_path: '/authors/auth/google/callback',
+    landing_path: '/workspaces/course_author',
+    workspace_heading: 'Course Author',
+    account_settings_link_name: 'Edit Account',
+    account_settings_path: '/authors/settings',
+    logout_path: '/authors/log_in',
+  },
 };
 
 const CONFIG_PATH = 'tests.oauth_logins';
@@ -47,26 +89,6 @@ export function validateOAuthLoginParameters(
   parameters: OAuthLoginParameters,
 ): OAuthLoginParameters {
   requirePositiveInteger(parameters?.timeout_ms, 'timeout_ms');
-  requireString(parameters?.provider?.name, 'provider.name');
-  requireHostname(parameters?.provider?.authorization_hostname, 'provider.authorization_hostname');
-  requireString(parameters?.provider?.selectors?.email_input, 'provider.selectors.email_input');
-  requireString(parameters?.provider?.selectors?.email_submit, 'provider.selectors.email_submit');
-  requireString(
-    parameters?.provider?.selectors?.password_input,
-    'provider.selectors.password_input',
-  );
-  requireString(
-    parameters?.provider?.selectors?.password_submit,
-    'provider.selectors.password_submit',
-  );
-  optionalString(
-    parameters?.provider?.selectors?.consent_submit,
-    'provider.selectors.consent_submit',
-  );
-  optionalString(
-    parameters?.provider?.selectors?.error_message,
-    'provider.selectors.error_message',
-  );
 
   OAUTH_ACCOUNT_CLASSES.forEach((accountClass) => {
     const account = parameters?.accounts?.[accountClass];
@@ -74,19 +96,23 @@ export function validateOAuthLoginParameters(
 
     requireRuntimeValue(account?.email, `${path}.email`);
     requireRuntimeValue(account?.password, `${path}.password`);
-    requireRuntimeValue(account?.torus_account_name, `${path}.torus_account_name`);
-    requireLocalPath(account?.login_path, `${path}.login_path`);
-    requireLocalPath(account?.authorization_path, `${path}.authorization_path`);
-    requireLocalPath(account?.callback_path, `${path}.callback_path`);
-    requireLocalPath(account?.landing_path, `${path}.landing_path`);
-    requireString(account?.workspace_heading, `${path}.workspace_heading`);
-    requireString(account?.account_settings_link_name, `${path}.account_settings_link_name`);
-    requireLocalPath(account?.account_settings_path, `${path}.account_settings_path`);
     optionalString(account?.account_label, `${path}.account_label`);
-    requireLocalPath(account?.logout_path, `${path}.logout_path`, true);
   });
 
   return parameters;
+}
+
+/**
+ * Combines environment-specific credentials with the stable expectations for an account class.
+ */
+export function oauthAccountParameters(
+  parameters: OAuthLoginParameters,
+  accountClass: OAuthAccountClass,
+): OAuthAccountParameters {
+  return {
+    ...OAUTH_ACCOUNT_EXPECTATIONS[accountClass],
+    ...parameters.accounts[accountClass],
+  };
 }
 
 function requireString(value: unknown, path: string) {
@@ -112,33 +138,5 @@ function requireRuntimeValue(value: unknown, path: string) {
 function requirePositiveInteger(value: unknown, path: string) {
   if (!Number.isInteger(value) || (value as number) <= 0) {
     throw new Error(`${CONFIG_PATH}.${path} must be a positive integer`);
-  }
-}
-
-function requireHostname(value: unknown, path: string) {
-  requireString(value, path);
-
-  try {
-    const url = new URL(`https://${value}`);
-
-    if (url.hostname !== value || url.pathname !== '/') {
-      throw new Error();
-    }
-  } catch {
-    throw new Error(`${CONFIG_PATH}.${path} must be a hostname without a scheme or path`);
-  }
-}
-
-function requireLocalPath(value: unknown, path: string, allowRoot = false) {
-  requireString(value, path);
-
-  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) {
-    throw new Error(`${CONFIG_PATH}.${path} must be a local absolute path`);
-  }
-
-  const parsed = new URL(value, 'https://torus.invalid');
-
-  if (parsed.pathname !== value || (!allowRoot && parsed.pathname === '/')) {
-    throw new Error(`${CONFIG_PATH}.${path} must be a local absolute path without a query or hash`);
   }
 }

@@ -1,11 +1,10 @@
-import { OAuthAccountParameters, OAuthLoginParameters } from './oauthLoginConfig';
+import { Utils } from '@core/Utils';
 import { expect, Page, Response } from '@playwright/test';
+import { OAuthAccountParameters, OAUTH_PROVIDER_PARAMETERS } from './oauthLoginConfig';
 
 /**
  * Provider interaction and Torus login-page helpers for the live OAuth tests.
  */
-
-type ProviderParameters = OAuthLoginParameters['provider'];
 
 /**
  * Completes the configured provider prompts and returns the Torus callback response.
@@ -13,11 +12,11 @@ type ProviderParameters = OAuthLoginParameters['provider'];
  */
 export async function completeOAuthProviderLogin(
   page: Page,
-  provider: ProviderParameters,
   account: OAuthAccountParameters,
   isCallbackResponse: (response: Response) => boolean,
   timeout: number,
 ): Promise<Response> {
+  const provider = OAUTH_PROVIDER_PARAMETERS;
   const providerError = provider.selectors.error_message
     ? page.locator(provider.selectors.error_message).first()
     : undefined;
@@ -137,7 +136,11 @@ export async function acceptTorusCookiesIfVisible(page: Page) {
     .catch(() => false);
 
   if (appeared) {
-    await acceptButton.click({ force: true });
+    // A normal click waits for the button to settle instead of racing Bootstrap's transition.
+    await acceptButton.click();
     await expect(cookieModal).toBeHidden({ timeout: 5_000 });
+
+    // Recover if the React unmount leaves Bootstrap's backdrop intercepting later clicks.
+    await new Utils(page).modalDisappears();
   }
 }
