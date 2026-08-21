@@ -149,11 +149,8 @@
     max-width: 70px;
     min-width: 70px;
     color: var(--color-body-color);
-    transition:
-      transform 100ms ease-in-out,
-      border-color 100ms ease-in-out,
-      box-shadow 100ms ease-in-out,
-      color 100ms ease-in-out;
+    transition: transform 100ms ease-in-out, border-color 100ms ease-in-out,
+      box-shadow 100ms ease-in-out, color 100ms ease-in-out;
 
     &:hover,
     &:focus {

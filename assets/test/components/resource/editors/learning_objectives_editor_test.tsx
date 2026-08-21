@@ -55,7 +55,7 @@ const resourceContext = (learningObjectives: ResolvedLearningObjective[]): Resou
     allTags: [],
     activityContexts: [],
     optionalContentTypes: { ecl: false, triggers: false },
-  }) as ResourceContext;
+  } as ResourceContext);
 
 const unresolvedLearningObjectivesContext = (): ResourceContext => {
   const context = resourceContext([]);

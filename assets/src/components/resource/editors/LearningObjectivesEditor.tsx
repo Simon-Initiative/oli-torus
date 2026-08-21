@@ -206,7 +206,7 @@ export const LearningObjectivesEditor = ({
     const toOptions = (pages: Persistence.Page[]) =>
       pages
         .filter((page) => !selectedPageIds.has(page.id))
-        .map((page) => ({ value: page.id, title: page.title }) as Option);
+        .map((page) => ({ value: page.id, title: page.title } as Option));
 
     window.oliDispatch(
       modalActions.display(
