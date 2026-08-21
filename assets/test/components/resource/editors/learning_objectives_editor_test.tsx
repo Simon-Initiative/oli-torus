@@ -57,6 +57,13 @@ const resourceContext = (learningObjectives: ResolvedLearningObjective[]): Resou
     optionalContentTypes: { ecl: false, triggers: false },
   }) as ResourceContext;
 
+const unresolvedLearningObjectivesContext = (): ResourceContext => {
+  const context = resourceContext([]);
+  delete context.learningObjectives;
+
+  return context;
+};
+
 const defaultEditorProps = (contentItem: LearningObjectivesContent) => ({
   contentItem,
   editMode: true,
@@ -133,6 +140,38 @@ describe('Learning Objectives insert menu', () => {
     await waitFor(() =>
       expect(onRefreshLearningObjectives).toHaveBeenCalledWith(inserted.id, resolved),
     );
+  });
+
+  it('uses already resolved learning objectives from context when inserting', async () => {
+    const resolved = [
+      resolvedObjective(1, 'Linear equations'),
+      resolvedObjective(2, 'Slope intercept form', 1),
+    ];
+    const learningObjectivesSpy = jest.spyOn(Persistence, 'learningObjectives');
+    const onAddItem = jest.fn();
+    const onRefreshLearningObjectives = jest.fn();
+
+    render(
+      <NonActivities
+        index={[0]}
+        parents={[]}
+        onAddItem={onAddItem}
+        onRefreshLearningObjectives={onRefreshLearningObjectives}
+        onSetTip={jest.fn()}
+        onResetTip={jest.fn()}
+        featureFlags={{ adaptivity: false, equity: false, survey: true }}
+        resourceContext={resourceContext(resolved)}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Objectives' }));
+
+    const inserted = onAddItem.mock.calls[0][0] as LearningObjectivesContent;
+
+    await waitFor(() =>
+      expect(onRefreshLearningObjectives).toHaveBeenCalledWith(inserted.id, resolved),
+    );
+    expect(learningObjectivesSpy).not.toHaveBeenCalled();
   });
 
   it('does not show the Objectives content type for nested insert positions', () => {
@@ -557,6 +596,17 @@ describe('LearningObjectivesEditor', () => {
       container.querySelector('svg.learning-objectives-editor__empty-warning-icon path'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Dismiss warning' })).toBeInTheDocument();
+    expect(screen.getByText('What is proficiency and how is it estimated?')).toBeInTheDocument();
+  });
+
+  it('does not show the empty learning objectives warning while objectives are unresolved', () => {
+    const props = defaultEditorProps(element());
+    props.resourceContext = unresolvedLearningObjectivesContext();
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('Linear equations')).not.toBeInTheDocument();
     expect(screen.getByText('What is proficiency and how is it estimated?')).toBeInTheDocument();
   });
 

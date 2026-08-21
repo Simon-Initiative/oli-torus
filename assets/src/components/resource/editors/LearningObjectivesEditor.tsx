@@ -92,6 +92,7 @@ export const LearningObjectivesEditor = ({
   onRemove,
   resourceContext,
 }: LearningObjectivesEditorProps) => {
+  const learningObjectivesResolved = resourceContext.learningObjectives !== undefined;
   const objectives = resourceContext.learningObjectives || [];
   const [pages, setPages] = useState<Persistence.Page[]>([]);
   const [pagesLoadFailed, setPagesLoadFailed] = useState(false);
@@ -317,7 +318,7 @@ export const LearningObjectivesEditor = ({
             </div>
           )}
 
-          {objectiveGroups.length === 0 && !emptyWarningDismissed ? (
+          {learningObjectivesResolved && objectiveGroups.length === 0 && !emptyWarningDismissed ? (
             <EmptyObjectivesWarning onDismiss={() => setEmptyWarningDismissed(true)} />
           ) : objectiveGroups.length > 0 ? (
             <ul className="learning-objectives-editor__list">
