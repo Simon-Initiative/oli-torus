@@ -28,7 +28,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "typescript-eslint": "^8.33.0",
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
     "prettier": "^3.3.3"
