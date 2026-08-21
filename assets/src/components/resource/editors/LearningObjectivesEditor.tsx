@@ -432,12 +432,7 @@ const ObjectiveCard = ({
       >
         <div className="learning-objectives-editor__objective-copy">
           <div className="learning-objectives-editor__objective-title-row">
-            <span
-              className="learning-objectives-editor__objective-number"
-              style={{ color: '#757682' }}
-            >
-              LO {ordinal}
-            </span>
+            <span className="learning-objectives-editor__objective-number">LO {ordinal}</span>
             <span className="learning-objectives-editor__objective-title">{objective.title}</span>
             {!config.enabled && (
               <span className="learning-objectives-editor__removed-status">Removed</span>

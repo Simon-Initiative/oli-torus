@@ -491,22 +491,172 @@
 
 .learning-objectives-editor__proficiency-card--unknown {
   background: var(--color-gray-100);
-  color: var(--color-gray-700);
 }
 
 .learning-objectives-editor__proficiency-card--beginning {
   background: #ffecde;
-  color: #bf5b13;
+
+  svg {
+    color: #bf5b13;
+  }
 }
 
 .learning-objectives-editor__proficiency-card--growing {
   background: #f7def8;
-  color: #9a40a8;
+
+  svg {
+    color: #9a40a8;
+  }
 }
 
 .learning-objectives-editor__proficiency-card--strong {
   background: #e7fcf3;
-  color: #218358;
+
+  svg {
+    color: #218358;
+  }
+}
+
+html.dark {
+  .learning-objectives-editor {
+    .label {
+      color: #eeebf5;
+    }
+  }
+
+  .learning-objectives-editor__mode {
+    border-color: #3b3740;
+    background-color: #1b191f;
+    color: #eeebf5;
+  }
+
+  .learning-objectives-editor__description,
+  .learning-objectives-editor__summary-helper,
+  .learning-objectives-editor__sub-objectives .custom-control-label,
+  .learning-objectives-editor__recommendation-label,
+  .learning-objectives-editor__proficiency-description {
+    color: #eeebf5;
+  }
+
+  .learning-objectives-editor__panel {
+    border-color: #3b3740;
+    background: #2b282e;
+  }
+
+  .learning-objectives-editor__empty-warning {
+    background: #4c3f39;
+    color: #eeebf5;
+
+    strong {
+      color: #ffb387;
+    }
+  }
+
+  .learning-objectives-editor__empty-warning-icon,
+  .learning-objectives-editor__empty-warning-close,
+  .learning-objectives-editor__empty-warning-close:hover,
+  .learning-objectives-editor__empty-warning-close:focus {
+    color: #ffb387;
+  }
+
+  .learning-objectives-editor__objective {
+    border-color: #3b3740;
+    background: #1b191f;
+  }
+
+  .learning-objectives-editor__objective--disabled {
+    border-color: #3b3740;
+    background: #1b191f;
+  }
+
+  .learning-objectives-editor__objective-number,
+  .learning-objectives-editor__proficiency-summary {
+    color: rgba(238, 235, 245, 0.75) !important;
+  }
+
+  .learning-objectives-editor__objective-title,
+  .learning-objectives-editor__sub-objective,
+  .learning-objectives-editor__chip,
+  .learning-objectives-editor__proficiency-card,
+  .learning-objectives-editor__proficiency-card--unknown,
+  .learning-objectives-editor__proficiency-card--beginning,
+  .learning-objectives-editor__proficiency-card--growing,
+  .learning-objectives-editor__proficiency-card--strong {
+    color: #eeebf5;
+  }
+
+  .learning-objectives-editor__objective-action,
+  .learning-objectives-editor__objective-action:hover,
+  .learning-objectives-editor__objective-action:focus {
+    color: var(--color-white);
+  }
+
+  .learning-objectives-editor__removed-status {
+    color: #ff8787;
+  }
+
+  .learning-objectives-editor__restore-action {
+    border-color: #4c82b8;
+    color: #9fd0ff;
+
+    &:hover,
+    &:focus {
+      border-color: #4c82b8;
+      background: #16395c;
+      color: #d7ecff;
+    }
+  }
+
+  .learning-objectives-editor__chip {
+    border-color: #3b3740;
+    background: #1b191f;
+  }
+
+  .learning-objectives-editor__add-page {
+    color: #4ca6ff;
+
+    &:disabled {
+      color: rgba(238, 235, 245, 0.75);
+    }
+  }
+
+  .learning-objectives-editor__add-page-wrapper--disabled:hover::after {
+    background: #eeebf5;
+    color: #1b191f;
+  }
+
+  .learning-objectives-editor__proficiency {
+    border-bottom-color: #3b3740;
+    color: rgba(238, 235, 245, 0.75);
+  }
+
+  .learning-objectives-editor__proficiency-card--unknown {
+    background: #353740;
+  }
+
+  .learning-objectives-editor__proficiency-card--beginning {
+    background: rgba(76, 63, 57, 0.7);
+
+    svg {
+      color: #ffb387;
+    }
+  }
+
+  .learning-objectives-editor__proficiency-card--growing {
+    background: #463552;
+
+    svg {
+      color: #ebaaf2;
+    }
+  }
+
+  .learning-objectives-editor__proficiency-card--strong {
+    background: #3d4f47;
+
+    svg {
+      color: #39e581;
+    }
+  }
 }
 
 @media (max-width: 720px) {
