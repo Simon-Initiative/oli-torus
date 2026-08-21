@@ -229,6 +229,37 @@ describe('LearningObjectivesEditor', () => {
     expect(revisitRow.children[2]).toHaveTextContent('+ Add Page(s)');
   });
 
+  it('disables Summary add actions with a tooltip when all pages are already selected', async () => {
+    const props = defaultEditorProps(
+      element({
+        mode: 'summary',
+        learning_objectives: [
+          { resource_id: 1, enabled: true, revisit_pages: [10, 20], practice_pages: [] },
+          { resource_id: 2, enabled: true, revisit_pages: [], practice_pages: [] },
+        ],
+      }),
+    );
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    await waitFor(() => expect(screen.getByText('Intro Page')).toBeInTheDocument());
+
+    const addRevisitPages = screen.getByRole('button', {
+      name: 'Add revisit pages for Linear equations',
+    });
+
+    expect(addRevisitPages).toBeDisabled();
+    expect(addRevisitPages.closest('.learning-objectives-editor__add-page-wrapper')).toHaveClass(
+      'learning-objectives-editor__add-page-wrapper--disabled',
+    );
+    expect(
+      addRevisitPages.closest('.learning-objectives-editor__add-page-wrapper'),
+    ).toHaveAttribute('data-tooltip', 'No more pages are available to select.');
+    expect(
+      addRevisitPages.closest('.learning-objectives-editor__add-page-wrapper'),
+    ).not.toHaveAttribute('tabIndex');
+  });
+
   it('changes mode without dropping advisory objective config', () => {
     const contentItem = element();
     const props = defaultEditorProps(contentItem);
@@ -258,6 +289,9 @@ describe('LearningObjectivesEditor', () => {
 
     expect(screen.getByText('Linear equations')).toBeInTheDocument();
     expect(screen.queryByText('Slope intercept form')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Linear equations').closest('.learning-objectives-editor__objective-header'),
+    ).toHaveClass('learning-objectives-editor__objective-header--single-line');
 
     fireEvent.click(screen.getByLabelText('Include sub-objectives'));
 

@@ -384,7 +384,12 @@ const ObjectiveCard = ({
         !config.enabled && 'learning-objectives-editor__objective--disabled',
       )}
     >
-      <div className="learning-objectives-editor__objective-header">
+      <div
+        className={classNames(
+          'learning-objectives-editor__objective-header',
+          children.length === 0 && 'learning-objectives-editor__objective-header--single-line',
+        )}
+      >
         <div className="learning-objectives-editor__objective-copy">
           <div className="learning-objectives-editor__objective-title-row">
             <span
@@ -507,41 +512,58 @@ const RecommendationList = ({
   editMode,
   onAddRecommendation,
   onRemoveRecommendation,
-}: RecommendationListProps) => (
-  <div className="learning-objectives-editor__recommendation-row">
-    <div className="learning-objectives-editor__recommendation-label">{label}</div>
-    {pageIds.length > 0 && (
-      <div className="learning-objectives-editor__chips">
-        {pageIds.map((pageId) => {
-          const title = pagesById.get(pageId)?.title || `Page ${pageId}`;
+}: RecommendationListProps) => {
+  const selectedPageIds = new Set(pageIds);
+  const noMorePagesAvailable =
+    pagesById.size > 0 &&
+    Array.from(pagesById.keys()).every((pageId) => selectedPageIds.has(pageId));
+  const addDisabled = !editMode || pageOptionsUnavailable || noMorePagesAvailable;
+  const noMorePagesMessage = 'No more pages are available to select.';
 
-          return (
-            <span key={pageId} className="learning-objectives-editor__chip">
-              {title}
-              <button
-                type="button"
-                disabled={!editMode}
-                onClick={() => onRemoveRecommendation(objective.resource_id, kind, pageId)}
-                aria-label={`Remove ${title} from ${label} for ${objective.title}`}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </span>
-          );
-        })}
-      </div>
-    )}
-    <button
-      type="button"
-      className="btn btn-link learning-objectives-editor__add-page"
-      disabled={!editMode || pageOptionsUnavailable}
-      onClick={() => onAddRecommendation(objective.resource_id, kind)}
-      aria-label={actionAriaLabel}
-    >
-      {actionLabel}
-    </button>
-  </div>
-);
+  return (
+    <div className="learning-objectives-editor__recommendation-row">
+      <div className="learning-objectives-editor__recommendation-label">{label}</div>
+      {pageIds.length > 0 && (
+        <div className="learning-objectives-editor__chips">
+          {pageIds.map((pageId) => {
+            const title = pagesById.get(pageId)?.title || `Page ${pageId}`;
+
+            return (
+              <span key={pageId} className="learning-objectives-editor__chip">
+                {title}
+                <button
+                  type="button"
+                  disabled={!editMode}
+                  onClick={() => onRemoveRecommendation(objective.resource_id, kind, pageId)}
+                  aria-label={`Remove ${title} from ${label} for ${objective.title}`}
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+      <span
+        className={classNames(
+          'learning-objectives-editor__add-page-wrapper',
+          noMorePagesAvailable && 'learning-objectives-editor__add-page-wrapper--disabled',
+        )}
+        data-tooltip={noMorePagesAvailable ? noMorePagesMessage : undefined}
+      >
+        <button
+          type="button"
+          className="btn btn-link learning-objectives-editor__add-page"
+          disabled={addDisabled}
+          onClick={() => onAddRecommendation(objective.resource_id, kind)}
+          aria-label={actionAriaLabel}
+        >
+          {actionLabel}
+        </button>
+      </span>
+    </div>
+  );
+};
 
 const groupObjectives = (
   objectives: ResolvedLearningObjective[],
