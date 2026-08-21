@@ -133,7 +133,7 @@
     "vega-lite": "5.1.0",
     "video-react": "^0.15.0",
     "vm-browserify": "^1.1.2",
-    "vm2": "^3.11.4",
+    "vm2": "^3.11.6",
     "whatwg-fetch": "^3.0.0",
     "xml-formatter": "^2.6.1"
   },
