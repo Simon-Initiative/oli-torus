@@ -208,6 +208,27 @@ describe('LearningObjectivesEditor', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders Summary recommendation controls as stacked authoring groups', async () => {
+    const props = defaultEditorProps(element({ mode: 'summary' }));
+
+    const { container } = render(<LearningObjectivesEditor {...props} />);
+
+    await waitFor(() => expect(screen.getByText('Intro Page')).toBeInTheDocument());
+
+    expect(
+      container.querySelector('.learning-objectives-editor__panel--summary'),
+    ).toBeInTheDocument();
+
+    const recommendationRows = container.querySelectorAll(
+      '.learning-objectives-editor__recommendation-row',
+    );
+    const revisitRow = recommendationRows[0];
+
+    expect(revisitRow.children[0]).toHaveTextContent('Pages students should revisit:');
+    expect(revisitRow.children[1]).toHaveClass('learning-objectives-editor__chips');
+    expect(revisitRow.children[2]).toHaveTextContent('+ Add Page(s)');
+  });
+
   it('changes mode without dropping advisory objective config', () => {
     const contentItem = element();
     const props = defaultEditorProps(contentItem);

@@ -296,7 +296,12 @@ export const LearningObjectivesEditor = ({
           </label>
         </div>
 
-        <div className="learning-objectives-editor__panel">
+        <div
+          className={classNames(
+            'learning-objectives-editor__panel',
+            contentItem.mode === 'summary' && 'learning-objectives-editor__panel--summary',
+          )}
+        >
           {contentItem.mode === 'summary' && (
             <p className="learning-objectives-editor__summary-helper">{SUMMARY_HELPER_TEXT}</p>
           )}
@@ -375,6 +380,7 @@ const ObjectiveCard = ({
     <li
       className={classNames(
         'learning-objectives-editor__objective',
+        mode === 'summary' && 'learning-objectives-editor__objective--summary',
         !config.enabled && 'learning-objectives-editor__objective--disabled',
       )}
     >
@@ -504,34 +510,36 @@ const RecommendationList = ({
 }: RecommendationListProps) => (
   <div className="learning-objectives-editor__recommendation-row">
     <div className="learning-objectives-editor__recommendation-label">{label}</div>
-    <div className="learning-objectives-editor__chips">
-      {pageIds.map((pageId) => {
-        const title = pagesById.get(pageId)?.title || `Page ${pageId}`;
+    {pageIds.length > 0 && (
+      <div className="learning-objectives-editor__chips">
+        {pageIds.map((pageId) => {
+          const title = pagesById.get(pageId)?.title || `Page ${pageId}`;
 
-        return (
-          <span key={pageId} className="learning-objectives-editor__chip">
-            {title}
-            <button
-              type="button"
-              disabled={!editMode}
-              onClick={() => onRemoveRecommendation(objective.resource_id, kind, pageId)}
-              aria-label={`Remove ${title} from ${label} for ${objective.title}`}
-            >
-              <i className="fas fa-times"></i>
-            </button>
-          </span>
-        );
-      })}
-      <button
-        type="button"
-        className="btn btn-link learning-objectives-editor__add-page"
-        disabled={!editMode || pageOptionsUnavailable}
-        onClick={() => onAddRecommendation(objective.resource_id, kind)}
-        aria-label={actionAriaLabel}
-      >
-        {actionLabel}
-      </button>
-    </div>
+          return (
+            <span key={pageId} className="learning-objectives-editor__chip">
+              {title}
+              <button
+                type="button"
+                disabled={!editMode}
+                onClick={() => onRemoveRecommendation(objective.resource_id, kind, pageId)}
+                aria-label={`Remove ${title} from ${label} for ${objective.title}`}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </span>
+          );
+        })}
+      </div>
+    )}
+    <button
+      type="button"
+      className="btn btn-link learning-objectives-editor__add-page"
+      disabled={!editMode || pageOptionsUnavailable}
+      onClick={() => onAddRecommendation(objective.resource_id, kind)}
+      aria-label={actionAriaLabel}
+    >
+      {actionLabel}
+    </button>
   </div>
 );
 
