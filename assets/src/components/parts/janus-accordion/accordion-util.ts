@@ -28,9 +28,59 @@ export const isResponsiveAccordionLayout = (width?: number | string): boolean =>
 export const accordionLayoutClass = (width?: number | string): string =>
   isResponsiveAccordionLayout(width) ? 'janus-accordion--responsive' : 'janus-accordion--fixed';
 
-export const accordionThemeStyles = (themeColor?: string): CSSProperties => ({
-  ['--accordion-theme' as string]: themeColor || DEFAULT_ACCORDION_THEME,
-});
+const parseColorToRgb = (color: string): { r: number; g: number; b: number } | null => {
+  const trimmed = color.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith('#')) {
+    const hex = trimmed.slice(1);
+    if (hex.length === 3) {
+      return {
+        r: parseInt(hex[0] + hex[0], 16),
+        g: parseInt(hex[1] + hex[1], 16),
+        b: parseInt(hex[2] + hex[2], 16),
+      };
+    }
+    if (hex.length === 6) {
+      return {
+        r: parseInt(hex.slice(0, 2), 16),
+        g: parseInt(hex.slice(2, 4), 16),
+        b: parseInt(hex.slice(4, 6), 16),
+      };
+    }
+    return null;
+  }
+
+  const rgbaMatch = trimmed.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgbaMatch) {
+    const parts = rgbaMatch[1].split(',').map((part) => part.trim());
+    const [r, g, b] = parts.map((part) => parseFloat(part));
+    if ([r, g, b].every((channel) => Number.isFinite(channel))) {
+      return { r, g, b };
+    }
+  }
+
+  return null;
+};
+
+export const hasAccordionTheme = (themeColor?: string): boolean => Boolean(themeColor?.trim());
+
+export const accordionHeaderContrastColor = (themeColor: string): string => {
+  const rgb = parseColorToRgb(themeColor);
+  if (!rgb) return '#262626';
+
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+  return luminance > 0.5 ? '#262626' : '#ffffff';
+};
+
+export const accordionThemeStyles = (themeColor?: string): CSSProperties => {
+  if (!hasAccordionTheme(themeColor)) return {};
+
+  return {
+    ['--accordion-theme' as string]: themeColor!.trim(),
+    ['--accordion-header-fg' as string]: accordionHeaderContrastColor(themeColor!),
+  };
+};
 
 export const accordionContainerStyles = (
   width?: number | string,
@@ -127,7 +177,7 @@ export const parseAccordionModel = (raw: unknown): AccordionModel => {
   return {
     ...model,
     enabled: typeof model.enabled === 'boolean' ? model.enabled : true,
-    themeColor: model.themeColor || DEFAULT_ACCORDION_THEME,
+    themeColor: typeof model.themeColor === 'string' ? model.themeColor : '',
     customCssClass: model.customCssClass || '',
     customCss: model.customCss || '',
     sections: normalizeSections(model.sections),

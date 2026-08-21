@@ -194,7 +194,7 @@ janus-accordion {
     font-size: 0.875rem;
   }
 
-  // Authoring static preview
+  // Authoring static preview (before --themed so themed bg/fg can win)
   &.janus-accordion--authoring {
     width: 100% !important;
     height: 100% !important;
@@ -219,6 +219,79 @@ janus-accordion {
 
       &.is-expanded .accordion-chevron {
         transform: rotate(90deg);
+      }
+    }
+
+    // Nested override: authoring preview must keep theme when both modifiers apply
+    &.janus-accordion--themed .accordion-header-preview {
+      background: var(--accordion-theme);
+      color: var(--accordion-header-fg);
+      border-bottom-color: color-mix(in srgb, var(--accordion-theme) 80%, #000000);
+
+      .accordion-chevron {
+        fill: var(--accordion-header-fg);
+      }
+
+      .accordion-title {
+        color: var(--accordion-header-fg);
+      }
+    }
+  }
+
+  &.janus-accordion--themed {
+    border-color: color-mix(in srgb, var(--accordion-theme) 30%, #ffffff);
+
+    .accordion-header-button,
+    .accordion-header-preview {
+      background: var(--accordion-theme);
+      color: var(--accordion-header-fg);
+      border-bottom-color: color-mix(in srgb, var(--accordion-theme) 80%, #000000);
+
+      .accordion-chevron {
+        fill: var(--accordion-header-fg);
+      }
+
+      .accordion-title {
+        color: var(--accordion-header-fg);
+      }
+
+      &:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--accordion-theme) 88%, #000000);
+        color: var(--accordion-header-fg);
+
+        .accordion-chevron {
+          fill: var(--accordion-header-fg);
+        }
+
+        .accordion-title {
+          color: var(--accordion-header-fg);
+        }
+      }
+
+      &[aria-expanded='true'] {
+        background: var(--accordion-theme);
+        color: var(--accordion-header-fg);
+
+        .accordion-chevron {
+          fill: var(--accordion-header-fg);
+        }
+
+        .accordion-title {
+          color: var(--accordion-header-fg);
+        }
+
+        &:hover:not(:disabled) {
+          background: color-mix(in srgb, var(--accordion-theme) 88%, #000000);
+          color: var(--accordion-header-fg);
+
+          .accordion-chevron {
+            fill: var(--accordion-header-fg);
+          }
+
+          .accordion-title {
+            color: var(--accordion-header-fg);
+          }
+        }
       }
     }
   }

@@ -61,8 +61,9 @@ export const schema: JSONSchema7Object = {
   themeColor: {
     title: 'Theme Color',
     type: 'string',
-    description: 'Hex color used for the accordion accent (e.g. #0070F3)',
-    default: DEFAULT_ACCORDION_THEME,
+    description:
+      'Optional header background color. Leave empty for default gray headers; pick a color to theme all section headers.',
+    default: '',
   },
   enabled: {
     title: 'Enabled',
@@ -102,7 +103,7 @@ export const adaptivitySchema = {
 export const createSchema = (): Partial<AccordionModel> => ({
   enabled: true,
   customCssClass: '',
-  themeColor: DEFAULT_ACCORDION_THEME,
+  themeColor: '',
   customCss: '',
   width: DEFAULT_ACCORDION_WIDTH,
   height: DEFAULT_ACCORDION_HEIGHT,

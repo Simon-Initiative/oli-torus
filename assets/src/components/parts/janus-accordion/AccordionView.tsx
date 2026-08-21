@@ -6,6 +6,7 @@ import {
   accordionContainerStyles,
   accordionLayoutClass,
   accordionThemeStyles,
+  hasAccordionTheme,
   normalizeSections,
 } from './accordion-util';
 import { AccordionModel } from './schema';
@@ -40,13 +41,14 @@ const AccordionView = forwardRef<HTMLDivElement, AccordionViewProps>(function Ac
 ) {
   const sections = normalizeSections(model.sections);
   const customCss = model.customCss || '';
-  const themeStyles = interactive ? accordionThemeStyles(model.themeColor) : {};
+  const themeStyles = accordionThemeStyles(model.themeColor);
   const styles: CSSProperties = interactive
     ? {
         ...accordionContainerStyles(model.width, model.height),
         ...themeStyles,
       }
     : themeStyles;
+  const themedClass = hasAccordionTheme(model.themeColor) ? 'janus-accordion--themed' : '';
 
   const handleHeaderKeyDown = useCallback(
     (event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
@@ -86,7 +88,7 @@ const AccordionView = forwardRef<HTMLDivElement, AccordionViewProps>(function Ac
     <div
       ref={ref}
       data-janus-type={tagName}
-      className={`janus-accordion ${accordionLayoutClass(model.width)} ${
+      className={`janus-accordion ${accordionLayoutClass(model.width)} ${themedClass} ${
         model.customCssClass || ''
       } ${className}`.trim()}
       style={styles}
@@ -121,22 +123,22 @@ const AccordionView = forwardRef<HTMLDivElement, AccordionViewProps>(function Ac
                       onClick={() => onToggle?.(oneBased)}
                       onKeyDown={(e) => handleHeaderKeyDown(e, index)}
                     >
-                      <AccordionChevron expanded={expanded} />
                       <span
                         className="accordion-title"
                         dangerouslySetInnerHTML={{ __html: titleHtml || fallbackTitle }}
                       />
+                      <AccordionChevron expanded={expanded} />
                     </button>
                   ) : (
                     <div
                       id={headerId}
                       className={`accordion-header-preview${expanded ? ' is-expanded' : ''}`}
                     >
-                      <AccordionChevron expanded={expanded} />
                       <span
                         className="accordion-title"
                         dangerouslySetInnerHTML={{ __html: titleHtml || fallbackTitle }}
                       />
+                      <AccordionChevron expanded={expanded} />
                     </div>
                   )}
                 </h3>
