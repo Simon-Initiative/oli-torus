@@ -147,7 +147,10 @@ describe('Learning Objectives insert menu', () => {
       resolvedObjective(1, 'Linear equations'),
       resolvedObjective(2, 'Slope intercept form', 1),
     ];
-    const learningObjectivesSpy = jest.spyOn(Persistence, 'learningObjectives');
+    const learningObjectivesSpy = jest.spyOn(Persistence, 'learningObjectives').mockResolvedValue({
+      type: 'success',
+      learningObjectives: [],
+    });
     const onAddItem = jest.fn();
     const onRefreshLearningObjectives = jest.fn();
 

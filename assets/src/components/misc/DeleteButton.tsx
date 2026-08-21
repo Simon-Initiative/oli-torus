@@ -14,9 +14,6 @@ export const DeleteButton = ({
   onClick,
 }: WithClassName<DeleteButtonProps>) => (
   <button
-    style={{
-      height: 31,
-    }}
     disabled={!editMode}
     type="button"
     className={classNames(
