@@ -320,6 +320,16 @@ describe('LearningObjectivesEditor', () => {
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
+  it('does not expose separate remove or restore controls for rendered sub-objectives', () => {
+    const props = defaultEditorProps(element());
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    expect(screen.getByText('Slope intercept form')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove Slope intercept form' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Restore Slope intercept form' })).toBeNull();
+  });
+
   it('renders every parent before a shared sub-objective', () => {
     const props = defaultEditorProps(element());
     props.resourceContext = resourceContext([
