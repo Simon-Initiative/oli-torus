@@ -419,7 +419,8 @@ const ObjectiveCard = ({
       className={classNames(
         'learning-objectives-editor__objective',
         mode === 'summary' && 'learning-objectives-editor__objective--summary',
-        !config.enabled && 'learning-objectives-editor__objective--disabled',
+        !config.enabled &&
+          'bg-Surface-surface-secondary-muted learning-objectives-editor__objective--disabled',
       )}
     >
       <div
@@ -437,6 +438,9 @@ const ObjectiveCard = ({
               LO {ordinal}
             </span>
             <span className="learning-objectives-editor__objective-title">{objective.title}</span>
+            {!config.enabled && (
+              <span className="learning-objectives-editor__removed-status">Removed</span>
+            )}
           </div>
           {children.length > 0 && (
             <ul className="learning-objectives-editor__sub-objective-list">
@@ -448,24 +452,22 @@ const ObjectiveCard = ({
             </ul>
           )}
         </div>
-        {!config.enabled && (
-          <span className="learning-objectives-editor__removed-status">Removed</span>
-        )}
         <button
           type="button"
           className={classNames(
-            'btn btn-link btn-sm learning-objectives-editor__objective-action',
-            !config.enabled && 'text-primary',
+            config.enabled
+              ? 'btn btn-link btn-sm learning-objectives-editor__objective-action'
+              : 'btn btn-sm learning-objectives-editor__restore-action',
           )}
           disabled={!editMode}
           onClick={() => onToggleEnabled(objective.resource_id)}
           aria-label={`${config.enabled ? 'Remove' : 'Restore'} ${objective.title}`}
         >
-          {config.enabled ? <TrashIcon /> : <i className="fas fa-undo-alt"></i>}
+          {config.enabled ? <TrashIcon /> : <i className="fas fa-undo-alt" aria-hidden="true"></i>}
         </button>
       </div>
 
-      {mode === 'summary' && config.enabled && (
+      {mode === 'summary' && (
         <div className="learning-objectives-editor__recommendations">
           <RecommendationList
             label="Pages students should revisit:"

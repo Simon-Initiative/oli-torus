@@ -364,10 +364,11 @@ describe('LearningObjectivesEditor', () => {
     });
   });
 
-  it('restores a disabled objective by flipping advisory enabled state', () => {
+  it('restores a disabled objective by flipping advisory enabled state', async () => {
     const contentItem = element({
+      mode: 'summary',
       learning_objectives: [
-        { resource_id: 1, enabled: false, revisit_pages: [10], practice_pages: [] },
+        { resource_id: 1, enabled: false, revisit_pages: [10], practice_pages: [20] },
         { resource_id: 2, enabled: true, revisit_pages: [], practice_pages: [] },
       ],
     });
@@ -375,12 +376,25 @@ describe('LearningObjectivesEditor', () => {
 
     render(<LearningObjectivesEditor {...props} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Restore Linear equations' }));
+    const restoreButton = screen.getByRole('button', { name: 'Restore Linear equations' });
+
+    expect(restoreButton).not.toHaveTextContent('Restore');
+    expect(screen.getByText('Removed')).toBeInTheDocument();
+    expect(screen.getByText('Linear equations').closest('li')).toHaveClass(
+      'bg-Surface-surface-secondary-muted',
+      'learning-objectives-editor__objective--disabled',
+    );
+    expect(screen.getAllByText('Pages students should revisit:').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Practice:').length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.getByText('Intro Page')).toBeInTheDocument());
+    expect(screen.getByText('Practice Page')).toBeInTheDocument();
+
+    fireEvent.click(restoreButton);
 
     expect(props.onEdit).toHaveBeenCalledWith({
       ...contentItem,
       learning_objectives: [
-        { resource_id: 1, enabled: true, revisit_pages: [10], practice_pages: [] },
+        { resource_id: 1, enabled: true, revisit_pages: [10], practice_pages: [20] },
         { resource_id: 2, enabled: true, revisit_pages: [], practice_pages: [] },
       ],
     });
