@@ -17,7 +17,7 @@ Implement the read-only authoring coverage data source in `lib/oli/authoring/`, 
 - The implementation targets the workspace Learning Objectives Editor; the older objectives route is not migrated in this work item.
 - The public module boundary is `Oli.Authoring.ObjectiveCoverage`; the exact internal struct names may be selected during Phase 1 but must remain stable for consumer tickets.
 - A missing `activity_refs` value is treated as an empty embedded-activity relationship; no page-content fallback is added.
-- A missing working publication is returned as an explicit tagged error unless existing workspace conventions require an empty model; that decision must be recorded in the execution record and tests.
+- A missing working publication is returned as an explicit tagged error; multiple working publications are also rejected rather than merged, and valid empty working publications return an empty model with context.
 - Curriculum paths are represented with stable node/resource ids, titles, parent ids, and descendant page ids sufficient for `MER-5800` and `MER-5801`; no additional content query is introduced.
 - Initial activity coverage includes only static embedded activities referenced from page `activity_refs`; bank-selection coverage is a follow-up.
 - No feature flag or migration is required. Telemetry remains aggregate-only and follows `docs/OPERATIONS.md`.

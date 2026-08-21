@@ -116,7 +116,7 @@ The model is not a cross-request cache. A later optimization may add an explicit
 ## 5. Interfaces
 
 - Proposed public constructor:
-  - `load(project_or_slug) :: {:ok, coverage_model} | {:error, :project_not_found | :working_publication_not_found | term()}`
+  - `load(project_or_slug) :: {:ok, coverage_model} | {:error, :project_not_found | :working_publication_not_found | :multiple_working_publications | term()}`
 - Proposed pure builder for focused tests:
   - `build(rows, publication_context) :: {:ok, coverage_model} | {:error, reason}`
 - Proposed consumer queries over the model:
@@ -165,6 +165,7 @@ No cache. The model is built once per consumer load and held by the caller. This
 
 - Project not found: return a tagged error; caller renders its existing authorization/not-found path.
 - No working publication: return a tagged error or an empty model according to the existing authoring convention; implementation should choose one and test it consistently.
+- Multiple working publications: return a tagged error rather than merging rows from ambiguous snapshots.
 - Query timeout/database error: propagate a tagged error, log aggregate context, and avoid partial model publication.
 - Deleted revision/stale mapping: filter it before indexing so deleted pages/activities cannot appear in counts or links.
 - Missing objective referenced by content: retain the content row only if a valid objective consumer exists; otherwise ignore the dangling objective id and record a bounded diagnostic if diagnostics are included.

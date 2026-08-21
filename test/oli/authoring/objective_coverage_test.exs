@@ -2,6 +2,7 @@ defmodule Oli.Authoring.ObjectiveCoverageTest do
   use Oli.DataCase
 
   import Ecto.Query
+  import Oli.Factory
 
   # Requirements traceability:
   # AC-001 -> "loads rows from the project's current working publication"
@@ -185,14 +186,17 @@ defmodule Oli.Authoring.ObjectiveCoverageTest do
 
       cycle =
         ObjectiveCoverage.build([
-          row(ResourceType.id_for_objective(), 1, children: [2]),
+          row(ResourceType.id_for_objective(), 1, children: [2, 3]),
           row(ResourceType.id_for_objective(), 2, children: [1]),
+          row(ResourceType.id_for_objective(), 3, []),
           row(ResourceType.id_for_container(), 40, children: [41]),
           row(ResourceType.id_for_container(), 41, children: [40])
         ])
 
-      assert ObjectiveCoverage.coverage(cycle, 1).sub_objective_count == 1
+      assert ObjectiveCoverage.coverage(cycle, 1).sub_objective_count == 2
       assert ObjectiveCoverage.search(cycle, "resource") != []
+      assert cycle.objective_scope_by_id[1] == [1, 2, 3]
+      assert cycle.objective_scope_by_id[2] == [1, 2, 3]
       assert cycle.curriculum_descendants_by_id[40] == [41]
       assert cycle.curriculum_paths_by_id[40] == [[41, 40]]
     end
@@ -254,6 +258,25 @@ defmodule Oli.Authoring.ObjectiveCoverageTest do
       )
 
       assert {:error, :working_publication_not_found} = ObjectiveCoverage.load(project.slug)
+    end
+
+    test "returns a tagged error when the project has multiple working publications" do
+      %{project: project} = Seeder.base_project_with_resource2()
+
+      publication =
+        Repo.one!(
+          from(publication in Publication,
+            where: publication.project_id == ^project.id and is_nil(publication.published)
+          )
+        )
+
+      insert(:publication,
+        project: project,
+        root_resource_id: publication.root_resource_id,
+        published: nil
+      )
+
+      assert {:error, :multiple_working_publications} = ObjectiveCoverage.load(project.slug)
     end
 
     test "returns an empty model with context for an empty working publication" do

@@ -78,7 +78,11 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   """
   @spec load(Project.t() | %{required(:id) => pos_integer()} | String.t()) ::
           {:ok, t()}
-          | {:error, :invalid_project | :project_not_found | :working_publication_not_found}
+          | {:error,
+             :invalid_project
+             | :project_not_found
+             | :working_publication_not_found
+             | :multiple_working_publications}
   def load(project_or_slug) do
     started_at = System.monotonic_time()
 
@@ -88,15 +92,19 @@ defmodule Oli.Authoring.ObjectiveCoverage do
           rows = Repo.all(query)
           context = context_from_rows(rows)
 
-          case {context[:project_id], context[:publication_id]} do
+          case {context[:project_id], context[:publication_ids]} do
             {nil, _publication_id} ->
               {:error, :project_not_found}
 
-            {_project_id, nil} ->
+            {_project_id, []} ->
               {:error, :working_publication_not_found}
 
-            _ ->
-              {:ok, build(Enum.filter(rows, &is_integer(&1.resource_id)), context)}
+            {_project_id, [_publication_id, _other_publication_id | _]} ->
+              {:error, :multiple_working_publications}
+
+            {_project_id, [publication_id]} ->
+              build_context = %{project_id: context.project_id, publication_id: publication_id}
+              {:ok, build(Enum.filter(rows, &is_integer(&1.resource_id)), build_context)}
           end
         end
 
@@ -318,10 +326,17 @@ defmodule Oli.Authoring.ObjectiveCoverage do
      |> where([project, _pub, _mapping, _revision], project.id == ^project_id)}
   end
 
-  defp context_from_rows([row | _]),
-    do: %{project_id: row.project_id, publication_id: row.publication_id}
-
-  defp context_from_rows([]), do: %{}
+  defp context_from_rows(rows) when is_list(rows) do
+    %{
+      project_id: first_value(rows, :project_id),
+      publication_ids:
+        rows
+        |> Enum.map(&Map.get(&1, :publication_id))
+        |> Enum.filter(&is_integer/1)
+        |> Enum.uniq()
+        |> Enum.sort()
+    }
+  end
 
   defp normalize_row(row) do
     %{
@@ -616,7 +631,9 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   defp objective_scopes_by_id(objectives_by_id, children_by_parent) do
     {scopes_by_id, _memo} =
       Enum.reduce(Map.keys(objectives_by_id), {%{}, %{}}, fn objective_id, {scopes, memo} ->
-        {scope, memo} = objective_scope_ids(objective_id, children_by_parent, memo, MapSet.new())
+        {scope, memo, _cyclic?} =
+          objective_scope_ids(objective_id, children_by_parent, memo, MapSet.new())
+
         {Map.put(scopes, objective_id, scope), memo}
       end)
 
@@ -626,26 +643,33 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   defp objective_scope_ids(objective_id, children_by_parent, memo, visiting) do
     cond do
       Map.has_key?(memo, objective_id) ->
-        {Map.fetch!(memo, objective_id), memo}
+        {Map.fetch!(memo, objective_id), memo, false}
 
       MapSet.member?(visiting, objective_id) ->
-        {[objective_id], memo}
+        {[objective_id], memo, true}
 
       true ->
         visiting = MapSet.put(visiting, objective_id)
 
-        {child_scopes, memo} =
-          Enum.map_reduce(Map.get(children_by_parent, objective_id, []), memo, fn child_id,
-                                                                                  memo ->
-            objective_scope_ids(child_id, children_by_parent, memo, visiting)
-          end)
+        {child_scopes, memo, cyclic?} =
+          Enum.reduce(
+            Map.get(children_by_parent, objective_id, []),
+            {[], memo, false},
+            fn child_id, {scopes, memo, cyclic?} ->
+              {scope, memo, child_cyclic?} =
+                objective_scope_ids(child_id, children_by_parent, memo, visiting)
+
+              {[scope | scopes], memo, cyclic? or child_cyclic?}
+            end
+          )
 
         scope =
           [objective_id | List.flatten(child_scopes)]
           |> Enum.uniq()
           |> Enum.sort()
 
-        {scope, Map.put(memo, objective_id, scope)}
+        memo = if cyclic?, do: memo, else: Map.put(memo, objective_id, scope)
+        {scope, memo, cyclic?}
     end
   end
 
@@ -661,60 +685,91 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   end
 
   defp curriculum_descendants_by_id(curriculum_by_id, children_by_parent) do
-    Map.new(curriculum_by_id, fn {resource_id, _node} ->
-      descendants =
-        children_by_parent
-        |> Map.get(resource_id, [])
-        |> Enum.flat_map(
-          &curriculum_descendant_ids(&1, children_by_parent, MapSet.new([resource_id]))
-        )
-        |> Enum.uniq()
-        |> Enum.sort()
+    {descendants_by_id, _memo} =
+      Enum.reduce(Map.keys(curriculum_by_id), {%{}, %{}}, fn resource_id, {descendants, memo} ->
+        {scope, memo, _cyclic?} =
+          curriculum_scope_ids(resource_id, children_by_parent, memo, MapSet.new())
 
-      {resource_id, descendants}
-    end)
+        {Map.put(descendants, resource_id, List.delete(scope, resource_id)), memo}
+      end)
+
+    descendants_by_id
   end
 
-  defp curriculum_descendant_ids(resource_id, children_by_parent, visited) do
-    if MapSet.member?(visited, resource_id) do
-      []
-    else
-      visited = MapSet.put(visited, resource_id)
+  defp curriculum_scope_ids(resource_id, children_by_parent, memo, visiting) do
+    cond do
+      Map.has_key?(memo, resource_id) ->
+        {Map.fetch!(memo, resource_id), memo, false}
 
-      [
-        resource_id
-        | Enum.flat_map(
+      MapSet.member?(visiting, resource_id) ->
+        {[resource_id], memo, true}
+
+      true ->
+        visiting = MapSet.put(visiting, resource_id)
+
+        {child_scopes, memo, cyclic?} =
+          Enum.reduce(
             Map.get(children_by_parent, resource_id, []),
-            &curriculum_descendant_ids(&1, children_by_parent, visited)
+            {[], memo, false},
+            fn child_id, {scopes, memo, cyclic?} ->
+              {scope, memo, child_cyclic?} =
+                curriculum_scope_ids(child_id, children_by_parent, memo, visiting)
+
+              {[scope | scopes], memo, cyclic? or child_cyclic?}
+            end
           )
-      ]
+
+        scope =
+          [resource_id | List.flatten(child_scopes)]
+          |> Enum.uniq()
+          |> Enum.sort()
+
+        memo = if cyclic?, do: memo, else: Map.put(memo, resource_id, scope)
+        {scope, memo, cyclic?}
     end
   end
 
   defp curriculum_paths_by_id(curriculum_by_id, parents_by_child) do
-    Map.new(curriculum_by_id, fn {resource_id, _node} ->
-      {resource_id, curriculum_paths(resource_id, parents_by_child, MapSet.new())}
-    end)
+    {paths_by_id, _memo} =
+      Enum.reduce(Map.keys(curriculum_by_id), {%{}, %{}}, fn resource_id, {paths_by_id, memo} ->
+        {reverse_paths, memo, _cyclic?} =
+          curriculum_reverse_paths(resource_id, parents_by_child, memo, MapSet.new())
+
+        node_paths =
+          reverse_paths
+          |> Enum.map(&Enum.reverse/1)
+          |> Enum.sort()
+
+        {Map.put(paths_by_id, resource_id, node_paths), memo}
+      end)
+
+    paths_by_id
   end
 
-  defp curriculum_paths(resource_id, parents_by_child, visited) do
-    if MapSet.member?(visited, resource_id) do
-      [[]]
-    else
-      visited = MapSet.put(visited, resource_id)
-      parent_ids = Map.get(parents_by_child, resource_id, [])
+  defp curriculum_reverse_paths(resource_id, parents_by_child, memo, visiting) do
+    cond do
+      Map.has_key?(memo, resource_id) ->
+        {Map.fetch!(memo, resource_id), memo, false}
 
-      case parent_ids do
-        [] ->
-          [[resource_id]]
+      MapSet.member?(visiting, resource_id) ->
+        {[[]], memo, true}
 
-        _ ->
-          Enum.flat_map(parent_ids, fn parent_id ->
-            Enum.map(curriculum_paths(parent_id, parents_by_child, visited), fn path ->
-              path ++ [resource_id]
-            end)
+      true ->
+        visiting = MapSet.put(visiting, resource_id)
+        parent_ids = Map.get(parents_by_child, resource_id, [])
+
+        {parent_paths, memo, cyclic?} =
+          Enum.reduce(parent_ids, {[], memo, false}, fn parent_id, {paths, memo, cyclic?} ->
+            {parent_paths, memo, parent_cyclic?} =
+              curriculum_reverse_paths(parent_id, parents_by_child, memo, visiting)
+
+            {Enum.map(parent_paths, &[resource_id | &1]) ++ paths, memo,
+             cyclic? or parent_cyclic?}
           end)
-      end
+
+        reverse_paths = if parent_ids == [], do: [[resource_id]], else: parent_paths
+        memo = if cyclic?, do: memo, else: Map.put(memo, resource_id, reverse_paths)
+        {reverse_paths, memo, cyclic?}
     end
   end
 
