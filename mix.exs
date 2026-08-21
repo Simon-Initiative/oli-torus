@@ -9,7 +9,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: @app,
-      version: "0.34.1",
+      version: "0.34.2",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
