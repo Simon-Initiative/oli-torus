@@ -44,9 +44,14 @@ defmodule Oli.Authoring.ObjectiveCoverage do
           objectives_by_id: %{pos_integer() => map()},
           parents_by_child: %{pos_integer() => [pos_integer()]},
           children_by_parent: %{pos_integer() => [pos_integer()]},
+          objective_scope_by_id: %{pos_integer() => [pos_integer()]},
           pages_by_id: %{pos_integer() => map()},
           activities_by_id: %{pos_integer() => map()},
           curriculum_by_id: %{pos_integer() => map()},
+          curriculum_parents_by_child: %{pos_integer() => [pos_integer()]},
+          curriculum_children_by_parent: %{pos_integer() => [pos_integer()]},
+          curriculum_descendants_by_id: %{pos_integer() => [pos_integer()]},
+          curriculum_paths_by_id: %{pos_integer() => [[pos_integer()]]},
           top_level_objective_ids: [pos_integer()],
           direct_page_ids_by_objective: %{pos_integer() => [pos_integer()]},
           activity_ids_by_objective: %{pos_integer() => %{atom() => [pos_integer()]}},
@@ -66,12 +71,14 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   Loads the compact working-publication projection for a project slug or
   project struct and builds its in-memory indexes.
 
-  An existing project without indexed objective/page/activity/container rows
-  returns an empty snapshot. Invalid project arguments return an error before
-  querying the database.
+  An existing project with an empty working publication returns an empty
+  snapshot with project and publication context. Missing projects and working
+  publications return tagged errors. Invalid project arguments return an error
+  before querying the database.
   """
   @spec load(Project.t() | %{required(:id) => pos_integer()} | String.t()) ::
-          {:ok, t()} | {:error, :invalid_project}
+          {:ok, t()}
+          | {:error, :invalid_project | :project_not_found | :working_publication_not_found}
   def load(project_or_slug) do
     started_at = System.monotonic_time()
 
@@ -80,7 +87,17 @@ defmodule Oli.Authoring.ObjectiveCoverage do
         with {:ok, query} <- projection_query(project_or_slug) do
           rows = Repo.all(query)
           context = context_from_rows(rows)
-          {:ok, build(rows, context)}
+
+          case {context[:project_id], context[:publication_id]} do
+            {nil, _publication_id} ->
+              {:error, :project_not_found}
+
+            {_project_id, nil} ->
+              {:error, :working_publication_not_found}
+
+            _ ->
+              {:ok, build(Enum.filter(rows, &is_integer(&1.resource_id)), context)}
+          end
         end
 
       emit_load(result, project_or_slug, started_at)
@@ -108,7 +125,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   def projection_query(project_slug) when is_binary(project_slug) do
     {:ok,
      base_projection_query()
-     |> where([_pub, project, _mapping, _revision], project.slug == ^project_slug)}
+     |> where([project, _pub, _mapping, _revision], project.slug == ^project_slug)}
   end
 
   def projection_query(_), do: {:error, :invalid_project}
@@ -136,6 +153,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     objectives_by_id = Map.new(objectives, &{&1.resource_id, objective_summary(&1)})
     children_by_parent = children_by_parent(objectives)
     parents_by_child = parents_by_child(children_by_parent)
+    objective_scope_by_id = objective_scopes_by_id(objectives_by_id, children_by_parent)
     pages_by_id = Map.new(pages, &{&1.resource_id, page_summary(&1)})
     activities_by_id = Map.new(activities, &{&1.resource_id, activity_summary(&1)})
     direct_page_ids_by_objective = direct_page_ids_by_objective(pages)
@@ -145,6 +163,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     coverage_by_objective =
       coverage_by_objective(
         objectives_by_id,
+        objective_scope_by_id,
         children_by_parent,
         direct_page_ids_by_objective,
         activity_ids_by_objective
@@ -153,7 +172,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     details_by_objective =
       details_by_objective(
         objectives_by_id,
-        children_by_parent,
+        objective_scope_by_id,
         direct_page_ids_by_objective,
         activity_occurrences,
         pages_by_id,
@@ -163,9 +182,13 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     search_by_objective =
       search_by_objective(
         objectives_by_id,
-        children_by_parent,
+        objective_scope_by_id,
         details_by_objective
       )
+
+    curriculum_by_id = Map.new(containers ++ pages, &{&1.resource_id, curriculum_summary(&1)})
+    curriculum_children_by_parent = curriculum_children_by_parent(curriculum_by_id)
+    curriculum_parents_by_child = parents_by_child(curriculum_children_by_parent)
 
     model = %{
       project_id: context[:project_id] || first_value(normalized_rows, :project_id),
@@ -174,9 +197,16 @@ defmodule Oli.Authoring.ObjectiveCoverage do
       objectives_by_id: objectives_by_id,
       parents_by_child: parents_by_child,
       children_by_parent: children_by_parent,
+      objective_scope_by_id: objective_scope_by_id,
       pages_by_id: pages_by_id,
       activities_by_id: activities_by_id,
-      curriculum_by_id: Map.new(containers ++ pages, &{&1.resource_id, curriculum_summary(&1)}),
+      curriculum_by_id: curriculum_by_id,
+      curriculum_parents_by_child: curriculum_parents_by_child,
+      curriculum_children_by_parent: curriculum_children_by_parent,
+      curriculum_descendants_by_id:
+        curriculum_descendants_by_id(curriculum_by_id, curriculum_children_by_parent),
+      curriculum_paths_by_id:
+        curriculum_paths_by_id(curriculum_by_id, curriculum_parents_by_child),
       top_level_objective_ids: top_level_objective_ids(objectives_by_id, parents_by_child),
       direct_page_ids_by_objective: direct_page_ids_by_objective,
       activity_ids_by_objective: activity_ids_by_objective,
@@ -244,23 +274,26 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   def curriculum_pages(model, selected_ids) do
     selected_ids
     |> normalize_ids()
-    |> Enum.flat_map(&curriculum_descendants(model, &1, MapSet.new()))
+    |> Enum.flat_map(fn resource_id ->
+      [resource_id | Map.get(model.curriculum_descendants_by_id, resource_id, [])]
+    end)
     |> Enum.filter(&Map.has_key?(model.pages_by_id, &1))
     |> Enum.uniq()
     |> Enum.sort()
   end
 
   defp base_projection_query do
-    from pub in Publication,
-      join: project in Project,
-      on: project.id == pub.project_id,
-      join: mapping in PublishedResource,
+    from project in Project,
+      left_join: pub in Publication,
+      on: pub.project_id == project.id and is_nil(pub.published),
+      left_join: mapping in PublishedResource,
       on: mapping.publication_id == pub.id,
-      join: revision in Revision,
-      on: revision.id == mapping.revision_id and revision.resource_id == mapping.resource_id,
-      where: is_nil(pub.published),
-      where: revision.deleted == false,
-      where: revision.resource_type_id in ^@projection_types,
+      left_join: revision in Revision,
+      on:
+        revision.id == mapping.revision_id and
+          revision.resource_id == mapping.resource_id and
+          revision.deleted == false and
+          revision.resource_type_id in ^@projection_types,
       select: %{
         project_id: project.id,
         publication_id: pub.id,
@@ -282,7 +315,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   defp projection_query_by_id(project_id) do
     {:ok,
      base_projection_query()
-     |> where([_pub, project, _mapping, _revision], project.id == ^project_id)}
+     |> where([project, _pub, _mapping, _revision], project.id == ^project_id)}
   end
 
   defp context_from_rows([row | _]),
@@ -343,12 +376,16 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   end
 
   defp direct_page_ids_by_objective(pages) do
-    Enum.reduce(pages, %{}, fn page, acc ->
+    pages
+    |> Enum.reduce(%{}, fn page, acc ->
       Enum.reduce(objective_ids(page.objectives), acc, fn objective_id, acc ->
-        Map.update(acc, objective_id, [page.resource_id], fn page_ids ->
-          Enum.sort(Enum.uniq([page.resource_id | page_ids]))
+        Map.update(acc, objective_id, MapSet.new([page.resource_id]), fn page_ids ->
+          MapSet.put(page_ids, page.resource_id)
         end)
       end)
+    end)
+    |> Map.new(fn {objective_id, page_ids} ->
+      {objective_id, page_ids |> MapSet.to_list() |> Enum.sort()}
     end)
   end
 
@@ -364,9 +401,14 @@ defmodule Oli.Authoring.ObjectiveCoverage do
               bucket_occurrences = Map.get(objective_occurrences, bucket, %{})
 
               bucket_occurrences =
-                Map.update(bucket_occurrences, page.resource_id, [activity_id], fn activity_ids ->
-                  Enum.sort(Enum.uniq([activity_id | activity_ids]))
-                end)
+                Map.update(
+                  bucket_occurrences,
+                  page.resource_id,
+                  MapSet.new([activity_id]),
+                  fn activity_ids ->
+                    MapSet.put(activity_ids, activity_id)
+                  end
+                )
 
               Map.put(
                 acc,
@@ -379,6 +421,19 @@ defmodule Oli.Authoring.ObjectiveCoverage do
             acc
         end
       end)
+    end)
+    |> normalize_activity_occurrences()
+  end
+
+  defp normalize_activity_occurrences(activity_occurrences) do
+    Map.new(activity_occurrences, fn {objective_id, by_bucket} ->
+      {objective_id,
+       Map.new(by_bucket, fn {bucket, by_page} ->
+         {bucket,
+          Map.new(by_page, fn {page_id, activity_ids} ->
+            {page_id, activity_ids |> MapSet.to_list() |> Enum.sort()}
+          end)}
+       end)}
     end)
   end
 
@@ -393,12 +448,13 @@ defmodule Oli.Authoring.ObjectiveCoverage do
 
   defp coverage_by_objective(
          objectives_by_id,
+         objective_scope_by_id,
          children_by_parent,
          direct_page_ids_by_objective,
          activity_ids_by_objective
        ) do
     Map.new(objectives_by_id, fn {objective_id, _objective} ->
-      related_ids = objective_scope_ids(objective_id, children_by_parent)
+      related_ids = Map.fetch!(objective_scope_by_id, objective_id)
 
       page_count =
         related_ids
@@ -429,14 +485,14 @@ defmodule Oli.Authoring.ObjectiveCoverage do
 
   defp details_by_objective(
          objectives_by_id,
-         children_by_parent,
+         objective_scope_by_id,
          direct_page_ids_by_objective,
          activity_occurrences,
          pages_by_id,
          activities_by_id
        ) do
     Map.new(objectives_by_id, fn {objective_id, _objective} ->
-      related_ids = objective_scope_ids(objective_id, children_by_parent)
+      related_ids = Map.fetch!(objective_scope_by_id, objective_id)
 
       direct_page_ids =
         related_ids
@@ -476,7 +532,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
 
                   activities = Enum.map(activity_ids, &Map.fetch!(activities_by_id, &1))
 
-                  if MapSet.member?(direct_page_ids, page_id) or activity_ids != [] do
+                  if assessment_bucket(page.graded) == bucket or activity_ids != [] do
                     [%{page: page, activities: activities}]
                   else
                     []
@@ -491,10 +547,10 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     end)
   end
 
-  defp search_by_objective(objectives_by_id, children_by_parent, details_by_objective) do
+  defp search_by_objective(objectives_by_id, objective_scope_by_id, details_by_objective) do
     Map.new(objectives_by_id, fn {objective_id, _objective} ->
       related_ids =
-        objective_scope_ids(objective_id, children_by_parent)
+        Map.fetch!(objective_scope_by_id, objective_id)
         |> Enum.filter(&Map.has_key?(objectives_by_id, &1))
 
       objective_matches =
@@ -557,26 +613,69 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     end)
   end
 
-  defp objective_scope_ids(objective_id, children_by_parent),
-    do: objective_scope_ids(objective_id, children_by_parent, MapSet.new())
+  defp objective_scopes_by_id(objectives_by_id, children_by_parent) do
+    {scopes_by_id, _memo} =
+      Enum.reduce(Map.keys(objectives_by_id), {%{}, %{}}, fn objective_id, {scopes, memo} ->
+        {scope, memo} = objective_scope_ids(objective_id, children_by_parent, memo, MapSet.new())
+        {Map.put(scopes, objective_id, scope), memo}
+      end)
 
-  defp objective_scope_ids(objective_id, children_by_parent, visited) do
-    if MapSet.member?(visited, objective_id) do
-      []
-    else
-      visited = MapSet.put(visited, objective_id)
+    scopes_by_id
+  end
 
-      [
-        objective_id
-        | Enum.flat_map(
-            Map.get(children_by_parent, objective_id, []),
-            &objective_scope_ids(&1, children_by_parent, visited)
-          )
-      ]
+  defp objective_scope_ids(objective_id, children_by_parent, memo, visiting) do
+    cond do
+      Map.has_key?(memo, objective_id) ->
+        {Map.fetch!(memo, objective_id), memo}
+
+      MapSet.member?(visiting, objective_id) ->
+        {[objective_id], memo}
+
+      true ->
+        visiting = MapSet.put(visiting, objective_id)
+
+        {child_scopes, memo} =
+          Enum.map_reduce(Map.get(children_by_parent, objective_id, []), memo, fn child_id,
+                                                                                  memo ->
+            objective_scope_ids(child_id, children_by_parent, memo, visiting)
+          end)
+
+        scope =
+          [objective_id | List.flatten(child_scopes)]
+          |> Enum.uniq()
+          |> Enum.sort()
+
+        {scope, Map.put(memo, objective_id, scope)}
     end
   end
 
-  defp curriculum_descendants(model, resource_id, visited) do
+  defp curriculum_children_by_parent(curriculum_by_id) do
+    Map.new(curriculum_by_id, fn {resource_id, node} ->
+      children =
+        node.children
+        |> Enum.filter(&Map.has_key?(curriculum_by_id, &1))
+        |> Enum.sort()
+
+      {resource_id, children}
+    end)
+  end
+
+  defp curriculum_descendants_by_id(curriculum_by_id, children_by_parent) do
+    Map.new(curriculum_by_id, fn {resource_id, _node} ->
+      descendants =
+        children_by_parent
+        |> Map.get(resource_id, [])
+        |> Enum.flat_map(
+          &curriculum_descendant_ids(&1, children_by_parent, MapSet.new([resource_id]))
+        )
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      {resource_id, descendants}
+    end)
+  end
+
+  defp curriculum_descendant_ids(resource_id, children_by_parent, visited) do
     if MapSet.member?(visited, resource_id) do
       []
     else
@@ -585,10 +684,37 @@ defmodule Oli.Authoring.ObjectiveCoverage do
       [
         resource_id
         | Enum.flat_map(
-            Map.get(model.curriculum_by_id, resource_id, %{}) |> Map.get(:children, []),
-            &curriculum_descendants(model, &1, visited)
+            Map.get(children_by_parent, resource_id, []),
+            &curriculum_descendant_ids(&1, children_by_parent, visited)
           )
       ]
+    end
+  end
+
+  defp curriculum_paths_by_id(curriculum_by_id, parents_by_child) do
+    Map.new(curriculum_by_id, fn {resource_id, _node} ->
+      {resource_id, curriculum_paths(resource_id, parents_by_child, MapSet.new())}
+    end)
+  end
+
+  defp curriculum_paths(resource_id, parents_by_child, visited) do
+    if MapSet.member?(visited, resource_id) do
+      [[]]
+    else
+      visited = MapSet.put(visited, resource_id)
+      parent_ids = Map.get(parents_by_child, resource_id, [])
+
+      case parent_ids do
+        [] ->
+          [[resource_id]]
+
+        _ ->
+          Enum.flat_map(parent_ids, fn parent_id ->
+            Enum.map(curriculum_paths(parent_id, parents_by_child, visited), fn path ->
+              path ++ [resource_id]
+            end)
+          end)
+      end
     end
   end
 
