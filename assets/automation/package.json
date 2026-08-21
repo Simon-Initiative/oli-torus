@@ -7,7 +7,7 @@
     "test-config": "npm run pw config.spec.ts",
     "test-config:headed": "npm run test-config -- --headed",
     "test-dot-smoke": "npm run pw dot-chatbot.spec.ts",
-    "test-oauth-logins": "npm run pw -- --grep @oauth --headed --reporter=line",
+    "test-oauth-logins": "npm run pw oauth-login.spec.ts",
     "test-useraccounts": "npm run pw user-accounts.spec",
     "test-all": "npm run pw user-accounts.spec course-authoring.spec.ts",
     "show-report": "npx playwright show-report",

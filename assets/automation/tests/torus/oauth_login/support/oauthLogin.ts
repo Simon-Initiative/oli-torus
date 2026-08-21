@@ -20,15 +20,28 @@ export async function completeOAuthProviderLogin(
   const providerError = provider.selectors.error_message
     ? page.locator(provider.selectors.error_message).first()
     : undefined;
+  const twoFactorChallenge = page.locator(provider.selectors.two_factor_challenge).first();
   const emailInput = page.locator(provider.selectors.email_input);
 
-  await waitForProviderElement(emailInput, providerError, timeout, 'email prompt');
+  await waitForProviderElement(
+    emailInput,
+    providerError,
+    twoFactorChallenge,
+    timeout,
+    'email prompt',
+  );
   await emailInput.fill(account.email);
   await page.locator(provider.selectors.email_submit).click();
 
   const passwordInput = page.locator(provider.selectors.password_input);
 
-  await waitForProviderElement(passwordInput, providerError, timeout, 'password prompt');
+  await waitForProviderElement(
+    passwordInput,
+    providerError,
+    twoFactorChallenge,
+    timeout,
+    'password prompt',
+  );
   await passwordInput.fill(account.password);
 
   // Start observing before submit so a fast callback redirect cannot be missed.
@@ -45,6 +58,7 @@ export async function completeOAuthProviderLogin(
   const outcome = await Promise.race([
     callbackResponsePromise.then((response) => ({ kind: 'callback' as const, response })),
     waitForProviderError(providerError, timeout),
+    waitForTwoFactorChallenge(twoFactorChallenge, timeout),
     ...(consentSelector
       ? [
           page
@@ -60,6 +74,10 @@ export async function completeOAuthProviderLogin(
     return throwProviderError(providerError, 'authentication');
   }
 
+  if (outcome.kind === 'two-factor') {
+    return throwTwoFactorChallenge();
+  }
+
   if (outcome.kind === 'consent') {
     if (!consentSelector) {
       throw new Error('OAuth provider reached consent without a configured consent selector');
@@ -72,10 +90,15 @@ export async function completeOAuthProviderLogin(
     const postConsentOutcome = await Promise.race([
       callbackResponsePromise.then((response) => ({ kind: 'callback' as const, response })),
       waitForProviderError(providerError, timeout),
+      waitForTwoFactorChallenge(twoFactorChallenge, timeout),
     ]);
 
     if (postConsentOutcome.kind === 'error') {
       return throwProviderError(providerError, 'consent');
+    }
+
+    if (postConsentOutcome.kind === 'two-factor') {
+      return throwTwoFactorChallenge();
     }
 
     return postConsentOutcome.response;
@@ -87,16 +110,22 @@ export async function completeOAuthProviderLogin(
 async function waitForProviderElement(
   element: ReturnType<Page['locator']>,
   providerError: ReturnType<Page['locator']> | undefined,
+  twoFactorChallenge: ReturnType<Page['locator']>,
   timeout: number,
   phase: string,
 ) {
   const outcome = await Promise.race([
     element.waitFor({ state: 'visible', timeout }).then(() => 'element' as const),
     waitForProviderError(providerError, timeout).then(() => 'error' as const),
+    waitForTwoFactorChallenge(twoFactorChallenge, timeout).then(() => 'two-factor' as const),
   ]);
 
   if (outcome === 'error') {
     await throwProviderError(providerError, phase);
+  }
+
+  if (outcome === 'two-factor') {
+    throwTwoFactorChallenge();
   }
 }
 
@@ -111,6 +140,21 @@ function waitForProviderError(
   return providerError
     .waitFor({ state: 'visible', timeout })
     .then(() => ({ kind: 'error' as const }));
+}
+
+function waitForTwoFactorChallenge(
+  twoFactorChallenge: ReturnType<Page['locator']>,
+  timeout: number,
+) {
+  return twoFactorChallenge
+    .waitFor({ state: 'visible', timeout })
+    .then(() => ({ kind: 'two-factor' as const }));
+}
+
+function throwTwoFactorChallenge(): never {
+  throw new Error(
+    'Google displayed the "Verify it\'s you" page. The OAuth test account must have 2FA disabled.',
+  );
 }
 
 async function throwProviderError(

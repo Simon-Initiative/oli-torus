@@ -38,6 +38,7 @@ export type OAuthProviderParameters = {
     email_submit: string;
     password_input: string;
     password_submit: string;
+    two_factor_challenge: string;
     consent_submit?: string;
     error_message?: string;
   };
@@ -51,6 +52,7 @@ export const OAUTH_PROVIDER_PARAMETERS: OAuthProviderParameters = {
     email_submit: '#identifierNext',
     password_input: 'input[type="password"]:not([aria-hidden="true"]):not([name="hiddenPassword"])',
     password_submit: '#passwordNext',
+    two_factor_challenge: 'text=/verify it.s you/i',
     consent_submit: 'button:has-text("Continue")',
     error_message:
       'text=/couldn.t find this account|wrong password|browser or app may not be secure|couldn.t sign you in/i',

@@ -62,7 +62,7 @@ tests:
         account_label: Author
 ```
 
-The dedicated provider accounts must be linked to the corresponding Torus account class and configured without MFA, CAPTCHA, recovery, or other interactive challenges. Keep them least-privileged and isolated from production data.
+The dedicated provider accounts must be linked to the corresponding Torus account class and configured without MFA, CAPTCHA, recovery, or other interactive challenges. If Google displays the “Verify it’s you” page, the test aborts with a message explaining that the account must have 2FA disabled. Keep the accounts least-privileged and isolated from production data.
 
 #### One-time automation setup
 
