@@ -95,6 +95,7 @@ export const LearningObjectivesEditor = ({
   const objectives = resourceContext.learningObjectives || [];
   const [pages, setPages] = useState<Persistence.Page[]>([]);
   const [pagesLoadFailed, setPagesLoadFailed] = useState(false);
+  const [emptyWarningDismissed, setEmptyWarningDismissed] = useState(false);
   const hasRecommendationIds = contentItem.learning_objectives.some(
     (config) => config.revisit_pages.length > 0 || config.practice_pages.length > 0,
   );
@@ -149,6 +150,10 @@ export const LearningObjectivesEditor = ({
     () => groupObjectives(orderedObjectives, includeSubObjectives),
     [includeSubObjectives, orderedObjectives],
   );
+
+  useEffect(() => {
+    setEmptyWarningDismissed(false);
+  }, [contentItem.id, objectiveGroups.length]);
 
   const editContent = (updates: Partial<LearningObjectivesContent>) =>
     onEdit({ ...contentItem, ...updates });
@@ -312,14 +317,9 @@ export const LearningObjectivesEditor = ({
             </div>
           )}
 
-          {objectiveGroups.length === 0 ? (
-            <div className="alert alert-warning learning-objectives-editor__warning" role="alert">
-              <strong>Warning</strong>
-              <span>
-                There are no learning objectives attached to activities in this container.
-              </span>
-            </div>
-          ) : (
+          {objectiveGroups.length === 0 && !emptyWarningDismissed ? (
+            <EmptyObjectivesWarning onDismiss={() => setEmptyWarningDismissed(true)} />
+          ) : objectiveGroups.length > 0 ? (
             <ul className="learning-objectives-editor__list">
               {objectiveGroups.map((group) => (
                 <ObjectiveCard
@@ -336,7 +336,7 @@ export const LearningObjectivesEditor = ({
                 />
               ))}
             </ul>
-          )}
+          ) : null}
 
           <ProficiencyExplanation />
         </div>
@@ -344,6 +344,44 @@ export const LearningObjectivesEditor = ({
     </ContentBlock>
   );
 };
+
+const EmptyObjectivesWarning = ({ onDismiss }: { onDismiss: () => void }) => (
+  <div
+    className="alert alert-warning bg-Fill-Accent-fill-accent-orange learning-objectives-editor__warning learning-objectives-editor__empty-warning"
+    role="alert"
+  >
+    <svg
+      className="learning-objectives-editor__empty-warning-icon"
+      width="15"
+      height="13"
+      viewBox="0 0 15 13"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M7.29133 4.84648V7.51315M7.29133 9.51315H7.29716M6.2 1.24048L0.795998 10.2631C0.684595 10.4561 0.625643 10.6748 0.625005 10.8976C0.624367 11.1204 0.682066 11.3394 0.792362 11.533C0.902658 11.7265 1.06171 11.8878 1.25369 12.0008C1.44568 12.1139 1.6639 12.1746 1.88666 12.1771H12.696C12.9187 12.1746 13.1368 12.1138 13.3287 12.0008C13.5206 11.8878 13.6795 11.7266 13.7898 11.5331C13.9001 11.3397 13.9578 11.1207 13.9573 10.8981C13.9567 10.6754 13.8979 10.4567 13.7867 10.2638L8.38267 1.23981C8.26897 1.05215 8.1088 0.896976 7.91763 0.789278C7.72646 0.681581 7.51075 0.625 7.29133 0.625C7.07191 0.625 6.8562 0.681581 6.66503 0.789278C6.47386 0.896976 6.31369 1.05282 6.2 1.24048Z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+    <div className="learning-objectives-editor__empty-warning-copy">
+      <strong>Warning</strong>
+      <span>There are no learning objectives attached to activities in this container.</span>
+    </div>
+    <button
+      type="button"
+      className="learning-objectives-editor__empty-warning-close"
+      aria-label="Dismiss warning"
+      onClick={onDismiss}
+    >
+      <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+);
 
 type ObjectiveGroup = {
   objective: ResolvedLearningObjective;

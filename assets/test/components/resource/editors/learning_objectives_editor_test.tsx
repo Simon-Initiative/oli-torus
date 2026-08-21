@@ -520,12 +520,31 @@ describe('LearningObjectivesEditor', () => {
     const props = defaultEditorProps(element());
     props.resourceContext = resourceContext([]);
 
-    render(<LearningObjectivesEditor {...props} />);
+    const { container } = render(<LearningObjectivesEditor {...props} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Warning');
-    expect(screen.getByRole('alert')).toHaveTextContent(
+    const warning = screen.getByRole('alert');
+
+    expect(warning).toHaveTextContent('Warning');
+    expect(warning).toHaveTextContent(
       'There are no learning objectives attached to activities in this container.',
     );
+    expect(warning).toHaveClass('bg-Fill-Accent-fill-accent-orange');
+    expect(
+      container.querySelector('svg.learning-objectives-editor__empty-warning-icon path'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dismiss warning' })).toBeInTheDocument();
+    expect(screen.getByText('What is proficiency and how is it estimated?')).toBeInTheDocument();
+  });
+
+  it('dismisses the empty learning objectives warning without removing the base panel content', () => {
+    const props = defaultEditorProps(element());
+    props.resourceContext = resourceContext([]);
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss warning' }));
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByText('What is proficiency and how is it estimated?')).toBeInTheDocument();
   });
 });
