@@ -176,14 +176,77 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
         })
 
       html = render(view)
+      page_text = html |> Floki.parse_document!() |> Floki.text() |> String.replace(~r/\s+/, " ")
 
+      assert page_text =~
+               "Look at student proficiency by learning objective to identify where to focus instruction and support students."
+
+      assert html =~ "Low Proficiency Learning Objectives"
+      assert html =~ "Low Proficiency Sub-Objectives"
       assert html =~ "LO.02"
       assert html =~ "Sub.LO.2a"
       assert html =~ "Sub.LO.2b"
       assert html =~ "Sub.LO.2c"
 
       assert card_text(html, "low_proficiency_outcomes") =~ "1"
+      assert card_text(html, "low_proficiency_outcomes") =~ "Learning objective"
       assert card_text(html, "low_proficiency_skills") =~ "1"
+      assert card_text(html, "low_proficiency_skills") =~ "Sub-objective"
+
+      assert has_element?(
+               view,
+               ~s(button[phx-value-selected="low_proficiency_outcomes"][aria-pressed="true"]),
+               "Low Proficiency Learning Objectives"
+             )
+    end
+
+    test "renders zero counts in low proficiency summary filters", %{conn: conn} do
+      objectives = [
+        %{
+          resource_id: 1,
+          title: "LO.01",
+          objective: "LO.01",
+          subobjective: nil,
+          student_proficiency_obj: "High",
+          student_proficiency_subobj: nil,
+          student_proficiency_obj_dist: %{},
+          container_ids: [10],
+          related_activities_count: 0
+        },
+        %{
+          resource_id: 2,
+          title: "Sub.LO.1a",
+          objective: "LO.01",
+          objective_resource_id: 1,
+          subobjective: "Sub.LO.1a",
+          student_proficiency_obj: "High",
+          student_proficiency_subobj: "Medium",
+          student_proficiency_obj_dist: %{},
+          student_proficiency_subobj_dist: %{},
+          container_ids: [10],
+          related_activities_count: 0
+        }
+      ]
+
+      {:ok, _view, html} =
+        live_component_isolated(conn, LearningObjectives, %{
+          id: "learning-objectives-zero-counts-test",
+          objectives_tab: %{objectives: objectives, navigator_items: []},
+          params: %{},
+          section_slug: "test-section",
+          section_id: 1,
+          section_title: "Test Section",
+          current_user: %{email: "instructor@example.edu"},
+          patch_url_type: :instructor_dashboard,
+          student_id: nil,
+          view: :insights,
+          v25_migration: :done
+        })
+
+      assert card_text(html, "low_proficiency_outcomes") =~ "0"
+      assert card_text(html, "low_proficiency_outcomes") =~ "Learning objectives"
+      assert card_text(html, "low_proficiency_skills") =~ "0"
+      assert card_text(html, "low_proficiency_skills") =~ "Sub-objectives"
     end
 
     test "keeps the targeted parent objective visible for tile deep-link context", %{conn: conn} do
@@ -473,7 +536,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
 
   defp card_text(html, value) do
     {:ok, document} = Floki.parse_document(html)
-    [card] = Floki.find(document, ~s(div[phx-value-selected="#{value}"]))
+    [card] = Floki.find(document, ~s(button[phx-value-selected="#{value}"]))
     Floki.text(card)
   end
 

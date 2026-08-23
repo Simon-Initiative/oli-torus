@@ -1431,7 +1431,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       # Filter by low scores clicking on the card
       view
-      |> element("div[phx-value-selected=\"low_scores\"]")
+      |> element("button[phx-value-selected='low_scores']")
       |> render_click()
 
       # After filter: only Page 2 is shown
@@ -1474,7 +1474,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       # Filter by low progress clicking on the card
       view
-      |> element("div[phx-value-selected=\"low_progress\"]")
+      |> element("button[phx-value-selected='low_progress']")
       |> render_click()
 
       # After filter: Page 1 and Page 2 are shown
@@ -1533,7 +1533,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       # Filter by low or no attempts clicking on the card
       view
-      |> element("div[phx-value-selected=\"low_or_no_attempts\"]")
+      |> element("button[phx-value-selected='low_or_no_attempts']")
       |> render_click()
 
       # After filter: Page 1 and Page 2 are shown

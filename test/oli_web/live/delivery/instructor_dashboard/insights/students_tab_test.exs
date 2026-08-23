@@ -856,33 +856,33 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
       # Low Progress card it should have 3 students
-      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~
+      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~
                "Low Progress"
 
-      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~ "3"
-      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~ "Students"
+      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~ "3"
+      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~ "Students"
 
       # Low Proficiency card it should have 0 students
-      assert element(view, "div[phx-value-selected='low_proficiency']") |> render() =~
+      assert element(view, "button[phx-value-selected='low_proficiency']") |> render() =~
                "Low Proficiency"
 
-      assert element(view, "div[phx-value-selected='low_proficiency']") |> render() =~ "0"
+      assert element(view, "button[phx-value-selected='low_proficiency']") |> render() =~ "0"
 
-      assert element(view, "div[phx-value-selected='low_proficiency']") |> render() =~
+      assert element(view, "button[phx-value-selected='low_proficiency']") |> render() =~
                "Students"
 
       # Zero Interaction in a week card it should have 2 students
-      assert element(view, "div[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
+      assert element(view, "button[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
                "Zero interaction in a week"
 
-      assert element(view, "div[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
+      assert element(view, "button[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
                "0"
 
-      assert element(view, "div[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
+      assert element(view, "button[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
                "Students"
 
       ## Filtering by Low Progress
-      element(view, "div[phx-value-selected='low_progress']") |> render_click()
+      element(view, "button[phx-value-selected='low_progress']") |> render_click()
 
       assert has_element?(view, "table tr td div a", user_2.family_name)
       assert has_element?(view, "table tr td div a", user_3.family_name)
@@ -890,13 +890,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       refute has_element?(view, "table tr td div a", user_1.family_name)
 
       ## Filtering by Low Proficiency
-      element(view, "div[phx-value-selected='low_proficiency']") |> render_click()
+      element(view, "button[phx-value-selected='low_proficiency']") |> render_click()
 
       assert has_element?(view, "p", "None exist")
 
       ## Filtering by Zero Interaction in a week
 
-      element(view, "div[phx-value-selected='zero_interaction_in_a_week']") |> render_click()
+      element(view, "button[phx-value-selected='zero_interaction_in_a_week']") |> render_click()
 
       refute has_element?(view, "table tr td div a", user_1.family_name)
       refute has_element?(view, "table tr td div a", user_2.family_name)
@@ -943,14 +943,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
       # Low Progress card it should have 3 students
-      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~
+      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~
                "Low Progress"
 
-      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~ "3"
-      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~ "Students"
+      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~ "3"
+      assert element(view, "button[phx-value-selected='low_progress']") |> render() =~ "Students"
 
       ## Select Low Progress card
-      element(view, "div[phx-value-selected='low_progress']") |> render_click()
+      element(view, "button[phx-value-selected='low_progress']") |> render_click()
 
       ## Check that only 3 students are displayed
       assert has_element?(view, "table tr td div a", user_2.family_name)
@@ -959,7 +959,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       refute has_element?(view, "table tr td div a", user_1.family_name)
 
       ## Click again to deselect Low Progress card
-      element(view, "div[phx-value-selected='low_progress']") |> render_click()
+      element(view, "button[phx-value-selected='low_progress']") |> render_click()
 
       ## Check that all students are displayed
       assert has_element?(view, "table tr td div a", user_2.family_name)
@@ -1041,7 +1041,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         )
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
+      element(view, "button[phx-value-selected='zero_student_progress']") |> render_click()
 
       ## Click on Unit 2 container
       element(

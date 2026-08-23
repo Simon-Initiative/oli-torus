@@ -202,7 +202,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       # Verify the card is initially not selected
       card_html_before =
         view
-        |> element("div[phx-value-selected='high_progress_low_proficiency']")
+        |> element("button[phx-value-selected='high_progress_low_proficiency']")
         |> render()
 
       # Check that selected state classes are not present
@@ -229,7 +229,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       # Verify the card is marked as selected
       card_html =
         view
-        |> element("div[phx-value-selected='high_progress_low_proficiency']")
+        |> element("button[phx-value-selected='high_progress_low_proficiency']")
         |> render()
 
       assert card_html =~ "bg-[#F2F9FF]"
