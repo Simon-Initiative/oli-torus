@@ -23,6 +23,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   @type row :: %{
           required(:project_id) => pos_integer(),
           required(:publication_id) => pos_integer(),
+          optional(:root_resource_id) => pos_integer() | nil,
           required(:revision_id) => pos_integer(),
           required(:resource_id) => pos_integer(),
           required(:resource_type_id) => pos_integer(),
@@ -31,6 +32,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
           optional(:deleted) => boolean(),
           optional(:objectives) => map() | nil,
           optional(:children) => list() | nil,
+          optional(:ordered_children) => list() | nil,
           optional(:graded) => boolean() | nil,
           optional(:activity_refs) => list() | nil,
           optional(:scope) => atom() | String.t() | nil,
@@ -40,6 +42,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   @type t :: %{
           project_id: pos_integer() | nil,
           publication_id: pos_integer() | nil,
+          root_resource_id: pos_integer() | nil,
           rows_by_type: %{pos_integer() => [row()]},
           objectives_by_id: %{pos_integer() => map()},
           parents_by_child: %{pos_integer() => [pos_integer()]},
@@ -103,7 +106,12 @@ defmodule Oli.Authoring.ObjectiveCoverage do
               {:error, :multiple_working_publications}
 
             {_project_id, [publication_id]} ->
-              build_context = %{project_id: context.project_id, publication_id: publication_id}
+              build_context = %{
+                project_id: context.project_id,
+                publication_id: publication_id,
+                root_resource_id: context.root_resource_id
+              }
+
               {:ok, build(Enum.filter(rows, &is_integer(&1.resource_id)), build_context)}
           end
         end
@@ -201,6 +209,8 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     model = %{
       project_id: context[:project_id] || first_value(normalized_rows, :project_id),
       publication_id: context[:publication_id] || first_value(normalized_rows, :publication_id),
+      root_resource_id:
+        context[:root_resource_id] || first_value(normalized_rows, :root_resource_id),
       rows_by_type: rows_by_type,
       objectives_by_id: objectives_by_id,
       parents_by_child: parents_by_child,
@@ -305,6 +315,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
       select: %{
         project_id: project.id,
         publication_id: pub.id,
+        root_resource_id: pub.root_resource_id,
         revision_id: revision.id,
         resource_id: revision.resource_id,
         resource_type_id: revision.resource_type_id,
@@ -329,6 +340,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   defp context_from_rows(rows) when is_list(rows) do
     %{
       project_id: first_value(rows, :project_id),
+      root_resource_id: first_value(rows, :root_resource_id),
       publication_ids:
         rows
         |> Enum.map(&Map.get(&1, :publication_id))
@@ -342,6 +354,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     %{
       project_id: Map.get(row, :project_id),
       publication_id: Map.get(row, :publication_id),
+      root_resource_id: Map.get(row, :root_resource_id),
       revision_id: Map.get(row, :revision_id),
       resource_id: Map.get(row, :resource_id),
       resource_type_id: Map.get(row, :resource_type_id),
@@ -350,6 +363,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
       deleted: Map.get(row, :deleted, false) == true,
       objectives: normalize_map(Map.get(row, :objectives)),
       children: normalize_ids(Map.get(row, :children)),
+      ordered_children: normalize_ordered_ids(Map.get(row, :children)),
       graded: Map.get(row, :graded, false) == true,
       activity_refs: normalize_ids(Map.get(row, :activity_refs)),
       scope: Map.get(row, :scope),
@@ -387,7 +401,15 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   end
 
   defp curriculum_summary(row) do
-    Map.take(row, [:resource_id, :revision_id, :slug, :title, :children])
+    Map.take(row, [
+      :resource_id,
+      :resource_type_id,
+      :revision_id,
+      :slug,
+      :title,
+      :children,
+      :ordered_children
+    ])
   end
 
   defp direct_page_ids_by_objective(pages) do
@@ -896,6 +918,11 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     do: value |> Enum.filter(&is_integer/1) |> Enum.uniq() |> Enum.sort()
 
   defp normalize_ids(_), do: []
+
+  defp normalize_ordered_ids(value) when is_list(value),
+    do: value |> Enum.filter(&is_integer/1) |> Enum.uniq()
+
+  defp normalize_ordered_ids(_), do: []
 
   defp first_value([row | _], key), do: Map.get(row, key)
   defp first_value([], _key), do: nil

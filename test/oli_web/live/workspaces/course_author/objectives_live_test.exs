@@ -211,6 +211,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(view, "p", "None exist")
 
+      assert has_element?(
+               view,
+               "#download-objectives-csv[download='#{project.slug}_learning_objectives.csv']",
+               "Download CSV"
+             )
+
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
@@ -268,6 +274,50 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
              |> element("#accordion article:first-child")
              |> render() =~
                "Second Objective"
+
+      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
+      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+    end
+
+    test "download link preserves the applied search and sort without pagination", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      create_objective(project, publication, "first_obj", "First Objective")
+      create_objective(project, publication, "second_obj", "Second Objective")
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element("input[phx-blur='change_search']")
+      |> render_blur(%{value: "first"})
+
+      view
+      |> element("button[phx-click='apply_search']")
+      |> render_click()
+
+      view
+      |> element("form[phx-change='sort']")
+      |> render_change(%{sort_by: "title"})
+
+      href =
+        view
+        |> element("#download-objectives-csv")
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.attribute("href")
+        |> hd()
+
+      assert href |> URI.parse() |> Map.fetch!(:path) ==
+               "/workspaces/course_author/#{project.slug}/objectives.csv"
+
+      export_params = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+
+      assert export_params["query"] == "first"
+      assert export_params["sort_by"] == "title"
+      assert export_params["sort_order"] == "desc"
+      refute Map.has_key?(export_params, "offset")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}

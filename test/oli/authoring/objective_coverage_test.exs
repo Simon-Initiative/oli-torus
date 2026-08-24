@@ -123,10 +123,16 @@ defmodule Oli.Authoring.ObjectiveCoverageTest do
         row(ResourceType.id_for_container(), nested_container_id, children: [page_id])
       ]
 
-      model = ObjectiveCoverage.build(rows, %{project_id: 1, publication_id: 2})
+      model =
+        ObjectiveCoverage.build(rows, %{
+          project_id: 1,
+          publication_id: 2,
+          root_resource_id: container_id
+        })
 
       assert model.project_id == 1
       assert model.publication_id == 2
+      assert model.root_resource_id == container_id
       assert model.objectives_by_id[objective_id].children == [child_id]
       assert model.children_by_parent == %{objective_id => [child_id], child_id => []}
       assert model.parents_by_child == %{child_id => [objective_id]}
@@ -209,6 +215,7 @@ defmodule Oli.Authoring.ObjectiveCoverageTest do
       assert {:ok, model} = ObjectiveCoverage.load(project.slug)
       assert model.project_id == project.id
       assert is_integer(model.publication_id)
+      assert is_integer(model.root_resource_id)
       assert model.rows_by_type != %{}
     end
 
@@ -290,6 +297,7 @@ defmodule Oli.Authoring.ObjectiveCoverageTest do
       assert {:ok, empty_model} = ObjectiveCoverage.load(project.slug)
       assert empty_model.project_id == project.id
       assert empty_model.publication_id == model.publication_id
+      assert empty_model.root_resource_id == model.root_resource_id
       assert empty_model.rows_by_type == %{}
     end
 

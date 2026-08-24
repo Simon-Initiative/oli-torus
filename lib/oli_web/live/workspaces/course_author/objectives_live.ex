@@ -89,7 +89,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
     </FilterBox.render>
 
-    <div class="flex justify-end">
+    <div class="flex flex-wrap justify-end gap-3">
+      <.link
+        id="download-objectives-csv"
+        href={
+          ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
+        }
+        download={"#{@project.slug}_learning_objectives.csv"}
+        class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md border border-Fill-Buttons-fill-primary bg-Background-bg-secondary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-button transition hover:bg-Fill-Buttons-fill-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      >
+        <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
+          <Icons.download stroke_class="stroke-current" />
+        </span>
+        Download CSV
+      </.link>
+
       <button
         type="button"
         class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
@@ -222,6 +236,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     </a>
     to learn more about the importance of attaching learning objectives to pages and activities.
     """
+  end
+
+  defp csv_export_params(params) do
+    Map.take(params, ["query", "filter", "sort_by", "sort_order"])
   end
 
   defp new_modal(form, socket) do

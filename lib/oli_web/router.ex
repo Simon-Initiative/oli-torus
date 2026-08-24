@@ -1209,6 +1209,12 @@ defmodule OliWeb.Router do
     end
   end
 
+  scope "/workspaces/course_author", OliWeb do
+    pipe_through([:browser, :authoring_protected, :authorize_project])
+
+    get("/:project_id/objectives.csv", ObjectivesCsvController, :download)
+  end
+
   scope "/workspaces", OliWeb.Workspaces do
     pipe_through([:browser, :delivery_protected])
 
