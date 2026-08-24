@@ -3,7 +3,18 @@ defmodule Oli.Delivery.Snapshots.WorkerTest do
 
   import Oli.Factory
 
+  alias Oli.Analytics.Common.Pipeline
+
+  alias Oli.Analytics.Summary.{
+    ResourcePartResponse,
+    ResourceSummary,
+    ResponseSummary,
+    StudentResponse
+  }
+
   alias Oli.Delivery.Snapshots.Worker
+  alias Oli.LearningModel.{AttemptApplication, LearningState, PriorActivityPartEvidence}
+  alias Oli.LearningModel.LktAoaFixtures
 
   describe "perform_now/3" do
     test "returns :ok when part attempts are in :submitted state (not :evaluated)" do
@@ -69,5 +80,129 @@ defmodule Oli.Delivery.Snapshots.WorkerTest do
       # Should return :ok because no evaluated part attempts were found
       assert result == :ok
     end
+
+    test "naive sections preserve summary writes without creating LKT operational rows" do
+      %{section: section, group: group} =
+        LktAoaFixtures.lkt_fixture(%{section_attrs: [learning_model_version: :naive]})
+
+      assert Worker.perform_now(attempt_guids(group), section.slug) == :ok
+
+      assert Repo.aggregate(AttemptApplication, :count) == 0
+      assert Repo.aggregate(PriorActivityPartEvidence, :count) == 0
+      assert Repo.aggregate(LearningState, :count) == 0
+      assert_summary_rows_created()
+    end
+
+    test "lkt_aoa sections apply learning state before preserving summary writes" do
+      %{section: section, group: group, objectives: [objective], user: user} =
+        LktAoaFixtures.lkt_fixture()
+
+      assert Worker.perform_now(attempt_guids(group), section.slug) == :ok
+
+      assert Repo.aggregate(AttemptApplication, :count) == 1
+      assert Repo.aggregate(PriorActivityPartEvidence, :count) == 1
+      assert_summary_rows_created()
+
+      state =
+        Repo.get_by!(LearningState,
+          section_id: section.id,
+          user_id: user.id,
+          learning_objective_id: objective.id
+        )
+
+      assert state.attempt_count == 1
+      assert state.unique_activity_part_count == 1
+    end
+
+    test "lkt_aoa bulk input supports multiple parts and multi-objective mappings" do
+      %{section: section, group: group} =
+        LktAoaFixtures.lkt_fixture(%{
+          objectives: [%{}, %{}],
+          part_attempts: [
+            %{part_id: "part-1", objective_indexes: [0, 1], response: %{"input" => "A"}},
+            %{part_id: "part-2", objective_indexes: [0], response: %{"input" => "B"}}
+          ]
+        })
+
+      assert Worker.perform_now(attempt_guids(group), section.slug) == :ok
+
+      assert Repo.aggregate(AttemptApplication, :count) == 2
+      assert Repo.aggregate(PriorActivityPartEvidence, :count) == 2
+      assert Repo.aggregate(LearningState, :count) == 2
+      assert Repo.aggregate(ResourcePartResponse, :count) == 2
+      assert Repo.aggregate(StudentResponse, :count) == 2
+    end
+
+    test "controlled LKT failure prevents summary writes and remains retryable" do
+      %{section: section, group: group} =
+        LktAoaFixtures.lkt_fixture(%{publish_objectives?: false})
+
+      assert {:error, {:missing_published_objective_revisions, [_objective_id]}} =
+               Worker.perform_now(attempt_guids(group), section.slug)
+
+      assert Repo.aggregate(AttemptApplication, :count) == 0
+      assert Repo.aggregate(PriorActivityPartEvidence, :count) == 0
+      assert Repo.aggregate(LearningState, :count) == 0
+      assert Repo.aggregate(ResourceSummary, :count) == 0
+      assert Repo.aggregate(ResponseSummary, :count) == 0
+    end
+
+    test "retry after downstream summary failure does not apply LKT state twice" do
+      %{section: section, group: group, user: user, objectives: [objective]} =
+        LktAoaFixtures.lkt_fixture()
+
+      Ecto.Adapters.SQL.query!(
+        Repo,
+        """
+        ALTER TABLE resource_summary
+        ADD CONSTRAINT resource_summary_phase4_forced_failure
+        CHECK (num_attempts = 0)
+        NOT VALID
+        """,
+        []
+      )
+
+      assert {:error, %Pipeline{errors: [_ | _]}} =
+               Worker.perform_now(attempt_guids(group), section.slug)
+
+      state =
+        Repo.get_by!(LearningState,
+          section_id: section.id,
+          user_id: user.id,
+          learning_objective_id: objective.id
+        )
+
+      assert state.attempt_count == 1
+      assert Repo.aggregate(AttemptApplication, :count) == 1
+      assert Repo.aggregate(ResourceSummary, :count) == 0
+
+      Ecto.Adapters.SQL.query!(
+        Repo,
+        "ALTER TABLE resource_summary DROP CONSTRAINT resource_summary_phase4_forced_failure",
+        []
+      )
+
+      assert Worker.perform_now(attempt_guids(group), section.slug) == :ok
+
+      state =
+        Repo.get_by!(LearningState,
+          section_id: section.id,
+          user_id: user.id,
+          learning_objective_id: objective.id
+        )
+
+      assert state.attempt_count == 1
+      assert Repo.aggregate(AttemptApplication, :count) == 1
+      assert_summary_rows_created()
+    end
+  end
+
+  defp attempt_guids(group), do: Enum.map(group.part_attempts, & &1.attempt_guid)
+
+  defp assert_summary_rows_created do
+    assert Repo.aggregate(ResourceSummary, :count) > 0
+    assert Repo.aggregate(ResponseSummary, :count) > 0
+    assert Repo.aggregate(ResourcePartResponse, :count) > 0
+    assert Repo.aggregate(StudentResponse, :count) > 0
   end
 end

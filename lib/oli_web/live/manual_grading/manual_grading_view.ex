@@ -24,6 +24,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   alias Oli.Activities.AdaptiveParts
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
+  alias Oli.Delivery.Snapshots
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   import OliWeb.DelegatedEvents
@@ -769,6 +770,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
       case ManualGrading.apply_manual_scoring(section, attempt, score_feedbacks) do
         {:ok, finalized_part_attempt_guids} ->
+          Snapshots.queue_or_create_snapshot(finalized_part_attempt_guids, section.slug)
+
           socket =
             socket
             |> assign(
