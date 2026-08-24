@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.XAPI.StatementFactory
   alias Oli.LearningModel
+  alias Oli.LearningModel.LktAoa.BatchResult
 
   @moduledoc """
   An Oban worker driven snapshot creator.  Snapshot creation jobs take a section slug and a collection of
@@ -80,13 +81,13 @@ defmodule Oli.Delivery.Snapshots.Worker do
 
     attempt_group = AttemptGroup.from_attempt_summary(results, project_id, host_name())
 
-    # LKT-AOA is applied before summary/xAPI writes so a downstream failure can
-    # safely retry through the exact attempt-claim projection instead of double
-    # applying learner state. The AttemptGroup is intentionally built once and
-    # reused so the learning model, summaries, and xAPI share the same evaluated
-    # attempt set.
-    with {:ok, _learning_model_result} <-
-           LearningModel.apply_evaluated_attempts(section, attempt_group),
+    # LKT-AOA is applied before summary/xAPI writes only for Sections pinned to
+    # the new model, so existing :naive Sections do not pay the LKT calculation
+    # or telemetry cost. When it does run, downstream failures can safely retry
+    # through the exact attempt-claim projection instead of double applying
+    # learner state. The AttemptGroup is intentionally built once and reused so
+    # learning model, summaries, and xAPI share the same evaluated attempt set.
+    with {:ok, _learning_model_result} <- apply_learning_model(section, attempt_group),
          {:ok, %Pipeline{} = pipeline} <- Summary.execute_analytics_pipeline(attempt_group) do
       case pipeline.data do
         nil ->
@@ -99,6 +100,16 @@ defmodule Oli.Delivery.Snapshots.Worker do
     else
       e -> e
     end
+  end
+
+  defp apply_learning_model(%{learning_model_version: :lkt_aoa} = section, attempt_group),
+    do: LearningModel.apply_evaluated_attempts(section, attempt_group)
+
+  defp apply_learning_model(_section, nil), do: {:ok, BatchResult.new(:noop)}
+
+  defp apply_learning_model(_section, %AttemptGroup{} = attempt_group) do
+    {:ok,
+     BatchResult.new(:skipped, input_attempt_count: length(attempt_group.part_attempts || []))}
   end
 
   defp emit_xapi(attempt_group) do

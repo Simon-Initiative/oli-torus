@@ -85,8 +85,12 @@ defmodule Oli.Delivery.Snapshots.WorkerTest do
       %{section: section, group: group} =
         LktAoaFixtures.lkt_fixture(%{section_attrs: [learning_model_version: :naive]})
 
-      assert Worker.perform_now(attempt_guids(group), section.slug) == :ok
+      events =
+        capture_lkt_aoa_events(fn ->
+          assert Worker.perform_now(attempt_guids(group), section.slug) == :ok
+        end)
 
+      assert events == []
       assert Repo.aggregate(AttemptApplication, :count) == 0
       assert Repo.aggregate(PriorActivityPartEvidence, :count) == 0
       assert Repo.aggregate(LearningState, :count) == 0
@@ -198,6 +202,41 @@ defmodule Oli.Delivery.Snapshots.WorkerTest do
   end
 
   defp attempt_guids(group), do: Enum.map(group.part_attempts, & &1.attempt_guid)
+
+  defp capture_lkt_aoa_events(fun) do
+    test_pid = self()
+    handler_id = "snapshot-worker-lkt-aoa-test-#{System.unique_integer([:positive])}"
+
+    :ok =
+      :telemetry.attach_many(
+        handler_id,
+        [
+          [:oli, :learning_model, :lkt_aoa, :batch, :start],
+          [:oli, :learning_model, :lkt_aoa, :batch, :stop],
+          [:oli, :learning_model, :lkt_aoa, :batch, :exception]
+        ],
+        fn event, measurements, metadata, _config ->
+          send(test_pid, {:lkt_aoa_event, {event, measurements, metadata}})
+        end,
+        nil
+      )
+
+    try do
+      fun.()
+    after
+      :telemetry.detach(handler_id)
+    end
+
+    collect_lkt_aoa_events([])
+  end
+
+  defp collect_lkt_aoa_events(events) do
+    receive do
+      {:lkt_aoa_event, event} -> collect_lkt_aoa_events([event | events])
+    after
+      0 -> Enum.reverse(events)
+    end
+  end
 
   defp assert_summary_rows_created do
     assert Repo.aggregate(ResourceSummary, :count) > 0
