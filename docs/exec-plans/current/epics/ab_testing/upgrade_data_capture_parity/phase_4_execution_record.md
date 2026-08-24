@@ -19,9 +19,10 @@ Phase: `4 - Compatibility Proof And Final Verification`
 
 Implementation notes:
 
-- Added `priv/clickhouse/queries/upgrade_v033_compatibility.sql`, parameterized by section and time
-  range. It ASOF-joins each evaluated activity to the most recent assignment/exposure evidence for
-  the same section enrollment and derives only the compatibility correctness value.
+- Added `priv/clickhouse/queries/upgrade_v033_compatibility.sql`, parameterized by section,
+  experiment, and time range. It ASOF-joins each evaluated activity to the most recent assignment
+  evidence for the same section enrollment and experiment, then derives only the compatibility
+  correctness value.
 - Kept raw `score` and `out_of` untouched. Missing, zero, and non-finite division results map to
   `0.0` only in the compatibility projection.
 - Expanded deterministic fixtures and tests to cover three enrollments, repeated evaluation of one

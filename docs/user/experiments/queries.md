@@ -125,7 +125,8 @@ ORDER BY raw.enrollment_id, raw.timestamp, raw.event_hash;
 ```
 
 The repository also contains a parameterized version at
-`priv/clickhouse/queries/upgrade_v033_compatibility.sql`.
+`priv/clickhouse/queries/upgrade_v033_compatibility.sql`. It requires both `section_id` and
+`experiment_id` so concurrent experiments cannot contribute assignment evidence to one another.
 
 ## Outcomes causally attributed to selected content
 

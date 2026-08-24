@@ -106,6 +106,14 @@ defmodule Oli.Test.Support.UpgradeDataCaptureParityFixtures do
       evidence(503, "condition-c", "thompson_sampling", "intervention", ~U[2026-08-19 11:59:45Z]),
       evidence(
         501,
+        "wrong-experiment",
+        "weighted_random",
+        "intervention",
+        ~U[2026-08-19 11:59:59Z],
+        experiment_id: 202
+      ),
+      evidence(
+        501,
         "wrong-project",
         "weighted_random",
         "intervention",
@@ -219,6 +227,7 @@ defmodule Oli.Test.Support.UpgradeDataCaptureParityFixtures do
     %{
       section_id: 2001,
       project_id: Keyword.get(opts, :project_id, 1001),
+      experiment_id: Keyword.get(opts, :experiment_id, 101),
       enrollment_id: enrollment_id,
       condition: condition,
       algorithm: algorithm,
@@ -290,7 +299,7 @@ defmodule Oli.Test.Support.UpgradeDataCaptureParityFixtures do
          out_of,
          branch_relationship,
          event_type \\ "activity_attempt",
-         verb_id \\ "http://adlnet.gov/expapi/verbs/evaluated"
+         verb_id \\ "http://adlnet.gov/expapi/verbs/completed"
        ) do
     %{
       section_id: 2001,

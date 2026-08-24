@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   require Logger
 
   alias Oli.Analytics.XAPI.Events.Context
+  alias Oli.Delivery.Experiments.AssignmentMatch
 
   alias Oli.Experiments.{
     AssignmentDecision,
@@ -197,7 +198,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   defp media_attributions([], _context), do: []
 
   defp media_attributions(assignments, context) do
-    assignments = Enum.map(assignments, &hydrate_assignment_match/1)
+    assignments = Enum.map(assignments, &AssignmentMatch.hydrate/1)
     section_slug = assignments |> hd() |> Map.fetch!(:section_slug)
 
     resource_ids =
@@ -306,24 +307,5 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
     Logger.warning("Media experiment attribution enrichment failed",
       error_type: inspect(error.__struct__)
     )
-  end
-
-  defp hydrate_assignment_match(match) do
-    experiment = struct(ExperimentDefinition, match.experiment)
-    condition = struct(Condition, match.condition)
-
-    assignment =
-      Assignment
-      |> struct(match.assignment)
-      |> Map.put(:experiment, experiment)
-      |> Map.put(:condition, condition)
-
-    %{
-      assignment: assignment,
-      experiment: experiment,
-      condition: condition,
-      intervention: struct(Intervention, match.intervention),
-      section_slug: match.section_slug
-    }
   end
 end

@@ -111,8 +111,8 @@ Every evaluated activity attempt must project one logical raw host row containin
 
 This row is written even when `experiment_attributions` is absent. Assignment/exposure evidence
 already contains enrollment, experiment, and condition identity. The compatibility query joins the
-raw activity stream to the applicable durable assignment/exposure evidence by section, enrollment,
-and time, without requiring branch containment.
+raw activity stream to the applicable durable assignment/exposure evidence by section, experiment,
+enrollment, and time, without requiring branch containment.
 
 Correctness is computed in the query as `score / out_of`, with `0.0` for zero values or invalid
 division to match the prior UpGrade behavior. Missing raw values remain visible as a data-quality

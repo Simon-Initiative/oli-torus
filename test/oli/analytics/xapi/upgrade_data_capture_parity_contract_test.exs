@@ -43,6 +43,9 @@ defmodule Oli.Analytics.XAPI.UpgradeDataCaptureParityContractTest do
     assert [%{"role" => "rollup", "attribution_type" => "outcome"}] =
              attributions(fixtures.attributed_activity_attempt)
 
+    assert get_in(fixtures.attributed_activity_attempt, ["verb", "id"]) ==
+             "http://adlnet.gov/expapi/verbs/completed"
+
     assert [%{"role" => "rollup", "assignment_scope" => "intervention"}] =
              attributions(fixtures.attributed_page_attempt)
 
@@ -187,6 +190,7 @@ defmodule Oli.Analytics.XAPI.UpgradeDataCaptureParityContractTest do
     sql = File.read!(@compatibility_query)
 
     assert sql =~ "{section_id:UInt64}"
+    assert sql =~ "{experiment_id:UInt64}"
     assert sql =~ "{evidence_from_timestamp:DateTime64(3)}"
     assert sql =~ "{from_timestamp:DateTime64(3)}"
     assert sql =~ "{to_timestamp:DateTime64(3)}"
@@ -195,6 +199,9 @@ defmodule Oli.Analytics.XAPI.UpgradeDataCaptureParityContractTest do
     assert sql =~ "raw.participant_id = evidence.participant_id"
     assert sql =~ "raw.timestamp >= evidence.timestamp"
     assert sql =~ "attribution_type = 'assignment'"
+    assert sql =~ "experiment_id = {experiment_id:UInt64}"
+    assert sql =~ "verb_id = 'http://adlnet.gov/expapi/verbs/completed'"
+    refute sql =~ "verb_id = 'http://adlnet.gov/expapi/verbs/evaluated'"
 
     assert sql =~
              "argMax(condition_code, tuple(event_version, attribution_hash)) AS selected_condition_code"
@@ -237,7 +244,8 @@ defmodule Oli.Analytics.XAPI.UpgradeDataCaptureParityContractTest do
     evidence =
       UpgradeDataCaptureParityFixtures.compatibility_assignment_evidence()
       |> Enum.filter(
-        &(&1.section_id == 2001 and &1.attribution_type == "assignment" and
+        &(&1.section_id == 2001 and &1.experiment_id == 101 and
+            &1.attribution_type == "assignment" and
             not is_nil(&1.enrollment_id) and not is_nil(&1.project_id) and
             not is_nil(&1.condition) and
             DateTime.compare(&1.timestamp, ~U[2026-08-01 00:00:00Z]) != :lt and
@@ -254,7 +262,7 @@ defmodule Oli.Analytics.XAPI.UpgradeDataCaptureParityContractTest do
        UpgradeDataCaptureParityFixtures.compatibility_excluded_activity_events())
     |> Enum.filter(
       &(&1.event_type == "activity_attempt" and
-          &1.verb_id == "http://adlnet.gov/expapi/verbs/evaluated" and
+          &1.verb_id == "http://adlnet.gov/expapi/verbs/completed" and
           DateTime.compare(&1.timestamp, ~U[2026-08-19 12:00:00Z]) != :lt and
           DateTime.compare(&1.timestamp, ~U[2026-08-20 00:00:00Z]) == :lt)
     )

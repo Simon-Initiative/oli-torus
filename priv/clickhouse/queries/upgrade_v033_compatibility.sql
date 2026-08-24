@@ -4,6 +4,7 @@
 --
 -- Required ClickHouse parameters:
 --   section_id UInt64
+--   experiment_id UInt64
 --   evidence_from_timestamp DateTime64(3) (experiment/analysis evidence horizon)
 --   from_timestamp DateTime64(3)
 --   to_timestamp DateTime64(3)
@@ -32,7 +33,7 @@ FROM
     FROM raw_events
     WHERE section_id = {section_id:UInt64}
       AND event_type = 'activity_attempt'
-      AND verb_id = 'http://adlnet.gov/expapi/verbs/evaluated'
+      AND verb_id = 'http://adlnet.gov/expapi/verbs/completed'
       AND timestamp >= {from_timestamp:DateTime64(3)}
       AND timestamp < {to_timestamp:DateTime64(3)}
       AND enrollment_id IS NOT NULL
@@ -49,6 +50,7 @@ ASOF LEFT JOIN
         argMax(condition_code, tuple(event_version, attribution_hash)) AS selected_condition_code
     FROM experiment_attributions
     WHERE section_id = {section_id:UInt64}
+      AND experiment_id = {experiment_id:UInt64}
       AND attribution_type = 'assignment'
       AND enrollment_id IS NOT NULL
       AND project_id IS NOT NULL

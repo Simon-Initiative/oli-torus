@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
   require Logger
 
   alias Oli.Analytics.Summary.AttemptGroup
+  alias Oli.Delivery.Experiments.AssignmentMatch
 
   alias Oli.Experiments.{
     OutcomeReceipt,
@@ -212,7 +213,7 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
       distinct: [assignment.id, intervention.id]
     )
     |> Repo.all()
-    |> Enum.map(&hydrate_assignment_match/1)
+    |> Enum.map(&AssignmentMatch.hydrate/1)
     |> Enum.flat_map(&match_selected_activities(&1, selected_index))
   end
 
@@ -346,24 +347,6 @@ defmodule Oli.Delivery.Experiments.AttemptAttributions do
     Enum.map(selected, fn selected ->
       Map.put(assignment_match, :activity_resource_id, selected.activity_resource_id)
     end)
-  end
-
-  defp hydrate_assignment_match(match) do
-    experiment = struct(ExperimentDefinition, match.experiment)
-    condition = struct(Condition, match.condition)
-
-    assignment =
-      Assignment
-      |> struct(match.assignment)
-      |> Map.put(:experiment, experiment)
-      |> Map.put(:condition, condition)
-
-    %{
-      assignment: assignment,
-      experiment: experiment,
-      condition: condition,
-      intervention: struct(Intervention, match.intervention)
-    }
   end
 
   defp selected_activity_placements(%{content: %{"model" => _model} = content}) do
