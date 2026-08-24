@@ -35,6 +35,7 @@ update this file accordingly.
 | GOOGLE_DOCS_IMPORT_FILE_ID    | No       | Google Docs file ID used by Google Docs import Playwright automation            |
 | DUMMY_LTI_TOOL_ADMIN_PASSWORD | No       | Admin password used to register Torus with the dummy LTI tool                   |
 | DUMMY_LTI_TOOL_BASE_URL       | No       | Dummy LTI tool base URL used by LTI external tool Playwright automation         |
+| OBAN_QUEUE_SIZE_AUTOMATION_TEARDOWN | No | Automation project teardown queue concurrency (Default: 1)                     |
 
 - `CANVAS_*` environment variables configure the Canvas-to-Torus grade passback Playwright
   smoke test. They are not required by the Torus application runtime. The student credentials

@@ -20,6 +20,11 @@ defmodule Oli.AutomationSetup.ProjectTeardownWorker do
 
   alias Oli.AutomationSetup
 
+  @non_retryable_messages [
+    "Can only delete projects with no authors",
+    "Project allows duplicates"
+  ]
+
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"project_slug" => project_slug}}) do
     started_at = System.monotonic_time(:millisecond)
@@ -37,6 +42,14 @@ defmodule Oli.AutomationSetup.ProjectTeardownWorker do
       %{success: false, message: "Project not found"} ->
         Logger.info("automation_project_teardown already_completed project=#{project_slug}")
         :ok
+
+      %{success: false, message: message} when message in @non_retryable_messages ->
+        Logger.error(
+          "automation_project_teardown cancelled project=#{project_slug} " <>
+            "duration_ms=#{System.monotonic_time(:millisecond) - started_at} message=#{message}"
+        )
+
+        {:cancel, message}
 
       %{success: false} = result ->
         message = Map.get(result, :message, "Could not delete project")
