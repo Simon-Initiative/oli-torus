@@ -256,7 +256,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert view
-             |> element(".card:first-child")
+             |> element("#accordion article:first-child")
              |> render() =~
                "First Objective"
 
@@ -265,7 +265,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_change(%{sort_by: "title"})
 
       assert view
-             |> element(".card:first-child")
+             |> element("#accordion article:first-child")
              |> render() =~
                "Second Objective"
 
@@ -298,6 +298,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       refute has_element?(view, "##{first_obj.slug}")
       assert has_element?(view, "##{last_obj.slug}")
+      assert has_element?(view, "#accordion article:first-child", "LO 21")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
@@ -313,10 +314,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
           sub_obj_2.resource_id
         ])
 
-      {:ok, page_1} =
+      {:ok, _page_1} =
         create_page_with_objective(project, publication, [obj.resource_id], "other_slug")
 
-      {:ok, page_2} =
+      {:ok, _page_2} =
         create_page_with_objective(project, publication, [
           sub_obj.resource_id,
           sub_obj_2.resource_id
@@ -325,24 +326,110 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
-      assert has_element?(view, "##{obj.slug}", "Sub-Objectives 2")
-      assert has_element?(view, "##{obj.slug}", "Pages 2")
-      assert has_element?(view, "##{obj.slug}", "Activities 0")
+      assert has_element?(view, "##{obj.slug}", "2 Sub-Objectives")
+      assert has_element?(view, "##{obj.slug}", "2 Pages")
+      assert has_element?(view, "##{obj.slug}", "0 Activities")
       assert has_element?(view, ".collapse", "Sub-Objectives")
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
-      assert has_element?(view, ".collapse", "Pages")
+      refute has_element?(view, ".collapse", "Pages")
 
-      assert has_element?(
-               view,
-               ".collapse a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_1.slug)}\"]",
-               "#{page_1.title}"
-             )
+      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
+      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+    end
 
-      assert has_element?(
-               view,
-               ".collapse a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_2.slug)}\"]",
-               "#{page_2.title}"
-             )
+    test "expands and collapses objectives independently", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, sub_obj_a} = create_objective(project, publication, "sub_obj_a", "Sub Objective A")
+      {:ok, sub_obj_b} = create_objective(project, publication, "sub_obj_b", "Sub Objective B")
+
+      {:ok, obj_a} =
+        create_objective(project, publication, "obj_a", "Objective A", [sub_obj_a.resource_id])
+
+      {:ok, obj_b} =
+        create_objective(project, publication, "obj_b", "Objective B", [sub_obj_b.resource_id])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
+      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_a.slug}]")
+      |> render_click(%{"slug" => obj_a.slug})
+
+      assert has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj_a.title}")
+      refute has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj_b.title}")
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_b.slug}]")
+      |> render_click(%{"slug" => obj_b.slug})
+
+      assert has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj_a.title}")
+      assert has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj_b.title}")
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_a.slug}]")
+      |> render_click(%{"slug" => obj_a.slug})
+
+      refute has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj_a.title}")
+      assert has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj_b.title}")
+    end
+
+    test "persists expanded objectives in the URL", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, sub_obj_a} = create_objective(project, publication, "sub_obj_a", "Sub Objective A")
+      {:ok, sub_obj_b} = create_objective(project, publication, "sub_obj_b", "Sub Objective B")
+
+      {:ok, obj_a} =
+        create_objective(project, publication, "obj_a", "Objective A", [sub_obj_a.resource_id])
+
+      {:ok, obj_b} =
+        create_objective(project, publication, "obj_b", "Objective B", [sub_obj_b.resource_id])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
+      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+
+      initial_patch = assert_patch(view)
+
+      refute initial_patch
+             |> URI.parse()
+             |> Map.get(:query)
+             |> URI.decode_query()
+             |> Map.has_key?("expanded")
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_a.slug}]")
+      |> render_click(%{"slug" => obj_a.slug})
+
+      assert assert_patch(view) =~ "expanded=#{obj_a.slug}"
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_b.slug}]")
+      |> render_click(%{"slug" => obj_b.slug})
+
+      expanded = Enum.sort([obj_a.slug, obj_b.slug]) |> Enum.join(",")
+
+      assert view |> assert_patch() |> URI.decode() =~ "expanded=#{expanded}"
+
+      view
+      |> element("form[phx-change='sort']")
+      |> render_change(%{sort_by: "title"})
+
+      assert view |> assert_patch() |> URI.decode() =~ "expanded=#{expanded}"
+
+      {:ok, expanded_view, _html} =
+        live(conn, live_view_route(project.slug, %{expanded: expanded}))
+
+      assert has_element?(expanded_view, "##{obj_a.slug} .collapse", "#{sub_obj_a.title}")
+      assert has_element?(expanded_view, "##{obj_b.slug} .collapse", "#{sub_obj_b.title}")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
@@ -423,7 +510,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       view
-      |> element("button[phx-click='set_selected'][phx-value-slug=#{obj_a.slug}]")
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_a.slug}]")
       |> render_click(%{"slug" => obj_a.slug})
 
       view
@@ -436,7 +523,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
                "Could not remove objective if it has sub-objectives associated"
 
       view
-      |> element("button[phx-click='set_selected'][phx-value-slug=#{obj_b.slug}]")
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_b.slug}]")
       |> render_click(%{"slug" => obj_b.slug})
 
       view
@@ -465,7 +552,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "#delete_objective_modal", "#{page.title}")
 
       view
-      |> element("button[phx-click='set_selected'][phx-value-slug=#{obj_c.slug}]")
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_c.slug}]")
       |> render_click(%{"slug" => obj_c.slug})
 
       view
@@ -486,7 +573,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
                |> ObjectiveEditor.fetch_objective_mappings()
                |> length()
 
-      refute has_element?(view, ".collapse", "#{removal_title}")
+      refute has_element?(view, "##{obj_c.slug}")
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
@@ -510,7 +597,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       view
-      |> element("button[phx-click='set_selected'][phx-value-slug=#{obj.slug}]")
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj.slug}]")
       |> render_click(%{"slug" => obj.slug})
 
       view
@@ -555,13 +642,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: first_obj.slug}))
 
-      refute has_element?(view, "#collapse0", "#{sub_obj_b.title}")
+      refute has_element?(view, "button", "Create new Sub-Objective")
+      refute has_element?(view, "button", "Add existing Sub-Objective")
+      assert has_element?(view, "button", "Add Existing")
+      assert has_element?(view, "button", "Create New")
+      refute has_element?(view, "##{first_obj.slug} .collapse", "#{sub_obj_b.title}")
 
       view
       |> element(
-        "button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{first_obj.slug}]"
+        "button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{first_obj.slug}]",
+        "Add Existing"
       )
-      |> render_click(%{slug: first_obj.slug})
+      |> render_click(%{"slug" => first_obj.slug})
 
       refute has_element?(
                view,
@@ -627,8 +719,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
+      refute has_element?(view, "button", "Create new Sub-Objective")
+      refute has_element?(view, "button", "Add existing Sub-Objective")
+      assert has_element?(view, "button", "Create New")
+
       view
-      |> element("button[phx-click='display_new_sub_modal'][phx-value-slug=#{obj.slug}]")
+      |> element(
+        "button[phx-click='display_new_sub_modal'][phx-value-slug=#{obj.slug}]",
+        "Create New"
+      )
       |> render_click(%{slug: obj.slug})
 
       view
@@ -752,6 +851,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{obj_a.slug}")
       assert has_element?(view, "##{obj_b.slug}")
       assert has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj.title}")
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_b.slug}]")
+      |> render_click(%{"slug" => obj_b.slug})
+
       assert has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj.title}")
 
       view

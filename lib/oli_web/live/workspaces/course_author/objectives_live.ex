@@ -16,8 +16,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   alias Oli.Resources
   alias Oli.Resources.{Revision, ResourceType}
   alias OliWeb.Common.{Filter, FilterBox}
+  alias OliWeb.Icons
   alias OliWeb.Common.Listing, as: Table
-  alias OliWeb.Router.Helpers, as: Routes
 
   alias OliWeb.Workspaces.CourseAuthor.Objectives.{
     DeleteModal,
@@ -32,8 +32,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
-  def live_path(socket, params),
-    do: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
+  def live_path(socket, params) do
+    params =
+      expanded_params(params, Map.get(socket.assigns, :expanded_objective_slugs, MapSet.new()))
+
+    ~p"/workspaces/course_author/#{socket.assigns.project.slug}/objectives?#{params}"
+  end
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
@@ -52,10 +56,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        total_count: length(objectives),
        all_objectives: all_objectives,
        all_children: all_children,
-       objective_attachments: [],
+       objectives_attachments: [],
        pending_sub_objective_delete_slugs: MapSet.new(),
        query: "",
-       selected: "",
+       expanded_objective_slugs: initial_expanded_objective_slugs(params),
        offset: 0,
        limit: 20,
        resource_slug: project.slug,
@@ -85,8 +89,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
     </FilterBox.render>
 
-    <div class="d-flex flex-row-reverse">
-      <button class="btn btn-primary" phx-click="display_new_modal">Create new Objective</button>
+    <div class="flex justify-end">
+      <button
+        type="button"
+        class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+        phx-click="display_new_modal"
+      >
+        <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
+        New Objective
+      </button>
     </div>
 
     <div id="objectives-table" class="my-4">
@@ -107,9 +118,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             (assigns[:has_show_links_uri_hash] || false) and Accounts.at_least_content_admin?(@author)
           }
           rows={@table_model.rows}
-          selected={@selected}
+          expanded_slugs={@expanded_objective_slugs}
           pending_delete_slugs={@pending_sub_objective_delete_slugs}
           project_slug={@project.slug}
+          offset={@offset}
         />
       </Table.render>
     </div>
@@ -243,10 +255,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   def handle_event("display_new_sub_modal", %{"slug" => slug}, socket),
     do: new_modal(Resources.change_revision(%Revision{parent_slug: slug}) |> to_form(), socket)
 
-  def handle_event("set_selected", %{"slug" => slug}, socket) do
+  def handle_event("toggle_objective", %{"slug" => slug}, socket) do
+    expanded_objective_slugs =
+      toggle_expanded_objective_slug(socket.assigns.expanded_objective_slugs, slug)
+
+    socket = assign(socket, expanded_objective_slugs: expanded_objective_slugs)
+
     {:noreply,
-     push_patch(socket,
-       to: live_path(socket, Map.merge(socket.assigns.params, %{"selected" => slug}))
+     socket
+     |> push_patch(
+       to: live_path(socket, socket.assigns.params),
+       replace: true
      )}
   end
 
@@ -668,9 +687,49 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        objectives_attachments: objectives_attachments
      )
      |> flash_fn.()
-     |> push_patch(to: live_path(socket, socket.assigns.params), replace: true)}
+     |> push_patch(
+       to: live_path(socket, socket.assigns.params),
+       replace: true
+     )}
   end
 
   # needed to ignore results of Task invocation
   def handle_info(_, socket), do: {:noreply, socket}
+
+  # Keep expanded LO state shareable in the URL while accepting legacy selected links.
+  defp initial_expanded_objective_slugs(params) do
+    expanded_slugs =
+      params
+      |> Map.get("expanded", "")
+      |> String.split(",", trim: true)
+      |> MapSet.new()
+
+    case Map.get(params, "selected", "") do
+      "" -> expanded_slugs
+      slug -> MapSet.put(expanded_slugs, slug)
+    end
+  end
+
+  defp toggle_expanded_objective_slug(expanded_objective_slugs, slug) do
+    case MapSet.member?(expanded_objective_slugs, slug) do
+      true -> MapSet.delete(expanded_objective_slugs, slug)
+      false -> MapSet.put(expanded_objective_slugs, slug)
+    end
+  end
+
+  # Build route params from the current table state and the expanded LO set.
+  defp expanded_params(params, expanded_objective_slugs) do
+    expanded_param =
+      expanded_objective_slugs
+      |> MapSet.to_list()
+      |> Enum.sort()
+      |> Enum.join(",")
+
+    params = Map.delete(params, "selected")
+
+    case expanded_param do
+      "" -> Map.delete(params, "expanded")
+      expanded_param -> Map.put(params, "expanded", expanded_param)
+    end
+  end
 end

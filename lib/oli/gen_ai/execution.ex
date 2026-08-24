@@ -11,6 +11,7 @@ defmodule Oli.GenAI.Execution do
   alias Oli.GenAI.Telemetry
   alias Oli.GenAI.Completions
   alias Oli.GenAI.Completions.ServiceConfig
+  require Logger
 
   @doc """
   Executes a synchronous completion request with routing.
@@ -39,18 +40,24 @@ defmodule Oli.GenAI.Execution do
       notify_plan(Keyword.get(opts, :on_plan), plan)
 
       try do
-        execute_with_fallback(
-          :generate,
-          completer,
-          messages,
-          functions,
-          plan,
-          service_config,
-          request_ctx,
-          request_type,
-          true,
-          provider_opts
-        )
+        result =
+          with :ok <- Completions.validate_registered_model(plan.selected_model) do
+            execute_with_fallback(
+              :generate,
+              completer,
+              messages,
+              functions,
+              plan,
+              service_config,
+              request_ctx,
+              request_type,
+              true,
+              provider_opts
+            )
+          end
+
+        log_validation_failure(result, plan, request_type, service_config)
+        result
       after
         release_admission!(plan)
       end
@@ -74,18 +81,24 @@ defmodule Oli.GenAI.Execution do
       notify_plan(Keyword.get(opts, :on_plan), plan)
 
       try do
-        execute_with_fallback(
-          :stream,
-          completer,
-          messages,
-          functions,
-          plan,
-          service_config,
-          request_ctx,
-          request_type,
-          false,
-          response_handler_fn
-        )
+        result =
+          with :ok <- Completions.validate_registered_model(plan.selected_model) do
+            execute_with_fallback(
+              :stream,
+              completer,
+              messages,
+              functions,
+              plan,
+              service_config,
+              request_ctx,
+              request_type,
+              false,
+              response_handler_fn
+            )
+          end
+
+        log_validation_failure(result, plan, request_type, service_config)
+        result
       after
         release_admission!(plan)
       end
@@ -154,6 +167,7 @@ defmodule Oli.GenAI.Execution do
     latency_ms = System.monotonic_time(:millisecond) - start_ms
 
     report_breaker(result, plan.selected_model, latency_ms)
+    log_failure(result, plan, request_type, service_config)
     emit_provider_telemetry(result, latency_ms, plan, request_type, service_config)
 
     case {include_metadata?, result} do
@@ -176,11 +190,24 @@ defmodule Oli.GenAI.Execution do
        ) do
     start_ms = System.monotonic_time(:millisecond)
     error_key = {:genai_stream_error, make_ref()}
-    Process.put(error_key, false)
+    Process.put(error_key, nil)
 
     wrapped_handler = fn chunk ->
-      if chunk == :error or match?({:error, _}, chunk) or chunk == {:error} do
-        Process.put(error_key, true)
+      case chunk do
+        {:error, reason} ->
+          log_failure({:error, reason}, plan, request_type, service_config)
+          Process.put(error_key, reason)
+
+        :error ->
+          log_failure({:error, :stream_error}, plan, request_type, service_config)
+          Process.put(error_key, :stream_error)
+
+        {:error} ->
+          log_failure({:error, :stream_error}, plan, request_type, service_config)
+          Process.put(error_key, :stream_error)
+
+        _ ->
+          :ok
       end
 
       response_handler_fn.(chunk)
@@ -189,17 +216,22 @@ defmodule Oli.GenAI.Execution do
     result = completer.stream(messages, functions, plan.selected_model, wrapped_handler)
     latency_ms = System.monotonic_time(:millisecond) - start_ms
 
-    error_seen? = Process.get(error_key, false)
+    stream_error = Process.get(error_key)
     Process.delete(error_key)
 
     result =
-      if error_seen? do
-        {:error, :stream_error}
+      if stream_error do
+        {:error, stream_error}
       else
         result
       end
 
     report_breaker(result, plan.selected_model, latency_ms)
+
+    if is_nil(stream_error) do
+      log_failure(result, plan, request_type, service_config)
+    end
+
     emit_provider_telemetry(result, latency_ms, plan, request_type, service_config)
     result
   end
@@ -231,6 +263,10 @@ defmodule Oli.GenAI.Execution do
   defp error_details(:connect_timeout), do: {nil, :timeout}
   defp error_details(:recv_timeout), do: {nil, :timeout}
   defp error_details({:timeout, _}), do: {nil, :timeout}
+
+  defp error_details(%{http_status: status, error_category: category}) when is_integer(status) do
+    {status, category}
+  end
 
   defp error_details(%{status: status}) when is_integer(status) do
     {status, http_status_category(status)}
@@ -306,6 +342,29 @@ defmodule Oli.GenAI.Execution do
       }
     )
   end
+
+  defp log_failure({:error, reason}, plan, request_type, service_config) do
+    {http_status, error_category} = error_details(reason)
+
+    Logger.warning(
+      "GenAI request failed service_config_id=#{service_config.id} " <>
+        "registered_model_id=#{plan.selected_model.id} provider=#{plan.selected_model.provider} " <>
+        "request_type=#{request_type} http_status=#{http_status || "none"} " <>
+        "error_category=#{error_category}"
+    )
+  end
+
+  defp log_failure(_, _, _, _), do: :ok
+
+  defp log_validation_failure(
+         {:error, {:invalid_model_configuration, _}} = result,
+         plan,
+         request_type,
+         service_config
+       ),
+       do: log_failure(result, plan, request_type, service_config)
+
+  defp log_validation_failure(_, _, _, _), do: :ok
 
   defp notify_plan(nil, _plan), do: :ok
   defp notify_plan(callback, plan) when is_function(callback, 1), do: callback.(plan)

@@ -5,6 +5,19 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
   alias Oli.GenAI.Completions.OpenAICompliantProvider
   alias HTTPoison.{AsyncEnd, Error}
 
+  describe "bearer/1" do
+    test "uses only the registered model API key" do
+      assert OpenAICompliantProvider.bearer(%{api_key: "registered-model-key"}) ==
+               {"Authorization", "Bearer registered-model-key"}
+    end
+
+    test "rejects a missing API key instead of falling back to global OpenAI configuration" do
+      assert_raise FunctionClauseError, fn ->
+        OpenAICompliantProvider.bearer(%{api_key: nil})
+      end
+    end
+  end
+
   describe "decode_stream_chunk/2" do
     test "buffers partial SSE payloads until a full event is available" do
       {data, buffer} =
