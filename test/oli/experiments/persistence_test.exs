@@ -364,34 +364,27 @@ defmodule Oli.Experiments.PersistenceTest do
       assert "does not belong to the selected experiment" in errors_on(changeset).intervention_id
     end
 
-    test "defines reversible ClickHouse decision-point removal as standalone statements" do
+    test "defines the final reversible ClickHouse experiment analytics schema" do
       migration =
         File.read!(
-          "priv/clickhouse/migrations/20260813180000_remove_experiment_decision_point_attribution.sql"
-        )
-
-      assert migration =~ "-- +goose Up"
-      assert migration =~ "DROP COLUMN IF EXISTS decision_point_id;"
-      assert migration =~ "DROP COLUMN IF EXISTS decision_point_key;"
-      assert migration =~ "-- +goose Down"
-      assert migration =~ "ADD COLUMN IF NOT EXISTS decision_point_id Nullable(UInt64)"
-      assert migration =~ "ADD COLUMN IF NOT EXISTS decision_point_key Nullable(String)"
-      refute migration =~ "StatementBegin"
-    end
-
-    test "defines reversible ClickHouse assignment scope with an old-evidence default" do
-      migration =
-        File.read!(
-          "priv/clickhouse/migrations/20260814120000_add_experiment_assignment_scope.sql"
+          "priv/clickhouse/migrations/20260714120000_add_experiment_columns_to_raw_events.sql"
         )
 
       assert migration =~ "-- +goose Up"
 
       assert migration =~
-               "ADD COLUMN IF NOT EXISTS assignment_scope LowCardinality(String) DEFAULT 'intervention'"
+               "assignment_scope LowCardinality(String) DEFAULT 'intervention'"
 
+      assert migration =~ "intervention_id Nullable(UInt64)"
+      assert migration =~ "assessment_binding_id Nullable(UInt64)"
+      assert migration =~ "normalized_score Nullable(Float64)"
+      assert migration =~ "assigned_at Nullable(DateTime64(3))"
+      assert migration =~ "ADD COLUMN IF NOT EXISTS enrollment_id Nullable(UInt64)"
+      refute migration =~ "decision_point_id"
+      refute migration =~ "decision_point_key"
       assert migration =~ "-- +goose Down"
-      assert migration =~ "DROP COLUMN IF EXISTS assignment_scope;"
+      assert migration =~ "DROP COLUMN IF EXISTS enrollment_id;"
+      assert migration =~ "DROP TABLE IF EXISTS experiment_attributions;"
       refute migration =~ "StatementBegin"
     end
   end

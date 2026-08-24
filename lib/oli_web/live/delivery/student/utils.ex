@@ -1155,11 +1155,18 @@ defmodule OliWeb.Delivery.Student.Utils do
     {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
     experiment_attributions = Map.get(socket.assigns, :experiment_attributions, [])
 
+    enrollment_id =
+      case Sections.get_enrollment(section.slug, socket.assigns.current_user.id) do
+        %{id: enrollment_id} -> enrollment_id
+        nil -> nil
+      end
+
     emit_page_viewed_helper(
       %Oli.Analytics.XAPI.Events.Context{
         user_id: socket.assigns.current_user.id,
         host_name: host_name(),
         section_id: section.id,
+        enrollment_id: enrollment_id,
         project_id: project_id,
         publication_id: publication_id
       },

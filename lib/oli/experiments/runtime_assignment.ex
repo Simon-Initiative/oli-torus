@@ -31,7 +31,17 @@ defmodule Oli.Experiments.RuntimeAssignment do
         metadata
       )
 
-      result
+      case result do
+        {:ok, decision, event} ->
+          deps.emit_committed_single.(event)
+          {:ok, decision}
+
+        {:ok, _decision} = success ->
+          success
+
+        error ->
+          error
+      end
     rescue
       exception ->
         :telemetry.execute(

@@ -31,6 +31,8 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
         on: ra.resource_access_id == a.id,
         join: s in Oli.Delivery.Sections.Section,
         on: a.section_id == s.id,
+        left_join: e in Oli.Delivery.Sections.Enrollment,
+        on: e.section_id == a.section_id and e.user_id == a.user_id,
         join: spp in Oli.Delivery.Sections.SectionsProjectsPublications,
         on: s.id == spp.section_id,
         join: sr in Oli.Delivery.Sections.SectionResource,
@@ -41,7 +43,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
         on: aa.revision_id == r2.id,
         join: at in assoc(r2, :activity_type),
         where: aa.attempt_guid == ^activity_attempt_guid,
-        select: {aa, ra, a, r1, sr.project_id, spp.publication_id, s, at}
+        select: {aa, ra, a, r1, sr.project_id, spp.publication_id, s, at, e.id}
       )
       |> Repo.one()
 
@@ -68,7 +70,8 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
           project_id,
           publication_id,
           section,
-          _activity_type
+          _activity_type,
+          enrollment_id
         },
         host_name,
         doc
@@ -86,6 +89,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
         user_id: resource_access.user_id,
         host_name: host_name,
         section_id: section.id,
+        enrollment_id: enrollment_id,
         project_id: project_id,
         publication_id: publication_id
       }
@@ -157,7 +161,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
     end
   end
 
-  # Updated to handle the 8-element tuple from the optimized query
+  # Updated to handle the query result tuple.
   defp to_attrs(
          {
            activity_attempt,
@@ -167,7 +171,8 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
            _project_id,
            _publication_id,
            _section,
-           activity_type
+           activity_type,
+           _enrollment_id
          },
          action,
          info

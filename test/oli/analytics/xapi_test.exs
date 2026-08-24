@@ -5,6 +5,7 @@ defmodule Oli.Analytics.XAPITest do
 
   alias Oli.Analytics.XAPI
   alias Oli.Analytics.XAPI.StatementBundle
+  alias Oli.Analytics.Summary.AttemptGroup
   alias Oli.Experiments
   alias Oli.Experiments.{LifecycleRequest, Scope}
 
@@ -20,10 +21,120 @@ defmodule Oli.Analytics.XAPITest do
 
   @experiment_attributions_key "http://oli.cmu.edu/extensions/experiment_attributions"
 
+  test "builds evaluated-attempt context with section enrollment identity" do
+    %{
+      project: project,
+      enrollment: enrollment,
+      resource_access: resource_access,
+      resource_attempt: resource_attempt
+    } = setup_video_experiment_context()
+
+    attempt_group =
+      AttemptGroup.from_attempt_summary(
+        [
+          {%{}, %{lifecycle_state: :active}, resource_attempt, resource_access, %{}}
+        ],
+        project.id,
+        "https://example.edu"
+      )
+
+    assert attempt_group.context.enrollment_id == enrollment.id
+  end
+
+  test "resolves one user's section enrollments as distinct analytical participants" do
+    user = insert(:user)
+    project = insert(:project)
+    publication = insert(:publication, project: project)
+    revision = insert(:revision)
+
+    contexts =
+      for _ <- 1..2 do
+        section = insert(:section)
+        enrollment = insert(:enrollment, section: section, user: user)
+
+        insert(:section_project_publication,
+          section: section,
+          project: project,
+          publication: publication
+        )
+
+        resource_access =
+          insert(:resource_access, section: section, user: user, resource: revision.resource)
+
+        resource_attempt =
+          insert(:resource_attempt, resource_access: resource_access, revision: revision)
+
+        attempt_group =
+          AttemptGroup.from_attempt_summary(
+            [{%{}, %{lifecycle_state: :active}, resource_attempt, resource_access, %{}}],
+            project.id,
+            "https://example.edu"
+          )
+
+        assert attempt_group.context.enrollment_id == enrollment.id
+        attempt_group.context
+      end
+
+    assert Enum.all?(contexts, &(&1.user_id == user.id))
+    assert contexts |> Enum.map(& &1.enrollment_id) |> Enum.uniq() |> length() == 2
+
+    Enum.each(contexts, fn context ->
+      statement =
+        Oli.Analytics.XAPI.Events.Attempt.ActivityAttemptEvaluated.new(
+          context,
+          %Oli.Delivery.Attempts.Core.ActivityAttempt{
+            attempt_guid: Ecto.UUID.generate(),
+            attempt_number: 1,
+            resource_id: revision.resource_id,
+            revision_id: revision.id,
+            score: 1.0,
+            out_of: 1.0,
+            date_evaluated: ~U[2026-08-19 12:00:00Z]
+          },
+          %{
+            attempt_guid: Ecto.UUID.generate(),
+            attempt_number: 1,
+            resource_id: revision.resource_id
+          }
+        )
+
+      extensions = get_in(statement, ["context", "extensions"])
+      assert extensions["http://oli.cmu.edu/extensions/enrollment_id"] == context.enrollment_id
+      refute Map.has_key?(extensions, "http://oli.cmu.edu/extensions/user_id")
+      refute Map.has_key?(extensions, "http://oli.cmu.edu/extensions/email")
+      refute Map.has_key?(extensions, "http://oli.cmu.edu/extensions/lms_id")
+    end)
+  end
+
+  test "keeps evaluated-attempt context nullable without a section publication mapping" do
+    user = insert(:user)
+    section = insert(:section)
+    enrollment = insert(:enrollment, section: section, user: user)
+    project = insert(:project)
+    revision = insert(:revision)
+
+    resource_access =
+      insert(:resource_access, section: section, user: user, resource: revision.resource)
+
+    resource_attempt =
+      insert(:resource_attempt, resource_access: resource_access, revision: revision)
+
+    attempt_group =
+      AttemptGroup.from_attempt_summary(
+        [{%{}, %{lifecycle_state: :active}, resource_attempt, resource_access, %{}}],
+        project.id,
+        "https://example.edu"
+      )
+
+    assert attempt_group.context.enrollment_id == enrollment.id
+    assert is_nil(attempt_group.context.publication_id)
+  end
+
   describe "construct_bundle/2 video experiment attributions" do
     test "attaches media interaction attributions when video is in the assigned alternatives branch" do
       %{
         user: user,
+        enrollment: enrollment,
         resource_attempt: resource_attempt,
         experiment: experiment,
         assignment: assignment
@@ -45,15 +156,19 @@ defmodule Oli.Analytics.XAPITest do
           user.id
         )
 
-      attributions =
-        bundle
-        |> statement_from_bundle()
-        |> get_in(["context", "extensions", @experiment_attributions_key])
+      statement = statement_from_bundle(bundle)
+      extensions = get_in(statement, ["context", "extensions"])
+      attributions = extensions[@experiment_attributions_key]
+
+      assert extensions["http://oli.cmu.edu/extensions/enrollment_id"] == enrollment.id
 
       assert [%{"role" => "media_interaction"} = attribution] = attributions
       assert attribution["attribution_type"] == "assignment"
       assert attribution["experiment_id"] == experiment.id
       assert attribution["assignment_id"] == assignment.id
+      assert is_integer(attribution["intervention_id"])
+      assert attribution["intervention_key"] =~ ":alternatives-placement"
+      refute Map.has_key?(attribution, "user_id")
     end
 
     test "does not attach attributions when video is outside the assigned alternatives branch" do
@@ -71,6 +186,46 @@ defmodule Oli.Analytics.XAPITest do
             "video_length" => 60,
             "video_play_time" => 0,
             "content_element_id" => "video-in-unselected-branch"
+          },
+          user.id
+        )
+
+      refute bundle
+             |> statement_from_bundle()
+             |> get_in(["context", "extensions", @experiment_attributions_key])
+    end
+
+    test "does not reuse an intervention-scoped media assignment at another placement" do
+      %{
+        user: user,
+        resource_attempt: resource_attempt,
+        page_revision: page_revision,
+        experiment: experiment
+      } = setup_video_experiment_context()
+
+      %Intervention{}
+      |> Intervention.changeset(%{
+        experiment_id: experiment.id,
+        page_resource_id: page_revision.resource_id,
+        content_element_id: "other-placement"
+      })
+      |> Repo.insert!()
+
+      content = put_in(resource_attempt.content, ["model", Access.at(0), "id"], "other-placement")
+      Repo.update!(Ecto.Changeset.change(resource_attempt, content: content))
+
+      {:ok, %StatementBundle{} = bundle} =
+        XAPI.construct_bundle(
+          %{
+            "category" => "video",
+            "event_type" => "played",
+            "host_name" => "http://example.edu",
+            "key" => %{"page_attempt_guid" => resource_attempt.attempt_guid},
+            "video_url" => "https://example.edu/video.mp4",
+            "video_title" => "Example video",
+            "video_length" => 60,
+            "video_play_time" => 0,
+            "content_element_id" => "video-in-selected-branch"
           },
           user.id
         )
@@ -234,7 +389,13 @@ defmodule Oli.Analytics.XAPITest do
     end
 
     test "attaches media interaction attributions for resource-only video events" do
-      %{user: user, section: section, page_revision: page_revision, assignment: assignment} =
+      %{
+        user: user,
+        section: section,
+        enrollment: enrollment,
+        page_revision: page_revision,
+        assignment: assignment
+      } =
         setup_video_experiment_context()
 
       section_resource =
@@ -274,6 +435,14 @@ defmodule Oli.Analytics.XAPITest do
                |> get_in(["context", "extensions", @experiment_attributions_key])
 
       assert assignment_id == assignment.id
+
+      assert bundle
+             |> statement_from_bundle()
+             |> get_in([
+               "context",
+               "extensions",
+               "http://oli.cmu.edu/extensions/enrollment_id"
+             ]) == enrollment.id
     end
 
     test "does not return page revision content for resource-only events without assignments" do
@@ -425,7 +594,10 @@ defmodule Oli.Analytics.XAPITest do
 
     %{
       user: user,
+      project: project,
       section: section,
+      enrollment: enrollment,
+      resource_access: resource_access,
       page_revision: page_revision,
       resource_attempt: resource_attempt,
       experiment:
@@ -493,6 +665,7 @@ defmodule Oli.Analytics.XAPITest do
       "model" => [
         %{
           "type" => "alternatives",
+          "id" => "alternatives-placement",
           "alternatives_id" => alternatives_resource_id,
           "children" => [
             %{

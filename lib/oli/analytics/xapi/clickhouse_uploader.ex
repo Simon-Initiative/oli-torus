@@ -20,6 +20,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     "http://id.tincanapi.com/verb/viewed",
     "http://adlnet.gov/expapi/verbs/experienced"
   ]
+  @experiment_condition_assigned_verb "http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned"
 
   @experiment_attributions_extension "http://oli.cmu.edu/extensions/experiment_attributions"
   @event_processing_chunk_size 500
@@ -115,7 +116,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     %{
       event: event,
       event_hash: event_hash,
-      host_event_type: if(raw_event, do: raw_event.event_type, else: "unknown"),
+      raw_event_type: if(raw_event, do: raw_event.event_type, else: "unknown"),
       raw_event: raw_event,
       timestamp: parse_timestamp(event["timestamp"])
     }
@@ -126,11 +127,12 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
     %{
       event_hash: event_hash,
-      user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
+      user_id: extract_account_user_id(event),
       home_page: get_in(event, ["actor", "account", "homePage"]),
       section_id: oli_extension(context_extensions, "section_id"),
       project_id: oli_extension(context_extensions, "project_id"),
       publication_id: oli_extension(context_extensions, "publication_id"),
+      enrollment_id: oli_extension(context_extensions, "enrollment_id"),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: event_type,
       verb_id: get_in(event, ["verb", "id"])
@@ -231,15 +233,32 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     end
   end
 
+  defp is_experiment_condition_assigned_event?(event),
+    do: get_in(event, ["verb", "id"]) == @experiment_condition_assigned_verb
+
   # Transform an xAPI event to the unified raw_events table format
   defp transform_to_raw_event(event, event_hash) do
     cond do
-      is_video_event?(event) -> transform_video_event(event, event_hash)
-      is_activity_attempt_event?(event) -> transform_activity_attempt_event(event, event_hash)
-      is_page_attempt_event?(event) -> transform_page_attempt_event(event, event_hash)
-      is_page_viewed_event?(event) -> transform_page_viewed_event(event, event_hash)
-      is_part_attempt_event?(event) -> transform_part_attempt_event(event, event_hash)
-      true -> nil
+      is_experiment_condition_assigned_event?(event) ->
+        raw_event_base(event, event_hash, "experiment_condition_assigned")
+
+      is_video_event?(event) ->
+        transform_video_event(event, event_hash)
+
+      is_activity_attempt_event?(event) ->
+        transform_activity_attempt_event(event, event_hash)
+
+      is_page_attempt_event?(event) ->
+        transform_page_attempt_event(event, event_hash)
+
+      is_page_viewed_event?(event) ->
+        transform_page_viewed_event(event, event_hash)
+
+      is_part_attempt_event?(event) ->
+        transform_part_attempt_event(event, event_hash)
+
+      true ->
+        nil
     end
   end
 
@@ -279,9 +298,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   defp transform_activity_attempt_event(event, event_hash) do
+    result = event["result"] || %{}
     extensions = get_in(event, ["result", "extensions"]) || %{}
     context_extensions = context_extensions(event)
-    result = event["result"] || %{}
 
     event
     |> raw_event_base(event_hash, "activity_attempt")
@@ -364,18 +383,16 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   defp transform_experiment_attributions(%{
          event: event,
          event_hash: raw_hash,
-         host_event_type: host_event_type,
+         raw_event_type: raw_event_type,
          timestamp: timestamp
        }) do
-    result = event["result"] || %{}
-
     event
     |> experiment_attributions()
     |> Enum.map(fn attribution ->
       %{
         raw_event_hash: raw_hash,
         attribution_hash: attribution_hash(raw_hash, attribution),
-        host_event_type: host_event_type,
+        raw_event_type: raw_event_type,
         timestamp: timestamp,
         section_id: attribution_value(attribution, "section_id"),
         project_id: attribution_value(attribution, "project_id"),
@@ -394,6 +411,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
           attribution_value(attribution, "algorithm") ||
             attribution_value(attribution, "assigned_by_policy"),
         policy_version: attribution_value(attribution, "policy_version"),
+        assigned_at: attribution_value(attribution, "assigned_at"),
         content_revision_id: attribution_value(attribution, "content_revision_id"),
         intervention_id: attribution_value(attribution, "intervention_id"),
         intervention_key: attribution_value(attribution, "intervention_key"),
@@ -405,9 +423,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         reward_threshold: attribution_value(attribution, "reward_threshold"),
         normalized_score: attribution_value(attribution, "normalized_score"),
         page_revision_id: attribution_value(attribution, "page_revision_id"),
-        reward_value:
-          attribution_value(attribution, "reward_value") ||
-            get_in(result, ["score", "raw"]),
+        reward_value: attribution_value(attribution, "reward_value"),
         reward_source: attribution_value(attribution, "reward_source")
       }
     end)
@@ -500,9 +516,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp oli_extension(_, _), do: nil
 
-  defp safe_extract_email(nil), do: nil
-  defp safe_extract_email(mbox) when is_binary(mbox), do: String.replace(mbox, "mailto:", "")
-  defp safe_extract_email(_), do: nil
+  defp extract_account_user_id(event) do
+    case get_in(event, ["actor", "account", "name"]) do
+      account_name when is_binary(account_name) -> account_name
+      account_name when is_integer(account_name) -> Integer.to_string(account_name)
+      _ -> nil
+    end
+  end
 
   defp parse_timestamp(timestamp_str) when is_binary(timestamp_str) do
     case DateTime.from_iso8601(timestamp_str) do
@@ -558,6 +578,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       section_id,
       project_id,
       publication_id,
+      enrollment_id,
       timestamp,
       event_type,
       verb_id,
@@ -602,6 +623,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(event[:section_id]),
       escape_value(event[:project_id]),
       escape_value(event[:publication_id]),
+      escape_value(event[:enrollment_id]),
       escape_value(event[:timestamp]),
       escape_value(event[:event_type]),
       escape_value(event[:verb_id]),
@@ -644,7 +666,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     INSERT INTO #{experiment_attributions_table()} (
       raw_event_hash,
       attribution_hash,
-      host_event_type,
+      raw_event_type,
       timestamp,
       section_id,
       project_id,
@@ -661,6 +683,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       assignment_scope,
       algorithm,
       policy_version,
+      assigned_at,
       content_revision_id,
       intervention_id,
       intervention_key,
@@ -681,7 +704,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     [
       escape_value(attribution[:raw_event_hash]),
       escape_value(attribution[:attribution_hash]),
-      escape_value(attribution[:host_event_type]),
+      escape_value(attribution[:raw_event_type]),
       escape_value(attribution[:timestamp]),
       escape_value(attribution[:section_id]),
       escape_value(attribution[:project_id]),
@@ -698,6 +721,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(attribution[:assignment_scope]),
       escape_value(attribution[:algorithm]),
       escape_value(attribution[:policy_version]),
+      escape_value(attribution[:assigned_at]),
       escape_value(attribution[:content_revision_id]),
       escape_value(attribution[:intervention_id]),
       escape_value(attribution[:intervention_key]),

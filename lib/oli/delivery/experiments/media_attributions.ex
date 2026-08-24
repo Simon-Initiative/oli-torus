@@ -4,8 +4,10 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   """
 
   import Ecto.Query, warn: false
+  require Logger
 
   alias Oli.Analytics.XAPI.Events.Context
+  alias Oli.Delivery.Experiments.AssignmentMatch
 
   alias Oli.Experiments.{
     AssignmentDecision,
@@ -16,7 +18,8 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   alias Oli.Experiments.Schemas.{
     Assignment,
     Condition,
-    ExperimentDefinition
+    ExperimentDefinition,
+    Intervention
   }
 
   alias Oli.Experiments.XAPI.Attributions
@@ -31,8 +34,8 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   The content is inspected first so events outside alternatives do not query experiment
   assignments. When matching branches exist, assignment filtering is performed in PostgreSQL.
   """
-  def for_media_event(%Context{} = context, page_content, content_element_id)
-      when is_binary(content_element_id) do
+  def for_media_event(%Context{} = context, page_content, page_resource_id, content_element_id)
+      when is_integer(page_resource_id) and is_binary(content_element_id) do
     matching_branches = matching_alternatives_branches(page_content, content_element_id)
 
     case matching_branches do
@@ -40,13 +43,18 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
         []
 
       _ ->
-        assignments = context |> assignment_query(matching_branches) |> Repo.all()
+        assignments =
+          context |> assignment_query(matching_branches, page_resource_id) |> Repo.all()
 
         media_attributions(assignments, context)
     end
+  rescue
+    error ->
+      log_enrichment_failure(error)
+      []
   end
 
-  def for_media_event(_context, _page_content, _content_element_id), do: []
+  def for_media_event(_context, _page_content, _page_resource_id, _content_element_id), do: []
 
   @doc """
   Builds media attributions for resource-only events using the deployed page revision.
@@ -58,7 +66,7 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
   """
   def for_media_event_from_revision(%Context{} = context, revision_id, content_element_id)
       when is_integer(revision_id) and is_binary(content_element_id) do
-    page_content = page_content_for_assigned_learner(context, revision_id)
+    {page_content, page_resource_id} = page_content_for_assigned_learner(context, revision_id)
     matching_branches = matching_alternatives_branches(page_content, content_element_id)
 
     case matching_branches do
@@ -67,10 +75,14 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
       matching_branches ->
         context
-        |> assignment_query(matching_branches)
+        |> assignment_query(matching_branches, page_resource_id)
         |> Repo.all()
         |> media_attributions(context)
     end
+  rescue
+    error ->
+      log_enrichment_failure(error)
+      []
   end
 
   def for_media_event_from_revision(_context, _revision_id, _content_element_id), do: []
@@ -83,6 +95,11 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       from(assignment in Assignment,
         join: experiment in ExperimentDefinition,
         on: experiment.id == assignment.experiment_id,
+        join: enrollment in Oli.Delivery.Sections.Enrollment,
+        on:
+          enrollment.id == assignment.enrollment_id and
+            enrollment.section_id == assignment.section_id and
+            enrollment.user_id == assignment.user_id,
         where:
           experiment.project_id == ^context.project_id and
             assignment.section_id == ^context.section_id and
@@ -93,24 +110,30 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
     from(revision in Oli.Resources.Revision,
       where: revision.id == ^revision_id,
       where: exists(subquery(assignments_exist)),
-      select: revision.content
+      select: {revision.content, revision.resource_id}
     )
     |> Repo.one()
+    |> case do
+      nil -> {nil, nil}
+      content_and_resource -> content_and_resource
+    end
   end
 
   # Restricts assignment loading to the alternatives-resource/option pairs containing the media
   # element. The dynamic predicate remains parameterized by Ecto and supports legacy data where the
   # branch value matches the condition code instead of option_id.
-  defp assignment_query(%Context{} = context, matching_branches) do
+  defp assignment_query(%Context{} = context, matching_branches, page_resource_id) do
     branch_filter =
       Enum.reduce(matching_branches, dynamic(false), fn branch, branch_filter ->
         alternatives_resource_id = branch.alternatives_resource_id
         option_id = branch.option_id
+        placement_id = branch.placement_id
 
         dynamic(
-          [experiment: experiment, condition: condition],
+          [experiment: experiment, condition: condition, intervention: intervention],
           ^branch_filter or
             (experiment.alternatives_resource_id == ^alternatives_resource_id and
+               intervention.content_element_id == ^placement_id and
                (condition.option_id == ^option_id or condition.condition_code == ^option_id))
         )
       end)
@@ -122,7 +145,24 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       on: experiment.id == assignment.experiment_id,
       join: condition in Condition,
       as: :condition,
-      on: condition.id == assignment.condition_id,
+      on:
+        condition.id == assignment.condition_id and
+          condition.experiment_id == experiment.id,
+      join: intervention in Intervention,
+      as: :intervention,
+      on:
+        intervention.experiment_id == experiment.id and
+          intervention.page_resource_id == ^page_resource_id and
+          ((assignment.assignment_scope == :intervention and
+              assignment.intervention_id == intervention.id) or
+             (assignment.assignment_scope == :section_enrollment and
+                is_nil(assignment.intervention_id))),
+      join: enrollment in Oli.Delivery.Sections.Enrollment,
+      as: :enrollment,
+      on:
+        enrollment.id == assignment.enrollment_id and
+          enrollment.section_id == assignment.section_id and
+          enrollment.user_id == assignment.user_id,
       join: section in Oli.Delivery.Sections.Section,
       as: :section,
       on: section.id == assignment.section_id,
@@ -131,20 +171,34 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
           assignment.section_id == ^context.section_id and
           assignment.user_id == ^context.user_id,
       where: ^branch_filter,
-      preload: [experiment: experiment],
       select: %{
-        assignment: assignment,
-        experiment: experiment,
-        condition: condition,
+        assignment:
+          map(assignment, [
+            :id,
+            :experiment_id,
+            :intervention_id,
+            :condition_id,
+            :section_id,
+            :enrollment_id,
+            :user_id,
+            :assigned_by_policy,
+            :policy_version,
+            :assignment_key,
+            :assignment_scope
+          ]),
+        experiment: map(experiment, [:id, :uuid, :alternatives_resource_id]),
+        condition: map(condition, [:id, :condition_code]),
+        intervention: map(intervention, [:id, :page_resource_id, :content_element_id]),
         section_slug: section.slug
       },
-      distinct: assignment.id
+      distinct: [assignment.id, intervention.id]
     )
   end
 
   defp media_attributions([], _context), do: []
 
   defp media_attributions(assignments, context) do
+    assignments = Enum.map(assignments, &AssignmentMatch.hydrate/1)
     section_slug = assignments |> hd() |> Map.fetch!(:section_slug)
 
     resource_ids =
@@ -165,7 +219,8 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
          %{
            assignment: %Assignment{} = assignment,
            experiment: %ExperimentDefinition{} = experiment,
-           condition: %Condition{} = condition
+           condition: %Condition{} = condition,
+           intervention: %Intervention{} = intervention
          },
          %Context{} = context,
          revisions_by_resource
@@ -190,6 +245,11 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
 
     decision
     |> Attributions.assignment_attribution(request, assignment: assignment)
+    |> Map.put("intervention_id", intervention.id)
+    |> Map.put(
+      "intervention_key",
+      "#{intervention.page_resource_id}:#{intervention.content_element_id}"
+    )
     |> List.wrap()
     |> Attributions.attributions_for_media_event()
   end
@@ -203,13 +263,15 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       |> Enum.filter(&branch_contains_content_element?(&1, content_element_id))
       |> Enum.map(fn branch ->
         %{
+          placement_id: Map.get(alternatives, "id"),
           alternatives_resource_id: Map.get(alternatives, "alternatives_id"),
           option_id: Map.get(branch, "value")
         }
       end)
     end)
     |> Enum.reject(fn branch ->
-      is_nil(branch.alternatives_resource_id) or is_nil(branch.option_id)
+      is_nil(branch.placement_id) or is_nil(branch.alternatives_resource_id) or
+        is_nil(branch.option_id)
     end)
   end
 
@@ -239,5 +301,11 @@ defmodule Oli.Delivery.Experiments.MediaAttributions do
       user_id: context.user_id,
       enrollment_id: assignment.enrollment_id
     }
+  end
+
+  defp log_enrichment_failure(error) do
+    Logger.warning("Media experiment attribution enrichment failed",
+      error_type: inspect(error.__struct__)
+    )
   end
 end

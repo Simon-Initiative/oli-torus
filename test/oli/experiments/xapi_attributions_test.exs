@@ -26,7 +26,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
   @extension "http://oli.cmu.edu/extensions/experiment_attributions"
   @experiment_uuid "11111111-2222-3333-4444-555555555555"
 
-  test "builds assignment attribution without a dedicated xAPI statement" do
+  test "builds assignment attribution for the dedicated xAPI statement" do
     attribution =
       Attributions.assignment_attribution(assignment_decision(false), assign_request(),
         assignment: assignment()
@@ -48,6 +48,7 @@ defmodule Oli.Experiments.XAPI.AttributionsTest do
     refute Map.has_key?(attribution, "user_id")
     assert attribution["algorithm"] == "weighted_random"
     assert attribution["policy_version"] == "weighted_random"
+    assert attribution["assigned_at"] == DateTime.to_iso8601(timestamp())
     assert attribution["key"] == "10:60:500"
   end
 

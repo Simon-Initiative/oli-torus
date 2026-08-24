@@ -203,6 +203,36 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       assert duration >= 0
     end
 
+    test "reward evidence includes the stable experiment UUID" do
+      context = setup_context(score: 1.0, out_of: 1.0, threshold: "0.75")
+
+      assert :ok = RewardHandoff.record_evaluated_resource_attempt(context.resource_attempt.id)
+      reward = Repo.one!(AcceptedReward)
+
+      assert {:ok, _evidence, statement} =
+               EvidenceDispatchWorker.prepare_dispatch(reward.id, %{
+                 "disposition" => "accepted",
+                 "project_id" => context.experiment.project_id,
+                 "publication_id" => context.publication.id,
+                 "page_revision_id" => context.page_revision.id
+               })
+
+      extensions = statement["context"]["extensions"]
+
+      assert extensions["http://oli.cmu.edu/extensions/enrollment_id"] ==
+               context.assignment.enrollment_id
+
+      [attribution] =
+        extensions["http://oli.cmu.edu/extensions/experiment_attributions"]
+
+      assert attribution["experiment_uuid"] == context.experiment.uuid
+      assert attribution["experiment_id"] == context.experiment.id
+      assert attribution["publication_id"] == context.publication.id
+      assert attribution["enrollment_id"] == context.assignment.enrollment_id
+      assert attribution["algorithm"] == "thompson_sampling"
+      assert attribution["policy_version"] == "thompson_sampling:v2"
+    end
+
     test "concurrent replay serializes to one claim and one posterior update" do
       context = setup_context(score: 1.0, out_of: 1.0)
       parent = self()

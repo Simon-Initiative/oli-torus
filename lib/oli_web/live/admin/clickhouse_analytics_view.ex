@@ -377,18 +377,18 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
           :if={@pending_confirmation in [:migrate_up, :migrate_down]}
           id="clickhouse-operation-confirmation"
           show
+          header_level={2}
+          wrapper_class="w-full max-w-lg p-4"
           on_cancel={JS.push("cancel_clickhouse_operation")}
         >
-          <div class="space-y-4">
-            <div>
-              <h3 class="text-lg font-semibold">
-                {gettext("Confirm %{operation}", operation: operation_title(@pending_confirmation))}
-              </h3>
-              <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {confirmation_message(@pending_confirmation)}
-              </p>
-            </div>
-            <div class="flex items-center justify-end gap-3">
+          <:title>
+            {gettext("Confirm %{operation}", operation: operation_title(@pending_confirmation))}
+          </:title>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            {confirmation_message(@pending_confirmation)}
+          </p>
+          <:custom_footer>
+            <div class="flex items-center justify-end gap-3 p-4 pt-0">
               <button
                 type="button"
                 phx-click="cancel_clickhouse_operation"
@@ -404,7 +404,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                 {gettext("Confirm")}
               </button>
             </div>
-          </div>
+          </:custom_footer>
         </.modal>
       </div>
     </div>

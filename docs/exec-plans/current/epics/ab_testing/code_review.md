@@ -130,7 +130,7 @@ The highest-priority fixes are:
 ### 4.4 Direct uploader transforms each event twice
 
 - **Source:** GitHub AI performance review.
-- **Current location:** `lib/oli/analytics/xapi/clickhouse_uploader.ex`; `parse_and_insert_events/3` builds raw rows, then `transform_experiment_attributions/1` calls `transform_to_raw_event/1` again to recover `host_event_type`.
+- **Current location:** `lib/oli/analytics/xapi/clickhouse_uploader.ex`; `parse_and_insert_events/3` builds raw rows, then `transform_experiment_attributions/1` calls `transform_to_raw_event/1` again to recover `raw_event_type`.
 - **Issue:** Event classification, extension extraction, timestamp parsing, and hashing are repeated for attributed events.
 - **Determination:** Fix.
 - **Why:** The duplicate transformation is confirmed and is easy to remove without changing behavior.

@@ -43,6 +43,7 @@ defmodule Oli.Experiments do
   alias Oli.Experiments.AssignmentIdentity
   alias Oli.Experiments.Policies.{ThompsonSampling, WeightedRandom}
   alias Oli.Experiments.XAPI.Attributions
+  alias Oli.Experiments.XAPI.ConditionAssignmentEmitter
 
   alias Oli.Experiments.Schemas.ExperimentDefinition, as: ExperimentDefinitionSchema
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
@@ -701,7 +702,8 @@ defmodule Oli.Experiments do
       common_scope: &common_page_assignment_scope/1,
       validate_publication: &validate_publication/1,
       batch_assign: &batch_assign_page_conditions/2,
-      emit_committed: &emit_committed_batch_assignment/1
+      emit_committed: &emit_committed_batch_assignment/1,
+      emit_committed_single: &emit_committed_single_assignment/1
     }
   end
 
@@ -1666,6 +1668,38 @@ defmodule Oli.Experiments do
       assignment: event.assignment,
       experiment: event.experiment
     )
+
+    emit_condition_assignment_safely(
+      event.assignment,
+      event.experiment,
+      event.decision,
+      event.request.scope
+    )
+  end
+
+  defp emit_committed_single_assignment(event) do
+    emit_condition_assignment_safely(
+      event.assignment,
+      event.experiment,
+      event.decision,
+      event.request.scope
+    )
+  end
+
+  defp emit_condition_assignment_safely(assignment, experiment, decision, scope) do
+    ConditionAssignmentEmitter.emit(assignment, experiment, decision, scope)
+  rescue
+    exception -> emit_condition_assignment_failure(exception.__struct__)
+  end
+
+  defp emit_condition_assignment_failure(reason) do
+    :telemetry.execute(
+      [:oli, :experiments, :condition_assignment, :emit, :failed],
+      %{count: 1},
+      %{reason: reason}
+    )
+
+    :ok
   end
 
   defp emit_batch_fallback(reason, rows) do
@@ -2262,7 +2296,14 @@ defmodule Oli.Experiments do
           experiment: match.experiment
         )
 
-        {:ok, decision}
+        event = %{
+          decision: decision,
+          request: request,
+          assignment: assignment,
+          experiment: match.experiment
+        }
+
+        {:ok, decision, event}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         if conflict?(changeset) do

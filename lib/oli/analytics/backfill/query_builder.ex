@@ -28,7 +28,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
     INSERT INTO #{target_table} (
         event_hash, event_version, source_file, source_etag, source_line, inserted_at,
-        user_id, home_page, section_id, project_id, publication_id,
+        user_id, home_page, section_id, project_id, publication_id, enrollment_id,
         timestamp, event_type, verb_id, page_id,
         content_element_id, video_url, video_time, video_length,
         video_progress, video_played_segments, video_seek_from, video_seek_to,
@@ -48,15 +48,13 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           + 1 AS source_line,
         now() AS inserted_at,
 
-        coalesce(
-          #{json_value_or_null("$.actor.account.name")},
-          #{json_value_or_null("$.actor.mbox")}
-        ) AS user_id,
+        #{json_value_or_null("$.actor.account.name")} AS user_id,
 
         #{json_value_or_null("$.actor.account.homePage")} AS home_page,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/section_id\"")}) AS section_id,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/project_id\"")}) AS project_id,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/publication_id\"")}) AS publication_id,
+        toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/enrollment_id\"")}) AS enrollment_id,
 
         parseDateTime64BestEffortOrNull(#{json_value_or_null("$.timestamp")}, 3) AS timestamp,
 
@@ -80,6 +78,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           (#{json_value_or_null("$.verb.id")} = 'http://id.tincanapi.com/verb/viewed')
             AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/types/page'),
           'page_viewed',
+
+          #{json_value_or_null("$.verb.id")} = 'http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned',
+          'experiment_condition_assigned',
 
           (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
             AND (#{json_value_or_null("$.object.definition.type")} = 'http://adlnet.gov/expapi/activities/question'),
@@ -158,10 +159,10 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
     INSERT INTO #{target_table} (
         raw_event_hash, attribution_hash, event_version, source_file, source_etag, source_line,
-        inserted_at, host_event_type, timestamp, section_id,
+        inserted_at, raw_event_type, timestamp, section_id,
         project_id, publication_id, enrollment_id, experiment_role, attribution_type, experiment_id, experiment_uuid,
         condition_id, condition_code, assignment_id, assignment_key, assignment_scope,
-        algorithm, policy_version,
+        algorithm, policy_version, assigned_at,
         content_revision_id, intervention_id, intervention_key, assessment_binding_id,
         assessment_page_resource_id, resource_attempt_id, disposition, reward_threshold,
         normalized_score, page_revision_id, reward_value, reward_source
@@ -176,7 +177,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           - min(rowNumberInAllBlocks()) OVER (PARTITION BY _path)
           + 1 AS source_line,
         now() AS inserted_at,
-        #{host_event_type_sql()} AS host_event_type,
+        #{raw_event_type_sql()} AS raw_event_type,
         parseDateTime64BestEffortOrNull(#{json_value_or_null("$.timestamp")}, 3) AS timestamp,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.section_id'), '')) AS section_id,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.project_id'), '')) AS project_id,
@@ -193,6 +194,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         coalesce(nullIf(JSON_VALUE(#{attribution}, '$.assignment_scope'), ''), 'intervention') AS assignment_scope,
         coalesce(nullIf(JSON_VALUE(#{attribution}, '$.algorithm'), ''), nullIf(JSON_VALUE(#{attribution}, '$.assigned_by_policy'), '')) AS algorithm,
         nullIf(JSON_VALUE(#{attribution}, '$.policy_version'), '') AS policy_version,
+        parseDateTime64BestEffortOrNull(nullIf(JSON_VALUE(#{attribution}, '$.assigned_at'), ''), 3) AS assigned_at,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.content_revision_id'), '')) AS content_revision_id,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.intervention_id'), '')) AS intervention_id,
         nullIf(JSON_VALUE(#{attribution}, '$.intervention_key'), '') AS intervention_key,
@@ -203,10 +205,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_threshold'), '')) AS reward_threshold,
         toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.normalized_score'), '')) AS normalized_score,
         toUInt64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.page_revision_id'), '')) AS page_revision_id,
-        coalesce(
-          toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_value'), '')),
-          toFloat64OrNull(#{json_value_or_null("$.result.score.raw")})
-        ) AS reward_value,
+        toFloat64OrNull(nullIf(JSON_VALUE(#{attribution}, '$.reward_value'), '')) AS reward_value,
         nullIf(JSON_VALUE(#{attribution}, '$.reward_source'), '') AS reward_source
     FROM #{s3_source}
     ARRAY JOIN JSONExtractArrayRaw(json, 'context.extensions."http://oli.cmu.edu/extensions/experiment_attributions"') AS #{attribution}
@@ -229,7 +228,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
   end
 
-  defp host_event_type_sql do
+  defp raw_event_type_sql do
     """
     multiIf(
       #{json_value_or_null("$.verb.id")} IN (
@@ -248,6 +247,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
       (#{json_value_or_null("$.verb.id")} = 'http://id.tincanapi.com/verb/viewed')
         AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/types/page'),
       'page_viewed',
+      #{json_value_or_null("$.verb.id")} = 'http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned',
+      'experiment_condition_assigned',
       (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
         AND (#{json_value_or_null("$.object.definition.type")} = 'http://adlnet.gov/expapi/activities/question'),
       'part_attempt',

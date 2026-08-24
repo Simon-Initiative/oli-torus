@@ -161,22 +161,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
         <div class="card-body px-4 pt-4">
           <div
             id="experiment-details-grid"
-            class="mb-6 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
+            class="mb-6 flex flex-wrap gap-x-12 gap-y-8"
           >
             <.detail_item label="Slug" value={@experiment.slug} monospace />
+            <.detail_item
+              id="experiment-uuid-detail"
+              intrinsic_width
+              value_class="overflow-x-auto whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              value_tabindex="0"
+              value_aria_label={"Experiment UUID: #{@experiment.uuid}"}
+              label="Experiment UUID"
+              value={@experiment.uuid}
+              monospace
+            />
             <.detail_item
               label="Assignment policy"
               value={format_algorithm(@experiment.algorithm)}
             />
             <.detail_item
-              label="Assignment unit"
-              value={display_value(@experiment.assignment_unit)}
-            />
-            <.detail_item
-              label="Assignment scope"
-              value={format_assignment_scope(@experiment.assignment_scope)}
-            />
-            <.detail_item
+              id="experiment-status-detail"
               label="Status"
               value={format_state(@experiment.state)}
               badge
@@ -1185,19 +1188,47 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
 
   attr :label, :string, required: true
   attr :value, :any, required: true
+  attr :id, :string, default: nil
+  attr :class, :string, default: nil
+  attr :value_class, :string, default: nil
+  attr :value_tabindex, :string, default: nil
+  attr :value_aria_label, :string, default: nil
+  attr :intrinsic_width, :boolean, default: false
   attr :monospace, :boolean, default: false
   attr :badge, :boolean, default: false
   attr :badge_class, :string, default: "badge-secondary"
 
   defp detail_item(assigns) do
     ~H"""
-    <div class="min-w-0">
-      <div class="text-muted small text-uppercase font-weight-bold mb-1 dark:text-gray-400">
+    <div
+      id={@id}
+      class={[
+        "w-full min-w-0 overflow-hidden px-4 sm:w-auto",
+        @intrinsic_width && "sm:flex-none",
+        !@intrinsic_width && "sm:flex-[1_0_12rem]",
+        @class
+      ]}
+    >
+      <div class="text-muted small text-uppercase font-weight-bold mb-1 whitespace-nowrap dark:text-gray-400">
         {@label}
       </div>
-      <div :if={@monospace} class="font-monospace">{@value}</div>
+      <div
+        :if={@monospace}
+        class={["break-all font-monospace", @value_class]}
+        tabindex={@value_tabindex}
+        aria-label={@value_aria_label}
+      >
+        {@value}
+      </div>
       <span :if={@badge} class={["badge", @badge_class]}>{@value}</span>
-      <div :if={not @monospace and not @badge}>{@value}</div>
+      <div
+        :if={not @monospace and not @badge}
+        class={["break-words", @value_class]}
+        tabindex={@value_tabindex}
+        aria-label={@value_aria_label}
+      >
+        {@value}
+      </div>
     </div>
     """
   end
@@ -2145,11 +2176,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentDetailsLive do
   defp format_algorithm(:weighted_random), do: "Weighted random"
   defp format_algorithm(:thompson_sampling), do: "Thompson Sampling"
   defp format_algorithm(value), do: display_value(value)
-
-  defp format_assignment_scope(:section_enrollment),
-    do: "Same condition within each participating course section"
-
-  defp format_assignment_scope(:intervention), do: "Independent at each intervention"
 
   defp format_state(value), do: display_value(value)
 

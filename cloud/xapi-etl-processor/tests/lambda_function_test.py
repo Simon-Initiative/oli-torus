@@ -345,7 +345,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["event_hash"], FIXTURE_EVENT_HASH)
         self.assertEqual(rows[0]["raw_event_hash"], FIXTURE_EVENT_HASH)
         self.assertEqual(rows[0]["attribution_hash"], FIXTURE_ATTRIBUTION_HASH)
-        self.assertEqual(rows[0]["host_event_type"], "part_attempt")
+        self.assertEqual(rows[0]["raw_event_type"], "part_attempt")
         self.assertEqual(rows[0]["experiment_role"], "reward")
         self.assertEqual(rows[0]["attribution_type"], "reward")
         self.assertEqual(rows[0]["experiment_id"], 101)
@@ -356,7 +356,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(rows[0]["assignment_scope"], "intervention")
         self.assertIsNone(rows[0]["intervention_id"])
         self.assertIsNone(rows[0]["intervention_key"])
-        self.assertEqual(rows[0]["reward_value"], 1.0)
+        self.assertIsNone(rows[0]["reward_value"])
         self.assertEqual(rows[0]["reward_source"], "activity_attempt:full_credit")
         self.assertNotIn("video_url", rows[0])
         self.assertNotIn("activity_attempt_guid", rows[0])
@@ -819,6 +819,7 @@ class LambdaFunctionTests(TestCase):
                     "http://oli.cmu.edu/extensions/project_id": 1719,
                     "http://oli.cmu.edu/extensions/publication_id": 8625,
                     "http://oli.cmu.edu/extensions/section_id": 2161,
+                    "http://oli.cmu.edu/extensions/enrollment_id": 7654,
                     "http://oli.cmu.edu/extensions/session_id": "70a20ff3-1373-4fe1-af64-59774295d22e",
                 }
             },
@@ -871,6 +872,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["event_type"], "part_attempt")
         self.assertEqual(transformed["user_id"], "15474")
         self.assertEqual(transformed["section_id"], 2161)
+        self.assertEqual(transformed["enrollment_id"], 7654)
         self.assertEqual(transformed["project_id"], 1719)
         self.assertEqual(transformed["publication_id"], 8625)
         self.assertEqual(transformed["session_id"], "70a20ff3-1373-4fe1-af64-59774295d22e")
@@ -883,6 +885,99 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["source_line"], 1)
         self.assertEqual(transformed["source_etag"], "etag")
         self.assertEqual(transformed["event_hash"], hashlib.sha256(raw_line).hexdigest())
+
+        del event["context"]["extensions"]["http://oli.cmu.edu/extensions/enrollment_id"]
+        historical_raw_line = json.dumps(event).encode("utf-8")
+        historical = lambda_function.transform_xapi_statement(
+            event,
+            raw_bytes=historical_raw_line,
+            bucket="bucket",
+            key="path/to/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+        self.assertIsNone(historical["enrollment_id"])
+
+    def test_transform_xapi_statement_does_not_project_actor_mbox_as_user_id(self):
+        event = {
+            "actor": {"mbox": "mailto:student@example.edu"},
+            "verb": {"id": "http://id.tincanapi.com/verb/viewed"},
+            "object": {
+                "definition": {"type": "http://oli.cmu.edu/extensions/types/page"}
+            },
+            "timestamp": "2026-08-20T13:17:58Z",
+        }
+        raw_line = json.dumps(event).encode("utf-8")
+
+        transformed = lambda_function.transform_xapi_statement(
+            event,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="path/to/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertIsNone(transformed["user_id"])
+
+    def test_shared_parity_statement_preserves_raw_and_attribution_contract(self):
+        fixture_path = Path(__file__).parents[3] / "test" / "support" / "fixtures" / "upgrade_data_capture_parity_statement.json"
+        raw_bytes = fixture_path.read_bytes()
+        event = json.loads(raw_bytes)
+
+        source = {
+            "raw_bytes": raw_bytes, "bucket": "bucket", "key": "parity.json",
+            "etag": "etag", "line_number": 1,
+        }
+        raw = lambda_function.transform_xapi_statement(event, **source)
+        attributions = lambda_function.transform_experiment_attributions(event, **source)
+        attribution = next(
+            row for row in attributions if row["attribution_type"] == "outcome"
+        )
+        reward = next(
+            row for row in attributions if row["attribution_type"] == "reward"
+        )
+
+        expected_raw = {
+            "section_id": 2001, "project_id": 1001, "publication_id": 3001,
+            "enrollment_id": 501, "activity_attempt_guid": "activity-guid",
+            "activity_attempt_number": 2, "page_attempt_guid": "page-guid",
+            "page_attempt_number": 1, "activity_id": 8001,
+            "activity_revision_id": 8101, "score": 1.0, "out_of": 2.0,
+        }
+        expected_attribution = {
+            "experiment_role": "rollup", "attribution_type": "outcome",
+            "experiment_id": 101, "condition_id": 303, "condition_code": "condition-a",
+            "assignment_id": 404, "assignment_scope": "intervention",
+            "algorithm": "weighted_random", "policy_version": "weighted_random",
+            "enrollment_id": 501, "resource_attempt_id": 901,
+        }
+
+        self.assertEqual({key: raw[key] for key in expected_raw}, expected_raw)
+        self.assertEqual({key: attribution[key] for key in expected_attribution}, expected_attribution)
+        self.assertIsNone(attribution["reward_value"])
+        self.assertEqual(reward["reward_value"], 0.0)
+        self.assertEqual(reward["reward_source"], "activity_attempt:no_credit")
+
+    def test_condition_assignment_projects_as_dedicated_raw_and_attribution_rows(self):
+        # AC-016: Lambda preserves the dedicated assignment event contract.
+        fixture_path = Path(__file__).parents[3] / "test" / "support" / "fixtures" / "experiment_condition_assignment_statement.json"
+        raw_bytes = fixture_path.read_bytes().rstrip(b"\n")
+        event = json.loads(raw_bytes)
+        source = {"raw_bytes": raw_bytes, "bucket": "bucket", "key": "assignment.jsonl", "etag": "etag", "line_number": 1}
+
+        raw = lambda_function.transform_xapi_statement(event, **source)
+        [attribution] = lambda_function.transform_experiment_attributions(event, **source)
+
+        self.assertEqual(raw["event_type"], "experiment_condition_assigned")
+        self.assertEqual(attribution["raw_event_type"], "experiment_condition_assigned")
+        self.assertEqual(attribution["experiment_role"], "assignment")
+        self.assertEqual(attribution["assignment_scope"], "intervention")
+        self.assertEqual(attribution["algorithm"], "thompson_sampling")
+        self.assertEqual(attribution["policy_version"], "thompson_sampling:v2")
+        self.assertEqual(attribution["assigned_at"], "2026-08-20T15:04:05Z")
+        self.assertEqual(raw["event_hash"], hashlib.sha256(raw_bytes).hexdigest())
+        self.assertEqual(attribution["raw_event_hash"], raw["event_hash"])
 
     def test_transform_xapi_statement_preserves_verb_id_and_canonical_video_fields(self):
         shared_context_extensions = {
