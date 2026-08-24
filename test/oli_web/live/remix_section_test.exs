@@ -42,6 +42,28 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert html =~ "Your work has been saved."
     end
 
+    test "a stale breadcrumb target does not crash or discard unsaved changes", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      initial_entry_ids = curriculum_entry_ids(view)
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      reordered_entry_ids = curriculum_entry_ids(view)
+
+      refute reordered_entry_ids == initial_entry_ids
+      assert has_element?(view, "#curriculum-container[data-saved='false']")
+
+      render_click(view, "set_active", %{"uuid" => "stale-hierarchy-uuid"})
+
+      assert curriculum_entry_ids(view) == reordered_entry_ids
+      assert has_element?(view, "#curriculum-container[data-saved='false']")
+      assert has_element?(view, "#save:not([disabled])")
+    end
+
     test "move modal moves an item into the selected container", %{
       conn: conn,
       section: section,
@@ -1723,6 +1745,14 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(view, ~p"/sections/#{section.slug}/remix")
     end
+  end
+
+  defp curriculum_entry_ids(view) do
+    view
+    |> render()
+    |> Floki.parse_fragment!()
+    |> Floki.find(".curriculum-entries > .curriculum-entry")
+    |> Floki.attribute("id")
   end
 
   defp open_modal_and_confirm_removal([], view), do: view
