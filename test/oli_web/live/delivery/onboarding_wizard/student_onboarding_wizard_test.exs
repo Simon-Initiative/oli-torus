@@ -89,7 +89,12 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       refute render(view) =~ "This custom title is not displayed"
       refute has_element?(view, "#onboarding-welcome-subtitle")
       refute has_element?(view, "#onboarding-welcome-description")
-      refute render(view) =~ "Here's what you can expect during this set up process."
+
+      assert has_element?(
+               view,
+               "p",
+               "Welcome to Chemistry 201! Here's what you can expect during this set up process."
+             )
 
       assert has_element?(view, "button", "Go to course")
       assert has_element?(view, "button", "Cancel")

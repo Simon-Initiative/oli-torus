@@ -81,6 +81,7 @@ defmodule Oli.Delivery do
             has_experiments: has_experiments,
             analytics_version: :v2,
             learning_model_version: project.learning_model_version,
+            description: project.description,
             welcome_title: project.welcome_title,
             encouraging_subtitle: project.encouraging_subtitle,
             certificate: nil
