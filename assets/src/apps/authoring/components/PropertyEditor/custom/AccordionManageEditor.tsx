@@ -2,7 +2,10 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import AccordionAuthorModal from '../../../../../components/parts/janus-accordion/AccordionAuthorModal';
 import { normalizeSections } from '../../../../../components/parts/janus-accordion/accordion-util';
-import { AccordionModel, AccordionSection } from '../../../../../components/parts/janus-accordion/schema';
+import {
+  AccordionModel,
+  AccordionSection,
+} from '../../../../../components/parts/janus-accordion/schema';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
 import { updatePart } from '../../../store/parts/actions/updatePart';
 import { selectCurrentSelection } from '../../../store/parts/slice';
