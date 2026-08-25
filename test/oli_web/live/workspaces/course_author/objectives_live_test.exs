@@ -211,22 +211,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, "#objectives-table")
+      assert has_element?(view, "input[phx-change='change_search'][phx-blur='apply_search']")
+      assert has_element?(view, "#select_sort")
+      assert has_element?(view, "button[phx-click='display_new_modal']", "New Objective")
 
       assert has_element?(
                view,
                "p.text-Text-text-high",
-               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
+               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
              )
 
       assert has_element?(
                view,
                "p",
-               "Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages."
+               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
              )
 
       assert has_element?(
                view,
-               ~s|a.external.text-Text-text-button[href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"][rel="noopener"][target="_blank"]|,
+               ~s|a[href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"][rel="noopener"][target="_blank"]|,
                "CMU Eberly Center guide on learning objectives"
              )
 
@@ -286,12 +289,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{second_obj.slug}")
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: "first"})
+      |> element("input[phx-change=\"change_search\"]")
+      |> render_change(%{value: "first"})
 
       view
-      |> element("button[phx-click='apply_search']")
-      |> render_click()
+      |> element("input[phx-blur=\"apply_search\"]")
+      |> render_blur(%{value: "first"})
 
       assert has_element?(view, "##{first_obj.slug}")
       refute has_element?(view, "##{second_obj.slug}")
@@ -382,7 +385,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{obj.slug}")
       assert has_element?(view, "##{obj.slug}", "2 Sub-Objectives")
       assert has_element?(view, "##{obj.slug}", "2 Pages")
-      assert has_element?(view, "##{obj.slug}", "0 Formative Activities")
+      assert has_element?(view, "##{obj.slug}", "0 Formative")
       assert has_element?(view, ".collapse", "Sub-Objectives")
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
       refute has_element?(view, ".collapse", "Pages")
@@ -441,8 +444,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(view, "##{parent.slug}", "2 Pages")
       assert has_element?(view, "##{parent.slug}", "1 Sub-Objective")
-      assert has_element?(view, "##{parent.slug}", "1 Formative Activity")
-      assert has_element?(view, "##{parent.slug}", "1 Summative Activity")
+      assert has_element?(view, "##{parent.slug}", "1 Formative")
+      assert has_element?(view, "##{parent.slug}", "1 Summative")
+
+      assert has_element?(
+               view,
+               "#sub-objective-summary-#{parent.slug}-#{child.resource_id} [aria-label='1 formative activities']"
+             )
+
+      assert has_element?(
+               view,
+               "#sub-objective-summary-#{parent.slug}-#{child.resource_id} [aria-label='1 summative activities']"
+             )
 
       view
       |> element("button[phx-click='toggle_objective'][phx-value-slug=#{child.slug}]")
@@ -458,6 +471,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
                view,
                "#sub-objective-coverage-#{child.resource_id}",
                summative_page.title
+             )
+
+      assert has_element?(
+               view,
+               "#sub-objective-summary-#{parent.slug}-#{child.resource_id}"
              )
     end
 

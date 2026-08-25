@@ -15,7 +15,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
   alias Oli.Resources.Revision
-  alias OliWeb.Common.{Filter, FilterBox}
   alias OliWeb.Icons
   alias OliWeb.Common.Listing, as: Table
 
@@ -83,25 +82,86 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     ~H"""
     {render_modal(assigns)}
 
-    <FilterBox.render
-      table_model={@table_model}
-      show_more_opts={false}
-      card_header_text="Learning Objectives"
-      card_body_text={card_body_text(assigns)}
-      card_body_text_class="mt-1 mb-4 text-Text-text-high"
-    >
-      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
-    </FilterBox.render>
+    <div class="mb-6 w-full">
+      <h2 id="header_id" class="pb-2 text-[28px] font-normal leading-[42px] text-Text-text-high">
+        Learning Objectives
+      </h2>
+      <p class="mb-6 mt-1 text-[16px] leading-6 text-Text-text-high">
+        Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies. Refer to the
+        <a
+          class="text-Text-text-button hover:underline"
+          href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
+          rel="noopener"
+          target="_blank"
+        >
+          CMU Eberly Center guide on learning objectives
+          <span class="sr-only"> (opens in a new tab)</span>
+        </a>
+        to learn more about the importance of attaching learning objectives to pages and activities.
+      </p>
 
-    <div class="flex justify-end">
-      <button
-        type="button"
-        class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-        phx-click="display_new_modal"
-      >
-        <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
-        New Objective
-      </button>
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="relative flex h-9 w-full items-center gap-3 rounded-md border border-Border-border-default bg-Specially-Tokens-Fill-fill-input px-2 sm:w-56">
+          <Icons.search class="shrink-0 text-Icon-icon-default" />
+          <input
+            type="text"
+            class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-Text-text-high outline-none placeholder:text-Text-text-low-alpha"
+            placeholder="Search..."
+            phx-change="change_search"
+            phx-blur="apply_search"
+            value={@query}
+          />
+          <button
+            :if={@query != ""}
+            id="reset_search"
+            type="button"
+            phx-click="reset_search"
+            class="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-Text-text-low-alpha hover:bg-Surface-surface-secondary-hover hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        </div>
+
+        <form id="sort" phx-change="sort" class="flex h-9 items-center gap-2">
+          <label for="select_sort" class="sr-only">Sort objectives</label>
+          <select
+            name="sort_by"
+            id="select_sort"
+            class="h-9 rounded-[3px] border border-Border-border-default bg-Background-bg-primary px-2 text-sm font-semibold text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          >
+            <%= for column_spec <- @table_model.column_specs do %>
+              <%= if column_spec.name != :action do %>
+                <option
+                  value={column_spec.name}
+                  selected={@table_model.sort_by_spec == column_spec}
+                >
+                  {column_spec.label}
+                </option>
+              <% end %>
+            <% end %>
+          </select>
+          <label class="inline-flex size-9 cursor-pointer items-center justify-center rounded text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
+            <span class="sr-only">Toggle sort direction</span>
+            <.input
+              type="checkbox"
+              name="sort_order"
+              class="hidden"
+              value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
+            />
+            <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
+          </label>
+        </form>
+
+        <button
+          type="button"
+          class="ml-auto inline-flex min-h-9 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          phx-click="display_new_modal"
+        >
+          <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
+          New Objective
+        </button>
+      </div>
     </div>
 
     <div id="objectives-table" class="my-4">
@@ -139,16 +199,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         additional_table_class="table-sm text-center"
         with_body={true}
       >
-        <Listing.render
-          revision_history_link={
-            (assigns[:has_show_links_uri_hash] || false) and Accounts.at_least_content_admin?(@author)
-          }
-          rows={@table_model.rows}
-          expanded_slugs={@expanded_objective_slugs}
-          pending_delete_slugs={@pending_sub_objective_delete_slugs}
-          project_slug={@project.slug}
-          offset={@offset}
-        />
+        <div class="rounded-lg bg-Background-bg-secondary p-6 shadow-[0px_2px_5px_rgba(0,50,99,0.10)]">
+          <Listing.render
+            revision_history_link={
+              (assigns[:has_show_links_uri_hash] || false) and
+                Accounts.at_least_content_admin?(@author)
+            }
+            rows={@table_model.rows}
+            expanded_slugs={@expanded_objective_slugs}
+            pending_delete_slugs={@pending_sub_objective_delete_slugs}
+            project_slug={@project.slug}
+            offset={@offset}
+          />
+        </div>
       </Table.render>
     </div>
     """
@@ -260,21 +323,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       |> hide_modal(modal_assigns: nil)
 
     {:noreply, push_patch(socket, to: live_path(socket, socket.assigns.params))}
-  end
-
-  defp card_body_text(assigns) do
-    ~H"""
-    Learning objectives define the knowledge and skills students should demonstrate throughout your course. Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages. Refer to the
-    <a
-      class="external text-Text-text-button hover:text-Text-text-button"
-      href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
-      rel="noopener"
-      target="_blank"
-    >
-      CMU Eberly Center guide on learning objectives
-    </a>
-    to learn more about the importance of attaching learning objectives to pages and activities.
-    """
   end
 
   defp new_modal(form, socket) do

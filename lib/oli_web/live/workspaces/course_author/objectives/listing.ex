@@ -103,34 +103,42 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
           <div class="flex flex-wrap gap-3 px-3 pb-4">
             <.metadata_pill label={pluralized_count(item.page_attachments_count, "Page", "Pages")}>
               <Icons.book
-                width="13"
-                height="14"
+                width="20"
+                height="20"
                 stroke_width="1.41573"
                 variant="objective"
                 class="shrink-0 text-current"
               />
             </.metadata_pill>
-            <.metadata_pill label={
-              pluralized_count(item.sub_objectives_count, "Sub-Objective", "Sub-Objectives")
-            } />
-            <.metadata_pill label={
-              pluralized_count(
-                item.formative_activity_attachments_count,
-                "Formative Activity",
-                "Formative Activities"
-              )
-            }>
-              <Icons.practice is_active={false} />
-            </.metadata_pill>
-            <.metadata_pill label={
-              pluralized_count(
-                item.summative_activity_attachments_count,
-                "Summative Activity",
-                "Summative Activities"
-              )
-            }>
-              <Icons.assignments is_active={false} />
-            </.metadata_pill>
+            <span class="inline-flex min-h-11 items-center rounded-[12px] border border-Border-border-default px-3 py-1 text-sm font-semibold leading-4 text-Text-text-high">
+              {pluralized_count(item.sub_objectives_count, "Sub-Objective", "Sub-Objectives")}
+            </span>
+            <span class="inline-flex min-h-11 items-center gap-1.5 rounded-[12px] border border-Border-border-default p-1">
+              <.metadata_pill
+                class="bg-Fill-Accent-fill-accent-blue text-Text-text-accent-blue"
+                label={
+                  pluralized_count(
+                    item.formative_activity_attachments_count,
+                    "Formative",
+                    "Formative"
+                  )
+                }
+              >
+                <Icons.practice is_active={false} />
+              </.metadata_pill>
+              <.metadata_pill
+                class="bg-Fill-Accent-fill-accent-orange text-Text-text-accent-orange"
+                label={
+                  pluralized_count(
+                    item.summative_activity_attachments_count,
+                    "Summative",
+                    "Summative"
+                  )
+                }
+              >
+                <Icons.assignments is_active={false} />
+              </.metadata_pill>
+            </span>
           </div>
 
           <div
@@ -193,42 +201,65 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                       />
                       <div
                         :if={!MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
-                        class="flex h-[23px] w-[60px] shrink-0 items-center gap-2 pl-2"
+                        class="flex shrink-0 items-center gap-4"
                       >
-                        <button
-                          type="button"
-                          class="inline-flex size-[22px] items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-hover active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                          phx-click="display_edit_modal"
-                          phx-value-slug={sub_objective.slug}
-                          aria-label={"Edit #{sub_objective.title}"}
-                          title={"Edit #{sub_objective.title}"}
+                        <div
+                          id={"sub-objective-summary-#{item.slug}-#{sub_objective.resource_id}"}
+                          class="flex shrink-0 items-center gap-1"
+                          aria-label={"Activity coverage summary for #{sub_objective.title}"}
                         >
-                          <Icons.edit
-                            width="14"
-                            height="14"
-                            stroke_width="1.26"
-                            variant="objective"
-                            class="shrink-0 text-current"
-                          />
-                        </button>
-                        <button
-                          type="button"
-                          class="inline-flex size-[22px] items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                          phx-click="display_sub_objective_delete_modal"
-                          phx-value-slug={sub_objective.slug}
-                          phx-value-parent_slug={item.slug}
-                          phx-value-title={sub_objective.title}
-                          aria-label={"Delete #{sub_objective.title}"}
-                          title={"Delete #{sub_objective.title}"}
-                        >
-                          <Icons.trash
-                            width="14"
-                            height="15"
-                            stroke_width="1.23853"
-                            variant="objective"
-                            class="shrink-0 text-current"
-                          />
-                        </button>
+                          <span
+                            class="inline-flex h-[27px] items-center gap-1.5 rounded-full bg-Fill-Accent-fill-accent-blue px-1.5 py-1 text-sm font-semibold leading-4 text-Text-text-accent-blue"
+                            aria-label={"#{sub_objective.formative_activity_attachments_count} formative activities"}
+                          >
+                            <Icons.practice is_active={false} />
+                            <span>{sub_objective.formative_activity_attachments_count}</span>
+                          </span>
+                          <span
+                            class="inline-flex h-[27px] items-center gap-1.5 rounded-full bg-Fill-Accent-fill-accent-orange px-1.5 py-1 text-sm font-semibold leading-4 text-Text-text-accent-orange"
+                            aria-label={"#{sub_objective.summative_activity_attachments_count} summative activities"}
+                          >
+                            <Icons.assignments is_active={false} />
+                            <span>{sub_objective.summative_activity_attachments_count}</span>
+                          </span>
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-2">
+                          <button
+                            type="button"
+                            class="inline-flex size-[22px] items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-hover active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                            phx-click="display_edit_modal"
+                            phx-value-slug={sub_objective.slug}
+                            aria-label={"Edit #{sub_objective.title}"}
+                            title={"Edit #{sub_objective.title}"}
+                          >
+                            <Icons.edit
+                              width="14"
+                              height="14"
+                              stroke_width="1.26"
+                              variant="objective"
+                              class="shrink-0 text-current"
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            class="inline-flex size-[22px] items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                            phx-click="display_sub_objective_delete_modal"
+                            phx-value-slug={sub_objective.slug}
+                            phx-value-parent_slug={item.slug}
+                            phx-value-title={sub_objective.title}
+                            aria-label={"Delete #{sub_objective.title}"}
+                            title={"Delete #{sub_objective.title}"}
+                          >
+                            <Icons.trash
+                              width="14"
+                              height="15"
+                              stroke_width="1.23853"
+                              variant="objective"
+                              class="shrink-0 text-current"
+                            />
+                          </button>
+                        </div>
                       </div>
                       <div
                         :if={child_expanded? and sub_objective.has_coverage}
@@ -320,11 +351,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   end
 
   attr :label, :string, required: true
+  attr :class, :string, default: nil
   slot :inner_block
 
   defp metadata_pill(assigns) do
     ~H"""
-    <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-Border-border-default bg-Background-bg-secondary px-[13px] py-0 text-[13px] font-semibold leading-5 text-Text-text-high">
+    <span class={[
+      "inline-flex min-h-9 items-center gap-1.5 rounded-[12px] px-3 py-1 text-sm font-semibold leading-4",
+      @class ||
+        "border border-Border-border-default bg-Specially-Tokens-Fill-fill-detail-pill text-Text-text-high"
+    ]}>
       <span
         :if={@inner_block != []}
         class="inline-flex h-5 w-[13px] shrink-0 items-center justify-center text-Text-text-high"
