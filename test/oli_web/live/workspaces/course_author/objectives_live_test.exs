@@ -498,6 +498,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click(%{"slug" => obj_a.slug})
 
       assert has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj_a.title}")
+
+      assert has_element?(
+               view,
+               "##{obj_a.slug} button[phx-value-slug=#{sub_obj_a.slug}][disabled]"
+             )
+
+      refute has_element?(
+               view,
+               "#sub-objective-chevron-#{obj_a.slug}-#{sub_obj_a.resource_id} svg"
+             )
+
       refute has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj_b.title}")
 
       view

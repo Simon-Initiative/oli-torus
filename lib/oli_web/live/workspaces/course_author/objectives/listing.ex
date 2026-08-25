@@ -197,7 +197,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                       <% child_expanded? = MapSet.member?(@expanded_slugs, sub_objective.slug) %>
                       <button
                         type="button"
-                        class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                        class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary disabled:cursor-default"
+                        disabled={!sub_objective.has_coverage}
                         aria-expanded={to_string(child_expanded?)}
                         aria-controls={
                           if sub_objective.has_coverage,
@@ -206,8 +207,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                         phx-click="toggle_objective"
                         phx-value-slug={sub_objective.slug}
                       >
-                        <span class="flex h-[15px] w-2.5 shrink-0 items-center justify-center text-Text-text-low-alpha">
+                        <span
+                          id={"sub-objective-chevron-#{item.slug}-#{sub_objective.resource_id}"}
+                          class="flex h-[15px] w-2.5 shrink-0 items-center justify-center text-Text-text-low-alpha"
+                        >
                           <Icons.chevron_down
+                            :if={sub_objective.has_coverage}
                             width="9.5"
                             height="5.5"
                             variant="stroke"
