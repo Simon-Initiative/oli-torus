@@ -85,6 +85,7 @@ defmodule OliWeb.Products.ImagePreview do
                     section={@preview_section}
                     ctx={@ctx}
                     context={context.id}
+                    id_prefix={"image-preview-thumbnail-#{context_id(context.id)}"}
                     course_picker_model={@course_picker_model}
                   />
                 </div>
@@ -134,6 +135,7 @@ defmodule OliWeb.Products.ImagePreview do
                 section={@preview_section}
                 ctx={@ctx}
                 context={@selected_context}
+                id_prefix="image-preview-modal"
                 course_picker_model={@course_picker_model}
               />
             </div>
@@ -185,6 +187,7 @@ defmodule OliWeb.Products.ImagePreview do
   attr :section, :map, required: true
   attr :ctx, :map, required: true
   attr :context, :atom, required: true
+  attr :id_prefix, :string, default: "image-preview"
   attr :course_picker_model, :any, default: nil
 
   def preview_content(%{context: :my_course} = assigns) do
@@ -389,6 +392,8 @@ defmodule OliWeb.Products.ImagePreview do
   end
 
   def preview_content(%{context: :student_welcome} = assigns) do
+    assigns = assign_new(assigns, :id_prefix, fn -> "image-preview" end)
+
     ~H"""
     <div
       class="relative h-[628px] w-[1200px] overflow-hidden text-gray-900 dark:text-white"
@@ -421,7 +426,10 @@ defmodule OliWeb.Products.ImagePreview do
             </div>
             <div class="flex flex-col overflow-hidden bg-white shadow-xl dark:bg-[#0B0C11] dark:shadow-none">
               <div class="flex-1 overflow-hidden [&_img]:!block [&_img]:!h-[150px] [&_img]:!w-full">
-                <Intro.render section={student_welcome_section(@section)} />
+                <Intro.render
+                  section={student_welcome_section(@section)}
+                  id_prefix={@id_prefix}
+                />
               </div>
               <div class="flex items-center justify-end bg-gray-100/50 p-3 dark:bg-black/40">
                 <button class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center">

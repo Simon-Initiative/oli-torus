@@ -223,6 +223,20 @@ defmodule OliWeb.Sections.EditLiveTest do
       refute html =~ "/authoring/products/#{section.slug}/discounts"
     end
 
+    test "section description cannot exceed 300 words", %{conn: conn, section: section} do
+      description = Enum.join(List.duplicate("word", 301), " ")
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      html =
+        view
+        |> element("#section-edit-form")
+        |> render_submit(section: %{description: description})
+
+      assert html =~ "must be 300 words or fewer"
+      assert Oli.Repo.get(Section, section.id).description == section.description
+    end
+
     test "loads open and free section data correctly", %{conn: conn} do
       welcome_title = %{
         type: "p",

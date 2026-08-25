@@ -89,6 +89,15 @@ defmodule Oli.Delivery.Sections.SectionTest do
       assert changeset.errors[:title] |> elem(0) =~ ~r/should be at most .* character/
     end
 
+    test "validates the description word limit" do
+      section = build(:section, @valid_section_attrs)
+      description = Enum.join(List.duplicate("word", 301), " ")
+
+      changeset = Section.changeset(section, %{description: description})
+
+      assert changeset.errors[:description] == {"must be 300 words or fewer", []}
+    end
+
     test "default assistant_enabled is false" do
       changeset =
         build(:section, @valid_section_attrs)

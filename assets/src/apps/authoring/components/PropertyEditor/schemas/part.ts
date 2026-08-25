@@ -101,8 +101,8 @@ export const responsivePartSchema: JSONSchema7 = {
           default: 960,
           anyOf: [
             { const: 960, title: '100%' },
-            { const: 470, title: '50% align left' },
-            { const: 471, title: '50% align right' },
+            { const: 470, title: '50% left' },
+            { const: 471, title: '50% right' },
           ],
         },
         height: { type: 'number', title: 'Height' },
@@ -148,8 +148,8 @@ export const simplifiedResponsivePartSchema: JSONSchema7 = {
           default: 960,
           anyOf: [
             { const: 960, title: '100%' },
-            { const: 470, title: '50% align left' },
-            { const: 471, title: '50% align right' },
+            { const: 470, title: '50% left' },
+            { const: 471, title: '50% right' },
           ],
         },
         height: { type: 'number', title: 'Height' },

@@ -304,6 +304,43 @@ defmodule Oli.DeliveryTest do
       assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
     end
 
+    test "copies the Project onboarding fields to a new Section", context do
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "project-welcome-title",
+            "type" => "p",
+            "children" => [%{"text" => "Welcome from the project"}]
+          }
+        ]
+      }
+
+      project =
+        context.project
+        |> Project.changeset(%{
+          description: "Project description",
+          welcome_title: welcome_title,
+          encouraging_subtitle: "Project subtitle"
+        })
+        |> Repo.update!()
+
+      user = insert(:user, independent_learner: true)
+
+      assert {:ok, section_id, _slug} =
+               Delivery.create_section(
+                 Sections.change_section(%Section{title: "Project onboarding Section"}),
+                 "project:#{project.id}",
+                 user,
+                 SectionSpecification.direct()
+               )
+
+      section = Sections.get_section!(section_id)
+      assert section.description == "Project description"
+      assert section.welcome_title == welcome_title
+      assert section.encouraging_subtitle == "Project subtitle"
+    end
+
     test "copies the blueprint model even when it differs from its base Project", context do
       product = set_section_learning_model(context.product, :lkt_aoa)
       assert context.project.learning_model_version == :naive
