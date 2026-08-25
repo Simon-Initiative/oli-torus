@@ -33,10 +33,11 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered =~ "Learning Objectives"
       assert rendered =~ "Plan &lt;Garden&gt;"
       assert rendered =~ "Identify sunlight"
-      assert rendered =~ "break-words text-base font-semibold"
-      assert rendered =~ ~s|<details class="learning-objectives-proficiency|
-      assert rendered =~ ~s|<summary class="min-h-11 cursor-pointer py-2|
+      assert rendered =~ ~s|<details class="group/proficiency learning-objectives-proficiency|
+      assert rendered =~ "text-Text-text-low-alpha"
+      assert rendered =~ "group-open/proficiency:rotate-180"
       assert rendered =~ "What is proficiency and how is it estimated?"
+      assert rendered =~ "Proficiency estimates become more reliable"
       refute rendered =~ "Learning Objective Summary"
       refute rendered =~ "Review</h4>"
       refute rendered =~ "Practice</h4>"
@@ -208,19 +209,25 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered =~ "Growing Proficiency"
       assert rendered =~ "Strong Proficiency"
       assert rendered =~ "Not Enough Information"
-      assert rendered =~ "fas fa-seedling"
-      assert rendered =~ "fas fa-spa"
-      assert rendered =~ "fas fa-tree"
-      assert rendered =~ "fas fa-hourglass-half"
+      assert rendered =~ ~s|aria-label="Beginning Proficiency"|
+      assert rendered =~ ~s|aria-label="Growing Proficiency"|
+      assert rendered =~ ~s|aria-label="Strong Proficiency"|
+      assert rendered =~ ~s|aria-label="Not Enough Information"|
+      assert rendered =~ "text-Text-text-accent-green"
+
+      assert rendered =~ ~s|role="tooltip"|
       refute rendered =~ "Not enough data"
+      refute rendered =~ "Establishing Proficiency"
 
       assert rendered =~ "Review page"
       assert rendered =~ "Practice page"
       assert rendered =~ "Sub-objective practice"
       assert rendered =~ ~s|href="/sections/section-a/lesson/review-page"|
       refute rendered =~ "Container not page"
-      refute rendered =~ "999"
-      refute rendered =~ "103"
+      refute rendered =~ ~s|href="/sections/section-a/lesson/999"|
+      refute rendered =~ ">999<"
+      refute rendered =~ ~s|href="/sections/section-a/lesson/103"|
+      refute rendered =~ ">103<"
     end
   end
 

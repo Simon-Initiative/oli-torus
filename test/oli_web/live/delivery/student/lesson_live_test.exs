@@ -1633,10 +1633,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       ensure_content_is_visible(view)
 
-      # if we render_click() on PROFICIENCY to show the modal, a JS command should be triggered.
-      # But, since the phx-click does not have any push command, we get "no push command found within JS commands".
-      # The workaround is to directly assert on the content of the modal
-
       assert has_element?(
                view,
                "#proficiency_explanation_modal h2",
@@ -1646,7 +1642,33 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(
                view,
                "#proficiency_explanation_modal p",
-               "This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page."
+               "Proficiency is our best estimate of how likely you are to successfully apply a learning objective"
+             )
+    end
+
+    test "can see proficiency explanation accordion", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+
+      ensure_content_is_visible(view)
+
+      assert has_element?(
+               view,
+               ~s{section[data-testid="page-objectives"] summary},
+               "What is proficiency"
+             )
+
+      assert has_element?(
+               view,
+               ~s{section[data-testid="page-objectives"] p},
+               "Proficiency is our best estimate of how likely you are to successfully apply a learning objective"
              )
     end
 
@@ -1680,57 +1702,59 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
       ensure_content_is_visible(view)
 
+      assert has_element?(view, ~s{section[data-testid="page-objectives"]}, "LEARNING OBJECTIVES")
+
       assert has_element?(
                view,
-               ~s{div[role="objective #{o1} title"]},
+               ~s{[data-testid="objective-#{o1}-title"]},
                "this is the first objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o1}"] svg[role="beginning proficiency icon"]}
+               ~s{[data-objective-id="#{o1}"] span[aria-label="Beginning Proficiency"]}
              )
 
-      assert has_element?(view, ~s{div[id="objective_#{o1}_tooltip"]}, "Beginning Proficiency")
+      assert has_element?(view, ~s{span[id="objective_#{o1}_tooltip"]}, "Beginning Proficiency")
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o2} title"]},
+               ~s{[data-testid="objective-#{o2}-title"]},
                "this is the second objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o2}"] svg[role="growing proficiency icon"]}
+               ~s{[data-objective-id="#{o2}"] span[aria-label="Growing Proficiency"]}
              )
 
-      assert has_element?(view, ~s{div[id="objective_#{o2}_tooltip"]}, "Growing Proficiency")
+      assert has_element?(view, ~s{span[id="objective_#{o2}_tooltip"]}, "Growing Proficiency")
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o3} title"]},
+               ~s{[data-testid="objective-#{o3}-title"]},
                "this is the third objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o3}"] svg[role="establishing proficiency icon"]}
+               ~s{[data-objective-id="#{o3}"] span[aria-label="Strong Proficiency"]}
              )
 
-      assert has_element?(view, ~s{div[id="objective_#{o3}_tooltip"]}, "Establishing Proficiency")
+      assert has_element?(view, ~s{span[id="objective_#{o3}_tooltip"]}, "Strong Proficiency")
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o4} title"]},
+               ~s{[data-testid="objective-#{o4}-title"]},
                "this is the forth objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o4}"] svg[role="no data proficiency icon"]}
+               ~s{[data-objective-id="#{o4}"] span[aria-label="Not Enough Information"]}
              )
 
-      assert has_element?(view, ~s{div[id="objective_#{o4}_tooltip"]}, "Not enough information")
+      assert has_element?(view, ~s{span[id="objective_#{o4}_tooltip"]}, "Not Enough Information")
     end
 
     test "can navigate between pages and updates references in the request path", %{
