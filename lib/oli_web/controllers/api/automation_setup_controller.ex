@@ -2,9 +2,11 @@ defmodule OliWeb.Api.AutomationSetupController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
   import OliWeb.Api.Helpers
+  require Logger
   alias Oli.AutomationSetup
 
   @moduledoc tags: ["Automated Test Data Setup Service"]
+  @automation_idle_timeout_ms 300_000
 
   alias OpenApiSpex.Schema
 
@@ -100,21 +102,39 @@ defmodule OliWeb.Api.AutomationSetupController do
   defmodule AutomationTeardownResponse do
     require OpenApiSpex
 
+    success_response = %Schema{
+      type: :object,
+      properties: %{
+        success: %Schema{type: :boolean, enum: [true]}
+      },
+      required: [:success]
+    }
+
+    error_response = %Schema{
+      type: :object,
+      properties: %{
+        success: %Schema{type: :boolean, enum: [false]},
+        message: %Schema{type: :string}
+      },
+      required: [:success, :message]
+    }
+
     teardown_response = %Schema{
+      oneOf: [success_response, error_response]
+    }
+
+    project_teardown_response = %Schema{
       oneOf: [
         %Schema{
           type: :object,
           properties: %{
-            success: true
-          }
+            success: %Schema{type: :boolean, enum: [true]},
+            queued: %Schema{type: :boolean, description: "Whether teardown was queued"},
+            job_id: %Schema{type: :integer, description: "Queued Oban job ID"}
+          },
+          required: [:success, :queued, :job_id]
         },
-        %Schema{
-          type: :object,
-          properties: %{
-            success: false,
-            message: %Schema{type: :string}
-          }
-        }
+        error_response
       ]
     }
 
@@ -126,7 +146,7 @@ defmodule OliWeb.Api.AutomationSetupController do
         educator_deleted: teardown_response,
         learner_deleted: teardown_response,
         section_deleted: teardown_response,
-        project_deleted: teardown_response
+        project_deleted: project_teardown_response
       },
       example: %{
         author_deleted: %{
@@ -139,7 +159,9 @@ defmodule OliWeb.Api.AutomationSetupController do
           success: true
         },
         project_deleted: %{
-          success: true
+          success: true,
+          queued: true,
+          job_id: 12_345
         },
         section_deleted: %{
           success: true
@@ -212,6 +234,8 @@ defmodule OliWeb.Api.AutomationSetupController do
         "create_educator" => create_educator,
         "project_archive" => project_archive
       }) do
+    conn = extend_automation_idle_timeout(conn)
+
     case setup_data(
            project_archive,
            create_learner,
@@ -258,12 +282,38 @@ defmodule OliWeb.Api.AutomationSetupController do
         "section_slug" => section_slug,
         "project_slug" => project_slug
       }) do
+    teardown_started_at = System.monotonic_time(:millisecond)
+
+    Logger.info("automation_teardown started project=#{project_slug} section=#{section_slug}")
+
     # The order these happen in matters
-    author_deleted = AutomationSetup.teardown_author(author_email, author_password)
-    educator_deleted = AutomationSetup.teardown_educator(educator_email, educator_password)
-    learner_deleted = AutomationSetup.teardown_learner(learner_email, learner_password)
-    section_deleted = AutomationSetup.teardown_section(section_slug)
-    project_deleted = AutomationSetup.teardown_project(project_slug)
+    author_deleted =
+      timed_teardown_step(:author, fn ->
+        AutomationSetup.teardown_author(author_email, author_password)
+      end)
+
+    educator_deleted =
+      timed_teardown_step(:educator, fn ->
+        AutomationSetup.teardown_educator(educator_email, educator_password)
+      end)
+
+    learner_deleted =
+      timed_teardown_step(:learner, fn ->
+        AutomationSetup.teardown_learner(learner_email, learner_password)
+      end)
+
+    section_deleted =
+      timed_teardown_step(:section, fn -> AutomationSetup.teardown_section(section_slug) end)
+
+    project_deleted =
+      timed_teardown_step(:project_enqueue, fn ->
+        AutomationSetup.enqueue_project_teardown(project_slug)
+      end)
+
+    Logger.info(
+      "automation_teardown completed project=#{project_slug} section=#{section_slug} " <>
+        "duration_ms=#{System.monotonic_time(:millisecond) - teardown_started_at}"
+    )
 
     json(conn, %{
       author_deleted: author_deleted,
@@ -272,6 +322,46 @@ defmodule OliWeb.Api.AutomationSetupController do
       section_deleted: section_deleted,
       project_deleted: project_deleted
     })
+  end
+
+  # Importing a full course can take longer than Cowboy's default HTTP/1 idle
+  # timeout. Scope the extension to automation setup requests.
+  defp extend_automation_idle_timeout(
+         %Plug.Conn{adapter: {Plug.Cowboy.Conn, cowboy_request}} = conn
+       ) do
+    :cowboy_req.cast(
+      {:set_options, %{idle_timeout: @automation_idle_timeout_ms}},
+      cowboy_request
+    )
+
+    conn
+  end
+
+  defp extend_automation_idle_timeout(conn), do: conn
+
+  defp timed_teardown_step(step, teardown_fn) do
+    started_at = System.monotonic_time(:millisecond)
+    Logger.info("automation_teardown step_started step=#{step}")
+
+    try do
+      result = teardown_fn.()
+
+      Logger.info(
+        "automation_teardown step_completed step=#{step} success=#{Map.get(result, :success)} " <>
+          "duration_ms=#{System.monotonic_time(:millisecond) - started_at}"
+      )
+
+      result
+    rescue
+      error ->
+        Logger.error(
+          "automation_teardown step_failed step=#{step} " <>
+            "duration_ms=#{System.monotonic_time(:millisecond) - started_at} " <>
+            "error=#{Exception.message(error)}"
+        )
+
+        reraise error, __STACKTRACE__
+    end
   end
 
   defp format_project(project) do
