@@ -175,6 +175,31 @@ defmodule Oli.LearningModel.LktAoa.Application do
 
   defp validate_part_attempt(part_attempt), do: {:error, {:invalid_part_attempt, part_attempt}}
 
+  # The transaction applies one evaluated-attempt batch as a single atomic model
+  # update. First it claims each PartAttempt in the narrow application table; only
+  # newly claimed attempts are allowed to affect proficiency or confidence, which
+  # makes Oban retries and duplicate GUIDs no-ops. It then resolves the published
+  # LO beta parameters, initializes and locks all affected learner/LO states, and
+  # records prior activity-part evidence.
+  #
+  # Evidence rows are keyed by Section, learner, activity resource, and part id.
+  # They intentionally are not keyed by LO: one newly encountered activity part may
+  # target several LOs, and it should increment confidence breadth once for each
+  # targeted learner/LO state. An evidence insert conflict means the learner has
+  # already encountered that same activity part in this Section, so the attempt
+  # still contributes a proficiency transition but does not increase confidence.
+  #
+  # After evidence insertion returns only genuinely new rows, pure replay folds
+  # claimed contributions into the locked states in deterministic order. Each
+  # contribution first calculates the pre-response P(correct), incorporates it
+  # into the running AOA proficiency value, then applies the observed binary
+  # outcome to recency state for the next opportunity. Confidence is recalculated
+  # from the updated distinct-part count. The final write persists only compact
+  # learner state; no historical attempts or model coefficients are copied there.
+  #
+  # Keeping claim, evidence, state replay, and final write in one transaction
+  # guarantees that any failure rolls the whole batch back rather than leaving a
+  # partially applied exam or a claim without matching learner-state updates.
   defp transaction_multi(normalized, config) do
     Multi.new()
     |> Multi.run(:claimed_ids, fn repo, _changes ->
@@ -287,7 +312,11 @@ defmodule Oli.LearningModel.LktAoa.Application do
             join: revision in Revision,
             on: revision.id == pr.revision_id,
             where: pr.publication_id == ^publication_id and pr.resource_id in ^objective_ids,
-            select: revision
+            # LKT-AOA only needs the published LO's resource identity, resource type,
+            # and typed beta parameter. Avoid loading full Revision content for every
+            # objective in a bulk assessment.
+            select:
+              struct(revision, [:resource_id, :resource_type_id, :learning_model_parameters])
           )
           |> repo.all()
 
