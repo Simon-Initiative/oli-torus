@@ -82,18 +82,23 @@ export const accordionThemeStyles = (themeColor?: string): CSSProperties => {
   };
 };
 
+// model.height is the minimum collapsed height floor, not a maximum cap.
+export const accordionMinHeight = (height?: number): number =>
+  height ?? DEFAULT_ACCORDION_HEIGHT;
+
 export const accordionContainerStyles = (
   width?: number | string,
   height?: number,
 ): CSSProperties => {
-  const resolvedHeight = height ?? DEFAULT_ACCORDION_HEIGHT;
-  const cssVar = { ['--accordion-min-height' as string]: `${resolvedHeight}px` };
+  const minHeight = accordionMinHeight(height);
+  const cssVar = { ['--accordion-min-height' as string]: `${minHeight}px` };
 
-  if (isResponsiveAccordionLayout(width)) {
-    return { width, minHeight: resolvedHeight, height: 'auto', ...cssVar };
-  }
-
-  return { width, height: resolvedHeight, minHeight: resolvedHeight, ...cssVar };
+  return {
+    width,
+    minHeight,
+    height: 'auto',
+    ...cssVar,
+  };
 };
 
 const parseNodes = (nodes: unknown): MarkupTree[] => {

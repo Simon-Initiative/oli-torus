@@ -9,12 +9,15 @@ import { PartComponentProps } from '../types/parts';
 import AccordionView, { tagName } from './AccordionView';
 import {
   AccordionCapiState,
+  accordionMinHeight,
   buildResponses,
   parseAccordionModel,
   parseSectionIndexes,
   uniqueSortedIndexes,
 } from './accordion-util';
 import { AccordionModel } from './schema';
+
+const RESIZE_REPORT_DEBOUNCE_MS = 400;
 
 const Accordion: React.FC<PartComponentProps<AccordionModel>> = (props) => {
   const id: string = props.id;
@@ -25,6 +28,7 @@ const Accordion: React.FC<PartComponentProps<AccordionModel>> = (props) => {
   const [openedSections, setOpenedSections] = useState<number[]>([]);
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const resizeDebounceRef = useRef<number | null>(null);
 
   const saveState = useCallback(
     (next: AccordionCapiState) => {
@@ -95,6 +99,59 @@ const Accordion: React.FC<PartComponentProps<AccordionModel>> = (props) => {
       props.onReady({ id: `${id}` });
     }
   }, [ready]);
+
+  const minHeight = model ? accordionMinHeight(model.height) : 0;
+  const { width } = model ?? {};
+
+  useEffect(() => {
+    if (!ready || !model) return;
+
+    const styleChanges: Record<string, { value: number | string }> = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number | string };
+    }
+    styleChanges.height = { value: minHeight };
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [ready, width, minHeight, id, model]);
+
+  useEffect(() => {
+    if (!ready || !model || !containerRef.current) {
+      return;
+    }
+
+    const el = containerRef.current;
+
+    const reportHeight = () => {
+      const contentHeight = Math.ceil(el.getBoundingClientRect().height);
+      props.onResize({
+        id: `${id}`,
+        settings: { height: { value: Math.max(minHeight, contentHeight) } },
+      });
+    };
+
+    const debouncedReportHeight = () => {
+      if (resizeDebounceRef.current !== null) {
+        window.clearTimeout(resizeDebounceRef.current);
+      }
+      resizeDebounceRef.current = window.setTimeout(() => {
+        resizeDebounceRef.current = null;
+        reportHeight();
+      }, RESIZE_REPORT_DEBOUNCE_MS);
+    };
+
+    reportHeight();
+    const observer = new ResizeObserver(debouncedReportHeight);
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      if (resizeDebounceRef.current !== null) {
+        window.clearTimeout(resizeDebounceRef.current);
+        resizeDebounceRef.current = null;
+      }
+    };
+  }, [ready, minHeight, id, model?.sections, expandedSections]);
 
   const applyStateChanges = useCallback(
     (changes: Record<string, any>) => {

@@ -33,6 +33,12 @@ janus-accordion {
     min-height: var(--accordion-min-height);
   }
 
+  &.janus-accordion-delivery {
+    height: auto;
+    overflow: visible;
+    min-height: var(--accordion-min-height);
+  }
+
   .accordion-list {
     display: flex;
     flex-direction: column;
