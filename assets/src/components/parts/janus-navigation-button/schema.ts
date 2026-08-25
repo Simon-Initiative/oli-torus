@@ -122,7 +122,7 @@ export const createSchema = (): Partial<NavButtonModel> => ({
   width: 100,
   height: 44,
   title: 'Nav Button',
-  ariaLabel: 'Nav Button',
+  ariaLabel: '',
   imageSource: '',
   imagePosition: 'Left',
   enableAiTrigger: false,
