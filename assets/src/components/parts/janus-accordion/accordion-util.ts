@@ -83,8 +83,7 @@ export const accordionThemeStyles = (themeColor?: string): CSSProperties => {
 };
 
 // model.height is the minimum collapsed height floor, not a maximum cap.
-export const accordionMinHeight = (height?: number): number =>
-  height ?? DEFAULT_ACCORDION_HEIGHT;
+export const accordionMinHeight = (height?: number): number => height ?? DEFAULT_ACCORDION_HEIGHT;
 
 export const accordionContainerStyles = (
   width?: number | string,
@@ -126,7 +125,9 @@ export const normalizeSections = (sections: unknown): AccordionSection[] => {
       contentNodes: parseNodes(s.contentNodes),
     }));
 
-  const count = clampSectionCount(normalized.length > 0 ? normalized.length : MIN_ACCORDION_SECTIONS);
+  const count = clampSectionCount(
+    normalized.length > 0 ? normalized.length : MIN_ACCORDION_SECTIONS,
+  );
   const next = normalized.slice(0, count);
   while (next.length < count) {
     next.push(createDefaultSection(next.length + 1));
@@ -166,7 +167,11 @@ export type AccordionCapiState = {
 export const buildResponses = (state: AccordionCapiState) => [
   { key: 'enabled', type: CapiVariableTypes.BOOLEAN, value: state.enabled },
   { key: 'userOpened', type: CapiVariableTypes.BOOLEAN, value: state.userOpened },
-  { key: 'openedSectionsCount', type: CapiVariableTypes.NUMBER, value: state.openedSections.length },
+  {
+    key: 'openedSectionsCount',
+    type: CapiVariableTypes.NUMBER,
+    value: state.openedSections.length,
+  },
   { key: 'openedSections', type: CapiVariableTypes.ARRAY, value: state.openedSections },
   { key: 'expandedSections', type: CapiVariableTypes.ARRAY, value: state.expandedSections },
 ];
@@ -174,7 +179,11 @@ export const buildResponses = (state: AccordionCapiState) => [
 export const parseAccordionModel = (raw: unknown): AccordionModel => {
   let model: Partial<AccordionModel> = {};
   if (typeof raw === 'string') {
-    try { model = JSON.parse(raw); } catch { model = {}; }
+    try {
+      model = JSON.parse(raw);
+    } catch {
+      model = {};
+    }
   } else if (raw && typeof raw === 'object') {
     model = raw as Partial<AccordionModel>;
   }

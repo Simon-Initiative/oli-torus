@@ -1,7 +1,7 @@
 import React, { CSSProperties } from 'react';
 import { FlashcardFaceContent } from './FlashcardsView';
-import { getFaceNodes } from './flashcardContent';
 import { flashcardThemeStyles } from './flashcard-util';
+import { getFaceNodes } from './flashcardContent';
 import { FlashcardItem } from './schema';
 
 type CardSide = 'front' | 'back';

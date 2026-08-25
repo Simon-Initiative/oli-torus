@@ -182,7 +182,7 @@ export const clampCardsPerRow = (value: unknown): number => {
 };
 
 export const resolveCardsPerRowBounds = (
-  model: Pick<FlashcardsModel, 'minCardsPerRow' | 'maxCardsPerRow'>,
+  model: Partial<Pick<FlashcardsModel, 'minCardsPerRow' | 'maxCardsPerRow'>>,
 ) => {
   const min = clampCardsPerRow(model.minCardsPerRow ?? MIN_CARDS_PER_ROW_DEFAULT);
   const max = clampCardsPerRow(model.maxCardsPerRow ?? MAX_CARDS_PER_ROW_DEFAULT);

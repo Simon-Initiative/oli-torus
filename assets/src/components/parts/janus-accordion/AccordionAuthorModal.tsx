@@ -1,21 +1,15 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import { AdvancedAuthoringModal } from '../../../apps/authoring/components/AdvancedAuthoringModal';
-import ConfirmDelete from '../../../apps/authoring/components/Modal/DeleteConfirmationModal';
 import { JanusRichLabelEditor } from 'components/parts/common/JanusRichLabelEditor';
 import { MarkupTree } from 'components/parts/janus-text-flow/TextFlow';
 import guid from 'utils/guid';
-import {
-  htmlToPlainText,
-  normalizeRichLabelForStorage,
-} from 'utils/richOptionLabel';
-import {
-  tagName as quillEditorTagName,
-  registerEditor,
-} from '../janus-text-flow/QuillEditor';
+import { htmlToPlainText, normalizeRichLabelForStorage } from 'utils/richOptionLabel';
+import { AdvancedAuthoringModal } from '../../../apps/authoring/components/AdvancedAuthoringModal';
+import ConfirmDelete from '../../../apps/authoring/components/Modal/DeleteConfirmationModal';
+import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
+import './AccordionAuthorModal.scss';
 import { getSectionPreviewText } from './accordion-util';
 import { AccordionSection, MAX_ACCORDION_SECTIONS, createDefaultSection } from './schema';
-import './AccordionAuthorModal.scss';
 
 export interface AccordionAuthorModalProps {
   show: boolean;
@@ -34,11 +28,7 @@ const AccordionSectionContentEditor = memo(function AccordionSectionContentEdito
   contentNodes,
 }: AccordionSectionContentEditorProps) {
   return (
-    <div
-      className="acc-modal-quill-wrap"
-      data-field="content"
-      data-section-id={sectionId}
-    >
+    <div className="acc-modal-quill-wrap" data-field="content" data-section-id={sectionId}>
       {React.createElement(quillEditorTagName, {
         key: `${sectionId}-content`,
         tree: JSON.stringify(contentNodes || []),
@@ -260,10 +250,8 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
 
           <div className="acc-modal-section-list">
             {draftSections.map((section, index) => {
-              const previewText =
-                getSectionPreviewText(section.contentNodes) || 'Empty content';
-              const titlePreview =
-                htmlToPlainText(section.title) || `Section ${index + 1}`;
+              const previewText = getSectionPreviewText(section.contentNodes) || 'Empty content';
+              const titlePreview = htmlToPlainText(section.title) || `Section ${index + 1}`;
 
               return (
                 <div
@@ -283,9 +271,7 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
                 >
                   <div className="acc-modal-section-body">
                     <div className="acc-modal-section-item-header">
-                      <span className="acc-modal-section-item-title">
-                        SECTION {index + 1}
-                      </span>
+                      <span className="acc-modal-section-item-title">SECTION {index + 1}</span>
                       {draftSections.length > 1 && (
                         <button
                           type="button"
@@ -313,9 +299,7 @@ const AccordionAuthorModal: React.FC<AccordionAuthorModalProps> = ({
         <main className="acc-modal-editor">
           {activeSection && activeSectionId ? (
             <>
-              <h4 className="acc-modal-editor-heading">
-                Editing Section {activeSectionIndex + 1}
-              </h4>
+              <h4 className="acc-modal-editor-heading">Editing Section {activeSectionIndex + 1}</h4>
 
               <div className="acc-modal-title-field">
                 <div className="acc-modal-field-label">Title</div>

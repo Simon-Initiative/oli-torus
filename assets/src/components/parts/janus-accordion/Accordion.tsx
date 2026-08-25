@@ -189,10 +189,7 @@ const Accordion: React.FC<PartComponentProps<AccordionModel>> = (props) => {
 
   useEffect(() => {
     if (!props.notify) return;
-    const notificationsHandled = [
-      NotificationType.STATE_CHANGED,
-      NotificationType.CONTEXT_CHANGED,
-    ];
+    const notificationsHandled = [NotificationType.STATE_CHANGED, NotificationType.CONTEXT_CHANGED];
     const notifications = notificationsHandled.map((notificationType) => {
       const handler = (payload: any) => {
         if (notificationType === NotificationType.STATE_CHANGED) {

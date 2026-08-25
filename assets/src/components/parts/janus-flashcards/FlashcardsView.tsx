@@ -1,8 +1,8 @@
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MarkupTree, renderFlow } from 'components/parts/janus-text-flow/TextFlow';
 import './Flashcard.css';
-import { getFaceNodes, stripFlashcardImageDimensions } from './flashcardContent';
 import { flashcardThemeStyles } from './flashcard-util';
+import { getFaceNodes, stripFlashcardImageDimensions } from './flashcardContent';
 import {
   FLASHCARDS_GRID_GAP_REM,
   FLASHCARD_NARROW_MIN_HEIGHT_PX,
@@ -269,7 +269,11 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
           </span>
 
           <div className="flashcard-inner">
-            <div className="flashcard-face flashcard-front" style={faceStyle} aria-hidden={isFlipped}>
+            <div
+              className="flashcard-face flashcard-front"
+              style={faceStyle}
+              aria-hidden={isFlipped}
+            >
               <FlashcardFaceContent
                 contentKeyPrefix={`${card.id}-front`}
                 nodes={getFaceNodes(card, 'front')}

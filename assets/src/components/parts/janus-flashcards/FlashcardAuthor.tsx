@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
-import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import {
   NotificationType,
   subscribeToNotification,
@@ -13,8 +13,13 @@ import FlashcardConfigurePreview from './FlashcardConfigurePreview';
 import FlashcardQuillEditor from './FlashcardQuillEditor';
 import FlashcardThemePicker from './FlashcardThemePicker';
 import { FlashcardsView } from './FlashcardsView';
+import {
+  DEFAULT_FLASHCARD_FACE_COLOR,
+  FLASHCARD_PREVIEW_HEIGHT_SCALE,
+  computeFlashcardCellWidth,
+  nodesToPlainText,
+} from './flashcard-util';
 import { getFaceNodes, plainTextToDefaultNodes } from './flashcardContent';
-import { nodesToPlainText, DEFAULT_FLASHCARD_FACE_COLOR, computeFlashcardCellWidth, FLASHCARD_PREVIEW_HEIGHT_SCALE } from './flashcard-util';
 import {
   FlashcardItem,
   FlashcardsModel,
@@ -281,7 +286,9 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
     const handleEditorChange = (e: any) => {
       if (!inConfigureMode || !activeCardId) return;
 
-      const wrapper = (e.target as HTMLElement | null)?.closest('[data-side]') as HTMLElement | null;
+      const wrapper = (e.target as HTMLElement | null)?.closest(
+        '[data-side]',
+      ) as HTMLElement | null;
       const side = wrapper?.dataset.side as CardSide | undefined;
       const cardId = wrapper?.dataset.cardId;
 
