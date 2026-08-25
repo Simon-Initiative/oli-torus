@@ -15,7 +15,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
   def render(assigns) do
     ~H"""
-    <div id="accordion" class="flex flex-col gap-2 font-open-sans">
+    <div id="accordion" class="flex flex-col gap-3 font-open-sans">
       <%= for {item, index} <- Enum.with_index(@rows, 1) do %>
         <% expanded? = MapSet.member?(@expanded_slugs, item.slug) %>
 
@@ -100,45 +100,41 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-3 px-3 pb-4">
+          <div
+            :if={!expanded?}
+            id={"objective-summary-#{item.resource_id}"}
+            class="flex flex-wrap gap-3 px-3 pb-4"
+          >
             <.metadata_pill label={pluralized_count(item.page_attachments_count, "Page", "Pages")}>
               <Icons.book
-                width="20"
-                height="20"
+                width="13"
+                height="14"
                 stroke_width="1.41573"
                 variant="objective"
                 class="shrink-0 text-current"
               />
             </.metadata_pill>
-            <span class="inline-flex min-h-11 items-center rounded-[12px] border border-Border-border-default px-3 py-1 text-sm font-semibold leading-4 text-Text-text-high">
+            <span class="inline-flex min-h-[30px] items-center rounded-[12px] border border-Border-border-default px-[13px] py-1 text-[13px] font-semibold leading-[19.5px] text-Text-text-high">
               {pluralized_count(item.sub_objectives_count, "Sub-Objective", "Sub-Objectives")}
             </span>
-            <span class="inline-flex min-h-11 items-center gap-1.5 rounded-[12px] border border-Border-border-default p-1">
-              <.metadata_pill
-                class="bg-Fill-Accent-fill-accent-blue text-Text-text-accent-blue"
-                label={
-                  pluralized_count(
-                    item.formative_activity_attachments_count,
-                    "Formative",
-                    "Formative"
-                  )
-                }
-              >
-                <Icons.practice is_active={false} />
-              </.metadata_pill>
-              <.metadata_pill
-                class="bg-Fill-Accent-fill-accent-orange text-Text-text-accent-orange"
-                label={
-                  pluralized_count(
-                    item.summative_activity_attachments_count,
-                    "Summative",
-                    "Summative"
-                  )
-                }
-              >
-                <Icons.assignments is_active={false} />
-              </.metadata_pill>
-            </span>
+            <.metadata_pill label={
+              pluralized_count(
+                item.formative_activity_attachments_count,
+                "Formative",
+                "Formative"
+              )
+            }>
+              <Icons.practice is_active={false} />
+            </.metadata_pill>
+            <.metadata_pill label={
+              pluralized_count(
+                item.summative_activity_attachments_count,
+                "Summative",
+                "Summative"
+              )
+            }>
+              <Icons.assignments is_active={false} />
+            </.metadata_pill>
           </div>
 
           <div
@@ -147,8 +143,42 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
             class="collapse show border-t border-Border-border-default"
             aria-labelledby={"heading#{index}"}
           >
-            <div class="flex flex-col gap-4 px-4 pb-5 pt-[17px]">
-              <section class="flex flex-col gap-3">
+            <div class="flex flex-col gap-5 px-4 pb-5 pt-[17px]">
+              <section :if={item.has_coverage} class="order-1 flex flex-col gap-3">
+                <div class="flex items-center justify-start gap-4">
+                  <div
+                    class="inline-flex items-center rounded-md border border-Border-border-default bg-Surface-surface-secondary-muted p-1"
+                    role="group"
+                    aria-label="Assessment bucket"
+                  >
+                    <button
+                      type="button"
+                      class={bucket_button_class(item.assessment_bucket == :formative)}
+                      aria-pressed={to_string(item.assessment_bucket == :formative)}
+                      phx-click="set_assessment_bucket"
+                      phx-value-objective_id={item.resource_id}
+                      phx-value-bucket="formative"
+                    >
+                      <Icons.practice is_active={item.assessment_bucket == :formative} />
+                      {item.formative_activity_attachments_count} Formative
+                    </button>
+                    <button
+                      type="button"
+                      class={bucket_button_class(item.assessment_bucket == :summative)}
+                      aria-pressed={to_string(item.assessment_bucket == :summative)}
+                      phx-click="set_assessment_bucket"
+                      phx-value-objective_id={item.resource_id}
+                      phx-value-bucket="summative"
+                    >
+                      <Icons.assignments is_active={item.assessment_bucket == :summative} />
+                      {item.summative_activity_attachments_count} Summative
+                    </button>
+                  </div>
+                </div>
+                <.coverage_details item={item} project_slug={@project_slug} />
+              </section>
+
+              <section class="order-2 flex flex-col gap-3">
                 <div class="flex items-center justify-between gap-4">
                   <div class="text-[17px] font-bold leading-[25.5px] text-Text-text-high">
                     Sub-Objectives
@@ -209,14 +239,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           aria-label={"Activity coverage summary for #{sub_objective.title}"}
                         >
                           <span
-                            class="inline-flex h-[27px] items-center gap-1.5 rounded-full bg-Fill-Accent-fill-accent-blue px-1.5 py-1 text-sm font-semibold leading-4 text-Text-text-accent-blue"
+                            class="inline-flex min-h-[26px] items-center gap-1 rounded-full border border-Border-border-default bg-Background-bg-secondary px-1.5 py-0.5 text-xs font-semibold leading-[18px] text-Text-text-high"
                             aria-label={"#{sub_objective.formative_activity_attachments_count} formative activities"}
                           >
                             <Icons.practice is_active={false} />
                             <span>{sub_objective.formative_activity_attachments_count}</span>
                           </span>
                           <span
-                            class="inline-flex h-[27px] items-center gap-1.5 rounded-full bg-Fill-Accent-fill-accent-orange px-1.5 py-1 text-sm font-semibold leading-4 text-Text-text-accent-orange"
+                            class="inline-flex min-h-[26px] items-center gap-1 rounded-full border border-Border-border-default bg-Background-bg-secondary px-1.5 py-0.5 text-xs font-semibold leading-[18px] text-Text-text-high"
                             aria-label={"#{sub_objective.summative_activity_attachments_count} summative activities"}
                           >
                             <Icons.assignments is_active={false} />
@@ -266,12 +296,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                         id={"sub-objective-coverage-#{sub_objective.resource_id}"}
                         class="basis-full border-t border-Border-border-default pt-3"
                       >
-                        <div class="mb-3 flex items-center justify-between gap-4">
-                          <div class="text-sm font-semibold text-Text-text-high">
-                            Attached Content
-                          </div>
+                        <div class="mb-3 flex items-center justify-start gap-4">
                           <div
-                            class="inline-flex rounded-md border border-Border-border-default bg-Background-bg-secondary p-0.5"
+                            class="inline-flex items-center rounded-md border border-Border-border-default bg-Surface-surface-secondary-muted p-1"
                             role="group"
                             aria-label="Assessment bucket"
                           >
@@ -285,7 +312,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                               phx-value-objective_id={sub_objective.resource_id}
                               phx-value-bucket="formative"
                             >
-                              Formative
+                              <Icons.practice is_active={
+                                sub_objective.assessment_bucket == :formative
+                              } />
+                              {sub_objective.formative_activity_attachments_count} Formative
                             </button>
                             <button
                               type="button"
@@ -297,7 +327,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                               phx-value-objective_id={sub_objective.resource_id}
                               phx-value-bucket="summative"
                             >
-                              Summative
+                              <Icons.assignments is_active={
+                                sub_objective.assessment_bucket == :summative
+                              } />
+                              {sub_objective.summative_activity_attachments_count} Summative
                             </button>
                           </div>
                         </div>
@@ -306,41 +339,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                     </li>
                   <% end %>
                 </ul>
-              </section>
-
-              <section :if={item.has_coverage} class="flex flex-col gap-3">
-                <div class="flex items-center justify-between gap-4">
-                  <div class="text-[17px] font-bold leading-[25.5px] text-Text-text-high">
-                    Attached Content
-                  </div>
-                  <div
-                    class="inline-flex rounded-md border border-Border-border-default bg-Background-bg-secondary p-0.5"
-                    role="group"
-                    aria-label="Assessment bucket"
-                  >
-                    <button
-                      type="button"
-                      class={bucket_button_class(item.assessment_bucket == :formative)}
-                      aria-pressed={to_string(item.assessment_bucket == :formative)}
-                      phx-click="set_assessment_bucket"
-                      phx-value-objective_id={item.resource_id}
-                      phx-value-bucket="formative"
-                    >
-                      Formative
-                    </button>
-                    <button
-                      type="button"
-                      class={bucket_button_class(item.assessment_bucket == :summative)}
-                      aria-pressed={to_string(item.assessment_bucket == :summative)}
-                      phx-click="set_assessment_bucket"
-                      phx-value-objective_id={item.resource_id}
-                      phx-value-bucket="summative"
-                    >
-                      Summative
-                    </button>
-                  </div>
-                </div>
-                <.coverage_details item={item} project_slug={@project_slug} />
               </section>
             </div>
           </div>
@@ -357,9 +355,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   defp metadata_pill(assigns) do
     ~H"""
     <span class={[
-      "inline-flex min-h-9 items-center gap-1.5 rounded-[12px] px-3 py-1 text-sm font-semibold leading-4",
+      "inline-flex min-h-[30px] items-center gap-1.5 rounded-[12px] px-[13px] py-1 text-[13px] font-semibold leading-[19.5px]",
       @class ||
-        "border border-Border-border-default bg-Specially-Tokens-Fill-fill-detail-pill text-Text-text-high"
+        "border border-Border-border-default bg-Background-bg-secondary text-Text-text-high"
     ]}>
       <span
         :if={@inner_block != []}
@@ -377,47 +375,51 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
   defp coverage_details(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-4">
       <%= if @item.coverage_details == [] do %>
         <p class="m-0 rounded-md bg-Background-bg-secondary px-3 py-2 text-sm text-Text-text-low-alpha">
           No pages or activities are attached for this assessment bucket.
         </p>
       <% else %>
-        <ul class="m-0 flex list-none flex-col gap-2 p-0">
+        <ul class="m-0 flex list-none flex-col gap-4 p-0">
           <%= for page <- @item.coverage_details do %>
-            <li class="rounded-md border border-Border-border-default bg-Background-bg-secondary p-3">
-              <.link
-                href={
-                  ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{page.page.slug}/edit"
-                }
-                class="flex items-center gap-2 rounded text-sm font-semibold text-Text-text-button hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-                aria-label={"Open page editor for #{page.page.title || page.page.slug}"}
-              >
-                <Icons.book width="13" height="14" stroke_width="1.41573" variant="objective" />
-                <span>{page.page.title || page.page.slug}</span>
-              </.link>
+            <li class="flex flex-col gap-2">
+              <div class="border-b border-Border-border-subtle pb-2">
+                <.link
+                  href={
+                    ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{page.page.slug}/edit"
+                  }
+                  class="flex items-center gap-1.5 rounded text-sm font-semibold leading-[21px] text-Text-text-button hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                  aria-label={"Open page editor for #{page.page.title || page.page.slug}"}
+                >
+                  <Icons.book width="12" height="13" stroke_width="1.41573" variant="objective" />
+                  <span>{page.page.title || page.page.slug}</span>
+                </.link>
+              </div>
               <%= if page.activities == [] do %>
-                <p class="m-0 mt-2 pl-5 text-sm text-Text-text-low-alpha">
+                <p class="m-0 pl-0.5 text-xs leading-[18px] text-Text-text-low-alpha">
                   No activities are attached for this assessment bucket.
                 </p>
               <% else %>
-                <ul class="m-0 mt-2 grid list-none grid-cols-1 gap-1 pl-5 sm:grid-cols-2">
+                <ul class="m-0 flex list-none flex-col gap-1 p-0">
                   <%= for activity <- page.activities do %>
-                    <li>
+                    <li class="flex h-[42px] items-center rounded-md border border-Border-border-default px-[13px] py-[7px]">
                       <.link
                         href={
                           ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{page.page.slug}/edit#activity_#{activity.resource_id}"
                         }
-                        class="flex items-center gap-2 rounded text-sm text-Text-text-button hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                        class="flex min-w-0 items-center gap-2 rounded text-[13px] font-semibold leading-[19.5px] text-Text-text-button hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                         aria-label={"Open activity #{activity.title || activity.slug} in #{page.page.title || page.page.slug}"
                         }
                       >
-                        <%= if page.page.graded do %>
-                          <Icons.assignments is_active={false} />
-                        <% else %>
-                          <Icons.practice is_active={false} />
-                        <% end %>
-                        <span>{activity.title || activity.slug}</span>
+                        <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-Fill-Accent-fill-accent-blue p-1">
+                          <%= if page.page.graded do %>
+                            <Icons.assignments is_active={false} />
+                          <% else %>
+                            <Icons.practice is_active={false} />
+                          <% end %>
+                        </span>
+                        <span class="min-w-0 truncate">{activity.title || activity.slug}</span>
                       </.link>
                     </li>
                   <% end %>
@@ -433,11 +435,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
   defp bucket_button_class(true),
     do:
-      "rounded px-2 py-1 text-xs font-semibold text-Text-text-white bg-Fill-Buttons-fill-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      "inline-flex h-[27px] items-center gap-1.5 rounded bg-Fill-Accent-fill-accent-blue px-3 py-1 text-sm font-semibold leading-4 text-Text-text-high whitespace-nowrap shadow-[0px_1px_1.5px_rgba(0,0,0,0.1),0px_1px_1px_rgba(0,0,0,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
 
   defp bucket_button_class(false),
     do:
-      "rounded px-2 py-1 text-xs font-semibold text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      "inline-flex h-[27px] items-center gap-1.5 rounded px-3 py-1 text-sm font-semibold leading-4 text-Text-text-low whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
 
   defp pluralized_count(1, singular, _plural), do: "1 #{singular}"
   defp pluralized_count(count, _singular, plural), do: "#{count} #{plural}"

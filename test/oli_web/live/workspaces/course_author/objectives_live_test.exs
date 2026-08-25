@@ -257,6 +257,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       wait_until(fn -> has_element?(view, "#objective-coverage-ready") end)
       assert has_element?(view, "##{objective.slug}")
+      assert has_element?(view, "#objective-summary-#{objective.resource_id}")
       refute has_element?(view, "#objective-coverage-error")
     end
 
@@ -383,9 +384,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
-      assert has_element?(view, "##{obj.slug}", "2 Sub-Objectives")
-      assert has_element?(view, "##{obj.slug}", "2 Pages")
-      assert has_element?(view, "##{obj.slug}", "0 Formative")
+      refute has_element?(view, "#objective-summary-#{obj.resource_id}")
       assert has_element?(view, ".collapse", "Sub-Objectives")
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
       refute has_element?(view, ".collapse", "Pages")
@@ -442,10 +441,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: parent.slug}))
       wait_for_coverage(view)
 
-      assert has_element?(view, "##{parent.slug}", "2 Pages")
-      assert has_element?(view, "##{parent.slug}", "1 Sub-Objective")
-      assert has_element?(view, "##{parent.slug}", "1 Formative")
-      assert has_element?(view, "##{parent.slug}", "1 Summative")
+      refute has_element?(view, "#objective-summary-#{parent.resource_id}")
 
       assert has_element?(
                view,
@@ -1055,6 +1051,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       wait_for_coverage(view)
 
       assert has_element?(view, "##{objective.slug} .collapse", page.title)
+      refute has_element?(view, "##{objective.slug} .collapse", "Attached Content")
+      assert has_element?(view, "##{objective.slug} .collapse", "0 Formative")
+      assert has_element?(view, "##{objective.slug} .collapse", "0 Summative")
 
       assert has_element?(
                view,
@@ -1250,7 +1249,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: objective.slug}))
       wait_for_coverage(view)
 
-      assert render(view) =~ "grid-cols-1 gap-1 pl-5 sm:grid-cols-2"
+      assert render(view) =~ "h-[42px] items-center rounded-md border"
       assert has_element?(view, "svg[role='practice icon']")
       assert has_element?(view, "##{objective.slug} .collapse", formative_page.title)
 
