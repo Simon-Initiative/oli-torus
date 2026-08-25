@@ -35,6 +35,7 @@ export const ActivityEditor = ({
       <ActivityBlock
         editMode={editMode}
         contentItem={contentItem}
+        activityId={activity.activityId}
         canRemove={canRemove}
         onRemove={onRemove}
       >

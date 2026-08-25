@@ -29,7 +29,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
           >
             <button
               class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-              aria-expanded={expanded?}
+              aria-expanded={to_string(expanded?)}
               aria-controls={"collapse#{index}"}
               phx-click="toggle_objective"
               phx-value-slug={item.slug}
@@ -114,15 +114,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
               pluralized_count(item.sub_objectives_count, "Sub-Objective", "Sub-Objectives")
             } />
             <.metadata_pill label={
-              pluralized_count(item.activity_attachments_count, "Activity", "Activities")
+              pluralized_count(
+                item.formative_activity_attachments_count,
+                "Formative Activity",
+                "Formative Activities"
+              )
             }>
-              <Icons.clipboard
-                width="13"
-                height="16"
-                stroke_width="1.45455"
-                variant="objective"
-                class="shrink-0 text-current"
-              />
+              <Icons.practice is_active={false} />
+            </.metadata_pill>
+            <.metadata_pill label={
+              pluralized_count(
+                item.summative_activity_attachments_count,
+                "Summative Activity",
+                "Summative Activities"
+              )
+            }>
+              <Icons.assignments is_active={false} />
             </.metadata_pill>
           </div>
 
@@ -145,24 +152,40 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                     <li
                       :if={!is_nil(sub_objective)}
                       class={[
-                        "group/item flex items-center gap-[10px] rounded-md border border-Border-border-default bg-Background-bg-secondary p-3",
+                        "group/item flex flex-wrap items-center gap-[10px] rounded-md border border-Border-border-default bg-Background-bg-secondary p-3",
                         MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "opacity-50"
                       ]}
                     >
-                      <span class="flex h-[15px] w-2.5 shrink-0 items-center justify-center text-Text-text-low-alpha">
-                        <Icons.chevron_down
-                          width="9.5"
-                          height="5.5"
-                          variant="stroke"
-                          class="shrink-0 -rotate-90 text-current"
-                        />
-                      </span>
-                      <div class={[
-                        "min-w-0 flex-1 text-sm font-normal leading-[19.25px] text-Text-text-high",
-                        MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "line-through"
-                      ]}>
-                        {sub_objective.title}
-                      </div>
+                      <% child_expanded? = MapSet.member?(@expanded_slugs, sub_objective.slug) %>
+                      <button
+                        type="button"
+                        class="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                        aria-expanded={to_string(child_expanded?)}
+                        aria-controls={
+                          if sub_objective.has_coverage,
+                            do: "sub-objective-coverage-#{sub_objective.resource_id}"
+                        }
+                        phx-click="toggle_objective"
+                        phx-value-slug={sub_objective.slug}
+                      >
+                        <span class="flex h-[15px] w-2.5 shrink-0 items-center justify-center text-Text-text-low-alpha">
+                          <Icons.chevron_down
+                            width="9.5"
+                            height="5.5"
+                            variant="stroke"
+                            class={[
+                              "shrink-0 text-current transition-transform",
+                              !child_expanded? && "-rotate-90"
+                            ]}
+                          />
+                        </span>
+                        <span class={[
+                          "min-w-0 flex-1 text-sm font-normal leading-[19.25px] text-Text-text-high",
+                          MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "line-through"
+                        ]}>
+                          {sub_objective.title}
+                        </span>
+                      </button>
                       <.loader
                         :if={MapSet.member?(@pending_delete_slugs, sub_objective.slug)}
                         class="ml-2"
@@ -207,9 +230,86 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           />
                         </button>
                       </div>
+                      <div
+                        :if={child_expanded? and sub_objective.has_coverage}
+                        id={"sub-objective-coverage-#{sub_objective.resource_id}"}
+                        class="basis-full border-t border-Border-border-default pt-3"
+                      >
+                        <div class="mb-3 flex items-center justify-between gap-4">
+                          <div class="text-sm font-semibold text-Text-text-high">
+                            Attached Content
+                          </div>
+                          <div
+                            class="inline-flex rounded-md border border-Border-border-default bg-Background-bg-secondary p-0.5"
+                            role="group"
+                            aria-label="Assessment bucket"
+                          >
+                            <button
+                              type="button"
+                              class={
+                                bucket_button_class(sub_objective.assessment_bucket == :formative)
+                              }
+                              aria-pressed={to_string(sub_objective.assessment_bucket == :formative)}
+                              phx-click="set_assessment_bucket"
+                              phx-value-objective_id={sub_objective.resource_id}
+                              phx-value-bucket="formative"
+                            >
+                              Formative
+                            </button>
+                            <button
+                              type="button"
+                              class={
+                                bucket_button_class(sub_objective.assessment_bucket == :summative)
+                              }
+                              aria-pressed={to_string(sub_objective.assessment_bucket == :summative)}
+                              phx-click="set_assessment_bucket"
+                              phx-value-objective_id={sub_objective.resource_id}
+                              phx-value-bucket="summative"
+                            >
+                              Summative
+                            </button>
+                          </div>
+                        </div>
+                        <.coverage_details item={sub_objective} project_slug={@project_slug} />
+                      </div>
                     </li>
                   <% end %>
                 </ul>
+              </section>
+
+              <section :if={item.has_coverage} class="flex flex-col gap-3">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="text-[17px] font-bold leading-[25.5px] text-Text-text-high">
+                    Attached Content
+                  </div>
+                  <div
+                    class="inline-flex rounded-md border border-Border-border-default bg-Background-bg-secondary p-0.5"
+                    role="group"
+                    aria-label="Assessment bucket"
+                  >
+                    <button
+                      type="button"
+                      class={bucket_button_class(item.assessment_bucket == :formative)}
+                      aria-pressed={to_string(item.assessment_bucket == :formative)}
+                      phx-click="set_assessment_bucket"
+                      phx-value-objective_id={item.resource_id}
+                      phx-value-bucket="formative"
+                    >
+                      Formative
+                    </button>
+                    <button
+                      type="button"
+                      class={bucket_button_class(item.assessment_bucket == :summative)}
+                      aria-pressed={to_string(item.assessment_bucket == :summative)}
+                      phx-click="set_assessment_bucket"
+                      phx-value-objective_id={item.resource_id}
+                      phx-value-bucket="summative"
+                    >
+                      Summative
+                    </button>
+                  </div>
+                </div>
+                <.coverage_details item={item} project_slug={@project_slug} />
               </section>
             </div>
           </div>
@@ -235,6 +335,73 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
     </span>
     """
   end
+
+  attr :item, :map, required: true
+  attr :project_slug, :string, required: true
+
+  defp coverage_details(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <%= if @item.coverage_details == [] do %>
+        <p class="m-0 rounded-md bg-Background-bg-secondary px-3 py-2 text-sm text-Text-text-low-alpha">
+          No pages or activities are attached for this assessment bucket.
+        </p>
+      <% else %>
+        <ul class="m-0 flex list-none flex-col gap-2 p-0">
+          <%= for page <- @item.coverage_details do %>
+            <li class="rounded-md border border-Border-border-default bg-Background-bg-secondary p-3">
+              <.link
+                href={
+                  ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{page.page.slug}/edit"
+                }
+                class="flex items-center gap-2 rounded text-sm font-semibold text-Text-text-button hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                aria-label={"Open page editor for #{page.page.title || page.page.slug}"}
+              >
+                <Icons.book width="13" height="14" stroke_width="1.41573" variant="objective" />
+                <span>{page.page.title || page.page.slug}</span>
+              </.link>
+              <%= if page.activities == [] do %>
+                <p class="m-0 mt-2 pl-5 text-sm text-Text-text-low-alpha">
+                  No activities are attached for this assessment bucket.
+                </p>
+              <% else %>
+                <ul class="m-0 mt-2 grid list-none grid-cols-1 gap-1 pl-5 sm:grid-cols-2">
+                  <%= for activity <- page.activities do %>
+                    <li>
+                      <.link
+                        href={
+                          ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{page.page.slug}/edit#activity_#{activity.resource_id}"
+                        }
+                        class="flex items-center gap-2 rounded text-sm text-Text-text-button hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                        aria-label={"Open activity #{activity.title || activity.slug} in #{page.page.title || page.page.slug}"
+                        }
+                      >
+                        <%= if page.page.graded do %>
+                          <Icons.assignments is_active={false} />
+                        <% else %>
+                          <Icons.practice is_active={false} />
+                        <% end %>
+                        <span>{activity.title || activity.slug}</span>
+                      </.link>
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp bucket_button_class(true),
+    do:
+      "rounded px-2 py-1 text-xs font-semibold text-Text-text-white bg-Fill-Buttons-fill-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+
+  defp bucket_button_class(false),
+    do:
+      "rounded px-2 py-1 text-xs font-semibold text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
 
   defp pluralized_count(1, singular, _plural), do: "1 #{singular}"
   defp pluralized_count(count, _singular, plural), do: "#{count} #{plural}"

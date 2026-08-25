@@ -7,15 +7,21 @@ interface ActivityBlockProps {
   editMode: boolean;
   canRemove: boolean;
   contentItem: ActivityReference;
+  activityId: number;
   onRemove: (key: string) => void;
 }
 
-export const ActivityBlock = ({ children, contentItem }: PropsWithChildren<ActivityBlockProps>) => {
+export const ActivityBlock = ({
+  children,
+  contentItem,
+  activityId,
+}: PropsWithChildren<ActivityBlockProps>) => {
   return (
     <div
       id={`resource-editor-${contentItem.id}`}
       className={classNames(styles.activityBlock, 'activity-block')}
     >
+      <span id={`activity_${activityId}`} className="sr-only" aria-hidden="true" />
       <div>{children}</div>
     </div>
   );

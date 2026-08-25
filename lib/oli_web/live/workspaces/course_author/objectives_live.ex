@@ -10,11 +10,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   alias Oli.Accounts
   alias Oli.Authoring.Course
+  alias Oli.Authoring.ObjectiveCoverage
   alias Oli.Authoring.Editing.ObjectiveEditor
-  alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
-  alias Oli.Resources.{Revision, ResourceType}
+  alias Oli.Resources.Revision
   alias OliWeb.Common.{Filter, FilterBox}
   alias OliWeb.Icons
   alias OliWeb.Common.Listing, as: Table
@@ -44,8 +44,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     project = socket.assigns.project
     author = socket.assigns.current_author
 
-    {all_objectives, all_children, objectives, table_model} =
-      build_objectives(project, [], fn socket -> socket end, true)
+    {all_objectives, all_children, objectives, table_model} = build_objectives(project)
+    load_ref = make_ref()
+    start_coverage_load(project, load_ref)
 
     {:ok,
      assign(socket,
@@ -56,7 +57,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        total_count: length(objectives),
        all_objectives: all_objectives,
        all_children: all_children,
-       objectives_attachments: [],
+       coverage_model: nil,
+       coverage_status: :loading,
+       coverage_load_ref: load_ref,
+       assessment_buckets: %{},
        pending_sub_objective_delete_slugs: MapSet.new(),
        query: "",
        expanded_objective_slugs: initial_expanded_objective_slugs(params),
@@ -101,7 +105,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     </div>
 
     <div id="objectives-table" class="my-4">
+      <%= case @coverage_status do %>
+        <% :loading -> %>
+          <div
+            id="objective-coverage-loading"
+            class="mb-3 flex items-center gap-2 text-sm text-Text-text-medium"
+            role="status"
+          >
+            <.loader icon_class="text-Icon-icon-default" /> Loading objective coverage...
+          </div>
+        <% {:error, reason} -> %>
+          <div
+            id="objective-coverage-error"
+            class="mb-3 rounded-md border border-Border-border-default bg-Background-bg-secondary px-3 py-2 text-sm text-Text-text-high"
+            role="alert"
+          >
+            {coverage_error_message(reason)}
+          </div>
+        <% :ready -> %>
+          <span class="sr-only" id="objective-coverage-ready">Objective coverage loaded</span>
+      <% end %>
+
       <Table.render
+        :if={@coverage_status == :ready}
         filter={@query}
         table_model={@table_model}
         total_count={@total_count}
@@ -128,7 +154,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     """
   end
 
-  defp build_objectives(project, objectives_attachments, flash_fn, first_load \\ false) do
+  defp build_objectives(project) do
     all_objectives =
       project
       |> ObjectiveEditor.fetch_objective_mappings()
@@ -156,7 +182,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                   sub_objectives_count: length(mapped_children),
                   page_attachments_count: 0,
                   page_attachments: [],
-                  activity_attachments_count: 0
+                  activity_attachments_count: 0,
+                  formative_activity_attachments_count: 0,
+                  summative_activity_attachments_count: 0,
+                  assessment_bucket: :formative,
+                  has_coverage: false,
+                  coverage_details: []
                 }
               )
             ] ++ acc
@@ -168,20 +199,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
     {:ok, table_model} = TableModel.new(objectives)
 
+    {all_objectives, all_children, objectives, table_model}
+  end
+
+  defp start_coverage_load(project, load_ref) do
     pid = self()
 
-    if first_load do
-      Task.async(fn ->
-        publication = Publishing.project_working_publication(project.slug)
-        objectives_attachments = Publishing.find_attached_objectives(publication.id)
+    Task.start(fn ->
+      result =
+        try do
+          ObjectiveCoverage.load(project)
+        rescue
+          _exception -> {:error, :coverage_load_failed}
+        catch
+          _kind, _reason -> {:error, :coverage_load_failed}
+        end
 
-        send(pid, {:finish_attachments, {objectives_attachments, flash_fn}})
-      end)
-    else
-      send(pid, {:finish_attachments, {objectives_attachments, flash_fn}})
-    end
-
-    {all_objectives, all_children, objectives, table_model}
+      send(pid, {:objective_coverage_loaded, load_ref, result})
+    end)
   end
 
   def filter_rows(socket, query, _filter) do
@@ -194,19 +229,37 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   defp return_updated_data(project, flash_fn, socket) do
     {all_objectives, all_children, objectives, table_model} =
-      build_objectives(project, socket.assigns.objectives_attachments, flash_fn)
+      build_objectives(project)
 
-    {:noreply,
-     socket
-     |> assign(
-       objectives: objectives,
-       table_model: table_model,
-       total_count: length(objectives),
-       all_objectives: all_objectives,
-       all_children: all_children
-     )
-     |> hide_modal(modal_assigns: nil)
-     |> push_patch(to: live_path(socket, socket.assigns.params))}
+    load_ref = make_ref()
+    start_coverage_load(project, load_ref)
+
+    objective_slugs =
+      objectives
+      |> Enum.map(& &1.slug)
+      |> MapSet.new()
+
+    expanded_objective_slugs =
+      MapSet.intersection(socket.assigns.expanded_objective_slugs, objective_slugs)
+
+    socket =
+      socket
+      |> assign(
+        objectives: objectives,
+        table_model: table_model,
+        total_count: length(objectives),
+        all_objectives: all_objectives,
+        all_children: all_children,
+        coverage_model: nil,
+        coverage_status: :loading,
+        coverage_load_ref: load_ref,
+        assessment_buckets: socket.assigns.assessment_buckets,
+        expanded_objective_slugs: expanded_objective_slugs
+      )
+      |> flash_fn.()
+      |> hide_modal(modal_assigns: nil)
+
+    {:noreply, push_patch(socket, to: live_path(socket, socket.assigns.params))}
   end
 
   defp card_body_text(assigns) do
@@ -267,6 +320,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        to: live_path(socket, socket.assigns.params),
        replace: true
      )}
+  end
+
+  def handle_event(
+        "set_assessment_bucket",
+        %{"objective_id" => objective_id, "bucket" => bucket},
+        socket
+      ) do
+    with {:ok, objective_id} <- parse_objective_id(objective_id),
+         {:ok, bucket} <- normalize_assessment_bucket(bucket),
+         model when not is_nil(model) <- socket.assigns.coverage_model,
+         coverage when not is_nil(coverage) <- ObjectiveCoverage.coverage(model, objective_id),
+         true <- tagged_content?(coverage) do
+      assessment_buckets = Map.put(socket.assigns.assessment_buckets, objective_id, bucket)
+      objectives = apply_coverage(socket.assigns.objectives, model, assessment_buckets)
+      {:ok, table_model} = TableModel.new(objectives)
+
+      {:noreply, assign(socket, objectives: objectives, table_model: table_model)}
+    else
+      _ -> {:noreply, socket}
+    end
   end
 
   def handle_event(
@@ -629,72 +702,122 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     do: AuthoringResolver.from_revision_slug(project.slug, slug)
 
   @impl Phoenix.LiveView
-  def handle_info({:finish_attachments, {objectives_attachments, flash_fn}}, socket) do
-    page_id = ResourceType.id_for_page()
-    activity_id = ResourceType.id_for_activity()
+  def handle_info({:objective_coverage_loaded, load_ref, result}, socket) do
+    case load_ref == socket.assigns.coverage_load_ref do
+      false ->
+        {:noreply, socket}
 
-    objectives =
-      Enum.reduce(socket.assigns.objectives, [], fn rev, acc ->
-        resource_id = rev.resource_id
-
-        children =
-          rev.children
-          |> Enum.filter(&(!is_nil(&1)))
-          |> Enum.map(& &1.resource_id)
-
-        all_page_attachments =
-          Enum.filter(objectives_attachments, fn
-            %{resource_type_id: ^page_id, attached_objective: resource_id} ->
-              Enum.member?(children, resource_id)
-
-            _ ->
-              false
-          end) ++
-            for pa = %{
-                  attached_objective: ^resource_id,
-                  resource_type_id: ^page_id
-                } <- objectives_attachments,
-                do: pa
-
-        page_attachments = Enum.uniq_by(all_page_attachments, & &1.slug)
-
-        activity_attachments =
-          for aa = %{
-                attached_objective: ^resource_id,
-                resource_type_id: ^activity_id
-              } <- objectives_attachments,
-              do: aa
-
-        [
-          Map.merge(
-            rev,
-            %{
-              page_attachments_count: length(page_attachments),
-              page_attachments: page_attachments,
-              activity_attachments_count: length(activity_attachments)
-            }
-          )
-        ] ++ acc
-      end)
-
-    {:ok, table_model} = TableModel.new(objectives)
-
-    {:noreply,
-     socket
-     |> assign(
-       objectives: objectives,
-       table_model: table_model,
-       objectives_attachments: objectives_attachments
-     )
-     |> flash_fn.()
-     |> push_patch(
-       to: live_path(socket, socket.assigns.params),
-       replace: true
-     )}
+      true ->
+        apply_coverage_result(result, socket)
+    end
   end
 
   # needed to ignore results of Task invocation
   def handle_info(_, socket), do: {:noreply, socket}
+
+  defp apply_coverage_result({:ok, model}, socket) do
+    assessment_buckets =
+      selected_assessment_buckets(
+        socket.assigns.assessment_buckets,
+        model,
+        socket.assigns.objectives
+      )
+
+    objectives = apply_coverage(socket.assigns.objectives, model, assessment_buckets)
+    {:ok, table_model} = TableModel.new(objectives)
+
+    {:noreply,
+     assign(socket,
+       objectives: objectives,
+       table_model: table_model,
+       total_count: length(objectives),
+       coverage_model: model,
+       coverage_status: :ready,
+       assessment_buckets: assessment_buckets
+     )}
+  end
+
+  defp apply_coverage_result({:error, reason}, socket) do
+    {:noreply, assign(socket, coverage_model: nil, coverage_status: {:error, reason})}
+  end
+
+  defp apply_coverage(objectives, model, assessment_buckets) do
+    Enum.map(objectives, fn objective ->
+      objective
+      |> Map.merge(coverage_fields(objective, model, assessment_buckets))
+      |> Map.update!(:children, fn children ->
+        Enum.map(children, fn
+          nil -> nil
+          child -> Map.merge(child, coverage_fields(child, model, assessment_buckets))
+        end)
+      end)
+    end)
+  end
+
+  defp coverage_fields(objective, model, assessment_buckets) do
+    coverage = ObjectiveCoverage.coverage(model, objective.resource_id) || %{}
+    formative = Map.get(coverage, :formative_activity_count, 0)
+    summative = Map.get(coverage, :summative_activity_count, 0)
+    bucket = Map.get(assessment_buckets, objective.resource_id, :formative)
+
+    %{
+      page_attachments_count: Map.get(coverage, :page_count, 0),
+      page_attachments: [],
+      activity_attachments_count: formative + summative,
+      formative_activity_attachments_count: formative,
+      summative_activity_attachments_count: summative,
+      sub_objectives_count: Map.get(coverage, :sub_objective_count, 0),
+      assessment_bucket: bucket,
+      has_coverage: tagged_content?(coverage),
+      coverage_details: ObjectiveCoverage.details(model, objective.resource_id, bucket)
+    }
+  end
+
+  defp selected_assessment_buckets(existing, model, objectives) do
+    objectives
+    |> Enum.flat_map(fn objective -> [objective | Enum.reject(objective.children, &is_nil/1)] end)
+    |> Map.new(fn row -> {row.resource_id, Map.get(existing, row.resource_id, :formative)} end)
+    |> Enum.filter(fn {objective_id, _bucket} ->
+      model
+      |> ObjectiveCoverage.coverage(objective_id)
+      |> tagged_content?()
+    end)
+    |> Map.new()
+  end
+
+  defp tagged_content?(nil), do: false
+
+  defp tagged_content?(coverage) do
+    Map.get(coverage, :page_count, 0) > 0 or
+      Map.get(coverage, :formative_activity_count, 0) > 0 or
+      Map.get(coverage, :summative_activity_count, 0) > 0
+  end
+
+  defp parse_objective_id(objective_id) when is_integer(objective_id), do: {:ok, objective_id}
+
+  defp parse_objective_id(objective_id) when is_binary(objective_id) do
+    case Integer.parse(objective_id) do
+      {id, ""} when id > 0 -> {:ok, id}
+      _ -> :error
+    end
+  end
+
+  defp parse_objective_id(_), do: :error
+
+  defp normalize_assessment_bucket("formative"), do: {:ok, :formative}
+  defp normalize_assessment_bucket("summative"), do: {:ok, :summative}
+  defp normalize_assessment_bucket(_), do: :error
+
+  defp coverage_error_message(:project_not_found), do: "The project could not be found."
+
+  defp coverage_error_message(:working_publication_not_found),
+    do: "No working publication is available."
+
+  defp coverage_error_message(:multiple_working_publications),
+    do: "The project has multiple working publications."
+
+  defp coverage_error_message(:invalid_project), do: "The project is invalid."
+  defp coverage_error_message(_reason), do: "Objective coverage could not be loaded."
 
   # Keep expanded LO state shareable in the URL while accepting legacy selected links.
   defp initial_expanded_objective_slugs(params) do
