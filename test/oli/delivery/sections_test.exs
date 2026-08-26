@@ -2384,6 +2384,28 @@ defmodule Oli.Delivery.SectionsTest do
       result = Sections.get_parent_containers_map(section.id, [999_999, 999_998])
       assert result == %{}
     end
+
+    test "excludes pages whose parent container's top-level unit is suppressed", %{
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      unit_1: unit_1
+    } do
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      page_ids = [page_1.resource_id, page_2.resource_id, page_3.resource_id]
+      result = Sections.get_parent_containers_map(section.id, page_ids)
+
+      # module_1 and module_2 are both descendants of the suppressed unit_1, so pages nested
+      # under either of them are treated the same as pages with no parent container at all.
+      refute Map.has_key?(result, page_1.resource_id)
+      refute Map.has_key?(result, page_2.resource_id)
+      refute Map.has_key?(result, page_3.resource_id)
+    end
   end
 
   describe "name_with_container_label/3" do

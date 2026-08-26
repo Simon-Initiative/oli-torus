@@ -6323,6 +6323,11 @@ defmodule Oli.Delivery.Sections do
   Only includes non-root containers (numbering_level > 0). If a page has multiple parent containers,
   returns the one with the highest numbering_level (most specific parent).
 
+  `numbering_level`/`numbering_index` reflect suppression-aware display numbering (see
+  `decorated_numbering_map/1`), not raw canonical numbering. A page whose parent container is
+  itself suppressed (or a descendant of a suppressed top-level unit) is treated the same as a
+  page with no parent container at all -- absent from the returned map.
+
   ## Parameters
     - `section_id` - The ID of the section
     - `page_ids` - A list of page resource IDs to look up
@@ -6333,6 +6338,9 @@ defmodule Oli.Delivery.Sections do
     - `numbering_level` - The numbering level of the container (1 = Unit, 2 = Module, etc.)
     - `numbering_index` - The numbering index of the container
 
+  Accepts either a section id or an already-loaded `%Section{}` -- pass the struct when the
+  caller already has it in scope to avoid an extra lookup.
+
   ## Examples
       iex> get_parent_containers_map(section.id, [123, 456])
       %{
@@ -6340,17 +6348,30 @@ defmodule Oli.Delivery.Sections do
         456 => %{container_id: 11, numbering_level: 2, numbering_index: 1}
       }
   """
-  @spec get_parent_containers_map(integer() | nil, [integer()]) :: %{
+  @spec get_parent_containers_map(integer() | Section.t() | nil, [integer()]) :: %{
           integer() => %{
             container_id: integer(),
             numbering_level: integer(),
             numbering_index: integer()
           }
         }
-  def get_parent_containers_map(_section_id, page_ids) when page_ids == [], do: %{}
+  def get_parent_containers_map(_section_id_or_section, page_ids) when page_ids == [], do: %{}
   def get_parent_containers_map(nil, _page_ids), do: %{}
 
+  def get_parent_containers_map(%Section{} = section, page_ids) do
+    fetch_parent_containers_map(section, page_ids)
+  end
+
   def get_parent_containers_map(section_id, page_ids) do
+    case Repo.get(Section, section_id) do
+      nil -> %{}
+      section -> fetch_parent_containers_map(section, page_ids)
+    end
+  end
+
+  defp fetch_parent_containers_map(%Section{id: section_id} = section, page_ids) do
+    numbering_map = decorated_numbering_map(section)
+
     from(cp in ContainedPage,
       join: sr in SectionResource,
       on: sr.section_id == ^section_id and sr.resource_id == cp.container_id,
@@ -6373,10 +6394,26 @@ defmodule Oli.Delivery.Sections do
         |> Enum.filter(fn c -> c.numbering_level > 0 end)
         |> Enum.max_by(& &1.numbering_level, fn -> nil end)
 
-      {page_id, parent_container}
+      {page_id, decorate_parent_container(parent_container, numbering_map)}
     end)
     |> Enum.filter(fn {_page_id, container} -> container != nil end)
     |> Map.new()
+  end
+
+  # Overlays suppression-aware numbering onto a raw parent-container lookup result. A
+  # container absent from `numbering_map` is suppressed, which is treated the same as
+  # having no parent container at all (nil), matching `name_with_container_label/3`'s
+  # existing "no parent -> title only" behavior.
+  defp decorate_parent_container(nil, _numbering_map), do: nil
+
+  defp decorate_parent_container(%{container_id: container_id} = container, numbering_map) do
+    case Map.get(numbering_map, container_id) do
+      nil ->
+        nil
+
+      %Numbering{level: level, index: index} ->
+        %{container | numbering_level: level, numbering_index: index}
+    end
   end
 
   @doc """
