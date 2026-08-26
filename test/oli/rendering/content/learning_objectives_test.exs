@@ -33,14 +33,46 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered =~ "Learning Objectives"
       assert rendered =~ "Plan &lt;Garden&gt;"
       assert rendered =~ "Identify sunlight"
-      assert rendered =~ ~s|<details class="group/proficiency learning-objectives-proficiency|
-      assert rendered =~ "text-Text-text-low-alpha"
-      assert rendered =~ "group-open/proficiency:rotate-180"
+      assert rendered =~ "bg-Surface-surface-secondary"
+      assert rendered =~ "bg-Surface-surface-primary"
+      assert rendered =~ ~s|<div class="learning-objectives-delivery__objective-copy">|
+
+      assert rendered =~
+               ~s|<span class="learning-objectives-delivery__objective-number">LO 1</span>|
+
+      assert rendered =~
+               ~s|<span class="learning-objectives-delivery__objective-title">Plan &lt;Garden&gt;</span>|
+
+      assert rendered =~ ~s|<ul class="learning-objectives-delivery__sub-objective-list">|
+
+      assert rendered =~
+               ~s|<li class="learning-objectives-delivery__sub-objective">Identify sunlight</li>|
+
+      refute rendered =~ "learning-objectives-editor__sub-objective"
+
+      assert rendered =~
+               ~s|<details class="learning-objectives-editor__proficiency learning-objectives-proficiency">|
+
+      assert rendered =~ ~s|<summary class="learning-objectives-editor__proficiency-summary|
       assert rendered =~ "What is proficiency and how is it estimated?"
-      assert rendered =~ "Proficiency estimates become more reliable"
+
+      assert rendered =~
+               "Proficiency estimates become more reliable as you complete more activities."
+
+      assert rendered =~ "Beginning Proficiency"
+      assert rendered =~ "Growing Proficiency"
+      assert rendered =~ "Strong Proficiency"
+      assert rendered =~ "Not Enough Information"
+      assert rendered =~ "potted-plant-pattern"
+      assert rendered =~ "potted-plant-image"
+      assert rendered =~ "learning-objectives-editor__proficiency-card--unknown"
+      assert rendered =~ "learning-objectives-editor__proficiency-card--beginning"
+      assert rendered =~ "learning-objectives-editor__proficiency-card--growing"
+      assert rendered =~ "learning-objectives-editor__proficiency-card--strong"
       refute rendered =~ "Learning Objective Summary"
       refute rendered =~ "Review</h4>"
       refute rendered =~ "Practice</h4>"
+      refute rendered =~ "Sub-Objective"
     end
 
     test "honors Include Sub-Objectives per element" do
@@ -224,10 +256,8 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered =~ "Sub-objective practice"
       assert rendered =~ ~s|href="/sections/section-a/lesson/review-page"|
       refute rendered =~ "Container not page"
-      refute rendered =~ ~s|href="/sections/section-a/lesson/999"|
-      refute rendered =~ ">999<"
-      refute rendered =~ ~s|href="/sections/section-a/lesson/103"|
-      refute rendered =~ ">103<"
+      refute rendered =~ ~s|/lesson/999|
+      refute rendered =~ ~s|/lesson/103|
     end
   end
 
