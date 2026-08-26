@@ -98,7 +98,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       assert html =~ "Objective D"
     end
 
-    test "renders Learning Objectives Summary recommendation links in LiveView delivery" do
+    test "renders Learning Objectives Summary base section in LiveView delivery" do
       %{section: section, resources: resources, revisions: revisions, project: project} =
         create_full_project_with_objectives()
 
@@ -134,13 +134,12 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
         )
         |> IO.iodata_to_binary()
 
-      assert html =~ "Learning Objective Summary"
-      assert html =~ "Review"
-      assert html =~ "Practice"
-      assert html =~ "Page 1"
-      assert html =~ "Page 3"
-      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_1?|
-      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_3?|
+      assert html =~ "Recommended Review"
+      assert html =~ "Objective C"
+      refute html =~ "Page 1"
+      refute html =~ "Page 3"
+      refute html =~ ~s|href="/sections/#{section.slug}/lesson/page_1?|
+      refute html =~ ~s|href="/sections/#{section.slug}/lesson/page_3?|
     end
   end
 
