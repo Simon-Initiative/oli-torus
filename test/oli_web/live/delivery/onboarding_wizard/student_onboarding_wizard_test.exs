@@ -135,6 +135,11 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
 
       assert has_element?(
                view,
+               ~s(#onboarding-welcome-title.min-w-0.max-w-full[class*="overflow-wrap:anywhere"])
+             )
+
+      assert has_element?(
+               view,
                "#onboarding-welcome-subtitle",
                "Discover how molecules shape our world."
              )

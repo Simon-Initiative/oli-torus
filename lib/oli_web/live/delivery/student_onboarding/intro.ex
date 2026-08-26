@@ -22,20 +22,20 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
           id={"#{@id_prefix}-welcome-title"}
           role="heading"
           aria-level="2"
-          class="font-semibold text-[18xl] leading-[24px] hvsm:text-[30px] hvsm:leading-[40px] hvxl:text-[40px] hvxl:leading-[54px] tracking-[0.02px]"
+          class="min-w-0 max-w-full [overflow-wrap:anywhere] font-semibold text-[18xl] leading-[24px] hvsm:text-[30px] hvsm:leading-[40px] hvxl:text-[40px] hvxl:leading-[54px] tracking-[0.02px]"
         >
           <Student.welcome_title title={@section.welcome_title} />
         </div>
         <p
           :if={custom_message?(@section.encouraging_subtitle)}
           id={"#{@id_prefix}-welcome-subtitle"}
-          class="font-semibold text-[16px] leading-6 tracking-[0.02px] dark:text-opacity-80"
+          class="min-w-0 max-w-full [overflow-wrap:anywhere] font-semibold text-[16px] leading-6 tracking-[0.02px] dark:text-opacity-80"
         >
           {@section.encouraging_subtitle}
         </p>
         <p
           id={"#{@id_prefix}-welcome-description"}
-          class="whitespace-pre-line break-words text-[14px] leading-5 tracking-[0.02px] dark:text-opacity-80"
+          class="min-w-0 max-w-full whitespace-pre-line [overflow-wrap:anywhere] text-[14px] leading-5 tracking-[0.02px] dark:text-opacity-80"
         >
           {@section.description}
         </p>
