@@ -1270,6 +1270,42 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "build_hierarchy/1 with a suppressed unit" do
+    setup(_) do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_large_sample_project(ref(:author))
+      |> Seeder.Project.ensure_published(ref(:publication))
+      |> Seeder.Section.create_section(
+        ref(:project),
+        ref(:publication),
+        nil,
+        %{},
+        section_tag: :section
+      )
+    end
+
+    test "carries suppression-aware display numbering through from previous_next_index", %{
+      section: section,
+      unit1: unit1,
+      unit2: unit2
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1.resource_id]})
+
+      section = Oli.Repo.preload(section, :root_section_resource)
+
+      hierarchy = Sections.build_hierarchy(section)
+
+      unit1_entry = Enum.find(hierarchy.children, &(&1["id"] == to_string(unit1.resource_id)))
+      unit2_entry = Enum.find(hierarchy.children, &(&1["id"] == to_string(unit2.resource_id)))
+
+      # Unit 1 is suppressed: no display numbering. Unit 2 is renumbered to display index 1.
+      assert unit1_entry["display_numbering"] == nil
+      assert unit2_entry["display_numbering"] == %{"level" => "1", "index" => "1"}
+    end
+  end
+
   describe "get_ordered_schedule/1" do
     setup do
       %{}
