@@ -560,7 +560,8 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp shared_card_styles_for(_) do
     %{
       icon_class: "h-6 w-6 shrink-0",
-      card_class: "justify-start bg-Fill-Chip-Gray px-4 pt-[31px] md:bg-Table-table-row-1",
+      card_class:
+        "justify-start bg-Fill-Chip-Gray px-4 pt-[31px] md:[html:not(.dark)_&]:bg-Table-table-row-1",
       content_class: "w-32",
       order_class: "order-1"
     }
