@@ -2196,6 +2196,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         "slug",
         "title",
         "numbering",
+        "display_numbering",
         "resource_id",
         "resource_type_id",
         "children",
