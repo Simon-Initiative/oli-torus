@@ -7,9 +7,7 @@ defmodule Oli.Authoring.Course.Project do
   alias Oli.LearningModel.ModelVersion
   alias Oli.Utils.Slug
 
-  import Oli.Utils, only: [validate_word_count: 3]
-
-  @description_word_limit 300
+  @description_character_limit 300
 
   @derive {Phoenix.Param, key: :slug}
   schema "projects" do
@@ -110,7 +108,10 @@ defmodule Oli.Authoring.Course.Project do
     |> validate_required([:title, :version, :family_id, :publisher_id])
     |> foreign_key_constraint(:publisher_id)
     |> check_constraint(:learning_model_version, name: :projects_learning_model_version_check)
-    |> validate_word_count(:description, @description_word_limit)
+    |> validate_length(:description,
+      max: @description_character_limit,
+      message: "must be %{count} characters or fewer"
+    )
     |> Slug.update_never("projects")
   end
 
@@ -136,7 +137,10 @@ defmodule Oli.Authoring.Course.Project do
     |> validate_required([:title, :version, :family_id, :publisher_id])
     |> foreign_key_constraint(:publisher_id)
     |> check_constraint(:learning_model_version, name: :projects_learning_model_version_check)
-    |> validate_word_count(:description, @description_word_limit)
+    |> validate_length(:description,
+      max: @description_character_limit,
+      message: "must be %{count} characters or fewer"
+    )
     |> Slug.update_never("projects")
   end
 

@@ -12,7 +12,7 @@ defmodule OliWeb.Components.Delivery.Student do
   attr(:fallback, :string, default: nil)
 
   @doc """
-  Renders a rich-text welcome title as inline content, or the given fallback when it is empty.
+  Renders rich-text welcome content, or the given fallback when it is empty.
   """
   def welcome_title(assigns) do
     assigns = assign(assigns, :content, render_welcome_title(assigns.title))
@@ -25,33 +25,15 @@ defmodule OliWeb.Components.Delivery.Student do
   defp render_welcome_title(welcome_title) when is_map(welcome_title) do
     children = Map.get(welcome_title, "children") || Map.get(welcome_title, :children) || []
 
-    # Persisted titles retain paragraph wrappers; unwrap them before placing the content in a heading.
-    inline_children =
-      children
-      |> Enum.with_index()
-      |> Enum.flat_map(fn {block, index} ->
-        case block do
-          block when is_map(block) ->
-            case Map.get(block, "children") || Map.get(block, :children) do
-              children when is_list(children) and index == 0 -> children
-              children when is_list(children) -> [%{"text" => " "} | children]
-              _ -> []
-            end
-
-          _ ->
-            []
-        end
-      end)
-
-    case inline_children do
+    case children do
       [] ->
         nil
 
-      inline_children ->
+      children ->
         Phoenix.HTML.raw(
           Oli.Rendering.Content.render(
             %Oli.Rendering.Context{},
-            inline_children,
+            children,
             Oli.Rendering.Content.Html
           )
         )

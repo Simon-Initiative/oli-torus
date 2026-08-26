@@ -1344,7 +1344,7 @@ defmodule OliWeb.Components.Common do
             editMode: true,
             value: @value,
             fixedToolbar: true,
-            allowBlockElements: false
+            allowBlockElements: true
           },
           id: "rich_text_editor_react_component"
         )}

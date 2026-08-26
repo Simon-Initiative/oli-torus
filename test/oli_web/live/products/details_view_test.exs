@@ -56,6 +56,8 @@ defmodule OliWeb.Products.DetailsViewTest do
     } do
       {:ok, _view, html} = live(conn, product_route(product.slug))
 
+      assert html =~ ~s(maxlength="300")
+
       {description_index, _} = :binary.match(html, "Description")
       {tags_index, _} = :binary.match(html, "Tags")
       {welcome_title_index, _} = :binary.match(html, "Welcome Message Title")

@@ -18,12 +18,14 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
     />
     <div class="flex flex-col gap-3 px-[50px] hvsm:px-[70px] hvxl:px-[84px] py-9 dark:text-white">
       <%= if custom_message?(@section.description) do %>
-        <h2
+        <div
           id={"#{@id_prefix}-welcome-title"}
+          role="heading"
+          aria-level="2"
           class="font-semibold text-[18xl] leading-[24px] hvsm:text-[30px] hvsm:leading-[40px] hvxl:text-[40px] hvxl:leading-[54px] tracking-[0.02px]"
         >
           <Student.welcome_title title={@section.welcome_title} />
-        </h2>
+        </div>
         <p
           :if={custom_message?(@section.encouraging_subtitle)}
           id={"#{@id_prefix}-welcome-subtitle"}
@@ -33,7 +35,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
         </p>
         <p
           id={"#{@id_prefix}-welcome-description"}
-          class="whitespace-pre-line text-[14px] leading-5 tracking-[0.02px] dark:text-opacity-80"
+          class="whitespace-pre-line break-words text-[14px] leading-5 tracking-[0.02px] dark:text-opacity-80"
         >
           {@section.description}
         </p>

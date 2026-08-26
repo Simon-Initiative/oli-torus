@@ -89,6 +89,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       refute render(view) =~ "This custom title is not displayed"
       refute has_element?(view, "#onboarding-welcome-subtitle")
       refute has_element?(view, "#onboarding-welcome-description")
+
       assert has_element?(
                view,
                "p",
@@ -145,6 +146,47 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
              )
 
       refute has_element?(view, "#onboarding-welcome-title", "Welcome to Chemistry 201")
+    end
+
+    test "renders welcome title block formatting", %{conn: conn, user: student} do
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "welcome-list",
+            "type" => "ul",
+            "children" => [
+              %{
+                "id" => "welcome-list-item",
+                "type" => "li",
+                "children" => [
+                  %{
+                    "id" => "welcome-list-paragraph",
+                    "type" => "p",
+                    "children" => [%{"text" => "Review the course goals"}]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+
+      section =
+        insert(:section,
+          description: "Prepare for the course.",
+          welcome_title: welcome_title
+        )
+
+      enroll_student(student, section)
+
+      {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
+
+      assert has_element?(
+               view,
+               "#onboarding-welcome-title ul.list-disc li",
+               "Review the course goals"
+             )
     end
 
     test "renders the section cover image when present", %{conn: conn, user: student} do
