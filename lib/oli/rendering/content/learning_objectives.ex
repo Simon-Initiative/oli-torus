@@ -7,10 +7,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   alias Oli.Delivery.LearningObjectives.ProficiencyDisplay
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Rendering.Context
-  alias Oli.Rendering.Content.UrlHelpers
-  alias OliWeb.Icons
   alias Phoenix.HTML
-  alias Phoenix.HTML.Safe
 
   @page_type_id Oli.Resources.ResourceType.id_for_page()
   @default_proficiency ProficiencyDisplay.default_label()
@@ -86,12 +83,39 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
   defp render_summary(%Context{} = context, objectives, config, opts) do
     resources_by_id = resolve_recommendation_pages(context, objectives, config, opts)
+    objectives_by_id = Map.new(objectives, &{&1.resource_id, &1})
+
+    {applying_objectives, review_objectives} =
+      objectives
+      |> root_objectives()
+      |> Enum.with_index(1)
+      |> Enum.split_with(fn {objective, _index} ->
+        objective
+        |> then(&proficiency_for(context.learning_objectives, &1.resource_id))
+        |> strong_proficiency?()
+      end)
 
     [
-      ~s|<section class="learning-objectives-element learning-objectives-summary my-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary p-6 shadow-sm">|,
-      ~s|<h2 class="mb-4 font-open-sans text-2xl font-semibold leading-8 text-Text-text-high">Learning Objective Summary</h2>|,
-      ~s|<div class="space-y-3">|,
-      render_objective_hierarchy(objectives, config, :summary, context, resources_by_id),
+      ~s|<section class="learning-objectives-element learning-objectives-summary my-6">|,
+      ~s|<div class="learning-objectives-summary__sections">|,
+      render_summary_section(
+        :applying,
+        "Learning Objectives You're Applying",
+        applying_objectives,
+        objectives_by_id,
+        config,
+        context,
+        resources_by_id
+      ),
+      render_summary_section(
+        :review,
+        "Recommended Review",
+        review_objectives,
+        objectives_by_id,
+        config,
+        context,
+        resources_by_id
+      ),
       "</div>",
       proficiency_explanation(),
       "</section>"
@@ -105,24 +129,6 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     Enum.with_index(roots, 1)
     |> Enum.map(fn {objective, index} ->
       render_introduction_objective(objective, index, objectives_by_id, config)
-    end)
-  end
-
-  defp render_objective_hierarchy(objectives, config, :summary, context, resources_by_id) do
-    roots = root_objectives(objectives)
-    objectives_by_id = Map.new(objectives, &{&1.resource_id, &1})
-
-    Enum.with_index(roots, 1)
-    |> Enum.map(fn {objective, index} ->
-      render_summary_objective(
-        objective,
-        "LO #{index}",
-        objectives_by_id,
-        config,
-        context,
-        resources_by_id,
-        0
-      )
     end)
   end
 
@@ -142,80 +148,81 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     ]
   end
 
-  defp render_summary_objective(
-         objective,
-         label,
-         objectives_by_id,
-         config,
-         context,
-         resources_by_id,
-         depth
-       ) do
-    children = visible_children(objective, objectives_by_id)
-    proficiency = proficiency_for(context.learning_objectives, objective.resource_id)
-    config_row = Map.get(config.config_by_objective_id, objective.resource_id, %{})
-
-    depth_class =
-      if depth == 0,
-        do: " bg-Surface-surface-primary",
-        else: " bg-Surface-surface-secondary-muted md:ml-6"
-
-    [
-      ~s|<article class="learning-objective-summary#{depth_class} rounded-lg border border-Border-border-subtle p-4">|,
-      ~s|<div class="flex min-w-0 flex-wrap items-start justify-between gap-3">|,
-      ~s|<div class="min-w-0 flex-1">|,
-      ~s|<div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">|,
-      ~s|<span class="shrink-0 text-sm font-semibold uppercase text-Text-text-low-alpha">#{label}</span>|,
-      ~s|<h3 class="m-0 min-w-0 flex-1 break-words text-base font-semibold leading-snug text-Text-text-high">#{escape(objective.title)}</h3>|,
-      "</div>",
-      "</div>",
-      proficiency_badge(proficiency, objective.resource_id),
-      "</div>",
-      recommendations(context, config_row, resources_by_id),
-      render_summary_children(
-        children,
-        objectives_by_id,
-        config,
-        context,
-        resources_by_id,
-        depth
-      ),
-      "</article>"
-    ]
-  end
-
-  defp render_summary_children(
+  defp render_summary_section(
+         _kind,
+         _heading,
          [],
          _objectives_by_id,
          _config,
          _context,
-         _resources_by_id,
-         _depth
+         _resources_by_id
        ),
        do: []
 
-  defp render_summary_children(
-         children,
+  defp render_summary_section(
+         kind,
+         heading,
+         objectives,
          objectives_by_id,
          config,
          context,
-         resources_by_id,
-         depth
+         resources_by_id
        ) do
+    section_class = summary_section_class(kind)
+
     [
-      ~s|<div class="mt-3 space-y-3">|,
-      Enum.map(children, fn child ->
+      ~s|<section class="learning-objectives-summary__section learning-objectives-summary__section--#{kind} #{section_class} border bg-Surface-surface-secondary">|,
+      ~s|<h3 class="learning-objectives-summary__section-heading">|,
+      summary_section_icon(kind),
+      ~s|<span>#{heading}</span>|,
+      "</h3>",
+      ~s|<ul class="learning-objectives-summary__list">|,
+      Enum.map(objectives, fn {objective, index} ->
         render_summary_objective(
-          child,
-          "Sub-Objective",
+          objective,
+          index,
+          kind,
           objectives_by_id,
           config,
           context,
-          resources_by_id,
-          depth + 1
+          resources_by_id
         )
       end),
-      "</div>"
+      "</ul>",
+      "</section>"
+    ]
+  end
+
+  defp render_summary_objective(
+         objective,
+         index,
+         section_kind,
+         objectives_by_id,
+         config,
+         context,
+         resources_by_id
+       ) do
+    children = visible_children(objective, objectives_by_id)
+    proficiency = proficiency_for(context.learning_objectives, objective.resource_id)
+    config_row = Map.get(config.config_by_objective_id, objective.resource_id, %{})
+    next_steps_attr = summary_next_steps_attr(section_kind, config_row, resources_by_id)
+    card_class = summary_card_class(section_kind, proficiency)
+
+    [
+      ~s|<li class="learning-objectives-summary__item">|,
+      ~s|<article class="learning-objectives-summary__card #{card_class} border bg-Surface-surface-primary"#{next_steps_attr}>|,
+      ~s|<div class="learning-objectives-summary__card-header">|,
+      ~s|<div class="learning-objectives-delivery__objective-copy">|,
+      ~s|<div class="learning-objectives-delivery__objective-title-row">|,
+      ~s|<span class="learning-objectives-delivery__objective-number">LO #{index}</span>|,
+      ~s|<span class="learning-objectives-delivery__objective-title">#{escape(objective.title)}</span>|,
+      "</div>",
+      maybe_render_sub_objectives(children, config),
+      "</div>",
+      proficiency_badge(proficiency),
+      "</div>",
+      "</article>",
+      "</li>"
     ]
   end
 
@@ -233,55 +240,83 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
   defp maybe_render_sub_objectives(_children, _config), do: []
 
-  defp recommendations(context, config_row, resources_by_id) do
+  defp proficiency_badge(proficiency) do
+    %{label: label, icon: icon, class: class} = proficiency_badge_display(proficiency)
+
+    [
+      ~s|<div class="learning-objectives-summary__proficiency learning-objectives-summary__proficiency--#{class}" aria-label="#{label}">|,
+      icon,
+      ~s|<span>#{label}</span>|,
+      "</div>"
+    ]
+  end
+
+  defp summary_next_steps_attr(:review, config_row, resources_by_id) do
     revisit_pages = resolved_recommendations(config_row, "revisit_pages", resources_by_id)
     practice_pages = resolved_recommendations(config_row, "practice_pages", resources_by_id)
 
     case {revisit_pages, practice_pages} do
-      {[], []} ->
-        []
-
-      _ ->
-        [
-          ~s|<div class="mt-3 grid gap-3 md:grid-cols-2">|,
-          recommendation_group(context, "Review", revisit_pages),
-          recommendation_group(context, "Practice", practice_pages),
-          "</div>"
-        ]
+      {[], []} -> ""
+      _ -> ~s| data-next-steps="available"|
     end
   end
 
-  defp recommendation_group(_context, _label, []), do: []
+  defp summary_next_steps_attr(_section_kind, _config_row, _resources_by_id), do: ""
 
-  defp recommendation_group(context, label, pages) do
-    [
-      ~s|<div class="learning-objective-recommendations min-w-0">|,
-      ~s|<h4 class="mb-1 text-sm font-semibold text-Text-text-low">#{label}</h4>|,
-      ~s|<ul class="m-0 list-none space-y-1 p-0">|,
-      Enum.map(pages, fn page ->
-        href = lesson_href(context, page.slug)
+  defp summary_card_class(:review, "Low"),
+    do:
+      "learning-objectives-summary__card--review-beginning border-Fill-Accent-fill-accent-orange-bold"
 
-        [
-          ~s|<li class="min-w-0">|,
-          ~s|<a class="internal-link flex min-h-11 items-center break-words py-2 text-Text-text-link underline" href="#{escape(href)}">|,
-          escape(page.title),
-          "</a>",
-          "</li>"
-        ]
-      end),
-      "</ul>",
-      "</div>"
-    ]
+  defp summary_card_class(:review, "Medium"),
+    do:
+      "learning-objectives-summary__card--review-growing border-Fill-Accent-fill-accent-purple-bold"
+
+  defp summary_card_class(:review, _proficiency),
+    do: "learning-objectives-summary__card--review-unknown border-Text-text-low-alpha"
+
+  defp summary_card_class(_section_kind, _proficiency), do: "border-Border-border-default"
+
+  defp summary_section_class(:applying), do: "border-Text-text-accent-green"
+  defp summary_section_class(_kind), do: "border-Border-border-subtle"
+
+  defp summary_section_icon(:applying) do
+    ~S|<span class="learning-objectives-summary__section-icon learning-objectives-summary__section-icon--applying" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false"><path d="M6.55 11.55 3.25 8.24l1.06-1.06 2.24 2.24 5.14-5.14 1.06 1.06-6.2 6.21Z" fill="currentColor"/></svg></span>|
   end
 
-  defp proficiency_badge(proficiency, objective_id) do
-    display = proficiency_display(proficiency)
+  defp summary_section_icon(:review) do
+    ~S|<span class="learning-objectives-summary__section-icon learning-objectives-summary__section-icon--review" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false"><path d="M8 1.33a6.67 6.67 0 1 0 6.67 6.67H13.2A5.2 5.2 0 1 1 11.67 4.32L9.8 6.2h4.87V1.33l-1.93 1.93A6.64 6.64 0 0 0 8 1.33Z" fill="currentColor"/></svg></span>|
+  end
 
-    [
-      ~s|<div class="learning-objective-proficiency shrink-0">|,
-      proficiency_icon(display, :summary, "summary_#{objective_id}"),
-      "</div>"
-    ]
+  defp proficiency_badge_display("High") do
+    %{
+      label: "Strong Proficiency",
+      icon: large_tree_icon(""),
+      class: "strong"
+    }
+  end
+
+  defp proficiency_badge_display("Medium") do
+    %{
+      label: "Growing Proficiency",
+      icon: sprout_icon(""),
+      class: "growing"
+    }
+  end
+
+  defp proficiency_badge_display("Low") do
+    %{
+      label: "Beginning Proficiency",
+      icon: almond_icon(""),
+      class: "beginning"
+    }
+  end
+
+  defp proficiency_badge_display(_proficiency) do
+    %{
+      label: @default_proficiency,
+      icon: potted_plant_icon(),
+      class: "unknown"
+    }
   end
 
   defp proficiency_explanation do
@@ -317,40 +352,6 @@ defmodule Oli.Rendering.Content.LearningObjectives do
       "</div>"
     ]
   end
-
-  defp proficiency_icon(%{label: label, icon: icon, icon_class: icon_class}, context, id_suffix) do
-    wrapper_class =
-      [
-        "group relative inline-flex items-center justify-center rounded-md",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
-        proficiency_icon_size_class(context)
-      ]
-      |> Enum.join(" ")
-
-    [
-      ~s|<span class="#{wrapper_class}" tabindex="0" role="img" aria-label="#{label}" title="#{label}">|,
-      proficiency_icon_component(icon, icon_class, id_suffix),
-      ~s|<span role="tooltip" class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-Specially-Tokens-Fill-fill-inverse px-2 py-1 text-xs font-semibold text-Specially-Tokens-Text-text-inverse opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus:opacity-100">#{label}</span>|,
-      "</span>"
-    ]
-  end
-
-  defp proficiency_icon_size_class(:explanation), do: "h-6 w-6"
-  defp proficiency_icon_size_class(_), do: "h-8 w-8"
-
-  defp proficiency_icon_component(:empty_pot, class, id_suffix),
-    do: component_to_iodata(Icons.proficiency_empty_pot(%{class: class, id_suffix: id_suffix}))
-
-  defp proficiency_icon_component(:seed, class, _id_suffix),
-    do: component_to_iodata(Icons.proficiency_seed(%{class: class}))
-
-  defp proficiency_icon_component(:sprout, class, _id_suffix),
-    do: component_to_iodata(Icons.proficiency_sprout(%{class: class}))
-
-  defp proficiency_icon_component(:tree, class, _id_suffix),
-    do: component_to_iodata(Icons.proficiency_tree(%{class: class}))
-
-  defp component_to_iodata(component), do: Safe.to_iodata(component)
 
   defp proficiency_explanation_display("High") do
     %{
@@ -553,48 +554,8 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     |> Map.get(objective_id, ProficiencyDisplay.default_label())
   end
 
-  defp proficiency_display(proficiency) do
-    proficiency
-    |> ProficiencyDisplay.display_for()
-    |> Map.merge(shared_card_styles_for(proficiency))
-  end
-
-  defp shared_card_styles_for("High") do
-    %{
-      icon_class: "h-6 w-6 shrink-0 text-Text-text-accent-green",
-      card_class: "justify-start bg-Fill-Chip-Green px-[17px] pt-[25px]",
-      content_class: "w-[126px]",
-      order_class: "order-3 md:order-4"
-    }
-  end
-
-  defp shared_card_styles_for("Medium") do
-    %{
-      icon_class: "h-6 w-6 shrink-0 text-Icon-icon-accent-purple",
-      card_class: "justify-start bg-Fill-Accent-fill-accent-purple px-[15px] pt-[28px]",
-      content_class: "w-[130px]",
-      order_class: "order-4 md:order-3"
-    }
-  end
-
-  defp shared_card_styles_for("Low") do
-    %{
-      icon_class: "h-6 w-6 shrink-0 text-Icon-icon-accent-orange",
-      card_class: "justify-start bg-Fill-Accent-fill-accent-orange/70 px-6 pt-[23px]",
-      content_class: "w-[112px]",
-      order_class: "order-2"
-    }
-  end
-
-  defp shared_card_styles_for(_) do
-    %{
-      icon_class: "h-6 w-6 shrink-0",
-      card_class:
-        "justify-start bg-Fill-Chip-Gray px-4 pt-[31px] md:[html:not(.dark)_&]:bg-Table-table-row-1",
-      content_class: "w-32",
-      order_class: "order-1"
-    }
-  end
+  defp strong_proficiency?("High"), do: true
+  defp strong_proficiency?(_proficiency), do: false
 
   defp resolve_recommendation_pages(%Context{section_id: nil}, _objectives, _config, _opts),
     do: %{}
@@ -640,14 +601,6 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     |> integer_list()
     |> Enum.map(&Map.get(resources_by_id, &1))
     |> Enum.reject(&is_nil/1)
-  end
-
-  defp lesson_href(%Context{internal_link_url: internal_link_url}, slug)
-       when is_function(internal_link_url, 1),
-       do: internal_link_url.(slug)
-
-  defp lesson_href(%Context{section_slug: section_slug, page_link_params: page_link_params}, slug) do
-    UrlHelpers.lesson_path(section_slug, slug, page_link_params)
   end
 
   defp heading(%{mode: "summary"}), do: "Learning Objective Summary"

@@ -160,7 +160,7 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered == ""
     end
 
-    test "renders Summary proficiency labels, recommendations, and stale filtering" do
+    test "renders Summary base sections, proficiency labels, and next-step availability" do
       parent = self()
 
       context =
@@ -179,7 +179,8 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
               11 => "Medium",
               20 => "High",
               30 => "Medium",
-              40 => "Not enough data"
+              40 => "Not enough data",
+              50 => "Medium"
             }
           )
         )
@@ -229,7 +230,19 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert_received {:recommendations, 42, [101, 999, 201, 102, 104]}
       refute_received {:recommendations, _, _}
 
-      assert rendered =~ "Learning Objective Summary"
+      assert rendered =~ "Learning Objectives"
+      assert rendered =~ "Learning Objectives You're Applying"
+      assert rendered =~ "Recommended Review"
+
+      assert rendered =~
+               "learning-objectives-summary__section learning-objectives-summary__section--applying border-Text-text-accent-green border bg-Surface-surface-secondary"
+
+      assert rendered =~
+               "learning-objectives-summary__section learning-objectives-summary__section--review border-Border-border-subtle border bg-Surface-surface-secondary"
+
+      assert rendered =~ "learning-objectives-summary__card"
+      refute rendered =~ "learning-objectives-summary__heading"
+      assert rendered =~ ~s|data-next-steps="available"|
       assert rendered =~ "Review limits"
       assert rendered =~ "Apply limit laws"
       assert rendered =~ "Practice derivatives"
@@ -241,20 +254,24 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered =~ "Growing Proficiency"
       assert rendered =~ "Strong Proficiency"
       assert rendered =~ "Not Enough Information"
-      assert rendered =~ ~s|aria-label="Beginning Proficiency"|
-      assert rendered =~ ~s|aria-label="Growing Proficiency"|
-      assert rendered =~ ~s|aria-label="Strong Proficiency"|
-      assert rendered =~ ~s|aria-label="Not Enough Information"|
-      assert rendered =~ "text-Text-text-accent-green"
-
-      assert rendered =~ ~s|role="tooltip"|
+      assert rendered =~ "learning-objectives-summary__proficiency--beginning"
+      assert rendered =~ "learning-objectives-summary__proficiency--growing"
+      assert rendered =~ "learning-objectives-summary__proficiency--strong"
+      assert rendered =~ "learning-objectives-summary__proficiency--unknown"
+      assert rendered =~ "learning-objectives-summary__card--review-beginning"
+      assert rendered =~ "learning-objectives-summary__card--review-growing"
+      assert rendered =~ "learning-objectives-summary__card--review-unknown"
+      assert rendered =~ "border-Fill-Accent-fill-accent-orange-bold"
+      assert rendered =~ "border-Fill-Accent-fill-accent-purple-bold"
+      assert rendered =~ "border-Text-text-low-alpha"
+      assert rendered =~ "potted-plant-pattern"
       refute rendered =~ "Not enough data"
-      refute rendered =~ "Establishing Proficiency"
+      refute rendered =~ "Sub-Objective"
 
-      assert rendered =~ "Review page"
-      assert rendered =~ "Practice page"
-      assert rendered =~ "Sub-objective practice"
-      assert rendered =~ ~s|href="/sections/section-a/lesson/review-page"|
+      refute rendered =~ "Review page"
+      refute rendered =~ "Practice page"
+      refute rendered =~ "Sub-objective practice"
+      refute rendered =~ ~s|href="/sections/section-a/lesson/review-page"|
       refute rendered =~ "Container not page"
       refute rendered =~ ~s|/lesson/999|
       refute rendered =~ ~s|/lesson/103|

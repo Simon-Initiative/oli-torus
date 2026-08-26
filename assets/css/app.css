@@ -205,6 +205,178 @@ https://tailwindcss.com/docs/utility-first
   content: '';
 }
 
+.content .learning-objectives-summary__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.content .learning-objectives-summary__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px 0 rgba(0, 50, 99, 0.05);
+}
+
+.content .learning-objectives-summary__section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--color-body-color);
+  font-family: 'Open Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.content .learning-objectives-summary__section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+}
+
+.content .learning-objectives-summary__section-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.content .learning-objectives-summary__section-icon--applying {
+  color: #218358;
+}
+
+.content .learning-objectives-summary__section-icon--review {
+  color: #bf5b13;
+}
+
+.content .learning-objectives-summary__section-icon--review svg {
+  transform: scaleX(-1);
+}
+
+.content .learning-objectives-summary__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.content .learning-objectives-summary__item {
+  margin-bottom: 0;
+  list-style: none;
+}
+
+.content .learning-objectives-summary__item::marker {
+  content: '';
+}
+
+.content .learning-objectives-summary__card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px 0 rgba(0, 50, 99, 0.05);
+}
+
+.content .learning-objectives-summary__card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.content .learning-objectives-summary__proficiency {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.content .learning-objectives-summary__proficiency svg {
+  width: 20px;
+  height: 20px;
+}
+
+.content .learning-objectives-summary__proficiency--strong {
+  background: #e7fcf3;
+  color: #218358;
+}
+
+.content .learning-objectives-summary__proficiency--growing {
+  background: #f7def8;
+  color: #9a40a8;
+}
+
+.content .learning-objectives-summary__proficiency--beginning {
+  background: #ffecde;
+  color: #bf5b13;
+}
+
+.content .learning-objectives-summary__proficiency--unknown {
+  background: var(--color-gray-100);
+  color: #757682;
+}
+
+.dark .content .learning-objectives-summary__section-icon--applying {
+  color: #39e581;
+}
+
+.dark .content .learning-objectives-summary__section-icon--review {
+  color: #ffb387;
+}
+
+.dark .content .learning-objectives-summary__proficiency--strong {
+  background: #3d4f47;
+  color: #39e581;
+}
+
+.dark .content .learning-objectives-summary__proficiency--growing {
+  background: #463552;
+  color: #ebaaf2;
+}
+
+.dark .content .learning-objectives-summary__proficiency--beginning {
+  background: rgba(76, 63, 57, 0.7);
+  color: #ffb387;
+}
+
+.dark .content .learning-objectives-summary__proficiency--unknown {
+  background: #353740;
+  color: rgba(238, 235, 245, 0.75);
+}
+
+@media (max-width: 720px) {
+  .content .learning-objectives-summary__section-heading {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .content .learning-objectives-summary__card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .content .learning-objectives-summary__proficiency {
+    align-self: flex-start;
+  }
+}
+
 .learning-objectives-editor__proficiency {
   margin-top: 4px;
   border-bottom: 1px solid var(--color-gray-300);
