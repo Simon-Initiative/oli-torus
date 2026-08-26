@@ -1,0 +1,251 @@
+work_item: usage
+requirements:
+- title: Provide model-aware proficiency dispatch
+  status: proposed
+  description: Route proficiency reads through a Section-based facade that dispatches
+    to naive or LKT-AOA providers from the persisted learning_model_version.
+  id: FR-001
+- title: Preserve naive proficiency compatibility
+  status: proposed
+  description: Keep existing naive formulas, thresholds, not-enough-data behavior,
+    and Metrics return shapes stable for naive Sections.
+  id: FR-002
+- title: Read direct LKT-AOA objective proficiency from learning state
+  status: proposed
+  description: Return direct learning-objective proficiency, raw confidence, and evidence
+    counts from materialized learning_states without scanning attempts.
+  id: FR-003
+- title: Define canonical proficiency estimates
+  status: proposed
+  description: Provide a model-neutral estimate contract for new consumers while adapting
+    legacy Metrics shapes during migration.
+  id: FR-004
+- title: Aggregate LKT-AOA proficiency across objectives and scopes
+  status: proposed
+  description: Support parent learning-objective, page, container, course, learner,
+    and class results using the approved LKT-AOA aggregation policies.
+  id: FR-005
+- title: Populate SRD-backed page activity membership
+  status: proposed
+  description: Extend SectionResource related_activities post-processing so page SectionResources
+    contain embedded activity IDs and scope membership can be resolved from SectionResourceDepot.
+  id: FR-006
+- title: Migrate direct proficiency consumers to the facade
+  status: proposed
+  description: Remove duplicated naive formulas from dashboard oracles and scenario
+    assertions so consumers use the selected Section model.
+  id: FR-007
+- title: Preserve authoring analytics boundaries
+  status: proposed
+  description: Keep descriptive Authoring Insights analytics separate from model-aware
+    learner proficiency unless a separate product requirement expands that surface.
+  id: FR-008
+- title: Maintain read-path performance and consistency
+  status: proposed
+  description: Use set-based reads, SRD-backed scope membership, and no mixed-provider
+    fallback within a rendered view.
+  id: FR-009
+acceptance_criteria:
+- requirement_id: FR-001
+  title: Proficiency reads dispatch from the loaded Section learning_model_version
+    and never from analytics_version, caller options, parameter presence, Project
+    defaults, or template data.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-001
+- requirement_id: FR-001
+  title: Existing section_id-only Metrics entry points either load the Section once
+    and delegate or are migrated to Section-accepting overloads when the caller already
+    has a Section.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-002
+- requirement_id: FR-001
+  title: A single rendered consumer cannot mix naive and LKT-AOA provider results;
+    unavailable LKT-AOA data returns unavailable or not-enough-information instead
+    of falling back to naive.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-003
+- requirement_id: FR-002
+  title: Naive Sections preserve the existing first-attempt formula, three-first-attempt
+    minimum, and Low/Medium/High thresholds.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-004
+- requirement_id: FR-002
+  title: Legacy Metrics functions keep their existing return shapes for naive Sections
+    while delegating implementation to the naive provider.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-005
+- requirement_id: FR-003
+  title: Direct LKT-AOA objective reads return learning_states.aoa as proficiency
+    and learning_states.confidence as a raw 0.0..1.0 confidence value for matching
+    section_id, user_id, and learning_objective_id.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-006
+- requirement_id: FR-003
+  title: Missing LKT-AOA state returns not_enough_information and remains distinct
+    from a real persisted score of 0.0.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-007
+- requirement_id: FR-003
+  title: Direct LKT-AOA objective reads require at least three attempts on that objective
+    before returning a numeric proficiency.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-008
+- requirement_id: FR-004
+  title: New provider APIs return canonical estimates with score, label, raw confidence,
+    attempt_count, unique_activity_part_count, section_id, user_id when applicable,
+    learning_objective_id when applicable, and learning_model_version.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-009
+- requirement_id: FR-004
+  title: raw_proficiency_per_learning_objective remains a naive implementation detail
+    or compatibility path and does not return an incompatible LKT-AOA tuple shape.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-010
+- requirement_id: FR-005
+  title: Parent learning-objective aggregation derives from child learning objectives
+    using the LKT-AOA technical definition and does not persist independent parent
+    learning_state rows.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-011
+- requirement_id: FR-005
+  title: Page, container, and course learner scores use an unweighted arithmetic mean
+    of available Section-wide learning-objective AOA scores.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-012
+- requirement_id: FR-005
+  title: Page, container, and course learner scores return not_enough_information
+    until contributing states contain at least three total attempts across the scope.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-013
+- requirement_id: FR-005
+  title: Unattempted learning objectives are omitted from scope means and do not suppress
+    otherwise eligible page, container, or course results.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-014
+- requirement_id: FR-005
+  title: A learning objective appearing on multiple pages contributes the same Section-wide
+    learner state once to each applicable page and ancestor container.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-015
+- requirement_id: FR-005
+  title: Instructor and class aggregates are calculated from defined learner results
+    with not-enough-information learners excluded from numeric averages and represented
+    in distributions.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-016
+- requirement_id: FR-006
+  title: Objective SectionResource related_activities continues to store activity
+    resource IDs targeting that objective, while page SectionResource related_activities
+    stores activity resource IDs embedded in that page.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-017
+- requirement_id: FR-006
+  title: Page related_activities is populated from Section-pinned page Revisions activity_refs,
+    stores distinct activity IDs, stores an empty array when no activities are embedded,
+    and ignores direct page-objective attachments.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-018
+- requirement_id: FR-006
+  title: Page, container, and course learning-objective membership is derived from
+    SectionResourceDepot by intersecting page embedded activities with objective targeted
+    activities, with deduplicated learning-objective IDs and no delivery-time Revision
+    query.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-019
+- requirement_id: FR-006
+  title: Post-processing updates or invalidates distributed SectionResourceDepot entries
+    whenever related_activities rows change, so database and SRD projections do not
+    diverge after success.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-020
+- requirement_id: FR-007
+  title: ProgressProficiency, ObjectivesProficiency, dashboard snapshots, CSV exports,
+    recommendations, and scenario proficiency assertions use the model-aware facade
+    rather than reconstructing proficiency from raw ResourceSummary counts.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-021
+- requirement_id: FR-007
+  title: Dashboard oracle payloads expose actual numeric LKT-AOA aggregates where
+    available and do not reconstruct average proficiency from Low/Medium/High labels.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-022
+- requirement_id: FR-007
+  title: Dashboard snapshot cache invalidation is not changed by this work item; any
+    cache-version or invalidation change requires separate approval.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+  id: AC-023
+- requirement_id: FR-008
+  title: Authoring Insights continues to display descriptive ResourceSummary-derived
+    analytics and does not read learning_states or dispatch through learner proficiency
+    providers.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-024
+- requirement_id: FR-009
+  title: Provider queries for instructor/class reads are set-based and do not issue
+    one query per learner or per learning objective.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-025
+- requirement_id: FR-009
+  title: Page, container, and course scope resolution uses SRD records in memory and
+    executes no delivery-time database query for Revision content or objective mappings.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-026
+- requirement_id: FR-009
+  title: Scenario coverage proves both naive parity and LKT-AOA proficiency reads
+    through realistic Section workflows.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-027

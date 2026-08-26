@@ -18,7 +18,8 @@ This chunk includes:
 - Compatibility adapters for existing Metrics consumers.
 - Objective and learner aggregation.
 - Page activity-membership projection into `SectionResource.related_activities` and SRD-backed scope resolution.
-- Instructor-dashboard oracle and cache integration.
+- Instructor-dashboard oracle integration. Dashboard snapshot cache invalidation is out of scope
+  for this work item.
 - Confidence and coverage in new read contracts.
 - Scenario coverage and naive-model parity verification.
 
@@ -105,9 +106,9 @@ Proficiency.Estimate
   learning_model_version
 ```
 
-The naive provider populates fields available from `ResourceSummary` and leaves unsupported confidence fields unset. The LKT-AOA provider populates the complete structure from `learning_state`.
+The naive provider populates fields available from `ResourceSummary` and leaves unsupported confidence fields unset. The LKT-AOA provider populates the complete structure from `learning_state`, including raw confidence.
 
-Existing Metrics functions adapt canonical estimates into their established return shapes during migration. New consumers should use estimates directly when they need score, confidence, evidence counts, or model provenance.
+Existing Metrics functions adapt canonical estimates into their established return shapes during migration. New consumers should use estimates directly when they need score, raw confidence, evidence counts, or model provenance.
 
 `raw_proficiency_per_learning_objective/2` is coupled to naive `ResourceSummary` tuples. It must remain a `Naive` implementation detail or be deprecated; it must not return a different tuple shape for LKT-AOA.
 
@@ -120,7 +121,7 @@ The shared current `proficiency_range/2` cannot determine both models from a sco
 
 ## LKT-AOA reads
 
-For a direct LO/sub-objective estimate, query `learning_state` by `(section_id, user_id, learning_objective_id)` and return stored AOA and confidence. Historical attempts are never read to answer this query.
+For a direct LO/sub-objective estimate, query `learning_state` by `(section_id, user_id, learning_objective_id)` and return stored AOA and raw confidence. Historical attempts are never read to answer this query.
 
 A missing state produces `not_enough_information`, not a numeric zero. Zero can be a valid model score and must remain distinct from no evidence.
 
@@ -137,7 +138,7 @@ The provider should return both:
 - Actual numeric aggregate values when defined.
 - Categorical distributions for presentation and compatibility.
 
-Confidence and coverage remain separate from proficiency. They must not be encoded by modifying the proficiency score or bucket label.
+Confidence and coverage remain separate from proficiency. Confidence is provided as a raw `0.0..1.0` value only in this work item; Low/Medium/High confidence bucketing is deferred to future UI work. Confidence must not be encoded by modifying the proficiency score or bucket label.
 
 ## Read integration inventory
 
@@ -245,7 +246,7 @@ Until page `SectionResource.related_activities` is populated and guaranteed cohe
 
 `Oli.InstructorDashboard.Oracles.ObjectivesProficiency` already delegates to Metrics, but it should pass the Section instead of only `section_id`. `ProgressProficiency` must stop querying `ResourceSummary` directly.
 
-Current downstream projections accept proficiency in `0.0..1.0` and categorical objective distributions. Those shapes can remain compatible. Oracle payloads must add confidence, coverage, and actual numeric objective aggregates as explicit fields.
+Current downstream projections accept proficiency in `0.0..1.0` and categorical objective distributions. Those shapes can remain compatible. Oracle payloads must add raw confidence, coverage, and actual numeric objective aggregates as explicit fields.
 
 Current summary projections reconstruct an approximate numeric "Average Class Proficiency" from category counts. They are inconsistent:
 
@@ -254,7 +255,7 @@ Current summary projections reconstruct an approximate numeric "Average Class Pr
 
 LKT-AOA provides actual numeric values. Dashboard cards and CSV exports must consume those values instead of converting to labels and approximating a number. Naive behavior may remain unchanged for compatibility.
 
-Oracle implementation versions must be incremented when calculation or payload shape changes. Cached dashboard snapshots must be invalidated or rebuilt if a Section's model version is changed through an authorized migration.
+Oracle implementation versions may be incremented only if the selected implementation changes an existing oracle payload contract. This work item must not introduce dashboard snapshot cache invalidation or rebuild behavior.
 
 ## Rollout behavior
 
@@ -264,7 +265,7 @@ LKT-AOA reads are enabled only for Sections with `learning_model_version: :lkt_a
 
 A Section must never mix providers within one rendered view. If required LKT-AOA data or a required scope-membership projection is unavailable, the result is explicitly unavailable rather than a fallback to naive proficiency.
 
-Confidence is a new signal. Existing label-only consumers can migrate incrementally, but any new UI that displays confidence needs an agreed presentation contract and UX design.
+Confidence is a new raw signal. Existing label-only consumers can migrate incrementally. Confidence Low/Medium/High bucketing and any UI treatment beyond exposing the raw value belong to future work.
 
 ## Verification boundary
 
@@ -284,7 +285,8 @@ This chunk is complete when tests demonstrate:
 - Page and container membership is calculated entirely from SRD records, produces consistent deduplicated LO sets, and executes no delivery-time database query.
 - Section-level reads are set-based and avoid per-learner/per-objective query loops.
 - Every direct naive formula outside the `Naive` provider has been removed or intentionally classified as descriptive analytics.
-- Dashboard oracles dispatch by Section model and cache versions are updated.
+- Dashboard oracles dispatch by Section model without introducing dashboard snapshot cache
+  invalidation changes.
 - Numeric LKT-AOA aggregates reach dashboards and exports without label-based reconstruction.
 - Scenario assertions cover both `:naive` and `:lkt_aoa` Sections.
 - Missing page/container membership infrastructure cannot silently fall back to naive proficiency.
