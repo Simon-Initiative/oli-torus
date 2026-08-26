@@ -1014,6 +1014,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
                "/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit1_container.resource.id}"
     end
 
+    test "container details heading is suppression-aware", %{conn: conn, instructor: instructor} do
+      %{
+        section: section,
+        unit1_resource: unit1_resource,
+        unit1_container: unit1_container,
+        unit2_container: unit2_container
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      # Unit 2 is not suppressed, but is renumbered to "Unit 1" since Unit 1 no longer
+      # consumes a numbering slot.
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{%{container_id: unit2_container.resource.id}}"
+        )
+
+      assert has_element?(
+               view,
+               "h4",
+               "Unit 1: #{unit2_container.revision.title} Student Insights"
+             )
+
+      # Unit 1 is suppressed: no numbering prefix at all, just the bare title, instead of
+      # crashing or showing "Unit nil: ... Student Insights".
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{%{container_id: unit1_container.resource.id}}"
+        )
+
+      refute has_element?(view, "h4", "Unit nil")
+      assert has_element?(view, "h4", "#{unit1_container.revision.title} Student Insights")
+    end
+
     test "button to back to units/modules works correctly", %{conn: conn, instructor: instructor} do
       %{
         section: section,
