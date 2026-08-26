@@ -2676,9 +2676,7 @@ defmodule Oli.Delivery.Sections do
 
     full_hierarchy
     |> Hierarchy.flatten_hierarchy()
-    |> Enum.filter(fn node ->
-      node.revision.resource_type_id == ResourceType.get_id_by_type("container")
-    end)
+    |> Enum.filter(&container_node?/1)
     |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev} = node ->
       numbering =
         case node.display_numbering do
@@ -2688,6 +2686,59 @@ defmodule Oli.Delivery.Sections do
 
       {resource_id, DisplayLabels.label_for(numbering, rev.title, short_label, customizations)}
     end)
+  end
+
+  @doc """
+  Builds a map of container resource_id => suppression-aware `%Oli.Resources.Numbering{}`
+  for every container in the given section, honoring `section.unnumbered_unit_ids`.
+
+  A container that is itself an unnumbered top-level unit, or a descendant of one, is
+  absent from the returned map -- there is no "suppressed" value, only absence. Callers
+  should treat a missing key the same way they treat "no parent container" today (title
+  only, no numbering prefix), consistent with `DisplayLabels.label_for/4` and
+  `name_with_container_label/3`.
+
+  For a section with no `unnumbered_unit_ids` configured, every container in the section
+  is present in the map with its canonical numbering, so this function is safe to call
+  unconditionally rather than special-casing the no-suppression case.
+
+  Sources the section hierarchy from `SectionResourceDepot`, so repeated calls for the
+  same section reuse the cached section resource data rather than re-querying it.
+
+  Expects `section` to have been through `create_section_resources/2` (true for every
+  section created via the normal delivery flows, which populate section resources
+  transactionally at creation time).
+
+  ## Parameters
+    - `section` - The section struct to compute container numbering for
+
+  ## Returns
+    A map where keys are container resource IDs and values are `%Oli.Resources.Numbering{}`
+    structs reflecting the numbering the student Learn view would show for that container.
+
+  ## Examples
+      iex> decorated_numbering_map(section)
+      %{
+        10 => %Oli.Resources.Numbering{level: 1, index: 1},
+        11 => %Oli.Resources.Numbering{level: 2, index: 1}
+      }
+  """
+  @spec decorated_numbering_map(Section.t()) :: %{integer() => Numbering.t()}
+  def decorated_numbering_map(%Section{} = section) do
+    section
+    |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
+    |> Hierarchy.flatten_hierarchy()
+    |> Enum.filter(&container_node?/1)
+    |> Enum.reduce(%{}, fn %HierarchyNode{resource_id: resource_id} = node, acc ->
+      case DisplayLabels.effective_numbering(node) do
+        nil -> acc
+        %Numbering{} = numbering -> Map.put(acc, resource_id, numbering)
+      end
+    end)
+  end
+
+  defp container_node?(%HierarchyNode{revision: revision}) do
+    revision.resource_type_id == ResourceType.get_id_by_type("container")
   end
 
   @doc """

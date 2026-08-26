@@ -1112,6 +1112,76 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "decorated_numbering_map/1" do
+    setup(_) do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_large_sample_project(ref(:author))
+      |> Seeder.Project.ensure_published(ref(:publication))
+      |> Seeder.Section.create_section(
+        ref(:project),
+        ref(:publication),
+        nil,
+        %{},
+        section_tag: :section
+      )
+    end
+
+    test "matches canonical numbering for every container when no units are suppressed", %{
+      section: section,
+      curriculum: curriculum,
+      unit1: unit1,
+      unit1_module1: unit1_module1,
+      unit2: unit2,
+      unit2_module3: unit2_module3
+    } do
+      map = Sections.decorated_numbering_map(section)
+
+      for revision <- [curriculum, unit1, unit1_module1, unit2, unit2_module3] do
+        sr =
+          Oli.Repo.get_by!(SectionResource,
+            section_id: section.id,
+            resource_id: revision.resource_id
+          )
+
+        assert map[revision.resource_id].level == sr.numbering_level
+        assert map[revision.resource_id].index == sr.numbering_index
+      end
+    end
+
+    test "omits a suppressed top-level unit and renumbers its numbered sibling", %{
+      section: section,
+      unit1: unit1,
+      unit2: unit2
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1.resource_id]})
+
+      map = Sections.decorated_numbering_map(section)
+
+      refute Map.has_key?(map, unit1.resource_id)
+      assert map[unit2.resource_id].level == 1
+      assert map[unit2.resource_id].index == 1
+    end
+
+    test "omits modules nested under a suppressed top-level unit", %{
+      section: section,
+      unit1: unit1,
+      unit1_module1: unit1_module1,
+      unit1_module2: unit1_module2,
+      unit2_module3: unit2_module3
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1.resource_id]})
+
+      map = Sections.decorated_numbering_map(section)
+
+      refute Map.has_key?(map, unit1_module1.resource_id)
+      refute Map.has_key?(map, unit1_module2.resource_id)
+      assert Map.has_key?(map, unit2_module3.resource_id)
+    end
+  end
+
   describe "get_ordered_schedule/1" do
     setup do
       %{}
