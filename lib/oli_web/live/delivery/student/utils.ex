@@ -423,8 +423,44 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   defp proficiency_styles(proficiency) do
     proficiency
-    |> ProficiencyDisplay.shared_card_styles_for()
+    |> shared_card_styles_for()
     |> Map.merge(chip_styles_for(proficiency))
+  end
+
+  defp shared_card_styles_for("High") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Text-text-accent-green",
+      card_class: "justify-start bg-Fill-Chip-Green px-[17px] pt-[25px]",
+      content_class: "w-[126px]",
+      order_class: "order-3 md:order-4"
+    }
+  end
+
+  defp shared_card_styles_for("Medium") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Icon-icon-accent-purple",
+      card_class: "justify-start bg-Fill-Accent-fill-accent-purple px-[15px] pt-[28px]",
+      content_class: "w-[130px]",
+      order_class: "order-4 md:order-3"
+    }
+  end
+
+  defp shared_card_styles_for("Low") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Icon-icon-accent-orange",
+      card_class: "justify-start bg-Fill-Accent-fill-accent-orange/70 px-6 pt-[23px]",
+      content_class: "w-[112px]",
+      order_class: "order-2"
+    }
+  end
+
+  defp shared_card_styles_for(_) do
+    %{
+      icon_class: "h-6 w-6 shrink-0",
+      card_class: "justify-start bg-Fill-Chip-Gray px-4 pt-[31px] md:bg-Table-table-row-1",
+      content_class: "w-32",
+      order_class: "order-1"
+    }
   end
 
   defp chip_styles_for("High"), do: %{chip_class: "bg-Fill-Chip-Green px-[10px] py-[3px]"}
