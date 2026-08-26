@@ -12,7 +12,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   def get_instructor_enrollment(_section, _current_user), do: nil
 
   def get_containers(section, opts \\ [async: true]) do
-    case Sections.get_units_and_modules_containers(section.slug) do
+    case Sections.get_units_and_modules_containers(section) do
       {0, pages} ->
         page_ids = Enum.map(pages, & &1.id)
         student_ids = Sections.progress_user_ids(section.id)

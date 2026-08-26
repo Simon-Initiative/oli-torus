@@ -230,7 +230,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   defp get_containers(section, student_id) do
-    case Sections.get_units_and_modules_containers(section.slug) do
+    case Sections.get_units_and_modules_containers(section) do
       {0, pages} ->
         student_progress =
           Metrics.progress_across_for_pages(

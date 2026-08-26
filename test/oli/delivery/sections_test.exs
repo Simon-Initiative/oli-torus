@@ -12,6 +12,7 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Delivery.Sections.{
     PostProcessing,
     SectionResource,
+    SectionResourceDepot,
     ScheduledContainerGroup,
     ScheduledSectionResource
   }
@@ -1179,6 +1180,93 @@ defmodule Oli.Delivery.SectionsTest do
       refute Map.has_key?(map, unit1_module1.resource_id)
       refute Map.has_key?(map, unit1_module2.resource_id)
       assert Map.has_key?(map, unit2_module3.resource_id)
+    end
+  end
+
+  describe "get_units_and_modules_containers/1" do
+    setup(_) do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_large_sample_project(ref(:author))
+      |> Seeder.Project.ensure_published(ref(:publication))
+      |> Seeder.Section.create_section(
+        ref(:project),
+        ref(:publication),
+        nil,
+        %{},
+        section_tag: :section
+      )
+    end
+
+    test "matches canonical numbering_index for every container when no units are suppressed",
+         %{section: section, unit1: unit1, unit2: unit2} do
+      {count, containers} = Sections.get_units_and_modules_containers(section)
+
+      assert count == length(containers)
+
+      unit1_container = Enum.find(containers, &(&1.id == unit1.resource_id))
+      unit2_container = Enum.find(containers, &(&1.id == unit2.resource_id))
+
+      assert unit1_container.numbering_index == 1
+      assert unit2_container.numbering_index == 2
+    end
+
+    test "sets numbering_index to nil for a suppressed unit and renumbers its sibling, leaving numbering_level untouched",
+         %{section: section, unit1: unit1, unit2: unit2} do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1.resource_id]})
+
+      {_count, containers} = Sections.get_units_and_modules_containers(section)
+
+      unit1_container = Enum.find(containers, &(&1.id == unit1.resource_id))
+      unit2_container = Enum.find(containers, &(&1.id == unit2.resource_id))
+
+      assert unit1_container.numbering_index == nil
+      assert unit1_container.numbering_level == 1
+      assert unit2_container.numbering_index == 1
+    end
+  end
+
+  describe "overlay_suppression_aware_numbering/2" do
+    setup(_) do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_large_sample_project(ref(:author))
+      |> Seeder.Project.ensure_published(ref(:publication))
+      |> Seeder.Section.create_section(
+        ref(:project),
+        ref(:publication),
+        nil,
+        %{},
+        section_tag: :section
+      )
+    end
+
+    test "matches raw numbering_index for every container when no units are suppressed", %{
+      section: section,
+      unit1: unit1
+    } do
+      containers = SectionResourceDepot.containers(section.id, numbering_level: {:in, [1, 2]})
+      overlaid = Sections.overlay_suppression_aware_numbering(containers, section)
+
+      unit1_sr = Enum.find(overlaid, &(&1.resource_id == unit1.resource_id))
+      assert unit1_sr.numbering_index == 1
+    end
+
+    test "sets numbering_index to nil for a suppressed container and leaves numbering_level untouched",
+         %{section: section, unit1: unit1, unit2: unit2} do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1.resource_id]})
+
+      containers = SectionResourceDepot.containers(section.id, numbering_level: {:in, [1, 2]})
+      overlaid = Sections.overlay_suppression_aware_numbering(containers, section)
+
+      unit1_sr = Enum.find(overlaid, &(&1.resource_id == unit1.resource_id))
+      unit2_sr = Enum.find(overlaid, &(&1.resource_id == unit2.resource_id))
+
+      assert unit1_sr.numbering_index == nil
+      assert unit1_sr.numbering_level == 1
+      assert unit2_sr.numbering_index == 1
     end
   end
 

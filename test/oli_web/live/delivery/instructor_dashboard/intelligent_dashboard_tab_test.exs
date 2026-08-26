@@ -368,6 +368,32 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     end
   end
 
+  describe "navigator_items/1" do
+    test "overlays suppression-aware numbering onto the dashboard scope navigator" do
+      %{
+        section: section,
+        unit1_resource: unit1_resource,
+        unit2_resource: unit2_resource
+      } = Oli.Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Oli.Delivery.Sections.update_section(section, %{
+          unnumbered_unit_ids: [unit1_resource.id]
+        })
+
+      {_count, items} = IntelligentDashboardTab.navigator_items(section)
+
+      unit1_item = Enum.find(items, &(&1.resource_id == unit1_resource.id))
+      unit2_item = Enum.find(items, &(&1.resource_id == unit2_resource.id))
+
+      # Unit 1 is suppressed -- no display number -- while Unit 2 is renumbered to 1
+      # since Unit 1 no longer consumes a numbering slot.
+      assert unit1_item.numbering_index == nil
+      assert unit1_item.numbering_level == 1
+      assert unit2_item.numbering_index == 1
+    end
+  end
+
   describe "handle_dashboard_request_timeout/2" do
     test "fails closed when no authenticated user id is available" do
       socket = %Phoenix.LiveView.Socket{

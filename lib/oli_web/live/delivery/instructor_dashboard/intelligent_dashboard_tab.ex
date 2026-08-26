@@ -25,6 +25,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   alias Oli.InstructorDashboard, as: InstructorDashboardStateContext
   alias Oli.InstructorDashboard.InstructorDashboardState
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Dashboard.Cache
   alias Oli.Dashboard.Cache.Key
@@ -4331,9 +4332,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
   defp valid_container_id?(%{id: section_id}, _containers, container_id)
        when is_integer(section_id) do
-    navigator_items(%{id: section_id})
-    |> elem(1)
-    |> Enum.any?(&(Map.get(&1, :resource_id) == container_id))
+    container_id in dashboard_container_resource_ids(section_id)
   end
 
   defp valid_container_id?(_, _, _), do: false
@@ -4349,13 +4348,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     }
   end
 
-  defp fetch_dashboard_containers(%{id: section_id}) when is_integer(section_id) do
+  defp fetch_dashboard_containers(%Section{id: section_id} = section)
+       when is_integer(section_id) do
     SectionResourceDepot.containers(section_id,
       numbering_level: {:in, @dashboard_container_levels}
     )
+    |> Sections.overlay_suppression_aware_numbering(section)
   end
 
   defp fetch_dashboard_containers(_), do: []
+
+  # Used only by `valid_container_id?/3`'s membership-check fallback, which has no full
+  # `%Section{}` in scope (only a section id) and needs container ids, not suppression-aware
+  # numbering. Kept as its own function -- rather than a second `fetch_dashboard_containers/1`
+  # clause dispatching on argument shape -- so a future caller can't silently end up on the
+  # no-overlay path by passing a bare `%{id: ...}` map instead of a `%Section{}`.
+  defp dashboard_container_resource_ids(section_id) do
+    SectionResourceDepot.containers(section_id,
+      numbering_level: {:in, @dashboard_container_levels}
+    )
+    |> Enum.map(& &1.resource_id)
+  end
 
   defp flatten_dashboard_containers(containers) do
     containers_by_id = Map.new(containers, &{&1.id, &1})

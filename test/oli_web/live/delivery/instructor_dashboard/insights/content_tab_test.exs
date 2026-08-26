@@ -275,6 +275,55 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert options_for_select == ["units", "modules"]
     end
 
+    test "content table's Order column and container navigator are suppression-aware", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{
+        section: section,
+        unit1_resource: unit1_resource,
+        unit2_resource: unit2_resource
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      ### Order column: modules under the suppressed unit1 show no order number, while
+      ### unit2's module is renumbered to 1 (it's the first module that still counts).
+      params = %{container_filter_by: :modules}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      rows =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr})
+
+      order_and_name =
+        Enum.map(rows, fn row ->
+          order = row |> Floki.find("td:first-child") |> Floki.text() |> String.trim()
+          name = row |> Floki.find("td a") |> Floki.text() |> String.trim()
+          {order, name}
+        end)
+
+      assert {"", "Module 1"} in order_and_name
+      assert {"", "Module 2"} in order_and_name
+      assert {"1", "Module 3"} in order_and_name
+
+      ### Container navigator: drilling into unit2 (not suppressed) should not show a
+      ### "Unit : Title" label for the suppressed unit1 sibling in its navigator dropdown.
+      params = %{container_id: unit2_resource.id}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      html = render(view)
+
+      refute html =~ "Unit : "
+      assert html =~ "Unit 1: Unit 2"
+    end
+
     test "content table given a section with only units",
          %{
            instructor: instructor,

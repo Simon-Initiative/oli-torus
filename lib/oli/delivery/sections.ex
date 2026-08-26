@@ -2742,6 +2742,37 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Overlays suppression-aware `numbering_index` onto a list of `%SectionResource{}` containers
+  (as returned by `SectionResourceDepot.containers/2`), using `decorated_numbering_map/1`.
+
+  A suppressed container (an unnumbered top-level unit, or a descendant of one) gets
+  `numbering_index: nil`. `numbering_level` is left untouched, since it reflects structural
+  depth (unit vs. module vs. section), not a suppression-aware display index.
+  """
+  @spec overlay_suppression_aware_numbering([SectionResource.t()], Section.t()) :: [
+          SectionResource.t()
+        ]
+  def overlay_suppression_aware_numbering(containers, %Section{} = section) do
+    overlay_numbering_index(containers, section, & &1.resource_id)
+  end
+
+  # Shared by `overlay_suppression_aware_numbering/2` (operates on `%SectionResource{}`,
+  # keyed by `resource_id`) and `get_units_and_modules_containers/1`'s private overlay
+  # (operates on plain maps from a custom `select`, keyed by `id`) -- both need the same
+  # nil-vs-`%Numbering{}` overlay logic against `decorated_numbering_map/1`, differing only
+  # in which field identifies the container.
+  defp overlay_numbering_index(containers, section, key_fun) do
+    numbering_map = decorated_numbering_map(section)
+
+    Enum.map(containers, fn container ->
+      case Numbering.lookup(numbering_map, key_fun.(container)) do
+        nil -> %{container | numbering_index: nil}
+        %Numbering{index: index} -> %{container | numbering_index: index}
+      end
+    end)
+  end
+
+  @doc """
   Returns a structured schedule of all scheduled section resources for the given section, ordered by month,
   week, date range, and container module.
 
@@ -5409,8 +5440,14 @@ defmodule Oli.Delivery.Sections do
   In case there are no units or modules, it returns a zero count and the pages
   of the curriculum.
   {container_count, containers} or {0, pages}
+
+  Each container's `numbering_index` is suppression-aware (see `decorated_numbering_map/1`):
+  a container that is itself an unnumbered top-level unit, or a descendant of one, has
+  `numbering_index: nil` instead of its raw index. `numbering_level` is left as the raw
+  structural depth (1 = unit, 2 = module) regardless of suppression, since it is used to
+  distinguish units from modules, not to display a number.
   """
-  def get_units_and_modules_containers(section_slug) do
+  def get_units_and_modules_containers(%Section{slug: section_slug} = section) do
     query =
       from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where:
@@ -5425,8 +5462,12 @@ defmodule Oli.Delivery.Sections do
 
     case Repo.all(query) do
       [] -> {0, get_pages(section_slug)}
-      containers -> {length(containers), containers}
+      containers -> {length(containers), overlay_suppression_aware_index(containers, section)}
     end
+  end
+
+  defp overlay_suppression_aware_index(containers, section) do
+    overlay_numbering_index(containers, section, & &1.id)
   end
 
   @scheduling_types Ecto.ParameterizedType.init(Ecto.Enum,
