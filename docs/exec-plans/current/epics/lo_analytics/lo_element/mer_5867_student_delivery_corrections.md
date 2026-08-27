@@ -473,6 +473,30 @@ Validation:
 - Jest/component test for filtering by page title.
 - Manual check with duplicate/similar Real Chem page titles.
 
+### Slice D5c - Smooth Next Steps Disclosure Motion
+
+Purpose:
+
+- Improve the `Show next steps` / `Hide next steps` interaction so expanding and collapsing recommendation content feels smooth instead of abrupt.
+
+Likely work:
+
+- Add a small CSS-only transition for the expanded recommendation content when feasible.
+- Preserve the native disclosure semantics already used for accessibility.
+- Respect `prefers-reduced-motion` and avoid motion for users who request reduced animation.
+- Keep this scoped to the Summary `Recommended Review` next-steps panel.
+- Do not change copy, link behavior, recommendation filtering, DOT content, or panel layout.
+
+Likely files:
+
+- `assets/css/app.css`
+- `lib/oli/rendering/content/learning_objectives.ex` only if a wrapper/attribute is required to support the transition safely.
+
+Validation:
+
+- Manual expand/collapse smoke check for desktop and mobile widths.
+- Manual or browser check that reduced-motion users do not get unnecessary animation.
+
 ### Slice D6 - Student Links 500 And Preview Support
 
 Purpose:
@@ -565,6 +589,7 @@ Validation:
 | MER-5808 `Recommended Review` section | D1 | Render tests | Figma node `287-50756` |
 | MER-5808 `Learning Objectives You're Applying` section | D1 | Render tests | Figma node `287-50809` |
 | MER-5808 `Show next steps` / `Hide next steps` | D2 | Render tests | Figma nodes `287-51458`, `434-8927` |
+| MER-5808 smooth next steps expand/collapse | D5c | CSS/class review if useful | Manual expand/collapse smoke check |
 | MER-5808 no next steps without recommendations | D2 | Render tests | Student smoke check |
 | MER-5808 Strong hides recommendations | D3 | Render tests | Student smoke check |
 | MER-5808 DOT Explain card | D5 | Render/integration tests | Figma expanded panel check |

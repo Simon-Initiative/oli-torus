@@ -444,7 +444,7 @@ https://tailwindcss.com/docs/utility-first
 .content .learning-objectives-summary__recommendation-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
