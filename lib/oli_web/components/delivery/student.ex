@@ -4,25 +4,34 @@ defmodule OliWeb.Components.Delivery.Student do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Rendering.Context
   alias OliWeb.Components.Common
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
 
   attr(:title, :map, default: nil)
   attr(:fallback, :string, default: nil)
+  attr(:render_context, :map, required: true)
+  attr(:id_prefix, :string, required: true)
 
   @doc """
   Renders rich-text welcome content, or the given fallback when it is empty.
+
+  The rendering context determines whether embedded React content uses LiveReact. The ID prefix
+  scopes those React mounts when the same welcome content appears in multiple previews.
   """
   def welcome_title(assigns) do
-    assigns = assign(assigns, :content, render_welcome_title(assigns.title))
+    render_context = with_react_component_id_prefix(assigns.render_context, assigns.id_prefix)
+
+    assigns =
+      assign(assigns, :content, render_welcome_title(assigns.title, render_context))
 
     ~H"""
     {@content || @fallback}
     """
   end
 
-  defp render_welcome_title(welcome_title) when is_map(welcome_title) do
+  defp render_welcome_title(welcome_title, %Context{} = context) when is_map(welcome_title) do
     children = Map.get(welcome_title, "children") || Map.get(welcome_title, :children) || []
 
     case children do
@@ -32,7 +41,7 @@ defmodule OliWeb.Components.Delivery.Student do
       children ->
         Phoenix.HTML.raw(
           Oli.Rendering.Content.render(
-            %Oli.Rendering.Context{},
+            context,
             children,
             Oli.Rendering.Content.Html
           )
@@ -40,7 +49,14 @@ defmodule OliWeb.Components.Delivery.Student do
     end
   end
 
-  defp render_welcome_title(_welcome_title), do: nil
+  defp render_welcome_title(_welcome_title, %Context{}), do: nil
+
+  defp with_react_component_id_prefix(%Context{} = context, id_prefix) do
+    %{
+      context
+      | render_opts: Map.put(context.render_opts, :react_component_id_prefix, id_prefix)
+    }
+  end
 
   attr(:raw_avg_score, :map)
 

@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
   use Phoenix.Component
 
   import OliWeb.Common.SourceImage
+  alias Oli.Rendering.Context
   alias OliWeb.Components.Delivery.Student
 
   attr :section, :map, required: true
@@ -22,9 +23,19 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
           id={"#{@id_prefix}-welcome-title"}
           role="heading"
           aria-level="2"
-          class="min-w-0 max-w-full [overflow-wrap:anywhere] text-[16px] leading-6 tracking-[0.02px] [&>*:first-child]:font-semibold [&>*:first-child]:text-[18xl] [&>*:first-child]:leading-[24px] hvsm:[&>*:first-child]:text-[30px] hvsm:[&>*:first-child]:leading-[40px] hvxl:[&>*:first-child]:text-[40px] hvxl:[&>*:first-child]:leading-[54px]"
+          class="min-w-0 max-w-full [overflow-wrap:anywhere] text-[16px] leading-6 tracking-[0.02px] [&_ol]:!pl-6 [&_ul]:!pl-6 [&>*:first-child]:font-semibold [&>*:first-child]:text-[18xl] [&>*:first-child]:leading-[24px] hvsm:[&>*:first-child]:text-[30px] hvsm:[&>*:first-child]:leading-[40px] hvxl:[&>*:first-child]:text-[40px] hvxl:[&>*:first-child]:leading-[54px]"
         >
-          <Student.welcome_title title={@section.welcome_title} />
+          <Student.welcome_title
+            title={@section.welcome_title}
+            render_context={
+              %Context{
+                is_liveview: true,
+                section_id: @section.id,
+                section_slug: @section.slug
+              }
+            }
+            id_prefix={@id_prefix}
+          />
         </div>
         <p
           :if={custom_message?(@section.encouraging_subtitle)}

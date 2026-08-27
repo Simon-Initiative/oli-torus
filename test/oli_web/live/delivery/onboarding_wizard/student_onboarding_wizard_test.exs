@@ -178,6 +178,12 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
                 ]
               }
             ]
+          },
+          %{
+            "id" => "welcome-video",
+            "type" => "youtube",
+            "src" => "RpnEyBIkdMc",
+            "children" => [%{"text" => ""}]
           }
         ]
       }
@@ -207,6 +213,16 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       assert has_element?(
                view,
                ~s(#onboarding-welcome-title[class*="text-[16px]"][class*="first-child]:text-[18xl]"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-welcome-title[class*="[&_ul]:!pl-6"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-youtube--welcome-video[phx-hook="LiveReact"])
              )
     end
 

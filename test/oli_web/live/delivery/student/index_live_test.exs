@@ -1019,6 +1019,29 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
             id: "2748906063",
             type: "p",
             children: [%{text: "Welcome to "}, %{text: "the best course ever!", strong: true}]
+          },
+          %{
+            id: "home-welcome-list",
+            type: "ol",
+            children: [
+              %{
+                id: "home-welcome-list-item",
+                type: "li",
+                children: [
+                  %{
+                    id: "home-welcome-list-paragraph",
+                    type: "p",
+                    children: [%{text: "Review the course goals"}]
+                  }
+                ]
+              }
+            ]
+          },
+          %{
+            id: "home-welcome-video",
+            type: "youtube",
+            src: "RpnEyBIkdMc",
+            children: [%{text: ""}]
           }
         ]
       }
@@ -1038,6 +1061,17 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       # Shows welcome title respecting the strong tag
       assert has_element?(view, ~s(div[role="heading"][aria-level="2"]), "Welcome to")
       assert has_element?(view, "strong", "the best course ever!")
+
+      assert has_element?(
+               view,
+               ~s(div[role="heading"][aria-level="2"][class*="text-base"][class*="first-child]:text-3xl"][class*="[&_ol]:!pl-6"] ol.list-decimal li),
+               "Review the course goals"
+             )
+
+      assert has_element?(
+               view,
+               ~s(#student-home-youtube--home-welcome-video[phx-hook="LiveReact"])
+             )
 
       # Shows encouraging subtitle
       assert has_element?(view, "div", encouraging_subtitle)
