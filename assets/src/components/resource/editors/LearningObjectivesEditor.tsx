@@ -231,13 +231,17 @@ export const LearningObjectivesEditor = ({
     const toOptions = (pages: Persistence.Page[]) =>
       pages
         .filter((page) => !selectedPageIds.has(page.id))
-        .map((page) => ({ value: page.id, title: page.title } as Option));
+        .map((page) => ({ value: page.id, title: pageOptionTitle(page) }) as Option);
 
     window.oliDispatch(
       modalActions.display(
         <SelectModal
           title={kind === 'revisit_pages' ? 'Select Revisit Page' : 'Select Practice Page'}
           description="Select a Page"
+          searchable
+          searchPlaceholder="Search pages"
+          searchAriaLabel="Search pages"
+          emptySearchMessage="No pages match your search."
           onFetchOptions={() =>
             // Keep new recommendation selections scoped to hierarchy pages. The broader
             // page list is only used for resolving labels on older saved selections.
@@ -632,6 +636,9 @@ const RecommendationList = ({
     </div>
   );
 };
+
+const pageOptionTitle = (page: Persistence.Page) =>
+  page.numbering_index == null ? page.title : `${page.numbering_index}. ${page.title}`;
 
 const groupObjectives = (
   objectives: ResolvedLearningObjective[],

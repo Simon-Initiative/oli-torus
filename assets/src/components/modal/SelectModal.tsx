@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Maybe } from 'tsmonad';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { lockScroll, unlockScroll } from 'components/modal/utils';
+import { SearchIcon } from 'components/misc/icons/Icons';
 
 export interface Option {
   value: string | number;
@@ -18,6 +19,10 @@ interface SelectModalProps<T extends Option> {
   onDone: (x: string | number) => void | Promise<void>;
   onCancel: () => void;
   additionalControls?: React.ReactNode;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  searchAriaLabel?: string;
+  emptySearchMessage?: string;
 }
 
 // Selector for focusable elements
@@ -31,6 +36,10 @@ export const SelectModal = function <T extends Option>({
   onDone,
   onCancel,
   additionalControls,
+  searchable = false,
+  searchPlaceholder = 'Search',
+  searchAriaLabel = 'Search options',
+  emptySearchMessage = 'No options match your search.',
 }: SelectModalProps<T>) {
   const modal = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
@@ -39,10 +48,16 @@ export const SelectModal = function <T extends Option>({
   const onCancelRef = useRef(onCancel);
   const modalId = useRef(`select-modal-${Math.random().toString(36).substr(2, 9)}`);
   const errorId = `${modalId.current}-error`;
+  const selectId = `${modalId.current}-select`;
+  const searchInputId = `${modalId.current}-search`;
+  const listboxId = `${modalId.current}-options`;
   const [options, setOptions] = useState<Maybe<T[]>>(Maybe.nothing());
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedOption, setSelectedOption] = useState<Maybe<T>>(Maybe.nothing());
   const [submitting, setSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const hasSearchSelection = selectedOption.caseOf({ just: () => true, nothing: () => false });
 
   onCancelRef.current = onCancel;
 
@@ -123,9 +138,12 @@ export const SelectModal = function <T extends Option>({
           setOptions(Maybe.just(result));
         } else {
           setOptions(Maybe.just(result.options));
-          setSelectedOption(
-            Maybe.maybe(result.options.find((o) => o.value == result.selectedValue)),
-          );
+          const selected = Maybe.maybe(result.options.find((o) => o.value == result.selectedValue));
+          setSelectedOption(selected);
+          selected.caseOf({
+            just: (s) => setSearchTerm(s.title),
+            nothing: () => {},
+          });
         }
       })
       .catch((error) =>
@@ -162,14 +180,21 @@ export const SelectModal = function <T extends Option>({
   };
 
   const renderSuccess = (options: T[]) => {
-    const renderOption = (o: T) => (
+    const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase();
+    const filteredOptions =
+      searchable && normalizedSearchTerm !== ''
+        ? options.filter((o) => o.title.toLocaleLowerCase().includes(normalizedSearchTerm))
+        : options;
+
+    const renderNativeOption = (o: T) => (
       <option key={o.value} value={o.value}>
         {o.title}
       </option>
     );
 
-    const optionSelect = (
+    const nativeSelect = (
       <select
+        id={selectId}
         className="form-control mr-2"
         value={selectedOption.caseOf({
           just: (s) => `${s.value}`,
@@ -184,15 +209,134 @@ export const SelectModal = function <T extends Option>({
         <option key="none" value="" hidden>
           {description}
         </option>
-        {options.map(renderOption)}
+        {options.map(renderNativeOption)}
       </select>
+    );
+
+    const selectSearchableOption = (o: T) => {
+      setSelectedOption(Maybe.just(o));
+      setSearchTerm(o.title);
+      setIsSearchOpen(false);
+    };
+
+    const renderSearchableOption = (o: T) => {
+      const selected = selectedOption.caseOf({
+        just: (s) => `${s.value}` === `${o.value}`,
+        nothing: () => false,
+      });
+
+      return (
+        <button
+          key={o.value}
+          id={`${listboxId}-${o.value}`}
+          type="button"
+          role="option"
+          aria-selected={selected}
+          className={`dropdown-item w-100 overflow-hidden text-truncate text-left${
+            selected ? ' active' : ''
+          }`}
+          title={o.title}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => selectSearchableOption(o)}
+        >
+          {o.title}
+        </button>
+      );
+    };
+
+    const searchableSelect = (
+      <div
+        className="w-100"
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setIsSearchOpen(false);
+          }
+        }}
+      >
+        <label className="sr-only" htmlFor={searchInputId}>
+          {description}
+        </label>
+        <div className="d-flex w-100 align-items-center rounded border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-850">
+          {!hasSearchSelection && (
+            <span className="d-inline-flex align-items-center pl-3 pr-2 text-Text-text-low-alpha">
+              <SearchIcon width={18} height={18} />
+            </span>
+          )}
+          <input
+            id={searchInputId}
+            type="text"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={isSearchOpen}
+            aria-controls={listboxId}
+            className="form-control flex-grow-1 border-0 bg-transparent shadow-none"
+            placeholder={searchPlaceholder}
+            aria-label={searchAriaLabel}
+            value={searchTerm}
+            onClick={() => setIsSearchOpen(true)}
+            onFocus={() => setIsSearchOpen(true)}
+            onChange={(event) => {
+              setSearchTerm(event.target.value);
+              setSelectedOption(Maybe.nothing());
+              setIsSearchOpen(true);
+            }}
+            style={{ border: 0, boxShadow: 'none', minWidth: 0 }}
+          />
+          {hasSearchSelection && (
+            <button
+              type="button"
+              className="btn btn-link px-3 py-0 text-Text-text-low-alpha"
+              aria-label="Clear selected page"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                setSelectedOption(Maybe.nothing());
+                setSearchTerm('');
+                setIsSearchOpen(true);
+              }}
+              style={{
+                cursor: 'pointer',
+                textDecoration: 'none',
+              }}
+            >
+              &times;
+            </button>
+          )}
+        </div>
+        {isSearchOpen && (
+          <>
+            <div
+              id={listboxId}
+              role="listbox"
+              className="max-h-96 w-100 overflow-x-hidden overflow-y-auto rounded border border-gray-300 bg-white p-0 shadow-sm"
+            >
+              {filteredOptions.map(renderSearchableOption)}
+            </div>
+            {filteredOptions.length === 0 && (
+              <div className="text-muted mt-2" role="status">
+                {emptySearchMessage}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     );
 
     return (
       <div className="select-modal">
-        <form className="form-inline">
-          <label className="sr-only">{description}</label>
-          {optionSelect}
+        <form
+          className={searchable ? 'form-inline flex-column align-items-stretch' : 'form-inline'}
+          onSubmit={(event) => event.preventDefault()}
+        >
+          {searchable ? (
+            searchableSelect
+          ) : (
+            <>
+              <label className="sr-only" htmlFor={selectId}>
+                {description}
+              </label>
+              {nativeSelect}
+            </>
+          )}
         </form>
       </div>
     );
@@ -202,7 +346,7 @@ export const SelectModal = function <T extends Option>({
 
   return (
     <div ref={modal} className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-      <div className="modal-dialog modal-dialog-centered modal-md">
+      <div className={`modal-dialog modal-dialog-centered ${searchable ? 'modal-lg' : 'modal-md'}`}>
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title" id={titleId}>
