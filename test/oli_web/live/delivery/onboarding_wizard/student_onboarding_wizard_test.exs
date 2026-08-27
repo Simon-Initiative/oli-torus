@@ -158,6 +158,11 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
         "type" => "p",
         "children" => [
           %{
+            "id" => "welcome-heading",
+            "type" => "p",
+            "children" => [%{"text" => "Welcome to the course"}]
+          },
+          %{
             "id" => "welcome-list",
             "type" => "ul",
             "children" => [
@@ -189,8 +194,19 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
 
       assert has_element?(
                view,
+               "#onboarding-welcome-title > p:first-child",
+               "Welcome to the course"
+             )
+
+      assert has_element?(
+               view,
                "#onboarding-welcome-title ul.list-disc li",
                "Review the course goals"
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-welcome-title[class*="text-[16px]"][class*="first-child]:text-[18xl]"])
              )
     end
 

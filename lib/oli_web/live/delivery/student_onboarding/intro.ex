@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
           id={"#{@id_prefix}-welcome-title"}
           role="heading"
           aria-level="2"
-          class="min-w-0 max-w-full [overflow-wrap:anywhere] font-semibold text-[18xl] leading-[24px] hvsm:text-[30px] hvsm:leading-[40px] hvxl:text-[40px] hvxl:leading-[54px] tracking-[0.02px]"
+          class="min-w-0 max-w-full [overflow-wrap:anywhere] text-[16px] leading-6 tracking-[0.02px] [&>*:first-child]:font-semibold [&>*:first-child]:text-[18xl] [&>*:first-child]:leading-[24px] hvsm:[&>*:first-child]:text-[30px] hvsm:[&>*:first-child]:leading-[40px] hvxl:[&>*:first-child]:text-[40px] hvxl:[&>*:first-child]:leading-[54px]"
         >
           <Student.welcome_title title={@section.welcome_title} />
         </div>
