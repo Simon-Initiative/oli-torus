@@ -7,6 +7,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   alias Oli.Delivery.LearningObjectives.ProficiencyDisplay
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Rendering.Context
+  alias Oli.Rendering.Content.UrlHelpers
   alias Phoenix.HTML
 
   @page_type_id Oli.Resources.ResourceType.id_for_page()
@@ -205,12 +206,25 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     children = visible_children(objective, objectives_by_id)
     proficiency = proficiency_for(context.learning_objectives, objective.resource_id)
     config_row = Map.get(config.config_by_objective_id, objective.resource_id, %{})
-    next_steps_attr = summary_next_steps_attr(section_kind, config_row, resources_by_id)
+
+    next_steps_content =
+      summary_next_steps_content(section_kind, context, config_row, resources_by_id)
+
+    next_steps_attr = if next_steps_content == [], do: "", else: ~s| data-next-steps="available"|
     card_class = summary_card_class(section_kind, proficiency)
+    card_header = summary_objective_header(objective, index, children, config, proficiency)
 
     [
       ~s|<li class="learning-objectives-summary__item">|,
       ~s|<article class="learning-objectives-summary__card #{card_class} border bg-Surface-surface-primary"#{next_steps_attr}>|,
+      summary_objective_content(card_header, next_steps_content, index),
+      "</article>",
+      "</li>"
+    ]
+  end
+
+  defp summary_objective_header(objective, index, children, config, proficiency) do
+    [
       ~s|<div class="learning-objectives-summary__card-header">|,
       ~s|<div class="learning-objectives-delivery__objective-copy">|,
       ~s|<div class="learning-objectives-delivery__objective-title-row">|,
@@ -220,9 +234,32 @@ defmodule Oli.Rendering.Content.LearningObjectives do
       maybe_render_sub_objectives(children, config),
       "</div>",
       proficiency_badge(proficiency),
+      "</div>"
+    ]
+  end
+
+  defp summary_objective_content(card_header, [], _index), do: card_header
+
+  defp summary_objective_content(card_header, next_steps_content, index) do
+    [
+      ~s|<details class="learning-objectives-summary__next-steps">|,
+      ~s|<summary class="learning-objectives-summary__next-steps-summary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus">|,
+      ~s|<span class="learning-objectives-summary__next-steps-header">|,
+      card_header,
+      ~s|<span class="learning-objectives-summary__next-steps-trigger">|,
+      ~s|<span class="learning-objectives-summary__next-steps-label">|,
+      ~s|<span class="learning-objectives-summary__next-steps-show">Show next steps</span>|,
+      ~s|<span class="learning-objectives-summary__next-steps-hide">Hide next steps</span>|,
+      ~s|<span class="sr-only"> for LO #{index}</span>|,
+      "</span>",
+      next_steps_chevron_icon(),
+      "</span>",
+      "</span>",
+      "</summary>",
+      ~s|<div class="learning-objectives-summary__next-steps-content">|,
+      next_steps_content,
       "</div>",
-      "</article>",
-      "</li>"
+      "</details>"
     ]
   end
 
@@ -251,17 +288,70 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     ]
   end
 
-  defp summary_next_steps_attr(:review, config_row, resources_by_id) do
+  defp summary_next_steps_content(:review, context, config_row, resources_by_id) do
     revisit_pages = resolved_recommendations(config_row, "revisit_pages", resources_by_id)
     practice_pages = resolved_recommendations(config_row, "practice_pages", resources_by_id)
 
     case {revisit_pages, practice_pages} do
-      {[], []} -> ""
-      _ -> ~s| data-next-steps="available"|
+      {[], []} ->
+        []
+
+      _ ->
+        [
+          recommendation_group(context, "REVISIT", :revisit, revisit_pages),
+          recommendation_group(context, "PRACTICE", :practice, practice_pages)
+        ]
     end
   end
 
-  defp summary_next_steps_attr(_section_kind, _config_row, _resources_by_id), do: ""
+  defp summary_next_steps_content(_section_kind, _context, _config_row, _resources_by_id), do: []
+
+  defp recommendation_group(_context, _heading, _kind, []), do: []
+
+  defp recommendation_group(context, heading, kind, pages) do
+    [
+      ~s|<section class="learning-objectives-summary__recommendation-group learning-objectives-summary__recommendation-group--#{kind}">|,
+      ~s|<h4 class="learning-objectives-summary__recommendation-heading text-Text-text-low-alpha">|,
+      recommendation_group_icon(kind),
+      ~s|<span>#{heading}</span>|,
+      "</h4>",
+      ~s|<ul class="learning-objectives-summary__recommendation-list">|,
+      Enum.map(pages, &recommendation_link(context, &1)),
+      "</ul>",
+      "</section>"
+    ]
+  end
+
+  defp recommendation_link(context, page) do
+    href =
+      context
+      |> lesson_href(page.slug)
+      |> escape()
+
+    [
+      ~s|<li class="learning-objectives-summary__recommendation-item">|,
+      ~s|<a class="learning-objectives-summary__recommendation-link internal-link text-Text-text-link" href="#{href}">|,
+      ~s|<span>#{escape(page.title)}</span>|,
+      "</a>",
+      "</li>"
+    ]
+  end
+
+  defp lesson_href(%Context{internal_link_url: internal_link_url}, slug)
+       when is_function(internal_link_url, 1),
+       do: internal_link_url.(slug)
+
+  defp lesson_href(%Context{section_slug: section_slug, page_link_params: page_link_params}, slug) do
+    UrlHelpers.lesson_path(section_slug, slug, page_link_params)
+  end
+
+  defp recommendation_group_icon(:revisit) do
+    ~S|<span class="learning-objectives-summary__recommendation-heading-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.16602 15.0007C4.16602 15.4427 4.34161 15.8666 4.65417 16.1792C4.96673 16.4917 5.39065 16.6673 5.83268 16.6673H15.8327V3.33398H5.83268C5.39065 3.33398 4.96673 3.50958 4.65417 3.82214C4.34161 4.1347 4.16602 4.55862 4.16602 5.00065V15.0007ZM4.16602 15.0007C4.16602 14.5586 4.34161 14.1347 4.65417 13.8221C4.96673 13.5096 5.39065 13.334 5.83268 13.334H15.8327M7.49935 6.66732H12.4993" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>|
+  end
+
+  defp recommendation_group_icon(:practice) do
+    ~S|<span class="learning-objectives-summary__recommendation-heading-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.49984 4.16667H5.83317C5.39114 4.16667 4.96722 4.34226 4.65466 4.65482C4.3421 4.96738 4.1665 5.39131 4.1665 5.83333V15.8333C4.1665 16.2754 4.3421 16.6993 4.65466 17.0118C4.96722 17.3244 5.39114 17.5 5.83317 17.5H14.1665C14.6085 17.5 15.0325 17.3244 15.345 17.0118C15.6576 16.6993 15.8332 16.2754 15.8332 15.8333V5.83333C15.8332 5.39131 15.6576 4.96738 15.345 4.65482C15.0325 4.34226 14.6085 4.16667 14.1665 4.16667H12.4998M7.49984 4.16667C7.49984 3.72464 7.67543 3.30072 7.98799 2.98816C8.30055 2.67559 8.72448 2.5 9.1665 2.5H10.8332C11.2752 2.5 11.6991 2.67559 12.0117 2.98816C12.3242 3.30072 12.4998 3.72464 12.4998 4.16667M7.49984 4.16667C7.49984 4.60869 7.67543 5.03262 7.98799 5.34518C8.30055 5.65774 8.72448 5.83333 9.1665 5.83333H10.8332C11.2752 5.83333 11.6991 5.65774 12.0117 5.34518C12.3242 5.03262 12.4998 4.60869 12.4998 4.16667M7.49984 10H7.50817M10.8332 10H12.4998M7.49984 13.3333H7.50817M10.8332 13.3333H12.4998" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>|
+  end
 
   defp summary_card_class(:review, "Low"),
     do:
@@ -398,6 +488,10 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
   defp chevron_down_icon do
     ~s|<i class="fas fa-chevron-down" aria-hidden="true"></i>|
+  end
+
+  defp next_steps_chevron_icon do
+    ~s|<i class="fas fa-chevron-down learning-objectives-summary__next-steps-chevron" aria-hidden="true"></i>|
   end
 
   defp potted_plant_icon do

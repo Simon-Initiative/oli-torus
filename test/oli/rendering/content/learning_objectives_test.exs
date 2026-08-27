@@ -193,14 +193,20 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
           %{
             "resource_id" => 10,
             "enabled" => true,
-            "revisit_pages" => [101, 999, 201],
-            "practice_pages" => [102]
+            "revisit_pages" => [101, 107, 999, 201],
+            "practice_pages" => [102, 108]
           },
           %{
             "resource_id" => 11,
             "enabled" => true,
             "revisit_pages" => [],
             "practice_pages" => [104]
+          },
+          %{
+            "resource_id" => 20,
+            "enabled" => true,
+            "revisit_pages" => [105],
+            "practice_pages" => [106]
           },
           %{
             "resource_id" => 30,
@@ -219,15 +225,29 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
 
             [
               section_resource(101, "Review page", "review-page", @page_type_id),
+              section_resource(107, "Second review page", "second-review-page", @page_type_id),
               section_resource(102, "Practice page", "practice-page", @page_type_id),
+              section_resource(
+                108,
+                "Second practice page",
+                "second-practice-page",
+                @page_type_id
+              ),
               section_resource(104, "Sub-objective practice", "sub-practice-page", @page_type_id),
+              section_resource(105, "Strong review page", "strong-review-page", @page_type_id),
+              section_resource(
+                106,
+                "Strong practice page",
+                "strong-practice-page",
+                @page_type_id
+              ),
               section_resource(201, "Container not page", "module", @container_type_id)
             ]
           end
         )
         |> safe_to_string()
 
-      assert_received {:recommendations, 42, [101, 999, 201, 102, 104]}
+      assert_received {:recommendations, 42, [101, 107, 999, 201, 102, 108, 104, 105, 106]}
       refute_received {:recommendations, _, _}
 
       assert rendered =~ "Learning Objectives"
@@ -243,6 +263,11 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered =~ "learning-objectives-summary__card"
       refute rendered =~ "learning-objectives-summary__heading"
       assert rendered =~ ~s|data-next-steps="available"|
+      assert rendered =~ ~s|<details class="learning-objectives-summary__next-steps">|
+      assert rendered =~ "Show next steps"
+      assert rendered =~ "Hide next steps"
+      assert rendered =~ "<span>REVISIT</span>"
+      assert rendered =~ "<span>PRACTICE</span>"
       assert rendered =~ "Review limits"
       assert rendered =~ "Apply limit laws"
       assert rendered =~ "Practice derivatives"
@@ -268,13 +293,51 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       refute rendered =~ "Not enough data"
       refute rendered =~ "Sub-Objective"
 
-      refute rendered =~ "Review page"
-      refute rendered =~ "Practice page"
+      assert rendered =~ "Review page"
+      assert rendered =~ "Second review page"
+      assert rendered =~ "Practice page"
+      assert rendered =~ "Second practice page"
+      assert rendered =~ ~s|href="/sections/section-a/lesson/review-page"|
+      assert rendered =~ ~s|href="/sections/section-a/lesson/second-review-page"|
+      assert rendered =~ ~s|href="/sections/section-a/lesson/practice-page"|
+      assert rendered =~ ~s|href="/sections/section-a/lesson/second-practice-page"|
       refute rendered =~ "Sub-objective practice"
-      refute rendered =~ ~s|href="/sections/section-a/lesson/review-page"|
       refute rendered =~ "Container not page"
+      refute rendered =~ "Strong review page"
+      refute rendered =~ "Strong practice page"
       refute rendered =~ ~s|/lesson/999|
       refute rendered =~ ~s|/lesson/103|
+    end
+
+    test "does not render Summary next steps for review objectives without recommendations" do
+      rendered =
+        render_content(
+          context(
+            payload(
+              [objective(10, "Review limits")],
+              performance_by_objective_id: %{10 => "Low"}
+            )
+          ),
+          %{
+            "type" => "learning_objectives",
+            "id" => "lo-summary",
+            "mode" => "summary",
+            "learning_objectives" => [
+              %{
+                "resource_id" => 10,
+                "enabled" => true,
+                "revisit_pages" => [],
+                "practice_pages" => []
+              }
+            ]
+          }
+        )
+
+      assert rendered =~ "Recommended Review"
+      assert rendered =~ "Review limits"
+      refute rendered =~ "Show next steps"
+      refute rendered =~ "<span>REVISIT</span>"
+      refute rendered =~ "<span>PRACTICE</span>"
     end
   end
 
