@@ -5,6 +5,7 @@ import { diff } from 'deep-object-diff';
 import { JSONSchema7 } from 'json-schema';
 import { at } from 'lodash';
 import { debounce } from 'lodash';
+import { AccordionManageEditor } from './custom/AccordionManageEditor';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
@@ -74,6 +75,7 @@ const widgets: any = {
   RichLabelWidget: RichLabelWidget,
   ItemBankManageEditor: ItemBankManageEditor,
   MatchingManageEditor: MatchingManageEditor,
+  AccordionManageEditor: AccordionManageEditor,
 };
 
 /**

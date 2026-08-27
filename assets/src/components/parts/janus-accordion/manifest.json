@@ -1,0 +1,15 @@
+{
+  "id": "janus_accordion",
+  "friendlyName": "Accordion",
+  "description": "Collapsible content panels the learner can expand and collapse",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-accordion",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-accordion",
+    "entry": "./authoring-entry.ts"
+  }
+}
