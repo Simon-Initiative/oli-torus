@@ -333,6 +333,147 @@ https://tailwindcss.com/docs/utility-first
   color: #757682;
 }
 
+.content .learning-objectives-summary__next-steps {
+  display: block;
+}
+
+.content .learning-objectives-summary__next-steps-summary {
+  display: block;
+  width: 100%;
+  margin: 0;
+  color: #0070e0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.content .learning-objectives-summary__next-steps[open] .learning-objectives-summary__next-steps-summary {
+  width: calc(100% + 24px);
+  margin-right: -12px;
+  margin-left: -12px;
+  padding-right: 12px;
+  padding-left: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ced1d9;
+}
+
+.content .learning-objectives-summary__next-steps-summary::-webkit-details-marker {
+  display: none;
+}
+
+.content .learning-objectives-summary__next-steps-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.content .learning-objectives-summary__next-steps-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+
+.content .learning-objectives-summary__next-steps-hide {
+  display: none;
+}
+
+.content
+  .learning-objectives-summary__next-steps[open]
+  .learning-objectives-summary__next-steps-show {
+  display: none;
+}
+
+.content
+  .learning-objectives-summary__next-steps[open]
+  .learning-objectives-summary__next-steps-hide {
+  display: inline;
+}
+
+.content .learning-objectives-summary__next-steps-chevron {
+  font-size: 12px;
+  transition: transform 120ms ease;
+}
+
+.content
+  .learning-objectives-summary__next-steps[open]
+  .learning-objectives-summary__next-steps-chevron {
+  transform: rotate(180deg);
+}
+
+.content .learning-objectives-summary__next-steps-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.content .learning-objectives-summary__recommendation-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.content .learning-objectives-summary__recommendation-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #757682;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.content .learning-objectives-summary__recommendation-heading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+
+.content .learning-objectives-summary__recommendation-heading-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.content .learning-objectives-summary__recommendation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.content .learning-objectives-summary__recommendation-item {
+  margin-bottom: 0;
+  list-style: none;
+}
+
+.content .learning-objectives-summary__recommendation-item::marker {
+  content: '';
+}
+
+.content .learning-objectives-summary__recommendation-link {
+  display: inline-flex;
+  align-items: flex-start;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.content .learning-objectives-summary__recommendation-link:hover,
+.content .learning-objectives-summary__recommendation-link:focus-visible {
+  text-decoration: underline;
+}
+
 .dark .content .learning-objectives-summary__section-icon--applying {
   color: #39e581;
 }
@@ -359,6 +500,14 @@ https://tailwindcss.com/docs/utility-first
 .dark .content .learning-objectives-summary__proficiency--unknown {
   background: #353740;
   color: rgba(238, 235, 245, 0.75);
+}
+
+.dark .content .learning-objectives-summary__next-steps-summary {
+  color: #95caff;
+}
+
+.dark .content .learning-objectives-summary__recommendation-heading {
+  color: #bab8bf;
 }
 
 @media (max-width: 720px) {

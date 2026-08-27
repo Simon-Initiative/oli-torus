@@ -136,10 +136,13 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
 
       assert html =~ "Recommended Review"
       assert html =~ "Objective C"
-      refute html =~ "Page 1"
-      refute html =~ "Page 3"
-      refute html =~ ~s|href="/sections/#{section.slug}/lesson/page_1?|
-      refute html =~ ~s|href="/sections/#{section.slug}/lesson/page_3?|
+      assert html =~ "Show next steps"
+      assert html =~ "<span>REVISIT</span>"
+      assert html =~ "<span>PRACTICE</span>"
+      assert html =~ "Page 1"
+      assert html =~ "Page 3"
+      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_1?|
+      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_3?|
     end
   end
 
