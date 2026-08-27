@@ -99,44 +99,61 @@ export const LearningObjectivesEditor = ({
     resourceContext.learningObjectives !== undefined && !learningObjectivesRefreshPending;
   const objectives = resourceContext.learningObjectives || [];
   const [pages, setPages] = useState<Persistence.Page[]>([]);
-  const [pagesLoadFailed, setPagesLoadFailed] = useState(false);
+  const [candidatePages, setCandidatePages] = useState<Persistence.Page[]>([]);
+  const [candidatePagesLoadFailed, setCandidatePagesLoadFailed] = useState(false);
   const [emptyWarningDismissed, setEmptyWarningDismissed] = useState(false);
   const hasRecommendationIds = contentItem.learning_objectives.some(
     (config) => config.revisit_pages.length > 0 || config.practice_pages.length > 0,
   );
 
   useEffect(() => {
-    if (contentItem.mode !== 'summary' || !hasRecommendationIds) {
+    if (contentItem.mode !== 'summary') {
       setPages([]);
-      setPagesLoadFailed(false);
+      setCandidatePages([]);
+      setCandidatePagesLoadFailed(false);
       return;
     }
 
     let active = true;
 
     setPages([]);
-    setPagesLoadFailed(false);
+    setCandidatePages([]);
+    setCandidatePagesLoadFailed(false);
 
-    Persistence.pages(projectSlug)
+    Persistence.hierarchyPages(projectSlug)
       .then((result) => {
         if (!active) {
           return;
         }
 
         if (result.type === 'success') {
-          setPages(result.pages);
-          setPagesLoadFailed(false);
+          setCandidatePages(result.pages);
+          setCandidatePagesLoadFailed(false);
         } else {
-          setPages([]);
-          setPagesLoadFailed(true);
+          setCandidatePages([]);
+          setCandidatePagesLoadFailed(true);
         }
       })
       .catch(() => {
         if (active) {
-          setPages([]);
-          setPagesLoadFailed(true);
+          setCandidatePages([]);
+          setCandidatePagesLoadFailed(true);
         }
       });
+
+    if (hasRecommendationIds) {
+      Persistence.pages(projectSlug)
+        .then((result) => {
+          if (active && result.type === 'success') {
+            setPages(result.pages);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setPages([]);
+          }
+        });
+    }
 
     return () => {
       active = false;
@@ -144,6 +161,10 @@ export const LearningObjectivesEditor = ({
   }, [contentItem.mode, hasRecommendationIds, projectSlug]);
 
   const pagesById = useMemo(() => new Map(pages.map((page) => [page.id, page])), [pages]);
+  const candidatePagesById = useMemo(
+    () => new Map(candidatePages.map((page) => [page.id, page])),
+    [candidatePages],
+  );
   const configByResourceId = useMemo(
     () => new Map(contentItem.learning_objectives.map((config) => [config.resource_id, config])),
     [contentItem.learning_objectives],
@@ -218,11 +239,11 @@ export const LearningObjectivesEditor = ({
           title={kind === 'revisit_pages' ? 'Select Revisit Page' : 'Select Practice Page'}
           description="Select a Page"
           onFetchOptions={() =>
-            // Keep author selections scoped to the current course; the backend
-            // save path still normalizes IDs as the final enforcement point.
-            pages.length > 0
-              ? Promise.resolve(toOptions(pages))
-              : Persistence.pages(projectSlug).then((result) => {
+            // Keep new recommendation selections scoped to hierarchy pages. The broader
+            // page list is only used for resolving labels on older saved selections.
+            candidatePages.length > 0
+              ? Promise.resolve(toOptions(candidatePages))
+              : Persistence.hierarchyPages(projectSlug).then((result) => {
                   if (result.type === 'success') {
                     return toOptions(result.pages);
                   } else {
@@ -241,7 +262,7 @@ export const LearningObjectivesEditor = ({
   };
 
   const pageOptionsUnavailable =
-    contentItem.mode === 'summary' && pagesLoadFailed && pages.length === 0;
+    contentItem.mode === 'summary' && candidatePagesLoadFailed && candidatePages.length === 0;
   const description =
     contentItem.mode === 'summary' ? SUMMARY_DESCRIPTION : INTRODUCTION_DESCRIPTION;
 
@@ -334,6 +355,7 @@ export const LearningObjectivesEditor = ({
                   mode={contentItem.mode}
                   editMode={editMode}
                   pagesById={pagesById}
+                  candidatePagesById={candidatePagesById}
                   pageOptionsUnavailable={pageOptionsUnavailable}
                   onToggleEnabled={toggleObjectiveEnabled}
                   onAddRecommendation={openPageSelector}
@@ -400,6 +422,7 @@ type ObjectiveCardProps = {
   mode: LearningObjectivesContentMode;
   editMode: boolean;
   pagesById: Map<number, Persistence.Page>;
+  candidatePagesById: Map<number, Persistence.Page>;
   pageOptionsUnavailable: boolean;
   onToggleEnabled: (resourceId: number) => void;
   onAddRecommendation: (resourceId: number, kind: RecommendationKind) => void;
@@ -412,6 +435,7 @@ const ObjectiveCard = ({
   mode,
   editMode,
   pagesById,
+  candidatePagesById,
   pageOptionsUnavailable,
   onToggleEnabled,
   onAddRecommendation,
@@ -477,6 +501,7 @@ const ObjectiveCard = ({
             objective={objective}
             pageIds={config.revisit_pages}
             pagesById={pagesById}
+            candidatePagesById={candidatePagesById}
             pageOptionsUnavailable={pageOptionsUnavailable}
             editMode={editMode}
             onAddRecommendation={onAddRecommendation}
@@ -490,6 +515,7 @@ const ObjectiveCard = ({
             objective={objective}
             pageIds={config.practice_pages}
             pagesById={pagesById}
+            candidatePagesById={candidatePagesById}
             pageOptionsUnavailable={pageOptionsUnavailable}
             editMode={editMode}
             onAddRecommendation={onAddRecommendation}
@@ -534,6 +560,7 @@ type RecommendationListProps = {
   objective: ResolvedLearningObjective;
   pageIds: number[];
   pagesById: Map<number, Persistence.Page>;
+  candidatePagesById: Map<number, Persistence.Page>;
   pageOptionsUnavailable: boolean;
   editMode: boolean;
   onAddRecommendation: (resourceId: number, kind: RecommendationKind) => void;
@@ -548,6 +575,7 @@ const RecommendationList = ({
   objective,
   pageIds,
   pagesById,
+  candidatePagesById,
   pageOptionsUnavailable,
   editMode,
   onAddRecommendation,
@@ -555,8 +583,8 @@ const RecommendationList = ({
 }: RecommendationListProps) => {
   const selectedPageIds = new Set(pageIds);
   const noMorePagesAvailable =
-    pagesById.size > 0 &&
-    Array.from(pagesById.keys()).every((pageId) => selectedPageIds.has(pageId));
+    candidatePagesById.size > 0 &&
+    Array.from(candidatePagesById.keys()).every((pageId) => selectedPageIds.has(pageId));
   const addDisabled = !editMode || pageOptionsUnavailable || noMorePagesAvailable;
   const noMorePagesMessage = 'No more pages are available to select.';
 

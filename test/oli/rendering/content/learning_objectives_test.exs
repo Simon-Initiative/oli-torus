@@ -224,7 +224,9 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
             send(parent, {:recommendations, section_id, resource_ids})
 
             [
-              section_resource(101, "Review page", "review-page", @page_type_id),
+              section_resource(101, "Review page", "review-page", @page_type_id,
+                revision_slug: "review-page-revision"
+              ),
               section_resource(107, "Second review page", "second-review-page", @page_type_id),
               section_resource(102, "Practice page", "practice-page", @page_type_id),
               section_resource(
@@ -297,7 +299,7 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered =~ "Second review page"
       assert rendered =~ "Practice page"
       assert rendered =~ "Second practice page"
-      assert rendered =~ ~s|href="/sections/section-a/lesson/review-page"|
+      assert rendered =~ ~s|href="/sections/section-a/lesson/review-page-revision"|
       assert rendered =~ ~s|href="/sections/section-a/lesson/second-review-page"|
       assert rendered =~ ~s|href="/sections/section-a/lesson/practice-page"|
       assert rendered =~ ~s|href="/sections/section-a/lesson/second-practice-page"|
@@ -388,11 +390,12 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
     }
   end
 
-  defp section_resource(resource_id, title, slug, type_id) do
+  defp section_resource(resource_id, title, slug, type_id, opts \\ []) do
     %SectionResource{
       resource_id: resource_id,
       title: title,
       slug: slug,
+      revision_slug: Keyword.get(opts, :revision_slug),
       resource_type_id: type_id
     }
   end
