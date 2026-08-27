@@ -325,7 +325,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp recommendation_link(context, page) do
     href =
       context
-      |> lesson_href(page.slug)
+      |> lesson_href(page_navigation_slug(page))
       |> escape()
 
     [
@@ -344,6 +344,11 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp lesson_href(%Context{section_slug: section_slug, page_link_params: page_link_params}, slug) do
     UrlHelpers.lesson_path(section_slug, slug, page_link_params)
   end
+
+  defp page_navigation_slug(%{revision_slug: revision_slug}) when is_binary(revision_slug),
+    do: revision_slug
+
+  defp page_navigation_slug(%{slug: slug}), do: slug
 
   defp recommendation_group_icon(:revisit) do
     ~S|<span class="learning-objectives-summary__recommendation-heading-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.16602 15.0007C4.16602 15.4427 4.34161 15.8666 4.65417 16.1792C4.96673 16.4917 5.39065 16.6673 5.83268 16.6673H15.8327V3.33398H5.83268C5.39065 3.33398 4.96673 3.50958 4.65417 3.82214C4.34161 4.1347 4.16602 4.55862 4.16602 5.00065V15.0007ZM4.16602 15.0007C4.16602 14.5586 4.34161 14.1347 4.65417 13.8221C4.96673 13.5096 5.39065 13.334 5.83268 13.334H15.8327M7.49935 6.66732H12.4993" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>|

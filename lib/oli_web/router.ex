@@ -726,6 +726,7 @@ defmodule OliWeb.Router do
       :learning_objectives
     )
 
+    get("/:project/link/hierarchy", Api.ResourceController, :hierarchy_pages)
     get("/:project/link", Api.ResourceController, :index)
 
     post("/:project/activity/:activity_type", Api.ActivityController, :create)
