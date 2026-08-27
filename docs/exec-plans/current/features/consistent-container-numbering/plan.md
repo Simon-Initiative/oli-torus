@@ -229,6 +229,88 @@ Replace every raw-numbering read path identified in the FDD (Groups A, B, and C,
 - Parallelizable Work:
   - None; this is the final convergence phase.
 
+## Phase 9: Post-Closeout Manual QA — Navigator Ordering + a Missed Surface [COMPLETE]
+- Goal: close out findings from a manual QA pass performed after Phase 8, using the
+  `manual_qa.md` walkthrough, against a section with a suppressed *middle* unit (stronger
+  test than a suppressed first unit, since it also proves units before it are untouched).
+  Phases 2-8 verified that every fixed surface shows the *correct number* for a suppressed
+  container; this pass found that on four surfaces the *row/item order* itself silently
+  broke once a container's `numbering_index` became `nil`, plus one real surface the
+  original FDD audit never covered at all.
+- Tasks:
+  - [x] **Ordering bug, 3 call sites** (not a new root cause -- the same "`nil` is not a
+    meaningful sort key" defect already fixed once in Phase 6, recurring in code Phase 6
+    didn't touch): a suppressed container was being sorted by its own post-overlay
+    `numbering_index` (`nil`), which pushed it to one end of the list instead of leaving it
+    in its real document position.
+    - Instructor Dashboard Content tab, "Order" column (`content.ex`'s `sort_by/3`):
+      ascending pushed the suppressed row to the bottom, **descending pushed it to the
+      top** -- the clearest case, since no reasonable reading of "Order" justifies an
+      unnumbered row sorting first. Fixed by adding `document_index` (the raw,
+      never-suppressed index) alongside `numbering_index` in
+      `Sections.get_units_and_modules_containers/1` and its `get_pages/1` fallback, and
+      sorting by `document_index` instead.
+    - Instructor Dashboard Intelligent Dashboard tab, container scope dropdown
+      (`intelligent_dashboard_tab.ex`'s `flatten_dashboard_containers/1`): same defect,
+      one level up (sorted the root *units* by their own now-nullable index before
+      flattening each unit's modules in). Fixed the same way: `fetch_dashboard_containers/1`
+      now also returns a raw-index lookup (`document_order`), used only for the root sort.
+    - Instructor Dashboard Learning Objectives tab **and** the Content tab's own
+      container-drilldown navigator (`instructor_dashboard_live.ex`, both consumers of
+      `SectionResourceDepot.containers/2`): a different-looking but related defect --
+      `containers/2`'s own sort mixes units and modules into one flat list ordered by a
+      raw index that isn't comparable across levels, so a module could appear to jump
+      ahead of (or behind) a unit it isn't part of. Fixed by adding a new shared function,
+      `Sections.overlay_and_order_containers_by_document_position/2`, which overlays
+      suppression-aware numbering *and* reorders into true document/tree order (root
+      containers in document order, each one's own descendants immediately following it,
+      also in document order) -- wired into both call sites.
+  - [x] **Missed surface**: the Student Dashboard's *own*, separate "Learning Objectives"
+    tab (`student_dashboard_live.ex` -- a different LiveView from the Instructor
+    Dashboard's Learning Objectives tab fixed in Phase 5) built its container navigator
+    from raw `SectionResourceDepot.containers/2` output with **no suppression overlay
+    applied at all**. The FDD's Group B audit (Section 4.1) enumerated the Instructor
+    Dashboard's four navigator surfaces (Content, Learning Objectives, Student Insights,
+    Intelligent Dashboard) but never audited this separate, similarly-named Student
+    Dashboard surface. Fixed by wiring in the same
+    `overlay_and_order_containers_by_document_position/2` used above.
+  - [x] Regression found and fixed while re-running the full suite (same nil-root-section
+    fixture class fixed repeatedly in Phases 4-5, not a new investigation): a pre-existing
+    test, `test/oli_web/live/delivery/student_dashboard/components/learning_objectives_tab_test.exs`'s
+    "loads correctly when there are no objectives", used a bare `insert(:section, ...)`
+    with no populated `SectionResource` rows -- previously safe because this call site
+    never touched `decorated_numbering_map/1`, now unsafe now that it's suppression-aware.
+    Fixed at the fixture (switched to `Oli.Seeder.base_project_with_larger_hierarchy/0`),
+    per the same precedent as before: this state is structurally impossible via any real
+    section-creation flow, so no defensive guard was added to production code.
+- Testing Tasks:
+  - [x] New/updated tests, each with a 3-unit fixture (the *middle* unit suppressed, to
+    prove both "units before stay put" and "units after shift down"), asserting item
+    order in **both** sort directions where the surface supports one:
+    `test/oli_web/live/delivery/instructor_dashboard/insights/content_tab_test.exs`,
+    `test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs`,
+    `test/oli/delivery/sections_test.exs` (direct unit test of the new shared function),
+    `test/oli_web/live/delivery/instructor_dashboard/insights/learning_objectives_tab_test.exs`,
+    `test/oli_web/live/delivery/student_dashboard/student_dashboard_live_test.exs` (new
+    `describe "learning_objectives"` block -- this LiveView had no prior coverage for this
+    tab's navigator at all).
+  - Command(s): `mix format`; `mix compile --warnings-as-errors`; full `mix test` --
+    **26 doctests, 8449-8453 tests (run count varies slightly by re-run), 0 failures
+    attributable to this phase's changes** (two pre-existing, unrelated flaky tests --
+    `attempt_controller_test.exs` and `discussions_live_test.exs` -- surfaced once each
+    across two full-suite runs; neither references any function touched in this phase).
+- Definition of Done:
+  - All four ordering/overlay defects fixed with a document-order guarantee (verified in
+    both sort directions where applicable); the missed Student Dashboard surface now
+    matches Learn; every fix has a dedicated regression test; full suite green.
+- Gate:
+  - Phase 8 complete. Met.
+- Dependencies:
+  - Phase 8 (all prior phases' fixes already in place); found via the `manual_qa.md`
+    walkthrough this phase also produced.
+- Parallelizable Work:
+  - None; a single manual-QA-driven bug-fixing pass.
+
 ## Parallelization Notes
 - Phase 1 (shared primitive) and Phase 2 (Group C quick fixes) have no dependency on each other and can start simultaneously.
 - Once Phase 1 is complete, Phases 3, 4, 5, and 6 (all Group A/B consumers of `decorated_numbering_map/1`) are mutually independent (disjoint files) and can proceed in parallel.

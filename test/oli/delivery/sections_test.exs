@@ -1270,6 +1270,184 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "overlay_and_order_containers_by_document_position/2" do
+    setup do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      unit_a =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Alpha")
+
+      unit_b = insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Beta")
+
+      unit_c =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Gamma")
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_a.resource_id, unit_b.resource_id, unit_c.resource_id],
+          title: "Root Container"
+        )
+
+      all_revisions = [unit_a, unit_b, unit_c, container_revision]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+      end)
+
+      publication =
+        insert(:publication, project: project, root_resource_id: container_revision.resource_id)
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      section = insert(:section, base_project: project)
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      [section: section, unit_a: unit_a, unit_b: unit_b, unit_c: unit_c]
+    end
+
+    test "matches document order when no unit is suppressed", %{
+      section: section,
+      unit_a: unit_a,
+      unit_b: unit_b,
+      unit_c: unit_c
+    } do
+      containers = SectionResourceDepot.containers(section.id, numbering_level: {:in, [1]})
+      overlaid = Sections.overlay_and_order_containers_by_document_position(containers, section)
+
+      assert Enum.map(overlaid, & &1.resource_id) == [
+               unit_a.resource_id,
+               unit_b.resource_id,
+               unit_c.resource_id
+             ]
+    end
+
+    test "keeps a suppressed middle unit in its document position instead of sorting it by its nil numbering_index",
+         %{section: section, unit_a: unit_a, unit_b: unit_b, unit_c: unit_c} do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
+
+      containers = SectionResourceDepot.containers(section.id, numbering_level: {:in, [1]})
+      overlaid = Sections.overlay_and_order_containers_by_document_position(containers, section)
+
+      # Beta is suppressed (numbering_index: nil), but it must stay between Alpha and
+      # Gamma -- its real position in the course -- not get sorted to either end of the
+      # list the way a plain `Enum.sort_by(& &1.numbering_index)` would push it.
+      assert Enum.map(overlaid, & &1.resource_id) == [
+               unit_a.resource_id,
+               unit_b.resource_id,
+               unit_c.resource_id
+             ]
+
+      unit_b_sr = Enum.find(overlaid, &(&1.resource_id == unit_b.resource_id))
+      assert unit_b_sr.numbering_index == nil
+    end
+
+    test "with a mix of units and modules, each module is flattened in immediately after its own parent unit, not sorted by its own raw index" do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      unit_a_module =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Alpha Mod")
+
+      unit_a =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_a_module.resource_id],
+          title: "Alpha"
+        )
+
+      unit_b_module =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Beta Mod")
+
+      unit_b =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_b_module.resource_id],
+          title: "Beta"
+        )
+
+      unit_c_module =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Gamma Mod")
+
+      unit_c =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_c_module.resource_id],
+          title: "Gamma"
+        )
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_a.resource_id, unit_b.resource_id, unit_c.resource_id],
+          title: "Root Container"
+        )
+
+      all_revisions = [
+        unit_a_module,
+        unit_a,
+        unit_b_module,
+        unit_b,
+        unit_c_module,
+        unit_c,
+        container_revision
+      ]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+      end)
+
+      publication =
+        insert(:publication, project: project, root_resource_id: container_revision.resource_id)
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      section = insert(:section, base_project: project)
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
+
+      containers = SectionResourceDepot.containers(section.id, numbering_level: {:in, [1, 2]})
+      overlaid = Sections.overlay_and_order_containers_by_document_position(containers, section)
+
+      # A raw-index-only sort would put both modules (level 2, indices 1-3) before any
+      # unit whose raw index is 2 or 3 (level 1), interleaving levels incorrectly. The
+      # correct, document-order result puts each module immediately after its own parent
+      # unit, and the suppressed unit's module stays right after its (unnumbered) parent
+      # instead of moving anywhere else.
+      assert Enum.map(overlaid, & &1.resource_id) == [
+               unit_a.resource_id,
+               unit_a_module.resource_id,
+               unit_b.resource_id,
+               unit_b_module.resource_id,
+               unit_c.resource_id,
+               unit_c_module.resource_id
+             ]
+
+      unit_b_sr = Enum.find(overlaid, &(&1.resource_id == unit_b.resource_id))
+      unit_b_module_sr = Enum.find(overlaid, &(&1.resource_id == unit_b_module.resource_id))
+      assert unit_b_sr.numbering_index == nil
+      assert unit_b_module_sr.numbering_index == nil
+    end
+  end
+
   describe "build_hierarchy/1 with a suppressed unit" do
     setup(_) do
       %{}

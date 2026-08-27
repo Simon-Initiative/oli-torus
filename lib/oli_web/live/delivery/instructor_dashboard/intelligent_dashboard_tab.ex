@@ -223,11 +223,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   @spec navigator_items(map()) :: {non_neg_integer(), [navigator_item()]}
   def navigator_items(section) do
     course_item = entire_course_item()
-
-    items =
-      section
-      |> fetch_dashboard_containers()
-      |> flatten_dashboard_containers()
+    items = section |> fetch_dashboard_containers() |> Enum.map(&navigator_item/1)
 
     {length(items), [course_item | items]}
   end
@@ -4348,12 +4344,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     }
   end
 
+  # Returns containers overlaid with suppression-aware numbering AND reordered into
+  # document position, so a suppressed container stays where it actually sits in the
+  # course rather than sorting by its now-nil `numbering_index`. Delegates to
+  # `Sections.overlay_and_order_containers_by_document_position/2` rather than
+  # implementing this locally -- see that function's docs for the algorithm.
   defp fetch_dashboard_containers(%Section{id: section_id} = section)
        when is_integer(section_id) do
     SectionResourceDepot.containers(section_id,
       numbering_level: {:in, @dashboard_container_levels}
     )
-    |> Sections.overlay_suppression_aware_numbering(section)
+    |> Sections.overlay_and_order_containers_by_document_position(section)
   end
 
   defp fetch_dashboard_containers(_), do: []
@@ -4368,31 +4369,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       numbering_level: {:in, @dashboard_container_levels}
     )
     |> Enum.map(& &1.resource_id)
-  end
-
-  defp flatten_dashboard_containers(containers) do
-    containers_by_id = Map.new(containers, &{&1.id, &1})
-
-    child_container_ids =
-      containers
-      |> Enum.flat_map(&Map.get(&1, :children, []))
-      |> MapSet.new()
-
-    containers
-    |> Enum.reject(&MapSet.member?(child_container_ids, &1.id))
-    |> Enum.sort_by(& &1.numbering_index)
-    |> Enum.flat_map(&flatten_dashboard_container(&1, containers_by_id))
-  end
-
-  defp flatten_dashboard_container(container, containers_by_id) do
-    children =
-      container
-      |> Map.get(:children, [])
-      |> Enum.map(&Map.get(containers_by_id, &1))
-      |> Enum.reject(&is_nil/1)
-      |> Enum.flat_map(&flatten_dashboard_container(&1, containers_by_id))
-
-    [navigator_item(container) | children]
   end
 
   defp navigator_item(container) do

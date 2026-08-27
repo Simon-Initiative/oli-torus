@@ -59,6 +59,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
               numbering_level: {:in, [1, 2]}
             )
+            |> Sections.overlay_and_order_containers_by_document_position(socket.assigns.section)
         }
       end)
 

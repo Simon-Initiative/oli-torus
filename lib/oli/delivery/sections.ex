@@ -2756,6 +2756,60 @@ defmodule Oli.Delivery.Sections do
     overlay_numbering_index(containers, section, & &1.resource_id)
   end
 
+  @doc """
+  Like `overlay_suppression_aware_numbering/2`, but also reorders the containers into
+  document/tree order: root containers (e.g. units) first, in the order they actually
+  appear in the course, each one immediately followed by its own descendants (e.g.
+  modules), also in document order.
+
+  This matters because a suppressed container's `numbering_index` becomes `nil` after the
+  overlay, and `nil` is not a meaningful sort key -- sorting containers by their own
+  (post-overlay) `numbering_index` pushes a suppressed container to one end of the list
+  (last ascending, first descending) instead of leaving it where it structurally sits.
+  This function sorts by each container's raw, never-suppressed index instead, captured
+  before the overlay runs, so a suppressed container stays in its natural position -- the
+  same guarantee `Sections.decorated_numbering_map/1` already gives for numbering itself.
+
+  A container is treated as a "root" if it is not listed as a child of any other container
+  in the given list -- so if `containers` is a partial list (e.g. only modules), every item
+  in it is treated as a root and sorted by its own raw index, since none of its true parents
+  are present to nest it under.
+  """
+  @spec overlay_and_order_containers_by_document_position([SectionResource.t()], Section.t()) ::
+          [SectionResource.t()]
+  def overlay_and_order_containers_by_document_position(containers, %Section{} = section) do
+    document_order = Map.new(containers, &{&1.id, &1.numbering_index})
+
+    containers
+    |> overlay_suppression_aware_numbering(section)
+    |> order_by_document_position(document_order)
+  end
+
+  defp order_by_document_position(containers, document_order) do
+    containers_by_id = Map.new(containers, &{&1.id, &1})
+
+    child_ids =
+      containers
+      |> Enum.flat_map(&Map.get(&1, :children, []))
+      |> MapSet.new()
+
+    containers
+    |> Enum.reject(&MapSet.member?(child_ids, &1.id))
+    |> Enum.sort_by(&Map.fetch!(document_order, &1.id))
+    |> Enum.flat_map(&flatten_by_document_position(&1, containers_by_id))
+  end
+
+  defp flatten_by_document_position(container, containers_by_id) do
+    children =
+      container
+      |> Map.get(:children, [])
+      |> Enum.map(&Map.get(containers_by_id, &1))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.flat_map(&flatten_by_document_position(&1, containers_by_id))
+
+    [container | children]
+  end
+
   # Shared by `overlay_suppression_aware_numbering/2` (operates on `%SectionResource{}`,
   # keyed by `resource_id`) and `get_units_and_modules_containers/1`'s private overlay
   # (operates on plain maps from a custom `select`, keyed by `id`) -- both need the same
@@ -5446,6 +5500,13 @@ defmodule Oli.Delivery.Sections do
   `numbering_index: nil` instead of its raw index. `numbering_level` is left as the raw
   structural depth (1 = unit, 2 = module) regardless of suppression, since it is used to
   distinguish units from modules, not to display a number.
+
+  Each container also carries `document_index`, the raw (never-suppressed) canonical index,
+  meant for ordering rather than display: a caller that needs to list containers in the
+  order they actually appear in the course (e.g. a sortable table) should sort by
+  `document_index`, not `numbering_index` -- otherwise a suppressed container's `nil` gets
+  treated as a sort key, which pushes it to one end of the list instead of leaving it in its
+  natural position.
   """
   def get_units_and_modules_containers(%Section{slug: section_slug} = section) do
     query =
@@ -5456,7 +5517,8 @@ defmodule Oli.Delivery.Sections do
           id: rev.resource_id,
           title: rev.title,
           numbering_level: sr.numbering_level,
-          numbering_index: sr.numbering_index
+          numbering_index: sr.numbering_index,
+          document_index: sr.numbering_index
         }
       )
 
@@ -5560,6 +5622,12 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  # Only reached when a section has no units/modules at all (see
+  # `get_units_and_modules_containers/1`'s `{0, pages}` fallback), so these pages never go
+  # through a suppression overlay and `numbering_index` is never nulled out here. Still
+  # duplicated into `document_index` so every row `content.ex` sorts has that key -- its
+  # `sort_by/3` sorts on `document_index` regardless of whether the rows came from here or
+  # from an overlaid container list.
   defp get_pages(section_slug) do
     query =
       from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
@@ -5567,7 +5635,8 @@ defmodule Oli.Delivery.Sections do
         select: %{
           id: rev.resource_id,
           title: rev.title,
-          numbering_index: sr.numbering_index
+          numbering_index: sr.numbering_index,
+          document_index: sr.numbering_index
         }
       )
 

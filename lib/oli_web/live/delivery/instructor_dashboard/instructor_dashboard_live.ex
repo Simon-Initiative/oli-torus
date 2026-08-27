@@ -78,14 +78,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
               ),
             else: SectionResourceDepot.containers(socket.assigns.section.id)
           )
-          |> Sections.overlay_suppression_aware_numbering(socket.assigns.section)
+          |> Sections.overlay_and_order_containers_by_document_position(socket.assigns.section)
         )
       else
         socket
         |> assign(
           :navigator_items,
           SectionResourceDepot.containers(socket.assigns.section.id)
-          |> Sections.overlay_suppression_aware_numbering(socket.assigns.section)
+          |> Sections.overlay_and_order_containers_by_document_position(socket.assigns.section)
         )
       end
 
@@ -128,7 +128,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
             SectionResourceDepot.containers(socket.assigns.section.id,
               numbering_level: {:in, [1, 2]}
             )
-            |> Sections.overlay_suppression_aware_numbering(socket.assigns.section)
+            |> Sections.overlay_and_order_containers_by_document_position(socket.assigns.section)
         }
       end)
 
