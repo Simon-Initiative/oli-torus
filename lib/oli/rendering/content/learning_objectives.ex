@@ -4,14 +4,15 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   """
 
   alias Oli.Delivery.LearningObjectives.IncludedObjective
+  alias Oli.Delivery.LearningObjectives.ProficiencyDisplay
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content.UrlHelpers
+  alias OliWeb.Icons
   alias Phoenix.HTML
+  alias Phoenix.HTML.Safe
 
   @page_type_id Oli.Resources.ResourceType.id_for_page()
-
-  @default_proficiency "Not Enough Information"
 
   @spec render(%Context{}, map()) :: [any()]
   def render(%Context{} = context, element) do
@@ -72,9 +73,9 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
   defp render_introduction(objectives, config) do
     [
-      ~s|<section class="learning-objectives-element my-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">|,
-      ~s|<h2 class="mb-4 text-2xl font-semibold text-gray-800">Learning Objectives</h2>|,
-      ~s|<div class="rounded-lg border border-gray-200 bg-white p-3">|,
+      ~s|<section class="learning-objectives-element my-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary p-6 shadow-sm">|,
+      ~s|<h2 class="mb-4 font-open-sans text-2xl font-semibold leading-8 text-Text-text-high">Learning Objectives</h2>|,
+      ~s|<div class="rounded-lg border border-Border-border-subtle bg-Surface-surface-primary p-3">|,
       render_objective_hierarchy(objectives, config, :introduction),
       "</div>",
       proficiency_explanation(),
@@ -86,8 +87,8 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     resources_by_id = resolve_recommendation_pages(context, objectives, config, opts)
 
     [
-      ~s|<section class="learning-objectives-element learning-objectives-summary my-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">|,
-      ~s|<h2 class="mb-4 text-2xl font-semibold text-gray-800">Learning Objective Summary</h2>|,
+      ~s|<section class="learning-objectives-element learning-objectives-summary my-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary p-6 shadow-sm">|,
+      ~s|<h2 class="mb-4 font-open-sans text-2xl font-semibold leading-8 text-Text-text-high">Learning Objective Summary</h2>|,
       ~s|<div class="space-y-3">|,
       render_objective_hierarchy(objectives, config, :summary, context, resources_by_id),
       "</div>",
@@ -128,10 +129,10 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     children = visible_children(objective, objectives_by_id)
 
     [
-      ~s|<article class="learning-objective mb-2 rounded-lg border border-gray-200 bg-white px-3 py-2 last:mb-0">|,
+      ~s|<article class="learning-objective mb-2 rounded-lg border border-Border-border-subtle bg-Surface-surface-primary px-3 py-2 last:mb-0">|,
       ~s|<div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">|,
-      ~s|<span class="shrink-0 text-sm font-semibold uppercase text-gray-500">LO #{index}</span>|,
-      ~s|<h3 class="m-0 min-w-0 flex-1 break-words text-base font-semibold leading-snug text-gray-800">#{escape(objective.title)}</h3>|,
+      ~s|<span class="shrink-0 text-sm font-semibold uppercase text-Text-text-low-alpha">LO #{index}</span>|,
+      ~s|<h3 class="m-0 min-w-0 flex-1 break-words text-base font-semibold leading-snug text-Text-text-high">#{escape(objective.title)}</h3>|,
       "</div>",
       maybe_render_sub_objectives(children, config),
       "</article>"
@@ -150,18 +151,22 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     children = visible_children(objective, objectives_by_id)
     proficiency = proficiency_for(context.learning_objectives, objective.resource_id)
     config_row = Map.get(config.config_by_objective_id, objective.resource_id, %{})
-    depth_class = if depth == 0, do: " bg-white", else: " bg-gray-50 md:ml-6"
+
+    depth_class =
+      if depth == 0,
+        do: " bg-Surface-surface-primary",
+        else: " bg-Surface-surface-secondary-muted md:ml-6"
 
     [
-      ~s|<article class="learning-objective-summary#{depth_class} rounded-lg border border-gray-200 p-4">|,
+      ~s|<article class="learning-objective-summary#{depth_class} rounded-lg border border-Border-border-subtle p-4">|,
       ~s|<div class="flex min-w-0 flex-wrap items-start justify-between gap-3">|,
       ~s|<div class="min-w-0 flex-1">|,
       ~s|<div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">|,
-      ~s|<span class="shrink-0 text-sm font-semibold uppercase text-gray-500">#{label}</span>|,
-      ~s|<h3 class="m-0 min-w-0 flex-1 break-words text-base font-semibold leading-snug text-gray-800">#{escape(objective.title)}</h3>|,
+      ~s|<span class="shrink-0 text-sm font-semibold uppercase text-Text-text-low-alpha">#{label}</span>|,
+      ~s|<h3 class="m-0 min-w-0 flex-1 break-words text-base font-semibold leading-snug text-Text-text-high">#{escape(objective.title)}</h3>|,
       "</div>",
       "</div>",
-      proficiency_badge(proficiency),
+      proficiency_badge(proficiency, objective.resource_id),
       "</div>",
       recommendations(context, config_row, resources_by_id),
       render_summary_children(
@@ -215,7 +220,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
   defp maybe_render_sub_objectives(children, %{include_sub_objectives?: true}) do
     [
-      ~s|<ul class="mt-2 ml-10 space-y-1 text-sm leading-relaxed text-gray-700">|,
+      ~s|<ul class="mt-2 ml-10 space-y-1 text-sm leading-relaxed text-Text-text-low">|,
       Enum.map(children, fn child ->
         ~s|<li class="min-w-0 break-words">#{escape(child.title)}</li>|
       end),
@@ -248,14 +253,14 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp recommendation_group(context, label, pages) do
     [
       ~s|<div class="learning-objective-recommendations min-w-0">|,
-      ~s|<h4 class="mb-1 text-sm font-semibold text-gray-700">#{label}</h4>|,
+      ~s|<h4 class="mb-1 text-sm font-semibold text-Text-text-low">#{label}</h4>|,
       ~s|<ul class="m-0 list-none space-y-1 p-0">|,
       Enum.map(pages, fn page ->
         href = lesson_href(context, page.slug)
 
         [
           ~s|<li class="min-w-0">|,
-          ~s|<a class="internal-link flex min-h-11 items-center break-words py-2 text-blue-700 underline" href="#{escape(href)}">|,
+          ~s|<a class="internal-link flex min-h-11 items-center break-words py-2 text-Text-text-link underline" href="#{escape(href)}">|,
           escape(page.title),
           "</a>",
           "</li>"
@@ -266,49 +271,122 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     ]
   end
 
-  defp proficiency_badge(proficiency) do
-    %{label: label, icon: icon, class: class} = proficiency_display(proficiency)
+  defp proficiency_badge(proficiency, objective_id) do
+    display = proficiency_display(proficiency)
 
     [
-      ~s|<div class="learning-objective-proficiency #{class} shrink-0 rounded-lg px-3 py-2 text-sm font-semibold">|,
-      ~s|<i class="#{icon} mr-1" aria-hidden="true"></i>|,
-      ~s|<span>#{label}</span>|,
+      ~s|<div class="learning-objective-proficiency shrink-0">|,
+      proficiency_icon(display, :summary, "summary_#{objective_id}"),
       "</div>"
     ]
   end
 
   defp proficiency_explanation do
     [
-      ~s|<details class="learning-objectives-proficiency mt-4 border-t border-gray-200 pt-3">|,
-      ~s|<summary class="min-h-11 cursor-pointer py-2 text-sm font-medium text-gray-600">|,
-      ~s|<span class="inline-flex items-center gap-2">|,
-      ~s|<i class="fas fa-info-circle" aria-hidden="true"></i>|,
-      ~s|<span>What is proficiency and how is it estimated?</span>|,
+      ~s|<details class="group/proficiency learning-objectives-proficiency mt-4 px-1">|,
+      ~s|<summary class="group flex h-[35px] cursor-pointer list-none items-center gap-1 border-b border-transparent text-Text-text-low-alpha group-open/proficiency:border-Border-border-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary [&::-webkit-details-marker]:hidden">|,
+      ~s|<span class="inline-flex h-5 w-5 shrink-0 items-center justify-center text-Icon-icon-default">|,
+      support_icon_component("h-5 w-5 text-Icon-icon-default"),
+      "</span>",
+      ~s|<span class="min-w-0 flex-1 font-open-sans text-xs font-semibold leading-3">What is proficiency and how is it estimated?</span>|,
+      ~s|<span class="inline-flex h-4 w-4 shrink-0 items-center justify-center text-Icon-icon-default transition-transform group-open/proficiency:rotate-180">|,
+      chevron_down_icon_component("h-4 w-4 text-Icon-icon-default"),
       "</span>",
       "</summary>",
-      ~s|<p class="mt-3 text-sm leading-relaxed text-gray-700">Proficiency is our best estimate of how likely you are to successfully apply a learning objective the next time you use it. It updates as you complete course activities and is based on evidence from your overall work.</p>|,
-      ~s|<div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">|,
-      proficiency_explanation_card(@default_proficiency),
-      proficiency_explanation_card("Low"),
-      proficiency_explanation_card("Medium"),
-      proficiency_explanation_card("High"),
+      ~s|<div class="pb-3 pt-3">|,
+      ~s|<p class="m-0 font-open-sans text-[14px] font-normal leading-6 text-Text-text-high">Proficiency is our best estimate of how likely you are to successfully apply a learning objective the next time you use it. It updates as you complete course activities and is based on evidence from your overall work. Proficiency estimates become more reliable as you complete more activities.</p>|,
+      ~s|<div class="mt-[10px] grid grid-cols-2 gap-[6px] md:grid-cols-4">|,
+      Enum.map(ProficiencyDisplay.levels(), &proficiency_explanation_card/1),
+      "</div>",
       "</div>",
       "</details>"
     ]
   end
 
   defp proficiency_explanation_card(proficiency) do
-    %{label: label, icon: icon, description: description, class: class} =
+    %{
+      label_lines: label_lines,
+      description: description,
+      card_class: card_class,
+      content_class: content_class,
+      order_class: order_class
+    } =
+      display =
       proficiency_display(proficiency)
 
+    label_html = Enum.join(label_lines, "<br/>")
+
     [
-      ~s|<div class="rounded-lg #{class} p-3 text-center text-sm">|,
-      ~s|<i class="#{icon} mb-2" aria-hidden="true"></i>|,
-      ~s|<div class="font-semibold">#{label}</div>|,
-      ~s|<p class="m-0 mt-2 leading-snug">#{description}</p>|,
+      ~s|<div class="flex h-[255px] min-w-0 flex-col items-center rounded-[9px] #{order_class} #{card_class} text-center font-open-sans">|,
+      ~s|<div class="flex flex-col items-center gap-[15px] #{content_class}">|,
+      ~s|<div class="flex h-6 items-center justify-center">|,
+      proficiency_icon(display, :explanation, "explanation_#{display.id_key}"),
+      "</div>",
+      ~s|<div class="text-center text-[14px] font-bold leading-[17.5px] text-Text-text-high">#{label_html}</div>|,
+      ~s|<p class="m-0 text-center text-[12px] font-normal leading-[15px] text-Text-text-high">#{description}</p>|,
+      "</div>",
       "</div>"
     ]
   end
+
+  defp proficiency_icon(%{label: label, icon: icon, icon_class: icon_class}, context, id_suffix) do
+    wrapper_class =
+      [
+        "group relative inline-flex items-center justify-center rounded-md",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+        proficiency_icon_size_class(context)
+      ]
+      |> Enum.join(" ")
+
+    [
+      ~s|<span class="#{wrapper_class}" tabindex="0" role="img" aria-label="#{label}" title="#{label}">|,
+      proficiency_icon_component(icon, icon_class, id_suffix),
+      ~s|<span role="tooltip" class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-Specially-Tokens-Fill-fill-inverse px-2 py-1 text-xs font-semibold text-Specially-Tokens-Text-text-inverse opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus:opacity-100">#{label}</span>|,
+      "</span>"
+    ]
+  end
+
+  defp proficiency_icon_size_class(:explanation), do: "h-6 w-6"
+  defp proficiency_icon_size_class(_), do: "h-8 w-8"
+
+  defp proficiency_icon_component(:empty_pot, class, id_suffix),
+    do: component_to_iodata(Icons.proficiency_empty_pot(%{class: class, id_suffix: id_suffix}))
+
+  defp proficiency_icon_component(:seed, class, _id_suffix),
+    do: component_to_iodata(Icons.proficiency_seed(%{class: class}))
+
+  defp proficiency_icon_component(:sprout, class, _id_suffix),
+    do: component_to_iodata(Icons.proficiency_sprout(%{class: class}))
+
+  defp proficiency_icon_component(:tree, class, _id_suffix),
+    do: component_to_iodata(Icons.proficiency_tree(%{class: class}))
+
+  defp support_icon_component(class) do
+    component_to_iodata(
+      Icons.support(%{
+        class: class,
+        width: "20",
+        height: "20",
+        view_box: "0 0 20 20",
+        variant: "figma_20"
+      })
+    )
+  end
+
+  defp chevron_down_icon_component(class) do
+    component_to_iodata(
+      Icons.chevron_down(%{
+        class: class,
+        width: "16",
+        height: "16",
+        view_box: "0 0 16 16",
+        variant: "stroke",
+        path: "M4 7L8 11L12 7"
+      })
+    )
+  end
+
+  defp component_to_iodata(component), do: Safe.to_iodata(component)
 
   defp normalize_element(element) when is_map(element) do
     %{
@@ -443,47 +521,50 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp proficiency_for(payload, objective_id) do
     payload
     |> field("performance_by_objective_id", %{})
-    |> Map.get(objective_id, @default_proficiency)
+    |> Map.get(objective_id, ProficiencyDisplay.default_label())
   end
 
-  # Keep analytics labels mapped in one place so student-facing copy can change without
-  # touching metrics internals or individual render branches.
   defp proficiency_display(proficiency) do
-    case proficiency do
-      "High" ->
-        %{
-          label: "Strong Proficiency",
-          icon: "fas fa-tree",
-          class: "bg-green-100 text-green-800",
-          description:
-            "You are likely to successfully apply this learning objective in different contexts."
-        }
+    proficiency
+    |> ProficiencyDisplay.display_for()
+    |> Map.merge(shared_card_styles_for(proficiency))
+  end
 
-      "Medium" ->
-        %{
-          label: "Growing Proficiency",
-          icon: "fas fa-spa",
-          class: "bg-fuchsia-100 text-fuchsia-800",
-          description:
-            "You have applied this learning objective and should keep practicing for consistency."
-        }
+  defp shared_card_styles_for("High") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Text-text-accent-green",
+      card_class: "justify-start bg-Fill-Chip-Green px-[17px] pt-[25px]",
+      content_class: "w-[126px]",
+      order_class: "order-3 md:order-4"
+    }
+  end
 
-      "Low" ->
-        %{
-          label: "Beginning Proficiency",
-          icon: "fas fa-seedling",
-          class: "bg-orange-100 text-orange-800",
-          description: "You are beginning to learn how to apply this learning objective."
-        }
+  defp shared_card_styles_for("Medium") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Icon-icon-accent-purple",
+      card_class: "justify-start bg-Fill-Accent-fill-accent-purple px-[15px] pt-[28px]",
+      content_class: "w-[130px]",
+      order_class: "order-4 md:order-3"
+    }
+  end
 
-      _ ->
-        %{
-          label: @default_proficiency,
-          icon: "fas fa-hourglass-half",
-          class: "bg-gray-100 text-gray-700",
-          description: "Complete a few more activities before we can estimate your proficiency."
-        }
-    end
+  defp shared_card_styles_for("Low") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Icon-icon-accent-orange",
+      card_class: "justify-start bg-Fill-Accent-fill-accent-orange/70 px-6 pt-[23px]",
+      content_class: "w-[112px]",
+      order_class: "order-2"
+    }
+  end
+
+  defp shared_card_styles_for(_) do
+    %{
+      icon_class: "h-6 w-6 shrink-0",
+      card_class:
+        "justify-start bg-Fill-Chip-Gray px-4 pt-[31px] md:[html:not(.dark)_&]:bg-Table-table-row-1",
+      content_class: "w-32",
+      order_class: "order-1"
+    }
   end
 
   defp resolve_recommendation_pages(%Context{section_id: nil}, _objectives, _config, _opts),
