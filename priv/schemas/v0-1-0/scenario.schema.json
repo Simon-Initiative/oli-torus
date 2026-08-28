@@ -1284,6 +1284,49 @@
           }
         }
       },
+      "learningObjectivesAssertion": {
+        "type": "object",
+        "required": [
+          "section"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "section": {
+            "type": "string"
+          },
+          "container": {
+            "type": "string"
+          },
+          "includes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "excludes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        },
+        "anyOf": [
+          {
+            "required": ["includes"],
+            "properties": {
+              "includes": { "minItems": 1 }
+            }
+          },
+          {
+            "required": ["excludes"],
+            "properties": {
+              "excludes": { "minItems": 1 }
+            }
+          }
+        ]
+      },
       "insightsExpected": {
         "type": "object",
         "additionalProperties": false,
@@ -1412,6 +1455,9 @@
           "activity_objectives": {
             "$ref": "#/definitions/activityObjectivesAssertion"
           },
+          "learning_objectives": {
+            "$ref": "#/definitions/learningObjectivesAssertion"
+          },
           "insights": {
             "$ref": "#/definitions/insightsAssertion"
           },
@@ -1484,6 +1530,9 @@
           },
           "activity_objectives": {
             "$ref": "#/definitions/activityObjectivesAssertion"
+          },
+          "learning_objectives": {
+            "$ref": "#/definitions/learningObjectivesAssertion"
           },
           "insights": {
             "$ref": "#/definitions/insightsAssertion"

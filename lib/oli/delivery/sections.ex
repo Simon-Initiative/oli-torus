@@ -55,7 +55,14 @@ defmodule Oli.Delivery.Sections do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
   alias Ecto.Multi
-  alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
+
+  alias Oli.Delivery.Attempts.Core.{
+    ActivityAttempt,
+    PartAttempt,
+    ResourceAccess,
+    ResourceAttempt
+  }
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections.PostProcessing
@@ -5912,9 +5919,14 @@ defmodule Oli.Delivery.Sections do
   * `:student_id` - If provided, filters proficiency results for a specific student
   * `:exclude_sub_objectives` - If true, only returns top-level objectives (default: false)
   * `:include_related_activities_count` - If true, includes `related_activities_count` field for each objective. A related activity is any activity that has the objective attached to it in its objectives map (default: false)
+
+  Container scopes union objectives statically attached to pages and embedded activities with
+  objectives from submitted or evaluated learner activity results. The latter allows realized
+  activity-bank selections to contribute their exact objectives after learners encounter them.
   """
   def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
     student_id = if opts[:student_id], do: opts[:student_id], else: nil
+    enrolled_student_ids = Sections.enrolled_student_ids(section_slug)
 
     exclude_sub_objectives = if opts[:exclude_sub_objectives], do: true, else: false
     include_related_activities_count = opts[:include_related_activities_count] || false
@@ -6005,8 +6017,6 @@ defmodule Oli.Delivery.Sections do
 
     {student_ids, proficiency_dist_for_objectives} =
       if is_nil(student_id) do
-        student_ids = Sections.enrolled_student_ids(section_slug)
-
         proficiency_dist_for_objectives =
           objectives
           |> Enum.reduce(%{}, fn objective, acc ->
@@ -6014,7 +6024,7 @@ defmodule Oli.Delivery.Sections do
               Metrics.evidence_resource_ids(objective.resource_id, objective.children)
 
             student_proficiency =
-              Enum.into(student_ids, %{}, fn enrolled_student_id ->
+              Enum.into(enrolled_student_ids, %{}, fn enrolled_student_id ->
                 {enrolled_student_id,
                  Metrics.proficiency_bucket_for_student(
                    resource_ids,
@@ -6030,7 +6040,7 @@ defmodule Oli.Delivery.Sections do
 
             {proficiency_mode, proficiency_dist} =
               if map_size(proficiency_dist) == 0 do
-                {"Not enough data", %{"Not enough data" => length(student_ids)}}
+                {"Not enough data", %{"Not enough data" => length(enrolled_student_ids)}}
               else
                 proficiency_mode =
                   proficiency_dist
@@ -6058,19 +6068,13 @@ defmodule Oli.Delivery.Sections do
             )
           end)
 
-        {student_ids, proficiency_dist_for_objectives}
+        {enrolled_student_ids, proficiency_dist_for_objectives}
       else
         {[], %{}}
       end
 
     objective_to_container_ids_map =
-      from(co in ContainedObjective)
-      |> where([co], co.section_id == ^section.id)
-      |> select([co], co)
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn co, acc ->
-        Map.update(acc, co.objective_id, [co.container_id], &(&1 ++ [co.container_id]))
-      end)
+      objective_to_container_ids_map(section.id, enrolled_student_ids)
 
     objectives =
       if include_related_activities_count do
@@ -6193,6 +6197,66 @@ defmodule Oli.Delivery.Sections do
       end
     end)
   end
+
+  defp objective_to_container_ids_map(section_id, enrolled_student_ids) do
+    from(co in ContainedObjective,
+      where: co.section_id == ^section_id,
+      select: {co.objective_id, co.container_id}
+    )
+    |> Repo.all()
+    |> Enum.concat(realized_objective_container_pairs(section_id, enrolled_student_ids))
+    |> Enum.reduce(%{}, fn {objective_id, container_id}, acc ->
+      Map.update(acc, objective_id, MapSet.new([container_id]), &MapSet.put(&1, container_id))
+    end)
+    |> Map.new(fn {objective_id, container_ids} ->
+      {objective_id, container_ids |> MapSet.to_list() |> Enum.sort()}
+    end)
+  end
+
+  defp realized_objective_container_pairs(_section_id, []), do: []
+
+  # Bank selections are only realized when learners receive them. Use the exact activity revision
+  # recorded by each submitted result so its objectives augment the static container index.
+  defp realized_objective_container_pairs(section_id, enrolled_student_ids) do
+    from(pa in PartAttempt,
+      join: aa in ActivityAttempt,
+      on: aa.id == pa.activity_attempt_id,
+      join: activity_revision in Revision,
+      on: activity_revision.id == aa.revision_id,
+      join: resource_attempt in ResourceAttempt,
+      on: resource_attempt.id == aa.resource_attempt_id,
+      join: access in ResourceAccess,
+      on: access.id == resource_attempt.resource_access_id,
+      join: contained_page in ContainedPage,
+      on:
+        contained_page.section_id == access.section_id and
+          contained_page.page_id == access.resource_id,
+      where:
+        access.section_id == ^section_id and
+          access.user_id in ^enrolled_student_ids and
+          pa.lifecycle_state in [:submitted, :evaluated],
+      distinct: [contained_page.container_id, activity_revision.id, pa.part_id],
+      select: %{
+        container_id: contained_page.container_id,
+        objectives: activity_revision.objectives,
+        part_id: pa.part_id
+      }
+    )
+    |> Repo.all()
+    |> Enum.flat_map(fn result ->
+      result_objective_ids(result.objectives, result.part_id)
+      |> Enum.map(&{&1, result.container_id})
+    end)
+  end
+
+  defp result_objective_ids(objectives, part_id) when is_map(objectives) do
+    objectives
+    |> Map.get(part_id, [])
+    |> List.wrap()
+    |> Enum.filter(&is_integer/1)
+  end
+
+  defp result_objective_ids(_objectives, _part_id), do: []
 
   @doc """
   Returns the container label and numbering for a given container.

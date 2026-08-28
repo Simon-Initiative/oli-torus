@@ -1173,6 +1173,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       "activity_customization",
       "page_objectives",
       "activity_objectives",
+      "learning_objectives",
       "insights",
       "discussion",
       "annotation",
@@ -1202,6 +1203,8 @@ defmodule Oli.Scenarios.DirectiveParser do
       page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
       activity_objectives:
         parse_activity_objectives_assertion(assert_data["activity_objectives"]),
+      learning_objectives:
+        parse_learning_objectives_assertion(assert_data["learning_objectives"]),
       insights: parse_insights_assertion(assert_data["insights"]),
       discussion: parse_discussion_assertion(assert_data["discussion"]),
       annotation: parse_annotation_assertion(assert_data["annotation"]),
@@ -1724,6 +1727,31 @@ defmodule Oli.Scenarios.DirectiveParser do
 
       {:error, msg} ->
         raise msg
+    end
+  end
+
+  defp parse_learning_objectives_assertion(nil), do: nil
+
+  defp parse_learning_objectives_assertion(data) when is_map(data) do
+    with :ok <-
+           DirectiveValidator.validate_assertion_attributes(:learning_objectives, data),
+         :ok <- require_learning_objective_expectation(data) do
+      %{
+        section: data["section"],
+        container: data["container"] || "course",
+        includes: data["includes"] || [],
+        excludes: data["excludes"] || []
+      }
+    else
+      {:error, msg} -> raise msg
+    end
+  end
+
+  defp require_learning_objective_expectation(data) do
+    if Enum.any?(["includes", "excludes"], &(is_list(data[&1]) and data[&1] != [])) do
+      :ok
+    else
+      {:error, "learning_objectives assertion requires a non-empty includes or excludes list"}
     end
   end
 

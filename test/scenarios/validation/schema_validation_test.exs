@@ -387,6 +387,46 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert length(directives) == 5
   end
 
+  test "schema and parser accept scoped learning objective assertions" do
+    yaml = """
+    - assert:
+        learning_objectives:
+          section: "demo_section"
+          container: "Unit 1"
+          includes:
+            - "Understand systems"
+          excludes:
+            - "Unrelated objective"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    [directive] = DirectiveParser.parse_yaml!(yaml)
+
+    assert directive.learning_objectives == %{
+             section: "demo_section",
+             container: "Unit 1",
+             includes: ["Understand systems"],
+             excludes: ["Unrelated objective"]
+           }
+  end
+
+  test "schema and parser reject learning objective assertions without expectations" do
+    yaml = """
+    - assert:
+        learning_objectives:
+          section: "demo_section"
+          container: "Unit 1"
+    """
+
+    assert {:error, _errors} = Scenarios.validate_yaml(yaml)
+
+    assert_raise RuntimeError,
+                 ~r/learning_objectives assertion requires a non-empty includes or excludes list/,
+                 fn ->
+                   DirectiveParser.parse_yaml!(yaml)
+                 end
+  end
+
   test "schema accepts finalize_attempt and gradebook assertions" do
     yaml = """
     - project:
