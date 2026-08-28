@@ -10,16 +10,20 @@ requirements:
     title: "Given a parent LO with multiple Sub-LOs each having a (proficiency, count)\
       \ pair, when the aggregation function is called, then it returns score = \u03A3\
       (proficiency_i \xD7 count_i) / \u03A3(count_i) over all supplied children."
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+      - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1)
+      - test/oli/delivery/metrics/aggregate_weighted_proficiency_test.exs
   - id: AC-002
     title: Given a parent LO that has both directly-tagged evidence and one or more
       Sub-LOs, when the aggregation function is called, then the parent's own (proficiency,
       count) pair is combined into the same weighted average as its Sub-LOs' pairs.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+      - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1)
+      - test/oli/delivery/metrics/aggregate_weighted_proficiency_test.exs
 - id: FR-002
   title: Document the aggregation function's count contract explicitly, making it
     the caller's responsibility to supply a count consistent with whichever algorithm
@@ -32,9 +36,11 @@ requirements:
       ("opportunity") count per the LKT-AOA technical notes section 6.2, and states
       that the function itself has no way to detect mismatched count semantics across
       children.
-    status: proposed
+    status: verified
     verification_method: manual
-    proofs: []
+    proofs:
+      - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1 @doc,
+        verified verbatim against informal.md's "Agreed function contract")
 - id: FR-003
   title: Preserve the existing no-double-counting rule so an activity tagged to both
     a parent LO and one of its Sub-LOs contributes to the aggregation once, at the
@@ -59,9 +65,11 @@ requirements:
       LO proficiency is aggregated, then the result reflects the incomplete coverage
       of the unattempted or under-evidenced Sub-LO rather than being calculated as
       if only the attempted Sub-LO existed.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+      - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1)
+      - test/oli/delivery/metrics/aggregate_weighted_proficiency_test.exs
 - id: FR-005
   title: Audit and update every runtime call site that rolls up (or should roll up)
     Sub-LO proficiency into a parent LO, across both authoring and delivery surfaces,

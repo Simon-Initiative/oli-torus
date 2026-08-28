@@ -1183,6 +1183,56 @@ defmodule Oli.Delivery.Metrics do
   def proficiency_range(proficiency, _num_first_attempts) when proficiency <= 0.8, do: "Medium"
   def proficiency_range(_proficiency, _num_first_attempts), do: "High"
 
+  @doc """
+  Aggregates a parent Learning Objective's proficiency from the proficiency
+  estimates of its Sub-LOs (and, optionally, its own directly-tagged evidence),
+  producing a single weighted average.
+
+  Each child is passed as `{proficiency, count}`, where `count` is a measure
+  of how much evidence backs that child's proficiency estimate. This function
+  is agnostic to which learner model produced `proficiency` — it is the
+  CALLER's responsibility to supply a `count` that is consistent with how
+  that proficiency value was calculated:
+
+    * Legacy (naive, first-attempt-only) algorithm: `count` MUST be the
+      number of FIRST attempts (`num_first_attempts`), since only first
+      attempts contribute to that model's proficiency estimate. Passing a
+      total attempt count here would over-weight children whose score was
+      computed from a smaller subset of evidence than their attempt count
+      implies.
+
+    * Learning Proficiency Framework v2 (LKT-AOA): `count` must reflect the
+      total evidence count used by that model (all attempts / "tagged
+      opportunities"), per the LKT-AOA technical definition
+      (`docs/exec-plans/current/epics/learning_model_v2/lkt_technical_notes.docx.md`,
+      section 6.2), since LKT-AOA's own Sub-LO score is a mean over every
+      attempt rather than only the first.
+
+  Mismatching `count` semantics across children (e.g. mixing first-attempt
+  counts with total-attempt counts within the same aggregation call) will
+  silently skew the weighted average — this function has no way to detect
+  that on its own.
+  """
+  @spec aggregate_weighted_proficiency([
+          {proficiency :: float() | nil, count :: non_neg_integer()}
+        ]) ::
+          {score :: float() | nil, total_count :: non_neg_integer()}
+  def aggregate_weighted_proficiency(children) do
+    {weighted_sum, total_count} =
+      Enum.reduce(children, {0.0, 0}, fn
+        {nil, _count}, acc ->
+          acc
+
+        {proficiency, count}, {sum, total} ->
+          {sum + proficiency * count, total + count}
+      end)
+
+    case total_count do
+      0 -> {nil, 0}
+      _ -> {weighted_sum / total_count, total_count}
+    end
+  end
+
   def progress_range(nil), do: "Not enough data"
   def progress_range(progress) when progress <= 0.5, do: "Low"
   def progress_range(progress) when progress <= 0.8, do: "Medium"

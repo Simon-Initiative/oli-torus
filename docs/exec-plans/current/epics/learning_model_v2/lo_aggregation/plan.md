@@ -47,23 +47,23 @@ implementation, no `learning_model_version` switch changes — those are explici
 - Goal: Introduce the algorithm-agnostic weighted-aggregation function with its documented
   `count` contract, fully unit-tested in isolation, with no call site wired to it yet.
 - Tasks:
-  - [ ] Decide the function's home module/name (default assumption above) and add it with the
+  - [x] Decide the function's home module/name (default assumption above) and add it with the
     exact `@doc` text agreed in `prd.md` / `informal.md` (must be preserved verbatim, not
-    rewritten).
-  - [ ] Implement `score = Σ(proficiency_i × count_i) / Σ(count_i)` over a list of
+    rewritten). Implemented as `Oli.Delivery.Metrics.aggregate_weighted_proficiency/1`.
+  - [x] Implement `score = Σ(proficiency_i × count_i) / Σ(count_i)` over a list of
     `(proficiency, count)` pairs, including a parent's own direct `(proficiency, count)` pair
     when present (FR-001).
-  - [ ] Handle a child with `count == 0` or unset/`nil` proficiency without excluding it from the
+  - [x] Handle a child with `count == 0` or unset/`nil` proficiency without excluding it from the
     aggregation's evidence accounting (FR-004) — it must still be representable so the caller can
     detect incomplete coverage, not silently vanish from the computation.
-  - [ ] Do not implement bucketing inside this function; it returns the weighted score (and total
+  - [x] Do not implement bucketing inside this function; it returns the weighted score (and total
     evidence count) only (FR-007, PRD Assumptions).
 - Testing Tasks:
-  - [ ] ExUnit unit tests: multiple Sub-LOs with different counts (AC-001); parent with both
+  - [x] ExUnit unit tests: multiple Sub-LOs with different counts (AC-001); parent with both
     direct evidence and Sub-LOs (AC-002); a Sub-LO with zero/insufficient evidence not silently
     dropped (AC-005); deterministic output for repeated calls with the same inputs (PRD
     Non-Functional Requirements).
-  - Command(s): `mix test <new test file path>`
+  - Command(s): `mix test test/oli/delivery/metrics/aggregate_weighted_proficiency_test.exs`
 - Definition of Done:
   - Function exists, is unit-tested per the cases above, and its `@doc` matches the agreed text
     exactly.
