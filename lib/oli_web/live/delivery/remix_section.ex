@@ -322,14 +322,9 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("set_active", %{"uuid" => uuid}, socket) do
     %{remix_state: state} = socket.assigns
 
-    node = Hierarchy.find_in_hierarchy(state.hierarchy, uuid)
+    {:ok, state} = Remix.select_active(state, uuid)
 
-    if is_container?(node.revision) do
-      {:ok, state} = Remix.select_active(state, uuid)
-      {:noreply, assign(socket, active: state.active, remix_state: state)}
-    else
-      {:noreply, socket}
-    end
+    {:noreply, assign(socket, active: state.active, remix_state: state)}
   end
 
   def handle_event("keydown", %{"key" => key, "shiftKey" => shiftKeyPressed?} = params, socket) do
