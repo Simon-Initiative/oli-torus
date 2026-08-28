@@ -237,6 +237,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
 
       {:ok, _live, html} = live(conn, live_view_route(project.slug, product.slug, %{}))
 
+      assert html =~ ~s(maxlength="300")
+
       {description_index, _} = :binary.match(html, "Description")
       {tags_index, _} = :binary.match(html, "Tags")
       {welcome_title_index, _} = :binary.match(html, "Welcome Message Title")

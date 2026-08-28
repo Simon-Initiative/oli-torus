@@ -162,6 +162,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               label="Project Description"
               type="textarea"
               class="form-control"
+              maxlength="300"
               placeholder="A brief description of your project..."
               error_position={:top}
               errors={f.errors}

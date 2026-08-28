@@ -40,10 +40,10 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ "<h4 class=\"h3\">1651–1748: Early seeds</h4>"
 
       assert rendered_html_string =~
-               "<ol class=\"list-inside pl-2\"><li data-point-marker=\"1896247178\">one</li>\n<li data-point-marker=\"1896247178\"><em>two</em></li>\n<li data-point-marker=\"1896247178\"><em><strong>three</strong></em></li>\n</ol>"
+               "<ol class=\"list-decimal list-inside pl-2\"><li data-point-marker=\"1896247178\">one</li>\n<li data-point-marker=\"1896247178\"><em>two</em></li>\n<li data-point-marker=\"1896247178\"><em><strong>three</strong></em></li>\n</ol>"
 
       assert rendered_html_string =~
-               "<ul class=\"list-inside pl-2\"><li data-point-marker=\"18868465\">alpha</li>\n<li data-point-marker=\"18868465\">beta</li>\n<li data-point-marker=\"18868465\">gamma</li>\n</ul>"
+               "<ul class=\"list-disc list-inside pl-2\"><li data-point-marker=\"18868465\">alpha</li>\n<li data-point-marker=\"18868465\">beta</li>\n<li data-point-marker=\"18868465\">gamma</li>\n</ul>"
 
       assert rendered_html_string =~
                ~r/<div data-react-class="Components.YoutubePlayer"/

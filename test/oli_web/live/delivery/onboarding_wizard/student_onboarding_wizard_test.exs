@@ -135,6 +135,11 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
 
       assert has_element?(
                view,
+               ~s(#onboarding-welcome-title.min-w-0.max-w-full[class*="overflow-wrap:anywhere"])
+             )
+
+      assert has_element?(
+               view,
                "#onboarding-welcome-subtitle",
                "Discover how molecules shape our world."
              )
@@ -146,6 +151,79 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
              )
 
       refute has_element?(view, "#onboarding-welcome-title", "Welcome to Chemistry 201")
+    end
+
+    test "renders welcome title block formatting", %{conn: conn, user: student} do
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "welcome-heading",
+            "type" => "p",
+            "children" => [%{"text" => "Welcome to the course"}]
+          },
+          %{
+            "id" => "welcome-list",
+            "type" => "ul",
+            "children" => [
+              %{
+                "id" => "welcome-list-item",
+                "type" => "li",
+                "children" => [
+                  %{
+                    "id" => "welcome-list-paragraph",
+                    "type" => "p",
+                    "children" => [%{"text" => "Review the course goals"}]
+                  }
+                ]
+              }
+            ]
+          },
+          %{
+            "id" => "welcome-video",
+            "type" => "youtube",
+            "src" => "RpnEyBIkdMc",
+            "children" => [%{"text" => ""}]
+          }
+        ]
+      }
+
+      section =
+        insert(:section,
+          description: "Prepare for the course.",
+          welcome_title: welcome_title
+        )
+
+      enroll_student(student, section)
+
+      {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
+
+      assert has_element?(
+               view,
+               "#onboarding-welcome-title > p:first-child",
+               "Welcome to the course"
+             )
+
+      assert has_element?(
+               view,
+               "#onboarding-welcome-title ul.list-disc li",
+               "Review the course goals"
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-welcome-title[class*="text-[16px]"][class*="first-child]:text-[18xl]"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-welcome-title[class*="[&_ul]:!pl-6"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-youtube--welcome-video[phx-hook="LiveReact"])
+             )
     end
 
     test "renders the section cover image when present", %{conn: conn, user: student} do

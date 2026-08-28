@@ -4,61 +4,59 @@ defmodule OliWeb.Components.Delivery.Student do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Rendering.Context
   alias OliWeb.Components.Common
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
 
   attr(:title, :map, default: nil)
   attr(:fallback, :string, default: nil)
+  attr(:render_context, :map, required: true)
+  attr(:id_prefix, :string, required: true)
 
   @doc """
-  Renders a rich-text welcome title as inline content, or the given fallback when it is empty.
+  Renders rich-text welcome content, or the given fallback when it is empty.
+
+  The rendering context determines whether embedded React content uses LiveReact. The ID prefix
+  scopes those React mounts when the same welcome content appears in multiple previews.
   """
   def welcome_title(assigns) do
-    assigns = assign(assigns, :content, render_welcome_title(assigns.title))
+    render_context = with_react_component_id_prefix(assigns.render_context, assigns.id_prefix)
+
+    assigns =
+      assign(assigns, :content, render_welcome_title(assigns.title, render_context))
 
     ~H"""
     {@content || @fallback}
     """
   end
 
-  defp render_welcome_title(welcome_title) when is_map(welcome_title) do
+  defp render_welcome_title(welcome_title, %Context{} = context) when is_map(welcome_title) do
     children = Map.get(welcome_title, "children") || Map.get(welcome_title, :children) || []
 
-    # Persisted titles retain paragraph wrappers; unwrap them before placing the content in a heading.
-    inline_children =
-      children
-      |> Enum.with_index()
-      |> Enum.flat_map(fn {block, index} ->
-        case block do
-          block when is_map(block) ->
-            case Map.get(block, "children") || Map.get(block, :children) do
-              children when is_list(children) and index == 0 -> children
-              children when is_list(children) -> [%{"text" => " "} | children]
-              _ -> []
-            end
-
-          _ ->
-            []
-        end
-      end)
-
-    case inline_children do
+    case children do
       [] ->
         nil
 
-      inline_children ->
+      children ->
         Phoenix.HTML.raw(
           Oli.Rendering.Content.render(
-            %Oli.Rendering.Context{},
-            inline_children,
+            context,
+            children,
             Oli.Rendering.Content.Html
           )
         )
     end
   end
 
-  defp render_welcome_title(_welcome_title), do: nil
+  defp render_welcome_title(_welcome_title, %Context{}), do: nil
+
+  defp with_react_component_id_prefix(%Context{} = context, id_prefix) do
+    %{
+      context
+      | render_opts: Map.put(context.render_opts, :react_component_id_prefix, id_prefix)
+    }
+  end
 
   attr(:raw_avg_score, :map)
 

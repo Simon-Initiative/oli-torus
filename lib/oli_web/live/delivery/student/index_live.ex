@@ -592,12 +592,25 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           Hi, {user_given_name(@ctx)} !
         </div>
         <div class="flex flex-col items-start gap-2.5">
-          <h2 class="text-3xl text-white font-medium">
+          <div
+            role="heading"
+            aria-level="2"
+            class="min-w-0 max-w-full [overflow-wrap:anywhere] text-base leading-6 text-white font-normal [&_ol]:!pl-6 [&_ul]:!pl-6 [&>*:first-child]:text-3xl [&>*:first-child]:leading-9 [&>*:first-child]:font-medium"
+          >
             <Student.welcome_title
               title={@section.welcome_title}
               fallback="Welcome to the Course"
+              render_context={
+                %Oli.Rendering.Context{
+                  is_liveview: true,
+                  section_id: @section.id,
+                  section_slug: @section.slug,
+                  user: @ctx.user
+                }
+              }
+              id_prefix="student-home"
             />
-          </h2>
+          </div>
           <div class="text-white/60 text-lg font-semibold">
             {@section.encouraging_subtitle ||
               "Dive Into Discovery. Begin Your Learning Adventure Now!"}

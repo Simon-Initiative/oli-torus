@@ -22,6 +22,7 @@ defmodule OliWeb.Sections.MainDetails do
           field={@form[:description]}
           label="Description"
           class="form-control"
+          maxlength="300"
           disabled={@disabled}
         />
       </div>

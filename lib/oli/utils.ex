@@ -194,33 +194,6 @@ defmodule Oli.Utils do
     end
   end
 
-  @doc """
-  Validates that a string field contains no more than the given number of words.
-
-  Words are separated by one or more whitespace characters. Blank values contain zero words.
-  """
-  @spec validate_word_count(Ecto.Changeset.t(), atom(), non_neg_integer()) ::
-          Ecto.Changeset.t()
-  def validate_word_count(changeset, field, max_words) do
-    validate_change(changeset, field, fn ^field, value ->
-      word_count =
-        case value do
-          value when is_binary(value) ->
-            value
-            |> String.split(~r/\s+/, trim: true)
-            |> length()
-
-          _ ->
-            0
-        end
-
-      case word_count > max_words do
-        true -> [{field, "must be #{max_words} words or fewer"}]
-        false -> []
-      end
-    end)
-  end
-
   def validate_number_if(
         changeset,
         field,

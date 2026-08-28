@@ -8,6 +8,9 @@ defmodule OliWeb.Common.React do
 
   <%= React.component(@ctx, "Components.MyComponent", %{name: "Bob"}, id: "my-component-1") %>
 
+  Rendering contexts may set `render_opts.react_component_id_prefix` to scope component IDs when
+  the same rendered content can appear more than once in a LiveView.
+
   Remember to import and register the component in assets/src/apps/Components.tsx
   """
 
@@ -19,9 +22,20 @@ defmodule OliWeb.Common.React do
   def component(_, name, props),
     do: ReactPhoenix.ClientSide.react_component(name, props)
 
-  def component(%{is_liveview: true}, name, props, opts),
-    do: live_react_component(name, props, opts)
+  def component(%{is_liveview: true} = context, name, props, opts),
+    do: live_react_component(name, props, prefix_component_id(context, opts))
 
-  def component(_, name, props, opts),
-    do: ReactPhoenix.ClientSide.react_component(name, props, opts)
+  def component(context, name, props, opts),
+    do: ReactPhoenix.ClientSide.react_component(name, props, prefix_component_id(context, opts))
+
+  defp prefix_component_id(context, opts) do
+    with %{render_opts: render_opts} when is_map(render_opts) <- context,
+         prefix when is_binary(prefix) and prefix != "" <-
+           Map.get(render_opts, :react_component_id_prefix),
+         id when is_binary(id) and id != "" <- Keyword.get(opts, :id) do
+      Keyword.put(opts, :id, "#{prefix}-#{id}")
+    else
+      _ -> opts
+    end
+  end
 end
