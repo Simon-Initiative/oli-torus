@@ -64,6 +64,48 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert has_element?(view, "#save:not([disabled])")
     end
 
+    test "Curriculum breadcrumb returns to the root after saving a nested removal", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      module_1: module_1
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      root_entry_ids = curriculum_entry_ids(view)
+
+      view
+      |> element(~s{#entry-#{unit_1.resource_id} button[phx-click="set_active"]})
+      |> render_click()
+
+      view
+      |> element(~s{#entry-#{module_1.resource_id} button[phx-click="show_remove_modal"]})
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-click="RemoveModal.remove"]})
+      |> render_click()
+
+      view
+      |> element("#save")
+      |> render_click()
+
+      assert curriculum_entry_ids(view) == root_entry_ids
+
+      view
+      |> element(~s{#entry-#{unit_2.resource_id} button[phx-click="set_active"]})
+      |> render_click()
+
+      refute curriculum_entry_ids(view) == root_entry_ids
+
+      view
+      |> element("button.breadcrumb-item", "Curriculum")
+      |> render_click()
+
+      assert curriculum_entry_ids(view) == root_entry_ids
+    end
+
     test "move modal moves an item into the selected container", %{
       conn: conn,
       section: section,

@@ -1181,13 +1181,11 @@ defmodule OliWeb.Delivery.RemixSection do
 
       <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
         {render_breadcrumb_item(
-          Enum.into(
-            %{
-              breadcrumb: breadcrumb,
-              show_short: length(@breadcrumbs) > 3,
-              is_last: length(@breadcrumbs) - 1 == index
-            },
-            assigns
+          assign(
+            assigns,
+            breadcrumb: breadcrumb,
+            show_short: length(@breadcrumbs) > 3,
+            is_last: length(@breadcrumbs) - 1 == index
           )
         )}
       <% end %>
