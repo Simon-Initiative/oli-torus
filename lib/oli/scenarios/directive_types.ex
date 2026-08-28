@@ -107,7 +107,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
   end
 
   defmodule AssertDirective do
-    @moduledoc "Asserts the structure, resource properties, progress, proficiency, or general assertions"
+    @moduledoc "Holds one parsed assertion specification."
     defstruct [
       :structure,
       :resource,
@@ -122,6 +122,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :activity_customization,
       :page_objectives,
       :activity_objectives,
+      :learning_objectives,
       :insights,
       :discussion,
       :annotation,

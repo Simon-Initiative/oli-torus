@@ -348,6 +348,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "learning_objectives assertion with unknown attribute fails" do
+      yaml = """
+      - assert:
+          learning_objectives:
+            section: "section1"
+            includes:
+              - "Objective"
+            hidden: false
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'learning_objectives assertion' directive: \["hidden"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "wait directive with unknown attribute fails" do
       yaml = """
       - wait:
