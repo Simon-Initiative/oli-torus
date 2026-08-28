@@ -103,3 +103,5 @@ No feature flags present in this work item
 - [ ] PRD sections complete
 - [ ] requirements.yml captured and valid
 - [ ] validation passes
+
+Probe note (2026-08-27): temporary line to exercise the requirements review; removed with the probe branch.
