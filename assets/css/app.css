@@ -495,6 +495,66 @@ https://tailwindcss.com/docs/utility-first
   text-decoration: underline;
 }
 
+.content .learning-objectives-summary__explain-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px 0 rgba(0, 50, 99, 0.05);
+}
+
+.content .learning-objectives-summary__explain-card img {
+  margin-bottom: 0;
+}
+
+.content .learning-objectives-summary__explain-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--color-body-color);
+  font-size: 14px;
+  line-height: 16px;
+}
+
+.content .learning-objectives-summary__explain-copy strong {
+  font-weight: 700;
+}
+
+.content .learning-objectives-summary__explain-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 8px 24px;
+  border: 1px solid var(--Border-border-bold, #8ab8e5);
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: 0 2px 4px 0 rgba(0, 52, 99, 0.1);
+  color: var(--Specially-Tokens-Text-text-button-secondary, #006cd9);
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 16px;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    color 120ms ease;
+}
+
+.content .learning-objectives-summary__explain-button:hover,
+.content .learning-objectives-summary__explain-button:focus-visible {
+  border-color: var(--Border-border-bold-hover, #006cd9);
+  background: var(--Surface-surface-secondary-hover, #f2f9ff);
+  box-shadow: 0 2px 6px 0 rgba(0, 52, 99, 0.15);
+  color: var(--Specially-Tokens-Text-text-button-secondary-hover, #0055ad);
+  text-decoration: none;
+}
+
 .dark .content .learning-objectives-summary__section-icon--applying {
   color: #39e581;
 }
@@ -531,6 +591,19 @@ https://tailwindcss.com/docs/utility-first
   color: #bab8bf;
 }
 
+
+.dark .content .learning-objectives-summary__explain-button {
+  background: transparent;
+  color: var(--Specially-Tokens-Text-text-button-secondary, #ffffff);
+}
+
+.dark .content .learning-objectives-summary__explain-button:hover,
+.dark .content .learning-objectives-summary__explain-button:focus-visible {
+  border-color: var(--Border-border-bold-hover, #ffffff);
+  background: var(--Fill-Buttons-fill-secondary-hover, rgba(255, 255, 255, 0.1));
+  color: var(--Specially-Tokens-Text-text-button-secondary-hover, #ffffff);
+}
+
 @media (max-width: 720px) {
   .content .learning-objectives-summary__section-heading {
     font-size: 16px;
@@ -544,6 +617,15 @@ https://tailwindcss.com/docs/utility-first
 
   .content .learning-objectives-summary__proficiency {
     align-self: flex-start;
+  }
+
+  .content .learning-objectives-summary__explain-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .content .learning-objectives-summary__explain-button {
+    width: 100%;
   }
 }
 
