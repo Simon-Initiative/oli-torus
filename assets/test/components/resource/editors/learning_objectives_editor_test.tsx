@@ -93,7 +93,9 @@ describe('Learning Objectives insert menu', () => {
     });
 
     const onAddItem = jest.fn();
+    const onStartLearningObjectivesRefresh = jest.fn();
     const onRefreshLearningObjectives = jest.fn();
+    const onFinishLearningObjectivesRefresh = jest.fn();
     const onSetTip = jest.fn();
     const onResetTip = jest.fn();
 
@@ -102,7 +104,9 @@ describe('Learning Objectives insert menu', () => {
         index={[0]}
         parents={[]}
         onAddItem={onAddItem}
+        onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
         onRefreshLearningObjectives={onRefreshLearningObjectives}
+        onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
         onSetTip={onSetTip}
         onResetTip={onResetTip}
         featureFlags={{ adaptivity: false, equity: false, survey: true }}
@@ -137,9 +141,11 @@ describe('Learning Objectives insert menu', () => {
 
     const inserted = onAddItem.mock.calls[0][0] as LearningObjectivesContent;
 
+    expect(onStartLearningObjectivesRefresh).toHaveBeenCalledWith(inserted.id);
     await waitFor(() =>
       expect(onRefreshLearningObjectives).toHaveBeenCalledWith(inserted.id, resolved),
     );
+    expect(onFinishLearningObjectivesRefresh).not.toHaveBeenCalled();
   });
 
   it('uses already resolved learning objectives from context when inserting', async () => {
@@ -152,14 +158,18 @@ describe('Learning Objectives insert menu', () => {
       learningObjectives: [],
     });
     const onAddItem = jest.fn();
+    const onStartLearningObjectivesRefresh = jest.fn();
     const onRefreshLearningObjectives = jest.fn();
+    const onFinishLearningObjectivesRefresh = jest.fn();
 
     render(
       <NonActivities
         index={[0]}
         parents={[]}
         onAddItem={onAddItem}
+        onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
         onRefreshLearningObjectives={onRefreshLearningObjectives}
+        onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
         onSetTip={jest.fn()}
         onResetTip={jest.fn()}
         featureFlags={{ adaptivity: false, equity: false, survey: true }}
@@ -171,10 +181,12 @@ describe('Learning Objectives insert menu', () => {
 
     const inserted = onAddItem.mock.calls[0][0] as LearningObjectivesContent;
 
+    expect(onStartLearningObjectivesRefresh).toHaveBeenCalledWith(inserted.id);
     await waitFor(() =>
       expect(onRefreshLearningObjectives).toHaveBeenCalledWith(inserted.id, resolved),
     );
     expect(learningObjectivesSpy).not.toHaveBeenCalled();
+    expect(onFinishLearningObjectivesRefresh).not.toHaveBeenCalled();
   });
 
   it('does not show the Objectives content type for nested insert positions', () => {
@@ -183,7 +195,9 @@ describe('Learning Objectives insert menu', () => {
         index={[0, 0]}
         parents={[createGroup() as ResourceContent]}
         onAddItem={jest.fn()}
+        onStartLearningObjectivesRefresh={jest.fn()}
         onRefreshLearningObjectives={jest.fn()}
+        onFinishLearningObjectivesRefresh={jest.fn()}
         onSetTip={jest.fn()}
         onResetTip={jest.fn()}
         featureFlags={{ adaptivity: false, equity: false, survey: true }}
@@ -610,6 +624,20 @@ describe('LearningObjectivesEditor', () => {
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByText('Linear equations')).not.toBeInTheDocument();
+    expect(screen.getByText('What is proficiency and how is it estimated?')).toBeInTheDocument();
+  });
+
+  it('does not show the empty learning objectives warning while inserted objectives are refreshing', () => {
+    const contentItem = element();
+    const props = defaultEditorProps(contentItem);
+    props.resourceContext = {
+      ...resourceContext([]),
+      learningObjectivesRefreshPendingFor: contentItem.id,
+    };
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByText('What is proficiency and how is it estimated?')).toBeInTheDocument();
   });
 

@@ -38,6 +38,8 @@ interface Props {
     contentId: string,
     learningObjectives: ResolvedLearningObjective[],
   ) => void;
+  onStartLearningObjectivesRefresh: (contentId: string) => void;
+  onFinishLearningObjectivesRefresh: (contentId: string) => void;
   onSetTip: (tip: string) => void;
   onResetTip: () => void;
 }
@@ -50,7 +52,9 @@ export const NonActivities: React.FC<Props> = ({
   parents,
   featureFlags,
   resourceContext,
+  onStartLearningObjectivesRefresh,
   onRefreshLearningObjectives,
+  onFinishLearningObjectivesRefresh,
 }) => {
   const [ABTestDisabled, setABTestDisabled] = useState(true);
 
@@ -106,7 +110,14 @@ export const NonActivities: React.FC<Props> = ({
             key={'learning_objectives'}
             disabled={false}
             onClick={() =>
-              addLearningObjectives(onAddItem, index, resourceContext, onRefreshLearningObjectives)
+              addLearningObjectives(
+                onAddItem,
+                index,
+                resourceContext,
+                onStartLearningObjectivesRefresh,
+                onRefreshLearningObjectives,
+                onFinishLearningObjectivesRefresh,
+              )
             }
           />
         )}
@@ -183,20 +194,25 @@ const addLearningObjectives = async (
   onAddItem: AddCallback,
   index: number[],
   resourceContext: ResourceContext,
+  onStartLearningObjectivesRefresh: (contentId: string) => void,
   onRefreshLearningObjectives: (
     contentId: string,
     learningObjectives: ResolvedLearningObjective[],
   ) => void,
+  onFinishLearningObjectivesRefresh: (contentId: string) => void,
 ) => {
   document.body.click();
 
   const content = createDefaultLearningObjectivesContent();
   onAddItem(content, index);
+  onStartLearningObjectivesRefresh(content.id);
 
   const resolved = await resolveLearningObjectives(resourceContext);
 
   if (resolved !== undefined) {
     onRefreshLearningObjectives(content.id, resolved);
+  } else {
+    onFinishLearningObjectivesRefresh(content.id);
   }
 };
 

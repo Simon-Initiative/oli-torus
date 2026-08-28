@@ -17,10 +17,12 @@ export type AddResourceProps = {
   resourceContext: ResourceContext;
   featureFlags: FeatureFlags;
   onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
+  onStartLearningObjectivesRefresh: (contentId: string) => void;
   onRefreshLearningObjectives: (
     contentId: string,
     learningObjectives: ResolvedLearningObjective[],
   ) => void;
+  onFinishLearningObjectivesRefresh: (contentId: string) => void;
   onRegisterNewObjective: (objective: Objective) => void;
 };
 

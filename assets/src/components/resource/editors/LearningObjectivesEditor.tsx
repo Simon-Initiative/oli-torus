@@ -29,6 +29,7 @@ type LearningObjectivesEditorProps = {
   onRemove: (id: string) => void;
   resourceContext: {
     learningObjectives?: ResolvedLearningObjective[];
+    learningObjectivesRefreshPendingFor?: string;
   };
 };
 
@@ -92,7 +93,10 @@ export const LearningObjectivesEditor = ({
   onRemove,
   resourceContext,
 }: LearningObjectivesEditorProps) => {
-  const learningObjectivesResolved = resourceContext.learningObjectives !== undefined;
+  const learningObjectivesRefreshPending =
+    resourceContext.learningObjectivesRefreshPendingFor === contentItem.id;
+  const learningObjectivesResolved =
+    resourceContext.learningObjectives !== undefined && !learningObjectivesRefreshPending;
   const objectives = resourceContext.learningObjectives || [];
   const [pages, setPages] = useState<Persistence.Page[]>([]);
   const [pagesLoadFailed, setPagesLoadFailed] = useState(false);
