@@ -126,11 +126,13 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       instructor: instructor,
       student: student
     } do
-      section =
-        insert(:section,
-          open_and_free: true,
-          type: :enrollable
-        )
+      # `base_project_with_larger_hierarchy/0` gives a section with real, populated
+      # section resources (required for `decorated_numbering_map/1`, used by this tab's
+      # suppression-aware container navigator) but no objective-type resources at all --
+      # a realistic "course with content but no objectives yet" section, unlike a bare
+      # `insert(:section, ...)`, which has no section resources and cannot occur via any
+      # real section-creation flow.
+      %{section: section} = Oli.Seeder.base_project_with_larger_hierarchy()
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])

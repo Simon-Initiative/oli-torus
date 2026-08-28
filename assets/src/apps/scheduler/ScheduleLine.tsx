@@ -171,7 +171,9 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
                   <i className={plusMinusIcon} />
                 </div>
               )}
-              <div className="inline mr-2">{showNumbers ? item.numbering_index + '.' : ''}</div>
+              <div className="inline mr-2">
+                {showNumbers && item.numbering_index !== null ? item.numbering_index + '.' : ''}
+              </div>
               <div className="inline">{item.title}</div>
             </div>
             {childrenCount > 0 && indent === 0 && (

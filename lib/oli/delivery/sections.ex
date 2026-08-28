@@ -2676,9 +2676,7 @@ defmodule Oli.Delivery.Sections do
 
     full_hierarchy
     |> Hierarchy.flatten_hierarchy()
-    |> Enum.filter(fn node ->
-      node.revision.resource_type_id == ResourceType.get_id_by_type("container")
-    end)
+    |> Enum.filter(&container_node?/1)
     |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev} = node ->
       numbering =
         case node.display_numbering do
@@ -2687,6 +2685,144 @@ defmodule Oli.Delivery.Sections do
         end
 
       {resource_id, DisplayLabels.label_for(numbering, rev.title, short_label, customizations)}
+    end)
+  end
+
+  @doc """
+  Builds a map of container resource_id => suppression-aware `%Oli.Resources.Numbering{}`
+  for every container in the given section, honoring `section.unnumbered_unit_ids`.
+
+  A container that is itself an unnumbered top-level unit, or a descendant of one, is
+  absent from the returned map -- there is no "suppressed" value, only absence. Callers
+  should treat a missing key the same way they treat "no parent container" today (title
+  only, no numbering prefix), consistent with `DisplayLabels.label_for/4` and
+  `name_with_container_label/3`.
+
+  For a section with no `unnumbered_unit_ids` configured, every container in the section
+  is present in the map with its canonical numbering, so this function is safe to call
+  unconditionally rather than special-casing the no-suppression case.
+
+  Sources the section hierarchy from `SectionResourceDepot`, so repeated calls for the
+  same section reuse the cached section resource data rather than re-querying it.
+
+  Expects `section` to have been through `create_section_resources/2` (true for every
+  section created via the normal delivery flows, which populate section resources
+  transactionally at creation time).
+
+  ## Parameters
+    - `section` - The section struct to compute container numbering for
+
+  ## Returns
+    A map where keys are container resource IDs and values are `%Oli.Resources.Numbering{}`
+    structs reflecting the numbering the student Learn view would show for that container.
+
+  ## Examples
+      iex> decorated_numbering_map(section)
+      %{
+        10 => %Oli.Resources.Numbering{level: 1, index: 1},
+        11 => %Oli.Resources.Numbering{level: 2, index: 1}
+      }
+  """
+  @spec decorated_numbering_map(Section.t()) :: %{integer() => Numbering.t()}
+  def decorated_numbering_map(%Section{} = section) do
+    section
+    |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
+    |> Hierarchy.flatten_hierarchy()
+    |> Enum.filter(&container_node?/1)
+    |> Enum.reduce(%{}, fn %HierarchyNode{resource_id: resource_id} = node, acc ->
+      case DisplayLabels.effective_numbering(node) do
+        nil -> acc
+        %Numbering{} = numbering -> Map.put(acc, resource_id, numbering)
+      end
+    end)
+  end
+
+  defp container_node?(%HierarchyNode{revision: revision}) do
+    revision.resource_type_id == ResourceType.get_id_by_type("container")
+  end
+
+  @doc """
+  Overlays suppression-aware `numbering_index` onto a list of `%SectionResource{}` containers
+  (as returned by `SectionResourceDepot.containers/2`), using `decorated_numbering_map/1`.
+
+  A suppressed container (an unnumbered top-level unit, or a descendant of one) gets
+  `numbering_index: nil`. `numbering_level` is left untouched, since it reflects structural
+  depth (unit vs. module vs. section), not a suppression-aware display index.
+  """
+  @spec overlay_suppression_aware_numbering([SectionResource.t()], Section.t()) :: [
+          SectionResource.t()
+        ]
+  def overlay_suppression_aware_numbering(containers, %Section{} = section) do
+    overlay_numbering_index(containers, section, & &1.resource_id)
+  end
+
+  @doc """
+  Like `overlay_suppression_aware_numbering/2`, but also reorders the containers into
+  document/tree order: root containers (e.g. units) first, in the order they actually
+  appear in the course, each one immediately followed by its own descendants (e.g.
+  modules), also in document order.
+
+  This matters because a suppressed container's `numbering_index` becomes `nil` after the
+  overlay, and `nil` is not a meaningful sort key -- sorting containers by their own
+  (post-overlay) `numbering_index` pushes a suppressed container to one end of the list
+  (last ascending, first descending) instead of leaving it where it structurally sits.
+  This function sorts by each container's raw, never-suppressed index instead, captured
+  before the overlay runs, so a suppressed container stays in its natural position -- the
+  same guarantee `Sections.decorated_numbering_map/1` already gives for numbering itself.
+
+  A container is treated as a "root" if it is not listed as a child of any other container
+  in the given list -- so if `containers` is a partial list (e.g. only modules), every item
+  in it is treated as a root and sorted by its own raw index, since none of its true parents
+  are present to nest it under.
+  """
+  @spec overlay_and_order_containers_by_document_position([SectionResource.t()], Section.t()) ::
+          [SectionResource.t()]
+  def overlay_and_order_containers_by_document_position(containers, %Section{} = section) do
+    document_order = Map.new(containers, &{&1.id, &1.numbering_index})
+
+    containers
+    |> overlay_suppression_aware_numbering(section)
+    |> order_by_document_position(document_order)
+  end
+
+  defp order_by_document_position(containers, document_order) do
+    containers_by_id = Map.new(containers, &{&1.id, &1})
+
+    child_ids =
+      containers
+      |> Enum.flat_map(&Map.get(&1, :children, []))
+      |> MapSet.new()
+
+    containers
+    |> Enum.reject(&MapSet.member?(child_ids, &1.id))
+    |> Enum.sort_by(&Map.fetch!(document_order, &1.id))
+    |> Enum.flat_map(&flatten_by_document_position(&1, containers_by_id))
+  end
+
+  defp flatten_by_document_position(container, containers_by_id) do
+    children =
+      container
+      |> Map.get(:children, [])
+      |> Enum.map(&Map.get(containers_by_id, &1))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.flat_map(&flatten_by_document_position(&1, containers_by_id))
+
+    [container | children]
+  end
+
+  # Shared by `overlay_suppression_aware_numbering/2` (operates on `%SectionResource{}`,
+  # keyed by `resource_id`) and `get_units_and_modules_containers/1`'s private overlay
+  # (operates on plain maps from a custom `select`, keyed by `id`) -- both need the same
+  # nil-vs-`%Numbering{}` overlay logic against `decorated_numbering_map/1`, differing only
+  # in which field identifies the container.
+  defp overlay_numbering_index(containers, section, key_fun) do
+    numbering_map = decorated_numbering_map(section)
+
+    Enum.map(containers, fn container ->
+      case Numbering.lookup(numbering_map, key_fun.(container)) do
+        nil -> %{container | numbering_index: nil}
+        %Numbering{index: index} -> %{container | numbering_index: index}
+      end
     end)
   end
 
@@ -5358,8 +5494,21 @@ defmodule Oli.Delivery.Sections do
   In case there are no units or modules, it returns a zero count and the pages
   of the curriculum.
   {container_count, containers} or {0, pages}
+
+  Each container's `numbering_index` is suppression-aware (see `decorated_numbering_map/1`):
+  a container that is itself an unnumbered top-level unit, or a descendant of one, has
+  `numbering_index: nil` instead of its raw index. `numbering_level` is left as the raw
+  structural depth (1 = unit, 2 = module) regardless of suppression, since it is used to
+  distinguish units from modules, not to display a number.
+
+  Each container also carries `document_index`, the raw (never-suppressed) canonical index,
+  meant for ordering rather than display: a caller that needs to list containers in the
+  order they actually appear in the course (e.g. a sortable table) should sort by
+  `document_index`, not `numbering_index` -- otherwise a suppressed container's `nil` gets
+  treated as a sort key, which pushes it to one end of the list instead of leaving it in its
+  natural position.
   """
-  def get_units_and_modules_containers(section_slug) do
+  def get_units_and_modules_containers(%Section{slug: section_slug} = section) do
     query =
       from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
         where:
@@ -5368,14 +5517,19 @@ defmodule Oli.Delivery.Sections do
           id: rev.resource_id,
           title: rev.title,
           numbering_level: sr.numbering_level,
-          numbering_index: sr.numbering_index
+          numbering_index: sr.numbering_index,
+          document_index: sr.numbering_index
         }
       )
 
     case Repo.all(query) do
       [] -> {0, get_pages(section_slug)}
-      containers -> {length(containers), containers}
+      containers -> {length(containers), overlay_suppression_aware_index(containers, section)}
     end
+  end
+
+  defp overlay_suppression_aware_index(containers, section) do
+    overlay_numbering_index(containers, section, & &1.id)
   end
 
   @scheduling_types Ecto.ParameterizedType.init(Ecto.Enum,
@@ -5468,6 +5622,12 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
+  # Only reached when a section has no units/modules at all (see
+  # `get_units_and_modules_containers/1`'s `{0, pages}` fallback), so these pages never go
+  # through a suppression overlay and `numbering_index` is never nulled out here. Still
+  # duplicated into `document_index` so every row `content.ex` sorts has that key -- its
+  # `sort_by/3` sorts on `document_index` regardless of whether the rows came from here or
+  # from an overlaid container list.
   defp get_pages(section_slug) do
     query =
       from([sr, s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
@@ -5475,7 +5635,8 @@ defmodule Oli.Delivery.Sections do
         select: %{
           id: rev.resource_id,
           title: rev.title,
-          numbering_index: sr.numbering_index
+          numbering_index: sr.numbering_index,
+          document_index: sr.numbering_index
         }
       )
 
@@ -6272,6 +6433,11 @@ defmodule Oli.Delivery.Sections do
   Only includes non-root containers (numbering_level > 0). If a page has multiple parent containers,
   returns the one with the highest numbering_level (most specific parent).
 
+  `numbering_level`/`numbering_index` reflect suppression-aware display numbering (see
+  `decorated_numbering_map/1`), not raw canonical numbering. A page whose parent container is
+  itself suppressed (or a descendant of a suppressed top-level unit) is treated the same as a
+  page with no parent container at all -- absent from the returned map.
+
   ## Parameters
     - `section_id` - The ID of the section
     - `page_ids` - A list of page resource IDs to look up
@@ -6282,6 +6448,9 @@ defmodule Oli.Delivery.Sections do
     - `numbering_level` - The numbering level of the container (1 = Unit, 2 = Module, etc.)
     - `numbering_index` - The numbering index of the container
 
+  Accepts either a section id or an already-loaded `%Section{}` -- pass the struct when the
+  caller already has it in scope to avoid an extra lookup.
+
   ## Examples
       iex> get_parent_containers_map(section.id, [123, 456])
       %{
@@ -6289,17 +6458,30 @@ defmodule Oli.Delivery.Sections do
         456 => %{container_id: 11, numbering_level: 2, numbering_index: 1}
       }
   """
-  @spec get_parent_containers_map(integer() | nil, [integer()]) :: %{
+  @spec get_parent_containers_map(integer() | Section.t() | nil, [integer()]) :: %{
           integer() => %{
             container_id: integer(),
             numbering_level: integer(),
             numbering_index: integer()
           }
         }
-  def get_parent_containers_map(_section_id, page_ids) when page_ids == [], do: %{}
+  def get_parent_containers_map(_section_id_or_section, page_ids) when page_ids == [], do: %{}
   def get_parent_containers_map(nil, _page_ids), do: %{}
 
+  def get_parent_containers_map(%Section{} = section, page_ids) do
+    fetch_parent_containers_map(section, page_ids)
+  end
+
   def get_parent_containers_map(section_id, page_ids) do
+    case Repo.get(Section, section_id) do
+      nil -> %{}
+      section -> fetch_parent_containers_map(section, page_ids)
+    end
+  end
+
+  defp fetch_parent_containers_map(%Section{id: section_id} = section, page_ids) do
+    numbering_map = decorated_numbering_map(section)
+
     from(cp in ContainedPage,
       join: sr in SectionResource,
       on: sr.section_id == ^section_id and sr.resource_id == cp.container_id,
@@ -6322,10 +6504,26 @@ defmodule Oli.Delivery.Sections do
         |> Enum.filter(fn c -> c.numbering_level > 0 end)
         |> Enum.max_by(& &1.numbering_level, fn -> nil end)
 
-      {page_id, parent_container}
+      {page_id, decorate_parent_container(parent_container, numbering_map)}
     end)
     |> Enum.filter(fn {_page_id, container} -> container != nil end)
     |> Map.new()
+  end
+
+  # Overlays suppression-aware numbering onto a raw parent-container lookup result. A
+  # container absent from `numbering_map` is suppressed, which is treated the same as
+  # having no parent container at all (nil), matching `name_with_container_label/3`'s
+  # existing "no parent -> title only" behavior.
+  defp decorate_parent_container(nil, _numbering_map), do: nil
+
+  defp decorate_parent_container(%{container_id: container_id} = container, numbering_map) do
+    case Map.get(numbering_map, container_id) do
+      nil ->
+        nil
+
+      %Numbering{level: level, index: index} ->
+        %{container | numbering_level: level, numbering_index: index}
+    end
   end
 
   @doc """
