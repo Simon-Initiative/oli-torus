@@ -1560,6 +1560,35 @@ defmodule Oli.Delivery.Metrics do
           opts :: Keyword.t()
         ) :: %{integer => %{integer => String.t()}}
   def proficiency_per_student_for_objective(section_id, objective_ids, opts \\ []) do
+    raw_proficiency_per_student_for_objective(section_id, objective_ids, opts)
+    |> Enum.into(%{}, fn {resource_id, proficiency_by_student} ->
+      bucketed =
+        Enum.into(proficiency_by_student, %{}, fn {student_id, {proficiency, num_first_attempts}} ->
+          {student_id, proficiency_range(proficiency, num_first_attempts)}
+        end)
+
+      {resource_id, bucketed}
+    end)
+  end
+
+  @doc """
+  Like `proficiency_per_student_for_objective/3`, but returns the raw
+  `{proficiency, num_first_attempts}` pair per objective/student instead of a
+  bucketed proficiency string (i.e. one already categorized into "Not enough
+  data" / "Low" / "Medium" / "High"), so a caller can combine an objective's
+  own evidence with its Sub-LOs' evidence (e.g. via
+  `aggregate_weighted_proficiency/1`) before bucketing.
+
+  Returns a map where each key is an objective_id, and the value is another map
+  where each key is a student_id and the value is a `{proficiency, num_first_attempts}`
+  tuple.
+  """
+  @spec raw_proficiency_per_student_for_objective(
+          section_id :: integer,
+          objective_ids :: list(integer),
+          opts :: Keyword.t()
+        ) :: %{integer => %{integer => {float() | nil, non_neg_integer()}}}
+  def raw_proficiency_per_student_for_objective(section_id, objective_ids, opts \\ []) do
     objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
     maybe_filter_by_student_id =
@@ -1597,7 +1626,7 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.reduce(%{}, fn {student_id, resource_id, proficiency, num_first_attempts}, acc ->
       res =
         Map.get(acc, resource_id, %{})
-        |> Map.put(student_id, proficiency_range(proficiency, num_first_attempts))
+        |> Map.put(student_id, {proficiency, num_first_attempts})
 
       Map.put(acc, resource_id, res)
     end)

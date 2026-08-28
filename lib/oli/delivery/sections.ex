@@ -5972,18 +5972,31 @@ defmodule Oli.Delivery.Sections do
 
     id_list = Enum.map(objectives, & &1.resource_id)
 
-    proficiencies_for_objectives =
-      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
+    # Raw (not yet bucketed, i.e. not yet categorized into "Not enough data" /
+    # "Low" / "Medium" / "High") proficiency per objective/student, so a
+    # parent objective's Sub-LOs' evidence can be combined via
+    # Metrics.aggregate_weighted_proficiency/1 before bucketing. See
+    # aggregated_proficiency_bucket/3 below for why a parent's own evidence is
+    # excluded once it has Sub-LOs.
+    raw_proficiency_for_objectives =
+      Metrics.raw_proficiency_per_student_for_objective(section.id, id_list,
+        student_id: student_id
+      )
 
     student_proficiency_for_objectives =
       if student_id do
-        Enum.reduce(id_list, %{}, fn objective_id, acc ->
-          proficiency =
-            proficiencies_for_objectives
-            |> Map.get(objective_id, %{})
-            |> Map.get(student_id, "Not enough data")
+        Enum.reduce(objectives, %{}, fn objective, acc ->
+          resource_ids = objective_evidence_resource_ids(objective)
 
-          Map.put(acc, objective_id, proficiency)
+          Map.put(
+            acc,
+            objective.resource_id,
+            aggregated_proficiency_bucket(
+              resource_ids,
+              raw_proficiency_for_objectives,
+              student_id
+            )
+          )
         end)
       else
         %{}
@@ -5992,25 +6005,20 @@ defmodule Oli.Delivery.Sections do
     {student_ids, proficiency_dist_for_objectives} =
       if is_nil(student_id) do
         student_ids = Sections.enrolled_student_ids(section_slug)
-        student_id_set = MapSet.new(student_ids)
 
         proficiency_dist_for_objectives =
-          proficiencies_for_objectives
-          |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
-            # Filter proficiency data to only include enrolled students (exclude instructors)
-            filtered_student_proficiency =
-              student_proficiency
-              |> Enum.filter(fn {user_id, _proficiency_level} ->
-                MapSet.member?(student_id_set, user_id)
-              end)
-              |> Map.new()
+          objectives
+          |> Enum.reduce(%{}, fn objective, acc ->
+            resource_ids = objective_evidence_resource_ids(objective)
 
-            # Add "Not enough data" for students who don't have proficiency data
             student_proficiency =
-              student_ids
-              |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
-              |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
-                Map.put(acc, user_id, "Not enough data")
+              Enum.into(student_ids, %{}, fn enrolled_student_id ->
+                {enrolled_student_id,
+                 aggregated_proficiency_bucket(
+                   resource_ids,
+                   raw_proficiency_for_objectives,
+                   enrolled_student_id
+                 )}
               end)
 
             proficiency_dist =
@@ -6042,7 +6050,7 @@ defmodule Oli.Delivery.Sections do
                 {proficiency_mode, proficiency_dist}
               end
 
-            Map.put(acc, objective_id,
+            Map.put(acc, objective.resource_id,
               proficiency_dist: proficiency_dist,
               proficiency_mode: proficiency_mode
             )
@@ -6182,6 +6190,37 @@ defmodule Oli.Delivery.Sections do
           all
       end
     end)
+  end
+
+  # The resource_ids whose evidence contributes to an objective's aggregated
+  # proficiency. A parent's own directly-tagged evidence is deliberately
+  # excluded whenever it has Sub-LOs: an activity tagged to both a parent and
+  # one of its Sub-LOs produces a separate ResourceSummary row under each
+  # resource_id, so combining the parent's own row with its Sub-LOs' rows
+  # would double count that activity's evidence. This mirrors the exclusion
+  # rule `Metrics.proficiency_for_student_per_learning_objective/3` already
+  # applies (count only at the more specific Sub-LO level, per FR-003). A leaf
+  # objective (children == []) falls back to just its own evidence.
+  defp objective_evidence_resource_ids(%{resource_id: resource_id, children: []}),
+    do: [resource_id]
+
+  defp objective_evidence_resource_ids(%{children: children}), do: children
+
+  # Combines the raw evidence for a set of resource_ids (as resolved by
+  # objective_evidence_resource_ids/1) into a single weighted-average
+  # proficiency, then categorizes it into a bucket ("Not enough data" / "Low"
+  # / "Medium" / "High") for one student.
+  defp aggregated_proficiency_bucket(resource_ids, raw_proficiency_for_objectives, student_id) do
+    pairs =
+      Enum.map(resource_ids, fn resource_id ->
+        raw_proficiency_for_objectives
+        |> Map.get(resource_id, %{})
+        |> Map.get(student_id, {nil, 0})
+      end)
+
+    {score, total_count} = Metrics.aggregate_weighted_proficiency(pairs)
+
+    Metrics.proficiency_range(score, total_count)
   end
 
   @doc """

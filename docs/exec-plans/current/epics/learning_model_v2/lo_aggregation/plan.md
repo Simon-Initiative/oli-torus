@@ -118,26 +118,29 @@ implementation, no `learning_model_version` switch changes — those are explici
   into its displayed/exported proficiency, closing the gap the ticket exists to fix, without
   regressing to per-learner or per-objective query loops.
 - Tasks:
-  - [ ] Extend the query backing `get_objectives_and_subobjectives/2`
+  - [x] Extend the query backing `get_objectives_and_subobjectives/2`
     (`lib/oli/delivery/sections.ex:5914-6185`) and/or
     `Metrics.proficiency_per_student_for_objective/3` (`lib/oli/delivery/metrics.ex:1509-1556`) to
     fetch each parent LO's own evidence and its Sub-LOs' evidence in the same set-based pass
     (resolve the Clarification above), then call the Phase 1 shared function per parent LO per
-    student.
-  - [ ] Ensure double-counting prevention: an activity tagged to both a parent LO and a Sub-LO
+    student. Implemented via new `Metrics.raw_proficiency_per_student_for_objective/3` (raw,
+    not-yet-bucketed extraction of the existing query) and a new `Sections.aggregated_proficiency_bucket/3`.
+  - [x] Ensure double-counting prevention: an activity tagged to both a parent LO and a Sub-LO
     contributes once, at the Sub-LO (FR-003, AC-004) — reuse whatever tagging-resolution logic
-    Phase 2 established if applicable, rather than re-deriving it.
-  - [ ] Ensure a leaf LO (no `children`) takes the same path it does today and is unaffected
+    Phase 2 established if applicable, rather than re-deriving it. Implemented via
+    `Sections.objective_evidence_resource_ids/1`, mirroring `Metrics.proficiency_for_student_per_learning_objective/3`'s
+    exclusion of a parent's own evidence whenever it has Sub-LOs.
+  - [x] Ensure a leaf LO (no `children`) takes the same path it does today and is unaffected
     (AC-008).
 - Testing Tasks:
-  - [ ] Update `test/oli/delivery/sections_test.exs:3450-3498` (the test that currently asserts
+  - [x] Update `test/oli/delivery/sections_test.exs:3450-3498` (the test that currently asserts
     the un-aggregated behavior) to assert the new combined result using
     `setup_objectives_and_activities_test/0` (`test/oli/delivery/sections_test.exs:3711`)
     (AC-006).
-  - [ ] Add a case for a parent LO with one attempted Sub-LO and one unattempted/under-evidenced
+  - [x] Add a case for a parent LO with one attempted Sub-LO and one unattempted/under-evidenced
     Sub-LO, asserting incomplete coverage is reflected rather than treated as fully attempted
     (AC-005).
-  - [ ] Run `Phoenix.LiveViewTest` coverage for `instructor_dashboard_live_test.exs` and
+  - [x] Run `Phoenix.LiveViewTest` coverage for `instructor_dashboard_live_test.exs` and
     `student_dashboard_live_test.exs`, and controller tests covering
     `delivery_controller.ex`'s `download_learning_objectives/2` CSV export (AC-006).
   - Command(s): `mix test test/oli/delivery/sections_test.exs test/oli_web/live/delivery/instructor_dashboard/ test/oli_web/live/delivery/student_dashboard/ test/oli_web/controllers/delivery_controller_test.exs`

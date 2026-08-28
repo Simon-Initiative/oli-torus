@@ -54,10 +54,14 @@ requirements:
     status: proposed
     verification_method: automated
     proofs:
-      - "Partially covered (Phase 2, naive delivery-side call site only):
-        test/oli/analytics/summary/metrics_v2_test.exs. Status stays proposed until
-        Phase 3 (Instructor Dashboard/CSV export) and Phase 4 (page element) verify
-        the same invariant for their own call sites."
+      - "Partially covered (Phase 2 naive delivery-side, and Phase 3
+        Instructor Dashboard/CSV export call sites): test/oli/analytics/summary/metrics_v2_test.exs,
+        test/oli/delivery/sections_test.exs ('filters by student_id when
+        provided' — objective_a's own directly-tagged evidence is excluded
+        from its aggregated proficiency once it has Sub-LOs, via
+        Sections.objective_evidence_resource_ids/1). Status stays proposed
+        until Phase 4 (page element) verifies the same invariant for its own
+        call site."
 - id: FR-004
   title: Preserve incomplete-coverage semantics so a Sub-LO with insufficient evidence
     is represented in the aggregation rather than silently excluded from it.
@@ -86,9 +90,17 @@ requirements:
       per-student instructor view, or downloads the Learning Objectives CSV export,
       then the parent LO's displayed/exported proficiency reflects its Sub-LOs' combined
       evidence instead of "not enough data".
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+      - "lib/oli/delivery/sections.ex (Sections.get_objectives_and_subobjectives/2,
+        aggregated_proficiency_bucket/3) — the Instructor Dashboard tab
+        (instructor_dashboard_live.ex:120), per-student instructor view
+        (student_dashboard_live.ex:54), and CSV export
+        (delivery_controller.ex:471) all route through this same function."
+      - test/oli/delivery/sections_test.exs ("filters by student_id when
+        provided", "reflects incomplete coverage instead of ignoring an
+        under-evidenced Sub-LO")
   - id: AC-007
     title: Given the same section and parent LO, when a student views their proficiency
       on the prologue, lesson, or review pages, or when the "learning_objectives"
@@ -97,14 +109,26 @@ requirements:
       that student.
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "Partially covered: student prologue/lesson/review pages (Phase 2, see
+        test/oli/analytics/summary/metrics_v2_test.exs) and the Instructor
+        Dashboard side of the comparison (Phase 3, see AC-006 proofs above).
+        Status stays proposed until Phase 4 (the 'learning_objectives' page
+        element) verifies the same invariant, and until Phase 5 confirms
+        cross-site consistency."
   - id: AC-008
     title: Given a leaf Learning Objective with no Sub-LOs, when its proficiency is
       read from any of the updated call sites, then its value is unchanged from current
       behavior.
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "Partially covered (Phase 2 naive delivery-side call site, and Phase 3
+        Instructor Dashboard/CSV export call site): test/oli/analytics/summary/metrics_v2_test.exs
+        (o3, a leaf objective), test/oli/delivery/sections_test.exs ('a leaf
+        Learning Objective with no Sub-LOs uses only its own evidence,
+        unaffected by aggregation'). Status stays proposed until Phase 4 (page
+        element) verifies the same invariant for its own call site."
 - id: FR-006
   title: Keep Learning Objective proficiency aggregation a runtime projection computed
     at read time rather than a persisted, write-time calculation.
