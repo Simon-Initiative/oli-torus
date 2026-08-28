@@ -255,7 +255,8 @@ https://tailwindcss.com/docs/utility-first
 }
 
 .content .learning-objectives-summary__section-icon--review svg {
-  transform: scaleX(-1);
+  width: 16px;
+  height: 16px;
 }
 
 .content .learning-objectives-summary__list {
@@ -335,6 +336,19 @@ https://tailwindcss.com/docs/utility-first
 
 .content .learning-objectives-summary__next-steps {
   display: block;
+  interpolate-size: allow-keywords;
+}
+
+.content .learning-objectives-summary__next-steps::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 180ms ease,
+    content-visibility 180ms ease allow-discrete;
+}
+
+.content .learning-objectives-summary__next-steps[open]::details-content {
+  block-size: auto;
 }
 
 .content .learning-objectives-summary__next-steps-summary {
@@ -408,6 +422,13 @@ https://tailwindcss.com/docs/utility-first
   flex-direction: column;
   gap: 16px;
   padding-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content .learning-objectives-summary__next-steps::details-content,
+  .content .learning-objectives-summary__next-steps-chevron {
+    transition: none;
+  }
 }
 
 .content .learning-objectives-summary__recommendation-group {
