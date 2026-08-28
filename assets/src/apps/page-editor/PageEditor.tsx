@@ -69,6 +69,7 @@ type EditorUpdate = {
   content: PageEditorContent;
   objectives: Immutable.List<ResourceId>;
   learningObjectives: ResolvedLearningObjective[];
+  learningObjectivesRefreshPendingFor?: string;
 };
 
 type PageEditorState = {
@@ -80,6 +81,7 @@ type PageEditorState = {
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
   objectives: Immutable.List<ResourceId>;
   learningObjectives: ResolvedLearningObjective[];
+  learningObjectivesRefreshPendingFor?: string;
   allObjectives: Immutable.List<Objective>;
   allTags: Immutable.List<Tag>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
@@ -192,6 +194,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
       learningObjectives: props.learningObjectives || [],
+      learningObjectivesRefreshPendingFor: undefined,
       content: reconciledContent.content,
       persistence: 'idle',
       allObjectives: arrangeObjectives(allObjectives),
@@ -615,6 +618,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       graded: state.graded,
       title: state.title,
       learningObjectives: state.learningObjectives,
+      learningObjectivesRefreshPendingFor: state.learningObjectivesRefreshPendingFor,
     };
 
     const onEdit = (content: PageEditorContent) => this.update({ content });
@@ -654,7 +658,18 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       this.update({
         content: this.state.content.updateContentItem(contentId, reconciled.content),
         learningObjectives,
+        learningObjectivesRefreshPendingFor: undefined,
       });
+    };
+
+    const onStartLearningObjectivesRefresh = (contentId: string) => {
+      this.setState({ learningObjectivesRefreshPendingFor: contentId });
+    };
+
+    const onFinishLearningObjectivesRefresh = (contentId: string) => {
+      if (this.state.learningObjectivesRefreshPendingFor === contentId) {
+        this.setState({ learningObjectivesRefreshPendingFor: undefined });
+      }
     };
 
     const onDuplicateActivity = (origContext: ActivityEditContext) => {
@@ -754,7 +769,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                       onPostUndoable={this.onPostUndoable}
                       content={this.state.content}
                       onAddItem={onAddItem}
+                      onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
                       onRefreshLearningObjectives={onRefreshLearningObjectives}
+                      onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
                       resourceContext={resourceContext}
                       onDuplicate={onDuplicateActivity}
                     />

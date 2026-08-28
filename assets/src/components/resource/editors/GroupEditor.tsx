@@ -32,7 +32,9 @@ export const GroupEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onStartLearningObjectivesRefresh,
   onRefreshLearningObjectives,
+  onFinishLearningObjectivesRefresh,
   onDuplicate,
 }: GroupEditorProps) => {
   const onEditChild = (child: ResourceContent) => {
@@ -58,7 +60,9 @@ export const GroupEditor = ({
               resourceContext={resourceContext}
               featureFlags={featureFlags}
               onAddItem={onAddItem}
+              onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
               onRefreshLearningObjectives={onRefreshLearningObjectives}
+              onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
               onRegisterNewObjective={onRegisterNewObjective}
             />
             {createEditor({
@@ -85,7 +89,9 @@ export const GroupEditor = ({
               onRegisterNewObjective,
               onRegisterNewTag,
               onAddItem,
+              onStartLearningObjectivesRefresh,
               onRefreshLearningObjectives,
+              onFinishLearningObjectivesRefresh,
               onDuplicate,
             })}
           </div>
@@ -99,7 +105,9 @@ export const GroupEditor = ({
         resourceContext={resourceContext}
         featureFlags={featureFlags}
         onAddItem={onAddItem}
+        onStartLearningObjectivesRefresh={onStartLearningObjectivesRefresh}
         onRefreshLearningObjectives={onRefreshLearningObjectives}
+        onFinishLearningObjectivesRefresh={onFinishLearningObjectivesRefresh}
         onRegisterNewObjective={onRegisterNewObjective}
       />
     </>

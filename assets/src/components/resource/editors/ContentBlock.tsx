@@ -13,6 +13,7 @@ interface ContentBlockProps {
   contentItem: StructuredContent | ActivityBankSelection | LearningObjectivesContent;
   canRemove: boolean;
   onRemove: (key: string) => void;
+  headerActions?: React.ReactNode;
 }
 
 export const ContentBlock = React.forwardRef<HTMLDivElement, PropsWithChildren<ContentBlockProps>>(
@@ -25,6 +26,7 @@ export const ContentBlock = React.forwardRef<HTMLDivElement, PropsWithChildren<C
       >
         <div className={styles.contentBlockHeader}>
           <div className="flex-grow-1"></div>
+          {props.headerActions}
           <DeleteButton
             editMode={props.editMode && props.canRemove}
             onClick={() => props.onRemove(props.contentItem.id)}

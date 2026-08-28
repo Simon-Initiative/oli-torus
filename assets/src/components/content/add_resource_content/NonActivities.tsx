@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import * as Immutable from 'immutable';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
+import { LearningObjectivesIcon } from 'components/misc/icons/Icons';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
 import { modalActions } from 'actions/modal';
@@ -37,6 +38,8 @@ interface Props {
     contentId: string,
     learningObjectives: ResolvedLearningObjective[],
   ) => void;
+  onStartLearningObjectivesRefresh: (contentId: string) => void;
+  onFinishLearningObjectivesRefresh: (contentId: string) => void;
   onSetTip: (tip: string) => void;
   onResetTip: () => void;
 }
@@ -49,7 +52,9 @@ export const NonActivities: React.FC<Props> = ({
   parents,
   featureFlags,
   resourceContext,
+  onStartLearningObjectivesRefresh,
   onRefreshLearningObjectives,
+  onFinishLearningObjectivesRefresh,
 }) => {
   const [ABTestDisabled, setABTestDisabled] = useState(true);
 
@@ -98,14 +103,21 @@ export const NonActivities: React.FC<Props> = ({
         />
         {canInsert(createDefaultLearningObjectivesContent(), parents) && (
           <ResourceChoice
-            icon="bullseye"
+            icon={<LearningObjectivesIcon />}
             label="Objectives"
             onHoverStart={() => onSetTip('Render a learning objective introduction or summary')}
             onHoverEnd={() => onResetTip()}
             key={'learning_objectives'}
             disabled={false}
             onClick={() =>
-              addLearningObjectives(onAddItem, index, resourceContext, onRefreshLearningObjectives)
+              addLearningObjectives(
+                onAddItem,
+                index,
+                resourceContext,
+                onStartLearningObjectivesRefresh,
+                onRefreshLearningObjectives,
+                onFinishLearningObjectivesRefresh,
+              )
             }
           />
         )}
@@ -182,20 +194,25 @@ const addLearningObjectives = async (
   onAddItem: AddCallback,
   index: number[],
   resourceContext: ResourceContext,
+  onStartLearningObjectivesRefresh: (contentId: string) => void,
   onRefreshLearningObjectives: (
     contentId: string,
     learningObjectives: ResolvedLearningObjective[],
   ) => void,
+  onFinishLearningObjectivesRefresh: (contentId: string) => void,
 ) => {
   document.body.click();
 
   const content = createDefaultLearningObjectivesContent();
   onAddItem(content, index);
+  onStartLearningObjectivesRefresh(content.id);
 
   const resolved = await resolveLearningObjectives(resourceContext);
 
   if (resolved !== undefined) {
     onRefreshLearningObjectives(content.id, resolved);
+  } else {
+    onFinishLearningObjectivesRefresh(content.id);
   }
 };
 

@@ -43,10 +43,12 @@ export type EditorProps = {
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
   onAddItem: AddCallback;
+  onStartLearningObjectivesRefresh: (contentId: string) => void;
   onRefreshLearningObjectives: (
     contentId: string,
     learningObjectives: ResolvedLearningObjective[],
   ) => void;
+  onFinishLearningObjectivesRefresh: (contentId: string) => void;
   onDuplicate: (context: ActivityEditContext) => void;
 };
 

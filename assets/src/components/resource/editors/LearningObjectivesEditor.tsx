@@ -1,4 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import {
+  AlmondIcon,
+  LargeTreeIcon,
+  LearningObjectivesIcon,
+  PottedPlantIcon,
+  TrashIcon,
+} from 'components/misc/icons/Icons';
 import { Option, SelectModal } from 'components/modal/SelectModal';
 import { modalActions } from 'actions/modal';
 import {
@@ -22,10 +29,53 @@ type LearningObjectivesEditorProps = {
   onRemove: (id: string) => void;
   resourceContext: {
     learningObjectives?: ResolvedLearningObjective[];
+    learningObjectivesRefreshPendingFor?: string;
   };
 };
 
 type RecommendationKind = 'revisit_pages' | 'practice_pages';
+
+const INTRODUCTION_DESCRIPTION =
+  'Learners will be introduced to the learning objectives attached to activities in the container you place this page (ex. entire course, unit, module, or section).';
+
+const SUMMARY_DESCRIPTION =
+  'Learners will receive a proficiency summary regarding the learning objectives attached to activities in the container you place this page (ex. entire course, unit, module, or section).';
+
+const SUMMARY_HELPER_TEXT =
+  'Learners will see how their proficiency is on the objectives in this container. For objectives students have low and medium proficiency on, recommend pages to revisit and extra practice opportunities.';
+
+const PROFICIENCY_DESCRIPTION =
+  'Proficiency is our best estimate of how likely you are to successfully apply a learning objective the next time you use it. It updates as you complete course activities and is based on evidence from your overall work. Proficiency estimates become more reliable as you complete more activities.';
+
+const PROFICIENCY_LEVELS = [
+  {
+    label: 'Not Enough Information',
+    icon: <PottedPlantIcon />,
+    className: 'learning-objectives-editor__proficiency-card--unknown',
+    description: 'Complete a few more activities before we can estimate your proficiency.',
+  },
+  {
+    label: 'Beginning Proficiency',
+    icon: <AlmondIcon />,
+    className: 'learning-objectives-editor__proficiency-card--beginning',
+    description:
+      'You are beginning to learn how to apply this learning objective. Continue practicing and reviewing feedback to strengthen your proficiency.',
+  },
+  {
+    label: 'Growing Proficiency',
+    icon: <LearningObjectivesIcon />,
+    className: 'learning-objectives-editor__proficiency-card--growing',
+    description:
+      "You've clearly applied this learning objective. Continue practicing across more opportunities to strengthen your consistency.",
+  },
+  {
+    label: 'Strong Proficiency',
+    icon: <LargeTreeIcon />,
+    className: 'learning-objectives-editor__proficiency-card--strong',
+    description:
+      'You are likely to successfully apply this learning objective in different contexts. Continue applying this learning objective as you progress through the course.',
+  },
+];
 
 const defaultConfig = (resourceId: number): LearningObjectiveConfig => ({
   resource_id: resourceId,
@@ -43,9 +93,14 @@ export const LearningObjectivesEditor = ({
   onRemove,
   resourceContext,
 }: LearningObjectivesEditorProps) => {
+  const learningObjectivesRefreshPending =
+    resourceContext.learningObjectivesRefreshPendingFor === contentItem.id;
+  const learningObjectivesResolved =
+    resourceContext.learningObjectives !== undefined && !learningObjectivesRefreshPending;
   const objectives = resourceContext.learningObjectives || [];
   const [pages, setPages] = useState<Persistence.Page[]>([]);
   const [pagesLoadFailed, setPagesLoadFailed] = useState(false);
+  const [emptyWarningDismissed, setEmptyWarningDismissed] = useState(false);
   const hasRecommendationIds = contentItem.learning_objectives.some(
     (config) => config.revisit_pages.length > 0 || config.practice_pages.length > 0,
   );
@@ -96,12 +151,14 @@ export const LearningObjectivesEditor = ({
   const orderedObjectives = useMemo(() => orderObjectives(objectives), [objectives]);
 
   const includeSubObjectives = contentItem.include_sub_objectives !== false;
-  const visibleObjectives = orderedObjectives.filter(
-    // Include Sub-Objectives is only a display filter for this element. Child
-    // config rows stay preserved so toggling the checkbox does not discard
-    // advisory remove/restore or recommendation state for those objectives.
-    (objective) => includeSubObjectives || parentResourceIds(objective).length === 0,
+  const objectiveGroups = useMemo(
+    () => groupObjectives(orderedObjectives, includeSubObjectives),
+    [includeSubObjectives, orderedObjectives],
   );
+
+  useEffect(() => {
+    setEmptyWarningDismissed(false);
+  }, [contentItem.id, objectiveGroups.length]);
 
   const editContent = (updates: Partial<LearningObjectivesContent>) =>
     onEdit({ ...contentItem, ...updates });
@@ -185,6 +242,8 @@ export const LearningObjectivesEditor = ({
 
   const pageOptionsUnavailable =
     contentItem.mode === 'summary' && pagesLoadFailed && pages.length === 0;
+  const description =
+    contentItem.mode === 'summary' ? SUMMARY_DESCRIPTION : INTRODUCTION_DESCRIPTION;
 
   return (
     <ContentBlock
@@ -192,6 +251,32 @@ export const LearningObjectivesEditor = ({
       contentItem={contentItem}
       canRemove={canRemove}
       onRemove={onRemove}
+      headerActions={
+        <>
+          <label className="sr-only" htmlFor={`${contentItem.id}-mode`}>
+            Learning Objectives mode
+          </label>
+          <span
+            className="learning-objectives-editor__mode-wrapper"
+            data-value={contentItem.mode === 'summary' ? 'Summary' : 'Introduction'}
+          >
+            <select
+              id={`${contentItem.id}-mode`}
+              className="custom-select learning-objectives-editor__mode"
+              value={contentItem.mode}
+              disabled={!editMode}
+              onChange={(event) => {
+                if (isLearningObjectivesContentMode(event.target.value)) {
+                  updateMode(event.target.value);
+                }
+              }}
+            >
+              <option value="introduction">Introduction</option>
+              <option value="summary">Summary</option>
+            </select>
+          </span>
+        </>
+      }
     >
       <div className="learning-objectives-editor mb-3">
         <div className="learning-objectives-editor__header">
@@ -200,26 +285,11 @@ export const LearningObjectivesEditor = ({
               ? 'Learning Objective Summary'
               : 'Learning Objective Introduction'}
           </h3>
-          <label className="sr-only" htmlFor={`${contentItem.id}-mode`}>
-            Learning Objectives mode
-          </label>
-          <select
-            id={`${contentItem.id}-mode`}
-            className="custom-select learning-objectives-editor__mode"
-            value={contentItem.mode}
-            disabled={!editMode}
-            onChange={(event) => {
-              if (isLearningObjectivesContentMode(event.target.value)) {
-                updateMode(event.target.value);
-              }
-            }}
-          >
-            <option value="introduction">Introduction</option>
-            <option value="summary">Summary</option>
-          </select>
         </div>
 
-        <div className="custom-control custom-checkbox mb-3">
+        <p className="learning-objectives-editor__description">{description}</p>
+
+        <div className="custom-control custom-checkbox learning-objectives-editor__sub-objectives">
           <input
             id={`${contentItem.id}-include-sub-objectives`}
             type="checkbox"
@@ -232,45 +302,100 @@ export const LearningObjectivesEditor = ({
             className="custom-control-label"
             htmlFor={`${contentItem.id}-include-sub-objectives`}
           >
-            Include Sub-Objectives
+            Include sub-objectives
           </label>
         </div>
 
-        {pageOptionsUnavailable && (
-          <div className="alert alert-warning" role="alert">
-            Unable to load course pages. Recommendation selectors are unavailable.
-          </div>
-        )}
+        <div
+          className={classNames(
+            'learning-objectives-editor__panel',
+            contentItem.mode === 'summary' && 'learning-objectives-editor__panel--summary',
+          )}
+        >
+          {contentItem.mode === 'summary' && (
+            <p className="learning-objectives-editor__summary-helper">{SUMMARY_HELPER_TEXT}</p>
+          )}
 
-        {visibleObjectives.length === 0 ? (
-          <div className="alert alert-warning mb-0" role="alert">
-            There are no learning objectives attached to activities in this container.
-          </div>
-        ) : (
-          <ul className="learning-objectives-editor__list">
-            {visibleObjectives.map((objective) => (
-              <ObjectiveRow
-                key={objective.resource_id}
-                objective={objective}
-                config={configFor(objective.resource_id)}
-                mode={contentItem.mode}
-                editMode={editMode}
-                pagesById={pagesById}
-                pageOptionsUnavailable={pageOptionsUnavailable}
-                onToggleEnabled={toggleObjectiveEnabled}
-                onAddRecommendation={openPageSelector}
-                onRemoveRecommendation={removeRecommendation}
-              />
-            ))}
-          </ul>
-        )}
+          {pageOptionsUnavailable && (
+            <div className="alert alert-warning learning-objectives-editor__warning" role="alert">
+              Unable to load course pages. Recommendation selectors are unavailable.
+            </div>
+          )}
+
+          {learningObjectivesResolved && objectiveGroups.length === 0 && !emptyWarningDismissed ? (
+            <EmptyObjectivesWarning onDismiss={() => setEmptyWarningDismissed(true)} />
+          ) : objectiveGroups.length > 0 ? (
+            <ul className="learning-objectives-editor__list">
+              {objectiveGroups.map((group) => (
+                <ObjectiveCard
+                  key={group.objective.resource_id}
+                  group={group}
+                  config={configFor(group.objective.resource_id)}
+                  mode={contentItem.mode}
+                  editMode={editMode}
+                  pagesById={pagesById}
+                  pageOptionsUnavailable={pageOptionsUnavailable}
+                  onToggleEnabled={toggleObjectiveEnabled}
+                  onAddRecommendation={openPageSelector}
+                  onRemoveRecommendation={removeRecommendation}
+                />
+              ))}
+            </ul>
+          ) : null}
+
+          <ProficiencyExplanation />
+        </div>
       </div>
     </ContentBlock>
   );
 };
 
-type ObjectiveRowProps = {
+const EmptyObjectivesWarning = ({ onDismiss }: { onDismiss: () => void }) => (
+  <div
+    className="alert alert-warning bg-Fill-Accent-fill-accent-orange learning-objectives-editor__warning learning-objectives-editor__empty-warning"
+    role="alert"
+  >
+    <svg
+      className="learning-objectives-editor__empty-warning-icon"
+      width="15"
+      height="13"
+      viewBox="0 0 15 13"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M7.29133 4.84648V7.51315M7.29133 9.51315H7.29716M6.2 1.24048L0.795998 10.2631C0.684595 10.4561 0.625643 10.6748 0.625005 10.8976C0.624367 11.1204 0.682066 11.3394 0.792362 11.533C0.902658 11.7265 1.06171 11.8878 1.25369 12.0008C1.44568 12.1139 1.6639 12.1746 1.88666 12.1771H12.696C12.9187 12.1746 13.1368 12.1138 13.3287 12.0008C13.5206 11.8878 13.6795 11.7266 13.7898 11.5331C13.9001 11.3397 13.9578 11.1207 13.9573 10.8981C13.9567 10.6754 13.8979 10.4567 13.7867 10.2638L8.38267 1.23981C8.26897 1.05215 8.1088 0.896976 7.91763 0.789278C7.72646 0.681581 7.51075 0.625 7.29133 0.625C7.07191 0.625 6.8562 0.681581 6.66503 0.789278C6.47386 0.896976 6.31369 1.05282 6.2 1.24048Z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+    <div className="learning-objectives-editor__empty-warning-copy">
+      <strong>Warning</strong>
+      <span>There are no learning objectives attached to activities in this container.</span>
+    </div>
+    <button
+      type="button"
+      className="learning-objectives-editor__empty-warning-close"
+      aria-label="Dismiss warning"
+      onClick={onDismiss}
+    >
+      <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+);
+
+type ObjectiveGroup = {
   objective: ResolvedLearningObjective;
+  children: ResolvedLearningObjective[];
+  ordinal: number;
+};
+
+type ObjectiveCardProps = {
+  group: ObjectiveGroup;
   config: LearningObjectiveConfig;
   mode: LearningObjectivesContentMode;
   editMode: boolean;
@@ -281,8 +406,8 @@ type ObjectiveRowProps = {
   onRemoveRecommendation: (resourceId: number, kind: RecommendationKind, pageId: number) => void;
 };
 
-const ObjectiveRow = ({
-  objective,
+const ObjectiveCard = ({
+  group,
   config,
   mode,
   editMode,
@@ -291,41 +416,58 @@ const ObjectiveRow = ({
   onToggleEnabled,
   onAddRecommendation,
   onRemoveRecommendation,
-}: ObjectiveRowProps) => {
-  const isSubObjective = parentResourceIds(objective).length > 0;
+}: ObjectiveCardProps) => {
+  const { objective, children, ordinal } = group;
 
   return (
     <li
       className={classNames(
         'learning-objectives-editor__objective',
-        isSubObjective && 'learning-objectives-editor__objective--child',
-        !config.enabled && 'learning-objectives-editor__objective--disabled',
+        mode === 'summary' && 'learning-objectives-editor__objective--summary',
+        !config.enabled &&
+          'bg-Surface-surface-secondary-muted learning-objectives-editor__objective--disabled',
       )}
     >
-      <div className="learning-objectives-editor__objective-header">
+      <div
+        className={classNames(
+          'learning-objectives-editor__objective-header',
+          children.length === 0 && 'learning-objectives-editor__objective-header--single-line',
+        )}
+      >
         <div className="learning-objectives-editor__objective-copy">
-          <div className="learning-objectives-editor__objective-title">{objective.title}</div>
-          {objective.description && (
-            <div className="learning-objectives-editor__objective-description">
-              {objective.description}
-            </div>
+          <div className="learning-objectives-editor__objective-title-row">
+            <span className="learning-objectives-editor__objective-number">LO {ordinal}</span>
+            <span className="learning-objectives-editor__objective-title">{objective.title}</span>
+            {!config.enabled && (
+              <span className="learning-objectives-editor__removed-status">Removed</span>
+            )}
+          </div>
+          {children.length > 0 && (
+            <ul className="learning-objectives-editor__sub-objective-list">
+              {children.map((child) => (
+                <li key={child.resource_id} className="learning-objectives-editor__sub-objective">
+                  {child.title}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-        {!config.enabled && (
-          <span className="learning-objectives-editor__removed-status">Removed</span>
-        )}
         <button
           type="button"
-          className={classNames('btn btn-link btn-sm', !config.enabled && 'text-primary')}
+          className={classNames(
+            config.enabled
+              ? 'btn btn-link btn-sm learning-objectives-editor__objective-action'
+              : 'btn btn-sm learning-objectives-editor__restore-action',
+          )}
           disabled={!editMode}
           onClick={() => onToggleEnabled(objective.resource_id)}
           aria-label={`${config.enabled ? 'Remove' : 'Restore'} ${objective.title}`}
         >
-          <i className={`fas fa-${config.enabled ? 'trash-alt' : 'undo-alt'}`}></i>
+          {config.enabled ? <TrashIcon /> : <i className="fas fa-undo-alt" aria-hidden="true"></i>}
         </button>
       </div>
 
-      {mode === 'summary' && config.enabled && (
+      {mode === 'summary' && (
         <div className="learning-objectives-editor__recommendations">
           <RecommendationList
             label="Pages students should revisit:"
@@ -359,6 +501,31 @@ const ObjectiveRow = ({
   );
 };
 
+const ProficiencyExplanation = () => (
+  <details className="learning-objectives-editor__proficiency">
+    <summary className="learning-objectives-editor__proficiency-summary">
+      <span className="learning-objectives-editor__proficiency-title">
+        <i className="fas fa-info-circle" aria-hidden="true"></i>
+        <span>What is proficiency and how is it estimated?</span>
+      </span>
+      <i className="fas fa-chevron-down" aria-hidden="true"></i>
+    </summary>
+    <p className="learning-objectives-editor__proficiency-description">{PROFICIENCY_DESCRIPTION}</p>
+    <div className="learning-objectives-editor__proficiency-cards">
+      {PROFICIENCY_LEVELS.map((level) => (
+        <div
+          key={level.label}
+          className={classNames('learning-objectives-editor__proficiency-card', level.className)}
+        >
+          {level.icon}
+          <strong>{level.label}</strong>
+          <span>{level.description}</span>
+        </div>
+      ))}
+    </div>
+  </details>
+);
+
 type RecommendationListProps = {
   label: string;
   actionLabel: string;
@@ -385,39 +552,89 @@ const RecommendationList = ({
   editMode,
   onAddRecommendation,
   onRemoveRecommendation,
-}: RecommendationListProps) => (
-  <div className="learning-objectives-editor__recommendation-row">
-    <div className="learning-objectives-editor__recommendation-label">{label}</div>
-    <div className="learning-objectives-editor__chips">
-      {pageIds.map((pageId) => {
-        const title = pagesById.get(pageId)?.title || `Page ${pageId}`;
+}: RecommendationListProps) => {
+  const selectedPageIds = new Set(pageIds);
+  const noMorePagesAvailable =
+    pagesById.size > 0 &&
+    Array.from(pagesById.keys()).every((pageId) => selectedPageIds.has(pageId));
+  const addDisabled = !editMode || pageOptionsUnavailable || noMorePagesAvailable;
+  const noMorePagesMessage = 'No more pages are available to select.';
 
-        return (
-          <span key={pageId} className="learning-objectives-editor__chip">
-            {title}
-            <button
-              type="button"
-              disabled={!editMode}
-              onClick={() => onRemoveRecommendation(objective.resource_id, kind, pageId)}
-              aria-label={`Remove ${title} from ${label} for ${objective.title}`}
-            >
-              <i className="fas fa-times"></i>
-            </button>
-          </span>
-        );
-      })}
-      <button
-        type="button"
-        className="btn btn-link learning-objectives-editor__add-page"
-        disabled={!editMode || pageOptionsUnavailable}
-        onClick={() => onAddRecommendation(objective.resource_id, kind)}
-        aria-label={actionAriaLabel}
+  return (
+    <div className="learning-objectives-editor__recommendation-row">
+      <div className="learning-objectives-editor__recommendation-label">{label}</div>
+      {pageIds.length > 0 && (
+        <div className="learning-objectives-editor__chips">
+          {pageIds.map((pageId) => {
+            const title = pagesById.get(pageId)?.title || `Page ${pageId}`;
+
+            return (
+              <span key={pageId} className="learning-objectives-editor__chip">
+                {title}
+                <button
+                  type="button"
+                  disabled={!editMode}
+                  onClick={() => onRemoveRecommendation(objective.resource_id, kind, pageId)}
+                  aria-label={`Remove ${title} from ${label} for ${objective.title}`}
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+      <span
+        className={classNames(
+          'learning-objectives-editor__add-page-wrapper',
+          noMorePagesAvailable && 'learning-objectives-editor__add-page-wrapper--disabled',
+        )}
+        data-tooltip={noMorePagesAvailable ? noMorePagesMessage : undefined}
       >
-        {actionLabel}
-      </button>
+        <button
+          type="button"
+          className="btn btn-link learning-objectives-editor__add-page"
+          disabled={addDisabled}
+          onClick={() => onAddRecommendation(objective.resource_id, kind)}
+          aria-label={actionAriaLabel}
+        >
+          {actionLabel}
+        </button>
+      </span>
     </div>
-  </div>
-);
+  );
+};
+
+const groupObjectives = (
+  objectives: ResolvedLearningObjective[],
+  includeSubObjectives: boolean,
+): ObjectiveGroup[] => {
+  const byResourceId = new Map(objectives.map((objective) => [objective.resource_id, objective]));
+  const childrenByParent = new Map<number, ResolvedLearningObjective[]>();
+
+  objectives.forEach((objective) => {
+    parentResourceIds(objective)
+      .filter((parentResourceId) => byResourceId.has(parentResourceId))
+      .forEach((parentResourceId) => {
+        childrenByParent.set(parentResourceId, [
+          ...(childrenByParent.get(parentResourceId) || []),
+          objective,
+        ]);
+      });
+  });
+
+  const roots = objectives.filter(
+    (objective) =>
+      parentResourceIds(objective).filter((parentResourceId) => byResourceId.has(parentResourceId))
+        .length === 0,
+  );
+
+  return roots.map((objective, index) => ({
+    objective,
+    children: includeSubObjectives ? childrenByParent.get(objective.resource_id) || [] : [],
+    ordinal: index + 1,
+  }));
+};
 
 const orderObjectives = (objectives: ResolvedLearningObjective[]): ResolvedLearningObjective[] => {
   const byResourceId = new Map(objectives.map((objective) => [objective.resource_id, objective]));
@@ -486,7 +703,9 @@ export const LearningObjectivesOutlineItem = (props: LearningObjectivesOutlineIt
 
   return (
     <OutlineItem {...props}>
-      <Icon iconName="fas fa-bullseye" />
+      <Icon>
+        <LearningObjectivesIcon width={20} height={20} />
+      </Icon>
       <Description title="Learning Objectives">
         {contentItem.mode === 'summary' ? 'Summary' : 'Introduction'}
       </Description>

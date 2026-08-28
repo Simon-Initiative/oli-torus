@@ -141,30 +141,53 @@
   }
 
   :global(.resource-choice) {
-    border: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background-color: transparent;
     max-height: 50px;
     min-height: 50px;
     max-width: 70px;
     min-width: 70px;
     color: var(--color-body-color);
-    transition: transform 100ms ease-in-out;
+    transition: transform 100ms ease-in-out, border-color 100ms ease-in-out,
+      box-shadow 100ms ease-in-out, color 100ms ease-in-out;
 
-    &:hover {
+    &:hover,
+    &:focus {
       color: var(--color-primary);
+      border-color: var(--color-primary);
+      box-shadow: 0 4px 10px rgba(0, 50, 99, 0.1);
+
+      .type-label {
+        color: var(--color-primary);
+        font-weight: 700;
+      }
     }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 1px;
+    }
+
     &:active {
       transform: translateY(4px);
     }
 
     &[disabled] {
       color: var(--color-gray-400);
+      border-color: transparent;
+      box-shadow: none;
 
       .type-label {
         color: var(--color-gray-400);
+        font-weight: 300;
       }
 
-      &:hover {
+      &:hover,
+      &:focus {
         color: var(--color-gray-400);
+        border-color: transparent;
+        box-shadow: none;
       }
       &:active {
         transform: none;
@@ -174,6 +197,17 @@
 
   :global(.resource-choice-icon) {
     font-size: 1.3em;
+  }
+
+  :global(.resource-choice-svg-icon) {
+    display: inline-flex;
+    height: 24px;
+    justify-content: center;
+    width: 24px;
+  }
+
+  :global(.resource-choice-svg-icon svg) {
+    display: block;
   }
 
   :global(.resource-choices-divider) {
@@ -229,8 +263,14 @@
     :global(.resource-choice) {
       color: var(--color-body-color-dark);
 
-      &:hover {
+      &:hover,
+      &:focus {
         color: var(--color-primary);
+        border-color: var(--color-primary);
+
+        .type-label {
+          color: var(--color-primary);
+        }
       }
       &[disabled] {
         color: var(--color-gray-500);
@@ -239,8 +279,11 @@
           color: var(--color-gray-500);
         }
 
-        &:hover {
+        &:hover,
+        &:focus {
           color: var(--color-gray-500);
+          border-color: transparent;
+          box-shadow: none;
         }
       }
     }
