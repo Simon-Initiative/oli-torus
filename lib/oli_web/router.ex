@@ -354,8 +354,6 @@ defmodule OliWeb.Router do
       pipe_through [:api]
 
       post "/scenario-yaml", PlaywrightScenarioController, :run
-      get "/emails", PlaywrightMailboxController, :index
-      get "/emails/:id", PlaywrightMailboxController, :show
     end
 
     scope "/test", OliWeb do
@@ -373,6 +371,15 @@ defmodule OliWeb.Router do
       pipe_through [:browser]
 
       get "/embedded/index.html", PlaywrightSupportAssetController, :embedded_runtime
+    end
+  end
+
+  if Application.compile_env(:oli, :enable_e2e_mailbox, false) do
+    scope "/test", OliWeb do
+      pipe_through [:api]
+
+      get "/emails", PlaywrightMailboxController, :index
+      get "/emails/:id", PlaywrightMailboxController, :show
     end
   end
 
