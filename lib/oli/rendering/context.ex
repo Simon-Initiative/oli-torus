@@ -41,6 +41,7 @@ defmodule Oli.Rendering.Context do
             effective_settings: nil,
             is_liveview: false,
             is_annotation_level: true,
+            assistant_available?: false,
             page_link_params: [],
             student_responses: []
 end

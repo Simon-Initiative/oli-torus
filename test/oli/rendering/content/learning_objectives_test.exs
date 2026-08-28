@@ -270,6 +270,8 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered =~ "Hide next steps"
       assert rendered =~ "<span>REVISIT</span>"
       assert rendered =~ "<span>PRACTICE</span>"
+      refute rendered =~ "Need help understanding this objective?"
+      refute rendered =~ "Explain this learning objective with DOT"
       assert rendered =~ "Review limits"
       assert rendered =~ "Apply limit laws"
       assert rendered =~ "Practice derivatives"
@@ -307,8 +309,94 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       refute rendered =~ "Container not page"
       refute rendered =~ "Strong review page"
       refute rendered =~ "Strong practice page"
+
       refute rendered =~ ~s|/lesson/999|
       refute rendered =~ ~s|/lesson/103|
+    end
+
+    test "renders Summary DOT explain card only when assistant is available" do
+      element = %{
+        "type" => "learning_objectives",
+        "id" => "lo-summary",
+        "mode" => "summary",
+        "learning_objectives" => [
+          %{
+            "resource_id" => 10,
+            "enabled" => true,
+            "revisit_pages" => [101],
+            "practice_pages" => []
+          }
+        ]
+      }
+
+      render = fn assistant_available? ->
+        context(
+          payload(
+            [objective(10, "Review limits")],
+            performance_by_objective_id: %{10 => "Low"}
+          ),
+          assistant_available?: assistant_available?
+        )
+        |> LearningObjectives.render(element,
+          recommendation_resources_fun: fn _section_id, _resource_ids ->
+            [section_resource(101, "Review page", "review-page", @page_type_id)]
+          end
+        )
+        |> safe_to_string()
+      end
+
+      rendered_with_assistant = render.(true)
+      rendered_without_assistant = render.(false)
+
+      assert rendered_with_assistant =~ "Need help understanding this objective?"
+      assert rendered_with_assistant =~ "Ask our AI Learning Assistant, DOT, to explain."
+      assert rendered_with_assistant =~ "/images/assistant/footer_dot_ai.png"
+      assert rendered_with_assistant =~ "Explain this learning objective with DOT"
+      assert rendered_with_assistant =~ "#ai_bot_collapsed_button"
+
+      refute rendered_without_assistant =~ "Need help understanding this objective?"
+      refute rendered_without_assistant =~ "Explain this learning objective with DOT"
+    end
+
+    test "does not render Summary DOT explain card for strong objectives" do
+      rendered =
+        context(
+          payload(
+            [
+              objective(10, "Apply limit laws")
+            ],
+            performance_by_objective_id: %{10 => "High"}
+          ),
+          assistant_available?: true
+        )
+        |> LearningObjectives.render(
+          %{
+            "type" => "learning_objectives",
+            "id" => "lo-summary",
+            "mode" => "summary",
+            "learning_objectives" => [
+              %{
+                "resource_id" => 10,
+                "enabled" => true,
+                "revisit_pages" => [101],
+                "practice_pages" => [102]
+              }
+            ]
+          },
+          recommendation_resources_fun: fn _section_id, _resource_ids ->
+            [
+              section_resource(101, "Strong review page", "strong-review-page", @page_type_id),
+              section_resource(102, "Strong practice page", "strong-practice-page", @page_type_id)
+            ]
+          end
+        )
+        |> safe_to_string()
+
+      assert rendered =~ "Learning Objectives You're Applying"
+      assert rendered =~ "Apply limit laws"
+      refute rendered =~ "Show next steps"
+      refute rendered =~ "Need help understanding this objective?"
+      refute rendered =~ "Explain this learning objective with DOT"
     end
 
     test "does not render Summary next steps for review objectives without recommendations" do
@@ -340,6 +428,7 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       refute rendered =~ "Show next steps"
       refute rendered =~ "<span>REVISIT</span>"
       refute rendered =~ "<span>PRACTICE</span>"
+      refute rendered =~ "Need help understanding this objective?"
     end
   end
 
@@ -362,12 +451,13 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
     |> safe_to_string()
   end
 
-  defp context(learning_objectives) do
+  defp context(learning_objectives, opts \\ []) do
     %Context{
       learning_objectives: learning_objectives,
       section_id: 42,
       section_slug: "section-a",
-      page_link_params: []
+      page_link_params: [],
+      assistant_available?: Keyword.get(opts, :assistant_available?, false)
     }
   end
 

@@ -299,12 +299,31 @@ defmodule Oli.Rendering.Content.LearningObjectives do
       _ ->
         [
           recommendation_group(context, "REVISIT", :revisit, revisit_pages),
-          recommendation_group(context, "PRACTICE", :practice, practice_pages)
+          recommendation_group(context, "PRACTICE", :practice, practice_pages),
+          maybe_dot_explain_card(context)
         ]
     end
   end
 
   defp summary_next_steps_content(_section_kind, _context, _config_row, _resources_by_id), do: []
+
+  defp maybe_dot_explain_card(%Context{assistant_available?: true}) do
+    [
+      ~s|<section class="learning-objectives-summary__explain-card border border-Border-border-subtle bg-Surface-surface-secondary-hover" aria-label="Ask DOT to explain this objective">|,
+      ~s|<div class="w-[56px] h-[56px] relative shrink-0" aria-hidden="true">|,
+      ~s|<img class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]" src="/images/assistant/footer_dot_ai.png" alt="" />|,
+      ~s|<div class="w-[48px] h-[48px] absolute bottom-0 right-0 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"></div>|,
+      ~s|</div>|,
+      ~s|<span class="learning-objectives-summary__explain-copy">|,
+      ~s|<strong>Need help understanding this objective?</strong>|,
+      ~s|<span>Ask our AI Learning Assistant, DOT, to explain.</span>|,
+      "</span>",
+      ~s|<button type="button" class="learning-objectives-summary__explain-button" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#ai_bot_collapsed_button&quot;,&quot;event&quot;:&quot;click&quot;}]]" aria-label="Explain this learning objective with DOT">Explain</button>|,
+      "</section>"
+    ]
+  end
+
+  defp maybe_dot_explain_card(_context), do: []
 
   defp recommendation_group(_context, _heading, _kind, []), do: []
 
