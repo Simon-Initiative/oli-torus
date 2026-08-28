@@ -29370,6 +29370,14 @@ Not supports in Firefox and IE */
   background-color: #063A85;
 }
 
+.hover\:bg-Fill-Buttons-fill-secondary:hover {
+  background-color: #FFFFFF1A;
+}
+
+.dark .hover\:bg-Fill-Buttons-fill-secondary:hover {
+  background-color: #FFFFFF1A;
+}
+
 .hover\:\!bg-Fill-Buttons-fill-secondary-hover:hover {
   background-color: #1B67B2 !important;
 }
