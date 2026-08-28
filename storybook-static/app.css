@@ -31462,6 +31462,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   outline-offset: -2px;
 }
 
+.focus-visible\:outline-\[\#006CD9\]:focus-visible {
+  outline-color: #006CD9;
+}
+
 .focus-visible\:outline-\[\#8AB8E5\]:focus-visible {
   outline-color: #8AB8E5;
 }
@@ -34056,6 +34060,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .dark .dark\:focus\:ring-offset-gray-900:focus {
   --tw-ring-offset-color: #171717;
+}
+
+.dark .focus-visible\:dark\:outline-\[\#4CA6FF\]:focus-visible {
+  outline-color: #4CA6FF;
 }
 
 .dark .dark\:active\:bg-gray-300:active {
