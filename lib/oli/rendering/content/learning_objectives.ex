@@ -375,11 +375,11 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp summary_section_class(_kind), do: "border-Border-border-subtle"
 
   defp summary_section_icon(:applying) do
-    ~S|<span class="learning-objectives-summary__section-icon learning-objectives-summary__section-icon--applying" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false"><path d="M6.55 11.55 3.25 8.24l1.06-1.06 2.24 2.24 5.14-5.14 1.06 1.06-6.2 6.21Z" fill="currentColor"/></svg></span>|
+    ~S|<span class="learning-objectives-summary__section-icon learning-objectives-summary__section-icon--applying" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 12L9.5 17L19.5 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>|
   end
 
   defp summary_section_icon(:review) do
-    ~S|<span class="learning-objectives-summary__section-icon learning-objectives-summary__section-icon--review" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false"><path d="M8 1.33a6.67 6.67 0 1 0 6.67 6.67H13.2A5.2 5.2 0 1 1 11.67 4.32L9.8 6.2h4.87V1.33l-1.93 1.93A6.64 6.64 0 0 0 8 1.33Z" fill="currentColor"/></svg></span>|
+    ~S|<span class="learning-objectives-summary__section-icon learning-objectives-summary__section-icon--review" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.26801 10.0428C1.70497 11.4659 2.58322 12.7132 3.77577 13.6043C4.96833 14.4954 6.41339 14.9841 7.90201 14.9998C9.62399 15.0211 11.2936 14.4079 12.5925 13.2772C13.8914 12.1465 14.7288 10.5773 14.945 8.86881C15.1578 7.16033 14.7334 5.43336 13.7531 4.01803C12.7728 2.6027 11.3052 1.5983 9.63101 1.19681C7.95642 0.791753 6.19135 1.01656 4.67176 1.82845C3.15217 2.64033 1.98414 3.98262 1.39001 5.59981M1 1.99982V5.99982H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>|
   end
 
   defp proficiency_badge_display("High") do
