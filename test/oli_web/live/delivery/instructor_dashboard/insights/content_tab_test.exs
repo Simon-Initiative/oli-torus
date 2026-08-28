@@ -628,13 +628,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert unit_for_tr_2 =~ "Unit 2"
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
+      element(view, "button[phx-value-selected='zero_student_progress']") |> render_click()
 
       refute has_element?(view, "table tr td div a", "Unit 1")
       assert has_element?(view, "table tr td div a", "Unit 2")
 
       ## Filtering by High Progress, Low Proficiency card
-      element(view, "div[phx-value-selected='high_progress_low_proficiency']") |> render_click()
+      element(view, "button[phx-value-selected='high_progress_low_proficiency']")
+      |> render_click()
+
       refute has_element?(view, "table tr td div a", "Unit 1")
       refute has_element?(view, "table tr td div a", "Unit 2")
     end
@@ -657,7 +659,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert has_element?(view, "button[id=filter_modules_button][disabled]", "Modules")
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
+      element(view, "button[phx-value-selected='zero_student_progress']") |> render_click()
 
       results =
         view
@@ -670,7 +672,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert length(results) == count_of_pages
 
       ## Filtering by High Progress, Low Proficiency card
-      element(view, "div[phx-value-selected='high_progress_low_proficiency']") |> render_click()
+      element(view, "button[phx-value-selected='high_progress_low_proficiency']")
+      |> render_click()
 
       ## Assert that filtering by High Progress, Low Proficiency card returns no pages
       assert has_element?(view, "p", "None exist")
@@ -764,7 +767,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert unit_for_tr_2 =~ "Unit 2"
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
+      element(view, "button[phx-value-selected='zero_student_progress']") |> render_click()
 
       assert has_element?(view, "table tr td div a", "Unit 2")
       refute has_element?(view, "table tr td div a", "Unit 1")

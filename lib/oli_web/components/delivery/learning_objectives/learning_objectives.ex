@@ -93,18 +93,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
     card_props = [
       %{
-        title: "Low Proficiency Outcomes",
+        title: "Low Proficiency Learning Objectives",
         count: Map.get(objectives_count, :low_proficiency_outcomes),
         is_selected: selected_card_value == "low_proficiency_outcomes",
         value: :low_proficiency_outcomes,
-        subtitle: "learning objective"
+        subtitle: "Learning objective"
       },
       %{
-        title: "Low Proficiency Sub-objectives",
+        title: "Low Proficiency Sub-Objectives",
         count: Map.get(objectives_count, :low_proficiency_skills),
         is_selected: selected_card_value == "low_proficiency_skills",
         value: :low_proficiency_skills,
-        subtitle: "sub-objective"
+        subtitle: "Sub-objective"
       }
     ]
 
@@ -189,9 +189,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       </div>
       <div class="bg-white shadow-sm dark:bg-gray-800">
         <div class="flex justify-between items-center px-4 pt-8 pb-4 instructor_dashboard_table">
-          <h4 class="justify-center text-Text-text-high text-lg font-bold leading-normal">
-            Learning Objectives
-          </h4>
+          <div class="flex flex-col gap-3">
+            <h4 class="justify-center text-Text-text-high text-lg font-bold leading-normal">
+              Learning Objectives
+            </h4>
+            <p class="text-sm font-normal leading-4 text-Text-text-high dark:text-[#EEEBF5]">
+              Look at student proficiency by learning objective to identify where to focus
+              instruction and support students.
+            </p>
+          </div>
 
           <a
             href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)}
