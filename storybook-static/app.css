@@ -18948,6 +18948,10 @@ table.table-striped tbody tr:nth-child(even) {
   list-style-position: inside;
 }
 
+.list-decimal {
+  list-style-type: decimal;
+}
+
 .list-disc {
   list-style-type: disc;
 }
@@ -25526,6 +25530,10 @@ table.table-striped tbody tr:nth-child(even) {
 .\@container\/card {
   container-type: inline-size;
   container-name: card;
+}
+
+.\[overflow-wrap\:anywhere\] {
+  overflow-wrap: anywhere;
 }
 
 .\[text-shadow\:_0px_1px_1px_rgb\(0_0_0_\/_0\.50\)\] {
@@ -36413,6 +36421,51 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   display: none;
 }
 
+.\[\&\>\*\:first-child\]\:text-3xl>*:first-child {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.\[\&\>\*\:first-child\]\:font-medium>*:first-child {
+  font-weight: 500;
+}
+
+.\[\&\>\*\:first-child\]\:font-semibold>*:first-child {
+  font-weight: 600;
+}
+
+.\[\&\>\*\:first-child\]\:leading-9>*:first-child {
+  line-height: 2.25rem;
+}
+
+.\[\&\>\*\:first-child\]\:leading-\[24px\]>*:first-child {
+  line-height: 24px;
+}
+
+.\[\&\>\*\:first-child\]\:text-\[18xl\]>*:first-child {
+  color: 18xl;
+}
+
+@media (min-width: 640px) and (min-height: 350px) {
+  .hvsm\:\[\&\>\*\:first-child\]\:text-\[30px\]>*:first-child {
+    font-size: 30px;
+  }
+
+  .hvsm\:\[\&\>\*\:first-child\]\:leading-\[40px\]>*:first-child {
+    line-height: 40px;
+  }
+}
+
+@media (min-width: 1280px) and (min-height: 800px) {
+  .hvxl\:\[\&\>\*\:first-child\]\:text-\[40px\]>*:first-child {
+    font-size: 40px;
+  }
+
+  .hvxl\:\[\&\>\*\:first-child\]\:leading-\[54px\]>*:first-child {
+    line-height: 54px;
+  }
+}
+
 .\[\&\>path\]\:stroke-current>path {
   stroke: currentColor;
 }
@@ -36456,10 +36509,18 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   width: 100% !important;
 }
 
+.\[\&_ol\]\:\!pl-6 ol {
+  padding-left: 1.5rem !important;
+}
+
 .\[\&_svg\]\:h-4 svg {
   height: 1rem;
 }
 
 .\[\&_svg\]\:w-4 svg {
   width: 1rem;
+}
+
+.\[\&_ul\]\:\!pl-6 ul {
+  padding-left: 1.5rem !important;
 }
