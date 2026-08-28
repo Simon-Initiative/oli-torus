@@ -3,7 +3,7 @@ defmodule Oli.Playwright.Recaptcha do
   Deterministic reCAPTCHA implementation for the isolated Playwright environment.
 
   The credential-account browser suite exercises Torus registration flows but
-  must not depend on the external reCAPTCHA service. `config/playwright.exs`
+  must not depend on the external reCAPTCHA service. `config/ci_e2e.exs`
   selects this module only for that ephemeral environment.
   """
 

@@ -3,7 +3,7 @@ name: PR Playwright Suite
 # Runs Playwright tests against a dedicated Torus instance built and torn
 # down for this job only, with an isolated database, Swoosh.Adapters.Local
 # for email, and the /test/scenario-yaml and /test/emails endpoints enabled
-# (MIX_ENV=playwright). This is the counterpart to nightly-playwright.yml,
+# (MIX_ENV=ci_e2e). This is the counterpart to nightly-playwright.yml,
 # which targets a real, persistent Torus deployment and must never gain
 # access to those endpoints.
 #
@@ -47,7 +47,7 @@ jobs:
           --health-retries 5
 
     env:
-      MIX_ENV: playwright
+      MIX_ENV: ci_e2e
       DB_NAME: oli_playwright_ci
       DB_HOST: localhost
       # HOST and PLAYWRIGHT_BASE_URL must name the same host: the server
@@ -95,9 +95,9 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-playwright-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-mix-ci-e2e-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-playwright-
+            ${{ runner.os }}-mix-ci-e2e-
 
       - name: Install Gleam Mix archive
         run: |
@@ -115,7 +115,7 @@ jobs:
       - name: Build dependencies
         run: mix deps.compile
 
-      - name: Compile (MIX_ENV=playwright)
+      - name: Compile (MIX_ENV=ci_e2e)
         run: set -a && source oli.env && mix compile --warnings-as-errors
 
       # mix.exs's ecto.setup alias runs create, migrate, and
@@ -132,7 +132,7 @@ jobs:
         working-directory: assets
         run: yarn install --frozen-lockfile
 
-      # Watchers are disabled for MIX_ENV=playwright (config/playwright.exs),
+      # Watchers are disabled for MIX_ENV=ci_e2e (config/ci_e2e.exs),
       # so the JS/CSS bundles the app serves must be built once, upfront,
       # rather than relying on the dev watcher process to build them live.
       - name: Build frontend assets
@@ -147,7 +147,7 @@ jobs:
         working-directory: assets/automation
         run: npx playwright install --with-deps chrome
 
-      - name: Start Torus (MIX_ENV=playwright)
+      - name: Start Torus (MIX_ENV=ci_e2e)
         run: |
           set -a
           source oli.env
@@ -172,7 +172,7 @@ jobs:
         run: npx playwright test --grep @pr --reporter=line
 
       - name: Upload Playwright report
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: pr-playwright-report
@@ -180,7 +180,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Playwright test results
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: pr-playwright-test-results
@@ -188,7 +188,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Torus server log
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: pr-playwright-torus-server-log

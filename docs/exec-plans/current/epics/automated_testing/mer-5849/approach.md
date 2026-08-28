@@ -10,8 +10,9 @@ depending on real inboxes or the nightly suite's persistent deployments.
 ### Reuse the existing Playwright environment gate
 
 The email-inspection routes will be mounted only when
-`Application.compile_env(:oli, :enable_playwright_scenarios, false)` is enabled.
-They will use the existing `OliWeb.PlaywrightAuth` token check.
+`Application.compile_env(:oli, :enable_e2e_mailbox, false)` is enabled in the
+dedicated E2E environment. They will use the existing `OliWeb.PlaywrightAuth`
+token check.
 
 This deliberately extends the test-only boundary established by MER-5171:
 `/test/scenario-yaml` already uses this compile-time gate and the same secret to
@@ -158,7 +159,7 @@ registration flows.
   `pgvector/pgvector:pg18` service-container database (destroyed with the
   runner, satisfying the ticket's "reset the CI test database after the run"
   without an explicit teardown step), compiles and boots Torus under
-  `MIX_ENV=playwright`, polls `/` until ready, then runs every `@pr`-tagged
+  `MIX_ENV=ci_e2e`, polls `/` until ready, then runs every `@pr`-tagged
   test. Named and worded generically on purpose (no MER-5849/credential
   wording in the workflow file itself): it is meant to be the durable,
   reusable home for any future Playwright test that can run against a bare,
@@ -169,10 +170,10 @@ registration flows.
   (`ci-ephemeral-token`) rather than a GitHub secret: the instance it protects
   is unreachable outside the job and destroyed when it ends, so the token has
   no value to protect beyond this one run.
-- On completion (success or failure), the job uploads the Playwright
-  report/trace/test-results (as `nightly-playwright.yml` already does) *and*
+- When the job fails, it uploads the Playwright report/trace/test-results and
   the Torus server's stdout/stderr, redirected to a file when the server is
-  started — nightly-playwright does not need this because it targets an
+  started. Successful runs do not retain redundant diagnostics;
+  `nightly-playwright` does not need the server log because it targets an
   already-running, separately-logged deployment.
 - Test selection uses an explicit Playwright tag, `@pr`, applied to both
   `credential-account-flows.spec.ts` and
@@ -188,7 +189,7 @@ registration flows.
   Argo CD in a private GitOps repository not present in this codebase, and
   every Plasma preview is currently built as a shared, human-reviewable
   `MIX_ENV=prod` image (real AWS SES mailer, no scenario/mailbox routes) —
-  changing that for all previews to get this suite's `MIX_ENV=playwright`
+  changing that for all previews to get this suite's `MIX_ENV=ci_e2e`
   behavior is out of this repo's reach and out of this ticket's scope. A
   fully self-contained job satisfies the ticket's own step-by-step "CI/CD
   Integration" section without depending on that external infrastructure.
@@ -216,13 +217,13 @@ production systems.
   test missing and invalid-token responses.
 - **Parallel interference:** use a generated address per test and server-side
   recipient filtering.
-- **Environment drift:** verify the routes are present only when the existing
-  Playwright compile-time flag is enabled and run the suite only against the
+- **Environment drift:** verify mailbox routes are present only when the
+  dedicated E2E mailbox flag is enabled, and run the suite only against the
   dedicated CI deployment.
 - **`PLAYWRIGHT_BASE_URL` must match the server's `HOST`:** Playwright resolves
   every relative `page.goto(...)` against `PLAYWRIGHT_BASE_URL`, but the
   server builds the absolute confirmation/reset links embedded in emails from
-  `HOST` (`config/dev.exs:108`, inherited by `config/playwright.exs`). If the
+  `HOST` (`config/dev.exs:108`, inherited by `config/ci_e2e.exs`). If the
   two values name different hosts (e.g. `PLAYWRIGHT_BASE_URL=127.0.0.1` with
   `HOST=localhost`), the browser reaches the emailed link on an origin it has
   never visited, so no cookie set earlier in the flow (including the

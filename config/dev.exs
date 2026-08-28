@@ -205,6 +205,7 @@ config :logger, :console, format: "[$level] $message\n"
 
 config :oli,
   enable_playwright_scenarios: true,
+  enable_e2e_mailbox: false,
   playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN"),
   playwright_assets_bucket: System.get_env("PLAYWRIGHT_ASSETS_BUCKET"),
   # runtime.exs points ex_aws at real AWS even in dev, so the playwright
