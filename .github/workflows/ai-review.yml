@@ -4,11 +4,17 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   changes:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     name: detect/changes
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       elixir: ${{ steps.filter.outputs.elixir }}
       gleam: ${{ steps.filter.outputs.gleam }}
@@ -20,17 +26,27 @@ jobs:
       roles: ${{ steps.build_matrix.outputs.roles }}
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Debug changed files
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          API_CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
         run: |
-          echo "Base ref: ${{ github.base_ref }} | Head ref: ${{ github.head_ref }}"
-          git fetch origin ${{ github.base_ref }} --depth=1 || true
-          echo "Changed files (GitHub API reports): ${{ github.event.pull_request.changed_files }}"
+          echo "Base ref: ${BASE_REF} | Head ref: ${HEAD_REF}"
+          git fetch origin "${BASE_REF}" --depth=1 || true
+          echo "Changed files (GitHub API reports): ${API_CHANGED_FILES}"
           echo "Changed files (git diff --name-only):"
-          git diff --name-only origin/${{ github.base_ref }}...HEAD || true
+          git diff --name-only "origin/${BASE_REF}...HEAD" || true
       - id: filter
         uses: dorny/paths-filter@v3
         with:
+          # list-files feeds the specialist job the exact matched file set per
+          # role, so the filter patterns below are the single source of truth
+          # for what each role reviews.
+          list-files: json
           filters: |
             elixir:
               - 'lib/**/*.ex'
@@ -44,22 +60,55 @@ jobs:
             typescript:
               - 'assets/src/**/*.ts'
               - 'assets/src/**/*.tsx'
+              - 'assets/automation/**/*.ts'
+              - 'assets/automation/**/*.tsx'
             ui:
               - 'assets/src/**/*'
               - 'lib/**/*.heex'
               - 'lib/**/*.leex'
               - 'lib/**/live/**/*.ex'
             requirements:
-              - 'docs/features/**/prd.md'
+              - 'docs/exec-plans/**/prd.md'
             security:
               - 'lib/**'
               - 'gleam/src/**/*.gleam'
               - 'gleam/gleam.toml'
               - 'assets/src/**'
+              - 'assets/automation/**'
               - 'config/**'
             performance:
               - 'lib/**'
               - 'gleam/src/**/*.gleam'
+
+      - name: Persist role file lists
+        shell: bash
+        # A quoted heredoc, not job outputs or env vars: overlapping role lists
+        # on a large PR can blow the 1 MB combined job-output limit, and a
+        # single env var caps at ~128 KB on Linux. The quoted delimiter means
+        # nothing here is shell-expanded; jq then has to accept it as JSON.
+        run: |
+          set -euo pipefail
+          cat > ai-role-files.json <<'ROLE_FILES_EOF'
+          {
+            "elixir": ${{ steps.filter.outputs.elixir_files || '[]' }},
+            "gleam": ${{ steps.filter.outputs.gleam_files || '[]' }},
+            "typescript": ${{ steps.filter.outputs.typescript_files || '[]' }},
+            "ui": ${{ steps.filter.outputs.ui_files || '[]' }},
+            "requirements": ${{ steps.filter.outputs.requirements_files || '[]' }},
+            "security": ${{ steps.filter.outputs.security_files || '[]' }},
+            "performance": ${{ steps.filter.outputs.performance_files || '[]' }}
+          }
+          ROLE_FILES_EOF
+          jq -e . ai-role-files.json > /dev/null
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-review-role-files
+          path: ai-role-files.json
+          # GitHub allows job re-runs for 30 days; a re-run of only a failed
+          # specialist does not re-run the changes job, so the artifact must
+          # outlive the re-run window. The file is tiny.
+          retention-days: 30
 
       - id: build_matrix
         name: Build matrix roles
@@ -73,13 +122,27 @@ jobs:
           [[ "${{ steps.filter.outputs.security }}" == 'true' ]] && roles+=("security")
           [[ "${{ steps.filter.outputs.performance }}" == 'true' ]] && roles+=("performance")
           [[ "${{ steps.filter.outputs.requirements }}" == 'true' ]] && roles+=("requirements")
-          json=$(printf '%s\n' "${roles[@]}" | jq -R . | jq -c -s .)
+          if (( ${#roles[@]} > 0 )); then
+            json=$(printf '%s\n' "${roles[@]}" | jq -R . | jq -c -s .)
+          else
+            # An empty bash array expands to one empty word, which jq turns into
+            # [""] -- a phantom matrix job that posts "No issues found" for a role
+            # that was never selected. Emit a real empty matrix instead.
+            json='[]'
+          fi
           echo "roles=${json}" >> "$GITHUB_OUTPUT"
 
   specialist:
     name: ai/${{ matrix.role }}
     runs-on: ubuntu-latest
     needs: [changes]
+    permissions:
+      contents: read
+      pull-requests: write
+    # An empty matrix vector is a workflow ERROR, not a skip
+    # ("Matrix vector 'role' does not contain any values"), so the zero-role
+    # case has to be gated here rather than expressed as an empty matrix.
+    if: ${{ needs.changes.outputs.roles != '[]' }}
     strategy:
       matrix:
         role: ${{ fromJSON(needs.changes.outputs.roles) }}
@@ -87,6 +150,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # ensure history for robust diffs/merge-base
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ai-review-role-files
       - name: Echo role being run
         run: |
           echo "Running reviewer role: ${{ matrix.role }}"
@@ -94,21 +161,45 @@ jobs:
 
       - name: Generate PR diff (exactly what GitHub shows)
         if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
+        env:
+          PATCH_URL: ${{ github.event.pull_request.patch_url }}
         run: |
-          curl -sSL "${{ github.event.pull_request.patch_url }}" -o diff.patch
+          set -euo pipefail
+          curl -sSL --fail-with-body "${PATCH_URL}" -o diff.patch
+          if ! head -n 1 diff.patch | grep -qE '^(From [0-9a-f]{7,40} |diff --git )'; then
+            echo "::error::downloaded content does not look like a git patch; refusing to review it"
+            exit 1
+          fi
 
       - name: Generate PR diff (merge-base fallback)
         if: ${{ github.event_name != 'pull_request' }}
         shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
-          MB=$(git merge-base HEAD~1 HEAD)
+          git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          # Same base paths-filter uses for non-PR events, so both jobs see one
+          # range: on the default branch itself it compares against the previous
+          # commit; elsewhere against the default-branch merge-base.
+          if [[ "${REF_NAME}" == "${DEFAULT_BRANCH}" ]]; then
+            MB=$(git rev-parse HEAD~1)
+          else
+            MB=$(git merge-base "origin/${DEFAULT_BRANCH}" HEAD)
+          fi
           git diff --unified=0 "${MB}" HEAD > diff.patch
           [ -f diff.patch ] || touch diff.patch
 
       - name: Narrow diff to this role's files
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           ROLE="${{ matrix.role }}"
@@ -117,35 +208,41 @@ jobs:
             [ -f diff.patch ] || touch diff.patch
             exit 0
           fi
-          case "$ROLE" in
-            elixir)      GLOBS=(":(glob)lib/**/*.ex" ":(glob)lib/**/*.exs" ":(glob)test/**/*.exs");;
-            gleam)       GLOBS=(":(glob)gleam/src/**/*.gleam" ":(glob)gleam/test/**/*.gleam" ":(glob)gleam/gleam.toml" ":(glob)gleam/manifest.toml");;
-            typescript)  GLOBS=(":(glob)assets/src/**/*.ts" ":(glob)assets/src/**/*.tsx");;
-            ui)          GLOBS=(":(glob)assets/src/**/*" ":(glob)lib/**/*.heex" ":(glob)lib/**/*.leex" ":(glob)lib/**/live/**/*.ex");;
-            security)    GLOBS=(":(glob)lib/**" ":(glob)gleam/src/**/*.gleam" ":(glob)gleam/gleam.toml" ":(glob)assets/src/**" ":(glob)config/**");;
-            performance) GLOBS=(":(glob)lib/**" ":(glob)gleam/src/**/*.gleam");;
-            *)           GLOBS=(":(glob)**/*");;
-          esac
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
-            HEADSHA="${{ github.event.pull_request.head.sha }}"
-            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
-            MB=$(git merge-base "$BASE" "$HEADSHA")
-            git diff --unified=0 "$MB" "$HEADSHA" -- "${GLOBS[@]}" > diff.role.patch
+          # ai-role-files.json holds the exact file set paths-filter matched per
+          # role -- the same source that selected the role, so no drift.
+          # NUL-delimited: a legal git path may contain a newline, and a
+          # newline-split path would silently drop files from the review.
+          FILES=()
+          while IFS= read -r -d '' f; do FILES+=("$f"); done \
+            < <(jq -j --arg role "$ROLE" '(.[$role] // [])[] | . + "\u0000"' ai-role-files.json)
+          if (( ${#FILES[@]} == 0 )); then
+            echo "::error::role ${ROLE} was selected but paths-filter reported no matching files"
+            exit 1
+          fi
+
+          git fetch --no-tags --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            MB=$(git merge-base "${BASE_SHA}" "${HEAD_SHA}")
+            git diff --unified=0 "${MB}" "${HEAD_SHA}" -- "${FILES[@]}" > diff.role.patch
           else
-            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/* || true
-            MB=$(git merge-base HEAD~1 HEAD)
-            git diff --unified=0 "$MB" HEAD -- "${GLOBS[@]}" > diff.role.patch
+            # Same range rule as the merge-base fallback step above
+            if [[ "${REF_NAME}" == "${DEFAULT_BRANCH}" ]]; then
+              MB=$(git rev-parse HEAD~1)
+            else
+              MB=$(git merge-base "origin/${DEFAULT_BRANCH}" HEAD)
+            fi
+            git diff --unified=0 "${MB}" HEAD -- "${FILES[@]}" > diff.role.patch
           fi
 
-          if [[ -s diff.role.patch ]]; then
-            mv diff.role.patch diff.patch
+          if [[ ! -s diff.role.patch ]]; then
+            echo "::error::role ${ROLE} was selected for ${#FILES[@]} files but the narrowed diff is empty; refusing to review nothing and report it as clean"
+            exit 1
           fi
-          [ -f diff.patch ] || touch diff.patch
+          mv diff.role.patch diff.patch
 
       - name: Install Codex CLI
-        run: npm i -g @openai/codex
+        run: npm i -g @openai/codex@0.148.0
 
       - name: Run Codex reviewer (strictly diff-only)
         id: run
@@ -153,11 +250,19 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          PROMPT_DIFF_BYTES: '150000'
         run: |
           set -euo pipefail
           mkdir -p ai
           ROLE="${{ matrix.role }}"
           export ROLE
+
+          DIFF_BYTES=$(wc -c < diff.patch | tr -d ' ')
+          if (( DIFF_BYTES > PROMPT_DIFF_BYTES )); then
+            note="only the first ${PROMPT_DIFF_BYTES} of ${DIFF_BYTES} diff bytes were sent to the reviewer; the rest of this role's diff was NOT reviewed"
+            echo "::warning::role ${ROLE}: ${note}"
+            printf '%s' "${note}" > "ai/${ROLE}.truncation.txt"
+          fi
 
           {
             echo "You are a specialist reviewer for ${ROLE}.";
@@ -165,22 +270,14 @@ jobs:
             echo "HARD CONSTRAINTS:";
             echo "1) REVIEW ONLY lines changed in the DIFF; ignore any other code.";
             echo "2) You may read some other files outside the DIFF ONLY for CONTEXT.";
-            echo "3) IMPORTANT: NEVER comment about findings in files or lines not included in the DIFF.";
-            echo "4) If you notice issues outside the DIFF, list them only under an 'Out-of-scope notes' section at the end.";
+            echo "3) IMPORTANT: NEVER report findings in files or lines not included in the DIFF.";
+            echo "4) If you notice issues outside the DIFF, put them in out_of_scope_notes, not in findings.";
             echo "5) Do NOT attempt to recalculate or expand the diff; rely strictly on the DIFF provided.";
             echo "";
-            echo "IMPORTANT: Return ONLY the summary of findings, wrapped between these markers:";
-            echo "<!-- FINDINGS_START -->";
-            echo "";
-            echo "<!-- FINDINGS_END -->";
-            echo "Do NOT include the prompt, your reasoning, or any other text outside those markers.";
-            echo "Within the markers, use this exact format for each finding:";
-            echo "### <short title>";
-            echo "file: <path>";
-            echo "line: <single line number from the DIFF>";
-            echo "Description: <what/why this is a problem in this codebase>";
-            echo "Suggestion: <specific, actionable code change>";
-            echo "If you have notes about issues outside the DIFF, add them in an 'Out-of-scope notes' section after the findings.";
+            echo "Return a JSON object matching the enforced output schema:";
+            echo "- findings: one entry per issue on a changed line. title: short title. file: path exactly as shown in the DIFF. line: the single line number from the DIFF. description: what/why this is a problem in this codebase. suggestion: specific, actionable code change.";
+            echo "- out_of_scope_notes: plain-text notes about issues outside the DIFF (empty array if none).";
+            echo "Return findings: [] when the changed lines have no issues.";
             echo "";
             echo "Coding Review Guidelines and Checklist:";
             echo "---CHECKLIST START---";
@@ -189,23 +286,32 @@ jobs:
             echo "";
             echo "DIFF (unified format, 0 lines of context):";
             echo "---DIFF START---";
-            head -c 150000 diff.patch;
+            head -c "${PROMPT_DIFF_BYTES}" diff.patch;
             echo "---DIFF END---";
           } > ai/prompt.${ROLE}.txt
 
           # Debug output suppressed for cleaner logs
 
-          # Run Codex reviewer (non-streaming output). Some versions don't support --no-stream;
-          # relying on default behavior with --stdin and --format json.
-          # Feed prompt via STDIN (portable across Codex CLI versions)
-          # If diff is empty, short-circuit with a PASS
-          if [[ ! -s diff.patch ]]; then
+          # The reviewer reads the prompt from stdin and writes its final
+          # message to --output-last-message, constrained by --output-schema.
+
+          # Forks never reach this job (the changes job excludes them), but if
+          # one ever does, skip quietly rather than red-X an external PR.
+          if [ "${IS_FORK:-false}" = "true" ]; then
             exit 0
           fi
-
-          # Fork/secret guard: on forks or missing key, emit WARN and skip Codex
-          if [ "${IS_FORK:-false}" = "true" ] || [ -z "${OPENAI_API_KEY:-}" ]; then
-            exit 0
+          # A missing key on an in-scope run is an operational failure, not a
+          # skip: exiting green here would let a required check pass unreviewed.
+          if [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "::error::OPENAI_API_KEY is not available for role ${ROLE}; the reviewer cannot run"
+            exit 1
+          fi
+          # A selected role with an empty diff is a contradictory state (the
+          # filters said this role's files changed); passing green here would
+          # satisfy a required check with no review.
+          if [[ ! -s diff.patch ]]; then
+            echo "::error::role ${ROLE} was selected but the diff is empty; refusing to pass without a review"
+            exit 1
           fi
 
           # Ensure Codex config dir under HOME is writable and exists
@@ -219,12 +325,75 @@ jobs:
 
           printenv OPENAI_API_KEY | codex login --with-api-key
 
-          codex exec --full-auto --skip-git-repo-check < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+          # Strict Structured Outputs schema (verified at the 0.148.0 tag:
+          # exec/src/cli.rs:43 defines the flag; the tagged integration test
+          # asserts the request carries type json_schema with strict true).
+          # Server-side enforcement reduces false reds; the posting step's own
+          # validation of this file remains the trust boundary.
+          cat > ai/output-schema.json <<'SCHEMA_EOF'
+          {
+            "type": "object",
+            "properties": {
+              "findings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": { "type": "string" },
+                    "file": { "type": "string" },
+                    "line": { "type": "integer" },
+                    "description": { "type": "string" },
+                    "suggestion": { "type": "string" }
+                  },
+                  "required": ["title", "file", "line", "description", "suggestion"],
+                  "additionalProperties": false
+                }
+              },
+              "out_of_scope_notes": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "required": ["findings", "out_of_scope_notes"],
+            "additionalProperties": false
+          }
+          SCHEMA_EOF
+          jq -e . ai/output-schema.json > /dev/null
 
-          # Debug output suppressed for cleaner logs
+          set +e
+          codex exec \
+            --sandbox read-only \
+            --skip-git-repo-check \
+            --output-schema "ai/output-schema.json" \
+            --output-last-message "ai/${ROLE}.raw.txt" \
+            < ai/prompt.${ROLE}.txt
+          rc=$?
+          set -e
+
+          if (( rc != 0 )); then
+            echo "::error::codex exec failed for role ${ROLE} (exit ${rc}); no review was produced"
+            exit "${rc}"
+          fi
+          if [[ ! -s "ai/${ROLE}.raw.txt" ]]; then
+            echo "::error::codex exec produced no output for role ${ROLE}; no review was produced"
+            exit 1
+          fi
+
+          # Early red on non-JSON output; the posting step's exact validation
+          # of shape, keys, and duplicates is the real acceptance boundary.
+          if ! jq -e . "ai/${ROLE}.raw.txt" > /dev/null 2>&1; then
+            echo "::error::codex output for role ${ROLE} is not valid JSON; refusing to treat it as a review"
+            exit 1
+          fi
 
       - name: Post per-role review comment (filtered to PR lines)
+        # Runs even when the reviewer failed, so a failed run replaces any
+        # stale "No issues found" comment instead of leaving it standing.
+        if: ${{ !cancelled() }}
         uses: actions/github-script@v7
+        env:
+          RUN_OUTCOME: ${{ steps.run.outcome }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
           script: |
             const fs = require('fs');
@@ -236,51 +405,6 @@ jobs:
             const header = `${headerMarker}\n${headerTitle}`;
             const MAX_BODY = 65000;
 
-            // Remove a single outer ``` code fence if present
-            function stripOuterCodeFence(s) {
-              const m = s.match(/^```[\w-]*\n([\s\S]*?)\n```$/);
-              return m ? m[1].trim() : (s ?? '').trim();
-            }
-
-            // Accept variations: FINDINGS_START / findings start / findings-start / findings_start
-            function extractBetweenSentinels(s) {
-              const startRe = /<!--\s*findings(?:\s*|[_-]+)start\s*-->/ig;
-              const endRe   = /<!--\s*findings(?:\s*|[_-]+)end\s*-->/ig;
-
-              const starts = [...s.matchAll(startRe)];
-              const ends   = [...s.matchAll(endRe)];
-              if (!starts.length || !ends.length) return '';
-
-              const chunks = [];
-              let endIdx = 0;
-              for (const st of starts) {
-                while (endIdx < ends.length && ends[endIdx].index < st.index) endIdx++;
-                if (endIdx >= ends.length) break;
-                const startPos = st.index + st[0].length;
-                const endPos   = ends[endIdx].index;
-                chunks.push(s.slice(startPos, endPos));
-                endIdx++;
-              }
-              return chunks.map(c => stripOuterCodeFence(c)).filter(Boolean).join('\n\n').trim();
-            }
-
-            // Heuristic fallback: take the first "### " AFTER the DIFF END marker
-            function heuristicExtractAfterDiff(s) {
-              const diffEndRe = /---\s*DIFF\s*END\s*---/i;
-              const m = diffEndRe.exec(s);
-              const from = m ? (m.index + m[0].length) : 0;
-
-              const tail = s.slice(from);
-              const startIdxRel = tail.search(/(^|\n)###\s+/);
-              if (startIdxRel < 0) return '';
-
-              const body = tail.slice(startIdxRel);
-              // Stop at obvious boundaries
-              const boundaryRel = body.search(/(^|\n)(---\s*DIFF\s*START\s*---|---\s*CHECKLIST\s*START\s*---|<!--\s*findings|^```)/mi);
-              const slice = boundaryRel > 0 ? body.slice(0, boundaryRel) : body;
-              return stripOuterCodeFence(slice);
-            }
-
             function truncateForGithub(body) {
               if (body.length <= MAX_BODY) return body;
               const head = body.slice(0, MAX_BODY - 80);
@@ -289,9 +413,15 @@ jobs:
 
             // --- main ---
             let bodyText = '';
+            let reviewerRan = true;
             try {
               bodyText = fs.readFileSync(`ai/${role}.raw.txt`, 'utf8');
-            } catch { /* ignore */ }
+            } catch { reviewerRan = false; }
+
+            let truncationNote = '';
+            try {
+              truncationNote = fs.readFileSync(`ai/${role}.truncation.txt`, 'utf8').trim();
+            } catch { /* not truncated */ }
 
             // --- Build allowlist of changed files and line numbers from diff.patch ---
             function normalizePath(p) {
@@ -301,24 +431,36 @@ jobs:
                 .replace(/^b\//, '');
             }
 
+            // Structural anomalies set diffParseOk = false rather than
+            // returning a silently partial map -- a partial map would classify
+            // real coordinates as off-diff and launder findings into a clean.
+            let diffParseOk = true;
             function parseDiffAddedLines(diffText) {
               const fileAdds = new Map(); // file -> Set(lineNumbers)
               let currentFile = null;
+              let targetSeen = false;
               let lnNew = 0;
+              let inHunk = false;
               const lines = diffText.split(/\r?\n/);
               for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
                 // File header
                 if (line.startsWith('diff --git ')) {
                   currentFile = null;
+                  targetSeen = false;
                   lnNew = 0;
+                  inHunk = false;
                   continue;
                 }
-                // Target filename
-                if (line.startsWith('+++ ')) {
+                // Target filename -- ONLY valid between the diff header and the
+                // first hunk. Inside a hunk, "+++ x" is an added source line
+                // whose content begins "++ ", not a header. A deletion's target
+                // is /dev/null: a legal header whose hunks add nothing.
+                if (!inHunk && line.startsWith('+++ ')) {
                   // format: +++ b/path or +++ /dev/null
                   const m = /^\+\+\+\s+(.*)$/.exec(line);
                   if (!m) continue;
+                  targetSeen = true;
                   const raw = m[1].trim();
                   if (raw === '/dev/null') { currentFile = null; continue; }
                   const filePath = normalizePath(raw);
@@ -329,11 +471,13 @@ jobs:
                 // Hunk header: @@ -a,b +c,d @@
                 const hunk = /^@@\s+-\d+(?:,\d+)?\s+\+(\d+)(?:,(\d+))?\s+@@/.exec(line);
                 if (hunk) {
+                  if (!targetSeen) { diffParseOk = false; break; }
+                  inHunk = true;
                   lnNew = parseInt(hunk[1], 10);
                   continue;
                 }
-                if (!currentFile) continue;
-                // Added lines start with '+' (but skip '+++' file header handled above)
+                if (!inHunk || !currentFile) continue;
+                // Added lines start with '+'; '+++' here is hunk data
                 if (line.startsWith('+')) {
                   fileAdds.get(currentFile).add(lnNew);
                   lnNew++;
@@ -344,19 +488,20 @@ jobs:
                   lnNew++;
                   continue;
                 }
-                // Removed lines ('-') advance old side only
-                if (line.startsWith('-')) {
-                  continue;
-                }
+                // Removed lines ('-') and "\ No newline" markers advance nothing
               }
               return fileAdds;
             }
 
+            // If the diff cannot be loaded, coordinates cannot be verified --
+            // that must be a red state, not "everything is off-diff".
+            let diffLoaded = true;
             function loadDiffAdds() {
               try {
                 const diff = fs.readFileSync('diff.patch', 'utf8');
                 return parseDiffAddedLines(diff);
               } catch {
+                diffLoaded = false;
                 return new Map();
               }
             }
@@ -370,64 +515,211 @@ jobs:
               return adds.has(Number(lineNumber));
             }
 
-            let findings = '';
-            if (bodyText && bodyText.trim()) {
-              const raw = stripOuterCodeFence(bodyText);
+            // --- JSON contract: parse once, validate exactly, consume the ---
+            // --- one parsed object for filtering and rendering.           ---
 
-              // Prefer explicit sentinels
-              findings = extractBetweenSentinels(raw);
-
-              // Fallback: first "###" AFTER DIFF END
-              if (!findings) {
-                findings = heuristicExtractAfterDiff(raw);
-              }
-            }
-
-            if (!findings) findings = 'No issues found';
-
-            // --- Enforce: keep only findings that target changed lines ---
-            function filterFindingsToChangedLines(text) {
-              const blocks = text.split(/\n(?=###\s+)/).filter(Boolean);
-              const kept = [];
-              for (const block of blocks) {
-                const fileMatch = /\bfile:\s*([^\n]+)/i.exec(block);
-                const lineMatch = /\bline:\s*(\d+)/i.exec(block);
-                if (!fileMatch || !lineMatch) continue;
-                const filePath = fileMatch[1].trim();
-                const lineNum = Number(lineMatch[1]);
-                if (!Number.isInteger(lineNum)) continue;
-                if (!addedLinesByFile.has(normalizePath(filePath))) continue;
-                if (isOnChangedLine(filePath, lineNum)) {
-                  kept.push(block.trim());
+            // JSON.parse silently collapses duplicate member names (RFC 8259
+            // leaves the behavior undefined), so scan the accepted text for
+            // duplicates before trusting the parsed value. Runs only on text
+            // JSON.parse already accepted, where a string followed by ':' is
+            // always an object member name.
+            function assertNoDuplicateKeys(text) {
+              const re = /"(?:[^"\\]|\\.)*"|[{}\[\]:]/g;
+              const stack = [];
+              let m;
+              let prev = null;
+              while ((m = re.exec(text))) {
+                const t = m[0];
+                if (t === '{') stack.push(new Set());
+                else if (t === '[') stack.push(null);
+                else if (t === '}' || t === ']') stack.pop();
+                else if (t === ':' && prev && prev.startsWith('"')) {
+                  const scope = stack[stack.length - 1];
+                  if (scope instanceof Set) {
+                    // Compare DECODED names: an escaped spelling of a key
+                    // (e.g. unicode-escaping its first letter) is the same
+                    // member to JSON.parse and must collide here too.
+                    const name = JSON.parse(prev);
+                    if (scope.has(name)) throw new Error(`duplicate object key ${JSON.stringify(name)}`);
+                    scope.add(name);
+                  }
                 }
+                prev = t;
               }
-              return kept.join('\n\n');
             }
 
-            const filtered = filterFindingsToChangedLines(findings);
-            const finalFindings = filtered || 'No issues found';
+            const FINDING_FIELDS = ['title', 'file', 'line', 'description', 'suggestion'];
+            function validateReview(obj) {
+              const errs = [];
+              const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+              if (!isObj(obj)) return ['root is not an object'];
+              for (const k of Object.keys(obj)) {
+                if (k !== 'findings' && k !== 'out_of_scope_notes') errs.push(`unknown root key ${k}`);
+              }
+              if (!Array.isArray(obj.findings)) errs.push('findings is not an array');
+              if (!Array.isArray(obj.out_of_scope_notes)) errs.push('out_of_scope_notes is not an array');
+              if (errs.length) return errs;
+              obj.out_of_scope_notes.forEach((n, i) => {
+                if (typeof n !== 'string' || n.trim() === '') errs.push(`out_of_scope_notes[${i}] is not a non-blank string`);
+              });
+              obj.findings.forEach((f, i) => {
+                if (!isObj(f)) { errs.push(`findings[${i}] is not an object`); return; }
+                for (const k of Object.keys(f)) {
+                  if (!FINDING_FIELDS.includes(k)) errs.push(`findings[${i}] unknown key ${k}`);
+                }
+                for (const k of ['title', 'file', 'description', 'suggestion']) {
+                  if (typeof f[k] !== 'string' || f[k].trim() === '') errs.push(`findings[${i}].${k} missing or empty`);
+                }
+                for (const k of ['title', 'file']) {
+                  if (typeof f[k] === 'string' && /[\r\n\u2028\u2029]/.test(f[k])) errs.push(`findings[${i}].${k} must be single-line`);
+                }
+                // isSafeInteger: JSON.parse silently rounds unsafe integers, so
+                // an exact coordinate can no longer be certified beyond 2^53-1.
+                if (!Number.isSafeInteger(f.line) || f.line < 1) errs.push(`findings[${i}].line is not a positive safe integer`);
+              });
+              return errs;
+            }
+
+            let review = null;
+            let contractErrors = [];
+            const runOutcome = process.env.RUN_OUTCOME || 'unknown';
+            if (reviewerRan && runOutcome === 'success') {
+              try {
+                const parsed = JSON.parse(bodyText);
+                assertNoDuplicateKeys(bodyText);
+                contractErrors = validateReview(parsed);
+                if (contractErrors.length === 0) review = parsed;
+              } catch (e) {
+                contractErrors = [String((e && e.message) || e)];
+              }
+            }
+            const malformed = reviewerRan && runOutcome === 'success' && review === null;
+
+            // Only a successfully loaded AND structurally parsed diff may reach
+            // the on-diff or clean terminal states; anything else is red even
+            // for findings: [] -- the evidence the policy needs is gone.
+            const diffUsable = diffLoaded && diffParseOk;
+            const diffUnusable = review !== null && !diffUsable;
+
+            // On-diff policy over the validated object only. "Off-diff" is a
+            // successful deterministic classification, never a fallback.
+            const onDiff = [];
+            let offDiffCount = 0;
+            if (review && diffUsable) {
+              for (const f of review.findings) {
+                if (isOnChangedLine(f.file, f.line)) onDiff.push(f);
+                else offDiffCount++;
+              }
+            }
+
+            // The workflow renders the Markdown; model strings are data.
+            // Vertical whitespace is flattened so a field can never start a new
+            // Markdown block, and HTML metacharacters are encoded so same-line
+            // raw HTML (h3, details, tables) cannot create comment structure --
+            // this also makes the upsert marker (<!-- ... -->) unforgeable.
+            function esc(s) {
+              return String(s)
+                .replace(/[\r\n\u2028\u2029]+/g, ' ')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;');
+            }
+            function clip(s, max) {
+              const e = esc(s);
+              return e.length > max ? `${e.slice(0, max - 1)}…` : e;
+            }
+            function renderFinding(f) {
+              return `### ${clip(f.title, 300)}\nfile: ${clip(f.file, 500)}\nline: ${f.line}\nDescription: ${clip(f.description, 10000)}\nSuggestion: ${clip(f.suggestion, 10000)}`;
+            }
+
+            let omittedFindings = 0;
+            let finalFindings;
+            if (runOutcome !== 'success') {
+              finalFindings = `_The reviewer for this role did not complete (step outcome: ${runOutcome}). **This is not a clean review** — check the workflow run logs._`;
+            } else if (!reviewerRan) {
+              finalFindings = '_The reviewer did not run for this role (fork PR or an empty diff). **This is not a clean review.**_';
+            } else if (malformed) {
+              finalFindings = `_The reviewer's output failed the JSON review contract (${esc(contractErrors.slice(0, 3).join('; '))}). **This is not a clean review** — check the workflow run logs._`;
+            } else if (diffUnusable) {
+              finalFindings = '_The PR diff could not be loaded or parsed, so the review result cannot be verified against changed lines. **This is not a clean review** — check the workflow run logs._';
+            } else if (onDiff.length > 0) {
+              // Assemble within the comment budget WITHOUT splitting a finding;
+              // clip() caps guarantee any single finding fits on its own.
+              const BUDGET = MAX_BODY - 2000;
+              const parts = [];
+              let used = 0;
+              for (const f of onDiff) {
+                const r = renderFinding(f);
+                if (parts.length > 0 && used + r.length + 2 > BUDGET) { omittedFindings++; continue; }
+                parts.push(r);
+                used += r.length + 2;
+              }
+              finalFindings = parts.join('\n\n');
+              if (omittedFindings > 0) {
+                finalFindings += `\n\n> ⚠️ **Incomplete comment:** ${omittedFindings} more accepted finding(s) did not fit the comment size limit. The full validated review is in this run's uploaded ai-review output artifact; the check is failed until every finding is visible.`;
+              }
+            } else if (offDiffCount > 0) {
+              finalFindings = `No issues found on changed lines (${offDiffCount} reported finding(s) referenced lines outside this PR's diff and were suppressed).`;
+            } else {
+              finalFindings = 'No issues found';
+            }
+
+            if (truncationNote) {
+              finalFindings += `\n\n> ⚠️ **Partial review:** ${truncationNote}.`;
+            }
 
             const composed = truncateForGithub(`${header}\n\n${finalFindings}`);
 
-            // Upsert: update if an existing role-specific comment is present
-            const { data: comments } = await github.rest.issues.listComments({
-              ...context.repo,
-              issue_number: context.issue.number,
-              per_page: 100,
-            });
-
-            const existing = comments.find(c => typeof c.body === 'string' && c.body.includes(headerMarker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                ...context.repo,
-                comment_id: existing.id,
-                body: composed,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                ...context.repo,
-                issue_number: context.issue.number,
-                body: composed,
-              });
+            const apiKey = process.env.OPENAI_API_KEY || '';
+            if (apiKey && composed.includes(apiKey)) {
+              core.setFailed(`refusing to post the ${role} review comment: the body contains the API key`);
+              return;
             }
+
+            const prNumber = context.payload.pull_request ? context.payload.pull_request.number : null;
+
+            if (prNumber) {
+              // Upsert: update if an existing role-specific comment is present
+              const { data: comments } = await github.rest.issues.listComments({
+                ...context.repo,
+                issue_number: prNumber,
+                per_page: 100,
+              });
+
+              const existing = comments.find(c => typeof c.body === 'string' && c.body.includes(headerMarker));
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  ...context.repo,
+                  comment_id: existing.id,
+                  body: composed,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: prNumber,
+                  body: composed,
+                });
+              }
+            } else {
+              // workflow_dispatch has no PR to comment on; surface the result
+              // in the run's step summary instead of failing on a missing number.
+              await core.summary.addRaw(composed).write();
+            }
+
+            if (malformed || diffUnusable || omittedFindings > 0) {
+              const reason = malformed ? 'contract violation'
+                : diffUnusable ? 'unusable diff'
+                : `${omittedFindings} accepted finding(s) omitted from the comment`;
+              core.setFailed(`review result for role ${role} was not fully delivered (${reason}); this is not a clean review`);
+            }
+
+      - name: Upload reviewer output artifact
+        # The comment can lawfully omit overflow findings (with a red check);
+        # the raw validated review must survive somewhere durable either way.
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-review-${{ matrix.role }}-output
+          path: ai/
+          if-no-files-found: ignore
+          retention-days: 30
