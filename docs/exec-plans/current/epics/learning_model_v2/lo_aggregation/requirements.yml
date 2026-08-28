@@ -53,7 +53,11 @@ requirements:
       once, attributed to the Sub-LO, and not also counted directly against the parent.
     status: proposed
     verification_method: automated
-    proofs: []
+    proofs:
+      - "Partially covered (Phase 2, naive delivery-side call site only):
+        test/oli/analytics/summary/metrics_v2_test.exs. Status stays proposed until
+        Phase 3 (Instructor Dashboard/CSV export) and Phase 4 (page element) verify
+        the same invariant for their own call sites."
 - id: FR-004
   title: Preserve incomplete-coverage semantics so a Sub-LO with insufficient evidence
     is represented in the aggregation rather than silently excluded from it.

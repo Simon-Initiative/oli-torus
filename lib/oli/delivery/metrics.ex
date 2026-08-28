@@ -804,22 +804,20 @@ defmodule Oli.Delivery.Metrics do
   defp aggregate_raw_proficiency([]), do: proficiency_range(nil, 0)
 
   defp aggregate_raw_proficiency(raw_values) do
-    {first_correct, first_count, _correct, _total} =
-      Enum.reduce(raw_values, {0, 0, 0, 0}, fn {first_correct, first_count, correct, count},
-                                               acc ->
-        {first_correct + elem(acc, 0), first_count + elem(acc, 1), correct + elem(acc, 2),
-         count + elem(acc, 3)}
+    {score, total_first_attempts} =
+      raw_values
+      |> Enum.map(fn {first_correct, first_count, _correct, _count} ->
+        {naive_child_proficiency(first_correct, first_count), first_count}
       end)
+      |> aggregate_weighted_proficiency()
 
-    proficiency_value =
-      if first_count == 0 do
-        0
-      else
-        (1.0 * first_correct + 0.2 * (first_count - first_correct)) /
-          first_count
-      end
+    proficiency_range(score, total_first_attempts)
+  end
 
-    proficiency_range(proficiency_value, first_count)
+  defp naive_child_proficiency(_first_correct, 0), do: nil
+
+  defp naive_child_proficiency(first_correct, first_count) do
+    (1.0 * first_correct + 0.2 * (first_count - first_correct)) / first_count
   end
 
   @doc """

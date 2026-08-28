@@ -211,6 +211,48 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert Map.get(results, id3) == "High"
     end
 
+    test "proficiency_for_student_per_learning_objective/3 does not double count a parent's own directly-tagged evidence when it also has a Sub-LO",
+         %{
+           user1: user1,
+           section: section,
+           o1: o1,
+           o2: o2
+         } do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+
+      # o1 is the parent, with o2 as its only Sub-LO.
+      {:ok, o1_revision} =
+        Oli.Resources.Revision.changeset(o1.revision, %{children: [o2.resource.id]})
+        |> Oli.Repo.update()
+
+      id = o1.resource.id
+      id2 = o2.resource.id
+
+      [
+        # o2 (the Sub-LO): 1 correct out of 5 first attempts => 0.36 => "Low"
+        [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 1, 5, 0, 5, 1],
+        # o1's own direct row: if this were combined with o2's instead of being
+        # ignored in favor of the Sub-LO, the pooled result would be "Medium"
+        # rather than "Low".
+        [-1, -1, section.id, user1.id, id, nil, objective_type_id, 5, 5, 0, 5, 5]
+      ]
+      |> Enum.each(fn v -> add_resource_summary(v) end)
+
+      # Only the parent is passed in, matching how real callers invoke this
+      # function (e.g. prologue_live.ex passes only the page-attached LOs, never
+      # their Sub-LOs alongside them); the Sub-LO's evidence is reached via
+      # o1_revision.children, not by also including it in this list.
+      results =
+        Metrics.proficiency_for_student_per_learning_objective(
+          [o1_revision],
+          user1.id,
+          section
+        )
+
+      assert Map.get(results, id) == "Low"
+    end
+
     test "proficiency_per_student_for_objective/2", %{
       user1: user1,
       user2: user2,

@@ -83,21 +83,21 @@ implementation, no `learning_model_version` switch changes — those are explici
   behaves like a weighted average today, so this phase is a refactor-in-place, not a functional
   change).
 - Tasks:
-  - [ ] Replace the inline pooling logic in `aggregate_raw_proficiency/1`
+  - [x] Replace the inline pooling logic in `aggregate_raw_proficiency/1`
     (`lib/oli/delivery/metrics.ex:804-823`) with a call to the Phase 1 shared function, passing
     `num_first_attempts` as `count` for each child (PRD Assumptions).
-  - [ ] Confirm `proficiency_for_student_per_learning_objective/3`
+  - [x] Confirm `proficiency_for_student_per_learning_objective/3`
     (`lib/oli/delivery/metrics.ex:761-802`) still bucket via `proficiency_range/2` on the
     aggregated score (FR-007).
-  - [ ] Leave `raw_proficiency_per_learning_objective/2`'s SQL-embedded formula
+  - [x] Leave `raw_proficiency_per_learning_objective/2`'s SQL-embedded formula
     (`lib/oli/delivery/metrics.ex:1522-1546`) untouched in this phase; it feeds
     `proficiency_per_student_for_objective/3`, which Phase 3 addresses separately.
 - Testing Tasks:
-  - [ ] Update/extend existing coverage in `test/oli/analytics/summary/metrics_v2_test.exs` for
+  - [x] Update/extend existing coverage in `test/oli/analytics/summary/metrics_v2_test.exs` for
     `aggregate_raw_proficiency/1` and `proficiency_for_student_per_learning_objective/3` to assert
     unchanged output for current fixtures, plus a new case with an activity tagged to both a
     parent and a Sub-LO to confirm no double count (AC-004).
-  - [ ] Run the targeted `Phoenix.LiveViewTest` suites for `prologue_live_test.exs`,
+  - [x] Run the targeted `Phoenix.LiveViewTest` suites for `prologue_live_test.exs`,
     `lesson_live_test.exs`, and `review_live_test.exs` to confirm no visible regression
     (AC-007, AC-008).
   - Command(s): `mix test test/oli/analytics/summary/metrics_v2_test.exs test/oli_web/live/delivery/student/`
