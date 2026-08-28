@@ -80,6 +80,8 @@ defmodule Oli.Delivery do
             customizations: customizations,
             has_experiments: has_experiments,
             analytics_version: :v2,
+            learning_model_version: project.learning_model_version,
+            description: project.description,
             welcome_title: project.welcome_title,
             encouraging_subtitle: project.encouraging_subtitle,
             certificate: nil
@@ -131,6 +133,7 @@ defmodule Oli.Delivery do
             has_experiments: project.has_experiments,
             context_id: UUID.uuid4(),
             analytics_version: :v2,
+            learning_model_version: blueprint.learning_model_version,
             welcome_title: blueprint.welcome_title,
             encouraging_subtitle: blueprint.encouraging_subtitle,
             amount: amount,
@@ -154,7 +157,8 @@ defmodule Oli.Delivery do
 
   defp create_from_publication(user, publication, section_params) do
     Repo.transaction(fn ->
-      with {:ok, section} <- Sections.create_section(section_params),
+      with {:ok, section} <-
+             Sections.create_section_from_source(section_params, publication.project),
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),

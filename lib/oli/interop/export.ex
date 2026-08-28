@@ -9,6 +9,7 @@ defmodule Oli.Interop.Export do
   alias Oli.Utils
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Delivery.Sections.BlueprintBrowseOptions
+  alias Oli.LearningModel.{ModelVersion, Parameters}
   alias Oli.Repo
 
   @page_resource_type_id ResourceType.id_for_page()
@@ -73,6 +74,7 @@ defmodule Oli.Interop.Export do
         objectives: Enum.map(r.children, fn id -> "#{id}" end),
         children: []
       }
+      |> maybe_put_learning_model_parameters(r)
       |> entry("#{r.resource_id}.json")
     end)
   end
@@ -99,6 +101,7 @@ defmodule Oli.Interop.Export do
         objectives: to_string_ids(r.objectives),
         subType: Map.get(registrations, r.activity_type_id).slug
       }
+      |> maybe_put_learning_model_parameters(r)
       |> entry("#{r.resource_id}.json")
     end)
   end
@@ -463,6 +466,7 @@ defmodule Oli.Interop.Export do
       description: project.description,
       welcomeTitle: project.welcome_title,
       encouragingSubtitle: project.encouraging_subtitle,
+      learningModelVersion: ModelVersion.encode(project.learning_model_version),
       type: "Manifest",
       required_student_survey: required_survey_resource_id,
       attributes: Map.get(project, :attributes)
@@ -581,6 +585,7 @@ defmodule Oli.Interop.Export do
       description: product.description,
       welcomeTitle: product.welcome_title,
       encouragingSubtitle: product.encouraging_subtitle,
+      learningModelVersion: ModelVersion.encode(product.learning_model_version),
       requiresPayment: product.requires_payment,
       paymentOptions: product.payment_options,
       payByInstitution: product.pay_by_institution,
@@ -596,6 +601,14 @@ defmodule Oli.Interop.Export do
   # helper to create a zip entry tuple
   defp entry(contents, name) do
     {String.to_charlist(name), Utils.pretty(contents)}
+  end
+
+  defp maybe_put_learning_model_parameters(contents, %{learning_model_parameters: nil}),
+    do: contents
+
+  defp maybe_put_learning_model_parameters(contents, revision) do
+    {:ok, encoded} = Parameters.encode(revision.learning_model_parameters)
+    Map.put(contents, :learningModelParameters, encoded)
   end
 
   # recursive impl to build out the nested, digest specific representation of the course hierarchy

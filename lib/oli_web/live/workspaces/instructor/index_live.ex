@@ -312,9 +312,10 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           <% end %>
           {list_instructors(Sections.get_instructors_for_section(@section.id))}
         </div>
-        <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
+        <div class="self-stretch min-w-0 text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
           <p
             role="course description"
+            class="break-words"
             style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;"
           >
             {@section.description}

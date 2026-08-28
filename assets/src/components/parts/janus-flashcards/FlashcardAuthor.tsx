@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import {
   NotificationType,
   subscribeToNotification,
@@ -8,7 +9,16 @@ import {
 import { clone, parseBoolean } from 'utils/common';
 import guid from 'utils/guid';
 import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
+import FlashcardConfigurePreview from './FlashcardConfigurePreview';
+import FlashcardQuillEditor from './FlashcardQuillEditor';
+import FlashcardThemePicker from './FlashcardThemePicker';
 import { FlashcardsView } from './FlashcardsView';
+import {
+  DEFAULT_FLASHCARD_FACE_COLOR,
+  FLASHCARD_PREVIEW_HEIGHT_SCALE,
+  computeFlashcardCellWidth,
+  nodesToPlainText,
+} from './flashcard-util';
 import { getFaceNodes, plainTextToDefaultNodes } from './flashcardContent';
 import {
   FlashcardItem,
@@ -19,11 +29,6 @@ import {
   resolveContainerWidth,
   withFlashcardsLayoutDimensions,
 } from './schema';
-
-type ActiveEdit = {
-  cardId: string;
-  side: 'front' | 'back';
-};
 
 type FlashcardAuthorProps = AuthorPartComponentProps<FlashcardsModel> & {
   editmode?: string | boolean | number;
@@ -37,6 +42,8 @@ type PreviousLayout = {
   requestedHeight?: number;
 };
 
+type CardSide = 'front' | 'back';
+
 const newCard = (label: string): FlashcardItem => ({
   id: guid(),
   frontNodes: plainTextToDefaultNodes(`${label} front`),
@@ -49,8 +56,10 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
   const editMode = parseBoolean((props as FlashcardAuthorProps).editmode ?? props.editMode);
   const layoutChanging = parseBoolean((props as FlashcardAuthorProps).layoutchanging ?? false);
   const [inConfigureMode, setInConfigureMode] = React.useState(configuremode);
-  const [activeEdit, setActiveEdit] = React.useState<ActiveEdit | null>(null);
+  const [activeCardId, setActiveCardId] = React.useState<string | null>(null);
+  const [activeSide, setActiveSide] = React.useState<CardSide>('front');
   const [draftCards, setDraftCards] = React.useState<FlashcardItem[]>(model.cards ?? []);
+  const [confirmDeleteCardId, setConfirmDeleteCardId] = React.useState<string | null>(null);
   const [portalElement, setPortalElement] = React.useState<HTMLElement | null>(null);
   const [measuredContainerWidth, setMeasuredContainerWidth] = React.useState(0);
   const previousLayoutRef = React.useRef<PreviousLayout | null>(null);
@@ -89,7 +98,9 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
       if (configure) {
         const cards = model.cards?.length ? model.cards : [newCard('New Card')];
         setDraftCards(cards);
-        setActiveEdit({ cardId: cards[0].id, side: 'front' });
+        setActiveCardId(cards[0].id);
+        setActiveSide('front');
+        setConfirmDeleteCardId(null);
         onConfigure({
           id,
           configure: true,
@@ -111,7 +122,9 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
 
     await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
-    setActiveEdit(null);
+    setActiveCardId(null);
+    setActiveSide('front');
+    setConfirmDeleteCardId(null);
   }, [containerWidth, draftCards, id, model, onSaveConfigure]);
 
   const previewModel = useMemo(() => {
@@ -225,7 +238,8 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
   const handleCancel = useCallback(() => {
     setDraftCards(model.cards ?? []);
     setInConfigureMode(false);
-    setActiveEdit(null);
+    setActiveCardId(null);
+    setActiveSide('front');
   }, [model.cards]);
 
   useEffect(() => {
@@ -270,13 +284,23 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
 
   useEffect(() => {
     const handleEditorChange = (e: any) => {
-      if (!inConfigureMode || !activeEdit) return;
+      if (!inConfigureMode || !activeCardId) return;
+
+      const wrapper = (e.target as HTMLElement | null)?.closest(
+        '[data-side]',
+      ) as HTMLElement | null;
+      const side = wrapper?.dataset.side as CardSide | undefined;
+      const cardId = wrapper?.dataset.cardId;
+
+      if (!side || cardId !== activeCardId) {
+        return;
+      }
 
       const nodes = e.detail.payload.value;
-      const field = activeEdit.side === 'front' ? 'frontNodes' : 'backNodes';
+      const field = side === 'front' ? 'frontNodes' : 'backNodes';
 
       setDraftCards((cards) =>
-        cards.map((card) => (card.id === activeEdit.cardId ? { ...card, [field]: nodes } : card)),
+        cards.map((card) => (card.id === activeCardId ? { ...card, [field]: nodes } : card)),
       );
     };
 
@@ -284,7 +308,9 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
       if (!inConfigureMode) return;
 
       setInConfigureMode(false);
-      setActiveEdit(null);
+      setActiveCardId(null);
+      setActiveSide('front');
+      setConfirmDeleteCardId(null);
       onCancelConfigure({ id });
     };
 
@@ -297,94 +323,223 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
       document.removeEventListener(`${quillEditorTagName}-change`, handleEditorChange);
       document.removeEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     };
-  }, [activeEdit, id, inConfigureMode, onCancelConfigure]);
+  }, [activeCardId, id, inConfigureMode, onCancelConfigure]);
 
   const activeCard = useMemo(
-    () => draftCards.find((card) => card.id === activeEdit?.cardId),
-    [draftCards, activeEdit],
+    () => draftCards.find((card) => card.id === activeCardId),
+    [draftCards, activeCardId],
   );
+
+  const activeCardIndex = useMemo(
+    () => draftCards.findIndex((card) => card.id === activeCardId),
+    [draftCards, activeCardId],
+  );
+
+  const previewCardWidth = useMemo(
+    () => computeFlashcardCellWidth(containerWidth, previewModel),
+    [containerWidth, previewModel],
+  );
+
+  const previewCardHeight = useMemo(() => {
+    const layoutHeight = resolveCardHeightForLayout(
+      previewModel,
+      containerWidth,
+      draftCards.length,
+    );
+
+    return Math.round(layoutHeight * FLASHCARD_PREVIEW_HEIGHT_SCALE);
+  }, [containerWidth, draftCards.length, previewModel]);
+
+  const selectCard = (cardId: string) => {
+    setActiveCardId(cardId);
+    setActiveSide('front');
+  };
 
   const addCard = () => {
     const card = newCard(`Card ${draftCards.length + 1}`);
     setDraftCards((cards) => [...cards, card]);
-    setActiveEdit({ cardId: card.id, side: 'front' });
+    setActiveCardId(card.id);
+    setActiveSide('front');
   };
 
   const deleteCard = (cardId: string) => {
     setDraftCards((cards) => {
       const nextCards = cards.filter((card) => card.id !== cardId);
 
-      if (activeEdit?.cardId === cardId) {
-        const nextActive = nextCards[0];
-        setActiveEdit(nextActive ? { cardId: nextActive.id, side: 'front' } : null);
+      if (activeCardId === cardId) {
+        setActiveCardId(nextCards[0]?.id ?? null);
+        setActiveSide('front');
       }
 
       return nextCards;
     });
   };
 
+  const confirmDeleteCard = () => {
+    if (!confirmDeleteCardId) {
+      return;
+    }
+
+    deleteCard(confirmDeleteCardId);
+    setConfirmDeleteCardId(null);
+  };
+
+  const confirmDeleteCardIndex = confirmDeleteCardId
+    ? draftCards.findIndex((card) => card.id === confirmDeleteCardId)
+    : -1;
+  const confirmDeleteCardName =
+    confirmDeleteCardIndex >= 0 ? `Card ${confirmDeleteCardIndex + 1}` : 'this card';
+
+  const updateActiveCardTheme = (themeColor: string | undefined) => {
+    if (!activeCardId) return;
+
+    setDraftCards((cards) =>
+      cards.map((card) => {
+        if (card.id !== activeCardId) {
+          return card;
+        }
+
+        if (!themeColor) {
+          const { themeColor: _removed, ...rest } = card;
+          return rest;
+        }
+
+        return { ...card, themeColor };
+      }),
+    );
+  };
+
   const configureContent =
     inConfigureMode && portalElement
       ? ReactDOM.createPortal(
-          <div className="flashcards-configure" style={{ padding: 20, minWidth: 720 }}>
-            <div style={{ display: 'flex', gap: 20 }}>
-              <div style={{ width: 220 }}>
-                <button type="button" className="btn btn-primary btn-sm" onClick={addCard}>
-                  Add card
+          <div className="flashcards-configure">
+            <div className="fc-config-header">
+              <span className="fc-config-header-title">Flashcard deck</span>
+              <span className="fc-config-header-count">
+                {draftCards.length} {draftCards.length === 1 ? 'card' : 'cards'}
+              </span>
+            </div>
+
+            <div className="fc-config-body">
+              <aside className="fc-config-list">
+                <button type="button" className="fc-config-add-btn" onClick={addCard}>
+                  + Add card
                 </button>
 
-                <div style={{ marginTop: 12 }}>
-                  {draftCards.map((card, index) => (
-                    <div key={card.id} style={{ marginBottom: 12 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <strong>Card {index + 1}</strong>
-                        <button
-                          type="button"
-                          className="btn btn-link btn-sm text-danger"
-                          onClick={() => deleteCard(card.id)}
-                        >
-                          Delete
-                        </button>
+                <div className="fc-config-card-list">
+                  {draftCards.map((card, index) => {
+                    const previewText =
+                      nodesToPlainText(getFaceNodes(card, 'front')) || 'Empty front';
+
+                    return (
+                      <div
+                        key={card.id}
+                        className={`fc-config-card-item${
+                          card.id === activeCardId ? ' is-active' : ''
+                        }`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => selectCard(card.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            selectCard(card.id);
+                          }
+                        }}
+                      >
+                        <span
+                          className="fc-config-card-strip"
+                          style={{ background: card.themeColor || DEFAULT_FLASHCARD_FACE_COLOR }}
+                        />
+                        <div className="fc-config-card-body">
+                          <div className="fc-config-card-item-header">
+                            <span className="fc-config-card-item-title">CARD {index + 1}</span>
+                            <button
+                              type="button"
+                              className="fc-config-card-delete"
+                              aria-label="Delete card"
+                              title="Delete card"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setConfirmDeleteCardId(card.id);
+                              }}
+                            >
+                              <i className="fa fa-trash-alt" aria-hidden="true" />
+                            </button>
+                          </div>
+                          <span className="fc-config-card-preview">{previewText}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </aside>
+
+              <main className="fc-config-editor">
+                {activeCard && activeCardId ? (
+                  <>
+                    <div className="fc-config-editor-top">
+                      <div className="fc-config-editor-title-block">
+                        <h4 className="fc-config-editor-heading">
+                          Editing card {activeCardIndex + 1}
+                        </h4>
+                        <p className="fc-config-editor-sub">
+                          Front and back save together — theme applies to both sides.
+                        </p>
                       </div>
 
+                      <FlashcardThemePicker
+                        compact
+                        value={activeCard.themeColor}
+                        onChange={updateActiveCardTheme}
+                      />
+                    </div>
+
+                    <div className="fc-side-switch" role="tablist" aria-label="Card side">
                       <button
                         type="button"
-                        className="btn btn-outline-secondary btn-sm mr-1"
-                        onClick={() => setActiveEdit({ cardId: card.id, side: 'front' })}
+                        role="tab"
+                        aria-selected={activeSide === 'front'}
+                        className={`fc-side-option${activeSide === 'front' ? ' active' : ''}`}
+                        onClick={() => setActiveSide('front')}
                       >
                         Front
+                        <span className="fc-side-option-tag">Shown first</span>
                       </button>
-
                       <button
                         type="button"
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={() => setActiveEdit({ cardId: card.id, side: 'back' })}
+                        role="tab"
+                        aria-selected={activeSide === 'back'}
+                        className={`fc-side-option${activeSide === 'back' ? ' active' : ''}`}
+                        onClick={() => setActiveSide('back')}
                       >
                         Back
+                        <span className="fc-side-option-tag">Revealed on flip</span>
                       </button>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              <div style={{ flex: 1 }}>
-                {activeCard && activeEdit ? (
-                  <>
-                    <h4>
-                      Editing {activeEdit.side} of card{' '}
-                      {draftCards.findIndex((card) => card.id === activeCard.id) + 1}
-                    </h4>
-
-                    {React.createElement(quillEditorTagName, {
-                      key: `${activeCard.id}-${activeEdit.side}`,
-                      tree: JSON.stringify(getFaceNodes(activeCard, activeEdit.side)),
-                      showimagecontrol: true,
-                    })}
+                    <FlashcardQuillEditor
+                      card={activeCard}
+                      cardId={activeCardId}
+                      activeSide={activeSide}
+                    />
                   </>
                 ) : (
-                  <div>No card selected</div>
+                  <div className="fc-config-editor-empty">No card selected</div>
                 )}
-              </div>
+              </main>
+
+              <aside className="fc-config-preview-pane">
+                <FlashcardConfigurePreview
+                  card={activeCard}
+                  cardNumber={activeCardIndex + 1}
+                  activeSide={activeSide}
+                  onSideChange={setActiveSide}
+                  cardWidthPx={previewCardWidth}
+                  cardHeightPx={previewCardHeight}
+                  flipDuration={model.flipDuration}
+                />
+              </aside>
             </div>
           </div>,
           portalElement,
@@ -399,6 +554,16 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
         onLayoutWidthChange={setMeasuredContainerWidth}
       />
       {configureContent}
+      {confirmDeleteCardId && (
+        <ConfirmDelete
+          show={!!confirmDeleteCardId}
+          elementType="card"
+          elementName={`"${confirmDeleteCardName}"`}
+          explanation="This cannot be undone."
+          deleteHandler={confirmDeleteCard}
+          cancelHandler={() => setConfirmDeleteCardId(null)}
+        />
+      )}
     </>
   );
 };

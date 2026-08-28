@@ -65,7 +65,19 @@ defmodule OliWeb.Products.ImagePreviewTest do
         insert(:section,
           type: :blueprint,
           title: "Preview Biology",
-          cover_image: nil
+          cover_image: nil,
+          description: "Prepare for the course.",
+          welcome_title: %{
+            "type" => "p",
+            "children" => [
+              %{
+                "id" => "preview-welcome-video",
+                "type" => "youtube",
+                "src" => "RpnEyBIkdMc",
+                "children" => [%{"text" => ""}]
+              }
+            ]
+          }
         )
         |> Map.put(:required_survey_resource_id, nil)
         |> Map.put(:contains_explorations, false)
@@ -82,6 +94,8 @@ defmodule OliWeb.Products.ImagePreviewTest do
       refute html =~ "Learning about the new ‘Exploration’ activities"
       assert html =~ "Go to course"
       assert html =~ "/images/course_default.png"
+      assert html =~ ~s(id="image-preview-youtube--preview-welcome-video")
+      assert html =~ ~s(phx-hook="LiveReact")
     end
 
     test "gallery renders the full uploaded image above the three shared runtime contexts" do

@@ -1,6 +1,10 @@
 defmodule OliWeb.OpenAndFreeControllerTest do
   use OliWeb.ConnCase
 
+  alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections
+  alias Oli.Repo
+
   @create_attrs %{
     end_date: ~U[2010-04-17 00:00:00.000000Z],
     open_and_free: true,
@@ -62,6 +66,29 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       assert html =~ "Section created successfully!"
       assert html =~ "Course setup recommended"
       assert html =~ "Your course section has been created and is ready for configuration."
+    end
+
+    test "create section from a Project copies its learning model", %{
+      conn: conn,
+      project: project
+    } do
+      project =
+        project
+        |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Repo.update!()
+
+      conn =
+        post(conn, ~p"/sections/independent",
+          section:
+            Enum.into(@create_attrs, %{
+              project_slug: project.slug,
+              source_id: "project:#{project.id}"
+            })
+        )
+
+      %{section_slug: section_slug} = redirected_params(conn)
+
+      assert Sections.get_section_by_slug(section_slug).learning_model_version == :lkt_aoa
     end
 
     test "renders errors when data is invalid", %{

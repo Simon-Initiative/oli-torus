@@ -72,7 +72,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
 
   const buttonProps = {
     title,
-    'aria-label': ariaLabel,
+    ...(ariaLabel?.trim() ? { 'aria-label': ariaLabel } : {}),
     disabled: false,
   };
   return (

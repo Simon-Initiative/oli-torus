@@ -4,6 +4,9 @@ defmodule Oli.ActivityEditingTest do
   import Mox
 
   alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
+  alias Oli.Publishing
   alias Oli.Resources
 
   describe "activity editing" do
@@ -867,6 +870,61 @@ defmodule Oli.ActivityEditingTest do
              }
     end
 
+    test "copy-on-write edits reconcile inherited parameters with the final activity parts", %{
+      author: author,
+      project: project,
+      revision1: page_revision
+    } do
+      content = activity_content(["deleted-part", "retained-part"])
+
+      {:ok, {activity_revision, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_multiple_choice",
+          author,
+          content,
+          [],
+          "embedded",
+          nil,
+          %{},
+          [],
+          activity_parameters(%{"deleted-part" => -0.2, "retained-part" => 0.45})
+        )
+
+      {:ok, _published} =
+        Publishing.publish_project(project, "publish trained activity", author.id)
+
+      before_edit =
+        Publishing.AuthoringResolver.from_resource_id(project.slug, activity_revision.resource_id)
+
+      {:acquired} = PageEditor.acquire_lock(project.slug, page_revision.slug, author.email)
+
+      assert {:ok, updated} =
+               ActivityEditor.edit(
+                 project.slug,
+                 page_revision.resource_id,
+                 activity_revision.resource_id,
+                 author.email,
+                 %{
+                   "authoring" => %{
+                     "parts" => [
+                       %{"id" => "retained-part"},
+                       %{"id" => "new-part"}
+                     ]
+                   }
+                 }
+               )
+
+      assert updated.id != before_edit.id
+      assert updated.previous_revision_id == before_edit.id
+
+      assert updated.learning_model_parameters ==
+               activity_parameters(%{"retained-part" => 0.45})
+
+      refute Map.has_key?(updated.learning_model_parameters.payload.parts, "deleted-part")
+      refute Map.has_key?(updated.learning_model_parameters.payload.parts, "new-part")
+    end
+
     test "edit/5 allows adaptive internal links when idref references a project resource", %{
       author: author,
       project: project,
@@ -1717,5 +1775,28 @@ defmodule Oli.ActivityEditingTest do
       )
 
     handler_id
+  end
+
+  defp activity_content(part_ids) do
+    %{
+      "authoring" => %{
+        "parts" => Enum.map(part_ids, &%{"id" => &1})
+      }
+    }
+  end
+
+  defp activity_parameters(parts) do
+    %Parameters{
+      schema_version: 1,
+      model: :lkt_aoa,
+      model_version: 2,
+      parameter_type: :activity,
+      payload: %ActivityParameters{
+        parts:
+          Map.new(parts, fn {part_id, beta_difficulty} ->
+            {part_id, %PartParameters{beta_difficulty: beta_difficulty}}
+          end)
+      }
+    }
   end
 end

@@ -122,6 +122,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> hd() =~ "Welcome Title"
     end
 
+    test "project description cannot exceed 300 characters", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      description = String.duplicate("a", 301)
+
+      {:ok, view, html} = live(conn, live_view_route(project.slug))
+
+      assert html =~ ~s(maxlength="300")
+
+      element(view, "form[phx-submit='update']")
+      |> render_submit(%{"project" => %{"description" => description}})
+
+      assert has_element?(view, "div.alert-danger", "Project could not be updated.")
+      assert render(view) =~ "must be 300 characters or fewer"
+      assert Course.get_project_by_slug(project.slug).description == project.description
+    end
+
     test "publisher dropdown displays publishers sorted alphabetically", %{
       conn: conn,
       author: author

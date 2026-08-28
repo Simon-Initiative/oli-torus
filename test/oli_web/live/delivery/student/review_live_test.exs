@@ -409,13 +409,13 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o1.resource_id}"]},
+               ~s{[data-testid="objective-#{o1.resource_id}-title"]},
                "this is the first objective"
              )
 
       assert has_element?(
                view,
-               ~s{div[role="objective #{o2.resource_id}"]},
+               ~s{[data-testid="objective-#{o2.resource_id}-title"]},
                "this is the second objective"
              )
     end

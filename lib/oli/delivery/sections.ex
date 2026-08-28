@@ -1589,6 +1589,28 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Creates a Section whose learning-model selection is copied from a trusted Project or Section.
+
+  The persisted source value takes precedence over any value present in `attrs`.
+  """
+  def create_section_from_source(attrs, %Project{} = source),
+    do: create_section_from_trusted_source(attrs, source.learning_model_version)
+
+  def create_section_from_source(attrs, %Section{} = source),
+    do: create_section_from_trusted_source(attrs, source.learning_model_version)
+
+  defp create_section_from_trusted_source(attrs, learning_model_version) do
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
+    %Section{}
+    |> Section.changeset(attrs)
+    |> Section.trusted_learning_model_changeset(%{
+      learning_model_version: learning_model_version
+    })
+    |> Repo.insert()
+  end
+
+  @doc """
   Updates a section.
   ## Examples
       iex> update_section(section, %{field: new_value})

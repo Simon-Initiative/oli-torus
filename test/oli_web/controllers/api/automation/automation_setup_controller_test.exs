@@ -1,5 +1,10 @@
 defmodule OliWeb.Api.AutomationSetupControllerTest do
   use OliWeb.ConnCase
+  use Oban.Testing, repo: Oli.Repo
+  @moduletag capture_log: true
+
+  alias Oli.AutomationSetup
+  alias Oli.AutomationSetup.ProjectTeardownWorker
   alias OliWeb.Api.AutomationSetupController
   alias Oli.Resources.Revision
   alias Oli.Accounts
@@ -140,9 +145,34 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
         "author_deleted" => %{"success" => true},
         "educator_deleted" => %{"success" => true},
         "learner_deleted" => %{"success" => true},
-        "project_deleted" => %{"success" => true},
+        "project_deleted" => %{
+          "success" => true,
+          "queued" => true,
+          "job_id" => project_teardown_job_id
+        },
         "section_deleted" => %{"success" => true}
       } = response
+
+      assert is_integer(project_teardown_job_id)
+
+      assert_enqueued(
+        worker: ProjectTeardownWorker,
+        args: %{"project_slug" => project_slug}
+      )
+
+      assert %{success: true, queued: true, job_id: ^project_teardown_job_id} =
+               AutomationSetup.enqueue_project_teardown(project_slug)
+
+      assert [_job] = all_enqueued(worker: ProjectTeardownWorker)
+
+      # Project cleanup is intentionally asynchronous. In test mode Oban jobs
+      # run manually, so the project remains until the worker is performed.
+      assert Oli.Authoring.Course.get_project_by_slug(project_slug)
+
+      assert :ok =
+               perform_job(ProjectTeardownWorker, %{
+                 "project_slug" => project_slug
+               })
 
       refute Accounts.get_author_by_email(author_email)
       refute Accounts.get_author_by_email(author_email)
@@ -158,7 +188,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
                  where: spp.project_id == ^project_id or spp.publication_id == ^publication.id
              )
 
-      # Make sure we cleaned up all the records
+      # Make sure the asynchronous job cleaned up all the records.
       assert revision_count_before == Repo.one(from r in Revision, select: count(r.id))
       assert resource_count_before == Repo.one(from r in Resource, select: count(r.id))
     end
@@ -198,6 +228,11 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
                },
                "section_deleted" => %{"success" => false, "message" => "No section slug provided"}
              } = response
+
+      refute_enqueued(
+        worker: ProjectTeardownWorker,
+        args: %{"project_slug" => project.slug}
+      )
     end
   end
 

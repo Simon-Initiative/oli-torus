@@ -3,6 +3,8 @@ defmodule Oli.Resources.Revision do
   import Ecto.Changeset
 
   alias Oli.Utils.Slug
+  alias Oli.LearningModel.Parameters
+  alias Oli.LearningModel.Parameters.Validation
 
   @derive {Jason.Encoder,
            only: [
@@ -75,6 +77,7 @@ defmodule Oli.Resources.Revision do
       default: :traditional
 
     field :parameters, :map
+    field :learning_model_parameters, Parameters.Type
 
     embeds_one :legacy, Oli.Resources.Legacy, on_replace: :delete
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
@@ -136,6 +139,7 @@ defmodule Oli.Resources.Revision do
       :retake_mode,
       :assessment_mode,
       :parameters,
+      :learning_model_parameters,
       :scoring_strategy_id,
       :activity_type_id,
       :purpose,
@@ -147,6 +151,27 @@ defmodule Oli.Resources.Revision do
     |> cast_embed(:explanation_strategy)
     |> cast_embed(:collab_space_config)
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
+    |> validate_learning_model_parameters()
     |> Slug.update_on_change("revisions")
+  end
+
+  defp validate_learning_model_parameters(changeset) do
+    if Keyword.has_key?(changeset.errors, :learning_model_parameters) do
+      changeset
+    else
+      parameters = get_field(changeset, :learning_model_parameters)
+      resource_type_id = get_field(changeset, :resource_type_id)
+      content = get_field(changeset, :content) || %{}
+
+      case Validation.validate_for_revision(parameters, resource_type_id, content) do
+        :ok ->
+          changeset
+
+        {:error, errors} ->
+          Enum.reduce(errors, changeset, fn {field, message}, changeset ->
+            add_error(changeset, field, message)
+          end)
+      end
+    end
   end
 end

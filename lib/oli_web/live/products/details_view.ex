@@ -342,7 +342,7 @@ defmodule OliWeb.Products.DetailsView do
   def handle_event("validate", %{"section" => params}, socket) do
     changeset =
       socket.assigns.product
-      |> Sections.change_section(params)
+      |> Sections.change_section(decode_welcome_title(params))
 
     {:noreply, assign(socket, changeset: changeset)}
   end

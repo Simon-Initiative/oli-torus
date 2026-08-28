@@ -364,9 +364,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
+    params =
+      params
+      |> decode_welcome_title()
+      |> filter_paywall_params(socket.assigns.is_admin)
+
     changeset =
       socket.assigns.product
-      |> Sections.change_section(filter_paywall_params(params, socket.assigns.is_admin))
+      |> Sections.change_section(params)
 
     {:noreply, assign(socket, changeset: changeset)}
   end

@@ -169,10 +169,56 @@ defmodule Oli.Delivery.Sections.Blueprint do
         hierarchy_definition \\ nil,
         attrs \\ %{}
       ) do
+    do_create_blueprint(base_project_slug, title, custom_labels, hierarchy_definition, attrs, nil)
+  end
+
+  @doc """
+  Creates a blueprint using a learning-model selection already validated by archive ingest.
+
+  This separate trusted boundary prevents ordinary blueprint attributes from
+  selecting or changing the learning model.
+  """
+  def create_blueprint_from_archive(
+        base_project_slug,
+        title,
+        custom_labels,
+        hierarchy_definition,
+        attrs,
+        learning_model_version
+      )
+      when learning_model_version in [:naive, :lkt_aoa] do
+    do_create_blueprint(
+      base_project_slug,
+      title,
+      custom_labels,
+      hierarchy_definition,
+      attrs,
+      learning_model_version
+    )
+  end
+
+  defp do_create_blueprint(
+         base_project_slug,
+         title,
+         custom_labels,
+         hierarchy_definition,
+         attrs,
+         archive_learning_model_version
+       ) do
     Repo.transaction(fn _ ->
       with {:ok, project} <- get_project(base_project_slug),
-           new_blueprint = build_blueprint_attrs(project, title, custom_labels, attrs),
-           {:ok, blueprint} <- Sections.create_section(new_blueprint),
+           learning_model_version =
+             archive_learning_model_version || project.learning_model_version,
+           new_blueprint =
+             build_blueprint_attrs(
+               project,
+               title,
+               custom_labels,
+               attrs,
+               learning_model_version
+             ),
+           trusted_source = %{project | learning_model_version: learning_model_version},
+           {:ok, blueprint} <- Sections.create_section_from_source(new_blueprint, trusted_source),
            publication =
              Oli.Publishing.get_latest_published_publication_by_slug(base_project_slug),
            {:ok, section} <-
@@ -192,7 +238,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end
   end
 
-  defp build_blueprint_attrs(project, title, custom_labels, attrs) do
+  defp build_blueprint_attrs(project, title, custom_labels, attrs, learning_model_version) do
     %{
       "type" => :blueprint,
       "status" => :active,
@@ -213,6 +259,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
         value_or_default(attrs["grace_period_strategy"], "relative_to_section"),
       "amount" => build_amount(attrs["amount"]),
       "publisher_id" => project.publisher_id,
+      "learning_model_version" => learning_model_version,
       "customizations" => custom_labels,
       "welcome_title" => value_or_default(attrs["welcome_title"], project.welcome_title),
       "encouraging_subtitle" =>
@@ -333,6 +380,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
         },
         attrs
       )
+      |> Map.put(:learning_model_version, section.learning_model_version)
 
     Map.merge(
       Map.from_struct(section),
@@ -340,7 +388,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
     )
     |> Map.delete(:id)
     |> Map.delete(:slug)
-    |> Sections.create_section()
+    |> Sections.create_section_from_source(section)
   end
 
   defp dupe_section_resources(

@@ -60,34 +60,170 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
   describe "Student Onboarding Wizard - Introduction" do
     setup [:user_conn]
 
-    test "the introduction step gets rendered", %{conn: conn, user: student} do
-      %{section: section} = basic_section(nil, %{title: "Chemistry 201"})
+    test "renders the default welcome message when the section description is empty", %{
+      conn: conn,
+      user: student
+    } do
+      %{section: section} =
+        basic_section(nil, %{
+          title: "Chemistry 201",
+          description: nil,
+          welcome_title: %{
+            "type" => "p",
+            "children" => [
+              %{
+                "id" => "unused-custom-title",
+                "type" => "p",
+                "children" => [%{"text" => "This custom title is not displayed"}]
+              }
+            ]
+          },
+          encouraging_subtitle: "This custom subtitle is not displayed"
+        })
+
       enroll_student(student, section)
 
       {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
 
-      assert has_element?(view, "h2", "Welcome to Chemistry 201!")
+      assert has_element?(view, "#onboarding-welcome-title", "Welcome to Chemistry 201")
+      refute render(view) =~ "This custom title is not displayed"
+      refute has_element?(view, "#onboarding-welcome-subtitle")
+      refute has_element?(view, "#onboarding-welcome-description")
 
       assert has_element?(
                view,
-               "li",
-               "A personalized Chemistry 201 experience based on your skillsets"
-             )
-
-      refute has_element?(
-               view,
-               "li",
-               "A short survey to help shape your learning experience and let your instructor get to know yous"
-             )
-
-      refute has_element?(
-               view,
-               "li",
-               "Explorations will bring the course to life, showing its relevance in the real world"
+               "p",
+               "Welcome to Chemistry 201! Here's what you can expect during this set up process."
              )
 
       assert has_element?(view, "button", "Go to course")
       assert has_element?(view, "button", "Cancel")
+    end
+
+    test "renders the section welcome fields when the description has content", %{
+      conn: conn,
+      user: student
+    } do
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "custom-welcome-title",
+            "type" => "p",
+            "children" => [
+              %{"text" => "Welcome to "},
+              %{"text" => "Organic Chemistry", "strong" => true}
+            ]
+          }
+        ]
+      }
+
+      section =
+        insert(:section,
+          title: "Chemistry 201",
+          description: "Build a strong foundation for the experiments ahead.",
+          welcome_title: welcome_title,
+          encouraging_subtitle: "Discover how molecules shape our world."
+        )
+
+      enroll_student(student, section)
+
+      {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
+
+      assert has_element?(view, "#onboarding-welcome-title", "Welcome to Organic Chemistry")
+      assert has_element?(view, "#onboarding-welcome-title strong", "Organic Chemistry")
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-welcome-title.min-w-0.max-w-full[class*="overflow-wrap:anywhere"])
+             )
+
+      assert has_element?(
+               view,
+               "#onboarding-welcome-subtitle",
+               "Discover how molecules shape our world."
+             )
+
+      assert has_element?(
+               view,
+               "#onboarding-welcome-description",
+               "Build a strong foundation for the experiments ahead."
+             )
+
+      refute has_element?(view, "#onboarding-welcome-title", "Welcome to Chemistry 201")
+    end
+
+    test "renders welcome title block formatting", %{conn: conn, user: student} do
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "welcome-heading",
+            "type" => "p",
+            "children" => [%{"text" => "Welcome to the course"}]
+          },
+          %{
+            "id" => "welcome-list",
+            "type" => "ul",
+            "children" => [
+              %{
+                "id" => "welcome-list-item",
+                "type" => "li",
+                "children" => [
+                  %{
+                    "id" => "welcome-list-paragraph",
+                    "type" => "p",
+                    "children" => [%{"text" => "Review the course goals"}]
+                  }
+                ]
+              }
+            ]
+          },
+          %{
+            "id" => "welcome-video",
+            "type" => "youtube",
+            "src" => "RpnEyBIkdMc",
+            "children" => [%{"text" => ""}]
+          }
+        ]
+      }
+
+      section =
+        insert(:section,
+          description: "Prepare for the course.",
+          welcome_title: welcome_title
+        )
+
+      enroll_student(student, section)
+
+      {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
+
+      assert has_element?(
+               view,
+               "#onboarding-welcome-title > p:first-child",
+               "Welcome to the course"
+             )
+
+      assert has_element?(
+               view,
+               "#onboarding-welcome-title ul.list-disc li",
+               "Review the course goals"
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-welcome-title[class*="text-[16px]"][class*="first-child]:text-[18xl]"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-welcome-title[class*="[&_ul]:!pl-6"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(#onboarding-youtube--welcome-video[phx-hook="LiveReact"])
+             )
     end
 
     test "renders the section cover image when present", %{conn: conn, user: student} do
@@ -126,16 +262,10 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       conn: conn,
       user: student
     } do
-      section = insert(:section, %{contains_explorations: true})
+      section = insert(:section, %{contains_explorations: true, description: nil})
       enroll_student(student, section)
 
       {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
-
-      assert has_element?(
-               view,
-               "li",
-               "Learning about the new ‘Exploration’ activities that provide real-world examples"
-             )
 
       assert has_element?(view, "button", "Let's Begin")
     end
@@ -148,12 +278,6 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       enroll_student(student, section)
 
       {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
-
-      assert has_element?(
-               view,
-               "li",
-               "A short survey to help shape your learning experience and let your instructor get to know you"
-             )
 
       assert has_element?(view, "button", "Start Survey")
     end

@@ -354,6 +354,8 @@ defmodule OliWeb.Router do
       pipe_through [:api]
 
       post "/scenario-yaml", PlaywrightScenarioController, :run
+      get "/emails", PlaywrightMailboxController, :index
+      get "/emails/:id", PlaywrightMailboxController, :show
     end
 
     scope "/test", OliWeb do
@@ -1207,6 +1209,12 @@ defmodule OliWeb.Router do
         end
       end
     end
+  end
+
+  scope "/workspaces/course_author", OliWeb do
+    pipe_through([:browser, :authoring_protected, :authorize_project])
+
+    get("/:project_id/objectives.csv", ObjectivesCsvController, :download)
   end
 
   scope "/workspaces", OliWeb.Workspaces do

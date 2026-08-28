@@ -13,7 +13,8 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
   const { context, closeSubmenus } = useToolbar();
 
   const onMouseDown = React.useCallback(
-    (_e) => {
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
       props.description.command.execute(context, editor);
       closeSubmenus();
     },
@@ -31,6 +32,7 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
 
   return (
     <button
+      type="button"
       className={classNames(styles.toolbarButton, styles.descriptive, active && styles.active)}
       onMouseDown={onMouseDown}
     >

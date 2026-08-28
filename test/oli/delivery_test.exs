@@ -8,6 +8,8 @@ defmodule Oli.DeliveryTest do
   alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionSpecification}
+  alias Oli.Authoring.Course.Project
+  alias Oli.Repo
 
   describe "user_research_consent_required?/2" do
     setup do
@@ -275,6 +277,101 @@ defmodule Oli.DeliveryTest do
       assert returned_section_slug == section.slug
     end
 
+    test "copies and pins the Project learning model for a new Section", context do
+      project = set_project_learning_model(context.project, :lkt_aoa)
+      context_id = "project-learning-model-#{System.unique_integer([:positive])}"
+
+      cache_lti_params(
+        put_in(
+          context.lti_params,
+          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+          context_id
+        ),
+        context.user.id
+      )
+
+      assert {:ok, section_id, _slug} =
+               Delivery.create_section(
+                 Sections.change_section(%Section{title: "Project model Section"}),
+                 "publication:#{context.publication.id}",
+                 context.user,
+                 SectionSpecification.lti(context.user, context_id)
+               )
+
+      assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
+
+      set_project_learning_model(project, :naive)
+      assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
+    end
+
+    test "copies the Project onboarding fields to a new Section", context do
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "project-welcome-title",
+            "type" => "p",
+            "children" => [%{"text" => "Welcome from the project"}]
+          }
+        ]
+      }
+
+      project =
+        context.project
+        |> Project.changeset(%{
+          description: "Project description",
+          welcome_title: welcome_title,
+          encouraging_subtitle: "Project subtitle"
+        })
+        |> Repo.update!()
+
+      user = insert(:user, independent_learner: true)
+
+      assert {:ok, section_id, _slug} =
+               Delivery.create_section(
+                 Sections.change_section(%Section{title: "Project onboarding Section"}),
+                 "project:#{project.id}",
+                 user,
+                 SectionSpecification.direct()
+               )
+
+      section = Sections.get_section!(section_id)
+      assert section.description == "Project description"
+      assert section.welcome_title == welcome_title
+      assert section.encouraging_subtitle == "Project subtitle"
+    end
+
+    test "copies the blueprint model even when it differs from its base Project", context do
+      product = set_section_learning_model(context.product, :lkt_aoa)
+      assert context.project.learning_model_version == :naive
+
+      context_id = "product-learning-model-#{System.unique_integer([:positive])}"
+
+      cache_lti_params(
+        put_in(
+          context.lti_params,
+          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+          context_id
+        ),
+        context.user.id
+      )
+
+      assert {:ok, section_id, _slug} =
+               Delivery.create_section(
+                 Sections.change_section(%Section{title: "Product model Section"}),
+                 "product:#{product.id}",
+                 context.user,
+                 SectionSpecification.lti(context.user, context_id)
+               )
+
+      section = Sections.get_section!(section_id)
+      assert section.learning_model_version == :lkt_aoa
+      assert section.blueprint_id == product.id
+
+      set_section_learning_model(product, :naive)
+      assert Sections.get_section!(section_id).learning_model_version == :lkt_aoa
+    end
+
     test "creates section with contained objectives from publication if it does not exist",
          context do
       context_id = "123"
@@ -498,5 +595,21 @@ defmodule Oli.DeliveryTest do
                  context.resources.obj_resource_f.id
                ])
     end
+  end
+
+  defp set_project_learning_model(project, learning_model_version) do
+    project
+    |> Project.trusted_learning_model_changeset(%{
+      learning_model_version: learning_model_version
+    })
+    |> Repo.update!()
+  end
+
+  defp set_section_learning_model(section, learning_model_version) do
+    section
+    |> Section.trusted_learning_model_changeset(%{
+      learning_model_version: learning_model_version
+    })
+    |> Repo.update!()
   end
 end

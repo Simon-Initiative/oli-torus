@@ -40,6 +40,10 @@ runtime_env =
       end
   end
 
+{lkt_aoa_config, lkt_aoa_sources} = Oli.LearningModel.Config.load_from_env!()
+Oli.LearningModel.Config.log_effective(lkt_aoa_config, lkt_aoa_sources)
+config :oli, :lkt_aoa, Oli.LearningModel.Config.to_keyword(lkt_aoa_config)
+
 # Appsignal client key is required for appsignal integration
 config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
@@ -737,7 +741,9 @@ if runtime_env == :prod do
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),
       mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10")),
       certificate_eligibility:
-        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10")),
+      automation_teardown:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_AUTOMATION_TEARDOWN", "1"))
     ]
 
   config :oli, Oli.Vault,

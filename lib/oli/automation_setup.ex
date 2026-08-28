@@ -5,17 +5,18 @@ defmodule Oli.AutomationSetup do
   """
   alias Lti_1p3.Roles.ContextRoles
 
-  alias Oli.Repo
   alias Oli.Accounts.User
   alias Oli.Analytics.Summary.ResourcePartResponse
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Analytics.Summary.ResponseSummary
   alias Oli.Analytics.Summary.StudentResponse
+  alias Oli.AutomationSetup.ProjectTeardownWorker
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Authoring.MediaLibrary.MediaItem
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Repo
   alias Oli.Resources.Resource
 
   alias Ecto.Multi
@@ -74,6 +75,37 @@ defmodule Oli.AutomationSetup do
     end
   end
 
+  @doc """
+  Validates an automation project and queues its full teardown.
+  """
+  @spec enqueue_project_teardown(String.t()) ::
+          %{success: true, queued: true, job_id: pos_integer()}
+          | %{success: false, message: String.t()}
+  def enqueue_project_teardown(slug) do
+    with {:ok, project} <-
+           Repo.one(from p in Project, where: p.slug == ^slug, preload: [:authors])
+           |> validate_project_for_teardown(),
+         {:ok, job} <-
+           %{project_slug: project.slug}
+           |> ProjectTeardownWorker.new()
+           |> Oban.insert() do
+      %{success: true, queued: true, job_id: job.id}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        Logger.error(
+          "Could not enqueue automation project teardown: #{inspect(changeset.errors)}"
+        )
+
+        %{success: false, message: "Could not queue project teardown"}
+
+      {:error, message} ->
+        %{success: false, message: message}
+
+      _ ->
+        %{success: false, message: "Unknown Reason"}
+    end
+  end
+
   # Tears down a test project, including publications, project-resource
   # associations, revisions, analytics rollups with non-cascading resource
   # references, resources, and imported media.
@@ -93,12 +125,7 @@ defmodule Oli.AutomationSetup do
                  :publications
                ]
            )
-           |> has_project(),
-         # Only tear down projects where duplicates are not allowed
-         {:ok} <- no_duplicates(project),
-         # Only tear down projects with no authors
-         {:ok} <-
-           has_no_authors(project.authors) do
+           |> validate_project_for_teardown() do
       resource_ids = for r <- project.resources, do: r.id
       publication_ids = for p <- project.publications, do: p.id
 
@@ -254,15 +281,18 @@ defmodule Oli.AutomationSetup do
       end
 
     {:ok, section} =
-      Oli.Delivery.Sections.create_section(%{
-        title: "Automation test section",
-        context_id: UUID.uuid4(),
-        start_date: Timex.now(),
-        end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
-        base_project_id: project.id,
-        open_and_free: true,
-        customizations: customizations
-      })
+      Oli.Delivery.Sections.create_section_from_source(
+        %{
+          title: "Automation test section",
+          context_id: UUID.uuid4(),
+          start_date: Timex.now(),
+          end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
+          base_project_id: project.id,
+          open_and_free: true,
+          customizations: customizations
+        },
+        project
+      )
 
     Oli.Delivery.Sections.create_section_resources(section, publication)
 
@@ -371,6 +401,14 @@ defmodule Oli.AutomationSetup do
 
   defp has_project(project) do
     {:ok, project}
+  end
+
+  defp validate_project_for_teardown(project) do
+    with {:ok, project} <- has_project(project),
+         {:ok} <- no_duplicates(project),
+         {:ok} <- has_no_authors(project.authors) do
+      {:ok, project}
+    end
   end
 
   defp has_no_authors([]) do

@@ -333,11 +333,16 @@ defmodule Oli.GenAI.Router do
         )
 
       {:error, reason} ->
-        Logger.warning("GenAI routing rejected",
-          service_config_id: service_config.id,
-          reason: reason,
-          request_type: request_type
+        Logger.warning(
+          "GenAI routing rejected service_config_id=#{service_config.id} " <>
+            "request_type=#{request_type} reason=#{routing_error_category(reason)}"
         )
     end
   end
+
+  defp routing_error_category(reason)
+       when reason in [:all_breakers_open, :over_capacity, :secondary_over_capacity],
+       do: reason
+
+  defp routing_error_category(_), do: :unknown
 end

@@ -144,7 +144,8 @@ Oli.Registrar.register_local_part_components(
     "janus_item_bank",
     "janus_list_sort",
     "janus_matching",
-    "janus_flashcards"
+    "janus_flashcards",
+    "janus_accordion"
   ])
 )
 

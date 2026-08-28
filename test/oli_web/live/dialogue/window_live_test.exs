@@ -11,7 +11,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
   alias Oli.Repo
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections
-  alias Oli.GenAI.Completions.ServiceConfig
+  alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
 
   defp create_project(_) do
     author = insert(:author)
@@ -446,6 +446,127 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
       assert assistant_message.llm_model == "gpt-4.1-mini"
       assert assistant_message.content =~ "assistant reply"
     end
+
+    test "ends streaming and shows a generic error when dialogue processing fails", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
+        )
+
+      render_submit(view, "update", %{"user_input" => %{"content" => "help"}})
+      send(view.pid, {:dialogue_server, {:error, :provider_failure}})
+
+      assert render(view) =~ "Hmmm, we encountered a problem"
+      assert socket_assigns(view).streaming == false
+      assert socket_assigns(view).allow_submission?
+      assert has_element?(view, "#ai_bot_input:not([disabled])")
+      assert has_element?(view, "#bot_submit_button:not([disabled])")
+    end
+
+    @tag capture_log: true
+    test "ends a stalled engagement when its watchdog expires", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
+        )
+
+      render_submit(view, "update", %{"user_input" => %{"content" => "help"}})
+      engagement_id = socket_assigns(view).engagement_id
+
+      send(view.pid, {:dialogue_timeout, engagement_id})
+
+      assert render(view) =~ "Hmmm, we encountered a problem"
+      assert socket_assigns(view).streaming == false
+      assert socket_assigns(view).allow_submission?
+    end
+
+    test "restarts the watchdog for a queued trigger continuation", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
+        )
+
+      trigger = %Oli.Conversation.Trigger{
+        trigger_type: :page,
+        data: %{},
+        prompt: "Offer help with the current page."
+      }
+
+      send(view.pid, {:trigger, trigger})
+      %{engagement_id: engagement_id, watchdog_timer: first_watchdog} = socket_assigns(view)
+
+      send(view.pid, {:trigger, trigger})
+      send(view.pid, {:dialogue_server, engagement_id, {:tokens_received, "First response."}})
+      send(view.pid, {:dialogue_server, engagement_id, {:tokens_finished}})
+
+      %{
+        engagement_id: ^engagement_id,
+        trigger_queue: [],
+        watchdog_timer: second_watchdog
+      } = socket_assigns(view)
+
+      assert second_watchdog != first_watchdog
+    end
+
+    test "ignores dialogue events from a stale engagement", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
+        )
+
+      send(view.pid, {:dialogue_server, make_ref(), {:error, :stale_provider_failure}})
+
+      refute render(view) =~ "Hmmm, we encountered a problem"
+      assert socket_assigns(view).messages == []
+    end
   end
 
   defp function_names(view) do
@@ -463,6 +584,10 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
   end
 
   defp stub_service_config do
-    %ServiceConfig{id: 1, name: "test-service-config", primary_model: %{id: 1}}
+    %ServiceConfig{
+      id: 1,
+      name: "test-service-config",
+      primary_model: %RegisteredModel{id: 1, name: "null", provider: :null}
+    }
   end
 end

@@ -1,0 +1,424 @@
+work_item: data_model
+requirements:
+- id: FR-001
+  title: Persist semantic learning-model selection
+  status: verified
+  description: Add explicit non-null learning-model selection to Projects and Sections
+    using semantic naive and LKT-AOA enum values independent of analytics versioning.
+- id: FR-002
+  title: Propagate and pin model selection
+  status: verified
+  description: Copy model selection through every supported Project, template, Section,
+    cloning, and duplication path while keeping created Sections pinned to their copied
+    value.
+- id: FR-003
+  title: Preserve a behavior-neutral staged rollout
+  status: verified
+  description: Keep existing and newly created Projects and Sections naive in this
+    work item and defer automatic LKT-AOA selection for new Projects to a later rollout.
+- id: FR-004
+  title: Preserve model selection through project archives
+  status: verified
+  description: Export and import Project and template model selections with explicit
+    validation, legacy fallback behavior, and faithful round-trip semantics.
+- id: FR-005
+  title: Store versioned parameters on Revisions
+  status: verified
+  description: Add dedicated self-describing JSONB learning-model parameter storage
+    to exact resource Revisions without reusing the generic parameters field.
+- id: FR-006
+  title: Represent and validate LO and activity-part parameters
+  status: verified
+  description: Support one LO beta coefficient and one difficulty coefficient per
+    activity part with strict validation and distinct missing-versus-zero semantics.
+- id: FR-007
+  title: Provide a typed extensible parameter boundary
+  status: verified
+  description: Load and dump parameter envelopes through explicit versioned Elixir
+    structs and one custom Ecto type that rejects unsupported or mismatched payloads.
+- id: FR-008
+  title: Preserve parameters through content lifecycle workflows
+  status: verified
+  description: Carry parameter payloads through Revision creation, duplication, cloning,
+    publication, and applicable import/export paths while delivery resolves Section-pinned
+    Revisions.
+- id: FR-009
+  title: Configure global LKT-AOA coefficients at application startup
+  status: verified
+  description: Provide centralized validated defaults and environment overrides for
+    gamma, rho, recency decay, and confidence saturation, with changes taking effect
+    only after restart.
+acceptance_criteria:
+- id: AC-001
+  requirement_id: FR-001
+  title: Existing Project and Section rows are backfilled to naive and both columns
+    are non-null with naive database and Ecto defaults.
+  status: verified
+  verification_method: automated
+  proofs:
+  - priv/repo/migrations/20260820110000_add_learning_model_fields.exs
+  - lib/oli/authoring/course/project.ex
+  - lib/oli/delivery/sections/section.ex
+  - test/oli/learning_model/schema_integration_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_2_execution_record.md
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-002
+  requirement_id: FR-001
+  title: Project and Section schemas accept only naive and lkt_aoa semantic values
+    and do not infer learning-model behavior from analytics_version.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/model_version.ex
+  - lib/oli/authoring/course/project.ex
+  - lib/oli/delivery/sections/section.ex
+  - test/oli/learning_model/model_version_test.exs
+  - test/oli/learning_model/schema_integration_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-003
+  requirement_id: FR-002
+  title: Project-to-Section, Project-to-template, and template-to-Section creation
+    explicitly copy learning_model_version from their source.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/delivery.ex
+  - lib/oli/delivery/sections/blueprint.ex
+  - lib/oli_web/controllers/open_and_free_controller.ex
+  - test/oli/delivery_test.exs
+  - test/oli/delivery/sections/blueprint_test.exs
+  - test/oli_web/controllers/open_and_free_controller_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_3_execution_record.md
+- id: AC-004
+  requirement_id: FR-002
+  title: Project, template, and Section duplication preserve source learning_model_version
+    unless an authorized workflow explicitly overrides it.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/authoring/clone.ex
+  - lib/oli/delivery/sections/blueprint.ex
+  - test/oli/clone_test.exs
+  - test/oli/delivery/sections/blueprint_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_3_execution_record.md
+- id: AC-005
+  requirement_id: FR-002
+  title: Later changes to a source Project or template do not implicitly change an
+    existing Section's pinned model selection.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/delivery/sections.ex
+  - test/oli/delivery_test.exs
+  - test/oli/delivery/sections/blueprint_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_3_execution_record.md
+- id: AC-006
+  requirement_id: FR-003
+  title: Newly created Projects continue to receive naive and no normal product interface
+    enables lkt_aoa in this work item.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli/authoring/course/project.ex
+  - lib/oli/delivery/sections/section.ex
+  - test/oli/learning_model/schema_integration_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_2_execution_record.md
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_3_execution_record.md
+- id: AC-007
+  requirement_id: FR-003
+  title: The migration and rollout do not rewrite existing entities to lkt_aoa or
+    change existing Section proficiency behavior.
+  status: verified
+  verification_method: automated
+  proofs:
+  - priv/repo/migrations/20260820110000_add_learning_model_fields.exs
+  - test/oli/learning_model/schema_integration_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_2_execution_record.md
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_3_execution_record.md
+- id: AC-008
+  requirement_id: FR-004
+  title: Project export writes learningModelVersion to _project.json using the strings
+    naive or lkt_aoa.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/interop/export.ex
+  - test/oli/interop/export_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-009
+  requirement_id: FR-004
+  title: Template export writes its persisted learningModelVersion to every Product
+    JSON record without deriving it from the Project.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/interop/export.ex
+  - test/oli/interop/export_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-010
+  requirement_id: FR-004
+  title: Exporting and re-importing an LKT-AOA Project preserves the Project and every
+    template's exact model selection, including a template value different from its
+    Project.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/authoring/course.ex
+  - lib/oli/delivery/sections/blueprint.ex
+  - lib/oli/interop/ingest/processor/project.ex
+  - lib/oli/interop/ingest/processor/products.ex
+  - test/oli/interop/export_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-011
+  requirement_id: FR-004
+  title: A legacy archive with no model fields imports its Project as naive and each
+    missing Product value inherits the imported Project value.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/model_version.ex
+  - lib/oli/interop/ingest/processor/project.ex
+  - lib/oli/interop/ingest/processor/products.ex
+  - test/oli/interop/ingest_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-012
+  requirement_id: FR-004
+  title: Explicit null archive values use documented missing-value fallbacks while
+    unsupported explicit types or values fail ingestion with an actionable error.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/model_version.ex
+  - lib/oli/interop/ingest/processor/project.ex
+  - lib/oli/interop/ingest/processor/products.ex
+  - test/oli/interop/ingest_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-013
+  requirement_id: FR-005
+  title: Revision has a dedicated learning_model_parameters JSONB field whose envelope
+    identifies schema version, model, model version, and parameter type.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/resources/revision.ex
+  - priv/repo/migrations/20260820110000_add_learning_model_fields.exs
+  - lib/oli/interop/export.ex
+  - test/oli/interop/export_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-014
+  requirement_id: FR-005
+  title: Naive and untrained LKT-AOA Revisions may omit learning_model_parameters
+    without conflating absence with an explicitly stored zero.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/interop/export.ex
+  - lib/oli/interop/ingest/processor/common.ex
+  - test/oli/interop/ingest_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-015
+  requirement_id: FR-006
+  title: An LO parameter payload stores one finite beta_lo value and is rejected when
+    used with a non-objective Revision.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/interop/ingest/processor/common.ex
+  - lib/oli/interop/ingest/processor/objectives.ex
+  - lib/oli/interop/ingest/processor/activities.ex
+  - test/oli/interop/ingest_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-016
+  requirement_id: FR-006
+  title: An activity payload stores finite beta_difficulty values in objects keyed
+    by string part IDs, with one value shared across every LO targeted by that part.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/interop/ingest/processor/common.ex
+  - lib/oli/interop/ingest/processor/activities.ex
+  - test/oli/interop/export_test.exs
+  - test/oli/interop/ingest_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-017
+  requirement_id: FR-006
+  title: Activity parameter validation rejects unknown part IDs and removes stale
+    entries when parts are deleted, while newly added parts may remain untrained.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/parameters/validation.ex
+  - lib/oli/resources.ex
+  - lib/oli/authoring/editing/activity_editor.ex
+  - test/oli/learning_model/parameters_validation_test.exs
+  - test/oli/resources_test.exs
+  - test/oli/editing/activity_editor_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_4_execution_record.md
+- id: AC-018
+  requirement_id: FR-006
+  title: Missing coefficients use the documented runtime cold-start fallback of 0.0
+    while explicitly stored 0.0 remains a legitimate trained value.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/fdd.md
+  - lib/oli/learning_model/parameters.ex
+  - test/oli/learning_model/parameters_test.exs
+  - test/oli/resources_test.exs
+  - test/oli/interop/export_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_4_execution_record.md
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-019
+  requirement_id: FR-007
+  title: Supported LO and activity payloads round-trip through versioned structs and
+    the custom Ecto type without exposing arbitrary maps to calculation code.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/parameters.ex
+  - lib/oli/learning_model/parameters/type.ex
+  - lib/oli/learning_model/v2/learning_objective_parameters.ex
+  - lib/oli/learning_model/v2/activity_parameters.ex
+  - lib/oli/learning_model/v2/part_parameters.ex
+  - test/oli/learning_model/parameters_test.exs
+  - test/oli/learning_model/schema_integration_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_1_execution_record.md
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-020
+  requirement_id: FR-007
+  title: Unsupported schema or model versions and parameter types mismatched to the
+    Revision resource type return controlled validation errors and are never interpreted
+    as v2.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/parameters.ex
+  - lib/oli/learning_model/parameters/validation.ex
+  - lib/oli/interop/ingest/processor/common.ex
+  - test/oli/interop/ingest_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-021
+  requirement_id: FR-008
+  title: Creating a Revision from a prior Revision preserves learning_model_parameters
+    unless the caller explicitly supplies a replacement.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/resources.ex
+  - test/oli/resources_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_4_execution_record.md
+- id: AC-022
+  requirement_id: FR-008
+  title: Activity, adaptive, Project, and package duplication paths preserve parameter
+    payloads on the corresponding duplicated Revisions.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/authoring/editing/activity_editor.ex
+  - lib/oli/authoring/editing/adaptive_duplication.ex
+  - lib/oli/authoring/editing/container_editor.ex
+  - lib/oli/publishing/unique_ids.ex
+  - lib/oli/authoring/clone.ex
+  - test/oli/authoring/editing/adaptive_duplication_test.exs
+  - test/oli/editing/activity_editor_test.exs
+  - test/oli/editing/container_editor_test.exs
+  - test/oli/publishing/unique_ids_test.exs
+  - test/oli/clone_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_4_execution_record.md
+- id: AC-023
+  requirement_id: FR-008
+  title: Publication preserves parameter payloads and delivery resolves parameters
+    from the Revision pinned to the Section rather than the latest authoring Revision.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/publishing/authoring_resolver.ex
+  - lib/oli/publishing/delivery_resolver.ex
+  - test/oli/publishing_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_4_execution_record.md
+- id: AC-024
+  requirement_id: FR-008
+  title: Import/export paths expected to preserve learning-model configuration retain
+    Revision parameter payloads.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/interop/export.ex
+  - lib/oli/interop/ingest/processor/common.ex
+  - lib/oli/interop/ingest/processor/objectives.ex
+  - lib/oli/interop/ingest/processor/activities.ex
+  - test/oli/interop/export_test.exs
+  - test/oli/interop/ingest_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_5_execution_record.md
+- id: AC-025
+  requirement_id: FR-009
+  title: The application exposes one typed lkt_aoa configuration containing gamma,
+    rho, recency_decay, and confidence_saturation without duplicating values into
+    learner state.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/config.ex
+  - config/config.exs
+  - test/oli/learning_model/config_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-026
+  requirement_id: FR-009
+  title: Unset environment variables use application defaults gamma 0.1, rho 1.0,
+    recency_decay 0.9, and confidence_saturation 3.0.
+  status: verified
+  verification_method: automated
+  proofs:
+  - config/config.exs
+  - lib/oli/learning_model/config.ex
+  - test/oli/learning_model/config_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-027
+  requirement_id: FR-009
+  title: LKT_AOA_GAMMA, LKT_AOA_RHO, LKT_AOA_RECENCY_DECAY, and LKT_AOA_CONFIDENCE_SATURATION
+    overrides are loaded from runtime configuration only at application startup.
+  status: verified
+  verification_method: automated
+  proofs:
+  - config/runtime.exs
+  - lib/oli/learning_model/config.ex
+  - test/oli/learning_model/config_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-028
+  requirement_id: FR-009
+  title: Present malformed, non-finite, or out-of-range overrides fail application
+    startup and identify the offending environment variable rather than silently using
+    a default.
+  status: verified
+  verification_method: automated
+  proofs:
+  - config/runtime.exs
+  - lib/oli/learning_model/config.ex
+  - test/oli/learning_model/config_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-029
+  requirement_id: FR-009
+  title: recency_decay is constrained to greater than 0.0 and at most 1.0, confidence_saturation
+    is greater than 0.0, and gamma and rho are greater than or equal to 0.0; all four
+    values must be finite.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/config.ex
+  - test/oli/learning_model/config_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md
+- id: AC-030
+  requirement_id: FR-009
+  title: No UI, database editor, per-Project override, or dynamic runtime mutation
+    path is introduced for global LKT-AOA configuration.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - config/config.exs
+  - config/runtime.exs
+  - lib/oli/learning_model/config.ex
+  - lib/oli/authoring/course/project.ex
+  - lib/oli/delivery/sections/section.ex
+  - test/oli/learning_model/schema_integration_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/data_model/phase_6_execution_record.md

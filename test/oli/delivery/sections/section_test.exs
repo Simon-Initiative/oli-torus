@@ -89,6 +89,17 @@ defmodule Oli.Delivery.Sections.SectionTest do
       assert changeset.errors[:title] |> elem(0) =~ ~r/should be at most .* character/
     end
 
+    test "validates the description character limit" do
+      section = build(:section, @valid_section_attrs)
+      description = String.duplicate("a", 301)
+
+      changeset = Section.changeset(section, %{description: description})
+
+      assert changeset.errors[:description] ==
+               {"must be %{count} characters or fewer",
+                [count: 300, validation: :length, kind: :max, type: :string]}
+    end
+
     test "default assistant_enabled is false" do
       changeset =
         build(:section, @valid_section_attrs)

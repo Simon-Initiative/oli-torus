@@ -126,7 +126,10 @@ defmodule OliWeb.Common.Stepper do
         <h4 class="font-bold text-md md:text-[20px] tracking-[0.02px] md:leading-5 mb-[9px]">
           {@step.title}
         </h4>
-        <p class="font-normal text-sm md:text-[16px] tracking-[0.02px] md:leading-[24px]">
+        <p
+          :if={@step.description not in [nil, ""]}
+          class="font-normal text-sm md:text-[16px] tracking-[0.02px] md:leading-[24px]"
+        >
           {@step.description}
         </p>
       </div>

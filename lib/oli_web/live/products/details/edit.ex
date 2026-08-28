@@ -49,7 +49,7 @@ defmodule OliWeb.Products.Details.Edit do
 
         <div class="form-group mb-2">
           {label(f, :description)}
-          {text_input(f, :description, class: "form-control")}
+          {text_input(f, :description, class: "form-control", maxlength: 300)}
           <div>{error_tag(f, :description)}</div>
         </div>
 
