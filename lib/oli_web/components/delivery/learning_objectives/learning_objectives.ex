@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives do
   use OliWeb, :live_component
 
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias OliWeb.Common.{Params, StripedPagedTable, SearchInput}
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
@@ -42,15 +43,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         socket
       ) do
     params = decode_params(params)
-    params = maybe_adjust_params_for_navigation(objectives_tab.objectives, params)
+    patch_url_type = assigns[:patch_url_type]
+
+    params =
+      maybe_adjust_params_for_navigation(
+        objectives_tab.objectives,
+        params,
+        patch_url_type
+      )
+
     scoped_objectives = scoped_objectives(objectives_tab.objectives, params)
     socket = maybe_handle_tile_navigation(socket, scoped_objectives, params)
 
-    {total_count, rows, _filtered_objectives} =
-      apply_filters(
-        objectives_tab.objectives,
-        params
-      )
+    {total_count, rows, search_expanded_parent_ids} =
+      apply_filters(scoped_objectives, params, patch_url_type)
 
     indexed_rows =
       Enum.with_index(rows)
@@ -59,13 +65,27 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       end)
 
     {:ok, objectives_table_model} =
-      ObjectivesTableModel.new(indexed_rows, assigns[:patch_url_type])
+      ObjectivesTableModel.new(indexed_rows, patch_url_type)
 
-    expanded_objectives = starting_expanded_objectives(socket, params)
+    # A new search term resets the expansion state to whatever that term dictates. While the
+    # term holds, rows the user collapsed by hand stay collapsed across sorting and paging.
+    # socket.assigns[:params] still holds the previous params here: they are reassigned at the
+    # end of this function.
+    search_changed? = socket.assigns[:params][:text_search] != params.text_search
+
+    expanded_objectives =
+      if search_changed?, do: MapSet.new(), else: starting_expanded_objectives(socket, params)
+
+    manually_collapsed_rows =
+      if search_changed?,
+        do: MapSet.new(),
+        else: socket.assigns[:manually_collapsed_rows] || MapSet.new()
 
     expanded_objectives =
       expanded_objectives
       |> MapSet.union(initial_expanded_rows(scoped_objectives, params))
+      |> MapSet.union(search_expanded_rows(search_expanded_parent_ids, rows))
+      |> MapSet.difference(manually_collapsed_rows)
 
     objectives_table_model =
       Map.merge(objectives_table_model, %{
@@ -82,6 +102,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             section_title: assigns[:section_title],
             current_user: assigns[:current_user],
             current_params: encode_params_for_url(params),
+            text_search: params.text_search,
             component_target: socket.assigns.myself,
             expanded_rows: expanded_objectives
           })
@@ -136,7 +157,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        selected_proficiency_options: selected_proficiency_options,
        selected_proficiency_ids: selected_proficiency_ids,
        card_props: card_props,
-       expanded_objectives: expanded_objectives
+       expanded_objectives: expanded_objectives,
+       manually_collapsed_rows: manually_collapsed_rows
      )
      |> assign(
        :email_modal_payload,
@@ -340,7 +362,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           ~p"/sections/#{section_slug}/student_dashboard/#{student_id}/learning_objectives"
       end
 
-    {:noreply, socket |> assign(expanded_objectives: MapSet.new()) |> push_patch(to: path)}
+    {:noreply,
+     socket
+     |> assign(expanded_objectives: MapSet.new(), manually_collapsed_rows: MapSet.new())
+     |> push_patch(to: path)}
   end
 
   def handle_event("filter_by", %{"filter" => filter}, socket) do
@@ -365,7 +390,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        to:
          route_for(
            socket,
-           %{text_search: objective_name},
+           %{text_search: trim_text_search(objective_name), offset: 0},
            socket.assigns.patch_url_type
          )
      )}
@@ -433,18 +458,19 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   def handle_event("toggle_objective_details", %{"objective_id" => objective_id}, socket) do
-    # Get current expanded state
-    expanded_objectives = socket.assigns.expanded_objectives
+    collapsing? = MapSet.member?(socket.assigns.expanded_objectives, objective_id)
 
-    # Toggle the state
     expanded_objectives =
-      if MapSet.member?(expanded_objectives, objective_id) do
-        MapSet.delete(expanded_objectives, objective_id)
-      else
-        MapSet.put(expanded_objectives, objective_id)
-      end
+      if collapsing?,
+        do: MapSet.delete(socket.assigns.expanded_objectives, objective_id),
+        else: MapSet.put(socket.assigns.expanded_objectives, objective_id)
 
-    # Update the table model with the new expanded_rows
+    # Tracked so a later sort or page change does not reopen what the user just closed.
+    manually_collapsed_rows =
+      if collapsing?,
+        do: MapSet.put(socket.assigns.manually_collapsed_rows, objective_id),
+        else: MapSet.delete(socket.assigns.manually_collapsed_rows, objective_id)
+
     updated_table_model =
       Map.update!(socket.assigns.table_model, :data, fn data ->
         Map.put(data, :expanded_rows, expanded_objectives)
@@ -453,6 +479,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {:noreply,
      socket
      |> assign(expanded_objectives: expanded_objectives)
+     |> assign(manually_collapsed_rows: manually_collapsed_rows)
      |> assign(table_model: updated_table_model)}
   end
 
@@ -512,7 +539,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           ],
           @default_params.sort_by
         ),
-      text_search: Params.get_param(params, "text_search", @default_params.text_search),
+      text_search:
+        params
+        |> Params.get_param("text_search", @default_params.text_search)
+        |> trim_text_search(),
       filter_by: Params.get_int_param(params, "filter_by", @default_params.filter_by),
       selected_proficiency_ids:
         Params.get_list_param(
@@ -558,6 +588,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end)
   end
 
+  defp trim_text_search(text_search) when is_binary(text_search) do
+    case String.trim(text_search) do
+      "" -> nil
+      text_search -> text_search
+    end
+  end
+
+  defp trim_text_search(_text_search), do: nil
+
   defp encode_params_for_url(params) do
     case Map.fetch(params, :selected_proficiency_ids) do
       {:ok, ids} when is_list(ids) ->
@@ -568,27 +607,49 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end
   end
 
-  defp apply_filters(objectives, params) do
-    scoped_objectives = scoped_objectives(objectives, params)
-    filtered_objectives = filtered_objectives(scoped_objectives, params)
+  defp apply_filters(scoped_objectives, params, patch_url_type) do
+    {filtered_objectives, search_expanded_parent_ids} =
+      case patch_url_type do
+        :instructor_dashboard -> instructor_dashboard_filter(scoped_objectives, params)
+        _ -> {filtered_objectives(scoped_objectives, params), MapSet.new()}
+      end
 
-    table_objectives =
-      filtered_objectives
-      |> sort_by(params.sort_by, params.sort_order)
+    sorted_objectives = sort_by(filtered_objectives, params.sort_by, params.sort_order)
 
-    total_count = length(table_objectives)
-
-    rows =
-      table_objectives
-      |> Enum.drop(params.offset)
-      |> Enum.take(params.limit)
-
-    {total_count, rows, filtered_objectives}
+    {length(sorted_objectives),
+     sorted_objectives |> Enum.drop(params.offset) |> Enum.take(params.limit),
+     search_expanded_parent_ids}
   end
 
   defp maybe_adjust_params_for_navigation(
          objectives,
-         %{navigation_source: "challenging_objectives_tile"} = params
+         %{navigation_source: "challenging_objectives_tile"} = params,
+         :instructor_dashboard
+       ) do
+    scoped_objectives = scoped_objectives(objectives, params)
+
+    case resolve_deep_link_parent_id(scoped_objectives, params) do
+      nil ->
+        params
+
+      parent_id ->
+        sorted_objectives =
+          scoped_objectives
+          |> instructor_dashboard_filter(params)
+          |> elem(0)
+          |> sort_by(params.sort_by, params.sort_order)
+
+        adjust_offset_to_index(
+          params,
+          Enum.find_index(sorted_objectives, &(&1.resource_id == parent_id))
+        )
+    end
+  end
+
+  defp maybe_adjust_params_for_navigation(
+         objectives,
+         %{navigation_source: "challenging_objectives_tile"} = params,
+         _patch_url_type
        ) do
     scoped_objectives = scoped_objectives(objectives, params)
 
@@ -597,7 +658,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       |> filtered_objectives(params)
       |> sort_by(params.sort_by, params.sort_order)
 
-    case navigation_target_index(sorted_objectives, params) do
+    adjust_offset_to_index(params, navigation_target_index(sorted_objectives, params))
+  end
+
+  defp maybe_adjust_params_for_navigation(_objectives, params, _patch_url_type), do: params
+
+  defp adjust_offset_to_index(params, index) do
+    case index do
       nil ->
         params
 
@@ -609,8 +676,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         end
     end
   end
-
-  defp maybe_adjust_params_for_navigation(_objectives, params), do: params
 
   defp navigation_target_index(objectives, %{subobjective_id: subobjective_id})
        when is_integer(subobjective_id) do
@@ -631,6 +696,28 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
     |> maybe_filter_by_card(params.selected_card_value)
   end
+
+  defp instructor_dashboard_filter(objectives, %{text_search: text_search} = params)
+       when is_binary(text_search) and text_search != "" do
+    search_term = String.downcase(text_search)
+
+    search_matches =
+      objectives
+      |> searchable_objectives()
+      |> maybe_filter_by_text(text_search)
+
+    search_expanded_parent_ids =
+      for match <- search_matches,
+          text_matches?(match.subobjective, search_term),
+          into: MapSet.new(),
+          do: match.objective_resource_id
+
+    {instructor_dashboard_parent_objectives(search_matches, objectives, params),
+     search_expanded_parent_ids}
+  end
+
+  defp instructor_dashboard_filter(objectives, params),
+    do: {instructor_dashboard_parent_objectives(objectives, objectives, params), MapSet.new()}
 
   @doc false
   def initial_expanded_rows(scoped_objectives, params) do
@@ -731,14 +818,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_text(objectives, ""), do: objectives
 
   defp maybe_filter_by_text(objectives, text_search) do
-    text = String.downcase(text_search)
+    search_term = String.downcase(text_search)
 
-    objectives
-    |> Enum.filter(fn objective ->
-      String.contains?(String.downcase(objective.objective), text) or
-        String.contains?(String.downcase(to_string(objective.subobjective || "")), text)
-    end)
+    Enum.filter(
+      objectives,
+      &(text_matches?(&1.objective, search_term) or text_matches?(&1.subobjective, search_term))
+    )
   end
+
+  defp text_matches?(nil, _search_term), do: false
+
+  defp text_matches?(text, search_term),
+    do: String.contains?(String.downcase(text), search_term)
 
   defp maybe_filter_by_proficiency(objectives, []), do: objectives
 
@@ -778,6 +869,69 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     do: Enum.filter(objectives, &(&1.student_proficiency_subobj == "Low"))
 
   defp maybe_filter_by_card(objectives, _), do: objectives
+
+  defp parent_resource_id(%{subobjective: nil, resource_id: resource_id}), do: resource_id
+  defp parent_resource_id(objective), do: objective[:objective_resource_id]
+
+  defp searchable_objectives(objectives),
+    do: searchable_child_objectives(missing_child_parent_pairs(objectives)) ++ objectives
+
+  defp missing_child_parent_pairs(objectives) do
+    existing_ids = MapSet.new(objectives, & &1.resource_id)
+
+    for objective <- objectives,
+        top_level_objective?(objective),
+        child_id <- Map.get(objective, :children, []),
+        not MapSet.member?(existing_ids, child_id),
+        do: {child_id, objective}
+  end
+
+  defp searchable_child_objectives(child_parent_pairs) do
+    case Enum.find_value(child_parent_pairs, fn {_child_id, parent} -> parent[:section_id] end) do
+      nil ->
+        []
+
+      section_id ->
+        children_by_id =
+          section_id
+          |> SectionResourceDepot.get_resources_by_ids(
+            for({child_id, _parent} <- child_parent_pairs, uniq: true, do: child_id)
+          )
+          |> Map.new(&{&1.resource_id, &1})
+
+        for {child_id, parent} <- child_parent_pairs,
+            section_resource <- List.wrap(children_by_id[child_id]) do
+          %{
+            resource_id: section_resource.resource_id,
+            objective: parent.objective,
+            objective_resource_id: parent.resource_id,
+            subobjective: section_resource.title,
+            student_proficiency_obj: parent.student_proficiency_obj,
+            student_proficiency_subobj: nil
+          }
+        end
+    end
+  end
+
+  defp instructor_dashboard_parent_objectives(candidates, objectives, params) do
+    matching_parent_ids =
+      candidates
+      |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
+      |> maybe_filter_by_card(params.selected_card_value)
+      |> MapSet.new(&parent_resource_id/1)
+
+    Enum.filter(objectives, fn objective ->
+      top_level_objective?(objective) and
+        MapSet.member?(matching_parent_ids, objective.resource_id)
+    end)
+  end
+
+  defp search_expanded_rows(search_expanded_parent_ids, rows) do
+    for row <- rows,
+        MapSet.member?(search_expanded_parent_ids, row.resource_id),
+        into: MapSet.new(),
+        do: "row_#{row.resource_id}"
+  end
 
   defp route_for(socket, new_params, :instructor_dashboard) do
     base_params =
@@ -947,7 +1101,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         nil
 
       subobjective ->
-        subobjective.resource_id
+        subobjective.objective_resource_id
     end
   end
 
