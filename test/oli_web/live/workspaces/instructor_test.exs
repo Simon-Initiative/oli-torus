@@ -393,6 +393,24 @@ defmodule OliWeb.Workspaces.InstructorTest do
                ~r/Instructors:\s*#{instructor.name},\s*Lionel Messi,\s*Angel Di Maria/
              )
     end
+
+    test "constrains long descriptions within the course card padding", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      description = String.duplicate("a", 300)
+      section = insert(:section, open_and_free: true, description: description)
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(
+               view,
+               "div.self-stretch.min-w-0 > p[role='course description'].break-words",
+               description
+             )
+    end
   end
 
   describe "user logged in as hidden instructor" do

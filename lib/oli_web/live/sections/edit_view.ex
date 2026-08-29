@@ -177,6 +177,7 @@ defmodule OliWeb.Sections.EditView do
       params
       |> can_change_payment?(socket.assigns.is_admin)
       |> convert_dates(socket.assigns.ctx)
+      |> decode_welcome_title()
 
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end

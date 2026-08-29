@@ -375,13 +375,13 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(
                view,
                "p.text-Text-text-high",
-               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
              )
 
       assert has_element?(
                view,
                "p",
-               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
              )
 
       assert has_element?(

@@ -168,7 +168,10 @@ defmodule OliWeb.DeliveryControllerTest do
       enrollment_path = ~p"/sections/#{section.slug}/enroll"
       conn = get(conn, enrollment_path)
 
-      assert response(conn, 200) =~ "Enroll in Course Section"
+      html = response(conn, 200)
+
+      assert html =~ "Enroll in Course Section"
+      assert html =~ ~s(class="text-sm my-1 break-words")
     end
 
     test "redirect to requested path after login", %{conn: conn, section: section} do

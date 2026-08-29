@@ -2,6 +2,8 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  alias Oli.Accounts
+  alias Oli.Utils.Seeder.AccountsFixtures
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do
@@ -46,6 +48,33 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
         |> follow_redirect(conn, ~p"/authors/log_in")
 
       assert html_response(conn, 200) =~ "Sign in"
+    end
+  end
+
+  describe "register author" do
+    test "creates an author through the configured recaptcha implementation", %{conn: conn} do
+      Oli.TestHelpers.stub_recaptcha()
+
+      {:ok, lv, _html} = live(conn, ~p"/authors/register")
+
+      email = AccountsFixtures.unique_author_email()
+
+      form =
+        form(lv, "#registration_form",
+          author: %{
+            "email" => email,
+            "given_name" => "Andrew",
+            "family_name" => "Carnegie",
+            "password" => "valid_password",
+            "password_confirmation" => "valid_password"
+          }
+        )
+
+      render_submit(form)
+      conn = follow_trigger_action(form, conn)
+
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+      assert Accounts.get_author_by_email(email)
     end
   end
 end

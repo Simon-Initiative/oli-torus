@@ -3,6 +3,7 @@ defmodule OliWeb.Common.FilterBox do
 
   # "The main filter/search"
   slot(:inner_block, required: true)
+  slot(:card_body)
   # "Extra options that can be added next to search and/or sort"
   slot(:extra_opts)
 
@@ -15,18 +16,28 @@ defmodule OliWeb.Common.FilterBox do
 
   attr(:card_body_text_class, :string, default: "mt-1 mb-4")
 
+  attr(:class, :string, default: "mb-3 w-full")
+  attr(:header_class, :string, default: "pb-2")
+  attr(:body_class, :string, default: nil)
+  attr(:filter_opts_class, :string, default: "filter-opts flex flex-wrap items-center gap-2")
+  attr(:inner_block_class, :string, default: "w-full")
+
   attr(:show_sort, :boolean, default: true)
   attr(:show_more_opts, :boolean, default: true)
   attr(:sort, :any, default: nil)
 
   def render(assigns) do
     ~H"""
-    <div class="mb-3 w-full">
-      <h2 id="header_id" class="pb-2">{@card_header_text}</h2>
-      <div>
-        <p class={@card_body_text_class}>{@card_body_text}</p>
-        <div class="filter-opts flex flex-wrap items-center gap-2">
-          <div class="w-full">
+    <div class={@class}>
+      <h2 id="header_id" class={@header_class}>{@card_header_text}</h2>
+      <div class={@body_class}>
+        <%= if @card_body != [] do %>
+          {render_slot(@card_body)}
+        <% else %>
+          <p class={@card_body_text_class}>{@card_body_text}</p>
+        <% end %>
+        <div class={@filter_opts_class}>
+          <div class={@inner_block_class}>
             {render_slot(@inner_block)}
           </div>
 

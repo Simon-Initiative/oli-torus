@@ -374,6 +374,15 @@ defmodule OliWeb.Router do
     end
   end
 
+  if Application.compile_env(:oli, :enable_e2e_mailbox, false) do
+    scope "/test", OliWeb do
+      pipe_through [:api]
+
+      get "/emails", PlaywrightMailboxController, :index
+      get "/emails/:id", PlaywrightMailboxController, :show
+    end
+  end
+
   scope "/", OliWeb do
     pipe_through [:browser, :redirect_if_author_is_authenticated]
 
@@ -1207,6 +1216,12 @@ defmodule OliWeb.Router do
         end
       end
     end
+  end
+
+  scope "/workspaces/course_author", OliWeb do
+    pipe_through([:browser, :authoring_protected, :authorize_project])
+
+    get("/:project_id/objectives.csv", ObjectivesCsvController, :download)
   end
 
   scope "/workspaces", OliWeb.Workspaces do

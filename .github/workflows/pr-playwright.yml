@@ -1,0 +1,199 @@
+name: PR Playwright Suite
+
+# Runs Playwright tests against a dedicated Torus instance built and torn
+# down for this job only, with an isolated database, Swoosh.Adapters.Local
+# for email, and the /test/scenario-yaml and /test/emails endpoints enabled
+# (MIX_ENV=ci_e2e). This is the counterpart to nightly-playwright.yml,
+# which targets a real, persistent Torus deployment and must never gain
+# access to those endpoints.
+#
+# To include a Playwright test here, tag its title (or its
+# test.describe title) with "@pr", the same way existing suites use
+# "@nightly" or "@smoke". The database starts out freshly created and empty
+# on every run - a test can (and, if it needs data, should) seed exactly
+# what it needs via /test/scenario-yaml, but only add "@pr" to a test that
+# doesn't depend on fixture data already present from elsewhere, or on real
+# third-party credentials (Canvas, Google, LTI tools, etc.) - this instance
+# has none of that.
+on:
+  pull_request:
+    branches:
+      - master
+      - hotfix-*
+      - prerelease-*
+      - nextgen-ux
+
+jobs:
+  pr-playwright:
+    name: PR Playwright Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18
+        env:
+          POSTGRES_DB: oli_playwright_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oli_playwright_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: ci_e2e
+      DB_NAME: oli_playwright_ci
+      DB_HOST: localhost
+      # HOST and PLAYWRIGHT_BASE_URL must name the same host: the server
+      # builds absolute confirmation/reset links in emails from HOST, while
+      # Playwright resolves every relative page.goto(...) against
+      # PLAYWRIGHT_BASE_URL. A mismatch (e.g. 127.0.0.1 vs localhost) sends
+      # the browser to an origin it never visited, with none of the earlier
+      # cookies (including cookie consent) present there.
+      HOST: localhost
+      SCHEME: http
+      HTTP_PORT: 4002
+      PORT: 4002
+      PLAYWRIGHT_BASE_URL: http://localhost:4002
+      # Scoped to this ephemeral, unreachable-from-outside-the-job instance
+      # only; it never needs to be a real secret.
+      PLAYWRIGHT_SCENARIO_TOKEN: ci-ephemeral-token
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Provides sane, non-secret defaults (e.g. CLOAK_VAULT_KEY) the same
+      # way nightly-scenarios does, so this job doesn't have to hand-list
+      # every variable the app reads at boot.
+      - name: Configure
+        run: cp oli.example.env oli.env
+
+      - name: Setup BEAM toolchain
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
+          gleam-version: '1.16.0'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/*'
+          cache: npm
+          cache-dependency-path: assets/automation/package-lock.json
+
+      - name: Restore deps cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-ci-e2e-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-ci-e2e-
+
+      - name: Install Gleam Mix archive
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix archive.install hex mix_gleam 0.6.2 --force
+
+      - name: Install Elixir dependencies
+        run: mix deps.get
+
+      - name: Build Gleam project
+        run: gleam build --target erlang
+        working-directory: gleam
+
+      - name: Build dependencies
+        run: mix deps.compile
+
+      - name: Compile (MIX_ENV=ci_e2e)
+        run: set -a && source oli.env && mix compile --warnings-as-errors
+
+      # mix.exs's ecto.setup alias runs create, migrate, and
+      # priv/repo/seeds.exs. Seeding is required, not optional: the
+      # `system_roles` rows an Author's system_role_id foreign key points
+      # at (ids 1/2) are only ever inserted by seeds.exs, not by any
+      # migration - a fresh database with no seed data can migrate cleanly
+      # and still reject every author insert with a foreign_key_constraint
+      # error.
+      - name: Create, migrate, and seed the ephemeral database
+        run: set -a && source oli.env && mix ecto.setup
+
+      - name: Install frontend dependencies
+        working-directory: assets
+        run: yarn install --frozen-lockfile
+
+      # Watchers are disabled for MIX_ENV=ci_e2e (config/ci_e2e.exs),
+      # so the JS/CSS bundles the app serves must be built once, upfront,
+      # rather than relying on the dev watcher process to build them live.
+      - name: Build frontend assets
+        working-directory: assets
+        run: yarn run deploy
+
+      - name: Install Playwright dependencies
+        working-directory: assets/automation
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: assets/automation
+        run: npx playwright install --with-deps chrome
+
+      - name: Start Torus (MIX_ENV=ci_e2e)
+        run: |
+          set -a
+          source oli.env
+          set +a
+          nohup mix phx.server > /tmp/torus-server.log 2>&1 &
+
+      - name: Wait for Torus to be ready
+        run: |
+          for _ in $(seq 1 60); do
+            if curl --silent --fail --output /dev/null "http://localhost:4002/"; then
+              echo "Torus is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Torus did not become ready in time." >&2
+          cat /tmp/torus-server.log
+          exit 1
+
+      - name: Run @pr-tagged Playwright tests
+        working-directory: assets/automation
+        run: npx playwright test --grep @pr --reporter=line
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-playwright-report
+          path: assets/automation/playwright-report/
+          retention-days: 14
+
+      - name: Upload Playwright test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-playwright-test-results
+          path: assets/automation/test-results/
+          retention-days: 14
+
+      - name: Upload Torus server log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-playwright-torus-server-log
+          path: /tmp/torus-server.log
+          retention-days: 14
+
+    # The postgres service container (and its `oli_playwright_ci` database)
+    # is destroyed with the job's runner; no manual cleanup step is needed.

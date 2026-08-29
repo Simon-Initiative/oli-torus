@@ -211,20 +211,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, "#objectives-table")
-      assert has_element?(view, "input[phx-change='change_search'][phx-blur='apply_search']")
+      assert has_element?(view, "input[phx-change='change_search'][phx-blur='change_search']")
       assert has_element?(view, "#select_sort")
       assert has_element?(view, "button[phx-click='display_new_modal']", "New Objective")
 
       assert has_element?(
                view,
                "p.text-Text-text-high",
-               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
              )
 
       assert has_element?(
                view,
                "p",
-               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
              )
 
       assert has_element?(
@@ -240,6 +240,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
              )
 
       assert has_element?(view, "p", "None exist")
+
+      assert has_element?(
+               view,
+               "#download-objectives-csv[download='#{project.slug}_learning_objectives.csv']",
+               "Download CSV"
+             )
 
       wait_for_coverage(view)
     end
@@ -290,12 +296,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{second_obj.slug}")
 
       view
-      |> element("input[phx-change=\"change_search\"]")
-      |> render_change(%{value: "first"})
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "first"})
 
       view
-      |> element("input[phx-blur=\"apply_search\"]")
-      |> render_blur(%{value: "first"})
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
 
       assert has_element?(view, "##{first_obj.slug}")
       refute has_element?(view, "##{second_obj.slug}")
@@ -333,6 +339,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
                "Second Objective"
 
       wait_for_coverage(view)
+    end
+
+    test "download link preserves the applied search and sort without pagination", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      create_objective(project, publication, "first_obj", "First Objective")
+      create_objective(project, publication, "second_obj", "Second Objective")
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "first"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      wait_for_coverage(view)
+      assert has_element?(view, "#first_obj")
+      refute has_element?(view, "#second_obj")
+      assert :sys.get_state(view.pid).socket.assigns.params["query"] == "first"
+
+      view
+      |> element("form[phx-change='sort']")
+      |> render_change(%{sort_by: "title"})
+
+      href =
+        view
+        |> element("#download-objectives-csv")
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.attribute("href")
+        |> hd()
+
+      assert href |> URI.parse() |> Map.fetch!(:path) ==
+               "/workspaces/course_author/#{project.slug}/objectives.csv"
+
+      export_params = href |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+
+      assert export_params["query"] == "first"
+      assert export_params["sort_by"] == "title"
+      assert export_params["sort_order"] == "desc"
+      refute Map.has_key?(export_params, "offset")
     end
 
     test "applies paging", %{conn: conn, project: project, publication: publication} do

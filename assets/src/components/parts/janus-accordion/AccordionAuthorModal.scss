@@ -1,0 +1,259 @@
+.modal-dialog.accordion-author-modal-dialog {
+  max-width: min(90vw, 1100px);
+  width: 90vw;
+  height: 85vh;
+  margin: 7.5vh auto;
+
+  .modal-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-header {
+    flex: none;
+    padding: 12px 16px;
+  }
+
+  .modal-footer {
+    flex: none;
+  }
+
+  .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.acc-modal-title-count {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.accordion-author-modal-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  padding: 12px 16px;
+  overflow: hidden;
+}
+
+.acc-modal-body {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.acc-modal-list {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  min-width: 200px;
+  min-height: 0;
+}
+
+.acc-modal-add-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background: #f1f5f9;
+  border: 1px dashed #94a3b8;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-align: center;
+
+  &:hover:not(:disabled) {
+    background: #e2e8f0;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.acc-modal-section-limit {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.acc-modal-section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.acc-modal-section-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  font-size: 0.8125rem;
+
+  &:hover {
+    background: #f8fafc;
+  }
+
+  &.is-active {
+    background: #eff6ff;
+    border-color: #3b82f6;
+  }
+}
+
+.acc-modal-section-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.acc-modal-section-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.acc-modal-section-item-title {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.acc-modal-section-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+
+  &:hover {
+    color: #ef4444;
+  }
+}
+
+.acc-modal-section-preview {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.acc-modal-editor {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.acc-modal-editor-heading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  flex: none;
+}
+
+.acc-modal-editor-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.acc-modal-field-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.acc-modal-title-field {
+  flex: none;
+  width: 100%;
+}
+
+.acc-modal-content-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.acc-modal-quill-wrap {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-sizing: border-box;
+
+  tf-quill-editor {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  // Overrides QuillEditor inline maxWidth: 520 so the content editor fills the pane
+  tf-quill-editor > div {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  tf-quill-editor,
+  .ql-toolbar.ql-snow,
+  .ql-container.ql-snow {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+.acc-modal-editor .janus-rich-label-editor-quill {
+  display: block;
+  width: 100%;
+
+  .ql-toolbar.ql-snow {
+    border-radius: 6px 6px 0 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .ql-container.ql-snow {
+    border-radius: 0 0 6px 6px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .ql-editor {
+    p {
+      margin: 0;
+    }
+  }
+}

@@ -15,9 +15,9 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Modal
   alias OliWeb.Icons
+  alias Oli.Delivery.LearningObjectives.ProficiencyDisplay
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Delivery.Instructor.PreviewRoutes
-  alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
 
   attr :page_context, Oli.Delivery.Page.PageContext
@@ -142,50 +142,80 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
         </div>
       </div>
-      <div
+      <section
         :if={@objectives != []}
-        class="flex-col justify-start items-start gap-3 flex w-full mt-4 mb-4"
-        role="page objectives"
+        class="flex w-full flex-col items-start gap-4 rounded-xl border border-Border-border-bold p-4"
+        role="region"
+        aria-label="Learning objectives"
+        data-testid="page-objectives"
       >
-        <div class="self-stretch justify-start items-center gap-2.5 inline-flex mb-2">
-          <span class="text-Text-text-high text-sm sm:text-base font-bold font-['Inter'] leading-normal">
-            LEARNING OBJECTIVES &
-            <button
-              phx-click={Modal.show_modal("proficiency_explanation_modal")}
-              class="text-Text-text-high hover:underline cursor-pointer"
-            >
-              PROFICIENCY
-            </button>
-          </span>
-          <button
-            phx-click={Modal.show_modal("proficiency_explanation_modal")}
-            aria-label="Explain proficiency"
-            class="w-6 h-6 flex items-center justify-center group"
-          >
-            <Icons.help class="stroke-Icon-icon-default group-hover:stroke-Icon-icon-hover" />
-          </button>
+        <div class="flex items-center justify-center gap-2">
+          <h2 class="m-0 font-open-sans text-base font-bold leading-4 text-Text-text-high">
+            LEARNING OBJECTIVES
+          </h2>
         </div>
-        <div
-          :for={{objective, index} <- Enum.with_index(@objectives, 1)}
-          class="self-stretch flex-col justify-start items-start sm:ml-6 w-full"
-          role={"objective #{objective.resource_id}"}
-        >
-          <div class="relative justify-start items-center gap-[19px] inline-flex w-full">
-            <.proficiency_icon_with_tooltip objective={objective} />
-            <div class="justify-start items-start flex w-full">
-              <div class="text-Text-text-low-alpha text-[12px] font-bold font-['Inter'] leading-[21px] min-w-[2rem]">
+        <div class="flex w-full flex-col items-start gap-4 px-4 py-2" role="list">
+          <div
+            :for={{objective, index} <- Enum.with_index(@objectives, 1)}
+            class="flex min-h-7 w-full items-center gap-3"
+            role="listitem"
+            data-objective-id={objective.resource_id}
+          >
+            <.proficiency_chip objective={objective} />
+            <div class="flex min-h-7 min-w-0 flex-1 translate-y-px items-center gap-[6px]">
+              <div class="shrink-0 font-open-sans text-xs font-bold uppercase leading-[18px] text-Text-text-low-alpha">
                 L{index}
               </div>
               <div
-                role={"objective #{objective.resource_id} title"}
-                class="text-Text-text-high text-sm font-normal font-['Open Sans'] leading-[21px]"
+                data-testid={"objective-#{objective.resource_id}-title"}
+                class="min-w-0 break-words font-open-sans text-sm font-normal leading-[18px] text-Text-text-high"
               >
                 {objective.title}
               </div>
             </div>
           </div>
+          <details class="group/page-proficiency w-full">
+            <summary class="flex h-10 cursor-pointer list-none items-start justify-center border-b border-Border-border-default px-1 [&::-webkit-details-marker]:hidden">
+              <div class="flex h-[35px] min-w-0 flex-1 items-center gap-1">
+                <Icons.support
+                  class="h-5 w-5 shrink-0 text-Icon-icon-default"
+                  width="20"
+                  height="20"
+                  view_box="0 0 20 20"
+                  variant="figma_20"
+                />
+                <span class="min-w-0 flex-1 font-open-sans text-xs font-semibold leading-3 text-Text-text-low-alpha">
+                  What is proficiency and how is it estimated?
+                </span>
+                <span class="inline-flex h-4 w-4 shrink-0 items-center justify-center text-Icon-icon-default transition-transform group-open/page-proficiency:rotate-180">
+                  <Icons.chevron_down
+                    class="h-4 w-4 text-Icon-icon-default"
+                    width="16"
+                    height="16"
+                    view_box="0 0 16 16"
+                    variant="stroke"
+                    path="M4 7L8 11L12 7"
+                  />
+                </span>
+              </div>
+            </summary>
+            <div class="pt-3">
+              <p class="m-0 font-open-sans text-sm font-normal leading-6 text-Text-text-high">
+                Proficiency is our best estimate of how likely you are to successfully apply a learning objective the next time you use it. It updates as you complete course activities and is based on evidence from your overall work. Proficiency estimates become more reliable as you complete more activities.
+              </p>
+              <div class="mt-[10px] grid grid-cols-2 gap-[6px] md:grid-cols-4">
+                <.proficiency_explanation_card
+                  proficiency="Not enough data"
+                  id_suffix="page_explanation_not_enough"
+                />
+                <.proficiency_explanation_card proficiency="Low" />
+                <.proficiency_explanation_card proficiency="Medium" />
+                <.proficiency_explanation_card proficiency="High" />
+              </div>
+            </div>
+          </details>
         </div>
-      </div>
+      </section>
       <span :if={@show_divider} class="mb-6 border-b border-Border-border-default w-full"></span>
     </div>
     """
@@ -253,19 +283,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def label_for_scheduling_type(_), do: ""
 
   def proficiency_explanation_modal(assigns) do
-    assigns =
-      assign(assigns, %{
-        proficiency_levels: [
-          {"Not enough data", "Not enough information",
-           "You haven't completed enough activities for the system to calculate learning proficiency."},
-          {"Low", "Beginning Proficiency",
-           "You're beginning to understand key ideas, but there is room to grow."},
-          {"Medium", "Growing Proficiency",
-           "Your understanding and skills are clearly strengthening and expanding."},
-          {"High", "Establishing Proficiency",
-           "You know the material well enough to apply it in different contexts."}
-        ]
-      })
+    assigns = assign(assigns, :proficiency_levels, ProficiencyDisplay.levels())
 
     ~H"""
     <Modal.student_delivery_modal
@@ -275,26 +293,30 @@ defmodule OliWeb.Delivery.Student.Utils do
     >
       <:title>Measuring Learning Proficiency</:title>
       <:subtitle>
-        This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page.
+        Proficiency is our best estimate of how likely you are to successfully apply a learning objective the next time you use it. It updates as you complete course activities and is based on evidence from your overall work.
       </:subtitle>
-      <div class="mb-6 sm:mb-11 text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
+      <div class="mb-6 sm:mb-11 font-open-sans text-base font-bold leading-normal text-Text-text-high">
         LEARNING PROFICIENCY SCALE
       </div>
-      <div class="flex-col justify-start items-center gap-[50px] flex">
+      <div class="flex flex-col items-start gap-[24px]">
         <div
-          :for={{proficiency, name, description} <- @proficiency_levels}
-          class="flex-col justify-start items-start gap-[15px] flex w-full"
+          :for={proficiency <- @proficiency_levels}
+          class="flex w-full flex-col items-start gap-[10px]"
         >
-          <div class="justify-start items-start gap-2.5 inline-flex">
-            <div class="mt-[2px] ml-1 w-6 h-6 scale-125">
-              <Icons.proficiency proficiency={proficiency} />
-            </div>
-            <div class="text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
-              {name}
+          <% display = proficiency_display(proficiency) %>
+          <div class="inline-flex items-center gap-2.5">
+            <span class="inline-flex h-6 w-6 items-center justify-center">
+              <.proficiency_level_icon
+                display={display}
+                id_suffix={"modal_explanation_#{display.id_key}"}
+              />
+            </span>
+            <div class="font-open-sans text-base font-bold leading-normal text-Text-text-high">
+              {display.label}
             </div>
           </div>
-          <div class="text-zinc-700 dark:text-white text-base font-normal font-['Inter'] leading-normal">
-            {description}
+          <div class="font-open-sans text-base font-normal leading-normal text-Text-text-high">
+            {display.description}
           </div>
         </div>
       </div>
@@ -304,34 +326,154 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   attr :objective, :map
 
-  defp proficiency_icon_with_tooltip(assigns) do
+  defp proficiency_chip(assigns) do
+    assigns =
+      assigns
+      |> assign(:display, proficiency_display(assigns.objective.proficiency))
+
     ~H"""
-    <div
-      class="absolute top-0 left-0 z-10 w-6 h-6 cursor-pointer"
-      xphx-mouseover={JS.show(to: "#objective_#{@objective.resource_id}_tooltip")}
-      xphx-mouseout={JS.hide(to: "#objective_#{@objective.resource_id}_tooltip")}
+    <span
+      class={[
+        "group relative inline-flex shrink-0 items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+        @display.chip_class
+      ]}
+      tabindex="0"
+      role="img"
+      aria-label={@display.label}
+      title={@display.label}
     >
-    </div>
-    <div class="w-6 h-6 flex items-center justify-center">
-      <div class="absolute top-0 left-0">
-        <Icons.proficiency proficiency={@objective.proficiency} />
+      <.proficiency_level_icon
+        display={@display}
+        id_suffix={"objective_#{@objective.resource_id}_not_enough"}
+      />
+      <span
+        id={"objective_#{@objective.resource_id}_tooltip"}
+        role="tooltip"
+        class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-Specially-Tokens-Fill-fill-inverse px-2 py-1 font-open-sans text-xs font-semibold text-Specially-Tokens-Text-text-inverse opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+      >
+        {@display.label}
+      </span>
+    </span>
+    """
+  end
+
+  attr :proficiency, :string, required: true
+  attr :id_suffix, :string, default: nil
+
+  defp proficiency_explanation_card(assigns) do
+    assigns = assign(assigns, :display, proficiency_display(assigns.proficiency))
+
+    ~H"""
+    <div class={[
+      "flex h-[255px] min-w-0 flex-col items-center rounded-[9px] text-center font-open-sans",
+      @display.order_class,
+      @display.card_class
+    ]}>
+      <div class={["flex flex-col items-center gap-[15px]", @display.content_class]}>
+        <div class="flex h-6 items-center justify-center">
+          <span class="inline-flex h-6 w-6 items-center justify-center">
+            <.proficiency_level_icon
+              display={@display}
+              id_suffix={@id_suffix || "page_explanation_#{@display.id_key}"}
+            />
+          </span>
+        </div>
+        <div class="text-center text-[14px] font-bold leading-[17.5px] text-Text-text-high">
+          <span :for={line <- @display.label_lines} class="block">{line}</span>
+        </div>
+        <p class="m-0 text-center text-[12px] font-normal leading-[15px] text-Text-text-high">
+          {@display.description}
+        </p>
       </div>
-    </div>
-    <div
-      id={"objective_#{@objective.resource_id}_tooltip"}
-      class="hidden absolute min-h-[57px] max-w-[240px] -top-[20px] p-6 -left-6 text-gray-800 dark:text-gray-700 text-base font-normal font-['Inter'] leading-normal bg-gray-300 dark:bg-white rounded-md border-2 border-gray-700 flex-col justify-start items-center gap-4 z-10 -translate-x-full"
-    >
-      {proficiency_to_text(@objective.proficiency)}
-      <div class="absolute h-[40px] w-2 bg-gray-300 dark:bg-white top-2 right-0 z-20"></div>
-      <Icons.filled_chevron_up class="absolute -right-[13px] top-[16px] fill-gray-300 dark:fill-white z-10 rotate-90 scale-150 stroke-1.5 stroke-gray-700" />
     </div>
     """
   end
 
-  defp proficiency_to_text("Not enough data"), do: "Not enough information"
-  defp proficiency_to_text("Low"), do: "Beginning Proficiency"
-  defp proficiency_to_text("Medium"), do: "Growing Proficiency"
-  defp proficiency_to_text("High"), do: "Establishing Proficiency"
+  attr :display, :map, required: true
+  attr :id_suffix, :string, default: nil
+
+  defp proficiency_level_icon(%{display: %{icon: :empty_pot}} = assigns) do
+    ~H"""
+    <Icons.proficiency_empty_pot class={@display.icon_class} id_suffix={@id_suffix} />
+    """
+  end
+
+  defp proficiency_level_icon(%{display: %{icon: :seed}} = assigns) do
+    ~H"""
+    <Icons.proficiency_seed class={@display.icon_class} />
+    """
+  end
+
+  defp proficiency_level_icon(%{display: %{icon: :sprout}} = assigns) do
+    ~H"""
+    <Icons.proficiency_sprout class={@display.icon_class} />
+    """
+  end
+
+  defp proficiency_level_icon(%{display: %{icon: :tree}} = assigns) do
+    ~H"""
+    <Icons.proficiency_tree class={@display.icon_class} />
+    """
+  end
+
+  defp proficiency_display(proficiency) do
+    ProficiencyDisplay.display_for(proficiency)
+    |> Map.merge(proficiency_styles(proficiency))
+  end
+
+  defp proficiency_styles(proficiency) do
+    proficiency
+    |> shared_card_styles_for()
+    |> Map.merge(chip_styles_for(proficiency))
+  end
+
+  defp shared_card_styles_for("High") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Text-text-accent-green",
+      card_class: "justify-start bg-Fill-Chip-Green px-[17px] pt-[25px]",
+      content_class: "w-[126px]",
+      order_class: "order-3 md:order-4"
+    }
+  end
+
+  defp shared_card_styles_for("Medium") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Icon-icon-accent-purple",
+      card_class: "justify-start bg-Fill-Accent-fill-accent-purple px-[15px] pt-[28px]",
+      content_class: "w-[130px]",
+      order_class: "order-4 md:order-3"
+    }
+  end
+
+  defp shared_card_styles_for("Low") do
+    %{
+      icon_class: "h-6 w-6 shrink-0 text-Icon-icon-accent-orange",
+      card_class: "justify-start bg-Fill-Accent-fill-accent-orange/70 px-6 pt-[23px]",
+      content_class: "w-[112px]",
+      order_class: "order-2"
+    }
+  end
+
+  defp shared_card_styles_for(_) do
+    %{
+      icon_class: "h-6 w-6 shrink-0",
+      card_class:
+        "justify-start bg-Fill-Chip-Gray px-4 pt-[31px] md:[html:not(.dark)_&]:bg-Table-table-row-1",
+      content_class: "w-32",
+      order_class: "order-1"
+    }
+  end
+
+  defp chip_styles_for("High"), do: %{chip_class: "bg-Fill-Chip-Green px-[10px] py-[3px]"}
+
+  defp chip_styles_for("Medium"),
+    do: %{chip_class: "bg-Fill-Accent-fill-accent-purple px-[10px] py-[3px]"}
+
+  defp chip_styles_for("Low"),
+    do: %{chip_class: "bg-Fill-Accent-fill-accent-orange px-[10px] py-[3px]"}
+
+  defp chip_styles_for(_),
+    do: %{chip_class: "px-[9px] py-[3px]", icon_class: "h-[22px] w-[22px] shrink-0"}
 
   attr :scripts, :list
   attr :user_token, :string

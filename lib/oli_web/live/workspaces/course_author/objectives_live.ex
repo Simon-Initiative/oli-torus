@@ -16,6 +16,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   alias Oli.Resources
   alias Oli.Resources.Revision
   alias OliWeb.Icons
+  alias OliWeb.Common.{Filter, FilterBox}
   alias OliWeb.Common.Listing, as: Table
 
   alias OliWeb.Workspaces.CourseAuthor.Objectives.{
@@ -82,45 +83,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     ~H"""
     {render_modal(assigns)}
 
-    <div class="mb-6 w-full">
-      <h2 id="header_id" class="pb-2 text-[28px] font-normal leading-[42px] text-Text-text-high">
-        Learning Objectives
-      </h2>
-      <p class="mb-6 mt-1 text-[16px] leading-6 text-Text-text-high">
-        Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies. Refer to the
-        <a
-          class="text-Text-text-button hover:underline"
-          href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
-          rel="noopener"
-          target="_blank"
-        >
-          CMU Eberly Center guide on learning objectives
-          <span class="sr-only"> (opens in a new tab)</span>
-        </a>
-        to learn more about the importance of attaching learning objectives to pages and activities.
-      </p>
-
+    <FilterBox.render
+      table_model={@table_model}
+      show_sort={false}
+      show_more_opts={false}
+      class="mb-6 w-full"
+      card_header_text="Learning Objectives"
+      card_body_text={card_body_text(assigns)}
+      card_body_text_class="mt-1 mb-4 text-Text-text-high"
+      filter_opts_class="w-full"
+    >
       <div class="flex flex-wrap items-center gap-3">
-        <div class="relative flex h-9 w-full items-center gap-3 rounded-md border border-Border-border-default bg-Specially-Tokens-Fill-fill-input px-2 sm:w-56">
-          <Icons.search class="shrink-0 text-Icon-icon-default" />
-          <input
-            type="text"
-            class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-Text-text-high outline-none placeholder:text-Text-text-low-alpha"
-            placeholder="Search..."
-            phx-change="change_search"
-            phx-blur="apply_search"
-            value={@query}
+        <div class="w-full sm:max-w-md">
+          <Filter.render
+            change="change_search"
+            reset="reset_search"
+            apply="apply_search"
+            query={@query}
+            apply_icon={true}
           />
-          <button
-            :if={@query != ""}
-            id="reset_search"
-            type="button"
-            phx-click="reset_search"
-            class="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-Text-text-low-alpha hover:bg-Surface-surface-secondary-hover hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-            aria-label="Clear search"
-          >
-            ×
-          </button>
         </div>
 
         <form id="sort" phx-change="sort" class="flex h-9 items-center gap-2">
@@ -132,10 +113,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           >
             <%= for column_spec <- @table_model.column_specs do %>
               <%= if column_spec.name != :action do %>
-                <option
-                  value={column_spec.name}
-                  selected={@table_model.sort_by_spec == column_spec}
-                >
+                <option value={column_spec.name} selected={@table_model.sort_by_spec == column_spec}>
                   {column_spec.label}
                 </option>
               <% end %>
@@ -153,16 +131,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           </label>
         </form>
 
+        <.link
+          id="download-objectives-csv"
+          href={
+            ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
+          }
+          download={"#{@project.slug}_learning_objectives.csv"}
+          class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md border border-Fill-Buttons-fill-primary bg-Background-bg-secondary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-button transition hover:bg-Fill-Buttons-fill-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+        >
+          <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
+            <Icons.download stroke_class="stroke-current" />
+          </span>
+          Download CSV
+        </.link>
+
         <button
           type="button"
-          class="ml-auto inline-flex min-h-9 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
           phx-click="display_new_modal"
         >
           <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
           New Objective
         </button>
       </div>
-    </div>
+    </FilterBox.render>
 
     <div id="objectives-table" class="my-4">
       <%= case @coverage_status do %>
@@ -323,6 +315,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       |> hide_modal(modal_assigns: nil)
 
     {:noreply, push_patch(socket, to: live_path(socket, socket.assigns.params))}
+  end
+
+  defp csv_export_params(params) do
+    Map.take(params, ["query", "filter", "sort_by", "sort_order"])
+  end
+
+  defp card_body_text(assigns) do
+    ~H"""
+    Learning objectives define the knowledge and skills students should demonstrate throughout your course. Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages. Refer to the
+    <a
+      class="external text-Text-text-button hover:text-Text-text-button"
+      href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
+      rel="noopener"
+      target="_blank"
+    >
+      CMU Eberly Center guide on learning objectives
+    </a>
+    to learn more about the importance of attaching learning objectives to pages and activities.
+    """
   end
 
   defp new_modal(form, socket) do
@@ -774,15 +785,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     objectives = apply_coverage(socket.assigns.objectives, model, assessment_buckets)
     {:ok, table_model} = TableModel.new(objectives)
 
-    {:noreply,
-     assign(socket,
-       objectives: objectives,
-       table_model: table_model,
-       total_count: length(objectives),
-       coverage_model: model,
-       coverage_status: :ready,
-       assessment_buckets: assessment_buckets
-     )}
+    socket =
+      assign(socket,
+        objectives: objectives,
+        table_model: table_model,
+        total_count: length(objectives),
+        coverage_model: model,
+        coverage_status: :ready,
+        assessment_buckets: assessment_buckets
+      )
+
+    params =
+      Map.update(socket.assigns.params, "sidebar_expanded", "true", fn
+        true -> "true"
+        false -> "false"
+        value -> value
+      end)
+
+    handle_params(params, nil, socket)
   end
 
   defp apply_coverage_result({:error, reason}, socket) do
