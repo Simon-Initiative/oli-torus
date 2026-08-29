@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   attr :section_id, :integer, required: true
   attr :section_slug, :string, required: true
   attr :current_user, :map, required: true
+  attr :text_search, :string, default: nil
   attr :sync_load, :boolean, default: false
   attr :is_expanded, :boolean, default: false
 
@@ -243,6 +244,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
                 id={"sub-objectives-list-#{@unique_id}"}
                 sub_objectives_data={@sub_objectives_data}
                 parent_unique_id={@unique_id}
+                text_search={@text_search}
               />
             <% end %>
           </div>

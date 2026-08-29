@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Chip
+  alias OliWeb.Common.Utils
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
@@ -174,17 +175,19 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   # OBJECTIVE INSTRUCTOR DASHBOARD
   defp custom_render(assigns, objective, %ColumnSpec{name: :objective_instructor_dashboard}) do
-    objective =
-      case Map.get(objective, :subobjective) do
-        nil -> objective.objective
-        subobjective -> subobjective
-      end
-
-    assigns = Map.merge(assigns, %{objective: objective})
+    assigns =
+      Map.merge(assigns, %{
+        objective: Map.get(objective, :subobjective) || objective.objective,
+        text_search: assigns.model.data[:text_search]
+      })
 
     ~H"""
     <div class="flex items-center gap-x-4">
-      <span class="text-Text-text-high">{@objective}</span>
+      <span class="text-Text-text-high">
+        {Phoenix.HTML.raw(
+          Utils.highlight_search_term(@objective, @text_search, class: "search-highlight")
+        )}
+      </span>
     </div>
     """
   end
@@ -405,6 +408,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
     section_id = assigns[:section_id] || assigns.model.data[:section_id]
     section_title = assigns[:section_title] || assigns.model.data[:section_title]
+    text_search = assigns.model.data[:text_search]
 
     proficiency_distribution =
       case Map.get(objective, :student_proficiency_subobj_dist) do
@@ -422,6 +426,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       |> Map.put(:section_slug, section_slug)
       |> Map.put(:section_id, section_id)
       |> Map.put(:section_title, section_title)
+      |> Map.put(:text_search, text_search)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
       |> Map.put(:current_user, current_user)
       |> Map.put(:is_expanded, is_expanded)
@@ -436,6 +441,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         section_id={@section_id}
         section_slug={@section_slug}
         section_title={@section_title}
+        text_search={@text_search}
         proficiency_distribution={@proficiency_distribution}
         current_user={@current_user}
         is_expanded={@is_expanded}
