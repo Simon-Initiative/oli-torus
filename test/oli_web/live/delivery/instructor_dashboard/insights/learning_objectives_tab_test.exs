@@ -472,8 +472,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert expanded?(view, revisions.obj_revision_c.resource_id)
 
       wait_until(fn ->
-        render(view) =~
-          ~s(<span class="search-highlight">#{revisions.obj_revision_c1.title}</span>)
+        has_element?(view, ".search-highlight", revisions.obj_revision_c1.title)
       end)
 
       refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
@@ -558,8 +557,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
 
       wait_until(fn ->
-        render(view) =~
-          ~s(<span class="search-highlight">#{revisions.obj_revision_c1.title}</span>)
+        has_element?(view, ".search-highlight", revisions.obj_revision_c1.title)
       end)
     end
   end
@@ -704,10 +702,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       }
 
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
-      expected_row_id = "row_#{revisions.obj_revision_c.resource_id}"
+      expected_id = "subobj-#{revisions.obj_revision_c1.resource_id}"
 
       assert_push_event(view, "learning-objectives-scroll", %{
-        id: ^expected_row_id
+        id: ^expected_id
       })
 
       assert expanded?(view, revisions.obj_revision_c.resource_id)

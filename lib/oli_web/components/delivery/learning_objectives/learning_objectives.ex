@@ -72,6 +72,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     # socket.assigns[:params] still holds the previous params here: they are reassigned at the
     # end of this function.
     search_changed? = socket.assigns[:params][:text_search] != params.text_search
+    new_search_with_results? = search_changed? and rows != []
+
+    socket =
+      maybe_scroll_to_first_search_match(socket, params, new_search_with_results?, patch_url_type)
 
     expanded_objectives =
       if search_changed?, do: MapSet.new(), else: starting_expanded_objectives(socket, params)
@@ -1105,16 +1109,45 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end
   end
 
+  # Only the instructor dashboard highlights matches, so it is the only view with something to
+  # scroll to. The first highlight in document order is the first match, whether it is an
+  # objective row or a subobjective inside an expanded panel; the selector is scoped to the
+  # table so highlights rendered elsewhere on the page cannot win.
+  defp maybe_scroll_to_first_search_match(
+         socket,
+         %{text_search: text_search},
+         true,
+         :instructor_dashboard
+       )
+       when is_binary(text_search) do
+    push_event(socket, "learning-objectives-scroll", %{
+      selector: "#objectives-table .search-highlight"
+    })
+  end
+
+  defp maybe_scroll_to_first_search_match(socket, _params, _new_search_with_results?, _type),
+    do: socket
+
   defp maybe_push_scroll_to_navigation_target(socket, scoped_objectives, params) do
     case resolve_deep_link_parent_id(scoped_objectives, params) do
       nil ->
         socket
 
-      resource_id ->
-        push_event(socket, "learning-objectives-scroll", %{
-          id: "row_#{resource_id}",
-          scroll_delay: 150
-        })
+      parent_id ->
+        push_event(
+          socket,
+          "learning-objectives-scroll",
+          deep_link_scroll_target(params, parent_id)
+        )
     end
   end
+
+  # A subobjective deep link scrolls to the subobjective inside the expanded panel. That panel
+  # loads asynchronously, so the parent row travels along as a fallback for the client to use if
+  # the subobjective never renders.
+  defp deep_link_scroll_target(%{subobjective_id: subobjective_id}, parent_id)
+       when is_integer(subobjective_id),
+       do: %{id: "subobj-#{subobjective_id}", fallback_id: "row_#{parent_id}"}
+
+  defp deep_link_scroll_target(_params, parent_id), do: %{id: "row_#{parent_id}"}
 end

@@ -40,7 +40,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       rows: sub_objectives,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
+      id_field: ["subobj", :id],
       data: %{parent_unique_id: parent_unique_id, text_search: text_search}
     )
   end

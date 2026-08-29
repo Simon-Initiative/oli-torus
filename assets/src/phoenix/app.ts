@@ -82,24 +82,65 @@ window.addEventListener('phx:page-loading-stop', () => {
 
 type LearningObjectivesScrollDetail = {
   id?: unknown;
-  scroll_delay?: unknown;
+  fallback_id?: unknown;
+  selector?: unknown;
 };
+
+const LEARNING_OBJECTIVES_SCROLL_TIMEOUT = 3000;
+
+// Only one scroll request can be pending: a stale one (a deep link whose panel is still
+// loading) must not yank the page away from a newer one.
+let pendingScrollFrame: number | null = null;
 
 window.addEventListener('phx:learning-objectives-scroll', (event: Event) => {
   const detail = (event as CustomEvent<LearningObjectivesScrollDetail>).detail ?? {};
   const targetId = typeof detail.id === 'string' ? detail.id : null;
-  if (!targetId) return;
+  const fallbackId = typeof detail.fallback_id === 'string' ? detail.fallback_id : null;
+  const selector = typeof detail.selector === 'string' ? detail.selector : null;
 
-  const scrollDelay = typeof detail.scroll_delay === 'number' ? detail.scroll_delay : 0;
+  const findTarget = selector
+    ? () => document.querySelector(selector)
+    : targetId
+    ? () => document.getElementById(targetId)
+    : null;
+
+  if (!findTarget) return;
+
+  if (pendingScrollFrame !== null) {
+    cancelAnimationFrame(pendingScrollFrame);
+    pendingScrollFrame = null;
+  }
+
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
-
-  setTimeout(() => {
-    const target = document.getElementById(targetId);
-    if (!target) return;
-
+  const scrollTo = (target: Element) =>
     target.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
-  }, scrollDelay);
+
+  // Expanded objective panels load asynchronously, so the target may not exist yet. Keep
+  // looking until it shows up or the deadline passes; a selector resolves to the first match
+  // in document order. On timeout fall back to an element known to be on the page already.
+  const deadline = performance.now() + LEARNING_OBJECTIVES_SCROLL_TIMEOUT;
+
+  const attempt = () => {
+    const target = findTarget();
+
+    if (target) {
+      pendingScrollFrame = null;
+      scrollTo(target);
+      return;
+    }
+
+    if (performance.now() < deadline) {
+      pendingScrollFrame = requestAnimationFrame(attempt);
+      return;
+    }
+
+    pendingScrollFrame = null;
+    const fallback = fallbackId ? document.getElementById(fallbackId) : null;
+    if (fallback) scrollTo(fallback);
+  };
+
+  attempt();
 });
 
 // Expose React/Redux APIs to server-side rendered templates
