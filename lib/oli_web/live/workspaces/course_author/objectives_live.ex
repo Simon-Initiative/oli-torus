@@ -46,7 +46,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
     {all_objectives, all_children, objectives, table_model} = build_objectives(project)
     load_ref = make_ref()
-    start_coverage_load(project, load_ref)
+    coverage_task_pid = start_coverage_load(project, load_ref)
 
     {:ok,
      assign(socket,
@@ -60,6 +60,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        coverage_model: nil,
        coverage_status: :loading,
        coverage_load_ref: load_ref,
+       coverage_task_pid: coverage_task_pid,
        assessment_buckets: %{},
        pending_sub_objective_delete_slugs: MapSet.new(),
        query: "",
@@ -124,7 +125,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             <.input
               type="checkbox"
               name="sort_order"
-              class="hidden"
+              class="sr-only"
               value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
             />
             <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
@@ -173,13 +174,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             role="alert"
           >
             {coverage_error_message(reason)}
+            <button
+              type="button"
+              phx-click="retry_coverage"
+              class="ml-3 rounded text-Text-text-button underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            >
+              Retry
+            </button>
           </div>
         <% :ready -> %>
           <span class="sr-only" id="objective-coverage-ready">Objective coverage loaded</span>
       <% end %>
 
       <Table.render
-        :if={@coverage_status == :ready}
         filter={@query}
         table_model={@table_model}
         total_count={@total_count}
@@ -226,7 +233,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           nil ->
             mapped_children =
               Enum.map(rev.children, fn resource_id ->
-                Enum.find(all_objectives, fn rev -> rev.resource_id == resource_id end)
+                case Enum.find(all_objectives, fn rev -> rev.resource_id == resource_id end) do
+                  nil ->
+                    nil
+
+                  child ->
+                    Map.merge(child, base_coverage_fields())
+                end
               end)
 
             [
@@ -260,18 +273,46 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   defp start_coverage_load(project, load_ref) do
     pid = self()
 
-    Task.start(fn ->
-      result =
-        try do
-          ObjectiveCoverage.load(project)
-        rescue
-          _exception -> {:error, :coverage_load_failed}
-        catch
-          _kind, _reason -> {:error, :coverage_load_failed}
-        end
+    {:ok, task_pid} =
+      Task.start(fn ->
+        result =
+          try do
+            ObjectiveCoverage.load(project)
+          rescue
+            _exception -> {:error, :coverage_load_failed}
+          catch
+            _kind, _reason -> {:error, :coverage_load_failed}
+          end
 
-      send(pid, {:objective_coverage_loaded, load_ref, result})
-    end)
+        send(pid, {:objective_coverage_loaded, load_ref, result})
+      end)
+
+    task_pid
+  end
+
+  defp cancel_coverage_load(socket) do
+    case Map.get(socket.assigns, :coverage_task_pid) do
+      pid when is_pid(pid) ->
+        if Process.alive?(pid), do: Process.exit(pid, :kill)
+
+      _ ->
+        :ok
+    end
+
+    socket
+  end
+
+  defp base_coverage_fields do
+    %{
+      page_attachments_count: 0,
+      page_attachments: [],
+      activity_attachments_count: 0,
+      formative_activity_attachments_count: 0,
+      summative_activity_attachments_count: 0,
+      assessment_bucket: :formative,
+      has_coverage: false,
+      coverage_details: []
+    }
   end
 
   def filter_rows(socket, query, _filter) do
@@ -286,8 +327,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     {all_objectives, all_children, objectives, table_model} =
       build_objectives(project)
 
+    socket = cancel_coverage_load(socket)
     load_ref = make_ref()
-    start_coverage_load(project, load_ref)
+    coverage_task_pid = start_coverage_load(project, load_ref)
 
     objective_slugs =
       objectives
@@ -308,6 +350,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_model: nil,
         coverage_status: :loading,
         coverage_load_ref: load_ref,
+        coverage_task_pid: coverage_task_pid,
         assessment_buckets: socket.assigns.assessment_buckets,
         expanded_objective_slugs: expanded_objective_slugs
       )
@@ -364,6 +407,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   def handle_event("display_new_modal", _, socket),
     do: new_modal(Resources.change_revision(%Revision{}) |> to_form(), socket)
 
+  def handle_event("retry_coverage", _, socket) do
+    socket = cancel_coverage_load(socket)
+    load_ref = make_ref()
+    coverage_task_pid = start_coverage_load(socket.assigns.project, load_ref)
+
+    {:noreply,
+     assign(socket,
+       coverage_model: nil,
+       coverage_status: :loading,
+       coverage_load_ref: load_ref,
+       coverage_task_pid: coverage_task_pid
+     )}
+  end
+
   def handle_event("display_new_sub_modal", %{"slug" => slug}, socket),
     do: new_modal(Resources.change_revision(%Revision{parent_slug: slug}) |> to_form(), socket)
 
@@ -392,7 +449,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
          coverage when not is_nil(coverage) <- ObjectiveCoverage.coverage(model, objective_id),
          true <- tagged_content?(coverage) do
       assessment_buckets = Map.put(socket.assigns.assessment_buckets, objective_id, bucket)
-      objectives = apply_coverage(socket.assigns.objectives, model, assessment_buckets)
+
+      objectives =
+        update_objective_coverage(
+          socket.assigns.objectives,
+          model,
+          assessment_buckets,
+          objective_id
+        )
+
       {:ok, table_model} = TableModel.new(objectives)
 
       {:noreply, assign(socket, objectives: objectives, table_model: table_model)}
@@ -792,6 +857,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         total_count: length(objectives),
         coverage_model: model,
         coverage_status: :ready,
+        coverage_task_pid: nil,
         assessment_buckets: assessment_buckets
       )
 
@@ -806,7 +872,32 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp apply_coverage_result({:error, reason}, socket) do
-    {:noreply, assign(socket, coverage_model: nil, coverage_status: {:error, reason})}
+    {:noreply,
+     assign(socket,
+       coverage_model: nil,
+       coverage_status: {:error, reason},
+       coverage_task_pid: nil
+     )}
+  end
+
+  defp update_objective_coverage(objectives, model, assessment_buckets, objective_id) do
+    Enum.map(objectives, fn objective ->
+      cond do
+        objective.resource_id == objective_id ->
+          Map.merge(objective, coverage_fields(objective, model, assessment_buckets))
+
+        true ->
+          Map.update!(objective, :children, fn children ->
+            Enum.map(children, fn
+              %{resource_id: ^objective_id} = child ->
+                Map.merge(child, coverage_fields(child, model, assessment_buckets))
+
+              child ->
+                child
+            end)
+          end)
+      end
+    end)
   end
 
   defp apply_coverage(objectives, model, assessment_buckets) do

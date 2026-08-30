@@ -21,7 +21,7 @@ defmodule OliWeb.Common.Filter do
         <button
           type="button"
           phx-click={@apply}
-          class="inline-flex size-5 shrink-0 items-center justify-center text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          class="inline-flex size-9 shrink-0 items-center justify-center rounded text-Icon-icon-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
           aria-label="Search"
         >
           <Icons.search class="size-5" />

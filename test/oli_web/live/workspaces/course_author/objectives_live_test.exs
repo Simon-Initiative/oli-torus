@@ -283,6 +283,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
              )
 
       refute has_element?(view, "#objective-coverage-ready")
+
+      assert has_element?(view, "button[phx-click='retry_coverage']", "Retry")
+
+      view
+      |> element("button[phx-click='retry_coverage']")
+      |> render_click()
+
+      wait_for_coverage(view)
     end
 
     test "applies searching", %{conn: conn, project: project, publication: publication} do

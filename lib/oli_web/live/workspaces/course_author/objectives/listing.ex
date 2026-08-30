@@ -56,7 +56,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
             <div class="flex shrink-0 items-center gap-2 self-end sm:self-auto">
               <button
                 type="button"
-                class="inline-flex size-[22px] items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-hover active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-hover active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                 phx-click="display_edit_modal"
                 phx-value-slug={item.slug}
                 aria-label={"Edit #{item.title}"}
@@ -73,7 +73,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
               <button
                 type="button"
-                class="inline-flex size-[22px] items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                 phx-click="display_delete_modal"
                 phx-value-slug={item.slug}
                 aria-label={"Delete #{item.title}"}
@@ -262,7 +262,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                         <div class="flex shrink-0 items-center gap-2">
                           <button
                             type="button"
-                            class="inline-flex size-[22px] items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-hover active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                            class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-hover active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                             phx-click="display_edit_modal"
                             phx-value-slug={sub_objective.slug}
                             aria-label={"Edit #{sub_objective.title}"}
@@ -278,7 +278,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           </button>
                           <button
                             type="button"
-                            class="inline-flex size-[22px] items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                            class="inline-flex size-9 items-center justify-center rounded p-1 text-Icon-icon-default transition-colors hover:text-Icon-icon-danger active:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                             phx-click="display_sub_objective_delete_modal"
                             phx-value-slug={sub_objective.slug}
                             phx-value-parent_slug={item.slug}
