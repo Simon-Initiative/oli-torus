@@ -14,7 +14,7 @@ defmodule OliWeb.Common.Filter do
     <div class={
       if @apply_icon,
         do:
-          "relative flex h-9 w-full items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input p-2",
+          "relative flex h-9 w-full items-center gap-3 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input p-1",
         else: "input-group search-input flex gap-2"
     }>
       <%= if @apply_icon do %>

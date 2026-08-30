@@ -183,7 +183,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             </button>
           </div>
         <% :ready -> %>
-          <span class="sr-only" id="objective-coverage-ready">Objective coverage loaded</span>
+          <span
+            class="sr-only"
+            id="objective-coverage-ready"
+            role="status"
+            aria-live="polite"
+          >
+            Objective coverage loaded
+          </span>
       <% end %>
 
       <Table.render
@@ -460,7 +467,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
       {:ok, table_model} = TableModel.new(objectives)
 
-      {:noreply, assign(socket, objectives: objectives, table_model: table_model)}
+      socket = assign(socket, objectives: objectives, table_model: table_model)
+      refresh_table_state(socket)
     else
       _ -> {:noreply, socket}
     end
@@ -861,14 +869,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         assessment_buckets: assessment_buckets
       )
 
-    params =
-      Map.update(socket.assigns.params, "sidebar_expanded", "true", fn
-        true -> "true"
-        false -> "false"
-        value -> value
-      end)
-
-    handle_params(params, nil, socket)
+    refresh_table_state(socket)
   end
 
   defp apply_coverage_result({:error, reason}, socket) do
@@ -898,6 +899,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           end)
       end
     end)
+  end
+
+  defp refresh_table_state(socket) do
+    params =
+      Map.update(socket.assigns.params, "sidebar_expanded", "true", fn
+        true -> "true"
+        false -> "false"
+        value -> value
+      end)
+
+    handle_params(params, nil, socket)
   end
 
   defp apply_coverage(objectives, model, assessment_buckets) do
