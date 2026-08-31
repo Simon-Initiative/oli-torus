@@ -352,7 +352,9 @@ defmodule Oli.Rendering.Content.LearningObjectivesTest do
       assert rendered_with_assistant =~ "Ask our AI Learning Assistant, DOT, to explain."
       assert rendered_with_assistant =~ "/images/assistant/footer_dot_ai.png"
       assert rendered_with_assistant =~ "Explain this learning objective with DOT"
-      assert rendered_with_assistant =~ "#ai_bot_collapsed_button"
+      assert rendered_with_assistant =~ ~s|phx-hook="ExplainObjectiveButton"|
+      assert rendered_with_assistant =~ ~s|data-section-slug="section-a"|
+      assert rendered_with_assistant =~ ~s|data-objective-title="Review limits"|
 
       refute rendered_without_assistant =~ "Need help understanding this objective?"
       refute rendered_without_assistant =~ "Explain this learning objective with DOT"

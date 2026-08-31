@@ -208,7 +208,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     config_row = Map.get(config.config_by_objective_id, objective.resource_id, %{})
 
     next_steps_content =
-      summary_next_steps_content(section_kind, context, config_row, resources_by_id)
+      summary_next_steps_content(section_kind, context, config_row, resources_by_id, objective)
 
     next_steps_attr = if next_steps_content == [], do: "", else: ~s| data-next-steps="available"|
     card_class = summary_card_class(section_kind, proficiency)
@@ -288,7 +288,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     ]
   end
 
-  defp summary_next_steps_content(:review, context, config_row, resources_by_id) do
+  defp summary_next_steps_content(:review, context, config_row, resources_by_id, objective) do
     revisit_pages = resolved_recommendations(config_row, "revisit_pages", resources_by_id)
     practice_pages = resolved_recommendations(config_row, "practice_pages", resources_by_id)
 
@@ -300,14 +300,15 @@ defmodule Oli.Rendering.Content.LearningObjectives do
         [
           recommendation_group(context, "REVISIT", :revisit, revisit_pages),
           recommendation_group(context, "PRACTICE", :practice, practice_pages),
-          maybe_dot_explain_card(context)
+          maybe_dot_explain_card(context, objective)
         ]
     end
   end
 
-  defp summary_next_steps_content(_section_kind, _context, _config_row, _resources_by_id), do: []
+  defp summary_next_steps_content(_section_kind, _context, _config_row, _resources_by_id, _objective),
+    do: []
 
-  defp maybe_dot_explain_card(%Context{assistant_available?: true}) do
+  defp maybe_dot_explain_card(%Context{assistant_available?: true} = context, objective) do
     [
       ~s|<section class="learning-objectives-summary__explain-card border border-Border-border-subtle bg-Surface-surface-secondary-hover" aria-label="Ask DOT to explain this objective">|,
       ~s|<div class="w-[56px] h-[56px] relative shrink-0" aria-hidden="true">|,
@@ -318,12 +319,12 @@ defmodule Oli.Rendering.Content.LearningObjectives do
       ~s|<strong>Need help understanding this objective?</strong>|,
       ~s|<span>Ask our AI Learning Assistant, DOT, to explain.</span>|,
       "</span>",
-      ~s|<button type="button" class="learning-objectives-summary__explain-button" phx-click="[[&quot;dispatch&quot;,{&quot;to&quot;:&quot;#ai_bot_collapsed_button&quot;,&quot;event&quot;:&quot;click&quot;}]]" aria-label="Explain this learning objective with DOT">Explain</button>|,
+      ~s|<button type="button" id="explain-lo-#{objective.resource_id}" class="learning-objectives-summary__explain-button" phx-hook="ExplainObjectiveButton" data-section-slug="#{context.section_slug}" data-resource-id="#{context.page_id}" data-objective-title="#{escape(objective.title)}" aria-label="Explain this learning objective with DOT">Explain</button>|,
       "</section>"
     ]
   end
 
-  defp maybe_dot_explain_card(_context), do: []
+  defp maybe_dot_explain_card(_context, _objective), do: []
 
   defp recommendation_group(_context, _heading, _kind, []), do: []
 
