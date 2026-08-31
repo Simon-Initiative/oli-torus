@@ -246,13 +246,12 @@ defmodule Oli.Rendering.Content.LearningObjectives do
       ~s|<summary class="learning-objectives-summary__next-steps-summary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus">|,
       ~s|<span class="learning-objectives-summary__next-steps-header">|,
       card_header,
-      ~s|<span class="learning-objectives-summary__next-steps-trigger">|,
+      ~s|<span class="learning-objectives-summary__next-steps-trigger text-Text-text-button">|,
       ~s|<span class="learning-objectives-summary__next-steps-label">|,
       ~s|<span class="learning-objectives-summary__next-steps-show">Show next steps</span>|,
       ~s|<span class="learning-objectives-summary__next-steps-hide">Hide next steps</span>|,
       ~s|<span class="sr-only"> for LO #{index}</span>|,
       "</span>",
-      next_steps_chevron_icon(),
       "</span>",
       "</span>",
       "</summary>",
@@ -311,9 +310,9 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp maybe_dot_explain_card(%Context{assistant_available?: true} = context, objective) do
     [
       ~s|<section class="learning-objectives-summary__explain-card border border-Border-border-subtle bg-Surface-surface-secondary-hover" aria-label="Ask DOT to explain this objective">|,
-      ~s|<div class="w-[56px] h-[56px] relative shrink-0" aria-hidden="true">|,
+      ~s|<div class="w-[72px] h-[72px] relative shrink-0" aria-hidden="true">|,
       ~s|<img class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]" src="/images/assistant/footer_dot_ai.png" alt="" />|,
-      ~s|<div class="w-[48px] h-[48px] absolute bottom-0 right-0 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"></div>|,
+      ~s|<div class="w-[28px] h-[28px] absolute inset-0 m-auto bg-zinc-300 rounded-full blur-[16px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"></div>|,
       ~s|</div>|,
       ~s|<span class="learning-objectives-summary__explain-copy">|,
       ~s|<strong>Need help understanding this objective?</strong>|,
@@ -350,7 +349,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
     [
       ~s|<li class="learning-objectives-summary__recommendation-item">|,
-      ~s|<a class="learning-objectives-summary__recommendation-link internal-link text-Text-text-link" href="#{href}">|,
+      ~s|<a class="learning-objectives-summary__recommendation-link internal-link text-Text-text-button" href="#{href}">|,
       ~s|<span>#{escape(page.title)}</span>|,
       "</a>",
       "</li>"
@@ -513,10 +512,6 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
   defp chevron_down_icon do
     ~s|<i class="fas fa-chevron-down" aria-hidden="true"></i>|
-  end
-
-  defp next_steps_chevron_icon do
-    ~s|<i class="fas fa-chevron-down learning-objectives-summary__next-steps-chevron" aria-hidden="true"></i>|
   end
 
   defp potted_plant_icon do
