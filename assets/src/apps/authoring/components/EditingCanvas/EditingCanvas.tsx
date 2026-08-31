@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
 import { selectCustom } from 'apps/authoring/store/page/slice';
@@ -8,7 +8,9 @@ import { useKeyDown } from 'hooks/useKeyDown';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import {
   selectBottomPanel,
+  selectConfigureRequest,
   selectReadOnly,
+  clearConfigureRequest,
   setCopiedPart,
   setCopiedPartActivityId,
   setRightPanelActiveTab,
@@ -33,6 +35,7 @@ const EditingCanvas: React.FC = () => {
   const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   const _currentLessonCustom = useSelector(selectCustom);
   const isReadOnly = useSelector(selectReadOnly);
+  const configureRequest = useSelector(selectConfigureRequest);
   const [_currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
@@ -47,6 +50,7 @@ const EditingCanvas: React.FC = () => {
     type: NotificationType;
     payload: any;
   } | null>(null);
+  const lastConfigureRequest = useRef<{ partId: string; nestedPartId?: string } | null>(null);
 
   useEffect(() => {
     let current = null;
@@ -150,6 +154,32 @@ const EditingCanvas: React.FC = () => {
     setConfigPartId(part);
     setShowConfigModal(true);
   };
+
+  useEffect(() => {
+    if (!configureRequest || isReadOnly) {
+      lastConfigureRequest.current = null;
+      return;
+    }
+
+    if (
+      lastConfigureRequest.current?.partId === configureRequest.partId &&
+      lastConfigureRequest.current?.nestedPartId === configureRequest.nestedPartId
+    ) {
+      return;
+    }
+
+    lastConfigureRequest.current = configureRequest;
+    const { partId } = configureRequest;
+    dispatch(setCurrentSelection({ selection: partId }));
+    setCurrentSelectedPartId(partId);
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
+    handlePartConfigure(partId, { fullscreen: true });
+    setNotificationStream({
+      stamp: Date.now(),
+      type: NotificationType.CONFIGURE,
+      payload: { partId, configure: true },
+    });
+  }, [configureRequest, isReadOnly]);
 
   const handlePartCancelConfigure = async (partId: string) => {
     /* console.log('[handlePartCancelConfigure]', { partId }); */
@@ -267,6 +297,7 @@ const EditingCanvas: React.FC = () => {
         customClassName={configModalCustomClassName}
         onClose={() => {
           setShowConfigModal(false);
+          dispatch(clearConfigureRequest());
           setNotificationStream({
             stamp: Date.now(),
             type: NotificationType.CONFIGURE_CANCEL,
@@ -279,6 +310,7 @@ const EditingCanvas: React.FC = () => {
         }}
         onSave={() => {
           setShowConfigModal(false);
+          dispatch(clearConfigureRequest());
           setNotificationStream({
             stamp: Date.now(),
             type: NotificationType.CONFIGURE_SAVE,

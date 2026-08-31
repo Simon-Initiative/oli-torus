@@ -310,7 +310,7 @@ export const validators: Validator[] = [
                   ...rule,
                   action,
                   owner,
-                  suggestedFix: ``,
+                  suggestedFix: action.params.target,
                 };
           }
           return null;
@@ -338,7 +338,7 @@ export const validators: Validator[] = [
             : {
                 fact,
                 owner,
-                suggestedFix: ``,
+                suggestedFix: fact.target,
               },
         ],
         [],
@@ -365,7 +365,7 @@ export const validators: Validator[] = [
               condition,
               rule,
               owner,
-              suggestedFix: ``,
+              suggestedFix: condition.fact,
             });
           }
         });

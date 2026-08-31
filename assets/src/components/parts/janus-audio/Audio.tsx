@@ -8,33 +8,16 @@ import {
 import { PartComponentProps } from '../types/parts';
 import './Audio.scss';
 import { AudioModel } from './schema';
+import {
+  getTranscriptFileFromModel,
+  getTranscriptTextFromModel,
+} from './transcript';
+
+export { getTranscriptTextFromModel } from './transcript';
 
 export const getTranscriptLinks = (transcriptFile?: string) => {
   const links = [transcriptFile].filter((link): link is string => !!link?.trim());
   return Array.from(new Set(links));
-};
-
-const getTranscriptFileFromModel = (model: any): string => {
-  if (typeof model?.transcript?.transcriptFile === 'string') {
-    return model.transcript.transcriptFile;
-  }
-  if (typeof model?.subtitles?.transcriptFile === 'string') {
-    return model.subtitles.transcriptFile;
-  }
-  if (typeof model?.transcriptFile === 'string') {
-    return model.transcriptFile;
-  }
-  return '';
-};
-
-export const getTranscriptTextFromModel = (model: any): string => {
-  if (typeof model?.transcript?.transcriptText === 'string') {
-    return model.transcript.transcriptText;
-  }
-  if (typeof model?.transcriptText === 'string') {
-    return model.transcriptText;
-  }
-  return '';
 };
 
 const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {

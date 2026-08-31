@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SolutionProps } from './SolutionProps';
 
 export const FixIdButton: React.FC<SolutionProps> = ({
@@ -6,11 +6,17 @@ export const FixIdButton: React.FC<SolutionProps> = ({
   onClick,
 }: SolutionProps): JSX.Element => {
   const txtRef = React.useRef<HTMLInputElement>(null);
+  const [isApplying, setIsApplying] = useState(false);
 
-  const handleClick = () => {
-    if (txtRef.current && onClick) {
-      const newVal = txtRef.current.value;
-      onClick(newVal);
+  const handleClick = async () => {
+    if (!txtRef.current || !onClick || isApplying) {
+      return;
+    }
+    setIsApplying(true);
+    try {
+      await onClick(txtRef.current.value);
+    } finally {
+      setIsApplying(false);
     }
   };
 
@@ -21,9 +27,18 @@ export const FixIdButton: React.FC<SolutionProps> = ({
         type="text"
         defaultValue={suggestion}
         className="form-control form-control-sm"
+        disabled={isApplying}
       />
-      <button className="btn btn-sm btn-primary ml-2" onClick={handleClick}>
-        Apply
+      <button
+        className="btn btn-sm btn-primary ml-2 diagnostics-hub__apply-btn"
+        onClick={handleClick}
+        disabled={isApplying}
+      >
+        {isApplying ? (
+          <i className="fa fa-spinner fa-spin" aria-hidden="true" />
+        ) : (
+          'Apply'
+        )}
       </button>
     </div>
   );
