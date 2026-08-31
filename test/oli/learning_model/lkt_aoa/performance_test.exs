@@ -4,7 +4,8 @@ defmodule Oli.LearningModel.LktAoa.PerformanceTest do
   alias Oli.LearningModel
   alias Oli.LearningModel.LktAoaFixtures
 
-  @large_batch_size 500
+  @large_batch_size 1_000
+  @expected_operational_query_count 6
   @operational_tables [
     "learning_model_attempt_applications",
     "published_resources",
@@ -13,7 +14,7 @@ defmodule Oli.LearningModel.LktAoa.PerformanceTest do
   ]
 
   @tag timeout: 120_000
-  test "operational query count is stable for one and 500 GUID batches" do
+  test "operational query count is stable for one and 1,000 GUID batches" do
     %{section: single_section, group: single_group} = LktAoaFixtures.lkt_fixture()
 
     single_count =
@@ -35,7 +36,7 @@ defmodule Oli.LearningModel.LktAoa.PerformanceTest do
       end)
 
     assert single_count == large_count
-    assert large_count <= 6
+    assert large_count == @expected_operational_query_count
   end
 
   @tag timeout: 120_000
