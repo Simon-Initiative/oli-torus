@@ -3,11 +3,23 @@ import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  DeliveryElementProps,
+  EvaluationResponse,
+  PartActivityResponse,
+} from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
 import { MultiInputComponent } from 'components/activities/multi_input/MultiInputDelivery';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { defaultModel } from 'components/activities/multi_input/utils';
+import {
+  makeChoice,
+  makeFeedback,
+  makeHint,
+  makePart,
+  makeResponse,
+} from 'components/activities/types';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { defaultActivityState } from 'data/activities/utils';
 import { configureStore } from 'state/store';
@@ -44,7 +56,10 @@ describe('multi input delivery', () => {
     window.MathJax = restoreMathJax;
   });
 
-  const renderMultiInput = (model: MultiInputSchema) => {
+  const renderMultiInput = (
+    model: MultiInputSchema,
+    deliveryProps: Partial<DeliveryElementProps<MultiInputSchema>> = {},
+  ) => {
     const props = {
       model,
       activitySlug: 'activity-slug',
@@ -76,7 +91,7 @@ describe('multi input delivery', () => {
 
     return render(
       <Provider store={store}>
-        <DeliveryElementProvider {...defaultDeliveryElementProps} {...props}>
+        <DeliveryElementProvider {...defaultDeliveryElementProps} {...props} {...deliveryProps}>
           <MultiInputComponent />
         </DeliveryElementProvider>
       </Provider>,
@@ -152,5 +167,115 @@ describe('multi input delivery', () => {
 
     expect(container.querySelector('.math-input')).toBeTruthy();
     expect(screen.queryByLabelText('answer submission textbox')).not.toBeInTheDocument();
+  });
+
+  it('keeps a corrected dropdown selected after resetting and resubmitting its part', async () => {
+    const dropdownPartId = 'dropdown-part';
+    const textPartId = 'text-part';
+    const dropdownInputId = 'dropdown-input';
+    const textInputId = 'text-input';
+    const incorrectChoice = makeChoice('Incorrect', 'incorrect-choice');
+    const correctChoice = makeChoice('Correct', 'correct-choice');
+
+    const model: MultiInputSchema = {
+      stem: {
+        id: 'stem',
+        content: [
+          {
+            type: 'p',
+            id: 'paragraph',
+            children: [
+              { text: 'Dropdown: ' },
+              { type: 'input_ref', id: dropdownInputId, children: [{ text: '' }] },
+              { text: ' Text: ' },
+              { type: 'input_ref', id: textInputId, children: [{ text: '' }] },
+            ],
+          },
+        ],
+      },
+      choices: [incorrectChoice, correctChoice],
+      inputs: [
+        {
+          id: dropdownInputId,
+          inputType: 'dropdown',
+          partId: dropdownPartId,
+          choiceIds: [incorrectChoice.id, correctChoice.id],
+        },
+        { id: textInputId, inputType: 'text', partId: textPartId },
+      ],
+      submitPerPart: true,
+      authoring: {
+        parts: [
+          makePart(
+            [makeResponse(`input like {${correctChoice.id}}`, 1)],
+            [makeHint('')],
+            dropdownPartId,
+          ),
+          makePart([makeResponse('input like {text}', 1)], [makeHint('')], textPartId),
+        ],
+        targeted: [],
+        transformations: [],
+        previewText: 'Dropdown and text',
+      },
+    };
+
+    let resetCount = 0;
+    const onResetPart = jest
+      .fn<Promise<PartActivityResponse>, [string, string]>()
+      .mockImplementation(async () => {
+        resetCount += 1;
+        return {
+          type: 'success',
+          attemptState: {
+            attemptGuid: `reset-attempt-${resetCount}`,
+            attemptNumber: resetCount + 1,
+            dateEvaluated: null,
+            dateSubmitted: null,
+            score: null,
+            outOf: null,
+            response: null,
+            feedback: null,
+            explanation: null,
+            hints: [],
+            hasMoreAttempts: true,
+            hasMoreHints: false,
+            partId: dropdownPartId,
+          },
+        };
+      });
+    const onSubmitPart = jest
+      .fn<Promise<EvaluationResponse>, [string, string, { input: string }]>()
+      .mockImplementation(async (_attemptGuid, partAttemptGuid, response) => ({
+        type: 'success',
+        actions: [
+          {
+            type: 'FeedbackAction',
+            attempt_guid: partAttemptGuid,
+            part_id: dropdownPartId,
+            out_of: 1,
+            score: response.input === correctChoice.id ? 1 : 0,
+            show_page: null,
+            feedback: makeFeedback(
+              response.input === correctChoice.id ? 'Correct feedback' : 'Incorrect feedback',
+            ),
+            explanation: null,
+          },
+        ],
+      }));
+
+    renderMultiInput(model, { onResetPart, onSubmitPart });
+
+    const dropdown = screen.getByLabelText('Select answer');
+    fireEvent.change(dropdown, { target: { value: incorrectChoice.id } });
+    await waitFor(() => expect(onSubmitPart).toHaveBeenCalledTimes(1));
+    expect(dropdown).toHaveValue(incorrectChoice.id);
+
+    fireEvent.change(dropdown, { target: { value: correctChoice.id } });
+    await waitFor(() => expect(onResetPart).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onSubmitPart).toHaveBeenCalledTimes(2));
+
+    expect(onSubmitPart.mock.calls[1][2]).toEqual({ input: correctChoice.id });
+    expect(screen.getByText('Correct feedback')).toBeInTheDocument();
+    expect(dropdown).toHaveValue(correctChoice.id);
   });
 });
