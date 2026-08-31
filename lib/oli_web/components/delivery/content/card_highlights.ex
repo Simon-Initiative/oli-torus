@@ -4,20 +4,25 @@ defmodule OliWeb.Components.Delivery.CardHighlights do
   attr :title, :string, required: true
   attr :count, :integer, required: true
   attr :is_selected, :boolean, default: false
-  attr :value, :string, required: true
+  attr :value, :any, required: true
   attr :on_click, :map, required: true
-  attr :container_filter_by, :atom, default: nil
+  attr :container_filter_by, :any, default: nil
 
   def render(assigns) do
     ~H"""
-    <div
+    <button
+      type="button"
       phx-click={@on_click}
       phx-value-selected={@value}
-      class={
-        "inline-flex flex-col justify-start items-start gap-3 p-6 h-32 rounded-2xl shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]
-        outline outline-1 outline-offset-[-1px] outline-gray-300 cursor-pointer transition-colors dark:bg-[#000000] dark:outline-[#3B3740] hover:outline-[#006CD9] hover:dark:outline-[#4CA6FF] " <>
-        if @is_selected, do: "bg-[#F2F9FF] outline-[#006CD9] dark:bg-[#0A203A] dark:outline-[#4CA6FF]", else: ""
-      }
+      aria-pressed={if @is_selected, do: "true", else: "false"}
+      class={[
+        "inline-flex flex-col justify-start items-start gap-3 p-6 min-h-32 rounded-2xl shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]",
+        "outline outline-1 outline-offset-[-1px] outline-gray-300 cursor-pointer transition-colors text-left",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006CD9]",
+        "dark:bg-[#000000] dark:outline-[#3B3740] hover:outline-[#006CD9] hover:dark:outline-[#4CA6FF] focus-visible:dark:outline-[#4CA6FF]",
+        @is_selected &&
+          "bg-[#F2F9FF] outline-[#006CD9] dark:bg-[#0A203A] dark:outline-[#4CA6FF]"
+      ]}
     >
       <div class="text-gray-700 text-base font-semibold leading-normal dark:text-[#EEEBF5]">
         {@title}
@@ -33,7 +38,7 @@ defmodule OliWeb.Components.Delivery.CardHighlights do
           </div>
         </div>
       </div>
-    </div>
+    </button>
     """
   end
 

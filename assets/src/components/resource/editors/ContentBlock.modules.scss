@@ -11,6 +11,8 @@
 .contentBlockHeader {
   display: flex;
   flex-direction: row;
+  align-items: center;
+  gap: 12px;
   padding: 0 calc(50% - 400px);
 }
 

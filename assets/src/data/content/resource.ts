@@ -196,6 +196,7 @@ export type ResourceContext = {
   objectives: AttachedObjectives; // Attached objectives
   allObjectives: Objective[]; // All objectives
   learningObjectives?: ResolvedLearningObjective[]; // Resolved LOs for this page's container scope
+  learningObjectivesRefreshPendingFor?: string; // LO element currently waiting for container-scoped LOs
   allTags: Tag[]; // All available tags
   activityContexts: ActivityEditContext[]; // Contexts for inline activity editing
   optionalContentTypes: OptionalContentTypes; // Optional content types

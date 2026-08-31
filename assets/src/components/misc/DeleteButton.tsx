@@ -1,4 +1,5 @@
 import React from 'react';
+import { TrashIcon } from 'components/misc/icons/Icons';
 import { WithClassName, classNames } from 'utils/classNames';
 import styles from './DeleteButton.modules.scss';
 
@@ -13,9 +14,6 @@ export const DeleteButton = ({
   onClick,
 }: WithClassName<DeleteButtonProps>) => (
   <button
-    style={{
-      height: 31,
-    }}
     disabled={!editMode}
     type="button"
     className={classNames(
@@ -26,6 +24,6 @@ export const DeleteButton = ({
     aria-label="delete"
     onClick={onClick}
   >
-    <i className="fa-solid fa-trash fa-lg"></i>
+    <TrashIcon />
   </button>
 );
