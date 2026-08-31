@@ -2,12 +2,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  import Ecto.Query
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
   import Oli.Factory
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.ContainedObjective
+  alias Oli.Repo
 
   defp live_view_learning_objectives_route(section_slug, params \\ %{}) do
     Routes.live_path(
@@ -19,6 +22,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       params
     )
   end
+
+  defp search(view, term),
+    do:
+      view
+      |> element("form[phx-change='search_objective']")
+      |> render_change(%{"objective_name" => term})
+
+  # A collapsed row renders no aria-expanded attribute; an expanded one does.
+  defp expanded?(view, resource_id),
+    do: has_element?(view, "[aria-controls='details-row_#{resource_id}'][aria-expanded]")
 
   describe "user" do
     test "can not access page when it is not logged in", %{conn: conn} do
@@ -428,6 +441,125 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
     end
+
+    test "searching for a subobjective shows and expands its parent objective", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_learning_objectives_route(section.slug, %{
+            offset: 4
+          })
+        )
+
+      search(view, revisions.obj_revision_c1.title)
+
+      assert_patch(
+        view,
+        live_view_learning_objectives_route(section.slug, %{
+          text_search: revisions.obj_revision_c1.title
+        })
+      )
+
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      assert expanded?(view, revisions.obj_revision_c.resource_id)
+
+      wait_until(fn ->
+        has_element?(view, ".search-highlight", revisions.obj_revision_c1.title)
+      end)
+
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+    end
+
+    test "clearing the search collapses the rows the search expanded", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      search(view, revisions.obj_revision_c1.title)
+      assert expanded?(view, revisions.obj_revision_c.resource_id)
+
+      search(view, "")
+      refute expanded?(view, revisions.obj_revision_c.resource_id)
+    end
+
+    test "a row collapsed by hand stays collapsed while the search term holds", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      search(view, revisions.obj_revision_c1.title)
+      assert expanded?(view, revisions.obj_revision_c.resource_id)
+
+      render_click(
+        element(view, "[aria-controls='details-row_#{revisions.obj_revision_c.resource_id}']")
+      )
+
+      refute expanded?(view, revisions.obj_revision_c.resource_id)
+
+      render_patch(
+        view,
+        live_view_learning_objectives_route(section.slug, %{
+          text_search: revisions.obj_revision_c1.title,
+          sort_order: "desc"
+        })
+      )
+
+      refute expanded?(view, revisions.obj_revision_c.resource_id)
+    end
+
+    test "finds a subobjective that is not a row in the objectives table", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      # Without contained objectives C1 is dropped from the table dataset, but the expanded
+      # panel still lists it, so search has to reach it through its parent.
+      {deleted, _} =
+        Repo.delete_all(
+          from(co in ContainedObjective,
+            where:
+              co.section_id == ^section.id and
+                co.objective_id == ^revisions.obj_revision_c1.resource_id
+          )
+        )
+
+      assert deleted > 0
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      search(view, revisions.obj_revision_c1.title)
+
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+      refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+
+      wait_until(fn ->
+        has_element?(view, ".search-highlight", revisions.obj_revision_c1.title)
+      end)
+    end
   end
 
   describe "page size change" do
@@ -570,16 +702,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       }
 
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
-      expected_row_id = "row_#{revisions.obj_revision_c1.resource_id}"
+      expected_id = "subobj-#{revisions.obj_revision_c1.resource_id}"
 
       assert_push_event(view, "learning-objectives-scroll", %{
-        id: ^expected_row_id
+        id: ^expected_id
       })
 
-      assert has_element?(
-               view,
-               "[id^='expanded-objective-row_#{revisions.obj_revision_c1.resource_id}_']"
-             )
+      assert expanded?(view, revisions.obj_revision_c.resource_id)
     end
 
     test "invalid deep-link ids fall back without crashing or forcing expansion", %{

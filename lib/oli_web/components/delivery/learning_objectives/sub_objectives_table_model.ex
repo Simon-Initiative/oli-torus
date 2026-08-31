@@ -3,10 +3,11 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Chip
+  alias OliWeb.Common.Utils
 
   @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
 
-  def new(sub_objectives, parent_unique_id \\ nil) do
+  def new(sub_objectives, parent_unique_id \\ nil, text_search \\ nil) do
     column_specs = [
       %ColumnSpec{
         name: :sub_objective,
@@ -39,14 +40,24 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       rows: sub_objectives,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
-      data: %{parent_unique_id: parent_unique_id}
+      id_field: ["subobj", :id],
+      data: %{parent_unique_id: parent_unique_id, text_search: text_search}
     )
   end
 
   # SUB-OBJECTIVE NAME
-  defp custom_render(_assigns, sub_objective, %ColumnSpec{name: :sub_objective}) do
-    sub_objective.title
+  defp custom_render(assigns, sub_objective, %ColumnSpec{name: :sub_objective}) do
+    assigns =
+      Map.merge(assigns, %{
+        title: sub_objective.title,
+        text_search: assigns.model.data[:text_search]
+      })
+
+    ~H"""
+    <span>
+      {Phoenix.HTML.raw(Utils.highlight_search_term(@title, @text_search, class: "search-highlight"))}
+    </span>
+    """
   end
 
   # STUDENT PROFICIENCY CHIP
