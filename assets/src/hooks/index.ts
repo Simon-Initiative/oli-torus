@@ -91,6 +91,7 @@ import { AutoHideTooltip, Popover, TooltipInit, TooltipWithTarget } from './tool
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
+import { ExplainObjectiveButton } from './explain_objective_button';
 
 export const Hooks = {
   AdaptiveIframeResize,
@@ -102,6 +103,7 @@ export const Hooks = {
   DebouncedTextInputListener,
   GlobalTooltip,
   WakeUpDot,
+  ExplainObjectiveButton,
   ExpandContainers,
   ShowTeaser,
   FirePageTrigger,
