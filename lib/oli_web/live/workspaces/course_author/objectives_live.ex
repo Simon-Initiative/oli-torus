@@ -45,37 +45,39 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     author = socket.assigns.current_author
 
     {all_objectives, all_children, objectives, table_model} = build_objectives(project)
-    load_ref = make_ref()
-    coverage_task_pid = start_coverage_load(project, load_ref)
+
+    socket =
+      assign(socket,
+        project: project,
+        author: author,
+        objectives: objectives,
+        table_model: table_model,
+        total_count: length(objectives),
+        all_objectives: all_objectives,
+        all_children: all_children,
+        coverage_model: nil,
+        coverage_status: :loading,
+        coverage_load_ref: make_ref(),
+        assessment_buckets: %{},
+        pending_sub_objective_delete_slugs: MapSet.new(),
+        query: "",
+        expanded_objective_slugs: initial_expanded_objective_slugs(params),
+        offset: 0,
+        limit: 20,
+        resource_slug: project.slug,
+        resource_title: project.title,
+        params: params
+      )
+      |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
+        {:cont,
+         assign_new(socket, :has_show_links_uri_hash, fn ->
+           String.contains?(uri, "#show_links")
+         end)}
+      end)
 
     {:ok,
-     assign(socket,
-       project: project,
-       author: author,
-       objectives: objectives,
-       table_model: table_model,
-       total_count: length(objectives),
-       all_objectives: all_objectives,
-       all_children: all_children,
-       coverage_model: nil,
-       coverage_status: :loading,
-       coverage_load_ref: load_ref,
-       coverage_task_pid: coverage_task_pid,
-       assessment_buckets: %{},
-       pending_sub_objective_delete_slugs: MapSet.new(),
-       query: "",
-       expanded_objective_slugs: initial_expanded_objective_slugs(params),
-       offset: 0,
-       limit: 20,
-       resource_slug: project.slug,
-       resource_title: project.title,
-       params: params
-     )
-     |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
-       {:cont,
-        assign_new(socket, :has_show_links_uri_hash, fn ->
-          String.contains?(uri, "#show_links")
-        end)}
+     start_async(socket, :objective_coverage, fn ->
+       ObjectiveCoverage.load(project)
      end)}
   end
 
@@ -277,38 +279,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     {all_objectives, all_children, objectives, table_model}
   end
 
-  defp start_coverage_load(project, load_ref) do
-    pid = self()
-
-    {:ok, task_pid} =
-      Task.start(fn ->
-        result =
-          try do
-            ObjectiveCoverage.load(project)
-          rescue
-            _exception -> {:error, :coverage_load_failed}
-          catch
-            _kind, _reason -> {:error, :coverage_load_failed}
-          end
-
-        send(pid, {:objective_coverage_loaded, load_ref, result})
-      end)
-
-    task_pid
-  end
-
-  defp cancel_coverage_load(socket) do
-    case Map.get(socket.assigns, :coverage_task_pid) do
-      pid when is_pid(pid) ->
-        if Process.alive?(pid), do: Process.exit(pid, :kill)
-
-      _ ->
-        :ok
-    end
-
-    socket
-  end
-
   defp base_coverage_fields do
     %{
       page_attachments_count: 0,
@@ -334,9 +304,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     {all_objectives, all_children, objectives, table_model} =
       build_objectives(project)
 
-    socket = cancel_coverage_load(socket)
-    load_ref = make_ref()
-    coverage_task_pid = start_coverage_load(project, load_ref)
+    socket = cancel_async(socket, :objective_coverage)
 
     objective_slugs =
       objectives
@@ -356,13 +324,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         all_children: all_children,
         coverage_model: nil,
         coverage_status: :loading,
-        coverage_load_ref: load_ref,
-        coverage_task_pid: coverage_task_pid,
         assessment_buckets: socket.assigns.assessment_buckets,
         expanded_objective_slugs: expanded_objective_slugs
       )
       |> flash_fn.()
       |> hide_modal(modal_assigns: nil)
+      |> start_async(:objective_coverage, fn -> ObjectiveCoverage.load(project) end)
 
     {:noreply, push_patch(socket, to: live_path(socket, socket.assigns.params))}
   end
@@ -415,17 +382,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     do: new_modal(Resources.change_revision(%Revision{}) |> to_form(), socket)
 
   def handle_event("retry_coverage", _, socket) do
-    socket = cancel_coverage_load(socket)
-    load_ref = make_ref()
-    coverage_task_pid = start_coverage_load(socket.assigns.project, load_ref)
+    socket = cancel_async(socket, :objective_coverage)
+    project = socket.assigns.project
 
     {:noreply,
      assign(socket,
        coverage_model: nil,
-       coverage_status: :loading,
-       coverage_load_ref: load_ref,
-       coverage_task_pid: coverage_task_pid
-     )}
+       coverage_status: :loading
+     )
+     |> start_async(:objective_coverage, fn ->
+       ObjectiveCoverage.load(project)
+     end)}
   end
 
   def handle_event("display_new_sub_modal", %{"slug" => slug}, socket),
@@ -798,6 +765,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_async(:objective_coverage, {:ok, result}, socket),
+    do: apply_coverage_result(result, socket)
+
+  def handle_async(:objective_coverage, {:exit, {exception, stacktrace}}, socket)
+      when is_exception(exception) do
+    Logger.error(
+      "Objective coverage load failed: #{Exception.message(exception)}",
+      stacktrace: stacktrace
+    )
+
+    apply_coverage_result({:error, :coverage_load_failed}, socket)
+  end
+
+  def handle_async(:objective_coverage, {:exit, reason}, socket) do
+    Logger.error("Objective coverage load exited: #{inspect(reason)}")
+    apply_coverage_result({:error, :coverage_load_failed}, socket)
+  end
+
   def handle_async({:delete_sub_objective, slug}, result, socket) do
     if MapSet.member?(socket.assigns.pending_sub_objective_delete_slugs, slug) do
       flash_type =
@@ -828,24 +813,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     end
   end
 
+  # Kept for compatibility with in-flight messages from older LiveView
+  # processes during a rolling deployment. New coverage loads use handle_async/3.
+  @impl Phoenix.LiveView
+  def handle_info({:objective_coverage_loaded, load_ref, result}, socket) do
+    if load_ref == socket.assigns.coverage_load_ref do
+      apply_coverage_result(result, socket)
+    else
+      {:noreply, socket}
+    end
+  end
+
   defp parent_objective(_project, ""), do: nil
 
   defp parent_objective(project, slug),
     do: AuthoringResolver.from_revision_slug(project.slug, slug)
-
-  @impl Phoenix.LiveView
-  def handle_info({:objective_coverage_loaded, load_ref, result}, socket) do
-    case load_ref == socket.assigns.coverage_load_ref do
-      false ->
-        {:noreply, socket}
-
-      true ->
-        apply_coverage_result(result, socket)
-    end
-  end
-
-  # needed to ignore results of Task invocation
-  def handle_info(_, socket), do: {:noreply, socket}
 
   defp apply_coverage_result({:ok, model}, socket) do
     assessment_buckets =
@@ -865,7 +847,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         total_count: length(objectives),
         coverage_model: model,
         coverage_status: :ready,
-        coverage_task_pid: nil,
         assessment_buckets: assessment_buckets
       )
 
@@ -876,8 +857,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     {:noreply,
      assign(socket,
        coverage_model: nil,
-       coverage_status: {:error, reason},
-       coverage_task_pid: nil
+       coverage_status: {:error, reason}
      )}
   end
 
