@@ -21,8 +21,9 @@ export const ActivityBlock = ({
       id={`resource-editor-${contentItem.id}`}
       className={classNames(styles.activityBlock, 'activity-block')}
     >
-      <span id={`activity_${activityId}`} className="sr-only" aria-hidden="true" />
-      <div>{children}</div>
+      <div id={`activity_${activityId}`} tabIndex={-1}>
+        {children}
+      </div>
     </div>
   );
 };
