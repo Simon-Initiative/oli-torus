@@ -19,6 +19,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
       end
 
       def handle_event("apply_search", _, socket) do
+        socket = maybe_prepare_search(socket, socket.assigns.query)
+
         {:noreply,
          push_patch(socket,
            to:
@@ -38,6 +40,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
       end
 
       def handle_event("reset_search", _, socket) do
+        socket = maybe_prepare_search(socket, "")
+
         {:noreply,
          push_patch(socket,
            to:
@@ -54,6 +58,14 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
              ),
            replace: true
          )}
+      end
+
+      defp maybe_prepare_search(socket, query) do
+        if function_exported?(__MODULE__, :prepare_search, 2) do
+          apply(__MODULE__, :prepare_search, [socket, query])
+        else
+          socket
+        end
       end
 
       def handle_event("page_change", %{"offset" => offset}, socket) do

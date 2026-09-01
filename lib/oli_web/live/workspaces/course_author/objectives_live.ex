@@ -62,6 +62,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
         expanded_objective_slugs: initial_expanded_objective_slugs(params),
+        search_expanded_objective_slugs: MapSet.new(),
         offset: 0,
         limit: 20,
         resource_slug: project.slug,
@@ -104,6 +105,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             apply="apply_search"
             query={@query}
             apply_icon={true}
+            search_label="Search learning objectives, sub-objectives, pages, and activities"
           />
         </div>
 
@@ -160,6 +162,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     </FilterBox.render>
 
     <div id="objectives-table" class="my-4">
+      <div id="objective-search-status" class="sr-only" role="status" aria-live="polite">
+        <%= if @applied_query != "" do %>
+          <%= if @total_count == 0 do %>
+            No learning objectives match "{@applied_query}".
+          <% else %>
+            {"#{@total_count} learning objective#{if @total_count == 1, do: "", else: "s"} found for \"#{@applied_query}\"."}
+          <% end %>
+        <% end %>
+      </div>
       <%= case @coverage_status do %>
         <% :loading -> %>
           <div
@@ -218,6 +229,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             pending_delete_slugs={@pending_sub_objective_delete_slugs}
             project_slug={@project.slug}
             offset={@offset}
+            search_query={@applied_query || ""}
           />
         </div>
       </Table.render>
@@ -293,11 +305,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   def filter_rows(socket, query, _filter) do
-    query_str = String.downcase(query)
+    case {String.trim(query), socket.assigns.coverage_model} do
+      {"", _} ->
+        socket.assigns.objectives
 
-    Enum.filter(socket.assigns.objectives, fn obj ->
-      String.contains?(String.downcase(obj.title), query_str)
-    end)
+      {_, nil} ->
+        filter_objective_titles(socket.assigns.objectives, query)
+
+      {_, model} ->
+        matching_ids = model |> ObjectiveCoverage.search(query) |> Enum.map(& &1.objective_id)
+
+        Enum.filter(socket.assigns.objectives, &(&1.resource_id in matching_ids))
+    end
+  end
+
+  def prepare_search(socket, query) do
+    search_expanded = socket.assigns.search_expanded_objective_slugs
+    new_search_expanded = search_expansion_slugs(socket, query)
+
+    assign(socket,
+      expanded_objective_slugs:
+        MapSet.difference(socket.assigns.expanded_objective_slugs, search_expanded)
+        |> MapSet.union(new_search_expanded),
+      search_expanded_objective_slugs: new_search_expanded
+    )
   end
 
   defp return_updated_data(project, flash_fn, socket) do
@@ -849,6 +880,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_status: :ready,
         assessment_buckets: assessment_buckets
       )
+      |> prepare_search(socket.assigns.applied_query || "")
 
     refresh_table_state(socket)
   end
@@ -859,6 +891,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        coverage_model: nil,
        coverage_status: {:error, reason}
      )}
+  end
+
+  defp filter_objective_titles(objectives, query) do
+    query = String.downcase(query)
+
+    Enum.filter(objectives, fn objective ->
+      String.contains?(String.downcase(objective.title || ""), query)
+    end)
+  end
+
+  defp search_expansion_slugs(%{assigns: %{coverage_model: nil}}, _query), do: MapSet.new()
+
+  defp search_expansion_slugs(%{assigns: %{coverage_model: model}}, query) do
+    if String.trim(query) == "" do
+      MapSet.new()
+    else
+      model
+      |> ObjectiveCoverage.search(query)
+      |> Enum.flat_map(&objective_search_path(model, &1.objective_id))
+      |> MapSet.new()
+    end
+  end
+
+  defp objective_search_path(model, objective_id) do
+    objective_ancestor_ids(model, objective_id)
+    |> Enum.map(&Map.get(model.objectives_by_id, &1))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(& &1.slug)
+  end
+
+  defp objective_ancestor_ids(model, objective_id),
+    do: objective_ancestor_ids(model, objective_id, MapSet.new())
+
+  defp objective_ancestor_ids(_model, nil, visited), do: MapSet.to_list(visited)
+
+  defp objective_ancestor_ids(model, objective_id, visited) do
+    if MapSet.member?(visited, objective_id) do
+      MapSet.to_list(visited)
+    else
+      visited = MapSet.put(visited, objective_id)
+
+      Enum.reduce(Map.get(model.parents_by_child, objective_id, []), visited, fn parent_id, acc ->
+        MapSet.new(objective_ancestor_ids(model, parent_id, acc))
+      end)
+      |> MapSet.to_list()
+    end
   end
 
   defp update_objective_coverage(objectives, model, assessment_buckets, objective_id) do

@@ -8,6 +8,7 @@ defmodule OliWeb.Common.Filter do
   attr :reset, :any, required: true
   attr :query, :string, default: ""
   attr :apply_icon, :boolean, default: false
+  attr :search_label, :string, default: "Search"
 
   def render(assigns) do
     ~H"""
@@ -42,6 +43,7 @@ defmodule OliWeb.Common.Filter do
               else: "form-control h-full pr-6"
           }
           placeholder="Search..."
+          aria-label={@search_label}
           phx-change={@change}
           phx-blur={@change}
           value={@query}

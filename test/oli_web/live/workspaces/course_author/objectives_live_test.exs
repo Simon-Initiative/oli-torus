@@ -324,6 +324,74 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       wait_for_coverage(view)
     end
 
+    test "searches nested objectives, pages, and activities and expands matches", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, child} = create_objective(project, publication, "child", "Nested Objective")
+
+      {:ok, parent} =
+        create_objective(project, publication, "parent", "Parent Objective", [child.resource_id])
+
+      {:ok, activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          child.resource_id,
+          "nested-activity"
+        )
+
+      {:ok, page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [child.resource_id],
+          "nested-page",
+          [activity.resource_id]
+        )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      search(view, page.title)
+
+      assert has_element?(view, "##{parent.slug}")
+      assert has_element?(view, "##{parent.slug} .collapse", child.title)
+      assert has_element?(view, "span.search-highlight", page.title)
+
+      expanded =
+        assert_patch(view)
+        |> URI.parse()
+        |> Map.fetch!(:query)
+        |> URI.decode_query()
+        |> Map.fetch!("expanded")
+
+      assert expanded == "child,parent"
+
+      search(view, activity.title)
+
+      assert has_element?(view, "span.search-highlight", activity.title)
+      assert has_element?(view, "##{parent.slug} .collapse", child.title)
+
+      view
+      |> element("button[phx-click='reset_search']")
+      |> render_click()
+
+      assert has_element?(view, "#objective-summary-#{parent.resource_id}")
+      refute has_element?(view, "span.search-highlight")
+    end
+
+    defp search(view, query) do
+      view
+      |> element("input[phx-blur='change_search']")
+      |> render_blur(%{value: query})
+
+      view
+      |> element("button[phx-click='apply_search']")
+      |> render_click()
+    end
+
     test "applies sorting", %{conn: conn, project: project, publication: publication} do
       {:ok, _first_obj} = create_objective(project, publication, "first_obj", "First Objective")
 
