@@ -10,7 +10,7 @@ import {
   selectBottomPanel,
   selectConfigureRequest,
   selectReadOnly,
-  clearConfigureRequest,
+  setConfigureRequest,
   setCopiedPart,
   setCopiedPartActivityId,
   setRightPanelActiveTab,
@@ -297,7 +297,7 @@ const EditingCanvas: React.FC = () => {
         customClassName={configModalCustomClassName}
         onClose={() => {
           setShowConfigModal(false);
-          dispatch(clearConfigureRequest());
+          dispatch(setConfigureRequest(null));
           setNotificationStream({
             stamp: Date.now(),
             type: NotificationType.CONFIGURE_CANCEL,
@@ -310,7 +310,7 @@ const EditingCanvas: React.FC = () => {
         }}
         onSave={() => {
           setShowConfigModal(false);
-          dispatch(clearConfigureRequest());
+          dispatch(setConfigureRequest(null));
           setNotificationStream({
             stamp: Date.now(),
             type: NotificationType.CONFIGURE_SAVE,

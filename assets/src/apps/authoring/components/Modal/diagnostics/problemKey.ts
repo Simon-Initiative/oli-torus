@@ -1,5 +1,13 @@
-import { DiagnosticProblem } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
+import { DiagnosticError, DiagnosticProblem } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import { DiagnosticTypes } from './DiagnosticTypes';
+
+const getActivityResourceId = (activity: DiagnosticError['activity']): string => {
+  if (activity && typeof activity === 'object' && 'resourceId' in activity) {
+    const resourceId = (activity as { resourceId?: string | number }).resourceId;
+    return resourceId !== undefined ? String(resourceId) : '';
+  }
+  return '';
+};
 
 export const getProblemKey = (problem: DiagnosticProblem, activityResourceId: string): string => {
   const { type, item } = problem;
@@ -32,24 +40,24 @@ export const getProblemKey = (problem: DiagnosticProblem, activityResourceId: st
 };
 
 export const problemExistsInErrors = (
-  errors: { activity: { resourceId: string }; problems: DiagnosticProblem[] }[],
+  errors: DiagnosticError[],
   problemKey: string,
   activityResourceId: string,
 ): boolean =>
   errors.some(
     (err) =>
-      err.activity.resourceId === activityResourceId &&
+      getActivityResourceId(err.activity) === String(activityResourceId) &&
       err.problems.some((p) => getProblemKey(p, activityResourceId) === problemKey),
   );
 
 export const removeProblemFromErrors = (
-  errors: { activity: { resourceId: string }; problems: DiagnosticProblem[] }[],
+  errors: DiagnosticError[],
   problemKey: string,
   activityResourceId: string,
-) =>
+): DiagnosticError[] =>
   errors
     .map((err) => {
-      if (err.activity.resourceId !== activityResourceId) {
+      if (getActivityResourceId(err.activity) !== String(activityResourceId)) {
         return err;
       }
       const problems = err.problems.filter(

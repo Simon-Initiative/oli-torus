@@ -73,8 +73,10 @@ const FIX_CONFIGS: Record<string, Partial<Record<string, AccessibilityFixConfig>
   },
 };
 
+export type AccessibilityFixLookup = Pick<AccessibilityFindingItem, 'type' | 'issue'>;
+
 export const getAccessibilityFixConfig = (
-  item: AccessibilityFindingItem,
+  item: AccessibilityFixLookup,
 ): AccessibilityFixConfig | null => {
   return FIX_CONFIGS[item.type]?.[item.issue] ?? null;
 };

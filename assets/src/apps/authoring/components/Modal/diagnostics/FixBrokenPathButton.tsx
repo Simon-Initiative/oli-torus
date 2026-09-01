@@ -23,7 +23,7 @@ export const FixBrokenPathButton: React.FC<SolutionProps> = ({
     }
   };
 
-  const onChangeHandler = (sequenceId: string) => {
+  const onChangeHandler = (sequenceId?: string) => {
     setTarget(sequenceId || 'invalid');
   };
 
@@ -53,11 +53,7 @@ export const FixBrokenPathButton: React.FC<SolutionProps> = ({
         onClick={handleClick}
         disabled={isApplying || target === 'invalid'}
       >
-        {isApplying ? (
-          <i className="fa fa-spinner fa-spin" aria-hidden="true" />
-        ) : (
-          'Apply'
-        )}
+        {isApplying ? <i className="fa fa-spinner fa-spin" aria-hidden="true" /> : 'Apply'}
       </button>
     </div>
   );

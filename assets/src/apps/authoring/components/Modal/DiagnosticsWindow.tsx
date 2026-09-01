@@ -1,12 +1,12 @@
-import React, { Fragment, ReactNode, useCallback, useRef, useState } from 'react';
+import React, { Fragment, ReactNode, useCallback, useState } from 'react';
 import { Badge, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/app/slice';
-import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import {
   countAccessibilityFindings,
   validateAccessibility,
 } from 'apps/authoring/store/groups/layouts/deck/actions/accessibilityAudit';
+import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import {
   DiagnosticError,
   validatePartIds,
@@ -14,19 +14,15 @@ import {
 } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { IAdaptiveRule, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
-import {
-  setConfigureRequest,
-  setCurrentRule,
-  setRightPanelActiveTab,
-} from '../../store/app/slice';
+import { setConfigureRequest, setCurrentRule, setRightPanelActiveTab } from '../../store/app/slice';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 import { DiagnosticsOverlayProvider } from './DiagnosticsOverlayContext';
 import DiagnosticMessage from './diagnostics/DiagnosticMessage';
 import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
 import { DiagnosticRuleTypes, DiagnosticTypes } from './diagnostics/DiagnosticTypes';
-import { createUpdater, updateAccessibilityDecorative } from './diagnostics/actions';
 import { getAccessibilityFixConfig } from './diagnostics/accessibilityFixConfig';
+import { createUpdater, updateAccessibilityDecorative } from './diagnostics/actions';
 import {
   getProblemKey,
   problemExistsInErrors,
@@ -134,7 +130,9 @@ const ActivityPartError: React.FC<{
 
   const issueCount = error.problems.length;
   const issueCountClass =
-    issueCount >= 3 ? 'diagnostics-hub__screen-issue-count--error' : 'diagnostics-hub__screen-issue-count--warning';
+    issueCount >= 3
+      ? 'diagnostics-hub__screen-issue-count--error'
+      : 'diagnostics-hub__screen-issue-count--warning';
 
   return (
     <div className="diagnostics-hub__screen-card">
@@ -176,7 +174,9 @@ const ActivityPartError: React.FC<{
               key={`${problem.owner.resourceId}-${problem.type}-${problem.item?.id || index}-${
                 problem.item?.issue || index
               }`}
-              className={`diagnostics-hub__issue-row${clickable ? ' diagnostics-hub__issue-row--clickable' : ''}${showFix ? ' diagnostics-hub__issue-row--has-fix' : ''}`}
+              className={`diagnostics-hub__issue-row${
+                clickable ? ' diagnostics-hub__issue-row--clickable' : ''
+              }${showFix ? ' diagnostics-hub__issue-row--has-fix' : ''}`}
               onClick={clickable ? () => handleProblemClick(problem) : undefined}
               role={clickable ? 'button' : undefined}
               tabIndex={clickable ? 0 : undefined}
@@ -193,7 +193,11 @@ const ActivityPartError: React.FC<{
               <div className="diagnostics-hub__issue-content">
                 <div className={`diagnostics-hub__issue-icon ${iconClass}`}>
                   <i
-                    className={`fa ${variant === 'accessibility' ? 'fa-exclamation-circle' : 'fa-exclamation-triangle'}`}
+                    className={`fa ${
+                      variant === 'accessibility'
+                        ? 'fa-exclamation-circle'
+                        : 'fa-exclamation-triangle'
+                    }`}
                     aria-hidden="true"
                   />
                 </div>
@@ -229,9 +233,7 @@ const ActivityPartError: React.FC<{
                         item={problem.item}
                         onClick={(val: string) => handleProblemFix(val, problem)}
                         onMarkDecorative={
-                          accessibilityFixable
-                            ? () => handleMarkDecorativeFix(problem)
-                            : undefined
+                          accessibilityFixable ? () => handleMarkDecorativeFix(problem) : undefined
                         }
                       />
                     </div>
@@ -324,7 +326,6 @@ interface DiagnosticsWindowProps {
 
 const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
   const dispatch = useDispatch();
-  const hubRef = useRef<HTMLDivElement>(null);
   const [overlayContainer, setOverlayContainer] = useState<HTMLElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<AuditTab>('accessibility');
@@ -348,8 +349,7 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
   } = useDiagnosticsCounts();
 
   const setHubRef = useCallback((node: HTMLDivElement | null) => {
-    hubRef.current = node;
-    setOverlayContainer(node?.closest('.modal-content') as HTMLElement | null ?? node);
+    setOverlayContainer((node?.closest('.modal-content') as HTMLElement | null) ?? node);
   }, []);
 
   const handleClose = () => {
@@ -425,9 +425,7 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
       if (errors.length > 0) {
         setVariablesResults(<PageError key={errors[0].owner.title} error={errors} />);
       } else {
-        setVariablesResults(
-          <p className="diagnostics-hub__empty-message">No errors found.</p>,
-        );
+        setVariablesResults(<p className="diagnostics-hub__empty-message">No errors found.</p>);
       }
       refreshCounts();
     }

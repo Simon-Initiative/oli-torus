@@ -234,9 +234,6 @@ const slice: Slice<AppState> = createSlice({
     ) {
       state.configureRequest = action.payload;
     },
-    clearConfigureRequest(state) {
-      state.configureRequest = null;
-    },
   },
   extraReducers: (builder) => {
     builder.addCase(acquireEditingLock.fulfilled, (state) => {
@@ -285,7 +282,6 @@ export const {
   changeEditMode,
   setLeftPanelState,
   setConfigureRequest,
-  clearConfigureRequest,
 } = slice.actions;
 
 export const selectState = (state: AuthoringRootState): AppState => state[AppSlice] as AppState;

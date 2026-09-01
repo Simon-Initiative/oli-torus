@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
+import { AccessibilityFindingItem } from 'apps/authoring/store/groups/layouts/deck/actions/accessibilityAudit';
 import guid from 'utils/guid';
-import { getAccessibilityFixConfig } from './accessibilityFixConfig';
 import { SolutionProps } from './SolutionProps';
+import { getAccessibilityFixConfig } from './accessibilityFixConfig';
 
 interface FixAccessibilityFieldProps extends SolutionProps {
-  item: {
-    id: string;
-    type: string;
-    issue: string;
-  };
+  item: AccessibilityFindingItem;
   onMarkDecorative?: () => Promise<void>;
 }
 
