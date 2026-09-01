@@ -66,11 +66,7 @@ export const FixTargetButton: React.FC<SolutionProps> = ({
         onClick={handleClick}
         disabled={isApplying}
       >
-        {isApplying ? (
-          <i className="fa fa-spinner fa-spin" aria-hidden="true" />
-        ) : (
-          'Apply'
-        )}
+        {isApplying ? <i className="fa fa-spinner fa-spin" aria-hidden="true" /> : 'Apply'}
       </button>
     </div>
   );

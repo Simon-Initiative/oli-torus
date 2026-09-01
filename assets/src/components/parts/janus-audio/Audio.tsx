@@ -8,10 +8,7 @@ import {
 import { PartComponentProps } from '../types/parts';
 import './Audio.scss';
 import { AudioModel } from './schema';
-import {
-  getTranscriptFileFromModel,
-  getTranscriptTextFromModel,
-} from './transcript';
+import { getTranscriptFileFromModel, getTranscriptTextFromModel } from './transcript';
 
 export { getTranscriptTextFromModel } from './transcript';
 

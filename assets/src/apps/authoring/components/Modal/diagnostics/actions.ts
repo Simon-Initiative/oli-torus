@@ -9,8 +9,8 @@ import { updatePartAccessibilityField } from 'apps/authoring/store/parts/actions
 import { clone } from 'utils/common';
 import { saveActivity } from '../../../../authoring/store/activities/actions/saveActivity';
 import { findConditionById, forEachCondition } from '../../AdaptivityEditor/ConditionsBlockEditor';
-import { getAccessibilityFixConfig } from './accessibilityFixConfig';
 import { DiagnosticTypes } from './DiagnosticTypes';
+import { getAccessibilityFixConfig } from './accessibilityFixConfig';
 
 export const updateId = (problem: any, fixed: string) => {
   const activityId = problem.owner.resourceId;

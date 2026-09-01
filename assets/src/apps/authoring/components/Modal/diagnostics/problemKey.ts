@@ -1,4 +1,7 @@
-import { DiagnosticError, DiagnosticProblem } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
+import {
+  DiagnosticError,
+  DiagnosticProblem,
+} from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import { DiagnosticTypes } from './DiagnosticTypes';
 
 const getActivityResourceId = (activity: DiagnosticError['activity']): string => {
@@ -25,7 +28,9 @@ export const getProblemKey = (problem: DiagnosticProblem, activityResourceId: st
     case DiagnosticTypes.INVALID_OWNER_INIT:
     case DiagnosticTypes.INVALID_OWNER_CONDITION:
     case DiagnosticTypes.INVALID_OWNER_MUTATE:
-      return `${type}:${activityResourceId}:${item.rule?.id ?? item.id}:${item.owner?.custom?.sequenceId ?? ''}`;
+      return `${type}:${activityResourceId}:${item.rule?.id ?? item.id}:${
+        item.owner?.custom?.sequenceId ?? ''
+      }`;
     case DiagnosticTypes.BROKEN:
       return `${type}:${activityResourceId}:${item.id}:${item.action?.params?.target}`;
     case DiagnosticTypes.DUPLICATE:

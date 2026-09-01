@@ -1,7 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/DiagnosticTypes';
-import { AppSlice } from 'apps/authoring/store/app/name';
 import { hasTranscriptFromModel } from 'components/parts/janus-audio/transcript';
+import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/DiagnosticTypes';
+import { getAccessibilitySuggestedFix } from 'apps/authoring/components/Modal/diagnostics/accessibilityFixConfig';
+import { AppSlice } from 'apps/authoring/store/app/name';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import {
   SequenceEntry,
@@ -9,7 +10,6 @@ import {
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { DiagnosticError, DiagnosticProblem } from './validate';
-import { getAccessibilitySuggestedFix } from 'apps/authoring/components/Modal/diagnostics/accessibilityFixConfig';
 
 export interface AccessibilityFindingItem {
   id: string;
@@ -132,9 +132,7 @@ const auditPart = (part: AuditablePart): AccessibilityFindingItem[] => {
       break;
     case 'janus-formula':
       if (isBlank(custom.formulaAltText)) {
-        findings.push(
-          makeFinding(part, 'missing_alt_text', 'Alternate text is empty or missing.'),
-        );
+        findings.push(makeFinding(part, 'missing_alt_text', 'Alternate text is empty or missing.'));
       } else if (isPlaceholder(custom.formulaAltText, 'Sample formula')) {
         findings.push(
           makeFinding(
@@ -160,11 +158,7 @@ const auditPart = (part: AuditablePart): AccessibilityFindingItem[] => {
       }
       if (isBlank(custom.alt)) {
         findings.push(
-          makeFinding(
-            part,
-            'missing_audio_description',
-            'Audio Description is empty or missing.',
-          ),
+          makeFinding(part, 'missing_audio_description', 'Audio Description is empty or missing.'),
         );
       }
       break;

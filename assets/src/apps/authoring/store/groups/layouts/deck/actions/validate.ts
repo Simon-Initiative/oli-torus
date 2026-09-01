@@ -63,6 +63,12 @@ const generateSuggestion = (id: string, dupBlacklist: string[] = []): string => 
   return newId;
 };
 
+const isLeafCondition = (condition: {
+  fact?: string;
+  all?: unknown;
+  any?: unknown;
+}): condition is JanusConditionProperties => 'fact' in condition;
+
 const parseTarget = (target: string) => {
   let screen: string | undefined;
   if (target.indexOf('|') > -1) {
@@ -272,7 +278,7 @@ export const validators: Validator[] = [
       }
       const owner = sequence.find((s) => s.resourceId === activity.id);
       const hierarchy = getHierarchy(sequence);
-      return (activity.authoring?.rules || []).reduce((brokenColl: [], rule: any) => {
+      return (activity.authoring?.rules || []).reduce((brokenColl: any[], rule: any) => {
         const brokenActions = rule.event.params.actions.map((action: any) => {
           if (action.type === 'navigation') {
             if (action?.params?.target && action.params.target !== 'next') {
@@ -288,7 +294,7 @@ export const validators: Validator[] = [
           return null;
         });
         return [...brokenColl, ...brokenActions];
-      }, []);
+      }, [] as any[]);
     },
   },
   {
@@ -301,7 +307,7 @@ export const validators: Validator[] = [
         throw new Error('INVALID_TARGET_MUTATE VALIDATION: parts is undefined!');
       }
       const owner = sequence.find((s) => s.resourceId === activity.id);
-      return (activity.authoring?.rules || []).reduce((brokenColl: [], rule: any) => {
+      return (activity.authoring?.rules || []).reduce((brokenColl: any[], rule: any) => {
         const brokenActions = rule.event.params.actions.map((action: any) => {
           if (action.type === 'mutateState') {
             return validateTarget(action.params.target, activity, parts)
@@ -316,7 +322,7 @@ export const validators: Validator[] = [
           return null;
         });
         return [...brokenColl, ...brokenActions];
-      }, []);
+      }, [] as any[]);
     },
   },
   {
@@ -359,7 +365,10 @@ export const validators: Validator[] = [
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         const brokenConditionValues: any[] = [];
-        forEachCondition(conditions, (condition: JanusConditionProperties) => {
+        forEachCondition(conditions, (condition) => {
+          if (!isLeafCondition(condition)) {
+            return;
+          }
           if (!validateTarget(condition.fact, activity, parts)) {
             brokenConditionValues.push({
               condition,
@@ -385,7 +394,10 @@ export const validators: Validator[] = [
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         const brokenConditionValues: any[] = [];
-        forEachCondition(conditions, (condition: JanusConditionProperties) => {
+        forEachCondition(conditions, (condition) => {
+          if (!isLeafCondition(condition)) {
+            return;
+          }
           brokenConditionValues.push(validateValue(condition, rule, owner));
         });
 
@@ -419,7 +431,10 @@ export const validators: Validator[] = [
           const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
           const brokenConditionValues: any[] = [];
-          forEachCondition(conditions, (condition: JanusConditionProperties) => {
+          forEachCondition(conditions, (condition) => {
+            if (!isLeafCondition(condition)) {
+              return;
+            }
             brokenConditionValues.push(validateValueExpression(condition, rule, owner));
           });
 
@@ -487,7 +502,10 @@ export const validators: Validator[] = [
         (broken: any[], rule: any) => {
           const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
-          forEachCondition(conditions, (condition: JanusConditionProperties) => {
+          forEachCondition(conditions, (condition) => {
+            if (!isLeafCondition(condition)) {
+              return;
+            }
             const val = getExpressionTarget(condition.value);
 
             if (typeof val === 'string') {
