@@ -191,24 +191,26 @@ defmodule Oli.Scenarios.Builder do
       {:ok, %{revision: parent_rev}} =
         ObjectiveEditor.add_new(%{title: objective.title}, author, project)
 
-      parent_map = Map.put(acc, objective.title, parent_rev)
-
-      # Create sub-objectives if any
+      # Create sub-objectives if any, attaching each to the parent. Each
+      # attachment produces a new parent revision (its `children` list
+      # grows), so the returned `container` -- not the original `parent_rev`
+      # -- is the up-to-date parent once all children are attached.
       case objective[:children] do
-        nil ->
-          parent_map
-
-        [] ->
-          parent_map
+        children when children in [nil, []] ->
+          Map.put(acc, objective.title, parent_rev)
 
         children when is_list(children) ->
-          # Create each sub-objective and attach to parent
-          Enum.reduce(children, parent_map, fn child_title, child_acc ->
-            {:ok, %{revision: child_rev}} =
-              ObjectiveEditor.add_new(%{title: child_title}, author, project, parent_rev.slug)
+          {child_map, updated_parent_rev} =
+            Enum.reduce(children, {%{}, parent_rev}, fn child_title, {child_acc, _parent_rev} ->
+              {:ok, %{revision: child_rev, container: updated_parent_rev}} =
+                ObjectiveEditor.add_new(%{title: child_title}, author, project, parent_rev.slug)
 
-            Map.put(child_acc, child_title, child_rev)
-          end)
+              {Map.put(child_acc, child_title, child_rev), updated_parent_rev}
+            end)
+
+          acc
+          |> Map.put(objective.title, updated_parent_rev)
+          |> Map.merge(child_map)
       end
     end)
   end
