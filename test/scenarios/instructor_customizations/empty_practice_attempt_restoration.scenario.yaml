@@ -1,4 +1,4 @@
-# Scenario: A learner revisiting an empty practice attempt receives an activity restored by an instructor.
+# Scenario: A learner refreshing an empty practice attempt receives activities restored by an instructor.
 
 - project:
     name: "empty_practice_attempt_restoration_project"
@@ -150,6 +150,11 @@
       - restore_bank_selection:
           selection_id: "restorable_selection"
 
+- finalize_attempt:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Bank Practice"
+
 - view_practice_page:
     student: "restoration_student"
     section: "empty_practice_attempt_restoration_section"
@@ -196,6 +201,11 @@
     ops:
       - restore_activity:
           activity_virtual_id: "restorable_activity"
+
+- finalize_attempt:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Practice"
 
 - view_practice_page:
     student: "restoration_student"

@@ -17,6 +17,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Icons
   alias Oli.Delivery.LearningObjectives.ProficiencyDisplay
   alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Resources.PageContent
   alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Common.SessionContext
 
@@ -499,15 +500,35 @@ defmodule OliWeb.Delivery.Student.Utils do
   def reset_attempts_button(assigns) do
     ~H"""
     <button
-      :if={@page_context.review_mode == false && not @advanced_delivery && @activity_count > 0}
+      :if={
+        @page_context.review_mode == false && not @advanced_delivery &&
+          reset_attempts_available?(@activity_count, @page_context.page.content)
+      }
       id="reset_answers"
       class="btn btn-sm text-center mb-10 text-Text-text-link"
       onClick={"window.OLI.finalize('#{@section_slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid}', false, 'reset_answers')"}
     >
-      <i class="fa-solid fa-rotate-right mr-2"></i> Reset Answers
+      <i class="fa-solid fa-rotate-right mr-2"></i>
+      {reset_attempts_label(@activity_count)}
     </button>
     """
   end
+
+  @doc """
+  Returns whether a practice attempt can be reset or refreshed.
+
+  Checking the authored content keeps the action available when instructor customizations remove
+  every activity from a page and one or more of those activities are later restored.
+  """
+  def reset_attempts_available?(activity_count, authored_content) do
+    activity_count > 0 or PageContent.contains_activity_opportunity?(authored_content)
+  end
+
+  @doc """
+  Returns the reset action label appropriate for the realized activity count.
+  """
+  def reset_attempts_label(0), do: "Refresh Activities"
+  def reset_attempts_label(_activity_count), do: "Reset Answers"
 
   @doc """
   Generates a URL for the Learn view.

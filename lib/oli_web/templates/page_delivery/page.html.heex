@@ -123,14 +123,15 @@
     </div>
   <% end %>
 
-  <%= if @graded == false && @activity_count > 0 && @review_mode == false && not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) && not @adaptive do %>
+  <%= if @graded == false && OliWeb.Delivery.Student.Utils.reset_attempts_available?(@activity_count, @page.content) && @review_mode == false && not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) && not @adaptive do %>
     <div class="d-flex align-items-center justify-content-center">
       <button
         id="reset_answers"
         class="btn btn-sm text-center text-Text-text-link"
         onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', #{@graded}, 'reset_answers')"}
       >
-        <i class="fa-solid fa-rotate-right mr-2"></i> Reset Answers
+        <i class="fa-solid fa-rotate-right mr-2"></i>
+        {OliWeb.Delivery.Student.Utils.reset_attempts_label(@activity_count)}
       </button>
     </div>
   <% end %>

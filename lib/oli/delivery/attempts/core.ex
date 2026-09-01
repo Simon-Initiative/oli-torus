@@ -644,31 +644,6 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
-  Locks a resource access so attempt replacement can be serialized for one learner and page.
-  """
-  def lock_resource_access(resource_access_id) do
-    Repo.one(
-      from(resource_access in ResourceAccess,
-        where: resource_access.id == ^resource_access_id,
-        lock: "FOR UPDATE"
-      )
-    )
-  end
-
-  @doc """
-  Retrieves the latest resource attempt for a resource access.
-  """
-  def get_latest_resource_attempt_for_access(resource_access_id) do
-    Repo.one(
-      from(resource_attempt in ResourceAttempt,
-        where: resource_attempt.resource_access_id == ^resource_access_id,
-        order_by: [desc: resource_attempt.id],
-        limit: 1
-      )
-    )
-  end
-
-  @doc """
   Retrieves the resource access record and all (if any) attempts related to it
   in a two element tuple of the form:
 
