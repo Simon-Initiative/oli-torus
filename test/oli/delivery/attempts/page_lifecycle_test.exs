@@ -209,6 +209,180 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
     end
   end
 
+  describe "recovering empty ungraded attempts after instructor activity restoration" do
+    setup do
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{}, :user1)
+        |> Seeder.add_activity(
+          %{title: "practice activity", content: @content_automatic, scope: "embedded"},
+          :activity
+        )
+
+      page_content = %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "activity_id" => map.activity.revision.resource_id,
+            "id" => "practice-activity"
+          }
+        ]
+      }
+
+      map
+      |> Seeder.add_page(
+        %{title: "practice page", graded: false, content: page_content},
+        :page
+      )
+      |> Seeder.add_page(
+        %{
+          title: "content-only page",
+          graded: false,
+          content: %{
+            "model" => [
+              %{"type" => "content", "children" => [%{"text" => "Reading content"}]}
+            ]
+          }
+        },
+        :content_only_page
+      )
+      |> Seeder.create_section_resources()
+    end
+
+    test "a visit replaces an empty attempt when a removed activity has been restored", %{
+      activity: activity,
+      page: %{revision: revision},
+      section: section,
+      user1: user
+    } do
+      test_process = self()
+
+      activity_provider = fn content, source, prototypes, user, section_slug, resolver ->
+        send(test_process, :activity_provider_called)
+
+        Oli.Delivery.ActivityProvider.provide(
+          content,
+          source,
+          prototypes,
+          user,
+          section_slug,
+          resolver
+        )
+      end
+
+      datashop_session_id = UUID.uuid4()
+
+      Core.track_access(revision.resource_id, section.id, user.id)
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id)
+
+      visit = fn ->
+        PageLifecycle.visit(
+          revision,
+          section.slug,
+          datashop_session_id,
+          user,
+          effective_settings,
+          activity_provider
+        )
+      end
+
+      {:ok, {:in_progress, %AttemptState{} = first_attempt_state}} = visit.()
+
+      assert Map.has_key?(
+               first_attempt_state.attempt_hierarchy,
+               activity.revision.resource_id
+             )
+
+      %ActivityExclusion{}
+      |> ActivityExclusion.changeset(section.id, revision.resource_id, %{
+        kind: :embedded_activity,
+        excluded_resource_id: activity.revision.resource_id
+      })
+      |> Repo.insert!()
+
+      {:ok, %FinalizationSummary{graded: false}} =
+        PageLifecycle.finalize(
+          section.slug,
+          first_attempt_state.resource_attempt.attempt_guid,
+          datashop_session_id
+        )
+
+      {:ok, {:in_progress, %AttemptState{} = empty_attempt_state}} = visit.()
+      assert empty_attempt_state.attempt_hierarchy == %{}
+      assert_receive :activity_provider_called
+      assert_receive :activity_provider_called
+      refute_receive :activity_provider_called, 0
+
+      ActivityExclusion
+      |> Repo.get_by!(
+        section_id: section.id,
+        page_resource_id: revision.resource_id,
+        kind: :embedded_activity,
+        excluded_resource_id: activity.revision.resource_id
+      )
+      |> Repo.delete!()
+
+      {:ok, {:in_progress, %AttemptState{} = restored_attempt_state}} = visit.()
+      assert_receive :activity_provider_called
+      refute_receive :activity_provider_called, 0
+
+      refute restored_attempt_state.resource_attempt.id ==
+               empty_attempt_state.resource_attempt.id
+
+      assert Map.has_key?(
+               restored_attempt_state.attempt_hierarchy,
+               activity.revision.resource_id
+             )
+    end
+
+    test "a visit retains an empty attempt while its only activity remains removed", %{
+      activity: activity,
+      page: %{revision: revision},
+      section: section,
+      user1: user
+    } do
+      Core.track_access(revision.resource_id, section.id, user.id)
+
+      %ActivityExclusion{}
+      |> ActivityExclusion.changeset(section.id, revision.resource_id, %{
+        kind: :embedded_activity,
+        excluded_resource_id: activity.revision.resource_id
+      })
+      |> Repo.insert!()
+
+      {:ok, {:in_progress, %AttemptState{} = first_attempt_state}} =
+        visit_ungraded_page(revision, section, user)
+
+      {:ok, {:in_progress, %AttemptState{} = second_attempt_state}} =
+        visit_ungraded_page(revision, section, user)
+
+      assert first_attempt_state.attempt_hierarchy == %{}
+      assert second_attempt_state.attempt_hierarchy == %{}
+      assert first_attempt_state.resource_attempt.id == second_attempt_state.resource_attempt.id
+    end
+
+    test "a visit retains an empty attempt for a content-only page", %{
+      content_only_page: %{revision: revision},
+      section: section,
+      user1: user
+    } do
+      Core.track_access(revision.resource_id, section.id, user.id)
+
+      {:ok, {:in_progress, %AttemptState{} = first_attempt_state}} =
+        visit_ungraded_page(revision, section, user)
+
+      {:ok, {:in_progress, %AttemptState{} = second_attempt_state}} =
+        visit_ungraded_page(revision, section, user)
+
+      assert first_attempt_state.attempt_hierarchy == %{}
+      assert second_attempt_state.attempt_hierarchy == %{}
+      assert first_attempt_state.resource_attempt.id == second_attempt_state.resource_attempt.id
+    end
+  end
+
   describe "browsing manual graded attempts" do
     setup do
       Seeder.base_project_with_resource2()
@@ -516,5 +690,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       assert is_nil(resource_attempt.out_of)
       assert resource_access.progress == 1.0
     end
+  end
+
+  defp visit_ungraded_page(revision, section, user) do
+    PageLifecycle.visit(
+      revision,
+      section.slug,
+      UUID.uuid4(),
+      user,
+      Oli.Delivery.Settings.get_combined_settings(revision, section.id, user.id),
+      &Oli.Delivery.ActivityProvider.provide/6
+    )
   end
 end

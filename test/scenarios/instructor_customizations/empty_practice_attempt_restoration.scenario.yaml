@@ -1,0 +1,211 @@
+# Scenario: A learner revisiting an empty practice attempt receives an activity restored by an instructor.
+
+- project:
+    name: "empty_practice_attempt_restoration_project"
+    title: "Empty Practice Attempt Restoration"
+    tags:
+      - "restorable_bank"
+    root:
+      children:
+        - page: "Restorable Practice"
+        - page: "Restorable Bank Practice"
+
+- create_activity:
+    project: "empty_practice_attempt_restoration_project"
+    title: "Restorable Bank Activity"
+    virtual_id: "restorable_bank_activity"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["restorable_bank"]
+    content: |
+      stem_md: "Is this bank activity available?"
+      choices:
+        - id: "a"
+          body_md: "Yes"
+          score: 1
+        - id: "b"
+          body_md: "No"
+
+- edit_page:
+    project: "empty_practice_attempt_restoration_project"
+    page: "Restorable Practice"
+    content: |
+      title: "Restorable Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "restorable_activity"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Is this activity available?"
+            choices:
+              - id: "a"
+                body_md: "Yes"
+                score: 1
+              - id: "b"
+                body_md: "No"
+
+- edit_page:
+    project: "empty_practice_attempt_restoration_project"
+    page: "Restorable Bank Practice"
+    content: |
+      title: "Restorable Bank Practice"
+      graded: false
+      blocks:
+        - type: bank-selection
+          id: "restorable_selection"
+          count: 1
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["restorable_bank"]
+
+- publish:
+    to: "empty_practice_attempt_restoration_project"
+    description: "Initial publication"
+
+- section:
+    name: "empty_practice_attempt_restoration_section"
+    title: "Empty Practice Attempt Restoration Section"
+    from: "empty_practice_attempt_restoration_project"
+
+- user:
+    name: "restoration_instructor"
+    type: "instructor"
+    email: "restoration_instructor@example.edu"
+
+- enroll:
+    user: "restoration_instructor"
+    section: "empty_practice_attempt_restoration_section"
+    role: "instructor"
+
+- user:
+    name: "restoration_student"
+    type: "student"
+    email: "restoration_student@example.edu"
+
+- enroll:
+    user: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    role: "student"
+
+- view_practice_page:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Practice"
+
+- assert:
+    activity_attempt:
+      section: "empty_practice_attempt_restoration_section"
+      student: "restoration_student"
+      page: "Restorable Practice"
+      activity_virtual_id: "restorable_activity"
+      exists: true
+
+- view_practice_page:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Bank Practice"
+
+- assert:
+    activity_attempt:
+      section: "empty_practice_attempt_restoration_section"
+      student: "restoration_student"
+      page: "Restorable Bank Practice"
+      activity_virtual_id: "restorable_bank_activity"
+      exists: true
+
+- instructor_customization:
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Bank Practice"
+    actor: "restoration_instructor"
+    ops:
+      - exclude_bank_selection:
+          selection_id: "restorable_selection"
+
+- finalize_attempt:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Bank Practice"
+
+- view_practice_page:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Bank Practice"
+
+- assert:
+    activity_attempt:
+      section: "empty_practice_attempt_restoration_section"
+      student: "restoration_student"
+      page: "Restorable Bank Practice"
+      activity_virtual_id: "restorable_bank_activity"
+      exists: false
+
+- instructor_customization:
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Bank Practice"
+    actor: "restoration_instructor"
+    ops:
+      - restore_bank_selection:
+          selection_id: "restorable_selection"
+
+- view_practice_page:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Bank Practice"
+
+- assert:
+    activity_attempt:
+      section: "empty_practice_attempt_restoration_section"
+      student: "restoration_student"
+      page: "Restorable Bank Practice"
+      activity_virtual_id: "restorable_bank_activity"
+      exists: true
+
+- instructor_customization:
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Practice"
+    actor: "restoration_instructor"
+    ops:
+      - exclude_activity:
+          activity_virtual_id: "restorable_activity"
+
+- finalize_attempt:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Practice"
+
+- view_practice_page:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Practice"
+
+- assert:
+    activity_attempt:
+      section: "empty_practice_attempt_restoration_section"
+      student: "restoration_student"
+      page: "Restorable Practice"
+      activity_virtual_id: "restorable_activity"
+      exists: false
+
+- instructor_customization:
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Practice"
+    actor: "restoration_instructor"
+    ops:
+      - restore_activity:
+          activity_virtual_id: "restorable_activity"
+
+- view_practice_page:
+    student: "restoration_student"
+    section: "empty_practice_attempt_restoration_section"
+    page: "Restorable Practice"
+
+- assert:
+    activity_attempt:
+      section: "empty_practice_attempt_restoration_section"
+      student: "restoration_student"
+      page: "Restorable Practice"
+      activity_virtual_id: "restorable_activity"
+      exists: true

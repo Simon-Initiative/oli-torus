@@ -27,7 +27,46 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   use a constant number of queries relative to the number of activities and parts.
   Returns {:ok, %ResourceAttempt{}}
   """
-  def create(%VisitContext{datashop_session_id: datashop_session_id} = context) do
+  def create(%VisitContext{} = context) do
+    create(context, realize(context))
+  end
+
+  @doc """
+  Realizes the activities and transformed content for an attempt without persisting it.
+  """
+  def realize(%VisitContext{} = context) do
+    constraining_attempt_prototypes = construct_attempt_prototypes(context)
+
+    audience_filtered_content =
+      Oli.Delivery.Audience.filter_for_role(context.audience_role, context.page_revision.content)
+
+    section = Sections.get_section_by(slug: context.section_slug)
+
+    page_exclusions =
+      InstructorCustomizations.get_page_exclusion_view(section, context.page_revision.resource_id)
+
+    context.activity_provider.(
+      audience_filtered_content,
+      %Source{
+        blacklisted_activity_ids: [],
+        section_slug: context.section_slug,
+        publication_id: context.publication_id,
+        page_exclusions: page_exclusions
+      },
+      constraining_attempt_prototypes,
+      context.user,
+      context.section_slug,
+      Oli.Publishing.DeliveryResolver
+    )
+  end
+
+  @doc """
+  Persists an attempt hierarchy from an activity realization.
+  """
+  def create(
+        %VisitContext{datashop_session_id: datashop_session_id} = context,
+        %Result{} = realization
+      ) do
     {resource_access_id, next_attempt_number} =
       case context.latest_resource_attempt do
         nil ->
@@ -41,35 +80,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           {attempt.resource_access_id, attempt.attempt_number + 1}
       end
 
-    constraining_attempt_prototypes = construct_attempt_prototypes(context)
-
-    audience_filtered_content =
-      Oli.Delivery.Audience.filter_for_role(context.audience_role, context.page_revision.content)
-
-    section = Sections.get_section_by(slug: context.section_slug)
-
-    page_exclusions =
-      InstructorCustomizations.get_page_exclusion_view(section, context.page_revision.resource_id)
-
     %Result{
       errors: errors,
       prototypes: prototypes,
       transformed_content: transformed_content,
       unscored: unscored
-    } =
-      context.activity_provider.(
-        audience_filtered_content,
-        %Source{
-          blacklisted_activity_ids: [],
-          section_slug: context.section_slug,
-          publication_id: context.publication_id,
-          page_exclusions: page_exclusions
-        },
-        constraining_attempt_prototypes,
-        context.user,
-        context.section_slug,
-        Oli.Publishing.DeliveryResolver
-      )
+    } = realization
 
     case create_resource_attempt(%{
            content: transformed_content,

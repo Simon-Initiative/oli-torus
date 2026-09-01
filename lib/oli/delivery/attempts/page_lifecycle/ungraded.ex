@@ -17,6 +17,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt}
   alias Oli.Delivery.Attempts.PageLifecycle.Common
   alias Oli.Delivery.Attempts.PageLifecycle.Graded
+  alias Oli.Delivery.ActivityProvider.Result
+  alias Oli.Resources.PageContent
 
   @moduledoc """
   Implementation of a page Lifecycle behaviour for ungraded pages.
@@ -40,20 +42,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
         } = context
       ) do
     if needs_new_attempt?(latest_resource_attempt, page_revision) do
-      case start(context) do
-        {:ok, %AttemptState{} = attempt_state} ->
-          {:ok, {:in_progress, attempt_state}}
-
-        error ->
-          error
-      end
+      start_from_visit(context)
     else
       {:ok, attempt_state} =
         Appsignal.instrument("Ungraded: AttemptState.fetch_attempt_state", fn ->
           AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
         end)
 
-      {:ok, {:in_progress, attempt_state}}
+      maybe_recover_empty_attempt(context, attempt_state)
     end
   end
 
@@ -62,9 +58,21 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           {:ok, FinalizationSummary.t()} | {:error, term()}
   @decorate transaction_event("Ungraded.finalize")
   def finalize(%FinalizationContext{
-        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
+        resource_attempt: %ResourceAttempt{} = resource_attempt,
         effective_settings: effective_settings
       }) do
+    lock_resource_access(resource_attempt.resource_access_id)
+
+    case get_resource_attempt_by(id: resource_attempt.id) do
+      %ResourceAttempt{lifecycle_state: :active} = current_resource_attempt ->
+        finalize_active_attempt(current_resource_attempt, effective_settings)
+
+      _ ->
+        {:error, {:already_submitted}}
+    end
+  end
+
+  defp finalize_active_attempt(resource_attempt, effective_settings) do
     now = DateTime.utc_now()
 
     update_attrs =
@@ -98,10 +106,150 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   @impl Lifecycle
   @decorate transaction_event("Ungraded.start")
   def start(%VisitContext{page_revision: page_revision} = context) do
-    {:ok, resource_attempt} = Hierarchy.create(context)
+    realization = Hierarchy.realize(context)
+
+    case context.latest_resource_attempt do
+      nil ->
+        start(context, realization, page_revision)
+
+      %ResourceAttempt{resource_access_id: resource_access_id} ->
+        lock_resource_access(resource_access_id)
+
+        refreshed_context = refresh_latest_attempt(context, resource_access_id)
+
+        case needs_new_attempt?(refreshed_context.latest_resource_attempt, page_revision) do
+          true -> start(refreshed_context, realization, page_revision)
+          false -> {:error, {:active_attempt_present}}
+        end
+    end
+  end
+
+  defp start(context, realization, page_revision) do
+    {:ok, resource_attempt} = Hierarchy.create(context, realization)
 
     AttemptState.fetch_attempt_state(resource_attempt, context.page_revision)
     |> update_progress(page_revision, resource_attempt)
+  end
+
+  defp start_from_visit(%VisitContext{page_revision: page_revision} = context) do
+    realization = Hierarchy.realize(context)
+
+    case context.latest_resource_attempt do
+      nil ->
+        start_visit_attempt(context, realization)
+
+      %ResourceAttempt{resource_access_id: resource_access_id} ->
+        lock_resource_access(resource_access_id)
+
+        refreshed_context = refresh_latest_attempt(context, resource_access_id)
+
+        case needs_new_attempt?(refreshed_context.latest_resource_attempt, page_revision) do
+          true -> start_visit_attempt(refreshed_context, realization)
+          false -> visit(refreshed_context)
+        end
+    end
+  end
+
+  defp start_visit_attempt(context, realization) do
+    case start(context, realization, context.page_revision) do
+      {:ok, %AttemptState{} = attempt_state} -> {:ok, {:in_progress, attempt_state}}
+      error -> error
+    end
+  end
+
+  defp maybe_recover_empty_attempt(
+         _context,
+         %AttemptState{attempt_hierarchy: attempt_hierarchy} = attempt_state
+       )
+       when map_size(attempt_hierarchy) > 0 do
+    {:ok, {:in_progress, attempt_state}}
+  end
+
+  defp maybe_recover_empty_attempt(
+         %VisitContext{page_revision: %{content: %{"advancedDelivery" => true}}},
+         attempt_state
+       ) do
+    {:ok, {:in_progress, attempt_state}}
+  end
+
+  defp maybe_recover_empty_attempt(%VisitContext{} = context, attempt_state) do
+    if PageContent.contains_activity_opportunity?(context.page_revision.content) do
+      audience_filtered_content =
+        Oli.Delivery.Audience.filter_for_role(
+          context.audience_role,
+          context.page_revision.content
+        )
+
+      maybe_recover_audience_attempt(context, attempt_state, audience_filtered_content)
+    else
+      {:ok, {:in_progress, attempt_state}}
+    end
+  end
+
+  defp maybe_recover_audience_attempt(context, attempt_state, audience_filtered_content) do
+    if PageContent.contains_activity_opportunity?(audience_filtered_content) do
+      realization = Hierarchy.realize(context)
+
+      case realization do
+        %Result{prototypes: []} ->
+          {:ok, {:in_progress, attempt_state}}
+
+        %Result{} ->
+          recover_empty_attempt(context, attempt_state, realization)
+      end
+    else
+      {:ok, {:in_progress, attempt_state}}
+    end
+  end
+
+  defp recover_empty_attempt(
+         %VisitContext{} = context,
+         %AttemptState{resource_attempt: resource_attempt},
+         realization
+       ) do
+    # Instructor customizations can remove every activity from a practice page, producing an
+    # empty active attempt. If an activity is later restored, replace that empty attempt so the
+    # learner is not permanently pinned to the activity-free transformed content.
+    lock_resource_access(resource_attempt.resource_access_id)
+
+    refreshed_context = refresh_latest_attempt(context, resource_attempt.resource_access_id)
+    latest_resource_attempt = refreshed_context.latest_resource_attempt
+
+    case latest_resource_attempt do
+      %ResourceAttempt{id: id, lifecycle_state: :active} when id == resource_attempt.id ->
+        replace_empty_attempt(context, resource_attempt, realization)
+
+      %ResourceAttempt{} ->
+        case needs_new_attempt?(latest_resource_attempt, context.page_revision) do
+          true -> start_visit_attempt(refreshed_context, realization)
+          false -> visit(refreshed_context)
+        end
+    end
+  end
+
+  defp refresh_latest_attempt(context, resource_access_id) do
+    %{
+      context
+      | latest_resource_attempt: get_latest_resource_attempt_for_access(resource_access_id)
+    }
+  end
+
+  defp replace_empty_attempt(context, resource_attempt, realization) do
+    now = DateTime.utc_now()
+
+    with {:ok, superseded_attempt} <-
+           update_resource_attempt(
+             resource_attempt,
+             determine_finalization_attrs(resource_attempt, now)
+           ),
+         {:ok, attempt_state} <-
+           start(
+             %{context | latest_resource_attempt: superseded_attempt},
+             realization,
+             context.page_revision
+           ) do
+      {:ok, {:in_progress, attempt_state}}
+    end
   end
 
   @decorate transaction_event("Ungraded.update_progress")
