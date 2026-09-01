@@ -101,6 +101,26 @@ defmodule Oli.Delivery.Proficiency do
     dispatch(section, :scope_aggregates, [scopes, opts], opts)
   end
 
+  @doc "Returns the provider-correct objective membership for a delivery scope."
+  def objective_ids_for_scope(%Section{} = section, scope) do
+    dispatch(section, :objective_ids_for_scope, [scope], [])
+  end
+
+  def page_ids(%Section{} = section), do: dispatch(section, :page_ids, [], [])
+
+  def user_ids_for_objectives(%Section{} = section, objective_ids),
+    do: dispatch(section, :user_ids_for_objectives, [objective_ids], [])
+
+  def user_ids_for_scopes(%Section{} = section, scopes, opts \\ []),
+    do: dispatch(section, :user_ids_for_scopes, [scopes, opts], opts)
+
+  def labels_for_pages(%Section{} = section, page_ids, user_ids),
+    do: dispatch(section, :labels_for_pages, [page_ids, user_ids], [])
+
+  @doc "Classifies an aggregate score according to the Section-selected provider."
+  def label_for_score(%Section{} = section, score, attempt_count \\ 3),
+    do: dispatch(section, :label_for_score, [score, attempt_count], [])
+
   # A model option would create two competing sources of truth. Reject it before
   # provider lookup so a caller cannot accidentally mix models within one view.
   defp dispatch(section, operation, args, opts) do

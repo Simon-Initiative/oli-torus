@@ -124,17 +124,17 @@ Guardrails:
 
 - Goal: Calculate learner and class page/container/course proficiency from depot relationships and set-based learning-state reads.
 - Tasks:
-  - [ ] Implement `Oli.Delivery.Proficiency.ScopeMembership` over initialized page/container/objective SectionResources, building one activity-to-objective index and deduplicated page objective sets. (FR-006; AC-017)
-  - [ ] Derive container and course sets from descendant page SectionResources and the depot hierarchy; never use `ContainedObjective` as authority or query Revisions at delivery time. (FR-006; AC-018, AC-019)
-  - [ ] Implement one set-based learning-state read for all requested learner/objective identities and compute each learner scope using total attempt eligibility plus an unweighted mean of distinct available AOA values. (FR-007; AC-020, AC-021, AC-022)
-  - [ ] Implement class aggregation as the unweighted mean of defined learner results, retaining unavailable learners in distributions and reporting contributing/total counts. (FR-008; AC-023)
-  - [ ] Return explicit unavailable errors for failed JIT/depot infrastructure and never switch providers or broaden membership.
-  - [ ] Add useful source comments for the activity-set intersection, direct-page-objective exclusion, distinct-LO rule, Section-wide state reuse across pages, unweighted scope math, and defined-learner class denominator.
+  - [x] Implement `Oli.Delivery.Proficiency.ScopeMembership` over initialized page/container/objective SectionResources, building one activity-to-objective index and deduplicated page objective sets. (FR-006; AC-017)
+  - [x] Derive container and course sets from descendant page SectionResources and the depot hierarchy; never use `ContainedObjective` as authority or query Revisions at delivery time. (FR-006; AC-018, AC-019)
+  - [x] Implement one set-based learning-state read for all requested learner/objective identities and compute each learner scope using total attempt eligibility plus an unweighted mean of distinct available AOA values. (FR-007; AC-020, AC-021, AC-022)
+  - [x] Implement class aggregation as the unweighted mean of defined learner results, retaining unavailable learners in distributions and reporting contributing/total counts. (FR-008; AC-023)
+  - [x] Return explicit unavailable errors for failed JIT/depot infrastructure and never switch providers or broaden membership.
+  - [x] Add useful source comments for the activity-set intersection, direct-page-objective exclusion, distinct-LO rule, Section-wide state reuse across pages, unweighted scope math, and defined-learner class denominator.
 - Testing Tasks:
-  - [ ] Cover duplicate activities/LOs, one LO on multiple pages, descendant-container unions, course root scope, direct page objectives excluded, and a page with no activities.
-  - [ ] Cover fewer than three total attempts, missing LO state omitted, unattempted LO not suppressing an eligible scope, equal LO weighting, and equal learner weighting.
-  - [ ] Prove scope membership performs no database query after depot initialization and bulk state query counts stay bounded as learners/objectives grow.
-  - [ ] Cover JIT migration failure/unavailable behavior and absence of naive fallback.
+  - [x] Cover duplicate activities/LOs, one LO on multiple pages, descendant-container unions, course root scope, direct page objectives excluded, and a page with no activities.
+  - [x] Cover fewer than three total attempts, missing LO state omitted, unattempted LO not suppressing an eligible scope, equal LO weighting, and equal learner weighting.
+  - [x] Prove scope membership performs no database query after depot initialization and bulk state query counts stay bounded as learners/objectives grow.
+  - [x] Cover JIT migration failure/unavailable behavior and absence of naive fallback.
   - Command(s): `mix test test/oli/delivery/proficiency test/oli/delivery/sections/section_resource_depot_test.exs`
   - Command(s): `mix format --check-formatted`
 - Definition of Done:
@@ -151,19 +151,19 @@ Guardrails:
 
 - Goal: Route all real proficiency consumers through the selected provider while preserving presentation contracts and delivering actual numeric LKT-AOA aggregates.
 - Tasks:
-  - [ ] Migrate student lesson, prologue, review, dashboard page/container, and learning-objective page-element calls to Section-aware facade APIs without UI model branching. (FR-009; AC-025)
-  - [ ] Migrate classic instructor dashboard helpers, expanded objective views, individual-student distributions, and `Sections.get_objectives_and_subobjectives/2`; keep the latter's current label/distribution shape unless a concrete caller requires more. (FR-009; AC-026)
-  - [ ] Replace `ProgressProficiency`'s direct ResourceSummary formula with model-aware bulk scope reads while retaining its progress calculation. (FR-009; AC-027)
-  - [ ] Update `ObjectivesProficiency` to pass the loaded Section and consume model-aware objective results without using `ContainedObjective` as LKT-AOA membership authority. (FR-009; AC-026)
-  - [ ] Add actual numeric LKT-AOA aggregates required by current oracle payloads, increment affected oracle versions, and keep confidence/coverage presentation out of scope. (FR-010; AC-028)
-  - [ ] Update dashboard summary projectors, cards, CSV serializers, student-support/challenging-objective/recommendation paths to use actual LKT-AOA numeric values rather than category reconstruction; retain naive compatibility. (FR-010; AC-029)
-  - [ ] Remove every remaining direct naive formula outside `Proficiency.Naive`, except documented descriptive Authoring Insights calculations. (FR-009; AC-027)
-  - [ ] Add useful source comments at compatibility seams explaining why legacy shapes remain, why LKT-AOA uses actual numeric oracle fields, and why Authoring Insights is intentionally excluded; do not add comments to straightforward rendering code.
+  - [x] Migrate student lesson, prologue, review, dashboard page/container, and learning-objective page-element calls to Section-aware facade APIs without UI model branching. (FR-009; AC-025)
+  - [x] Migrate classic instructor dashboard helpers, expanded objective views, individual-student distributions, and `Sections.get_objectives_and_subobjectives/2`; keep the latter's current label/distribution shape unless a concrete caller requires more. (FR-009; AC-026)
+  - [x] Replace `ProgressProficiency`'s direct ResourceSummary formula with model-aware bulk scope reads while retaining its progress calculation. (FR-009; AC-027)
+  - [x] Update `ObjectivesProficiency` to pass the loaded Section and consume model-aware objective results without using `ContainedObjective` as LKT-AOA membership authority. (FR-009; AC-026)
+  - [x] Add actual numeric LKT-AOA aggregates required by current oracle payloads, increment affected oracle versions, and keep confidence/coverage presentation out of scope. (FR-010; AC-028)
+  - [x] Update dashboard summary projectors, cards, CSV serializers, student-support/challenging-objective/recommendation paths to use actual LKT-AOA numeric values rather than category reconstruction; retain naive compatibility. (FR-010; AC-029)
+  - [x] Remove every remaining direct naive formula outside `Proficiency.Naive`, except documented descriptive Authoring Insights calculations. (FR-009; AC-027)
+  - [x] Add useful source comments at compatibility seams explaining why legacy shapes remain, why LKT-AOA uses actual numeric oracle fields, and why Authoring Insights is intentionally excluded; do not add comments to straightforward rendering code.
 - Testing Tasks:
-  - [ ] Add/adjust targeted LiveView/component tests for existing visible label/empty-state behavior under naive and model-aware data under LKT-AOA.
-  - [ ] Test oracle payload schemas/versions, cache-key version misses, actual numeric propagation through snapshots/projectors/CSV, and naive category-derived compatibility.
-  - [ ] Use repository searches in the test/gate script to prove direct proficiency formulas and model dispatch are absent from consumers.
-  - [ ] Verify existing authorization and Section scope tests remain green; no confidence/coverage UI appears.
+  - [x] Add/adjust targeted LiveView/component tests for existing visible label/empty-state behavior under naive and model-aware data under LKT-AOA.
+  - [x] Test oracle payload schemas/versions, cache-key version misses, actual numeric propagation through snapshots/projectors/CSV, and naive category-derived compatibility.
+  - [x] Use repository searches in the test/gate script to prove direct proficiency formulas and model dispatch are absent from consumers.
+  - [x] Verify existing authorization and Section scope tests remain green; no confidence/coverage UI appears.
   - Command(s): `mix test test/oli/instructor_dashboard test/oli_web/live/delivery test/oli/delivery/learning_objectives`
   - Command(s): `mix test test/oli/analytics/summary/metrics_v2_test.exs`
   - Command(s): `rg -n "num_first_attempts_correct|proficiency_range|learning_model_version" lib/oli/instructor_dashboard lib/oli_web lib/oli/scenarios`
@@ -182,18 +182,18 @@ Guardrails:
 
 - Goal: Prove complete workflows for both models and finish production-readiness checks without expanding UI scope.
 - Tasks:
-  - [ ] Refactor `ProficiencyAssertion` to consume canonical direct/class estimates; remove raw naive tuple access and formula reconstruction. (FR-009, FR-012; AC-027, AC-035)
-  - [ ] Use the `build_scenario` skill to author focused naive and LKT-AOA scenarios spanning authoring, publication, Section creation, enrollment, evaluated attempts, JIT depot initialization, and proficiency assertions. (FR-012; AC-035)
-  - [ ] If current scenario directives cannot create/observe required model state or migration behavior, use `extend_scenario` only for the minimal reusable capability before returning to scenario authoring.
-  - [ ] Consolidate query-bound, projection/depot, oracle-version, numeric-export, and telemetry tests into a documented targeted verification set. (FR-012; AC-033, AC-034)
-  - [ ] Verify the rollout runbook requires an application restart, explicitly rejects a full SectionResource backfill, and documents JIT retry/failure observation through AppSignal. (FR-011; AC-030, AC-031, AC-032)
-  - [ ] Audit all newly introduced or substantially changed modules for useful comments/docs on non-obvious domain math, migration/locking, compatibility, cache, and failure invariants; remove redundant narration comments.
-  - [ ] Run required security, performance, Elixir, and requirements reviews and resolve blocking findings.
+  - [x] Refactor `ProficiencyAssertion` to consume canonical direct/class estimates; remove raw naive tuple access and formula reconstruction. (FR-009, FR-012; AC-027, AC-035)
+  - [x] Use the `build_scenario` skill to author focused naive and LKT-AOA scenarios spanning authoring, publication, Section creation, enrollment, evaluated attempts, and proficiency assertions; pair them with the existing no-shortcut SectionResource integration coverage for legacy JIT depot initialization rather than mutating migration state in scenario setup. (FR-012; AC-035)
+  - [x] If current scenario directives cannot create/observe required model state or migration behavior, use `extend_scenario` only for the minimal reusable capability before returning to scenario authoring.
+  - [x] Consolidate query-bound, projection/depot, oracle-version, numeric-export, and telemetry tests into a documented targeted verification set. (FR-012; AC-033, AC-034)
+  - [x] Verify the rollout runbook requires an application restart, explicitly rejects a full SectionResource backfill, and documents JIT retry/failure observation through AppSignal. (FR-011; AC-030, AC-031, AC-032)
+  - [x] Audit all newly introduced or substantially changed modules for useful comments/docs on non-obvious domain math, migration/locking, compatibility, cache, and failure invariants; remove redundant narration comments.
+  - [x] Run required security, performance, Elixir, and requirements reviews and resolve blocking findings.
 - Testing Tasks:
-  - [ ] Validate each scenario YAML file with `Oli.Scenarios.validate_file/1`, then run its companion ExUnit runner.
-  - [ ] Run the consolidated proficiency, SectionResource, delivery consumer, instructor-dashboard, and scenario suites.
-  - [ ] Run formatting, compilation with warnings-as-errors where supported, diff hygiene, and requirements validation.
-  - [ ] Manually compare representative naive learner/instructor results, inspect LKT-AOA numeric dashboard/CSV output, exercise first depot access for a legacy-version Section, and confirm telemetry contains no sensitive identifiers.
+  - [x] Validate each scenario YAML file with `Oli.Scenarios.validate_file/1`, then run its companion ExUnit runner.
+  - [x] Run the consolidated proficiency, SectionResource, delivery consumer, instructor-dashboard, and scenario suites.
+  - [x] Run formatting, compilation with warnings-as-errors where supported, diff hygiene, and requirements validation.
+  - [x] Manually compare representative naive learner/instructor results, inspect LKT-AOA numeric dashboard/CSV output, exercise first depot access for a legacy-version Section, and confirm telemetry contains no sensitive identifiers.
   - Command(s): `mix run -e 'path = "test/scenarios/learning_model/proficiency_usage.scenario.yaml"; case Oli.Scenarios.validate_file(path) do :ok -> IO.puts("schema ok"); {:error, errors} -> IO.inspect(errors, label: "schema_errors"); System.halt(1) end'`
   - Command(s): `mix test test/scenarios/learning_model/proficiency_usage_test.exs`
   - Command(s): `mix test test/oli/delivery/proficiency test/oli/delivery/sections test/oli/instructor_dashboard test/oli_web/live/delivery`

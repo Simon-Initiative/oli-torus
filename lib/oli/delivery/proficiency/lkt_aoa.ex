@@ -11,12 +11,127 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
 
   import Ecto.Query
 
-  alias Oli.Delivery.Proficiency.{Estimate, Telemetry}
+  alias Oli.Delivery.Proficiency.{Aggregate, Estimate, ScopeMembership, Telemetry}
   alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
   alias Oli.LearningModel.LearningState
   alias Oli.Repo
 
   @minimum_attempts 3
+
+  def objective_ids_for_scope(%Section{} = section, scope) do
+    with {:ok, %{^scope => objective_ids}} <-
+           ScopeMembership.objectives_for_scopes(section, [scope]) do
+      {:ok, MapSet.to_list(objective_ids)}
+    end
+  end
+
+  def page_ids(%Section{id: section_id}) do
+    {:ok,
+     section_id
+     |> SectionResourceDepot.get_lessons()
+     |> Enum.map(& &1.resource_id)}
+  end
+
+  def user_ids_for_objectives(%Section{id: section_id}, objective_ids) do
+    ids =
+      from(state in LearningState,
+        where: state.section_id == ^section_id and state.learning_objective_id in ^objective_ids,
+        select: state.user_id,
+        distinct: true
+      )
+      |> Repo.all()
+
+    {:ok, ids}
+  end
+
+  def user_ids_for_scopes(%Section{id: section_id} = section, scopes, _opts) do
+    with {:ok, membership} <- ScopeMembership.objectives_for_scopes(section, scopes) do
+      objective_ids = membership |> Map.values() |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+
+      ids =
+        from(state in LearningState,
+          where:
+            state.section_id == ^section_id and
+              state.learning_objective_id in ^MapSet.to_list(objective_ids),
+          select: state.user_id,
+          distinct: true
+        )
+        |> Repo.all()
+
+      {:ok, ids}
+    end
+  end
+
+  def labels_for_pages(%Section{} = section, page_ids, user_ids) do
+    scopes = Enum.map(page_ids, &{:page, &1})
+
+    with {:ok, estimates} <- estimates_for_scopes(section, user_ids, scopes, []) do
+      {:ok,
+       Map.new(estimates, fn {{:page, page_id}, by_user} ->
+         labels = by_user |> Map.values() |> Enum.map(&label_string(&1.label))
+         {page_id, mode_label(labels)}
+       end)}
+    end
+  end
+
+  def label_for_score(_section, score, attempt_count),
+    do: score |> direct_label(attempt_count) |> label_string()
+
+  @doc "Bulk-reads learner estimates for page, container, and course scopes."
+  def estimates_for_scopes(%Section{id: section_id} = section, user_ids, scopes, _opts) do
+    user_ids = normalize_ids(user_ids)
+    scopes = Enum.uniq(scopes)
+
+    Telemetry.span(
+      :lkt_aoa,
+      :learner_scope,
+      %{requested_user_count: length(user_ids), requested_scope_count: length(scopes)},
+      fn ->
+        with {:ok, membership} <- ScopeMembership.objectives_for_scopes(section, scopes) do
+          objective_ids = membership |> Map.values() |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+          states = read_states(section_id, user_ids, MapSet.to_list(objective_ids))
+
+          estimates =
+            Map.new(scopes, fn scope ->
+              {scope,
+               Map.new(user_ids, fn user_id ->
+                 {user_id, scope_estimate(section_id, user_id, membership[scope], states)}
+               end)}
+            end)
+
+          result = {:ok, estimates}
+          {:telemetry_result, result, %{returned_count: length(scopes) * length(user_ids)}}
+        end
+      end
+    )
+  end
+
+  @doc "Aggregates direct objective estimates across the requested learners."
+  def objective_aggregates(%Section{} = section, objective_ids, opts) do
+    with {:ok, user_ids} <- user_ids_from(opts),
+         {:ok, estimates} <- estimates_for_objectives(section, user_ids, objective_ids, opts) do
+      {:ok,
+       Map.new(estimates, fn {id, learner_estimates} -> {id, aggregate(learner_estimates)} end)}
+    end
+  end
+
+  @doc "Aggregates scope estimates across the requested learners with equal learner weight."
+  def scope_aggregates(%Section{} = section, scopes, opts) do
+    Telemetry.span(
+      :lkt_aoa,
+      :class_scope,
+      %{requested_scope_count: length(Enum.uniq(scopes))},
+      fn ->
+        with {:ok, user_ids} <- user_ids_from(opts),
+             {:ok, estimates} <- estimates_for_scopes(section, user_ids, scopes, opts) do
+          {:ok,
+           Map.new(estimates, fn {scope, learner_estimates} ->
+             {scope, aggregate(learner_estimates)}
+           end)}
+        end
+      end
+    )
+  end
 
   @doc "Bulk-reads direct and effective-parent estimates using one learning-state query."
   def estimates_for_objectives(%Section{id: section_id}, user_ids, objective_ids, _opts) do
@@ -145,6 +260,65 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
     )
   end
 
+  defp scope_estimate(section_id, user_id, objective_ids, states) do
+    available_states =
+      objective_ids
+      |> Enum.flat_map(&List.wrap(Map.get(states, {user_id, &1})))
+
+    attempt_count = Enum.sum(Enum.map(available_states, & &1.attempt_count))
+    unique_part_count = Enum.sum(Enum.map(available_states, & &1.unique_activity_part_count))
+
+    # Scope eligibility uses total evidence, while its score gives every distinct
+    # available LO equal weight. An unattempted LO therefore cannot suppress a scope.
+    score = mean(available_states, :aoa)
+    confidence = mean(available_states, :confidence)
+    label = parent_label(score, attempt_count)
+    visible_score = if label == :not_enough_information, do: nil, else: score
+
+    new_estimate!(
+      section_id,
+      user_id,
+      nil,
+      visible_score,
+      label,
+      confidence,
+      attempt_count,
+      unique_part_count
+    )
+  end
+
+  defp aggregate(learner_estimates) do
+    estimates = Map.values(learner_estimates)
+    defined = Enum.filter(estimates, &is_number(&1.score))
+    numeric_score = mean(defined, :score)
+
+    distribution = Enum.frequencies_by(estimates, & &1.label)
+
+    {:ok, aggregate} =
+      Aggregate.new(%{
+        numeric_score: numeric_score,
+        distribution: distribution,
+        contributing_count: length(defined),
+        eligible_count: length(defined),
+        total_count: length(estimates),
+        coverage: %{defined: length(defined), total: length(estimates)}
+      })
+
+    aggregate
+  end
+
+  defp mean([], _field), do: nil
+
+  defp mean(values, field),
+    do: Enum.sum(Enum.map(values, &Map.fetch!(&1, field))) / length(values)
+
+  defp user_ids_from(opts) do
+    case Keyword.fetch(opts, :user_ids) do
+      {:ok, user_ids} when is_list(user_ids) -> {:ok, normalize_ids(user_ids)}
+      _ -> {:error, {:invalid_option, :user_ids}}
+    end
+  end
+
   defp weighted_average(_states, _field, 0), do: nil
 
   defp weighted_average(states, field, total_attempts) do
@@ -167,6 +341,26 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
   defp numeric_label(score) when score < 0.4, do: :low
   defp numeric_label(score) when score <= 0.8, do: :medium
   defp numeric_label(_score), do: :high
+
+  defp label_string(:low), do: "Low"
+  defp label_string(:medium), do: "Medium"
+  defp label_string(:high), do: "High"
+  defp label_string(_label), do: "Not enough data"
+
+  defp mode_label([]), do: "Not enough data"
+
+  defp mode_label(labels) do
+    labels
+    |> Enum.frequencies()
+    |> Enum.sort_by(fn {label, _count} -> label_rank(label) end)
+    |> Enum.max_by(fn {_label, count} -> count end)
+    |> elem(0)
+  end
+
+  defp label_rank("Low"), do: 0
+  defp label_rank("Medium"), do: 1
+  defp label_rank("High"), do: 2
+  defp label_rank(_label), do: 3
 
   defp new_estimate!(section_id, user_id, objective_id, score, label, confidence, attempts, parts) do
     {:ok, estimate} =

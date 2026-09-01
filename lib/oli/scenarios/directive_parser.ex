@@ -176,7 +176,16 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Parse individual directive based on its type
   defp parse_directive(%{"project" => project_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "root", "objectives", "tags", "slug", "visibility"]
+    allowed_attrs = [
+      "name",
+      "title",
+      "root",
+      "objectives",
+      "tags",
+      "slug",
+      "visibility",
+      "learning_model_version"
+    ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, project_data, "project") do
       :ok ->
@@ -187,7 +196,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           objectives: parse_objectives(project_data["objectives"]),
           tags: parse_tags(project_data["tags"]),
           slug: project_data["slug"],
-          visibility: parse_visibility(project_data["visibility"])
+          visibility: parse_visibility(project_data["visibility"]),
+          learning_model_version:
+            parse_learning_model_version(project_data["learning_model_version"])
         }
 
       {:error, msg} ->
@@ -2077,6 +2088,13 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_section_type("enrollable"), do: :enrollable
   defp parse_section_type("open_and_free"), do: :open_and_free
   defp parse_section_type(type) when is_atom(type), do: type
+
+  defp parse_learning_model_version(nil), do: :naive
+  defp parse_learning_model_version("naive"), do: :naive
+  defp parse_learning_model_version("lkt_aoa"), do: :lkt_aoa
+
+  defp parse_learning_model_version(value),
+    do: raise("Invalid learning_model_version: #{inspect(value)}")
 
   defp parse_optional_payment_options(nil), do: nil
 

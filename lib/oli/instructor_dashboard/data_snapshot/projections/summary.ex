@@ -103,9 +103,10 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary do
     |> Map.get(:objective_rows, [])
     |> List.wrap()
     |> Enum.map(fn row ->
-      row
-      |> Map.get(:proficiency_distribution, %{})
-      |> objective_average_proficiency()
+      case Map.get(row, :numeric_proficiency) do
+        score when is_number(score) -> score * 100.0
+        nil -> row |> Map.get(:proficiency_distribution, %{}) |> objective_average_proficiency()
+      end
     end)
     |> average()
   end

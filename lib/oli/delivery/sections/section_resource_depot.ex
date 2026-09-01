@@ -300,6 +300,23 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns all SectionResources needed for proficiency membership after ensuring
+  the versioned depot projection is available.
+  """
+  def proficiency_resources(section_id) do
+    type_ids = [
+      Oli.Resources.ResourceType.id_for_page(),
+      Oli.Resources.ResourceType.id_for_container(),
+      Oli.Resources.ResourceType.id_for_objective()
+    ]
+
+    with {:ok, _status} <-
+           depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__) do
+      {:ok, Depot.query(@depot_desc, section_id, resource_type_id: {:in, type_ids})}
+    end
+  end
+
+  @doc """
   Returns a SectionResource record for a given section and resource id.
   """
 

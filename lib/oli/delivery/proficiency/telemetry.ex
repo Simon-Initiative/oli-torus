@@ -1,5 +1,11 @@
 defmodule Oli.Delivery.Proficiency.Telemetry do
-  @moduledoc false
+  @moduledoc """
+  Emits bounded provider-read telemetry suitable for AppSignal aggregation.
+
+  Only categorical model/operation/outcome values and aggregate counts are emitted.
+  Section, learner, objective, attempt, and raw-content identifiers are deliberately
+  excluded so operational diagnosis cannot expose learner-level data.
+  """
 
   alias Oli.Delivery.Proficiency.{Aggregate, Estimate}
 
@@ -9,7 +15,7 @@ defmodule Oli.Delivery.Proficiency.Telemetry do
   def span(model, operation, requested_counts, fun) when is_function(fun, 0) do
     metadata =
       requested_counts
-      |> Map.take([:requested_user_count, :requested_objective_count])
+      |> Map.take([:requested_user_count, :requested_objective_count, :requested_scope_count])
       |> Map.merge(%{
         model: model,
         operation: operation,

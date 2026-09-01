@@ -5973,7 +5973,7 @@ defmodule Oli.Delivery.Sections do
     id_list = Enum.map(objectives, & &1.resource_id)
 
     proficiencies_for_objectives =
-      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
+      Metrics.proficiency_per_student_for_objective(section, id_list, student_id: student_id)
 
     student_proficiency_for_objectives =
       if student_id do

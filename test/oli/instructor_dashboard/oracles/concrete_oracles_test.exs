@@ -618,12 +618,21 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       objective_2_row = Enum.find(rows, &(&1.objective_id == objective_2.id))
 
       assert objective_1_row.title == "Objective A"
+      assert_in_delta objective_1_row.numeric_proficiency, 0.84, 0.0001
       assert objective_1_row.proficiency_distribution["High"] == 1
       assert objective_1_row.proficiency_distribution["Not enough data"] == 1
+      assert objective_1_row.confidence == nil
+      assert objective_1_row.coverage == %{defined: 1, total: 2}
+      assert objective_1_row.contributing_count == 1
+      assert objective_1_row.eligible_count == 1
+      assert objective_1_row.total_count == 2
 
       assert objective_2_row.title == "Objective B"
       assert objective_2_row.proficiency_distribution["Low"] == 1
       assert objective_2_row.proficiency_distribution["High"] == 1
+      assert_in_delta objective_2_row.numeric_proficiency, 0.68, 0.0001
+      assert objective_2_row.coverage == %{defined: 2, total: 2}
+      assert ObjectivesProficiency.version() == 4
     end
   end
 

@@ -149,14 +149,14 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
           resources.page_resource_2.id,
           learning_objectives_content("summary"),
           user,
-          proficiency_fun: fn section_id, objective_ids, student_id: student_id ->
-            send(parent, {:proficiency, section_id, objective_ids, student_id})
+          proficiency_fun: fn loaded_section, objective_ids, student_id: student_id ->
+            send(parent, {:proficiency, loaded_section, objective_ids, student_id})
             Map.new(objective_ids, &{&1, %{student_id => "High"}})
           end
         )
 
-      assert_received {:proficiency, section_id, objective_ids, student_id}
-      assert section_id == section.id
+      assert_received {:proficiency, loaded_section, objective_ids, student_id}
+      assert loaded_section.id == section.id
       assert student_id == user.id
       assert Enum.sort(objective_ids) == Enum.sort(Enum.map(payload.objectives, & &1.resource_id))
 

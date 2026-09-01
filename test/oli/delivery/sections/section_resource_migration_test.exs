@@ -335,7 +335,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
     end
   end
 
-  describe "versioned JIT migration" do
+  describe "versioned JIT migration (AC-036)" do
     test "migrates version zero once and treats a current version as a no-op" do
       %{section: section, page: page, activity: activity} = pinned_projection_fixture()
 
