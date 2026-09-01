@@ -25,7 +25,8 @@ import { DiagnosticsOverlayProvider } from './DiagnosticsOverlayContext';
 import DiagnosticMessage from './diagnostics/DiagnosticMessage';
 import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
 import { DiagnosticRuleTypes, DiagnosticTypes } from './diagnostics/DiagnosticTypes';
-import { createUpdater } from './diagnostics/actions';
+import { createUpdater, updateAccessibilityDecorative } from './diagnostics/actions';
+import { getAccessibilityFixConfig } from './diagnostics/accessibilityFixConfig';
 import {
   getProblemKey,
   problemExistsInErrors,
@@ -62,24 +63,35 @@ const ActivityPartError: React.FC<{
   const handleProblemFix = async (fixed: string, problem: any) => {
     await dispatch(setCurrentSelection({ selection: '' }));
     const updater = createUpdater(problem.type)(problem, fixed, currentActivities);
+    if (!updater) {
+      return;
+    }
     const result = await dispatch(updater);
 
-    const ruleId =
-      problem.type === DiagnosticTypes.INVALID_TARGET_MUTATE
-        ? problem.item.id
-        : problem.type === DiagnosticTypes.INVALID_TARGET_COND
-        ? problem.item.rule.id
-        : problem.type === DiagnosticTypes.INVALID_VALUE
-        ? problem.item.rule.id
-        : problem.type === DiagnosticTypes.INVALID_EXPRESSION_VALUE
-        ? problem.item.rule.id
-        : 'initState';
+    if (problem.type !== DiagnosticTypes.ACCESSIBILITY) {
+      const ruleId =
+        problem.type === DiagnosticTypes.INVALID_TARGET_MUTATE
+          ? problem.item.id
+          : problem.type === DiagnosticTypes.INVALID_TARGET_COND
+          ? problem.item.rule.id
+          : problem.type === DiagnosticTypes.INVALID_VALUE
+          ? problem.item.rule.id
+          : problem.type === DiagnosticTypes.INVALID_EXPRESSION_VALUE
+          ? problem.item.rule.id
+          : 'initState';
 
-    const activity = result.meta.arg.activity;
-    if (activity) {
-      const rule = activity.authoring.rules.find((rule: IAdaptiveRule) => rule.id === ruleId);
-      dispatch(setCurrentRule({ currentRule: rule }));
+      const activity = result.meta.arg.activity;
+      if (activity) {
+        const rule = activity.authoring.rules.find((rule: IAdaptiveRule) => rule.id === ruleId);
+        dispatch(setCurrentRule({ currentRule: rule }));
+      }
     }
+    await onApplyFix(problem);
+  };
+
+  const handleMarkDecorativeFix = async (problem: any) => {
+    await dispatch(setCurrentSelection({ selection: '' }));
+    await dispatch(updateAccessibilityDecorative(problem));
     await onApplyFix(problem);
   };
 
@@ -148,8 +160,12 @@ const ActivityPartError: React.FC<{
       <div className="diagnostics-hub__issues-list">
         {error.problems.map((problem: any, index: number) => {
           const clickable = isClickableItem(problem.type);
+          const accessibilityFixable =
+            problem.type === DiagnosticTypes.ACCESSIBILITY &&
+            getAccessibilityFixConfig(problem.item);
           const showFix =
-            !isReadOnlyMode && problem.type !== DiagnosticTypes.ACCESSIBILITY;
+            !isReadOnlyMode &&
+            (problem.type !== DiagnosticTypes.ACCESSIBILITY || accessibilityFixable);
           const iconClass =
             variant === 'accessibility'
               ? 'diagnostics-hub__issue-icon--warning'
@@ -210,7 +226,13 @@ const ActivityPartError: React.FC<{
                       <DiagnosticSolution
                         type={problem.type}
                         suggestion={problem.suggestedFix}
-                        onClick={(val: any) => handleProblemFix(val, problem)}
+                        item={problem.item}
+                        onClick={(val: string) => handleProblemFix(val, problem)}
+                        onMarkDecorative={
+                          accessibilityFixable
+                            ? () => handleMarkDecorativeFix(problem)
+                            : undefined
+                        }
                       />
                     </div>
                   )}
@@ -306,7 +328,7 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
   const [overlayContainer, setOverlayContainer] = useState<HTMLElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<AuditTab>('accessibility');
-  const [accessibilityResults, setAccessibilityResults] = useState<ReactNode | null>(null);
+  const [accessibilityErrors, setAccessibilityErrors] = useState<DiagnosticError[]>([]);
   const [validationErrors, setValidationErrors] = useState<DiagnosticError[]>([]);
   const [variablesResults, setVariablesResults] = useState<ReactNode | null>(null);
   const [hasRunAccessibility, setHasRunAccessibility] = useState(false);
@@ -316,8 +338,14 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
   const [accessibilityScreenCount, setAccessibilityScreenCount] = useState(0);
   const [validationScreenCount, setValidationScreenCount] = useState(0);
 
-  const { lessonResultsCount, variableResultsCount, accessibilityResultsCount, refreshCounts, setLessonResultsCount } =
-    useDiagnosticsCounts();
+  const {
+    lessonResultsCount,
+    variableResultsCount,
+    accessibilityResultsCount,
+    refreshCounts,
+    setLessonResultsCount,
+    setAccessibilityResultsCount,
+  } = useDiagnosticsCounts();
 
   const setHubRef = useCallback((node: HTMLDivElement | null) => {
     hubRef.current = node;
@@ -353,6 +381,30 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
     [dispatch, setLessonResultsCount],
   );
 
+  const handleAccessibilityApplyFix = useCallback(
+    async (problem: any, activityResourceId: string) => {
+      const result = await dispatch(validateAccessibility({}));
+      if ((result as any).meta.requestStatus !== 'fulfilled') {
+        return;
+      }
+
+      const freshErrors = (result as any).payload.errors as DiagnosticError[];
+      const problemKey = getProblemKey(problem, activityResourceId);
+
+      if (!problemExistsInErrors(freshErrors, problemKey, activityResourceId)) {
+        setAccessibilityErrors((prev) => {
+          const next = removeProblemFromErrors(prev, problemKey, activityResourceId);
+          const issueCount = countAccessibilityFindings(next);
+          setAccessibilityIssueCount(issueCount);
+          setAccessibilityScreenCount(next.length);
+          setAccessibilityResultsCount(issueCount);
+          return next;
+        });
+      }
+    },
+    [dispatch, setAccessibilityResultsCount],
+  );
+
   const handleValidateClick = async () => {
     const result = await dispatch(validatePartIds({}));
     if ((result as any).meta.requestStatus === 'fulfilled') {
@@ -385,26 +437,11 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
     const result = await dispatch(validateAccessibility({}));
     if ((result as any).meta.requestStatus === 'fulfilled') {
       setHasRunAccessibility(true);
-      const errors = (result as any).payload.errors;
+      const errors = (result as any).payload.errors as DiagnosticError[];
+      setAccessibilityErrors(errors);
       setAccessibilityIssueCount(countAccessibilityFindings(errors));
       setAccessibilityScreenCount(errors.length);
-      if (errors.length > 0) {
-        const errorList = errors.map((item: any) => (
-          <ActivityPartError
-            key={item.activity.resourceId}
-            error={item}
-            variant="accessibility"
-            onApplyFix={async () => {
-              setAccessibilityResults(null);
-            }}
-          />
-        ));
-        setAccessibilityResults(errorList);
-      } else {
-        setAccessibilityResults(
-          <p className="diagnostics-hub__empty-message">No accessibility issues found.</p>,
-        );
-      }
+      setAccessibilityResultsCount(countAccessibilityFindings(errors));
       refreshCounts();
     }
   };
@@ -428,9 +465,26 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
   };
 
   const tabResults: Record<AuditTab, ReactNode | null> = {
-    accessibility: accessibilityResults,
+    accessibility: null,
     validation: null,
     variables: variablesResults,
+  };
+
+  const renderAccessibilityResults = () => {
+    if (accessibilityErrors.length === 0) {
+      return <p className="diagnostics-hub__empty-message">No accessibility issues found.</p>;
+    }
+
+    return accessibilityErrors.map((item: DiagnosticError) => (
+      <ActivityPartError
+        key={(item.activity as any).resourceId}
+        error={item}
+        variant="accessibility"
+        onApplyFix={(problem) =>
+          handleAccessibilityApplyFix(problem, (item.activity as any).resourceId)
+        }
+      />
+    ));
   };
 
   const renderValidationResults = () => {
@@ -520,7 +574,11 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
           <div className="diagnostics-hub__results">
             {renderSummaryBanner(tab)}
             <div className="mt-3">
-              {tab === 'validation' ? renderValidationResults() : results}
+              {tab === 'accessibility'
+                ? renderAccessibilityResults()
+                : tab === 'validation'
+                ? renderValidationResults()
+                : results}
             </div>
           </div>
         )}

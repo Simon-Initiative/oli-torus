@@ -669,6 +669,22 @@ $diagnostics-hub-slate-900: #0f172a;
       }
     }
 
+    textarea.form-control {
+      height: auto;
+      min-height: 48px;
+      resize: vertical;
+    }
+
+    .btn-outline-secondary {
+      flex-shrink: 0;
+      font-size: 12px;
+      padding: 4px 10px;
+      height: 31px;
+      white-space: nowrap;
+      border-color: $diagnostics-hub-slate-200;
+      color: $diagnostics-hub-slate-600;
+    }
+
     .btn-primary {
       flex-shrink: 0;
       background-color: $diagnostics-hub-primary;

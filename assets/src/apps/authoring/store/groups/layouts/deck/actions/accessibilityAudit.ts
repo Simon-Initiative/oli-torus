@@ -9,6 +9,7 @@ import {
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { DiagnosticError, DiagnosticProblem } from './validate';
+import { getAccessibilitySuggestedFix } from 'apps/authoring/components/Modal/diagnostics/accessibilityFixConfig';
 
 export interface AccessibilityFindingItem {
   id: string;
@@ -230,7 +231,7 @@ export const diagnoseAccessibility = (
       auditPart(part).map((finding) => ({
         owner,
         type: DiagnosticTypes.ACCESSIBILITY,
-        suggestedFix: '',
+        suggestedFix: getAccessibilitySuggestedFix(finding, part.custom),
         item: finding,
       })),
     );

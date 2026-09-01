@@ -18,6 +18,7 @@ export interface DiagnosticsCounts {
   totalCount: number;
   refreshCounts: () => Promise<void>;
   setLessonResultsCount: (count: number) => void;
+  setAccessibilityResultsCount: (count: number) => void;
 }
 
 export const useDiagnosticsCounts = (): DiagnosticsCounts => {
@@ -67,5 +68,6 @@ export const useDiagnosticsCounts = (): DiagnosticsCounts => {
     totalCount: lessonResultsCount + variableResultsCount + accessibilityResultsCount,
     refreshCounts,
     setLessonResultsCount,
+    setAccessibilityResultsCount,
   };
 };

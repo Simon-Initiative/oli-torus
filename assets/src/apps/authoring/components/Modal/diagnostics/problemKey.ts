@@ -24,6 +24,8 @@ export const getProblemKey = (problem: DiagnosticProblem, activityResourceId: st
     case DiagnosticTypes.PATTERN:
     case DiagnosticTypes.INVALID_EXPRESSION:
       return `${type}:${activityResourceId}:${item.id}`;
+    case DiagnosticTypes.ACCESSIBILITY:
+      return `${type}:${activityResourceId}:${item.id}:${item.issue}`;
     default:
       return `${type}:${activityResourceId}:${item?.id ?? ''}:${item?.issue ?? ''}`;
   }

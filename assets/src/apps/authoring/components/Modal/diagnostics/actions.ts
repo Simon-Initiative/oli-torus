@@ -5,9 +5,11 @@ import {
   updatePart,
   updatePartWithCorrectExpression,
 } from 'apps/authoring/store/parts/actions/updatePart';
+import { updatePartAccessibilityField } from 'apps/authoring/store/parts/actions/updatePartAccessibility';
 import { clone } from 'utils/common';
 import { saveActivity } from '../../../../authoring/store/activities/actions/saveActivity';
 import { findConditionById, forEachCondition } from '../../AdaptivityEditor/ConditionsBlockEditor';
+import { getAccessibilityFixConfig } from './accessibilityFixConfig';
 import { DiagnosticTypes } from './DiagnosticTypes';
 
 export const updateId = (problem: any, fixed: string) => {
@@ -132,6 +134,31 @@ export const updateInitComponentPath =
     }
   };
 
+export const updateAccessibilityField = (problem: any, fixed: string) => {
+  const config = getAccessibilityFixConfig(problem.item);
+  if (!config) {
+    return;
+  }
+
+  return updatePartAccessibilityField({
+    activityId: problem.owner.resourceId,
+    partId: problem.item.id,
+    parentPopupId: problem.item.parentPopupId,
+    fieldPath: config.fieldPath,
+    value: fixed,
+  });
+};
+
+export const updateAccessibilityDecorative = (problem: any) => {
+  return updatePartAccessibilityField({
+    activityId: problem.owner.resourceId,
+    partId: problem.item.id,
+    parentPopupId: problem.item.parentPopupId,
+    fieldPath: 'decorative',
+    value: true,
+  });
+};
+
 const updaters: any = {
   [DiagnosticTypes.DUPLICATE]: updateId,
   [DiagnosticTypes.PATTERN]: updateId,
@@ -145,6 +172,7 @@ const updaters: any = {
   [DiagnosticTypes.INVALID_OWNER_INIT]: updateInitComponentPath('value'),
   [DiagnosticTypes.INVALID_OWNER_CONDITION]: updateConditionProperty('value'),
   [DiagnosticTypes.INVALID_OWNER_MUTATE]: updatePath('mutateState', 'value'),
+  [DiagnosticTypes.ACCESSIBILITY]: updateAccessibilityField,
   [DiagnosticTypes.DEFAULT]: () => {},
 };
 
