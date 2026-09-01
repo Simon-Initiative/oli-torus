@@ -12,7 +12,7 @@ defmodule Oli.Delivery.Proficiency.Naive do
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Delivery.Proficiency.{Aggregate, Estimate, Telemetry}
   alias Oli.Delivery.Sections.ContainedPage
-  alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
+  alias Oli.Delivery.Sections.Section
   alias Oli.Repo
   alias Oli.Resources.ResourceType
 
@@ -179,21 +179,13 @@ defmodule Oli.Delivery.Proficiency.Naive do
       :direct_objective,
       %{requested_user_count: length(user_ids), requested_objective_count: length(objective_ids)},
       fn ->
-        objective_sources = objective_sources(section_id, objective_ids)
-        source_ids = objective_sources |> Map.values() |> List.flatten() |> Enum.uniq()
-        rows = read_summaries(section_id, user_ids, source_ids)
+        rows = read_summaries(section_id, user_ids, objective_ids)
 
         estimates =
           Map.new(objective_ids, fn objective_id ->
-            source_ids = Map.fetch!(objective_sources, objective_id)
-
             {objective_id,
              Map.new(user_ids, fn user_id ->
-               values =
-                 source_ids
-                 |> Enum.map(&Map.get(rows, {user_id, &1}))
-                 |> Enum.reject(&is_nil/1)
-                 |> sum_summary_values()
+               values = Map.get(rows, {user_id, objective_id})
 
                {user_id, estimate(section_id, user_id, objective_id, values)}
              end)}
@@ -202,30 +194,6 @@ defmodule Oli.Delivery.Proficiency.Naive do
         {:ok, estimates}
       end
     )
-  end
-
-  defp objective_sources(_section_id, []), do: %{}
-
-  defp objective_sources(section_id, objective_ids) do
-    effective_children =
-      section_id
-      |> SectionResourceDepot.objectives_with_effective_children_for(objective_ids)
-      |> Map.new(&{&1.resource_id, normalize_ids(List.wrap(&1.children))})
-
-    Map.new(objective_ids, fn objective_id ->
-      case Map.get(effective_children, objective_id, []) do
-        [] -> {objective_id, [objective_id]}
-        child_ids -> {objective_id, child_ids}
-      end
-    end)
-  end
-
-  defp sum_summary_values([]), do: nil
-
-  defp sum_summary_values(values) do
-    Enum.reduce(values, {0, 0}, fn {correct, attempts}, {total_correct, total_attempts} ->
-      {total_correct + correct, total_attempts + attempts}
-    end)
   end
 
   defp read_summaries(_section_id, [], _objective_ids), do: %{}
