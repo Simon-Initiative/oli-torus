@@ -3489,20 +3489,28 @@ defmodule Oli.Delivery.SectionsTest do
       assert top_level_a.section_id == section.id
 
       # objective_a has Sub-LOs (sub_objective_a1 and sub_objective_a2), so its
-      # displayed proficiency now reflects its Sub-LOs' combined evidence
-      # instead of only its own directly-tagged evidence. objective_a's own row
-      # (3/3 first attempts) is excluded to avoid double counting an activity
-      # that could be tagged to both it and a Sub-LO; only Sub-LO evidence is
-      # combined: sub_objective_a1 (0/3, proficiency 0.0) and sub_objective_a2
-      # (no evidence) => proficiency_range(0.0, 3) => "Low". Previously this
-      # showed objective_a's own evidence directly ("High"), ignoring its
-      # Sub-LOs entirely.
-      assert top_level_a.student_proficiency_obj == "Low"
+      # displayed proficiency now reflects its Sub-LOs' combined evidence in
+      # addition to its own directly-tagged evidence — always combined, never
+      # excluded, per a deliberate product decision (Darren Siegel, Slack,
+      # 2026-09-01, "Option B" in
+      # docs/exec-plans/current/epics/learning_model_v2/lo_aggregation/parent_evidence_aggregation_options.md):
+      # objective_a's own evidence (3/3 first attempts, proficiency 1.0) and
+      # sub_objective_a1's evidence (0/3, proficiency 0.2) combine as
+      # (1.0*3 + 0.2*3) / (3+3) = 0.6 => "Medium" (sub_objective_a2 has no
+      # evidence and contributes nothing). Previously this showed only
+      # objective_a's own evidence directly ("High"), ignoring its Sub-LOs
+      # entirely.
+      assert top_level_a.student_proficiency_obj == "Medium"
       assert top_level_a.student_proficiency_obj_dist == nil
 
       sub_a1 = Enum.find(result, &(&1.subobjective == "Sub-objective A.1"))
       assert sub_a1 != nil
-      assert sub_a1.student_proficiency_obj == "Low"
+      # student_proficiency_obj on a sub-objective's row always mirrors its
+      # parent's (combined) proficiency, not the sub-objective's own.
+      assert sub_a1.student_proficiency_obj == "Medium"
+      # student_proficiency_subobj is sub_objective_a1's own proficiency. It
+      # is itself a leaf (no Sub-LOs of its own), so it is unaffected by the
+      # parent's combined value.
       assert sub_a1.student_proficiency_subobj == "Low"
       assert sub_a1.student_proficiency_subobj_dist == nil
     end

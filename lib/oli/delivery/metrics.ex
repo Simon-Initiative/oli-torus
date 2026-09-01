@@ -737,7 +737,9 @@ defmodule Oli.Delivery.Metrics do
   }
 
   This implementation considers that an objective may have sub-objectives.
-  In that case, the proficiency for the given objectives will result from the aggregated raw proficiency of its contained sub-objectives.
+  In that case, the proficiency for the given objectives will result from the aggregated raw
+  proficiency of its contained sub-objectives, combined with the objective's own directly-tagged
+  evidence when it has any (see `evidence_resource_ids/2`).
 
   Example:
     Given the following parent-child learning objectives relationship:
@@ -769,7 +771,7 @@ defmodule Oli.Delivery.Metrics do
         section
       ) do
     unique_objective_and_subobjective_ids =
-      Enum.flat_map(learning_objectives, fn rev -> [rev.resource_id | rev.children] end)
+      Enum.flat_map(learning_objectives, &evidence_resource_ids(&1.resource_id, &1.children))
       |> Enum.uniq()
 
     raw_proficiency_per_learning_objective =
@@ -781,19 +783,8 @@ defmodule Oli.Delivery.Metrics do
 
     Enum.into(learning_objectives, %{}, fn rev ->
       aggregated_proficiency =
-        if rev.children == [] do
-          [
-            Map.get(
-              raw_proficiency_per_learning_objective,
-              rev.resource_id,
-              nil
-            )
-          ]
-        else
-          Enum.map(rev.children, fn subobjective_id ->
-            Map.get(raw_proficiency_per_learning_objective, subobjective_id)
-          end)
-        end
+        evidence_resource_ids(rev.resource_id, rev.children)
+        |> Enum.map(&Map.get(raw_proficiency_per_learning_objective, &1))
         |> Enum.reject(&is_nil/1)
         |> aggregate_raw_proficiency()
 
@@ -1630,6 +1621,57 @@ defmodule Oli.Delivery.Metrics do
 
       Map.put(acc, resource_id, res)
     end)
+  end
+
+  @doc """
+  The resource_ids whose evidence contributes to an objective's aggregated
+  proficiency, given its own `resource_id` and its Sub-LO `children` (both
+  resource_ids): always the objective's own resource_id plus every one of its
+  children (an empty list for a leaf objective, contributing nothing extra).
+
+  A parent LO's own directly-tagged evidence is always included alongside its
+  Sub-LOs' evidence, even when the parent has Sub-LOs. This is a deliberate
+  product decision ("Option B" — Darren Siegel, Slack, 2026-09-01: "the
+  simplest thing that we can (and should) do"), not an oversight: if an
+  activity happens to be tagged to both a parent and one of its Sub-LOs, that
+  activity's evidence is double-counted (it contributes once via the parent's
+  own `ResourceSummary` row and again via the Sub-LO's row) — this risk is
+  explicitly accepted rather than mitigated. See
+  `docs/exec-plans/current/epics/learning_model_v2/lo_aggregation/parent_evidence_aggregation_options.md`
+  for the alternatives considered and why this one was chosen.
+
+  Shared by every runtime call site that rolls up Sub-LO proficiency into a
+  parent LO, so they all apply this rule identically instead of each
+  re-deriving it.
+  """
+  @spec evidence_resource_ids(resource_id :: integer(), children :: [integer()]) :: [integer()]
+  def evidence_resource_ids(resource_id, children), do: [resource_id | children]
+
+  @doc """
+  Combines the raw `{proficiency, count}` evidence for a set of resource_ids
+  (as resolved by `evidence_resource_ids/2`) into a single weighted-average
+  proficiency via `aggregate_weighted_proficiency/1`, then categorizes it into
+  a bucket ("Not enough data" / "Low" / "Medium" / "High") via
+  `proficiency_range/2`, for one student.
+  """
+  @spec proficiency_bucket_for_student(
+          resource_ids :: [integer()],
+          raw_proficiency_by_resource_id :: %{
+            integer() => %{integer() => {float() | nil, non_neg_integer()}}
+          },
+          student_id :: integer()
+        ) :: String.t()
+  def proficiency_bucket_for_student(resource_ids, raw_proficiency_by_resource_id, student_id) do
+    pairs =
+      Enum.map(resource_ids, fn resource_id ->
+        raw_proficiency_by_resource_id
+        |> Map.get(resource_id, %{})
+        |> Map.get(student_id, {nil, 0})
+      end)
+
+    {score, total_count} = aggregate_weighted_proficiency(pairs)
+
+    proficiency_range(score, total_count)
   end
 
   defp proficiency_mode(proficiencies_for_resources) do

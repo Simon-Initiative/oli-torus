@@ -211,7 +211,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert Map.get(results, id3) == "High"
     end
 
-    test "proficiency_for_student_per_learning_objective/3 does not double count a parent's own directly-tagged evidence when it also has a Sub-LO",
+    test "proficiency_for_student_per_learning_objective/3 combines a parent's own directly-tagged evidence with its Sub-LO's evidence",
          %{
            user1: user1,
            section: section,
@@ -230,11 +230,9 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       id2 = o2.resource.id
 
       [
-        # o2 (the Sub-LO): 1 correct out of 5 first attempts => 0.36 => "Low"
+        # o2 (the Sub-LO): 1 correct out of 5 first attempts => 0.36
         [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 1, 5, 0, 5, 1],
-        # o1's own direct row: if this were combined with o2's instead of being
-        # ignored in favor of the Sub-LO, the pooled result would be "Medium"
-        # rather than "Low".
+        # o1's own direct row: 5 correct out of 5 first attempts => 1.0
         [-1, -1, section.id, user1.id, id, nil, objective_type_id, 5, 5, 0, 5, 5]
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
@@ -250,7 +248,15 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
           section
         )
 
-      assert Map.get(results, id) == "Low"
+      # o1's own evidence (0.36, count=5) and o2's evidence (1.0, count=5) are
+      # always combined: (0.36*5 + 1.0*5) / (5+5) = 6.8/10 = 0.68 => "Medium".
+      # This is a deliberate product decision (Darren Siegel, Slack,
+      # 2026-09-01, "Option B" in
+      # docs/exec-plans/current/epics/learning_model_v2/lo_aggregation/parent_evidence_aggregation_options.md):
+      # a parent's own evidence is never excluded just because it has a
+      # Sub-LO, even though this means an activity tagged to both the parent
+      # and the Sub-LO would be double-counted.
+      assert Map.get(results, id) == "Medium"
     end
 
     test "proficiency_per_student_for_objective/2", %{

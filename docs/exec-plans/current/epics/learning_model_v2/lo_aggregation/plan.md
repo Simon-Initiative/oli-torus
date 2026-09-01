@@ -95,8 +95,9 @@ implementation, no `learning_model_version` switch changes — those are explici
 - Testing Tasks:
   - [x] Update/extend existing coverage in `test/oli/analytics/summary/metrics_v2_test.exs` for
     `aggregate_raw_proficiency/1` and `proficiency_for_student_per_learning_objective/3` to assert
-    unchanged output for current fixtures, plus a new case with an activity tagged to both a
-    parent and a Sub-LO to confirm no double count (AC-004).
+    unchanged output for current fixtures, plus a new case covering a parent LO that has both its
+    own directly-tagged evidence and a Sub-LO (AC-004; the double-counting outcome for this case
+    was revised after Phase 4 — see the Post-Phase-4 Correction note below).
   - [x] Run the targeted `Phoenix.LiveViewTest` suites for `prologue_live_test.exs`,
     `lesson_live_test.exs`, and `review_live_test.exs` to confirm no visible regression
     (AC-007, AC-008).
@@ -125,11 +126,12 @@ implementation, no `learning_model_version` switch changes — those are explici
     (resolve the Clarification above), then call the Phase 1 shared function per parent LO per
     student. Implemented via new `Metrics.raw_proficiency_per_student_for_objective/3` (raw,
     not-yet-bucketed extraction of the existing query) and a new `Sections.aggregated_proficiency_bucket/3`.
-  - [x] Ensure double-counting prevention: an activity tagged to both a parent LO and a Sub-LO
-    contributes once, at the Sub-LO (FR-003, AC-004) — reuse whatever tagging-resolution logic
-    Phase 2 established if applicable, rather than re-deriving it. Implemented via
-    `Sections.objective_evidence_resource_ids/1`, mirroring `Metrics.proficiency_for_student_per_learning_objective/3`'s
-    exclusion of a parent's own evidence whenever it has Sub-LOs.
+  - [x] ~~Ensure double-counting prevention...~~ **Superseded after Phase 4** — see the
+    Post-Phase-4 Correction note below. Originally implemented as exclusion of a parent's own
+    evidence whenever it has Sub-LOs (mirroring `Metrics.proficiency_for_student_per_learning_objective/3`'s
+    pre-existing 2024 behavior); Darren Siegel confirmed on Slack (2026-09-01) that the parent's
+    own evidence should always be combined with its Sub-LOs' evidence instead (FR-003, AC-004),
+    accepting the resulting double-counting risk when an activity is tagged to both levels.
   - [x] Ensure a leaf LO (no `children`) takes the same path it does today and is unaffected
     (AC-008).
 - Testing Tasks:
@@ -162,17 +164,24 @@ implementation, no `learning_model_version` switch changes — those are explici
 - Goal: Make `PageElement.maybe_proficiency/5` combine Sub-LOs for the
   `"learning_objectives"` page element, consistent with Phases 2 and 3.
 - Tasks:
-  - [ ] Update `maybe_proficiency/5`
+  - [x] Update `maybe_proficiency/5`
     (`lib/oli/delivery/learning_objectives/page_element.ex:135-147`) to call the Phase 1 shared
     function (directly, or via whichever `Metrics`/`Sections` entry point Phase 2/3 expose) for
-    LOs with `children`, instead of returning only the LO's own direct proficiency.
-  - [ ] Confirm `lib/oli/rendering/content/learning_objectives.ex`'s `proficiency_for/2` still
+    LOs with `children`, instead of returning only the LO's own direct proficiency. Implemented
+    as `maybe_proficiency/6` (gained an `objectives_with_children` param, shared with
+    `do_included_objectives/3` to avoid a duplicate depot fetch), consuming two functions
+    extracted from `Sections` into `Metrics` for reuse across all three call sites:
+    `Metrics.evidence_resource_ids/2` and `Metrics.proficiency_bucket_for_student/3`.
+  - [x] Confirm `lib/oli/rendering/content/learning_objectives.ex`'s `proficiency_for/2` still
     renders the same bucket labels it does today; no rendering change should be needed if the
-    upstream data now already reflects the aggregated value.
+    upstream data now already reflects the aggregated value. Confirmed unchanged; the module was
+    not touched by this phase.
 - Testing Tasks:
-  - [ ] Add/extend tests for `page_element.ex` covering a parent LO with Sub-LOs and no direct
-    evidence (AC-007).
-  - [ ] Run existing rendering tests for `learning_objectives.ex` to confirm no regression in
+  - [x] Add/extend tests for `page_element.ex` covering a parent LO with Sub-LOs and no direct
+    evidence (AC-007). Includes a case where the Sub-LO has no activity within the page
+    element's own render scope, cross-checked directly against
+    `Sections.get_objectives_and_subobjectives/2` for the same student/section.
+  - [x] Run existing rendering tests for `learning_objectives.ex` to confirm no regression in
     label/bucket rendering.
   - Command(s): `mix test test/oli/delivery/learning_objectives/ test/oli/rendering/content/learning_objectives_test.exs`
 - Definition of Done:
@@ -184,6 +193,55 @@ implementation, no `learning_model_version` switch changes — those are explici
   - Phase 1. Not dependent on Phase 2 or Phase 3.
 - Parallelizable Work:
   - Can run concurrently with Phase 2 and Phase 3 once Phase 1 is merged.
+
+## Post-Phase-4 Correction: parent's own evidence is always combined, not excluded
+
+After Phase 4 was implemented and committed, further review of the case where a parent LO has
+Sub-LOs but neither the parent nor its Sub-LOs necessarily have overlapping evidence surfaced a
+genuine open question the PRD/requirements.yml had not resolved precisely: should a parent LO's
+own directly-tagged evidence ever be excluded from its aggregated proficiency, and if so, when?
+
+Phases 2–4 as originally implemented answered this by excluding a parent's own evidence entirely
+whenever it had any Sub-LOs (mirroring `Metrics.proficiency_for_student_per_learning_objective/3`'s
+pre-existing 2024 behavior from ticket NG23-252). This avoided double-counting an activity tagged
+to both a parent and a Sub-LO, but it also meant a parent with substantial, genuinely independent
+direct evidence could show "Not enough data" indefinitely if its Sub-LOs were never tagged to any
+activity — a real regression risk for existing course content, since a separate, already-filed
+ticket will restrict this kind of parent-level tagging only for **new** courses going forward, not
+retroactively.
+
+Four alternatives (exact activity-level reconciliation, always combining, prefer-Sub-LOs-with-a-
+fallback, and always-Sub-LOs-only) were compared, with worked numeric examples, in
+`parent_evidence_aggregation_options.md` in this directory. **Darren Siegel confirmed on Slack
+(2026-09-01)** that always combining a parent's own evidence with its Sub-LOs' evidence ("Option
+B") is "the simplest thing that we can (and should) do" — explicitly accepting the resulting
+double-counting risk when an activity happens to be tagged to both a parent and one of its
+Sub-LOs, rather than building the more expensive exact-reconciliation approach or the fallback
+approach. This decision supersedes the original Jira ticket's own AC that such an activity's
+evidence must count only once, at the Sub-LO.
+
+Retrofit applied across all phases already implemented:
+
+- `Metrics.evidence_resource_ids/2` (introduced in Phase 4, shared by all three call sites) now
+  unconditionally returns `[resource_id | children]` instead of excluding `resource_id` whenever
+  `children` is non-empty.
+- `Metrics.proficiency_for_student_per_learning_objective/3` (Phase 2's call site, and the
+  pre-existing 2024 logic it was refactored from) now delegates to `evidence_resource_ids/2` as
+  well, replacing its own separate `if rev.children == [] do ... else ... end` exclusion with the
+  same always-combine rule — unifying all three call sites onto one shared implementation of this
+  rule instead of two independent copies.
+- `Sections.get_objectives_and_subobjectives/2` and `PageElement.maybe_proficiency/6` required no
+  code changes themselves, since both already delegated to `Metrics.evidence_resource_ids/2`.
+- Every test asserting the old exclusion behavior was recomputed and updated for the new combined
+  result: `test/oli/analytics/summary/metrics_v2_test.exs`, `test/oli/delivery/sections_test.exs`
+  ("filters by student_id when provided"), and
+  `test/oli/delivery/learning_objectives/page_element_test.exs` (both the resource_ids-fetched
+  assertion and the combined-proficiency assertion).
+- `informal.md`, `prd.md`, and `requirements.yml` (FR-003/AC-004) were updated to describe the new
+  rule and record the decision and its rationale.
+
+No further phase renumbering was needed — Phase 5 (below) still applies to the corrected
+implementation.
 
 ## Phase 5: Cross-cutting verification, review, and closeout
 

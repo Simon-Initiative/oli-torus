@@ -42,26 +42,40 @@ requirements:
       - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1 @doc,
         verified verbatim against informal.md's "Agreed function contract")
 - id: FR-003
-  title: Preserve the existing no-double-counting rule so an activity tagged to both
-    a parent LO and one of its Sub-LOs contributes to the aggregation once, at the
-    Sub-LO.
-  status: proposed
+  title: "SUPERSEDED (Darren Siegel, Slack, 2026-09-01, \"Option B\"): always combine\
+    \ a parent LO's own directly-tagged evidence with its Sub-LOs' evidence in the\
+    \ weighted average, whenever the parent has evidence of its own. This replaces\
+    \ the original Jira AC requiring that an activity tagged to both a parent LO and\
+    \ one of its Sub-LOs contribute to the aggregation only once, at the Sub-LO —\
+    \ that de-duplication is explicitly NOT implemented; see\
+    \ parent_evidence_aggregation_options.md for the alternatives considered and why\
+    \ Option B was chosen over them."
+  status: verified
   acceptance_criteria:
   - id: AC-004
-    title: Given an activity tagged to both a parent LO and one of its Sub-LOs, when
-      parent LO proficiency is aggregated, then that activity's evidence is counted
-      once, attributed to the Sub-LO, and not also counted directly against the parent.
-    status: proposed
+    title: Given a parent LO with one or more Sub-LOs, when parent LO proficiency is
+      aggregated, then the parent's own directly-tagged evidence (when present) is
+      always combined with each Sub-LO's evidence into the weighted average. An
+      activity tagged to both a parent LO and one of its Sub-LOs is NOT deduplicated
+      under this rule — its evidence contributes once via the parent's own row and
+      again via the Sub-LO's row. This double-counting is a deliberate, accepted
+      trade-off (see FR-003), not a defect.
+    status: verified
     verification_method: automated
     proofs:
-      - "Partially covered (Phase 2 naive delivery-side, and Phase 3
-        Instructor Dashboard/CSV export call sites): test/oli/analytics/summary/metrics_v2_test.exs,
-        test/oli/delivery/sections_test.exs ('filters by student_id when
-        provided' — objective_a's own directly-tagged evidence is excluded
-        from its aggregated proficiency once it has Sub-LOs, via
-        Sections.objective_evidence_resource_ids/1). Status stays proposed
-        until Phase 4 (page element) verifies the same invariant for its own
-        call site."
+      - "lib/oli/delivery/metrics.ex (Metrics.evidence_resource_ids/2) — the
+        shared always-combine rule now used by all three call sites: Metrics
+        (naive delivery-side), Sections.get_objectives_and_subobjectives/2
+        (Instructor Dashboard/CSV export), and
+        PageElement.maybe_proficiency/6 (the 'learning_objectives' page
+        element)."
+      - test/oli/analytics/summary/metrics_v2_test.exs
+      - "test/oli/delivery/sections_test.exs ('filters by student_id when
+        provided')"
+      - "test/oli/delivery/learning_objectives/page_element_test.exs
+        ('combines a parent's Sub-LO evidence, including a Sub-LO outside
+        this page element's own scope, consistent with the Instructor
+        Dashboard')"
 - id: FR-004
   title: Preserve incomplete-coverage semantics so a Sub-LO with insufficient evidence
     is represented in the aggregation rather than silently excluded from it.
@@ -94,8 +108,9 @@ requirements:
     verification_method: automated
     proofs:
       - "lib/oli/delivery/sections.ex (Sections.get_objectives_and_subobjectives/2,
-        aggregated_proficiency_bucket/3) — the Instructor Dashboard tab
-        (instructor_dashboard_live.ex:120), per-student instructor view
+        via the shared Metrics.evidence_resource_ids/2 and
+        Metrics.proficiency_bucket_for_student/3) — the Instructor Dashboard
+        tab (instructor_dashboard_live.ex:120), per-student instructor view
         (student_dashboard_live.ex:54), and CSV export
         (delivery_controller.ex:471) all route through this same function."
       - test/oli/delivery/sections_test.exs ("filters by student_id when
@@ -107,28 +122,38 @@ requirements:
       page element renders that LO, then the displayed proficiency reflects the same
       combined Sub-LO evidence, consistent with the Instructor Dashboard's value for
       that student.
-    status: proposed
+    status: verified
     verification_method: automated
     proofs:
-      - "Partially covered: student prologue/lesson/review pages (Phase 2, see
-        test/oli/analytics/summary/metrics_v2_test.exs) and the Instructor
-        Dashboard side of the comparison (Phase 3, see AC-006 proofs above).
-        Status stays proposed until Phase 4 (the 'learning_objectives' page
-        element) verifies the same invariant, and until Phase 5 confirms
-        cross-site consistency."
+      - "lib/oli/delivery/learning_objectives/page_element.ex
+        (PageElement.maybe_proficiency/6) — resolves evidence resource_ids
+        from the section's authoritative objective hierarchy (not the page
+        element's own narrow render scope), so a Sub-LO with no activity on
+        the current page still contributes to its parent's aggregated
+        proficiency."
+      - "test/oli/delivery/learning_objectives/page_element_test.exs
+        ('combines a parent's Sub-LO evidence, including a Sub-LO outside
+        this page element's own scope, consistent with the Instructor
+        Dashboard') — directly cross-checks
+        PageElement.prepare_render_payload/5's result against
+        Sections.get_objectives_and_subobjectives/2's result for the same
+        student/section and asserts they match."
+      - test/oli/analytics/summary/metrics_v2_test.exs (student
+        prologue/lesson/review side, Phase 2)
   - id: AC-008
     title: Given a leaf Learning Objective with no Sub-LOs, when its proficiency is
       read from any of the updated call sites, then its value is unchanged from current
       behavior.
-    status: proposed
+    status: verified
     verification_method: automated
     proofs:
-      - "Partially covered (Phase 2 naive delivery-side call site, and Phase 3
-        Instructor Dashboard/CSV export call site): test/oli/analytics/summary/metrics_v2_test.exs
-        (o3, a leaf objective), test/oli/delivery/sections_test.exs ('a leaf
-        Learning Objective with no Sub-LOs uses only its own evidence,
-        unaffected by aggregation'). Status stays proposed until Phase 4 (page
-        element) verifies the same invariant for its own call site."
+      - test/oli/analytics/summary/metrics_v2_test.exs (o3, a leaf objective)
+      - "test/oli/delivery/sections_test.exs ('a leaf Learning Objective with
+        no Sub-LOs uses only its own evidence, unaffected by aggregation')"
+      - "test/oli/delivery/learning_objectives/page_element_test.exs
+        ('queries proficiency only when a Summary element exists' —
+        obj_resource_c1/obj_resource_d, both leaves, are queried by their own
+        resource_id)"
 - id: FR-006
   title: Keep Learning Objective proficiency aggregation a runtime projection computed
     at read time rather than a persisted, write-time calculation.

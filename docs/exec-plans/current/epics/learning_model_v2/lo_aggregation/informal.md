@@ -171,8 +171,18 @@ This `@doc` text must be preserved as written (not rewritten) when this function
 
 Functional rules the function/its callers must preserve:
 
-- No double-counting: an activity tagged to both a parent LO and one of its Sub-LOs is counted
-  once, at the Sub-LO.
+- Always combine: whenever a parent LO has evidence of its own (an activity tagged directly to
+  it), that evidence is always included in the weighted average alongside every Sub-LO's evidence
+  — never excluded just because the parent has Sub-LOs, and never used as a fallback only when
+  Sub-LOs lack evidence. This is a deliberate product decision, not an oversight: **Darren Siegel
+  confirmed on Slack (2026-09-01) that this ("Option B") is "the simplest thing that we can (and
+  should) do."** It explicitly supersedes the original Jira ticket's own AC that an activity
+  tagged to both a parent LO and one of its Sub-LOs must be counted only once, at the Sub-LO —
+  under Option B that specific activity's evidence is double-counted (once via the parent's own
+  row, once via the Sub-LO's row) when this occurs. Three alternatives that would avoid or reduce
+  that double-counting were considered and rejected in favor of Option B's simplicity; see
+  `parent_evidence_aggregation_options.md` in this directory for the full comparison, including
+  worked numeric examples of each alternative's trade-offs.
 - Incomplete coverage: a Sub-LO with insufficient evidence is not silently excluded from the
   denominator — it must still be represented so the parent reflects incomplete coverage rather
   than behaving as if only the attempted Sub-LOs existed.

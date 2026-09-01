@@ -61,8 +61,13 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
         container_resource_id =
           current_container_resource_id(section, current_page_resource_id, schedule)
 
-        {:ok, objectives} =
-          included_objectives(
+        # objectives_with_children (only fetched when there are any in-scope
+        # activities, see do_included_objectives/3) is reused by
+        # maybe_proficiency/6 below for the same authoritative (not
+        # page-scoped) hierarchy it needs to resolve a parent's Sub-LOs for
+        # aggregation, instead of each independently re-fetching it.
+        {:ok, objectives, objectives_with_children} =
+          do_included_objectives(
             section,
             container_resource_id,
             Keyword.put(opts, :schedule, schedule)
@@ -75,7 +80,14 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
           objectives: objectives,
           objectives_by_id: Map.new(objectives, &{&1.resource_id, &1}),
           performance_by_objective_id:
-            maybe_proficiency(section, objective_ids, user, summary_element?(elements), opts)
+            maybe_proficiency(
+              section,
+              objective_ids,
+              objectives_with_children,
+              user,
+              summary_element?(elements),
+              opts
+            )
         }
     end
   end
@@ -95,22 +107,31 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
 
   @doc false
   def included_objectives(%Section{} = section, container_resource_id, opts) do
+    {:ok, objectives, _objectives_with_children} =
+      do_included_objectives(section, container_resource_id, opts)
+
+    {:ok, objectives}
+  end
+
+  # Returns `{:ok, objectives, objectives_with_children}`, where
+  # `objectives_with_children` is the section's authoritative objective
+  # hierarchy fetched to build `objectives` (empty, and the depot left
+  # unqueried, when there are no in-scope activities) — the caller can reuse
+  # it (e.g. for proficiency aggregation) instead of re-fetching.
+  defp do_included_objectives(%Section{} = section, container_resource_id, opts) do
     schedule = schedule(section.id, opts)
     container = container_section_resource(section, container_resource_id, schedule)
 
     pages = descendant_page_section_resources(container, schedule)
     activity_ids = in_scope_activity_ids(pages, opts)
 
-    objectives =
-      if MapSet.size(activity_ids) == 0 do
-        []
-      else
-        section.id
-        |> objectives_with_effective_children(opts)
-        |> included_objectives_for_activity_ids(activity_ids)
-      end
-
-    {:ok, objectives}
+    if MapSet.size(activity_ids) == 0 do
+      {:ok, [], []}
+    else
+      objectives_with_children = objectives_with_effective_children(section.id, opts)
+      objectives = included_objectives_for_activity_ids(objectives_with_children, activity_ids)
+      {:ok, objectives, objectives_with_children}
+    end
   end
 
   defp learning_objectives_elements(%{"model" => model}) when is_list(model) do
@@ -129,21 +150,86 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
     end)
   end
 
-  defp maybe_proficiency(_section, [], _user, _summary?, _opts), do: %{}
-  defp maybe_proficiency(_section, _objective_ids, _user, false, _opts), do: %{}
-  defp maybe_proficiency(_section, _objective_ids, nil, true, _opts), do: %{}
+  defp maybe_proficiency(_section, [], _objectives_with_children, _user, _summary?, _opts),
+    do: %{}
 
-  defp maybe_proficiency(%Section{id: section_id}, objective_ids, %User{id: user_id}, true, opts) do
-    proficiency_fun =
-      Keyword.get(opts, :proficiency_fun, &Metrics.proficiency_per_student_for_objective/3)
+  defp maybe_proficiency(
+         _section,
+         _objective_ids,
+         _objectives_with_children,
+         _user,
+         false,
+         _opts
+       ),
+       do: %{}
 
-    proficiency_fun.(section_id, objective_ids, student_id: user_id)
-    |> Enum.into(%{}, fn {objective_id, proficiency_by_user_id} ->
-      {objective_id, Map.get(proficiency_by_user_id, user_id)}
+  defp maybe_proficiency(_section, _objective_ids, _objectives_with_children, nil, true, _opts),
+    do: %{}
+
+  defp maybe_proficiency(
+         %Section{id: section_id},
+         objective_ids,
+         objectives_with_children,
+         %User{id: user_id},
+         true,
+         opts
+       ) do
+    # A parent objective's proficiency must combine its Sub-LOs' evidence
+    # (Metrics.evidence_resource_ids/2), which can include a Sub-LO that has no
+    # activity in this page element's own scope (e.g. attempted elsewhere in
+    # the course). `objectives_with_children` is the section's authoritative
+    # objective hierarchy (not page-scoped), so this matches the same rule the
+    # Instructor Dashboard uses (Sections.get_objectives_and_subobjectives/2)
+    # for the same student.
+    children_by_resource_id =
+      Map.new(objectives_with_children, &{&1.resource_id, List.wrap(&1.children)})
+
+    evidence_resource_ids_by_objective_id =
+      Map.new(objective_ids, fn objective_id ->
+        {objective_id,
+         Metrics.evidence_resource_ids(
+           objective_id,
+           Map.get(children_by_resource_id, objective_id, [])
+         )}
+      end)
+
+    all_evidence_resource_ids =
+      evidence_resource_ids_by_objective_id
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.uniq()
+
+    raw_proficiency_fun =
+      Keyword.get(
+        opts,
+        :raw_proficiency_fun,
+        &Metrics.raw_proficiency_per_student_for_objective/3
+      )
+
+    raw_proficiency_by_resource_id =
+      raw_proficiency_fun.(section_id, all_evidence_resource_ids, student_id: user_id)
+
+    Map.new(objective_ids, fn objective_id ->
+      resource_ids = Map.fetch!(evidence_resource_ids_by_objective_id, objective_id)
+
+      {objective_id,
+       Metrics.proficiency_bucket_for_student(
+         resource_ids,
+         raw_proficiency_by_resource_id,
+         user_id
+       )}
     end)
   end
 
-  defp maybe_proficiency(_section, _objective_ids, _non_delivery_user, true, _opts), do: %{}
+  defp maybe_proficiency(
+         _section,
+         _objective_ids,
+         _objectives_with_children,
+         _non_delivery_user,
+         true,
+         _opts
+       ),
+       do: %{}
 
   defp schedule(section_id, opts) do
     Keyword.get_lazy(opts, :schedule, fn ->

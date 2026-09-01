@@ -59,8 +59,14 @@ internals.
 - Audit and update every runtime call site that rolls up (or should roll up) Sub-LO proficiency
   into a parent LO — both authoring-facing and delivery-facing — so they all consume the shared
   function instead of duplicating or omitting the rollup.
-- Preserve the existing double-counting rule: an activity tagged to both a parent LO and one of
-  its Sub-LOs counts once, at the Sub-LO.
+- Always combine a parent LO's own directly-tagged evidence with its Sub-LOs' evidence in the
+  weighted average whenever the parent has evidence of its own — never excluding it because the
+  parent has Sub-LOs, and never treating it as a fallback used only when Sub-LOs lack evidence.
+  This supersedes the original Jira ticket's own AC (an activity tagged to both a parent LO and
+  one of its Sub-LOs must count only once, at the Sub-LO); Darren Siegel confirmed on Slack
+  (2026-09-01) that always combining ("Option B") is "the simplest thing that we can (and should)
+  do," accepting the resulting double-counting risk when an activity is tagged to both levels. See
+  `parent_evidence_aggregation_options.md` for the alternatives considered and their trade-offs.
 - Preserve incomplete-coverage semantics: a Sub-LO with insufficient evidence is represented in
   the aggregation rather than silently excluded, so the parent reflects incomplete coverage
   instead of behaving as though only the attempted Sub-LOs exist.
@@ -188,6 +194,18 @@ No feature flags present in this work item
 
 ## 13. Risks & Mitigations
 
+- Risk: an activity tagged to both a parent LO and one of its Sub-LOs is double-counted (its
+  evidence contributes once via the parent's own row and again via the Sub-LO's row), since the
+  parent's own evidence and its Sub-LOs' evidence are always combined (Option B). Mitigation:
+  **none — this is an accepted risk, not mitigated by this work item.** Darren Siegel confirmed on
+  Slack (2026-09-01) that always combining is "the simplest thing that we can (and should) do,"
+  explicitly choosing this over three alternatives that would avoid or reduce the double-counting
+  (see `parent_evidence_aggregation_options.md`) because those alternatives either require
+  materially more engineering effort (querying raw attempt data instead of the pre-aggregated
+  `ResourceSummary` rows this work item's other call sites rely on) or their own worse trade-offs
+  (silently discarding a parent's real evidence in other scenarios). How common double-tagging
+  actually is in existing OLI/Torus courses remains unknown; if it turns out to be prevalent, this
+  risk may need to be revisited in a follow-up work item.
 - Risk: mismatching `count` semantics between the naive and a future LKT-AOA caller could silently
   skew the weighted average. Mitigation: the function's documentation states the contract
   explicitly and assigns responsibility to the caller; naive callers are updated in this work item
