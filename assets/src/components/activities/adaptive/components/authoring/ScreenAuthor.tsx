@@ -37,7 +37,6 @@ interface ScreenAuthorProps {
   responsiveLayout?: boolean;
   allowTriggers?: boolean;
   partComponentTypes?: readonly PartComponentRegistration[];
-  initialSelectedPartId?: string;
 }
 
 const screenSchema: JSONSchema7 = {
@@ -138,7 +137,6 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
   responsiveLayout,
   allowTriggers = false,
   partComponentTypes = [],
-  initialSelectedPartId = '',
 }) => {
   const propertyEditorInstanceId = useRef(
     `screen_author_${Math.random().toString(36).slice(2, 10)}`,
@@ -202,18 +200,6 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
     setScreenWidth(screen.custom.width);
     setScreenPalette(convertPalette(screen.custom.palette));
   }, [screen]);
-
-  useEffect(() => {
-    if (!initialSelectedPartId) {
-      return;
-    }
-    const partExists = (screen.partsLayout || []).some(
-      (part: AnyPartComponent) => part.id === initialSelectedPartId,
-    );
-    if (partExists) {
-      setSelectedPartId(initialSelectedPartId);
-    }
-  }, [initialSelectedPartId, screen]);
 
   const [currentPropertySchema, setCurrentPropertySchema] = useState<JSONSchema7>(screenSchema);
   const [currentPropertyUiSchema, setCurrentPropertyUiSchema] = useState<any>(screenUiSchema);

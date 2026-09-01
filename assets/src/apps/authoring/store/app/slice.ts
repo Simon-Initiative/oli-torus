@@ -80,7 +80,6 @@ export interface AppState {
   topLeftPanel: boolean;
   bottomLeftPanel: boolean;
   sequenceEditorExpanded: boolean;
-  configureRequest: { partId: string; nestedPartId?: string } | null;
 }
 
 const initialState: AppState = {
@@ -111,7 +110,6 @@ const initialState: AppState = {
   topLeftPanel: true,
   bottomLeftPanel: true,
   sequenceEditorExpanded: false,
-  configureRequest: null,
 };
 
 export interface AppConfig {
@@ -228,12 +226,6 @@ const slice: Slice<AppState> = createSlice({
     setShowScoringOverview(state, action: PayloadAction<{ show: boolean }>) {
       state.showScoringOverview = action.payload.show;
     },
-    setConfigureRequest(
-      state,
-      action: PayloadAction<{ partId: string; nestedPartId?: string } | null>,
-    ) {
-      state.configureRequest = action.payload;
-    },
   },
   extraReducers: (builder) => {
     builder.addCase(acquireEditingLock.fulfilled, (state) => {
@@ -281,7 +273,6 @@ export const {
   setShowScoringOverview,
   changeEditMode,
   setLeftPanelState,
-  setConfigureRequest,
 } = slice.actions;
 
 export const selectState = (state: AuthoringRootState): AppState => state[AppSlice] as AppState;
@@ -406,10 +397,5 @@ export const selectAppMode = createSelector(
 );
 
 export const selectEditMode = createSelector(selectState, (state: AppState) => state.editingMode);
-
-export const selectConfigureRequest = createSelector(
-  selectState,
-  (state: AppState) => state.configureRequest,
-);
 
 export default slice.reducer;

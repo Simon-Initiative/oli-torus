@@ -14,7 +14,7 @@ import {
 } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { IAdaptiveRule, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
-import { setConfigureRequest, setCurrentRule, setRightPanelActiveTab } from '../../store/app/slice';
+import { setCurrentRule, setRightPanelActiveTab } from '../../store/app/slice';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 import { DiagnosticsOverlayProvider } from './DiagnosticsOverlayContext';
@@ -100,14 +100,6 @@ const ActivityPartError: React.FC<{
           const selectionId = item.parentPopupId || item.id;
           dispatch(setCurrentSelection({ selection: selectionId }));
           dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
-          if (item.parentPopupId) {
-            dispatch(
-              setConfigureRequest({
-                partId: item.parentPopupId,
-                nestedPartId: item.id,
-              }),
-            );
-          }
           break;
         }
         case DiagnosticTypes.INVALID_TARGET_INIT:

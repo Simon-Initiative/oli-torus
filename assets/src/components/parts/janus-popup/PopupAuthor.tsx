@@ -1,9 +1,7 @@
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { useSelector } from 'react-redux';
 import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import { selectConfigureRequest } from 'apps/authoring/store/app/slice';
 import {
   NotificationType,
   subscribeToNotification,
@@ -21,19 +19,11 @@ interface DesignerProps {
   portal: HTMLElement | null;
   responsiveLayout: boolean;
   partComponentTypes?: ContextProps['partComponentTypes'];
-  initialSelectedPartId?: string;
 }
 
 // eslint-disable-next-line react/display-name
 const Designer: React.FC<DesignerProps> = React.memo(
-  ({
-    screenModel,
-    onChange,
-    portal,
-    responsiveLayout,
-    partComponentTypes,
-    initialSelectedPartId,
-  }) => {
+  ({ screenModel, onChange, portal, responsiveLayout, partComponentTypes }) => {
     return (
       portal &&
       ReactDOM.createPortal(
@@ -42,7 +32,6 @@ const Designer: React.FC<DesignerProps> = React.memo(
           onChange={onChange}
           responsiveLayout={responsiveLayout}
           partComponentTypes={partComponentTypes || []}
-          initialSelectedPartId={initialSelectedPartId}
         />,
         portal,
       )
@@ -52,9 +41,6 @@ const Designer: React.FC<DesignerProps> = React.memo(
 
 const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const { id, model, configuremode, onConfigure, onSaveConfigure } = props;
-  const configureRequest = useSelector(selectConfigureRequest);
-  const initialSelectedPartId =
-    configureRequest?.partId === id ? configureRequest.nestedPartId : undefined;
 
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
   useEffect(() => {
@@ -337,7 +323,6 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
           portal={portalEl}
           responsiveLayout={responsiveLayout}
           partComponentTypes={context.partComponentTypes}
-          initialSelectedPartId={initialSelectedPartId}
         />
       )}
       <div className="popup-container" style={containerStyle}>
