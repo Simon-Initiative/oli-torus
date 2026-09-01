@@ -247,16 +247,14 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
   defp summary_objective_content(card_header, next_steps_content, index) do
     [
+      card_header,
       ~s|<details class="learning-objectives-summary__next-steps">|,
       ~s|<summary class="learning-objectives-summary__next-steps-summary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus">|,
-      ~s|<span class="learning-objectives-summary__next-steps-header">|,
-      card_header,
       ~s|<span class="learning-objectives-summary__next-steps-trigger text-Text-text-button">|,
       ~s|<span class="learning-objectives-summary__next-steps-label">|,
       ~s|<span class="learning-objectives-summary__next-steps-show">Show next steps</span>|,
       ~s|<span class="learning-objectives-summary__next-steps-hide">Hide next steps</span>|,
       ~s|<span class="sr-only"> for LO #{index}</span>|,
-      "</span>",
       "</span>",
       "</span>",
       "</summary>",
