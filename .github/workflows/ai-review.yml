@@ -159,16 +159,18 @@ jobs:
           echo "Running reviewer role: ${{ matrix.role }}"
           echo "Filter outputs: elixir=${{ needs.changes.outputs.elixir }}, gleam=${{ needs.changes.outputs.gleam }}, ts=${{ needs.changes.outputs.typescript }}, ui=${{ needs.changes.outputs.ui }}, perf=${{ needs.changes.outputs.performance }}, sec=${{ needs.changes.outputs.security }}, req=${{ needs.changes.outputs.requirements }}"
 
-      - name: Generate PR diff (exactly what GitHub shows)
+      - name: Generate full PR diff
         if: ${{ github.event_name == 'pull_request' }}
         shell: bash
         env:
-          PATCH_URL: ${{ github.event.pull_request.patch_url }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          curl -sSL --fail-with-body "${PATCH_URL}" -o diff.patch
+          MB=$(git merge-base "${BASE_SHA}" "${HEAD_SHA}")
+          git diff --unified=0 "${MB}" "${HEAD_SHA}" > diff.patch
           if ! head -n 1 diff.patch | grep -qE '^(From [0-9a-f]{7,40} |diff --git )'; then
-            echo "::error::downloaded content does not look like a git patch; refusing to review it"
+            echo "::error::generated content does not look like a git patch; refusing to review it"
             exit 1
           fi
 
