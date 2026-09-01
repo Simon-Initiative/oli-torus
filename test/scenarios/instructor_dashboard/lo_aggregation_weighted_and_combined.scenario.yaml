@@ -1,0 +1,316 @@
+# Scenario: Seeds real course/section/attempt data for two Learning
+# Objective aggregation cases. The `assert: proficiency` checks
+# below are a pipeline sanity check; the actual coverage this fixture exists
+# for is in the LiveView/controller tests that load it directly (see
+# test/oli_web/live/delivery/instructor_dashboard/insights/lo_aggregation_ui_test.exs),
+# which log in as the seeded instructor/student and check the real
+# Instructor Dashboard Learning Objectives tab, the per-student instructor
+# view, and the CSV export -- not just the Metrics functions in isolation.
+#
+# Case 1, "Weighted Parent": no evidence of its own, only its two Sub-LOs.
+# - Weighted Child A: 4 correct first attempts -> proficiency 1.0, weight 4.
+# - Weighted Child B: 1 incorrect first attempt -> proficiency 0.2, weight 1.
+# - Weighted average = (1.0*4 + 0.2*1) / 5 = 4.2/5 = 0.84 (High).
+# A naive *unweighted* average of the two Sub-LO proficiencies would give
+# (1.0+0.2)/2 = 0.6 (Medium) -- a different bucket -- so this demonstrates
+# real count-weighted aggregation, not just "some combination happened".
+#
+# Case 2, "Combined Parent": has both its own evidence and a Sub-LO's
+# evidence.
+# - Combined Parent's own evidence: 3 correct first attempts -> proficiency
+#   1.0, weight 3.
+# - Combined Child: 1 incorrect first attempt -> proficiency 0.2, weight 1.
+# - Weighted average = (1.0*3 + 0.2*1) / 4 = 3.2/4 = 0.8 (Medium).
+# If the parent's own evidence were dropped whenever a Sub-LO has evidence
+# (a design once considered and rejected), only the Sub-LO's single attempt
+# would remain, which is below the 3-attempt minimum -> "Not enough data".
+# That bucket flip is what the LiveView tests assert against.
+
+- project:
+    name: "lo_aggregation_ui_project"
+    title: "LO Aggregation UI Project"
+    objectives:
+      - Weighted Parent:
+        - Weighted Child A
+        - Weighted Child B
+      - Combined Parent:
+        - Combined Child
+    root:
+      children:
+        - page: "Weighted Practice A"
+        - page: "Weighted Practice B"
+        - page: "Combined Direct Practice"
+        - page: "Combined Child Practice"
+
+- edit_page:
+    project: "lo_aggregation_ui_project"
+    page: "Weighted Practice A"
+    content: |
+      title: "Weighted Practice A"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "weighted_a_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Weighted Child A"]
+            stem_md: "Weighted Child A, question 1"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+        - type: activity
+          virtual_id: "weighted_a_q2"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Weighted Child A"]
+            stem_md: "Weighted Child A, question 2"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+        - type: activity
+          virtual_id: "weighted_a_q3"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Weighted Child A"]
+            stem_md: "Weighted Child A, question 3"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+        - type: activity
+          virtual_id: "weighted_a_q4"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Weighted Child A"]
+            stem_md: "Weighted Child A, question 4"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "lo_aggregation_ui_project"
+    page: "Weighted Practice B"
+    content: |
+      title: "Weighted Practice B"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "weighted_b_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Weighted Child B"]
+            stem_md: "Weighted Child B, question 1"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "lo_aggregation_ui_project"
+    page: "Combined Direct Practice"
+    content: |
+      title: "Combined Direct Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "combined_direct_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Combined Parent"]
+            stem_md: "Combined Parent, question 1"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+        - type: activity
+          virtual_id: "combined_direct_q2"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Combined Parent"]
+            stem_md: "Combined Parent, question 2"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+        - type: activity
+          virtual_id: "combined_direct_q3"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Combined Parent"]
+            stem_md: "Combined Parent, question 3"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "lo_aggregation_ui_project"
+    page: "Combined Child Practice"
+    content: |
+      title: "Combined Child Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "combined_child_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Combined Child"]
+            stem_md: "Combined Child, question 1"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- publish:
+    to: "lo_aggregation_ui_project"
+    description: "Initial publication"
+
+- section:
+    name: "lo_aggregation_ui_section"
+    title: "LO Aggregation UI Section"
+    from: "lo_aggregation_ui_project"
+
+- user:
+    name: "lo_ui_instructor"
+    type: "instructor"
+    email: "lo_ui_instructor@example.edu"
+    given_name: "Ivy"
+    family_name: "Instructor"
+
+- user:
+    name: "lo_ui_student"
+    type: "student"
+    email: "lo_ui_student@example.edu"
+    given_name: "Sam"
+    family_name: "Student"
+
+- enroll:
+    user: "lo_ui_instructor"
+    section: "lo_aggregation_ui_section"
+    role: instructor
+
+- enroll:
+    user: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    role: student
+
+- view_practice_page:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Weighted Practice A"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Weighted Practice A"
+    activity_virtual_id: "weighted_a_q1"
+    response: "b"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Weighted Practice A"
+    activity_virtual_id: "weighted_a_q2"
+    response: "b"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Weighted Practice A"
+    activity_virtual_id: "weighted_a_q3"
+    response: "b"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Weighted Practice A"
+    activity_virtual_id: "weighted_a_q4"
+    response: "b"
+
+- view_practice_page:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Weighted Practice B"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Weighted Practice B"
+    activity_virtual_id: "weighted_b_q1"
+    response: "a"
+
+- view_practice_page:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Combined Direct Practice"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Combined Direct Practice"
+    activity_virtual_id: "combined_direct_q1"
+    response: "b"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Combined Direct Practice"
+    activity_virtual_id: "combined_direct_q2"
+    response: "b"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Combined Direct Practice"
+    activity_virtual_id: "combined_direct_q3"
+    response: "b"
+
+- view_practice_page:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Combined Child Practice"
+
+- answer_question:
+    student: "lo_ui_student"
+    section: "lo_aggregation_ui_section"
+    page: "Combined Child Practice"
+    activity_virtual_id: "combined_child_q1"
+    response: "a"
+
+- dashboard_analytics_ready:
+    section: "lo_aggregation_ui_section"
+
+- assert:
+    proficiency:
+      section: "lo_aggregation_ui_section"
+      objective: "Weighted Parent"
+      student: "lo_ui_student"
+      bucket: "High"
+
+- assert:
+    proficiency:
+      section: "lo_aggregation_ui_section"
+      objective: "Combined Parent"
+      student: "lo_ui_student"
+      bucket: "Medium"

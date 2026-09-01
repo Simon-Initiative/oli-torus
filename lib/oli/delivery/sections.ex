@@ -5901,9 +5901,11 @@ defmodule Oli.Delivery.Sections do
   }
 
   For objectives that are subobjectives, the objective is shown as the `subobjective` like the
-  above example, with the aggregated proficiency for its parent shown.  For objectives that are
-  top level objectives, they appear with their proficiency for only those activities that
-  directly attached to them.
+  above example, with the aggregated proficiency for its parent shown. For objectives that are
+  top level objectives, their proficiency is the weighted average of their own directly-attached
+  evidence (when present) combined with all their Sub-LOs' evidence (see
+  `Metrics.evidence_resource_ids/2`) — a leaf objective with no Sub-LOs reduces to just its own
+  directly-attached evidence.
 
   ## Options
 

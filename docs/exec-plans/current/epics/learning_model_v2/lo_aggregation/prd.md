@@ -145,13 +145,14 @@ Requirements are found in requirements.yml
   attribution; no schema changes are introduced by this work item.
 - `Oli.Analytics.Summary.ResourceSummary` remains the source of naive-model evidence counts
   (`num_first_attempts`, `num_first_attempts_correct`).
-- New shared function (exact module/function name to be decided during planning/implementation)
-  consumed by:
-  - `Oli.Delivery.Metrics.aggregate_raw_proficiency/1` /
-    `proficiency_for_student_per_learning_objective/3` (`lib/oli/delivery/metrics.ex`)
+- Shared functions, implemented as `Metrics.aggregate_weighted_proficiency/1`,
+  `Metrics.evidence_resource_ids/2`, and `Metrics.proficiency_bucket_for_student/3`
+  (`lib/oli/delivery/metrics.ex`), consumed identically by all three call sites:
+  - `Oli.Delivery.Metrics.proficiency_for_student_per_learning_objective/3`
+    (`lib/oli/delivery/metrics.ex`)
   - `Oli.Delivery.Sections.get_objectives_and_subobjectives/2` (`lib/oli/delivery/sections.ex`),
-    via `Metrics.proficiency_per_student_for_objective/3`
-  - `Oli.Delivery.LearningObjectives.PageElement.maybe_proficiency/5`
+    via `Metrics.raw_proficiency_per_student_for_objective/3`
+  - `Oli.Delivery.LearningObjectives.PageElement.maybe_proficiency/6`
     (`lib/oli/delivery/learning_objectives/page_element.ex`)
 - Depends on (does not implement): `Oli.LearningModel.ModelVersion` and the
   `learning_model_version` field on `Oli.Authoring.Course.Project` /
@@ -257,15 +258,15 @@ No feature flags present in this work item
 - Automated validation:
   - Run Harness requirements capture, requirements structure validation, and PRD validation.
   - New ExUnit unit tests for the shared aggregation function covering: multiple Sub-LOs with
-    different evidence counts, a parent with both directly-tagged evidence and Sub-LOs, a Sub-LO
-    with zero/insufficient evidence (coverage not silently dropped), and an activity tagged to
-    both parent and Sub-LO (counted once).
+    different evidence counts, a parent with both directly-tagged evidence and Sub-LOs (always
+    combined, per the confirmed "Option B" decision — see `parent_evidence_aggregation_options.md`;
+    an activity tagged to both a parent and a Sub-LO is deliberately NOT deduplicated), and a
+    Sub-LO with zero/insufficient evidence (coverage not silently dropped).
   - Updated/added ExUnit coverage in `test/oli/delivery/sections_test.exs` for
     `get_objectives_and_subobjectives/2`, replacing the assertion at lines 3450-3498 that
     currently documents the un-aggregated behavior.
-  - Updated/added coverage for `Metrics.aggregate_raw_proficiency/1` and
-    `proficiency_for_student_per_learning_objective/3` if their signature or behavior changes
-    during extraction to the shared function.
+  - Updated/added coverage for `Metrics.proficiency_for_student_per_learning_objective/3` if its
+    signature or behavior changes during extraction to the shared function.
   - `Phoenix.LiveViewTest` coverage for `instructor_dashboard_live.ex`, `student_dashboard_live.ex`,
     `prologue_live.ex`, `lesson_live.ex`, and `review_live.ex` where the rendered proficiency value
     is user-visible and expected to change for fixtures with Sub-LOs.

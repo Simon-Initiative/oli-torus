@@ -1,0 +1,146 @@
+# Scenario: Parent Learning Objective combines its own evidence with a
+# Sub-LO's evidence.
+#
+# Unlike the unit tests for this rule (test/oli/analytics/summary/metrics_v2_test.exs),
+# this scenario exercises the real attempt pipeline end to end: a student
+# answers real activities through Oli.Delivery.Attempts, real analytics
+# summary rows get generated, and only then is proficiency aggregated and
+# read back — no ResourceSummary row is inserted directly.
+#
+# "Combined Objective" has its own directly-tagged activity (1 correct
+# first attempt -> proficiency 1.0, weight 1) and a Sub-LO "Combined
+# Sub Objective" with two directly-tagged activities (1 correct, 1
+# incorrect first attempt -> proficiency 0.6, weight 2).
+#
+# Weighted average = (1.0*1 + 0.6*2) / (1+2) = 2.2/3 = 0.73 (Medium), from a
+# combined total of 3 first attempts.
+# If the parent's own evidence were dropped whenever a Sub-LO has evidence
+# (a design once considered and rejected), only the Sub-LO's 2 attempts
+# would remain, which is below the 3-attempt minimum -> "Not enough data"
+# instead of "Medium". That bucket flip is what this assertion actually
+# pins down.
+
+- project:
+    name: "combines_own_and_subobjective_evidence_project"
+    title: "Combines Own And Subobjective Evidence"
+    objectives:
+      - Combined Objective:
+        - Combined Sub Objective
+    root:
+      children:
+        - page: "Parent Direct Practice"
+        - page: "Sub Objective Practice"
+
+- edit_page:
+    project: "combines_own_and_subobjective_evidence_project"
+    page: "Parent Direct Practice"
+    content: |
+      title: "Parent Direct Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "parent_direct_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Combined Objective"]
+            stem_md: "Directly tagged to the parent objective"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "combines_own_and_subobjective_evidence_project"
+    page: "Sub Objective Practice"
+    content: |
+      title: "Sub Objective Practice"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "sub_q1"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Combined Sub Objective"]
+            stem_md: "Tagged to the Sub-LO, question 1"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+        - type: activity
+          virtual_id: "sub_q2"
+          activity:
+            type: "oli_multiple_choice"
+            objectives: ["Combined Sub Objective"]
+            stem_md: "Tagged to the Sub-LO, question 2"
+            choices:
+              - id: "a"
+                body_md: "Wrong"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- publish:
+    to: "combines_own_and_subobjective_evidence_project"
+    description: "Initial publication"
+
+- section:
+    name: "combines_own_and_subobjective_evidence_section"
+    title: "Combines Own And Subobjective Evidence Section"
+    from: "combines_own_and_subobjective_evidence_project"
+
+- user:
+    name: "learner"
+    type: "student"
+    email: "combines_own_and_subobjective_evidence_learner@example.edu"
+    given_name: "Lee"
+    family_name: "Learner"
+
+- enroll:
+    user: "learner"
+    section: "combines_own_and_subobjective_evidence_section"
+    role: student
+
+- view_practice_page:
+    student: "learner"
+    section: "combines_own_and_subobjective_evidence_section"
+    page: "Parent Direct Practice"
+
+- answer_question:
+    student: "learner"
+    section: "combines_own_and_subobjective_evidence_section"
+    page: "Parent Direct Practice"
+    activity_virtual_id: "parent_direct_q1"
+    response: "b"
+
+- view_practice_page:
+    student: "learner"
+    section: "combines_own_and_subobjective_evidence_section"
+    page: "Sub Objective Practice"
+
+- answer_question:
+    student: "learner"
+    section: "combines_own_and_subobjective_evidence_section"
+    page: "Sub Objective Practice"
+    activity_virtual_id: "sub_q1"
+    response: "b"
+
+- answer_question:
+    student: "learner"
+    section: "combines_own_and_subobjective_evidence_section"
+    page: "Sub Objective Practice"
+    activity_virtual_id: "sub_q2"
+    response: "a"
+
+- dashboard_analytics_ready:
+    section: "combines_own_and_subobjective_evidence_section"
+
+- assert:
+    proficiency:
+      section: "combines_own_and_subobjective_evidence_section"
+      objective: "Combined Objective"
+      student: "learner"
+      bucket: "Medium"

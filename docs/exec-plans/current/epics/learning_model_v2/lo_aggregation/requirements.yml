@@ -73,9 +73,21 @@ requirements:
       - "test/oli/delivery/sections_test.exs ('filters by student_id when
         provided')"
       - "test/oli/delivery/learning_objectives/page_element_test.exs
-        ('combines a parent's Sub-LO evidence, including a Sub-LO outside
+        ('combines a parent's own evidence with a Sub-LO's evidence, including a Sub-LO outside
         this page element's own scope, consistent with the Instructor
         Dashboard')"
+      - "test/scenarios/proficiency/parent_combines_own_and_subobjective_evidence.scenario.yaml
+        and test/scenarios/instructor_dashboard/lo_aggregation_weighted_and_combined.scenario.yaml
+        — exercise the real attempt-submission pipeline (Oli.Scenarios'
+        answer_question/finalize_attempt directives, not factory-inserted
+        ResourceSummary rows) so this behavior is verified end to end, not
+        just at the Metrics function boundary."
+      - "test/scenarios/proficiency/parent_double_counts_activity_tagged_to_both_parent_and_subobjective.scenario.yaml
+        — the literal double-counting case named in this AC's title: one
+        real activity tagged to both the parent and a Sub-LO is answered
+        once, and the parent's aggregation counts it twice (once via its
+        own row, again via the Sub-LO's row), which is what pushes a
+        2-real-attempt section past the 3-attempt 'enough data' minimum."
 - id: FR-004
   title: Preserve incomplete-coverage semantics so a Sub-LO with insufficient evidence
     is represented in the aggregation rather than silently excluded from it.
@@ -92,6 +104,10 @@ requirements:
     proofs:
       - lib/oli/delivery/metrics.ex (Metrics.aggregate_weighted_proficiency/1)
       - test/oli/delivery/metrics/aggregate_weighted_proficiency_test.exs
+      - "test/scenarios/proficiency/parent_reflects_incomplete_subobjective_coverage.scenario.yaml
+        — a Sub-LO with a single (incorrect) real attempt still shifts the
+        parent's bucket from what it would be if that Sub-LO's thin evidence
+        were ignored (High) to the correct combined value (Medium)."
 - id: FR-005
   title: Audit and update every runtime call site that rolls up (or should roll up)
     Sub-LO proficiency into a parent LO, across both authoring and delivery surfaces,
@@ -116,6 +132,14 @@ requirements:
       - test/oli/delivery/sections_test.exs ("filters by student_id when
         provided", "reflects incomplete coverage instead of ignoring an
         under-evidenced Sub-LO")
+      - "test/oli_web/live/delivery/instructor_dashboard/insights/lo_aggregation_ui_test.exs
+        — logs in as a real instructor and checks the actual rendered
+        Instructor Dashboard Learning Objectives tab, the per-student
+        instructor view, and the Learning Objectives CSV export, seeded via
+        Oli.Scenarios (real attempt pipeline). Closes a coverage gap: no
+        prior automated test exercised
+        Sections.get_objectives_and_subobjectives/2 through these three UI
+        surfaces rather than by calling the function directly."
   - id: AC-007
     title: Given the same section and parent LO, when a student views their proficiency
       on the prologue, lesson, or review pages, or when the "learning_objectives"
@@ -132,7 +156,7 @@ requirements:
         the current page still contributes to its parent's aggregated
         proficiency."
       - "test/oli/delivery/learning_objectives/page_element_test.exs
-        ('combines a parent's Sub-LO evidence, including a Sub-LO outside
+        ('combines a parent's own evidence with a Sub-LO's evidence, including a Sub-LO outside
         this page element's own scope, consistent with the Instructor
         Dashboard') — directly cross-checks
         PageElement.prepare_render_payload/5's result against
@@ -140,6 +164,10 @@ requirements:
         student/section and asserts they match."
       - test/oli/analytics/summary/metrics_v2_test.exs (student
         prologue/lesson/review side, Phase 2)
+      - "test/oli_web/live/delivery/instructor_dashboard/insights/lo_aggregation_ui_test.exs
+        — the same seeded student/section is checked against both the
+        Instructor Dashboard tab and the per-student instructor view and
+        asserts the same bucket in both."
   - id: AC-008
     title: Given a leaf Learning Objective with no Sub-LOs, when its proficiency is
       read from any of the updated call sites, then its value is unchanged from current
