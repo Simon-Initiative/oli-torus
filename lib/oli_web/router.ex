@@ -2003,7 +2003,6 @@ defmodule OliWeb.Router do
       live("/audit_log", Admin.AuditLogLive)
       live("/ai_recommendation_feedback", Admin.RecommendationFeedbackLive)
       get("/activity_review", ActivityReviewController, :index)
-      live("/part_attempts", Admin.PartAttemptsView)
 
       live("/restore_progress", Admin.RestoreUserProgress)
 

@@ -1,0 +1,401 @@
+work_item: core_impl
+requirements:
+- title: Persist compact per-learner/per-LO operational state
+  status: verified
+  description: Store the complete constant-work proficiency and confidence state for
+    each Section, learner, and learning objective without persisting attempt history
+    in the state row.
+  id: FR-001
+- title: Apply the LKT-AOA proficiency transition
+  status: verified
+  description: Calculate pre-response probability, running all-opportunities average,
+    and decayed recency state using the documented binary outcome and typed coefficients.
+  id: FR-002
+- title: Track confidence from distinct activity-part evidence
+  status: verified
+  description: Persist normalized prior-part membership and derive confidence breadth
+    without incrementing repeated encounters.
+  id: FR-003
+- title: Process single and bulk evaluated attempts with bounded database work
+  status: verified
+  description: Support multi-LO parts and large graded pages or exams through one
+    collection-oriented operation whose database round trips do not grow with contribution
+    count.
+  id: FR-004
+- title: Enforce exact idempotency without updating PartAttempts
+  status: verified
+  description: Claim each evaluated PartAttempt once in a narrow append-only projection
+    and make successful retries no-ops.
+  id: FR-005
+- title: Guarantee atomic and concurrency-safe state mutation
+  status: verified
+  description: Commit claims, evidence, and learner state together while preventing
+    lost updates, double increments, and avoidable deadlocks.
+  id: FR-006
+- title: Integrate model application with Snapshot processing and semantic dispatch
+  status: verified
+  description: Run LKT-AOA only for Sections pinned to lkt_aoa while preserving naive
+    behavior, summary analytics, and xAPI emission.
+  id: FR-007
+- title: Consume typed publication-pinned parameters and startup configuration
+  status: verified
+  description: Use exact activity and published LO Revisions, explicit cold-start
+    coefficients, and one typed global configuration per batch.
+  id: FR-008
+- title: Replay each batch deterministically
+  status: verified
+  description: Apply contributions sequentially within each learner/LO state by evaluation
+    time and immutable GUID tie-breaker without imposing cross-job chronology.
+  id: FR-009
+- title: Provide bounded operational observability
+  status: verified
+  description: Measure batch performance, claims, evidence, state impact, failures,
+    and query scaling without emitting learner-level or attempt-level identifiers.
+  id: FR-010
+acceptance_criteria:
+- requirement_id: FR-001
+  title: learning_state has one unique row per section_id, user_id, and learning_objective_id
+    with attempt_count, success_score, failure_score, recency_logit, aoa, unique_activity_part_count,
+    confidence, and standard timestamps.
+  status: verified
+  verification_method: automated
+  proofs:
+  - priv/repo/migrations/20260824120000_create_learning_model_operational_tables.exs
+  - lib/oli/learning_model/learning_state.ex
+  - test/oli/learning_model/operational_storage_test.exs
+  id: AC-001
+- requirement_id: FR-001
+  title: New learner-state rows use the documented neutral zero defaults and identify
+    learning objectives by resource ID rather than Revision ID.
+  status: verified
+  verification_method: automated
+  proofs:
+  - priv/repo/migrations/20260824120000_create_learning_model_operational_tables.exs
+  - lib/oli/learning_model/learning_state.ex
+  - test/oli/learning_model/operational_storage_test.exs
+  id: AC-002
+- requirement_id: FR-001
+  title: Learner state does not duplicate attempt history, model coefficients, a singular
+    parameter version, or latest_p_correct without a separately approved consumer.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - docs/exec-plans/current/epics/learning_model_v2/core_impl/fdd.md
+  - lib/oli/learning_model/learning_state.ex
+  - test/oli/learning_model/operational_storage_test.exs
+  id: AC-003
+- requirement_id: FR-002
+  title: Each contribution computes probability from beta_lo, beta_part, gamma times
+    log(attempt_count plus one), and rho times the pre-response recency_logit.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/transition.ex
+  - test/oli/learning_model/lkt_aoa/transition_test.exs
+  id: AC-004
+- requirement_id: FR-002
+  title: AOA incorporates the pre-response probability through the constant-work running-average
+    formula before the observed outcome changes recency state.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/transition.ex
+  - test/oli/learning_model/lkt_aoa/transition_test.exs
+  id: AC-005
+- requirement_id: FR-002
+  title: Success and failure scores decay by recency_decay, add the binary outcome,
+    and produce the documented smoothed recency logit for the next opportunity.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/transition.ex
+  - test/oli/learning_model/lkt_aoa/transition_test.exs
+  id: AC-006
+- requirement_id: FR-002
+  title: A contribution is correct only when score equals out_of; partial credit is
+    treated as incorrect and xAPI success is not used as the outcome source.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/contribution.ex
+  - test/oli/learning_model/lkt_aoa/contribution_test.exs
+  id: AC-007
+- requirement_id: FR-003
+  title: Prior activity-part evidence is unique by section_id, user_id, activity_id,
+    and string part_id and is not duplicated once per targeted LO.
+  status: verified
+  verification_method: automated
+  proofs:
+  - priv/repo/migrations/20260824120000_create_learning_model_operational_tables.exs
+  - lib/oli/learning_model/prior_activity_part_evidence.ex
+  - test/oli/learning_model/operational_storage_test.exs
+  id: AC-008
+- requirement_id: FR-003
+  title: Bulk evidence insertion ignores conflicts, returns only newly inserted parts,
+    and increments each affected learner/LO unique count from those returned rows.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/concurrency_test.exs
+  id: AC-009
+- requirement_id: FR-003
+  title: Confidence equals one minus exp of negative unique_activity_part_count divided
+    by confidence_saturation; repeated parts change proficiency but not confidence
+    breadth.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/transition.ex
+  - lib/oli/learning_model/lkt_aoa/contribution.ex
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/transition_test.exs
+  - test/oli/learning_model/lkt_aoa/contribution_test.exs
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  id: AC-010
+- requirement_id: FR-003
+  title: One newly encountered part targeting several LOs increments confidence breadth
+    once for every targeted learner/LO state.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/contribution.ex
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/contribution_test.exs
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  id: AC-011
+- requirement_id: FR-004
+  title: One collection-oriented public operation supports one part, multi-LO parts,
+    multi-part activities, and graded pages or exams with overlapping LO contributions.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model.ex
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - lib/oli/learning_model/lkt_aoa/contribution.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/contribution_test.exs
+  id: AC-012
+- requirement_id: FR-004
+  title: Database round-trip count is bounded by operation type and remains constant
+    when batch cardinality and activity/LO pair count increase.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/performance_test.exs
+  id: AC-013
+- requirement_id: FR-004
+  title: A representative batch of 500 to 1000 PartAttempt GUIDs uses measured set-based
+    query shapes without a historical-attempt scan or per-LO database loop.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/performance_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/core_impl/phase_5_execution_record.md
+  id: AC-014
+- requirement_id: FR-005
+  title: learning_model_attempt_applications contains exactly part_attempt_id, learning_model_version,
+    and applied_at, uses part_attempt_id as its primary key, and has no surrogate
+    ID or inserted_at/updated_at fields.
+  status: verified
+  verification_method: automated
+  proofs:
+  - priv/repo/migrations/20260824120000_create_learning_model_operational_tables.exs
+  - lib/oli/learning_model/attempt_application.ex
+  - test/oli/learning_model/operational_storage_test.exs
+  id: AC-015
+- requirement_id: FR-005
+  title: A single conflict-tolerant bulk insert claims only evaluated PartAttempts
+    and only returned part_attempt_ids may contribute state or evidence mutations.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/concurrency_test.exs
+  id: AC-016
+- requirement_id: FR-005
+  title: Retrying successfully applied GUIDs or submitting duplicates in one batch
+    produces no additional proficiency, confidence, evidence, or application rows.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - lib/oli/delivery/snapshots/worker.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/concurrency_test.exs
+  - test/oli/delivery/snapshots/worker_test.exs
+  id: AC-017
+- requirement_id: FR-005
+  title: Application claims use the shared semantic model enum and cascade when the source
+    PartAttempt is directly deleted, without leaving an orphan.
+  status: verified
+  verification_method: automated
+  proofs:
+  - priv/repo/migrations/20260824120000_create_learning_model_operational_tables.exs
+  - lib/oli/learning_model/attempt_application.ex
+  - test/oli/learning_model/operational_storage_test.exs
+  id: AC-018
+- requirement_id: FR-006
+  title: Idempotency claims, evidence inserts, and final learner-state writes occur
+    in one transaction and any failure rolls all three concerns back.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/performance_test.exs
+  id: AC-019
+- requirement_id: FR-006
+  title: Affected learner-state rows are initialized or locked in deterministic key
+    order so concurrent jobs cannot lose attempts or double-increment confidence.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/concurrency_test.exs
+  - test/oli/learning_model/lkt_aoa/performance_test.exs
+  id: AC-020
+- requirement_id: FR-006
+  title: Multiple contributions to one learner/LO state in the same transaction are
+    reduced to one final insert or update without per-contribution database writes.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  id: AC-021
+- requirement_id: FR-007
+  title: Snapshot processing dispatches from the loaded Section learning_model_version
+    and invokes the new mutation only for lkt_aoa.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model.ex
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - lib/oli/delivery/snapshots/worker.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/delivery/snapshots/worker_test.exs
+  id: AC-022
+- requirement_id: FR-007
+  title: Naive Sections create no learning_state, prior evidence, or application-claim
+    rows and retain the existing proficiency path.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model.ex
+  - lib/oli/delivery/snapshots/worker.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/delivery/snapshots/worker_test.exs
+  id: AC-023
+- requirement_id: FR-007
+  title: Server/client evaluation, graded-page finalization, auto-submission, and
+    manual grading remain compatible with Snapshot processing, summary analytics,
+    and xAPI emission.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli/delivery/snapshots.ex
+  - lib/oli/delivery/snapshots/worker.ex
+  - lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex
+  - lib/oli/delivery/attempts/activity_lifecycle/apply_client_evaluation.ex
+  - lib/oli/delivery/attempts/page_lifecycle.ex
+  - lib/oli/delivery/attempts/auto_submit/worker.ex
+  - lib/oli_web/live/manual_grading/manual_grading_view.ex
+  - test/oli/delivery/snapshots/worker_test.exs
+  - test/oli/delivery/attempts
+  - test/oli_web/live/manual_grading
+  id: AC-024
+- requirement_id: FR-008
+  title: Activity difficulty is read from the exact typed activity Revision associated
+    with the PartAttempt and LO difficulty from the exact typed LO Revision pinned
+    by the Section publication, never authoring HEAD or raw JSONB.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/contribution.ex
+  - test/oli/learning_model/lkt_aoa/contribution_test.exs
+  id: AC-025
+- requirement_id: FR-008
+  title: Missing LO parameters, missing activity parameters, and missing activity-part
+    entries each contribute a cold-start beta of 0.0 while an explicitly stored 0.0
+    remains valid trained data.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/contribution.ex
+  - test/oli/learning_model/lkt_aoa/contribution_test.exs
+  id: AC-026
+- requirement_id: FR-008
+  title: Oli.LearningModel.Config.fetch! is called once per bulk operation and the
+    same typed gamma, rho, recency_decay, and confidence_saturation values are used
+    for every transition in that batch.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli/learning_model.ex
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - lib/oli/learning_model/lkt_aoa/transition.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/transition_test.exs
+  id: AC-027
+- requirement_id: FR-009
+  title: Contributions for each learner/LO state replay sequentially by date_evaluated
+    ascending and part_attempt_guid ascending as the deterministic tie-breaker.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/transition.ex
+  - test/oli/learning_model/lkt_aoa/transition_test.exs
+  id: AC-028
+- requirement_id: FR-009
+  title: Null date_evaluated makes the batch invalid and rolls back before idempotency
+    claims or partial state changes can commit.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - lib/oli/learning_model/lkt_aoa/transition.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/transition_test.exs
+  id: AC-029
+- requirement_id: FR-009
+  title: The implementation does not scan for earlier unclaimed attempts or add a
+    queue, watermark, delay window, replay, or repair mechanism to enforce ordering
+    across separate Oban jobs.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - docs/exec-plans/current/epics/learning_model_v2/core_impl/informal.md
+  - docs/exec-plans/current/epics/learning_model_v2/core_impl/fdd.md
+  - lib/oli/learning_model/lkt_aoa/transition.ex
+  - test/oli/learning_model/lkt_aoa/application_test.exs
+  - test/oli/learning_model/lkt_aoa/transition_test.exs
+  id: AC-030
+- requirement_id: FR-010
+  title: Telemetry records bounded batch duration, input and claimed attempt counts,
+    contribution and affected-state counts, new evidence count, result, and failure
+    category without learner IDs, attempt GUIDs, responses, or parameter payloads.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/telemetry_test.exs
+  id: AC-031
+- requirement_id: FR-010
+  title: Operational verification demonstrates stable query counts as batches grow
+    and exposes latency, errors, and retries through existing telemetry and AppSignal
+    workflows.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli/learning_model/lkt_aoa/application.ex
+  - test/oli/learning_model/lkt_aoa/performance_test.exs
+  - test/oli/learning_model/lkt_aoa/telemetry_test.exs
+  - docs/exec-plans/current/epics/learning_model_v2/core_impl/phase_5_execution_record.md
+  id: AC-032

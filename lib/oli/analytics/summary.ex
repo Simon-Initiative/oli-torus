@@ -37,6 +37,33 @@ defmodule Oli.Analytics.Summary do
   def execute_analytics_pipeline(snapshot_attempt_summary, project_id, host_name) do
     Pipeline.init("SummaryAnalyticsPipeline")
     |> AttemptGroup.from_attempt_summary(snapshot_attempt_summary, project_id, host_name)
+    |> execute_prebuilt_analytics_pipeline()
+  end
+
+  @doc """
+  Executes the summary upsert pipeline for an already assembled AttemptGroup.
+
+  Snapshot processing now builds the AttemptGroup once so both learning-model
+  application and existing summary/xAPI emission operate from the same evaluated
+  attempt set. The three-argument API above remains for existing callers that
+  still start from the raw attempt-summary query result.
+  """
+  def execute_analytics_pipeline(%AttemptGroup{} = attempt_group) do
+    Pipeline.init("SummaryAnalyticsPipeline")
+    |> Map.put(:data, attempt_group)
+    |> Pipeline.step_done(:query)
+    |> execute_prebuilt_analytics_pipeline()
+  end
+
+  def execute_analytics_pipeline(nil) do
+    Pipeline.init("SummaryAnalyticsPipeline")
+    |> Map.put(:data, nil)
+    |> Pipeline.step_done(:query)
+    |> execute_prebuilt_analytics_pipeline()
+  end
+
+  defp execute_prebuilt_analytics_pipeline(%Pipeline{} = pipeline) do
+    pipeline
     |> upsert_resource_summaries()
     |> upsert_response_summaries()
     |> Pipeline.all_done()

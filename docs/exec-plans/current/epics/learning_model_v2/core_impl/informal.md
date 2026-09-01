@@ -2,7 +2,11 @@
 
 This work item implements the delivery write path for LKT-AOA proficiency and confidence. It is the second of three implementation chunks derived from `docs/exec-plans/current/epics/learning_model_v2/informal.md`.
 
-It depends on the model-selection and Revision parameter contracts in `docs/exec-plans/current/epics/learning_model_v2/data_model/informal.md`.
+It depends on the completed model-selection, typed Revision parameter, publication,
+and startup-configuration contracts in
+`docs/exec-plans/current/epics/learning_model_v2/data_model/`. The authoritative
+downstream contract is summarized in that work item's `fdd.md`; this document uses
+the concrete interfaces that now exist in Torus rather than redesigning them.
 
 The intended outcome is that one evaluated part or a complete graded exam can atomically and idempotently update all affected learner/LO states without scanning historical attempts.
 
@@ -13,6 +17,107 @@ For one submitted batch, the number of database round trips must remain a small 
 The number of mathematical transitions and affected rows necessarily grows with the meaningful contributions in the batch. The prohibited pattern is a loop whose body performs an independent read and write for every LO. A grouped in-memory transition over data loaded in bulk is acceptable.
 
 Historical responses continue to flow through xAPI, S3, and ClickHouse. Those systems support analytics, training, audit, and reconstruction; the online calculation uses compact operational state.
+
+## Established data-model contracts
+
+The following pieces are already implemented and are inputs to this work.
+
+### Model dispatch
+
+`Oli.Delivery.Sections.Section` has a non-null Ecto enum field:
+
+```elixir
+field :learning_model_version,
+  Ecto.Enum,
+  values: Oli.LearningModel.ModelVersion.values(),
+  default: :naive
+```
+
+The supported values are `:naive` and `:lkt_aoa`. The database also enforces those
+two values. The Snapshot Worker integration must dispatch from the loaded Section's
+persisted `learning_model_version`; it must not infer the model from
+`analytics_version`, the Project, a template, parameter presence, or archive data.
+
+Existing and newly created Projects and Sections still default to `:naive`. Trusted
+Project/template/Section creation paths copy the value and Sections remain pinned.
+There is no authoring or delivery UI that enables LKT-AOA yet. Consequently, this
+chunk adds the LKT-AOA execution path but does not change the future rollout policy
+for newly created Projects.
+
+### Typed Revision parameters
+
+`Oli.Resources.Revision.learning_model_parameters` is a nullable JSONB column exposed
+through `Oli.LearningModel.Parameters.Type`. Application code receives either `nil`
+or a typed `%Oli.LearningModel.Parameters{}` envelope; core calculation code must not
+decode the JSONB map itself or reuse the unrelated `Revision.parameters` field.
+
+The currently supported payloads are:
+
+```elixir
+%Oli.LearningModel.Parameters{
+  schema_version: 1,
+  model: :lkt_aoa,
+  model_version: 2,
+  parameter_type: :learning_objective,
+  payload: %Oli.LearningModel.V2.LearningObjectiveParameters{
+    beta_lo: beta_lo
+  }
+}
+
+%Oli.LearningModel.Parameters{
+  schema_version: 1,
+  model: :lkt_aoa,
+  model_version: 2,
+  parameter_type: :activity,
+  payload: %Oli.LearningModel.V2.ActivityParameters{
+    parts: %{
+      part_id => %Oli.LearningModel.V2.PartParameters{
+        beta_difficulty: beta_part
+      }
+    }
+  }
+}
+```
+
+The Ecto type and Revision validation already reject unsupported versions,
+non-finite values, resource-type mismatches, and activity part IDs that do not exist
+in that Revision. Core code may therefore pattern match on supported typed v2 values;
+it should still fail clearly if an impossible or unsupported value crosses the
+boundary rather than treating it as v2.
+
+Activity difficulty comes from the exact activity Revision associated with the
+evaluated PartAttempt. LO difficulty comes from the exact LO Revision resolved by the
+Section's pinned publication. It must not come from the latest authoring Revision.
+The existing publication/delivery resolvers are the authority for that lookup.
+
+Parameter absence is valid. This chunk owns the previously deferred calculation rule:
+
+- A missing LO envelope resolves to `beta_lo = 0.0`.
+- A missing activity envelope or missing part entry resolves to `beta_part = 0.0`.
+- An explicitly stored `0.0` is a trained value and remains distinguishable from
+  absence in persistence and lifecycle workflows, even though both supply the same
+  numeric value to this transition.
+
+### Startup-loaded coefficients
+
+`Oli.LearningModel.Config` is already implemented. Its typed value is:
+
+```elixir
+%Oli.LearningModel.Config{
+  gamma: 0.1,
+  rho: 1.0,
+  recency_decay: 0.9,
+  confidence_saturation: 3.0
+}
+```
+
+Those are the defaults; deployment environment variables may replace them only at
+application startup, with finite/range validation and controlled startup failure for
+invalid values. The bulk application boundary must call
+`Oli.LearningModel.Config.fetch!/0` once per batch and pass that immutable struct
+through every transition. It must not read environment variables, repeatedly query
+application configuration inside a contribution loop, or duplicate coefficients into
+`learning_state`.
 
 ## `learning_state`
 
@@ -77,7 +182,8 @@ logit(P(correct)) =
 
 The item coefficient is the difficulty value for the evaluated activity part. The same part coefficient is used for every LO targeted by that part.
 
-`gamma` and `rho` come from the startup-loaded LKT-AOA application configuration and default to `0.1` and `1.0`, respectively.
+`gamma` and `rho` come from the single `%Oli.LearningModel.Config{}` fetched for the
+bulk operation and default to `0.1` and `1.0`, respectively.
 
 `attempt_count` is per learner/LO opportunity. A part targeting three LOs contributes one opportunity to each of the three corresponding states.
 
@@ -98,7 +204,8 @@ new_recency_logit =
   log((new_success_score + 1) / (new_failure_score + 1))
 ```
 
-`recency_decay` comes from the startup-loaded LKT-AOA application configuration and defaults to `0.9`.
+`recency_decay` comes from that same fetched configuration struct and defaults to
+`0.9`.
 
 Persisting success and failure scores avoids reconstructing them from a derived logit and keeps the implementation adaptable if decay behavior changes later.
 
@@ -120,7 +227,8 @@ The state stores both the count and calculated confidence:
 confidence = 1 - exp(-unique_activity_part_count / k)
 ```
 
-`k` is the startup-loaded `confidence_saturation` value from the LKT-AOA application configuration and defaults to `3.0`.
+`k` is the fetched configuration's `confidence_saturation` value and defaults to
+`3.0`.
 
 ## Prior activity/part evidence
 
@@ -204,14 +312,19 @@ attempt_number
 effective_learning_objective_ids
 ```
 
-Model parameters, mappings, current learner states, and evidence membership are loaded or claimed in bulk.
+Model parameters, mappings, current learner states, and evidence membership are loaded
+or claimed in bulk. `activity_revision_id` identifies the exact typed activity
+parameter payload. Effective LO IDs must be resolved to the LO Revisions pinned by the
+Section publication before reading their typed `beta_lo` values.
 
 ## Atomic processing boundary
 
 The learning-model mutation needs its own database transaction. Conceptually, it performs a fixed sequence of bulk operations:
 
 1. Retrieve the context of the evaluated part attempt guids (section id, user id, etc)
-2. Resolve effective part-to-LO mappings and published activity/LO parameters in bulk.
+2. Resolve effective part-to-LO mappings, exact PartAttempt activity Revisions, and
+   publication-pinned LO Revisions in bulk; extract typed v2 parameters and apply the
+   documented `0.0` cold-start fallback where they are absent.
 3. Read or initialize and lock all affected `learning_state` rows in deterministic key order.
 4. Insert all prior activity/part evidence rows with `ON CONFLICT DO NOTHING RETURNING`.
 5. Group newly inserted evidence by learner/LO state for confidence increments.
@@ -220,9 +333,12 @@ The learning-model mutation needs its own database transaction. Conceptually, it
 8. Commit the idempotency claim, evidence, and state changes together.
 
 
-It is important to find the most efficient method to READ items from steps 1, 2 and 3 above. It is likely that
-this can be done in a small number of queries but we want to be careful about what we actually are joining when
-the collection of part attempt guids is large (500-1000).  A larger number of much simpler queries could be better.
+It is important to find the most efficient method to read items from steps 1, 2, and 3
+above. It is likely that this can be done in a small fixed number of queries, but we
+must be careful about what is joined when the collection of PartAttempt GUIDs is large
+(500–1000). Several set-based queries with simple, index-supported shapes may be safer
+than one multiplicative join. The round-trip count must remain bounded by query type,
+not by the number of attempts, parts, or LOs.
 
 Failure must leave all three concerns unchanged. A partially applied exam is not acceptable.
 
@@ -250,13 +366,16 @@ There is no generated surrogate `id` field. `part_attempt_id` is the primary key
 
 `learning_model_version` records the model applied to the attempt and uses the same semantic enum vocabulary as Project and Section, including `:lkt_aoa`. Because a PartAttempt belongs to a Section pinned to one model, an attempt is applied at most once; `learning_model_version` does not participate in the primary key.
 
+The Ecto schema for this table must use `Oli.LearningModel.ModelVersion.values()` for
+its enum definition rather than declaring a second list of model values.
+
 `applied_at` records when the application transaction succeeded and is the table's only timestamp.
 
 The table intentionally does **not** use the standard Ecto `timestamps()` fields. It has neither `inserted_at` nor `updated_at`, and the schema must use `@primary_key false` so Ecto does not add an implicit fourth field. The row is immutable after insertion: there is no update workflow and therefore no need for `updated_at`.
 
 No Section, user, activity, part, LO, score, `date_evaluated`, attempt GUID, model parameters, or learner-state values are duplicated into this table. Those values remain available from the PartAttempt context or their owning records. This is one application row per evaluated PartAttempt, not one row per LO targeted by that attempt.
 
-The foreign key should use `ON DELETE CASCADE` so existing `PartAttemptCleaner` behavior is not blocked and application rows do not become orphaned after their source attempts are removed. This is safe only because a deleted PartAttempt can no longer be supplied for reprocessing; that assumption must be covered by the cleanup integration tests.
+The foreign key should use `ON DELETE CASCADE` so application rows do not become orphaned after their source attempts are removed through any supported direct PartAttempt deletion path. This is safe only because a deleted PartAttempt can no longer be supplied for reprocessing; that assumption must be covered by a focused cascade test. The old `PartAttemptCleaner` runtime/admin surface is obsolete and is removed rather than preserved.
 
 ### Atomic bulk claim
 
@@ -301,7 +420,7 @@ Existing producers include:
 - Page auto-submission.
 - Manual grading.
 
-The LKT-AOA mutation should be a distinct pipeline step operating on the constructed evaluated-part collection. Current summary analytics and xAPI emission continue for both model versions because they support concerns beyond proficiency. The new mutation runs only when the Section has `learning_model_version: :lkt_aoa`, unless an explicit shadow/backfill mode is introduced later.
+The LKT-AOA mutation should be a distinct pipeline step operating on the constructed evaluated-part collection. Current summary analytics and xAPI emission continue for both model versions because they support concerns beyond proficiency. The new mutation runs only when the loaded Section has `learning_model_version: :lkt_aoa`. A `:naive` Section must preserve the existing proficiency path and must not write `learning_state`, evidence, or application-claim rows. No additional feature flag or fallback from an LKT-AOA Section to the naive formula is part of this design; shadow/backfill behavior would require a separate explicit mode.
 
 Snapshot work normally runs asynchronously through Oban and may be attempted up to three times. Proficiency is therefore eventually consistent with grading, and the mutation must be idempotent.
 
@@ -337,6 +456,22 @@ Concurrent jobs for the same learner/LO must not both read the same prior state 
 
 The evidence uniqueness constraint handles concurrent first encounters: only one transaction inserts the evidence row. The successful insert alone causes the confidence increment.
 
+## Usage-layer handoff
+
+The `usage` work item can treat this chunk as the stable delivery-side write boundary for LKT-AOA state.
+
+Stable inputs and semantics:
+
+- State identity is one row in `learning_states` per `(section_id, user_id, learning_objective_id)`.
+- `learning_objective_id` is the objective resource ID, not the objective Revision ID.
+- `attempt_count`, `success_score`, `failure_score`, `recency_logit`, and `aoa` represent the sequential LKT-AOA proficiency state for directly targeted objectives only.
+- `unique_activity_part_count` and `confidence` represent distinct prior activity-part breadth for the same Section, learner, and objective. Reattempting the same `(activity_id, part_id)` can change proficiency but does not increase confidence.
+- Section dispatch remains semantic: `:lkt_aoa` Sections update these operational rows, while `:naive` Sections do not.
+- Snapshot processing is asynchronous, so usage-layer reads must treat LKT-AOA state as eventually consistent with grading.
+- This chunk writes state only for directly targeted learning objectives. Parent objective, page, container, course, and coverage aggregation policy belongs to `usage`.
+- No read-oriented indexes beyond the write-path primary keys are added here. The `usage` work item should add indexes only after measuring concrete read queries.
+- Summary analytics and xAPI continue to run independently of these operational rows and remain the audit/analytics path, not the online LKT-AOA read source.
+
 ## Verification boundary
 
 This chunk is complete when tests demonstrate:
@@ -345,12 +480,16 @@ This chunk is complete when tests demonstrate:
 - Multiple contributions to the same state within one bulk application use sequential replay ordered by `date_evaluated`.
 - Equal `date_evaluated` values within one bulk application are replayed deterministically by `part_attempt_guid`.
 - Correct cold-start behavior for missing beta parameters.
+- Parameter extraction uses typed `%Oli.LearningModel.Parameters{}` values from exact
+  PartAttempt/published Revisions and never interprets raw JSONB or authoring HEAD.
+- `Oli.LearningModel.Config.fetch!/0` is called once per bulk operation, with the same
+  typed configuration applied to every contribution in that batch.
 - Multi-LO parts update every applicable state.
 - A bulk exam updates overlapping states with bounded database round trips.
 - Repeated parts affect proficiency but not confidence breadth.
 - `learning_model_attempt_applications` persists exactly the three specified fields and no Ecto-generated ID or standard timestamps.
 - Duplicate GUIDs and Oban retries do not double-apply state.
-- PartAttempt cleanup cascades to its application claim without blocking cleanup or leaving an orphan.
+- Direct PartAttempt deletion cascades to its application claim without leaving an orphan.
 - Concurrent updates cannot lose attempts or double-increment confidence.
 - Any transaction failure rolls back idempotency, evidence, and state together.
 - Naive sections do not write LKT-AOA operational state.
