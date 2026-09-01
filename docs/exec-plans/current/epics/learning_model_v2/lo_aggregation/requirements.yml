@@ -4,7 +4,7 @@ requirements:
   title: Provide a single, algorithm-agnostic weighted-aggregation function that computes
     a parent Learning Objective's proficiency score from (proficiency, count) pairs
     contributed by its Sub-LOs and, when present, its own directly-tagged evidence.
-  status: proposed
+  status: verified
   acceptance_criteria:
   - id: AC-001
     title: "Given a parent LO with multiple Sub-LOs each having a (proficiency, count)\
@@ -28,7 +28,7 @@ requirements:
   title: Document the aggregation function's count contract explicitly, making it
     the caller's responsibility to supply a count consistent with whichever algorithm
     computed that child's proficiency.
-  status: proposed
+  status: verified
   acceptance_criteria:
   - id: AC-003
     title: The function's documentation states that a naive/legacy child's count must
@@ -79,7 +79,7 @@ requirements:
 - id: FR-004
   title: Preserve incomplete-coverage semantics so a Sub-LO with insufficient evidence
     is represented in the aggregation rather than silently excluded from it.
-  status: proposed
+  status: verified
   acceptance_criteria:
   - id: AC-005
     title: Given a parent LO with one Sub-LO that has sufficient evidence and another
@@ -96,7 +96,7 @@ requirements:
   title: Audit and update every runtime call site that rolls up (or should roll up)
     Sub-LO proficiency into a parent LO, across both authoring and delivery surfaces,
     so all of them consume the shared aggregation function.
-  status: proposed
+  status: verified
   acceptance_criteria:
   - id: AC-006
     title: Given a section with a parent LO that has Sub-LOs and no direct evidence,
@@ -157,27 +157,39 @@ requirements:
 - id: FR-006
   title: Keep Learning Objective proficiency aggregation a runtime projection computed
     at read time rather than a persisted, write-time calculation.
-  status: proposed
+  status: verified
   acceptance_criteria:
   - id: AC-009
     title: Given a learner submits a new attempt on an activity tagged to a Sub-LO,
       when that attempt is evaluated, then no parent LO proficiency value is persisted
       or recalculated as part of that evaluation; the parent's aggregated value is
       computed only when subsequently read.
-    status: proposed
+    status: verified
     verification_method: manual
-    proofs: []
+    proofs:
+      - "This work item's entire diff (git diff master...HEAD) touches only
+        read-side aggregation functions in lib/oli/delivery/metrics.ex,
+        lib/oli/delivery/sections.ex, and
+        lib/oli/delivery/learning_objectives/page_element.ex; no file under
+        lib/oli/delivery/attempts/ (attempt submission/evaluation) is
+        modified, confirming aggregation stays a runtime projection with no
+        new write-time persistence introduced."
 - id: FR-007
   title: Route the naive algorithm's aggregated score through the existing Metrics.proficiency_range/2
     bucketing so parent LO Not Enough Information/Low/Medium/High distributions reflect
     combined evidence without duplicating threshold logic.
-  status: proposed
+  status: verified
   acceptance_criteria:
   - id: AC-010
     title: Given a parent LO's aggregated naive score and total evidence count, when
       it is bucketed for display, then Metrics.proficiency_range/2's existing thresholds
       are used unchanged rather than a second, duplicated set of thresholds.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+      - "lib/oli/delivery/metrics.ex (Metrics.proficiency_bucket_for_student/3
+        and proficiency_for_student_per_learning_objective/3) both call
+        proficiency_range/2 directly on the aggregated (score, total_count)
+        pair; no second bucketing implementation exists anywhere in this
+        work item's diff."
 acceptance_criteria: []

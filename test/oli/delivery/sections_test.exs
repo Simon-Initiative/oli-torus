@@ -3571,9 +3571,10 @@ defmodule Oli.Delivery.SectionsTest do
       # instead yields (1.0*10 + 0.2*5) / 15 = 0.733 => "Medium" — a different
       # bucket, so this test actually discriminates between the two outcomes.
       # (0.2, not 0.0, because the naive formula gives 0.2 partial credit per
-      # incorrect first attempt rather than 0 — see naive_child_proficiency/2
-      # in metrics.ex: sub_objective_a2's 0 correct out of 5 first attempts is
-      # (1.0*0 + 0.2*5) / 5 = 0.2, not 0.0.)
+      # incorrect first attempt rather than 0 — see the SQL fragment in
+      # Metrics.raw_proficiency_per_student_for_objective/3: sub_objective_a2's
+      # 0 correct out of 5 first attempts is (1.0*0 + 0.2*5) / 5 = 0.2, not
+      # 0.0.)
       assert result.student_proficiency_obj == "Medium"
     end
 

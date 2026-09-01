@@ -774,41 +774,19 @@ defmodule Oli.Delivery.Metrics do
       Enum.flat_map(learning_objectives, &evidence_resource_ids(&1.resource_id, &1.children))
       |> Enum.uniq()
 
-    raw_proficiency_per_learning_objective =
-      raw_proficiency_per_learning_objective(
+    raw_proficiency_by_resource_id =
+      raw_proficiency_per_student_for_objective(
         section.id,
-        student_id: student_id,
-        objective_ids: unique_objective_and_subobjective_ids
+        unique_objective_and_subobjective_ids,
+        student_id: student_id
       )
 
     Enum.into(learning_objectives, %{}, fn rev ->
-      aggregated_proficiency =
-        evidence_resource_ids(rev.resource_id, rev.children)
-        |> Enum.map(&Map.get(raw_proficiency_per_learning_objective, &1))
-        |> Enum.reject(&is_nil/1)
-        |> aggregate_raw_proficiency()
+      resource_ids = evidence_resource_ids(rev.resource_id, rev.children)
 
-      {rev.resource_id, aggregated_proficiency}
+      {rev.resource_id,
+       proficiency_bucket_for_student(resource_ids, raw_proficiency_by_resource_id, student_id)}
     end)
-  end
-
-  defp aggregate_raw_proficiency([]), do: proficiency_range(nil, 0)
-
-  defp aggregate_raw_proficiency(raw_values) do
-    {score, total_first_attempts} =
-      raw_values
-      |> Enum.map(fn {first_correct, first_count, _correct, _count} ->
-        {naive_child_proficiency(first_correct, first_count), first_count}
-      end)
-      |> aggregate_weighted_proficiency()
-
-    proficiency_range(score, total_first_attempts)
-  end
-
-  defp naive_child_proficiency(_first_correct, 0), do: nil
-
-  defp naive_child_proficiency(first_correct, first_count) do
-    (1.0 * first_correct + 0.2 * (first_count - first_correct)) / first_count
   end
 
   @doc """

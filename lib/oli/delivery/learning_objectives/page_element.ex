@@ -182,7 +182,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
     # Instructor Dashboard uses (Sections.get_objectives_and_subobjectives/2)
     # for the same student.
     children_by_resource_id =
-      Map.new(objectives_with_children, &{&1.resource_id, List.wrap(&1.children)})
+      Map.new(objectives_with_children, &{&1.resource_id, &1.children})
 
     evidence_resource_ids_by_objective_id =
       Map.new(objective_ids, fn objective_id ->

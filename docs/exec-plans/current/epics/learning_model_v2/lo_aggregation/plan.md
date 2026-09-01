@@ -125,13 +125,17 @@ implementation, no `learning_model_version` switch changes — those are explici
     fetch each parent LO's own evidence and its Sub-LOs' evidence in the same set-based pass
     (resolve the Clarification above), then call the Phase 1 shared function per parent LO per
     student. Implemented via new `Metrics.raw_proficiency_per_student_for_objective/3` (raw,
-    not-yet-bucketed extraction of the existing query) and a new `Sections.aggregated_proficiency_bucket/3`.
-  - [x] ~~Ensure double-counting prevention...~~ **Superseded after Phase 4** — see the
-    Post-Phase-4 Correction note below. Originally implemented as exclusion of a parent's own
-    evidence whenever it has Sub-LOs (mirroring `Metrics.proficiency_for_student_per_learning_objective/3`'s
-    pre-existing 2024 behavior); Darren Siegel confirmed on Slack (2026-09-01) that the parent's
-    own evidence should always be combined with its Sub-LOs' evidence instead (FR-003, AC-004),
-    accepting the resulting double-counting risk when an activity is tagged to both levels.
+    not-yet-bucketed extraction of the existing query); the bucketing helper was later relocated
+    to the shared `Metrics.proficiency_bucket_for_student/3` (see the Post-Phase-4 Correction note
+    below).
+  - [ ] ~~Ensure double-counting prevention...~~ **NOT done — deliberately superseded after
+    Phase 4**, see the Post-Phase-4 Correction note below. This task, as originally written, was
+    initially implemented (exclusion of a parent's own evidence whenever it has Sub-LOs, mirroring
+    `Metrics.proficiency_for_student_per_learning_objective/3`'s pre-existing 2024 behavior), then
+    explicitly reversed: Darren Siegel confirmed on Slack (2026-09-01) that the parent's own
+    evidence should always be combined with its Sub-LOs' evidence instead (FR-003, AC-004),
+    accepting the resulting double-counting risk when an activity is tagged to both levels. Left
+    unchecked because double-counting prevention is not what the shipped code does.
   - [x] Ensure a leaf LO (no `children`) takes the same path it does today and is unaffected
     (AC-008).
 - Testing Tasks:
@@ -243,6 +247,35 @@ Retrofit applied across all phases already implemented:
 No further phase renumbering was needed — Phase 5 (below) still applies to the corrected
 implementation.
 
+## Post-Correction Cleanup: consolidating the student-facing call site onto shared primitives
+
+A branch-wide `/simplify`-style review (reuse, simplification, efficiency, altitude lenses)
+surfaced that `Metrics.proficiency_for_student_per_learning_objective/3` (Phase 2's call site)
+still used its own private raw-fetch/aggregate pair — `raw_proficiency_per_learning_objective/2`
+plus `aggregate_raw_proficiency/1` and `naive_child_proficiency/2` — instead of the
+`raw_proficiency_per_student_for_objective/3` + `evidence_resource_ids/2` +
+`proficiency_bucket_for_student/3` pipeline the Instructor Dashboard and page element call sites
+already shared. This was accumulated phasing debt (Phase 2 predates the cleaner primitives Phase 3
+introduced), not a deliberate design choice, and duplicated the naive proficiency formula
+byte-for-byte in both Elixir and SQL.
+
+`proficiency_for_student_per_learning_objective/3` was refactored to call
+`raw_proficiency_per_student_for_objective/3` and `proficiency_bucket_for_student/3` directly, and
+the now-fully-unused private helpers `aggregate_raw_proficiency/1` and `naive_child_proficiency/2`
+were deleted. `raw_proficiency_per_learning_objective/2` itself was **not** removed — it remains a
+public function used independently by `Oli.Scenarios.Directives.Assert.ProficiencyAssertion` and
+covered by its own dedicated test in `metrics_v2_test.exs`, outside this ticket's scope. Verified
+mathematically equivalent (every objective-type `ResourceSummary` row uses a fixed `part_id`, so
+`GROUP BY`+`SUM` over that one row equals reading it directly) and confirmed by the full existing
+test suite plus the `Oli.Scenarios` suite (which exercises `raw_proficiency_per_learning_objective/2`
+via the assertion directive above) — no test changes were required for this refactor.
+
+Also fixed in the same pass: a genuinely dead `aggregate_raw_proficiency([])` clause (the general
+clause already produced the identical result), an unnecessary defensive `List.wrap/1` in
+`page_element.ex` (the depot always normalizes `children` to a list, never `nil`), and this file's
+own stale reference to `Sections.aggregated_proficiency_bucket/3` (see the Phase 3 task note
+above, corrected to point at its final home).
+
 ## Phase 5: Cross-cutting verification, review, and closeout
 
 - Goal: Confirm the three integrated call sites agree with each other, run full regression, and
@@ -252,7 +285,12 @@ implementation.
   - [ ] Manual QA per PRD QA Plan: for one section fixture with a parent LO with Sub-LOs and no
     direct evidence, confirm the Instructor Dashboard tab, its CSV export, the per-student
     instructor view, and student prologue/lesson/review views all show the same combined value
-    for the same student; confirm a leaf LO is unchanged.
+    for the same student; confirm a leaf LO is unchanged. **Also** cover the scenario that
+    actually changed behavior under the Post-Phase-4 Correction (Option B): a parent LO that has
+    *both* its own directly-tagged evidence *and* a Sub-LO with evidence — confirm all four
+    surfaces show the same combined value (not the parent's own value alone, and not "not enough
+    data"). The "no direct evidence" scenario alone behaves identically whether or not the
+    parent's own evidence is combined, so it does not exercise Option B on its own.
   - [ ] Update Jira `MER-5821` with implementation notes/status per `docs/ISSUE_TRACKING.md`.
   - [ ] Run code review per `docs/CODEREVIEW.md`: `.review/security.md` and `.review/performance.md`
     always; `.review/elixir.md` (backend Elixir/Ecto/LiveView changes) and `.review/requirements.md`
