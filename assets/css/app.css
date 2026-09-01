@@ -158,22 +158,21 @@ https://tailwindcss.com/docs/utility-first
 }
 
 .content .learning-objectives-element .learning-objectives-delivery__objective-title-row {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
   min-height: 16px;
+  line-height: 16px;
 }
 
 .content .learning-objectives-element .learning-objectives-delivery__objective-number {
-  flex-shrink: 0;
+  display: inline;
   color: #757682 !important;
   font-size: 16px;
   font-weight: 700;
   line-height: 16px;
+  margin-right: 6px;
 }
 
 .content .learning-objectives-element .learning-objectives-delivery__objective-title {
+  display: inline;
   color: var(--color-body-color);
   font-size: 16px;
   font-weight: 700;
@@ -666,6 +665,19 @@ https://tailwindcss.com/docs/utility-first
   margin-top: 4px;
   border-bottom: 1px solid var(--color-gray-300);
   color: var(--color-gray-700);
+  interpolate-size: allow-keywords;
+}
+
+.learning-objectives-editor__proficiency::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 180ms ease,
+    content-visibility 180ms ease allow-discrete;
+}
+
+.learning-objectives-editor__proficiency[open]::details-content {
+  block-size: auto;
 }
 
 .learning-objectives-editor__proficiency-summary {
