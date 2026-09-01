@@ -376,12 +376,6 @@ https://tailwindcss.com/docs/utility-first
   display: none;
 }
 
-.content .learning-objectives-summary__next-steps-header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .content .learning-objectives-summary__next-steps-trigger {
   display: inline-flex;
   align-items: center;
