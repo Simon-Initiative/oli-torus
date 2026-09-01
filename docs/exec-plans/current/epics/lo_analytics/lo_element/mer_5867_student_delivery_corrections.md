@@ -576,6 +576,36 @@ Validation:
 - Manual mobile viewport check.
 - Render tests for wrapping-friendly classes where not brittle.
 
+### Slice D9 - AC Clarifications And Authoring Modal Dark Mode
+
+Purpose:
+
+- Apply three AC clarifications confirmed with designer (Jess) after D8:
+  1. **"Not Enough Information" LOs** must not appear in the Summary at all — omit them from both *Recommended Review* and *Learning Objectives You're Applying* because no accurate learning signal exists yet.
+  2. **No configured pages + DOT enabled** — still render the `Show next steps` toggle and expand panel, showing only the DOT explain card. Keeps the interaction consistent; designer will update if data shows this is the common case.
+  3. **Explain component + AI Activation Points** — treat the Explain action as an activation point. Disable/hide it when the section-level `Enable AI Activation Points` boolean is off. If there are no pages, no activities, *and* activation points are disabled, next steps are not shown at all.
+- Fix dark mode for the authoring page-picker modal (search + dropdown added in D5b). Light mode is correct; dark mode still has hardcoded white backgrounds on some elements.
+
+Likely work:
+
+- Filter "Not Enough Information" objectives out of Summary grouping logic in `lib/oli/rendering/content/learning_objectives.ex` (or the LiveView that builds the assigns).
+- Gate `maybe_dot_explain_card/2` on `context.assistant_available?` already; confirm it also checks the activation-points config, or add the check.
+- Re-examine the `Show next steps` rendering condition so it shows when DOT is available even if recommendation pages are empty.
+- Audit the authoring page-picker modal for hardcoded `bg-white`, `text-gray-*`, or similar non-tokenized classes and replace with dark-mode-aware equivalents.
+
+Likely files:
+
+- `lib/oli/rendering/content/learning_objectives.ex`
+- `lib/oli_web/live/delivery/student/utils.ex` (or wherever Summary grouping is computed)
+- Authoring modal component (search + hierarchy picker added in D5b)
+- `assets/css/app.css` if any modal dark mode overrides are needed
+
+Validation:
+
+- Render tests for Not Enough Information exclusion.
+- Manual dark mode check on authoring page-picker modal.
+- Manual smoke check: DOT-only next steps, activation-points-off state.
+
 ## Validation Matrix
 
 | Requirement / Bug | Slice | Automated validation | Manual validation |
