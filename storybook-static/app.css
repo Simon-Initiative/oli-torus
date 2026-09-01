@@ -15776,10 +15776,6 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: 5rem;
 }
 
-.bottom-3 {
-  bottom: 0.75rem;
-}
-
 .bottom-4 {
   bottom: 1rem;
 }
@@ -23493,11 +23489,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-gray-200 {
   --tw-text-opacity: 1;
   color: rgb(229 229 229 / var(--tw-text-opacity));
-}
-
-.text-gray-300 {
-  --tw-text-opacity: 1;
-  color: rgb(212 212 212 / var(--tw-text-opacity));
 }
 
 .text-gray-400 {
