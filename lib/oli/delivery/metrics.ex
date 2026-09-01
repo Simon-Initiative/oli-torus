@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Resources.Revision
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Proficiency.Naive
 
   alias Oli.Delivery.Sections.{
     ContainedPage,
@@ -826,6 +827,11 @@ defmodule Oli.Delivery.Metrics do
   Retrieves raw proficiency data for a specific section and set of learning objectives,
   optionally filtering by a list of objective IDs or a specific student ID.
 
+  This is a naive-model compatibility API whose tuple is coupled to
+  `ResourceSummary` first-attempt counters. Model-aware callers must use
+  `Oli.Delivery.Proficiency`; this function will not acquire an LKT-AOA tuple
+  variant.
+
   ## Options
 
     * `:objective_ids` - (optional) a list of objective IDs to filter the data by specific objectives.
@@ -843,37 +849,7 @@ defmodule Oli.Delivery.Metrics do
           integer => tuple
         }
   def raw_proficiency_per_learning_objective(section_id, opts \\ []) do
-    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-
-    maybe_filter_by_objective_id =
-      if opts[:objective_ids],
-        do: dynamic([s], s.resource_id in ^opts[:objective_ids]),
-        else: true
-
-    maybe_filter_by_student_id =
-      if opts[:student_id],
-        do: dynamic([s], s.user_id == ^opts[:student_id]),
-        else: dynamic([s], s.user_id == -1)
-
-    from(summary in Oli.Analytics.Summary.ResourceSummary,
-      where:
-        summary.section_id == ^section_id and
-          summary.project_id == -1 and
-          summary.resource_type_id == ^objective_type_id,
-      where: ^maybe_filter_by_objective_id,
-      where: ^maybe_filter_by_student_id,
-      select: {
-        summary.resource_id,
-        {
-          summary.num_first_attempts_correct,
-          summary.num_first_attempts,
-          summary.num_correct,
-          summary.num_attempts
-        }
-      }
-    )
-    |> Repo.all()
-    |> Map.new()
+    Naive.raw_proficiency_per_learning_objective(section_id, opts)
   end
 
   @doc """
@@ -1177,11 +1153,7 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
-  def proficiency_range(_, num_first_attempts) when num_first_attempts < 3, do: "Not enough data"
-  def proficiency_range(nil, _num_first_attempts), do: "Not enough data"
-  def proficiency_range(proficiency, _num_first_attempts) when proficiency <= 0.4, do: "Low"
-  def proficiency_range(proficiency, _num_first_attempts) when proficiency <= 0.8, do: "Medium"
-  def proficiency_range(_proficiency, _num_first_attempts), do: "High"
+  defdelegate proficiency_range(proficiency, num_first_attempts), to: Naive
 
   def progress_range(nil), do: "Not enough data"
   def progress_range(progress) when progress <= 0.5, do: "Low"

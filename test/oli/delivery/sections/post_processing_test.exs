@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Sections.PostProcessingTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Resources.ResourceType
   alias Oli.Repo
 
@@ -56,6 +57,68 @@ defmodule Oli.Delivery.Sections.PostProcessingTest do
 
       # Objective 3 should have no related activities (activity 3 has no objectives)
       assert objective_3_sr.related_activities == []
+    end
+
+    test "projects pinned page activity refs with deduplication and ignores direct page objectives",
+         %{
+           section: section,
+           page_revision: page_revision,
+           empty_page_revision: empty_page_revision,
+           activity_1: activity_1,
+           activity_2: activity_2,
+           objective_1: objective_1,
+           objective_3: objective_3
+         } do
+      # Newer authoring revisions deliberately disagree with the pinned publication.
+      # Projection must continue to use only the exact revisions pinned to this Section.
+      insert(:revision,
+        resource: page_revision.resource,
+        resource_type_id: ResourceType.id_for_page(),
+        activity_refs: []
+      )
+
+      insert(:revision,
+        resource: activity_1.resource,
+        resource_type_id: ResourceType.id_for_activity(),
+        objectives: %{"latest" => [objective_3.resource_id]}
+      )
+
+      PostProcessing.apply(section, :related_activities)
+
+      page = Sections.get_section_resource(section.id, page_revision.resource_id)
+      empty_page = Sections.get_section_resource(section.id, empty_page_revision.resource_id)
+      pinned_objective = Sections.get_section_resource(section.id, objective_1.resource_id)
+
+      assert page.related_activities ==
+               Enum.sort([activity_1.resource_id, activity_2.resource_id])
+
+      assert empty_page.related_activities == []
+      refute objective_3.resource_id in page.related_activities
+      assert activity_1.resource_id in pinned_objective.related_activities
+
+      assert Repo.get!(Oli.Delivery.Sections.Section, section.id).section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
+    end
+
+    test "updates an already initialized depot after the projection commits", %{
+      section: section,
+      page_revision: page_revision,
+      activity_1: activity_1,
+      activity_2: activity_2
+    } do
+      PostProcessing.apply(section, :related_activities)
+      assert SectionResourceDepot.get_section_resource(section.id, page_revision.resource_id)
+
+      page = Sections.get_section_resource(section.id, page_revision.resource_id)
+
+      Repo.update_all(from(sr in Oli.Delivery.Sections.SectionResource, where: sr.id == ^page.id),
+        set: [related_activities: []]
+      )
+
+      PostProcessing.apply(section, :related_activities)
+
+      assert SectionResourceDepot.get_section_resource(section.id, page_revision.resource_id).related_activities ==
+               Enum.sort([activity_1.resource_id, activity_2.resource_id])
     end
 
     test "handles activities with malformed objectives field", %{
@@ -150,7 +213,16 @@ defmodule Oli.Delivery.Sections.PostProcessingTest do
     page_revision =
       insert(:revision,
         resource_type_id: ResourceType.id_for_page(),
-        title: "Page with Activities"
+        title: "Page with Activities",
+        activity_refs: [activity_1.resource_id, activity_2.resource_id, activity_2.resource_id],
+        objectives: %{"page" => [objective_3.resource_id]}
+      )
+
+    empty_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Empty Page",
+        activity_refs: []
       )
 
     # Root container
@@ -158,7 +230,7 @@ defmodule Oli.Delivery.Sections.PostProcessingTest do
       insert(:revision,
         resource_type_id: ResourceType.id_for_container(),
         title: "Root Container",
-        children: [page_revision.resource_id]
+        children: [page_revision.resource_id, empty_page_revision.resource_id]
       )
 
     instructor = insert(:user)
@@ -167,6 +239,7 @@ defmodule Oli.Delivery.Sections.PostProcessingTest do
     all_revisions = [
       container_revision,
       page_revision,
+      empty_page_revision,
       objective_1,
       objective_2,
       objective_3,
@@ -214,6 +287,7 @@ defmodule Oli.Delivery.Sections.PostProcessingTest do
       activity_3: activity_3,
       activity_4: activity_4,
       page_revision: page_revision,
+      empty_page_revision: empty_page_revision,
       container_revision: container_revision
     }
   end

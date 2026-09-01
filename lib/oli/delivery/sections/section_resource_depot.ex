@@ -200,6 +200,40 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns effective child resource IDs for only the requested objectives.
+
+  Parent `children` may contain either SectionResource IDs or resource IDs, so
+  this bounded lookup resolves both representations without hydrating every
+  objective in the course.
+  """
+  def objectives_with_effective_children_for(section_id, resource_ids) do
+    requested = objectives(section_id, resource_id: {:in, resource_ids})
+    child_refs = requested |> Enum.flat_map(&List.wrap(&1.children)) |> Enum.uniq()
+
+    referenced_by_section_resource_id =
+      case child_refs do
+        [] ->
+          []
+
+        ids ->
+          objectives(section_id, id: {:in, ids})
+      end
+      |> Map.new(&{&1.id, &1.resource_id})
+
+    revision_children = revision_children_for(requested)
+
+    Enum.map(requested, fn section_resource ->
+      children =
+        case List.wrap(section_resource.children) do
+          [] -> Map.get(revision_children, section_resource.revision_id, [])
+          refs -> Enum.map(refs, &Map.get(referenced_by_section_resource_id, &1, &1))
+        end
+
+      %{section_resource | children: Enum.reject(children, &is_nil/1)}
+    end)
+  end
+
+  @doc """
   Access the SectionResource records pertaining to the course schedule.
   """
   def retrieve_schedule(section_id, filter_resource_type \\ false) do
@@ -285,11 +319,11 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Public function responsible for creating the ETS table
   """
   def process_table_creation(section_id) do
-    if SectionResourceMigration.requires_migration?(section_id) do
-      SectionResourceMigration.migrate(section_id)
+    # The version marker, not an empty projection array, proves readiness. Load
+    # ETS only after the locked migration transaction has committed successfully.
+    with {:ok, _status} <- SectionResourceMigration.ensure_current(section_id) do
+      load(section_id)
     end
-
-    load(section_id)
   end
 
   defp load(section_id) do
@@ -357,6 +391,24 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
       %{sr | children: children}
     end)
+  end
+
+  defp revision_children_for(section_resources) do
+    revision_ids =
+      section_resources
+      |> Enum.filter(&(List.wrap(&1.children) == []))
+      |> Enum.map(& &1.revision_id)
+      |> Enum.reject(&is_nil/1)
+
+    case revision_ids do
+      [] ->
+        %{}
+
+      ids ->
+        from(r in Oli.Resources.Revision, where: r.id in ^ids, select: {r.id, r.children})
+        |> Repo.all()
+        |> Map.new()
+    end
   end
 
   def fetch_recently_active_sections() do
