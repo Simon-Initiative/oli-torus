@@ -142,7 +142,7 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     children = visible_children(objective, objectives_by_id)
 
     [
-      ~s|<article class="learning-objective rounded-[12px] border border-Border-border-default bg-Surface-surface-primary px-3 py-2 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">|,
+      ~s|<article class="learning-objective min-h-[40px] flex items-center rounded-[12px] border border-Border-border-default bg-Surface-surface-primary px-3 py-2 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">|,
       ~s|<div class="learning-objectives-delivery__objective-copy">|,
       ~s|<div class="learning-objectives-delivery__objective-title-row">|,
       ~s|<span class="learning-objectives-delivery__objective-number">LO #{index}</span>|,

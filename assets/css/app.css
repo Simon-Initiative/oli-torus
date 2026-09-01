@@ -282,6 +282,7 @@ https://tailwindcss.com/docs/utility-first
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  min-height: 55px;
   padding: 12px;
   border-radius: 12px;
   box-shadow: 0 2px 10px 0 rgba(0, 50, 99, 0.05);
@@ -289,7 +290,7 @@ https://tailwindcss.com/docs/utility-first
 
 .content .learning-objectives-summary__card-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
