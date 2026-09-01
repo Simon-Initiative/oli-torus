@@ -1,9 +1,12 @@
 import React, { Fragment } from 'react';
+import { AccessibilityFindingItem } from 'apps/authoring/store/groups/layouts/deck/actions/accessibilityAudit';
 import { DiagnosticTypes } from './DiagnosticTypes';
+import { FixAccessibilityField } from './FixAccessibilityField';
 import { FixBrokenPathButton } from './FixBrokenPathButton';
 import { FixIdButton } from './FixIdButton';
 import { FixTargetButton } from './FixTargetButton';
 import { SolutionProps } from './SolutionProps';
+import { getAccessibilityFixConfig } from './accessibilityFixConfig';
 
 export const DiagnosticSolution: React.FC<SolutionProps> = (props: SolutionProps): JSX.Element => {
   const { type = DiagnosticTypes.DEFAULT } = props;
@@ -31,6 +34,16 @@ export const DiagnosticSolution: React.FC<SolutionProps> = (props: SolutionProps
     case DiagnosticTypes.INVALID_OWNER_CONDITION:
     case DiagnosticTypes.INVALID_OWNER_MUTATE:
       action = <FixIdButton {...props} />;
+      break;
+    case DiagnosticTypes.ACCESSIBILITY:
+      action =
+        props.item &&
+        typeof props.item === 'object' &&
+        'type' in props.item &&
+        'issue' in props.item &&
+        getAccessibilityFixConfig(props.item as AccessibilityFindingItem) ? (
+          <FixAccessibilityField {...props} item={props.item as AccessibilityFindingItem} />
+        ) : null;
       break;
     default:
       action = <Fragment>No fix defined.</Fragment>;
