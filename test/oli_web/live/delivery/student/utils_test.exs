@@ -144,17 +144,11 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
         )
         |> IO.iodata_to_binary()
 
-      assert html =~ "Recommended Review"
-      assert html =~ "Objective C"
-      assert html =~ "Show next steps"
-      assert html =~ "<span>REVISIT</span>"
-      assert html =~ "<span>PRACTICE</span>"
-      assert html =~ "Page 1"
-      assert html =~ "Page 3"
-      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_1?|
-      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_3?|
-      assert html =~ "Need help understanding this objective?"
-      assert html =~ "Explain this learning objective with DOT"
+      assert html =~ "learning-objectives-element learning-objectives-summary"
+      assert html =~ "What is proficiency and how is it estimated?"
+      refute html =~ "Recommended Review"
+      refute html =~ "Objective C"
+      refute html =~ "Show next steps"
     end
   end
 

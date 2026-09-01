@@ -198,7 +198,7 @@ export const SelectModal = function <T extends Option>({
           type="button"
           role="option"
           aria-selected={selected}
-          className={`dropdown-item w-100 overflow-hidden text-truncate text-left${
+          className={`dropdown-item w-100 overflow-hidden text-truncate text-left dark:text-gray-100 dark:hover:bg-gray-700${
             selected ? ' active' : ''
           }`}
           title={o.title}
@@ -222,7 +222,7 @@ export const SelectModal = function <T extends Option>({
         <label className="sr-only" htmlFor={searchInputId}>
           {description}
         </label>
-        <div className="d-flex w-100 align-items-center rounded border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-850">
+        <div className="d-flex w-100 align-items-center rounded border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800">
           {!hasSearchSelection && (
             <span className="d-inline-flex align-items-center pl-3 pr-2 text-Text-text-low-alpha">
               <SearchIcon width={18} height={18} />
@@ -273,7 +273,7 @@ export const SelectModal = function <T extends Option>({
             <div
               id={listboxId}
               role="listbox"
-              className="max-h-96 w-100 overflow-x-hidden overflow-y-auto rounded border border-gray-300 bg-white p-0 shadow-sm"
+              className="max-h-96 w-100 overflow-x-hidden overflow-y-auto rounded border border-gray-300 bg-white p-0 shadow-sm dark:border-gray-600 dark:bg-gray-800"
             >
               {filteredOptions.map(renderSearchableOption)}
             </div>
@@ -313,14 +313,14 @@ export const SelectModal = function <T extends Option>({
   return (
     <div ref={modal} className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className={`modal-dialog modal-dialog-centered ${searchable ? 'modal-lg' : 'modal-md'}`}>
-        <div className="modal-content">
-          <div className="modal-header">
+        <div className="modal-content dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700">
+          <div className="modal-header dark:border-gray-700">
             <h5 className="modal-title" id={titleId}>
               {title}
             </h5>
             <button
               type="button"
-              className="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 hover:text-black hover:opacity-75 hover:no-underline focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 hover:text-black hover:opacity-75 dark:hover:text-white hover:no-underline focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-400"
               data-bs-dismiss="modal"
               aria-label="Close"
             >
@@ -337,7 +337,7 @@ export const SelectModal = function <T extends Option>({
                 }),
             })}
           </div>
-          <div className="modal-footer d-flex flex-row">
+          <div className="modal-footer d-flex flex-row dark:border-gray-700">
             {additionalControls}
             <div className="flex-grow-1"></div>
             <button type="button" className="btn btn-link" onClick={onCancel}>

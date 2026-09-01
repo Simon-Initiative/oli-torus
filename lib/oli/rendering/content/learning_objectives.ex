@@ -89,6 +89,11 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     {applying_objectives, review_objectives} =
       objectives
       |> root_objectives()
+      |> Enum.filter(fn objective ->
+        objective
+        |> then(&proficiency_for(context.learning_objectives, &1.resource_id))
+        |> known_proficiency?()
+      end)
       |> Enum.with_index(1)
       |> Enum.split_with(fn {objective, _index} ->
         objective
@@ -290,16 +295,17 @@ defmodule Oli.Rendering.Content.LearningObjectives do
   defp summary_next_steps_content(:review, context, config_row, resources_by_id, objective) do
     revisit_pages = resolved_recommendations(config_row, "revisit_pages", resources_by_id)
     practice_pages = resolved_recommendations(config_row, "practice_pages", resources_by_id)
+    dot_card = maybe_dot_explain_card(context, objective)
 
-    case {revisit_pages, practice_pages} do
-      {[], []} ->
+    case {revisit_pages, practice_pages, dot_card} do
+      {[], [], []} ->
         []
 
       _ ->
         [
           recommendation_group(context, "REVISIT", :revisit, revisit_pages),
           recommendation_group(context, "PRACTICE", :practice, practice_pages),
-          maybe_dot_explain_card(context, objective)
+          dot_card
         ]
     end
   end
@@ -670,6 +676,11 @@ defmodule Oli.Rendering.Content.LearningObjectives do
 
   defp strong_proficiency?("High"), do: true
   defp strong_proficiency?(_proficiency), do: false
+
+  defp known_proficiency?("High"), do: true
+  defp known_proficiency?("Medium"), do: true
+  defp known_proficiency?("Low"), do: true
+  defp known_proficiency?(_), do: false
 
   defp resolve_recommendation_pages(%Context{section_id: nil}, _objectives, _config, _opts),
     do: %{}
