@@ -635,6 +635,41 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       wait_for_coverage(view)
     end
 
+    test "preserves expanded sub-objectives when refreshing the objective list", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
+
+      {:ok, obj} =
+        create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
+
+      {:ok, _page} = create_page_with_objective(project, publication, [sub_obj.resource_id])
+
+      {:ok, view, _html} =
+        live(conn, live_view_route(project.slug, %{expanded: "obj,sub_obj"}))
+
+      wait_for_coverage(view)
+
+      view
+      |> element("button[phx-click='display_new_sub_modal'][phx-value-slug=#{obj.slug}]")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit='new']")
+      |> render_submit(%{
+        "revision" => %{"title" => "Another Sub Objective", "parent_slug" => obj.slug}
+      })
+
+      wait_for_coverage(view)
+
+      assert has_element?(
+               view,
+               "button[phx-value-slug=#{sub_obj.slug}][aria-expanded='true']"
+             )
+    end
+
     test "new objective", %{conn: conn, project: project} do
       title = "New Objective"
 
@@ -952,10 +987,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, obj} =
         create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
 
+      {:ok, _page} = create_page_with_objective(project, publication, [sub_obj.resource_id])
+
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
+      wait_for_coverage(view)
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{sub_obj.slug}]")
+      |> render_click()
+
+      assert has_element?(view, "#sub-objective-coverage-#{sub_obj.resource_id}")
 
       view
       |> element("button[phx-click='display_edit_modal'][phx-value-slug=#{sub_obj.slug}]")

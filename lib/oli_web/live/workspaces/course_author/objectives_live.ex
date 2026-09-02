@@ -308,6 +308,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
     objective_slugs =
       objectives
+      |> Enum.flat_map(fn objective ->
+        [objective | Enum.reject(objective.children, &is_nil/1)]
+      end)
       |> Enum.map(& &1.slug)
       |> MapSet.new()
 
