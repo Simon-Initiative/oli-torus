@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This runbook configures production monitoring for the asynchronous experiment reward handoff. The
-handoff processes finalized scored-page resource attempts in
-`Oli.Delivery.Experiments.RewardHandoffWorker`. Eligibility context is loaded in one bounded batch,
-while assignment resolution remains observable so production telemetry can show whether further
-set-oriented optimization is warranted.
+This runbook configures production monitoring for experiment reward handoff during snapshot
+processing. `Oli.Delivery.Snapshots.Worker` processes finalized scored-page resource attempts and
+records accepted rewards before emitting the authoritative xAPI statement. Eligibility context is
+loaded in one bounded batch, while assignment resolution remains observable so production telemetry
+can show whether further set-oriented optimization is warranted.
 
 Use this runbook to:
 
@@ -20,10 +20,10 @@ resource, or resource-attempt identifiers.
 
 ## Delivery Guarantee
 
-Scored-page evaluation and insertion of the `RewardHandoffWorker` job occur in the same PostgreSQL
-transaction. If Oban cannot persist the job, evaluation rolls back and the finalization operation can
-be retried; an evaluated attempt cannot commit without its relevant reward-handoff job. Worker
-execution remains asynchronous and idempotent after commit.
+Scored-page evaluation schedules the normal snapshot job. During snapshot execution, reward handoff
+runs synchronously before statement construction. A reward-processing failure fails the snapshot job
+so Oban can retry it; the worker does not emit an unattributed statement. Reward acceptance and
+posterior updates remain idempotent across retries.
 
 ## Prerequisites
 
@@ -31,7 +31,8 @@ execution remains asynchronous and idempotent after commit.
 - The deployment includes `Oli.Delivery.Experiments.Telemetry` in the application supervision tree.
 - AppSignal's automatic Oban and Ecto instrumentation is enabled. Torus does not disable either
   integration in repository configuration.
-- At least one `Oli.Delivery.Experiments.RewardHandoffWorker` job has run after deployment.
+- At least one `Oli.Delivery.Snapshots.Worker` job has processed an experiment-controlled scored page
+  after deployment.
 
 Phoenix LiveDashboard is useful for current node, VM, and Ecto health, but it does not register the
 reward-handoff custom events. AppSignal is the durable monitoring surface for the metrics below.
@@ -120,14 +121,14 @@ content required an assignment query. Compare these ratios with average and p95 
 Any sustained nonzero value requires investigation. AppSignal's automatic Oban instrumentation
 should provide the failed transaction, exception, and retry details when the worker fails.
 
-### 6. Oban transaction performance
+### 6. Snapshot transaction performance
 
 Add or save an AppSignal performance view for
-`Oli.Delivery.Experiments.RewardHandoffWorker#perform`. Include throughput, error rate, and p95
+`Oli.Delivery.Snapshots.Worker#perform`. Include throughput, error rate, and p95
 duration. Also add these metrics supplied by AppSignal's automatic Oban integration:
 
 - `oban_job_duration`, filtered to
-  `worker=Elixir.Oli.Delivery.Experiments.RewardHandoffWorker`, grouped by `state`;
+  `worker=Elixir.Oli.Delivery.Snapshots.Worker`, grouped by `state`;
 - `oban_job_count`, with the same worker filter, grouped by `state`; and
 - `oban_job_queue_time`, filtered to `queue=default`, as supporting evidence of shared-queue
   contention. This metric is queue-scoped and cannot isolate the reward worker.
@@ -159,8 +160,7 @@ encode section or learner IDs as tags to make either condition more granular.
 1. Confirm the affected time window in the batch-latency and failure graphs.
 2. Compare batch duration with attempt count, context count, and eligibility duration.
 3. Calculate assignment queries per completed batch for the same window.
-4. Open AppSignal performance samples for
-   `Oli.Delivery.Experiments.RewardHandoffWorker#perform` in that window.
+4. Open AppSignal performance samples for `Oli.Delivery.Snapshots.Worker#perform` in that window.
 5. Inspect the Ecto event timeline for repeated eligibility-assignment queries and individually slow
    queries.
 6. Check Oban throughput, retries, and execution time. The worker uses the shared `default` queue,
@@ -189,8 +189,8 @@ batching eligibility queries is not the remedy for those conditions.
 - [ ] Confirm AppSignal receives `batch.completed` after a reward-handoff job runs.
 - [ ] Confirm all batch and eligibility distributions appear on the dashboard.
 - [ ] Confirm only documented `status` values are present.
-- [ ] Confirm an AppSignal Oban sample exists for
-      `Oli.Delivery.Experiments.RewardHandoffWorker#perform` and contains Ecto timeline events.
+- [ ] Confirm an AppSignal Oban sample exists for `Oli.Delivery.Snapshots.Worker#perform` and
+      contains Ecto timeline events.
 - [ ] Confirm the dashboard time range and environment match the deployment being validated.
 - [ ] Exercise alert notification routing in a non-production environment or through AppSignal's
       alert test facility.
@@ -204,13 +204,11 @@ deployable.
 1. Apply the PostgreSQL migrations in timestamp order, followed by the additive ClickHouse
    migration. The new ClickHouse evidence fields are nullable, so existing rows and older producers
    remain valid.
-2. Deploy web nodes and Oban workers from the same release. During a rolling deployment, new
-   finalized-page jobs carry only `resource_attempt_id`; old workers that cannot process that job
-   shape must be drained or paused before new web nodes enqueue it. Resume the queue after every
-   worker runs the new release.
-3. Verify reward-handoff and evidence-dispatch telemetry, then configure the dashboard and alerts
-   above. Dashboard creation is an external operational action and is not performed by repository
-   deployment.
+2. Deploy web nodes and Oban workers from the same release. During a rolling deployment, drain or
+   pause snapshot processing before deploying the new snapshot behavior, then resume the queue after
+   every worker runs the new release.
+3. Verify reward-handoff telemetry, then configure the dashboard and alerts above. Dashboard
+   creation is an external operational action and is not performed by repository deployment.
 4. For code rollback, first pause or drain the affected Oban queue, deploy code that still reads
    both `experiment_controlled` and the legacy `upgrade_decision_point` alias, and only then consider
    schema rollback. Do not roll back PostgreSQL after intervention-scoped production writes unless

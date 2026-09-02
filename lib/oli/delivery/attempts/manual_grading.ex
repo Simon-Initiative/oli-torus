@@ -18,7 +18,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
-  alias Oli.Delivery.Experiments
+  alias Oli.Delivery.Snapshots
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -279,35 +279,43 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
           Map.put(part_attempt, :grading_approach, :automatic)
         end)
 
-      Oli.Repo.transaction(fn ->
-        case ApplyClientEvaluation.apply(
-               section_slug,
-               activity_attempt.attempt_guid,
-               client_evaluations,
-               datashop_session_id,
-               enforce_client_side_eval: false,
-               part_attempts_input: mocked_part_attempts
-             ) do
-          {:ok, _} ->
-            restore_original_responses(part_attempts)
+      result =
+        Oli.Repo.transaction(fn ->
+          case ApplyClientEvaluation.apply(
+                 section_slug,
+                 activity_attempt.attempt_guid,
+                 client_evaluations,
+                 datashop_session_id,
+                 enforce_client_side_eval: false,
+                 part_attempts_input: mocked_part_attempts,
+                 create_snapshot: false
+               ) do
+            {:ok, _} ->
+              restore_original_responses(part_attempts)
 
-            case RollUp.rollup_evaluated(activity_attempt.attempt_guid) do
-              :ok ->
-                maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+              case RollUp.rollup_evaluated(activity_attempt.attempt_guid) do
+                :ok ->
+                  maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
 
-              :error ->
-                Repo.rollback(:rollup_failed)
+                :error ->
+                  Repo.rollback(:rollup_failed)
 
-              other ->
-                Repo.rollback(other)
-            end
+                other ->
+                  Repo.rollback(other)
+              end
 
-            manual_part_attempt_guids
+              manual_part_attempt_guids
 
-          {:error, error} ->
-            Repo.rollback(error)
-        end
-      end)
+            {:error, error} ->
+              Repo.rollback(error)
+          end
+        end)
+
+      result
+      |> Snapshots.maybe_create_snapshot(
+        Enum.map(manual_part_attempt_guids, &%{attempt_guid: &1}),
+        section_slug
+      )
     end
   end
 
@@ -453,14 +461,11 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
          ) do
       {:ok,
        %ResourceAttempt{
-         id: resource_attempt_id,
          lifecycle_state: :evaluated,
          revision: revision,
          resource_access_id: resource_access_id,
          was_late: was_late
        }} ->
-        enqueue_reward(resource_attempt_id, section.id)
-
         resource_access = Oli.Repo.get(ResourceAccess, resource_access_id)
 
         effective_settings =
@@ -496,13 +501,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   defp maybe_initiate_grade_passback(other, _) do
     other
-  end
-
-  defp enqueue_reward(resource_attempt_id, section_id) do
-    case Experiments.RewardHandoffWorker.maybe_enqueue(resource_attempt_id, section_id) do
-      :ok -> :ok
-      {:error, reason} -> Repo.rollback({:reward_handoff_enqueue_failed, reason})
-    end
   end
 
   defp wrap_in_paragraphs(text) do

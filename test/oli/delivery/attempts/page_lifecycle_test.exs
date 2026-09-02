@@ -9,7 +9,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
-  alias Oli.Delivery.Experiments.RewardHandoffWorker
 
   alias Oli.Experiments.Schemas.{
     AssessmentBinding,
@@ -481,19 +480,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       {:ok, %FinalizationSummary{resource_access: resource_access1}} =
         PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
 
-      assert_enqueued(
-        worker: RewardHandoffWorker,
-        args: %{"resource_attempt_id" => attempt1.id}
-      )
-
       assert {:error, {:already_submitted}} =
                PageLifecycle.finalize(
                  section.slug,
                  attempt1.attempt_guid,
                  datashop_session_id_user1
                )
-
-      assert [_job] = all_enqueued(worker: RewardHandoffWorker)
 
       {:ok, %FinalizationSummary{resource_access: resource_access2}} =
         PageLifecycle.finalize(section.slug, attempt2.attempt_guid, datashop_session_id_user1)

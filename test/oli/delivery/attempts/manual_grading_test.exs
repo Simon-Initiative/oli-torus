@@ -7,7 +7,6 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Activities.Model.{Part}
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Experiments.RewardHandoffWorker
   alias Oli.Experiments.Schemas.{AcceptedReward, PolicyState}
   alias Oli.Test.ExperimentRewardSetup
 
@@ -457,12 +456,6 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       ra = Oli.Delivery.Attempts.Core.get_resource_attempt_by(id: aa.resource_attempt_id)
       assert ra.lifecycle_state == :evaluated
 
-      assert_enqueued(
-        worker: RewardHandoffWorker,
-        args: %{"resource_attempt_id" => ra.id}
-      )
-
-      assert :ok = perform_job(RewardHandoffWorker, %{"resource_attempt_id" => ra.id})
       assert Oli.Repo.aggregate(AcceptedReward, :count) == 1
 
       policy_state = Oli.Repo.get!(PolicyState, reward_context.policy_state.id)
