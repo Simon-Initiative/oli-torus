@@ -1,5 +1,6 @@
 import {
   canCreateObjective,
+  isSearchOnly,
   objectivesForAttachment,
 } from 'components/resource/objectives/ObjectivesSelection';
 import { Objective } from 'data/content/objective';
@@ -31,12 +32,24 @@ describe('objective attachment restrictions', () => {
     },
   );
 
-  it('disables just-in-time objective creation for well-formed projects', () => {
+  it('allows just-in-time objective creation for well-formed page attachments', () => {
     const register = jest.fn();
 
-    expect(canCreateObjective(register, true)).toBe(false);
-    expect(canCreateObjective(register, false)).toBe(true);
-    expect(canCreateObjective(register)).toBe(true);
-    expect(canCreateObjective(undefined, false)).toBe(false);
+    expect(canCreateObjective(register, 'page', true)).toBe(true);
+  });
+
+  it('disables just-in-time objective creation only for well-formed activity attachments', () => {
+    const register = jest.fn();
+
+    expect(canCreateObjective(register, 'activity', true)).toBe(false);
+    expect(canCreateObjective(register, 'activity', false)).toBe(true);
+    expect(canCreateObjective(register, 'activity')).toBe(true);
+    expect(canCreateObjective(undefined, 'activity', false)).toBe(false);
+  });
+
+  it('uses search-only behavior only for well-formed activity attachments', () => {
+    expect(isSearchOnly('activity', true)).toBe(true);
+    expect(isSearchOnly('page', true)).toBe(false);
+    expect(isSearchOnly('activity', false)).toBe(false);
   });
 });

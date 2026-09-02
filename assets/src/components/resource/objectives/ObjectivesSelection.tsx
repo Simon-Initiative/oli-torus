@@ -48,8 +48,14 @@ export const objectivesForAttachment = (
 
 export const canCreateObjective = (
   onRegisterNewObjective?: (objective: Objective) => void,
+  attachmentType?: ObjectivesProps['attachmentType'],
   loWellFormed?: boolean,
-) => !!onRegisterNewObjective && !loWellFormed;
+) => !!onRegisterNewObjective && !(loWellFormed === true && attachmentType === 'activity');
+
+export const isSearchOnly = (
+  attachmentType?: ObjectivesProps['attachmentType'],
+  loWellFormed?: boolean,
+) => loWellFormed === true && attachmentType === 'activity';
 
 // Custom filterBy function for the Typeahead. This allows searches to
 // pick up child objectives for text that matches any of their parents
@@ -83,7 +89,9 @@ function createMapById(objectives: Objective[]) {
   }, {});
 }
 
-const getPlaceholderLabel = (hasObjectives: boolean, editMode: boolean) => {
+const getPlaceholderLabel = (hasObjectives: boolean, editMode: boolean, searchOnly: boolean) => {
+  if (editMode && searchOnly) return 'Search learning objectives...';
+
   if (editMode) {
     return hasObjectives
       ? 'Select or Create learning objectives...'
@@ -108,6 +116,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   // Typeahead throws a bunch of warnings if it doesn't contain
   // a unique DOM id.  So we generate one for it.
   const [id] = useState(guid());
+  const [searchResetNonce, setSearchResetNonce] = useState(0);
   const [byId, setById] = useState(createMapById(objectives));
 
   const allSelected = selected.reduce((m: any, id: any) => {
@@ -145,18 +154,31 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   const map = Immutable.Map<ResourceId, Objective>(objectives.map((o) => [o.id, o]));
   const asObjectives = selected.map((s) => map.get(s) as Objective).filter((o) => !!o);
 
-  const allowNewObjective = canCreateObjective(onRegisterNewObjective, loWellFormed);
+  const searchOnly = isSearchOnly(attachmentType, loWellFormed);
+  const allowNewObjective = canCreateObjective(
+    onRegisterNewObjective,
+    attachmentType,
+    loWellFormed,
+  );
   const hasObjectives = attachmentObjectives.length > 0;
-  const placeholder = getPlaceholderLabel(hasObjectives, editMode && allowNewObjective);
+  const placeholder = getPlaceholderLabel(hasObjectives, editMode, searchOnly);
+
+  const clearSearch = () => setSearchResetNonce((nonce) => nonce + 1);
 
   return (
     <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
       <Typeahead
+        key={searchResetNonce}
         id={id}
         filterBy={filterBy.bind(this, byId)}
         renderMenuItemChildren={renderMenuItemChildren}
         multiple={true}
         disabled={!editMode}
+        emptyLabel={searchOnly ? 'No eligible learning objectives found.' : undefined}
+        onBlur={() => searchOnly && clearSearch()}
+        onKeyDown={(event) => {
+          if (searchOnly && (event as KeyboardEvent).key === 'Escape') clearSearch();
+        }}
         onChange={(updated: (Objective & { customOption?: boolean })[]) => {
           // we can safely assume that only one objective will ever be selected at a time
           const createdObjective = updated.find((o) => o.customOption);
