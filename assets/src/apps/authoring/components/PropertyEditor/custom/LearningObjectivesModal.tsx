@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { ObjectivesSelection } from '../../../../../components/resource/objectives/ObjectivesSelection';
-import { ObjectivesMap, selectProjectSlug } from '../../../store/app/slice';
+import { ObjectivesMap, selectLoWellFormed, selectProjectSlug } from '../../../store/app/slice';
 import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 
 interface LearningModalObjectiveProps {
@@ -20,6 +20,7 @@ export const LearningObjectivesModal: React.FC<LearningModalObjectiveProps> = ({
   objectiveMap,
 }) => {
   const projectSlug = useSelector(selectProjectSlug);
+  const loWellFormed = useSelector(selectLoWellFormed);
 
   return (
     <AdvancedAuthoringModal onHide={handleClose} show={true} size="xl">
@@ -29,6 +30,8 @@ export const LearningObjectivesModal: React.FC<LearningModalObjectiveProps> = ({
       <Modal.Body>
         <ObjectivesSelection
           editMode={!readonly}
+          attachmentType="activity"
+          loWellFormed={loWellFormed}
           objectives={Object.values(objectiveMap)}
           selected={currentObjectives}
           onEdit={onChange}

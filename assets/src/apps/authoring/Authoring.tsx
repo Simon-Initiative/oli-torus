@@ -274,6 +274,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       partComponentTypes,
       activityTypes,
       allObjectives: content.allObjectives || [],
+      loWellFormed: content.loWellFormed === true,
       applicationMode:
         content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
     };

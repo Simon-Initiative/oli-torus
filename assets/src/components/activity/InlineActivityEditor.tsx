@@ -32,6 +32,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   onRemove: () => void;
   onDuplicate?: () => void;
   responsiveLayout?: boolean;
+  loWellFormed?: boolean;
 }
 
 // This is the state of our activity editing that is undoable
@@ -289,6 +290,7 @@ export class InlineActivityEditor extends React.Component<
           projectSlug={webComponentProps.projectslug}
           objectives={this.props.objectives}
           allObjectives={this.props.allObjectives}
+          loWellFormed={this.props.loWellFormed}
           onRegisterNewObjective={this.props.onRegisterNewObjective}
           onEdit={(objectives) => this.update({ objectives })}
         />
