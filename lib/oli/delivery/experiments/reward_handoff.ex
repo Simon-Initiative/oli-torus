@@ -14,7 +14,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   alias Oli.Repo
 
   alias Oli.Experiments.Policies.ThompsonSampling
-  alias Oli.Delivery.Experiments.EvidenceDispatchWorker
 
   alias Oli.Experiments.Schemas.{
     AcceptedReward,
@@ -237,7 +236,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
                 assignment,
                 binding_context.condition,
                 binding_context.experiment_id,
-                binding_context.project_id,
                 context.enrollment_id,
                 resource_attempt,
                 normalized_score
@@ -252,7 +250,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
          assignment,
          condition,
          experiment_id,
-         project_id,
          enrollment_id,
          resource_attempt,
          normalized_score
@@ -312,21 +309,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
         })
         |> Repo.update!()
 
-        publication_id = current_publication_id(assignment.section_id, project_id)
-
-        :ok =
-          EvidenceDispatchWorker.enqueue(%{
-            accepted_reward_id: accepted_reward.id,
-            disposition: "accepted",
-            project_id: project_id,
-            publication_id: publication_id,
-            page_revision_id: resource_attempt.revision_id,
-            reward_threshold: binding.reward_threshold,
-            previous_policy_context:
-              condition_context(policy_state.state, condition.condition_code),
-            next_policy_context: condition_context(update.next_state, condition.condition_code)
-          })
-
         {:accepted, accepted_reward}
     end
   end
@@ -352,22 +334,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
       [:oli, :experiments, :delivery_reward, disposition],
       %{count: 1},
       %{assessment_binding_id: binding_id, resource_attempt_id: resource_attempt_id}
-    )
-  end
-
-  defp condition_context(state, condition_code) do
-    state
-    |> Map.get(condition_code, %{})
-    |> Map.take(["posterior_alpha", "posterior_beta"])
-  end
-
-  defp current_publication_id(section_id, project_id) do
-    Repo.one!(
-      from(deployment in Oli.Delivery.Sections.SectionsProjectsPublications,
-        where: deployment.section_id == ^section_id and deployment.project_id == ^project_id,
-        select: deployment.publication_id,
-        limit: 1
-      )
     )
   end
 end

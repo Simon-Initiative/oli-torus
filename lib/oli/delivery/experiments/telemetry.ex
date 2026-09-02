@@ -11,7 +11,6 @@ defmodule Oli.Delivery.Experiments.Telemetry do
 
   @batch_completed_event [:oli, :experiments, :delivery_reward, :batch, :completed]
   @eligibility_completed_event [:oli, :experiments, :delivery_reward, :eligibility, :completed]
-  @evidence_dispatch_event [:oli, :experiments, :delivery_reward, :evidence_dispatch, :completed]
   @reward_events [
     [:oli, :experiments, :delivery_reward, :accepted],
     [:oli, :experiments, :delivery_reward, :duplicate],
@@ -88,23 +87,6 @@ defmodule Oli.Delivery.Experiments.Telemetry do
     )
   end
 
-  def handle_event(@evidence_dispatch_event, measurements, metadata, _config) do
-    tags = %{status: classify_status(metadata[:status])}
-
-    add_distribution(
-      "oli.experiments.reward_handoff.evidence_dispatch.duration_ms",
-      measurements,
-      :duration_ms,
-      tags
-    )
-
-    Appsignal.increment_counter(
-      "oli.experiments.reward_handoff.evidence_dispatch.completed",
-      1,
-      tags
-    )
-  end
-
   def handle_event(
         [:oli, :experiments, :delivery_reward, outcome],
         _measurements,
@@ -149,8 +131,7 @@ defmodule Oli.Delivery.Experiments.Telemetry do
   defp attach_appsignal_handler do
     case :telemetry.attach_many(
            "experiment-reward-appsignal-handler",
-           [@batch_completed_event, @eligibility_completed_event, @evidence_dispatch_event] ++
-             @reward_events,
+           [@batch_completed_event, @eligibility_completed_event] ++ @reward_events,
            &__MODULE__.handle_event/4,
            %{}
          ) do

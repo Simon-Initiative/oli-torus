@@ -5,14 +5,6 @@ defmodule Oli.Delivery.Experiments.TelemetryTest do
 
   @batch_completed_event [:oli, :experiments, :delivery_reward, :batch, :completed]
   @eligibility_completed_event [:oli, :experiments, :delivery_reward, :eligibility, :completed]
-  @evidence_dispatch_event [
-    :oli,
-    :experiments,
-    :delivery_reward,
-    :evidence_dispatch,
-    :completed
-  ]
-
   describe "handle_event/4" do
     test "maps batch measurements to AppSignal metrics" do
       assert :ok =
@@ -44,15 +36,7 @@ defmodule Oli.Delivery.Experiments.TelemetryTest do
       assert :ok = Telemetry.handle_event(@eligibility_completed_event, %{}, %{}, %{})
     end
 
-    test "maps evidence dispatch latency and bounded reward outcomes" do
-      assert :ok =
-               Telemetry.handle_event(
-                 @evidence_dispatch_event,
-                 %{duration_ms: 12},
-                 %{status: :ok},
-                 %{}
-               )
-
+    test "maps bounded reward outcomes" do
       assert :ok =
                Telemetry.handle_event(
                  [:oli, :experiments, :delivery_reward, :skipped],

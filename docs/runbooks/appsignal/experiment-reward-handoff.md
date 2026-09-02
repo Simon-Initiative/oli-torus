@@ -31,8 +31,7 @@ execution remains asynchronous and idempotent after commit.
 - The deployment includes `Oli.Delivery.Experiments.Telemetry` in the application supervision tree.
 - AppSignal's automatic Oban and Ecto instrumentation is enabled. Torus does not disable either
   integration in repository configuration.
-- At least one `Oli.Delivery.Experiments.RewardHandoffWorker` and, for accepted rewards, one
-  `Oli.Delivery.Experiments.EvidenceDispatchWorker` job has run after deployment.
+- At least one `Oli.Delivery.Experiments.RewardHandoffWorker` job has run after deployment.
 
 Phoenix LiveDashboard is useful for current node, VM, and Ecto health, but it does not register the
 reward-handoff custom events. AppSignal is the durable monitoring surface for the metrics below.
@@ -52,8 +51,6 @@ All custom metrics use the prefix `oli.experiments.reward_handoff`.
 | `eligibility.assignment_count` | Distribution | `matched`, `empty`, `error`, `unknown` | Eligible assignments returned for one attempt. |
 | `eligibility.lookup` | Counter | `matched`, `empty`, `error`, `unknown` | Eligibility lookups attempted. |
 | `eligibility.assignment_query` | Counter | `matched`, `empty`, `error`, `unknown` | PostgreSQL assignment queries executed. A lookup with no matching alternatives branch contributes zero. |
-| `evidence_dispatch.duration_ms` | Distribution | `ok`, `error`, `unknown` | Time spent dispatching one durable post-commit evidence record. |
-| `evidence_dispatch.completed` | Counter | `ok`, `error`, `unknown` | Completed durable evidence dispatch attempts. |
 | `outcome` | Counter | `accepted`, `duplicate`, or `skipped`; bounded `reason` | Reward dispositions. Reasons are restricted to the allowlist in `Oli.Delivery.Experiments.Telemetry`. |
 
 Metric names are emitted exactly as `oli.experiments.reward_handoff.<metric>`. Status, outcome, and

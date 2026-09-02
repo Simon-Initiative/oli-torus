@@ -5,8 +5,9 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
   import Oli.Factory
   import Ecto.Query
 
+  alias Oli.Analytics.Summary.AttemptGroup
+  alias Oli.Analytics.XAPI.{Events.Context, StatementFactory}
   alias Oli.Delivery.Experiments.RewardHandoff
-  alias Oli.Delivery.Experiments.EvidenceDispatchWorker
   alias Oli.Delivery.Experiments.RewardHandoffWorker
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Experiments.Policies.ThompsonSampling
@@ -38,17 +39,6 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       assert policy_state.reward_failure_count == 0
       assert policy_state.state["condition-a"]["posterior_alpha"] == 2.0
       assert policy_state.state["condition-a"]["posterior_beta"] == 1.0
-
-      assert_enqueued(
-        worker: EvidenceDispatchWorker,
-        args: %{
-          "accepted_reward_id" => reward.id,
-          "disposition" => "accepted",
-          "project_id" => context.experiment.project_id,
-          "publication_id" => context.publication.id,
-          "page_revision_id" => context.page_revision.id
-        }
-      )
     end
 
     test "records a failure below a binding-specific threshold and accepts threshold zero" do
@@ -161,69 +151,34 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       assert policy_state.state["condition-a"]["successes"] == 1
     end
 
-    test "dispatches committed reward evidence without mutating the posterior again" do
-      context = setup_context(score: 1.0, out_of: 1.0, threshold: "0.75")
-      parent = self()
-      handler_id = "reward-evidence-dispatch-#{System.unique_integer([:positive])}"
-
-      :telemetry.attach(
-        handler_id,
-        [:oli, :experiments, :delivery_reward, :evidence_dispatch, :completed],
-        fn _, measurements, metadata, _ ->
-          send(parent, {:evidence_dispatch, measurements, metadata})
-        end,
-        %{}
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
-
-      assert :ok = RewardHandoff.record_evaluated_resource_attempt(context.resource_attempt.id)
-      reward = Repo.one!(AcceptedReward)
-      state_after_reward = Repo.get!(PolicyState, context.policy_state.id).state
-
-      assert :ok =
-               perform_job(EvidenceDispatchWorker, %{
-                 "accepted_reward_id" => reward.id,
-                 "disposition" => "accepted",
-                 "project_id" => context.experiment.project_id,
-                 "publication_id" => context.publication.id,
-                 "page_revision_id" => context.page_revision.id,
-                 "previous_policy_context" => %{
-                   "posterior_alpha" => 1.0,
-                   "posterior_beta" => 1.0
-                 },
-                 "next_policy_context" => %{
-                   "posterior_alpha" => 2.0,
-                   "posterior_beta" => 1.0
-                 }
-               })
-
-      assert Repo.get!(PolicyState, context.policy_state.id).state == state_after_reward
-      assert_receive {:evidence_dispatch, %{count: 1, duration_ms: duration}, %{status: :ok}}
-      assert duration >= 0
-    end
-
-    test "reward evidence includes the stable experiment UUID" do
+    test "makes accepted reward evidence available to the authoritative page snapshot" do
       context = setup_context(score: 1.0, out_of: 1.0, threshold: "0.75")
 
       assert :ok = RewardHandoff.record_evaluated_resource_attempt(context.resource_attempt.id)
-      reward = Repo.one!(AcceptedReward)
 
-      assert {:ok, _evidence, statement} =
-               EvidenceDispatchWorker.prepare_dispatch(reward.id, %{
-                 "disposition" => "accepted",
-                 "project_id" => context.experiment.project_id,
-                 "publication_id" => context.publication.id,
-                 "page_revision_id" => context.page_revision.id
-               })
+      xapi_context = %Context{
+        host_name: "https://example.edu",
+        user_id: context.assignment.user_id,
+        section_id: context.section.id,
+        enrollment_id: context.assignment.enrollment_id,
+        project_id: context.experiment.project_id,
+        publication_id: context.publication.id
+      }
 
-      extensions = statement["context"]["extensions"]
+      attempt_group = %AttemptGroup{
+        context: xapi_context,
+        part_attempts: [],
+        activity_attempts: [],
+        resource_attempt:
+          Map.put(context.resource_attempt, :resource_id, context.resource_access.resource_id)
+      }
 
-      assert extensions["http://oli.cmu.edu/extensions/enrollment_id"] ==
-               context.assignment.enrollment_id
+      [statement] = StatementFactory.to_statements(attempt_group)
 
       [attribution] =
-        extensions["http://oli.cmu.edu/extensions/experiment_attributions"]
+        statement["context"]["extensions"][
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ]
 
       assert attribution["experiment_uuid"] == context.experiment.uuid
       assert attribution["experiment_id"] == context.experiment.id
@@ -290,7 +245,6 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       assert policy_state.state == invalid_state
       assert policy_state.reward_success_count == 0
       assert policy_state.reward_failure_count == 0
-      refute_enqueued(worker: EvidenceDispatchWorker)
     end
 
     test "worker retry succeeds after a transient processing failure" do
