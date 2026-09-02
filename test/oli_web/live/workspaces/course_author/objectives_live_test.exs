@@ -408,6 +408,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "p", "No learning objectives match your search.")
     end
 
+    test "bounds search input before applying it", %{conn: conn, project: project} do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      oversized_query = String.duplicate("term ", 20)
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: oversized_query})
+
+      query = :sys.get_state(view.pid).socket.assigns.query
+
+      assert String.length(query) <= 100
+      assert length(String.split(query)) <= 10
+    end
+
     test "applies sorting", %{conn: conn, project: project, publication: publication} do
       {:ok, _first_obj} = create_objective(project, publication, "first_obj", "First Objective")
 

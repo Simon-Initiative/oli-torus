@@ -31,6 +31,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
+  @max_search_length 100
+  @max_search_terms 10
 
   def live_path(socket, params) do
     params =
@@ -61,6 +63,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         assessment_buckets: %{},
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
+        search_matching_ids: nil,
         expanded_objective_slugs: initial_expanded_objective_slugs(params),
         search_expanded_objective_slugs: MapSet.new(),
         offset: 0,
@@ -76,8 +79,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
          end)}
       end)
       |> attach_hook(:objective_search_expansion, :handle_event, fn
+        "change_search", %{"value" => value}, socket ->
+          {:halt,
+           assign(socket,
+             query: normalize_search_query(value),
+             search_matching_ids: nil
+           )}
+
         "apply_search", _params, socket ->
-          {:cont, expand_search_results(socket, socket.assigns.query)}
+          matching_ids =
+            case socket.assigns.coverage_model do
+              nil -> MapSet.new()
+              model -> matching_objective_ids(model, socket.assigns.query)
+            end
+
+          socket = assign(socket, search_matching_ids: matching_ids)
+          {:cont, expand_search_results(socket, socket.assigns.query, matching_ids)}
 
         "reset_search", _params, socket ->
           {:cont,
@@ -87,7 +104,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                  socket.assigns.expanded_objective_slugs,
                  Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
                ),
-             search_expanded_objective_slugs: MapSet.new()
+             search_expanded_objective_slugs: MapSet.new(),
+             search_matching_ids: MapSet.new()
            )}
 
         _event, _params, socket ->
@@ -320,6 +338,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   def filter_rows(socket, query, _filter) do
+    query = normalize_search_query(query)
+
     case socket.assigns.coverage_model do
       nil ->
         if String.trim(query) == "", do: socket.assigns.objectives, else: []
@@ -328,7 +348,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         if String.trim(query) == "" do
           socket.assigns.objectives
         else
-          matching_ids = matching_objective_ids(model, query)
+          matching_ids =
+            socket.assigns.search_matching_ids || matching_objective_ids(model, query)
 
           Enum.filter(socket.assigns.objectives, fn objective ->
             objective.resource_id in matching_ids or
@@ -342,22 +363,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   defp matching_objective_ids(model, query) do
     model
-    |> ObjectiveCoverage.search(query)
+    |> ObjectiveCoverage.search(normalize_search_query(query))
     |> Enum.map(& &1.objective_id)
     |> MapSet.new()
   end
 
-  defp expand_search_results(socket, query) do
+  defp normalize_search_query(query) when is_binary(query) do
+    query
+    |> String.slice(0, @max_search_length)
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.take(@max_search_terms)
+    |> Enum.join(" ")
+  end
+
+  defp normalize_search_query(_query), do: ""
+
+  defp expand_search_results(socket, query, matching_ids) do
     case socket.assigns.coverage_model do
       nil ->
         socket
 
-      model when is_binary(query) ->
+      _model when is_binary(query) ->
         if String.trim(query) == "" do
           socket
         else
-          matching_ids = matching_objective_ids(model, query)
-
           auto_expanded =
             socket.assigns.objectives
             |> Enum.flat_map(fn objective ->
