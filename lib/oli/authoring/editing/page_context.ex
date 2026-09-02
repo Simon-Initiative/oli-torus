@@ -11,6 +11,7 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     :objectives,
     :allObjectives,
     :learningObjectives,
+    :loWellFormed,
     :allTags,
     :editorMap,
     :activities,
