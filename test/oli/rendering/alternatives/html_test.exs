@@ -47,6 +47,41 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
                ~s|class="alternative alternative-b" data-alternatives-id="23"|
     end
 
+    test "passes the page resource id to the alternatives strategy", %{author: author} do
+      test_process = self()
+
+      element = %{
+        "type" => "alternatives",
+        "id" => "experiment-placement",
+        "alternatives_id" => 23,
+        "children" => [%{"type" => "alternative", "value" => "a", "children" => []}]
+      }
+
+      Alternatives.render(
+        %Context{
+          user: author,
+          page_id: 42,
+          activity_map: %{},
+          alternatives_groups_fn: fn ->
+            {:ok, [%{id: 23, strategy: "select_all", options: []}]}
+          end,
+          alternatives_selector_fn: fn strategy_context, alternatives_element ->
+            send(test_process, {:strategy_context, strategy_context})
+
+            Oli.Resources.Alternatives.SelectAllStrategy.select(
+              strategy_context,
+              alternatives_element
+            )
+          end,
+          mode: :review
+        },
+        element,
+        Alternatives.Html
+      )
+
+      assert_receive {:strategy_context, %{page_resource_id: 42}}
+    end
+
     test "renders well-formed survey properly", %{author: author} do
       activity_map = %{
         1 => %ActivitySummary{

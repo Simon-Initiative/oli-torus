@@ -30,6 +30,7 @@ defmodule Oli.Rendering.Alternatives do
           section_id: section_id,
           section_slug: section_slug,
           project_slug: project_slug,
+          page_id: page_resource_id,
           activity_map: activity_map,
           mode: mode,
           alternatives_selector_fn: alternatives_selector_fn,
@@ -60,6 +61,7 @@ defmodule Oli.Rendering.Alternatives do
         section_slug: section_slug,
         mode: mode,
         project_slug: project_slug,
+        page_resource_id: page_resource_id,
         activity_resource_ids: activity_resource_ids(activity_map),
         alternative_groups_by_id: by_id,
         experiment_decisions: experiment_decisions

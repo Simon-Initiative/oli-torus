@@ -769,7 +769,7 @@ defmodule Oli.Resources.AlternativesTest do
       "value" => value,
       "children" => [
         %{
-          "type" => "activity",
+          "type" => "activity-reference",
           "activity_id" => activity_id
         }
       ]

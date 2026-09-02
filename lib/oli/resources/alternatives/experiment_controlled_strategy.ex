@@ -473,7 +473,8 @@ defmodule Oli.Resources.Alternatives.ExperimentControlledStrategy do
     end
   end
 
-  defp activity_ids(%{"type" => "activity", "activity_id" => activity_id}), do: [activity_id]
+  defp activity_ids(%{"type" => "activity-reference", "activity_id" => activity_id}),
+    do: [activity_id]
 
   defp activity_ids(%{"children" => children}) when is_list(children) do
     Enum.flat_map(children, &activity_ids/1)
