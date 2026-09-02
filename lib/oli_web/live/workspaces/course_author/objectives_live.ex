@@ -62,6 +62,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
         expanded_objective_slugs: initial_expanded_objective_slugs(params),
+        search_expanded_objective_slugs: MapSet.new(),
         offset: 0,
         limit: 20,
         resource_slug: project.slug,
@@ -73,6 +74,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
          assign_new(socket, :has_show_links_uri_hash, fn ->
            String.contains?(uri, "#show_links")
          end)}
+      end)
+      |> attach_hook(:objective_search_expansion, :handle_event, fn
+        "apply_search", _params, socket ->
+          {:cont, expand_search_results(socket, socket.assigns.query)}
+
+        "reset_search", _params, socket ->
+          {:cont,
+           assign(socket,
+             expanded_objective_slugs:
+               MapSet.difference(
+                 socket.assigns.expanded_objective_slugs,
+                 Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
+               ),
+             search_expanded_objective_slugs: MapSet.new()
+           )}
+
+        _event, _params, socket ->
+          {:cont, socket}
       end)
 
     {:ok,
@@ -96,66 +115,70 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       card_body_text_class="mt-1 mb-4 text-Text-text-high"
       filter_opts_class="w-full"
     >
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="w-full sm:max-w-md">
-          <Filter.render
-            change="change_search"
-            reset="reset_search"
-            apply="apply_search"
-            query={@query}
-            apply_icon={true}
-          />
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+          <div class="w-full sm:max-w-md">
+            <Filter.render
+              change="change_search"
+              reset="reset_search"
+              apply="apply_search"
+              query={@query}
+              apply_icon={true}
+            />
+          </div>
+
+          <form id="sort" phx-change="sort" class="flex h-9 items-center gap-2">
+            <label for="select_sort" class="sr-only">Sort objectives</label>
+            <select
+              name="sort_by"
+              id="select_sort"
+              class="h-9 rounded-[3px] border border-Border-border-default bg-Background-bg-primary px-2 text-sm font-semibold text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            >
+              <%= for column_spec <- @table_model.column_specs do %>
+                <%= if column_spec.name != :action do %>
+                  <option value={column_spec.name} selected={@table_model.sort_by_spec == column_spec}>
+                    {column_spec.label}
+                  </option>
+                <% end %>
+              <% end %>
+            </select>
+            <label class="inline-flex size-9 cursor-pointer items-center justify-center rounded text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
+              <span class="sr-only">Toggle sort direction</span>
+              <.input
+                type="checkbox"
+                name="sort_order"
+                class="sr-only"
+                value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
+              />
+              <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
+            </label>
+          </form>
         </div>
 
-        <form id="sort" phx-change="sort" class="flex h-9 items-center gap-2">
-          <label for="select_sort" class="sr-only">Sort objectives</label>
-          <select
-            name="sort_by"
-            id="select_sort"
-            class="h-9 rounded-[3px] border border-Border-border-default bg-Background-bg-primary px-2 text-sm font-semibold text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+        <div class="flex shrink-0 items-center gap-3">
+          <.link
+            id="download-objectives-csv"
+            href={
+              ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
+            }
+            download={"#{@project.slug}_learning_objectives.csv"}
+            class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md border border-Fill-Buttons-fill-primary bg-Background-bg-secondary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-button transition hover:bg-Fill-Buttons-fill-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
           >
-            <%= for column_spec <- @table_model.column_specs do %>
-              <%= if column_spec.name != :action do %>
-                <option value={column_spec.name} selected={@table_model.sort_by_spec == column_spec}>
-                  {column_spec.label}
-                </option>
-              <% end %>
-            <% end %>
-          </select>
-          <label class="inline-flex size-9 cursor-pointer items-center justify-center rounded text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
-            <span class="sr-only">Toggle sort direction</span>
-            <.input
-              type="checkbox"
-              name="sort_order"
-              class="sr-only"
-              value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
-            />
-            <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
-          </label>
-        </form>
+            <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
+              <Icons.download stroke_class="stroke-current" />
+            </span>
+            Download CSV
+          </.link>
 
-        <.link
-          id="download-objectives-csv"
-          href={
-            ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
-          }
-          download={"#{@project.slug}_learning_objectives.csv"}
-          class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md border border-Fill-Buttons-fill-primary bg-Background-bg-secondary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-button transition hover:bg-Fill-Buttons-fill-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-        >
-          <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
-            <Icons.download stroke_class="stroke-current" />
-          </span>
-          Download CSV
-        </.link>
-
-        <button
-          type="button"
-          class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-          phx-click="display_new_modal"
-        >
-          <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
-          New Objective
-        </button>
+          <button
+            type="button"
+            class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            phx-click="display_new_modal"
+          >
+            <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
+            New Objective
+          </button>
+        </div>
       </div>
     </FilterBox.render>
 
@@ -206,6 +229,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         show_bottom_paging={false}
         additional_table_class="table-sm text-center"
         with_body={true}
+        empty_state_text={
+          if @query == "", do: "None exist", else: "No learning objectives match your search."
+        }
       >
         <div class="rounded-lg bg-Background-bg-secondary p-6 shadow-[0px_2px_5px_rgba(0,50,99,0.10)]">
           <Listing.render
@@ -218,6 +244,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             pending_delete_slugs={@pending_sub_objective_delete_slugs}
             project_slug={@project.slug}
             offset={@offset}
+            query={@query}
           />
         </div>
       </Table.render>
@@ -293,11 +320,86 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   def filter_rows(socket, query, _filter) do
-    query_str = String.downcase(query)
+    case socket.assigns.coverage_model do
+      nil ->
+        if String.trim(query) == "", do: socket.assigns.objectives, else: []
 
-    Enum.filter(socket.assigns.objectives, fn obj ->
-      String.contains?(String.downcase(obj.title), query_str)
-    end)
+      model ->
+        if String.trim(query) == "" do
+          socket.assigns.objectives
+        else
+          matching_ids = matching_objective_ids(model, query)
+
+          Enum.filter(socket.assigns.objectives, fn objective ->
+            objective.resource_id in matching_ids or
+              Enum.any?(objective.children, fn child ->
+                not is_nil(child) and child.resource_id in matching_ids
+              end)
+          end)
+        end
+    end
+  end
+
+  defp matching_objective_ids(model, query) do
+    model
+    |> ObjectiveCoverage.search(query)
+    |> Enum.map(& &1.objective_id)
+    |> MapSet.new()
+  end
+
+  defp expand_search_results(socket, query) do
+    case socket.assigns.coverage_model do
+      nil ->
+        socket
+
+      model when is_binary(query) ->
+        if String.trim(query) == "" do
+          socket
+        else
+          matching_ids = matching_objective_ids(model, query)
+
+          auto_expanded =
+            socket.assigns.objectives
+            |> Enum.flat_map(fn objective ->
+              child_ids =
+                objective.children
+                |> Enum.reject(&is_nil/1)
+                |> Enum.map(& &1.resource_id)
+
+              if objective.resource_id in matching_ids or
+                   Enum.any?(child_ids, &(&1 in matching_ids)) do
+                matching_child_slugs =
+                  objective.children
+                  |> Enum.filter(fn child ->
+                    not is_nil(child) and child.resource_id in matching_ids
+                  end)
+                  |> Enum.map(& &1.slug)
+
+                [objective.slug | matching_child_slugs]
+              else
+                []
+              end
+            end)
+            |> Enum.reject(&is_nil/1)
+            |> MapSet.new()
+
+          previous_auto_expanded =
+            Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
+
+          manually_expanded =
+            MapSet.difference(socket.assigns.expanded_objective_slugs, previous_auto_expanded)
+
+          search_expanded = MapSet.difference(auto_expanded, manually_expanded)
+
+          assign(socket,
+            expanded_objective_slugs: MapSet.union(manually_expanded, auto_expanded),
+            search_expanded_objective_slugs: search_expanded
+          )
+        end
+
+      _model ->
+        socket
+    end
   end
 
   defp return_updated_data(project, flash_fn, socket) do

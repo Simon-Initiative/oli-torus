@@ -12,6 +12,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   attr(:expanded_slugs, :any, default: MapSet.new())
   attr(:pending_delete_slugs, :any, default: MapSet.new())
   attr(:offset, :integer, default: 0)
+  attr(:query, :string, default: "")
 
   def render(assigns) do
     ~H"""
@@ -49,7 +50,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                 <span>{"LO #{@offset + index}"}</span>
               </span>
               <span class="flex min-h-[22.5px] min-w-0 flex-1 items-center text-[15px] font-semibold leading-[22.5px] text-Text-text-high">
-                <span class="min-w-0">{item.title}</span>
+                <span class="min-w-0"><.highlighted_title title={item.title} query={@query} /></span>
               </span>
             </button>
 
@@ -175,7 +176,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                     </button>
                   </div>
                 </div>
-                <.coverage_details item={item} project_slug={@project_slug} />
+                <.coverage_details item={item} project_slug={@project_slug} query={@query} />
               </section>
 
               <section class="order-2 flex flex-col gap-3">
@@ -226,7 +227,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           "min-w-0 flex-1 text-sm font-normal leading-[19.25px] text-Text-text-high",
                           MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "line-through"
                         ]}>
-                          {sub_objective.title}
+                          <.highlighted_title title={sub_objective.title} query={@query} />
                         </span>
                       </button>
                       <.loader
@@ -339,7 +340,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                             </button>
                           </div>
                         </div>
-                        <.coverage_details item={sub_objective} project_slug={@project_slug} />
+                        <.coverage_details
+                          item={sub_objective}
+                          project_slug={@project_slug}
+                          query={@query}
+                        />
                       </div>
                     </li>
                   <% end %>
@@ -377,6 +382,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
   attr :item, :map, required: true
   attr :project_slug, :string, required: true
+  attr :query, :string, default: ""
 
   defp coverage_details(assigns) do
     ~H"""
@@ -398,7 +404,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                   aria-label={"Open page editor for #{page.page.title || page.page.slug}"}
                 >
                   <Icons.book width="12" height="13" stroke_width="1.41573" variant="objective" />
-                  <span>{page.page.title || page.page.slug}</span>
+                  <span>
+                    <.highlighted_title
+                      title={page.page.title || page.page.slug}
+                      query={@query}
+                    />
+                  </span>
                 </.link>
               </div>
               <%= if page.activities == [] do %>
@@ -424,7 +435,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                             <Icons.practice is_active={false} />
                           <% end %>
                         </span>
-                        <span class="min-w-0 truncate">{activity.title || activity.slug}</span>
+                        <span class="min-w-0 truncate">
+                          <.highlighted_title
+                            title={activity.title || activity.slug}
+                            query={@query}
+                          />
+                        </span>
                       </.link>
                     </li>
                   <% end %>
@@ -448,4 +464,38 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
   defp pluralized_count(1, singular, _plural), do: "1 #{singular}"
   defp pluralized_count(count, _singular, plural), do: "#{count} #{plural}"
+
+  attr :title, :string, required: true
+  attr :query, :string, default: ""
+
+  defp highlighted_title(assigns) do
+    ~H"""
+    <%= for part <- highlight_parts(@title, @query) do %>
+      <mark :if={highlighted_part?(part, @query)}>{part}</mark>
+      <span :if={!highlighted_part?(part, @query)}>{part}</span>
+    <% end %>
+    """
+  end
+
+  defp highlight_parts(title, query) do
+    terms = String.split(query, ~r/\s+/, trim: true)
+
+    case terms do
+      [] ->
+        [title]
+
+      terms ->
+        Regex.split(~r/(#{Enum.map_join(terms, "|", &Regex.escape/1)})/iu, title,
+          include_captures: true
+        )
+    end
+  end
+
+  defp highlighted_part?(part, query) do
+    normalized_part = String.downcase(part)
+
+    query
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.any?(&(String.downcase(&1) == normalized_part))
+  end
 end
