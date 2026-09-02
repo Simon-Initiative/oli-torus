@@ -17135,10 +17135,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 23em;
 }
 
-.h-\[23px\] {
-  height: 23px;
-}
-
 .h-\[242px\] {
   height: 242px;
 }
@@ -17522,6 +17518,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[300px\] {
   min-height: 300px;
+}
+
+.min-h-\[30px\] {
+  min-height: 30px;
 }
 
 .min-h-\[34px\] {
@@ -18580,6 +18580,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .basis-1\/2 {
   flex-basis: 50%;
+}
+
+.basis-full {
+  flex-basis: 100%;
 }
 
 .table-fixed {
@@ -22179,6 +22183,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 60px;
 }
 
+.py-\[7px\] {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
 .py-px {
   padding-top: 1px;
   padding-bottom: 1px;
@@ -22298,6 +22307,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pl-0 {
   padding-left: 0px;
+}
+
+.pl-0\.5 {
+  padding-left: 0.125rem;
 }
 
 .pl-1 {
@@ -24001,6 +24014,12 @@ table.table-striped tbody tr:nth-child(even) {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.shadow-\[0px_1px_1\.5px_rgba\(0\2c 0\2c 0\2c 0\.1\)\2c 0px_1px_1px_rgba\(0\2c 0\2c 0\2c 0\.1\)\] {
+  --tw-shadow: 0px 1px 1.5px rgba(0,0,0,0.1),0px 1px 1px rgba(0,0,0,0.1);
+  --tw-shadow-colored: 0px 1px 1.5px var(--tw-shadow-color), 0px 1px 1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-\[0px_1px_2px_0px_rgba\(0\2c 0\2c 0\2c 0\.18\)\] {
   --tw-shadow: 0px 1px 2px 0px rgba(0,0,0,0.18);
   --tw-shadow-colored: 0px 1px 2px 0px var(--tw-shadow-color);
@@ -24076,6 +24095,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_2px_5px_0px_rgba\(0\2c 50\2c 99\2c 0\.10\)\] {
   --tw-shadow: 0px 2px 5px 0px rgba(0,50,99,0.10);
   --tw-shadow-colored: 0px 2px 5px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_2px_5px_rgba\(0\2c 50\2c 99\2c 0\.10\)\] {
+  --tw-shadow: 0px 2px 5px rgba(0,50,99,0.10);
+  --tw-shadow-colored: 0px 2px 5px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -29237,6 +29262,22 @@ Not supports in Firefox and IE */
   color: #BAB8BF;
 }
 
+.placeholder\:text-Text-text-low-alpha::-moz-placeholder {
+  color: #757682;
+}
+
+.placeholder\:text-Text-text-low-alpha::placeholder {
+  color: #757682;
+}
+
+.dark .placeholder\:text-Text-text-low-alpha::-moz-placeholder {
+  color: #EEEBF5BF;
+}
+
+.dark .placeholder\:text-Text-text-low-alpha::placeholder {
+  color: #EEEBF5BF;
+}
+
 .before\:bg-Border-border-danger::before {
   content: var(--tw-content);
   background-color: #FF4040;
@@ -29285,6 +29326,14 @@ Not supports in Firefox and IE */
 
 .dark .focus-within\:bg-Fill-fill-hover:focus-within {
   background-color: #FFFFFF1A;
+}
+
+.focus-within\:outline-Fill-Buttons-fill-primary:focus-within {
+  outline-color: #0080FF;
+}
+
+.dark .focus-within\:outline-Fill-Buttons-fill-primary:focus-within {
+  outline-color: #0080FF;
 }
 
 .focus-within\:border-Border-border-hover:focus-within {
@@ -30415,6 +30464,18 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .read-only\:bg-gray-100:read-only {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 245 / var(--tw-bg-opacity));
+}
+
+.focus-within\:outline:focus-within {
+  outline-style: solid;
+}
+
+.focus-within\:outline-2:focus-within {
+  outline-width: 2px;
+}
+
+.focus-within\:outline-offset-2:focus-within {
+  outline-offset: 2px;
 }
 
 .hover\:pointer-events-none:hover {
