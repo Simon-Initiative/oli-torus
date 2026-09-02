@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AllTypeaheadOwnAndInjectedProps,
   Typeahead,
@@ -25,6 +25,8 @@ export type ObjectivesProps = {
 };
 
 export type ObjectiveOption = Objective & { disabled?: boolean };
+
+type TypeaheadInstance = Typeahead<ObjectiveOption> & { focus: () => void };
 
 export const objectivesForAttachment = (
   objectives: Objective[],
@@ -118,6 +120,8 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   const [id] = useState(guid());
   const [searchResetNonce, setSearchResetNonce] = useState(0);
   const [byId, setById] = useState(createMapById(objectives));
+  const typeaheadRef = useRef<TypeaheadInstance>(null);
+  const restoreFocusAfterReset = useRef(false);
 
   const allSelected = selected.reduce((m: any, id: any) => {
     m[id] = true;
@@ -127,6 +131,13 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   useEffect(() => {
     setById(createMapById(objectives));
   }, [objectives]);
+
+  useEffect(() => {
+    if (restoreFocusAfterReset.current) {
+      restoreFocusAfterReset.current = false;
+      typeaheadRef.current?.focus();
+    }
+  }, [searchResetNonce]);
 
   const renderMenuItemChildren = (
     option: TypeaheadResult<ObjectiveOption>,
@@ -163,12 +174,16 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   const hasObjectives = attachmentObjectives.length > 0;
   const placeholder = getPlaceholderLabel(hasObjectives, editMode, searchOnly);
 
-  const clearSearch = () => setSearchResetNonce((nonce) => nonce + 1);
+  const clearSearch = (restoreFocus = false) => {
+    restoreFocusAfterReset.current = restoreFocus;
+    setSearchResetNonce((nonce) => nonce + 1);
+  };
 
   return (
     <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
       <Typeahead
         key={searchResetNonce}
+        ref={typeaheadRef}
         id={id}
         filterBy={filterBy.bind(this, byId)}
         renderMenuItemChildren={renderMenuItemChildren}
@@ -177,7 +192,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
         emptyLabel={searchOnly ? 'No eligible learning objectives found.' : undefined}
         onBlur={() => searchOnly && clearSearch()}
         onKeyDown={(event) => {
-          if (searchOnly && (event as KeyboardEvent).key === 'Escape') clearSearch();
+          if (searchOnly && (event as KeyboardEvent).key === 'Escape') clearSearch(true);
         }}
         onChange={(updated: (Objective & { customOption?: boolean })[]) => {
           // we can safely assume that only one objective will ever be selected at a time

@@ -49,9 +49,11 @@ describe('well-formed activity objective search', () => {
     renderSearchOnlySelector();
 
     const input = screen.getByRole('textbox');
+    input.focus();
     fireEvent.change(input, { target: { value: 'Unsaved search' } });
     fireEvent.keyDown(input, { key: 'Escape', keyCode: 27 });
 
     expect(screen.getByRole('textbox')).toHaveValue('');
+    expect(screen.getByRole('textbox')).toHaveFocus();
   });
 });
