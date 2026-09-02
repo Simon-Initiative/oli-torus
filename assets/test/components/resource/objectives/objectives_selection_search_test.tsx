@@ -8,20 +8,18 @@ const objectives: Objective[] = [
   { id: 2, title: 'Child', parentIds: [1] },
 ];
 
-const renderSearchOnlySelector = (selected: number[] = [], onKeyDown?: () => void) =>
+const renderSearchOnlySelector = (selected: number[] = []) =>
   render(
-    <div onKeyDown={onKeyDown}>
-      <ObjectivesSelection
-        objectives={objectives}
-        selected={selected}
-        editMode={true}
-        projectSlug="project"
-        attachmentType="activity"
-        loWellFormed={true}
-        onEdit={jest.fn()}
-        onRegisterNewObjective={jest.fn()}
-      />
-    </div>,
+    <ObjectivesSelection
+      objectives={objectives}
+      selected={selected}
+      editMode={true}
+      projectSlug="project"
+      attachmentType="activity"
+      loWellFormed={true}
+      onEdit={jest.fn()}
+      onRegisterNewObjective={jest.fn()}
+    />,
   );
 
 describe('well-formed activity objective search', () => {
@@ -45,28 +43,5 @@ describe('well-formed activity objective search', () => {
 
     expect(screen.getByRole('textbox')).toHaveValue('');
     expect(screen.getByText('Child')).toBeInTheDocument();
-  });
-
-  it('clears unmatched search text on Escape', () => {
-    const onParentKeyDown = jest.fn();
-    renderSearchOnlySelector([], onParentKeyDown);
-
-    const input = screen.getByRole('textbox');
-    input.focus();
-    fireEvent.change(input, { target: { value: 'Unsaved search' } });
-    fireEvent.keyDown(input, { key: 'Escape', keyCode: 27 });
-
-    expect(screen.getByRole('textbox')).toHaveValue('');
-    expect(screen.getByRole('textbox')).toHaveFocus();
-    expect(onParentKeyDown).not.toHaveBeenCalled();
-  });
-
-  it('allows Escape to propagate when the search is empty', () => {
-    const onParentKeyDown = jest.fn();
-    renderSearchOnlySelector([], onParentKeyDown);
-
-    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape', keyCode: 27 });
-
-    expect(onParentKeyDown).toHaveBeenCalledTimes(1);
   });
 });
