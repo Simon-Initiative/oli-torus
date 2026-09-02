@@ -6010,7 +6010,6 @@ defmodule Oli.Delivery.Sections do
       |> Enum.filter(&MapSet.member?(contained_ids, &1.resource_id))
       |> Enum.map(fn objective ->
         Map.merge(objective, %{
-          children: Enum.filter(objective.children, &MapSet.member?(root_contained_ids, &1)),
           container_ids: Map.get(objective_to_container_ids_map, objective.resource_id, [])
         })
       end)
@@ -6167,8 +6166,13 @@ defmodule Oli.Delivery.Sections do
             false ->
               # this is a top-level objective, so we need to include its subobjectives
               # in the result set as well
+              # `children` keeps every authored subobjective so callers can still resolve them
+              # by id; only contained ones become rows here, and membership in
+              # `root_contained_ids` guarantees `lookup_map` resolves them.
               sub_objectives =
-                Enum.map(objective.children, fn child ->
+                objective.children
+                |> Enum.filter(&MapSet.member?(root_contained_ids, &1))
+                |> Enum.map(fn child ->
                   sub_objective = Map.get(lookup_map, child)
 
                   {student_proficiency_subobj, student_proficiency_subobj_dist} =
