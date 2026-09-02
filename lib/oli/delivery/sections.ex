@@ -5905,6 +5905,9 @@ defmodule Oli.Delivery.Sections do
   top level objectives, they appear with their proficiency for only those activities that
   directly attached to them.
 
+  Only objectives contained by the currently delivered course content are returned, so that the
+  instructor dashboard, the student dashboard and the CSV export report on the same objective set.
+
   ## Options
 
   * `:student_id` - If provided, filters proficiency results for a specific student
@@ -5969,6 +5972,62 @@ defmodule Oli.Delivery.Sections do
           related_activities: sr.related_activities || []
         }
       end)
+
+    objective_to_container_ids_map =
+      from(co in ContainedObjective)
+      |> where([co], co.section_id == ^section.id)
+      |> select([co], co)
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn co, acc ->
+        Map.update(acc, co.objective_id, [co.container_id], &(&1 ++ [co.container_id]))
+      end)
+
+    # Section resources outlive the content that referenced them, so containment - not the
+    # `deleted` flag - decides whether an objective still belongs to the delivered course.
+    root_contained? = fn resource_id ->
+      nil in Map.get(objective_to_container_ids_map, resource_id, [])
+    end
+
+    # From `objectives`, so membership proves a section resource exists: `children` may come from
+    # the revision fallback and name objectives absent here, breaking `lookup_map` below.
+    root_contained_ids =
+      objectives
+      |> Enum.filter(&root_contained?.(&1.resource_id))
+      |> MapSet.new(& &1.resource_id)
+
+    # Applied before proficiency so discards never reach the metrics queries. The parent rule
+    # reads `children`, not the expanded rows, so `exclude_sub_objectives` cannot change it.
+    contained_ids =
+      objectives
+      |> Enum.filter(fn objective ->
+        MapSet.member?(root_contained_ids, objective.resource_id) or
+          Enum.any?(objective.children, &MapSet.member?(root_contained_ids, &1))
+      end)
+      |> MapSet.new(& &1.resource_id)
+
+    objectives =
+      objectives
+      |> Enum.filter(&MapSet.member?(contained_ids, &1.resource_id))
+      |> Enum.map(fn objective ->
+        Map.merge(objective, %{
+          children: Enum.filter(objective.children, &MapSet.member?(root_contained_ids, &1)),
+          container_ids: Map.get(objective_to_container_ids_map, objective.resource_id, [])
+        })
+      end)
+
+    objectives =
+      if include_related_activities_count do
+        # Use pre-calculated related_activities field for performance
+        Enum.map(objectives, fn objective ->
+          Map.put(
+            objective,
+            :related_activities_count,
+            length(objective.related_activities || [])
+          )
+        end)
+      else
+        objectives
+      end
 
     id_list = Enum.map(objectives, & &1.resource_id)
 
@@ -6051,32 +6110,6 @@ defmodule Oli.Delivery.Sections do
         {student_ids, proficiency_dist_for_objectives}
       else
         {[], %{}}
-      end
-
-    objective_to_container_ids_map =
-      from(co in ContainedObjective)
-      |> where([co], co.section_id == ^section.id)
-      |> select([co], co)
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn co, acc ->
-        Map.update(acc, co.objective_id, [co.container_id], &(&1 ++ [co.container_id]))
-      end)
-
-    objectives =
-      if include_related_activities_count do
-        # Use pre-calculated related_activities field for performance
-        Enum.map(objectives, fn obj ->
-          Map.merge(obj, %{
-            container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, []),
-            related_activities_count: length(obj.related_activities || [])
-          })
-        end)
-      else
-        Enum.map(objectives, fn obj ->
-          Map.merge(obj, %{
-            container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, [])
-          })
-        end)
       end
 
     lookup_map =
