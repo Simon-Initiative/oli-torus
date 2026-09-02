@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
 
   alias Oli.Delivery.Proficiency.LktAoa
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Sections.SectionResourceMigration
   alias Oli.LearningModel.LearningState
   alias Oli.Resources.ResourceType
 
@@ -57,7 +58,12 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
   end
 
   test "parents weight children by total attempt count without a per-child minimum" do
-    section = insert(:section, learning_model_version: :lkt_aoa)
+    section =
+      insert(:section,
+        learning_model_version: :lkt_aoa,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
     user = insert(:user)
     project = insert(:project)
     [parent, child_a, child_b] = Enum.map(1..3, fn _ -> insert(:resource) end)
@@ -81,7 +87,12 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
   end
 
   test "parents require three attempts in total and never prefer a parent state row" do
-    section = insert(:section, learning_model_version: :lkt_aoa)
+    section =
+      insert(:section,
+        learning_model_version: :lkt_aoa,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
     user = insert(:user)
     project = insert(:project)
     [parent, child] = Enum.map(1..2, fn _ -> insert(:resource) end)
@@ -101,7 +112,12 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
   end
 
   test "parent children prefer SectionResource IDs when resource-ID values collide" do
-    section = insert(:section, learning_model_version: :lkt_aoa)
+    section =
+      insert(:section,
+        learning_model_version: :lkt_aoa,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
     user = insert(:user)
     project = insert(:project)
     parent = insert(:resource)
@@ -153,7 +169,12 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
   end
 
   test "direct and parent query counts stay constant as identity cardinality grows" do
-    section = insert(:section, learning_model_version: :lkt_aoa)
+    section =
+      insert(:section,
+        learning_model_version: :lkt_aoa,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
     project = insert(:project)
     users = Enum.map(1..4, fn _ -> insert(:user) end)
     direct_objectives = Enum.map(1..4, fn _ -> insert(:resource) end)
@@ -200,9 +221,8 @@ defmodule Oli.Delivery.Proficiency.LktAoaTest do
       end)
 
     assert query_count(small_direct) == query_count(large_direct)
-    # Direct SectionResources with no stored children perform one bounded
-    # revision fallback query in addition to the learning-state query.
-    assert query_count(small_direct) == 2
+    assert query_count(small_direct) == 1
+    refute Enum.any?(small_direct, &String.contains?(&1, ~s(FROM "revisions")))
     assert query_count(small_parent) == query_count(large_parent)
     assert query_count(small_parent) == 1
   end

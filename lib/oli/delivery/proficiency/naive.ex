@@ -132,7 +132,15 @@ defmodule Oli.Delivery.Proficiency.Naive do
   end
 
   defp persisted_page_membership(%Section{id: section_id} = section, scopes) do
-    {:ok, all_page_ids} = page_ids(section)
+    all_page_ids =
+      case :course in scopes do
+        true ->
+          {:ok, ids} = page_ids(section)
+          ids
+
+        false ->
+          []
+      end
 
     container_ids =
       Enum.flat_map(scopes, fn

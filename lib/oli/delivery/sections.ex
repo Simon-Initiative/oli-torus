@@ -24,6 +24,7 @@ defmodule Oli.Delivery.Sections do
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
+    ObjectiveChildrenProjection,
     EnrollmentContextRole,
     Scheduling,
     MinimalHierarchy
@@ -4961,6 +4962,11 @@ defmodule Oli.Delivery.Sections do
         hierarchy_definition,
         skip_set
       )
+    end
+
+    case ObjectiveChildrenProjection.persist(section_id) do
+      {:ok, _count} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 

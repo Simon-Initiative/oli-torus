@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
   import Ecto.Query
   alias Oli.Delivery.DepotCoordinator
   alias Oli.Delivery.Sections.RelatedActivitiesProjection
+  alias Oli.Delivery.Sections.ObjectiveChildrenProjection
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
@@ -20,8 +21,8 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
   alias Oli.Resources.Revision
   alias Oli.Authoring.Course.Project
 
-  @current_version 1
-  @migration_steps [1]
+  @current_version 2
+  @migration_steps [1, 2]
 
   @doc "Returns the complete SectionResource projection version required by this release."
   def current_version, do: @current_version
@@ -67,6 +68,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
       # Lifecycle creation paths intentionally insert lightweight placeholders.
       # Bring every pinned field current before declaring their projection ready.
       with {:ok, _count} <- migrate(section.id),
+           {:ok, _count} <- ObjectiveChildrenProjection.persist(section.id),
            {:ok, _entries} <- projection_module().persist(section, return_entries: false),
            {1, _} <- set_version(section.id, @current_version) do
         %{section | section_resource_migration_version: @current_version}
@@ -120,6 +122,16 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
     else
       {:error, reason} -> {:error, reason}
       unexpected -> {:error, {:migration_step_failed, unexpected}}
+    end
+  end
+
+  defp apply_step(%Section{} = section, 2) do
+    with {:ok, _count} <- ObjectiveChildrenProjection.persist(section.id),
+         {1, _} <- set_version(section.id, 2) do
+      {:ok, %{section | section_resource_migration_version: 2}}
+    else
+      {:error, reason} -> {:error, reason}
+      unexpected -> {:error, {:version_update_failed, unexpected}}
     end
   end
 

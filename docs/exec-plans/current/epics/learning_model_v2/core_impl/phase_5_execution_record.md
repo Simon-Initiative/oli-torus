@@ -19,7 +19,8 @@ Phase: `5 - Telemetry, Scale, And Operational Hardening`
     - `[:oli, :learning_model, :lkt_aoa, :batch, :start]`
     - `[:oli, :learning_model, :lkt_aoa, :batch, :stop]`
     - `[:oli, :learning_model, :lkt_aoa, :batch, :exception]`
-  - Stop metadata includes only model, result, bounded failure category, and aggregate counts.
+  - Stop measurements include duration and aggregate counts; metadata includes only model, result,
+    and bounded failure category.
   - Exception telemetry intentionally excludes exception structs and stacktraces to avoid leaking
     learner data, SQL binds, IDs, parameter payloads, or response content.
   - Added bounded failure categories for invalid input, publication lookup, parameter validation,
@@ -34,7 +35,7 @@ Phase: `5 - Telemetry, Scale, And Operational Hardening`
 - [x] Observability or operational updates when needed
   - Source comments document the telemetry event privacy contract at the emission boundary.
   - AppSignal/local telemetry verification: the events use normal `:telemetry.execute/3`, so the
-    existing telemetry/AppSignal integration can consume duration and count metadata without adding
+    existing telemetry/AppSignal integration can consume duration and count measurements without adding
     a bespoke dashboard. Operators should inspect duration percentiles, result/failure-category
     rates, and aggregate fan-out counts from these event names after deploy.
 

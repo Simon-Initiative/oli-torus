@@ -336,6 +336,72 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
   end
 
   describe "versioned JIT migration (AC-036)" do
+    test "version two projects objective children as SectionResource IDs" do
+      project = insert(:project)
+      publication = insert(:publication, project: project)
+      section = insert(:section, base_project: project, section_resource_migration_version: 1)
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      child_revision = insert(:revision, resource_type_id: objective_type_id)
+      unresolved_revision = insert(:revision, resource_type_id: objective_type_id)
+
+      parent_revision =
+        insert(:revision,
+          resource_type_id: objective_type_id,
+          children: [child_revision.resource_id, unresolved_revision.resource_id]
+        )
+
+      Enum.each([parent_revision, child_revision], fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision
+        )
+      end)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      parent =
+        insert(:section_resource,
+          section: section,
+          project: project,
+          resource_id: parent_revision.resource_id,
+          resource_type_id: objective_type_id,
+          revision_id: parent_revision.id,
+          children: []
+        )
+
+      child =
+        insert(:section_resource,
+          section: section,
+          project: project,
+          resource_id: child_revision.resource_id,
+          resource_type_id: objective_type_id,
+          revision_id: child_revision.id,
+          children: []
+        )
+
+      unresolved =
+        insert(:section_resource,
+          section: section,
+          project: project,
+          resource_id: unresolved_revision.resource_id,
+          resource_type_id: objective_type_id,
+          revision_id: unresolved_revision.id,
+          children: [parent.id]
+        )
+
+      assert {:ok, :migrated} = SectionResourceMigration.ensure_current(section.id)
+      assert Repo.reload(parent).children == [child.id]
+      assert Repo.reload(child).children == []
+      assert Repo.reload(unresolved).children == []
+      assert Repo.reload(section).section_resource_migration_version == 2
+    end
+
     test "migrates version zero once and treats a current version as a no-op" do
       %{section: section, page: page, activity: activity} = pinned_projection_fixture()
 

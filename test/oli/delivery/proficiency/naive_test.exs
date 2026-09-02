@@ -105,4 +105,49 @@ defmodule Oli.Delivery.Proficiency.NaiveTest do
     assert estimates[high.id][user.id].score > 0.8
     assert estimates[high.id][user.id].label == :high
   end
+
+  test "page-only scope estimates do not query all page summaries" do
+    section = insert(:section, learning_model_version: :naive)
+    user = insert(:user)
+    page = insert(:resource)
+
+    queries =
+      capture_queries(fn ->
+        assert {:ok, _estimates} =
+                 Naive.estimates_for_scopes(section, [user.id], [{:page, page.id}], [])
+      end)
+
+    assert Enum.count(queries, &String.contains?(&1, ~s(FROM "resource_summary"))) == 1
+  end
+
+  defp capture_queries(fun) do
+    handler_id = "naive-query-count-#{System.unique_integer([:positive])}"
+    parent = self()
+
+    :ok =
+      :telemetry.attach(
+        handler_id,
+        [:oli, :repo, :query],
+        fn _event, _measurements, metadata, _config ->
+          send(parent, {:repo_query, metadata.query || ""})
+        end,
+        nil
+      )
+
+    try do
+      fun.()
+    after
+      :telemetry.detach(handler_id)
+    end
+
+    collect_queries([])
+  end
+
+  defp collect_queries(queries) do
+    receive do
+      {:repo_query, query} -> collect_queries([query | queries])
+    after
+      0 -> queries
+    end
+  end
 end

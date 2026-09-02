@@ -85,13 +85,12 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
   defp pub_id_for_section_project(section_id, nil) do
     query =
       from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        join: section in Oli.Delivery.Sections.Section,
+        on: section.id == spp.section_id and section.base_project_id == spp.project_id,
         where: spp.section_id == ^section_id,
         select: spp.publication_id
 
-    case Repo.all(query) do
-      [] -> nil
-      [{pub_id}] -> pub_id
-    end
+    Repo.one(query)
   end
 
   defp pub_id_for_section_project(section_id, project_id) do

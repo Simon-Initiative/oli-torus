@@ -190,8 +190,8 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   @doc """
   Returns objective SectionResource records with `children` normalized to objective resource ids.
 
-  When the depot record does not store objective hierarchy directly, falls back to the
-  corresponding revision children for the objective tree.
+  The versioned SectionResource projection guarantees that stored children are
+  SectionResource IDs, including an empty list for leaf objectives.
   """
   def objectives_with_effective_children(section_id, additional_query_conditions \\ []) do
     section_id
@@ -202,9 +202,9 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   @doc """
   Returns effective child resource IDs for only the requested objectives.
 
-  Parent `children` may contain either SectionResource IDs or resource IDs, so
-  this bounded lookup resolves both representations without hydrating every
-  objective in the course.
+  Version-two SectionResource children are stored as SectionResource IDs. This
+  bounded lookup resolves those references without hydrating every objective in
+  the course.
   """
   def objectives_with_effective_children_for(section_id, resource_ids) do
     requested = objectives(section_id, resource_id: {:in, resource_ids})
@@ -220,14 +220,11 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
       end
       |> Map.new(&{&1.id, &1.resource_id})
 
-    revision_children = revision_children_for(requested)
-
     Enum.map(requested, fn section_resource ->
       children =
-        case List.wrap(section_resource.children) do
-          [] -> Map.get(revision_children, section_resource.revision_id, [])
-          refs -> Enum.map(refs, &Map.get(referenced_by_section_resource_id, &1, &1))
-        end
+        section_resource.children
+        |> List.wrap()
+        |> Enum.map(&Map.get(referenced_by_section_resource_id, &1))
 
       %{section_resource | children: Enum.reject(children, &is_nil/1)}
     end)
@@ -377,55 +374,15 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
         Map.put(acc, sr.id, sr.resource_id)
       end)
 
-    revision_children_by_id =
-      objectives_section_resources
-      |> Enum.filter(&(List.wrap(&1.children) == []))
-      |> Enum.map(& &1.revision_id)
-      |> case do
-        [] ->
-          %{}
-
-        revision_ids ->
-          from(r in Oli.Resources.Revision,
-            where: r.id in ^revision_ids,
-            select: {r.id, r.children}
-          )
-          |> Repo.all()
-          |> Map.new()
-      end
-
     Enum.map(objectives_section_resources, fn sr ->
       children =
-        case sr.children || [] do
-          [] ->
-            Map.get(revision_children_by_id, sr.revision_id, [])
-
-          section_resource_children ->
-            section_resource_children
-            |> Enum.map(&Map.get(section_resource_id_to_resource_id, &1, &1))
-            |> Enum.filter(&(&1 != nil))
-        end
+        sr.children
+        |> List.wrap()
+        |> Enum.map(&Map.get(section_resource_id_to_resource_id, &1))
+        |> Enum.reject(&is_nil/1)
 
       %{sr | children: children}
     end)
-  end
-
-  defp revision_children_for(section_resources) do
-    revision_ids =
-      section_resources
-      |> Enum.filter(&(List.wrap(&1.children) == []))
-      |> Enum.map(& &1.revision_id)
-      |> Enum.reject(&is_nil/1)
-
-    case revision_ids do
-      [] ->
-        %{}
-
-      ids ->
-        from(r in Oli.Resources.Revision, where: r.id in ^ids, select: {r.id, r.children})
-        |> Repo.all()
-        |> Map.new()
-    end
   end
 
   def fetch_recently_active_sections() do
