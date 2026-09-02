@@ -89,7 +89,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         "apply_search", _params, socket ->
           matching_ids =
             case socket.assigns.coverage_model do
-              nil -> MapSet.new()
+              nil -> nil
               model -> matching_objective_ids(model, socket.assigns.query)
             end
 
@@ -459,6 +459,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_model: nil,
         coverage_status: :loading,
         assessment_buckets: socket.assigns.assessment_buckets,
+        search_matching_ids: nil,
         expanded_objective_slugs: expanded_objective_slugs
       )
       |> flash_fn.()
@@ -522,7 +523,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     {:noreply,
      assign(socket,
        coverage_model: nil,
-       coverage_status: :loading
+       coverage_status: :loading,
+       search_matching_ids: nil
      )
      |> start_async(:objective_coverage, fn ->
        ObjectiveCoverage.load(project)
@@ -981,7 +983,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         total_count: length(objectives),
         coverage_model: model,
         coverage_status: :ready,
-        assessment_buckets: assessment_buckets
+        assessment_buckets: assessment_buckets,
+        search_matching_ids:
+          if(String.trim(socket.assigns.query) == "",
+            do: MapSet.new(),
+            else: matching_objective_ids(model, socket.assigns.query)
+          )
       )
 
     refresh_table_state(socket)
