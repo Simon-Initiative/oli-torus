@@ -381,12 +381,12 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(
                view,
                "p",
-               "Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages."
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
              )
 
       assert has_element?(
                view,
-               ~s|a.external.text-Text-text-button[href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"][rel="noopener"][target="_blank"]|,
+               ~s|a[href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"][rel="noopener"][target="_blank"]|,
                "CMU Eberly Center guide on learning objectives"
              )
 

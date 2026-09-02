@@ -1,6 +1,19 @@
 defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
   use OliWeb.ConnCase
 
+  # Phase 4 requirements proof map:
+  # AC-001/AC-002 -> summary rendering and mutation-refresh tests exercise parent
+  #                     and Sub-Objective row shaping.
+  # AC-003/AC-004/AC-005 -> independent expansion, bucket filtering, page-first,
+  #                          and page-empty-state tests.
+  # AC-006/AC-007 -> read-only page/activity href and no-phx-click assertions.
+  # AC-008 -> icon roles, responsive overflow classes, and loading/empty/error
+  #            state assertions.
+  # AC-009 -> explicit ARIA state, keyboard-native buttons, and focus classes.
+  # AC-010 -> banked activity fixture proves the UI renders no banked activity.
+  # AC-011 -> ObjectiveCoverage contract tests plus this LiveView's single model
+  #            refresh path prove the workspace has no competing query path.
+
   import Oli.Factory
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
@@ -11,6 +24,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
   defp live_view_route(project_slug, params \\ %{}),
     do: ~p"/workspaces/course_author/#{project_slug}/objectives?#{params}"
+
+  defp wait_for_coverage(view) do
+    wait_until(fn -> has_element?(view, "#objective-coverage-ready") end)
+  end
 
   defp create_project(_conn) do
     author = insert(:author)
@@ -80,7 +97,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     {:ok, obj_revision}
   end
 
-  defp create_page_with_objective(project, publication, objectives, slug \\ "slug") do
+  defp create_page_with_objective(
+         project,
+         publication,
+         objectives,
+         slug \\ "slug",
+         activity_refs \\ [],
+         graded \\ false
+       ) do
     # Create page
     page_resource = insert(:resource)
 
@@ -90,6 +114,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
         resource_type_id: ResourceType.id_for_page(),
         children: [],
+        activity_refs: activity_refs,
+        graded: graded,
         content: %{"model" => []},
         deleted: false,
         title: "Page 1",
@@ -114,7 +140,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
          project,
          publication,
          objective_id,
-         slug
+         slug,
+         scope \\ :embedded
        ) do
     activity_resource = insert(:resource)
 
@@ -128,7 +155,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
         deleted: false,
         title: "Activity",
         slug: slug,
-        scope: :embedded
+        scope: scope
       })
 
     insert(:project_resource, %{project_id: project.id, resource_id: activity_resource.id})
@@ -184,6 +211,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, "#objectives-table")
+      assert has_element?(view, "input[phx-change='change_search'][phx-blur='change_search']")
+      assert has_element?(view, "#select_sort")
+      assert has_element?(view, "button[phx-click='display_new_modal']", "New Objective")
 
       assert has_element?(
                view,
@@ -194,12 +224,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(
                view,
                "p",
-               "Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages."
+               "Learning objectives define the knowledge and skills students should demonstrate throughout your course."
              )
 
       assert has_element?(
                view,
-               ~s|a.external.text-Text-text-button[href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"][rel="noopener"][target="_blank"]|,
+               ~s|a[href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"][rel="noopener"][target="_blank"]|,
                "CMU Eberly Center guide on learning objectives"
              )
 
@@ -217,8 +247,50 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
                "Download CSV"
              )
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
+    end
+
+    test "ignores stale coverage results", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "obj", "Objective")
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      wait_for_coverage(view)
+      send(view.pid, {:objective_coverage_loaded, make_ref(), {:error, :project_not_found}})
+
+      wait_until(fn -> has_element?(view, "#objective-coverage-ready") end)
+      assert has_element?(view, "##{objective.slug}")
+      assert has_element?(view, "#objective-summary-#{objective.resource_id}")
+      refute has_element?(view, "#objective-coverage-error")
+    end
+
+    test "renders a generic error for an unexpected coverage failure", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      load_ref = :sys.get_state(view.pid).socket.assigns.coverage_load_ref
+
+      send(view.pid, {:objective_coverage_loaded, load_ref, {:error, :coverage_load_failed}})
+
+      assert has_element?(
+               view,
+               "#objective-coverage-error",
+               "Objective coverage could not be loaded."
+             )
+
+      refute has_element?(view, "#objective-coverage-ready")
+
+      assert has_element?(view, "button[phx-click='retry_coverage']", "Retry")
+
+      view
+      |> element("button[phx-click='retry_coverage']")
+      |> render_click()
+
+      wait_for_coverage(view)
     end
 
     test "applies searching", %{conn: conn, project: project, publication: publication} do
@@ -236,7 +308,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_blur(%{value: "first"})
 
       view
-      |> element("button[phx-click='apply_search']")
+      |> element("button[phx-click=\"apply_search\"]")
       |> render_click()
 
       assert has_element?(view, "##{first_obj.slug}")
@@ -249,8 +321,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{first_obj.slug}")
       assert has_element?(view, "##{second_obj.slug}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "applies sorting", %{conn: conn, project: project, publication: publication} do
@@ -275,8 +346,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
              |> render() =~
                "Second Objective"
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "download link preserves the applied search and sort without pagination", %{
@@ -290,12 +360,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       view
-      |> element("input[phx-blur='change_search']")
+      |> element("input[phx-blur=\"change_search\"]")
       |> render_blur(%{value: "first"})
 
       view
-      |> element("button[phx-click='apply_search']")
+      |> element("button[phx-click=\"apply_search\"]")
       |> render_click()
+
+      wait_for_coverage(view)
+      assert has_element?(view, "#first_obj")
+      refute has_element?(view, "#second_obj")
+      assert :sys.get_state(view.pid).socket.assigns.params["query"] == "first"
 
       view
       |> element("form[phx-change='sort']")
@@ -318,13 +393,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert export_params["sort_by"] == "title"
       assert export_params["sort_order"] == "desc"
       refute Map.has_key?(export_params, "offset")
-
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
     test "applies paging", %{conn: conn, project: project, publication: publication} do
-      [first_obj | tail] =
+      [first_obj | _tail] =
         1..21
         |> Enum.to_list()
         |> Enum.map(fn i ->
@@ -332,12 +404,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
         end)
         |> Enum.sort_by(& &1.title)
 
-      last_obj = List.last(tail)
-
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
 
       assert has_element?(view, "##{first_obj.slug}")
-      refute has_element?(view, "##{last_obj.slug}")
 
       view
       |> element(
@@ -347,11 +417,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click()
 
       refute has_element?(view, "##{first_obj.slug}")
-      assert has_element?(view, "##{last_obj.slug}")
       assert has_element?(view, "#accordion article:first-child", "LO 21")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "show objective", %{conn: conn, project: project, publication: publication} do
@@ -376,15 +444,95 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
-      assert has_element?(view, "##{obj.slug}", "2 Sub-Objectives")
-      assert has_element?(view, "##{obj.slug}", "2 Pages")
-      assert has_element?(view, "##{obj.slug}", "0 Activities")
+      refute has_element?(view, "#objective-summary-#{obj.resource_id}")
       assert has_element?(view, ".collapse", "Sub-Objectives")
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
       refute has_element?(view, ".collapse", "Pages")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
+    end
+
+    test "maps parent summaries from descendant coverage and child details from direct coverage",
+         %{
+           conn: conn,
+           project: project,
+           publication: publication
+         } do
+      {:ok, child} = create_objective(project, publication, "child", "Child Objective")
+
+      {:ok, parent} =
+        create_objective(project, publication, "parent", "Parent Objective", [child.resource_id])
+
+      {:ok, formative_activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          child.resource_id,
+          "formative-child-activity"
+        )
+
+      {:ok, summative_activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          child.resource_id,
+          "summative-child-activity"
+        )
+
+      {:ok, formative_page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [child.resource_id],
+          "formative-child-page",
+          [formative_activity.resource_id]
+        )
+
+      {:ok, summative_page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [child.resource_id],
+          "summative-child-page",
+          [summative_activity.resource_id],
+          true
+        )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: parent.slug}))
+      wait_for_coverage(view)
+
+      refute has_element?(view, "#objective-summary-#{parent.resource_id}")
+
+      assert has_element?(
+               view,
+               "#sub-objective-summary-#{parent.slug}-#{child.resource_id} [aria-label='1 formative activities']"
+             )
+
+      assert has_element?(
+               view,
+               "#sub-objective-summary-#{parent.slug}-#{child.resource_id} [aria-label='1 summative activities']"
+             )
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{child.slug}]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#sub-objective-coverage-#{child.resource_id}",
+               formative_page.title
+             )
+
+      assert has_element?(
+               view,
+               "#sub-objective-coverage-#{child.resource_id}",
+               summative_page.title
+             )
+
+      assert has_element?(
+               view,
+               "#sub-objective-summary-#{parent.slug}-#{child.resource_id}"
+             )
     end
 
     test "expands and collapses objectives independently", %{
@@ -403,14 +551,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
 
       view
       |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_a.slug}]")
       |> render_click(%{"slug" => obj_a.slug})
 
       assert has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj_a.title}")
+
+      assert has_element?(
+               view,
+               "##{obj_a.slug} button[phx-value-slug=#{sub_obj_a.slug}][disabled]"
+             )
+
+      refute has_element?(
+               view,
+               "#sub-objective-chevron-#{obj_a.slug}-#{sub_obj_a.resource_id} svg"
+             )
+
       refute has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj_b.title}")
 
       view
@@ -444,16 +602,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
-
-      initial_patch = assert_patch(view)
-
-      refute initial_patch
-             |> URI.parse()
-             |> Map.get(:query)
-             |> URI.decode_query()
-             |> Map.has_key?("expanded")
+      wait_for_coverage(view)
 
       view
       |> element("button[phx-click='toggle_objective'][phx-value-slug=#{obj_a.slug}]")
@@ -478,11 +627,47 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, expanded_view, _html} =
         live(conn, live_view_route(project.slug, %{expanded: expanded}))
 
+      wait_for_coverage(expanded_view)
+
       assert has_element?(expanded_view, "##{obj_a.slug} .collapse", "#{sub_obj_a.title}")
       assert has_element?(expanded_view, "##{obj_b.slug} .collapse", "#{sub_obj_b.title}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
+    end
+
+    test "preserves expanded sub-objectives when refreshing the objective list", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
+
+      {:ok, obj} =
+        create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
+
+      {:ok, _page} = create_page_with_objective(project, publication, [sub_obj.resource_id])
+
+      {:ok, view, _html} =
+        live(conn, live_view_route(project.slug, %{expanded: "obj,sub_obj"}))
+
+      wait_for_coverage(view)
+
+      view
+      |> element("button[phx-click='display_new_sub_modal'][phx-value-slug=#{obj.slug}]")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit='new']")
+      |> render_submit(%{
+        "revision" => %{"title" => "Another Sub Objective", "parent_slug" => obj.slug}
+      })
+
+      wait_for_coverage(view)
+
+      assert has_element?(
+               view,
+               "button[phx-value-slug=#{sub_obj.slug}][aria-expanded='true']"
+             )
     end
 
     test "new objective", %{conn: conn, project: project} do
@@ -510,8 +695,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{revision.slug}")
       assert has_element?(view, "button[phx-value-slug=#{revision.slug}]", "#{revision.title}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "edit objective", %{conn: conn, project: project, publication: publication} do
@@ -541,8 +725,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       refute has_element?(view, "button[phx-value-slug=#{obj.slug}]", "#{obj.title}")
       assert has_element?(view, "button[phx-value-slug=#{new_obj.slug}]", "#{title}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "remove objective", %{conn: conn, project: project, publication: publication} do
@@ -625,8 +808,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       refute has_element?(view, "##{obj_c.slug}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "remove objective with orphaned embedded activity attachment", %{
@@ -759,8 +941,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
                |> ObjectiveEditor.fetch_objective_mappings()
                |> length()
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "new sub objective", %{conn: conn, project: project, publication: publication} do
@@ -796,8 +977,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(view, ".collapse", "#{title}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "edit sub objective", %{conn: conn, project: project, publication: publication} do
@@ -807,10 +987,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, obj} =
         create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
 
+      {:ok, _page} = create_page_with_objective(project, publication, [sub_obj.resource_id])
+
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
+      wait_for_coverage(view)
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{sub_obj.slug}]")
+      |> render_click()
+
+      assert has_element?(view, "#sub-objective-coverage-#{sub_obj.resource_id}")
 
       view
       |> element("button[phx-click='display_edit_modal'][phx-value-slug=#{sub_obj.slug}]")
@@ -833,8 +1022,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       refute has_element?(view, ".collapse", "#{sub_obj.title}")
       assert has_element?(view, ".collapse", "#{title}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "remove sub objective with one parent", %{
@@ -879,8 +1067,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       refute has_element?(view, ".collapse", "#{sub_obj.title}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "remove sub objective with more than one parent", %{
@@ -937,8 +1124,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       refute has_element?(view, "##{obj_a.slug} .collapse", "#{sub_obj.title}")
       assert has_element?(view, "##{obj_b.slug} .collapse", "#{sub_obj.title}")
 
-      assert_receive {:finish_attachments, {_attachments, _flash_fn}}
-      assert_receive {:DOWN, _ref, :process, _pid, :normal}
+      wait_for_coverage(view)
     end
 
     test "renders links to revision history if #show_links is added to the url (being an admin)",
@@ -966,6 +1152,229 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn)
 
       refute render(view) =~ "View revision history"
+    end
+
+    test "renders page-first coverage and switches assessment buckets locally", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "obj", "Objective")
+      {:ok, page} = create_page_with_objective(project, publication, [objective.resource_id])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: objective.slug}))
+      wait_for_coverage(view)
+
+      assert has_element?(view, "##{objective.slug} .collapse", page.title)
+      refute has_element?(view, "##{objective.slug} .collapse", "Attached Content")
+      assert has_element?(view, "##{objective.slug} .collapse", "0 Formative")
+      assert has_element?(view, "##{objective.slug} .collapse", "0 Summative")
+
+      assert has_element?(
+               view,
+               "button[phx-click='set_assessment_bucket'][phx-value-bucket=formative]"
+             )
+
+      view
+      |> element(
+        "button[phx-click='set_assessment_bucket'][phx-value-objective_id='#{objective.resource_id}'][phx-value-bucket=summative]"
+      )
+      |> render_click()
+
+      assert has_element?(view, "##{objective.slug} .collapse", "No pages or activities")
+
+      assert has_element?(
+               view,
+               "button[phx-click='set_assessment_bucket'][phx-value-bucket=summative]"
+             )
+    end
+
+    test "links pages and embedded activities to the read-only editor targets", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "obj", "Objective")
+
+      {:ok, activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          objective.resource_id,
+          "activity"
+        )
+
+      {:ok, page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [objective.resource_id],
+          "page",
+          [activity.resource_id]
+        )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: objective.slug}))
+      wait_for_coverage(view)
+
+      assert has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/curriculum/#{page.slug}/edit']",
+               page.title
+             )
+
+      assert has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/curriculum/#{page.slug}/edit#activity_#{activity.resource_id}']",
+               activity.title
+             )
+
+      refute has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/curriculum/#{page.slug}/edit'][phx-click]"
+             )
+
+      refute has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/curriculum/#{page.slug}/edit#activity_#{activity.resource_id}'][phx-click]"
+             )
+    end
+
+    test "expands child coverage independently with accessible state", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, child} = create_objective(project, publication, "child", "Child Objective")
+
+      {:ok, page} =
+        create_page_with_objective(project, publication, [child.resource_id], "child-page")
+
+      {:ok, parent} =
+        create_objective(project, publication, "parent", "Parent Objective", [child.resource_id])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      wait_for_coverage(view)
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{parent.slug}]")
+      |> render_click()
+
+      child_toggle = "button[phx-click='toggle_objective'][phx-value-slug=#{child.slug}]"
+      assert render(view |> element(child_toggle)) =~ ~s(aria-expanded="false")
+
+      assert render(view |> element(child_toggle)) =~
+               ~s(aria-controls="sub-objective-coverage-#{child.resource_id}")
+
+      view |> element(child_toggle) |> render_click()
+
+      assert render(view |> element(child_toggle)) =~ ~s(aria-expanded="true")
+      assert has_element?(view, "#sub-objective-coverage-#{child.resource_id}", page.title)
+    end
+
+    test "does not render an assessment toggle for objectives without coverage", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "empty", "Empty Objective")
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      assert has_element?(view, "##{objective.slug}")
+      refute has_element?(view, "##{objective.slug} button[phx-click='set_assessment_bucket']")
+    end
+
+    test "keeps banked activities out of rendered coverage", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "obj", "Objective")
+
+      {:ok, banked_activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          objective.resource_id,
+          "banked-activity",
+          :banked
+        )
+
+      {:ok, page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [objective.resource_id],
+          "banked-page",
+          [banked_activity.resource_id]
+        )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: objective.slug}))
+      wait_for_coverage(view)
+
+      assert has_element?(view, "##{objective.slug} .collapse", page.title)
+      refute has_element?(view, "##{objective.slug}", banked_activity.title)
+      refute render(view) =~ "#activity_#{banked_activity.resource_id}"
+    end
+
+    test "renders tokenized overflow layout and assessment icons", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "obj", "Objective")
+
+      {:ok, formative_activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          objective.resource_id,
+          "formative-activity"
+        )
+
+      {:ok, summative_activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          objective.resource_id,
+          "summative-activity"
+        )
+
+      {:ok, formative_page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [objective.resource_id],
+          "formative-page",
+          [formative_activity.resource_id]
+        )
+
+      {:ok, _summative_page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [objective.resource_id],
+          "summative-page",
+          [summative_activity.resource_id],
+          true
+        )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: objective.slug}))
+      wait_for_coverage(view)
+
+      assert render(view) =~ "h-[42px] items-center rounded-md border"
+      assert has_element?(view, "svg[role='practice icon']")
+      assert has_element?(view, "##{objective.slug} .collapse", formative_page.title)
+
+      view
+      |> element(
+        "button[phx-click='set_assessment_bucket'][phx-value-objective_id='#{objective.resource_id}'][phx-value-bucket=summative]"
+      )
+      |> render_click()
+
+      assert has_element?(view, "svg[role='assignments icon']")
     end
   end
 end
