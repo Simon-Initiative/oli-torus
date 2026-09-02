@@ -48,36 +48,36 @@ defmodule Oli.InstructorDashboard.Oracles.ObjectivesProficiency do
 
         learner_ids = Helpers.enrolled_learner_ids(section_id)
 
-        {:ok, aggregates} =
-          Proficiency.objective_aggregates(section, objective_ids, user_ids: learner_ids)
+        with {:ok, aggregates} <-
+               Proficiency.objective_aggregates(section, objective_ids, user_ids: learner_ids) do
+          objective_rows =
+            objective_section_resources
+            |> Enum.map(fn objective ->
+              aggregate = Map.fetch!(aggregates, objective.resource_id)
 
-        objective_rows =
-          objective_section_resources
-          |> Enum.map(fn objective ->
-            aggregate = Map.fetch!(aggregates, objective.resource_id)
+              %{
+                objective_id: objective.resource_id,
+                title: objective.title,
+                proficiency_distribution:
+                  Map.new(aggregate.distribution, fn {label, count} -> {label(label), count} end),
+                numeric_proficiency: aggregate.numeric_score,
+                # Confidence has no class aggregation policy; expose that absence instead of
+                # manufacturing a value from learner confidence or categorical labels.
+                confidence: nil,
+                coverage: aggregate.coverage,
+                contributing_count: aggregate.contributing_count,
+                eligible_count: aggregate.eligible_count,
+                total_count: aggregate.total_count
+              }
+            end)
+            |> Enum.sort_by(& &1.objective_id)
 
-            %{
-              objective_id: objective.resource_id,
-              title: objective.title,
-              proficiency_distribution:
-                Map.new(aggregate.distribution, fn {label, count} -> {label(label), count} end),
-              numeric_proficiency: aggregate.numeric_score,
-              # Confidence has no class aggregation policy; expose that absence instead of
-              # manufacturing a value from learner confidence or categorical labels.
-              confidence: nil,
-              coverage: aggregate.coverage,
-              contributing_count: aggregate.contributing_count,
-              eligible_count: aggregate.eligible_count,
-              total_count: aggregate.total_count
-            }
-          end)
-          |> Enum.sort_by(& &1.objective_id)
-
-        {:ok,
-         %{
-           objective_rows: objective_rows,
-           objective_resources: all_objective_resources
-         }}
+          {:ok,
+           %{
+             objective_rows: objective_rows,
+             objective_resources: all_objective_resources
+           }}
+        end
       end
     end
   end

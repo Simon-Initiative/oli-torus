@@ -112,6 +112,21 @@ defmodule Oli.Delivery.Proficiency.TelemetryTest do
     :telemetry.detach(handler_id)
   end
 
+  test "uses complete provider counts without traversing the result" do
+    result = {:ok, %{opaque: :provider_owned_shape}}
+
+    assert ^result =
+             capture_stop(
+               fn ->
+                 Telemetry.span(:lkt_aoa, :learner_scope, %{}, fn ->
+                   {:telemetry_result, result,
+                    %{returned_count: 10, defined_count: 7, unavailable_count: 3}}
+                 end)
+               end,
+               %{returned_count: 10, defined_count: 7, unavailable_count: 3}
+             )
+  end
+
   defp capture_stop(fun, expected_counts) do
     handler_id = "proficiency-provider-shape-#{System.unique_integer([:positive])}"
     parent = self()

@@ -4,8 +4,9 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
   import Ecto.Query
   import Oli.Factory
 
+  alias Oli.Delivery.Metrics
   alias Oli.Delivery.Proficiency.LktAoa
-  alias Oli.Delivery.Sections.SectionResourceMigration
+  alias Oli.Delivery.Sections.{ContainedPage, SectionResourceMigration}
   alias Oli.LearningModel.LearningState
   alias Oli.Resources.ResourceType
 
@@ -53,6 +54,8 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
     insert_state(section, high, objective, aoa: 0.8, attempt_count: 30)
     insert_state(section, unavailable, objective, aoa: 1.0, attempt_count: 2)
 
+    handler = attach_operation_handler()
+
     assert {:ok, aggregates} =
              LktAoa.scope_aggregates(section, [{:page, page.resource_id}],
                user_ids: [low.id, high.id, unavailable.id]
@@ -63,6 +66,9 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
     assert aggregate.contributing_count == 2
     assert aggregate.total_count == 3
     assert aggregate.distribution == %{low: 1, medium: 1, not_enough_information: 1}
+    assert_receive {:provider_operation, :class_scope}
+    refute_receive {:provider_operation, :learner_scope}
+    :telemetry.detach(handler)
   end
 
   test "page label ties preserve the legacy proficiency ordering" do
@@ -72,8 +78,30 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
     insert_state(section, low, objective, aoa: 0.2, attempt_count: 3)
     insert_state(section, medium, objective, aoa: 0.6, attempt_count: 3)
 
+    handler = attach_operation_handler()
+
     assert {:ok, %{^page_id => "Low"}} =
              LktAoa.labels_for_pages(section, [page_id], [low.id, medium.id])
+
+    refute_receive {:provider_operation, :learner_scope}
+    :telemetry.detach(handler)
+  end
+
+  test "container class labels use aggregate results without learner-scope materialization" do
+    %{section: section, root: root, page: page, objectives: [objective | _]} = scope_fixture()
+    [low, medium] = Enum.map(1..2, fn _ -> insert(:user) end)
+    insert_state(section, low, objective, aoa: 0.2, attempt_count: 3)
+    insert_state(section, medium, objective, aoa: 0.6, attempt_count: 3)
+
+    handler = attach_operation_handler()
+
+    assert %{root.resource_id => "Low"} ==
+             Metrics.proficiency_per_container(section, [
+               %ContainedPage{container_id: root.resource_id, page_id: page.resource_id}
+             ])
+
+    refute_receive {:provider_operation, :learner_scope}
+    :telemetry.detach(handler)
   end
 
   test "one state query serves growing learner and objective sets" do
@@ -152,6 +180,7 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
 
     %{
       section: %{section | root_section_resource_id: root.id},
+      root: root,
       page: page,
       objectives: objectives
     }
@@ -223,5 +252,22 @@ defmodule Oli.Delivery.Proficiency.LktAoaScopeTest do
     after
       0 -> queries
     end
+  end
+
+  defp attach_operation_handler do
+    handler = "lkt-scope-operation-#{System.unique_integer([:positive])}"
+    parent = self()
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:oli, :delivery, :proficiency, :provider, :stop],
+        fn _event, _measurements, metadata, _config ->
+          send(parent, {:provider_operation, metadata.operation})
+        end,
+        nil
+      )
+
+    handler
   end
 end

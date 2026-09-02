@@ -837,10 +837,23 @@ defmodule Oli.Delivery.Metrics do
     membership = page_membership(contained_pages, scopes)
     learner_ids = scope_user_ids(section, scopes, page_membership: membership)
 
-    estimates_for_scope_labels(section, learner_ids, scopes, page_membership: membership)
-    |> Map.new(fn {{:container, container_id}, by_user} ->
-      {container_id, by_user |> Map.values() |> Enum.frequencies() |> mode_label()}
-    end)
+    case Proficiency.scope_aggregates(section, scopes,
+           user_ids: learner_ids,
+           page_membership: membership
+         ) do
+      {:ok, aggregates} ->
+        Map.new(aggregates, fn {{:container, container_id}, aggregate} ->
+          distribution =
+            Map.new(aggregate.distribution, fn {label, count} ->
+              {estimate_label(%{label: label}), count}
+            end)
+
+          {container_id, mode_label(distribution)}
+        end)
+
+      {:error, _reason} ->
+        %{}
+    end
   end
 
   @doc """

@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Proficiency.NaiveTest do
   import Oli.Factory
 
   alias Oli.Delivery.Proficiency.Naive
+  alias Oli.Delivery.Sections.SectionResourceMigration
   alias Oli.Resources.ResourceType
 
   test "returns canonical estimates while preserving legacy first-attempt math" do
@@ -118,6 +119,75 @@ defmodule Oli.Delivery.Proficiency.NaiveTest do
       end)
 
     assert Enum.count(queries, &String.contains?(&1, ~s(FROM "resource_summary"))) == 1
+  end
+
+  test "page objective membership comes from the page activity projection" do
+    section =
+      insert(:section,
+        learning_model_version: :naive,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
+    project = insert(:project)
+    page = insert(:resource)
+    objective = insert(:resource)
+    activity = insert(:resource)
+
+    insert(:section_resource,
+      section: section,
+      project: project,
+      resource_id: page.id,
+      resource_type_id: ResourceType.id_for_page(),
+      related_activities: [activity.id]
+    )
+
+    insert(:section_resource,
+      section: section,
+      project: project,
+      resource_id: objective.id,
+      resource_type_id: ResourceType.id_for_objective(),
+      related_activities: [activity.id]
+    )
+
+    assert {:ok, [objective_id]} = Naive.objective_ids_for_scope(section, {:page, page.id})
+    assert objective_id == objective.id
+  end
+
+  test "scope aggregates are grouped in the database without learner estimate materialization" do
+    section = insert(:section, learning_model_version: :naive)
+    [low, high, insufficient, missing] = Enum.map(1..4, fn _ -> insert(:user) end)
+    page = insert(:resource)
+
+    Enum.each([{low, 0, 3}, {high, 3, 3}, {insufficient, 2, 2}], fn
+      {user, correct, attempts} ->
+        insert(:resource_summary,
+          section_id: section.id,
+          project_id: -1,
+          user_id: user.id,
+          resource_id: page.id,
+          resource_type_id: ResourceType.id_for_page(),
+          num_first_attempts_correct: correct,
+          num_first_attempts: attempts
+        )
+    end)
+
+    queries =
+      capture_queries(fn ->
+        assert {:ok, %{course: aggregate}} =
+                 Naive.scope_aggregates(section, [:course],
+                   user_ids: [low.id, high.id, insufficient.id, missing.id],
+                   page_membership: %{course: MapSet.new([page.id])}
+                 )
+
+        assert_in_delta aggregate.numeric_score, 0.6, 1.0e-12
+        assert aggregate.distribution == %{low: 1, high: 1, not_enough_information: 2}
+        assert aggregate.coverage == %{defined: 2, total: 4}
+      end)
+
+    assert Enum.any?(queries, fn query ->
+             String.contains?(query, "JOIN resource_summary") and
+               String.contains?(query, "sum(")
+           end)
   end
 
   defp capture_queries(fun) do

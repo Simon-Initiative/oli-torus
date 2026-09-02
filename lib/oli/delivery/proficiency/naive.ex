@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Proficiency.Naive do
   import Ecto.Query
 
   alias Oli.Analytics.Summary.ResourceSummary
-  alias Oli.Delivery.Proficiency.{Aggregate, Estimate, Telemetry}
+  alias Oli.Delivery.Proficiency.{Aggregate, Estimate, ScopeMembership, Telemetry}
   alias Oli.Delivery.Sections.ContainedPage
   alias Oli.Delivery.Sections.Section
   alias Oli.Repo
@@ -19,11 +19,20 @@ defmodule Oli.Delivery.Proficiency.Naive do
   @minimum_attempts 3
 
   # ContainedObjective remains the compatibility authority for naive dashboards;
-  # LKT-AOA uses only activity-derived SectionResource membership.
-  def objective_ids_for_scope(%Section{id: section_id}, scope) do
-    container_id = if scope == :course, do: nil, else: elem(scope, 1)
-    {:ok, Oli.Delivery.Sections.get_section_contained_objectives(section_id, container_id)}
+  # page scopes use activity-derived SectionResource membership because pages
+  # are not ContainedObjective container scopes.
+  def objective_ids_for_scope(%Section{} = section, {:page, _page_id} = scope) do
+    with {:ok, %{^scope => objective_ids}} <-
+           ScopeMembership.objectives_for_scopes(section, [scope]) do
+      {:ok, MapSet.to_list(objective_ids)}
+    end
   end
+
+  def objective_ids_for_scope(%Section{id: section_id}, :course),
+    do: {:ok, Oli.Delivery.Sections.get_section_contained_objectives(section_id, nil)}
+
+  def objective_ids_for_scope(%Section{id: section_id}, {:container, container_id}),
+    do: {:ok, Oli.Delivery.Sections.get_section_contained_objectives(section_id, container_id)}
 
   def page_ids(%Section{id: section_id}) do
     page_type_id = ResourceType.id_for_page()
@@ -174,7 +183,112 @@ defmodule Oli.Delivery.Proficiency.Naive do
   end
 
   def scope_aggregates(%Section{} = section, scopes, opts) do
-    aggregate_estimates(section, scopes, opts, &estimates_for_scopes/4)
+    with {:ok, user_ids} <- user_ids_from(opts),
+         {:ok, membership} <- page_membership(section, scopes, opts) do
+      read_scope_aggregates(section.id, user_ids, Enum.uniq(scopes), membership)
+    end
+  end
+
+  defp read_scope_aggregates(section_id, user_ids, scopes, membership) do
+    scope_payload =
+      scopes
+      |> Enum.with_index()
+      |> Enum.map(fn {scope, index} ->
+        %{
+          "scope_index" => index,
+          "page_ids" => membership |> Map.fetch!(scope) |> MapSet.to_list()
+        }
+      end)
+
+    page_type_id = ResourceType.id_for_page()
+
+    sql = """
+    WITH requested_scopes AS (
+      SELECT scope_index, page_ids
+      FROM jsonb_to_recordset($1::jsonb)
+        AS requested(scope_index integer, page_ids bigint[])
+    ),
+    scope_pages AS (
+      SELECT requested.scope_index, page_id
+      FROM requested_scopes AS requested
+      CROSS JOIN LATERAL unnest(requested.page_ids) AS page_id
+    ),
+    learner_scopes AS (
+      SELECT
+        membership.scope_index,
+        summary.user_id,
+        sum(summary.num_first_attempts_correct)::bigint AS correct,
+        sum(summary.num_first_attempts)::bigint AS attempts
+      FROM scope_pages AS membership
+      JOIN resource_summary AS summary ON summary.resource_id = membership.page_id
+      WHERE summary.section_id = $2
+        AND summary.project_id = -1
+        AND summary.resource_type_id = $3
+        AND summary.user_id = ANY($4::bigint[])
+      GROUP BY membership.scope_index, summary.user_id
+    ),
+    learner_scores AS (
+      SELECT
+        scope_index,
+        user_id,
+        attempts,
+        (correct + 0.2 * (attempts - correct)) / NULLIF(attempts, 0)::float8 AS score
+      FROM learner_scopes
+    )
+    SELECT
+      requested.scope_index,
+      avg(learner.score) FILTER (WHERE learner.attempts >= 3)::float8 AS numeric_score,
+      count(learner.user_id) FILTER (
+        WHERE learner.attempts >= 3 AND learner.score <= 0.4
+      )::bigint AS low_count,
+      count(learner.user_id) FILTER (
+        WHERE learner.attempts >= 3 AND learner.score > 0.4 AND learner.score <= 0.8
+      )::bigint AS medium_count,
+      count(learner.user_id) FILTER (
+        WHERE learner.attempts >= 3 AND learner.score > 0.8
+      )::bigint AS high_count,
+      count(learner.user_id) FILTER (WHERE learner.attempts >= 3)::bigint AS defined_count
+    FROM requested_scopes AS requested
+    LEFT JOIN learner_scores AS learner ON learner.scope_index = requested.scope_index
+    GROUP BY requested.scope_index
+    ORDER BY requested.scope_index
+    """
+
+    case Repo.query(sql, [scope_payload, section_id, page_type_id, user_ids]) do
+      {:ok, %{rows: rows}} ->
+        total_count = length(user_ids)
+        scopes_by_index = List.to_tuple(scopes)
+
+        aggregates =
+          Map.new(rows, fn [index, numeric_score, low, medium, high, defined] ->
+            distribution =
+              %{
+                low: low,
+                medium: medium,
+                high: high,
+                not_enough_information: total_count - defined
+              }
+              |> Enum.reject(fn {_label, count} -> count == 0 end)
+              |> Map.new()
+
+            {:ok, aggregate} =
+              Aggregate.new(%{
+                numeric_score: numeric_score,
+                distribution: distribution,
+                contributing_count: defined,
+                eligible_count: defined,
+                total_count: total_count,
+                coverage: %{defined: defined, total: total_count}
+              })
+
+            {elem(scopes_by_index, index), aggregate}
+          end)
+
+        {:ok, aggregates}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc "Bulk-reads canonical naive estimates for the requested learners and objectives."
@@ -189,17 +303,21 @@ defmodule Oli.Delivery.Proficiency.Naive do
       fn ->
         rows = read_summaries(section_id, user_ids, objective_ids)
 
-        estimates =
-          Map.new(objective_ids, fn objective_id ->
-            {objective_id,
-             Map.new(user_ids, fn user_id ->
-               values = Map.get(rows, {user_id, objective_id})
+        {entries, counts} =
+          Enum.reduce(objective_ids, {%{}, Telemetry.empty_counts()}, fn objective_id,
+                                                                         {entries, counts} ->
+            {learner_entries, counts} =
+              Enum.reduce(user_ids, {%{}, counts}, fn user_id, {learner_entries, counts} ->
+                values = Map.get(rows, {user_id, objective_id})
+                estimate = estimate(section_id, user_id, objective_id, values)
+                learner_entries = Map.put(learner_entries, user_id, estimate)
+                {learner_entries, Telemetry.count_score(counts, estimate.score)}
+              end)
 
-               {user_id, estimate(section_id, user_id, objective_id, values)}
-             end)}
+            {Map.put(entries, objective_id, learner_entries), counts}
           end)
 
-        {:ok, estimates}
+        {:telemetry_result, {:ok, entries}, counts}
       end
     )
   end

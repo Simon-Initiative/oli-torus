@@ -65,11 +65,10 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
   def labels_for_pages(%Section{} = section, page_ids, user_ids) do
     scopes = Enum.map(page_ids, &{:page, &1})
 
-    with {:ok, estimates} <- estimates_for_scopes(section, user_ids, scopes, []) do
+    with {:ok, aggregates} <- scope_aggregates(section, scopes, user_ids: user_ids) do
       {:ok,
-       Map.new(estimates, fn {{:page, page_id}, by_user} ->
-         labels = by_user |> Map.values() |> Enum.map(&label_string(&1.label))
-         {page_id, mode_label(labels)}
+       Map.new(aggregates, fn {{:page, page_id}, aggregate} ->
+         {page_id, mode_label(aggregate.distribution)}
        end)}
     end
   end
@@ -91,16 +90,13 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
           objective_ids = membership |> Map.values() |> Enum.reduce(MapSet.new(), &MapSet.union/2)
           states = read_states(section_id, user_ids, MapSet.to_list(objective_ids))
 
-          estimates =
-            Map.new(scopes, fn scope ->
-              {scope,
-               Map.new(user_ids, fn user_id ->
-                 {user_id, scope_estimate(section_id, user_id, membership[scope], states)}
-               end)}
+          {estimates, counts} =
+            build_estimate_map(scopes, user_ids, fn scope, user_id ->
+              scope_estimate(section_id, user_id, membership[scope], states)
             end)
 
           result = {:ok, estimates}
-          {:telemetry_result, result, %{returned_count: length(scopes) * length(user_ids)}}
+          {:telemetry_result, result, counts}
         end
       end
     )
@@ -123,14 +119,107 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
       %{requested_scope_count: length(Enum.uniq(scopes))},
       fn ->
         with {:ok, user_ids} <- user_ids_from(opts),
-             {:ok, estimates} <- estimates_for_scopes(section, user_ids, scopes, opts) do
-          {:ok,
-           Map.new(estimates, fn {scope, learner_estimates} ->
-             {scope, aggregate(learner_estimates)}
-           end)}
+             {:ok, membership} <- ScopeMembership.objectives_for_scopes(section, scopes) do
+          case read_scope_aggregates(section.id, user_ids, Enum.uniq(scopes), membership) do
+            {:ok, aggregates, counts} -> {:telemetry_result, {:ok, aggregates}, counts}
+            {:error, _reason} = error -> error
+          end
         end
       end
     )
+  end
+
+  defp read_scope_aggregates(section_id, user_ids, scopes, membership) do
+    scope_payload =
+      scopes
+      |> Enum.with_index()
+      |> Enum.map(fn {scope, index} ->
+        %{
+          "scope_index" => index,
+          "objective_ids" => membership |> Map.fetch!(scope) |> MapSet.to_list()
+        }
+      end)
+
+    sql = """
+    WITH requested_scopes AS (
+      SELECT scope_index, objective_ids
+      FROM jsonb_to_recordset($1::jsonb)
+        AS requested(scope_index integer, objective_ids bigint[])
+    ),
+    scope_objectives AS (
+      SELECT requested.scope_index, objective_id
+      FROM requested_scopes AS requested
+      CROSS JOIN LATERAL unnest(requested.objective_ids) AS objective_id
+    ),
+    learner_scopes AS (
+      SELECT
+        membership.scope_index,
+        state.user_id,
+        avg(state.aoa)::float8 AS score,
+        sum(state.attempt_count)::bigint AS attempt_count
+      FROM scope_objectives AS membership
+      JOIN learning_states AS state
+        ON state.learning_objective_id = membership.objective_id
+      WHERE state.section_id = $2
+        AND state.user_id = ANY($3::bigint[])
+      GROUP BY membership.scope_index, state.user_id
+    )
+    SELECT
+      requested.scope_index,
+      avg(learner.score) FILTER (WHERE learner.attempt_count >= 3)::float8 AS numeric_score,
+      count(learner.user_id) FILTER (
+        WHERE learner.attempt_count >= 3 AND learner.score < 0.4
+      )::bigint AS low_count,
+      count(learner.user_id) FILTER (
+        WHERE learner.attempt_count >= 3 AND learner.score >= 0.4 AND learner.score <= 0.8
+      )::bigint AS medium_count,
+      count(learner.user_id) FILTER (
+        WHERE learner.attempt_count >= 3 AND learner.score > 0.8
+      )::bigint AS high_count,
+      count(learner.user_id) FILTER (WHERE learner.attempt_count >= 3)::bigint AS defined_count
+    FROM requested_scopes AS requested
+    LEFT JOIN learner_scopes AS learner ON learner.scope_index = requested.scope_index
+    GROUP BY requested.scope_index
+    ORDER BY requested.scope_index
+    """
+
+    case Repo.query(sql, [scope_payload, section_id, user_ids]) do
+      {:ok, %{rows: rows}} ->
+        total_count = length(user_ids)
+        scopes_by_index = List.to_tuple(scopes)
+
+        {aggregates, counts} =
+          Enum.reduce(rows, {%{}, Telemetry.empty_counts()}, fn
+            [index, numeric_score, low, medium, high, defined], {aggregates, counts} ->
+              distribution =
+                %{
+                  low: low,
+                  medium: medium,
+                  high: high,
+                  not_enough_information: total_count - defined
+                }
+                |> Enum.reject(fn {_label, count} -> count == 0 end)
+                |> Map.new()
+
+              {:ok, aggregate} =
+                Aggregate.new(%{
+                  numeric_score: numeric_score,
+                  distribution: distribution,
+                  contributing_count: defined,
+                  eligible_count: defined,
+                  total_count: total_count,
+                  coverage: %{defined: defined, total: total_count}
+                })
+
+              aggregates = Map.put(aggregates, elem(scopes_by_index, index), aggregate)
+              {aggregates, Telemetry.count_score(counts, aggregate.numeric_score)}
+          end)
+
+        {:ok, aggregates, counts}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc "Bulk-reads direct and effective-parent estimates using one learning-state query."
@@ -147,19 +236,14 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
         state_objective_ids = objective_sources |> Map.values() |> List.flatten() |> Enum.uniq()
         states = read_states(section_id, user_ids, state_objective_ids)
 
-        estimates =
-          Map.new(objective_ids, fn objective_id ->
+        {estimates, counts} =
+          build_estimate_map(objective_ids, user_ids, fn objective_id, user_id ->
             sources = Map.fetch!(objective_sources, objective_id)
-
-            {objective_id,
-             Map.new(user_ids, fn user_id ->
-               estimate = build_estimate(section_id, user_id, objective_id, sources, states)
-               {user_id, estimate}
-             end)}
+            build_estimate(section_id, user_id, objective_id, sources, states)
           end)
 
         result = {:ok, estimates}
-        {:telemetry_result, result, %{operation: operation_for(objective_sources)}}
+        {:telemetry_result, result, Map.put(counts, :operation, operation_for(objective_sources))}
       end
     )
   end
@@ -185,6 +269,19 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
       true -> :parent_objective
       false -> :direct_objective
     end
+  end
+
+  defp build_estimate_map(keys, user_ids, build_estimate) do
+    Enum.reduce(keys, {%{}, Telemetry.empty_counts()}, fn key, {entries, counts} ->
+      {learner_entries, counts} =
+        Enum.reduce(user_ids, {%{}, counts}, fn user_id, {learner_entries, counts} ->
+          estimate = build_estimate.(key, user_id)
+          learner_entries = Map.put(learner_entries, user_id, estimate)
+          {learner_entries, Telemetry.count_score(counts, estimate.score)}
+        end)
+
+      {Map.put(entries, key, learner_entries), counts}
+    end)
   end
 
   defp read_states(_section_id, [], _objective_ids), do: %{}
@@ -347,11 +444,11 @@ defmodule Oli.Delivery.Proficiency.LktAoa do
   defp label_string(:high), do: "High"
   defp label_string(_label), do: "Not enough data"
 
-  defp mode_label([]), do: "Not enough data"
+  defp mode_label(distribution) when map_size(distribution) == 0, do: "Not enough data"
 
-  defp mode_label(labels) do
-    labels
-    |> Enum.frequencies()
+  defp mode_label(distribution) do
+    distribution
+    |> Enum.map(fn {label, count} -> {label_string(label), count} end)
     |> Enum.sort_by(fn {label, _count} -> label_rank(label) end)
     |> Enum.max_by(fn {_label, count} -> count end)
     |> elem(0)
