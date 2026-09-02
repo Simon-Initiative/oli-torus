@@ -78,6 +78,30 @@ defmodule Oli.Interop.ExportTest do
       assert section.learning_model_version == :naive
     end
 
+    test "project export includes its learning-objective compatibility state", %{
+      project: project,
+      export: export
+    } do
+      project_json = Jason.decode!(Map.fetch!(export, ~c"_project.json"))
+
+      assert project_json["loWellFormed"] == true
+
+      project =
+        project
+        |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: nil})
+        |> Repo.update!()
+
+      null_project_json =
+        project
+        |> Export.export()
+        |> unzip_to_memory()
+        |> Map.new()
+        |> Map.fetch!(~c"_project.json")
+        |> Jason.decode!()
+
+      assert is_nil(null_project_json["loWellFormed"])
+    end
+
     test "round trip preserves divergent selections and typed LO/activity parameters", %{
       project: project,
       section: exported_product,
@@ -86,6 +110,7 @@ defmodule Oli.Interop.ExportTest do
       project =
         project
         |> Project.trusted_learning_model_changeset(%{learning_model_version: :lkt_aoa})
+        |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: false})
         |> Repo.update!()
 
       objective_parameters = learning_objective_parameters(-0.42)
@@ -148,6 +173,7 @@ defmodule Oli.Interop.ExportTest do
 
       assert {:ok, imported_project} = Oli.Interop.Ingest.process(entries, author)
       assert imported_project.learning_model_version == :lkt_aoa
+      refute imported_project.lo_well_formed
 
       imported_product =
         Sections.get_section_by(base_project_id: imported_project.id, type: :blueprint)

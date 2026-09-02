@@ -1069,9 +1069,9 @@ defmodule Oli.Authoring.Course do
   end
 
   @doc """
-  Creates a Project whose learning-model selection is copied from a trusted source Project.
+  Creates a Project whose trusted compatibility state is copied from a source Project.
 
-  The source value takes precedence over any value present in `attrs`.
+  Source values take precedence over any values present in `attrs`.
   """
   def create_project_from_source(attrs, %Project{} = source_project) do
     %Project{}
@@ -1079,11 +1079,14 @@ defmodule Oli.Authoring.Course do
     |> Project.trusted_learning_model_changeset(%{
       learning_model_version: source_project.learning_model_version
     })
+    |> Project.trusted_lo_well_formed_changeset(%{
+      lo_well_formed: source_project.lo_well_formed
+    })
     |> Repo.insert()
   end
 
   def create_project(title, author, additional_attrs \\ %{}) do
-    do_create_project(title, author, additional_attrs, nil)
+    do_create_project(title, author, additional_attrs, nil, :use_default)
   end
 
   @doc """
@@ -1094,16 +1097,29 @@ defmodule Oli.Authoring.Course do
   """
   def create_project_from_archive(title, author, learning_model_version, additional_attrs \\ %{})
       when learning_model_version in [:naive, :lkt_aoa] do
-    do_create_project(title, author, additional_attrs, learning_model_version)
+    do_create_project(
+      title,
+      author,
+      Map.delete(additional_attrs, :lo_well_formed),
+      learning_model_version,
+      Map.get(additional_attrs, :lo_well_formed)
+    )
   end
 
-  defp do_create_project(title, author, additional_attrs, learning_model_version) do
+  defp do_create_project(
+         title,
+         author,
+         additional_attrs,
+         learning_model_version,
+         lo_well_formed
+       ) do
     Repo.transaction(fn ->
       with {:ok, project_family} <- create_family(default_family(title)),
            {:ok, project} <-
-             create_project_with_learning_model(
+             create_project_with_trusted_state(
                default_project(title, project_family, additional_attrs),
-               learning_model_version
+               learning_model_version,
+               lo_well_formed
              ),
            {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
            {:ok, %{resource: resource, revision: resource_revision}} <-
@@ -1125,15 +1141,28 @@ defmodule Oli.Authoring.Course do
     end)
   end
 
-  defp create_project_with_learning_model(attrs, nil), do: create_project(attrs)
-
-  defp create_project_with_learning_model(attrs, learning_model_version) do
+  defp create_project_with_trusted_state(attrs, learning_model_version, lo_well_formed) do
     %Project{}
     |> Project.changeset(attrs)
-    |> Project.trusted_learning_model_changeset(%{
+    |> maybe_set_learning_model(learning_model_version)
+    |> maybe_set_lo_well_formed(lo_well_formed)
+    |> Repo.insert()
+  end
+
+  defp maybe_set_learning_model(changeset, nil), do: changeset
+
+  defp maybe_set_learning_model(changeset, learning_model_version) do
+    Project.trusted_learning_model_changeset(changeset, %{
       learning_model_version: learning_model_version
     })
-    |> Repo.insert()
+  end
+
+  defp maybe_set_lo_well_formed(changeset, :use_default), do: changeset
+
+  defp maybe_set_lo_well_formed(changeset, lo_well_formed) do
+    Project.trusted_lo_well_formed_changeset(changeset, %{
+      lo_well_formed: lo_well_formed
+    })
   end
 
   defp default_project(title, family, additional_attrs) do

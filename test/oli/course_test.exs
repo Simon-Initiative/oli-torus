@@ -53,6 +53,7 @@ defmodule Oli.CourseTest do
       assert project.description == "some description"
       assert project.slug == "some_title"
       assert project.title == "some title"
+      assert project.lo_well_formed
     end
 
     test "create_empty_project/1 with invalid data returns error changeset" do
