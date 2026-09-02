@@ -452,6 +452,10 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
       assert is_list(context.allTags)
       refute Repo.get!(Project, project.id).lo_well_formed
     end
+
+    test "returns not found when working publication lookup returns nil", %{author: author} do
+      assert {:error, :not_found} = ActivityBank.context("missing-project", author)
+    end
   end
 
   defp project_with_activity_bank(_context) do

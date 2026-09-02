@@ -192,7 +192,13 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
         emptyLabel={searchOnly ? 'No eligible learning objectives found.' : undefined}
         onBlur={() => searchOnly && clearSearch()}
         onKeyDown={(event) => {
-          if (searchOnly && (event as KeyboardEvent).key === 'Escape') clearSearch(true);
+          const keyboardEvent = event as unknown as React.KeyboardEvent<HTMLInputElement>;
+
+          if (searchOnly && keyboardEvent.key === 'Escape' && keyboardEvent.currentTarget.value) {
+            keyboardEvent.preventDefault();
+            keyboardEvent.stopPropagation();
+            clearSearch(true);
+          }
         }}
         onChange={(updated: (Objective & { customOption?: boolean })[]) => {
           // we can safely assume that only one objective will ever be selected at a time

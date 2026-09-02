@@ -786,6 +786,23 @@ defmodule Oli.ActivityEditingTest do
       assert Repo.get!(Project, project.id).lo_well_formed
     end
 
+    test "activity context creation returns not found when working publication lookup returns nil",
+         %{author: author} do
+      assert {:error, :not_found} =
+               ActivityEditor.create_context(
+                 "missing-project",
+                 "missing-revision",
+                 "missing-activity",
+                 author
+               )
+    end
+
+    test "page context creation returns not found when working publication lookup returns nil",
+         %{author: author} do
+      assert {:error, :not_found} =
+               PageEditor.create_context("missing-project", "missing-revision", author)
+    end
+
     test "attaching an unknown activity to a resource fails", %{
       author: author,
       project: project,

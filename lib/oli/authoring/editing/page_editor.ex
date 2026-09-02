@@ -200,9 +200,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
     editor_map = Activities.create_registered_activity_map(project_slug)
 
     with {:ok, publication} <-
-           Publishing.project_working_publication(project_slug)
-           |> Repo.preload(:project)
-           |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         publication = Repo.preload(publication, :project),
          {:ok, %{deleted: false} = revision} <-
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, %{content: content} = revision} <- maybe_migrate_revision_content(revision),

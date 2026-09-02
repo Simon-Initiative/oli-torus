@@ -39,9 +39,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   """
   def context(project_slug, author) do
     with {:ok, publication} <-
-           Publishing.project_working_publication(project_slug)
-           |> Repo.preload(:project)
-           |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         publication = Repo.preload(publication, :project),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-

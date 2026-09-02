@@ -2068,9 +2068,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   """
   def create_context(project_slug, revision_slug, activity_slug, author) do
     with {:ok, publication} <-
-           Publishing.project_working_publication(project_slug)
-           |> Repo.preload(:project)
-           |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         publication = Repo.preload(publication, :project),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, lo_well_formed} <-
            ProjectClassifier.ensure_classified(publication.project, publication.id),
