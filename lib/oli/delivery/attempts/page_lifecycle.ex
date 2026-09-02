@@ -236,7 +236,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             context = %FinalizationContext{
               resource_attempt: resource_attempt,
               section_slug: section_slug,
-              section_id: resource_access.section_id,
               datashop_session_id: datashop_session_id,
               effective_settings:
                 Oli.Delivery.Settings.get_combined_settings(
@@ -249,11 +248,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             impl = determine_page_impl(resource_attempt.revision.graded)
 
             case impl.finalize(context) do
-              {:ok, %FinalizationSummary{} = results} ->
-                results
-
-              {:error, error} ->
-                Repo.rollback(error)
+              {:ok, results} -> results
+              {:error, error} -> Repo.rollback(error)
             end
         end
       end)

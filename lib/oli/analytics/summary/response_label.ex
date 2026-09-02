@@ -372,16 +372,8 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
   defp normalize_scalar_value(value) when is_integer(value), do: Integer.to_string(value)
   defp normalize_scalar_value(value) when is_float(value), do: to_string(value)
 
-  defp normalize_scalar_value(value) when is_list(value) do
-    value
-    |> Enum.map(fn
-      %{"value" => nested_value} -> normalize_scalar_value(nested_value)
-      nested_value -> normalize_scalar_value(nested_value)
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(", ")
-    |> blank_to_nil()
-  end
+  defp normalize_scalar_value(value) when is_list(value),
+    do: value |> Enum.map(&to_string/1) |> Enum.join(", ") |> blank_to_nil()
 
   defp normalize_scalar_value(_), do: nil
 

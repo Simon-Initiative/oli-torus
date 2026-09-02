@@ -244,11 +244,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
       false ->
         case update_activity_attempt(activity_attempt_id, %{score: score, out_of: out_of}, now) do
-          {1, _} ->
-            :ok
-
-          _ ->
-            :error
+          {1, _} -> :ok
+          _ -> :error
         end
     end
   end

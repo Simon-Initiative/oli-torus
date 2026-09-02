@@ -14,66 +14,6 @@ defmodule Oli.Delivery.AttemptsTest do
 
   import Oli.Factory
 
-  describe "activity attempt context" do
-    test "loads the activity attempt, section, parts, revision, and activity type in one query" do
-      section = insert(:section)
-      user = insert(:user)
-      page_revision = insert(:revision)
-
-      resource_access =
-        insert(:resource_access,
-          section: section,
-          user: user,
-          resource: page_revision.resource
-        )
-
-      resource_attempt =
-        insert(:resource_attempt,
-          resource_access: resource_access,
-          revision: page_revision,
-          content: %{"model" => []}
-        )
-
-      activity_type = insert(:activity_registration)
-      activity_revision = insert(:revision, activity_type: activity_type)
-
-      activity_attempt =
-        insert(:activity_attempt,
-          resource_attempt: resource_attempt,
-          revision: activity_revision,
-          resource: activity_revision.resource
-        )
-
-      insert_list(2, :part_attempt, activity_attempt: activity_attempt)
-
-      parent = self()
-      handler_id = "activity-attempt-context-query-#{System.unique_integer([:positive])}"
-
-      :telemetry.attach(
-        handler_id,
-        [:oli, :repo, :query],
-        fn _, _, metadata, _ ->
-          case metadata.query do
-            "SELECT" <> _ -> send(parent, :activity_attempt_context_query)
-            _ -> :ok
-          end
-        end,
-        %{}
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
-
-      assert {loaded_attempt, section_id} =
-               Attempts.get_activity_attempt_with_section_by_guid(activity_attempt.attempt_guid)
-
-      assert section_id == section.id
-      assert length(loaded_attempt.part_attempts) == 2
-      assert loaded_attempt.revision.activity_type.id == activity_type.id
-      assert_receive :activity_attempt_context_query
-      refute_receive :activity_attempt_context_query
-    end
-  end
-
   defp setup_create_attempt_records(_) do
     content1 = %{
       "stem" => "1",

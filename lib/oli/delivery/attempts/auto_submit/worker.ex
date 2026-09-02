@@ -27,13 +27,12 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
         nil ->
           Oli.Repo.rollback({:not_found})
 
-        %ResourceAttempt{} = resource_attempt ->
+        resource_attempt ->
           resource_access = Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id)
 
           context = %FinalizationContext{
             resource_attempt: resource_attempt,
             section_slug: section_slug,
-            section_id: resource_access.section_id,
             datashop_session_id: datashop_session_id,
             effective_settings:
               Oli.Delivery.Settings.get_combined_settings(

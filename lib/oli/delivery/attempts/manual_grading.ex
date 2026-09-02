@@ -1,8 +1,6 @@
 defmodule Oli.Delivery.Attempts.ManualGrading do
   import Ecto.Query, warn: false
 
-  require Logger
-
   @moduledoc """
   Manual activity grading.
   """
@@ -18,7 +16,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
-  alias Oli.Delivery.Snapshots
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -279,43 +276,35 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
           Map.put(part_attempt, :grading_approach, :automatic)
         end)
 
-      result =
-        Oli.Repo.transaction(fn ->
-          case ApplyClientEvaluation.apply(
-                 section_slug,
-                 activity_attempt.attempt_guid,
-                 client_evaluations,
-                 datashop_session_id,
-                 enforce_client_side_eval: false,
-                 part_attempts_input: mocked_part_attempts,
-                 create_snapshot: false
-               ) do
-            {:ok, _} ->
-              restore_original_responses(part_attempts)
+      Oli.Repo.transaction(fn ->
+        case ApplyClientEvaluation.apply(
+               section_slug,
+               activity_attempt.attempt_guid,
+               client_evaluations,
+               datashop_session_id,
+               enforce_client_side_eval: false,
+               part_attempts_input: mocked_part_attempts
+             ) do
+          {:ok, _} ->
+            restore_original_responses(part_attempts)
 
-              case RollUp.rollup_evaluated(activity_attempt.attempt_guid) do
-                :ok ->
-                  maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+            case RollUp.rollup_evaluated(activity_attempt.attempt_guid) do
+              :ok ->
+                maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
 
-                :error ->
-                  Repo.rollback(:rollup_failed)
+              :error ->
+                Repo.rollback(:rollup_failed)
 
-                other ->
-                  Repo.rollback(other)
-              end
+              other ->
+                Repo.rollback(other)
+            end
 
-              manual_part_attempt_guids
+            manual_part_attempt_guids
 
-            {:error, error} ->
-              Repo.rollback(error)
-          end
-        end)
-
-      result
-      |> Snapshots.maybe_create_snapshot(
-        Enum.map(manual_part_attempt_guids, &%{attempt_guid: &1}),
-        section_slug
-      )
+          {:error, error} ->
+            Repo.rollback(error)
+        end
+      end)
     end
   end
 

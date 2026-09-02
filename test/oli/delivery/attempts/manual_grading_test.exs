@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Activities.Model.{Part}
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Snapshots.Worker, as: SnapshotWorker
   alias Oli.Experiments.Schemas.{AcceptedReward, PolicyState}
   alias Oli.Test.ExperimentRewardSetup
 
@@ -455,6 +456,10 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       # The resource attempt must be evaluated
       ra = Oli.Delivery.Attempts.Core.get_resource_attempt_by(id: aa.resource_attempt_id)
       assert ra.lifecycle_state == :evaluated
+
+      # Test mode executes snapshots synchronously inside the grading transaction. Run the worker
+      # after commit to model production's deferred snapshot timing for reward processing.
+      assert :ok = SnapshotWorker.perform_now(part_guids, section.slug)
 
       assert Oli.Repo.aggregate(AcceptedReward, :count) == 1
 

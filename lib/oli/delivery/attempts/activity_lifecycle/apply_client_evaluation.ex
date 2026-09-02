@@ -39,7 +39,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
   - `:use_fixed_score` - `{score, out_of}` to force a fixed score on rollup.
   - `:no_roll_up` - Set to true to disable rollup after part evaluation.
   - `:enforce_client_side_eval` - If true (default), activity type must allow client evaluation.
-  - `:create_snapshot` - If true (default), create the snapshot after evaluation.
   """
   def apply(
         section_slug,
@@ -52,10 +51,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
     use_fixed_score = Keyword.get(opts, :use_fixed_score, nil)
     no_roll_up = Keyword.get(opts, :no_roll_up, false)
     enforce_client_side_eval = Keyword.get(opts, :enforce_client_side_eval, true)
-    create_snapshot = Keyword.get(opts, :create_snapshot, true)
 
-    {activity_attempt, section_id} =
-      get_activity_attempt_with_section_by_guid(activity_attempt_guid)
+    activity_attempt =
+      get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+      |> Repo.preload(revision: [:activity_type])
 
     activity_registration_slug = activity_attempt.revision.activity_type.slug
 
@@ -74,52 +73,47 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
       Oli.Activities.get_registration_by_slug(activity_registration_slug)
 
     if not enforce_client_side_eval or allow_client_evaluation do
-      result =
-        Repo.transaction(fn ->
-          part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
-          part_inputs = filter_already_evaluated(part_inputs, part_attempts)
+      Repo.transaction(fn ->
+        part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
+        part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
-          roll_up_fn =
-            case use_fixed_score do
-              nil ->
-                RollUp.determine_activity_rollup_fn(
-                  activity_attempt_guid,
-                  part_inputs,
-                  part_attempts
-                )
+        roll_up_fn =
+          case use_fixed_score do
+            nil ->
+              RollUp.determine_activity_rollup_fn(
+                activity_attempt_guid,
+                part_inputs,
+                part_attempts
+              )
 
-              {score, out_of} ->
-                fn result ->
-                  evaluate_with_rule_engine_score(activity_attempt, section_id, score, out_of)
-                  result
-                end
-            end
+            {score, out_of} ->
+              fn result ->
+                evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of)
+                result
+              end
+          end
 
-          roll_up_fn =
-            if no_roll_up do
-              fn result -> result end
-            else
-              roll_up_fn
-            end
+        roll_up_fn =
+          if no_roll_up do
+            fn result -> result end
+          else
+            roll_up_fn
+          end
 
-          result =
-            persist_client_evaluations(
-              part_inputs,
-              client_evaluations,
-              roll_up_fn,
-              false,
-              datashop_session_id
-            )
+        result =
+          persist_client_evaluations(
+            part_inputs,
+            client_evaluations,
+            roll_up_fn,
+            false,
+            datashop_session_id
+          )
 
-          Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
+        Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
 
-          result
-        end)
-
-      case create_snapshot do
-        true -> Snapshots.maybe_create_snapshot(result, part_inputs, section_slug)
-        false -> result
-      end
+        result
+      end)
+      |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
     else
       {:error, "Activity type does not allow client evaluation"}
     end
@@ -164,8 +158,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
     end
   end
 
-  defp evaluate_with_rule_engine_score(activity_attempt, _section_id, score, out_of) do
+  defp evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of) do
     Logger.debug("evaluate_with_rule_engine_score: score: #{score}, out_of: #{out_of}")
+
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
     now = DateTime.utc_now()
 

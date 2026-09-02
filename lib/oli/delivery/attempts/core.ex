@@ -873,28 +873,6 @@ defmodule Oli.Delivery.Attempts.Core do
       |> Repo.preload([:part_attempts, revision: [:activity_type]])
 
   @doc """
-  Gets an activity attempt and its section ID by attempt GUID.
-
-  The section ID is selected through the existing attempt relationships in the same query that
-  loads the activity attempt, avoiding a separate section lookup for delivery handoffs.
-  """
-  def get_activity_attempt_with_section_by_guid(activity_attempt_guid) do
-    from(activity_attempt in ActivityAttempt,
-      join: resource_attempt in ResourceAttempt,
-      on: resource_attempt.id == activity_attempt.resource_attempt_id,
-      join: resource_access in ResourceAccess,
-      on: resource_access.id == resource_attempt.resource_access_id,
-      join: revision in assoc(activity_attempt, :revision),
-      join: activity_type in assoc(revision, :activity_type),
-      left_join: part_attempt in assoc(activity_attempt, :part_attempts),
-      where: activity_attempt.attempt_guid == ^activity_attempt_guid,
-      preload: [part_attempts: part_attempt, revision: {revision, activity_type: activity_type}],
-      select: {activity_attempt, resource_access.section_id}
-    )
-    |> Repo.one()
-  end
-
-  @doc """
   Gets a part attempt by a clause.
   ## Examples
       iex> get_part_attempt_by(attempt_guid: "123")
