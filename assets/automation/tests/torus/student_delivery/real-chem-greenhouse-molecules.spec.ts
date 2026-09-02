@@ -41,16 +41,16 @@ import { completeAdaptiveHappyPath, LessonAnswers } from '@tasks/AdaptiveHappyPa
  *   - the private assets seeded ONCE in your own playwright assets bucket
  *     (MinIO in dev, console at :9001; name it whatever you like, e.g.
  *     torus-playwright-assets-dev — there's no default, export that name as
- *     PLAYWRIGHT_ASSETS_BUCKET server-side): mer-5672/real-chem-course.zip
- *     and mer-5672/answers.json. The test fetches them through
+ *     PLAYWRIGHT_ASSETS_BUCKET server-side): real_chem-greenhouse_molecules/course.zip
+ *     and real_chem-greenhouse_molecules/answers.json. The test fetches them through
  *     GET /test/assets/* on the server. The server must also be started with
  *     PLAYWRIGHT_SCENARIO_TOKEN.
  *
  * Then: npx playwright test real-chem-greenhouse-molecules
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const archiveKey = 'mer-5672/real-chem-course.zip';
-const answersKey = 'mer-5672/answers.json';
+const archiveKey = 'real_chem-greenhouse_molecules/course.zip';
+const answersKey = 'real_chem-greenhouse_molecules/answers.json';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 
 let seededCourse: AutomationSetupResponse | null = null;
@@ -111,7 +111,7 @@ test.describe.serial('Real Chem I greenhouse molecules adaptive lesson', () => {
     }
   });
 
-  test('student completes the greenhouse molecules happy path', async ({ page }) => {
+  test('student completes the greenhouse molecules happy path @nightly', async ({ page }) => {
     test.setTimeout(900_000); // 33 screens with server-side rule evaluation per check
 
     if (!seededCourse || !answers) {
