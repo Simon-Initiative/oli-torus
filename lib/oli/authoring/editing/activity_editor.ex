@@ -2072,7 +2072,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          publication = Repo.preload(publication, :project),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, lo_well_formed} <-
-           ProjectClassifier.ensure_classified(publication.project, publication.id),
+           ProjectClassifier.ensure_classified(publication.project, publication),
          {:ok, all_objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, %{title: resource_title}} <-

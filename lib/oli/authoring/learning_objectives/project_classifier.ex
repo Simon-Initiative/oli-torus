@@ -11,6 +11,7 @@ defmodule Oli.Authoring.LearningObjectives.ProjectClassifier do
 
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.PublishedResource
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Resources.{ResourceType, Revision}
 
@@ -21,12 +22,20 @@ defmodule Oli.Authoring.LearningObjectives.ProjectClassifier do
 
   @doc """
   Returns a project's existing classification, or computes and persists it when currently nil.
+
+  The publication must belong to the project being classified.
   """
-  def ensure_classified(%Project{lo_well_formed: value}, _publication_id)
+  def ensure_classified(
+        %Project{id: project_id, lo_well_formed: value},
+        %Publication{project_id: project_id}
+      )
       when is_boolean(value),
       do: {:ok, value}
 
-  def ensure_classified(%Project{id: project_id}, publication_id) do
+  def ensure_classified(
+        %Project{id: project_id},
+        %Publication{id: publication_id, project_id: project_id}
+      ) do
     value = publication_id |> classification_data() |> well_formed?()
 
     case persist_if_unclassified(project_id, value) do
@@ -34,6 +43,8 @@ defmodule Oli.Authoring.LearningObjectives.ProjectClassifier do
       :already_classified -> current_classification(project_id)
     end
   end
+
+  def ensure_classified(%Project{}, %Publication{}), do: {:error, :not_found}
 
   @doc """
   Determines whether classification data follows the learning-objective attachment rules.

@@ -66,7 +66,7 @@ defmodule Oli.Authoring.LearningObjectives.ProjectClassifierTest do
       create_activity(map, [child_id])
 
       assert {:ok, true} =
-               ProjectClassifier.ensure_classified(map.project, map.publication.id)
+               ProjectClassifier.ensure_classified(map.project, map.publication)
 
       assert Repo.get!(Project, map.project.id).lo_well_formed == true
     end
@@ -75,7 +75,7 @@ defmodule Oli.Authoring.LearningObjectives.ProjectClassifierTest do
       revise_page_objectives(map, [map.sub_objective.resource.id])
 
       assert {:ok, false} =
-               ProjectClassifier.ensure_classified(map.project, map.publication.id)
+               ProjectClassifier.ensure_classified(map.project, map.publication)
 
       assert Repo.get!(Project, map.project.id).lo_well_formed == false
     end
@@ -84,7 +84,7 @@ defmodule Oli.Authoring.LearningObjectives.ProjectClassifierTest do
       create_activity(map, [map.objective.resource.id])
 
       assert {:ok, false} =
-               ProjectClassifier.ensure_classified(map.project, map.publication.id)
+               ProjectClassifier.ensure_classified(map.project, map.publication)
 
       assert Repo.get!(Project, map.project.id).lo_well_formed == false
     end
@@ -98,15 +98,25 @@ defmodule Oli.Authoring.LearningObjectives.ProjectClassifierTest do
       )
 
       assert {:ok, true} =
-               ProjectClassifier.ensure_classified(map.project, map.publication.id)
+               ProjectClassifier.ensure_classified(map.project, map.publication)
+    end
+
+    test "rejects a publication belonging to another project", map do
+      mismatched_publication = %{map.publication | project_id: map.project.id + 1}
+
+      assert {:error, :not_found} =
+               ProjectClassifier.ensure_classified(map.project, mismatched_publication)
+
+      assert is_nil(Repo.get!(Project, map.project.id).lo_well_formed)
     end
 
     test "does not inspect or overwrite an existing classification", map do
       Enum.each([true, false], fn classification ->
         project = set_classification(map.project, classification)
+        missing_publication = %{map.publication | id: -1}
 
         assert {:ok, ^classification} =
-                 ProjectClassifier.ensure_classified(project, -1)
+                 ProjectClassifier.ensure_classified(project, missing_publication)
 
         assert Repo.get!(Project, project.id).lo_well_formed == classification
       end)

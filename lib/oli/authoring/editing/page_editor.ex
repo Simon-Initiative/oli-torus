@@ -206,7 +206,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, %{content: content} = revision} <- maybe_migrate_revision_content(revision),
          {:ok, lo_well_formed} <-
-           ProjectClassifier.ensure_classified(publication.project, publication.id),
+           ProjectClassifier.ensure_classified(publication.project, publication),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-

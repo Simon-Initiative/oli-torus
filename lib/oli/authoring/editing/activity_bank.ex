@@ -50,7 +50,7 @@ defmodule Oli.Authoring.Editing.ActivityBank do
          {:ok, %Result{totalCount: total_count}} <-
            query(project_slug, author, %Logic{conditions: nil}, %Paging{limit: 1, offset: 0}),
          {:ok, lo_well_formed} <-
-           ProjectClassifier.ensure_classified(publication.project, publication.id) do
+           ProjectClassifier.ensure_classified(publication.project, publication) do
       editor_map =
         Activities.create_registered_activity_map(project_slug)
         |> Enum.reject(fn {_key, entry} -> entry.isLtiActivity end)
