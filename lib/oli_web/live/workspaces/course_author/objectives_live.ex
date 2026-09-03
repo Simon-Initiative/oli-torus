@@ -29,6 +29,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     TableModel
   }
 
+  alias OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter
+
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
   @max_search_length 100
@@ -36,7 +38,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   def live_path(socket, params) do
     params =
-      expanded_params(params, Map.get(socket.assigns, :expanded_objective_slugs, MapSet.new()))
+      params
+      |> preserve_course_content_param(socket)
+      |> expanded_params(Map.get(socket.assigns, :expanded_objective_slugs, MapSet.new()))
 
     ~p"/workspaces/course_author/#{socket.assigns.project.slug}/objectives?#{params}"
   end
@@ -61,6 +65,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_status: :loading,
         coverage_load_ref: make_ref(),
         assessment_buckets: %{},
+        course_content_open: false,
+        course_content_selection: nil,
+        course_content_scope_ids: nil,
+        course_content_nodes: [],
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
         search_matching_ids: nil,
@@ -133,24 +141,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       card_body_text_class="mt-1 mb-4 text-Text-text-high"
       filter_opts_class="w-full"
     >
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-          <div class="w-full sm:max-w-md">
-            <Filter.render
-              change="change_search"
-              reset="reset_search"
-              apply="apply_search"
-              query={@query}
-              apply_icon={true}
-            />
-          </div>
+      <div class="flex w-full flex-wrap items-center gap-2 pt-6">
+        <div class="w-full shrink-0 sm:w-56">
+          <Filter.render
+            change="change_search"
+            reset="reset_search"
+            apply="apply_search"
+            query={@query}
+            apply_icon={true}
+          />
+        </div>
 
-          <form id="sort" phx-change="sort" class="flex h-9 items-center gap-2">
-            <label for="select_sort" class="sr-only">Sort objectives</label>
+        <form id="sort" phx-change="sort" class="flex h-9 shrink-0 items-center gap-2">
+          <label for="select_sort" class="sr-only">Sort objectives</label>
+          <div class="relative h-9 w-[86px] shrink-0">
             <select
               name="sort_by"
               id="select_sort"
-              class="h-9 rounded-[3px] border border-Border-border-default bg-Background-bg-primary px-2 text-sm font-semibold text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              class="h-9 w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] pr-7 text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
             >
               <%= for column_spec <- @table_model.column_specs do %>
                 <%= if column_spec.name != :action do %>
@@ -160,43 +168,57 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                 <% end %>
               <% end %>
             </select>
-            <label class="inline-flex size-9 cursor-pointer items-center justify-center rounded text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
-              <span class="sr-only">Toggle sort direction</span>
-              <.input
-                type="checkbox"
-                name="sort_order"
-                class="sr-only"
-                value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
-              />
-              <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
-            </label>
-          </form>
-        </div>
+            <Icons.chevron_down
+              width="9.5"
+              height="5.5"
+              variant="stroke"
+              class="pointer-events-none absolute right-[10px] top-1/2 -translate-y-1/2 text-Icon-icon-default"
+            />
+          </div>
+          <label class="inline-flex size-[30px] cursor-pointer items-center justify-center rounded-md border border-Border-border-default text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
+            <span class="sr-only">Toggle sort direction</span>
+            <.input
+              type="checkbox"
+              name="sort_order"
+              class="sr-only"
+              value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
+            />
+            <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
+          </label>
+        </form>
+        <div class="hidden h-6 w-px shrink-0 bg-Border-border-default xl:block" aria-hidden="true" />
+        <ContentFilter.render
+          nodes={@course_content_nodes}
+          selected_ids={MapSet.new(get_in(@course_content_selection || %{}, [:selected_ids]) || [])}
+          active_count={get_in(@course_content_selection || %{}, [:active_count]) || 0}
+          open={@course_content_open}
+          disabled={@coverage_status != :ready}
+        />
 
-        <div class="flex shrink-0 items-center gap-3">
-          <.link
-            id="download-objectives-csv"
-            href={
-              ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
-            }
-            download={"#{@project.slug}_learning_objectives.csv"}
-            class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md border border-Fill-Buttons-fill-primary bg-Background-bg-secondary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-button transition hover:bg-Fill-Buttons-fill-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-          >
-            <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
-              <Icons.download stroke_class="stroke-current" />
-            </span>
-            Download CSV
-          </.link>
+        <div class="flex-1" />
 
-          <button
-            type="button"
-            class="inline-flex min-h-8 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-            phx-click="display_new_modal"
-          >
-            <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
-            New Objective
-          </button>
-        </div>
+        <.link
+          id="download-objectives-csv"
+          href={
+            ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
+          }
+          download={"#{@project.slug}_learning_objectives.csv"}
+          class="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-Border-border-default bg-Background-bg-primary px-[13px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+        >
+          <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
+            <Icons.download stroke_class="stroke-current" />
+          </span>
+          Download CSV
+        </.link>
+
+        <button
+          type="button"
+          class="inline-flex h-[34px] shrink-0 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 text-[13px] font-semibold leading-[19.5px] text-Text-text-white shadow-[0px_2px_2px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          phx-click="display_new_modal"
+        >
+          <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
+          New Objective
+        </button>
       </div>
     </FilterBox.render>
 
@@ -247,9 +269,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         show_bottom_paging={false}
         additional_table_class="table-sm text-center"
         with_body={true}
-        empty_state_text={
-          if @query == "", do: "None exist", else: "No learning objectives match your search."
-        }
+        empty_state_text={empty_state_text(assigns)}
       >
         <div class="rounded-lg bg-Background-bg-secondary p-6 shadow-[0px_2px_5px_rgba(0,50,99,0.10)]">
           <Listing.render
@@ -337,7 +357,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     }
   end
 
-  def filter_rows(socket, query, _filter) do
+  def filter_rows(socket, query, filter),
+    do: filter_rows(socket, query, filter, socket.assigns.params)
+
+  def filter_rows(socket, query, _filter, params) do
     query = normalize_search_query(query)
 
     case socket.assigns.coverage_model do
@@ -345,20 +368,150 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         if String.trim(query) == "", do: socket.assigns.objectives, else: []
 
       model ->
-        if String.trim(query) == "" do
-          socket.assigns.objectives
-        else
-          matching_ids =
+        matching_ids =
+          if String.trim(query) == "" do
+            nil
+          else
             socket.assigns.search_matching_ids || matching_objective_ids(model, query)
+          end
 
-          Enum.filter(socket.assigns.objectives, fn objective ->
-            objective.resource_id in matching_ids or
-              Enum.any?(objective.children, fn child ->
-                not is_nil(child) and child.resource_id in matching_ids
-              end)
-          end)
-        end
+        content_selection =
+          ObjectiveCoverage.normalize_curriculum_selection(model, params["course_content"])
+
+        socket.assigns.objectives
+        |> filter_objective_rows(matching_ids)
+        |> filter_content_rows(model, content_selection)
     end
+  end
+
+  def after_table_params(params, socket) do
+    params =
+      if Map.has_key?(params, "course_content") do
+        Map.put(socket.assigns.params, "course_content", params["course_content"])
+      else
+        Map.delete(socket.assigns.params, "course_content")
+      end
+
+    selection =
+      case socket.assigns.coverage_model do
+        nil -> nil
+        model -> ObjectiveCoverage.normalize_curriculum_selection(model, params["course_content"])
+      end
+
+    params =
+      case selection do
+        nil -> params
+        selection -> put_course_content_param(params, selection.selected_ids)
+      end
+
+    scope_ids =
+      case {socket.assigns.coverage_model, selection} do
+        {model, %{page_ids: page_ids}} when not is_nil(model) ->
+          ObjectiveCoverage.objective_scope_for_pages(model, page_ids)
+
+        _ ->
+          []
+      end
+
+    assign(socket,
+      course_content_selection: selection,
+      course_content_scope_ids: scope_ids,
+      params: params
+    )
+  end
+
+  defp empty_state_text(%{course_content_selection: %{selected_ids: selected_ids}})
+       when selected_ids != [],
+       do: "No learning objectives match the selected course content."
+
+  defp empty_state_text(assigns) do
+    if assigns.query == "", do: "None exist", else: "No learning objectives match your search."
+  end
+
+  def handle_event("toggle_course_content_filter", _params, socket) do
+    {:noreply, assign(socket, course_content_open: !socket.assigns.course_content_open)}
+  end
+
+  def handle_event("close_course_content_filter", _params, socket) do
+    {:noreply, assign(socket, course_content_open: false)}
+  end
+
+  def handle_event(
+        "toggle_course_content_item",
+        %{"resource_id" => resource_id},
+        socket
+      ) do
+    with model when not is_nil(model) <- socket.assigns.coverage_model,
+         {:ok, resource_id} <- parse_objective_id(resource_id),
+         true <- Map.has_key?(model.curriculum_by_id, resource_id) do
+      current_ids =
+        MapSet.new(get_in(socket.assigns, [:course_content_selection, :selected_ids]) || [])
+
+      selected_ids =
+        if MapSet.member?(current_ids, resource_id) do
+          MapSet.delete(current_ids, resource_id)
+        else
+          MapSet.put(current_ids, resource_id)
+        end
+
+      params =
+        socket.assigns.params
+        |> put_course_content_param(MapSet.to_list(selected_ids))
+        |> Map.put("offset", 0)
+
+      params =
+        if MapSet.size(selected_ids) == 0 do
+          Map.put(params, "clear_course_content", true)
+        else
+          params
+        end
+
+      {:noreply, push_patch(socket, to: live_path(socket, params), replace: true)}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("clear_course_content_filter", _params, socket) do
+    params =
+      socket.assigns.params
+      |> Map.put("clear_course_content", true)
+      |> Map.put("offset", 0)
+
+    {:noreply, push_patch(socket, to: live_path(socket, params), replace: true)}
+  end
+
+  defp filter_objective_rows(rows, nil), do: rows
+
+  defp filter_objective_rows(rows, matching_ids) do
+    Enum.filter(rows, fn objective ->
+      objective.resource_id in matching_ids or
+        Enum.any?(objective.children, fn child ->
+          not is_nil(child) and child.resource_id in matching_ids
+        end)
+    end)
+  end
+
+  defp filter_content_rows(rows, _model, %{selected_ids: []}), do: rows
+
+  defp filter_content_rows(rows, model, selection) do
+    direct_ids = ObjectiveCoverage.objective_ids_for_pages(model, selection.page_ids)
+    visible_ids = ObjectiveCoverage.objective_scope_for_pages(model, selection.page_ids)
+
+    rows
+    |> Enum.filter(fn objective ->
+      objective.resource_id in visible_ids or
+        Enum.any?(objective.children, fn child ->
+          not is_nil(child) and child.resource_id in direct_ids
+        end)
+    end)
+    |> Enum.map(fn objective ->
+      Map.update!(objective, :children, fn children ->
+        Enum.filter(children, fn child ->
+          not is_nil(child) and child.resource_id in direct_ids
+        end)
+      end)
+    end)
   end
 
   defp matching_objective_ids(model, query) do
@@ -459,6 +612,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_model: nil,
         coverage_status: :loading,
         assessment_buckets: socket.assigns.assessment_buckets,
+        course_content_selection: nil,
         search_matching_ids: nil,
         expanded_objective_slugs: expanded_objective_slugs
       )
@@ -983,6 +1137,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         total_count: length(objectives),
         coverage_model: model,
         coverage_status: :ready,
+        course_content_nodes: ObjectiveCoverage.curriculum_nodes(model),
+        course_content_selection:
+          ObjectiveCoverage.normalize_curriculum_selection(
+            model,
+            socket.assigns.params["course_content"]
+          ),
         assessment_buckets: assessment_buckets,
         search_matching_ids:
           if(String.trim(socket.assigns.query) == "",
@@ -998,7 +1158,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     {:noreply,
      assign(socket,
        coverage_model: nil,
-       coverage_status: {:error, reason}
+       coverage_status: {:error, reason},
+       course_content_selection: nil,
+       course_content_nodes: []
      )}
   end
 
@@ -1122,6 +1284,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     case Map.get(params, "selected", "") do
       "" -> expanded_slugs
       slug -> MapSet.put(expanded_slugs, slug)
+    end
+  end
+
+  defp preserve_course_content_param(params, socket) do
+    case Map.pop(params, "clear_course_content") do
+      {true, params} ->
+        Map.delete(params, "course_content")
+
+      {_clear, params} ->
+        if Map.has_key?(params, "course_content") do
+          params
+        else
+          selected_ids = get_in(socket.assigns, [:course_content_selection, :selected_ids]) || []
+          put_course_content_param(params, selected_ids)
+        end
+    end
+  end
+
+  defp put_course_content_param(params, selected_ids) do
+    selected_ids = selected_ids |> Enum.map(&to_string/1) |> Enum.sort()
+
+    case Enum.join(selected_ids, ",") do
+      "" -> Map.delete(params, "course_content")
+      value -> Map.put(params, "course_content", value)
     end
   end
 

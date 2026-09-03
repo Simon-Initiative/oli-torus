@@ -57,6 +57,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
           curriculum_paths_by_id: %{pos_integer() => [[pos_integer()]]},
           top_level_objective_ids: [pos_integer()],
           direct_page_ids_by_objective: %{pos_integer() => [pos_integer()]},
+          objective_ids_by_page: %{pos_integer() => [pos_integer()]},
           activity_ids_by_objective: %{pos_integer() => %{atom() => [pos_integer()]}},
           coverage_by_objective: %{pos_integer() => map()},
           details_by_objective: %{pos_integer() => %{atom() => [map()]}},
@@ -173,6 +174,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     pages_by_id = Map.new(pages, &{&1.resource_id, page_summary(&1)})
     activities_by_id = Map.new(activities, &{&1.resource_id, activity_summary(&1)})
     direct_page_ids_by_objective = direct_page_ids_by_objective(pages)
+    objective_ids_by_page = objective_ids_by_page(pages, activities_by_id)
     activity_occurrences = activity_occurrences_by_objective(pages, activities_by_id)
     activity_ids_by_objective = activity_ids_by_objective(activity_occurrences)
 
@@ -227,6 +229,7 @@ defmodule Oli.Authoring.ObjectiveCoverage do
         curriculum_paths_by_id(curriculum_by_id, curriculum_parents_by_child),
       top_level_objective_ids: top_level_objective_ids(objectives_by_id, parents_by_child),
       direct_page_ids_by_objective: direct_page_ids_by_objective,
+      objective_ids_by_page: objective_ids_by_page,
       activity_ids_by_objective: activity_ids_by_objective,
       coverage_by_objective: coverage_by_objective,
       details_by_objective: details_by_objective,
@@ -298,6 +301,85 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     |> Enum.filter(&Map.has_key?(model.pages_by_id, &1))
     |> Enum.uniq()
     |> Enum.sort()
+  end
+
+  @doc """
+  Returns normalized course-content selection state for the supplied curriculum ids.
+
+  The explicit selection contains only valid curriculum ids. The effective curriculum
+  scope includes each selected node and its descendants, while the page scope retains
+  only page resources. Objective ids contain direct page/activity matches; callers can
+  use `objective_scope_for_pages/2` when ancestor objectives are also required.
+  """
+  @spec normalize_curriculum_selection(t(), list() | String.t()) :: %{
+          selected_ids: [pos_integer()],
+          curriculum_ids: [pos_integer()],
+          page_ids: [pos_integer()],
+          objective_ids: MapSet.t(),
+          active_count: non_neg_integer()
+        }
+  def normalize_curriculum_selection(model, selected_ids) do
+    selected_ids =
+      selected_ids
+      |> selected_curriculum_ids()
+      |> Enum.filter(&Map.has_key?(model.curriculum_by_id, &1))
+
+    curriculum_ids =
+      selected_ids
+      |> Enum.flat_map(fn resource_id ->
+        [resource_id | Map.get(model.curriculum_descendants_by_id, resource_id, [])]
+      end)
+      |> Enum.filter(&Map.has_key?(model.curriculum_by_id, &1))
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    page_ids = Enum.filter(curriculum_ids, &Map.has_key?(model.pages_by_id, &1))
+
+    %{
+      selected_ids: selected_ids,
+      curriculum_ids: curriculum_ids,
+      page_ids: page_ids,
+      objective_ids: objective_ids_for_pages(model, page_ids),
+      active_count: length(curriculum_ids)
+    }
+  end
+
+  @doc "Returns deterministic curriculum nodes suitable for a hierarchical checklist."
+  @spec curriculum_nodes(t()) :: [map()]
+  def curriculum_nodes(model) do
+    model.curriculum_by_id
+    |> Enum.map(fn {resource_id, node} ->
+      paths = Map.get(model.curriculum_paths_by_id, resource_id, [[resource_id]])
+
+      %{
+        resource_id: resource_id,
+        resource_type_id: node.resource_type_id,
+        title: node.title,
+        children: Map.get(model.curriculum_children_by_parent, resource_id, []),
+        parent_ids: Map.get(model.curriculum_parents_by_child, resource_id, []),
+        paths: paths,
+        path: List.first(paths, [resource_id]),
+        depth: (paths |> Enum.map(&length/1) |> Enum.min(fn -> 1 end)) - 1
+      }
+    end)
+    |> Enum.sort_by(&{&1.path, &1.resource_id})
+  end
+
+  @doc "Returns objective ids matched by direct page or embedded-activity attachments."
+  @spec objective_ids_for_pages(t(), list()) :: MapSet.t()
+  def objective_ids_for_pages(model, page_ids) do
+    page_ids
+    |> normalize_ids()
+    |> Enum.flat_map(&Map.get(model.objective_ids_by_page, &1, []))
+    |> MapSet.new()
+  end
+
+  @doc "Returns matched objective ids plus all of their objective ancestors."
+  @spec objective_scope_for_pages(t(), list()) :: MapSet.t()
+  def objective_scope_for_pages(model, page_ids) do
+    model
+    |> objective_ids_for_pages(page_ids)
+    |> objective_ancestors(model.parents_by_child)
   end
 
   defp base_projection_query do
@@ -423,6 +505,30 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     end)
     |> Map.new(fn {objective_id, page_ids} ->
       {objective_id, page_ids |> MapSet.to_list() |> Enum.sort()}
+    end)
+  end
+
+  defp objective_ids_by_page(pages, activities_by_id) do
+    Map.new(pages, fn page ->
+      activity_objective_ids =
+        page.activity_refs
+        |> Enum.flat_map(fn activity_id ->
+          case Map.get(activities_by_id, activity_id) do
+            %{scope: scope, objectives: objectives} when scope in [:embedded, "embedded"] ->
+              objective_ids(objectives)
+
+            _ ->
+              []
+          end
+        end)
+
+      objective_ids =
+        [objective_ids(page.objectives) | activity_objective_ids]
+        |> List.flatten()
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      {page.resource_id, objective_ids}
     end)
   end
 
@@ -805,6 +911,52 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   end
 
   defp objective_ids(_), do: []
+
+  defp selected_curriculum_ids(selected_ids) when is_binary(selected_ids) do
+    selected_ids
+    |> String.split(",", trim: true)
+    |> Enum.flat_map(fn selected_id ->
+      case Integer.parse(selected_id) do
+        {resource_id, ""} when resource_id > 0 -> [resource_id]
+        _ -> []
+      end
+    end)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  defp selected_curriculum_ids(selected_ids) when is_list(selected_ids) do
+    selected_ids
+    |> Enum.flat_map(fn
+      resource_id when is_integer(resource_id) and resource_id > 0 -> [resource_id]
+      resource_id when is_binary(resource_id) -> selected_curriculum_ids(resource_id)
+      _ -> []
+    end)
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  defp selected_curriculum_ids(_), do: []
+
+  defp objective_ancestors(objective_ids, parents_by_child) do
+    objective_ancestors(MapSet.to_list(objective_ids), parents_by_child, objective_ids)
+  end
+
+  defp objective_ancestors([], _parents_by_child, objective_ids), do: objective_ids
+
+  defp objective_ancestors([objective_id | remaining], parents_by_child, objective_ids) do
+    {new_parents, objective_ids} =
+      Enum.reduce(Map.get(parents_by_child, objective_id, []), {[], objective_ids}, fn parent_id,
+                                                                                       {new, ids} ->
+        if MapSet.member?(ids, parent_id) do
+          {new, ids}
+        else
+          {[parent_id | new], MapSet.put(ids, parent_id)}
+        end
+      end)
+
+    objective_ancestors(remaining ++ new_parents, parents_by_child, objective_ids)
+  end
 
   defp assessment_bucket(true), do: :summative
   defp assessment_bucket(_), do: :formative
