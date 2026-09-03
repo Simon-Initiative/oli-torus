@@ -3487,14 +3487,124 @@ defmodule Oli.Delivery.SectionsTest do
       top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
       assert top_level_a != nil
       assert top_level_a.section_id == section.id
-      assert top_level_a.student_proficiency_obj == "High"
+
+      # objective_a has Sub-LOs (sub_objective_a1 and sub_objective_a2), so its
+      # displayed proficiency now reflects its Sub-LOs' combined evidence in
+      # addition to its own directly-tagged evidence — always combined, never
+      # excluded, per a deliberate product decision (Darren Siegel, Slack,
+      # 2026-09-01, "Option B" in
+      # docs/exec-plans/current/epics/learning_model_v2/lo_aggregation/parent_evidence_aggregation_options.md):
+      # objective_a's own evidence (3/3 first attempts, proficiency 1.0) and
+      # sub_objective_a1's evidence (0/3, proficiency 0.2) combine as
+      # (1.0*3 + 0.2*3) / (3+3) = 0.6 => "Medium" (sub_objective_a2 has no
+      # evidence and contributes nothing). Previously this showed only
+      # objective_a's own evidence directly ("High"), ignoring its Sub-LOs
+      # entirely.
+      assert top_level_a.student_proficiency_obj == "Medium"
       assert top_level_a.student_proficiency_obj_dist == nil
 
       sub_a1 = Enum.find(result, &(&1.subobjective == "Sub-objective A.1"))
       assert sub_a1 != nil
-      assert sub_a1.student_proficiency_obj == "High"
+      # student_proficiency_obj on a sub-objective's row always mirrors its
+      # parent's (combined) proficiency, not the sub-objective's own.
+      assert sub_a1.student_proficiency_obj == "Medium"
+      # student_proficiency_subobj is sub_objective_a1's own proficiency. It
+      # is itself a leaf (no Sub-LOs of its own), so it is unaffected by the
+      # parent's combined value.
       assert sub_a1.student_proficiency_subobj == "Low"
       assert sub_a1.student_proficiency_subobj_dist == nil
+    end
+
+    test "reflects incomplete coverage instead of ignoring an under-evidenced Sub-LO", %{
+      section: section,
+      objectives: %{
+        objective_a: objective_a,
+        sub_objective_a1: sub_objective_a1,
+        sub_objective_a2: sub_objective_a2
+      }
+    } do
+      student = insert(:user)
+      objective_type_id = ResourceType.id_for_objective()
+
+      # sub_objective_a1: well-attempted, perfect proficiency.
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: sub_objective_a1.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 10,
+        num_attempts: 10,
+        num_hints: 0,
+        num_first_attempts: 10,
+        num_first_attempts_correct: 10
+      })
+
+      # sub_objective_a2: under-evidenced (attempted, but with a thin, nonzero
+      # count), not wholly unattempted. This distinguishes "correctly weighted
+      # in" from "silently dropped": a zero-count child can't change a weighted
+      # average by definition, so testing only that case wouldn't prove
+      # anything (see the aggregate_weighted_proficiency/1 unit tests for that
+      # boundary case instead).
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: sub_objective_a2.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 0,
+        num_attempts: 5,
+        num_hints: 0,
+        num_first_attempts: 5,
+        num_first_attempts_correct: 0
+      })
+
+      result =
+        Sections.get_objectives_and_subobjectives(section, student_id: student.id)
+        |> Enum.find(&(&1.objective_resource_id == objective_a.resource_id))
+
+      # If sub_objective_a2's under-evidenced result were silently dropped,
+      # objective_a would be computed as if only sub_objective_a1 existed:
+      # proficiency 1.0 => "High". Correctly weighting both Sub-LOs together
+      # instead yields (1.0*10 + 0.2*5) / 15 = 0.733 => "Medium" — a different
+      # bucket, so this test actually discriminates between the two outcomes.
+      # (0.2, not 0.0, because the naive formula gives 0.2 partial credit per
+      # incorrect first attempt rather than 0 — see the SQL fragment in
+      # Metrics.raw_proficiency_per_student_for_objective/3: sub_objective_a2's
+      # 0 correct out of 5 first attempts is (1.0*0 + 0.2*5) / 5 = 0.2, not
+      # 0.0.)
+      assert result.student_proficiency_obj == "Medium"
+    end
+
+    test "a leaf Learning Objective with no Sub-LOs uses only its own evidence, unaffected by aggregation",
+         %{section: section, objectives: %{objective_c: objective_c}} do
+      student = insert(:user)
+      objective_type_id = ResourceType.id_for_objective()
+
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: objective_c.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 2,
+        num_attempts: 4,
+        num_hints: 0,
+        num_first_attempts: 4,
+        num_first_attempts_correct: 2
+      })
+
+      result =
+        Sections.get_objectives_and_subobjectives(section, student_id: student.id)
+        |> Enum.find(&(&1.objective_resource_id == objective_c.resource_id))
+
+      assert objective_c.children == []
+      # (1.0*2 + 0.2*2) / 4 = 0.6 => "Medium", identical to reading
+      # objective_c's own evidence directly (no Sub-LOs to combine).
+      assert result.student_proficiency_obj == "Medium"
     end
 
     test "returns proficiency data with correct structure", %{section: section} do

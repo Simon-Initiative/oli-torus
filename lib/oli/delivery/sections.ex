@@ -5901,9 +5901,11 @@ defmodule Oli.Delivery.Sections do
   }
 
   For objectives that are subobjectives, the objective is shown as the `subobjective` like the
-  above example, with the aggregated proficiency for its parent shown.  For objectives that are
-  top level objectives, they appear with their proficiency for only those activities that
-  directly attached to them.
+  above example, with the aggregated proficiency for its parent shown. For objectives that are
+  top level objectives, their proficiency is the weighted average of their own directly-attached
+  evidence (when present) combined with all their Sub-LOs' evidence (see
+  `Metrics.evidence_resource_ids/2`) — a leaf objective with no Sub-LOs reduces to just its own
+  directly-attached evidence.
 
   ## Options
 
@@ -5972,18 +5974,30 @@ defmodule Oli.Delivery.Sections do
 
     id_list = Enum.map(objectives, & &1.resource_id)
 
-    proficiencies_for_objectives =
-      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
+    # Raw (not yet bucketed, i.e. not yet categorized into "Not enough data" /
+    # "Low" / "Medium" / "High") proficiency per objective/student, so a
+    # parent objective's own evidence and its Sub-LOs' evidence can be
+    # combined via Metrics.aggregate_weighted_proficiency/1 before bucketing.
+    # See Metrics.evidence_resource_ids/2.
+    raw_proficiency_for_objectives =
+      Metrics.raw_proficiency_per_student_for_objective(section.id, id_list,
+        student_id: student_id
+      )
 
     student_proficiency_for_objectives =
       if student_id do
-        Enum.reduce(id_list, %{}, fn objective_id, acc ->
-          proficiency =
-            proficiencies_for_objectives
-            |> Map.get(objective_id, %{})
-            |> Map.get(student_id, "Not enough data")
+        Enum.reduce(objectives, %{}, fn objective, acc ->
+          resource_ids = Metrics.evidence_resource_ids(objective.resource_id, objective.children)
 
-          Map.put(acc, objective_id, proficiency)
+          Map.put(
+            acc,
+            objective.resource_id,
+            Metrics.proficiency_bucket_for_student(
+              resource_ids,
+              raw_proficiency_for_objectives,
+              student_id
+            )
+          )
         end)
       else
         %{}
@@ -5992,25 +6006,21 @@ defmodule Oli.Delivery.Sections do
     {student_ids, proficiency_dist_for_objectives} =
       if is_nil(student_id) do
         student_ids = Sections.enrolled_student_ids(section_slug)
-        student_id_set = MapSet.new(student_ids)
 
         proficiency_dist_for_objectives =
-          proficiencies_for_objectives
-          |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
-            # Filter proficiency data to only include enrolled students (exclude instructors)
-            filtered_student_proficiency =
-              student_proficiency
-              |> Enum.filter(fn {user_id, _proficiency_level} ->
-                MapSet.member?(student_id_set, user_id)
-              end)
-              |> Map.new()
+          objectives
+          |> Enum.reduce(%{}, fn objective, acc ->
+            resource_ids =
+              Metrics.evidence_resource_ids(objective.resource_id, objective.children)
 
-            # Add "Not enough data" for students who don't have proficiency data
             student_proficiency =
-              student_ids
-              |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
-              |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
-                Map.put(acc, user_id, "Not enough data")
+              Enum.into(student_ids, %{}, fn enrolled_student_id ->
+                {enrolled_student_id,
+                 Metrics.proficiency_bucket_for_student(
+                   resource_ids,
+                   raw_proficiency_for_objectives,
+                   enrolled_student_id
+                 )}
               end)
 
             proficiency_dist =
@@ -6042,7 +6052,7 @@ defmodule Oli.Delivery.Sections do
                 {proficiency_mode, proficiency_dist}
               end
 
-            Map.put(acc, objective_id,
+            Map.put(acc, objective.resource_id,
               proficiency_dist: proficiency_dist,
               proficiency_mode: proficiency_mode
             )

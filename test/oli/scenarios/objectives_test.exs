@@ -58,6 +58,12 @@ defmodule Oli.Scenarios.ObjectivesTest do
       lo1_current = AuthoringResolver.from_resource_id(project.project.slug, lo1.resource_id)
       assert sub1_1.resource_id in lo1_current.children
       assert sub1_2.resource_id in lo1_current.children
+
+      # objectives_by_title itself must also reflect the up-to-date parent
+      # revision (its children list, not just AuthoringResolver's), since
+      # callers such as the proficiency assertion directive read the parent
+      # straight out of objectives_by_title rather than re-resolving it.
+      assert lo1.children == lo1_current.children
     end
 
     test "can create a project with flat objectives list" do
