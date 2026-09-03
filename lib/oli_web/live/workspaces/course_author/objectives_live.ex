@@ -481,189 +481,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     {:noreply, push_patch(socket, to: live_path(socket, params), replace: true)}
   end
 
-  defp filter_objective_rows(rows, nil), do: rows
-
-  defp filter_objective_rows(rows, matching_ids) do
-    Enum.filter(rows, fn objective ->
-      objective.resource_id in matching_ids or
-        Enum.any?(objective.children, fn child ->
-          not is_nil(child) and child.resource_id in matching_ids
-        end)
-    end)
-  end
-
-  defp filter_content_rows(rows, _model, %{selected_ids: []}), do: rows
-
-  defp filter_content_rows(rows, model, selection) do
-    direct_ids = ObjectiveCoverage.objective_ids_for_pages(model, selection.page_ids)
-    visible_ids = ObjectiveCoverage.objective_scope_for_pages(model, selection.page_ids)
-
-    rows
-    |> Enum.filter(fn objective ->
-      objective.resource_id in visible_ids or
-        Enum.any?(objective.children, fn child ->
-          not is_nil(child) and child.resource_id in direct_ids
-        end)
-    end)
-    |> Enum.map(fn objective ->
-      Map.update!(objective, :children, fn children ->
-        Enum.filter(children, fn child ->
-          not is_nil(child) and child.resource_id in direct_ids
-        end)
-      end)
-    end)
-  end
-
-  defp matching_objective_ids(model, query) do
-    model
-    |> ObjectiveCoverage.search(normalize_search_query(query))
-    |> Enum.map(& &1.objective_id)
-    |> MapSet.new()
-  end
-
-  defp normalize_search_query(query) when is_binary(query) do
-    query
-    |> String.slice(0, @max_search_length)
-    |> String.split(~r/\s+/, trim: true)
-    |> Enum.take(@max_search_terms)
-    |> Enum.join(" ")
-  end
-
-  defp normalize_search_query(_query), do: ""
-
-  defp expand_search_results(socket, query, matching_ids) do
-    case socket.assigns.coverage_model do
-      nil ->
-        socket
-
-      _model when is_binary(query) ->
-        if String.trim(query) == "" do
-          socket
-        else
-          auto_expanded =
-            socket.assigns.objectives
-            |> Enum.flat_map(fn objective ->
-              child_ids =
-                objective.children
-                |> Enum.reject(&is_nil/1)
-                |> Enum.map(& &1.resource_id)
-
-              if objective.resource_id in matching_ids or
-                   Enum.any?(child_ids, &(&1 in matching_ids)) do
-                matching_child_slugs =
-                  objective.children
-                  |> Enum.filter(fn child ->
-                    not is_nil(child) and child.resource_id in matching_ids
-                  end)
-                  |> Enum.map(& &1.slug)
-
-                [objective.slug | matching_child_slugs]
-              else
-                []
-              end
-            end)
-            |> Enum.reject(&is_nil/1)
-            |> MapSet.new()
-
-          previous_auto_expanded =
-            Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
-
-          manually_expanded =
-            MapSet.difference(socket.assigns.expanded_objective_slugs, previous_auto_expanded)
-
-          search_expanded = MapSet.difference(auto_expanded, manually_expanded)
-
-          assign(socket,
-            expanded_objective_slugs: MapSet.union(manually_expanded, auto_expanded),
-            search_expanded_objective_slugs: search_expanded
-          )
-        end
-
-      _model ->
-        socket
-    end
-  end
-
-  defp return_updated_data(project, flash_fn, socket) do
-    {all_objectives, all_children, objectives, table_model} =
-      build_objectives(project)
-
-    socket = cancel_async(socket, :objective_coverage)
-
-    objective_slugs =
-      objectives
-      |> Enum.flat_map(fn objective ->
-        [objective | Enum.reject(objective.children, &is_nil/1)]
-      end)
-      |> Enum.map(& &1.slug)
-      |> MapSet.new()
-
-    expanded_objective_slugs =
-      MapSet.intersection(socket.assigns.expanded_objective_slugs, objective_slugs)
-
-    socket =
-      socket
-      |> assign(
-        objectives: objectives,
-        table_model: table_model,
-        total_count: length(objectives),
-        all_objectives: all_objectives,
-        all_children: all_children,
-        coverage_model: nil,
-        coverage_status: :loading,
-        assessment_buckets: socket.assigns.assessment_buckets,
-        course_content_selection: nil,
-        search_matching_ids: nil,
-        expanded_objective_slugs: expanded_objective_slugs
-      )
-      |> flash_fn.()
-      |> hide_modal(modal_assigns: nil)
-      |> start_async(:objective_coverage, fn -> ObjectiveCoverage.load(project) end)
-
-    {:noreply, push_patch(socket, to: live_path(socket, socket.assigns.params))}
-  end
-
-  defp csv_export_params(params) do
-    Map.take(params, ["query", "filter", "sort_by", "sort_order"])
-  end
-
-  defp card_body_text(assigns) do
-    ~H"""
-    Learning objectives define the knowledge and skills students should demonstrate throughout your course. Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages. Refer to the
-    <a
-      class="external text-Text-text-button hover:text-Text-text-button"
-      href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
-      rel="noopener"
-      target="_blank"
-    >
-      CMU Eberly Center guide on learning objectives
-    </a>
-    to learn more about the importance of attaching learning objectives to pages and activities.
-    """
-  end
-
-  defp new_modal(form, socket) do
-    modal_assigns = %{
-      id: "new_objective_modal",
-      form: form,
-      action: :new,
-      on_click: "new"
-    }
-
-    modal = fn assigns ->
-      ~H"""
-      <FormModal.render {@modal_assigns} />
-      """
-    end
-
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
-  end
-
   def handle_event("hide_modal", _, socket),
     do: {:noreply, hide_modal(socket, modal_assigns: nil)}
 
@@ -989,6 +806,189 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       end
 
     return_updated_data(project, flash_fn, socket)
+  end
+
+  defp filter_objective_rows(rows, nil), do: rows
+
+  defp filter_objective_rows(rows, matching_ids) do
+    Enum.filter(rows, fn objective ->
+      objective.resource_id in matching_ids or
+        Enum.any?(objective.children, fn child ->
+          not is_nil(child) and child.resource_id in matching_ids
+        end)
+    end)
+  end
+
+  defp filter_content_rows(rows, _model, %{selected_ids: []}), do: rows
+
+  defp filter_content_rows(rows, model, selection) do
+    direct_ids = ObjectiveCoverage.objective_ids_for_pages(model, selection.page_ids)
+    visible_ids = ObjectiveCoverage.objective_scope_for_pages(model, selection.page_ids)
+
+    rows
+    |> Enum.filter(fn objective ->
+      objective.resource_id in visible_ids or
+        Enum.any?(objective.children, fn child ->
+          not is_nil(child) and child.resource_id in direct_ids
+        end)
+    end)
+    |> Enum.map(fn objective ->
+      Map.update!(objective, :children, fn children ->
+        Enum.filter(children, fn child ->
+          not is_nil(child) and child.resource_id in direct_ids
+        end)
+      end)
+    end)
+  end
+
+  defp matching_objective_ids(model, query) do
+    model
+    |> ObjectiveCoverage.search(normalize_search_query(query))
+    |> Enum.map(& &1.objective_id)
+    |> MapSet.new()
+  end
+
+  defp normalize_search_query(query) when is_binary(query) do
+    query
+    |> String.slice(0, @max_search_length)
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.take(@max_search_terms)
+    |> Enum.join(" ")
+  end
+
+  defp normalize_search_query(_query), do: ""
+
+  defp expand_search_results(socket, query, matching_ids) do
+    case socket.assigns.coverage_model do
+      nil ->
+        socket
+
+      _model when is_binary(query) ->
+        if String.trim(query) == "" do
+          socket
+        else
+          auto_expanded =
+            socket.assigns.objectives
+            |> Enum.flat_map(fn objective ->
+              child_ids =
+                objective.children
+                |> Enum.reject(&is_nil/1)
+                |> Enum.map(& &1.resource_id)
+
+              if objective.resource_id in matching_ids or
+                   Enum.any?(child_ids, &(&1 in matching_ids)) do
+                matching_child_slugs =
+                  objective.children
+                  |> Enum.filter(fn child ->
+                    not is_nil(child) and child.resource_id in matching_ids
+                  end)
+                  |> Enum.map(& &1.slug)
+
+                [objective.slug | matching_child_slugs]
+              else
+                []
+              end
+            end)
+            |> Enum.reject(&is_nil/1)
+            |> MapSet.new()
+
+          previous_auto_expanded =
+            Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
+
+          manually_expanded =
+            MapSet.difference(socket.assigns.expanded_objective_slugs, previous_auto_expanded)
+
+          search_expanded = MapSet.difference(auto_expanded, manually_expanded)
+
+          assign(socket,
+            expanded_objective_slugs: MapSet.union(manually_expanded, auto_expanded),
+            search_expanded_objective_slugs: search_expanded
+          )
+        end
+
+      _model ->
+        socket
+    end
+  end
+
+  defp return_updated_data(project, flash_fn, socket) do
+    {all_objectives, all_children, objectives, table_model} =
+      build_objectives(project)
+
+    socket = cancel_async(socket, :objective_coverage)
+
+    objective_slugs =
+      objectives
+      |> Enum.flat_map(fn objective ->
+        [objective | Enum.reject(objective.children, &is_nil/1)]
+      end)
+      |> Enum.map(& &1.slug)
+      |> MapSet.new()
+
+    expanded_objective_slugs =
+      MapSet.intersection(socket.assigns.expanded_objective_slugs, objective_slugs)
+
+    socket =
+      socket
+      |> assign(
+        objectives: objectives,
+        table_model: table_model,
+        total_count: length(objectives),
+        all_objectives: all_objectives,
+        all_children: all_children,
+        coverage_model: nil,
+        coverage_status: :loading,
+        assessment_buckets: socket.assigns.assessment_buckets,
+        course_content_selection: nil,
+        search_matching_ids: nil,
+        expanded_objective_slugs: expanded_objective_slugs
+      )
+      |> flash_fn.()
+      |> hide_modal(modal_assigns: nil)
+      |> start_async(:objective_coverage, fn -> ObjectiveCoverage.load(project) end)
+
+    {:noreply, push_patch(socket, to: live_path(socket, socket.assigns.params))}
+  end
+
+  defp csv_export_params(params) do
+    Map.take(params, ["query", "filter", "sort_by", "sort_order"])
+  end
+
+  defp card_body_text(assigns) do
+    ~H"""
+    Learning objectives define the knowledge and skills students should demonstrate throughout your course. Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages. Refer to the
+    <a
+      class="external text-Text-text-button hover:text-Text-text-button"
+      href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
+      rel="noopener"
+      target="_blank"
+    >
+      CMU Eberly Center guide on learning objectives
+    </a>
+    to learn more about the importance of attaching learning objectives to pages and activities.
+    """
+  end
+
+  defp new_modal(form, socket) do
+    modal_assigns = %{
+      id: "new_objective_modal",
+      form: form,
+      action: :new,
+      on_click: "new"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <FormModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
   end
 
   defp delete_objective(slug, parent_slug, project, author) do
