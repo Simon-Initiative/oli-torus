@@ -781,7 +781,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(
                view,
                "a[data-linked-activities-button][href*='/related_activities/#{objective.id}']",
-               "View 1 Activities"
+               "View 1 Activity"
              )
 
       assert has_element?(

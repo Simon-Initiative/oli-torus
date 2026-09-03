@@ -247,7 +247,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
           aria-label={"View #{@count} linked #{@activity_label}"}
           data-linked-activities-button
         >
-          View {@count} Activities
+          View {@count} {String.capitalize(@activity_label)}
           <:icon_right>
             <Icons.chevron_right width="16" height="16" class="-rotate-90 fill-current" />
           </:icon_right>
