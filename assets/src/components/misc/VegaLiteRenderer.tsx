@@ -85,7 +85,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({
         console.warn('VegaLite theme update failed:', error);
       }
     }
-  }, [chartBackground]);
+  }, [chartBackground, darkMode]);
 
   // Observe dark mode changes
   useEffect(() => {

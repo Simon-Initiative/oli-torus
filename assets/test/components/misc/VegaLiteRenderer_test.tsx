@@ -22,12 +22,14 @@ jest.mock('react-vega', () => {
   const mockReact = require('react');
   return {
     VegaLite: ({ spec, onNewView, tooltip }: any) => {
-      // Simulate onNewView callback
+      const [initializeView] = mockReact.useState(
+        () => () => onNewView?.((global as any).mockViewForTests),
+      );
+
+      // Simulate onNewView firing once when Vega initializes its view.
       mockReact.useEffect(() => {
-        if (onNewView) {
-          onNewView((global as any).mockViewForTests);
-        }
-      }, [onNewView]);
+        initializeView();
+      }, [initializeView]);
 
       return mockReact.createElement('div', {
         'data-testid': 'vega-lite-renderer',
