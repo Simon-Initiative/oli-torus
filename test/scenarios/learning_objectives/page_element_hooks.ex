@@ -147,10 +147,12 @@ defmodule Oli.Scenarios.LearningObjectives.PageElementHooks do
       |> LearningObjectives.render(element)
       |> IO.iodata_to_binary()
 
-    assert html =~ "Compute slope"
-    assert html =~ "Interpret intercepts"
-    assert html =~ "Objectives Page"
-    assert html =~ "Practice A"
+    # Both objectives lack enough attempts for a reliable proficiency signal (< 3 first attempts),
+    # so D9 filtering excludes them from the summary entirely.
+    refute html =~ "Compute slope"
+    refute html =~ "Interpret intercepts"
+    refute html =~ "Objectives Page"
+    refute html =~ "Practice A"
     refute html =~ "Practice B</a>"
     refute html =~ Integer.to_string(@stale_objective_id)
 
