@@ -5973,13 +5973,15 @@ defmodule Oli.Delivery.Sections do
         }
       end)
 
+    # Only the two containment fields are needed, and both consumers of `container_ids` are
+    # membership checks, so the grouped lists are prepended and never reversed.
     objective_to_container_ids_map =
       from(co in ContainedObjective)
       |> where([co], co.section_id == ^section.id)
-      |> select([co], co)
+      |> select([co], {co.objective_id, co.container_id})
       |> Repo.all()
-      |> Enum.reduce(%{}, fn co, acc ->
-        Map.update(acc, co.objective_id, [co.container_id], &(&1 ++ [co.container_id]))
+      |> Enum.reduce(%{}, fn {objective_id, container_id}, acc ->
+        Map.update(acc, objective_id, [container_id], &[container_id | &1])
       end)
 
     # Section resources outlive the content that referenced them, so containment - not the
