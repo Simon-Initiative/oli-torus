@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: "20" }
+        with: { node-version-file: .node-version }
       - run: npm i -D danger js-yaml micromatch typescript@5.9.3 ts-node
       - run: npx danger ci
         env:

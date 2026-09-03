@@ -104,6 +104,7 @@ describe('VegaLiteRenderer', () => {
   };
 
   beforeEach(() => {
+    (global as any).mockViewForTests = mockView;
     // Reset document class for dark mode tests
     document.documentElement.className = '';
     jest.clearAllMocks();
@@ -427,11 +428,9 @@ describe('VegaLiteRenderer', () => {
 
   describe('Edge Cases', () => {
     it('handles null view reference gracefully', () => {
-      // Mock viewRef to be null
+      // Have the mocked Vega component supply a null view.
+      (global as any).mockViewForTests = null;
       const { rerender } = render(<VegaLiteRenderer spec={mockSpec} />);
-
-      // Force viewRef to be null by not calling onNewView
-      jest.spyOn(React, 'useRef').mockReturnValueOnce({ current: null });
 
       rerender(<VegaLiteRenderer spec={mockSpec} />);
 

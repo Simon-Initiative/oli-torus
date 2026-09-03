@@ -21,16 +21,18 @@ module.exports = {
     '\\.(css|scss|wav)$': '<rootDir>/__mocks__/empty.mock.js',
   },
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
-    '^.+\\.mjs$': 'babel-jest',
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        babelConfig: 'babel.config.js',
+      },
+    ],
+    '^.+\\.(mjs|js)$': 'babel-jest',
   },
-  transformIgnorePatterns: ['node_modules/(?!monaco-editor/.*)'],
+  transformIgnorePatterns: [
+    'node_modules/(?!jsonpath-plus/|monaco-editor/|nanoid/|uuid/|(?:dom-serializer|domelementtype|domhandler|domutils|entities|htmlparser2)/|sanitize-html/node_modules/(?:dom-serializer|domelementtype|domhandler|domutils|entities|htmlparser2)/)',
+  ],
   preset: 'ts-jest',
-  globals: {
-    'ts-jest': {
-      babelConfig: 'babel.config.js',
-    },
-  },
   testRegex: 'test/.*_test.[jt]sx?$',
   collectCoverage: true,
   cacheDirectory: './node_modules/.cache/jest',
