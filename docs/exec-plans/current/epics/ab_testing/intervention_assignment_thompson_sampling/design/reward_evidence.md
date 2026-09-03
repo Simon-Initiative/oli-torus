@@ -15,29 +15,29 @@ For a binding/enrollment, inspect eligible resource attempts in canonical order.
 
 ## Handoff Boundary
 
-Automatic finalization, manual grading, and auto-submit use one helper while the transaction that persists the resource attempt as evaluated is still open. The helper inserts the Oban job in that same transaction, so evaluation and handoff persistence commit or roll back together. Its trusted payload is the resource-attempt identity plus server-derived scope, never client-selected assignment, score, or condition data.
+Automatic finalization, manual grading, and auto-submit retain their existing attempt and snapshot flows. After a resource attempt becomes evaluated, each path performs one bounded section-level check for an active Thompson Sampling experiment. A negative result returns immediately. A positive result processes the reward inside the current learner-attempt transaction using persisted server state, never a client-selected assignment, score, or condition.
 
-All evaluation paths use the same helper. Only graded attempts reaching `evaluated` run the relevance query. A rollback enqueues nothing, an enqueue failure rolls back evaluation for safe retry, and a page with multiple activities enqueues one resource-attempt job.
+Reward-processing failure rolls back the learner-attempt transaction. Snapshot processing does not mutate experiment state; after commit it reads `AcceptedReward` and attaches the reward attribution to the one authoritative page-attempt statement.
 
 ## Reward Transaction
 
 The worker derives the assessment binding, enrollment, page score, canonical attempt order, and persisted assignment. Missing assignment records a skip and never creates or infers one.
 
-One PostgreSQL transaction:
+One PostgreSQL reward transaction:
 
 1. locks the decision-point policy row;
 2. claims unique `(assessment_binding_id, enrollment_id)` and `(assessment_binding_id, resource_attempt_id)` reward identity;
 3. computes `normalized_score >= threshold` using inclusive decimal comparison;
 4. increments only the assigned condition's alpha or beta and aggregate accepted counts;
-5. persists compact disposition and before/after policy context plus a durable evidence-outbox entry.
+5. persists the accepted reward used to enrich the authoritative snapshot statement.
 
 Duplicate work returns the existing disposition. Distinct concurrent rewards serialize on the policy row without lost updates. Evidence delivery cannot mutate posterior state.
 
 ## Evidence Storage and Dispatch
 
-`assignment.runtime_event_state` is compact idempotency state, not a durable outbox. The current xAPI pipeline begins with an in-memory cast and can lose an event between commit and durable queue persistence. Add a PostgreSQL transactional outbox (or equivalent durable evidence row tied to assignment/accepted reward), then dispatch through an Oban worker after commit with idempotent delivery markers and independent retry.
+`AcceptedReward` is the durable source used to build reward attribution during snapshot processing. The snapshot worker emits no separate compatibility statement and never changes the posterior. The existing xAPI pipeline begins with an in-memory cast; improving durability after that boundary remains a broader analytics concern rather than a second experiment-specific dispatch path.
 
-Extend `priv/clickhouse/migrations/` with a new ordinary goose migration that alters `experiment_attributions`, not `raw_events`. Add nullable typed fields for intervention ID/key, assessment binding ID, assessment page resource ID, resource attempt ID, disposition, threshold, normalized score, and page revision ID. Retain publication ID. Keep bounded before/after policy context in the xAPI JSON evidence, but do not project or process it into dedicated ClickHouse columns until a concrete OLAP query requirement justifies the additional storage and ingestion contract. Do not overload `content_revision_id`, which currently identifies the Alternatives revision for exposure.
+Extend `priv/clickhouse/migrations/` with a new ordinary goose migration that alters `experiment_attributions`, not `raw_events`. Add nullable typed fields for intervention ID/key, assessment binding ID, assessment page resource ID, resource attempt ID, disposition, threshold, normalized score, and page revision ID. Retain publication ID. Before/after policy context is not part of the ETL or ClickHouse projection and should not be added until a concrete OLAP query requirement justifies the additional storage and ingestion contract. Do not overload `content_revision_id`, which currently identifies the Alternatives revision for exposure.
 
 Update together:
 
@@ -59,5 +59,5 @@ Emit bounded counts/durations for queue delay, eligibility result, accepted/dupl
 - Cover active/submitted blockers, eventual transition to evaluated, later attempts, reevaluation, invalid score fields, and thresholds `0.0`, `1.0`, exact boundary, and below boundary.
 - Prove rollback produces no job and success produces exactly one resource-attempt job for automatic and manual finalization.
 - Cover missing assignment, duplicate/replayed work, transaction rollback, and concurrent distinct rewards.
-- Test crash-before-dispatch, sink failure/retry, sink deduplication, and proof that evidence retry never changes posterior state.
+- Test learner-attempt rollback on reward failure, snapshot sink deduplication, and proof that snapshot retry never changes posterior state.
 - Retain the existing two-query batch context characterization until the resource-attempt eligibility query replaces the activity-attempt shape.

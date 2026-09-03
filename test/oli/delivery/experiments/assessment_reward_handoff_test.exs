@@ -24,6 +24,40 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
   }
 
   describe "record_evaluated_resource_attempt/1" do
+    test "gates reward processing to sections in active Thompson Sampling experiments" do
+      project = insert(:project)
+      active_section = insert(:section, base_project: project)
+      inactive_section = insert(:section, base_project: project)
+
+      experiment =
+        %ExperimentDefinition{}
+        |> ExperimentDefinition.changeset(%{
+          project_id: project.id,
+          slug: "active-reward-experiment",
+          name: "Active reward experiment",
+          state: :active,
+          algorithm: :thompson_sampling,
+          alternatives_resource_id: insert(:resource).id
+        })
+        |> Repo.insert!()
+
+      %ExperimentSection{}
+      |> ExperimentSection.changeset(%{
+        experiment_id: experiment.id,
+        section_id: active_section.id
+      })
+      |> Repo.insert!()
+
+      assert RewardHandoff.active_thompson_section?(active_section.id)
+      refute RewardHandoff.active_thompson_section?(inactive_section.id)
+
+      experiment
+      |> ExperimentDefinition.changeset(%{state: :completed})
+      |> Repo.update!()
+
+      refute RewardHandoff.active_thompson_section?(active_section.id)
+    end
+
     test "accepts the first evaluated page attempt at the inclusive binding threshold" do
       context = setup_context(score: 3.0, out_of: 4.0, threshold: "0.75")
 
@@ -225,6 +259,12 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       end
 
       assert :ok =
+               RewardHandoff.record_if_active_thompson(
+                 context.resource_attempt.id,
+                 context.section.id
+               )
+
+      assert :ok =
                SnapshotWorker.perform_now(
                  [part_attempt.attempt_guid],
                  context.section.slug,
@@ -250,12 +290,16 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
 
       assert [page_attempt] = page_attempts
 
-      assert [%{"attribution_type" => "reward", "reward_value" => 1}] =
+      assert [attribution] =
                get_in(page_attempt, [
                  "context",
                  "extensions",
                  "http://oli.cmu.edu/extensions/experiment_attributions"
                ])
+
+      assert attribution["attribution_type"] == "reward"
+      assert attribution["reward_value"] == 1
+      assert attribution["page_revision_id"] == context.resource_attempt.revision_id
     end
 
     test "concurrent replay serializes to one claim and one posterior update" do

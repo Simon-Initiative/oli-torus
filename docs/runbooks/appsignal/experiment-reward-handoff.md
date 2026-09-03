@@ -2,16 +2,16 @@
 
 ## Purpose
 
-This runbook configures production monitoring for experiment reward handoff during snapshot
-processing. `Oli.Delivery.Snapshots.Worker` processes finalized scored-page resource attempts and
-records accepted rewards before emitting the authoritative xAPI statement. Eligibility context is
-loaded in one bounded batch, while assignment resolution remains observable so production telemetry
-can show whether further set-oriented optimization is warranted.
+This runbook configures production monitoring for synchronous experiment reward processing during
+learner-attempt completion. Automatic finalization, manual grading, and auto-submit perform one
+bounded active-Thompson section check. Participating sections record the accepted reward and update
+the policy posterior in the same database transaction that evaluates the resource attempt. The
+analytics-only snapshot path later reads that committed reward for the authoritative xAPI statement.
 
 Use this runbook to:
 
-- create the AppSignal dashboard and alerts required to observe the deferred optimization;
-- distinguish reward-handoff latency from general Oban queue or database pressure;
+- create the AppSignal dashboard and alerts required to observe reward latency and failures;
+- distinguish policy-lock contention from general request, Oban, or database pressure;
 - decide when to revisit set-oriented eligibility loading; and
 - validate that telemetry is arriving after deployment.
 
@@ -20,19 +20,20 @@ resource, or resource-attempt identifiers.
 
 ## Delivery Guarantee
 
-Scored-page evaluation schedules the normal snapshot job. During snapshot execution, reward handoff
-runs synchronously before statement construction. A reward-processing failure fails the snapshot job
-so Oban can retry it; the worker does not emit an unattributed statement. Reward acceptance and
-posterior updates remain idempotent across retries.
+After a graded resource attempt becomes evaluated, learner-attempt processing checks whether its
+section participates in an active Thompson Sampling experiment. A negative result bypasses all
+reward work. A positive result records the reward before the surrounding attempt transaction can
+commit. Reward-processing failure rolls back the submission; accepted reward identity and the
+posterior update commit atomically. Snapshot processing never mutates reward or policy state.
 
 ## Prerequisites
 
 - AppSignal is active and `APPSIGNAL_PUSH_API_KEY` is configured for the environment.
 - The deployment includes `Oli.Delivery.Experiments.Telemetry` in the application supervision tree.
-- AppSignal's automatic Oban and Ecto instrumentation is enabled. Torus does not disable either
-  integration in repository configuration.
-- At least one `Oli.Delivery.Snapshots.Worker` job has processed an experiment-controlled scored page
-  after deployment.
+- AppSignal's automatic Phoenix, Oban, and Ecto instrumentation is enabled. Torus does not disable
+  these integrations in repository configuration.
+- At least one attempt has completed in a section participating in an active Thompson Sampling
+  experiment after deployment.
 
 Phoenix LiveDashboard is useful for current node, VM, and Ecto health, but it does not register the
 reward-handoff custom events. AppSignal is the durable monitoring surface for the metrics below.
@@ -121,17 +122,16 @@ content required an assignment query. Compare these ratios with average and p95 
 Any sustained nonzero value requires investigation. AppSignal's automatic Oban instrumentation
 should provide the failed transaction, exception, and retry details when the worker fails.
 
-### 6. Snapshot transaction performance
+### 6. Learner-attempt transaction performance
 
-Add or save an AppSignal performance view for
-`Oli.Delivery.Snapshots.Worker#perform`. Include throughput, error rate, and p95
-duration. Also add these metrics supplied by AppSignal's automatic Oban integration:
+Add or save AppSignal performance views for the learner submission/finalization transactions used by
+automatic evaluation and manual grading. Include throughput, error rate, and p95 duration. For
+auto-submit, also add these metrics supplied by AppSignal's automatic Oban integration:
 
 - `oban_job_duration`, filtered to
-  `worker=Elixir.Oli.Delivery.Snapshots.Worker`, grouped by `state`;
+  `worker=Elixir.Oli.Delivery.Attempts.AutoSubmit.Worker`, grouped by `state`;
 - `oban_job_count`, with the same worker filter, grouped by `state`; and
-- `oban_job_queue_time`, filtered to `queue=default`, as supporting evidence of shared-queue
-  contention. This metric is queue-scoped and cannot isolate the reward worker.
+- `oban_job_queue_time`, filtered to `queue=auto_submit`, as supporting evidence of queue contention.
 
 AppSignal includes Ecto events in sampled transaction timelines; these samples are the primary way
 to identify the exact repeated or slow query after the aggregate custom metrics identify a
@@ -148,7 +148,7 @@ weeks of representative production data and tune thresholds to normal batch size
 | Reward batch latency | `batch.duration_ms` p95 above 2,000 ms for 15 minutes with at least 10 completed batches | Detect sustained worker degradation while avoiding alerts from isolated jobs. |
 | Eligibility latency | `eligibility.duration_ms` p95 above 500 ms for 15 minutes with at least 25 lookups | Identify assignment lookup or database degradation. |
 | Query amplification | Assignment-query count per completed batch above 20 for 30 minutes | Identify batches large enough for the deferred set-oriented lookup to be valuable. |
-| Missing telemetry | Reward-handoff Oban transactions are present but `batch.completed` has no data for 30 minutes | Detect a detached handler or metric-delivery problem. |
+| Missing telemetry | Thompson attempt transactions are present but reward outcome telemetry has no data for 30 minutes | Detect a detached handler, an incorrect relevance gate, or metric-delivery problem. |
 
 If the AppSignal alert builder cannot express a ratio, graph both counters and evaluate the ratio
 during investigation. If it cannot compare transaction presence with missing custom-metric data,
@@ -160,11 +160,10 @@ encode section or learner IDs as tags to make either condition more granular.
 1. Confirm the affected time window in the batch-latency and failure graphs.
 2. Compare batch duration with attempt count, context count, and eligibility duration.
 3. Calculate assignment queries per completed batch for the same window.
-4. Open AppSignal performance samples for `Oli.Delivery.Snapshots.Worker#perform` in that window.
+4. Open AppSignal performance samples for affected learner-attempt transactions in that window.
 5. Inspect the Ecto event timeline for repeated eligibility-assignment queries and individually slow
    queries.
-6. Check Oban throughput, retries, and execution time. The worker uses the shared `default` queue,
-   so unrelated jobs can create queue contention.
+6. For auto-submit, check Oban throughput, retries, and execution time in the `auto_submit` queue.
 7. Use Phoenix LiveDashboard to check current Ecto latency, database pool pressure, scheduler usage,
    memory, and node health when the issue is ongoing.
 8. Compare other AppSignal Phoenix/Ecto transaction performance. Broad degradation suggests shared
@@ -178,19 +177,19 @@ the following:
 - batch duration increases materially with batch attempt count;
 - eligibility duration accounts for a meaningful portion of batch duration;
 - assignment queries per batch are consistently high rather than isolated outliers; and
-- AppSignal Oban samples show repeated eligibility queries, rather than policy persistence, queue
-  contention, or general database pressure, as the dominant cost.
+- AppSignal transaction samples show policy-row lock waits or repeated eligibility queries, rather
+  than general database pressure, as the dominant cost.
 
 Correctness failures, missing contexts, or reward persistence errors should be fixed independently;
 batching eligibility queries is not the remedy for those conditions.
 
 ## Post-Deployment Validation
 
-- [ ] Confirm AppSignal receives `batch.completed` after a reward-handoff job runs.
+- [ ] Confirm AppSignal receives reward outcome telemetry after a Thompson attempt completes.
 - [ ] Confirm all batch and eligibility distributions appear on the dashboard.
 - [ ] Confirm only documented `status` values are present.
-- [ ] Confirm an AppSignal Oban sample exists for `Oli.Delivery.Snapshots.Worker#perform` and
-      contains Ecto timeline events.
+- [ ] Confirm AppSignal learner-attempt samples contain the relevance, accepted-reward, and
+      policy-state Ecto timeline events.
 - [ ] Confirm the dashboard time range and environment match the deployment being validated.
 - [ ] Exercise alert notification routing in a non-production environment or through AppSignal's
       alert test facility.
@@ -204,9 +203,8 @@ deployable.
 1. Apply the PostgreSQL migrations in timestamp order, followed by the additive ClickHouse
    migration. The new ClickHouse evidence fields are nullable, so existing rows and older producers
    remain valid.
-2. Deploy web nodes and Oban workers from the same release. During a rolling deployment, drain or
-   pause snapshot processing before deploying the new snapshot behavior, then resume the queue after
-   every worker runs the new release.
+2. Deploy web nodes and auto-submit Oban workers from the same release so learner-driven and
+   scheduled finalization use identical synchronous reward semantics.
 3. Verify reward-handoff telemetry, then configure the dashboard and alerts above. Dashboard
    creation is an external operational action and is not performed by repository deployment.
 4. For code rollback, first pause or drain the affected Oban queue, deploy code that still reads

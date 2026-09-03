@@ -49,36 +49,36 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   def record_evaluated_resource_attempt(_resource_attempt_id),
     do: {:error, :invalid_resource_attempt}
 
-  @doc "Returns whether an evaluated resource attempt has an active Thompson assessment binding."
-  @spec relevant_resource_attempt?(integer(), integer()) :: boolean()
-  def relevant_resource_attempt?(resource_attempt_id, section_id)
+  @doc "Processes an evaluated attempt only when its section has an active Thompson experiment."
+  @spec record_if_active_thompson(integer(), integer()) :: :ok | {:error, term()}
+  def record_if_active_thompson(resource_attempt_id, section_id)
       when is_integer(resource_attempt_id) and is_integer(section_id) do
-    from(resource_attempt in ResourceAttempt,
-      join: resource_access in ResourceAccess,
-      on:
-        resource_access.id == resource_attempt.resource_access_id and
-          resource_access.section_id == ^section_id,
-      join: section in Section,
-      on: section.id == resource_access.section_id,
-      join: binding in AssessmentBinding,
-      on: binding.assessment_page_resource_id == resource_access.resource_id,
-      join: intervention in Intervention,
-      on: intervention.id == binding.intervention_id,
+    case active_thompson_section?(section_id) do
+      true -> record_evaluated_resource_attempt(resource_attempt_id)
+      false -> :ok
+    end
+  end
+
+  def record_if_active_thompson(_resource_attempt_id, _section_id),
+    do: {:error, :invalid_resource_attempt}
+
+  @doc "Returns whether a section participates in an active Thompson Sampling experiment."
+  @spec active_thompson_section?(integer()) :: boolean()
+  def active_thompson_section?(section_id) when is_integer(section_id) do
+    from(experiment_section in ExperimentSection,
       join: experiment in ExperimentDefinition,
-      on:
-        experiment.id == intervention.experiment_id and
-          experiment.algorithm == :thompson_sampling and experiment.state == :active and
-          experiment.project_id == section.base_project_id,
-      join: experiment_section in ExperimentSection,
-      on:
-        experiment_section.experiment_id == experiment.id and
-          experiment_section.section_id == resource_access.section_id,
-      where: resource_attempt.id == ^resource_attempt_id
+      on: experiment.id == experiment_section.experiment_id,
+      join: section in Section,
+      on: section.id == experiment_section.section_id,
+      where:
+        experiment_section.section_id == ^section_id and
+          experiment.project_id == section.base_project_id and
+          experiment.state == :active and experiment.algorithm == :thompson_sampling
     )
     |> Repo.exists?()
   end
 
-  def relevant_resource_attempt?(_resource_attempt_id, _section_id), do: false
+  def active_thompson_section?(_section_id), do: false
 
   defp load_resource_attempt_context(resource_attempt_id) do
     from(resource_attempt in ResourceAttempt,

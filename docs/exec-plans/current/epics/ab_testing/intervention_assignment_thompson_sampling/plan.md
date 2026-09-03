@@ -8,7 +8,7 @@ Scope and reference artifacts:
 
 ## Scope
 
-Extend `Oli.Experiments` so each experiment owns one assignment policy, one reusable Alternatives Group, stable conditions and mappings, and one policy/posterior scope, while each placed Alternatives instance is a distinct sticky assignment opportunity. Add assessment-driven, asynchronous Beta-Bernoulli Thompson Sampling rewards; preserve weighted-random behavior; make Alternatives Group strategy canonical and group-owned; preserve authoring, publication, delivery, completion, export/ingest, and legacy-content compatibility; and expose bounded policy reporting, analytics evidence, and operational telemetry.
+Extend `Oli.Experiments` so each experiment owns one assignment policy, one reusable Alternatives Group, stable conditions and mappings, and one policy/posterior scope, while each placed Alternatives instance is a distinct sticky assignment opportunity. Add assessment-driven, transactionally coupled Beta-Bernoulli Thompson Sampling rewards; preserve weighted-random behavior; make Alternatives Group strategy canonical and group-owned; preserve authoring, publication, delivery, completion, export/ingest, and legacy-content compatibility; and expose bounded policy reporting, analytics evidence, and operational telemetry.
 
 Guardrails:
 
@@ -40,7 +40,7 @@ Guardrails:
 - Goal: Resolve the implementation facts that affect schema and workflow design, record executable slice boundaries, and establish baseline behavior before migrations or runtime changes.
 - Tasks:
   - [x] Audit current experiment schemas, lifecycle APIs, policy-state encoding, assignment/reward uniqueness, and compatibility callers in `lib/oli/experiments.ex` and `lib/oli/experiments/`.
-  - [x] Trace resource-attempt scoring through finalization and post-commit hooks; document the authoritative final-state predicate and persisted attempt ordering used by reward eligibility (FR-013, FR-016).
+  - [x] Trace resource-attempt scoring through automatic finalization, manual grading, and auto-submit transactions; document the authoritative final-state predicate and persisted attempt ordering used by reward eligibility (FR-013, FR-016).
   - [x] Trace Alternatives insertion, reorder, copy, page duplication, and course movement; confirm which operations retain or regenerate page resource and nested element IDs (FR-005, FR-006, FR-019).
   - [x] Measure the current delivery query path and identify the indexed section relevance query plus positive-path batching boundary (FR-027).
   - [x] Inspect the existing xAPI/ClickHouse attribution schema and outbox/retry path; choose additive evidence fields and migration placement (FR-023, FR-024, FR-026).
@@ -138,23 +138,23 @@ Guardrails:
 - Parallelizable Work:
   - Policy/assignment, rendering/completion, preview, and editor-identity streams may proceed concurrently against agreed APIs; final integration and query-budget tests join them.
 
-## Phase 5: Process Assessment Rewards Atomically and Asynchronously
+## Phase 5: Process Assessment Rewards Atomically with Learner Attempts
 
-- Goal: Convert the first eligible finalized scored-page attempt into exactly one condition reward without blocking submission or corrupting posterior state (FR-011 through FR-016).
+- Goal: Convert the first eligible finalized scored-page attempt into exactly one condition reward in the same transaction that completes the attempt, without corrupting posterior state (FR-011 through FR-016).
 - Tasks:
-  - [x] Persist `RewardHandoffWorker` atomically in the scored-page evaluation transaction, passing only trusted resource-attempt identity and server scope; an enqueue failure rolls back evaluation for safe retry.
+  - [x] In automatic finalization, manual grading, and auto-submit, perform one lightweight active-Thompson section check and synchronously process the reward only for participating sections.
   - [x] Resolve relevant bindings, enrollment, normalized overall score, canonical attempt order, and the first eligible finalized attempt server-side; keep an earlier pending attempt as a blocker.
   - [x] Resolve only the persisted assignment for the bound intervention; record a bounded skip when absent and never infer or create a retroactive assignment.
-  - [x] In one transaction, lock the decision-point policy row, claim the unique binding/source reward, calculate `normalized_score >= threshold`, update only the assigned condition posterior and accepted counts, and persist compact before/after context.
+  - [x] In one transaction, lock the decision-point policy row, claim the unique binding/source reward, calculate `normalized_score >= threshold`, update only the assigned condition posterior and accepted counts, and persist the accepted reward used by snapshot attribution.
   - [x] Make duplicate/replayed work return the prior disposition and make concurrent distinct rewards serialize without lost updates.
 - Testing Tasks:
   - [x] Cover threshold `0.0`, `1.0`, exact boundary, below boundary, binding-specific values, and proof that existing page scoring—not activity inspection—supplies the score.
-  - [x] Cover pending blockers, canonical attempt ordering, eventual first-final acceptance, later attempts, reevaluation, missing assignment, duplicate job, rollback, and retry.
+  - [x] Cover pending blockers, canonical attempt ordering, eventual first-final acceptance, later attempts, reevaluation, missing assignment, duplicate processing, rollback, and retry.
   - [x] Add concurrency tests for one replayed reward and multiple distinct rewards to the same policy row; assert one claim per accepted source and no lost alpha/beta increments.
-  - [x] Prove submission completes independently, only committed posterior updates affect later new assignments, and existing assignments never change.
-  - Command(s): `mix test <reward handoff, worker, attempt eligibility, policy transaction, and Oban tests>`
+  - [x] Prove reward failure rolls back attempt completion, only committed posterior updates affect later new assignments, and existing assignments never change.
+  - Command(s): `mix test <reward handoff, learner attempt completion, snapshot attribution, and policy transaction tests>`
 - Definition of Done:
-  - Reward processing is post-commit, deterministic, atomic, idempotent, retryable, and correctly attributed; failures cannot block assessment submission or partially mutate policy state.
+  - Reward processing is synchronous with learner-attempt completion, deterministic, atomic, idempotent, and correctly attributed; failure rolls back the submission and cannot partially mutate policy state.
 - Gate:
   - Gate E — AC-011 through AC-016 pass under normal, duplicate, failure, and concurrent execution, and the phase changes complete focused code review. This gate does not authorize deployment.
 - Dependencies:
@@ -415,7 +415,7 @@ Guardrails:
 - Phase 13 proves AC-026 and AC-035 through PostgreSQL and ClickHouse forward/rollback schema tests, final constraint/index assertions, and existing Alternatives content compatibility checks.
 - Phase 3 proves AC-001, AC-002, AC-003, AC-004, AC-011, AC-012, AC-017, AC-018, AC-019, and AC-020 through configuration, constraint, lifecycle, authorization, and history tests.
 - Phase 4 proves AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-019, AC-021, AC-022, AC-027, and AC-034 through identity, policy, concurrency, delivery-query, rendering, preview, completion, and Alternatives non-nesting tests.
-- Phase 5 proves AC-011, AC-012, AC-013, AC-014, AC-015, and AC-016 through attempt-order, threshold, attribution, transaction, concurrency, replay, and asynchronous handoff tests.
+- Phase 5 proves AC-011, AC-012, AC-013, AC-014, AC-015, and AC-016 through attempt-order, threshold, attribution, transaction, concurrency, replay, and synchronous rollback tests.
 - Phase 6 proves AC-004, AC-017, AC-021, AC-028, AC-029, AC-030, AC-032, and the UI portions of AC-033 through context, LiveView, component, accessibility, and JSON Schema tests.
 - Phase 7 proves AC-023, AC-024, AC-025, AC-026, AC-031, and the interop/evidence portions of AC-033 through migration, compatibility, export/ingest, analytics, privacy, and telemetry tests.
 - Phase 8 supplies workflow-level proof for AC-005, AC-007, AC-009, AC-010, AC-013, AC-014, AC-016, AC-021, AC-022, and AC-023.
@@ -427,7 +427,7 @@ Guardrails:
 - Gate B: Backward-compatible PostgreSQL/ClickHouse persistence and canonical strategy normalization apply and roll back safely.
 - Gate C: Authorized draft configuration, activation validation, lifecycle immutability, dependency protection, and sequential reuse are proven.
 - Gate D: Intervention-scoped assignment, bounded delivery, rendering, preview, edit identity, and visible-only completion are proven.
-- Gate E: Assessment-driven reward processing is asynchronous, deterministic, atomic, idempotent, and concurrency-safe.
+- Gate E: Assessment-driven reward processing is transactionally coupled to attempt completion, deterministic, atomic, idempotent, and concurrency-safe.
 - Gate F: Strategy-specific authoring, experiment configuration/reporting, accessibility, and the versioned Alternatives schema meet the final contract.
 - Gate G: Export/ingest, evidence, telemetry, privacy, legacy compatibility, and analytics migration behavior are proven.
 - Gate H: Real multi-learner authoring-to-delivery scenarios prove completion and posterior reuse across repeated interventions.

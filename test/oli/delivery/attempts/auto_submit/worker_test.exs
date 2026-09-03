@@ -56,7 +56,7 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.WorkerTest do
     end
 
     @tag capture_log: true
-    test "applies the reward through the snapshot after an evaluated auto-submit", %{
+    test "applies the reward in the evaluated auto-submit transaction", %{
       section: section,
       attempt1: attempt,
       reward_context: reward_context

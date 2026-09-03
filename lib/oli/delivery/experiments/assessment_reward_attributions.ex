@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardAttributions do
   import Ecto.Query, warn: false
 
   alias Oli.Analytics.XAPI.Events.Context
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
 
   alias Oli.Experiments.Schemas.{
     AcceptedReward,
@@ -35,6 +36,8 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardAttributions do
       on: binding.id == reward.assessment_binding_id,
       join: intervention in Intervention,
       on: intervention.id == binding.intervention_id,
+      join: resource_attempt in ResourceAttempt,
+      on: resource_attempt.id == reward.resource_attempt_id,
       where: reward.resource_attempt_id == ^resource_attempt_id,
       order_by: [asc: reward.id],
       select: %{
@@ -43,7 +46,8 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardAttributions do
         condition_code: condition.condition_code,
         experiment_uuid: experiment.uuid,
         binding: binding,
-        intervention: intervention
+        intervention: intervention,
+        page_revision_id: resource_attempt.revision_id
       }
     )
     |> Repo.all()
@@ -91,6 +95,7 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardAttributions do
       "resource_attempt_id" => resource_attempt_id(evidence.reward),
       "reward_threshold" => decimal_number(evidence.binding.reward_threshold),
       "normalized_score" => decimal_number(evidence.reward.normalized_score),
+      "page_revision_id" => evidence.page_revision_id,
       "disposition" => "accepted"
     })
   end

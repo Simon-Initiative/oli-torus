@@ -15,7 +15,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
 
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.XAPI.StatementFactory
-  alias Oli.Delivery.Experiments.RewardHandoff
 
   @moduledoc """
   An Oban worker driven snapshot creator.  Snapshot creation jobs take a section slug and a collection of
@@ -58,9 +57,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
       )
       |> Repo.all()
 
-    with :ok <- record_assessment_rewards(results) do
-      create_and_emit_snapshot(results, section_slug, emit_fn)
-    end
+    create_and_emit_snapshot(results, section_slug, emit_fn)
   end
 
   defp create_and_emit_snapshot(results, section_slug, emit_fn) do
@@ -99,19 +96,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
 
       e ->
         e
-    end
-  end
-
-  defp record_assessment_rewards(results) do
-    case Enum.uniq_by(results, fn {_, _, resource_attempt, _, _} -> resource_attempt.id end) do
-      [] ->
-        :ok
-
-      [{_, _, resource_attempt, _, _}] ->
-        RewardHandoff.record_evaluated_resource_attempt(resource_attempt.id)
-
-      _multiple_resource_attempts ->
-        {:error, :snapshot_spans_multiple_resource_attempts}
     end
   end
 
