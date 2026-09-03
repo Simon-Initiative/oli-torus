@@ -445,6 +445,16 @@
   display: none;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .learning-objectives-editor__proficiency::details-content {
+    transition: none;
+  }
+
+  .learning-objectives-editor__proficiency-summary .fa-chevron-down {
+    transition: none;
+  }
+}
+
 .learning-objectives-editor__proficiency[open] .learning-objectives-editor__proficiency-summary {
   .fa-chevron-down {
     transform: rotate(180deg);

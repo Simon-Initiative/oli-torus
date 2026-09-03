@@ -22,6 +22,7 @@ interface SelectModalProps<T extends Option> {
   searchable?: boolean;
   searchPlaceholder?: string;
   searchAriaLabel?: string;
+  clearAriaLabel?: string;
   emptySearchMessage?: string;
 }
 
@@ -39,6 +40,7 @@ export const SelectModal = function <T extends Option>({
   searchable = false,
   searchPlaceholder = 'Search',
   searchAriaLabel = 'Search options',
+  clearAriaLabel = 'Clear selection',
   emptySearchMessage = 'No options match your search.',
 }: SelectModalProps<T>) {
   const modal = useRef<HTMLDivElement>(null);
@@ -252,7 +254,7 @@ export const SelectModal = function <T extends Option>({
             <button
               type="button"
               className="btn btn-link px-3 py-0 text-Text-text-low-alpha"
-              aria-label="Clear selected page"
+              aria-label={clearAriaLabel}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
                 setSelectedOption(Maybe.nothing());
@@ -320,7 +322,7 @@ export const SelectModal = function <T extends Option>({
             </h5>
             <button
               type="button"
-              className="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 hover:text-black hover:opacity-75 dark:hover:text-white hover:no-underline focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-400"
+              className="box-content w-4 h-4 p-1 border-none rounded-none opacity-50 hover:text-black hover:opacity-75 dark:hover:text-white hover:no-underline focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:text-gray-400"
               data-bs-dismiss="modal"
               aria-label="Close"
             >
