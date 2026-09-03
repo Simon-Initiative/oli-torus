@@ -396,9 +396,14 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
   end
 
   defp force_children(section, objective_resource_id, child_resource_ids) do
+    child_section_resource_ids =
+      Enum.map(child_resource_ids, fn child_resource_id ->
+        SectionResourceDepot.get_section_resource(section.id, child_resource_id).id
+      end)
+
     section.id
     |> SectionResourceDepot.get_section_resource(objective_resource_id)
-    |> Sections.update_section_resource(%{children: child_resource_ids})
+    |> Sections.update_section_resource(%{children: child_section_resource_ids})
     |> case do
       {:ok, section_resource} ->
         SectionResourceDepot.update_section_resource(section_resource)
