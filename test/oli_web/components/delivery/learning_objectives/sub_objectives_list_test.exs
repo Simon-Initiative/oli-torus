@@ -90,6 +90,36 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       assert has_element?(view, "td", "High")
       assert has_element?(view, "td", "Medium")
       assert has_element?(view, "td", "Low")
+
+      assert has_element?(
+               view,
+               "[data-role='low-proficiency-warning'][aria-hidden='true']"
+             )
+
+      assert length(
+               view
+               |> render()
+               |> Floki.parse_fragment!()
+               |> Floki.find("[data-role='low-proficiency-warning']")
+             ) == 1
+    end
+
+    test "uses the approved light and dark proficiency distribution colors", %{
+      conn: conn,
+      sub_objectives_data: sub_objectives_data
+    } do
+      {:ok, view, _html} =
+        live_component_isolated(conn, SubObjectivesList, %{
+          id: "sub-objectives-list-test",
+          sub_objectives_data: sub_objectives_data,
+          parent_unique_id: "test-parent-id"
+        })
+
+      html = render(view)
+
+      for color <- ~w(#CED1D9 #CE2C31 #BF5B13 #218358 #353740 #FF8787 #FFB387 #39E581) do
+        assert html =~ color
+      end
     end
 
     test "handles empty sub-objectives data", %{conn: conn} do
@@ -222,7 +252,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       # Check that the actual activities count values are displayed in the table
       rendered_html = render(view)
 
-      # Verify the activities count appears in the Related Activities column
+      assert has_element?(view, "table thead", "Linked Activities")
+
+      # Verify the activities count appears in the Linked Activities column
       # Look for the specific pattern in the rendered table
       assert rendered_html =~ ~r/<span class="text-Text-text-high">3<\/span>/
       assert rendered_html =~ ~r/<span class="text-Text-text-high">2<\/span>/

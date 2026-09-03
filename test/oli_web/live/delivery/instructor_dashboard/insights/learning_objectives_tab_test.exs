@@ -301,6 +301,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
                view,
                "#proficiency-data-bar-chart-for-objective-#{obj_revision_2.resource_id}"
              )
+
+      html = render(view)
+
+      for color <- ~w(#CED1D9 #CE2C31 #BF5B13 #218358 #353740 #FF8787 #FFB387 #39E581) do
+        assert html =~ color
+      end
     end
   end
 
@@ -734,10 +740,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
     end
   end
 
-  describe "related activities column" do
+  describe "linked activities column" do
     setup [:instructor_conn, :create_project_with_objectives]
 
-    test "related activities column is present for instructors", %{
+    test "linked activities column and empty state are present for instructors", %{
       conn: conn,
       instructor: instructor,
       section: section
@@ -747,12 +753,43 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
 
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
-      # Check that the "Related Activities" column header is present
       assert has_element?(
                view,
-               "table thead th span[title*='Number of activities']",
-               "Related Activities"
+               "table thead th[data-sortable='false'] span[title*='Number of activities']",
+               "Linked Activities"
              )
+
+      assert has_element?(view, "[data-linked-activities-empty]", "No linked activities")
+      refute has_element?(view, "[data-linked-activities-button]", "View 0 Activities")
+    end
+  end
+
+  describe "linked activities controls" do
+    setup [:instructor_conn, :create_full_project_with_objectives]
+
+    test "renders a secondary navigation button for linked activities", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      resources: %{obj_resource_d: objective}
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Oli.Delivery.Sections.PostProcessing.apply(section, [:related_activities])
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      assert has_element?(
+               view,
+               "a[data-linked-activities-button][href*='/related_activities/#{objective.id}']",
+               "View 1 Activities"
+             )
+
+      assert has_element?(
+               view,
+               "a[data-linked-activities-button].whitespace-nowrap[aria-label='View 1 linked activity'] svg[width='16'][height='16'][class*='-rotate-90']"
+             )
+
+      assert render(view) =~ "transparent_background"
     end
   end
 end

@@ -185,6 +185,39 @@ describe('VegaLiteRenderer', () => {
       expect(mockView.background).toHaveBeenCalledWith('white');
       expect(mockView.run).toHaveBeenCalled();
     });
+
+    it('can preserve a transparent chart background across themes', () => {
+      render(<VegaLiteRenderer spec={mockSpec} transparent_background={true} />);
+
+      expect(mockView.background).toHaveBeenCalledWith('transparent');
+      expect(mockView.run).toHaveBeenCalled();
+
+      const mockInstance = MockMutationObserver.instances[0];
+      expect(mockInstance).toBeDefined();
+
+      if (mockInstance?.callback) {
+        jest.clearAllMocks();
+
+        act(() => {
+          document.documentElement.classList.add('dark');
+          mockInstance.callback([] as MutationRecord[], mockInstance as MutationObserver);
+          jest.advanceTimersByTime(60);
+        });
+
+        const specData = screen.getByTestId('vega-lite-renderer').getAttribute('data-spec');
+        expect(specData).toBeTruthy();
+
+        if (specData) {
+          const parsedSpec = JSON.parse(specData);
+          expect(parsedSpec.params).toEqual(
+            expect.arrayContaining([expect.objectContaining({ name: 'isDarkMode', value: true })]),
+          );
+        }
+
+        expect(mockView.background).toHaveBeenCalledWith('transparent');
+        expect(mockView.run).toHaveBeenCalled();
+      }
+    });
   });
 
   describe('Dark Mode Detection and Theme Switching', () => {
