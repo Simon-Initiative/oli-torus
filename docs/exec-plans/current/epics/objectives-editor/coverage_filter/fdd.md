@@ -96,12 +96,22 @@ Existing projects lacking map keys behave as 3/3. Existing search and manual exp
 
 ## 16. Open Questions & Follow-ups
 
-- Obtain the published Learn more URL from Jess.
-- Produce the governed full Figma brief before coding; no new shared primitive is assumed until that mapping is complete.
+- Resolved 2026-09-02 (Jess Fortunato, Slack): no Learn more URL will ship
+  with this ticket. Jess is filing a separate follow-up ticket for the
+  knowledge-base article and link, since accurate screenshots require the
+  real UI to be live first. Implementation must omit/hide the Learn more
+  affordance rather than ship a placeholder; see
+  `phase-1-figma-brief.md` §8.
+- Produce the governed full Figma brief before coding; no new shared primitive is assumed until that mapping is complete. **Done** — see `phase-1-figma-brief.md`.
 
 ## 17. References
 
 - Jira MER-5799.
 - `docs/exec-plans/current/epics/objectives-editor/core_data/informal.md`.
 - MER-5794 and MER-5797 PRs.
-- Learning Objectives Updates Figma nodes 365-14554 and 365-17228.
+- Learning Objectives Updates Figma nodes: 365-14554 (warning, light),
+  365-17228 (warning, dark), 365-19034 (coverage filter applied),
+  365-18532 (coverage filter settings open), 365-19751 (settings popover,
+  light), 365-19793 (settings popover, dark), 329-532 (collapsed card with
+  issue), 365-16457 (expanded, flagged sub-objective row, dark). Full
+  detail in `phase-1-figma-brief.md`.
