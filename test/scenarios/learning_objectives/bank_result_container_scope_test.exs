@@ -14,7 +14,7 @@ defmodule Oli.Scenarios.LearningObjectives.BankResultContainerScopeTest do
     result = Scenarios.execute_file(@scenario_path, RuntimeOpts.build())
 
     assert result.errors == []
-    assert length(result.verifications) == 4
+    assert length(result.verifications) == 5
     assert Enum.all?(result.verifications, & &1.passed)
   end
 

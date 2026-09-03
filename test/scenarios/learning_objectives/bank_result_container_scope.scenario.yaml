@@ -11,6 +11,9 @@
         - container: "Unit 1"
           children:
             - page: "Bank Practice"
+        - container: "Unit 2"
+          children:
+            - page: "Other Bank Practice"
 
 - create_activity:
     project: "bank_objective_scope_course"
@@ -56,6 +59,23 @@
                 score: 0
         - type: bank-selection
           id: "bank_result_selection"
+          count: 1
+          points: 1
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value:
+                - "bank-result"
+
+- edit_page:
+    project: "bank_objective_scope_course"
+    page: "Other Bank Practice"
+    content: |
+      title: "Other Bank Practice"
+      graded: false
+      blocks:
+        - type: bank-selection
+          id: "other_bank_result_selection"
           count: 1
           points: 1
           clauses:
@@ -149,4 +169,11 @@
       section: "bank_objective_scope_section"
       includes:
         - "Static objective"
+        - "Bank result objective"
+
+- assert:
+    learning_objectives:
+      section: "bank_objective_scope_section"
+      container: "Unit 2"
+      excludes:
         - "Bank result objective"
