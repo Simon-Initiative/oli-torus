@@ -8,6 +8,8 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
 
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections.Section
 
@@ -53,9 +55,25 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   @spec record_if_active_thompson(integer(), integer()) :: :ok | {:error, term()}
   def record_if_active_thompson(resource_attempt_id, section_id)
       when is_integer(resource_attempt_id) and is_integer(section_id) do
-    case active_thompson_section?(section_id) do
-      true -> record_evaluated_resource_attempt(resource_attempt_id)
-      false -> :ok
+    try do
+      case active_thompson_section?(section_id) do
+        true ->
+          case record_evaluated_resource_attempt(resource_attempt_id) do
+            :ok ->
+              :ok
+
+            {:error, reason} = error ->
+              report_failure(reason, resource_attempt_id, section_id)
+              error
+          end
+
+        false ->
+          :ok
+      end
+    rescue
+      exception ->
+        report_failure(exception, resource_attempt_id, section_id)
+        reraise exception, __STACKTRACE__
     end
   end
 
@@ -336,4 +354,43 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
       %{assessment_binding_id: binding_id, resource_attempt_id: resource_attempt_id}
     )
   end
+
+  defp report_failure(reason, resource_attempt_id, section_id) do
+    failure_reason = classify_failure(reason)
+
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :failed],
+      %{count: 1},
+      %{reason: failure_reason}
+    )
+
+    Logger.error("Thompson reward processing failed",
+      reward_processing_reason: failure_reason,
+      resource_attempt_id: resource_attempt_id,
+      section_id: section_id,
+      failure: inspect(reason)
+    )
+  end
+
+  defp classify_failure(%Ecto.NoResultsError{}), do: :missing_policy_state
+  defp classify_failure(%MatchError{term: {:error, :invalid_reward_value}}), do: :invalid_reward
+  defp classify_failure(%MatchError{term: {:error, _reason}}), do: :policy_update_error
+  defp classify_failure(%MatchError{}), do: :unexpected_exception
+  defp classify_failure(%Ecto.ConstraintError{}), do: :database_error
+
+  defp classify_failure(%Postgrex.Error{postgres: %{code: :lock_not_available}}),
+    do: :lock_timeout
+
+  defp classify_failure(%Postgrex.Error{postgres: %{code: :query_canceled, message: message}})
+       when is_binary(message) do
+    case String.contains?(message, "lock timeout") do
+      true -> :lock_timeout
+      false -> :database_timeout
+    end
+  end
+
+  defp classify_failure(%Postgrex.Error{postgres: %{code: :deadlock_detected}}), do: :deadlock
+  defp classify_failure(%Postgrex.Error{}), do: :database_error
+  defp classify_failure(%_{}), do: :unexpected_exception
+  defp classify_failure(_reason), do: :unexpected_exception
 end

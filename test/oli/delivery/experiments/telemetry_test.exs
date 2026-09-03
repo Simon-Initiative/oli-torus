@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Experiments.TelemetryTest do
 
   @batch_completed_event [:oli, :experiments, :delivery_reward, :batch, :completed]
   @eligibility_completed_event [:oli, :experiments, :delivery_reward, :eligibility, :completed]
+  @reward_failed_event [:oli, :experiments, :delivery_reward, :failed]
   describe "handle_event/4" do
     test "maps batch measurements to AppSignal metrics" do
       assert :ok =
@@ -46,6 +47,24 @@ defmodule Oli.Delivery.Experiments.TelemetryTest do
                )
     end
 
+    test "maps reward failures with bounded reasons" do
+      assert :ok =
+               Telemetry.handle_event(
+                 @reward_failed_event,
+                 %{count: 1},
+                 %{reason: :lock_timeout, private_detail: "not a metric tag"},
+                 %{}
+               )
+
+      assert :ok =
+               Telemetry.handle_event(
+                 @reward_failed_event,
+                 %{},
+                 %{reason: "unbounded failure detail"},
+                 %{}
+               )
+    end
+
     test "ignores unrelated events" do
       assert :ok = Telemetry.handle_event([:other, :event], %{}, %{}, %{})
     end
@@ -56,6 +75,9 @@ defmodule Oli.Delivery.Experiments.TelemetryTest do
       handlers = :telemetry.list_handlers(@batch_completed_event)
 
       assert Enum.any?(handlers, &(&1.id == "experiment-reward-appsignal-handler"))
+
+      failure_handlers = :telemetry.list_handlers(@reward_failed_event)
+      assert Enum.any?(failure_handlers, &(&1.id == "experiment-reward-appsignal-handler"))
     end
   end
 end

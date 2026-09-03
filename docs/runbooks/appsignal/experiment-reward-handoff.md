@@ -54,6 +54,7 @@ All custom metrics use the prefix `oli.experiments.reward_handoff`.
 | `eligibility.lookup` | Counter | `matched`, `empty`, `error`, `unknown` | Eligibility lookups attempted. |
 | `eligibility.assignment_query` | Counter | `matched`, `empty`, `error`, `unknown` | PostgreSQL assignment queries executed. A lookup with no matching alternatives branch contributes zero. |
 | `outcome` | Counter | `accepted`, `duplicate`, or `skipped`; bounded `reason` | Reward dispositions. Reasons are restricted to the allowlist in `Oli.Delivery.Experiments.Telemetry`. |
+| `failure` | Counter | Bounded `reason` | Synchronous reward-processing failures. Reasons are restricted to the allowlist in `Oli.Delivery.Experiments.Telemetry`. |
 
 Metric names are emitted exactly as `oli.experiments.reward_handoff.<metric>`. Status, outcome, and
 bounded reason are the only custom dimensions. Do not add experiment, decision-point, intervention,
@@ -114,13 +115,18 @@ content required an assignment query. Compare these ratios with average and p95 
 ### 5. Failures
 
 - Metrics:
+  - `oli.experiments.reward_handoff.failure`, grouped by `reason`
   - `oli.experiments.reward_handoff.batch.failure_count`
   - `oli.experiments.reward_handoff.batch.completed`, filtered to `status=error`
 - Visualization: value and line charts
 - Aggregation: sum
 
-Any sustained nonzero value requires investigation. AppSignal's automatic Oban instrumentation
-should provide the failed transaction, exception, and retry details when the worker fails.
+Any sustained nonzero value requires investigation. Search AppSignal logs for the stable message
+`Thompson reward processing failed` during the same window. Those structured log entries include
+the bounded failure classification plus the section and resource-attempt identifiers for
+correlation; the identifiers are deliberately excluded from metric tags. AppSignal's automatic
+Phoenix and Oban instrumentation should provide the failed transaction, exception, and retry
+details where applicable.
 
 ### 6. Learner-attempt transaction performance
 
@@ -144,6 +150,7 @@ weeks of representative production data and tune thresholds to normal batch size
 
 | Alert | Initial condition | Purpose |
 | --- | --- | --- |
+| Synchronous reward failure | At least one `failure` event in 10 minutes | Detect a learner-attempt reward failure and group recurring failures by bounded reason. |
 | Reward batch errors | At least one `batch.completed` event with `status=error` in 10 minutes | Detect partial or complete reward failures promptly. |
 | Reward batch latency | `batch.duration_ms` p95 above 2,000 ms for 15 minutes with at least 10 completed batches | Detect sustained worker degradation while avoiding alerts from isolated jobs. |
 | Eligibility latency | `eligibility.duration_ms` p95 above 500 ms for 15 minutes with at least 25 lookups | Identify assignment lookup or database degradation. |
@@ -157,16 +164,19 @@ encode section or learner IDs as tags to make either condition more granular.
 
 ## Investigation Procedure
 
-1. Confirm the affected time window in the batch-latency and failure graphs.
-2. Compare batch duration with attempt count, context count, and eligibility duration.
-3. Calculate assignment queries per completed batch for the same window.
-4. Open AppSignal performance samples for affected learner-attempt transactions in that window.
-5. Inspect the Ecto event timeline for repeated eligibility-assignment queries and individually slow
+1. Confirm the affected time window and reason in the synchronous failure graph.
+2. Search logs for `Thompson reward processing failed` in that window and use its identifiers to
+   correlate the failure with the relevant transaction.
+3. Compare batch duration with attempt count, context count, and eligibility duration when legacy
+   batch processing is involved.
+4. Calculate assignment queries per completed batch for the same window when applicable.
+5. Open AppSignal performance samples for affected learner-attempt transactions in that window.
+6. Inspect the Ecto event timeline for repeated eligibility-assignment queries and individually slow
    queries.
-6. For auto-submit, check Oban throughput, retries, and execution time in the `auto_submit` queue.
-7. Use Phoenix LiveDashboard to check current Ecto latency, database pool pressure, scheduler usage,
+7. For auto-submit, check Oban throughput, retries, and execution time in the `auto_submit` queue.
+8. Use Phoenix LiveDashboard to check current Ecto latency, database pool pressure, scheduler usage,
    memory, and node health when the issue is ongoing.
-8. Compare other AppSignal Phoenix/Ecto transaction performance. Broad degradation suggests shared
+9. Compare other AppSignal Phoenix/Ecto transaction performance. Broad degradation suggests shared
    database or infrastructure pressure rather than reward-handoff query amplification.
 
 ## Optimization Decision
@@ -186,6 +196,8 @@ batching eligibility queries is not the remedy for those conditions.
 ## Post-Deployment Validation
 
 - [ ] Confirm AppSignal receives reward outcome telemetry after a Thompson attempt completes.
+- [ ] Confirm an induced Thompson reward failure increments `failure`, retains a bounded `reason`,
+      and produces a `Thompson reward processing failed` log entry.
 - [ ] Confirm all batch and eligibility distributions appear on the dashboard.
 - [ ] Confirm only documented `status` values are present.
 - [ ] Confirm AppSignal learner-attempt samples contain the relevance, accepted-reward, and

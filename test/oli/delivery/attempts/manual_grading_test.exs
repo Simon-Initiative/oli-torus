@@ -463,6 +463,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       assert policy_state.state["condition-a"]["posterior_beta"] == 1.0
     end
 
+    @tag capture_log: true
     test "rolls back manual scoring when synchronous reward processing fails", %{
       section: section,
       attempt_1a: attempt_1a,

@@ -5,6 +5,8 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
   import Oli.Factory
   import Ecto.Query
 
+  import ExUnit.CaptureLog
+
   alias Oli.Analytics.Summary.AttemptGroup
   alias Oli.Analytics.XAPI.{Events.Context, StatementBundle, StatementFactory}
   alias Oli.Delivery.Experiments.RewardHandoff
@@ -359,6 +361,43 @@ defmodule Oli.Delivery.Experiments.AssessmentRewardHandoffTest do
       assert policy_state.state == invalid_state
       assert policy_state.reward_success_count == 0
       assert policy_state.reward_failure_count == 0
+    end
+
+    test "active Thompson handoff reports failures and reraises the original exception" do
+      context = setup_context(score: 0.0, out_of: 1.0)
+      invalid_state = put_in(context.policy_state.state, ["condition-a", "successes"], -1)
+
+      from(policy_state in PolicyState, where: policy_state.id == ^context.policy_state.id)
+      |> Repo.update_all(set: [state: invalid_state])
+
+      parent = self()
+      event = [:oli, :experiments, :delivery_reward, :failed]
+      handler_id = "reward-failure-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        event,
+        fn _, measurements, metadata, _ ->
+          send(parent, {:reward_failure, measurements, metadata})
+        end,
+        %{}
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      log =
+        capture_log(fn ->
+          assert_raise MatchError, fn ->
+            RewardHandoff.record_if_active_thompson(
+              context.resource_attempt.id,
+              context.section.id
+            )
+          end
+        end)
+
+      assert log =~ "Thompson reward processing failed"
+      assert_receive {:reward_failure, %{count: 1}, %{reason: :policy_update_error}}
+      assert Repo.aggregate(AcceptedReward, :count) == 0
     end
 
     test "reward processing retry succeeds after a transient failure" do
