@@ -325,7 +325,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
              InstructorCustomizations.duplicate_section_exclusions(section, blueprint) do
         Oli.Delivery.Gating.duplicate_gates(section, blueprint)
 
-        blueprint
+        PostProcessing.apply(blueprint, :all)
       else
         {:error, e} -> Repo.rollback(e)
       end

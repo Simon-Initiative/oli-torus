@@ -81,6 +81,44 @@ defmodule Oli.LearningModel.LktAoa.ApplicationTest do
       assert_in_delta state.confidence, 1.0 - :math.exp(-1 / 3.0), 1.0e-12
     end
 
+    test "resolves objectives from the attempted remixed project's publication" do
+      %{section: section, group: group, objectives: [objective]} =
+        LktAoaFixtures.lkt_fixture()
+
+      source_mapping =
+        Repo.get_by!(Oli.Publishing.PublishedResource,
+          publication_id: group.context.publication_id,
+          resource_id: objective.id
+        )
+
+      remix_project = Oli.Factory.insert(:project)
+      remix_publication = Oli.Factory.insert(:publication, project: remix_project)
+
+      Oli.Factory.insert(:section_project_publication,
+        section: section,
+        project: remix_project,
+        publication: remix_publication
+      )
+
+      Oli.Factory.insert(:published_resource,
+        publication: remix_publication,
+        resource: objective,
+        revision: Repo.get!(Oli.Resources.Revision, source_mapping.revision_id)
+      )
+
+      group = %{
+        group
+        | context: %{
+            group.context
+            | project_id: remix_project.id,
+              publication_id: remix_publication.id
+          }
+      }
+
+      assert {:ok, %BatchResult{status: :applied, contribution_count: 1}} =
+               LearningModel.apply_evaluated_attempts(section, group)
+    end
+
     test "multi-objective and multi-part batches write one final row per affected state" do
       %{section: section, group: group, user: user, objectives: objectives} =
         LktAoaFixtures.lkt_fixture(%{
@@ -241,16 +279,75 @@ defmodule Oli.LearningModel.LktAoa.ApplicationTest do
       assert Repo.aggregate(AttemptApplication, :count) == 0
     end
 
-    test "missing published objective revision rolls back the idempotency claim" do
+    test "missing published objective revisions are skipped after claiming the attempt" do
       %{section: section, group: group} =
         LktAoaFixtures.lkt_fixture(%{publish_objectives?: false})
 
-      assert {:error, {:missing_published_objective_revisions, [_objective_id]}} =
-               LearningModel.apply_evaluated_attempts(section, group)
+      assert {:ok,
+              %BatchResult{
+                status: :applied,
+                claimed_attempt_count: 1,
+                contribution_count: 0,
+                affected_state_count: 0,
+                new_evidence_count: 0
+              }} = LearningModel.apply_evaluated_attempts(section, group)
 
-      assert Repo.aggregate(AttemptApplication, :count) == 0
+      assert Repo.aggregate(AttemptApplication, :count) == 1
       assert Repo.aggregate(PriorActivityPartEvidence, :count) == 0
       assert Repo.aggregate(LearningState, :count) == 0
+    end
+
+    test "missing and deleted objective revisions do not block valid objectives" do
+      %{section: section, group: group, objectives: [valid, missing, deleted], user: user} =
+        LktAoaFixtures.lkt_fixture(%{
+          objectives: [%{}, %{}, %{}],
+          part_attempts: [%{objective_indexes: [0, 1, 2]}]
+        })
+
+      missing_mapping =
+        Repo.get_by!(Oli.Publishing.PublishedResource,
+          publication_id: group.context.publication_id,
+          resource_id: missing.id
+        )
+
+      Repo.delete!(missing_mapping)
+
+      deleted_mapping =
+        Repo.get_by!(Oli.Publishing.PublishedResource,
+          publication_id: group.context.publication_id,
+          resource_id: deleted.id
+        )
+
+      deleted_mapping.revision_id
+      |> then(&Repo.get!(Oli.Resources.Revision, &1))
+      |> Ecto.Changeset.change(deleted: true)
+      |> Repo.update!()
+
+      assert {:ok,
+              %BatchResult{
+                status: :applied,
+                claimed_attempt_count: 1,
+                contribution_count: 1,
+                affected_state_count: 1
+              }} = LearningModel.apply_evaluated_attempts(section, group)
+
+      assert Repo.get_by!(LearningState,
+               section_id: section.id,
+               user_id: user.id,
+               learning_objective_id: valid.id
+             )
+
+      refute Repo.get_by(LearningState,
+               section_id: section.id,
+               user_id: user.id,
+               learning_objective_id: missing.id
+             )
+
+      refute Repo.get_by(LearningState,
+               section_id: section.id,
+               user_id: user.id,
+               learning_objective_id: deleted.id
+             )
     end
 
     test "database failure after evidence insertion rolls back claims, evidence, and state" do

@@ -24,6 +24,7 @@ defmodule Oli.Delivery.Sections do
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
+    ObjectiveChildrenProjection,
     EnrollmentContextRole,
     Scheduling,
     MinimalHierarchy
@@ -3859,7 +3860,7 @@ defmodule Oli.Delivery.Sections do
       # reset any section cached data
       SectionCache.clear(section.slug)
 
-      Oli.Delivery.DepotCoordinator.clear(
+      Oli.Delivery.DepotCoordinator.clear_synchronously(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
         section_id
       )
@@ -4962,6 +4963,11 @@ defmodule Oli.Delivery.Sections do
         skip_set
       )
     end
+
+    case ObjectiveChildrenProjection.persist(section_id) do
+      {:ok, _count} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
+    end
   end
 
   def is_structural?(%Revision{resource_type_id: resource_type_id}) do
@@ -5973,7 +5979,7 @@ defmodule Oli.Delivery.Sections do
     id_list = Enum.map(objectives, & &1.resource_id)
 
     proficiencies_for_objectives =
-      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
+      Metrics.proficiency_per_student_for_objective(section, id_list, student_id: student_id)
 
     student_proficiency_for_objectives =
       if student_id do

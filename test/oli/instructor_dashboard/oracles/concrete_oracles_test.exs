@@ -1,6 +1,11 @@
 defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
   use Oli.DataCase
 
+  defmodule FailingObjectiveAggregatesProvider do
+    def objective_ids_for_scope(_section, _scope), do: {:ok, []}
+    def objective_aggregates(_section, _objective_ids, _opts), do: {:error, :unavailable}
+  end
+
   import Ecto.Query
   import Oli.Factory
 
@@ -528,6 +533,29 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
   end
 
   describe "ObjectivesProficiency oracle" do
+    test "propagates provider errors instead of crashing", %{map: map} do
+      previous_providers = Application.get_env(:oli, :proficiency_providers)
+
+      Application.put_env(:oli, :proficiency_providers, %{
+        naive: FailingObjectiveAggregatesProvider
+      })
+
+      on_exit(fn ->
+        case previous_providers do
+          nil -> Application.delete_env(:oli, :proficiency_providers)
+          providers -> Application.put_env(:oli, :proficiency_providers, providers)
+        end
+      end)
+
+      context =
+        build_context(map.section.id, map.instructor.id, %{
+          container_type: :container,
+          container_id: map.mod1_resource.id
+        })
+
+      assert {:error, :unavailable} = ObjectivesProficiency.load(context, [])
+    end
+
     test "returns scope-contained objective proficiency distributions using objective_id payloads",
          %{map: map} do
       objective_type_id = ResourceType.id_for_objective()
@@ -618,12 +646,21 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       objective_2_row = Enum.find(rows, &(&1.objective_id == objective_2.id))
 
       assert objective_1_row.title == "Objective A"
+      assert_in_delta objective_1_row.numeric_proficiency, 0.84, 0.0001
       assert objective_1_row.proficiency_distribution["High"] == 1
       assert objective_1_row.proficiency_distribution["Not enough data"] == 1
+      assert objective_1_row.confidence == nil
+      assert objective_1_row.coverage == %{defined: 1, total: 2}
+      assert objective_1_row.contributing_count == 1
+      assert objective_1_row.eligible_count == 1
+      assert objective_1_row.total_count == 2
 
       assert objective_2_row.title == "Objective B"
       assert objective_2_row.proficiency_distribution["Low"] == 1
       assert objective_2_row.proficiency_distribution["High"] == 1
+      assert_in_delta objective_2_row.numeric_proficiency, 0.68, 0.0001
+      assert objective_2_row.coverage == %{defined: 2, total: 2}
+      assert ObjectivesProficiency.version() == 4
     end
   end
 

@@ -44,6 +44,10 @@ defmodule Oli.Delivery.Sections.Section do
     field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v2)
     field(:learning_model_version, Ecto.Enum, values: ModelVersion.values(), default: :naive)
 
+    # Internal projection marker. It is intentionally absent from every public
+    # changeset so only SectionResourceMigration can advance it.
+    field(:section_resource_migration_version, :integer, default: 0)
+
     field(:status, Ecto.Enum, values: [:active, :deleted, :archived], default: :active)
     field(:invite_token, :string)
     field(:passcode, :string)

@@ -2,14 +2,14 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
   @moduledoc """
   Handles proficiency assertions for learning objectives.
 
-  Proficiency assertions check the calculated proficiency values for learning objectives
-  within a section. They can be student-specific or calculate average proficiency across
-  all enrolled students.
+  Student assertions consume canonical estimates; class assertions consume canonical
+  aggregates. This keeps scenario coverage on the same Section-selected provider path
+  as production consumers and preserves the distinction between missing evidence and 0.0.
   """
 
   alias Oli.Scenarios.DirectiveTypes.{AssertDirective, VerificationResult}
   alias Oli.Scenarios.Engine
-  alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Proficiency
   alias Oli.Delivery.Sections
 
   @doc """
@@ -19,13 +19,11 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
   - The proficiency bucket (High/Medium/Low/Not enough data)
   - Optionally, the raw proficiency value (0.0-1.0)
 
-  Can be scoped to:
-  - A specific student or all students
-  - A specific page or container
+  It can target a specific student or aggregate all enrolled learners.
   """
   def assert(%AssertDirective{proficiency: proficiency}, state) when is_map(proficiency) do
     with {:ok, section} <- get_section(state, proficiency.section),
-         {:ok, objective} <- find_objective_by_title(state, proficiency.objective),
+         {:ok, objective} <- find_objective_by_title(state, section, proficiency.objective),
          {:ok, actual_proficiency} <-
            calculate_proficiency(
              section,
@@ -37,16 +35,18 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
       expected_bucket = proficiency.bucket
       expected_value = proficiency.value
 
-      # Check if the bucket matches
       bucket_matches = actual_bucket == expected_bucket
 
-      # Check if the value matches (if specified)
       value_matches =
-        if expected_value do
-          # Round to 2 decimal places for comparison
-          Float.round(actual_value || 0.0, 2) == Float.round(expected_value, 2)
-        else
-          true
+        case {expected_value, actual_value} do
+          {nil, _actual} ->
+            true
+
+          {expected, actual} when is_number(expected) and is_number(actual) ->
+            Float.round(actual, 2) == Float.round(expected, 2)
+
+          {_expected, _actual} ->
+            false
         end
 
       passed = bucket_matches && value_matches
@@ -104,25 +104,19 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
     end
   end
 
-  defp find_objective_by_title(state, objective_title) do
-    # Search through all projects for an objective with the given title
+  defp find_objective_by_title(state, section, objective_title) do
     objective =
       state.projects
-      |> Enum.flat_map(fn {_name, project} ->
-        # BuiltProject stores objectives in objectives_by_title
-        case Map.get(project, :objectives_by_title) do
-          nil ->
-            []
+      |> Enum.find_value(fn {_name, built_project} ->
+        case built_project do
+          %{project: %{id: project_id}, objectives_by_title: objectives}
+          when project_id == section.base_project_id and is_map(objectives) ->
+            Map.get(objectives, objective_title)
 
-          objectives_map when is_map(objectives_map) ->
-            # objectives_by_title is a map of title -> objective
-            case Map.get(objectives_map, objective_title) do
-              nil -> []
-              obj -> [obj]
-            end
+          _other ->
+            nil
         end
       end)
-      |> List.first()
 
     case objective do
       nil -> {:error, "Learning objective '#{objective_title}' not found"}
@@ -131,14 +125,9 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
   end
 
   defp calculate_proficiency(section, objective, state, proficiency) do
-    cond do
-      # Student-specific proficiency for a learning objective
-      proficiency.student != nil ->
-        calculate_student_proficiency(section, objective, state, proficiency)
-
-      # Average proficiency across all students
-      true ->
-        calculate_average_proficiency(section, objective, state, proficiency)
+    case proficiency.student do
+      nil -> calculate_average_proficiency(section, objective, state, proficiency)
+      _student -> calculate_student_proficiency(section, objective, state, proficiency)
     end
   end
 
@@ -148,28 +137,17 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
     if user == nil do
       {:error, "Student '#{proficiency.student}' not found"}
     else
-      # Get the learning objective revisions
-      learning_objectives = [objective]
+      case Proficiency.estimates_for_objectives(
+             section,
+             [user.id],
+             [objective.resource_id]
+           ) do
+        {:ok, estimates} ->
+          estimate = get_in(estimates, [objective.resource_id, user.id])
+          {:ok, estimate_result(estimate)}
 
-      # Calculate proficiency using Metrics module
-      proficiency_map =
-        Metrics.proficiency_for_student_per_learning_objective(
-          learning_objectives,
-          user.id,
-          section
-        )
-
-      # Get the proficiency for this objective
-      case Map.get(proficiency_map, objective.resource_id) do
-        nil ->
-          {:ok, {0.0, "Not enough data"}}
-
-        {value, bucket} ->
-          {:ok, {value, bucket}}
-
-        bucket when is_binary(bucket) ->
-          # Sometimes it returns just the bucket string
-          {:ok, {nil, bucket}}
+        {:error, reason} ->
+          {:error, "proficiency provider unavailable: #{inspect(reason)}"}
       end
     end
   end
@@ -181,36 +159,41 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
     # Get all enrolled students
     student_ids =
       Sections.list_enrollments(section.slug)
-      # Student role
-      |> Enum.filter(&(&1.user_role_id == 4))
+      |> Enum.filter(fn enrollment ->
+        Enum.any?(enrollment.context_roles, &String.ends_with?(&1.uri, "#Learner"))
+      end)
       |> Enum.map(& &1.user_id)
 
     if Enum.empty?(student_ids) do
-      {:ok, {0.0, "Not enough data"}}
+      {:ok, {nil, "Not enough data"}}
     else
-      # Use the Metrics module's raw_proficiency_per_learning_objective function
-      raw_proficiency_map =
-        Metrics.raw_proficiency_per_learning_objective(
-          section.id,
-          objective_ids: [objective.resource_id]
-        )
+      case Proficiency.objective_aggregates(section, [objective.resource_id],
+             user_ids: student_ids
+           ) do
+        {:ok, aggregates} ->
+          aggregate = Map.get(aggregates, objective.resource_id)
+          {:ok, aggregate_result(section, aggregate)}
 
-      case Map.get(raw_proficiency_map, objective.resource_id) do
-        nil ->
-          {:ok, {0.0, "Not enough data"}}
-
-        {first_correct, first_count, _correct, _total} when first_count > 0 ->
-          # Calculate proficiency value
-          value = (1.0 * first_correct + 0.2 * (first_count - first_correct)) / first_count
-          # Use 3 as minimum for "enough data"
-          bucket = Metrics.proficiency_range(value, 3)
-          {:ok, {value, bucket}}
-
-        _ ->
-          {:ok, {0.0, "Not enough data"}}
+        {:error, reason} ->
+          {:error, "proficiency provider unavailable: #{inspect(reason)}"}
       end
     end
   end
+
+  defp estimate_result(nil), do: {nil, "Not enough data"}
+  defp estimate_result(estimate), do: {estimate.score, label_string(estimate.label)}
+
+  defp aggregate_result(_section, nil), do: {nil, "Not enough data"}
+  defp aggregate_result(_section, %{numeric_score: nil}), do: {nil, "Not enough data"}
+
+  defp aggregate_result(section, %{numeric_score: score}) do
+    {score, Proficiency.label_for_score(section, score)}
+  end
+
+  defp label_string(:low), do: "Low"
+  defp label_string(:medium), do: "Medium"
+  defp label_string(:high), do: "High"
+  defp label_string(_label), do: "Not enough data"
 
   defp format_value(nil), do: "nil"
   defp format_value(value) when is_float(value), do: Float.round(value, 2) |> to_string()

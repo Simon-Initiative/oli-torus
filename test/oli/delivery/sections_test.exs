@@ -3569,7 +3569,7 @@ defmodule Oli.Delivery.SectionsTest do
       assert no_activities_obj.related_activities_count == 0
     end
 
-    test "falls back to revision children when objective section resources do not store hierarchy",
+    test "JIT projection repairs objective hierarchy before depot reads",
          %{
            section: section,
            objectives: %{objective_a: objective_a}
@@ -3584,6 +3584,9 @@ defmodule Oli.Delivery.SectionsTest do
       )
       |> Oli.Repo.update_all(set: [children: []])
 
+      from(s in Oli.Delivery.Sections.Section, where: s.id == ^section.id)
+      |> Oli.Repo.update_all(set: [section_resource_migration_version: 1])
+
       result = Sections.get_objectives_and_subobjectives(section)
 
       top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
@@ -3595,6 +3598,14 @@ defmodule Oli.Delivery.SectionsTest do
       assert sub_a1.objective_resource_id == objective_a.resource_id
       assert sub_a2 != nil
       assert sub_a2.objective_resource_id == objective_a.resource_id
+
+      projected_parent =
+        Oli.Repo.get_by!(SectionResource,
+          section_id: section.id,
+          resource_id: objective_a.resource_id
+        )
+
+      assert projected_parent.children != []
     end
   end
 

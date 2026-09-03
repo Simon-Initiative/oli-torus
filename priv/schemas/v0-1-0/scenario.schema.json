@@ -2372,14 +2372,21 @@
                   "slug": {
                     "type": "string"
                   },
-                  "visibility": {
-                    "type": "string",
-                    "enum": [
-                      "authors",
-                      "selected",
-                      "global"
-                    ]
-                  }
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "authors",
+            "selected",
+            "global"
+          ]
+        },
+        "learning_model_version": {
+          "type": "string",
+          "enum": [
+            "naive",
+            "lkt_aoa"
+          ]
+        }
                 }
               }
             }
@@ -2454,10 +2461,10 @@
                   "open_and_free": {
                     "$ref": "#/definitions/booleanLike"
                   },
-                  "requires_enrollment": {
-                    "$ref": "#/definitions/booleanLike"
-                  },
-                  "assistant_enabled": {
+            "requires_enrollment": {
+              "$ref": "#/definitions/booleanLike"
+            },
+            "assistant_enabled": {
                     "$ref": "#/definitions/booleanLike"
                   },
                   "assistant_service_config": {

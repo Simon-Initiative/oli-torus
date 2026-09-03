@@ -133,11 +133,11 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
   defp maybe_proficiency(_section, _objective_ids, _user, false, _opts), do: %{}
   defp maybe_proficiency(_section, _objective_ids, nil, true, _opts), do: %{}
 
-  defp maybe_proficiency(%Section{id: section_id}, objective_ids, %User{id: user_id}, true, opts) do
+  defp maybe_proficiency(%Section{} = section, objective_ids, %User{id: user_id}, true, opts) do
     proficiency_fun =
       Keyword.get(opts, :proficiency_fun, &Metrics.proficiency_per_student_for_objective/3)
 
-    proficiency_fun.(section_id, objective_ids, student_id: user_id)
+    proficiency_fun.(section, objective_ids, student_id: user_id)
     |> Enum.into(%{}, fn {objective_id, proficiency_by_user_id} ->
       {objective_id, Map.get(proficiency_by_user_id, user_id)}
     end)

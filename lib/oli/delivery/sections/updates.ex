@@ -82,7 +82,7 @@ defmodule Oli.Delivery.Sections.Updates do
       {:ok, _} ->
         Oli.Delivery.Sections.SectionCache.clear(section.slug)
 
-        Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.DepotCoordinator.clear_synchronously(
           Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
           section_id
         )
