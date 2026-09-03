@@ -308,8 +308,14 @@ defmodule Oli.Rendering.Content.LearningObjectives do
     end
   end
 
-  defp summary_next_steps_content(_section_kind, _context, _config_row, _resources_by_id, _objective),
-    do: []
+  defp summary_next_steps_content(
+         _section_kind,
+         _context,
+         _config_row,
+         _resources_by_id,
+         _objective
+       ),
+       do: []
 
   defp maybe_dot_explain_card(%Context{assistant_available?: true} = context, objective) do
     [
