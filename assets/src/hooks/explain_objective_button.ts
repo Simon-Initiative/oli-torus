@@ -4,6 +4,7 @@ export const ExplainObjectiveButton = {
   mounted() {
     let disabled = false;
     let delay = 5000;
+    const MAX_DELAY = 60_000;
 
     this.el.addEventListener('click', () => {
       if (disabled) return;
@@ -16,11 +17,13 @@ export const ExplainObjectiveButton = {
 
       disabled = true;
       this.el.setAttribute('disabled', '');
-      setTimeout(() => {
+      const el = this.el;
+      let cooldownTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
         disabled = false;
-        this.el.removeAttribute('disabled');
+        el.removeAttribute('disabled');
+        cooldownTimer = null;
       }, delay);
-      delay = delay * 2;
+      delay = Math.min(delay * 2, MAX_DELAY);
 
       Trigger.invoke(sectionSlug, {
         trigger_type: 'explain_objective',
@@ -28,6 +31,11 @@ export const ExplainObjectiveButton = {
         data: { objective_title: objectiveTitle },
         prompt:
           'Explain this learning objective to the student in a clear and helpful way. Help them understand what concepts they need to master, why this objective matters, and provide examples where appropriate.',
+      }).catch(() => {
+        if (cooldownTimer !== null) clearTimeout(cooldownTimer);
+        disabled = false;
+        el.removeAttribute('disabled');
+        delay = 5000;
       });
     });
   },

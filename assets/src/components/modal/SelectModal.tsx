@@ -22,6 +22,7 @@ interface SelectModalProps<T extends Option> {
   searchable?: boolean;
   searchPlaceholder?: string;
   searchAriaLabel?: string;
+  clearAriaLabel?: string;
   emptySearchMessage?: string;
 }
 
@@ -39,6 +40,7 @@ export const SelectModal = function <T extends Option>({
   searchable = false,
   searchPlaceholder = 'Search',
   searchAriaLabel = 'Search options',
+  clearAriaLabel = 'Clear selection',
   emptySearchMessage = 'No options match your search.',
 }: SelectModalProps<T>) {
   const modal = useRef<HTMLDivElement>(null);
@@ -286,7 +288,7 @@ export const SelectModal = function <T extends Option>({
             <button
               type="button"
               className="btn btn-link px-3 py-0 text-Text-text-low-alpha"
-              aria-label="Clear selected page"
+              aria-label={clearAriaLabel}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
                 setSelectedOption(Maybe.nothing());

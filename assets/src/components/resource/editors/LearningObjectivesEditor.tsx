@@ -241,6 +241,7 @@ export const LearningObjectivesEditor = ({
           searchable
           searchPlaceholder="Search pages"
           searchAriaLabel="Search pages"
+          clearAriaLabel="Clear selected page"
           emptySearchMessage="No pages match your search."
           onFetchOptions={() =>
             // Keep new recommendation selections scoped to hierarchy pages. The broader
