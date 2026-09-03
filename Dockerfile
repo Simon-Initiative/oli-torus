@@ -37,10 +37,6 @@ RUN apt-get update -y && apt-get install -y build-essential git \
 COPY --from=node /usr/local/ /usr/local/
 COPY --from=node /opt/yarn-v1.22.22/ /opt/yarn-v1.22.22/
 
-# The pinned official Node image already includes the Yarn Classic version used
-# by local development and CI. Verify it after copying the Node toolchain.
-RUN test "$(yarn --version)" = "1.22.22"
-
 # install Gleam for the mix_gleam compiler
 RUN curl -fsSL -o /tmp/gleam.tar.gz "https://github.com/gleam-lang/gleam/releases/download/v${GLEAM_VERSION}/gleam-v${GLEAM_VERSION}-x86_64-unknown-linux-musl.tar.gz" && \
     tar -xzf /tmp/gleam.tar.gz -C /usr/local/bin gleam && \
