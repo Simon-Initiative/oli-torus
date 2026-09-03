@@ -1289,7 +1289,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   defp preserve_course_content_param(params, socket) do
     case Map.pop(params, "clear_course_content") do
-      {true, params} ->
+      {clear, params} when clear in [true, "true"] ->
         Map.delete(params, "course_content")
 
       {_clear, params} ->

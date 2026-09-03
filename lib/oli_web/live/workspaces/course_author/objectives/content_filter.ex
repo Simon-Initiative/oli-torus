@@ -15,6 +15,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
       assigns
       |> assign(:nodes_by_id, Map.new(assigns.nodes, &{&1.resource_id, &1}))
       |> assign(:root_nodes, Enum.filter(assigns.nodes, &(&1.parent_ids == [])))
+      |> assign(:selected_ids, MapSet.new(assigns.selected_ids))
 
     ~H"""
     <div class="relative" id="course-content-filter">
@@ -89,6 +90,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
               nodes_by_id={@nodes_by_id}
               selected_ids={@selected_ids}
               visited_ids={MapSet.new()}
+              path={[node.resource_id]}
             />
           <% end %>
           <p :if={@root_nodes == []} class="py-4 text-sm text-Text-text-medium">
@@ -105,6 +107,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
   attr :nodes_by_id, :map, required: true
   attr :selected_ids, :any, required: true
   attr :visited_ids, :any, required: true
+  attr :path, :list, required: true
 
   def render_node(assigns) do
     children =
@@ -113,8 +116,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
       |> Enum.map(&Map.get(assigns.nodes_by_id, &1))
       |> Enum.reject(&is_nil/1)
 
-    selected_ids = MapSet.new(assigns.selected_ids, &to_string/1)
-    selected = MapSet.member?(selected_ids, to_string(assigns.node.resource_id))
+    selected = MapSet.member?(assigns.selected_ids, assigns.node.resource_id)
     expandable? = children != []
     type = ResourceType.get_type_by_id(assigns.node.resource_type_id)
     visited_ids = MapSet.put(assigns.visited_ids, assigns.node.resource_id)
@@ -125,12 +127,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
         selected: selected,
         expandable?: expandable?,
         type: type,
-        visited_ids: visited_ids
+        visited_ids: visited_ids,
+        dom_id: Enum.join(assigns.path, "-")
       )
 
     ~H"""
     <details
-      id={"course-content-node-#{@node.resource_id}"}
+      id={"course-content-node-#{@dom_id}"}
       role="treeitem"
       open={@level == 0}
       aria-level={@level + 1}
@@ -150,7 +153,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
           />
         </span>
         <input
-          id={"course-content-checkbox-#{@node.resource_id}"}
+          id={"course-content-checkbox-#{@dom_id}"}
           type="checkbox"
           checked={if @selected, do: "checked", else: nil}
           aria-checked={to_string(@selected)}
@@ -175,6 +178,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
             nodes_by_id={@nodes_by_id}
             selected_ids={@selected_ids}
             visited_ids={@visited_ids}
+            path={@path ++ [child.resource_id]}
           />
         <% end %>
       </div>
