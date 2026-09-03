@@ -68,6 +68,25 @@ defmodule Oli.CourseTest do
       assert returned_project.title == "some updated title"
     end
 
+    test "update_project/2 persists coverage thresholds in project attributes", %{
+      project: project
+    } do
+      assert {:ok, %Project{} = updated_project} =
+               Course.update_project(project, %{
+                 attributes: %{
+                   coverage_formative_threshold: 4,
+                   coverage_summative_threshold: 2
+                 }
+               })
+
+      assert updated_project.attributes.coverage_formative_threshold == 4
+      assert updated_project.attributes.coverage_summative_threshold == 2
+
+      persisted_project = Course.get_project!(project.id)
+      assert persisted_project.attributes.coverage_formative_threshold == 4
+      assert persisted_project.attributes.coverage_summative_threshold == 2
+    end
+
     test "update_project/2 with invalid data returns error changeset", %{project: project} do
       assert {:error, %Ecto.Changeset{}} = Course.update_project(project, @invalid_attrs)
 

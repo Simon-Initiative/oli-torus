@@ -10,13 +10,22 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
     field :learning_language, :string
     embeds_one :license, ProjectAttributes.License
     field :calculate_embeddings_on_publish, :boolean, default: false
+    field :coverage_formative_threshold, :integer, default: 3
+    field :coverage_summative_threshold, :integer, default: 3
   end
 
   @type module_struct_or_changeset_type :: %ProjectAttributes{} | %Ecto.Changeset{}
   @spec changeset(module_struct_or_changeset_type, map) :: %Ecto.Changeset{}
   def changeset(item, attrs \\ %{}) do
     item
-    |> cast(attrs, [:learning_language, :calculate_embeddings_on_publish])
+    |> cast(attrs, [
+      :learning_language,
+      :calculate_embeddings_on_publish,
+      :coverage_formative_threshold,
+      :coverage_summative_threshold
+    ])
+    |> validate_number(:coverage_formative_threshold, greater_than_or_equal_to: 0)
+    |> validate_number(:coverage_summative_threshold, greater_than_or_equal_to: 0)
     |> cast_embed(:license, required: false)
   end
 end
