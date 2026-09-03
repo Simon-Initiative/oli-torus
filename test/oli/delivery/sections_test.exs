@@ -3715,8 +3715,7 @@ defmodule Oli.Delivery.SectionsTest do
 
       assert Oli.Repo.exists?(
                from(sr in SectionResource,
-                 where:
-                   sr.section_id == ^section.id and sr.resource_id == ^deleted_objective_id
+                 where: sr.section_id == ^section.id and sr.resource_id == ^deleted_objective_id
                )
              ),
              "expected the deleted objective to still have a section resource"
