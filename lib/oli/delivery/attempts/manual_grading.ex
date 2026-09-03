@@ -1,8 +1,6 @@
 defmodule Oli.Delivery.Attempts.ManualGrading do
   import Ecto.Query, warn: false
 
-  require Logger
-
   @moduledoc """
   Manual activity grading.
   """
@@ -18,7 +16,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
-  alias Oli.Delivery.Experiments
+  alias Oli.Delivery.Experiments.RewardHandoff
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -459,7 +457,10 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
          resource_access_id: resource_access_id,
          was_late: was_late
        }} ->
-        enqueue_reward(resource_attempt_id, section.id)
+        case RewardHandoff.record_if_active_thompson(resource_attempt_id, section.id) do
+          :ok -> :ok
+          {:error, reason} -> Repo.rollback({:reward_processing_failed, reason})
+        end
 
         resource_access = Oli.Repo.get(ResourceAccess, resource_access_id)
 
@@ -496,13 +497,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   defp maybe_initiate_grade_passback(other, _) do
     other
-  end
-
-  defp enqueue_reward(resource_attempt_id, section_id) do
-    case Experiments.RewardHandoffWorker.maybe_enqueue(resource_attempt_id, section_id) do
-      :ok -> :ok
-      {:error, reason} -> Repo.rollback({:reward_handoff_enqueue_failed, reason})
-    end
   end
 
   defp wrap_in_paragraphs(text) do

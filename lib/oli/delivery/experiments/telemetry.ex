@@ -2,20 +2,19 @@ defmodule Oli.Delivery.Experiments.Telemetry do
   @moduledoc """
   Maps reward-handoff telemetry to low-cardinality AppSignal metrics.
 
-  These metrics make the deferred batch eligibility optimization observable without tagging user,
-  section, experiment, or attempt identifiers. Compare eligibility assignment-query volume with
-  reward batch size and duration to determine whether query amplification warrants optimization.
+  These metrics make reward outcomes, failures, and the deferred batch eligibility optimization
+  observable without tagging user, section, experiment, or attempt identifiers.
   """
 
   use Supervisor
 
   @batch_completed_event [:oli, :experiments, :delivery_reward, :batch, :completed]
   @eligibility_completed_event [:oli, :experiments, :delivery_reward, :eligibility, :completed]
-  @evidence_dispatch_event [:oli, :experiments, :delivery_reward, :evidence_dispatch, :completed]
   @reward_events [
     [:oli, :experiments, :delivery_reward, :accepted],
     [:oli, :experiments, :delivery_reward, :duplicate],
-    [:oli, :experiments, :delivery_reward, :skipped]
+    [:oli, :experiments, :delivery_reward, :skipped],
+    [:oli, :experiments, :delivery_reward, :failed]
   ]
 
   @doc "Starts the telemetry supervisor and attaches the AppSignal handler."
@@ -88,23 +87,6 @@ defmodule Oli.Delivery.Experiments.Telemetry do
     )
   end
 
-  def handle_event(@evidence_dispatch_event, measurements, metadata, _config) do
-    tags = %{status: classify_status(metadata[:status])}
-
-    add_distribution(
-      "oli.experiments.reward_handoff.evidence_dispatch.duration_ms",
-      measurements,
-      :duration_ms,
-      tags
-    )
-
-    Appsignal.increment_counter(
-      "oli.experiments.reward_handoff.evidence_dispatch.completed",
-      1,
-      tags
-    )
-  end
-
   def handle_event(
         [:oli, :experiments, :delivery_reward, outcome],
         _measurements,
@@ -118,6 +100,19 @@ defmodule Oli.Delivery.Experiments.Telemetry do
     }
 
     Appsignal.increment_counter("oli.experiments.reward_handoff.outcome", 1, tags)
+  end
+
+  def handle_event(
+        [:oli, :experiments, :delivery_reward, :failed],
+        measurements,
+        metadata,
+        _config
+      ) do
+    Appsignal.increment_counter(
+      "oli.experiments.reward_handoff.failure",
+      Map.get(measurements, :count, 1),
+      %{reason: classify_failure_reason(metadata[:reason])}
+    )
   end
 
   def handle_event(_, _, _, _), do: :ok
@@ -146,11 +141,25 @@ defmodule Oli.Delivery.Experiments.Telemetry do
   defp classify_reason({:invalid_lifecycle_state, _state}), do: "invalid_lifecycle_state"
   defp classify_reason(_reason), do: "none"
 
+  defp classify_failure_reason(reason)
+       when reason in [
+              :database_error,
+              :database_timeout,
+              :deadlock,
+              :invalid_reward,
+              :lock_timeout,
+              :missing_policy_state,
+              :policy_update_error,
+              :unexpected_exception
+            ],
+       do: Atom.to_string(reason)
+
+  defp classify_failure_reason(_reason), do: "unknown"
+
   defp attach_appsignal_handler do
     case :telemetry.attach_many(
            "experiment-reward-appsignal-handler",
-           [@batch_completed_event, @eligibility_completed_event, @evidence_dispatch_event] ++
-             @reward_events,
+           [@batch_completed_event, @eligibility_completed_event] ++ @reward_events,
            &__MODULE__.handle_event/4,
            %{}
          ) do

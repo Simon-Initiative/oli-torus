@@ -4,7 +4,6 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.WorkerTest do
 
   alias Oli.Delivery.Attempts.AutoSubmit.Worker
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
-  alias Oli.Delivery.Experiments.RewardHandoffWorker
   alias Oli.Delivery.Settings.Combined
   alias Oli.Activities.Model.Part
   alias Oli.Experiments.Schemas.{AcceptedReward, PolicyState}
@@ -57,7 +56,7 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.WorkerTest do
     end
 
     @tag capture_log: true
-    test "enqueues and applies the reward after an evaluated auto-submit", %{
+    test "applies the reward in the evaluated auto-submit transaction", %{
       section: section,
       attempt1: attempt,
       reward_context: reward_context
@@ -71,16 +70,6 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.WorkerTest do
 
       resource_attempt = Oli.Repo.reload!(attempt)
       assert resource_attempt.lifecycle_state == :evaluated
-
-      assert_enqueued(
-        worker: RewardHandoffWorker,
-        args: %{"resource_attempt_id" => resource_attempt.id}
-      )
-
-      assert :ok =
-               perform_job(RewardHandoffWorker, %{
-                 "resource_attempt_id" => resource_attempt.id
-               })
 
       assert Oli.Repo.aggregate(AcceptedReward, :count) == 1
 

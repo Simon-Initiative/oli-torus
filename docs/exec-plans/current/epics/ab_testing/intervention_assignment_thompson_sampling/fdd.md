@@ -4,7 +4,7 @@
 
 Extend the existing `Oli.Experiments` subsystem rather than introducing a second experiment runtime. The design separates experiment-owned treatment/policy state, placed intervention instances, per-intervention assignments, and scored-page assessment bindings. A learner assignment becomes sticky on `(section enrollment, experiment, intervention)` while all accepted rewards for the experiment's interventions update its shared PostgreSQL posterior.
 
-Authoring continues to store reusable Alternatives Groups as versioned resources and placement-local content in page revisions. Group strategy is the sole selection authority. New experiment-controlled groups use `experiment_controlled`; `upgrade_decision_point` is normalized only at read and ingest boundaries. Delivery performs one bounded active-experiment relevance check before resolving bindings, creates assignments transactionally, renders the persisted alternative, and emits detailed evidence asynchronously. Finalized scored-page attempts enqueue an Oban handoff that claims one reward and updates one policy snapshot atomically.
+Authoring continues to store reusable Alternatives Groups as versioned resources and placement-local content in page revisions. Group strategy is the sole selection authority. New experiment-controlled groups use `experiment_controlled`; `upgrade_decision_point` is normalized only at read and ingest boundaries. Delivery performs one bounded active-experiment relevance check before resolving bindings, creates assignments transactionally, renders the persisted alternative, and emits detailed evidence asynchronously. Finalized scored-page attempts in participating Thompson Sampling sections claim one reward and update one policy snapshot atomically in the learner-attempt transaction.
 
 This design requires replacing the pre-release decision-point and mapping storage with experiment, condition, intervention, assignment, and policy-state storage, plus an ordinary ClickHouse migration where evidence dimensions change. Existing Alternatives content requires no backfill or forced republication, while QA-only experiment operational and analytical rows may be discarded.
 
@@ -42,7 +42,7 @@ This design requires replacing the pre-release decision-point and mapping storag
   - Experiment persistence is singular: the definition owns its Alternatives Group, conditions, interventions, assignments, and one JSON policy state; the obsolete decision-point schemas have been removed.
   - `Oli.Resources.Alternatives` resolves strategy from the loaded Alternatives Group, while `ExperimentControlledStrategy` prepares delivery decisions and evidence.
   - `Oli.Delivery.Experiments.PageDecisions` discovers placement group references from attempt-pinned page content and loads group revisions through `DeliveryResolver`.
-  - `RewardHandoffWorker` already provides asynchronous post-commit processing, but `RewardHandoff` currently derives full-credit rewards from activity attempts rather than finalized scored-page attempts.
+  - The normal asynchronous snapshot path is the authoritative page-attempt analytics path. Reward processing derives its input from finalized scored-page attempts and enriches that one snapshot statement rather than dispatching a second page-attempt statement.
   - `ExperimentsLive`, `ExperimentDetailsLive`, and `AlternativesLive` own the current authoring UI. Group management logic is duplicated and currently writes `upgrade_decision_point` on the Experiments page.
   - `Oli.Interop.Export` and `Oli.Interop.Ingest.Processor` already serialize Alternatives resources and rewire page references.
   - `priv/schemas/v0-1-0/content-alternatives.schema.json` currently requires element-level `strategy` and does not require `alternatives_id`, contrary to the target contract.
@@ -69,8 +69,10 @@ Web and delivery modules remain adapters:
 - `ExperimentsLive` composes experiment listing/configuration with a shared group-management component configured for `:experiment_controlled`. The shared component is extracted from the current Experiments `Decision Points` Alternatives Groups editor, whose more polished presentation and interaction model is the UX baseline.
 - `AlternativesLive` adopts that Experiments-derived component configured for `:user_section_preference`, replacing its less-polished group editor while retaining its route, Learner Choice filtering, labels, and permissions.
 - `PageDecisions` performs the relevance gate, classifies Alternatives with one content-tree traversal, derives `(page_resource_id, element_id)` for valid placements, and calls one page-level assignment API for experiment-controlled groups.
-- `RewardHandoffWorker` jobs are persisted in the same transaction that evaluates a scored resource attempt and execute only after that transaction commits; enqueue failure rolls back evaluation so finalization remains retryable.
-- xAPI/ClickHouse adapters emit evidence after the PostgreSQL transaction; retryable evidence delivery does not change accepted reward state.
+- The learner-attempt completion paths perform one lightweight section-level check for an active Thompson Sampling experiment. A negative result bypasses reward processing; a positive result processes the eligible reward in the same transaction that evaluates the resource attempt.
+- Reward-processing failure rolls back the learner submission transaction. Lock contention and reward latency are isolated to participating Thompson Sampling sections and monitored through bounded telemetry and AppSignal transaction traces.
+- The snapshot worker remains analytics-only. It reads the committed accepted reward while constructing the authoritative page-attempt statement and does not mutate experiment state.
+- xAPI/ClickHouse adapters project the reward attribution from the authoritative snapshot statement, including the assessment page revision required by the ClickHouse contract.
 
 ### 4.2 State & Data Flow
 
@@ -127,7 +129,7 @@ Reporting flow:
 - Keep weighted-random interventions exclusively author-configured: rejected because weighted random has no assessment binding and manual registration becomes stale when placements are added, copied, moved, or removed.
 - Derive interventions without ever persisting identity: rejected because assignments, evidence, concurrency constraints, and deletion checks benefit from typed foreign keys. Weighted-random delivery instead lazily materializes the durable row; Thompson Sampling retains explicit configuration because its assessment binding must exist before activation.
 - Store posteriors only as reward history and recalculate: rejected because assignment and reporting must be bounded and independent of analytical stores.
-- Synchronously update rewards during submission: rejected because scoring latency and failures must not block assessment completion.
+- Couple reward mutation to asynchronous snapshot processing: rejected because Thompson Sampling policy state is core experiment state, while snapshots are an analytics boundary. Reward mutation belongs in the learner-attempt transaction so success means both the evaluated attempt and its policy update committed.
 - Migrate legacy page JSON and group revisions: rejected because immutable publications and existing attempts must continue to function without backfill or republication.
 
 ## 5. Interfaces
@@ -166,7 +168,7 @@ Content storage:
 
 Analytics storage:
 
-- Add intervention ID/key, assessment binding ID, assessment page resource ID, resource attempt ID, disposition, threshold, normalized score, publication ID, page revision ID, and before/after policy context to the existing xAPI attribution evidence. Project the typed identity, disposition, score, and revision fields into ClickHouse, but retain before/after policy context only in xAPI JSON until a concrete OLAP query requirement is established. Assignment creation evidence records the initial delivered snapshot, and exposure evidence records the snapshot for each rendered revisit without changing the sticky assignment.
+- Add intervention ID/key, assessment binding ID, assessment page resource ID, resource attempt ID, disposition, threshold, normalized score, publication ID, and page revision ID to the existing xAPI attribution evidence. Project those typed identity, disposition, score, and revision fields into ClickHouse. Before/after policy context remains outside the analytics contract until a concrete OLAP query requirement is established. Assignment creation evidence records the initial delivered snapshot, and exposure evidence records the snapshot for each rendered revisit without changing the sticky assignment.
 - Preserve event-only publication and page-revision context in the existing compact runtime event/outbox state only as needed for reliable retry, then rely on xAPI/ClickHouse as the durable detailed evidence store; do not promote these values to permanent assignment columns.
 - ClickHouse migration and rollback preserve existing rows and make new fields nullable/defaulted for old evidence.
 
@@ -192,7 +194,7 @@ Analytics storage:
 - Assignment cost is proportional to the number of experiment conditions, never reward history or total experiment history.
 - Reward lookup is indexed by assessment page, section/enrollment, and ordered resource attempt identity. Posterior update touches one claim row and one policy-state row.
 - Reporting groups assignment counts in SQL and reads one policy row per experiment. It does not calculate next-assignment probabilities.
-- Emit duration telemetry for relevance, binding resolution, sampling/insert, reward queue delay, reward transaction, and snapshot load. No new numeric latency SLO is asserted because `harness.yml` defaults performance requirements to exclude, but regressions must be visible in AppSignal.
+- Emit duration telemetry for relevance, binding resolution, sampling/insert, reward transaction, and snapshot load. No new numeric latency SLO is asserted because `harness.yml` defaults performance requirements to exclude, but regressions and policy-lock contention must be visible in AppSignal.
 
 ## 10. Failure Modes & Resilience
 
@@ -231,7 +233,7 @@ Analytics storage:
 - AC-035 is verified by PostgreSQL and ClickHouse migration tests that remove all physical decision-point storage, assert the final singular constraints and indexes, and restore the prior schema shape on rollback without requiring QA experiment-row preservation.
 - Context/schema ExUnit tests cover FR-001 through FR-004, FR-017 through FR-020, lifecycle locks, authorization, project compatibility, bijective mappings, current-binding exclusivity, sequential reuse, and explicit deletion reconciliation.
 - Policy/runtime ExUnit tests cover FR-007 through FR-010 and FR-027: independent intervention assignments, sticky revisits, deterministic random seams, one-snapshot Thompson draws, weighted random without rewards, races, negative relevance query budgets, and batched positive paths.
-- Reward/Oban tests cover FR-011 through FR-016: threshold edges, normalized page score use, attempt ordering/pending blockers, missing assignments, concurrency, replay, transaction rollback, post-commit enqueue, and delayed influence.
+- Reward and learner-attempt tests cover FR-011 through FR-016: threshold edges, normalized page score use, attempt ordering/pending blockers, missing assignments, concurrency, replay, transaction rollback, synchronous failure propagation, and committed influence on later assignments.
 - Rendering/progress/completion tests cover FR-005, FR-006, FR-019, FR-021, and FR-022 with differing local content, reorder/move/copy/duplicate/reinsert identity behavior, inert accessible previews, fallback, and hidden activity exclusion. Tests must create multiple interventions whose alternatives contain different numbers of required activities, assign learners to different combinations, and prove for each learner that: only displayed descendants enter the progress/completion numerator and denominator; every hidden sibling is excluded; completing all displayed requirements yields exactly 100%; incomplete displayed requirements yield the expected percentage; revisits preserve the denominator through sticky assignments; and shared content plus the bound assessment follows ordinary completion behavior without duplication.
 - Add a workflow-level `Oli.Scenarios` assertion for two learners assigned to different alternatives across repeated interventions, verifying that both independently reach 100% after completing only their respective visible activities and the shared assessment. If scenario directives cannot inspect learner-visible completion inputs and final percentage, extend the scenario infrastructure before authoring this case.
 - LiveView/component tests cover FR-028, FR-029, and FR-032: both routes render the shared Experiments-derived group editor with consistent polished interactions; each surface retains its own labels, strategy filter, creation behavior, and permissions; neither exposes a selector or inline content editing; and experiment configuration covers the singular group/policy scope, validation, read-only lifecycle, posterior labels/counts/modes/warnings, refresh, and draft/weighted-random omission.

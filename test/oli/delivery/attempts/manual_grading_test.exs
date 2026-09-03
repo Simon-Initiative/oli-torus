@@ -7,7 +7,6 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Activities.Model.{Part}
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Experiments.RewardHandoffWorker
   alias Oli.Experiments.Schemas.{AcceptedReward, PolicyState}
   alias Oli.Test.ExperimentRewardSetup
 
@@ -457,17 +456,51 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       ra = Oli.Delivery.Attempts.Core.get_resource_attempt_by(id: aa.resource_attempt_id)
       assert ra.lifecycle_state == :evaluated
 
-      assert_enqueued(
-        worker: RewardHandoffWorker,
-        args: %{"resource_attempt_id" => ra.id}
-      )
-
-      assert :ok = perform_job(RewardHandoffWorker, %{"resource_attempt_id" => ra.id})
       assert Oli.Repo.aggregate(AcceptedReward, :count) == 1
 
       policy_state = Oli.Repo.get!(PolicyState, reward_context.policy_state.id)
       assert policy_state.state["condition-a"]["posterior_alpha"] == 2.0
       assert policy_state.state["condition-a"]["posterior_beta"] == 1.0
+    end
+
+    @tag capture_log: true
+    test "rolls back manual scoring when synchronous reward processing fails", %{
+      section: section,
+      attempt_1a: attempt_1a,
+      reward_context: reward_context
+    } do
+      attempt =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+        |> Enum.find(fn attempt -> attempt.id == attempt_1a.id end)
+
+      invalid_state =
+        put_in(reward_context.policy_state.state, ["condition-a", "successes"], -1)
+
+      reward_context.policy_state
+      |> PolicyState.changeset(%{state: invalid_state})
+      |> Repo.update!()
+
+      assert_raise MatchError, fn ->
+        ManualGrading.apply_manual_scoring(
+          section,
+          attempt,
+          create_score_feedbacks(attempt)
+        )
+      end
+
+      assert Core.get_activity_attempt_by(id: attempt_1a.id).lifecycle_state == :submitted
+      assert Repo.aggregate(AcceptedReward, :count) == 0
     end
 
     test "preserves file upload responses during manual scoring", %{

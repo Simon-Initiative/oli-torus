@@ -1,6 +1,6 @@
 defmodule Oli.Analytics.XAPI.StatementFactory do
   alias Oli.Analytics.Summary.AttemptGroup
-  alias Oli.Delivery.Experiments.AttemptAttributions
+  alias Oli.Delivery.Experiments.{AssessmentRewardAttributions, AttemptAttributions}
   alias Oli.Experiments.XAPI.Attributions
 
   alias Oli.Analytics.XAPI.Events.Attempt.{
@@ -35,9 +35,13 @@ defmodule Oli.Analytics.XAPI.StatementFactory do
 
     case resource_attempt.lifecycle_state do
       :evaluated ->
+        page_attributions =
+          Map.get(attributions, :page_attempt, []) ++
+            AssessmentRewardAttributions.for_resource_attempt(resource_attempt.id, context)
+
         [
           PageAttemptEvaluated.new(context, resource_attempt)
-          |> Attributions.attach_attributions(Map.get(attributions, :page_attempt, []))
+          |> Attributions.attach_attributions(page_attributions)
           | parts_and_activities
         ]
 

@@ -8,13 +8,14 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
 
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections.Section
 
   alias Oli.Repo
 
   alias Oli.Experiments.Policies.ThompsonSampling
-  alias Oli.Delivery.Experiments.EvidenceDispatchWorker
 
   alias Oli.Experiments.Schemas.{
     AcceptedReward,
@@ -50,36 +51,52 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
   def record_evaluated_resource_attempt(_resource_attempt_id),
     do: {:error, :invalid_resource_attempt}
 
-  @doc "Returns whether an evaluated resource attempt has an active Thompson assessment binding."
-  @spec relevant_resource_attempt?(integer(), integer()) :: boolean()
-  def relevant_resource_attempt?(resource_attempt_id, section_id)
+  @doc "Processes an evaluated attempt only when its section has an active Thompson experiment."
+  @spec record_if_active_thompson(integer(), integer()) :: :ok | {:error, term()}
+  def record_if_active_thompson(resource_attempt_id, section_id)
       when is_integer(resource_attempt_id) and is_integer(section_id) do
-    from(resource_attempt in ResourceAttempt,
-      join: resource_access in ResourceAccess,
-      on:
-        resource_access.id == resource_attempt.resource_access_id and
-          resource_access.section_id == ^section_id,
-      join: section in Section,
-      on: section.id == resource_access.section_id,
-      join: binding in AssessmentBinding,
-      on: binding.assessment_page_resource_id == resource_access.resource_id,
-      join: intervention in Intervention,
-      on: intervention.id == binding.intervention_id,
+    try do
+      case active_thompson_section?(section_id) do
+        true ->
+          case record_evaluated_resource_attempt(resource_attempt_id) do
+            :ok ->
+              :ok
+
+            {:error, reason} = error ->
+              report_failure(reason, resource_attempt_id, section_id)
+              error
+          end
+
+        false ->
+          :ok
+      end
+    rescue
+      exception ->
+        report_failure(exception, resource_attempt_id, section_id)
+        reraise exception, __STACKTRACE__
+    end
+  end
+
+  def record_if_active_thompson(_resource_attempt_id, _section_id),
+    do: {:error, :invalid_resource_attempt}
+
+  @doc "Returns whether a section participates in an active Thompson Sampling experiment."
+  @spec active_thompson_section?(integer()) :: boolean()
+  def active_thompson_section?(section_id) when is_integer(section_id) do
+    from(experiment_section in ExperimentSection,
       join: experiment in ExperimentDefinition,
-      on:
-        experiment.id == intervention.experiment_id and
-          experiment.algorithm == :thompson_sampling and experiment.state == :active and
-          experiment.project_id == section.base_project_id,
-      join: experiment_section in ExperimentSection,
-      on:
-        experiment_section.experiment_id == experiment.id and
-          experiment_section.section_id == resource_access.section_id,
-      where: resource_attempt.id == ^resource_attempt_id
+      on: experiment.id == experiment_section.experiment_id,
+      join: section in Section,
+      on: section.id == experiment_section.section_id,
+      where:
+        experiment_section.section_id == ^section_id and
+          experiment.project_id == section.base_project_id and
+          experiment.state == :active and experiment.algorithm == :thompson_sampling
     )
     |> Repo.exists?()
   end
 
-  def relevant_resource_attempt?(_resource_attempt_id, _section_id), do: false
+  def active_thompson_section?(_section_id), do: false
 
   defp load_resource_attempt_context(resource_attempt_id) do
     from(resource_attempt in ResourceAttempt,
@@ -237,7 +254,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
                 assignment,
                 binding_context.condition,
                 binding_context.experiment_id,
-                binding_context.project_id,
                 context.enrollment_id,
                 resource_attempt,
                 normalized_score
@@ -252,7 +268,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
          assignment,
          condition,
          experiment_id,
-         project_id,
          enrollment_id,
          resource_attempt,
          normalized_score
@@ -312,21 +327,6 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
         })
         |> Repo.update!()
 
-        publication_id = current_publication_id(assignment.section_id, project_id)
-
-        :ok =
-          EvidenceDispatchWorker.enqueue(%{
-            accepted_reward_id: accepted_reward.id,
-            disposition: "accepted",
-            project_id: project_id,
-            publication_id: publication_id,
-            page_revision_id: resource_attempt.revision_id,
-            reward_threshold: binding.reward_threshold,
-            previous_policy_context:
-              condition_context(policy_state.state, condition.condition_code),
-            next_policy_context: condition_context(update.next_state, condition.condition_code)
-          })
-
         {:accepted, accepted_reward}
     end
   end
@@ -355,19 +355,42 @@ defmodule Oli.Delivery.Experiments.RewardHandoff do
     )
   end
 
-  defp condition_context(state, condition_code) do
-    state
-    |> Map.get(condition_code, %{})
-    |> Map.take(["posterior_alpha", "posterior_beta"])
-  end
+  defp report_failure(reason, resource_attempt_id, section_id) do
+    failure_reason = classify_failure(reason)
 
-  defp current_publication_id(section_id, project_id) do
-    Repo.one!(
-      from(deployment in Oli.Delivery.Sections.SectionsProjectsPublications,
-        where: deployment.section_id == ^section_id and deployment.project_id == ^project_id,
-        select: deployment.publication_id,
-        limit: 1
-      )
+    :telemetry.execute(
+      [:oli, :experiments, :delivery_reward, :failed],
+      %{count: 1},
+      %{reason: failure_reason}
+    )
+
+    Logger.error("Thompson reward processing failed",
+      reward_processing_reason: failure_reason,
+      resource_attempt_id: resource_attempt_id,
+      section_id: section_id,
+      failure: inspect(reason)
     )
   end
+
+  defp classify_failure(%Ecto.NoResultsError{}), do: :missing_policy_state
+  defp classify_failure(%MatchError{term: {:error, :invalid_reward_value}}), do: :invalid_reward
+  defp classify_failure(%MatchError{term: {:error, _reason}}), do: :policy_update_error
+  defp classify_failure(%MatchError{}), do: :unexpected_exception
+  defp classify_failure(%Ecto.ConstraintError{}), do: :database_error
+
+  defp classify_failure(%Postgrex.Error{postgres: %{code: :lock_not_available}}),
+    do: :lock_timeout
+
+  defp classify_failure(%Postgrex.Error{postgres: %{code: :query_canceled, message: message}})
+       when is_binary(message) do
+    case String.contains?(message, "lock timeout") do
+      true -> :lock_timeout
+      false -> :database_timeout
+    end
+  end
+
+  defp classify_failure(%Postgrex.Error{postgres: %{code: :deadlock_detected}}), do: :deadlock
+  defp classify_failure(%Postgrex.Error{}), do: :database_error
+  defp classify_failure(%_{}), do: :unexpected_exception
+  defp classify_failure(_reason), do: :unexpected_exception
 end

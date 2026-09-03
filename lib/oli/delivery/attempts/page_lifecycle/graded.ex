@@ -175,7 +175,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   @decorate transaction_event("Graded.finalize")
   def finalize(%FinalizationContext{
         resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
-        section_id: section_id,
         section_slug: section_slug,
         datashop_session_id: datashop_session_id,
         effective_settings: effective_settings
@@ -184,7 +183,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     with {:ok, part_attempt_guids} <-
            finalize_activity_and_part_attempts(
              resource_attempt,
-             section_id,
              datashop_session_id,
              effective_settings
            ),
@@ -241,7 +239,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   @decorate transaction_event("Graded.finalize_activity_and_part_attempts")
   defp finalize_activity_and_part_attempts(
          resource_attempt,
-         _section_id,
          datashop_session_id,
          effective_settings
        ) do
@@ -257,7 +254,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  datashop_session_id,
                  effective_settings
                ),
-             {:ok, _activity_attempt_ids} <-
+             {:ok, _} <-
                Persistence.bulk_update_activity_attempts(
                  Enum.join(activity_attempt_values, ", "),
                  activity_attempt_params

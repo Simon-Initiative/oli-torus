@@ -5,14 +5,7 @@ defmodule Oli.Delivery.Experiments.TelemetryTest do
 
   @batch_completed_event [:oli, :experiments, :delivery_reward, :batch, :completed]
   @eligibility_completed_event [:oli, :experiments, :delivery_reward, :eligibility, :completed]
-  @evidence_dispatch_event [
-    :oli,
-    :experiments,
-    :delivery_reward,
-    :evidence_dispatch,
-    :completed
-  ]
-
+  @reward_failed_event [:oli, :experiments, :delivery_reward, :failed]
   describe "handle_event/4" do
     test "maps batch measurements to AppSignal metrics" do
       assert :ok =
@@ -44,20 +37,30 @@ defmodule Oli.Delivery.Experiments.TelemetryTest do
       assert :ok = Telemetry.handle_event(@eligibility_completed_event, %{}, %{}, %{})
     end
 
-    test "maps evidence dispatch latency and bounded reward outcomes" do
-      assert :ok =
-               Telemetry.handle_event(
-                 @evidence_dispatch_event,
-                 %{duration_ms: 12},
-                 %{status: :ok},
-                 %{}
-               )
-
+    test "maps bounded reward outcomes" do
       assert :ok =
                Telemetry.handle_event(
                  [:oli, :experiments, :delivery_reward, :skipped],
                  %{count: 1},
                  %{reason: {:invalid_lifecycle_state, :abandoned}, learner_name: "private"},
+                 %{}
+               )
+    end
+
+    test "maps reward failures with bounded reasons" do
+      assert :ok =
+               Telemetry.handle_event(
+                 @reward_failed_event,
+                 %{count: 1},
+                 %{reason: :lock_timeout, private_detail: "not a metric tag"},
+                 %{}
+               )
+
+      assert :ok =
+               Telemetry.handle_event(
+                 @reward_failed_event,
+                 %{},
+                 %{reason: "unbounded failure detail"},
                  %{}
                )
     end
@@ -72,6 +75,9 @@ defmodule Oli.Delivery.Experiments.TelemetryTest do
       handlers = :telemetry.list_handlers(@batch_completed_event)
 
       assert Enum.any?(handlers, &(&1.id == "experiment-reward-appsignal-handler"))
+
+      failure_handlers = :telemetry.list_handlers(@reward_failed_event)
+      assert Enum.any?(failure_handlers, &(&1.id == "experiment-reward-appsignal-handler"))
     end
   end
 end

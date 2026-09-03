@@ -87,10 +87,11 @@ requirements:
     are preserved and retries or duplicate evaluation cannot increment posterior state
     twice.
   id: FR-015
-- title: Keep assessment submission asynchronous
-  description: Assessment submission must not wait for posterior processing, and only
-    committed rewards may influence later first-time assignments without changing
-    assignments already made.
+- title: Commit assessment rewards with submission
+  description: In sections participating in an active Thompson Sampling experiment,
+    assessment submission and posterior processing must commit atomically; reward
+    failure rolls back submission, and committed rewards may influence only later
+    first-time assignments without changing assignments already made.
   id: FR-016
 - title: Enforce lifecycle and structural integrity
   description: Experiment structural configuration must be editable only in draft,
@@ -300,9 +301,10 @@ acceptance_criteria:
     the assigned condition without loss.
   id: AC-015
 - requirement: FR-016
-  description: Assessment submission completes independently of reward processing,
-    a delayed reward affects only assignments created after commit, and sampling does
-    not wait on evaluation or reward locks.
+  description: Tests prove reward failure rolls back assessment submission in participating
+    Thompson Sampling sections, successful attempt and posterior updates commit together,
+    and committed rewards affect only assignments created afterward without changing
+    existing assignments.
   id: AC-016
 - requirement: FR-017
   description: Draft structural edits succeed when valid, leaving draft freezes structural
