@@ -790,35 +790,6 @@ defmodule Oli.Delivery.Metrics do
   defp estimate_label(_estimate), do: "Not enough data"
 
   @doc """
-  Retrieves raw proficiency data for a specific section and set of learning objectives,
-  optionally filtering by a list of objective IDs or a specific student ID.
-
-  This is a naive-model compatibility API whose tuple is coupled to
-  `ResourceSummary` first-attempt counters. Model-aware callers must use
-  `Oli.Delivery.Proficiency`; this function will not acquire an LKT-AOA tuple
-  variant.
-
-  ## Options
-
-    * `:objective_ids` - (optional) a list of objective IDs to filter the data by specific objectives.
-    * `:student_id` - (optional) an ID of a student to filter data by a specific student.
-
-  ## Examples
-
-      iex> raw_proficiency_per_learning_objective(123, objective_ids: [1, 2, 3], student_id: 42)
-      # Query result with raw proficiency data for section 123, filtered by objectives [1, 2, 3] and student ID 42
-
-      iex> raw_proficiency_per_learning_objective(123)
-      # Query result with raw proficiency data for all objectives in section 123
-  """
-  @spec raw_proficiency_per_learning_objective(section_id :: integer, opts :: Keyword.t()) :: %{
-          integer => tuple
-        }
-  def raw_proficiency_per_learning_objective(section_id, opts \\ []) do
-    Naive.raw_proficiency_per_learning_objective(section_id, opts)
-  end
-
-  @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
   for every container of a given section
 
