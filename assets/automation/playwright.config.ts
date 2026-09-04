@@ -21,6 +21,10 @@ export default defineConfig({
   reporter: [['html', { open: 'always' }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    /* An unbounded locator action can silently eat the whole test timeout
+       (a flaky CAPI iframe held getAttribute for 732s, MER-5674); every
+       longer wait in the POs passes its own explicit timeout. */
+    actionTimeout: 15_000,
     ignoreHTTPSErrors: true,
     launchOptions: {
       args: ['--start-maximized', '--ignore-certificate-errors'],
@@ -42,32 +46,32 @@ export default defineConfig({
 
     // {
     //   name: "firefox",
-    //   use: { ...devices["Desktop Firefox"] },
+    //   use: {...devices["Desktop Firefox"] },
     // },
 
     // {
     //   name: "webkit",
-    //   use: { ...devices["Desktop Safari"] },
+    //   use: {...devices["Desktop Safari"] },
     // },
 
     /* Test against mobile viewports. */
     // {
     //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
+    //   use: {...devices['Pixel 5'] },
     // },
     // {
     //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
+    //   use: {...devices['iPhone 12'] },
     // },
 
     /* Test against branded browsers. */
     // {
     //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
+    //   use: {...devices['Desktop Edge'], channel: 'msedge' },
     // },
     // {
     //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    //   use: {...devices['Desktop Chrome'], channel: 'chrome' },
     // },
   ],
 

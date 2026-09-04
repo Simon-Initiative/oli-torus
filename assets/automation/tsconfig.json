@@ -4,7 +4,11 @@
       "@core/*": ["./src/core/*"],
       "@fixture/*": ["./src/core/fixture/*"],
       "@pom/*": ["./src/systems/torus/pom/*"],
-      "@tasks/*": ["./src/systems/torus/tasks/*"]
+      "@tasks/*": ["./src/systems/torus/tasks/*"],
+      "@product/*": ["../src/*"],
+      "utils/*": ["../src/utils/*"],
+      "data/*": ["../src/data/*"],
+      "components/*": ["../src/components/*"]
     },
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
