@@ -1,0 +1,333 @@
+work_item: preview-environment-tooling
+requirements:
+- title: Gate all deployed seeding and user masquerade capabilities behind explicit
+    deny-by-default runtime configuration
+  id: FR-001
+- title: Execute approved seed profiles automatically and safely on configured deployment
+    initialization
+  id: FR-002
+- title: Provide one policy-enforcing deployed seeding service shared by every invocation
+    path
+  id: FR-003
+- title: Reuse Oli.Scenarios through a deployed-safe scenario contract
+  id: FR-004
+- title: Replace the Stagehand prototype with scenario directives for realistic bulk
+    user enrollment and learner progress
+  id: FR-005
+- title: Provide a system-administrator seed workbench for predefined scenario selection,
+    transient YAML editing, execution, and run monitoring
+  id: FR-006
+- title: Support YAML-text portability without persisting or transferring custom definition
+    files
+  id: FR-007
+- title: Provide a narrowly authenticated read-only startup-seed status interface
+    for test automation
+  id: FR-008
+- title: Execute seed runs through Oban with durable history, concurrency safety,
+    declared repeat policy, and observability
+  id: FR-009
+- title: Let system administrators start and stop a temporary session as a selected
+    user
+  id: FR-010
+- title: Preserve original administrator accountability and target-user authorization
+    during masquerade
+  id: FR-011
+- title: Display a persistent accessible masquerade warning across application surfaces
+  id: FR-012
+acceptance_criteria:
+- requirement_id: FR-001
+  title: With DEV_QA_TOOLS_ENABLED absent, blank, malformed, or any value other than
+    exactly `true`, startup seeding does not run and seeding routes, events, service
+    calls, automation calls, and masquerade actions reject access
+  verification_method: automated
+  id: AC-001
+- requirement_id: FR-001
+  title: Enabling an unrelated feature flag, using a preview or sandbox hostname,
+    or running in a particular Mix environment does not enable the capability
+  verification_method: automated
+  id: AC-002
+- requirement_id: FR-001
+  title: Disabling the flag invalidates an existing masquerade on its next request
+    and preserves historical audit and run records
+  verification_method: automated
+  id: AC-003
+- requirement_id: FR-002
+  title: An enabled deployment with an approved startup profile creates its expected
+    synthetic data once according to the configured execution policy and records a
+    terminal run result
+  verification_method: hybrid
+  id: AC-004
+- requirement_id: FR-002
+  title: Enabling the capability without configuring a startup profile makes admin
+    capabilities available but performs no automatic seed run
+  verification_method: automated
+  id: AC-005
+- requirement_id: FR-002
+  title: Restarting pods or performing a rolling deployment does not duplicate a once-per-database
+    or once-per-definition-digest startup seed
+  verification_method: automated
+  id: AC-006
+- requirement_id: FR-002
+  title: A startup seed failure is visible and follows the configured readiness/failure
+    policy without making the application unhealthy
+  verification_method: hybrid
+  id: AC-007
+- requirement_id: FR-002
+  title: DEV_QA_SEED_PROFILE selects only a predefined scenario and cannot trigger
+    seeding unless DEV_QA_TOOLS_ENABLED is exactly `true`; an unknown profile surfaces
+    a configuration error and performs no seed execution
+  verification_method: automated
+  id: AC-038
+- requirement_id: FR-002
+  title: The codebase provides a modular review_demo profile containing a realistic
+    institution, content-rich published course, product, section, two instructors,
+    approximately 20 learners, varied progress states, and representative supported
+    review data
+  verification_method: hybrid
+  id: AC-045
+- requirement_id: FR-002
+  title: The codebase provides a modular playwright_smoke profile containing a compact
+    published course and section, one instructor, and three deterministic learners
+    representing not-started, in-progress, and completed states
+  verification_method: automated
+  id: AC-042
+- requirement_id: FR-002
+  title: Predefined profiles use stable scenario references, collision-safe addresses
+    under seed.example.invalid, deterministic realistic names and progress when seeded,
+    and no shared passwords or login credentials
+  verification_method: automated
+  id: AC-043
+- requirement_id: FR-002
+  title: A completed predefined profile reports bounded stable user references, names,
+    roles, section slugs, and relevant content slugs for administrator and automation
+    discovery
+  verification_method: automated
+  id: AC-044
+- requirement_id: FR-003
+  title: Startup, admin UI, and automation invocations resolve definitions and execute
+    them through the same authorization, validation, batching, run-policy, and audit
+    service
+  verification_method: automated
+  id: AC-008
+- requirement_id: FR-003
+  title: The service uses an explicit existing author and institution execution context
+    and does not create accidental default ownership records
+  verification_method: automated
+  id: AC-009
+- requirement_id: FR-004
+  title: A schema-valid approved YAML definition can create representative projects,
+    content, publications, sections, products, synthetic users, and enrollments through
+    existing scenario handlers
+  verification_method: automated
+  id: AC-010
+- requirement_id: FR-004
+  title: Deployed execution rejects non-allowlisted directives and functions, arbitrary
+    hooks, remote references, absolute paths, path traversal, and includes outside
+    approved roots before mutation
+  verification_method: automated
+  id: AC-011
+- requirement_id: FR-004
+  title: Existing test scenarios are not automatically exposed; only definitions marked
+    and validated as deployed-safe appear in the catalog
+  verification_method: automated
+  id: AC-012
+- requirement_id: FR-005
+  title: bulk_users requires a stable group name and section reference, accepts non-negative
+    instructor and student counts with at least one non-zero count plus an optional
+    integer random seed, and enrolls generated users in the named scenario or supported
+    existing section
+  verification_method: automated
+  id: AC-013
+- requirement_id: FR-005
+  title: bulk_users generates stable indexed member references, realistic synthetic
+    names, collision-safe identities, and seed.example.invalid emails without allowing
+    custom identity formats, email domains, or name providers
+  verification_method: automated
+  id: AC-014
+- requirement_id: FR-005
+  title: simulate_progress requires a section and bulk group or explicit user references,
+    accepts percent_complete and percent_correct from 0.0 to 1.0 with defaults of
+    1.0, and accepts an optional integer random seed
+  verification_method: automated
+  id: AC-015
+- requirement_id: FR-005
+  title: Invalid sections, identity collisions that cannot be resolved, unsupported
+    activities, and worker failures return structured scenario errors without crashing
+    execution or silently reporting success
+  verification_method: automated
+  id: AC-036
+- requirement_id: FR-005
+  title: Existing repository Stagehand call sites are migrated to scenarios or scenario-owned
+    services, and the standalone Stagehand execution API is removed or explicitly deprecated
+    with no deployed bypass around scenario policy
+  verification_method: automated
+  id: AC-037
+- requirement_id: FR-005
+  title: simulate_progress uses controlled batching, produces deterministic page selection
+    and responses when seeded, permits multiple cohort-targeted directives, skips unsupported
+    pages or activities with structured warnings, and reports unexpected failures as
+    structured errors
+  verification_method: automated
+  id: AC-047
+- requirement_id: FR-004
+  title: Deployed seeding executes allowlisted non-mutating assertions in scenario
+    order as post-seed verification; a failed assertion marks the job failed and reports
+    that preceding committed mutations were not rolled back
+  verification_method: automated
+  id: AC-048
+- requirement_id: FR-004
+  title: Deployed seeding rejects non-certified assertions and arbitrary hooks, and
+    permits file-based use composition only for predefined codebase-owned scenarios—not
+    pasted custom YAML
+  verification_method: automated
+  id: AC-049
+- requirement_id: FR-006
+  title: Only a currently authenticated system administrator on an enabled deployment
+    can open the seed workbench, view predefined scenarios, or invoke its validation,
+    execution, and run-inspection events
+  verification_method: automated
+  id: AC-016
+- requirement_id: FR-006
+  title: The workbench lists all historical seed jobs and runs with predefined scenario
+    identity when applicable, source, digest or version, Oban job identity, current
+    or terminal status, attempts, actor, timestamps, duration, aggregate summary,
+    and redacted failures
+  verification_method: hybrid
+  id: AC-017
+- requirement_id: FR-006
+  title: A confirmed run executes asynchronously, exposes progress or current status,
+    prevents disallowed duplicate concurrency, and reaches a success or failure terminal
+    state
+  verification_method: hybrid
+  id: AC-018
+- requirement_id: FR-007
+  title: The workbench reuses the existing OliWeb.Common.Monaco component and MonacoEditor
+    LiveView hook in YAML mode so an administrator can load a predefined scenario or
+    paste completely custom YAML subject to existing request-body protection, edit
+    it, and receive syntax, schema, and deployed-policy validation feedback before
+    execution
+  verification_method: hybrid
+  id: AC-019
+- requirement_id: FR-007
+  title: Loading or editing a predefined scenario creates a transient working copy
+    and cannot modify the codebase-owned definition
+  verification_method: automated
+  id: AC-020
+- requirement_id: FR-007
+  title: Custom YAML is portable through ordinary text copy and paste; Torus provides
+    no custom-definition persistence, file upload, or file download workflow and does
+    not retain custom YAML bodies in reusable definitions or run history
+  verification_method: hybrid
+  id: AC-021
+- requirement_id: FR-008
+  title: With DEV_QA_TOOLS_ENABLED exactly `true`, a purpose-authenticated read-only
+    endpoint lets Playwright poll the configured startup profile and content digest
+    until the matching run succeeds or fails
+  verification_method: automated
+  id: AC-022
+- requirement_id: FR-008
+  title: The status response contains only run ID, predefined profile ID, content digest,
+    status, timestamps, attempt count, and successful stable entity identifiers or
+    slugs; it exposes no YAML bodies, arbitrary history, credentials, or unrestricted
+    errors and does not allow run creation
+  verification_method: automated
+  id: AC-023
+- requirement_id: FR-008
+  title: Unknown runs and unauthorized callers receive non-enumerable responses, and
+    no HTTP route in the initial release accepts a request to trigger predefined or
+    custom seed execution
+  verification_method: automated
+  id: AC-041
+- requirement_id: FR-009
+  title: Seed run records persist definition identity and digest, source, policy,
+    actor or startup source, associated Oban job identity, status, attempt/retry information,
+    timestamps, aggregate summary, and redacted failure details
+  verification_method: automated
+  id: AC-024
+- requirement_id: FR-009
+  title: Concurrent requests across application nodes cannot execute the same non-concurrent
+    definition policy more than once
+  verification_method: automated
+  id: AC-025
+- requirement_id: FR-009
+  title: Telemetry records validation/execution lifecycle, outcome, duration, source,
+    digest/profile, rejection, and aggregate counts without YAML bodies, responses,
+    personal data, or tokens
+  verification_method: automated
+  id: AC-026
+- requirement_id: FR-009
+  title: Startup and administrator-requested seed simulations execute as Oban jobs
+    with bounded retries but no seed-specific execution timeout, and startup enqueue
+    occurs only after migrations are ready without blocking application readiness
+  verification_method: automated
+  id: AC-039
+- requirement_id: FR-009
+  title: Oban uniqueness keyed by the deployment database, predefined profile or custom
+    content digest, and declared execution policy prevents duplicate execution across
+    clustered startup, pod restarts, and rolling deployments
+  verification_method: automated
+  id: AC-040
+- requirement_id: FR-009
+  title: Seed jobs use a dedicated Oban queue with concurrency `1` per deployment
+    database, no separate pending-job cap, and telemetry for aggregate workload and
+    queue pressure
+  verification_method: automated
+  id: AC-046
+- requirement_id: FR-010
+  title: On an enabled deployment a system administrator can start masquerading from
+    an existing admin user detail page and can stop from the persistent warning control
+  verification_method: hybrid
+  id: AC-027
+- requirement_id: FR-010
+  title: Unauthenticated users and all non-system-admin roles cannot start masquerade
+    through the UI, a forged event, or a direct request
+  verification_method: automated
+  id: AC-028
+- requirement_id: FR-010
+  title: Masquerade cannot be chained, expires after the configured lifetime, ends
+    on administrator logout, and terminates safely if the target is deleted, disabled,
+    or otherwise invalid
+  verification_method: automated
+  id: AC-029
+- requirement_id: FR-011
+  title: Session state retains the original administrator separately from the effective
+    target user; ordinary authorization uses only target-user permissions while audit
+    attribution includes both actor and target
+  verification_method: automated
+  id: AC-030
+- requirement_id: FR-011
+  title: Normal application authorization applies exactly the target user's existing
+    permissions, including when the target is an administrator; the original actor
+    contributes no inherited privilege except the narrowly scoped stop-masquerade
+    operation
+  verification_method: automated
+  id: AC-031
+- requirement_id: FR-011
+  title: Start, stop, expiry, and invalidation events are audited with actor, target,
+    timestamp, and bounded request context but no session token
+  verification_method: automated
+  id: AC-032
+- requirement_id: FR-012
+  title: Every representative server-rendered, LiveView, and mounted React page shown
+    while masquerading has a high-contrast magenta treatment and textual message naming
+    the target with an immediately available stop control
+  verification_method: hybrid
+  id: AC-033
+- requirement_id: FR-012
+  title: The warning and stop control are keyboard operable, screen-reader labeled,
+    and understandable without color perception
+  verification_method: hybrid
+  id: AC-034
+- requirement_id: FR-012
+  title: Stopping masquerade restores the administrator identity and returns to a
+    safe authorized destination without granting the target or administrator an unintended
+    route bypass
+  verification_method: automated
+  id: AC-035
+- requirement_id: FR-011
+  title: The initial implementation adds no action-specific masquerade deny list;
+    permitted target-user actions create real non-rollback changes, while deployment
+    configuration disables or safely redirects payments, outbound email, LTI grade
+    passback, and other approved external integrations for all QA activity
+  verification_method: hybrid
+  id: AC-050
