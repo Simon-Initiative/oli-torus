@@ -2,10 +2,8 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Common.Chip
   alias OliWeb.Common.Utils
-
-  @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
+  alias OliWeb.Delivery.LearningObjectives.Proficiency
 
   def new(sub_objectives, parent_unique_id \\ nil, text_search \\ nil) do
     column_specs = [
@@ -30,7 +28,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       },
       %ColumnSpec{
         name: :related_activities,
-        label: "Related Activities",
+        label: "Linked Activities",
         render_fn: &custom_render/3,
         sortable: false
       }
@@ -64,23 +62,10 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
   defp custom_render(assigns, sub_objective, %ColumnSpec{name: :student_proficiency}) do
     student_proficiency = sub_objective.student_proficiency || "Not enough data"
 
-    {bg_color, text_color} =
-      case student_proficiency do
-        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
-        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
-        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
-        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
-      end
-
-    assigns =
-      Map.merge(assigns, %{
-        label: student_proficiency,
-        bg_color: bg_color,
-        text_color: text_color
-      })
+    assigns = Map.put(assigns, :student_proficiency, student_proficiency)
 
     ~H"""
-    <Chip.render {assigns} />
+    <Proficiency.chip label={@student_proficiency} />
     """
   end
 
@@ -99,7 +84,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       assigns
       |> Map.put(:sub_objective_id, sub_objective.id)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
-      |> Map.put(:proficiency_labels, @proficiency_labels)
+      |> Map.put(:proficiency_labels, Proficiency.labels())
 
     ~H"""
     <div class="group flex relative">
@@ -131,7 +116,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
   # RENDER PROFICIENCY CHART (same as main table but for sub-objectives)
   defp render_proficiency_chart(sub_objective_id, data, parent_unique_id) do
     # Order labels correctly and calculate positions manually
-    counts = Enum.map(@proficiency_labels, fn label -> Map.get(data, label, 0) end)
+    counts = Enum.map(Proficiency.labels(), fn label -> Map.get(data, label, 0) end)
     total = Enum.sum(counts)
 
     data_with_positions =
@@ -139,7 +124,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
         []
       else
         {result, _} =
-          Enum.reduce(@proficiency_labels, {[], 0}, fn label, {acc, cumulative_start} ->
+          Enum.reduce(Proficiency.labels(), {[], 0}, fn label, {acc, cumulative_start} ->
             count = Map.get(data, label, 0)
 
             if count > 0 do
@@ -171,7 +156,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
           type: "nominal",
           scale: %{
             domain: ["Not enough data", "Low", "Medium", "High"],
-            range: ["#C2C2C2", "#B37CEA", "#964BEA", "#7818BB"]
+            range: Proficiency.colors(:light)
           }
         }
       },
@@ -193,9 +178,10 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       %{
         spec: spec,
         dark_mode_colors: %{
-          light: ["#C2C2C2", "#B37CEA", "#964BEA", "#7818BB"],
-          dark: ["#C2C2C2", "#E6D4FA", "#B17BE8", "#7B19C1"]
-        }
+          light: Proficiency.colors(:light),
+          dark: Proficiency.colors(:dark)
+        },
+        transparent_background: true
       },
       id: build_chart_id(sub_objective_id, parent_unique_id)
     )
@@ -217,7 +203,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       if total == 0, do: 0, else: round(Map.get(data, label, 0) / total * 100)
     end
 
-    @proficiency_labels
+    Proficiency.labels()
     |> Enum.map(fn label -> {label, perc.(label)} end)
     |> Map.new()
   end

@@ -4,13 +4,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   import OliWeb.Components.Common
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Common.Chip
   alias OliWeb.Common.Utils
+  alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
+  alias OliWeb.Delivery.LearningObjectives.Proficiency
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
-  @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
   @student_proficiency_tooltip_text "Proficiency is based on the percentage of correct answers on first attempts for activities linked to this learning objective or its sub-objectives."
 
   def render(assigns) do
@@ -50,8 +50,9 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       },
       %ColumnSpec{
         name: :related_activities_count,
-        label: "Related Activities",
+        label: "Linked Activities",
         render_fn: &custom_render/3,
+        sortable: false,
         tooltip: "Number of activities that have this learning objective attached"
       }
     ]
@@ -108,23 +109,10 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         _ -> objectives.student_proficiency_subobj
       end
 
-    {bg_color, text_color} =
-      case student_proficiency do
-        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
-        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
-        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
-        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
-      end
-
-    assigns =
-      Map.merge(assigns, %{
-        label: student_proficiency,
-        bg_color: bg_color,
-        text_color: text_color
-      })
+    assigns = Map.put(assigns, :student_proficiency, student_proficiency)
 
     ~H"""
-    <Chip.render {assigns} />
+    <Proficiency.chip label={@student_proficiency} />
     """
   end
 
@@ -135,23 +123,10 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         value -> value
       end
 
-    {bg_color, text_color} =
-      case student_proficiency do
-        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
-        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
-        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
-        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
-      end
-
-    assigns =
-      Map.merge(assigns, %{
-        label: student_proficiency,
-        bg_color: bg_color,
-        text_color: text_color
-      })
+    assigns = Map.put(assigns, :student_proficiency, student_proficiency)
 
     ~H"""
-    <Chip.render {assigns} />
+    <Proficiency.chip label={@student_proficiency} />
     """
   end
 
@@ -216,7 +191,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       Map.merge(assigns, %{
         objective_id: objective_id,
         proficiency_distribution: proficiency_distribution,
-        proficiency_labels: @proficiency_labels
+        proficiency_labels: Proficiency.labels()
       })
 
     ~H"""
@@ -257,18 +232,32 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     assigns =
       Map.merge(assigns, %{
         count: count,
-        navigate_url: full_url
+        navigate_url: full_url,
+        activity_label: if(count == 1, do: "activity", else: "activities")
       })
 
     ~H"""
     <div class="text-center">
-      <.link
-        navigate={@navigate_url}
-        class="text-Text-text-link"
-        aria-label={~s(View #{@count} related activities)}
-      >
-        {@count}
-      </.link>
+      <%= if @count > 0 do %>
+        <Button.button
+          navigate={@navigate_url}
+          variant={:secondary}
+          size={:sm}
+          class="whitespace-nowrap"
+          aria-label={"View #{@count} linked #{@activity_label}"}
+          data-linked-activities-button
+        >
+          View {@count} {String.capitalize(@activity_label)}
+          <:icon_right>
+            <Icons.chevron_right width="16" height="16" class="-rotate-90 fill-current" />
+          </:icon_right>
+        </Button.button>
+      <% else %>
+        <span data-linked-activities-empty>
+          <span aria-hidden="true">–</span>
+          <span class="sr-only">No linked activities</span>
+        </span>
+      <% end %>
     </div>
     """
   end
@@ -310,7 +299,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   # RENDER PROFICIENCY DATA CHART
   defp render_proficiency_data_chart(objective_id, data) do
     # Order labels correctly and calculate positions manually
-    counts = Enum.map(@proficiency_labels, fn label -> Map.get(data, label, 0) end)
+    counts = Enum.map(Proficiency.labels(), fn label -> Map.get(data, label, 0) end)
     total = Enum.sum(counts)
 
     data_with_positions =
@@ -318,7 +307,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         []
       else
         {result, _} =
-          Enum.reduce(@proficiency_labels, {[], 0}, fn label, {acc, cumulative_start} ->
+          Enum.reduce(Proficiency.labels(), {[], 0}, fn label, {acc, cumulative_start} ->
             count = Map.get(data, label, 0)
 
             if count > 0 do
@@ -350,7 +339,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
           type: "nominal",
           scale: %{
             domain: ["Not enough data", "Low", "Medium", "High"],
-            range: ["#C2C2C2", "#B37CEA", "#964BEA", "#7818BB"]
+            range: Proficiency.colors(:light)
           }
         }
       },
@@ -372,9 +361,10 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %{
         spec: spec,
         dark_mode_colors: %{
-          light: ["#C2C2C2", "#B37CEA", "#964BEA", "#7818BB"],
-          dark: ["#C2C2C2", "#E6D4FA", "#B17BE8", "#7B19C1"]
-        }
+          light: Proficiency.colors(:light),
+          dark: Proficiency.colors(:dark)
+        },
+        transparent_background: true
       },
       id: "proficiency-data-bar-chart-for-objective-#{objective_id}"
     )
@@ -388,7 +378,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       if total == 0, do: 0, else: round(Map.get(data, label, 0) / total * 100)
     end
 
-    @proficiency_labels
+    Proficiency.labels()
     |> Enum.map(fn label -> {label, perc.(label)} end)
     |> Map.new()
   end
