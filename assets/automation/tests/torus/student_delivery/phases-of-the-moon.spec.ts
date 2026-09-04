@@ -24,13 +24,13 @@ import { completeAdaptiveHappyPath, LessonAnswers } from '@tasks/AdaptiveHappyPa
  * The course archive and answer key are instructional IP. They are fetched
  * from the private Playwright assets bucket and must never be committed.
  * Seed these keys before running:
- *   - phases-of-the-moon_phases-of-the-moon/course.zip
- *   - phases-of-the-moon_phases-of-the-moon/answers.json
+ *   - phases_of_the_moon-phases_of_the_moon/course.zip
+ *   - phases_of_the_moon-phases_of_the_moon/answers.json
  *
  * Then: npx playwright test phases-of-the-moon
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const assetPrefix = 'phases-of-the-moon_phases-of-the-moon';
+const assetPrefix = 'phases_of_the_moon-phases_of_the_moon';
 const archiveKey = `${assetPrefix}/course.zip`;
 const answersKey = `${assetPrefix}/answers.json`;
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
@@ -113,7 +113,7 @@ test.describe.serial('Phases of the Moon adaptive lesson', () => {
     }
   });
 
-  test('student completes the Phases of the Moon Easy-to-Difficult path', async ({ page }) => {
+  test('student completes the Phases of the Moon Easy-to-Difficult path @nightly', async ({ page }) => {
     test.setTimeout(1_200_000);
 
     if (!seededCourse || !answers) {
