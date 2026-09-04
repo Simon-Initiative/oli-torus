@@ -1,4 +1,10 @@
 defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
+  # Implementation proof references for content_filter:
+  # AC-001 toolbar placement/open state; AC-002 hierarchy and OR/descendant selection;
+  # AC-003 objective/sub-objective matching; AC-004 URL and composed filter state;
+  # AC-005 active count; AC-006 clear behavior; AC-007 native keyboard controls;
+  # AC-008 ARIA/focus/truncation attributes; AC-009 malformed selection resilience;
+  # AC-010 compact read-only coverage integration and no-write behavior.
   use OliWeb.ConnCase
 
   # Phase 4 requirements proof map:
@@ -20,6 +26,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Repo
+  alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
 
   defp live_view_route(project_slug, params \\ %{}),
@@ -322,6 +330,395 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{second_obj.slug}")
 
       wait_for_coverage(view)
+    end
+
+    test "restores course content selection from the URL and composes with search", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, matching_objective} =
+        create_objective(project, publication, "matching_obj", "Matching Objective")
+
+      {:ok, other_objective} =
+        create_objective(project, publication, "other_obj", "Other Objective")
+
+      {:ok, page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [matching_objective.resource_id],
+          "filtered_page"
+        )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_route(project.slug, %{
+            course_content: page.resource_id,
+            filter: %{coverage: "issues"}
+          })
+        )
+
+      wait_for_coverage(view)
+
+      assert has_element?(view, "##{matching_objective.slug}")
+      refute has_element?(view, "##{other_objective.slug}")
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "matching"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "##{matching_objective.slug}")
+      refute has_element?(view, "##{other_objective.slug}")
+      patch = URI.decode(assert_patch(view))
+      assert patch =~ "course_content=#{page.resource_id}"
+      assert patch =~ "filter[coverage]=issues"
+
+      view
+      |> element("form[phx-change='sort']")
+      |> render_change(%{sort_by: "title"})
+
+      patch = URI.decode(assert_patch(view))
+      assert patch =~ "course_content=#{page.resource_id}"
+      assert patch =~ "query=matching"
+    end
+
+    test "renders the course content checklist and patches selection changes", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "objective", "Objective")
+      {:ok, page} = create_page_with_objective(project, publication, [objective.resource_id])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      view
+      |> element("button#course-content-filter-trigger")
+      |> render_click()
+
+      assert has_element?(view, "#course-content-filter-menu")
+      assert has_element?(view, "#course-content-filter-tree[role='tree']")
+      assert has_element?(view, "#course-content-checkbox-#{page.resource_id}[type='checkbox']")
+
+      assert has_element?(
+               view,
+               "#course-content-checkbox-#{page.resource_id}[aria-label='Select Page 1']"
+             )
+
+      view
+      |> element("#course-content-checkbox-#{page.resource_id}")
+      |> render_click()
+
+      assert URI.decode(assert_patch(view)) =~ "course_content=#{page.resource_id}"
+      assert has_element?(view, "#course-content-filter-trigger", "1")
+
+      view
+      |> element("button", "Clear all")
+      |> render_click()
+
+      refute URI.decode(assert_patch(view)) =~ "course_content="
+      refute has_element?(view, "#course-content-filter-trigger", "1")
+    end
+
+    test "keeps checkbox state synchronized across repeated selections", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, first_objective} = create_objective(project, publication, "first", "First Objective")
+
+      {:ok, second_objective} =
+        create_objective(project, publication, "second", "Second Objective")
+
+      {:ok, first_page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [first_objective.resource_id],
+          "first_page"
+        )
+
+      {:ok, second_page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [second_objective.resource_id],
+          "second_page"
+        )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      view
+      |> element("button#course-content-filter-trigger")
+      |> render_click()
+
+      first_checkbox = "#course-content-checkbox-#{first_page.resource_id}"
+      second_checkbox = "#course-content-checkbox-#{second_page.resource_id}"
+
+      view |> element(first_checkbox) |> render_click()
+
+      assert has_element?(view, "#{first_checkbox}[aria-checked='true']")
+      refute has_element?(view, "#{second_checkbox}[aria-checked='true']")
+
+      view |> element(second_checkbox) |> render_click()
+      assert has_element?(view, "#{first_checkbox}[aria-checked='true']")
+      assert has_element?(view, "#{second_checkbox}[aria-checked='true']")
+
+      view |> element(first_checkbox) |> render_click()
+      refute has_element?(view, "#{first_checkbox}[aria-checked='true']")
+      assert has_element?(view, "#{second_checkbox}[aria-checked='true']")
+    end
+
+    test "applies OR semantics for multiple selected pages", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, first_objective} = create_objective(project, publication, "first", "First Objective")
+
+      {:ok, second_objective} =
+        create_objective(project, publication, "second", "Second Objective")
+
+      {:ok, first_page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [first_objective.resource_id],
+          "first_page"
+        )
+
+      {:ok, second_page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [second_objective.resource_id],
+          "second_page"
+        )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_route(project.slug, %{
+            course_content: "#{first_page.resource_id},#{second_page.resource_id}"
+          })
+        )
+
+      wait_for_coverage(view)
+
+      assert has_element?(view, "##{first_objective.slug}")
+      assert has_element?(view, "##{second_objective.slug}")
+      assert has_element?(view, "#course-content-filter-trigger", "2")
+    end
+
+    test "keeps objective parent context for selected page content", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, child} = create_objective(project, publication, "child", "Matching Child")
+
+      {:ok, parent} =
+        create_objective(project, publication, "parent", "Parent Objective", [child.resource_id])
+
+      {:ok, page} =
+        create_page_with_objective(project, publication, [child.resource_id], "child_page")
+
+      {:ok, view, _html} =
+        live(conn, live_view_route(project.slug, %{course_content: page.resource_id}))
+
+      wait_for_coverage(view)
+
+      assert has_element?(view, "##{parent.slug}")
+
+      view
+      |> element("button[phx-click='toggle_objective'][phx-value-slug=#{parent.slug}]")
+      |> render_click()
+
+      assert has_element?(view, "##{parent.slug} .collapse", child.title)
+    end
+
+    test "resets pagination when applying a content selection", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      objectives =
+        for index <- 1..21 do
+          {:ok, objective} =
+            create_objective(project, publication, "objective_#{index}", "Objective #{index}")
+
+          objective
+        end
+
+      {:ok, page} =
+        create_page_with_objective(project, publication, [hd(objectives).resource_id], "page")
+
+      {:ok, view, _html} =
+        live(conn, live_view_route(project.slug, %{offset: 20}))
+
+      wait_for_coverage(view)
+
+      view
+      |> element("button#course-content-filter-trigger")
+      |> render_click()
+
+      view
+      |> element("#course-content-checkbox-#{page.resource_id}")
+      |> render_click()
+
+      patch = URI.decode(assert_patch(view))
+      assert patch =~ "course_content=#{page.resource_id}"
+      assert patch =~ "offset=0"
+
+      assert Repo.get!(Revision, page.id).objectives == page.objectives
+    end
+
+    test "ignores invalid content ids from copied URLs", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, first_objective} = create_objective(project, publication, "first", "First Objective")
+
+      {:ok, second_objective} =
+        create_objective(project, publication, "second", "Second Objective")
+
+      {:ok, view, _html} =
+        live(conn, live_view_route(project.slug, %{course_content: "0,not-a-resource"}))
+
+      wait_for_coverage(view)
+
+      assert has_element?(view, "##{first_objective.slug}")
+      assert has_element?(view, "##{second_objective.slug}")
+      refute has_element?(view, "#course-content-filter-trigger", "1")
+    end
+
+    test "shows a content-specific empty state when selected pages have no objectives", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "objective", "Objective")
+      {:ok, page} = create_page_with_objective(project, publication, [], "empty_page")
+
+      {:ok, view, _html} =
+        live(conn, live_view_route(project.slug, %{course_content: page.resource_id}))
+
+      wait_for_coverage(view)
+
+      refute has_element?(view, "##{objective.slug}")
+
+      assert has_element?(
+               view,
+               "#objectives-table",
+               "No learning objectives match the selected course content."
+             )
+    end
+
+    test "searches sub-objectives and expands the matching hierarchy", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, child} = create_objective(project, publication, "child_obj", "Matching Sub-Objective")
+
+      {:ok, parent} =
+        create_objective(project, publication, "parent_obj", "Parent Objective", [
+          child.resource_id
+        ])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "matching sub"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "##{parent.slug} .collapse")
+      assert has_element?(view, "##{parent.slug}", "Sub-Objective")
+      assert has_element?(view, "##{parent.slug} mark", "Sub")
+
+      view
+      |> element("button[phx-click='reset_search']")
+      |> render_click()
+
+      refute has_element?(view, "##{parent.slug} .collapse")
+    end
+
+    test "searches page and activity titles and shows an accessible empty state", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "objective", "Objective")
+
+      {:ok, activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          objective.resource_id,
+          "activity"
+        )
+
+      create_page_with_objective(project, publication, [objective.resource_id], "page", [
+        activity.resource_id
+      ])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      for query <- ["Page 1", "Activity"] do
+        view
+        |> element("input[phx-blur=\"change_search\"]")
+        |> render_blur(%{value: query})
+
+        view
+        |> element("button[phx-click=\"apply_search\"]")
+        |> render_click()
+
+        assert has_element?(view, "##{objective.slug} .collapse")
+        assert has_element?(view, "##{objective.slug} mark", query |> String.split() |> hd())
+
+        view
+        |> element("button[phx-click='reset_search']")
+        |> render_click()
+      end
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "does not exist"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "p", "No learning objectives match your search.")
+    end
+
+    test "bounds search input before applying it", %{conn: conn, project: project} do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      oversized_query = String.duplicate("term ", 20)
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: oversized_query})
+
+      query = :sys.get_state(view.pid).socket.assigns.query
+
+      assert String.length(query) <= 100
+      assert length(String.split(query)) <= 10
     end
 
     test "applies sorting", %{conn: conn, project: project, publication: publication} do

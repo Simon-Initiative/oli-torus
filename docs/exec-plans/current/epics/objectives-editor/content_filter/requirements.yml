@@ -1,0 +1,134 @@
+version: 1
+feature: content_filter
+generated_from: docs/exec-plans/current/epics/objectives-editor/content_filter/prd.md
+work_item: content_filter
+requirements:
+- id: FR-001
+  title: Provide the Course content toolbar filter
+  description: Add the exact Course content dropdown to the Learning Objectives authoring
+    toolbar in the approved Figma grouping and connect it to the current workspace
+    editor.
+  status: verified
+- id: FR-002
+  title: Render and operate a curriculum checklist
+  description: Display a scrollable Unit, Module, Section, and Page hierarchy that
+    supports multiple selections, OR semantics, descendant inclusion for selected
+    parents, and child selection without ancestor selection.
+  status: verified
+- id: FR-003
+  title: Filter objective coverage by course content
+  description: Include objectives attached directly to selected pages or through embedded
+    activities on selected pages, show matching parent Learning Objectives, and show
+    only matching Sub-Objectives.
+  status: verified
+- id: FR-004
+  title: Preserve composed filter state in query parameters
+  description: Preserve search, sort, and Coverage Issues state while applying or
+    clearing Course content selections, and serialize selections for sharing, refresh,
+    and browser history navigation.
+  status: verified
+- id: FR-005
+  title: Show active state and selection count
+  description: Indicate when the filter is active and count the deduplicated selected
+    active containers and pages, including descendants activated by selected parents.
+  status: verified
+- id: FR-006
+  title: Provide accessible and resilient controls
+  description: Make the hierarchy keyboard accessible with programmatic structure,
+    ARIA checkbox and expansion state, descriptive labels, visible focus indicators,
+    title truncation, and full-title tooltips while tolerating malformed optional
+    data.
+  status: verified
+- id: FR-007
+  title: Use the shared read-only coverage model
+  description: Use Oli.Authoring.ObjectiveCoverage and its compact in-memory indexes
+    without full content loads, repeated per-selection queries, or writes to course
+    data.
+  status: verified
+acceptance_criteria:
+- id: AC-001
+  requirement_id: FR-001
+  title: The toolbar displays the exact Course content dropdown in the approved Figma
+    grouping and opens its filter UI.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli_web/live/workspaces/course_author/objectives_live.ex: toolbar placement and ContentFilter integration
+- id: AC-002
+  requirement_id: FR-002
+  title: The filter renders a scrollable Unit, Module, Section, and Page hierarchy,
+    stays open during multiple selections, applies OR semantics, includes descendants
+    for selected parents, and does not select ancestors for child-only selections.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: hierarchy rendering, OR selection, and parent/child semantics
+- id: AC-003
+  requirement_id: FR-003
+  title: Direct page tags and embedded-activity tags within selected pages produce
+    the expected parent Learning Objectives, with only matching Sub-Objectives displayed
+    beneath them.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/authoring/objective_coverage_test.exs: selected page/objective scope matching
+- id: AC-004
+  requirement_id: FR-004
+  title: Applying or clearing the filter preserves search, sort, and Coverage Issues
+    state, and query parameters restore selections and results after direct navigation,
+    refresh, copied URLs, and browser history navigation.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: URL restoration and composed query/sort/filter state
+- id: AC-005
+  requirement_id: FR-005
+  title: The active indication appears when selections exist, and the count equals
+    the deduplicated selected active containers and pages, including descendant content
+    activated by a parent selection.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: active selection count and deduplication
+- id: AC-006
+  requirement_id: FR-005
+  title: Clearing all selections removes the content constraint and restores the complete
+    objective list without resetting unrelated filter state.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: clear behavior and complete-list restoration
+- id: AC-007
+  requirement_id: FR-006
+  title: Keyboard users can open the control, expand and collapse hierarchy nodes,
+    navigate checklist items, change checkbox state, and continue without a pointer.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli_web/live/workspaces/course_author/objectives/content_filter.ex: native button, details, and checkbox controls
+- id: AC-008
+  requirement_id: FR-006
+  title: Hierarchy, checkbox state, expanded state, accessible labels, and visible
+    focus indicators meet the ticket accessibility contract; long titles truncate
+    and expose full-title tooltips.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: accessibility attributes, focus classes, and title truncation
+- id: AC-009
+  requirement_id: FR-006
+  title: Missing or malformed optional curriculum descendants do not crash the editor
+    and produce stable partial filtering behavior.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/authoring/objective_coverage_test.exs: malformed curriculum data handling
+- id: AC-010
+  requirement_id: FR-007
+  title: The filter uses the compact shared coverage model, avoids full page/activity
+    content loads and N+1 filter queries, performs no content or relationship writes,
+    and passes targeted implementation checks.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - lib/oli/authoring/objective_coverage.ex: compact read-only coverage model and in-memory indexes

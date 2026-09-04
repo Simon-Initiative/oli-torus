@@ -181,7 +181,12 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
         # First update the rows of the sortable table model to be all products, then apply the sort,
         # then slice the model rows according to the paging settings
 
-        filtered = @table_filter_fn.(socket, query, filter)
+        filtered =
+          if function_exported?(__MODULE__, :filter_rows, 4) do
+            apply(__MODULE__, :filter_rows, [socket, query, filter, params])
+          else
+            @table_filter_fn.(socket, query, filter)
+          end
 
         table_model =
           Map.put(socket.assigns.table_model, :rows, filtered)
@@ -194,19 +199,28 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
             )
           end)
 
-        {:noreply,
-         assign(socket,
-           table_model: table_model,
-           offset: offset,
-           applied_query: query,
-           query: query,
-           filter: filter,
-           total_count: length(filtered),
-           selected: selected,
-           sidebar_expanded: sidebar_expanded,
-           params:
-             get_patch_params(table_model, offset, query, filter, selected, sidebar_expanded)
-         )}
+        socket =
+          assign(socket,
+            table_model: table_model,
+            offset: offset,
+            applied_query: query,
+            query: query,
+            filter: filter,
+            total_count: length(filtered),
+            selected: selected,
+            sidebar_expanded: sidebar_expanded,
+            params:
+              get_patch_params(table_model, offset, query, filter, selected, sidebar_expanded)
+          )
+
+        socket =
+          if function_exported?(__MODULE__, :after_table_params, 2) do
+            apply(__MODULE__, :after_table_params, [params, socket])
+          else
+            socket
+          end
+
+        {:noreply, socket}
       end
 
       def withelist_filter(filter, filter_name, allowed_values) do
