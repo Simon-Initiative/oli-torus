@@ -51,6 +51,7 @@ export const ActivityEditor = ({
           description={activity.description}
           objectives={activity.objectives}
           allObjectives={allObjectives}
+          loWellFormed={resourceContext.loWellFormed}
           tags={activity.tags}
           allTags={allTags}
           activityId={activity.activityId}

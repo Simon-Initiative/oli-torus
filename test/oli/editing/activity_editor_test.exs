@@ -3,10 +3,12 @@ defmodule Oli.ActivityEditingTest do
 
   import Mox
 
+  alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
   alias Oli.LearningModel.Parameters
   alias Oli.LearningModel.V2.{ActivityParameters, PartParameters}
   alias Oli.Publishing
+  alias Oli.Repo
   alias Oli.Resources
 
   describe "activity editing" do
@@ -668,7 +670,17 @@ defmodule Oli.ActivityEditingTest do
       # Now generate the resource editing context with this attached activity in place
       # so that we can verify that the activities, editorMap and content are all wired
       # together correctly
-      {:ok, %ResourceContext{activities: activities, content: content, editorMap: editorMap}} =
+      project
+      |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: nil})
+      |> Repo.update!()
+
+      {:ok,
+       %ResourceContext{
+         activities: activities,
+         content: content,
+         editorMap: editorMap,
+         loWellFormed: true
+       }} =
         PageEditor.create_context(project.slug, updated_revision.slug, author)
 
       activity_ref = hd(Map.get(content, "model"))
@@ -680,6 +692,7 @@ defmodule Oli.ActivityEditingTest do
       # and that activity map entry has a type slug that references an editor map entry
       %{typeSlug: typeSlug} = Map.get(activities, activity_slug)
       assert Map.has_key?(editorMap, typeSlug)
+      assert Repo.get!(Project, project.id).lo_well_formed
     end
 
     test "can repeatedly edit an activity", %{
@@ -752,6 +765,10 @@ defmodule Oli.ActivityEditingTest do
       assert {:ok, %{slug: revision_slug}} =
                PageEditor.edit(project.slug, revision.slug, author.email, update)
 
+      project
+      |> Project.trusted_lo_well_formed_changeset(%{lo_well_formed: nil})
+      |> Repo.update!()
+
       # create the activity context
       {:ok, context} = ActivityEditor.create_context(project.slug, revision_slug, slug_1, author)
 
@@ -765,6 +782,25 @@ defmodule Oli.ActivityEditingTest do
       assert context.resourceSlug == revision_slug
       assert context.authorEmail == author.email
       assert length(context.allObjectives) == 2
+      assert context.loWellFormed
+      assert Repo.get!(Project, project.id).lo_well_formed
+    end
+
+    test "activity context creation returns not found when working publication lookup returns nil",
+         %{author: author} do
+      assert {:error, :not_found} =
+               ActivityEditor.create_context(
+                 "missing-project",
+                 "missing-revision",
+                 "missing-activity",
+                 author
+               )
+    end
+
+    test "page context creation returns not found when working publication lookup returns nil",
+         %{author: author} do
+      assert {:error, :not_found} =
+               PageEditor.create_context("missing-project", "missing-revision", author)
     end
 
     test "attaching an unknown activity to a resource fails", %{

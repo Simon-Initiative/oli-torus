@@ -467,6 +467,7 @@ defmodule Oli.Interop.Export do
       welcomeTitle: project.welcome_title,
       encouragingSubtitle: project.encouraging_subtitle,
       learningModelVersion: ModelVersion.encode(project.learning_model_version),
+      loWellFormed: project.lo_well_formed,
       type: "Manifest",
       required_student_survey: required_survey_resource_id,
       attributes: Map.get(project, :attributes)

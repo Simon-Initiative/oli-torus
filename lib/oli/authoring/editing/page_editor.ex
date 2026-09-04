@@ -22,6 +22,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Authoring.Broadcaster
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Authoring.LearningObjectives.PageElement, as: LearningObjectivesPageElement
+  alias Oli.Authoring.LearningObjectives.ProjectClassifier
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
@@ -199,12 +200,13 @@ defmodule Oli.Authoring.Editing.PageEditor do
     editor_map = Activities.create_registered_activity_map(project_slug)
 
     with {:ok, publication} <-
-           Publishing.project_working_publication(project_slug)
-           |> Repo.preload(:project)
-           |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         publication = Repo.preload(publication, :project),
          {:ok, %{deleted: false} = revision} <-
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, %{content: content} = revision} <- maybe_migrate_revision_content(revision),
+         {:ok, lo_well_formed} <-
+           ProjectClassifier.ensure_classified(publication.project, publication),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
@@ -241,6 +243,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          editorMap: editor_map,
          objectives: revision.objectives,
          allObjectives: objectives_with_parent_reference,
+         loWellFormed: lo_well_formed,
          learningObjectives: learning_objectives,
          allTags: Enum.map(tags, fn t -> %{id: t.resource_id, title: t.title} end),
          title: revision.title,
@@ -256,7 +259,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            ActivityEditor.create_contexts(
              objectives_with_parent_reference,
              project_slug,
-             activity_ids
+             activity_ids,
+             lo_well_formed
            ),
          featureFlags:
            Features.list_features_and_states()

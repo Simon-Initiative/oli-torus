@@ -30,6 +30,7 @@ defmodule Oli.Authoring.Course.Project do
     field(:latest_datashop_snapshot_timestamp, :utc_datetime)
     field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v2)
     field(:learning_model_version, Ecto.Enum, values: ModelVersion.values(), default: :naive)
+    field(:lo_well_formed, :boolean, default: true)
     field(:allow_transfer_payment_codes, :boolean, default: false)
     field(:welcome_title, :map, default: %{})
 
@@ -154,5 +155,14 @@ defmodule Oli.Authoring.Course.Project do
     |> cast(attrs, [:learning_model_version])
     |> validate_required([:learning_model_version])
     |> check_constraint(:learning_model_version, name: :projects_learning_model_version_check)
+  end
+
+  @doc """
+  Casts the learning-objective compatibility state at trusted domain boundaries.
+
+  Do not use this function with unfiltered user or form parameters.
+  """
+  def trusted_lo_well_formed_changeset(project_or_changeset, attrs) do
+    cast(project_or_changeset, attrs, [:lo_well_formed])
   end
 end

@@ -195,6 +195,7 @@ export type ResourceContext = {
   content: PageContent; // Content of the resource
   objectives: AttachedObjectives; // Attached objectives
   allObjectives: Objective[]; // All objectives
+  loWellFormed?: boolean; // Whether LO attachment hierarchy is enforced
   learningObjectives?: ResolvedLearningObjective[]; // Resolved LOs for this page's container scope
   learningObjectivesRefreshPendingFor?: string; // LO element currently waiting for container-scoped LOs
   allTags: Tag[]; // All available tags

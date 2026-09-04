@@ -28,6 +28,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Authoring.Broadcaster
   alias Oli.Resources.ContentMigrator
   alias Oli.LearningModel.Parameters.Validation, as: ParameterValidation
+  alias Oli.Authoring.LearningObjectives.ProjectClassifier
   alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
   alias ExAws.S3
 
@@ -2051,6 +2052,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                authoringScript: any,
                description: any,
                friendlyName: any,
+               loWellFormed: boolean,
                model: any,
                objectives: any,
                projectSlug: any,
@@ -2067,7 +2069,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   def create_context(project_slug, revision_slug, activity_slug, author) do
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
+         publication = Repo.preload(publication, :project),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
+         {:ok, lo_well_formed} <-
+           ProjectClassifier.ensure_classified(publication.project, publication),
          {:ok, all_objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, %{title: resource_title}} <-
@@ -2102,6 +2107,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         model: model,
         objectives: filtered_objectives,
         allObjectives: all_objectives_with_parents,
+        loWellFormed: lo_well_formed,
         typeSlug: activity_type.slug,
         tags: tags,
         variables:
@@ -2117,7 +2123,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
-  def create_contexts(all_objectives_with_parents, project_slug, activity_ids) do
+  def create_contexts(
+        all_objectives_with_parents,
+        project_slug,
+        activity_ids,
+        lo_well_formed
+      ) do
     type_by_id =
       Activities.list_activity_registrations()
       |> Enum.reduce(%{}, fn t, m -> Map.put(m, t.id, t) end)
@@ -2143,6 +2154,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         model: r.content,
         objectives: filtered_objectives,
         allObjectives: all_objectives_with_parents,
+        loWellFormed: lo_well_formed,
         typeSlug: activity_type.slug,
         tags: r.tags,
         variables:

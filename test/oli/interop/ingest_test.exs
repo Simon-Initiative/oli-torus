@@ -444,6 +444,39 @@ defmodule Oli.Interop.IngestTest do
     end
   end
 
+  describe "learning-objective compatibility archive handling" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "preserves explicit boolean values", %{author: author} do
+      Enum.each([true, false], fn lo_well_formed ->
+        {:ok, project} =
+          minimal_digest(%{
+            "title" => "Explicit LO compatibility #{lo_well_formed}",
+            "loWellFormed" => lo_well_formed
+          })
+          |> Ingest.process(author)
+
+        assert project.lo_well_formed == lo_well_formed
+      end)
+    end
+
+    test "maps a null or missing archive value to nil", %{author: author} do
+      Enum.each(
+        [
+          %{"title" => "Null LO compatibility", "loWellFormed" => nil},
+          %{"title" => "Missing LO compatibility"}
+        ],
+        fn project_details ->
+          {:ok, project} = minimal_digest(project_details) |> Ingest.process(author)
+
+          assert is_nil(project.lo_well_formed)
+        end
+      )
+    end
+  end
+
   defp minimal_digest(project, products \\ [], resources \\ []) do
     base = [
       {~c"_project.json", Map.put_new(project, "description", "")},
