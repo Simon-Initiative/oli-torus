@@ -55,7 +55,9 @@ defmodule Oli.Delivery.Sections do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.PreviousNextIndex
   alias Ecto.Multi
+  alias Oli.Analytics.Summary.{ResourcePartResponse, ResourceSummary, StudentResponse}
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections.PostProcessing
@@ -5912,6 +5914,11 @@ defmodule Oli.Delivery.Sections do
   * `:student_id` - If provided, filters proficiency results for a specific student
   * `:exclude_sub_objectives` - If true, only returns top-level objectives (default: false)
   * `:include_related_activities_count` - If true, includes `related_activities_count` field for each objective. A related activity is any activity that has the objective attached to it in its objectives map (default: false)
+
+  Container scopes union objectives statically attached to pages and embedded activities with
+  objectives from answered activities recorded in per-student analytics summaries. The latter
+  allows realized activity-bank selections to contribute their objectives after learners encounter
+  them.
   """
   def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
     student_id = if opts[:student_id], do: opts[:student_id], else: nil
@@ -6064,13 +6071,7 @@ defmodule Oli.Delivery.Sections do
       end
 
     objective_to_container_ids_map =
-      from(co in ContainedObjective)
-      |> where([co], co.section_id == ^section.id)
-      |> select([co], co)
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn co, acc ->
-        Map.update(acc, co.objective_id, [co.container_id], &(&1 ++ [co.container_id]))
-      end)
+      objective_to_container_ids_map(section.id)
 
     objectives =
       if include_related_activities_count do
@@ -6193,6 +6194,89 @@ defmodule Oli.Delivery.Sections do
       end
     end)
   end
+
+  defp objective_to_container_ids_map(section_id) do
+    from(co in ContainedObjective,
+      where: co.section_id == ^section_id,
+      select: {co.objective_id, co.container_id}
+    )
+    |> Repo.all()
+    |> Enum.concat(realized_objective_container_pairs(section_id))
+    |> Enum.reduce(%{}, fn {objective_id, container_id}, acc ->
+      Map.update(acc, objective_id, MapSet.new([container_id]), &MapSet.put(&1, container_id))
+    end)
+    |> Map.new(fn {objective_id, container_ids} ->
+      {objective_id, container_ids |> MapSet.to_list() |> Enum.sort()}
+    end)
+  end
+
+  # Student response summaries retain the page on which an activity was answered. Pair them with
+  # per-student resource summaries to scope realized bank objectives without scanning attempts.
+  defp realized_objective_container_pairs(section_id) do
+    activity_type_id = ResourceType.id_for_activity()
+
+    from(summary in ResourceSummary,
+      join: enrollment in Enrollment,
+      on:
+        enrollment.section_id == summary.section_id and
+          enrollment.user_id == summary.user_id,
+      join: enrollment_context_role in EnrollmentContextRole,
+      on: enrollment_context_role.enrollment_id == enrollment.id,
+      join: resource_part_response in ResourcePartResponse,
+      on:
+        resource_part_response.resource_id == summary.resource_id and
+          resource_part_response.part_id == summary.part_id,
+      join: student_response in StudentResponse,
+      on:
+        student_response.section_id == summary.section_id and
+          student_response.user_id == summary.user_id and
+          student_response.resource_part_response_id == resource_part_response.id,
+      join: contained_page in ContainedPage,
+      on:
+        contained_page.section_id == student_response.section_id and
+          contained_page.page_id == student_response.page_id,
+      join: spp in SectionsProjectsPublications,
+      on: spp.section_id == summary.section_id,
+      join: published_resource in PublishedResource,
+      on:
+        published_resource.publication_id == spp.publication_id and
+          published_resource.resource_id == summary.resource_id,
+      join: activity_revision in Revision,
+      on: activity_revision.id == published_resource.revision_id,
+      where:
+        summary.project_id == -1 and
+          summary.section_id == ^section_id and
+          summary.resource_type_id == ^activity_type_id and
+          summary.num_attempts > 0 and
+          enrollment.status == :enrolled and
+          enrollment_context_role.context_role_id == ^@student_role_id and
+          activity_revision.deleted == false,
+      distinct: [contained_page.container_id, activity_revision.id, summary.part_id],
+      select: %{
+        container_id: contained_page.container_id,
+        objectives: activity_revision.objectives,
+        part_id: summary.part_id
+      }
+    )
+    |> Repo.all()
+    |> Enum.flat_map(fn result ->
+      objective_ids_for_part(result.objectives, result.part_id)
+      |> Enum.map(&{&1, result.container_id})
+    end)
+  end
+
+  defp objective_ids_for_part(objectives, part_id) when is_map(objectives) do
+    objectives
+    |> Map.get(part_id, [])
+    |> List.wrap()
+    |> Enum.filter(&is_integer/1)
+  end
+
+  defp objective_ids_for_part(objectives, _part_id) when is_list(objectives) do
+    Enum.filter(objectives, &is_integer/1)
+  end
+
+  defp objective_ids_for_part(_objectives, _part_id), do: []
 
   @doc """
   Returns the container label and numbering for a given container.
