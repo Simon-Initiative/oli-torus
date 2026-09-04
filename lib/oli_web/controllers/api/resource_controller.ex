@@ -5,6 +5,7 @@ defmodule OliWeb.Api.ResourceController do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Delivery.Hierarchy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
   alias Oli.Resources.Numbering
@@ -38,6 +39,32 @@ defmodule OliWeb.Api.ResourceController do
                 slug: r.slug,
                 title: r.title,
                 numbering_index: numbering && numbering.index
+              }
+            end)
+
+          json(conn, %{"type" => "success", "pages" => pages})
+        else
+          error(conn, 403, "unauthorized")
+        end
+    end
+  end
+
+  def hierarchy_pages(conn, %{"project" => project_slug}) do
+    case Course.get_project_by_slug(project_slug) do
+      nil ->
+        error(conn, 404, "not found")
+
+      project ->
+        if Accounts.can_access?(conn.assigns[:current_author], project) do
+          pages =
+            AuthoringResolver.full_hierarchy(project.slug)
+            |> Hierarchy.flatten_pages()
+            |> Enum.map(fn node ->
+              %{
+                id: node.revision.resource_id,
+                slug: node.revision.slug,
+                title: node.revision.title,
+                numbering_index: node.numbering && node.numbering.index
               }
             end)
 

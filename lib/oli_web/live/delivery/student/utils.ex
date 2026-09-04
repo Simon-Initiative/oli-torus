@@ -862,6 +862,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       historical_attempts: page_context.historical_attempts,
       learning_language: Sections.get_section_attributes(section).learning_language,
       effective_settings: page_context.effective_settings,
+      assistant_available?:
+        Sections.assistant_enabled_for_page?(section, page_context.page) &&
+          section.triggers_enabled,
       # when migrating from page_delivery_controller this key-values were found
       # to apparently not be used by the page template:
       #   project_slug: base_project_slug,

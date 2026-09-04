@@ -29,6 +29,7 @@ import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
 import { ExpandContainers } from './expand_containers';
+import { ExplainObjectiveButton } from './explain_objective_button';
 import { FixedNavigationBar } from './fixed_navigation_bar';
 import { GlobalTooltip } from './global_tooltip';
 import { GraphNavigation } from './graph';
@@ -102,6 +103,7 @@ export const Hooks = {
   DebouncedTextInputListener,
   GlobalTooltip,
   WakeUpDot,
+  ExplainObjectiveButton,
   ExpandContainers,
   ShowTeaser,
   FirePageTrigger,

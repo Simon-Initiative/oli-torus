@@ -164,36 +164,41 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
         conn.params["revision_slug"]
       )
 
-    is_attempt_review_path? = is_attempt_review_path?(conn)
+    if is_nil(page_revision) do
+      nil
+    else
+      is_attempt_review_path? = is_attempt_review_path?(conn)
 
-    case {page_revision.graded, page_revision.content["advancedDelivery"],
-          page_revision.content["displayApplicationChrome"]} do
-      # Adaptive chromeless (fullscreen)
-      {false, true, display_application_chrome} when display_application_chrome in [nil, false] ->
-        {:practice, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?,
-         page_revision}
+      case {page_revision.graded, page_revision.content["advancedDelivery"],
+            page_revision.content["displayApplicationChrome"]} do
+        # Adaptive chromeless (fullscreen)
+        {false, true, display_application_chrome} when display_application_chrome in [nil, false] ->
+          {:practice, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?,
+           page_revision}
 
-      {true, true, display_application_chrome} when display_application_chrome in [nil, false] ->
-        {:graded, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?,
-         page_revision}
+        {true, true, display_application_chrome}
+        when display_application_chrome in [nil, false] ->
+          {:graded, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?,
+           page_revision}
 
-      # Adaptive with chrome
-      {false, true, true} ->
-        {:practice, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?,
-         page_revision}
+        # Adaptive with chrome
+        {false, true, true} ->
+          {:practice, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?,
+           page_revision}
 
-      {true, true, true} ->
-        {:graded, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?,
-         page_revision}
+        {true, true, true} ->
+          {:graded, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?,
+           page_revision}
 
-      # Not adaptive
-      {false, _, _} ->
-        {:practice, :not_adaptive, page_revision.resource_id, is_attempt_review_path?,
-         page_revision}
+        # Not adaptive
+        {false, _, _} ->
+          {:practice, :not_adaptive, page_revision.resource_id, is_attempt_review_path?,
+           page_revision}
 
-      {true, _, _} ->
-        {:graded, :not_adaptive, page_revision.resource_id, is_attempt_review_path?,
-         page_revision}
+        {true, _, _} ->
+          {:graded, :not_adaptive, page_revision.resource_id, is_attempt_review_path?,
+           page_revision}
+      end
     end
   end
 
