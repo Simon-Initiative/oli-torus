@@ -75,11 +75,29 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
           author_id: author.id
         })
 
+      # Attaching the subobjectives to a page, so they are contained by the course content
+      page_revision_1 = Oli.Publishing.DeliveryResolver.from_revision_slug(section.slug, "page_1")
+
+      {:ok, _page_revision_1} =
+        Oli.Resources.update_revision(page_revision_1, %{
+          objectives: %{
+            "attached" => [
+              obj_revision_1.resource_id,
+              subobj_rev_1.resource_id,
+              subobj_rev_2.resource_id,
+              subobj_rev_3.resource_id
+            ]
+          },
+          author_id: author.id
+        })
+
       # Publishing the project
       {:ok, _publication} = Oli.Publishing.update_publication(publication, %{published: nil})
       {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
       Sections.update_section_project_publication(section, project.id, publication.id)
       Sections.rebuild_section_resources(section: section, publication: publication)
+      # rebuild_section_resources does not pick up the objectives attached by the republish above
+      {:ok, _} = Sections.rebuild_contained_objectives(section)
       Sections.PostProcessing.apply(section, :all)
 
       {:ok, view, _html} =
@@ -98,6 +116,59 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       assert [obj_revision_1.title, subobj_rev_3.title] == pull_data_from_table(view, 4)
       # Row 5 - has subobjective 2 (We also check here the order)
       assert [obj_revision_1.title, subobj_rev_2.title] == pull_data_from_table(view, 5)
+    end
+
+    test "does not render objectives that are no longer part of the course content", %{
+      section: section,
+      conn: conn,
+      student: student,
+      obj_revision_1: obj_revision_1,
+      project: project,
+      publication: publication
+    } do
+      %{authors: [author]} = project
+
+      # An objective that was deleted in authoring, and so is not attached to any page or
+      # activity of the section, but still has its own section resource.
+      orphan_resource = insert(:resource)
+
+      orphan_revision =
+        insert(:revision,
+          resource: orphan_resource,
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          slug: "orphan_objective",
+          title: "Orphan Objective",
+          deleted: true
+        )
+
+      insert(:project_resource, project_id: project.id, resource_id: orphan_resource.id)
+
+      insert(:published_resource,
+        publication: publication,
+        resource: orphan_resource,
+        revision: orphan_revision
+      )
+
+      {:ok, _publication} = Oli.Publishing.update_publication(publication, %{published: nil})
+      {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
+      Sections.update_section_project_publication(section, project.id, publication.id)
+      Sections.rebuild_section_resources(section: section, publication: publication)
+      {:ok, _} = Sections.rebuild_contained_objectives(section)
+      Sections.PostProcessing.apply(section, :all)
+
+      assert Enum.any?(
+               Oli.Delivery.Sections.SectionResourceDepot.objectives(section.id),
+               &(&1.resource_id == orphan_resource.id)
+             )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      assert has_element?(view, "span", obj_revision_1.title)
+      refute has_element?(view, "span", orphan_revision.title)
     end
 
     test "gets rendered correctly", %{

@@ -10,6 +10,7 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Delivery.Sections
 
   alias Oli.Delivery.Sections.{
+    ContainedObjective,
     PostProcessing,
     SectionResource,
     ScheduledContainerGroup,
@@ -19,8 +20,10 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
 
+  alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
+  alias Oli.Resources.Revision
   alias Lti_1p3.Roles.ContextRoles
 
   defp set_progress(
@@ -3334,8 +3337,10 @@ defmodule Oli.Delivery.SectionsTest do
     } do
       result = Sections.get_objectives_and_subobjectives(section)
 
-      # Should return 9 items: 5 top-level objectives + 4 subobjectives
-      assert length(result) == 9
+      # Should return 8 items: 4 top-level objectives + 4 subobjectives. The fifth top-level
+      # objective is not contained by any page or activity, so it is not part of the course
+      # as it is currently delivered.
+      assert length(result) == 8
 
       # Find top-level objectives
       top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
@@ -3404,8 +3409,8 @@ defmodule Oli.Delivery.SectionsTest do
     } do
       result = Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: true)
 
-      # Should return only 5 top-level objectives
-      assert length(result) == 5
+      # Should return only the 4 contained top-level objectives
+      assert length(result) == 4
 
       # Verify only top-level objectives are returned
       objective_ids = Enum.map(result, & &1.objective_resource_id)
@@ -3664,19 +3669,83 @@ defmodule Oli.Delivery.SectionsTest do
       assert result == []
     end
 
-    test "handles objectives with no activities", %{
+    test "excludes objectives that no active page or activity references", %{
       section: section,
       objectives: %{objective_no_activities: objective_no_activities}
     } do
       result =
         Sections.get_objectives_and_subobjectives(section, include_related_activities_count: true)
 
-      # Find objective with no activities
-      no_activities_obj =
-        Enum.find(result, &(&1.objective_resource_id == objective_no_activities.resource_id))
+      refute Enum.any?(
+               result,
+               &(&1.objective_resource_id == objective_no_activities.resource_id)
+             )
+    end
 
-      # Objective with no activities should have 0 related activities
-      assert no_activities_obj.related_activities_count == 0
+    test "excludes uncontained objectives for the individual student view", %{
+      section: section,
+      objectives: %{
+        objective_a: objective_a,
+        objective_no_activities: objective_no_activities
+      }
+    } do
+      student = insert(:user)
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      result = Sections.get_objectives_and_subobjectives(section, student_id: student.id)
+
+      assert Enum.any?(result, &(&1.objective_resource_id == objective_a.resource_id))
+
+      refute Enum.any?(
+               result,
+               &(&1.objective_resource_id == objective_no_activities.resource_id)
+             )
+    end
+
+    test "preserves a parent objective when only one of its subobjectives is contained", %{
+      section: section,
+      objectives: %{
+        objective_a: objective_a,
+        sub_objective_a1: sub_objective_a1,
+        sub_objective_a2: sub_objective_a2
+      }
+    } do
+      # Objective A is attached to "Page 1 MCQ 1", A.1 to "Page 1 MCQ 2" and A.2 to "Page 1 MCQ 3".
+      # Dropping the containment of the parent and of A.2 leaves A.1 as the only contained member
+      # of the tree, which is the case where the parent must still be reported.
+      uncontained_ids = [objective_a.resource_id, sub_objective_a2.resource_id]
+
+      from(co in ContainedObjective,
+        where:
+          co.section_id == ^section.id and
+            co.objective_id in ^uncontained_ids
+      )
+      |> Oli.Repo.delete_all()
+
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      parent_row =
+        Enum.find(
+          result,
+          &(&1.objective_resource_id == objective_a.resource_id and is_nil(&1.subobjective))
+        )
+
+      assert parent_row != nil
+      assert parent_row.objective == "Objective A"
+
+      assert Enum.any?(
+               result,
+               &(&1.subobjective_resource_id == sub_objective_a1.resource_id)
+             )
+
+      refute Enum.any?(
+               result,
+               &(&1.subobjective_resource_id == sub_objective_a2.resource_id)
+             )
+
+      # The preserved parent must not depend on whether subobjectives are expanded.
+      assert Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: true)
+             |> Enum.any?(&(&1.objective_resource_id == objective_a.resource_id))
     end
 
     test "falls back to revision children when objective section resources do not store hierarchy",
@@ -3705,6 +3774,76 @@ defmodule Oli.Delivery.SectionsTest do
       assert sub_a1.objective_resource_id == objective_a.resource_id
       assert sub_a2 != nil
       assert sub_a2.objective_resource_id == objective_a.resource_id
+    end
+  end
+
+  describe "get_objectives_and_subobjectives/2 for a section built from a publication with deleted objectives" do
+    setup [:create_project_with_objectives]
+
+    test "omits an objective deleted in authoring before the section was created", %{
+      project: project,
+      publication: publication,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2
+    } do
+      %{authors: [author]} = project
+
+      # The author deletes Objective 2 and detaches it from Page 2.
+      {:ok, _} =
+        Oli.Resources.update_revision(obj_revision_2, %{deleted: true, author_id: author.id})
+
+      page_2 = Oli.Repo.one!(from(r in Revision, where: r.slug == "page_2"))
+
+      {:ok, _} =
+        Oli.Resources.update_revision(page_2, %{
+          objectives: %{"attached" => []},
+          author_id: author.id
+        })
+
+      {:ok, _} = Publishing.update_publication(publication, %{published: nil})
+
+      {:ok, new_publication} =
+        Publishing.publish_project(project, "deleted objective 2", author.id)
+
+      # A section created from this publication gets a section resource for the deleted
+      # objective, because create_nonstructural_section_resources/3 builds them from the
+      # published resource mappings without excluding deleted revisions.
+      section =
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          type: :enrollable
+        )
+
+      {:ok, section} = Sections.create_section_resources(section, new_publication)
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+      {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+      deleted_objective_id = obj_revision_2.resource_id
+
+      assert Oli.Repo.exists?(
+               from(sr in SectionResource,
+                 where: sr.section_id == ^section.id and sr.resource_id == ^deleted_objective_id
+               )
+             ),
+             "expected the deleted objective to still have a section resource"
+
+      refute Oli.Repo.exists?(
+               from(co in ContainedObjective,
+                 where:
+                   co.section_id == ^section.id and
+                     co.objective_id == ^deleted_objective_id and
+                     is_nil(co.container_id)
+               )
+             ),
+             "expected the deleted objective to have no root containment"
+
+      titles = Sections.get_objectives_and_subobjectives(section) |> Enum.map(& &1.objective)
+
+      assert obj_revision_1.title in titles
+      refute obj_revision_2.title in titles
     end
   end
 
