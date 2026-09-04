@@ -4,7 +4,13 @@ Scope and reference artifacts:
 
 - PRD: `docs/exec-plans/current/epics/objectives-editor/coverage_filter/prd.md`
 - FDD: `docs/exec-plans/current/epics/objectives-editor/coverage_filter/fdd.md`
-- Integration baseline: MER-5794 / PR #6800 and MER-5797 / PR #6818.
+- Integration baseline: MER-5794 / PR #6800 (merged 2026-09-02) and the
+  currently open MER-5797 PR. **The MER-5797 PR number is not stable** — it
+  was #6818 (closed without merging 2026-09-02), then #6820 (open as of
+  2026-09-04). Do not hardcode a PR number when reasoning about this
+  dependency; check open/merged PRs for MER-5797 at the time of reading.
+  See `handoff.md` for the live-verified integration contract, pinned to a
+  specific commit SHA that must be re-checked before implementation.
 
 ## Scope
 
@@ -22,7 +28,7 @@ Guardrails:
 - Thresholds are shared configuration for every authorized author of a project, stored as new embedded `ProjectAttributes` fields in `projects.attributes`; missing keys read as `3` formative and `3` summative.
 - A direct objective issue and an issue found on any descendant both make the visible parent an affected result. A filtered parent need not be auto-expanded solely because it has an issue.
 - `Coverage Issues` is a value within the existing `filter` map, rather than a separate query parameter. Its exact key and serialised value must match MER-5797's merged conventions.
-- The feature may begin pure-domain/persistence work on the current #6800 base. Before any LiveView/toolbar implementation is finalized, rebase onto the merged #6800 and reconcile with the current merged tip of #6818. This is a hard integration gate, not end-of-PR cleanup.
+- The feature may begin pure-domain/persistence work on the current #6800 base. Before any LiveView/toolbar implementation is finalized, rebase onto the merged #6800 and reconcile with the current merged tip of MER-5797's PR (see the PR-number note above). This is a hard integration gate, not end-of-PR cleanup.
 - The pending Figma confirmation covers the published Learn more URL and any responsive behavior not explicit in nodes `365:14554` and `365:17228`.
 
 ## Phase 1: Lock the Integration Contract and UI Brief
@@ -41,7 +47,7 @@ Guardrails:
 - Definition of Done:
   - The branch is based on the documented post-merge integration baseline, the Figma brief is available, and no proposed MER-5799 event or URL parameter bypasses `TableHandlers`.
 - Gate:
-  - Do not begin overlapping toolbar/LiveView rendering until the #6818 merge/rebase reconciliation is complete and the parameter-composition regression passes.
+  - Do not begin overlapping toolbar/LiveView rendering until the MER-5797 PR's merge/rebase reconciliation is complete and the parameter-composition regression passes.
 - Dependencies:
   - MER-5794 must be merged; MER-5797's current draft is the design reference and its merge is required before final LiveView integration.
 - Parallelizable Work:
@@ -75,7 +81,7 @@ Guardrails:
   - [ ] Add the Coverage Issues control and affected-objective count to the toolbar at the Figma-defined location, using the shared filter surface where its API is sufficient.
   - [ ] Represent activation through the existing `filter` map and `apply_filter` flow; preserve `query`, `sort_by`, `sort_order`, `expanded`, sidebar state, and CSV export parameters.
   - [ ] Extend `filter_rows/3` to compose search and coverage filtering over the already loaded normalized model before `SortableTableModel` sorts and slices rows.
-  - [ ] Keep `prepare_search/2` and `search_expanded_objective_slugs` exclusively responsible for automatic search expansion. Coverage filter changes must not discard manual expansions or search-created expansion bookkeeping.
+  - [ ] Keep whatever mechanism the MER-5797 PR uses for automatic search expansion (verified in `handoff.md` as `search_expanded_objective_slugs` plus a local `attach_hook`/`expand_search_results/3` as of that file's pinned commit — **re-verify against the live PR, do not assume `prepare_search/2`, which does not exist in this codebase**) exclusively responsible for that expansion. Coverage filter changes must not discard manual expansions or search-created expansion bookkeeping.
   - [ ] Rebuild the table model after threshold changes or coverage reloads, then route state back through the established refresh/patch path.
 - Testing Tasks:
   - [ ] Add LiveView state-transition coverage for active/inactive filter, count, parent inclusion for child issues, filter plus nested page/activity search, sorting, pagination reset, direct URL loading, clear/reset behavior, and preservation of `expanded=child,parent`.
@@ -134,8 +140,8 @@ Guardrails:
 
 ## Parallelization Notes
 
-- Work safely in parallel only below the LiveView boundary: ProjectAttributes persistence/classifier work does not need to wait for #6818.
-- Do not independently redesign shared `Filter`, `FilterBox`, `TableHandlers`, `live_path/2`, `prepare_search/2`, or expansion state. Any change to those seams is made only after comparing against the merged #6818 tip and must carry its combination regression.
+- Work safely in parallel only below the LiveView boundary: ProjectAttributes persistence/classifier work does not need to wait for MER-5797's PR.
+- Do not independently redesign shared `Filter`, `FilterBox`, `TableHandlers`, `live_path/2`, or expansion-tracking state (whatever it is currently named — see `handoff.md`'s pinned-commit note, not `prepare_search/2`, which does not exist). Any change to those seams is made only after comparing against the merged tip of MER-5797's PR and must carry its combination regression.
 - Keep the final LiveView integration as a deliberately serialized reconciliation after MER-5797 merges; this is the lowest-risk point to resolve unavoidable overlapping lines.
 
 ## Phase Gate Summary

@@ -39,16 +39,27 @@ row-level issue badge is a **bordered pill**, not a filled
 
 ## 1. Toolbar composition (light root, node `365:14702`, confirmed identical in `365:19034`/`365:18532`)
 
-Left-to-right order confirmed via metadata + screenshot:
+**Known to be out of date as of `handoff.md`'s 2026-09-04 check against PR
+#6820 (commit `94e0a9460`)**: the flat left-to-right order below is the
+Figma design's intent, but the actual MER-5797 PR implements the toolbar
+as two separate flex groups (search+sort on the left, CSV+New Objective
+on the right, `justify-between` between them) with no "Course content"
+dropdown at all. Do not assume this flat order is still buildable
+as-is — re-read `handoff.md`'s pinned-commit section (re-verified against
+the live PR) before deciding where Coverage Issues/Settings actually go
+in the real markup.
 
-1. `365:14703` — `Search-Bar` instance (owned by #6818, do not touch)
-2. `365:14704` — `Title` sort dropdown (owned by #6818, do not touch)
+Left-to-right order confirmed via metadata + screenshot (Figma intent,
+not necessarily current implementation — see warning above):
+
+1. `365:14703` — `Search-Bar` instance (owned by MER-5797's PR, do not touch)
+2. `365:14704` — `Title` sort dropdown (owned by MER-5797's PR, do not touch)
 3. divider `365:14711`
 4. `365:14712` — **Coverage Issues** button (this ticket)
 5. `365:14720` — **Settings** icon button (this ticket)
 6. divider `365:14724`
 7. `502:12519` — `Content filter` ("Course content") instance (owned by
-   #6818, do not touch)
+   MER-5797's PR, do not touch)
 8. spacer `365:14730`
 9. `365:14731` — Download CSV button (existing)
 10. `365:14736` — New Objective button (existing, primary/blue)
@@ -58,9 +69,9 @@ Coverage Issues button and the gear icon sit directly adjacent, both with
 light chrome and a visible border, positioned between sort and the content
 filter — i.e. inside the existing toolbar `Container`, not a new row.
 
-This confirms the handoff's warning: items 1, 2, 7 are #6818's surface.
+This confirms the handoff's warning: items 1, 2, 7 are MER-5797's PR's surface.
 Items 4 and 5 are the two new controls this ticket owns, inserted between
-the existing divider pair without disturbing #6818's nodes.
+the existing divider pair without disturbing MER-5797's PR's nodes.
 
 ## 2. Coverage Issues button — default (inactive) state (node `365:14712`)
 
@@ -357,7 +368,7 @@ detail (toolbar button, badge, warning banner, settings trigger).
 
 ## 11. Next steps (per `handoff.md`'s recommended sequence)
 
-1. This brief is ready for Phase 3/4 implementation once #6818 merges and
+1. This brief is ready for Phase 3/4 implementation once MER-5797's PR merges and
    this branch is reconciled onto it (per `handoff.md` Phase 1 gate).
 2. Phase 4 should reuse `Icons.warning_triangle/1` and `Icons.settings/1`,
    the token names in §8, and the exact copy in §4b/§6, rather than
