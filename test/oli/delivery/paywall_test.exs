@@ -259,6 +259,7 @@ defmodule Oli.Delivery.PaywallTest do
 
       %{
         product: product,
+        product2: product2,
         section: section,
         map: map,
         user1: user1,
@@ -279,13 +280,15 @@ defmodule Oli.Delivery.PaywallTest do
                Paywall.redeem_code(hd(codes1) |> to_human(), user2, section.slug)
     end
 
-    test "redeem_code/3 fails when code applies to another product", %{
+    test "redeem_code/3 succeeds when code applies to another product with the same amount", %{
+      product2: product2,
       section: section,
       codes2: codes,
       user1: user
     } do
-      assert {:error, {:invalid_code}} ==
-               Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
+      assert {:ok, payment} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
+      assert payment.section_id == product2.id
+      assert payment.pending_section_id == section.id
     end
 
     test "redeem_code/3 fails when section does not exist", %{
@@ -310,6 +313,41 @@ defmodule Oli.Delivery.PaywallTest do
       codes1: codes
     } do
       assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
+    end
+
+    test "redeem_code/3 succeeds when code amount is greater than section amount", %{
+      section: section,
+      user1: user,
+      codes2: codes
+    } do
+      code = hd(codes)
+      {:ok, code} = Paywall.update_payment(code, %{amount: Money.new(150, "USD")})
+
+      assert {:ok, _} = Paywall.redeem_code(to_human(code), user, section.slug)
+    end
+
+    test "redeem_code/3 fails when code amount is less than section amount", %{
+      section: section,
+      user1: user,
+      codes2: codes
+    } do
+      code = hd(codes)
+      {:ok, code} = Paywall.update_payment(code, %{amount: Money.new(50, "USD")})
+
+      assert {:error, {:insufficient_value}} =
+               Paywall.redeem_code(to_human(code), user, section.slug)
+    end
+
+    test "redeem_code/3 fails when code currency does not match section currency", %{
+      section: section,
+      user1: user,
+      codes2: codes
+    } do
+      code = hd(codes)
+      {:ok, code} = Paywall.update_payment(code, %{amount: Money.new(150, "EUR")})
+
+      assert {:error, {:insufficient_value}} =
+               Paywall.redeem_code(to_human(code), user, section.slug)
     end
 
     test "redeem_code/3 fails after it has been redeemed once", %{
@@ -946,6 +984,20 @@ defmodule Oli.Delivery.PaywallTest do
       assert found_payment.section_id == section.id
     end
 
+    test "returns payment associated with an unrelated section for the enrollment" do
+      section = insert(:section, %{type: :enrollable})
+      unrelated_product = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      payment = insert(:payment, section: unrelated_product, enrollment: enrollment)
+
+      {:ok, found_payment} = Paywall.get_active_payment_for(enrollment.id, section)
+
+      assert found_payment.id == payment.id
+      assert found_payment.section_id == unrelated_product.id
+    end
+
     test "does not return invalidated payment even if it matches section or blueprint" do
       # Create a blueprint
       blueprint = insert(:section, %{type: :blueprint})
@@ -1025,6 +1077,29 @@ defmodule Oli.Delivery.PaywallTest do
       # No payment created
       assert Paywall.get_active_payment_for(enrollment.id, section) ==
                {:error, :no_active_payment_found}
+    end
+
+    test "returns the newest active payment when multiple active payments exist" do
+      section = insert(:section, %{type: :enrollable})
+      user = insert(:user)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      insert(:payment,
+        section: section,
+        enrollment: enrollment,
+        type: :direct
+      )
+
+      newest_payment =
+        insert(:payment,
+          section: section,
+          enrollment: enrollment,
+          type: :bypass
+        )
+
+      {:ok, found_payment} = Paywall.get_active_payment_for(enrollment.id, section)
+
+      assert found_payment.id == newest_payment.id
     end
   end
 

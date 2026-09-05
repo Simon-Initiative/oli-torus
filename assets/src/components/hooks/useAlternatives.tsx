@@ -13,6 +13,7 @@ type AlternativesState =
   | {
       type: AlternativesTypes.SUCCESS;
       alternatives: AlternativesGroup[];
+      alternativesById: Record<number, AlternativesGroup>;
       alternativesOptionsTitles: Record<number, Record<string, string>>;
     }
   | { type: AlternativesTypes.FAILURE; error: string };
@@ -57,9 +58,15 @@ export const AlternativesContextProvider = ({
             {} as Record<number, Record<string, string>>,
           );
 
+          const alternativesById = result.alternatives.reduce(
+            (acc, group) => ({ ...acc, [group.id]: group }),
+            {} as Record<number, AlternativesGroup>,
+          );
+
           setAlternativesState({
             type: AlternativesTypes.SUCCESS,
             alternatives: result.alternatives,
+            alternativesById,
             alternativesOptionsTitles,
           });
         } else {

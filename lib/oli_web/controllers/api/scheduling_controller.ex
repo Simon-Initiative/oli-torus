@@ -10,6 +10,8 @@ defmodule OliWeb.Api.SchedulingController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Accounts
+  alias Oli.Resources.Numbering
+  alias Oli.Resources.ResourceType
 
   import OliWeb.Api.Helpers
 
@@ -131,9 +133,11 @@ defmodule OliWeb.Api.SchedulingController do
     ctx = SessionContext.init(conn)
 
     if can_access_section?(conn, section) do
+      numbering_map = Sections.decorated_numbering_map(section)
+
       resources =
         Scheduling.retrieve(section)
-        |> serialize_resource(ctx.local_tz)
+        |> serialize_resource(ctx.local_tz, numbering_map)
 
       json(conn, %{"result" => "success", "resources" => resources})
     else
@@ -221,11 +225,11 @@ defmodule OliWeb.Api.SchedulingController do
       Sections.is_admin?(conn.assigns.current_user, section.slug)
   end
 
-  defp serialize_resource(resources, local_tz) when is_list(resources) do
-    Enum.map(resources, fn p -> serialize_resource(p, local_tz) end)
+  defp serialize_resource(resources, local_tz, numbering_map) when is_list(resources) do
+    Enum.map(resources, fn p -> serialize_resource(p, local_tz, numbering_map) end)
   end
 
-  defp serialize_resource(%SectionResource{} = sr, local_tz) do
+  defp serialize_resource(%SectionResource{} = sr, local_tz, numbering_map) do
     just_date = fn datetime ->
       case datetime do
         nil ->
@@ -238,6 +242,8 @@ defmodule OliWeb.Api.SchedulingController do
           DateTime.to_date(user_tz_date)
       end
     end
+
+    {numbering_level, numbering_index} = resource_numbering(sr, numbering_map)
 
     %{
       "id" => sr.id,
@@ -261,9 +267,24 @@ defmodule OliWeb.Api.SchedulingController do
       "scheduling_type" => sr.scheduling_type,
       "resource_id" => sr.resource_id,
       "manually_scheduled" => sr.manually_scheduled,
-      "numbering_index" => sr.numbering_index,
-      "numbering_level" => sr.numbering_level,
+      "numbering_index" => numbering_index,
+      "numbering_level" => numbering_level,
       "removed_from_schedule" => sr.removed_from_schedule
     }
+  end
+
+  # Pages keep their raw numbering (their own ordinal position within a container is
+  # unaffected by unit-level suppression). Containers use suppression-aware numbering:
+  # absence from `numbering_map` means the container itself, or an ancestor unit, is
+  # suppressed, so both fields become nil rather than showing a stale raw number.
+  defp resource_numbering(%SectionResource{} = sr, numbering_map) do
+    if sr.resource_type_id == ResourceType.id_for_container() do
+      case Numbering.lookup(numbering_map, sr.resource_id) do
+        nil -> {nil, nil}
+        %Numbering{level: level, index: index} -> {level, index}
+      end
+    else
+      {sr.numbering_level, sr.numbering_index}
+    end
   end
 end

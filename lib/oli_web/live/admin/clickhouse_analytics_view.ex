@@ -91,6 +91,13 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
           gettext("ClickHouse must be reachable before running migrations.")
         )
 
+      {:error, :database_not_setup} ->
+        put_flash(
+          socket,
+          :error,
+          gettext("Set up the ClickHouse database before running migrations.")
+        )
+
       {:error, :migrate_up_not_available} ->
         put_flash(socket, :error, gettext("There are no pending ClickHouse migrations."))
 
@@ -264,9 +271,6 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   <span class={status_indicator_class(capabilities.database_exists)}>
                     {status_indicator_icon(capabilities.database_exists)} {gettext("Database exists")}
                   </span>
-                  <span class={status_indicator_class(capabilities.table_exists)}>
-                    {status_indicator_icon(capabilities.table_exists)} {gettext("Table exists")}
-                  </span>
                 </div>
                 <button
                   type="button"
@@ -308,7 +312,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="migrate_down"
                   class="mt-auto self-start inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!capabilities.reachable}
+                  disabled={!capabilities.migrate_down_enabled}
                 >
                   {gettext("Migrate Down")}
                 </button>
@@ -373,18 +377,18 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
           :if={@pending_confirmation in [:migrate_up, :migrate_down]}
           id="clickhouse-operation-confirmation"
           show
+          header_level={2}
+          wrapper_class="w-full max-w-lg p-4"
           on_cancel={JS.push("cancel_clickhouse_operation")}
         >
-          <div class="space-y-4">
-            <div>
-              <h3 class="text-lg font-semibold">
-                {gettext("Confirm %{operation}", operation: operation_title(@pending_confirmation))}
-              </h3>
-              <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {confirmation_message(@pending_confirmation)}
-              </p>
-            </div>
-            <div class="flex items-center justify-end gap-3">
+          <:title>
+            {gettext("Confirm %{operation}", operation: operation_title(@pending_confirmation))}
+          </:title>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            {confirmation_message(@pending_confirmation)}
+          </p>
+          <:custom_footer>
+            <div class="flex items-center justify-end gap-3 p-4 pt-0">
               <button
                 type="button"
                 phx-click="cancel_clickhouse_operation"
@@ -400,7 +404,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                 {gettext("Confirm")}
               </button>
             </div>
-          </div>
+          </:custom_footer>
         </.modal>
       </div>
     </div>
@@ -408,20 +412,25 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   end
 
   defp load_dashboard_async(socket) do
+    analytics_provider = analytics_provider()
+
     socket
     |> assign_async(:health_summary, fn ->
-      case ClickhouseAnalytics.health_summary() do
+      case analytics_provider.health_summary() do
         {:ok, summary} -> {:ok, %{health_summary: summary}}
         {:error, reason} -> {:error, reason}
       end
     end)
     |> assign_async(:clickhouse_capabilities, fn ->
-      case ClickhouseAnalytics.admin_capabilities() do
+      case analytics_provider.admin_capabilities() do
         {:ok, capabilities} -> {:ok, %{clickhouse_capabilities: capabilities}}
         {:error, reason} -> {:error, reason}
       end
     end)
   end
+
+  defp analytics_provider,
+    do: Application.get_env(:oli, :clickhouse_analytics_provider, ClickhouseAnalytics)
 
   defp breadcrumbs do
     OliWeb.Admin.AdminView.breadcrumb() ++

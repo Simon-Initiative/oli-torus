@@ -1659,6 +1659,13 @@ defmodule OliWeb.Components.Delivery.Students do
     end
   end
 
+  # A container absent from the suppression-aware numbering map (an unnumbered top-level
+  # unit, or a descendant of one) has `numbering_index: nil`; show its bare title instead
+  # of a numbering prefix, matching how Learn presents a suppressed unit.
+  defp get_container_title(%{numbering_index: nil} = container) do
+    "#{container.title} Student Insights"
+  end
+
   defp get_container_title(container) do
     "#{get_container_label(container)} #{container.numbering_index}: #{container.title} Student Insights"
   end

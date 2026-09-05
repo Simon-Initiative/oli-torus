@@ -12,6 +12,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Experiments.RewardHandoff
   alias Oli.Delivery.Snapshots
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
@@ -248,8 +249,20 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             impl = determine_page_impl(resource_attempt.revision.graded)
 
             case impl.finalize(context) do
-              {:ok, results} -> results
-              {:error, error} -> Repo.rollback(error)
+              {:ok, %FinalizationSummary{graded: true, lifecycle_state: :evaluated} = results} ->
+                case RewardHandoff.record_if_active_thompson(
+                       resource_attempt.id,
+                       resource_access.section_id
+                     ) do
+                  :ok -> results
+                  {:error, reason} -> Repo.rollback({:reward_processing_failed, reason})
+                end
+
+              {:ok, results} ->
+                results
+
+              {:error, error} ->
+                Repo.rollback(error)
             end
         end
       end)

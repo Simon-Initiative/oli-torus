@@ -435,6 +435,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         navigation_params
       )
 
+    alternative_groups_by_id = alternative_groups_by_id(content, section_slug)
+
     activity_bank_selection_previews =
       Map.new(activity_bank_selection_previews, fn {selection_id, preview} ->
         criteria_presentation = Map.get(preview, :criteria, %{})
@@ -463,7 +465,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         bib_entries,
         all_activities,
         navigation_params,
-        activity_bank_selection_previews
+        activity_bank_selection_previews,
+        alternative_groups_by_id
       )
 
     html = Page.render(render_context, content, Page.Html)
@@ -516,10 +519,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
          bib_entries,
          all_activities,
          navigation_params,
-         activity_bank_selection_previews
+         activity_bank_selection_previews,
+         alternative_groups_by_id
        ) do
     section_slug = section.slug
     base_project_attributes = Sections.get_section_attributes(section)
+    alternative_groups = Map.values(alternative_groups_by_id)
 
     %Context{
       user: user,
@@ -543,6 +548,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         activity_bank_selections: activity_bank_selection_previews
       },
       resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
+      alternatives_groups_fn: fn -> {:ok, alternative_groups} end,
+      alternative_groups_by_id: alternative_groups_by_id,
       alternatives_selector_fn: &Resources.Alternatives.select/2,
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       activity_types_map: Map.new(all_activities, fn activity -> {activity.id, activity} end),
@@ -550,6 +557,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       learning_language: base_project_attributes.learning_language,
       submitted_surveys: %{}
     }
+  end
+
+  defp alternative_groups_by_id(content, section_slug) do
+    case PageContent.alternatives_placements(content) do
+      [] ->
+        %{}
+
+      _placements ->
+        {:ok, groups} = Resources.alternatives_groups(section_slug, Resolver)
+        Map.new(groups, fn group -> {group.id, group} end)
+    end
   end
 
   defp activity_summary(
@@ -1131,6 +1149,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         "slug",
         "title",
         "numbering",
+        "display_numbering",
         "resource_id",
         "resource_type_id",
         "children",

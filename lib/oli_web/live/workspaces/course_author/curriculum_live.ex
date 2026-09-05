@@ -24,6 +24,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   }
 
   alias OliWeb.Workspaces.CourseAuthor.Curriculum.Entry
+  alias OliWeb.Components.ReorderableList
   alias OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive
 
   alias OliWeb.Common.Hierarchy.MoveModal
@@ -92,6 +93,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
            resource_slug: project_slug,
            resource_title: project.title,
            children: children,
+           children_count: length(children),
            active: :curriculum,
            breadcrumbs:
              Breadcrumb.trail_to(
@@ -502,56 +504,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     {:noreply, assign(socket, :selected, selected)}
   end
 
-  def handle_event("keydown", %{"key" => key, "shiftKey" => shiftKeyPressed?} = params, socket) do
-    focused_index =
-      case params["index"] do
-        nil -> nil
-        stringIndex -> String.to_integer(stringIndex)
-      end
-
-    last_index = length(socket.assigns.children) - 1
-    children = socket.assigns.children
-
-    case {focused_index, key, shiftKeyPressed?} do
-      {nil, _, _} ->
-        {:noreply, socket}
-
-      {^last_index, "ArrowDown", _} ->
-        {:noreply, socket}
-
-      {0, "ArrowUp", _} ->
-        {:noreply, socket}
-
-      # Each drop target has a corresponding entry after it with a matching index.
-      # That means that the "drop index" is the index of where you'd like to place the item AHEAD OF
-      # So to reorder an item below its current position, we add +2 ->
-      # +1 would mean insert it BEFORE the next item, but +2 means insert it before the item after the next item.
-      # See the logic in container editor that does the adjustment based on the positions of the drop targets.
-      {focused_index, "ArrowDown", true} ->
+  def handle_event("keydown", params, socket) do
+    case ReorderableList.keyboard_move(params) do
+      {:move, source_index, drop_index} ->
         handle_event(
           "reorder",
           %{
-            "sourceIndex" => Integer.to_string(focused_index),
-            "dropIndex" => Integer.to_string(focused_index + 2)
+            "sourceIndex" => Integer.to_string(source_index),
+            "dropIndex" => Integer.to_string(drop_index)
           },
           socket
         )
 
-      {focused_index, "ArrowUp", true} ->
-        handle_event(
-          "reorder",
-          %{
-            "sourceIndex" => Integer.to_string(focused_index),
-            "dropIndex" => Integer.to_string(focused_index - 1)
-          },
-          socket
-        )
-
-      {focused_index, "Enter", _} ->
-        {:noreply, assign(socket, :selected, Enum.at(children, focused_index))}
-
-      {_, _, _} ->
-        {:noreply, socket}
+      :noop ->
+        select_entry_from_keydown(params, socket)
     end
   end
 
@@ -631,6 +597,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     Logger.warning("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
   end
+
+  defp select_entry_from_keydown(%{"key" => "Enter", "index" => index}, socket) do
+    case Integer.parse(to_string(index)) do
+      {index, ""} ->
+        {:noreply, assign(socket, :selected, Enum.at(socket.assigns.children, index))}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  defp select_entry_from_keydown(_params, socket), do: {:noreply, socket}
 
   defp add_page_click(type, scored, adaptive_mode \\ nil) do
     values = %{"type" => type, "scored" => scored}
@@ -1367,7 +1345,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
           socket.assigns.project.slug
         )
 
-      assign(socket, selected: selected, children: children, rollup: rollup)
+      assign(socket,
+        selected: selected,
+        children: children,
+        children_count: length(children),
+        rollup: rollup
+      )
     else
       socket
     end
@@ -1395,6 +1378,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
         selected: selected,
         container: revision,
         children: children,
+        children_count: length(children),
         rollup: rollup,
         numberings:
           Numbering.number_full_tree(

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import * as Immutable from 'immutable';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { LearningObjectivesIcon } from 'components/misc/icons/Icons';
@@ -7,7 +7,6 @@ import { ManageAlternativesLink } from 'components/resource/editors/Alternatives
 import { modalActions } from 'actions/modal';
 import { FeatureFlags } from 'apps/page-editor/types';
 import {
-  AlternativeContent,
   ResolvedLearningObjective,
   ResourceContext,
   canInsert,
@@ -17,6 +16,7 @@ import {
   createDefaultStructuredContent,
   createGroup,
   createReport,
+  hasAncestorOfType,
 } from 'data/content/resource';
 import {
   ResourceContent,
@@ -27,6 +27,14 @@ import {
 import * as Persistence from 'data/persistence/resource';
 import { ActivityWithReportOption } from 'data/persistence/resource';
 import { ResourceChoice } from './ResourceChoice';
+
+const EXPERIMENT_STRATEGIES: ReadonlySet<Persistence.AlternativesGroup['strategy']> = new Set([
+  'experiment_controlled',
+  'upgrade_decision_point',
+]);
+
+export const isExperimentStrategy = (strategy: Persistence.AlternativesGroup['strategy']) =>
+  EXPERIMENT_STRATEGIES.has(strategy);
 
 interface Props {
   index: number[];
@@ -56,11 +64,7 @@ export const NonActivities: React.FC<Props> = ({
   onRefreshLearningObjectives,
   onFinishLearningObjectivesRefresh,
 }) => {
-  const [ABTestDisabled, setABTestDisabled] = useState(true);
-
-  useEffect(() => {
-    setABTestDisabled(!resourceContext.hasExperiments);
-  }, []);
+  const hasAlternativesAncestor = hasAncestorOfType(parents, 'alternatives');
 
   return (
     <div className="d-flex flex-column">
@@ -148,28 +152,32 @@ export const NonActivities: React.FC<Props> = ({
           disabled={false}
           onClick={() => addReport(onAddItem, index, resourceContext.projectSlug)}
         />
-        <ResourceChoice
-          icon="window-restore"
-          label="Alt"
-          onHoverStart={() =>
-            onSetTip('Alternative materials which will be displayed based on student preference')
-          }
-          onHoverEnd={() => onResetTip()}
-          key={'alternatives'}
-          disabled={false}
-          onClick={() => addAlternatives(onAddItem, index, resourceContext.projectSlug)}
-        />
-        <ResourceChoice
-          icon="vial"
-          label="A/B Test"
-          onHoverStart={() =>
-            onSetTip('Insert your A/B testing decision point to assign options randomly')
-          }
-          onHoverEnd={() => onResetTip()}
-          key={'ab-test'}
-          disabled={ABTestDisabled}
-          onClick={() => addExperiment(onAddItem, index, resourceContext.projectSlug)}
-        />
+        {!hasAlternativesAncestor && resourceContext.alternativesEnabled && (
+          <ResourceChoice
+            icon="window-restore"
+            label="Alt"
+            onHoverStart={() =>
+              onSetTip('Alternative materials which will be displayed based on student preference')
+            }
+            onHoverEnd={() => onResetTip()}
+            key={'alternatives'}
+            disabled={false}
+            onClick={() => addAlternatives(onAddItem, index, resourceContext.projectSlug)}
+          />
+        )}
+        {!hasAlternativesAncestor && resourceContext.experimentsEnabled && (
+          <ResourceChoice
+            icon="vial"
+            label="A/B Test"
+            onHoverStart={() =>
+              onSetTip('A/B decision point to show materials according to an experiment policy')
+            }
+            onHoverEnd={() => onResetTip()}
+            key={'ab-test'}
+            disabled={false}
+            onClick={() => addExperiment(onAddItem, index, resourceContext.projectSlug)}
+          />
+        )}
       </div>
     </div>
   );
@@ -262,9 +270,9 @@ const addReport = (onAddItem: AddCallback, index: number[], projectSlug: string)
             }
           })
         }
-        onDone={(activityId: string) => {
+        onDone={(activityId: string | number) => {
           window.oliDispatch(modalActions.dismiss());
-          const ac = activitiesWithReport.find((a) => a.id === activityId);
+          const ac = activitiesWithReport.find((a) => String(a.id) === String(activityId));
           if (ac) onAddItem(createReport(ac), index);
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
@@ -284,7 +292,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         description="Select an Alternatives Group"
         additionalControls={
           <ManageAlternativesLink
-            linkHref={`/authoring/project/${projectSlug}/alternatives`}
+            linkHref={`/workspaces/course_author/${projectSlug}/alternatives`}
             linkText="Manage Alternatives"
           />
         }
@@ -292,21 +300,16 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
               return result.alternatives
-                .filter(
-                  (a: Persistence.AlternativesGroup) => a.strategy !== 'upgrade_decision_point',
-                )
+                .filter((a: Persistence.AlternativesGroup) => !isExperimentStrategy(a.strategy))
                 .map((a) => ({ value: a.id, title: a.title }));
             } else {
               throw result.message;
             }
           })
         }
-        onDone={(alternativesId: string) => {
+        onDone={(alternativesId: string | number) => {
           window.oliDispatch(modalActions.dismiss());
-          onAddItem(
-            createAlternatives(Number(alternativesId), 'user_section_preference', Immutable.List()),
-            index,
-          );
+          onAddItem(createAlternatives(Number(alternativesId), Immutable.List()), index);
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,
@@ -317,21 +320,49 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
 const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
   document.body.click();
 
-  Persistence.alternatives(projectSlug).then((result) => {
-    if (result.type === 'success') {
-      const experiment = result.alternatives.find((a) => a.strategy === 'upgrade_decision_point');
-      if (experiment) {
-        const children: AlternativeContent[] = [];
-        experiment.options.forEach((o) => children.push(createAlternative(o.id)));
-        onAddItem(
-          createAlternatives(
-            Number(experiment.id),
-            'upgrade_decision_point',
-            Immutable.List(children),
-          ),
-          index,
-        );
-      }
-    }
-  });
+  window.oliDispatch(
+    modalActions.display(
+      <SelectModal
+        title="Select A/B Decision Point"
+        description="Select an A/B decision point"
+        additionalControls={
+          <ManageAlternativesLink
+            linkHref={`/workspaces/course_author/${projectSlug}/experiments`}
+            linkText="Manage Decision Points"
+          />
+        }
+        onFetchOptions={() =>
+          Persistence.alternatives(projectSlug).then((result) => {
+            if (result.type === 'success') {
+              return result.alternatives
+                .filter((a: Persistence.AlternativesGroup) => isExperimentStrategy(a.strategy))
+                .map((a) => ({ value: a.id, title: a.title }));
+            } else {
+              throw result.message;
+            }
+          })
+        }
+        onDone={async (alternativesId: string | number) => {
+          const result = await Persistence.alternatives(projectSlug);
+
+          if (result.type !== 'success') {
+            throw new Error(result.message);
+          }
+
+          const experiment = result.alternatives.find(
+            (a) => a.id === Number(alternativesId) && isExperimentStrategy(a.strategy),
+          );
+
+          if (!experiment) {
+            throw new Error('The selected A/B decision point is no longer available.');
+          }
+
+          const children = experiment.options.map((option) => createAlternative(option.id));
+          onAddItem(createAlternatives(Number(experiment.id), Immutable.List(children)), index);
+          window.oliDispatch(modalActions.dismiss());
+        }}
+        onCancel={() => window.oliDispatch(modalActions.dismiss())}
+      />,
+    ),
+  );
 };

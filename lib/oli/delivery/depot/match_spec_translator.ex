@@ -195,7 +195,7 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
   defp encode(value, _), do: value
 
   defp build_field_pairs(schema) do
-    apply(schema, :__schema__, [:fields])
+    (apply(schema, :__schema__, [:fields]) ++ apply(schema, :__schema__, [:virtual_fields]))
     |> Enum.map(fn field -> {field, apply(schema, :__schema__, [:type, field])} end)
   end
 end

@@ -1,0 +1,92 @@
+work_item: remix-product-sources
+requirements:
+- title: Represent project publications and product templates as explicit remix sources
+  description: The remix source discovery layer distinguishes project-publication
+    sources from product/template section sources while preserving the data needed
+    to resolve selections to publications and resources.
+  id: FR-001
+- title: Authorize product-source remix through community product access
+  description: Users and institutions associated with communities that include products
+    can access those products as remix sources even when the communities do not include
+    the products' base projects.
+  id: FR-002
+- title: Render product sources using curated product content
+  description: The Add Materials flow loads product-source hierarchy and page listings
+    from the product section so instructors see the cleaned-up product content rather
+    than the raw base project, and product-source page search includes only visible
+    product section resources.
+  id: FR-003
+- title: Preserve existing project-source remix behavior
+  description: Users who can access project publications continue to see and add project-source
+    materials with the same validation, ordering, and save behavior.
+  id: FR-004
+- title: Resolve selected product-source materials through pinned publications
+  description: Adding materials from a product source resolves each selected resource
+    through the product source's project/publication mapping before appending it to
+    the target section.
+  id: FR-005
+- title: Maintain conflict and availability protections across source types
+  description: Remix validation continues to reject unavailable sources and shared-resource
+    conflicts for project sources, product sources, and mixed source selections.
+  id: FR-006
+- title: Provide observable aggregate outcomes for product-source remix
+  description: The implementation emits or extends aggregate operational signals for
+    source selection and add outcomes without logging sensitive content.
+  id: FR-007
+- title: Provide end-to-end scenario coverage for community product-source remix
+  description: The implementation includes scenario coverage for community product
+    access and product-source remix, extending the scenario DSL if existing directives
+    cannot express the workflow.
+  id: FR-008
+acceptance_criteria:
+- title: An instructor with community access to two products and no projects can add
+    materials from the other product in Manage > Configure Content > Add Materials
+  requirement: Represent project publications and product templates as explicit remix
+    sources
+  verification_method: automated and manual
+  id: AC-001
+- title: A product-only community association makes the product visible as a remix
+    source while the underlying base project remains unavailable as a project source
+  requirement: Authorize product-source remix through community product access
+  verification_method: automated
+  id: AC-002
+- title: Selecting a product source shows the product/template title and the product's
+    curated hierarchy, including product-level removals or customizations, and only
+    visible product section resources appear in product-source page search
+  requirement: Render product sources using curated product content
+  verification_method: automated and manual
+  id: AC-003
+- title: Existing tests for project-publication source listing, selection, add, save,
+    and pinned publication behavior continue to pass
+  requirement: Preserve existing project-source remix behavior
+  verification_method: automated
+  id: AC-004
+- title: Adding a selected resource from a product source appends the expected hierarchy
+    node and records the correct source project publication for future delivery resolution
+  requirement: Resolve selected product-source materials through pinned publications
+  verification_method: automated
+  id: AC-005
+- title: Attempts to add unavailable materials or materials from sources that share
+    conflicting project resources produce the existing user-facing errors and do not
+    mutate the target hierarchy
+  requirement: Maintain conflict and availability protections across source types
+  verification_method: automated
+  id: AC-006
+- title: Product-source source selection and add success/failure outcomes are observable
+    through aggregate telemetry or existing operational logging without raw content
+    payloads
+  requirement: Provide observable aggregate outcomes for product-source remix
+  verification_method: automated or inspection
+  id: AC-007
+- title: Source picker rows visibly identify whether each source is a Project or
+    Product/Template
+  requirement: Represent project publications and product templates as explicit remix
+    sources
+  verification_method: automated and manual
+  id: AC-008
+- title: End-to-end scenario coverage verifies community product access and product-source
+    remix, with scenario DSL extensions included if current directives cannot express
+    the workflow
+  requirement: Provide end-to-end scenario coverage for community product-source remix
+  verification_method: automated
+  id: AC-009

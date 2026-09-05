@@ -28,7 +28,16 @@ mix format
 
 # Reset database
 mix ecto.reset
+
+# Generate a database migration
+mix ecto.gen.migration add_posts_table
 ```
+
+#### Codex Mix Commands
+
+Mix 1.19+ opens a loopback TCP socket for `Mix.PubSub`, which is blocked by the default Codex
+sandbox. Run `mix format`, `mix test`, `mix compile`, and other Mix commands with escalated
+sandbox permissions on the first attempt. Keep escalation scoped to the specific Mix command.
 
 ### Frontend (TypeScript/React)
 
@@ -130,6 +139,21 @@ PostgreSQL with Ecto ORM. Key tables:
 - `users` & `authors`: Account management
 - `enrollments`: Student-section relationships
 - `attempts`: Student activity attempts
+
+### Database Migration Policy
+
+- Always create new Ecto migrations with the standard generator command:
+
+  ```bash
+  mix ecto.gen.migration add_posts_table
+  ```
+
+- Replace `add_posts_table` with a descriptive snake_case migration name for the schema change.
+- Do not manually invent migration timestamps or filenames.
+- Every migration must define both `up/0` and `down/0` explicitly.
+- Do not use `change/0`, even when Ecto could infer the rollback.
+- `up/0` must contain the forward migration and `down/0` must explicitly reverse it in dependency-safe order.
+- Verify both migration and rollback behavior when the change is non-trivial.
 
 ## Activity Development
 
@@ -236,10 +260,21 @@ The review process should first assess the scope of the PR, then load the approp
 - Follow Elixir formatting standards (use `mix format`)
 - Follow Gleam formatting standards (use `gleam format`)
 - Always put alias and import statements at the top of a file
+- Add documentation for all new or modified public API functions.
+- Document private functions only when the documentation materially improves clarity, especially
+  for complex behavior, non-obvious constraints, or important implementation decisions.
 - TypeScript code uses ESLint configuration
 - React components should be functional with hooks
 - Prefer composition over inheritance
 - Keep contexts focused and cohesive
+- Bootstrap-style classes and dedicated Sass/CSS stylesheets are deprecated for new UI work.
+- Prefer Tailwind utility classes and established component-framework patterns for new UI and
+  reusable styling.
+- When modifying UI that already makes extensive use of Bootstrap classes or dedicated Sass/CSS,
+  preserve the existing approach when replacing it would introduce unnecessary risk or expand the
+  task substantially.
+- When the risk is low, migrate the modified UI surface away from deprecated Bootstrap or
+  stylesheet-based styling instead of adding more of it.
 - Rarely use "if", prefer "case" statements
 - Use the "with" construct to avoid nested "case" statements
 

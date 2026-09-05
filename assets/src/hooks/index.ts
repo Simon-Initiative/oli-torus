@@ -55,6 +55,7 @@ import { PageContentHooks } from './page_content_hooks';
 import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
 import { PreserveScrollAnchor } from './preserve_scroll_anchor';
+import { PreviewAlternativesTabs } from './preview_alternatives_tabs';
 import { ProgressTileChart } from './progress_tile_chart';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
@@ -116,6 +117,7 @@ export const Hooks = {
   IframeLoadState,
   ProjectsTypeahead,
   ProgressTileChart,
+  PreviewAlternativesTabs,
   RenderedActivityIframeState,
   TextInputListener,
   ReviewActivity,

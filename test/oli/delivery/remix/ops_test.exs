@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Remix.OpsTest do
   import Oli.Factory
 
   alias Oli.Delivery.Remix
+  alias Oli.Delivery.Remix.Source
   alias Oli.Delivery.Sections
   alias Oli.Publishing
 
@@ -113,6 +114,16 @@ defmodule Oli.Delivery.Remix.OpsTest do
              Remix.add_materials(state, [{pub.id, page.resource_id}])
   end
 
+  test "derives publication lookup from available sources", %{state: state} do
+    %{pub: pub} = publication_with_page("Available Source")
+    state = make_publication_available(state, pub)
+
+    assert %{id: publication_id, project_id: project_id} = Remix.publication_by_id(state, pub.id)
+    assert publication_id == pub.id
+    assert project_id == pub.project_id
+    assert Remix.publication_by_id(state, -1) == nil
+  end
+
   test "add_materials rejects materials sharing resources with an already remixed project", %{
     state: state
   } do
@@ -188,7 +199,7 @@ defmodule Oli.Delivery.Remix.OpsTest do
   end
 
   defp make_publication_available(state, pub) do
-    %{state | available_publications: [pub | state.available_publications]}
+    %{state | available_sources: [Source.project(pub) | state.available_sources]}
   end
 
   defp publication_with_page(page_title, opts \\ []) do

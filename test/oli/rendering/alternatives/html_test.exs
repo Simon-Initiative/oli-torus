@@ -12,6 +12,76 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
       %{author: author}
     end
 
+    test "tags delivered alternative branches with their group id", %{author: author} do
+      element = %{
+        "type" => "alternatives",
+        "id" => "preference-placement",
+        "alternatives_id" => 23,
+        "children" => [
+          %{"type" => "alternative", "value" => "a", "children" => []},
+          %{"type" => "alternative", "value" => "b", "children" => []}
+        ]
+      }
+
+      rendered =
+        Alternatives.render(
+          %Context{
+            user: author,
+            activity_map: %{},
+            alternatives_groups_fn: fn ->
+              {:ok, [%{id: 23, strategy: "select_all", options: []}]}
+            end,
+            alternatives_selector_fn: &Oli.Resources.Alternatives.SelectAllStrategy.select/2,
+            mode: :delivery
+          },
+          element,
+          Alternatives.Html
+        )
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered =~
+               ~s|class="alternative alternative-a" data-alternatives-id="23"|
+
+      assert rendered =~
+               ~s|class="alternative alternative-b" data-alternatives-id="23"|
+    end
+
+    test "passes the page resource id to the alternatives strategy", %{author: author} do
+      test_process = self()
+
+      element = %{
+        "type" => "alternatives",
+        "id" => "experiment-placement",
+        "alternatives_id" => 23,
+        "children" => [%{"type" => "alternative", "value" => "a", "children" => []}]
+      }
+
+      Alternatives.render(
+        %Context{
+          user: author,
+          page_id: 42,
+          activity_map: %{},
+          alternatives_groups_fn: fn ->
+            {:ok, [%{id: 23, strategy: "select_all", options: []}]}
+          end,
+          alternatives_selector_fn: fn strategy_context, alternatives_element ->
+            send(test_process, {:strategy_context, strategy_context})
+
+            Oli.Resources.Alternatives.SelectAllStrategy.select(
+              strategy_context,
+              alternatives_element
+            )
+          end,
+          mode: :review
+        },
+        element,
+        Alternatives.Html
+      )
+
+      assert_receive {:strategy_context, %{page_resource_id: 42}}
+    end
+
     test "renders well-formed survey properly", %{author: author} do
       activity_map = %{
         1 => %ActivitySummary{
@@ -153,9 +223,24 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
 
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
+      assert rendered_html_string =~ ~s|phx-hook="PreviewAlternativesTabs"|
+      assert rendered_html_string =~ ~s|role="tablist"|
+      assert rendered_html_string =~ ~s|aria-label="Alternative content options"|
+      assert rendered_html_string =~ ~s|role="tab"|
+      assert rendered_html_string =~ ~s|aria-selected="true"|
+
+      assert rendered_html_string =~
+               ~s|class="btn btn-sm mr-2 whitespace-nowrap bg-primary text-white dark:bg-blue-600 dark:text-white"|
+
+      assert rendered_html_string =~
+               ~s|class="btn btn-sm mr-2 whitespace-nowrap hover:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-700"|
+
+      assert rendered_html_string =~ ~s|role="tabpanel"|
+      assert rendered_html_string =~ ~s| hidden>|
+
       # renders R alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-DhY8ERStw7vXActR5U5BqR"><div class="content" ><p data-point-marker="19094070">R</p>|
+               ~s|<div class="content" ><p data-point-marker="19094070">R</p>|
 
       # renders activity embedded in R alternative
       assert rendered_html_string =~
@@ -163,11 +248,116 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
 
       # renders Excel alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-kQqFWsHyXeMenEDzT9rymP"><div class=\"content\" ><p data-point-marker="1742467879">Excel</p>\n</div>|
+               ~s|<div class=\"content\" ><p data-point-marker="1742467879">Excel</p>\n</div>|
 
       # renders Python alternative
       assert rendered_html_string =~
-               ~s|<div class="alternative alternative-bdaqYkKs8RFE4LWLmPCLnf"><div class=\"content\" ><p data-point-marker="378189886">Python</p>\n</div>|
+               ~s|<div class=\"content\" ><p data-point-marker="378189886">Python</p>\n</div>|
+    end
+
+    test "treats legacy upgrade decision points as experiment-controlled in preview", %{
+      author: author
+    } do
+      element = %{
+        "type" => "alternatives",
+        "id" => "legacy-placement",
+        "alternatives_id" => 1,
+        "strategy" => "user_section_preference",
+        "children" => [
+          %{"type" => "alternative", "value" => "a", "children" => []},
+          %{"type" => "alternative", "value" => "b", "children" => []}
+        ]
+      }
+
+      groups_fn = fn ->
+        {:ok,
+         [
+           %{
+             id: 1,
+             revision_id: 1,
+             title: "Legacy decision point",
+             strategy: "upgrade_decision_point",
+             options: [%{"id" => "a", "name" => "A"}, %{"id" => "b", "name" => "B"}]
+           }
+         ]}
+      end
+
+      rendered =
+        Alternatives.render(
+          %Context{
+            user: author,
+            activity_map: %{},
+            alternatives_groups_fn: groups_fn,
+            alternatives_selector_fn: &Oli.Resources.Alternatives.select/2,
+            mode: :author_preview
+          },
+          element,
+          Alternatives.Html
+        )
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered =~ ~s|phx-hook="PreviewAlternativesTabs"|
+      assert rendered =~ "Alternative 1"
+      assert rendered =~ "Alternative 2"
+      assert rendered =~ "Preview each alternative using the tabs below to switch between them"
+
+      assert rendered =~
+               "experiment policy assigns one alternative to each learner"
+
+      assert rendered =~ "assignment stays with the learner for this intervention"
+      refute rendered =~ "AlternativesPreferenceSelector"
+      refute rendered =~ "alternatives-selector-1"
+    end
+
+    test "renders user preference alternatives with the dropdown instead of tabs in preview", %{
+      author: author
+    } do
+      element = %{
+        "type" => "alternatives",
+        "id" => "preference-placement",
+        "alternatives_id" => 1,
+        "children" => [
+          %{"type" => "alternative", "value" => "a", "children" => []},
+          %{"type" => "alternative", "value" => "b", "children" => []}
+        ]
+      }
+
+      groups_fn = fn ->
+        {:ok,
+         [
+           %{
+             id: 1,
+             revision_id: 1,
+             title: "Learner choice",
+             strategy: "user_section_preference",
+             options: [%{"id" => "a", "name" => "A"}, %{"id" => "b", "name" => "B"}]
+           }
+         ]}
+      end
+
+      rendered =
+        Alternatives.render(
+          %Context{
+            user: author,
+            activity_map: %{},
+            alternatives_groups_fn: groups_fn,
+            alternatives_selector_fn: &Oli.Resources.Alternatives.select/2,
+            extrinsic_read_section_fn: fn _, _, _ -> {:ok, %{}} end,
+            mode: :author_preview
+          },
+          element,
+          Alternatives.Html
+        )
+        |> Phoenix.HTML.raw()
+        |> Phoenix.HTML.safe_to_string()
+
+      assert rendered =~ "AlternativesPreferenceSelector"
+      assert rendered =~ "alternatives-selector-1"
+      assert rendered =~ "Preview each alternative by selecting it from the list below"
+      assert rendered =~ "stored as their preference for the section"
+      refute rendered =~ ~s|phx-hook="PreviewAlternativesTabs"|
+      refute rendered =~ ~s|role="tablist"|
     end
   end
 end

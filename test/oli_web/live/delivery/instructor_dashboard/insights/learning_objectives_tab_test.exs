@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.ContainedObjective
   alias Oli.Repo
+  alias Oli.Resources.ResourceType
 
   defp live_view_learning_objectives_route(section_slug, params \\ %{}) do
     Routes.live_path(
@@ -120,17 +121,118 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       conn: conn,
       instructor: instructor
     } do
-      section =
-        insert(:section,
-          open_and_free: true,
-          type: :enrollable
-        )
+      # `base_project_with_larger_hierarchy/0` gives a section with real, populated
+      # section resources (required for `decorated_numbering_map/1`, used by this tab's
+      # suppression-aware container navigator) but no objective-type resources at all --
+      # a realistic "course with content but no objectives yet" section, unlike a bare
+      # `insert(:section, ...)`, which has no section resources and cannot occur via any
+      # real section-creation flow.
+      %{section: section} = Oli.Seeder.base_project_with_larger_hierarchy()
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       refute has_element?(view, "#objectives-table")
       assert has_element?(view, "h6", "There are no objectives to show")
+    end
+
+    test "container navigator dropdown shows suppression-aware unit/module numbering", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{
+        section: section,
+        unit1_resource: unit1_resource
+      } = Oli.Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      normalized_text =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.text()
+        |> String.replace(~r/\s+/, " ")
+
+      # Unit 1 (suppressed) shows only its bare title in the navigator, no "Unit : " prefix;
+      # Unit 2 is renumbered to "Unit 1" since Unit 1 no longer consumes a numbering slot.
+      refute normalized_text =~ "Unit : "
+      assert normalized_text =~ "Unit 1: Unit 2"
+    end
+
+    test "container navigator dropdown keeps a suppressed middle unit in its document position",
+         %{conn: conn, instructor: instructor} do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      unit_a =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Alpha")
+
+      unit_b = insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Beta")
+
+      unit_c =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Gamma")
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_a.resource_id, unit_b.resource_id, unit_c.resource_id],
+          title: "Root Container"
+        )
+
+      all_revisions = [unit_a, unit_b, unit_c, container_revision]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+      end)
+
+      publication =
+        insert(:publication, project: project, root_resource_id: container_revision.resource_id)
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      section =
+        insert(:section,
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          type: :enrollable
+        )
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      item_titles =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{[data-list-navigator-option] [title]})
+        |> Enum.map(&(Floki.attribute(&1, "title") |> List.first()))
+        |> Enum.reject(&(&1 in [nil, "All"]))
+
+      # Beta (suppressed, no number) must stay between Alpha and Gamma -- their real
+      # document order -- not get pushed to the end of the list by its nil
+      # numbering_index.
+      assert item_titles == ["Alpha", "Beta", "Gamma"]
     end
 
     test "does not show objectives that are not root-contained", %{

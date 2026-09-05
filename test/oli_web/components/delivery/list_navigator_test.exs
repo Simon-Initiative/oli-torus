@@ -464,6 +464,34 @@ defmodule OliWeb.Components.Delivery.ListNavigatorTest do
       refute html =~ "Module -1: All Modules"
     end
 
+    test "handles items with a nil numbering_index (a suppressed container)", %{
+      conn: conn,
+      path_builder_fn: path_fn
+    } do
+      # A container with numbering_index: nil is what a suppressed top-level unit (or a
+      # descendant of one) looks like after Sections.overlay_suppression_aware_numbering/2.
+      suppressed_item = %{
+        resource_id: 124,
+        title: "Suppressed Unit",
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        numbering_level: 1,
+        numbering_index: nil
+      }
+
+      {:ok, _lcd, html} =
+        live_component_isolated(
+          conn,
+          ListNavigator,
+          items: [suppressed_item],
+          current_item_resource_id: 124,
+          path_builder_fn: path_fn
+        )
+
+      # Should show just the title without a numbering prefix, not crash on the nil value
+      assert html =~ "Suppressed Unit"
+      refute html =~ "Unit : Suppressed Unit"
+    end
+
     test "renders a single item as non-interactive text without dropdown controls", %{
       conn: conn,
       path_builder_fn: path_fn

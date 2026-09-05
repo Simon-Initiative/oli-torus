@@ -19,6 +19,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
   alias Oli.InstructorDashboard.Oracles.StudentInfo
   alias Oli.Repo
   alias Oli.Resources.ResourceType
+  alias Lti_1p3.Roles.ContextRoles
 
   @grades_execute_event [:oli, :dashboard, :oracle, :execute]
 
@@ -334,6 +335,111 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
   end
 
   describe "ScopeResources oracle" do
+    # Uses its own Factory-built fixture (not the shared module-level `map`) with unit
+    # and module titles deliberately unlike "Unit 1"/"Module 1" (Oli.Seeder's convention).
+    # A suppressed container's label falls back to its bare title with no numbering
+    # prefix at all (see container_label/2 above), so if the fixture's titles happened
+    # to equal their own numbered form (as Oli.Seeder's do), a bare-title-fallback
+    # assertion would be indistinguishable from suppression silently not applying.
+    setup do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      mod1_page = insert(:revision, resource_type_id: ResourceType.id_for_page(), title: "Page")
+
+      mod1_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [mod1_page.resource_id],
+          title: "Introduction to Math"
+        )
+
+      mod2_page = insert(:revision, resource_type_id: ResourceType.id_for_page(), title: "Page")
+
+      mod2_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [mod2_page.resource_id],
+          title: "Basic Geometry"
+        )
+
+      unit1_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [mod1_revision.resource_id, mod2_revision.resource_id],
+          title: "Foundations"
+        )
+
+      mod3_page = insert(:revision, resource_type_id: ResourceType.id_for_page(), title: "Page")
+
+      mod3_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [mod3_page.resource_id],
+          title: "Statistics Basics"
+        )
+
+      unit2_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [mod3_revision.resource_id],
+          title: "Data Analysis"
+        )
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit1_revision.resource_id, unit2_revision.resource_id],
+          title: "Root Container"
+        )
+
+      all_revisions = [
+        mod1_page,
+        mod1_revision,
+        mod2_page,
+        mod2_revision,
+        unit1_revision,
+        mod3_page,
+        mod3_revision,
+        unit2_revision,
+        container_revision
+      ]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+      end)
+
+      publication =
+        insert(:publication, project: project, root_resource_id: container_revision.resource_id)
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      section = insert(:section, base_project: project)
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      instructor = insert(:user)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok,
+       map: %{
+         section: section,
+         instructor: instructor,
+         unit1_resource: unit1_revision.resource,
+         mod1_resource: mod1_revision.resource,
+         mod2_resource: mod2_revision.resource,
+         mod1_pages: [mod1_page],
+         mod2_pages: [mod2_page],
+         mod3_pages: [mod3_page]
+       }}
+    end
+
     test "returns scoped descendant items with relative context labels", %{map: map} do
       context =
         build_context(
@@ -344,7 +450,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
 
       assert {:ok, payload} = ScopeResources.load(context, [])
       assert payload.course_title == map.section.title
-      assert payload.scope_label == "Unit 1"
+      assert payload.scope_label == "Foundations"
 
       resource_ids = payload.items |> Enum.map(& &1.resource_id) |> Enum.sort()
 
@@ -370,6 +476,39 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
         Enum.find(payload.items, &(&1.resource_id == hd(map.mod1_pages).resource.id))
 
       assert page_item.context_label == "Unit 1 > Module 1"
+    end
+
+    test "shows suppression-aware context labels when a top-level unit is unnumbered", %{
+      map: map
+    } do
+      {:ok, section} =
+        Sections.update_section(map.section, %{unnumbered_unit_ids: [map.unit1_resource.id]})
+
+      context = build_context(section.id, map.instructor.id, %{container_type: :course})
+
+      assert {:ok, payload} = ScopeResources.load(context, [])
+
+      unit2_page_item =
+        Enum.find(payload.items, &(&1.resource_id == hd(map.mod3_pages).resource.id))
+
+      # Unit 2 is renumbered to "Unit 1" once Unit 1 is suppressed. Module 3 (Unit 2's only
+      # module) is renumbered to "Module 1" too: Modules 1 and 2 sit inside the suppressed
+      # Unit 1 subtree, so they never consume a level-2 numbering slot, and Module 3 is the
+      # first module display-numbering actually assigns one to.
+      refute unit2_page_item.context_label == "Unit 2 > Module 3"
+      assert unit2_page_item.context_label == "Unit 1 > Module 1"
+
+      # A page nested inside the suppressed Unit 1 (via "Basic Geometry") falls back to
+      # bare titles for both breadcrumb segments -- no numbering prefix at all -- instead
+      # of crashing or showing a stale/raw number, matching how Learn presents a
+      # suppressed unit. Titles are deliberately unlike "Unit 1"/"Module 2" so this
+      # assertion can't be confused with the (format-wise identical-looking) numbered
+      # form a suppression bug would leak through -- see the fixture's setup comment.
+      unit1_page_item =
+        Enum.find(payload.items, &(&1.resource_id == hd(map.mod2_pages).resource.id))
+
+      refute unit1_page_item.context_label == "Unit 1 > Module 2"
+      assert unit1_page_item.context_label == "Foundations > Basic Geometry"
     end
   end
 

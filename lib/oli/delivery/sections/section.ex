@@ -40,7 +40,6 @@ defmodule Oli.Delivery.Sections.Section do
     field(:slug, :string)
     field(:open_and_free, :boolean, default: false)
     field(:requires_enrollment, :boolean, default: false)
-    field(:has_experiments, :boolean, default: false)
     field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v2)
     field(:learning_model_version, Ecto.Enum, values: ModelVersion.values(), default: :naive)
 
@@ -191,7 +190,6 @@ defmodule Oli.Delivery.Sections.Section do
       :context_id,
       :slug,
       :open_and_free,
-      :has_experiments,
       :analytics_version,
       :status,
       :invite_token,

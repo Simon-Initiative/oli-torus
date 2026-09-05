@@ -4,6 +4,10 @@ defmodule OliWeb.Api.ResourceControllerTest do
   import Oli.Factory
 
   alias Oli.Resources
+  alias Oli.Authoring.Course
+  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Publishing
+  alias Oli.Utils.Time
 
   describe "GET /api/v1/project/:project/link" do
     setup [:author_conn, :create_project_with_pages]
@@ -108,6 +112,61 @@ defmodule OliWeb.Api.ResourceControllerTest do
         )
 
       assert response(conn, 403)
+    end
+  end
+
+  describe "PUT /api/v1/project/:project/resource/:resource" do
+    setup [:author_conn, :create_project_with_pages]
+
+    test "returns forbidden when adding a content element for a disabled project feature", %{
+      author: author,
+      conn: conn,
+      project: project,
+      page_1: page
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: false,
+          experiments_enabled: true
+        })
+
+      {:ok, alternatives_group} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          Oli.Resources.ResourceType.id_for_alternatives(),
+          %{
+            title: "Alternatives Group",
+            content: %{"options" => [], "strategy" => "user_section_preference"}
+          }
+        )
+
+      project.slug
+      |> Publishing.project_working_publication()
+      |> then(&Publishing.get_published_resource!(&1.id, page.resource_id))
+      |> Publishing.update_published_resource(%{
+        lock_updated_at: Time.now(),
+        locked_by_id: author.id
+      })
+
+      conn =
+        put(conn, "/api/v1/project/#{project.slug}/resource/#{page.slug}", %{
+          "update" => %{
+            "content" => %{
+              "version" => "0.1.0",
+              "model" => [
+                %{
+                  "type" => "alternatives",
+                  "id" => "new-alternatives",
+                  "alternatives_id" => alternatives_group.resource_id,
+                  "children" => []
+                }
+              ]
+            }
+          }
+        })
+
+      assert response(conn, 403) == "alternatives authoring is not enabled for this project"
     end
   end
 

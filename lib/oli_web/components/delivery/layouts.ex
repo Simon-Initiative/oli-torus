@@ -518,6 +518,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:sidebar_expanded, :boolean)
   attr(:preview_mode, :boolean)
   attr(:section, Section, default: nil)
+  attr(:project, Project, default: nil)
   attr(:resource_title, :string)
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
@@ -581,7 +582,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           </div>
           <WorkspaceUtils.sub_menu
             :if={@resource_slug}
-            hierarchy={WorkspaceUtils.hierarchy(@active_workspace)}
+            hierarchy={WorkspaceUtils.hierarchy(@active_workspace, @project)}
             resource_slug={@resource_slug}
             resource_title={@resource_title}
             sidebar_expanded={@sidebar_expanded}

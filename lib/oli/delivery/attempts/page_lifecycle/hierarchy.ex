@@ -55,7 +55,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       errors: errors,
       prototypes: prototypes,
       transformed_content: transformed_content,
-      unscored: unscored
+      unscored: unscored,
+      alternative_groups_by_id: alternative_groups_by_id,
+      experiment_decisions: experiment_decisions,
+      experiment_attributions: experiment_attributions
     } =
       context.activity_provider.(
         audience_filtered_content,
@@ -95,7 +98,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           datashop_session_id
         )
 
-        {:ok, resource_attempt}
+        {:ok,
+         %{
+           resource_attempt
+           | alternative_groups_by_id: alternative_groups_by_id,
+             experiment_decisions: experiment_decisions,
+             experiment_attributions: experiment_attributions
+         }}
 
       error ->
         error

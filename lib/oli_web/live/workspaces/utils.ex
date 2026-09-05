@@ -352,7 +352,7 @@ defmodule OliWeb.Workspaces.Utils do
     route
   end
 
-  def hierarchy(:course_author) do
+  def hierarchy(:course_author, project) do
     [
       %SubMenuItem{
         text: "Overview",
@@ -363,43 +363,52 @@ defmodule OliWeb.Workspaces.Utils do
         text: "Create",
         icon: "author_create",
         view: :create,
-        children: [
-          %SubMenuItem{
-            text: "Objectives",
-            view: :objectives,
-            parent_view: :create
-          },
-          %SubMenuItem{
-            text: "Activity Bank",
-            view: :activity_bank,
-            parent_view: :create
-          },
-          %SubMenuItem{
-            text: "Experiments",
-            view: :experiments,
-            parent_view: :create
-          },
-          %SubMenuItem{
-            text: "Bibliography",
-            view: :bibliography,
-            parent_view: :create
-          },
-          %SubMenuItem{
-            text: "Curriculum",
-            view: :curriculum,
-            parent_view: :create
-          },
-          %SubMenuItem{
-            text: "All Pages",
-            view: :pages,
-            parent_view: :create
-          },
-          %SubMenuItem{
-            text: "All Activities",
-            view: :activities,
-            parent_view: :create
-          }
-        ]
+        children:
+          [
+            %SubMenuItem{
+              text: "Objectives",
+              view: :objectives,
+              parent_view: :create
+            },
+            %SubMenuItem{
+              text: "Activity Bank",
+              view: :activity_bank,
+              parent_view: :create
+            },
+            project && project.experiments_enabled &&
+              %SubMenuItem{
+                text: "Experiments",
+                view: :experiments,
+                parent_view: :create
+              },
+            project && project.alternatives_enabled &&
+              %SubMenuItem{
+                text: "Alternatives",
+                view: :alternatives,
+                parent_view: :create
+              },
+            %SubMenuItem{
+              text: "Bibliography",
+              view: :bibliography,
+              parent_view: :create
+            },
+            %SubMenuItem{
+              text: "Curriculum",
+              view: :curriculum,
+              parent_view: :create
+            },
+            %SubMenuItem{
+              text: "All Pages",
+              view: :pages,
+              parent_view: :create
+            },
+            %SubMenuItem{
+              text: "All Activities",
+              view: :activities,
+              parent_view: :create
+            }
+          ]
+          |> Enum.filter(&match?(%SubMenuItem{}, &1))
       },
       %SubMenuItem{
         text: "Publish",
@@ -445,7 +454,7 @@ defmodule OliWeb.Workspaces.Utils do
     ]
   end
 
-  def hierarchy(:instructor) do
+  def hierarchy(:instructor, _project) do
     [
       %SubMenuItem{
         text: "Overview",
@@ -520,7 +529,9 @@ defmodule OliWeb.Workspaces.Utils do
     ]
   end
 
-  def hierarchy(:student) do
+  def hierarchy(:student, _project) do
     []
   end
+
+  def hierarchy(active_workspace), do: hierarchy(active_workspace, nil)
 end

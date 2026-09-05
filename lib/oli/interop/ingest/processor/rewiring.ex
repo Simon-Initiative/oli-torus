@@ -206,7 +206,13 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                 {ref, {:error, [original | invalid_refs]}}
 
               retrieved ->
-                {Map.put(ref, "alternatives_id", retrieved), {status, invalid_refs}}
+                rewritten =
+                  ref
+                  |> Map.put("alternatives_id", retrieved)
+                  |> Map.delete("group")
+                  |> Map.delete("strategy")
+
+                {rewritten, {status, invalid_refs}}
             end
 
           other ->

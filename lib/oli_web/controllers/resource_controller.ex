@@ -24,7 +24,6 @@ defmodule OliWeb.ResourceController do
 
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
-        context = Map.put(context, :hasExperiments, conn.assigns.project.has_experiments)
         render_editor(context, conn, project_slug, revision_slug, is_admin?)
 
       {:error, :not_found} ->

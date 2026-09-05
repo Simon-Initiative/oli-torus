@@ -1188,7 +1188,8 @@ defmodule OliWeb.DeliveryControllerTest do
   defp setup_lti_session(%{conn: conn}) do
     author = author_fixture()
 
-    %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
+    %{project: project, institution: institution, publication: base_publication} =
+      Oli.Seeder.base_project_with_resource(author)
 
     tool_jwk = jwk_fixture()
 
@@ -1203,6 +1204,8 @@ defmodule OliWeb.DeliveryControllerTest do
         lti_1p3_deployment_id: deployment.id,
         base_project_id: project.id
       })
+
+    {:ok, section} = Sections.create_section_resources(section, base_publication)
 
     institution_no_rc = insert(:institution, research_consent: :no_form)
     deployment_no_rc = insert(:lti_deployment, institution: institution_no_rc)

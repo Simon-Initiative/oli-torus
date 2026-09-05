@@ -265,6 +265,7 @@
   <div class="grid grid-cols-12" phx-window-keydown="keydown">
     <div class="col-span-12">
       <div class="curriculum-entries">
+        <ReorderableList.status id="curriculum-reorder-status" />
         <%= if Enum.count(@children) == 0 do %>
           <div style="margin-top: 15px">
             <p>There's nothing here.</p>
@@ -284,6 +285,7 @@
             activity_map={@rollup.activity_map}
             objective_map={@rollup.objective_map}
             index={index}
+            count={@children_count}
             project={@project}
             view={@view}
             numberings={@numberings}
