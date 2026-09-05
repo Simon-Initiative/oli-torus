@@ -68,10 +68,10 @@ defmodule Oli.Delivery.Snapshots.Worker do
       )
       |> Repo.all()
 
-    create_and_emit_snapshot(results, section_slug, emit_fn)
+    create_and_emit_snapshot(results, section, emit_fn)
   end
 
-  defp create_and_emit_snapshot(results, section_slug, emit_fn) do
+  defp create_and_emit_snapshot(results, section, emit_fn) do
     # Determine the project id
     project_id =
       case results do
@@ -96,25 +96,14 @@ defmodule Oli.Delivery.Snapshots.Worker do
           :ok
 
         %AttemptGroup{} = attempt_group ->
-          bundle_id = create_bundle_id(attempt_group)
-
-          partition_id = attempt_group.context.section_id
-
-          %StatementBundle{
-            body: body,
-            bundle_id: bundle_id,
-            partition_id: partition_id,
-            category: :attempt_evaluated,
-            partition: :section
-          }
-          |> emit_fn.()
+          emit_xapi(attempt_group, emit_fn)
       end
     else
       e -> e
     end
   end
 
-  defp emit_xapi(attempt_group) do
+  defp emit_xapi(attempt_group, emit_fn) do
     body =
       StatementFactory.to_statements(attempt_group)
       |> Oli.Analytics.Common.to_jsonlines()
@@ -130,7 +119,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
       category: :attempt_evaluated,
       partition: :section
     }
-    |> Oli.Analytics.XAPI.emit()
+    |> emit_fn.()
   end
 
   defp create_bundle_id(attempt_group) do
