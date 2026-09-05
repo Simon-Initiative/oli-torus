@@ -324,6 +324,104 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       wait_for_coverage(view)
     end
 
+    test "searches sub-objectives and expands the matching hierarchy", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, child} = create_objective(project, publication, "child_obj", "Matching Sub-Objective")
+
+      {:ok, parent} =
+        create_objective(project, publication, "parent_obj", "Parent Objective", [
+          child.resource_id
+        ])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "matching sub"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "##{parent.slug} .collapse")
+      assert has_element?(view, "##{parent.slug}", "Sub-Objective")
+      assert has_element?(view, "##{parent.slug} mark", "Sub")
+
+      view
+      |> element("button[phx-click='reset_search']")
+      |> render_click()
+
+      refute has_element?(view, "##{parent.slug} .collapse")
+    end
+
+    test "searches page and activity titles and shows an accessible empty state", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, objective} = create_objective(project, publication, "objective", "Objective")
+
+      {:ok, activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          objective.resource_id,
+          "activity"
+        )
+
+      create_page_with_objective(project, publication, [objective.resource_id], "page", [
+        activity.resource_id
+      ])
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      for query <- ["Page 1", "Activity"] do
+        view
+        |> element("input[phx-blur=\"change_search\"]")
+        |> render_blur(%{value: query})
+
+        view
+        |> element("button[phx-click=\"apply_search\"]")
+        |> render_click()
+
+        assert has_element?(view, "##{objective.slug} .collapse")
+        assert has_element?(view, "##{objective.slug} mark", query |> String.split() |> hd())
+
+        view
+        |> element("button[phx-click='reset_search']")
+        |> render_click()
+      end
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "does not exist"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "p", "No learning objectives match your search.")
+    end
+
+    test "bounds search input before applying it", %{conn: conn, project: project} do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      oversized_query = String.duplicate("term ", 20)
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: oversized_query})
+
+      query = :sys.get_state(view.pid).socket.assigns.query
+
+      assert String.length(query) <= 100
+      assert length(String.split(query)) <= 10
+    end
+
     test "applies sorting", %{conn: conn, project: project, publication: publication} do
       {:ok, _first_obj} = create_objective(project, publication, "first_obj", "First Objective")
 
