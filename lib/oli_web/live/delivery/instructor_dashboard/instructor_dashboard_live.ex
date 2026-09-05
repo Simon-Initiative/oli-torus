@@ -73,17 +73,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           :navigator_items,
           if(selected_container,
             do:
-              Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+              SectionResourceDepot.containers(socket.assigns.section.id,
                 numbering_level: selected_container.numbering_level
               ),
-            else: Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id)
+            else: SectionResourceDepot.containers(socket.assigns.section.id)
           )
+          |> Sections.overlay_and_order_containers_by_document_position(socket.assigns.section)
         )
       else
         socket
         |> assign(
           :navigator_items,
-          Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id)
+          SectionResourceDepot.containers(socket.assigns.section.id)
+          |> Sections.overlay_and_order_containers_by_document_position(socket.assigns.section)
         )
       end
 
@@ -122,9 +124,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
               include_related_activities_count: true
             ),
           navigator_items:
-            Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+            SectionResourceDepot.containers(socket.assigns.section.id,
               numbering_level: {:in, [1, 2]}
             )
+            |> Sections.overlay_and_order_containers_by_document_position(socket.assigns.section)
         }
       end)
 

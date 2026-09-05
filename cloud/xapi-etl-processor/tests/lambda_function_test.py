@@ -23,6 +23,9 @@ except ModuleNotFoundError:
     pytest.skip("pyarrow is required for these tests; install it or run under Python 3.11", allow_module_level=True)
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "lambda_function.py"
+FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "experiment_attributed_part_attempt.jsonl"
+FIXTURE_EVENT_HASH = "1324eea1ad081cb5cbd2f7e8859bd5ba339b5b2bb9a28ced3c70d5f08bee062a"
+FIXTURE_ATTRIBUTION_HASH = "4ab96ee53f4775c80d5bc1471f4e6c1d2ee514d5a12e0b6c1df56c5a81bcb257"
 spec = importlib.util.spec_from_file_location("lambda_function", MODULE_PATH)
 lambda_function = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = lambda_function
@@ -62,6 +65,7 @@ class LambdaFunctionTests(TestCase):
             "LAMBDA_TIMEOUT_SAFETY_MARGIN_MS",
             "CLICKHOUSE_TIMEOUT_SECONDS",
             "MAX_MESSAGES_PER_INVOCATION_TO_PROCESS",
+            "MAX_EXPERIMENT_ATTRIBUTIONS_PER_STATEMENT",
         ]:
             self.addCleanup(lambda name=env_var: os.environ.pop(name, None))
 
@@ -73,6 +77,15 @@ class LambdaFunctionTests(TestCase):
         return lambda_function.pa.Table.from_pylist(
             [{"event_hash": f"hash-{index}", "source_line": index + 1} for index in range(row_count)]
         )
+
+    def _event_tables_with_rows(self, row_count):
+        return self._table_with_rows(row_count), None
+
+    def _experiment_attributed_part_attempt_fixture(self):
+        raw_line = next(
+            line for line in FIXTURE_PATH.read_bytes().splitlines() if line.strip()
+        )
+        return raw_line, json.loads(raw_line)
 
     def test_extract_s3_references_from_event(self):
         event = {
@@ -136,6 +149,65 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(args[1], 1)
         self.assertIn("timeout_seconds", kwargs)
         self.assertIn("insert_token", kwargs)
+
+    def test_lambda_handler_inserts_experiment_attributions_with_raw_events(self):
+        raw_line, _statement = self._experiment_attributed_part_attempt_fixture()
+        event = {"Records": [self._message("msg-1")]}
+        self.mock_s3.get_object.return_value = {
+            "Body": FakeBody([raw_line.decode("utf-8")]),
+            "ETag": '"etag-value"',
+        }
+
+        with mock.patch.object(lambda_function, "insert_into_clickhouse") as insert_mock:
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "CLICKHOUSE_DATABASE": "db",
+                    "CLICKHOUSE_TABLE": "raw_events",
+                    "TARGET_ROWS_PER_INSERT": "10",
+                },
+                clear=False,
+            ):
+                result = lambda_function.lambda_handler(
+                    event, FakeContext(remaining_time_ms=60000)
+                )
+
+        self.assertEqual(result["batchItemFailures"], [])
+        self.assertEqual(insert_mock.call_count, 2)
+        self.assertEqual(insert_mock.call_args_list[0].args[1], 1)
+        self.assertEqual(insert_mock.call_args_list[0].kwargs["table"], "raw_events")
+        self.assertEqual(insert_mock.call_args_list[1].args[1], 1)
+        self.assertEqual(
+            insert_mock.call_args_list[1].kwargs["table"],
+            "experiment_attributions",
+        )
+        attribution_columns = insert_mock.call_args_list[1].kwargs["columns"]
+        self.assertNotIn("decision_point_id", attribution_columns)
+        self.assertNotIn("decision_point_key", attribution_columns)
+
+    def test_rejects_statements_exceeding_attribution_limit(self):
+        raw_line, statement = self._experiment_attributed_part_attempt_fixture()
+        attribution = statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ][0]
+        statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ] = [attribution, attribution]
+
+        with mock.patch.dict(
+            os.environ,
+            {"MAX_EXPERIMENT_ATTRIBUTIONS_PER_STATEMENT": "1"},
+            clear=False,
+        ):
+            with self.assertRaisesRegex(ValueError, "exceeds configured maximum 1"):
+                lambda_function.transform_experiment_attributions(
+                    statement,
+                    raw_bytes=raw_line,
+                    bucket="bucket",
+                    key="events/file.jsonl",
+                    etag='"etag"',
+                    line_number=1,
+                )
 
     def test_lambda_handler_respects_dry_run(self):
         body = json.dumps(
@@ -243,6 +315,145 @@ class LambdaFunctionTests(TestCase):
         source_lines = table.column("source_line").to_pylist()
         self.assertEqual(source_lines, [1, 2])
 
+    def test_transform_xapi_statement_keeps_experiment_fields_out_of_raw_event(self):
+        raw_line, statement = self._experiment_attributed_part_attempt_fixture()
+
+        transformed = lambda_function.transform_xapi_statement(
+            statement,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertEqual(transformed["event_type"], "part_attempt")
+        self.assertNotIn("has_experiment_attribution", transformed)
+        self.assertNotIn("experiment_attribution_count", transformed)
+        self.assertNotIn("experiment_uuid", transformed)
+
+        rows = lambda_function.transform_experiment_attributions(
+            statement,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(transformed["event_hash"], FIXTURE_EVENT_HASH)
+        self.assertEqual(rows[0]["raw_event_hash"], FIXTURE_EVENT_HASH)
+        self.assertEqual(rows[0]["attribution_hash"], FIXTURE_ATTRIBUTION_HASH)
+        self.assertEqual(rows[0]["raw_event_type"], "part_attempt")
+        self.assertEqual(rows[0]["experiment_role"], "reward")
+        self.assertEqual(rows[0]["attribution_type"], "reward")
+        self.assertEqual(rows[0]["experiment_id"], 101)
+        self.assertEqual(rows[0]["experiment_uuid"], "11111111-2222-3333-4444-555555555555")
+        self.assertNotIn("decision_point_id", rows[0])
+        self.assertNotIn("decision_point_key", rows[0])
+        self.assertEqual(rows[0]["condition_code"], "condition-a")
+        self.assertEqual(rows[0]["assignment_scope"], "intervention")
+        self.assertIsNone(rows[0]["intervention_id"])
+        self.assertIsNone(rows[0]["intervention_key"])
+        self.assertIsNone(rows[0]["reward_value"])
+        self.assertEqual(rows[0]["reward_source"], "activity_attempt:full_credit")
+        self.assertNotIn("video_url", rows[0])
+        self.assertNotIn("activity_attempt_guid", rows[0])
+        self.assertNotIn("content_element_id", rows[0])
+        self.assertNotIn("algorithm_version", rows[0])
+        self.assertNotIn("policy_update_reason", rows[0])
+        self.assertNotIn("key_hash", rows[0])
+        self.assertNotIn("key", rows[0])
+        self.assertNotIn("outcome_id", rows[0])
+        self.assertNotIn("reward_id", rows[0])
+        self.assertNotIn("previous_policy_state_hash", rows[0])
+        self.assertNotIn("next_policy_state_hash", rows[0])
+
+        attribution = statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ][0]
+        attribution.update(
+            {
+                "intervention_id": 14,
+                "intervention_key": "807288:3765579404",
+                "assessment_binding_id": 3,
+                "assessment_page_resource_id": 807288,
+                "resource_attempt_id": 7936916,
+                "disposition": "accepted",
+                "reward_threshold": 1,
+                "normalized_score": 0,
+                "page_revision_id": 1955463,
+            }
+        )
+        evidence_row = lambda_function.transform_experiment_attributions(
+            statement,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )[0]
+        self.assertEqual(evidence_row["intervention_id"], 14)
+        self.assertEqual(evidence_row["assessment_page_resource_id"], 807288)
+        self.assertEqual(evidence_row["resource_attempt_id"], 7936916)
+        self.assertEqual(evidence_row["normalized_score"], 0.0)
+        self.assertEqual(evidence_row["page_revision_id"], 1955463)
+
+        statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ][0].update({"role": "rollup", "attribution_type": "outcome"})
+
+        rollup_rows = lambda_function.transform_experiment_attributions(
+            statement,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertEqual(rollup_rows[0]["experiment_role"], "rollup")
+        self.assertEqual(rollup_rows[0]["attribution_type"], "outcome")
+
+        attribution = statement["context"]["extensions"][
+            "http://oli.cmu.edu/extensions/experiment_attributions"
+        ][0]
+        attribution.update({"role": "media_interaction", "attribution_type": "assignment"})
+        media_rows = lambda_function.transform_experiment_attributions(
+            statement,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="events/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+        self.assertEqual(media_rows[0]["experiment_role"], "media_interaction")
+        self.assertEqual(media_rows[0]["attribution_type"], "assignment")
+
+        attribution.pop("attribution_type")
+        with self.assertRaisesRegex(ValueError, "invalid experiment attribution role/type pair"):
+            lambda_function.transform_experiment_attributions(
+                statement,
+                raw_bytes=raw_line,
+                bucket="bucket",
+                key="events/file.jsonl",
+                etag='"etag"',
+                line_number=1,
+            )
+
+        attribution["attribution_type"] = "assignment"
+        attribution.pop("key")
+        with self.assertRaisesRegex(ValueError, "key must be a non-empty string"):
+            lambda_function.transform_experiment_attributions(
+                statement,
+                raw_bytes=raw_line,
+                bucket="bucket",
+                key="events/file.jsonl",
+                etag='"etag"',
+                line_number=1,
+            )
+
     def test_lambda_handler_sends_failed_prepare_to_dlq(self):
         body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})
         event = {
@@ -348,8 +559,8 @@ class LambdaFunctionTests(TestCase):
             with mock.patch.object(lambda_function, "_sqs_client") as sqs_mock:
                 with mock.patch.object(
                     lambda_function,
-                    "build_arrow_table_from_s3_objects",
-                    side_effect=[self._table_with_rows(2), self._table_with_rows(2)],
+                    "build_arrow_tables_from_s3_objects",
+                    side_effect=[self._event_tables_with_rows(2), self._event_tables_with_rows(2)],
                 ):
                     with mock.patch.object(
                         lambda_function,
@@ -388,11 +599,11 @@ class LambdaFunctionTests(TestCase):
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
+            "build_arrow_tables_from_s3_objects",
             side_effect=[
-                self._table_with_rows(2),
-                self._table_with_rows(2),
-                self._table_with_rows(2),
+                self._event_tables_with_rows(2),
+                self._event_tables_with_rows(2),
+                self._event_tables_with_rows(2),
             ],
         ):
             with mock.patch.object(lambda_function, "insert_into_clickhouse", side_effect=capture_insert):
@@ -419,11 +630,11 @@ class LambdaFunctionTests(TestCase):
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
+            "build_arrow_tables_from_s3_objects",
             side_effect=[
-                self._table_with_rows(2),
-                self._table_with_rows(2),
-                self._table_with_rows(2),
+                self._event_tables_with_rows(2),
+                self._event_tables_with_rows(2),
+                self._event_tables_with_rows(2),
             ],
         ):
             with mock.patch.object(
@@ -451,11 +662,11 @@ class LambdaFunctionTests(TestCase):
 
         def prepare_then_exhaust_time(_refs):
             context.remaining_time_ms = 500
-            return self._table_with_rows(2)
+            return self._event_tables_with_rows(2)
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
+            "build_arrow_tables_from_s3_objects",
             side_effect=prepare_then_exhaust_time,
         ):
             with mock.patch.object(lambda_function, "insert_into_clickhouse") as insert_mock:
@@ -483,8 +694,8 @@ class LambdaFunctionTests(TestCase):
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
-            return_value=self._table_with_rows(2),
+            "build_arrow_tables_from_s3_objects",
+            return_value=self._event_tables_with_rows(2),
         ):
             with mock.patch.object(
                 lambda_function,
@@ -523,8 +734,8 @@ class LambdaFunctionTests(TestCase):
 
         with mock.patch.object(
             lambda_function,
-            "build_arrow_table_from_s3_objects",
-            return_value=self._table_with_rows(2),
+            "build_arrow_tables_from_s3_objects",
+            return_value=self._event_tables_with_rows(2),
         ):
             with mock.patch.object(lambda_function, "insert_into_clickhouse") as insert_mock:
                 with mock.patch.dict(
@@ -608,6 +819,7 @@ class LambdaFunctionTests(TestCase):
                     "http://oli.cmu.edu/extensions/project_id": 1719,
                     "http://oli.cmu.edu/extensions/publication_id": 8625,
                     "http://oli.cmu.edu/extensions/section_id": 2161,
+                    "http://oli.cmu.edu/extensions/enrollment_id": 7654,
                     "http://oli.cmu.edu/extensions/session_id": "70a20ff3-1373-4fe1-af64-59774295d22e",
                 }
             },
@@ -660,6 +872,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["event_type"], "part_attempt")
         self.assertEqual(transformed["user_id"], "15474")
         self.assertEqual(transformed["section_id"], 2161)
+        self.assertEqual(transformed["enrollment_id"], 7654)
         self.assertEqual(transformed["project_id"], 1719)
         self.assertEqual(transformed["publication_id"], 8625)
         self.assertEqual(transformed["session_id"], "70a20ff3-1373-4fe1-af64-59774295d22e")
@@ -672,6 +885,99 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["source_line"], 1)
         self.assertEqual(transformed["source_etag"], "etag")
         self.assertEqual(transformed["event_hash"], hashlib.sha256(raw_line).hexdigest())
+
+        del event["context"]["extensions"]["http://oli.cmu.edu/extensions/enrollment_id"]
+        historical_raw_line = json.dumps(event).encode("utf-8")
+        historical = lambda_function.transform_xapi_statement(
+            event,
+            raw_bytes=historical_raw_line,
+            bucket="bucket",
+            key="path/to/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+        self.assertIsNone(historical["enrollment_id"])
+
+    def test_transform_xapi_statement_does_not_project_actor_mbox_as_user_id(self):
+        event = {
+            "actor": {"mbox": "mailto:student@example.edu"},
+            "verb": {"id": "http://id.tincanapi.com/verb/viewed"},
+            "object": {
+                "definition": {"type": "http://oli.cmu.edu/extensions/types/page"}
+            },
+            "timestamp": "2026-08-20T13:17:58Z",
+        }
+        raw_line = json.dumps(event).encode("utf-8")
+
+        transformed = lambda_function.transform_xapi_statement(
+            event,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="path/to/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertIsNone(transformed["user_id"])
+
+    def test_shared_parity_statement_preserves_raw_and_attribution_contract(self):
+        fixture_path = Path(__file__).parents[3] / "test" / "support" / "fixtures" / "upgrade_data_capture_parity_statement.json"
+        raw_bytes = fixture_path.read_bytes()
+        event = json.loads(raw_bytes)
+
+        source = {
+            "raw_bytes": raw_bytes, "bucket": "bucket", "key": "parity.json",
+            "etag": "etag", "line_number": 1,
+        }
+        raw = lambda_function.transform_xapi_statement(event, **source)
+        attributions = lambda_function.transform_experiment_attributions(event, **source)
+        attribution = next(
+            row for row in attributions if row["attribution_type"] == "outcome"
+        )
+        reward = next(
+            row for row in attributions if row["attribution_type"] == "reward"
+        )
+
+        expected_raw = {
+            "section_id": 2001, "project_id": 1001, "publication_id": 3001,
+            "enrollment_id": 501, "activity_attempt_guid": "activity-guid",
+            "activity_attempt_number": 2, "page_attempt_guid": "page-guid",
+            "page_attempt_number": 1, "activity_id": 8001,
+            "activity_revision_id": 8101, "score": 1.0, "out_of": 2.0,
+        }
+        expected_attribution = {
+            "experiment_role": "rollup", "attribution_type": "outcome",
+            "experiment_id": 101, "condition_id": 303, "condition_code": "condition-a",
+            "assignment_id": 404, "assignment_scope": "intervention",
+            "algorithm": "weighted_random", "policy_version": "weighted_random",
+            "enrollment_id": 501, "resource_attempt_id": 901,
+        }
+
+        self.assertEqual({key: raw[key] for key in expected_raw}, expected_raw)
+        self.assertEqual({key: attribution[key] for key in expected_attribution}, expected_attribution)
+        self.assertIsNone(attribution["reward_value"])
+        self.assertEqual(reward["reward_value"], 0.0)
+        self.assertEqual(reward["reward_source"], "activity_attempt:no_credit")
+
+    def test_condition_assignment_projects_as_dedicated_raw_and_attribution_rows(self):
+        # AC-016: Lambda preserves the dedicated assignment event contract.
+        fixture_path = Path(__file__).parents[3] / "test" / "support" / "fixtures" / "experiment_condition_assignment_statement.json"
+        raw_bytes = fixture_path.read_bytes().rstrip(b"\n")
+        event = json.loads(raw_bytes)
+        source = {"raw_bytes": raw_bytes, "bucket": "bucket", "key": "assignment.jsonl", "etag": "etag", "line_number": 1}
+
+        raw = lambda_function.transform_xapi_statement(event, **source)
+        [attribution] = lambda_function.transform_experiment_attributions(event, **source)
+
+        self.assertEqual(raw["event_type"], "experiment_condition_assigned")
+        self.assertEqual(attribution["raw_event_type"], "experiment_condition_assigned")
+        self.assertEqual(attribution["experiment_role"], "assignment")
+        self.assertEqual(attribution["assignment_scope"], "intervention")
+        self.assertEqual(attribution["algorithm"], "thompson_sampling")
+        self.assertEqual(attribution["policy_version"], "thompson_sampling:v2")
+        self.assertEqual(attribution["assigned_at"], "2026-08-20T15:04:05Z")
+        self.assertEqual(raw["event_hash"], hashlib.sha256(raw_bytes).hexdigest())
+        self.assertEqual(attribution["raw_event_hash"], raw["event_hash"])
 
     def test_transform_xapi_statement_preserves_verb_id_and_canonical_video_fields(self):
         shared_context_extensions = {

@@ -175,5 +175,47 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       assert lcd |> element("#outline_item_11 div[role='index']") |> render() =~ "1"
       assert lcd |> element("#outline_item_12 div[role='index']") |> render() =~ "2"
     end
+
+    test "prefers display_numbering over raw numbering when a top-level unit is suppressed", %{
+      conn: conn,
+      component_params: component_params
+    } do
+      hierarchy = %{
+        "resource_id" => 0,
+        "title" => "Course Root",
+        "children" => [
+          %{
+            "id" => 1,
+            "resource_id" => 1,
+            "title" => "Introduction",
+            "resource_type_id" => ResourceType.id_for_container(),
+            "numbering" => %{"level" => 1, "index" => 1},
+            "display_numbering" => nil,
+            "children" => []
+          },
+          %{
+            "id" => 2,
+            "resource_id" => 2,
+            "title" => "Main Concepts",
+            "resource_type_id" => ResourceType.id_for_container(),
+            "numbering" => %{"level" => 1, "index" => 2},
+            "display_numbering" => %{"level" => 1, "index" => 1},
+            "children" => []
+          }
+        ]
+      }
+
+      component_params = Map.put(component_params, :hierarchy, hierarchy)
+
+      {:ok, lcd, _html} = live_component_isolated(conn, OutlineComponent, component_params)
+
+      # Suppressed unit shows its title with no "Unit N" prefix.
+      assert lcd |> element("#outline_item_1 button") |> render() =~ "Introduction"
+      refute lcd |> element("#outline_item_1 button") |> render() =~ "Unit"
+
+      # Numbered sibling is renumbered via display_numbering, not shown with its raw index.
+      assert lcd |> element("#outline_item_2 button") |> render() =~ "Unit 1"
+      refute lcd |> element("#outline_item_2 button") |> render() =~ "Unit 2"
+    end
   end
 end

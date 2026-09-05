@@ -1,17 +1,13 @@
-import React, { PropsWithChildren, useState } from 'react';
-import { Maybe } from 'tsmonad';
+import React, { PropsWithChildren, useEffect, useMemo, useState } from 'react';
+import * as Immutable from 'immutable';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { Tooltip } from 'components/common/Tooltip';
 import { AlternativesTypes, useAlternatives } from 'components/hooks/useAlternatives';
 import { DeleteButton } from 'components/misc/DeleteButton';
-import { SelectModal } from 'components/modal/SelectModal';
-import { modalActions } from 'actions/modal';
-import { makePageUndoable } from 'apps/page-editor/types';
 import {
   AlternativeContent,
   AlternativesContent,
   ResourceContent,
-  ResourceContext,
   createAlternative,
 } from 'data/content/resource';
 import * as Persistence from 'data/persistence/resource';
@@ -35,21 +31,37 @@ interface AlternativesEditorProps extends EditorProps {
 }
 
 export const AlternativesEditor = (props: AlternativesEditorProps) => {
-  const {
-    editMode,
-    projectSlug,
-    contentItem,
-    index,
-    parents,
-    canRemove,
-    resourceContext,
-    onEdit,
-    onRemove,
-    onPostUndoable,
-  } = props;
+  const { editMode, contentItem, index, parents, canRemove, onEdit, onRemove } = props;
   const alternativesContext = useAlternatives();
 
-  const [activeOption, setActiveOption] = useState(contentItem.children.first());
+  const [activeOptionId, setActiveOptionId] = useState<string | undefined>(
+    contentItem.children.first()?.id,
+  );
+  const selectedGroup =
+    alternativesContext.type === AlternativesTypes.SUCCESS
+      ? alternativesContext.alternatives.find((group) => group.id === contentItem.alternatives_id)
+      : undefined;
+  const reconciledChildren = useMemo(
+    () =>
+      selectedGroup
+        ? reconcileAlternativeOptions(contentItem.children, selectedGroup.options)
+        : contentItem.children,
+    [contentItem.children, selectedGroup],
+  );
+  const activeOption =
+    reconciledChildren.find((option) => option.id === activeOptionId) ?? reconciledChildren.first();
+
+  useEffect(() => {
+    if (selectedGroup && !contentItem.children.equals(reconciledChildren)) {
+      onEdit({ ...contentItem, children: reconciledChildren });
+    }
+  }, [contentItem, onEdit, reconciledChildren, selectedGroup]);
+
+  useEffect(() => {
+    if (activeOption && activeOption.id !== activeOptionId) {
+      setActiveOptionId(activeOption.id);
+    }
+  }, [activeOption, activeOptionId]);
 
   const renderLoading = () => (
     <LoadingSpinner size={LoadingSpinnerSize.Medium}>Loading...</LoadingSpinner>
@@ -64,123 +76,48 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     </div>
   );
 
-  const renderAlternatives = (
-    alternativeOptions: Persistence.AlternativesGroupOption[],
-    alternativeOptionsTitles: Record<string, string>,
-  ) => {
-    const activeOptionIndex = contentItem.children.findIndex((c) => c.id == activeOption.id);
+  const renderAlternatives = (alternativeOptionsTitles: Record<string, string>) => {
+    const reconciledContent = { ...contentItem, children: reconciledChildren };
+    const activeOptionIndex = activeOption
+      ? reconciledChildren.findIndex((option) => option.id === activeOption.id)
+      : -1;
+    const reconciledActiveOption = reconciledChildren.get(activeOptionIndex);
 
-    const showCreateAlternativeModal = () => {
-      const title =
-        contentItem.strategy === 'upgrade_decision_point' ? 'Select Option' : 'Select Alternative';
-      const description =
-        contentItem.strategy === 'upgrade_decision_point' ? 'Select Option' : 'Select Alternative';
-      const linkHref =
-        contentItem.strategy === 'upgrade_decision_point'
-          ? `/authoring/project/${projectSlug}/experiments`
-          : `/authoring/project/${projectSlug}/alternatives`;
-      const linkText =
-        contentItem.strategy === 'upgrade_decision_point'
-          ? 'Manage Upgrade Options'
-          : 'Manage Alternatives Options';
-
-      window.oliDispatch(
-        modalActions.display(
-          <SelectModal
-            title={title}
-            description={description}
-            additionalControls={<ManageAlternativesLink linkHref={linkHref} linkText={linkText} />}
-            onFetchOptions={() => {
-              return Promise.resolve(
-                alternativeOptions.map((o) => ({ value: o.id, title: o.name })),
-              );
-            }}
-            onDone={(optionId: string) => {
-              window.oliDispatch(modalActions.dismiss());
-
-              const newAlt = createAlternative(optionId);
-              const update = {
-                ...contentItem,
-                children: contentItem.children.push(newAlt),
-              };
-
-              onEdit(update);
-              setActiveOption(newAlt);
-            }}
-            onCancel={() => window.oliDispatch(modalActions.dismiss())}
-          />,
-        ),
-      );
+    const onEditAlternative = (updatedContent: ResourceContent) => {
+      if (updatedContent.type === 'alternative') {
+        onEdit(updateAlternativeContent(reconciledContent, updatedContent));
+      }
     };
-
-    const onEditAlternative = (updatedOption: AlternativeContent) => {
-      const update = {
-        ...contentItem,
-        children: contentItem.children.map((a) => (a.id === updatedOption.id ? updatedOption : a)),
-      };
-
-      onEdit(update);
-    };
-
-    const onDeleteAlternative = (optionId: string) => {
-      const update = {
-        ...contentItem,
-        children: contentItem.children.filter((a) => a.id !== optionId),
-      };
-
-      onEdit(update);
-      onPostUndoable(contentItem.id, makePageUndoable('Removed alternative', index, contentItem));
-      setActiveOption(contentItem.children.first());
-    };
-    const options =
-      contentItem.strategy === 'upgrade_decision_point'
-        ? 'No upgrade decision point option selected.'
-        : 'No alternative option selected.';
 
     return (
       <AlternativesGroupBlock
         editMode={editMode}
-        projectSlug={projectSlug}
-        resourceContext={resourceContext}
-        contentItem={contentItem}
+        contentItem={reconciledContent}
+        groupTitle={selectedGroup?.title ?? ''}
         activeOption={activeOption}
-        setActiveOption={setActiveOption}
-        alternativeOptions={alternativeOptions}
+        setActiveOption={(option) => setActiveOptionId(option.id)}
         alternativeOptionsTitles={alternativeOptionsTitles}
         parents={parents}
         canRemove={canRemove}
         onRemove={() => onRemove(contentItem.id)}
-        onCreateAlternative={showCreateAlternativeModal}
-        onEditAlternative={onEditAlternative}
-        onDeleteAlternative={onDeleteAlternative}
       >
         <div className={styles.alternativesEditor}>
-          {Maybe.maybe(contentItem.children.get(activeOptionIndex)).caseOf({
-            just: (activeOption) => (
+          {reconciledActiveOption ? (
+            <>
+              {!alternativeOptionsTitles[reconciledActiveOption.value] && (
+                <StaleOptionNotice projectSlug={props.projectSlug} />
+              )}
               <AlternativeEditor
                 {...props}
-                contentItem={activeOption}
+                contentItem={reconciledActiveOption}
                 index={[...index, activeOptionIndex]}
-                parents={[...parents, activeOption]}
+                parents={[...parents, contentItem]}
+                onEdit={onEditAlternative}
               />
-            ),
-            nothing: () => (
-              <div className={styles.alternativesEditor}>
-                <div className="text-secondary text-center m-4">
-                  <div>{options}</div>
-                  <div>
-                    <button
-                      className="btn btn-link btn-sm p-0 align-bottom"
-                      onClick={showCreateAlternativeModal}
-                    >
-                      Select{' '}
-                    </button>{' '}
-                    an option to get started.
-                  </div>
-                </div>
-              </div>
-            ),
-          })}
+            </>
+          ) : (
+            <EmptyOptionsNotice projectSlug={props.projectSlug} />
+          )}
         </div>
       </AlternativesGroupBlock>
     );
@@ -202,10 +139,61 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
         case undefined:
           return renderFailed('Options for alternative group could not be found');
         default:
-          return renderAlternatives(group.options, alternativeOptionsTitles);
+          return renderAlternatives(alternativeOptionsTitles);
       }
   }
 };
+
+export const reconcileAlternativeOptions = (
+  children: Immutable.List<AlternativeContent>,
+  options: Persistence.AlternativesGroupOption[],
+): Immutable.List<AlternativeContent> => {
+  const currentOptionIds = new Set(options.map((option) => option.id));
+  const childrenByOptionId = children.reduce((byOptionId, child) => {
+    const matches = byOptionId.get(child.value) ?? [];
+    matches.push(child);
+    byOptionId.set(child.value, matches);
+    return byOptionId;
+  }, new Map<string, AlternativeContent[]>());
+  const currentChildren = options.flatMap((option) => {
+    const matches = childrenByOptionId.get(option.id) ?? [];
+    return matches.length > 0 ? matches : [createAlternative(option.id)];
+  });
+  const staleChildren = children.filter((child) => !currentOptionIds.has(child.value)).toArray();
+
+  return Immutable.List([...currentChildren, ...staleChildren]);
+};
+
+export const updateAlternativeContent = (
+  content: AlternativesContent,
+  updatedOption: AlternativeContent,
+): AlternativesContent => ({
+  ...content,
+  children: content.children.map((option) =>
+    option.id === updatedOption.id ? updatedOption : option,
+  ),
+});
+
+export const StaleOptionNotice = ({ projectSlug }: { projectSlug: string }) => (
+  <div className="alert alert-warning m-3" role="alert">
+    This content belongs to an option that no longer exists. It has been preserved and was not
+    assigned to another option.{' '}
+    <ManageAlternativesLink
+      linkHref={`/workspaces/course_author/${projectSlug}/alternatives`}
+      linkText="Review options in Manage Alternatives"
+    />
+  </div>
+);
+
+export const EmptyOptionsNotice = ({ projectSlug }: { projectSlug: string }) => (
+  <div className="text-secondary text-center m-4">
+    This alternatives group has no options.{' '}
+    <ManageAlternativesLink
+      linkHref={`/workspaces/course_author/${projectSlug}/alternatives`}
+      linkText="Add options in Manage Alternatives"
+    />
+  </div>
+);
 
 interface ManageAlternativesLinkProps {
   linkHref: string;
@@ -230,86 +218,28 @@ const AlternativeEditor = (props: AlternativeEditorProps) => {
 
 interface AlternativesGroupBlockProps {
   editMode: boolean;
-  projectSlug: string;
-  resourceContext: ResourceContext;
   contentItem: AlternativesContent;
-  activeOption: AlternativeContent;
+  groupTitle: string;
+  activeOption: AlternativeContent | undefined;
   parents: ResourceContent[];
   canRemove: boolean;
-  alternativeOptions: Persistence.AlternativesGroupOption[];
   alternativeOptionsTitles: Record<string, string>;
-  onCreateAlternative: () => void;
-  onEditAlternative: (update: AlternativeContent) => void;
-  onDeleteAlternative: (optionId: string) => void;
   onRemove: () => void;
   setActiveOption: (option: AlternativeContent) => void;
 }
 export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGroupBlockProps>) => {
   const {
     editMode,
-    projectSlug,
-    resourceContext,
     contentItem,
+    groupTitle,
     activeOption,
     canRemove,
     children,
-    alternativeOptions,
     alternativeOptionsTitles,
     onRemove,
-    onCreateAlternative,
-    onEditAlternative,
-    onDeleteAlternative,
     setActiveOption,
   } = props;
-
-  const selectedOption = contentItem.children.find((o) => o.id === activeOption.id);
-
-  const showEditAlternative = () => {
-    const title =
-      contentItem.strategy === 'upgrade_decision_point' ? 'Edit Option' : 'Edit Alternative';
-    const description =
-      contentItem.strategy === 'upgrade_decision_point' ? 'Edit Option' : 'Edit Alternative';
-    window.oliDispatch(
-      modalActions.display(
-        <SelectModal
-          title={title}
-          description={description}
-          additionalControls={
-            <>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => {
-                  window.oliDispatch(modalActions.dismiss());
-                  onDeleteAlternative(activeOption.id);
-                }}
-              >
-                Delete
-              </button>
-            </>
-          }
-          onFetchOptions={() => {
-            return Promise.resolve({
-              options: alternativeOptions.map((o) => ({ value: o.id, title: o.name })),
-              selectedValue: selectedOption?.value,
-            });
-          }}
-          onDone={(optionId: string) => {
-            window.oliDispatch(modalActions.dismiss());
-
-            const update = contentItem.children.find((o) => o.id === activeOption.id);
-            if (update) {
-              onEditAlternative({
-                ...update,
-                value: optionId,
-              });
-            }
-          }}
-          onCancel={() => window.oliDispatch(modalActions.dismiss())}
-        />,
-      ),
-    );
-  };
+  const panelId = `alternatives-panel-${contentItem.id}`;
 
   const optionIdCount = contentItem.children.reduce(
     (acc, option) => ({
@@ -327,64 +257,64 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
       alternativeOptionsTitles={alternativeOptionsTitles}
       isDuplicate={optionIdCount[option.value] > 1}
       onSetActiveOption={setActiveOption}
-      onEditAlternativeClick={showEditAlternative}
+      panelId={panelId}
     />
   ));
 
-  const maybeConnectUpgrade = !resourceContext.hasExperiments && (
-    <div className="mb-1">
-      <i className="fas fa-exclamation-triangle text-warning mx-1"></i>This experiment is not
-      integrated with UpGrade.
-      <a
-        className="btn btn-link"
-        href={`/authoring/project/${projectSlug}/experiments`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        Enable A/B testing with UpGrade
-      </a>
-      to collect experiment data.
-    </div>
-  );
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
 
-  const maybeUpgradeAB = contentItem.strategy === 'upgrade_decision_point' && (
-    <div className="mb-1">
-      {maybeConnectUpgrade}
-      <h2>A/B Testing Decision Point</h2>
-    </div>
-  );
+    const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]'));
+    const currentIndex = tabs.indexOf(event.target as HTMLElement);
+    if (currentIndex === -1) return;
+
+    event.preventDefault();
+    const nextIndex =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+        ? tabs.length - 1
+        : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+
+    tabs[nextIndex]?.focus();
+    tabs[nextIndex]?.click();
+  };
 
   return (
     <div id={`resource-editor-${contentItem.id}`} className={contentBlockStyles.groupBlock}>
-      {maybeUpgradeAB}
       <div className={styles.groupBlockHeader}>
-        <div className={styles.options}>
-          {options}
-          {contentItem.strategy !== 'upgrade_decision_point' && (
-            <button
-              key="add"
-              className={classNames('btn btn-sm', styles.option)}
-              onClick={onCreateAlternative}
-            >
-              <i className="fas fa-plus"></i>
-            </button>
-          )}
-        </div>
+        <h2 className="h4 mb-0">{groupTitle}</h2>
         <div className="flex-grow-1"></div>
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
-      {children}
+      <div className={styles.groupBlockHeader}>
+        <div
+          className={styles.options}
+          role="tablist"
+          aria-label="Alternative content options"
+          onKeyDown={onTabKeyDown}
+        >
+          {options}
+        </div>
+      </div>
+      <div
+        id={panelId}
+        role="tabpanel"
+        aria-labelledby={activeOption ? `alternative-tab-${activeOption.id}` : undefined}
+      >
+        {children}
+      </div>
     </div>
   );
 };
 
 type OptionPillProps = {
   option: AlternativeContent;
-  activeOption: AlternativeContent;
+  activeOption: AlternativeContent | undefined;
   alternativeOptionsTitles: Record<string, string>;
   isDuplicate: boolean;
   onSetActiveOption: (option: AlternativeContent) => void;
-  onEditAlternativeClick: () => void;
+  panelId: string;
 };
 
 const OptionPill = ({
@@ -393,7 +323,7 @@ const OptionPill = ({
   alternativeOptionsTitles,
   isDuplicate,
   onSetActiveOption,
-  onEditAlternativeClick,
+  panelId,
 }: OptionPillProps): JSX.Element => {
   const title = alternativeOptionsTitles[option.value];
 
@@ -413,27 +343,22 @@ const OptionPill = ({
     </Tooltip>
   );
 
-  if (option.id == activeOption.id) {
-    return (
-      <div key={option.id} className={classNames('btn btn-sm', styles.option, styles.active)}>
-        {maybeDuplicateWarning}
-        {titleOrWarning}
-        <>
-          <button
-            className={classNames('btn btn-sm', styles.edit)}
-            onClick={onEditAlternativeClick}
-          >
-            <i className="fas fa-ellipsis-h"></i>
-          </button>
-        </>
-      </div>
-    );
-  }
-
+  const selected = option.id === activeOption?.id;
   return (
     <button
       key={option.id}
-      className={classNames('btn btn-sm', styles.option, !title && styles.warn)}
+      id={`alternative-tab-${option.id}`}
+      role="tab"
+      type="button"
+      aria-selected={selected}
+      aria-controls={panelId}
+      tabIndex={selected ? 0 : -1}
+      className={classNames(
+        'btn btn-sm',
+        styles.option,
+        selected && styles.active,
+        !title && styles.warn,
+      )}
       onClick={() => onSetActiveOption(option)}
     >
       {maybeDuplicateWarning}

@@ -26,7 +26,9 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
                     NOTE: Callers are responsible for filtering preselected items from their data before
                     rendering (e.g., via exclude_resource_ids at the query level). The component uses
                     preselected to hide items in the curriculum tab but does not enforce filtering in
-                    the All Pages table tab.
+                    the All Pages table tab. Product/template sources compare preselected items by
+                    resource id because their pinned publications can differ from the target section's
+                    pinned publications for the same project.
 
   ## Optional Parameters:
 
@@ -56,6 +58,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   use Phoenix.HTML
 
   alias Oli.Resources.Numbering
+  alias Oli.Delivery.Remix.Source
   alias OliWeb.Common.{Breadcrumb, PagedTable, SearchInput}
   alias Oli.Delivery.Hierarchy.HierarchyNode
 
@@ -104,6 +107,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             Map.put(assigns.pages_table_model, :data, %{
               selection: assigns.selection,
               preselected: assigns.preselected,
+              selected_source: assigns.selected_source,
               selected_publication: assigns.selected_publication
             })
           }
@@ -202,14 +206,14 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
         %{
           select_mode: :multiple,
           selection: selection,
-          selected_publication: pub
+          selected_source: _source
         } = assigns,
         child
       ) do
     assigns =
       assigns
       |> assign(:child, child)
-      |> assign(:maybe_checked, maybe_checked(selection, pub.id, child.revision.resource_id))
+      |> assign(:maybe_checked, maybe_checked(selection, assigns.selected_source, child))
 
     ~H"""
     <div
@@ -221,6 +225,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
         <span class="align-middle">
           <input
             type="checkbox"
+            aria-label={@child.revision.title}
             class="w-5 h-5 rounded-[3px] border-2 border-Border-border-default bg-Surface-surface-background cursor-pointer"
             {@maybe_checked}
           />
@@ -318,7 +323,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   defp render_back_to_publications(assigns) do
     ~H"""
     <button class="btn btn-sm btn-link mr-2" phx-click="HierarchyPicker.clear_publication">
-      <OliWeb.Icons.back_arrow class="inline w-4 h-3.5 stroke-current mr-1" /> Back to publications
+      <OliWeb.Icons.back_arrow class="inline w-4 h-3.5 stroke-current mr-1" /> Back to content sources
     </button>
     """
   end
@@ -343,11 +348,13 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     """
   end
 
-  defp maybe_checked(selection, pub_id, resource_id) do
-    if {pub_id, resource_id} in selection do
-      [checked: true]
-    else
-      []
+  defp maybe_checked(selection, source, child) do
+    case Source.selection_identity(source, child) do
+      {:ok, selection_identity} ->
+        if(selection_identity in selection, do: [checked: true], else: [])
+
+      _ ->
+        []
     end
   end
 
@@ -421,10 +428,34 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   defp reject_preselected(children, %{
          select_mode: :multiple,
          preselected: preselected,
-         selected_publication: %Oli.Publishing.Publications.Publication{id: pub_id}
+         selected_source: %Source{type: :product}
+       }) do
+    preselected_resource_ids =
+      preselected
+      |> Enum.map(&elem(&1, 1))
+      |> MapSet.new()
+
+    Enum.reject(children, fn child ->
+      case Map.fetch(child, :resource_id) do
+        {:ok, resource_id} -> MapSet.member?(preselected_resource_ids, resource_id)
+        :error -> false
+      end
+    end)
+  end
+
+  defp reject_preselected(children, %{
+         select_mode: :multiple,
+         preselected: preselected,
+         selected_source: source
        }) do
     preselected_set = MapSet.new(preselected)
-    Enum.reject(children, &MapSet.member?(preselected_set, {pub_id, &1.revision.resource_id}))
+
+    Enum.reject(children, fn child ->
+      case Source.selection_identity(source, child) do
+        {:ok, selection_identity} -> MapSet.member?(preselected_set, selection_identity)
+        :error -> false
+      end
+    end)
   end
 
   defp reject_preselected(children, _assigns), do: children

@@ -52,19 +52,25 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
   end
 
   describe "register author" do
-    test "creates an author through the configured recaptcha implementation", %{conn: conn} do
+    test "confirms and redirects the author when email verification is disabled", %{conn: conn} do
       Oli.TestHelpers.stub_recaptcha()
 
-      {:ok, lv, _html} = live(conn, ~p"/authors/register")
+      previous = Application.get_env(:oli, :author_email_verification_required)
+      Application.put_env(:oli, :author_email_verification_required, false)
 
+      on_exit(fn ->
+        Application.put_env(:oli, :author_email_verification_required, previous)
+      end)
+
+      {:ok, lv, _html} = live(conn, ~p"/authors/register")
       email = AccountsFixtures.unique_author_email()
 
       form =
         form(lv, "#registration_form",
           author: %{
             "email" => email,
-            "given_name" => "Andrew",
-            "family_name" => "Carnegie",
+            "given_name" => "Ada",
+            "family_name" => "Lovelace",
             "password" => "valid_password",
             "password_confirmation" => "valid_password"
           }
@@ -74,7 +80,8 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
       conn = follow_trigger_action(form, conn)
 
       assert redirected_to(conn) == ~p"/workspaces/course_author"
-      assert Accounts.get_author_by_email(email)
+      assert Accounts.get_author_by_email(email).email_confirmed_at
+      Swoosh.TestAssertions.assert_no_email_sent()
     end
   end
 end

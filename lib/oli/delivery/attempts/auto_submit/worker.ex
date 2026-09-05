@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
   alias Oli.Delivery.Attempts.AutoSubmit.Worker
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   alias Oli.Delivery.Attempts.PageLifecycle.{FinalizationSummary, FinalizationContext}
+  alias Oli.Delivery.Experiments.RewardHandoff
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.PageLifecycle.Graded
@@ -59,6 +60,17 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
 
               section = Sections.get_section_by(slug: section_slug)
               user = Oli.Accounts.get_user!(resource_access.user_id)
+
+              case RewardHandoff.record_if_active_thompson(
+                     resource_attempt.id,
+                     resource_access.section_id
+                   ) do
+                :ok ->
+                  :ok
+
+                {:error, reason} ->
+                  Oli.Repo.rollback({:reward_processing_failed, reason})
+              end
 
               Oli.Delivery.Snapshots.Worker.perform_now(part_attempt_guids, section_slug)
 

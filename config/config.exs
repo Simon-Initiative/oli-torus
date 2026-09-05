@@ -74,6 +74,8 @@ get_env_as_integer = fn key, default ->
 end
 
 config :oli,
+  author_email_verification_required: true,
+  user_email_verification_required: true,
   logger_truncation_enabled: get_env_as_boolean.("LOGGER_TRUNCATION_ENABLED", "true"),
   logger_truncation_length: get_env_as_integer.("LOGGER_TRUNCATION_LENGTH", "5000"),
   instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),
@@ -149,6 +151,8 @@ config :oli, :xapi_upload_pipeline,
   uploader_module: Oli.Analytics.XAPI.S3Uploader,
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_OUTPUT_DIR", "./xapi_output")
 
+config :oli, :xapi_host_name, "localhost"
+
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
     nil -> Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator
@@ -222,11 +226,6 @@ config :oli, Oli.Repo,
 # Config adapter for refreshing part_mapping
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
 config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenLibrary
-
-config :oli, :upgrade_experiment_provider,
-  url: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_URL"),
-  user_url: System.get_env("UPGRADE_EXPERIMENT_USER_URL"),
-  api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,

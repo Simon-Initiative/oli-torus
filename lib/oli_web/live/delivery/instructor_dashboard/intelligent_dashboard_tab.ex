@@ -25,6 +25,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   alias Oli.InstructorDashboard, as: InstructorDashboardStateContext
   alias Oli.InstructorDashboard.InstructorDashboardState
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Dashboard.Cache
   alias Oli.Dashboard.Cache.Key
@@ -222,11 +223,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   @spec navigator_items(map()) :: {non_neg_integer(), [navigator_item()]}
   def navigator_items(section) do
     course_item = entire_course_item()
-
-    items =
-      section
-      |> fetch_dashboard_containers()
-      |> flatten_dashboard_containers()
+    items = section |> fetch_dashboard_containers() |> Enum.map(&navigator_item/1)
 
     {length(items), [course_item | items]}
   end
@@ -4331,9 +4328,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
   defp valid_container_id?(%{id: section_id}, _containers, container_id)
        when is_integer(section_id) do
-    navigator_items(%{id: section_id})
-    |> elem(1)
-    |> Enum.any?(&(Map.get(&1, :resource_id) == container_id))
+    container_id in dashboard_container_resource_ids(section_id)
   end
 
   defp valid_container_id?(_, _, _), do: false
@@ -4349,37 +4344,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     }
   end
 
-  defp fetch_dashboard_containers(%{id: section_id}) when is_integer(section_id) do
+  # Returns containers overlaid with suppression-aware numbering AND reordered into
+  # document position, so a suppressed container stays where it actually sits in the
+  # course rather than sorting by its now-nil `numbering_index`. Delegates to
+  # `Sections.overlay_and_order_containers_by_document_position/2` rather than
+  # implementing this locally -- see that function's docs for the algorithm.
+  defp fetch_dashboard_containers(%Section{id: section_id} = section)
+       when is_integer(section_id) do
     SectionResourceDepot.containers(section_id,
       numbering_level: {:in, @dashboard_container_levels}
     )
+    |> Sections.overlay_and_order_containers_by_document_position(section)
   end
 
   defp fetch_dashboard_containers(_), do: []
 
-  defp flatten_dashboard_containers(containers) do
-    containers_by_id = Map.new(containers, &{&1.id, &1})
-
-    child_container_ids =
-      containers
-      |> Enum.flat_map(&Map.get(&1, :children, []))
-      |> MapSet.new()
-
-    containers
-    |> Enum.reject(&MapSet.member?(child_container_ids, &1.id))
-    |> Enum.sort_by(& &1.numbering_index)
-    |> Enum.flat_map(&flatten_dashboard_container(&1, containers_by_id))
-  end
-
-  defp flatten_dashboard_container(container, containers_by_id) do
-    children =
-      container
-      |> Map.get(:children, [])
-      |> Enum.map(&Map.get(containers_by_id, &1))
-      |> Enum.reject(&is_nil/1)
-      |> Enum.flat_map(&flatten_dashboard_container(&1, containers_by_id))
-
-    [navigator_item(container) | children]
+  # Used only by `valid_container_id?/3`'s membership-check fallback, which has no full
+  # `%Section{}` in scope (only a section id) and needs container ids, not suppression-aware
+  # numbering. Kept as its own function -- rather than a second `fetch_dashboard_containers/1`
+  # clause dispatching on argument shape -- so a future caller can't silently end up on the
+  # no-overlay path by passing a bare `%{id: ...}` map instead of a `%Section{}`.
+  defp dashboard_container_resource_ids(section_id) do
+    SectionResourceDepot.containers(section_id,
+      numbering_level: {:in, @dashboard_container_levels}
+    )
+    |> Enum.map(& &1.resource_id)
   end
 
   defp navigator_item(container) do

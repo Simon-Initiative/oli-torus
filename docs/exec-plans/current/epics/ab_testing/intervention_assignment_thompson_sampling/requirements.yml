@@ -1,0 +1,442 @@
+work_item: intervention_assignment_thompson_sampling
+requirements:
+- title: Model one policy scope per experiment
+  description: An experiment must own one immutable assignment policy, one reusable
+    Experiment-Controlled Alternatives Group, N stable condition identities, one bijective
+    condition mapping, and one policy/posterior state; many intervention placements may
+    share that scope while remaining separate sticky assignment opportunities.
+  id: FR-001
+- title: Bind one reusable Alternatives Group per experiment
+  description: Each experiment must bind one project-compatible Experiment-Controlled
+    Alternatives Group, recognizing canonical experiment_controlled and legacy upgrade_decision_point
+    revisions as the same internal strategy. Multiple draft or paused experiments may bind
+    the same group, but at most one experiment using that group may be active at a time.
+  id: FR-002
+- title: Enforce a bijective condition mapping
+  description: The bound group must have the same number of alternatives as the experiment
+    has conditions, with every condition mapped to exactly one distinct alternative
+    and every alternative mapped exactly once.
+  id: FR-003
+- title: Preserve stable group and alternative identities
+  description: Group strategy and stable alternative identities must not be renamed,
+    reordered, added, removed, or otherwise mutated in place through supported authoring
+    operations.
+  id: FR-004
+- title: Prohibit Alternatives within Alternatives
+  description: Any Alternatives placement may appear at any depth inside ordinary
+    page content, but must not have another Alternatives placement as an ancestor.
+    Authoring insertion, drag/drop, schema validation, and experiment configuration
+    enforce this structural invariant. Delivery discovers every valid placement in
+    one traversal and never assigns an invalid nested placement.
+  id: FR-034
+- title: Store content on placed Alternatives instances
+  description: Every placement of a reusable group must own its local content for
+    all alternatives, and editing one placement in the page content editor must not
+    change any other placement or experiment configuration.
+  id: FR-005
+- title: Identify interventions independently of revisions
+  description: An intervention must be identified by the tuple of page resource ID
+    and placed content-element ID, while revision and publication IDs remain delivered-snapshot
+    evidence rather than logical identity.
+  id: FR-006
+- title: Assign Thompson Sampling independently and stickily per intervention
+  description: Assignment identity must include section enrollment, experiment,
+    and intervention instance so first encounters at different instances sample independently
+    and revisits reuse the persisted assignment.
+  id: FR-007
+- title: Resolve concurrent assignment safely
+  description: Concurrent first encounters by the same enrollment at the same intervention
+    must converge on one persisted assignment, while different interventions remain
+    independently assignable.
+  id: FR-008
+- title: Support weighted-random intervention assignment
+  description: Weighted random must sample fixed experiment condition weights
+    for every newly discovered valid placement, lazily persist the intervention identity
+    on first delivery encounter, and must not require author-configured interventions,
+    assessment bindings, or rewards.
+  id: FR-009
+- title: Share Thompson Sampling state within an experiment
+  description: Thompson Sampling must maintain one Beta posterior per experiment
+    condition, default to Beta(1,1) unless configured otherwise, and sample every
+    condition from one consistent committed snapshot for each new assignment.
+  id: FR-010
+- title: Bind a distinct scored page to every adaptive intervention
+  description: Every Thompson Sampling intervention must have exactly one assessment
+    binding to a distinct compatible scored page, and a scored page must not reward
+    more than one intervention.
+  id: FR-011
+- title: Convert normalized assessment scores to binary rewards
+  description: Each assessment binding must convert the existing normalized overall
+    page score to reward 1 at or above its draft-configurable threshold in the inclusive
+    range 0.0 through 1.0, defaulting to 1.0, and to reward 0 below it.
+  id: FR-012
+- title: Select one immutable reward attempt
+  description: The first eligible scored-page attempt in persisted attempt order that
+    reaches a final successfully evaluated state must supply the assignment's only
+    reward; pending earlier attempts cannot be bypassed and later attempts or reevaluations
+    cannot replace it.
+  id: FR-013
+- title: Attribute rewards through the bound assignment
+  description: Reward processing must resolve the same enrollment's persisted assignment
+    at the bound intervention and update only its assigned condition, without inferring
+    a condition or creating a retroactive assignment when none exists.
+  id: FR-014
+- title: Apply rewards atomically and idempotently
+  description: PostgreSQL must atomically claim the accepted reward and update the
+    assigned condition posterior in one transaction so concurrent distinct rewards
+    are preserved and retries or duplicate evaluation cannot increment posterior state
+    twice.
+  id: FR-015
+- title: Commit assessment rewards with submission
+  description: In sections participating in an active Thompson Sampling experiment,
+    assessment submission and posterior processing must commit atomically; reward
+    failure rolls back submission, and committed rewards may influence only later
+    first-time assignments without changing assignments already made.
+  id: FR-016
+- title: Enforce lifecycle and structural integrity
+  description: Experiment structural configuration must be editable only in draft,
+    active and paused structures must reject intervention-changing operations, and
+    paused, completed, or archived experiments must remain read-only and unable to
+    return to draft.
+  id: FR-017
+- title: Preserve immutable history and sequential group reuse
+  description: Completed or archived experiments must retain immutable group bindings,
+    mappings, publication context, assignments, policy state, and evidence while allowing
+    the group to be bound later to a new draft experiment with independent state.
+  id: FR-018
+- title: Preserve binding identity through supported edits
+  description: Same-page reorder and whole-page course moves must retain bindings,
+    while copying or recreating an element within the same page must generate a new
+    content-element ID. Page duplication and any future cross-page element move create
+    new intervention identity through the destination page resource ID and must not
+    copy or retarget bindings or experiment state; unrelated content-element IDs remain
+    unchanged during whole-page duplication.
+  id: FR-019
+- title: Require explicit draft dependency reconciliation
+  description: Bound groups, interventions, and assessments must not be deleted through
+    silent cascades; supported draft operations must explicitly remove or reconcile
+    dependent bindings before deletion.
+  id: FR-020
+- title: Provide deterministic fallback and inert previews
+  description: An experiment-controlled placement without an applicable active experiment
+    must render its first local alternative without evidence or policy effects,
+    while authoring and instructor previews must show all alternatives in keyboard-accessible
+    tabs without creating assignments, exposures, rewards, or updates.
+  id: FR-021
+- title: Calculate completion from displayed content
+  description: Learner completion must include only content and activities in the
+    persisted alternative selected at each intervention, exclude hidden alternatives,
+    and apply ordinary completion rules to the shared assessment.
+  id: FR-022
+- title: Keep operational state bounded and export detailed evidence
+  description: PostgreSQL must store assignments, sufficient posterior statistics,
+    and compact accepted-reward identity while detailed assignment, exposure, assessment,
+    reward, disposition, and policy-update evidence is emitted to configured xAPI
+    or ClickHouse storage outside learner hot paths.
+  id: FR-023
+- title: Emit bounded operational telemetry
+  description: The system must emit privacy-safe telemetry for assignment creation
+    and reuse, sampling, fallback, conflicts, binding resolution, accepted, duplicate,
+    and skipped rewards, posterior updates, processing latency, and migration anomalies.
+  id: FR-024
+- title: Preserve existing content without feature conversion
+  description: Existing upgrade_decision_point groups, alternatives, placements, revisions,
+    and publications must remain supported through read-time
+    normalization to experiment_controlled without historical content rewrite, forced
+    author re-save, content backfill, or forced republication. Preservation or conversion
+    of pre-release QA experiment operational and analytical rows is explicitly excluded.
+  id: FR-025
+- title: Use production-safe schema migrations
+  description: Required PostgreSQL migrations must be generated conventionally with
+    explicit up and down functions, affected ClickHouse schemas must use ordinary
+    migrations, and forward and rollback schema behavior must be verified in dependency-safe
+    order. Experiment-row transformation, backfill, and preservation are not required.
+  id: FR-026
+- title: Gate delivery experiment work by active section relevance
+  description: Delivery must run experiment-specific queries or processing only when
+    the delivered section has a relevant active experiment, using one efficient bounded
+    relevance check such as an exists query or section-level experiment tracking before
+    entering experiment paths.
+  id: FR-027
+- title: Keep strategy-specific Alternatives management surfaces
+  description: The Alternatives page must manage only Learner Choice groups, while
+    the project Experiments page must retain a co-located group-management section
+    labeled Decision Points that manages only experiment-controlled
+    groups. Both routes and experiment listing and configuration behavior must remain,
+    the surfaces must share reusable implementation where practical, and neither surface
+    may mix group types or edit placement-local page content inline.
+  id: FR-028
+- title: Make group strategy authoritative and implicit at creation
+  description: Group strategy must be assigned implicitly by the creation surface without
+    presenting a type selector. The Alternatives page must persist new Learner Choice
+    groups with user_section_preference, and the Experiments page must persist new
+    Experiment-Controlled Alternatives with canonical experiment_controlled; strategy must
+    be immutable and solely authoritative, new page placements must not contain a
+    strategy field, and any legacy strategy field retained on a content element must be
+    ignored without content migration or backfill.
+  id: FR-029
+- title: Update the versioned Alternatives content schema
+  description: By completion, priv/schemas/v0-1-0/content-alternatives.schema.json
+    must match the final Alternatives placement contract by requiring a valid alternatives_id
+    group reference, no longer requiring or treating element-level strategy as authoritative,
+    and remaining compatible with existing elements that retain an ignored legacy
+    strategy field without requiring content migration.
+  id: FR-030
+- title: Preserve group-owned Alternatives strategy through export and ingest
+  description: Project export must include every exported Alternatives Group's authoritative
+    strategy, stable option identities and labels, and required group content; ingest
+    must recreate each group with those semantics before rewiring all page placements
+    to the imported resource ID, must ignore placement-level strategy, and must preserve
+    the existing Learner Choice default for legacy imported groups without an explicit
+    group strategy. Ingest must accept upgrade_decision_point as a legacy alias and
+    persist the imported group as experiment_controlled, while new exports use the
+    canonical identifier.
+  id: FR-031
+- title: Display current condition posterior metrics after draft
+  description: For active, paused, completed, and archived Thompson Sampling experiments,
+    the experiment details page must show every condition's current
+    posterior mean as Estimated success probability using posterior_alpha divided
+    by posterior_alpha plus posterior_beta, accepted success and failure counts, observed
+    assignment count and share, expandable posterior alpha and beta values, and the
+    policy-state last-updated time. The same bounded PostgreSQL snapshot must identify
+    the effective policy mode as normal Thompson Sampling, warm-up weighted random,
+    fixed-control enforcement, or traffic-cap enforcement with affected conditions,
+    show configured thresholds and current progress, present assignment imbalance
+    as a monitoring warning, and distinguish lifecycle pause from guardrail configuration.
+    The display must not calculate next-assignment probability and must show frozen
+    final values after completion or archival.
+  id: FR-032
+- title: Replace the UpGrade-specific strategy identifier compatibly
+  description: experiment_controlled must be the canonical persisted identifier for
+    all newly created Experiment-Controlled Alternatives Groups, while editing an
+    existing upgrade_decision_point group preserves its legacy strategy and
+    upgrade_decision_point remains a supported read alias normalized to the same internal
+    strategy for immutable historical revisions and existing publications; the transition
+    must not rewrite historical revisions, require a backfill, or force republication.
+  id: FR-033
+- title: Remove the decision-point persistence hierarchy
+  description: Experiment group binding, mapping, policy parameters, interventions,
+    assignments, and policy state must relate directly to the experiment. The decision-point
+    and decision-point-condition tables and foreign keys must be removed through generated,
+    reversible PostgreSQL migrations, with corresponding ClickHouse schema changes where
+    evidence dimensions change. The migrations may discard pre-release QA experiment rows;
+    no backfill, relationship preservation, or mixed-version compatibility is required.
+  id: FR-035
+acceptance_criteria:
+- requirement: FR-001
+  description: Tests show an experiment's assignment policy is selected at creation,
+    cannot be changed afterward, and owns exactly one group binding, condition mapping,
+    policy configuration, and posterior scope. Many interventions share that scope, no
+    decision-point persistence remains, and separate experiments retain isolated state.
+  id: AC-001
+- requirement: FR-002
+  description: Valid project-compatible groups bind successfully, multiple draft and paused
+    experiments may share a group, simultaneous active bindings are rejected across
+    experiments, and authors can switch the active binding by pausing the current experiment.
+  id: AC-002
+- requirement: FR-003
+  description: Activation and supported writes reject mismatched cardinality, duplicate
+    mappings, unmapped conditions, and unused alternatives.
+  id: AC-003
+- requirement: FR-004
+  description: Authoring cannot change a group's strategy or mutate individual alternative
+    identities in place after group creation.
+  id: AC-004
+- requirement: FR-005
+  description: Two placements of one group can contain different local content, and
+    editing either placement leaves the other placement and experiment configuration
+    unchanged.
+  id: AC-005
+- requirement: FR-006
+  description: Ordinary content edits, revisions, publication, same-page reorder,
+    and moving the containing page preserve intervention identity. Same-page element
+    recreation produces a new content-element ID, while page duplication produces
+    a new identity through its new page resource ID without regenerating copied content-element
+    IDs.
+  id: AC-006
+- requirement: FR-007
+  description: One learner can receive different conditions at two instances of the
+    same group, and revisiting either instance always renders that instance's original
+    assigned local content.
+  id: AC-007
+- requirement: FR-008
+  description: A concurrency test proves duplicate first encounters at one intervention
+    produce one assignment and that first encounters at separate interventions do
+    not share uniqueness.
+  id: AC-008
+- requirement: FR-009
+  description: Weighted-random tests show activation succeeds without configured interventions,
+    every valid delivered group placement is lazily materialized and samples the configured
+    fixed weights, revisits reuse the same identity, concurrent discovery converges,
+    and no assessment or posterior state is required or updated.
+  id: AC-009
+- requirement: FR-010
+  description: Thompson Sampling tests draw once from every condition posterior in
+    a consistent snapshot, select the highest draw, use configured or Beta(1,1) priors,
+    and share later committed updates across interventions of only that experiment.
+  id: AC-010
+- requirement: FR-011
+  description: Draft validation requires exactly one distinct eligible scored-page
+    binding for every adaptive intervention and rejects unscored pages, duplicate
+    assessment reuse, or missing bindings.
+  id: AC-011
+- requirement: FR-012
+  description: Threshold tests cover 0.0, 1.0, exact-boundary, below-boundary, and
+    binding-specific values and prove the experiment subsystem consumes the existing
+    overall score without inspecting internal activity types.
+  id: AC-012
+- requirement: FR-013
+  description: Attempt-order tests prove an earlier pending eligible attempt blocks
+    a later completed attempt, the first eligible finalized attempt is eventually
+    accepted, and later attempts or reevaluations cannot replace its reward.
+  id: AC-013
+- requirement: FR-014
+  description: A finalized assessment updates alpha for reward 1 or beta for reward
+    0 on only the condition assigned at its bound intervention, while a missing assignment
+    records a bounded skip and makes no assignment or posterior change.
+  id: AC-014
+- requirement: FR-015
+  description: Concurrent and replayed processing of one reward yields one accepted-reward
+    record and one posterior increment, while concurrent distinct rewards all update
+    the assigned condition without loss.
+  id: AC-015
+- requirement: FR-016
+  description: Tests prove reward failure rolls back assessment submission in participating
+    Thompson Sampling sections, successful attempt and posterior updates commit together,
+    and committed rewards affect only assignments created afterward without changing
+    existing assignments.
+  id: AC-016
+- requirement: FR-017
+  description: Draft structural edits succeed when valid, leaving draft freezes structural
+    fields and thresholds, prohibited active or paused intervention changes fail,
+    and paused, completed, or archived experiments cannot return to draft.
+  id: AC-017
+- requirement: FR-018
+  description: Reusing a group after completion or archival begins with independent
+    policy state and evidence and does not rewrite the prior experiment's binding,
+    publication, assignments, rewards, posterior, or reports.
+  id: AC-018
+- requirement: FR-019
+  description: Tests prove bindings survive identity-preserving reorder and course
+    moves; same-page element copy and deletion/reinsertion generate new element IDs;
+    and page duplication or simulated cross-page movement obtains a new page resource
+    identity without copying or retargeting bindings or rewriting unrelated element
+    IDs.
+  id: AC-019
+- requirement: FR-020
+  description: Attempts to delete a draft bound group, intervention, or assessment
+    fail until dependencies are explicitly reconciled, and active dependencies prevent
+    deletion without silent cascades.
+  id: AC-020
+- requirement: FR-021
+  description: Delivery without an applicable active experiment deterministically renders
+    the first local alternative with no experiment effects, and keyboard navigation
+    through preview alternatives creates no learner or policy state.
+  id: AC-021
+- requirement: FR-022
+  description: Completion tests with different assignments across interventions count
+    only each persisted displayed alternative, exclude every hidden alternative, and
+    retain ordinary shared-assessment completion behavior.
+  id: AC-022
+- requirement: FR-023
+  description: Assignment and reward paths use PostgreSQL bounded state without scanning
+    reward history or querying ClickHouse or external xAPI stores, while exported
+    evidence contains the required intervention, assessment, attempt, disposition,
+    publication, and before-and-after policy context.
+  id: AC-023
+- requirement: FR-024
+  description: Telemetry tests observe all required success, reuse, fallback, conflict,
+    duplicate, skip, failure, latency, and anomaly signals with bounded identifiers
+    and without raw responses or unnecessary learner identity.
+  id: AC-024
+- requirement: FR-025
+  description: Representative existing Alternatives content renders
+    and publishes through legacy-strategy normalization without transformation, and
+    no feature-specific content backfill, forced republication, or author re-save
+    is required. Tests do not require preservation of pre-release QA experiment rows.
+  id: AC-025
+- requirement: FR-026
+  description: PostgreSQL and ClickHouse schema changes apply and roll back in dependency-safe
+    order, Ecto migrations use explicit up and down functions, and tests verify final
+    tables, columns, indexes, foreign keys, and constraints without requiring experiment-row
+    backfill or preservation.
+  id: AC-026
+- requirement: FR-027
+  description: Delivery-path tests prove that a section without a relevant active
+    experiment performs only the efficient relevance check and executes no experiment-specific
+    assignment, binding, policy-state, reward, or evidence queries or processing,
+    while a section with a relevant active experiment enters the required experiment
+    path.
+  id: AC-027
+- requirement: FR-028
+  description: UX and integration tests prove the Alternatives page lists and creates
+    only Learner Choice groups, the Experiments page contains an Experiment-Controlled
+    Alternatives section that lists and creates only experiment-controlled groups,
+    neither surface offers a strategy selector or inline page-content editing, shared
+    interactions remain consistent, and both routes plus experiment listing and configuration
+    remain available.
+  id: AC-028
+- requirement: FR-029
+  description: Authoring tests prove each creation surface implicitly persists its
+    corresponding canonical strategy without a type selector, including experiment_controlled
+    for Experiment-Controlled groups, and groups cannot change type after creation;
+    insertion tests prove every new
+    placement omits the strategy field, and delivery tests prove behavior resolves
+    only from the referenced group for new placements and existing placements with
+    missing, matching, conflicting, or unknown legacy strategy values; verification
+    confirms no content migration, rewrite, synchronization, or author re-save is required.
+  id: AC-029
+- requirement: FR-030
+  description: Schema validation tests prove the updated content-alternatives schema
+    accepts new placements containing the required type, id, alternatives_id, and
+    children without strategy; accepts supported existing placements that retain matching,
+    conflicting, or otherwise ignored legacy strategy strings; rejects placements
+    missing or providing an invalid alternatives_id; and remains correctly referenced
+    by the versioned elements schema.
+  id: AC-030
+- requirement: FR-031
+  description: End-to-end export and ingest tests prove Learner Choice and Experiment-Controlled
+    groups retain their strategy, option identities and labels, repeated placements,
+    placement-local content, and correct rewritten alternatives_id references; new
+    placements without strategy and legacy placements with matching, conflicting,
+    or unknown strategy values produce behavior from the imported group only; and
+    an upgrade_decision_point group ingests and re-exports as experiment_controlled,
+    and an older imported group without explicit strategy retains user_section_preference
+    behavior.
+  id: AC-031
+- requirement: FR-032
+  description: Context and LiveView tests prove draft experiments omit posterior metrics;
+    non-draft Thompson Sampling experiments display correctly calculated and labeled
+    values for every experiment condition with accepted success and failure
+    counts, observed assignment count and share, expandable posterior alpha and beta,
+    and updated time. Tests cover normal, warm-up, fixed-control, and traffic-cap
+    modes, affected conditions, configured thresholds, current progress, imbalance
+    warnings, and lifecycle pause. Loading or explicitly refreshing reflects the latest
+    committed PostgreSQL state without reward-history, xAPI, ClickHouse, or next-assignment-probability
+    calculations; weighted-random experiments do not present posterior metrics; and
+    completed or archived experiments retain their final frozen values.
+  id: AC-032
+- requirement: FR-033
+  description: Tests prove all new Experiment-Controlled group writes use experiment_controlled;
+    authoring discovery, experiment binding, delivery, rendering, preview, feature
+    checks, export, and analytics paths treat legacy upgrade_decision_point revisions
+    identically; editing a legacy group preserves upgrade_decision_point in its successor
+    revisions; historical and deployed revisions remain unchanged and functional without
+    republication; and unsupported strategy identifiers still fail safely.
+  id: AC-033
+- requirement: FR-035
+  description: PostgreSQL and ClickHouse migration tests prove the singular schema applies
+    and rolls back in dependency-safe order; the forward schema contains direct experiment
+    relationships and no decision-point tables, columns, foreign keys, or indexes. No test
+    requires transformation or preservation of pre-release QA experiment data.
+  id: AC-035
+- requirement: FR-034
+  description: Authoring insertion and drag/drop tests allow both Learner Choice and
+    Experiment-Controlled Alternatives inside ordinary containers, reject all four
+    strategy combinations when one Alternatives placement would be nested beneath
+    another, and allow an invalid legacy placement to be dragged outward for repair.
+    Schema and experiment configuration validation reject direct or deeply nested
+    Alternatives descendants. Delivery tests prove valid non-root experiment placements
+    participate in the single page batch, while invalid nested placements receive inert
+    first-branch fallback and are never submitted for assignment or exposure.
+  id: AC-034

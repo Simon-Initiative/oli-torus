@@ -20,6 +20,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias Oli.Resources.PageContent
   alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Common.SessionContext
+  alias Oli.Experiments.XAPI.Attributions, as: ExperimentAttributions
 
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, SessionContext
@@ -847,6 +848,8 @@ defmodule OliWeb.Delivery.Student.Utils do
         ),
       user: page_context.user,
       page_id: page_context.page.resource_id,
+      institution_id: section.institution_id,
+      project_id: section.base_project_id,
       section_id: section.id,
       section_slug: section.slug,
       project_slug: Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug,
@@ -856,7 +859,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       alternatives_groups_fn: fn ->
         Oli.Resources.alternatives_groups(section.slug, Resolver)
       end,
+      alternative_groups_by_id: Map.get(assigns, :alternative_groups_by_id),
       alternatives_selector_fn: &Oli.Resources.Alternatives.select/2,
+      experiment_decisions: Map.get(assigns, :experiment_decisions, %{}),
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       bib_app_params: page_context.bib_revisions,
       historical_attempts: page_context.historical_attempts,
@@ -1323,12 +1328,20 @@ defmodule OliWeb.Delivery.Student.Utils do
       end
 
     {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
+    experiment_attributions = Map.get(socket.assigns, :experiment_attributions, [])
+
+    enrollment_id =
+      case Sections.get_enrollment(section.slug, socket.assigns.current_user.id) do
+        %{id: enrollment_id} -> enrollment_id
+        nil -> nil
+      end
 
     emit_page_viewed_helper(
       %Oli.Analytics.XAPI.Events.Context{
         user_id: socket.assigns.current_user.id,
         host_name: host_name(),
         section_id: section.id,
+        enrollment_id: enrollment_id,
         project_id: project_id,
         publication_id: publication_id
       },
@@ -1338,7 +1351,8 @@ defmodule OliWeb.Delivery.Student.Utils do
         resource_id: context.page.resource_id,
         timestamp: DateTime.utc_now(),
         page_sub_type: page_sub_type
-      }
+      },
+      experiment_attributions
     )
 
     socket
@@ -1352,9 +1366,17 @@ defmodule OliWeb.Delivery.Student.Utils do
            resource_id: _page_id,
            timestamp: _timestamp,
            page_sub_type: _page_sub_type
-         } = page_details
+         } = page_details,
+         experiment_attributions
        ) do
     event = Oli.Analytics.XAPI.Events.Attempt.PageViewed.new(context, page_details)
+
+    event =
+      ExperimentAttributions.attach_attributions(
+        event,
+        experiment_attributions
+      )
+
     Oli.Analytics.XAPI.emit(:page_viewed, event)
   end
 

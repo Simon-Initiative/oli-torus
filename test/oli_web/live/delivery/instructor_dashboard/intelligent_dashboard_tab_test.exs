@@ -2,8 +2,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
   use Oli.DataCase, async: false
 
   import ExUnit.CaptureLog
+  import Oli.Factory
 
+  alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.SummaryRecommendationAdapter
+  alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
 
   defmodule StubSummaryRecommendationAdapter do
@@ -365,6 +368,84 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                "container:123"
              ) ==
                "container:123"
+    end
+  end
+
+  describe "navigator_items/1" do
+    test "overlays suppression-aware numbering onto the dashboard scope navigator" do
+      %{
+        section: section,
+        unit1_resource: unit1_resource,
+        unit2_resource: unit2_resource
+      } = Oli.Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Oli.Delivery.Sections.update_section(section, %{
+          unnumbered_unit_ids: [unit1_resource.id]
+        })
+
+      {_count, items} = IntelligentDashboardTab.navigator_items(section)
+
+      unit1_item = Enum.find(items, &(&1.resource_id == unit1_resource.id))
+      unit2_item = Enum.find(items, &(&1.resource_id == unit2_resource.id))
+
+      # Unit 1 is suppressed -- no display number -- while Unit 2 is renumbered to 1
+      # since Unit 1 no longer consumes a numbering slot.
+      assert unit1_item.numbering_index == nil
+      assert unit1_item.numbering_level == 1
+      assert unit2_item.numbering_index == 1
+    end
+
+    test "keeps a suppressed middle unit in its document position instead of sorting it by its nil numbering_index" do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      unit_a =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Alpha")
+
+      unit_b = insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Beta")
+
+      unit_c =
+        insert(:revision, resource_type_id: ResourceType.id_for_container(), title: "Gamma")
+
+      container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          children: [unit_a.resource_id, unit_b.resource_id, unit_c.resource_id],
+          title: "Root Container"
+        )
+
+      all_revisions = [unit_a, unit_b, unit_c, container_revision]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+      end)
+
+      publication =
+        insert(:publication, project: project, root_resource_id: container_revision.resource_id)
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      section = insert(:section, base_project: project)
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_b.resource_id]})
+
+      {_count, items} = IntelligentDashboardTab.navigator_items(section)
+
+      # "Entire Course" is always first; the 3 units must follow in their real document
+      # order -- Beta (suppressed) between Alpha and Gamma -- not sorted to the end of the
+      # list the way its nil numbering_index would put it.
+      titles = Enum.map(items, & &1.title)
+      assert titles == ["Entire Course", "Alpha", "Beta", "Gamma"]
     end
   end
 

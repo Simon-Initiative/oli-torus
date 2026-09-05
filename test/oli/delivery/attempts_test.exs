@@ -6,7 +6,6 @@ defmodule Oli.Delivery.AttemptsTest do
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.{Hierarchy, VisitContext, AttemptState}
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
-
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}

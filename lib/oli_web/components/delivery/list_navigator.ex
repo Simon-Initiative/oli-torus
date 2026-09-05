@@ -349,11 +349,13 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
   end
 
   defp item_prefix("Page", _item), do: ""
-  defp item_prefix(_label, %{numbering_index: -1} = _item), do: ""
+  # -1 is the default dropdown item's sentinel ("All Modules", for example); nil is a
+  # suppressed container (an unnumbered top-level unit, or a descendant of one). Neither
+  # has a display number, so both show the bare title instead of "Unit : Title".
+  defp item_prefix(_label, %{numbering_index: idx}) when idx in [-1, nil], do: ""
   defp item_prefix(label, item), do: "#{label} #{item.numbering_index}: "
 
-  # We use -1 to detect the default dropdown item ("All Modules" for example)
-  defp item_title(_label, %{numbering_index: -1} = item), do: item.title
+  defp item_title(_label, %{numbering_index: idx} = item) when idx in [-1, nil], do: item.title
   defp item_title("Page", item), do: item.title
 
   defp item_title(label, item) do

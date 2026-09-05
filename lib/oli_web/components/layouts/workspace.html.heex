@@ -17,6 +17,7 @@
         is_admin={@is_admin}
         active_workspace={assigns[:active_workspace] || :student}
         active_view={assigns[:active_view]}
+        project={assigns[:project]}
         preview_mode={@preview_mode}
         sidebar_expanded={@sidebar_expanded}
         resource_title={assigns[:resource_title]}
@@ -72,7 +73,7 @@
             data-bs-dismiss="alert"
             aria-label="Close"
             phx-click="lv:clear-flash"
-            phx-value-key="danger"
+            phx-value-key="error"
           >
             <i class="fa-solid fa-xmark fa-lg"></i>
           </button>

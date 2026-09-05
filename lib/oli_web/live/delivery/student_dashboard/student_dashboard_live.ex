@@ -59,6 +59,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
               numbering_level: {:in, [1, 2]}
             )
+            |> Sections.overlay_and_order_containers_by_document_position(socket.assigns.section)
         }
       end)
 
@@ -230,7 +231,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   defp get_containers(section, student_id) do
-    case Sections.get_units_and_modules_containers(section.slug) do
+    case Sections.get_units_and_modules_containers(section) do
       {0, pages} ->
         student_progress =
           Metrics.progress_across_for_pages(

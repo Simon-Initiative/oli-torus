@@ -7,6 +7,21 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Test.MockHTTP
 
+  @fixture_path Path.expand(
+                  "../../../../cloud/xapi-etl-processor/tests/fixtures/experiment_attributed_part_attempt.jsonl",
+                  __DIR__
+                )
+  @fixture_event_hash "1324eea1ad081cb5cbd2f7e8859bd5ba339b5b2bb9a28ced3c70d5f08bee062a"
+  @fixture_attribution_hash "4ab96ee53f4775c80d5bc1471f4e6c1d2ee514d5a12e0b6c1df56c5a81bcb257"
+  @parity_fixture Path.expand(
+                    "../../../support/fixtures/upgrade_data_capture_parity_statement.json",
+                    __DIR__
+                  )
+  @condition_assignment_fixture Path.expand(
+                                  "../../../support/fixtures/experiment_condition_assignment_statement.json",
+                                  __DIR__
+                                )
+
   setup :verify_on_exit!
 
   setup do
@@ -109,6 +124,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
             "https://oli.cmu.edu/extensions/section_id" => 111,
             "https://oli.cmu.edu/extensions/project_id" => 222,
             "https://oli.cmu.edu/extensions/publication_id" => 333,
+            "https://oli.cmu.edu/extensions/enrollment_id" => 777,
             "https://oli.cmu.edu/extensions/activity_attempt_guid" => "activity-guid",
             "https://oli.cmu.edu/extensions/activity_attempt_number" => 4,
             "https://oli.cmu.edu/extensions/page_attempt_guid" => "page-guid",
@@ -159,12 +175,513 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
     expect(MockHTTP, :post, fn _url, query, _headers ->
       assert query =~ "'http://adlnet.gov/expapi/verbs/answered'"
       assert query =~ "'activity-guid'"
+      assert query =~ ~r/publication_id,\s+enrollment_id/
+      assert query =~ "777"
       assert query =~ "'nice work'"
       assert query =~ "'http://adlnet.gov/expapi/verbs/experienced'"
       {:ok, %{status_code: 200, body: ""}}
     end)
 
     assert {:ok, 2} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload projects the actor account name as the raw event user id" do
+    statement = %{
+      "actor" => %{
+        "account" => %{
+          "homePage" => "https://proton.oli.cmu.edu",
+          "name" => 42
+        }
+      },
+      "verb" => %{"id" => "http://id.tincanapi.com/verb/viewed"},
+      "object" => %{
+        "definition" => %{"type" => "http://oli.cmu.edu/extensions/types/page"}
+      },
+      "context" => %{
+        "extensions" => %{
+          "http://oli.cmu.edu/extensions/section_id" => 1,
+          "http://oli.cmu.edu/extensions/project_id" => 2,
+          "http://oli.cmu.edu/extensions/publication_id" => 3,
+          "http://oli.cmu.edu/extensions/page_id" => 4
+        }
+      },
+      "timestamp" => "2026-08-20T13:17:58Z"
+    }
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :page_viewed,
+      bundle_id: "account-actor"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "INSERT INTO analytics.raw_events"
+      assert query =~ ~r/VALUES\s*\('[^']+', '42',/s
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload does not project an actor mbox when the account name is absent" do
+    statement =
+      video_statement("https://w3id.org/xapi/video/verbs/played", %{
+        "https://w3id.org/xapi/video/extensions/time" => 12.5
+      })
+      |> put_in(["actor"], %{"mbox" => "mailto:student@example.edu"})
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :video,
+      bundle_id: "mbox-actor"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ ~r/VALUES\s*\('[^']+', NULL, NULL,/s
+      refute query =~ "student@example.edu"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload maps xAPI statement experiment attribution arrays into attribution table rows" do
+    statement = attributed_part_attempt_statement()
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-exp"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "'part_attempt'"
+      refute query =~ "has_experiment_attribution"
+      refute query =~ "experiment_attribution_count"
+      refute query =~ "experiment_uuid"
+      refute query =~ "experiment_event_type"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "INSERT INTO analytics.experiment_attributions"
+      assert query =~ "raw_event_hash"
+      assert query =~ "raw_event_type"
+      assert query =~ "experiment_role"
+      assert query =~ "attribution_type"
+      assert query =~ "'reward'"
+      assert query =~ "101"
+      assert query =~ "'11111111-2222-3333-4444-555555555555'"
+      assert query =~ "'condition-a'"
+      assert query =~ "policy_version"
+      assert query =~ "assignment_scope"
+      assert query =~ "'intervention'"
+      assert query =~ "intervention_id"
+      assert query =~ "'page-77:placement\\\\\\'a\\nline'"
+      assert query =~ "assessment_binding_id"
+      assert query =~ "resource_attempt_id"
+      assert query =~ "'accepted'"
+      assert query =~ "0.75"
+      assert query =~ "page_revision_id"
+      refute query =~ sha256("reward-key")
+      refute query =~ "'reward-key'"
+      assert query =~ "'activity_attempt:full_credit'"
+      refute query =~ "key_hash"
+      refute query =~ "algorithm_version"
+      refute query =~ "policy_update_reason"
+      refute query =~ "outcome_id"
+      refute query =~ "reward_id"
+      refute query =~ "previous_policy_state_hash"
+      refute query =~ "next_policy_state_hash"
+      refute query =~ "video_url"
+      refute query =~ "activity_attempt_guid"
+      refute query =~ "content_element_id"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload projects dedicated condition assignment statements and persisted assigned_at" do
+    # AC-015 / AC-016: direct upload preserves the dedicated assignment event contract.
+    raw_statement = File.read!(@condition_assignment_fixture) |> String.trim_trailing()
+    raw_event_hash = sha256(raw_statement)
+    attribution_hash = sha256("#{raw_event_hash}:v2:intervention:10:60:500")
+
+    bundle = %StatementBundle{
+      body: raw_statement,
+      category: :experiment_condition_assigned,
+      bundle_id: "assignment"
+    }
+
+    expect(MockHTTP, :post, 2, fn _url, query, _headers ->
+      assert query =~ "'experiment_condition_assigned'"
+
+      case query =~ "INSERT INTO analytics.experiment_attributions" do
+        true ->
+          assert query =~ "assigned_at"
+          assert query =~ "'2026-08-20T15:04:05Z'"
+          assert query =~ "'assignment'"
+          assert query =~ "'thompson_sampling'"
+          assert query =~ "'thompson_sampling:v2'"
+          assert query =~ raw_event_hash
+          assert query =~ attribution_hash
+
+        false ->
+          assert query =~ "INSERT INTO analytics.raw_events"
+          assert query =~ ~r/VALUES\s*\('[^']+', '400',/s
+          assert query =~ raw_event_hash
+      end
+
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "direct projection preserves the shared parity statement's raw and attribution contract" do
+    raw_statement = @parity_fixture |> File.read!() |> Jason.decode!() |> Jason.encode!()
+
+    bundle = %StatementBundle{
+      body: raw_statement,
+      category: :attempt,
+      bundle_id: "parity-contract"
+    }
+
+    expect(MockHTTP, :post, 2, fn _url, query, _headers ->
+      if query =~ "INSERT INTO analytics.raw_events" do
+        for value <- [
+              "2001",
+              "1001",
+              "3001",
+              "501",
+              "'activity-guid'",
+              "2",
+              "'page-guid'",
+              "8001",
+              "8101",
+              "1.0",
+              "2.0"
+            ] do
+          assert query =~ value
+        end
+      else
+        for value <- [
+              "'rollup'",
+              "'outcome'",
+              "101",
+              "303",
+              "'condition-a'",
+              "404",
+              "'intervention'",
+              "'weighted_random'",
+              "901"
+            ] do
+          assert query =~ value
+        end
+
+        assert query =~ ~r/901, NULL, NULL, NULL, NULL, NULL, NULL\)/
+        assert query =~ ~r/901, NULL, NULL, NULL, NULL, 0\.0, 'activity_attempt:no_credit'\)/
+      end
+
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload preserves outcome type independently from rollup role" do
+    statement =
+      attributed_part_attempt_statement()
+      |> put_in(
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0),
+          "role"
+        ],
+        "rollup"
+      )
+      |> put_in(
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0),
+          "attribution_type"
+        ],
+        "outcome"
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-rollup"
+    }
+
+    expect(MockHTTP, :post, fn _url, _query, _headers ->
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "experiment_role"
+      assert query =~ "attribution_type"
+      assert query =~ "'rollup'"
+      assert query =~ "'outcome'"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload fails for a missing required attribution type" do
+    statement =
+      update_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0)
+        ],
+        &Map.delete(&1, "attribution_type")
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-missing-type"
+    }
+
+    assert {:error, {:invalid_experiment_attribution, %{role: "reward", type: nil}}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload fails for a missing attribution idempotency key" do
+    statement =
+      update_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0)
+        ],
+        &Map.delete(&1, "key")
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-missing-key"
+    }
+
+    assert {:error, {:invalid_experiment_attribution_key, nil}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload rejects a non-map attribution without inserting any chunk rows" do
+    statement =
+      update_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ],
+        fn [attribution] -> [attribution, "malformed"] end
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-non-map-attribution"
+    }
+
+    assert {:error,
+            {:invalid_experiment_attribution,
+             %{event_index: 0, attribution_index: 1, reason: :expected_map}}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload rejects an attribution array containing only non-map values" do
+    statement =
+      put_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ],
+        [nil, 42]
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-non-map-attributions"
+    }
+
+    assert {:error,
+            {:invalid_experiment_attribution,
+             %{event_index: 0, attribution_index: 0, reason: :expected_map}}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  @tag capture_log: true
+  test "upload rejects a present attribution extension that is not an array" do
+    statement =
+      put_in(
+        attributed_part_attempt_statement(),
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ],
+        nil
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-invalid-attribution-container"
+    }
+
+    assert {:error, {:invalid_experiment_attributions, %{event_index: 0, reason: :expected_list}}} =
+             ClickHouseUploader.upload(bundle)
+  end
+
+  test "upload accepts a host event without the attribution extension" do
+    statement =
+      update_in(
+        attributed_part_attempt_statement(),
+        ["context", "extensions"],
+        &Map.delete(&1, "http://oli.cmu.edu/extensions/experiment_attributions")
+      )
+
+    bundle = %StatementBundle{
+      body: Jason.encode!(statement),
+      category: :attempt,
+      bundle_id: "bundle-without-attributions"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "INSERT INTO analytics.raw_events"
+      refute query =~ "INSERT INTO analytics.experiment_attributions"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "raw event and attribution hashes match lambda raw-line hashing contract" do
+    raw_line = attributed_part_attempt_json_line()
+    reencoded_hash = raw_line |> Jason.decode!() |> Jason.encode!() |> sha256()
+
+    assert sha256(raw_line) == @fixture_event_hash
+    refute @fixture_event_hash == reencoded_hash
+
+    bundle = %StatementBundle{
+      body: raw_line,
+      category: :attempt,
+      bundle_id: "bundle-hash"
+    }
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "'#{@fixture_event_hash}'"
+      refute query =~ "'#{reencoded_hash}'"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    expect(MockHTTP, :post, fn _url, query, _headers ->
+      assert query =~ "'#{@fixture_event_hash}'"
+      assert query =~ "'#{@fixture_attribution_hash}'"
+      refute query =~ "'#{reencoded_hash}'"
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+  end
+
+  test "inserts experiment attributions in bounded chunks" do
+    bundle = attributed_bundle(501, "bundle-chunks")
+    {:ok, attribution_queries} = Agent.start_link(fn -> [] end)
+
+    expect(MockHTTP, :post, 3, fn _url, query, _headers ->
+      if query =~ "INSERT INTO analytics.experiment_attributions" do
+        Agent.update(attribution_queries, &[query | &1])
+      end
+
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 1} = ClickHouseUploader.upload(bundle)
+
+    assert attribution_queries
+           |> Agent.get(& &1)
+           |> Enum.map(&length(Regex.scan(~r/\),\n\(/, &1)))
+           |> Enum.sort() == [0, 499]
+  end
+
+  test "processes raw events in bounded chunks" do
+    body =
+      1..501
+      |> Enum.map_join("\n", fn second ->
+        video_statement("https://w3id.org/xapi/video/verbs/played", %{
+          "https://w3id.org/xapi/video/extensions/time" => second
+        })
+        |> Jason.encode!()
+      end)
+
+    bundle = %StatementBundle{body: body, category: :video, bundle_id: "bundle-event-chunks"}
+    {:ok, raw_queries} = Agent.start_link(fn -> [] end)
+
+    expect(MockHTTP, :post, 2, fn _url, query, _headers ->
+      Agent.update(raw_queries, &[query | &1])
+      {:ok, %{status_code: 200, body: ""}}
+    end)
+
+    assert {:ok, 501} = ClickHouseUploader.upload(bundle)
+
+    assert raw_queries
+           |> Agent.get(& &1)
+           |> Enum.map(&length(Regex.scan(~r/\),\n\(/, &1)))
+           |> Enum.sort() == [0, 499]
+  end
+
+  @tag capture_log: true
+  test "returns an error for malformed JSON without issuing an insert" do
+    bundle = %StatementBundle{
+      body: "{not-json}",
+      category: :video,
+      bundle_id: "bundle-invalid-json"
+    }
+
+    assert {:error, {:invalid_json_event, message}} = ClickHouseUploader.upload(bundle)
+    assert message =~ "unexpected byte"
+  end
+
+  @tag capture_log: true
+  test "stops attribution insertion after a failed chunk" do
+    bundle = attributed_bundle(1_001, "bundle-chunk-failure")
+    {:ok, request_count} = Agent.start_link(fn -> 0 end)
+
+    expect(MockHTTP, :post, 3, fn _url, _query, _headers ->
+      request_number = Agent.get_and_update(request_count, &{&1 + 1, &1 + 1})
+
+      case request_number do
+        3 -> {:ok, %{status_code: 500, body: "forced failure"}}
+        _ -> {:ok, %{status_code: 200, body: ""}}
+      end
+    end)
+
+    assert {:error, "Query failed with status 500: forced failure"} =
+             ClickHouseUploader.upload(bundle)
   end
 
   defp video_statement(verb_id, result_extensions) do
@@ -195,5 +712,115 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploaderTest do
       "result" => %{"extensions" => result_extensions},
       "timestamp" => "2026-03-27T12:00:00Z"
     }
+  end
+
+  defp attributed_part_attempt_statement do
+    %{
+      "actor" => %{
+        "account" => %{
+          "homePage" => "https://proton.oli.cmu.edu",
+          "name" => "123"
+        },
+        "objectType" => "Agent"
+      },
+      "verb" => %{
+        "id" => "http://adlnet.gov/expapi/verbs/completed",
+        "display" => %{"en-US" => "completed"}
+      },
+      "object" => %{
+        "id" => "https://proton.oli.cmu.edu/parts/part-1",
+        "definition" => %{
+          "type" => "http://adlnet.gov/expapi/activities/question",
+          "name" => %{"en-US" => "Part 1"}
+        }
+      },
+      "context" => %{
+        "extensions" => %{
+          "http://oli.cmu.edu/extensions/project_id" => 1001,
+          "http://oli.cmu.edu/extensions/section_id" => 2001,
+          "http://oli.cmu.edu/extensions/publication_id" => 3001,
+          "http://oli.cmu.edu/extensions/activity_id" => 606,
+          "http://oli.cmu.edu/extensions/part_id" => "part-1",
+          "http://oli.cmu.edu/extensions/part_attempt_guid" => "part-guid",
+          "http://oli.cmu.edu/extensions/experiment_attributions" => [
+            %{
+              "role" => "reward",
+              "attribution_type" => "reward",
+              "experiment_id" => 101,
+              "experiment_uuid" => "11111111-2222-3333-4444-555555555555",
+              "decision_point_id" => 202,
+              "condition_id" => 303,
+              "condition_code" => "condition-a",
+              "assignment_id" => 404,
+              "assignment_key" => "101:202:505",
+              "enrollment_id" => 505,
+              "algorithm" => "thompson_sampling",
+              "policy_version" => "thompson_sampling:v2",
+              "intervention_id" => 707,
+              "intervention_key" => "page-77:placement\\'a\nline",
+              "assessment_binding_id" => 808,
+              "assessment_page_resource_id" => 909,
+              "resource_attempt_id" => 1001,
+              "disposition" => "accepted",
+              "reward_threshold" => 0.75,
+              "normalized_score" => 1.0,
+              "page_revision_id" => 1101,
+              "key" => "reward-key",
+              "reward_source" => "activity_attempt:full_credit"
+            }
+          ]
+        }
+      },
+      "result" => %{
+        "score" => %{"raw" => 1.0, "min" => 0, "max" => 1},
+        "extensions" => %{
+          "http://oli.cmu.edu/extensions/reward_source" => "activity_attempt:full_credit"
+        }
+      },
+      "timestamp" => "2026-07-14T12:00:00Z"
+    }
+  end
+
+  defp attributed_part_attempt_json_line do
+    @fixture_path
+    |> File.stream!()
+    |> Enum.find(&(String.trim(&1) != ""))
+    |> String.trim_trailing("\n")
+  end
+
+  defp attributed_bundle(attribution_count, bundle_id) do
+    statement = attributed_part_attempt_statement()
+
+    [attribution] =
+      get_in(statement, [
+        "context",
+        "extensions",
+        "http://oli.cmu.edu/extensions/experiment_attributions"
+      ])
+
+    attributions =
+      Enum.map(1..attribution_count, fn index ->
+        attribution
+        |> Map.put("assignment_id", index)
+        |> Map.put("key", "reward-key-#{index}")
+      end)
+
+    statement =
+      put_in(
+        statement,
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions"
+        ],
+        attributions
+      )
+
+    %StatementBundle{body: Jason.encode!(statement), category: :attempt, bundle_id: bundle_id}
+  end
+
+  defp sha256(value) do
+    :crypto.hash(:sha256, value)
+    |> Base.encode16(case: :lower)
   end
 end

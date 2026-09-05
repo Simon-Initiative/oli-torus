@@ -214,6 +214,13 @@ export const MultiInputComponent: React.FC = () => {
     const response = { input: value };
 
     if (part !== undefined) {
+      dispatch(
+        activityDeliverySlice.actions.setStudentInputForPart({
+          partId: input.partId,
+          studentInput: [value],
+        }),
+      );
+
       // Here we handle the case that the student is typing again into an input whose
       // part attempt had already been evaluated. So we must first reset to get a new
       // part attempt, then either submit (if dropdown) or save the input to that part attempt
@@ -243,14 +250,6 @@ export const MultiInputComponent: React.FC = () => {
         }
       } else {
         // Otherwise this is just a change to an existing active part attempt
-
-        dispatch(
-          activityDeliverySlice.actions.setStudentInputForPart({
-            partId: input.partId,
-            studentInput: [value],
-          }),
-        );
-
         const doSave = () =>
           onSaveActivity(uiState.attemptState.attemptGuid, [
             {

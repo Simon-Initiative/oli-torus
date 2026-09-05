@@ -60,6 +60,38 @@ defmodule Oli.Delivery.PreviousNextIndexTest do
     end
   end
 
+  describe "retrieve/2 with a suppressed unit" do
+    test "rebuilds with suppression-aware display numbering when previous_next_index is nil, with no manual step" do
+      %{
+        section: section,
+        unit1_resource: unit1_resource,
+        unit2_resource: unit2_resource
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+
+      # Simulates the post-migration state: cache invalidated, nothing rebuilt yet.
+      assert is_nil(section.previous_next_index)
+
+      {:ok, {_previous, _next, current}, rebuilt_index} =
+        PreviousNextIndex.retrieve(section, unit2_resource.id)
+
+      # Unit 2 is renumbered to display index 1, since Unit 1 no longer consumes a
+      # numbering slot -- picked up automatically on this first access, no manual step.
+      assert current["display_numbering"] == %{"level" => "1", "index" => "1"}
+
+      unit1_entry = Map.get(rebuilt_index, Integer.to_string(unit1_resource.id))
+
+      # Unit 1 itself is suppressed: no display numbering at all.
+      assert unit1_entry["display_numbering"] == nil
+
+      # The rebuilt index is persisted, so a later request doesn't need to rebuild again.
+      section = Sections.get_section_by_slug(section.slug)
+      refute is_nil(section.previous_next_index)
+    end
+  end
+
   describe "retrieve/3 when there are containers to skip" do
     test "returns no previous or next when the current resource is not in the index map" do
       assert {:ok, {nil, nil, nil}, %{}} == PreviousNextIndex.retrieve(%{}, 1, skip: [:unit])

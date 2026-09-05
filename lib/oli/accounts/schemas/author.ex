@@ -87,6 +87,15 @@ defmodule Oli.Accounts.Author do
     |> validate_required([:given_name, :family_name])
     |> default_system_role()
     |> maybe_name_from_given_and_family()
+    |> maybe_confirm_email(opts)
+  end
+
+  defp maybe_confirm_email(changeset, opts) do
+    if Keyword.get(opts, :email_verification_required, true) do
+      changeset
+    else
+      put_change(changeset, :email_confirmed_at, DateTime.truncate(DateTime.utc_now(), :second))
+    end
   end
 
   @doc """

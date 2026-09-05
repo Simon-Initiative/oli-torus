@@ -20,17 +20,23 @@ export const AlternativesPreferenceSelector = ({
   const [selectedValue, setSelectedValue] = useState(selected || '');
 
   useEffect(() => {
-    // listen for other page alternative preference selections
+    const handlePreferenceSelection = (e: CustomEvent<Events.AlternativesPreferenceSelection>) => {
+      if (e.detail.alternativesId === alternativesId) {
+        setSelectedValue(e.detail.value);
+      }
+    };
+
     document.addEventListener(
       Events.Registry.AlternativesPreferenceSelection,
-      (e: CustomEvent<Events.AlternativesPreferenceSelection>) => {
-        // check if this alternatives selector belongs to the preference group being selected
-        if (e.detail.alternativesId === alternativesId) {
-          setSelectedValue(e.detail.value);
-        }
-      },
+      handlePreferenceSelection,
     );
-  }, []);
+
+    return () =>
+      document.removeEventListener(
+        Events.Registry.AlternativesPreferenceSelection,
+        handlePreferenceSelection,
+      );
+  }, [alternativesId]);
 
   const onChangeSelection = (alternativesId: number, value: string) => {
     if (sectionSlug) {
@@ -43,9 +49,16 @@ export const AlternativesPreferenceSelector = ({
       Events.makeAlternativesPreferenceSelectionEvent({ alternativesId, value }),
     );
 
-    // update all alternative elements on the current page
-    document.querySelectorAll('.alternative').forEach((a) => a.classList.add('hidden'));
-    document.querySelectorAll(`.alternative-${value}`).forEach((a) => a.classList.remove('hidden'));
+    // Update only this preference group. Other Alternatives groups on the page may be
+    // experiment decision points whose selected branches must remain visible.
+    document
+      .querySelectorAll(`.alternative[data-alternatives-id="${alternativesId}"]`)
+      .forEach((alternative) => {
+        alternative.classList.toggle(
+          'hidden',
+          !alternative.classList.contains(`alternative-${value}`),
+        );
+      });
   };
 
   return (

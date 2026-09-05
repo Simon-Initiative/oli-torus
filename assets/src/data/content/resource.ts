@@ -139,6 +139,15 @@ export const canInsert = (content: ResourceContent, parents: ResourceContent[]):
     return allElements.some((t) => t === content.type);
   }
 
+  if (containsAlternatives(content)) {
+    // Alternatives may be placed in ordinary containers, but never inside another
+    // Alternatives placement. Inspect the entire moved subtree so wrapping an Alternatives
+    // placement in an ordinary group cannot bypass the constraint.
+    if (hasAncestorOfType(parents, 'alternatives')) {
+      return false;
+    }
+  }
+
   const parent = parents[parents.length - 1];
   switch (content.type) {
     case 'learning_objectives':
@@ -163,6 +172,16 @@ export const canInsert = (content: ResourceContent, parents: ResourceContent[]):
       return allowedContentItems(parent).some((t) => t === content.type);
   }
 };
+
+/** Returns whether the content ancestry contains an element of the requested type. */
+export const hasAncestorOfType = (
+  parents: ResourceContent[],
+  type: ResourceContent['type'],
+): boolean => parents.some((parent) => parent.type === type);
+
+const containsAlternatives = (content: ResourceContent): boolean =>
+  content.type === 'alternatives' ||
+  (isResourceGroup(content) && (content as ResourceGroup).children.some(containsAlternatives));
 
 export const isSurvey = (c: ResourceContent) => c.type === 'survey';
 export const isReport = (c: ResourceContent) => c.type === 'report';
@@ -190,7 +209,8 @@ export type ResourceContext = {
   projectSlug: ProjectSlug; // The current project
   resourceSlug: ResourceSlug; // The current resource
   resourceId: ResourceId; // The resource id
-  hasExperiments: boolean; // Whether the project has experiments
+  experimentsEnabled: boolean; // Whether native A/B testing authoring is enabled
+  alternativesEnabled: boolean; // Whether learner-preference alternatives authoring is enabled
   title: string; // The title of the resource
   content: PageContent; // Content of the resource
   objectives: AttachedObjectives; // Attached objectives
@@ -254,13 +274,11 @@ export const createGroup = (
 
 export const createAlternatives = (
   alternatives_id: number,
-  strategy: AlternativesStrategy,
   children: Immutable.List<AlternativeContent>,
 ): AlternativesContent => ({
   type: 'alternatives',
   id: guid(),
   children,
-  strategy,
   alternatives_id,
 });
 
@@ -367,6 +385,7 @@ export type GroupLayout = 'vertical' | 'deck';
 export type AlternativesStrategy =
   | 'select_all'
   | 'user_section_preference'
+  | 'experiment_controlled'
   | 'upgrade_decision_point';
 
 export type PaginationMode = 'normal' | 'manualReveal' | 'automatedReveal';
@@ -387,7 +406,6 @@ export interface PurposeGroupContent {
 export interface AlternativesContent {
   type: 'alternatives';
   id: string;
-  strategy: AlternativesStrategy;
   children: Immutable.List<AlternativeContent>;
   alternatives_id: number;
 }

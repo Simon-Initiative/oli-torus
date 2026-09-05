@@ -38,20 +38,20 @@ defmodule Oli.Delivery.Snapshots.Worker do
   @doc """
   Allows immediate execution of the snapshot creation logic. Used to bypass queueing during testing scenarios.
   """
-  def perform_now(guids, section_slug, unused \\ true)
+  def perform_now(guids, section_slug, emit_fn \\ &Oli.Analytics.XAPI.emit/1)
 
-  def perform_now([], _, _unused) do
+  def perform_now([], _, _emit_fn) do
     :ok
   end
 
-  def perform_now(part_attempt_guids, section_slug, _unused) do
+  def perform_now(part_attempt_guids, section_slug, emit_fn) when is_function(emit_fn, 1) do
     case Sections.get_section_by_slug(section_slug) do
       nil -> {:error, {:section_not_found, section_slug}}
-      section -> perform_for_section(part_attempt_guids, section)
+      section -> perform_for_section(part_attempt_guids, section, emit_fn)
     end
   end
 
-  defp perform_for_section(part_attempt_guids, section) do
+  defp perform_for_section(part_attempt_guids, section, emit_fn) do
     # Fetch all the necessary context information to be able to create snapshots
     results =
       from(pa in PartAttempt,
@@ -68,6 +68,10 @@ defmodule Oli.Delivery.Snapshots.Worker do
       )
       |> Repo.all()
 
+    create_and_emit_snapshot(results, section_slug, emit_fn)
+  end
+
+  defp create_and_emit_snapshot(results, section_slug, emit_fn) do
     # Determine the project id
     project_id =
       case results do
@@ -92,7 +96,18 @@ defmodule Oli.Delivery.Snapshots.Worker do
           :ok
 
         %AttemptGroup{} = attempt_group ->
-          emit_xapi(attempt_group)
+          bundle_id = create_bundle_id(attempt_group)
+
+          partition_id = attempt_group.context.section_id
+
+          %StatementBundle{
+            body: body,
+            bundle_id: bundle_id,
+            partition_id: partition_id,
+            category: :attempt_evaluated,
+            partition: :section
+          }
+          |> emit_fn.()
       end
     else
       e -> e
