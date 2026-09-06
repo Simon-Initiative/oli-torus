@@ -211,7 +211,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, "#objectives-table")
-      assert has_element?(view, "input[phx-change='change_search'][phx-blur='change_search']")
+
+      assert has_element?(
+               view,
+               "form#objectives-search-form input#objectives-search-input[phx-debounce='300']"
+             )
+
       assert has_element?(view, "#select_sort")
       assert has_element?(view, "button[phx-click='display_new_modal']", "New Objective")
 
@@ -304,19 +309,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{second_obj.slug}")
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: "first"})
-
-      view
-      |> element("button[phx-click=\"apply_search\"]")
-      |> render_click()
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "first"})
 
       assert has_element?(view, "##{first_obj.slug}")
       refute has_element?(view, "##{second_obj.slug}")
 
       view
-      |> element("button[phx-click='reset_search']")
-      |> render_click()
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: ""})
 
       assert has_element?(view, "##{first_obj.slug}")
       assert has_element?(view, "##{second_obj.slug}")
@@ -340,20 +341,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       wait_for_coverage(view)
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: "matching sub"})
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "Parent Objective"})
+
+      refute has_element?(view, "##{parent.slug} .collapse")
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
-      |> render_click()
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: ""})
+
+      view
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "matching sub"})
 
       assert has_element?(view, "##{parent.slug} .collapse")
       assert has_element?(view, "##{parent.slug}", "Sub-Objective")
       assert has_element?(view, "##{parent.slug} mark", "Sub")
 
       view
-      |> element("button[phx-click='reset_search']")
-      |> render_click()
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: ""})
 
       refute has_element?(view, "##{parent.slug} .collapse")
     end
@@ -382,28 +389,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       for query <- ["Page 1", "Activity"] do
         view
-        |> element("input[phx-blur=\"change_search\"]")
-        |> render_blur(%{value: query})
-
-        view
-        |> element("button[phx-click=\"apply_search\"]")
-        |> render_click()
+        |> element("form#objectives-search-form")
+        |> render_change(%{query: query})
 
         assert has_element?(view, "##{objective.slug} .collapse")
         assert has_element?(view, "##{objective.slug} mark", query |> String.split() |> hd())
 
         view
-        |> element("button[phx-click='reset_search']")
-        |> render_click()
+        |> element("form#objectives-search-form")
+        |> render_change(%{query: ""})
       end
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: "does not exist"})
-
-      view
-      |> element("button[phx-click=\"apply_search\"]")
-      |> render_click()
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "does not exist"})
 
       assert has_element?(view, "p", "No learning objectives match your search.")
     end
@@ -413,8 +412,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       oversized_query = String.duplicate("term ", 20)
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: oversized_query})
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: oversized_query})
 
       query = :sys.get_state(view.pid).socket.assigns.query
 
@@ -458,12 +457,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: "first"})
-
-      view
-      |> element("button[phx-click=\"apply_search\"]")
-      |> render_click()
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "first"})
 
       wait_for_coverage(view)
       assert has_element?(view, "#first_obj")
