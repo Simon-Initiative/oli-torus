@@ -8,6 +8,7 @@ defmodule Oli.Delivery.SectionsTest do
   alias Oli.Utils.Seeder
   alias Oli.Factory
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.LinkedActivities
 
   alias Oli.Delivery.Sections.{
     ContainedObjective,
@@ -3557,7 +3558,7 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_activities_for_objective/2" do
+  describe "LinkedActivities.get_activities_for_objective/2" do
     setup do
       setup_objectives_and_activities_test()
     end
@@ -3567,12 +3568,12 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_a: objective_a},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
-      # Should return 1 activity that has objective A
-      assert length(result) == 1
+      # Includes objective A and activities attached to its sub-objectives.
+      assert length(result) == 3
 
-      activity = List.first(result)
+      activity = Enum.find(result, &(&1.resource_id == activities.page_1_mcq_1.resource_id))
       assert activity.resource_id == activities.page_1_mcq_1.resource_id
       assert activity.title == "Page 1 MCQ 1"
       assert activity.question_stem == "What is the capital of France?"
@@ -3585,7 +3586,7 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_c: objective_c},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_c.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_c.resource_id)
 
       # Should return 3 activities that have objective C:
       # - page_1_mcq_4 (has both objective_b and objective_c)
@@ -3604,7 +3605,7 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{objective_d: objective_d},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, objective_d.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_d.resource_id)
 
       # Should return 2 activities that have objective D:
       # - page_4_mcq_2 (graded)
@@ -3621,7 +3622,8 @@ defmodule Oli.Delivery.SectionsTest do
       objectives: %{sub_objective_a1: sub_objective_a1},
       activities: activities
     } do
-      result = Sections.get_activities_for_objective(section, sub_objective_a1.resource_id)
+      result =
+        LinkedActivities.get_activities_for_objective(section, sub_objective_a1.resource_id)
 
       # Should return 1 activity that has sub-objective A.1
       assert length(result) == 1
@@ -3634,7 +3636,7 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "returns empty list for non-existent objective", %{section: section} do
       non_existent_objective_id = 99999
-      result = Sections.get_activities_for_objective(section, non_existent_objective_id)
+      result = LinkedActivities.get_activities_for_objective(section, non_existent_objective_id)
 
       assert result == []
     end
@@ -3673,10 +3675,10 @@ defmodule Oli.Delivery.SectionsTest do
       Sections.rebuild_contained_objectives(section)
       Sections.PostProcessing.apply(section, :all)
 
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
-      # Should now return 2 activities (original + new one)
-      assert length(result) == 2
+      # Should now return 4 activities (direct + two sub-objective activities + new one)
+      assert length(result) == 4
 
       activity_no_stem_result =
         Enum.find(result, &(&1.resource_id == activity_no_stem.resource_id))
@@ -3688,7 +3690,7 @@ defmodule Oli.Delivery.SectionsTest do
       section: section,
       objectives: %{objective_a: objective_a}
     } do
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
       # All activities should have 0 attempts and 0% correct when no attempts exist
       assert length(result) > 0
@@ -3719,7 +3721,7 @@ defmodule Oli.Delivery.SectionsTest do
       ])
 
       # Get activities for objective A initially
-      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      result = LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
       first_activity = List.first(result)
 
       # Initially should have 0 attempts and 0% correct
@@ -3742,7 +3744,8 @@ defmodule Oli.Delivery.SectionsTest do
       })
 
       # Get fresh results after creating attempts
-      updated_result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      updated_result =
+        LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
 
       updated_activity =
         Enum.find(updated_result, &(&1.resource_id == activities.page_1_mcq_1.resource_id))

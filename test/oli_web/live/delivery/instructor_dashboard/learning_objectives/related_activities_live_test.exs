@@ -426,7 +426,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         )
 
       assert has_element?(view, "h1", objective_without_activities.title)
-      assert has_element?(view, "p", "No activities found for this learning objective.")
+      assert has_element?(view, "p", "No activities are linked to this learning objective.")
     end
 
     test "handles invalid objective ID", %{conn: conn, instructor: instructor, section: section} do
@@ -517,15 +517,264 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       # Assert on specific table row-column values
       # First row: Activity 3 - Multiple Objectives (attempts and % correct)
       # Attempts column
-      assert has_element?(view, "tbody tr:first-child td:nth-child(2) span", "1")
+      assert has_element?(
+               view,
+               "tr[data-row-id='row_#{activity_3.resource_id}'] td:nth-child(3)",
+               "1"
+             )
+
       # % Correct column
-      assert has_element?(view, "tbody tr:first-child td:nth-child(3) span", "0.0%")
+      assert has_element?(
+               view,
+               "tr[data-row-id='row_#{activity_3.resource_id}'] td:nth-child(4)",
+               "0%"
+             )
 
       # Second row: Activity 1 - Basic Math (attempts and % correct)
       # Attempts column
-      assert has_element?(view, "tbody tr:nth-child(2) td:nth-child(2) span", "1")
+      assert has_element?(
+               view,
+               "tr[data-row-id='row_#{activity_1.resource_id}'] td:nth-child(3)",
+               "1"
+             )
+
       # % Correct column
-      assert has_element?(view, "tbody tr:nth-child(2) td:nth-child(3) span", "100.0%")
+      assert has_element?(
+               view,
+               "tr[data-row-id='row_#{activity_1.resource_id}'] td:nth-child(4)",
+               "100%"
+             )
+    end
+
+    test "supports attempt and score filters and keeps filtered empty state distinct", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_1: activity_1,
+      activity_3: activity_3
+    } do
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_related_activities_route(section.slug, objective_a.resource_id, %{
+            "avg_score_selector" => "is_greather_than_or_equal",
+            "avg_score_percentage" => "50"
+          })
+        )
+
+      assert has_element?(view, "td", activity_1.title)
+      refute has_element?(view, "td", activity_3.title)
+
+      render_change(view, "toggle_selected", %{"_target" => ["3"]})
+
+      view
+      |> element("button[data-event='apply_attempts_filter']")
+      |> render_click()
+
+      assert has_element?(view, "p", "No activities match the selected filters.")
+      refute has_element?(view, "p", "No activities are linked to this learning objective.")
+    end
+
+    test "uses shared expandable details and linked sort columns", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_1: activity_1
+    } do
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
+
+      assert has_element?(view, "th", "Question Stem")
+      assert has_element?(view, "th", "Attempts")
+      assert has_element?(view, "th", "% Correct")
+      refute has_element?(view, "th", "Learning Objectives")
+
+      assert has_element?(
+               view,
+               "button[aria-expanded='false'][aria-controls='details-row_#{activity_1.resource_id}']"
+             )
+
+      view
+      |> element("button#button_#{activity_1.resource_id}")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[aria-expanded='true'][aria-controls='details-row_#{activity_1.resource_id}']"
+             )
+
+      assert has_element?(view, "#details-row_#{activity_1.resource_id}")
+      assert has_element?(view, "#details-#{activity_1.resource_id}", "Question details")
+
+      assert has_element?(
+               view,
+               "#details-#{activity_1.resource_id}",
+               "No attempt registered for this question"
+             )
+
+      assert has_element?(view, "#details-#{activity_1.resource_id}", "First Try Correct")
+      assert has_element?(view, "#details-#{activity_1.resource_id}", "Eventually Correct")
+
+      assert has_element?(
+               view,
+               "button#button_#{activity_1.resource_id}[aria-label='Collapse activity details']"
+             )
+
+      view
+      |> element("button#button_#{activity_1.resource_id}")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[aria-expanded='false'][aria-controls='details-row_#{activity_1.resource_id}']"
+             )
+
+      view
+      |> element("th[phx-value-sort_by='avg_score']")
+      |> render_click()
+
+      html = render(view)
+      assert :binary.match(html, "Activity 3") < :binary.match(html, "Activity 1")
+
+      view
+      |> element("th[phx-value-sort_by='avg_score']")
+      |> render_click()
+
+      html = render(view)
+      assert :binary.match(html, "Activity 1") < :binary.match(html, "Activity 3")
+    end
+
+    test "sorts linked activities by title and attempts in both directions", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      page_1: page_1,
+      activity_1: activity_1
+    } do
+      second_student = insert(:user, %{can_create_sections: false})
+      Sections.enroll(second_student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      create_attempt(second_student, section, page_1, %{
+        activity_1.resource_id => %{score: 1.0, out_of: 1.0}
+      })
+
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
+
+      view |> element("th[phx-value-sort_by='title']") |> render_click()
+      html = render(view)
+      assert :binary.match(html, "Activity 1") < :binary.match(html, "Activity 3")
+
+      view |> element("th[phx-value-sort_by='title']") |> render_click()
+      html = render(view)
+      assert :binary.match(html, "Activity 3") < :binary.match(html, "Activity 1")
+
+      view |> element("th[phx-value-sort_by='total_attempts']") |> render_click()
+      html = render(view)
+      assert :binary.match(html, "Activity 3") < :binary.match(html, "Activity 1")
+
+      view |> element("th[phx-value-sort_by='total_attempts']") |> render_click()
+      html = render(view)
+      assert :binary.match(html, "Activity 1") < :binary.match(html, "Activity 3")
+    end
+
+    test "shows the established empty state for an activity without question analytics", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_3: activity_3
+    } do
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
+
+      view |> element("button#button_#{activity_3.resource_id}") |> render_click()
+
+      assert has_element?(
+               view,
+               "#details-#{activity_3.resource_id}",
+               "No attempt registered for this question"
+             )
+    end
+
+    test "keeps all linked activity rows collapsed after filtering, sorting, and paging", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_3: activity_3
+    } do
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_related_activities_route(section.slug, objective_a.resource_id, %{
+            "limit" => "1"
+          })
+        )
+
+      view |> element("button#button_#{activity_3.resource_id}") |> render_click()
+      assert has_element?(view, "button[aria-expanded='true']")
+
+      view
+      |> element("nav[aria-label='Paging'] button[phx-value-offset='1']", "2")
+      |> render_click()
+
+      refute has_element?(view, "button[aria-expanded='true']")
+
+      view |> element("button[phx-value-offset='0']", "1") |> render_click()
+
+      view
+      |> form("form[phx-change='search_activity']", %{activity_name: "Basic Math"})
+      |> render_change()
+
+      refute has_element?(view, "button[aria-expanded='true']")
+
+      view |> element("th[phx-value-sort_by='title']") |> render_click()
+      refute has_element?(view, "button[aria-expanded='true']")
+    end
+
+    test "preserves filters through pagination and clear resets the linked table", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_1: activity_1,
+      activity_3: activity_3
+    } do
+      conn = log_in_user(conn, instructor)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_related_activities_route(section.slug, objective_a.resource_id, %{
+            "text_search" => "Activity",
+            "sort_by" => "avg_score",
+            "sort_order" => "desc",
+            "limit" => "1",
+            "offset" => "1"
+          })
+        )
+
+      assert has_element?(view, "td", activity_3.title)
+      refute has_element?(view, "td", activity_1.title)
+
+      view |> element("button", "Clear All Filters") |> render_click()
+
+      assert has_element?(view, "td", activity_1.title)
+      assert has_element?(view, "td", activity_3.title)
     end
 
     test "displays activities for sub-objectives", %{

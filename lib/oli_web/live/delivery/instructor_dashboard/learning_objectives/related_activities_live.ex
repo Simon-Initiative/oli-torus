@@ -1,18 +1,26 @@
 defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActivitiesLive do
   use OliWeb, :live_view
 
+  require Logger
+
+  alias Oli.Delivery.Sections.LinkedActivities
   alias Oli.Delivery.Sections
+  alias Oli.Activities
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.{Params, StripedPagedTable, SearchInput}
-  alias OliWeb.Components.Delivery.LearningObjectives.RelatedActivitiesTableModel
+  alias OliWeb.Delivery.Content.{MultiSelect, PercentageSelector}
+  alias OliWeb.Delivery.Pages.ActivitiesTableModel
+  alias OliWeb.Delivery.ActivityHelpers
+  alias OliWeb.Delivery.ActivityInsightsState
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
     limit: 20,
     sort_order: :asc,
-    sort_by: :question_stem,
+    sort_by: :title,
     text_search: nil
   }
 
@@ -29,13 +37,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
          |> redirect(to: back_to_objectives_path(socket))}
 
       objective ->
-        # Fetch related activities for this objective
-        activities = Sections.get_activities_for_objective(section, resource_id)
+        activity_types = Activities.list_activity_registrations()
+        activity_types_map = Map.new(activity_types, &{&1.id, &1})
+
+        students =
+          Sections.enrolled_students(section.slug)
+          |> Enum.reject(&(&1.user_role_id != 4))
+
+        scripts =
+          activity_types
+          |> Enum.map(& &1.authoring_script)
+          |> Enum.concat(Oli.PartComponents.get_part_component_scripts(:delivery_script))
+          |> Enum.map(&Routes.static_path(OliWeb.Endpoint, "/js/" <> &1))
+
+        activities = LinkedActivities.get_activities_for_objective(section, resource_id)
 
         {:ok,
          assign(socket,
            objective: objective,
            activities: activities,
+           activity_types_map: activity_types_map,
+           students: students,
+           scripts: scripts,
+           activity_summary_cache: %{},
+           loaded_activity_summaries: %{},
+           expanded_activity_ids: MapSet.new(),
+           attempts_options: ActivityHelpers.attempts_filter_options(),
+           selected_attempts_options: %{},
+           selected_attempts_ids: [],
            view: :insights
          )}
     end
@@ -44,13 +73,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   @impl Phoenix.LiveView
   def handle_params(params, _uri, socket) do
     %{activities: activities} = socket.assigns
+    socket = assign(socket, expanded_activity_ids: MapSet.new(), loaded_activity_summaries: %{})
 
     # Decode and apply filters
     decoded_params = decode_params(params)
     {total_count, filtered_activities} = apply_filters(activities, decoded_params)
 
     # Create table model
-    {:ok, table_model} = RelatedActivitiesTableModel.new(filtered_activities)
+    {:ok, table_model} =
+      ActivitiesTableModel.new(filtered_activities, columns: :linked_activities)
 
     table_model =
       Map.merge(table_model, %{
@@ -63,10 +94,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       })
 
     {:noreply,
-     assign(socket,
-       table_model: table_model,
+     socket
+     |> assign(
+       table_model: put_detail_state(table_model, socket),
        total_count: total_count,
-       params: decoded_params
+       params: decoded_params,
+       attempts_options: update_attempts_options(decoded_params.selected_attempts_ids),
+       selected_attempts_options: selected_attempts_options(decoded_params.selected_attempts_ids),
+       selected_attempts_ids: decoded_params.selected_attempts_ids
      )}
   end
 
@@ -84,8 +119,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       Params.get_atom_param(
         params,
         "sort_by",
-        [:question_stem, :attempts, :percent_correct],
-        :question_stem
+        [:title, :total_attempts, :avg_score, :question_stem, :attempts, :percent_correct],
+        :title
       )
 
     {:noreply,
@@ -124,8 +159,90 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   end
 
   @impl Phoenix.LiveView
-  def handle_event("paged_table_selection_change", _params, socket) do
-    {:noreply, socket}
+  def handle_event("paged_table_selection_change", %{"id" => id}, socket) do
+    with {activity_id, ""} <- Integer.parse("#{id}") do
+      expanded_ids = socket.assigns.expanded_activity_ids
+
+      if MapSet.member?(expanded_ids, activity_id) do
+        {:noreply,
+         socket
+         |> assign(expanded_activity_ids: MapSet.delete(expanded_ids, activity_id))
+         |> refresh_table_model()}
+      else
+        {:noreply,
+         socket
+         |> maybe_load_activity_summary(activity_id)
+         |> assign(expanded_activity_ids: MapSet.put(expanded_ids, activity_id))
+         |> refresh_table_model()}
+      end
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("paged_table_selection_change", _params, socket), do: {:noreply, socket}
+
+  def handle_event("apply_attempts_filter", _params, socket) do
+    selected_ids = socket.assigns.selected_attempts_ids
+
+    {:noreply,
+     push_patch(socket,
+       to: route_for(socket, %{selected_attempts_ids: Jason.encode!(selected_ids), offset: 0})
+     )}
+  end
+
+  def handle_event("apply_avg_score_filter", params, socket) do
+    selector =
+      get_in(params, ["progress", "option"]) || Map.get(params, "avg_score_selector", "")
+
+    percentage = Map.get(params, "avg_score_percentage", "")
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(socket, %{
+           avg_score_selector: if(selector == "", do: nil, else: selector),
+           avg_score_percentage: if(percentage == "", do: nil, else: percentage),
+           offset: 0
+         })
+     )}
+  end
+
+  def handle_event("toggle_selected", %{"_target" => [selected_id]}, socket) do
+    with {selected_id, ""} <- Integer.parse(selected_id) do
+      selected_ids =
+        if selected_id in socket.assigns.selected_attempts_ids do
+          List.delete(socket.assigns.selected_attempts_ids, selected_id)
+        else
+          [selected_id | socket.assigns.selected_attempts_ids]
+        end
+
+      {:noreply,
+       assign(socket,
+         selected_attempts_ids: selected_ids,
+         selected_attempts_options: selected_attempts_options(selected_ids),
+         attempts_options: update_attempts_options(selected_ids)
+       )}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(socket, %{
+           text_search: nil,
+           selected_attempts_ids: Jason.encode!([]),
+           avg_score_selector: nil,
+           avg_score_percentage: nil,
+           sort_by: :title,
+           sort_order: :asc,
+           offset: 0,
+           limit: @default_params.limit
+         })
+     )}
   end
 
   @impl Phoenix.LiveView
@@ -156,7 +273,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
           
     <!-- Search Bar -->
 
-          <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
+          <div class="flex w-fit gap-2 mx-4 my-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
             <div class="flex p-2 gap-2">
               <.form for={%{}} phx-debounce="300" phx-change="search_activity" class="w-56">
                 <label for="activity_search_input-input" class="sr-only">Search activities</label>
@@ -166,6 +283,35 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
                   text={@params.text_search}
                 />
               </.form>
+
+              <MultiSelect.render
+                id="attempts_select"
+                label="Attempts"
+                options={@attempts_options}
+                selected_values={@selected_attempts_options}
+                selected_ids={@selected_attempts_ids}
+                target={nil}
+                disabled={@selected_attempts_ids == %{}}
+                placeholder="Attempts"
+                submit_event="apply_attempts_filter"
+              />
+
+              <PercentageSelector.render
+                id="score"
+                label="Score"
+                target={nil}
+                percentage={@params.avg_score_percentage}
+                selector={@params.avg_score_selector}
+                submit_event="apply_avg_score_filter"
+                input_name="avg_score_percentage"
+              />
+
+              <button
+                class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
+                phx-click="clear_all_filters"
+              >
+                <Icons.trash /> Clear All Filters
+              </button>
             </div>
           </div>
           
@@ -188,15 +334,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
                 allow_selection={false}
                 additional_row_class="!h-20"
                 sticky_header_offset={56}
+                details_render_fn={&ActivitiesTableModel.render_assessment_details/2}
               />
             </div>
           <% else %>
             <div class="text-center py-8">
               <p class="text-gray-500 dark:text-gray-400">
-                <%= if @params.text_search && @params.text_search != "" do %>
-                  No activities found for <strong><%= @params.text_search %></strong>.
+                <%= if @activities == [] do %>
+                  No activities are linked to this learning objective.
                 <% else %>
-                  No activities found for this learning objective.
+                  <%= if @params.text_search && @params.text_search != "" do %>
+                    No activities found for <strong><%= @params.text_search %></strong>.
+                  <% else %>
+                    No activities match the selected filters.
+                  <% end %>
                 <% end %>
               </p>
             </div>
@@ -221,13 +372,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
           @default_params.sort_order
         ),
       sort_by:
+        params
+        |> Params.get_atom_param(
+          "sort_by",
+          [:title, :total_attempts, :avg_score, :question_stem, :attempts, :percent_correct],
+          :title
+        )
+        |> normalize_sort_by(),
+      text_search: Params.get_param(params, "text_search", @default_params.text_search),
+      selected_attempts_ids: Params.get_list_param(params, "selected_attempts_ids", []),
+      avg_score_percentage: Params.get_int_param(params, "avg_score_percentage", nil),
+      avg_score_selector:
         Params.get_atom_param(
           params,
-          "sort_by",
-          [:question_stem, :attempts, :percent_correct],
-          @default_params.sort_by
+          "avg_score_selector",
+          [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal],
+          nil
         ),
-      text_search: Params.get_param(params, "text_search", @default_params.text_search),
       back_params: extract_back_url_params(params)
     }
   end
@@ -236,6 +397,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     filtered_activities =
       activities
       |> maybe_filter_by_text(params.text_search)
+      |> maybe_filter_by_attempts(params.selected_attempts_ids)
+      |> maybe_filter_by_score(params.avg_score_selector, params.avg_score_percentage)
       |> sort_by(params.sort_by, params.sort_order)
 
     total_count = length(filtered_activities)
@@ -253,26 +416,75 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
   defp maybe_filter_by_text(activities, text_search) do
     Enum.filter(activities, fn activity ->
-      String.contains?(
-        String.downcase(activity.question_stem || ""),
-        String.downcase(text_search)
-      )
+      search = String.downcase(text_search)
+      stem = String.downcase(activity.question_stem || "")
+      title = String.downcase(activity.title || "")
+
+      String.contains?(stem, search) or String.contains?(title, search)
     end)
   end
 
-  defp sort_by(activities, :question_stem, sort_order) do
-    Enum.sort_by(activities, &(&1.question_stem || ""), sort_order)
+  defp maybe_filter_by_attempts(activities, []), do: activities
+
+  defp maybe_filter_by_attempts(activities, selected_ids) do
+    Enum.filter(activities, fn activity ->
+      # Predicates intentionally mirror the Scored/Practice Activities filter in
+      # OliWeb.Components.Delivery.Pages so the same option means the same thing on
+      # every Insights View table. Note that "Less than 5" includes zero-attempt rows.
+      Enum.any?(selected_ids, fn
+        1 -> activity.total_attempts in [nil, 0]
+        2 -> not is_nil(activity.total_attempts) and activity.total_attempts <= 5
+        3 -> not is_nil(activity.total_attempts) and activity.total_attempts > 5
+        _ -> false
+      end)
+    end)
   end
 
-  defp sort_by(activities, :attempts, sort_order) do
-    Enum.sort_by(activities, &(&1.attempts || 0), sort_order)
+  defp maybe_filter_by_score(activities, nil, _), do: activities
+  defp maybe_filter_by_score(activities, _, nil), do: activities
+
+  defp maybe_filter_by_score(activities, selector, percentage) do
+    Enum.filter(activities, fn activity ->
+      score = round((activity.avg_score || 0.0) * 100)
+
+      case selector do
+        :is_equal_to -> score == percentage
+        :is_less_than_or_equal -> score <= percentage
+        :is_greather_than_or_equal -> score >= percentage
+      end
+    end)
   end
 
-  defp sort_by(activities, :percent_correct, sort_order) do
-    Enum.sort_by(activities, &(&1.percent_correct || 0), sort_order)
+  # Sorting always runs on the column names the shared table model emits. Legacy names
+  # coming from older bookmarked URLs are mapped by normalize_sort_by/1 in decode_params.
+  defp sort_by(activities, :title, sort_order) do
+    Enum.sort_by(activities, &String.downcase(&1.question_stem || &1.title || ""), sort_order)
+  end
+
+  defp sort_by(activities, :total_attempts, sort_order) do
+    Enum.sort_by(activities, &(&1.total_attempts || 0), sort_order)
+  end
+
+  defp sort_by(activities, :avg_score, sort_order) do
+    Enum.sort_by(activities, &(&1.avg_score || 0), sort_order)
   end
 
   defp sort_by(activities, _sort_by, _sort_order), do: activities
+
+  defp normalize_sort_by(:question_stem), do: :title
+  defp normalize_sort_by(:attempts), do: :total_attempts
+  defp normalize_sort_by(:percent_correct), do: :avg_score
+  defp normalize_sort_by(sort_by), do: sort_by
+
+  defp update_attempts_options(selected_ids) do
+    Enum.map(ActivityHelpers.attempts_filter_options(), &%{&1 | selected: &1.id in selected_ids})
+  end
+
+  defp selected_attempts_options(selected_ids) do
+    ActivityHelpers.attempts_filter_options()
+    |> Enum.filter(&(&1.id in selected_ids))
+    |> Map.new(&{&1.id, &1.name})
+  end
 
   defp route_for(socket, new_params) do
     params = update_params(socket.assigns.params, new_params)
@@ -296,6 +508,103 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
   defp update_params(params, new_param) do
     Map.merge(params, new_param)
+  end
+
+  defp put_detail_state(table_model, socket) do
+    Map.update!(table_model, :data, fn data ->
+      Map.merge(data, %{
+        activity_summary_cache: socket.assigns.activity_summary_cache,
+        loaded_activity_summaries: socket.assigns.loaded_activity_summaries,
+        expanded_activity_ids: socket.assigns.expanded_activity_ids,
+        expanded_rows: ActivityInsightsState.expanded_rows(socket.assigns.expanded_activity_ids),
+        activity_types_map: socket.assigns.activity_types_map,
+        scripts: socket.assigns.scripts,
+        target: nil
+      })
+    end)
+  end
+
+  defp refresh_table_model(socket) do
+    {_, rows} = apply_filters(socket.assigns.activities, socket.assigns.params)
+    {:ok, table_model} = ActivitiesTableModel.new(rows, columns: :linked_activities)
+    assign(socket, table_model: put_detail_state(table_model, socket))
+  end
+
+  defp maybe_load_activity_summary(socket, activity_id) do
+    if ActivityInsightsState.loaded?(socket.assigns.loaded_activity_summaries, activity_id) do
+      socket
+    else
+      activity = Enum.find(socket.assigns.activities, &(&1.resource_id == activity_id))
+
+      case activity && activity.canonical_page_context do
+        %{page_resource_id: page_id} ->
+          page_revision = DeliveryResolver.from_resource_id(socket.assigns.section.slug, page_id)
+
+          summary =
+            if page_revision do
+              ActivityHelpers.summarize_activity_performance(
+                socket.assigns.section,
+                page_revision,
+                socket.assigns.activity_types_map,
+                socket.assigns.students,
+                [activity_id],
+                include_adaptive_part_analytics: true
+              )
+              |> List.first()
+            end
+
+          summary =
+            summary ||
+              %{
+                resource_id: activity_id,
+                id: activity_id,
+                revision: activity.revision,
+                first_attempt_pct: 0.0,
+                all_attempt_pct: 0.0,
+                preview_rendered: nil
+              }
+
+          cache_summary(socket, activity_id, summary)
+
+        _ when not is_nil(activity) ->
+          cache_summary(socket, activity_id, empty_summary(activity))
+
+        _ ->
+          socket
+      end
+    end
+  rescue
+    exception ->
+      Logger.warning("Linked activity summary load failed",
+        section_id: socket.assigns.section.id,
+        activity_id: activity_id,
+        error: exception.__struct__
+      )
+
+      case Enum.find(socket.assigns.activities, &(&1.resource_id == activity_id)) do
+        nil -> socket
+        activity -> cache_summary(socket, activity_id, empty_summary(activity))
+      end
+  end
+
+  defp cache_summary(socket, activity_id, summary) do
+    socket
+    |> assign(
+      loaded_activity_summaries:
+        Map.put(socket.assigns.loaded_activity_summaries, activity_id, summary),
+      activity_summary_cache: Map.put(socket.assigns.activity_summary_cache, activity_id, summary)
+    )
+  end
+
+  defp empty_summary(activity) do
+    %{
+      resource_id: activity.resource_id,
+      id: activity.resource_id,
+      revision: activity.revision,
+      first_attempt_pct: 0.0,
+      all_attempt_pct: 0.0,
+      preview_rendered: nil
+    }
   end
 
   defp extract_back_url_params(params) do
