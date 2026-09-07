@@ -4,6 +4,11 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "jest.rootPath": "./assets",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "yaml.schemas": {
+    "./priv/schemas/v0-1-0/scenario.schema.json": [
+      "test/scenarios/**/*.scenario.yaml"
+    ]
+  },
   "[elixir]": {
     "editor.defaultFormatter": "JakeBecker.elixir-ls"
   },

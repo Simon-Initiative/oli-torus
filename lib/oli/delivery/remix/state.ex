@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Remix.State do
   """
 
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Delivery.Remix.Source
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.Publication
 
@@ -17,7 +18,7 @@ defmodule Oli.Delivery.Remix.State do
     :hierarchy,
     :active,
     :pinned_project_publications,
-    :available_publications
+    :available_sources
   ]
   defstruct section: nil,
             hierarchy: nil,
@@ -26,7 +27,7 @@ defmodule Oli.Delivery.Remix.State do
             selected: nil,
             has_unsaved_changes: false,
             pinned_project_publications: %{},
-            available_publications: [],
+            available_sources: [],
             # listing controls are UI-hints but kept here to keep transitions pure/deterministic
             pages: %{text_filter: "", limit: 5, offset: 0, sort_by: :title, sort_order: :asc},
             publications: %{
@@ -45,7 +46,7 @@ defmodule Oli.Delivery.Remix.State do
           selected: HierarchyNode.t() | nil,
           has_unsaved_changes: boolean(),
           pinned_project_publications: %{optional(integer()) => Publication.t()},
-          available_publications: [Publication.t()],
+          available_sources: [Source.t()],
           pages: map(),
           publications: map()
         }

@@ -12,6 +12,14 @@ Torus uses layered testing. Choose the cheapest test type that gives high confid
 
 Guiding principle: if the behavior is pure or local, keep it in unit tests. If the behavior is shared Gleam code consumed from both Elixir and browser code, test it directly in Gleam and add boundary tests only where integration behavior can regress. If the behavior is UI orchestration in LiveView, keep it in LiveView tests. If the behavior is a realistic multi-step Torus workflow that spans domain boundaries but does not require a browser, prefer `Oli.Scenarios`.
 
+## Test Output Hygiene
+
+Tests must not leave intentionally triggered application logs visible in normal test output.
+
+- For an ExUnit test that intentionally triggers logs without asserting on them, add `@tag capture_log: true`.
+- When a test verifies log content, wrap only the relevant operation in `capture_log(...)` and assert on the captured value.
+- Do not capture unrelated setup, migration, or infrastructure logs merely to hide unexpected output; determine and address their source instead.
+
 ## When Scenario Tests Are Necessary
 
 Scenario coverage is usually warranted when one or more of these are true:

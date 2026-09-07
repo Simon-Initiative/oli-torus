@@ -16,7 +16,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   alias Oli.Resources
   alias Oli.Resources.Revision
   alias OliWeb.Icons
-  alias OliWeb.Common.{Filter, FilterBox}
+  alias OliWeb.Common.{FilterBox, SearchInput}
   alias OliWeb.Common.Listing, as: Table
 
   alias OliWeb.Workspaces.CourseAuthor.Objectives.{
@@ -72,6 +72,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
         search_matching_ids: nil,
+        search_expansion_ids: nil,
         expanded_objective_slugs: initial_expanded_objective_slugs(params),
         search_expanded_objective_slugs: MapSet.new(),
         offset: 0,
@@ -87,22 +88,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
          end)}
       end)
       |> attach_hook(:objective_search_expansion, :handle_event, fn
-        "change_search", %{"value" => value}, socket ->
-          {:halt,
-           assign(socket,
-             query: normalize_search_query(value),
-             search_matching_ids: nil
-           )}
+        "apply_search", params, socket ->
+          query =
+            params
+            |> Map.get("query", socket.assigns.query)
+            |> normalize_search_query()
 
-        "apply_search", _params, socket ->
-          matching_ids =
+          {matching_ids, expansion_ids} =
             case socket.assigns.coverage_model do
-              nil -> nil
-              model -> matching_objective_ids(model, socket.assigns.query)
+              nil -> {nil, nil}
+              model -> search_result_ids(model, query)
             end
 
-          socket = assign(socket, search_matching_ids: matching_ids)
-          {:cont, expand_search_results(socket, socket.assigns.query, matching_ids)}
+          socket =
+            assign(socket,
+              query: query,
+              search_matching_ids: matching_ids,
+              search_expansion_ids: expansion_ids
+            )
+
+          {:cont, expand_search_results(socket, query, expansion_ids)}
 
         "reset_search", _params, socket ->
           {:cont,
@@ -113,7 +118,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                  Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
                ),
              search_expanded_objective_slugs: MapSet.new(),
-             search_matching_ids: MapSet.new()
+             search_matching_ids: MapSet.new(),
+             search_expansion_ids: MapSet.new()
            )}
 
         _event, _params, socket ->
@@ -143,13 +149,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     >
       <div class="flex w-full flex-wrap items-center gap-2 pt-6">
         <div class="w-full shrink-0 sm:w-56">
-          <Filter.render
-            change="change_search"
-            reset="reset_search"
-            apply="apply_search"
-            query={@query}
-            apply_icon={true}
-          />
+          <.form for={%{}} id="objectives-search-form" phx-change="apply_search">
+            <SearchInput.render
+              id="objectives-search"
+              name="query"
+              text={@query}
+              placeholder="Search..."
+              aria_label="Search learning objectives, sub-objectives, pages, and activities"
+            />
+            <input
+              type="text"
+              class="sr-only"
+              aria-hidden="true"
+              phx-blur="change_search"
+              value={@query}
+            />
+            <button type="button" class="sr-only" phx-click="apply_search">Search</button>
+          </.form>
         </div>
 
         <form id="sort" phx-change="sort" class="flex h-9 shrink-0 items-center gap-2">
@@ -186,6 +202,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
           </label>
         </form>
+
         <div class="hidden h-6 w-px shrink-0 bg-Border-border-default xl:block" aria-hidden="true" />
         <ContentFilter.render
           nodes={@course_content_nodes}
@@ -196,29 +213,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         />
 
         <div class="flex-1" />
+        <div class="ml-auto flex shrink-0 items-center gap-2">
+          <.link
+            id="download-objectives-csv"
+            href={
+              ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
+            }
+            download={"#{@project.slug}_learning_objectives.csv"}
+            class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md border border-Border-border-default bg-Background-bg-primary px-[13px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          >
+            <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
+              <Icons.download stroke_class="stroke-current" />
+            </span>
+            Download CSV
+          </.link>
 
-        <.link
-          id="download-objectives-csv"
-          href={
-            ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
-          }
-          download={"#{@project.slug}_learning_objectives.csv"}
-          class="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-Border-border-default bg-Background-bg-primary px-[13px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-        >
-          <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
-            <Icons.download stroke_class="stroke-current" />
-          </span>
-          Download CSV
-        </.link>
-
-        <button
-          type="button"
-          class="inline-flex h-[34px] shrink-0 items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 text-[13px] font-semibold leading-[19.5px] text-Text-text-white shadow-[0px_2px_2px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-          phx-click="display_new_modal"
-        >
-          <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
-          New Objective
-        </button>
+          <button
+            type="button"
+            class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 text-[13px] font-semibold leading-[19.5px] text-Text-text-white shadow-[0px_2px_2px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            phx-click="display_new_modal"
+          >
+            <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
+            New Objective
+          </button>
+        </div>
       </div>
     </FilterBox.render>
 
@@ -420,12 +438,244 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     )
   end
 
+  defp filter_objective_rows(rows, nil), do: rows
+
+  defp filter_objective_rows(rows, matching_ids) do
+    Enum.filter(rows, fn objective ->
+      objective.resource_id in matching_ids or
+        Enum.any?(objective.children, fn child ->
+          not is_nil(child) and child.resource_id in matching_ids
+        end)
+    end)
+  end
+
+  defp filter_content_rows(rows, _model, %{selected_ids: []}), do: rows
+
+  defp filter_content_rows(rows, model, selection) do
+    direct_ids = ObjectiveCoverage.objective_ids_for_pages(model, selection.page_ids)
+    visible_ids = ObjectiveCoverage.objective_scope_for_pages(model, selection.page_ids)
+
+    rows
+    |> Enum.filter(fn objective ->
+      objective.resource_id in visible_ids or
+        Enum.any?(objective.children, fn child ->
+          not is_nil(child) and child.resource_id in direct_ids
+        end)
+    end)
+    |> Enum.map(fn objective ->
+      Map.update!(objective, :children, fn children ->
+        Enum.filter(children, fn child ->
+          not is_nil(child) and child.resource_id in direct_ids
+        end)
+      end)
+    end)
+  end
+
   defp empty_state_text(%{course_content_selection: %{selected_ids: selected_ids}})
        when selected_ids != [],
        do: "No learning objectives match the selected course content."
 
   defp empty_state_text(assigns) do
     if assigns.query == "", do: "None exist", else: "No learning objectives match your search."
+  end
+
+  defp matching_objective_ids(model, query) do
+    {matching_ids, _expansion_ids} = search_result_ids(model, query)
+    matching_ids
+  end
+
+  defp search_result_ids(model, query) do
+    results = ObjectiveCoverage.search(model, normalize_search_query(query))
+
+    matching_ids =
+      results
+      |> Enum.map(& &1.objective_id)
+      |> MapSet.new()
+
+    expansion_ids =
+      results
+      |> Enum.filter(fn result ->
+        Enum.any?(result.matches, &(Map.get(&1, :type) != :objective))
+      end)
+      |> Enum.map(& &1.objective_id)
+      |> MapSet.new()
+
+    {matching_ids, expansion_ids}
+  end
+
+  defp normalize_search_query(query) when is_binary(query) do
+    query
+    |> String.slice(0, @max_search_length)
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.take(@max_search_terms)
+    |> Enum.join(" ")
+  end
+
+  defp normalize_search_query(_query), do: ""
+
+  defp expand_search_results(socket, query, expansion_ids) do
+    case socket.assigns.coverage_model do
+      nil ->
+        socket
+
+      _model when is_binary(query) ->
+        if String.trim(query) == "" do
+          previous_auto_expanded =
+            Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
+
+          assign(socket,
+            expanded_objective_slugs:
+              MapSet.difference(socket.assigns.expanded_objective_slugs, previous_auto_expanded),
+            search_expanded_objective_slugs: MapSet.new()
+          )
+        else
+          auto_expanded =
+            socket.assigns.objectives
+            |> Enum.flat_map(fn objective ->
+              child_ids =
+                objective.children
+                |> Enum.reject(&is_nil/1)
+                |> Enum.map(& &1.resource_id)
+
+              if objective.resource_id in expansion_ids or
+                   Enum.any?(child_ids, &(&1 in expansion_ids)) do
+                matching_child_slugs =
+                  objective.children
+                  |> Enum.filter(fn child ->
+                    not is_nil(child) and child.resource_id in expansion_ids
+                  end)
+                  |> Enum.map(& &1.slug)
+
+                [objective.slug | matching_child_slugs]
+              else
+                []
+              end
+            end)
+            |> Enum.reject(&is_nil/1)
+            |> MapSet.new()
+
+          previous_auto_expanded =
+            Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
+
+          manually_expanded =
+            MapSet.difference(socket.assigns.expanded_objective_slugs, previous_auto_expanded)
+
+          search_expanded = MapSet.difference(auto_expanded, manually_expanded)
+
+          assign(socket,
+            expanded_objective_slugs: MapSet.union(manually_expanded, auto_expanded),
+            search_expanded_objective_slugs: search_expanded
+          )
+        end
+
+      _model ->
+        socket
+    end
+  end
+
+  defp return_updated_data(project, flash_fn, socket) do
+    {all_objectives, all_children, objectives, table_model} =
+      build_objectives(project)
+
+    socket = cancel_async(socket, :objective_coverage)
+
+    objective_slugs =
+      objectives
+      |> Enum.flat_map(fn objective ->
+        [objective | Enum.reject(objective.children, &is_nil/1)]
+      end)
+      |> Enum.map(& &1.slug)
+      |> MapSet.new()
+
+    expanded_objective_slugs =
+      MapSet.intersection(socket.assigns.expanded_objective_slugs, objective_slugs)
+
+    socket =
+      socket
+      |> assign(
+        objectives: objectives,
+        table_model: table_model,
+        total_count: length(objectives),
+        all_objectives: all_objectives,
+        all_children: all_children,
+        coverage_model: nil,
+        coverage_status: :loading,
+        assessment_buckets: socket.assigns.assessment_buckets,
+        course_content_selection: nil,
+        course_content_scope_ids: nil,
+        course_content_nodes: [],
+        search_matching_ids: nil,
+        search_expansion_ids: nil,
+        expanded_objective_slugs: expanded_objective_slugs
+      )
+      |> flash_fn.()
+      |> hide_modal(modal_assigns: nil)
+      |> start_async(:objective_coverage, fn -> ObjectiveCoverage.load(project) end)
+
+    {:noreply, push_patch(socket, to: live_path(socket, socket.assigns.params))}
+  end
+
+  defp csv_export_params(params) do
+    Map.take(params, ["query", "filter", "sort_by", "sort_order", "course_content"])
+  end
+
+  defp card_body_text(assigns) do
+    ~H"""
+    Learning objectives define the knowledge and skills students should demonstrate throughout your course. Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages. Refer to the
+    <a
+      class="external text-Text-text-button hover:text-Text-text-button"
+      href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
+      rel="noopener"
+      target="_blank"
+    >
+      CMU Eberly Center guide on learning objectives
+    </a>
+    to learn more about the importance of attaching learning objectives to pages and activities.
+    """
+  end
+
+  defp new_modal(form, socket) do
+    modal_assigns = %{
+      id: "new_objective_modal",
+      form: form,
+      action: :new,
+      on_click: "new"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <FormModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  def handle_event("hide_modal", _, socket),
+    do: {:noreply, hide_modal(socket, modal_assigns: nil)}
+
+  def handle_event("display_new_modal", _, socket),
+    do: new_modal(Resources.change_revision(%Revision{}) |> to_form(), socket)
+
+  def handle_event("retry_coverage", _, socket) do
+    socket = cancel_async(socket, :objective_coverage)
+    project = socket.assigns.project
+
+    {:noreply,
+     assign(socket,
+       coverage_model: nil,
+       coverage_status: :loading,
+       search_matching_ids: nil,
+       search_expansion_ids: nil
+     )
+     |> start_async(:objective_coverage, fn ->
+       ObjectiveCoverage.load(project)
+     end)}
   end
 
   def handle_event("toggle_course_content_filter", _params, socket) do
@@ -436,11 +686,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     {:noreply, assign(socket, course_content_open: false)}
   end
 
-  def handle_event(
-        "toggle_course_content_item",
-        %{"resource_id" => resource_id},
-        socket
-      ) do
+  def handle_event("toggle_course_content_item", %{"resource_id" => resource_id}, socket) do
     with model when not is_nil(model) <- socket.assigns.coverage_model,
          {:ok, resource_id} <- parse_objective_id(resource_id),
          true <- Map.has_key?(model.curriculum_by_id, resource_id) do
@@ -479,27 +725,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       |> Map.put("offset", 0)
 
     {:noreply, push_patch(socket, to: live_path(socket, params), replace: true)}
-  end
-
-  def handle_event("hide_modal", _, socket),
-    do: {:noreply, hide_modal(socket, modal_assigns: nil)}
-
-  def handle_event("display_new_modal", _, socket),
-    do: new_modal(Resources.change_revision(%Revision{}) |> to_form(), socket)
-
-  def handle_event("retry_coverage", _, socket) do
-    socket = cancel_async(socket, :objective_coverage)
-    project = socket.assigns.project
-
-    {:noreply,
-     assign(socket,
-       coverage_model: nil,
-       coverage_status: :loading,
-       search_matching_ids: nil
-     )
-     |> start_async(:objective_coverage, fn ->
-       ObjectiveCoverage.load(project)
-     end)}
   end
 
   def handle_event("display_new_sub_modal", %{"slug" => slug}, socket),
@@ -808,189 +1033,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     return_updated_data(project, flash_fn, socket)
   end
 
-  defp filter_objective_rows(rows, nil), do: rows
-
-  defp filter_objective_rows(rows, matching_ids) do
-    Enum.filter(rows, fn objective ->
-      objective.resource_id in matching_ids or
-        Enum.any?(objective.children, fn child ->
-          not is_nil(child) and child.resource_id in matching_ids
-        end)
-    end)
-  end
-
-  defp filter_content_rows(rows, _model, %{selected_ids: []}), do: rows
-
-  defp filter_content_rows(rows, model, selection) do
-    direct_ids = ObjectiveCoverage.objective_ids_for_pages(model, selection.page_ids)
-    visible_ids = ObjectiveCoverage.objective_scope_for_pages(model, selection.page_ids)
-
-    rows
-    |> Enum.filter(fn objective ->
-      objective.resource_id in visible_ids or
-        Enum.any?(objective.children, fn child ->
-          not is_nil(child) and child.resource_id in direct_ids
-        end)
-    end)
-    |> Enum.map(fn objective ->
-      Map.update!(objective, :children, fn children ->
-        Enum.filter(children, fn child ->
-          not is_nil(child) and child.resource_id in direct_ids
-        end)
-      end)
-    end)
-  end
-
-  defp matching_objective_ids(model, query) do
-    model
-    |> ObjectiveCoverage.search(normalize_search_query(query))
-    |> Enum.map(& &1.objective_id)
-    |> MapSet.new()
-  end
-
-  defp normalize_search_query(query) when is_binary(query) do
-    query
-    |> String.slice(0, @max_search_length)
-    |> String.split(~r/\s+/, trim: true)
-    |> Enum.take(@max_search_terms)
-    |> Enum.join(" ")
-  end
-
-  defp normalize_search_query(_query), do: ""
-
-  defp expand_search_results(socket, query, matching_ids) do
-    case socket.assigns.coverage_model do
-      nil ->
-        socket
-
-      _model when is_binary(query) ->
-        if String.trim(query) == "" do
-          socket
-        else
-          auto_expanded =
-            socket.assigns.objectives
-            |> Enum.flat_map(fn objective ->
-              child_ids =
-                objective.children
-                |> Enum.reject(&is_nil/1)
-                |> Enum.map(& &1.resource_id)
-
-              if objective.resource_id in matching_ids or
-                   Enum.any?(child_ids, &(&1 in matching_ids)) do
-                matching_child_slugs =
-                  objective.children
-                  |> Enum.filter(fn child ->
-                    not is_nil(child) and child.resource_id in matching_ids
-                  end)
-                  |> Enum.map(& &1.slug)
-
-                [objective.slug | matching_child_slugs]
-              else
-                []
-              end
-            end)
-            |> Enum.reject(&is_nil/1)
-            |> MapSet.new()
-
-          previous_auto_expanded =
-            Map.get(socket.assigns, :search_expanded_objective_slugs, MapSet.new())
-
-          manually_expanded =
-            MapSet.difference(socket.assigns.expanded_objective_slugs, previous_auto_expanded)
-
-          search_expanded = MapSet.difference(auto_expanded, manually_expanded)
-
-          assign(socket,
-            expanded_objective_slugs: MapSet.union(manually_expanded, auto_expanded),
-            search_expanded_objective_slugs: search_expanded
-          )
-        end
-
-      _model ->
-        socket
-    end
-  end
-
-  defp return_updated_data(project, flash_fn, socket) do
-    {all_objectives, all_children, objectives, table_model} =
-      build_objectives(project)
-
-    socket = cancel_async(socket, :objective_coverage)
-
-    objective_slugs =
-      objectives
-      |> Enum.flat_map(fn objective ->
-        [objective | Enum.reject(objective.children, &is_nil/1)]
-      end)
-      |> Enum.map(& &1.slug)
-      |> MapSet.new()
-
-    expanded_objective_slugs =
-      MapSet.intersection(socket.assigns.expanded_objective_slugs, objective_slugs)
-
-    socket =
-      socket
-      |> assign(
-        objectives: objectives,
-        table_model: table_model,
-        total_count: length(objectives),
-        all_objectives: all_objectives,
-        all_children: all_children,
-        coverage_model: nil,
-        coverage_status: :loading,
-        assessment_buckets: socket.assigns.assessment_buckets,
-        course_content_selection: nil,
-        search_matching_ids: nil,
-        expanded_objective_slugs: expanded_objective_slugs
-      )
-      |> flash_fn.()
-      |> hide_modal(modal_assigns: nil)
-      |> start_async(:objective_coverage, fn -> ObjectiveCoverage.load(project) end)
-
-    {:noreply, push_patch(socket, to: live_path(socket, socket.assigns.params))}
-  end
-
-  defp csv_export_params(params) do
-    Map.take(params, ["query", "filter", "sort_by", "sort_order"])
-  end
-
-  defp card_body_text(assigns) do
-    ~H"""
-    Learning objectives define the knowledge and skills students should demonstrate throughout your course. Use this page to organize objectives and review coverage of formative (practice) and summative (scored) activities and pages. Refer to the
-    <a
-      class="external text-Text-text-button hover:text-Text-text-button"
-      href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
-      rel="noopener"
-      target="_blank"
-    >
-      CMU Eberly Center guide on learning objectives
-    </a>
-    to learn more about the importance of attaching learning objectives to pages and activities.
-    """
-  end
-
-  defp new_modal(form, socket) do
-    modal_assigns = %{
-      id: "new_objective_modal",
-      form: form,
-      action: :new,
-      on_click: "new"
-    }
-
-    modal = fn assigns ->
-      ~H"""
-      <FormModal.render {@modal_assigns} />
-      """
-    end
-
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
-  end
-
   defp delete_objective(slug, parent_slug, project, author) do
     case delete_objective_result(slug, parent_slug, project, author) do
       :ok -> fn socket -> put_flash(socket, :info, "Objective successfully removed") end
@@ -1130,6 +1172,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     objectives = apply_coverage(socket.assigns.objectives, model, assessment_buckets)
     {:ok, table_model} = TableModel.new(objectives)
 
+    {matching_ids, expansion_ids} =
+      if String.trim(socket.assigns.query) == "" do
+        {MapSet.new(), MapSet.new()}
+      else
+        search_result_ids(model, socket.assigns.query)
+      end
+
     socket =
       assign(socket,
         objectives: objectives,
@@ -1144,11 +1193,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             socket.assigns.params["course_content"]
           ),
         assessment_buckets: assessment_buckets,
-        search_matching_ids:
-          if(String.trim(socket.assigns.query) == "",
-            do: MapSet.new(),
-            else: matching_objective_ids(model, socket.assigns.query)
-          )
+        search_matching_ids: matching_ids,
+        search_expansion_ids: expansion_ids
       )
 
     refresh_table_state(socket)
@@ -1273,20 +1319,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   defp coverage_error_message(:invalid_project), do: "The project is invalid."
   defp coverage_error_message(_reason), do: "Objective coverage could not be loaded."
 
-  # Keep expanded LO state shareable in the URL while accepting legacy selected links.
-  defp initial_expanded_objective_slugs(params) do
-    expanded_slugs =
-      params
-      |> Map.get("expanded", "")
-      |> String.split(",", trim: true)
-      |> MapSet.new()
-
-    case Map.get(params, "selected", "") do
-      "" -> expanded_slugs
-      slug -> MapSet.put(expanded_slugs, slug)
-    end
-  end
-
   defp preserve_course_content_param(params, socket) do
     case Map.pop(params, "clear_course_content") do
       {clear, params} when clear in [true, "true"] ->
@@ -1308,6 +1340,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     case Enum.join(selected_ids, ",") do
       "" -> Map.delete(params, "course_content")
       value -> Map.put(params, "course_content", value)
+    end
+  end
+
+  # Keep expanded LO state shareable in the URL while accepting legacy selected links.
+  defp initial_expanded_objective_slugs(params) do
+    expanded_slugs =
+      params
+      |> Map.get("expanded", "")
+      |> String.split(",", trim: true)
+      |> MapSet.new()
+
+    case Map.get(params, "selected", "") do
+      "" -> expanded_slugs
+      slug -> MapSet.put(expanded_slugs, slug)
     end
   end
 

@@ -22,6 +22,7 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   alias Oli.Authoring.Editing.BankContext
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Authoring.LearningObjectives.ProjectClassifier
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionsProjectsPublications
@@ -38,8 +39,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   """
   def context(project_slug, author) do
     with {:ok, publication} <-
-           Publishing.project_working_publication(project_slug)
-           |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         publication = Repo.preload(publication, :project),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
@@ -47,13 +48,13 @@ defmodule Oli.Authoring.Editing.ActivityBank do
          {:ok, tags} <-
            ResourceEditor.list(project_slug, author, ResourceType.id_for_tag()),
          {:ok, %Result{totalCount: total_count}} <-
-           query(project_slug, author, %Logic{conditions: nil}, %Paging{limit: 1, offset: 0}) do
+           query(project_slug, author, %Logic{conditions: nil}, %Paging{limit: 1, offset: 0}),
+         {:ok, lo_well_formed} <-
+           ProjectClassifier.ensure_classified(publication.project, publication) do
       editor_map =
         Activities.create_registered_activity_map(project_slug)
         |> Enum.reject(fn {_key, entry} -> entry.isLtiActivity end)
         |> Enum.into(%{})
-
-      project = Course.get_project_by_slug(project_slug)
 
       {:ok,
        %BankContext{
@@ -61,9 +62,10 @@ defmodule Oli.Authoring.Editing.ActivityBank do
          projectSlug: project_slug,
          editorMap: editor_map,
          allObjectives: objectives_with_parent_reference,
+         loWellFormed: lo_well_formed,
          allTags: Enum.map(tags, fn tag -> %{id: tag.resource_id, title: tag.title} end),
          totalCount: total_count,
-         allowTriggers: project.allow_triggers
+         allowTriggers: publication.project.allow_triggers
        }}
     else
       _ -> {:error, :not_found}

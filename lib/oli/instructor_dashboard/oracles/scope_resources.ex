@@ -7,6 +7,7 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
 
   alias Oli.Dashboard.OracleContext
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.DisplayLabels
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.InstructorDashboard.Oracles.Helpers
   alias Oli.Resources.ResourceType
@@ -77,7 +78,8 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
             context_label
 
           false ->
-            append_context_label(context_label, container_label(child, customizations))
+            label = container_label(child, customizations) || child.revision.title
+            append_context_label(context_label, label)
         end
 
       [
@@ -88,13 +90,17 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
   end
 
   defp container_label(child, customizations) do
-    numbering = Map.get(child, :numbering, %{})
+    case DisplayLabels.effective_numbering(child) do
+      nil ->
+        nil
 
-    Sections.get_container_label_and_numbering(
-      Map.get(numbering, :level, 0),
-      Map.get(numbering, :index, 0),
-      customizations
-    )
+      numbering ->
+        Sections.get_container_label_and_numbering(
+          numbering.level,
+          numbering.index,
+          customizations
+        )
+    end
   end
 
   defp append_context_label(nil, label), do: label

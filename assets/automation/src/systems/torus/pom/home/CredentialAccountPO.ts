@@ -17,6 +17,7 @@ export class CredentialAccountPO {
 
   async register(account: AccountDetails) {
     await this.page.goto(`/${this.pathSegment()}/register`);
+    await this.waitForLiveViewReady();
 
     const form = this.page.locator('#registration_form');
     await form.locator(`input[name="${this.formName()}[email]"]`).fill(account.email);
@@ -28,42 +29,61 @@ export class CredentialAccountPO {
       .fill(account.password);
 
     await this.acceptCookieConsentIfVisible();
-    await form.getByRole('button', { name: 'Create account', exact: true }).click();
-    await this.page.waitForURL(`/${this.pathSegment()}/confirm`, { waitUntil: 'commit' });
+    await Promise.all([
+      this.page.waitForURL(`/${this.pathSegment()}/confirm`, { waitUntil: 'commit' }),
+      form.getByRole('button', { name: 'Create account', exact: true }).click(),
+    ]);
+    // The confirm-instructions LiveView must finish joining before the
+    // session cookie is cleared (clearSessionCookie, called by the caller
+    // right after this returns): if the join is still in flight when the
+    // cookie disappears, the server rejects it as a stale session and the
+    // LiveView client reloads the page on its own, racing with whatever
+    // navigation the test performs next.
+    await this.waitForLiveViewReady();
   }
 
   async confirm(url: string) {
     await this.page.goto(url);
+    await this.waitForLiveViewReady();
     await this.acceptCookieConsentIfVisible();
-    await this.page.getByRole('button', { name: 'Confirm', exact: true }).click();
-    await this.page.waitForURL(`/${this.pathSegment()}/log_in`, { waitUntil: 'commit' });
+    await Promise.all([
+      this.page.waitForURL(`/${this.pathSegment()}/log_in`, { waitUntil: 'commit' }),
+      this.page.getByRole('button', { name: 'Confirm', exact: true }).click(),
+    ]);
     await expect(this.page.getByText('Email successfully confirmed.')).toBeVisible();
   }
 
   async requestPasswordReset(email: string) {
     await this.page.goto(`/${this.pathSegment()}/reset_password`);
+    await this.waitForLiveViewReady();
 
     const form = this.page.locator('#reset_password_form');
     await form.locator(`input[name="${this.formName()}[email]"]`).fill(email);
     await this.acceptCookieConsentIfVisible();
-    await form.getByRole('button', { name: 'Send password reset instructions' }).click();
-    await this.page.waitForURL(this.resetRequestDestination());
+    await Promise.all([
+      this.page.waitForURL(this.resetRequestDestination()),
+      form.getByRole('button', { name: 'Send password reset instructions' }).click(),
+    ]);
   }
 
   async resetPassword(url: string, password: string) {
     await this.page.goto(url);
+    await this.waitForLiveViewReady();
 
     const form = this.page.locator('#reset_password_form');
     await form.locator(`input[name="${this.formName()}[password]"]`).fill(password);
     await form.locator(`input[name="${this.formName()}[password_confirmation]"]`).fill(password);
     await this.acceptCookieConsentIfVisible();
-    await form.getByRole('button', { name: 'Reset Password', exact: true }).click();
-    await this.page.waitForURL(`/${this.pathSegment()}/log_in`, { waitUntil: 'commit' });
+    await Promise.all([
+      this.page.waitForURL(`/${this.pathSegment()}/log_in`, { waitUntil: 'commit' }),
+      form.getByRole('button', { name: 'Reset Password', exact: true }).click(),
+    ]);
     await expect(this.page.getByText('Password reset successfully.')).toBeVisible();
   }
 
   async login(email: string, password: string, loginPath?: string) {
     await this.page.goto(loginPath ?? `/${this.pathSegment()}/log_in`);
+    await this.waitForLiveViewReady();
 
     const form = this.page.locator('#login_form');
     await form.locator(`input[name="${this.formName()}[email]"]`).fill(email);
@@ -106,6 +126,12 @@ export class CredentialAccountPO {
 
   private resetRequestDestination() {
     return this.type === 'author' ? '/authors/log_in' : '/';
+  }
+
+  private async waitForLiveViewReady() {
+    await expect(this.page.locator('[data-phx-main].phx-connected').first()).toBeAttached({
+      timeout: 15_000,
+    });
   }
 
   private async acceptCookieConsentIfVisible() {

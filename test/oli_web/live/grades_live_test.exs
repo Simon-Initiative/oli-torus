@@ -9,11 +9,133 @@ defmodule OliWeb.GradesLiveTest do
   alias Oli.Test.MockHTTP
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils, as: StudentUtils
 
   defp live_view_grades_route(section_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, section_slug)
+  end
+
+  # A small two-unit hierarchy for suppression tests. `insert(:section, ...)` already wires
+  # up a working LTI deployment/registration by default (see `section_factory/0` in
+  # `test/support/factory.ex`), so `GradesLive.mount/3`'s deployment/registration lookup
+  # succeeds without any extra LTI fixture setup.
+  defp create_section_with_hierarchy(%{conn: conn, user: user}) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    page_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 1",
+        graded: true
+      )
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 2",
+        graded: true
+      )
+
+    page_3_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 3",
+        graded: true
+      )
+
+    module_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        children: [page_1_revision.resource_id],
+        title: "Module 1"
+      )
+
+    module_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        children: [page_2_revision.resource_id, page_3_revision.resource_id],
+        title: "Module 2"
+      )
+
+    unit_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        children: [module_1_revision.resource_id],
+        title: "Unit 1"
+      )
+
+    unit_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        children: [module_2_revision.resource_id],
+        title: "Unit 2"
+      )
+
+    container_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        children: [unit_1_revision.resource_id, unit_2_revision.resource_id],
+        title: "Root Container"
+      )
+
+    all_revisions = [
+      page_1_revision,
+      page_2_revision,
+      page_3_revision,
+      module_1_revision,
+      module_2_revision,
+      unit_1_revision,
+      unit_2_revision,
+      container_revision
+    ]
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+    end)
+
+    publication =
+      insert(:publication, project: project, root_resource_id: container_revision.resource_id)
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource,
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      )
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+
+    Sections.enroll(user.id, section.id, [
+      Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
+    ])
+
+    [
+      conn: conn,
+      section: section,
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision
+    ]
   end
 
   defp create_section(_conn) do
@@ -131,6 +253,35 @@ defmodule OliWeb.GradesLiveTest do
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
 
       assert has_element?(view, "h2", "Manage Scores")
+    end
+  end
+
+  describe "grade sync assessment selector" do
+    setup [:user_conn, :create_section_with_hierarchy]
+
+    test "shows suppression-aware container labels when a top-level unit is unnumbered", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
+
+      select_html = view |> element(~s{select#assignment_grade_sync_select}) |> render()
+
+      # Page 1 is nested under the suppressed Unit 1 (via Module 1), so it shows no
+      # container-number prefix at all, matching how Learn presents a suppressed unit.
+      assert select_html =~ "Page 1"
+      refute select_html =~ "Unit 1: Page 1"
+      refute select_html =~ "Module 1: Page 1"
+
+      # Page 2 is nested under Unit 2 / Module 2. Unit 1 being suppressed means Module 1
+      # (nested inside it) never consumes a numbering slot, so Module 2 becomes "Module 1"
+      # instead of the raw "Module 2" -- this is the exact bug reported in the ticket.
+      refute select_html =~ "Module 2: Page 2"
+      assert select_html =~ "Module 1: Page 2"
     end
   end
 

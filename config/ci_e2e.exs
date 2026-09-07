@@ -15,7 +15,9 @@ config :oli, Oli.Repo, database: System.get_env("DB_NAME", "oli_ci_e2e")
 
 config :oli, OliWeb.Endpoint,
   code_reloader: false,
-  live_reload: [],
-  watchers: []
+  # Config.Reader recursively merges keyword lists, so [] would leave the
+  # values imported from dev.exs intact. nil explicitly disables them.
+  live_reload: nil,
+  watchers: nil
 
 config :oli, Oli.Mailer, adapter: Swoosh.Adapters.Local

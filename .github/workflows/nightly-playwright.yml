@@ -25,6 +25,7 @@ jobs:
       PLAYWRIGHT_SCENARIO_TOKEN: ${{ secrets.PLAYWRIGHT_SCENARIO_TOKEN }}
       CANVAS_UI_EMAIL: ${{ secrets.CANVAS_UI_EMAIL }}
       CANVAS_UI_PASSWORD: ${{ secrets.CANVAS_UI_PASSWORD }}
+      PLAYWRIGHT_PARAMETER_CONFIG_URL: ${{ secrets.PLAYWRIGHT_PARAMETER_CONFIG_URL }}
 
     steps:
       - name: Checkout
@@ -33,7 +34,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 'lts/*'
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: assets/automation/package-lock.json
 
