@@ -8672,6 +8672,10 @@ select {
   fill: #FF8787;
 }
 
+.stroke-Icon-icon-danger {
+  stroke: #CE2C31;
+}
+
 .dark .stroke-Icon-icon-danger {
   stroke: #FF8787;
 }
