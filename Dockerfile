@@ -7,20 +7,20 @@
 # This file is based on these images:
 #
 #   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
-#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20240722-slim - for the release image
+#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=trixie-20260610-slim - for the release image
 #   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: hexpm/elixir:1.19.2-erlang-28.1.1-debian-bullseye-20251103-slim
+#   - Ex: hexpm/elixir:1.19.2-erlang-28.1.1-debian-trixie-20260610-slim
 #
 ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
 ARG GLEAM_VERSION=1.16.0
-ARG DEBIAN_VERSION=bullseye-20251103-slim
+ARG DEBIAN_VERSION=trixie-20260610-slim
 ARG NODE_VERSION=24.20.0
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM node:${NODE_VERSION}-bullseye-slim@sha256:f7818cba7c85740e6f9dd31553636131d01e9992fb7d112b9b0893afd884d1d6 AS node
+FROM node:${NODE_VERSION}-trixie-slim@sha256:50c3b2f6988dfc307b86e5301d69611af31f4789bdf232863b07d3b02fe55ae0 AS node
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -116,7 +116,8 @@ FROM ${RUNNER_IMAGE}
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 
-RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
+RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses6 locales \
+  ca-certificates curl \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Install goose for database migrations
