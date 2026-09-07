@@ -1984,4 +1984,53 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       index + byte_size(snippet)
     end)
   end
+
+  describe "instructor preview with learning_objectives element" do
+    setup [:setup_lo_preview_section]
+
+    test "renders without error when page contains a learning_objectives element", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ ~s|id="instructor-preview-header"|
+    end
+  end
+
+  defp setup_lo_preview_section(%{conn: conn}) do
+    user = user_fixture(%{independent_learner: false})
+
+    map = Seeder.base_project_with_resource2()
+
+    page_attrs = %{
+      graded: false,
+      title: "LO page",
+      content: %{
+        "model" => [
+          %{"type" => "learning_objectives", "id" => "lo-intro", "mode" => "introduction"}
+        ]
+      }
+    }
+
+    map = Seeder.add_page(map, page_attrs, :container, :page)
+
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "lo preview test", map.author.id)
+
+    map =
+      map
+      |> Map.merge(%{publication: publication})
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
+
+    enroll_as_instructor(%{section: map.section, user: user})
+    cache_lti_context(map.section, user)
+
+    {:ok,
+     conn: log_in_user(conn, user),
+     section: map.section,
+     page_revision: map.page.revision}
+  end
 end

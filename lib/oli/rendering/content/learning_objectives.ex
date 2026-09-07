@@ -1,6 +1,22 @@
 defmodule Oli.Rendering.Content.LearningObjectives do
   @moduledoc """
   Renders the delivery Learning Objectives page element from precomputed context data.
+
+  ## Why raw HTML strings instead of HEEx
+
+  This module is part of the `Oli.Rendering.Elements.render/3` flat page-content
+  pipeline. The entire page is assembled as a list of HTML strings that are later
+  concatenated and injected as a single `phx-update="ignore"` island that LiveView
+  never re-diffs. Using HEEx components here would require the LiveView component
+  runtime, which is incompatible with that model.
+
+  ## Why named CSS classes instead of inline Tailwind utilities
+
+  Inline Tailwind works well inside HEEx templates, where each element is a
+  self-contained expression. Here, styles would have to be embedded in many separate
+  `~s|...|` string literals, scattering long utility chains across the rendering
+  functions and hurting readability. Named CSS classes defined in `assets/css/app.css`
+  centralise the styling and keep the string-building code lean.
   """
 
   alias Oli.Delivery.LearningObjectives.IncludedObjective
