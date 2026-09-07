@@ -64,6 +64,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
       assert has_element?(view, "#draft_email_modal_objectives_test-section_wrapper")
       assert html =~ "Draft Email"
       assert html =~ "emma@test.com"
+      assert has_element?(view, "[data-role='low-proficiency-warning'][aria-hidden='true']")
+
+      assert has_element?(view, "div.whitespace-nowrap", "Low")
 
       # ...and it is NOT nested inside the objectives table, so it escapes the table's
       # sticky-header stacking context (the regression this fix addresses).
