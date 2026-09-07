@@ -39,23 +39,23 @@ const element = (updates: Partial<LearningObjectivesContent> = {}): LearningObje
   ...updates,
 });
 
-const resourceContext = (learningObjectives: ResolvedLearningObjective[]): ResourceContext =>
-  ({
-    graded: false,
-    authorEmail: 'author@example.edu',
-    projectSlug: 'project-1',
-    resourceSlug: 'page-1',
-    resourceId: 100,
-    hasExperiments: false,
-    title: 'Page 1',
-    content: { model: [] },
-    objectives: { attached: [] },
-    allObjectives: [],
-    learningObjectives,
-    allTags: [],
-    activityContexts: [],
-    optionalContentTypes: { ecl: false, triggers: false },
-  } as ResourceContext);
+const resourceContext = (learningObjectives: ResolvedLearningObjective[]): ResourceContext => ({
+  graded: false,
+  authorEmail: 'author@example.edu',
+  projectSlug: 'project-1',
+  resourceSlug: 'page-1',
+  resourceId: 100,
+  experimentsEnabled: false,
+  alternativesEnabled: false,
+  title: 'Page 1',
+  content: { model: [] },
+  objectives: { attached: [] },
+  allObjectives: [],
+  learningObjectives,
+  allTags: [],
+  activityContexts: [],
+  optionalContentTypes: { ecl: false, triggers: false },
+});
 
 const unresolvedLearningObjectivesContext = (): ResourceContext => {
   const context = resourceContext([]);

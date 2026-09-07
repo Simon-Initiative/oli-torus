@@ -42,6 +42,9 @@ const renderMenu = (
       parents={parents}
       featureFlags={{ adaptivity: false, equity: false, survey: false }}
       resourceContext={resourceContext}
+      onRefreshLearningObjectives={jest.fn()}
+      onStartLearningObjectivesRefresh={jest.fn()}
+      onFinishLearningObjectivesRefresh={jest.fn()}
       onSetTip={jest.fn()}
       onResetTip={jest.fn()}
     />,

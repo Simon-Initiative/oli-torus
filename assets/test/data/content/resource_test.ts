@@ -41,7 +41,7 @@ describe('ResourceContent learning objectives element', () => {
     const group = createGroup();
     const survey = createSurvey();
     const alternative = createAlternative('A');
-    const alternatives = createAlternatives(1, 'select_all', Immutable.List([alternative]));
+    const alternatives = createAlternatives(1, Immutable.List([alternative]));
 
     expect(isResourceGroup(content)).toBe(false);
     expect('children' in content).toBe(false);
