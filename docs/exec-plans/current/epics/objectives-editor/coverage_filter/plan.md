@@ -4,13 +4,11 @@ Scope and reference artifacts:
 
 - PRD: `docs/exec-plans/current/epics/objectives-editor/coverage_filter/prd.md`
 - FDD: `docs/exec-plans/current/epics/objectives-editor/coverage_filter/fdd.md`
-- Integration baseline: MER-5794 / PR #6800 (merged 2026-09-02) and the
-  currently open MER-5797 PR. **The MER-5797 PR number is not stable** — it
-  was #6818 (closed without merging 2026-09-02), then #6820 (open as of
-  2026-09-04). Do not hardcode a PR number when reasoning about this
-  dependency; check open/merged PRs for MER-5797 at the time of reading.
-  See `handoff.md` for the live-verified integration contract, pinned to a
-  specific commit SHA that must be re-checked before implementation.
+- Integration baseline: MER-5794 / PR #6800 (merged 2026-09-02) and
+  MER-5797 / PR #6820 (merged 2026-09-07, commit `b913d0463a`). MER-5797's
+  PR number changed once before merging (was #6818, closed without merging
+  2026-09-02, replaced by #6820) — that risk no longer applies now that it
+  is merged.
 
 ## Scope
 
@@ -81,7 +79,7 @@ Guardrails:
   - [ ] Add the Coverage Issues control and affected-objective count to the toolbar at the Figma-defined location, using the shared filter surface where its API is sufficient.
   - [ ] Represent activation through the existing `filter` map and `apply_filter` flow; preserve `query`, `sort_by`, `sort_order`, `expanded`, sidebar state, and CSV export parameters.
   - [ ] Extend `filter_rows/3` to compose search and coverage filtering over the already loaded normalized model before `SortableTableModel` sorts and slices rows.
-  - [ ] Keep whatever mechanism the MER-5797 PR uses for automatic search expansion (verified in `handoff.md` as `search_expanded_objective_slugs` plus a local `attach_hook`/`expand_search_results/3` as of that file's pinned commit — **re-verify against the live PR, do not assume `prepare_search/2`, which does not exist in this codebase**) exclusively responsible for that expansion. Coverage filter changes must not discard manual expansions or search-created expansion bookkeeping.
+  - [ ] Keep the mechanism MER-5797 merged for automatic search expansion exclusively responsible for that expansion: a local `attach_hook(:objective_search_expansion, :handle_event, ...)` in `objectives_live.ex`'s `mount/3`, plus `search_expanded_objective_slugs`/`search_expansion_ids` and the private `expand_search_results/3`. There is no `prepare_search/2` in this codebase. Coverage filter changes must not discard manual expansions or search-created expansion bookkeeping.
   - [ ] Rebuild the table model after threshold changes or coverage reloads, then route state back through the established refresh/patch path.
 - Testing Tasks:
   - [ ] Add LiveView state-transition coverage for active/inactive filter, count, parent inclusion for child issues, filter plus nested page/activity search, sorting, pagination reset, direct URL loading, clear/reset behavior, and preservation of `expanded=child,parent`.
@@ -141,7 +139,7 @@ Guardrails:
 ## Parallelization Notes
 
 - Work safely in parallel only below the LiveView boundary: ProjectAttributes persistence/classifier work does not need to wait for MER-5797's PR.
-- Do not independently redesign shared `Filter`, `FilterBox`, `TableHandlers`, `live_path/2`, or expansion-tracking state (whatever it is currently named — see `handoff.md`'s pinned-commit note, not `prepare_search/2`, which does not exist). Any change to those seams is made only after comparing against the merged tip of MER-5797's PR and must carry its combination regression.
+- Do not independently redesign shared `FilterBox`, `TableHandlers`, `live_path/2`, or `search_expanded_objective_slugs`/`search_expansion_ids` expansion-tracking state. (MER-5797 no longer uses `OliWeb.Common.Filter` for the search box — it now uses `OliWeb.Common.SearchInput` inside a `phx-change="apply_search"` form.) Any change to those seams must carry its combination regression against the merged MER-5797 tip.
 - Keep the final LiveView integration as a deliberately serialized reconciliation after MER-5797 merges; this is the lowest-risk point to resolve unavoidable overlapping lines.
 
 ## Phase Gate Summary

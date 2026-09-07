@@ -28,6 +28,29 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
     |> validate_number(:coverage_summative_threshold, greater_than_or_equal_to: 0)
     |> cast_embed(:license, required: false)
   end
+
+  @doc """
+  Returns a project's coverage thresholds as `%{formative: _, summative: _}`,
+  read from its persisted `attributes`. Projects predating this field (or any
+  project whose `attributes` embed is absent) read as `3`/`3` — the same
+  recommended default persisted on new projects by this schema, kept as an
+  independent literal here rather than depending on
+  `Oli.Authoring.ObjectiveCoverage.Issues.default_thresholds/0` so this
+  low-level schema module has no dependency on that domain-classification
+  module.
+  """
+  @spec coverage_thresholds(module_struct_or_changeset_type() | nil) :: %{
+          formative: non_neg_integer(),
+          summative: non_neg_integer()
+        }
+  def coverage_thresholds(nil), do: %{formative: 3, summative: 3}
+
+  def coverage_thresholds(%ProjectAttributes{} = attributes) do
+    %{
+      formative: attributes.coverage_formative_threshold,
+      summative: attributes.coverage_summative_threshold
+    }
+  end
 end
 
 defmodule Oli.Authoring.Course.ProjectAttributes.License do

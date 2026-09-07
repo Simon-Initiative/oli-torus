@@ -14,16 +14,16 @@ It does not implement or modify any LiveView/HEEx code.
 
 ## 0. Node inventory
 
-| Node | Label (product-supplied) | What it shows | First inspected |
-|---|---|---|---|
-| `365:14554` | Coverage warning (light) | Full page: toolbar default state, per-row inline issue badges, sub-objective warning banner | 2026-09-02, first pass |
-| `365:17228` | Coverage warning (dark) | Same page, dark theme (screenshot only, not walked node-by-node) | 2026-09-02, first pass |
-| `365:19034` | Coverage filter applied | Full page with the Coverage Issues filter **active** — toolbar button pressed state, filtered result list | 2026-09-02, second pass (link supplied by user) |
-| `365:18532` | Coverage filter settings | Full page with the settings popover **open**, anchored under the gear button | 2026-09-02, second pass (link supplied by user) |
-| `365:19751` | Settings (light mode) | The settings popover in isolation, light theme | 2026-09-02, second pass (link supplied by user) |
-| `365:19793` | Settings (dark mode) | The settings popover in isolation, dark theme | 2026-09-02, second pass (link supplied by user) |
-| `329:532` | Default (light mode) | Collapsed objective list; LO 2 carries a coverage issue while still collapsed | 2026-09-02, third pass (link supplied by user) |
-| `365:16457` | Expanded - Dark Mode | Same LO expanded; the specific flagged sub-objective row is outlined in red | 2026-09-02, third pass (link supplied by user) |
+| Node        | Label (product-supplied) | What it shows                                                                                             | First inspected                                 |
+| ----------- | ------------------------ | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `365:14554` | Coverage warning (light) | Full page: toolbar default state, per-row inline issue badges, sub-objective warning banner               | 2026-09-02, first pass                          |
+| `365:17228` | Coverage warning (dark)  | Same page, dark theme (screenshot only, not walked node-by-node)                                          | 2026-09-02, first pass                          |
+| `365:19034` | Coverage filter applied  | Full page with the Coverage Issues filter **active** — toolbar button pressed state, filtered result list | 2026-09-02, second pass (link supplied by user) |
+| `365:18532` | Coverage filter settings | Full page with the settings popover **open**, anchored under the gear button                              | 2026-09-02, second pass (link supplied by user) |
+| `365:19751` | Settings (light mode)    | The settings popover in isolation, light theme                                                            | 2026-09-02, second pass (link supplied by user) |
+| `365:19793` | Settings (dark mode)     | The settings popover in isolation, dark theme                                                             | 2026-09-02, second pass (link supplied by user) |
+| `329:532`   | Default (light mode)     | Collapsed objective list; LO 2 carries a coverage issue while still collapsed                             | 2026-09-02, third pass (link supplied by user)  |
+| `365:16457` | Expanded - Dark Mode     | Same LO expanded; the specific flagged sub-objective row is outlined in red                               | 2026-09-02, third pass (link supplied by user)  |
 
 **Correction / disclosure**: the first pass of this brief was built from
 `365:14554` and `365:17228` only. It did **not** include the settings
@@ -39,15 +39,17 @@ row-level issue badge is a **bordered pill**, not a filled
 
 ## 1. Toolbar composition (light root, node `365:14702`, confirmed identical in `365:19034`/`365:18532`)
 
-**Known to be out of date as of `handoff.md`'s 2026-09-04 check against PR
-#6820 (commit `94e0a9460`)**: the flat left-to-right order below is the
-Figma design's intent, but the actual MER-5797 PR implements the toolbar
-as two separate flex groups (search+sort on the left, CSV+New Objective
-on the right, `justify-between` between them) with no "Course content"
-dropdown at all. Do not assume this flat order is still buildable
-as-is — re-read `handoff.md`'s pinned-commit section (re-verified against
-the live PR) before deciding where Coverage Issues/Settings actually go
-in the real markup.
+**Superseded by the merged MER-5797 PR (#6820, merged 2026-09-07, commit
+`b913d0463a`)**: the flat left-to-right order below was the Figma design's
+intent, but the actual merged toolbar in `ObjectivesLive.render/1` is one
+`flex w-full flex-wrap items-center gap-2` row containing, in order: the
+search box (`OliWeb.Common.SearchInput`, fixed `w-56`), the sort `<form>`,
+then a `<div class="ml-auto flex shrink-0 items-center gap-2">` (margin-
+left-auto, not a second explicit flex group) holding Download CSV and New
+Objective. There is no "Course content" dropdown at all. Coverage
+Issues/Settings need a real placement decision against this actual
+structure (most likely inserted after the sort form and before the
+`ml-auto` div) before Phase 3/4 write any toolbar markup.
 
 Left-to-right order confirmed via metadata + screenshot (Figma intent,
 not necessarily current implementation — see warning above):
@@ -208,9 +210,9 @@ sub-objective has an issue:
 ```
 
 - Exact copy (captured via design-context export, not the truncated Figma
-  layer name): *"This sub-objective contains limited practice
+  layer name): _"This sub-objective contains limited practice
   opportunities. Additional formative activities may improve both learning
-  and insight quality."*
+  and insight quality."_
 - Only a **formative** variant is present in this frame (only one banner
   instance was found under node `365:14554`, and none under the other four
   inspected frames either). No summative-specific banner copy exists in
@@ -230,8 +232,8 @@ sub-objective has an issue:
   danger) already used elsewhere in the codebase).
 - Text: `text-Text-text-high`, Open Sans Regular 13px.
 - Confirmed again on this pass: the banner has exactly two children (icon
-  + paragraph) — no "Learn more" link lives here; that link is exclusively
-  in the settings popover (§4c/§5).
+  - paragraph) — no "Learn more" link lives here; that link is exclusively
+    in the settings popover (§4c/§5).
 
 ## 7. Inline issue badge on objective/sub-objective row headers (corrected)
 
@@ -298,21 +300,21 @@ confirmed across every inspected frame.
 
 ## 8. Design token mapping (verified against `assets/tailwind.tokens.js`)
 
-| Figma value | Token name | Verified codebase usage |
-|---|---|---|
-| `#CE2C31` (icon/text stroke) | `Text-text-danger` / `Icon-icon-danger` | `text-Text-text-danger` used in `objectives_table_model.ex`, `challenging_objectives_tile.ex`, etc. |
-| `#FEEBED` (pill badge fill) | `Fill-fill-danger` | `bg-Fill-fill-danger` used in `sub_objectives_table_model.ex`, `objectives_table_model.ex`, `gradebook_table_model.ex` |
-| `#A42327` (pill badge text) | `Table-text-danger` | `text-Table-text-danger` used in `sections/table_model.ex` |
-| `#FF4040` (banner border) | `Border-border-danger` | `border-Border-border-danger` used in `design_tokens/primitives/button.ex`, `common.ex` |
-| `#757682` (settings icon) | matches `Icons.settings/1`'s existing hardcoded stroke exactly | n/a — icon already ships this color |
-| `#DEECFF` / `#363B59` (formative icon badge fill) | `Fill-Accent-fill-accent-blue` | confirmed present in `tailwind.tokens.js:129` |
-| `#FFECDE` / `#4C3F39` (summative icon badge fill) | `Fill-Accent-fill-accent-orange` | confirmed present in `tailwind.tokens.js:141` |
-| `#353740` / `#EEEBF5` (stepper border) | `Border-border-active` | confirmed present in `tailwind.tokens.js:219` |
-| `#FFFFFF` / `#1B191F` (popover surface) | `Surface-surface-primary` | confirmed present in `tailwind.tokens.js:18` |
-| `#FFFFFF` / `#2B282E` (paragraph section surface) | `Surface-surface-secondary` | confirmed present in `tailwind.tokens.js:26` |
-| `#8AB8E5` (Restore default border) | `Border-border-bold` | confirmed present in `tailwind.tokens.js:223` |
-| `#006CD9` (Restore default / Learn more text) | `Text-text-button` / `Specially-Tokens-Text-text-button-secondary` | confirmed present in `tailwind.tokens.js:268`, `:494` |
-| `#FFFFFF` / `black` (row/card & pill background) | `Background-bg-secondary` | confirmed present in `tailwind.tokens.js:9` |
+| Figma value                                       | Token name                                                         | Verified codebase usage                                                                                                |
+| ------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `#CE2C31` (icon/text stroke)                      | `Text-text-danger` / `Icon-icon-danger`                            | `text-Text-text-danger` used in `objectives_table_model.ex`, `challenging_objectives_tile.ex`, etc.                    |
+| `#FEEBED` (pill badge fill)                       | `Fill-fill-danger`                                                 | `bg-Fill-fill-danger` used in `sub_objectives_table_model.ex`, `objectives_table_model.ex`, `gradebook_table_model.ex` |
+| `#A42327` (pill badge text)                       | `Table-text-danger`                                                | `text-Table-text-danger` used in `sections/table_model.ex`                                                             |
+| `#FF4040` (banner border)                         | `Border-border-danger`                                             | `border-Border-border-danger` used in `design_tokens/primitives/button.ex`, `common.ex`                                |
+| `#757682` (settings icon)                         | matches `Icons.settings/1`'s existing hardcoded stroke exactly     | n/a — icon already ships this color                                                                                    |
+| `#DEECFF` / `#363B59` (formative icon badge fill) | `Fill-Accent-fill-accent-blue`                                     | confirmed present in `tailwind.tokens.js:129`                                                                          |
+| `#FFECDE` / `#4C3F39` (summative icon badge fill) | `Fill-Accent-fill-accent-orange`                                   | confirmed present in `tailwind.tokens.js:141`                                                                          |
+| `#353740` / `#EEEBF5` (stepper border)            | `Border-border-active`                                             | confirmed present in `tailwind.tokens.js:219`                                                                          |
+| `#FFFFFF` / `#1B191F` (popover surface)           | `Surface-surface-primary`                                          | confirmed present in `tailwind.tokens.js:18`                                                                           |
+| `#FFFFFF` / `#2B282E` (paragraph section surface) | `Surface-surface-secondary`                                        | confirmed present in `tailwind.tokens.js:26`                                                                           |
+| `#8AB8E5` (Restore default border)                | `Border-border-bold`                                               | confirmed present in `tailwind.tokens.js:223`                                                                          |
+| `#006CD9` (Restore default / Learn more text)     | `Text-text-button` / `Specially-Tokens-Text-text-button-secondary` | confirmed present in `tailwind.tokens.js:268`, `:494`                                                                  |
+| `#FFFFFF` / `black` (row/card & pill background)  | `Background-bg-secondary`                                          | confirmed present in `tailwind.tokens.js:9`                                                                            |
 
 No new design tokens are needed anywhere in this feature. Every color
 inspected across all seven frames maps 1:1 to an existing token already
@@ -366,10 +368,11 @@ detail (toolbar button, badge, warning banner, settings trigger).
   theme-aware by construction (each token has a `light`/`dark` pair in
   `tailwind.tokens.js`).
 
-## 11. Next steps (per `handoff.md`'s recommended sequence)
+## 11. Next steps
 
-1. This brief is ready for Phase 3/4 implementation once MER-5797's PR merges and
-   this branch is reconciled onto it (per `handoff.md` Phase 1 gate).
+1. This brief is ready for Phase 3/4 implementation — MER-5797's PR (#6820)
+   merged 2026-09-07 and this branch is rebased onto it, satisfying
+   `plan.md`'s Phase 1 gate.
 2. Phase 4 should reuse `Icons.warning_triangle/1` and `Icons.settings/1`,
    the token names in §8, and the exact copy in §4b/§6, rather than
    re-deriving them.

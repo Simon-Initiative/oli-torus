@@ -10,7 +10,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
   alias Oli.Accounts
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Authoring.ObjectiveCoverage
+  alias Oli.Authoring.ObjectiveCoverage.Issues
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
@@ -20,6 +22,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   alias OliWeb.Common.Listing, as: Table
 
   alias OliWeb.Workspaces.CourseAuthor.Objectives.{
+    CoverageIssuesControl,
     DeleteModal,
     FormModal,
     Listing,
@@ -60,6 +63,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_model: nil,
         coverage_status: :loading,
         coverage_load_ref: make_ref(),
+        coverage_issue_ids: MapSet.new(),
         assessment_buckets: %{},
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
@@ -179,6 +183,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           </label>
         </form>
 
+        <CoverageIssuesControl.coverage_issues_control
+          id="coverage-issues-filter"
+          count={MapSet.size(@coverage_issue_ids)}
+          active={Map.get(@filter, "coverage_issues") == "true"}
+          click={
+            JS.push("apply_filter",
+              value: %{
+                filter:
+                  Map.put(
+                    @filter,
+                    "coverage_issues",
+                    if(Map.get(@filter, "coverage_issues") == "true", do: "false", else: "true")
+                  )
+              }
+            )
+          }
+        />
+
         <div class="ml-auto flex shrink-0 items-center gap-2">
           <.link
             id="download-objectives-csv"
@@ -253,9 +275,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         show_bottom_paging={false}
         additional_table_class="table-sm text-center"
         with_body={true}
-        empty_state_text={
-          if @query == "", do: "None exist", else: "No learning objectives match your search."
-        }
+        empty_state_text={coverage_empty_state_text(@query, @filter, @coverage_status)}
       >
         <div class="rounded-lg bg-Background-bg-secondary p-6 shadow-[0px_2px_5px_rgba(0,50,99,0.10)]">
           <Listing.render
@@ -343,27 +363,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     }
   end
 
-  def filter_rows(socket, query, _filter) do
+  def filter_rows(socket, query, filter) do
     query = normalize_search_query(query)
 
-    case socket.assigns.coverage_model do
-      nil ->
-        if String.trim(query) == "", do: socket.assigns.objectives, else: []
+    rows =
+      case socket.assigns.coverage_model do
+        nil ->
+          if String.trim(query) == "", do: socket.assigns.objectives, else: []
 
-      model ->
-        if String.trim(query) == "" do
-          socket.assigns.objectives
-        else
-          matching_ids =
-            socket.assigns.search_matching_ids || matching_objective_ids(model, query)
+        model ->
+          if String.trim(query) == "" do
+            socket.assigns.objectives
+          else
+            matching_ids =
+              socket.assigns.search_matching_ids || matching_objective_ids(model, query)
 
-          Enum.filter(socket.assigns.objectives, fn objective ->
-            objective.resource_id in matching_ids or
-              Enum.any?(objective.children, fn child ->
-                not is_nil(child) and child.resource_id in matching_ids
-              end)
-          end)
-        end
+            Enum.filter(socket.assigns.objectives, fn objective ->
+              objective.resource_id in matching_ids or
+                Enum.any?(objective.children, fn child ->
+                  not is_nil(child) and child.resource_id in matching_ids
+                end)
+            end)
+          end
+      end
+
+    if Map.get(filter, "coverage_issues") == "true" do
+      Enum.filter(rows, fn objective ->
+        MapSet.member?(socket.assigns.coverage_issue_ids, objective.resource_id)
+      end)
+    else
+      rows
     end
   end
 
@@ -488,6 +517,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         all_children: all_children,
         coverage_model: nil,
         coverage_status: :loading,
+        coverage_issue_ids: MapSet.new(),
         assessment_buckets: socket.assigns.assessment_buckets,
         search_matching_ids: nil,
         search_expansion_ids: nil,
@@ -555,6 +585,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
      assign(socket,
        coverage_model: nil,
        coverage_status: :loading,
+       coverage_issue_ids: MapSet.new(),
        search_matching_ids: nil,
        search_expansion_ids: nil
      )
@@ -1015,6 +1046,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         search_result_ids(model, socket.assigns.query)
       end
 
+    coverage_issue_ids =
+      Issues.flagged_top_level_ids(
+        model,
+        ProjectAttributes.coverage_thresholds(socket.assigns.project.attributes)
+      )
+
     socket =
       assign(socket,
         objectives: objectives,
@@ -1022,6 +1059,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         total_count: length(objectives),
         coverage_model: model,
         coverage_status: :ready,
+        coverage_issue_ids: coverage_issue_ids,
         assessment_buckets: assessment_buckets,
         search_matching_ids: matching_ids,
         search_expansion_ids: expansion_ids
@@ -1030,12 +1068,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     refresh_table_state(socket)
   end
 
+  # Clears coverage_issue_ids rather than leaving the previous, now-stale
+  # flagged set in place: a coverage-filter toggle should show no rows while
+  # coverage is unknown, not incorrectly imply every objective is healthy.
+  # coverage_status/coverage_model separately communicate the real
+  # loading/error state to the user. Routes back through refresh_table_state,
+  # like the success branch, so table_model/rows stay in sync with the
+  # cleared coverage_issue_ids rather than keeping whatever was last filtered.
   defp apply_coverage_result({:error, reason}, socket) do
-    {:noreply,
-     assign(socket,
-       coverage_model: nil,
-       coverage_status: {:error, reason}
-     )}
+    socket =
+      assign(socket,
+        coverage_model: nil,
+        coverage_status: {:error, reason},
+        coverage_issue_ids: MapSet.new()
+      )
+
+    refresh_table_state(socket)
+  end
+
+  # coverage_issue_ids reads as "zero issues" both while coverage is still
+  # loading and right after a failed load (see the reset sites above), so an
+  # empty result set alone can't tell those apart from "genuinely no
+  # issues." Route the message through coverage_status too, so an active
+  # coverage-issues filter never claims a clean "no issues" result while
+  # coverage is actually unknown or broken.
+  defp coverage_empty_state_text(query, filter, coverage_status) do
+    coverage_filter_active? = Map.get(filter, "coverage_issues") == "true"
+
+    cond do
+      coverage_filter_active? and coverage_status == :loading ->
+        "Loading objective coverage — issues can't be shown yet."
+
+      coverage_filter_active? and match?({:error, _}, coverage_status) ->
+        "Objective coverage could not be loaded, so issues can't be shown."
+
+      query != "" and coverage_filter_active? ->
+        "No learning objectives with a coverage issue match your search."
+
+      query != "" ->
+        "No learning objectives match your search."
+
+      coverage_filter_active? ->
+        "No learning objectives currently have a coverage issue."
+
+      true ->
+        "None exist"
+    end
   end
 
   defp update_objective_coverage(objectives, model, assessment_buckets, objective_id) do

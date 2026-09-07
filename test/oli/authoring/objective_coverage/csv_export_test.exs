@@ -3,6 +3,7 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExportTest do
 
   alias Oli.Authoring.ObjectiveCoverage
   alias Oli.Authoring.ObjectiveCoverage.CsvExport
+  alias Oli.Authoring.ObjectiveCoverage.Issues
   alias Oli.Branding.CustomLabels
   alias Oli.Resources.ResourceType
 
@@ -191,6 +192,46 @@ defmodule Oli.Authoring.ObjectiveCoverage.CsvExportTest do
 
     assert [headers] ==
              NimbleCSV.RFC4180.parse_string(header_only, skip_headers: false)
+  end
+
+  test "excludes healthy objectives when the coverage_issues filter is active" do
+    model =
+      ObjectiveCoverage.build([
+        row(:objective, 1, title: "Flagged Objective"),
+        row(:objective, 2, title: "Healthy Objective"),
+        row(:page, 100, activity_refs: [900]),
+        row(:activity, 900,
+          title: "Flagged Activity",
+          objectives: %{"part" => [1]},
+          activity_type_id: 11
+        ),
+        row(:page, 200, activity_refs: [300]),
+        row(:page, 201, activity_refs: [301]),
+        row(:page, 202, activity_refs: [302]),
+        row(:page, 210, activity_refs: [310], graded: true),
+        row(:page, 211, activity_refs: [311], graded: true),
+        row(:page, 212, activity_refs: [312], graded: true),
+        row(:activity, 300, title: "H1", objectives: %{"part" => [2]}, activity_type_id: 11),
+        row(:activity, 301, title: "H2", objectives: %{"part" => [2]}, activity_type_id: 11),
+        row(:activity, 302, title: "H3", objectives: %{"part" => [2]}, activity_type_id: 11),
+        row(:activity, 310, title: "H4", objectives: %{"part" => [2]}, activity_type_id: 11),
+        row(:activity, 311, title: "H5", objectives: %{"part" => [2]}, activity_type_id: 11),
+        row(:activity, 312, title: "H6", objectives: %{"part" => [2]}, activity_type_id: 11)
+      ])
+
+    coverage_issue_ids = Issues.flagged_top_level_ids(model)
+
+    assert [["LO 1", "Flagged Objective" | _]] =
+             CsvExport.rows(
+               model,
+               nil,
+               %{11 => "Multiple Choice"},
+               %{"filter" => %{"coverage_issues" => "true"}},
+               coverage_issue_ids
+             )
+
+    # Without the filter, the healthy objective's own rows are included too.
+    assert [_, _ | _] = CsvExport.rows(model, nil, %{11 => "Multiple Choice"})
   end
 
   defp row(type, resource_id, attrs) do

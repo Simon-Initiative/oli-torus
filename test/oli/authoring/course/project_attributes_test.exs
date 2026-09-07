@@ -35,4 +35,19 @@ defmodule Oli.Authoring.Course.ProjectAttributesTest do
     assert %{coverage_summative_threshold: ["must be greater than or equal to 0"]} =
              errors_on(changeset)
   end
+
+  describe "coverage_thresholds/1" do
+    test "reads the persisted thresholds" do
+      attributes = %ProjectAttributes{
+        coverage_formative_threshold: 5,
+        coverage_summative_threshold: 2
+      }
+
+      assert ProjectAttributes.coverage_thresholds(attributes) == %{formative: 5, summative: 2}
+    end
+
+    test "defaults to 3/3 for a project with no attributes embed" do
+      assert ProjectAttributes.coverage_thresholds(nil) == %{formative: 3, summative: 3}
+    end
+  end
 end

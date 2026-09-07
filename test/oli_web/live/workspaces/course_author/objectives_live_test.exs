@@ -177,6 +177,49 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
     {:ok, activity_revision}
   end
 
+  # Attaches enough formative and summative activities to clear the default
+  # 3/3 coverage thresholds, so the objective reads as healthy (no coverage
+  # issue) rather than the zero-coverage default every freshly-created
+  # objective otherwise has.
+  defp attach_full_coverage(project, publication, objective_resource_id, prefix) do
+    for n <- 1..3 do
+      {:ok, formative_activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          objective_resource_id,
+          "#{prefix}-formative-activity-#{n}"
+        )
+
+      create_page_with_objective(
+        project,
+        publication,
+        [objective_resource_id],
+        "#{prefix}-formative-page-#{n}",
+        [formative_activity.resource_id]
+      )
+
+      {:ok, summative_activity} =
+        create_embedded_activity_with_objective(
+          project,
+          publication,
+          objective_resource_id,
+          "#{prefix}-summative-activity-#{n}"
+        )
+
+      create_page_with_objective(
+        project,
+        publication,
+        [objective_resource_id],
+        "#{prefix}-summative-page-#{n}",
+        [summative_activity.resource_id],
+        true
+      )
+    end
+
+    :ok
+  end
+
   describe "user cannot access when is not logged in" do
     setup [:create_project]
 
@@ -1468,6 +1511,167 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click()
 
       assert has_element?(view, "svg[role='assignments icon']")
+    end
+  end
+
+  describe "coverage issues filter" do
+    setup [:admin_conn, :create_project]
+
+    test "shows the count of flagged top-level objectives and toggles visibility", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, healthy} = create_objective(project, publication, "healthy_obj", "Healthy Objective")
+      {:ok, flagged} = create_objective(project, publication, "flagged_obj", "Flagged Objective")
+
+      attach_full_coverage(project, publication, healthy.resource_id, "healthy")
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      assert has_element?(view, "##{healthy.slug}")
+      assert has_element?(view, "##{flagged.slug}")
+      assert has_element?(view, "#coverage-issues-filter", "1")
+      assert has_element?(view, "#coverage-issues-filter[aria-pressed='false']")
+
+      view
+      |> element("#coverage-issues-filter")
+      |> render_click()
+
+      assert has_element?(view, "#coverage-issues-filter[aria-pressed='true']")
+      refute has_element?(view, "##{healthy.slug}")
+      assert has_element?(view, "##{flagged.slug}")
+
+      view
+      |> element("#coverage-issues-filter")
+      |> render_click()
+
+      assert has_element?(view, "#coverage-issues-filter[aria-pressed='false']")
+      assert has_element?(view, "##{healthy.slug}")
+      assert has_element?(view, "##{flagged.slug}")
+    end
+
+    test "composes with an active search: only rows matching both show", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, flagged_match} =
+        create_objective(project, publication, "flagged_match", "Match Alpha")
+
+      {:ok, healthy_match} = create_objective(project, publication, "healthy_match", "Match Beta")
+
+      attach_full_coverage(project, publication, healthy_match.resource_id, "healthy-match")
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      view
+      |> element("#coverage-issues-filter")
+      |> render_click()
+
+      view
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "Match"})
+
+      assert has_element?(view, "##{flagged_match.slug}")
+      refute has_element?(view, "##{healthy_match.slug}")
+    end
+
+    test "shows an accessible empty state when the filter excludes every objective", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, healthy} = create_objective(project, publication, "only_obj", "Only Objective")
+      attach_full_coverage(project, publication, healthy.resource_id, "only")
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      view
+      |> element("#coverage-issues-filter")
+      |> render_click()
+
+      assert has_element?(view, "p", "No learning objectives currently have a coverage issue.")
+    end
+
+    test "shows a combined empty-state message when search and the coverage filter both exclude every row",
+         %{conn: conn, project: project, publication: publication} do
+      {:ok, healthy} = create_objective(project, publication, "healthy_combo", "Combo Objective")
+      attach_full_coverage(project, publication, healthy.resource_id, "healthy-combo")
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      view
+      |> element("#coverage-issues-filter")
+      |> render_click()
+
+      view
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "Combo"})
+
+      assert has_element?(
+               view,
+               "p",
+               "No learning objectives with a coverage issue match your search."
+             )
+    end
+
+    test "is preserved through a direct URL visit", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, flagged} = create_objective(project, publication, "flagged_obj2", "Flagged Two")
+      {:ok, healthy} = create_objective(project, publication, "healthy_obj2", "Healthy Two")
+
+      attach_full_coverage(project, publication, healthy.resource_id, "healthy-two")
+
+      {:ok, view, _html} =
+        live(conn, live_view_route(project.slug, %{filter: %{coverage_issues: "true"}}))
+
+      wait_for_coverage(view)
+
+      assert has_element?(view, "#coverage-issues-filter[aria-pressed='true']")
+      assert has_element?(view, "##{flagged.slug}")
+      refute has_element?(view, "##{healthy.slug}")
+    end
+
+    test "includes a parent whose own aggregate looks healthy but a child is flagged", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, child} = create_objective(project, publication, "flagged_child", "Flagged Child")
+
+      {:ok, parent} =
+        create_objective(
+          project,
+          publication,
+          "parent_with_flagged_child",
+          "Parent With Flagged Child",
+          [child.resource_id]
+        )
+
+      # Attaching coverage directly to the parent (not the child) makes the
+      # parent's own aggregate count healthy on its own, since
+      # ObjectiveCoverage sums a parent's scope across itself and its
+      # descendants. The child remains at zero coverage. Only the classifier
+      # rollup (any_issue) — not the parent's own aggregate — should surface
+      # the parent here.
+      attach_full_coverage(project, publication, parent.resource_id, "parent-own")
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      view
+      |> element("#coverage-issues-filter")
+      |> render_click()
+
+      assert has_element?(view, "##{parent.slug}")
     end
   end
 end

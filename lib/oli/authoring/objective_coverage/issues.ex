@@ -83,6 +83,29 @@ defmodule Oli.Authoring.ObjectiveCoverage.Issues do
     end)
   end
 
+  @doc """
+  Returns the ids of top-level objectives that currently have a coverage
+  issue (`any_issue`, per `classify_all/2` — an objective flags here if it
+  or any of its descendants has a shortfall).
+
+  Scoped to top-level objectives because that is the granularity the
+  Coverage Issues toolbar control filters and counts against; sub-objective
+  detail remains available through `classify_all/2` directly.
+
+  Inherits `classify_all/2`'s precondition: every id in
+  `model.top_level_objective_ids` must also be present in
+  `model.coverage_by_objective`/`model.objectives_by_id`, or this raises
+  `KeyError`.
+  """
+  @spec flagged_top_level_ids(map(), thresholds()) :: MapSet.t(pos_integer())
+  def flagged_top_level_ids(model, thresholds \\ default_thresholds()) do
+    issues = classify_all(model, thresholds)
+
+    model.top_level_objective_ids
+    |> Enum.filter(fn objective_id -> Map.fetch!(issues, objective_id).any_issue end)
+    |> MapSet.new()
+  end
+
   @spec propagate_to_parents(
           pos_integer(),
           %{pos_integer() => [pos_integer()]},

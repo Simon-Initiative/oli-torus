@@ -123,4 +123,61 @@ defmodule Oli.Authoring.ObjectiveCoverage.IssuesTest do
       assert_raise KeyError, fn -> Issues.classify_all(model) end
     end
   end
+
+  describe "flagged_top_level_ids/2" do
+    test "includes a top-level objective flagged directly and one flagged only through a descendant" do
+      model = %{
+        objectives_by_id: %{1 => %{}, 2 => %{}, 3 => %{}},
+        parents_by_child: %{3 => [2]},
+        top_level_objective_ids: [1, 2],
+        coverage_by_objective: %{
+          1 => %{formative_activity_count: 2, summative_activity_count: 3},
+          2 => %{formative_activity_count: 3, summative_activity_count: 3},
+          3 => %{formative_activity_count: 2, summative_activity_count: 3}
+        }
+      }
+
+      assert Issues.flagged_top_level_ids(model) == MapSet.new([1, 2])
+    end
+
+    test "excludes healthy top-level objectives even when other objectives in the snapshot are flagged" do
+      model = %{
+        objectives_by_id: %{1 => %{}, 2 => %{}},
+        parents_by_child: %{},
+        top_level_objective_ids: [1],
+        coverage_by_objective: %{
+          1 => %{formative_activity_count: 3, summative_activity_count: 3},
+          2 => %{formative_activity_count: 0, summative_activity_count: 0}
+        }
+      }
+
+      assert Issues.flagged_top_level_ids(model) == MapSet.new()
+    end
+
+    test "returns an empty set when no top-level objectives are flagged" do
+      model = %{
+        objectives_by_id: %{1 => %{}},
+        parents_by_child: %{},
+        top_level_objective_ids: [1],
+        coverage_by_objective: %{
+          1 => %{formative_activity_count: 3, summative_activity_count: 3}
+        }
+      }
+
+      assert Issues.flagged_top_level_ids(model) == MapSet.new()
+    end
+
+    test "uses supplied project thresholds" do
+      model = %{
+        objectives_by_id: %{1 => %{}},
+        parents_by_child: %{},
+        top_level_objective_ids: [1],
+        coverage_by_objective: %{
+          1 => %{formative_activity_count: 1, summative_activity_count: 2}
+        }
+      }
+
+      assert Issues.flagged_top_level_ids(model, %{formative: 1, summative: 2}) == MapSet.new()
+    end
+  end
 end
