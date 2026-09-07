@@ -404,7 +404,7 @@ defmodule OliWeb.Grades.GradesLive do
     graded_page_ids = Enum.map(graded_pages, & &1.resource_id)
 
     parent_containers_map =
-      Sections.get_parent_containers_map(section.id, graded_page_ids)
+      Sections.get_parent_containers_map(section, graded_page_ids)
 
     Enum.map(graded_pages, fn p ->
       Map.merge(p, %{

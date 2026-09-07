@@ -1,0 +1,66 @@
+work_item: section_participation
+requirements:
+- title: Select participating sections per experiment
+  description: Authorized experiment researchers must be able to select zero or more
+    participating sections from the experiment configuration page, with selections
+    persisted independently for each experiment.
+  id: FR-001
+- title: Limit the selector to eligible active sections
+  description: The selector must include only active sections created from the experiment's
+    project or currently remixing content from that project, subject to tenant and
+    author access boundaries.
+  id: FR-002
+- title: Maintain selection state safely
+  description: Experiment configuration must display saved selections, support deselection,
+    reject ineligible submissions, and identify previously selected sections that
+    are no longer eligible.
+  id: FR-003
+- title: Gate experiment delivery by participation
+  description: Delivery must perform assignment or sticky assignment reuse only when
+    the learner's section is selected for the experiment and remains eligible.
+  id: FR-004
+- title: Fall back for nonparticipating sections
+  description: Decision points must render their first choice when the learner's section
+    is unselected, stale, ineligible, or otherwise not actively participating in the
+    experiment.
+  id: FR-005
+- title: Suppress experiment evidence outside participating sections
+  description: Nonparticipating sections must not emit experiment assignment, exposure,
+    outcome, reward, or policy-update evidence for the experiment.
+  id: FR-006
+- title: Enforce experiment participation authorization
+  description: Participation reads and writes must enforce experiment, project, institution,
+    section, and accepted-author or administrative authorization boundaries.
+  id: FR-007
+acceptance_criteria:
+- requirement: FR-001
+  description: An authorized researcher can save an empty or non-empty set of sections
+    for one experiment without changing participation in another experiment.
+  id: AC-001
+- requirement: FR-002
+  description: The selector includes active base-project and current-remix sections
+    and excludes inactive, removed-remix, unrelated, inaccessible, and cross-institution
+    sections.
+  id: AC-002
+- requirement: FR-003
+  description: Editing shows saved selections; deselection persists; forged ineligible
+    section IDs are rejected; and a selected section that later becomes ineligible
+    is shown as stale and is not treated as participating.
+  id: AC-003
+- requirement: FR-004
+  description: A learner in a selected eligible section receives or reuses a sticky
+    experiment assignment, while a learner in any other section does not receive or
+    reuse one for that experiment.
+  id: AC-004
+- requirement: FR-005
+  description: The same decision point renders its first choice for learners in unselected,
+    inactive, or no-longer-remixed sections, including after a section is deselected.
+  id: AC-005
+- requirement: FR-006
+  description: Assignment, exposure, outcome, reward, and policy-update evidence is
+    emitted for valid participating delivery and is absent for nonparticipating delivery.
+  id: AC-006
+- requirement: FR-007
+  description: Unauthorized authors and requests containing out-of-scope section IDs
+    cannot view or modify experiment participation.
+  id: AC-007

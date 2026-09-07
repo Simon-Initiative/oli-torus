@@ -13,7 +13,9 @@ defmodule Oli.Clickhouse.AdminOperationsTest do
          database_exists: false,
          initialized: false,
          setup_enabled: true,
-         allowed_operations: [:setup, :migrate_up, :migrate_down]
+         migrate_up_enabled: false,
+         migrate_down_enabled: false,
+         allowed_operations: [:setup]
        }}
     end
   end
@@ -26,6 +28,8 @@ defmodule Oli.Clickhouse.AdminOperationsTest do
          database_exists: true,
          initialized: true,
          setup_enabled: false,
+         migrate_up_enabled: true,
+         migrate_down_enabled: true,
          allowed_operations: [:migrate_up, :migrate_down]
        }}
     end
@@ -85,6 +89,13 @@ defmodule Oli.Clickhouse.AdminOperationsTest do
     author = admin_author()
 
     assert {:error, :setup_not_available} = AdminOperations.start(:setup, author)
+  end
+
+  test "rejects migrations when the database is not set up" do
+    author = admin_author()
+
+    assert {:error, :database_not_setup} = AdminOperations.start(:migrate_up, author)
+    assert {:error, :database_not_setup} = AdminOperations.start(:migrate_down, author)
   end
 
   test "rejects unauthorized authors" do

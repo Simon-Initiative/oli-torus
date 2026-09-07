@@ -6,6 +6,7 @@ defmodule Oli.Analytics.XAPI.Events.Attempt.PartAttemptEvaluated do
           user_id: user_id,
           host_name: host_name,
           section_id: section_id,
+          enrollment_id: enrollment_id,
           project_id: project_id,
           publication_id: publication_id
         },
@@ -90,6 +91,7 @@ defmodule Oli.Analytics.XAPI.Events.Attempt.PartAttemptEvaluated do
           "http://oli.cmu.edu/extensions/activity_attempt_guid" => activity_attempt.attempt_guid,
           "http://oli.cmu.edu/extensions/page_attempt_guid" => page_attempt_guid,
           "http://oli.cmu.edu/extensions/section_id" => section_id,
+          "http://oli.cmu.edu/extensions/enrollment_id" => enrollment_id,
           "http://oli.cmu.edu/extensions/project_id" => project_id,
           "http://oli.cmu.edu/extensions/publication_id" => publication_id,
           "http://oli.cmu.edu/extensions/page_id" => page_id,

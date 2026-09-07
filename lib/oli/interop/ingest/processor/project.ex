@@ -48,7 +48,8 @@ defmodule Oli.Interop.Ingest.Processor.Project do
           legacy_svn_root: Map.get(project_details, "svnRoot"),
           attributes: Map.get(project_details, "attributes"),
           welcome_title: Map.get(project_details, "welcomeTitle"),
-          encouraging_subtitle: Map.get(project_details, "encouragingSubtitle")
+          encouraging_subtitle: Map.get(project_details, "encouragingSubtitle"),
+          lo_well_formed: Map.get(project_details, "loWellFormed")
         }
       )
 

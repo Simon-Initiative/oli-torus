@@ -16,6 +16,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
+  alias Oli.Delivery.Experiments.RewardHandoff
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -450,11 +451,17 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
          ) do
       {:ok,
        %ResourceAttempt{
+         id: resource_attempt_id,
          lifecycle_state: :evaluated,
          revision: revision,
          resource_access_id: resource_access_id,
          was_late: was_late
        }} ->
+        case RewardHandoff.record_if_active_thompson(resource_attempt_id, section.id) do
+          :ok -> :ok
+          {:error, reason} -> Repo.rollback({:reward_processing_failed, reason})
+        end
+
         resource_access = Oli.Repo.get(ResourceAccess, resource_access_id)
 
         effective_settings =

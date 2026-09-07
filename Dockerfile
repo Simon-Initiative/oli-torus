@@ -15,9 +15,12 @@ ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
 ARG GLEAM_VERSION=1.16.0
 ARG DEBIAN_VERSION=bullseye-20251103-slim
+ARG NODE_VERSION=24.20.0
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+
+FROM node:${NODE_VERSION}-bullseye-slim@sha256:f7818cba7c85740e6f9dd31553636131d01e9992fb7d112b9b0893afd884d1d6 AS node
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -25,20 +28,14 @@ ARG GLEAM_VERSION
 ARG SHA
 ENV SHA=${SHA}
 
-# install build dependencies including Node.js for asset compilation
+# install build dependencies
 RUN apt-get update -y && apt-get install -y build-essential git \
-    ca-certificates curl gnupg \
+    ca-certificates curl \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
-# install NodeJS 16 for asset compilation
-RUN mkdir -p /etc/apt/keyrings \
-  && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
-
-RUN apt-get update -y && apt-get install nodejs -y
-
-# install yarn
-RUN npm install -g yarn
+# Use the same pinned Node.js distribution for asset compilation and at runtime.
+COPY --from=node /usr/local/ /usr/local/
+COPY --from=node /opt/yarn-v1.22.22/ /opt/yarn-v1.22.22/
 
 # install Gleam for the mix_gleam compiler
 RUN curl -fsSL -o /tmp/gleam.tar.gz "https://github.com/gleam-lang/gleam/releases/download/v${GLEAM_VERSION}/gleam-v${GLEAM_VERSION}-x86_64-unknown-linux-musl.tar.gz" && \
@@ -84,7 +81,7 @@ RUN cd gleam && gleam clean && gleam deps download && gleam build --target erlan
 COPY assets assets
 
 # install node dependencies
-RUN yarn --cwd ./assets
+RUN yarn --cwd ./assets --frozen-lockfile
 
 # compile assets
 RUN NODE_ENV=production npm run deploy --prefix ./assets
@@ -117,18 +114,10 @@ RUN DATABASE_URL=ecto://postgres:postgres@localhost/oli \
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
-
-# install NodeJS 16 runtime
-RUN apt-get update -y \
-  && apt-get install -y ca-certificates curl gnupg \
-  && mkdir -p /etc/apt/keyrings \
-  && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
-
-RUN apt-get update -y \
-  && apt-get install nodejs -y
 
 # Install goose for database migrations
 RUN curl -fsSL https://raw.githubusercontent.com/pressly/goose/master/install.sh | sh

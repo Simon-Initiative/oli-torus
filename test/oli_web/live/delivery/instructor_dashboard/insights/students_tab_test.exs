@@ -1014,6 +1014,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
                "/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit1_container.resource.id}"
     end
 
+    test "container details heading is suppression-aware", %{conn: conn, instructor: instructor} do
+      %{
+        section: section,
+        unit1_resource: unit1_resource,
+        unit1_container: unit1_container,
+        unit2_container: unit2_container
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      # Unit 2 is not suppressed, but is renumbered to "Unit 1" since Unit 1 no longer
+      # consumes a numbering slot.
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{%{container_id: unit2_container.resource.id}}"
+        )
+
+      assert has_element?(
+               view,
+               "h4",
+               "Unit 1: #{unit2_container.revision.title} Student Insights"
+             )
+
+      # Unit 1 is suppressed: no numbering prefix at all, just the bare title, instead of
+      # crashing or showing "Unit nil: ... Student Insights".
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{%{container_id: unit1_container.resource.id}}"
+        )
+
+      refute has_element?(view, "h4", "Unit nil")
+      assert has_element?(view, "h4", "#{unit1_container.revision.title} Student Insights")
+    end
+
     test "button to back to units/modules works correctly", %{conn: conn, instructor: instructor} do
       %{
         section: section,
@@ -1566,7 +1606,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
     end
 
     test "can't invite new users to the section if section is not open and free", %{conn: conn} do
-      section = insert(:section)
+      section = insert_section_with_resources(%{})
 
       {:ok, _view, html} = live(conn, live_view_students_route(section.slug))
 
@@ -1865,9 +1905,49 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
     })
   end
 
+  # Builds a minimal, but real, project/publication (a single empty root container) so
+  # sections created against it have populated section resources -- required by
+  # `decorated_numbering_map/1` (used by this LiveView's suppression-aware container
+  # navigator on every "Students" tab load), and a state a real section can never be
+  # missing outside of an unrealistic test fixture.
+  defp insert_section_with_resources(attrs) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    container_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [],
+        title: "Root Container"
+      )
+
+    insert(:project_resource,
+      project_id: project.id,
+      resource_id: container_revision.resource_id
+    )
+
+    publication =
+      insert(:publication, project: project, root_resource_id: container_revision.resource_id)
+
+    insert(:published_resource,
+      publication: publication,
+      resource: container_revision.resource,
+      revision: container_revision,
+      author: author
+    )
+
+    section = insert(:section, Map.merge(%{base_project: project}, attrs))
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    section
+  end
+
   defp setup_instructor_certificates(%{conn: conn}) do
     section =
-      insert(:section, %{certificate_enabled: true, open_and_free: true, type: :enrollable})
+      insert_section_with_resources(%{
+        certificate_enabled: true,
+        open_and_free: true,
+        type: :enrollable
+      })
 
     certificate = insert(:certificate, section: section)
 
@@ -1880,7 +1960,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
     Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
 
     section_without_certificate =
-      insert(:section, %{certificate_enabled: false, open_and_free: true, type: :enrollable})
+      insert_section_with_resources(%{
+        certificate_enabled: false,
+        open_and_free: true,
+        type: :enrollable
+      })
 
     Sections.enroll(instructor.id, section_without_certificate.id, [
       ContextRoles.get_role(:context_instructor)
@@ -1929,6 +2013,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
     map = Seeder.base_project_with_resource2()
 
     section = make(map.project, map.institution, "a", %{open_and_free: true})
+    {:ok, section} = Sections.create_section_resources(section, map.publication)
 
     enroll(section)
 

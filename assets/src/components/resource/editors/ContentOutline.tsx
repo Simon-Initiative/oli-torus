@@ -221,7 +221,7 @@ type OutlineItemProps = {
   content: PageEditorContent;
   collapsedGroupMap: Immutable.Map<string, boolean>;
   onEditContent: (content: PageEditorContent) => void;
-  setActiveDragId: (id: string) => void;
+  setActiveDragId: React.Dispatch<React.SetStateAction<string | null>>;
   onKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
   onFocus: (id: string) => void;
   setCollapsedGroupMap: (map: Immutable.Map<string, boolean>) => void;
@@ -266,6 +266,7 @@ const OutlineItem = ({
   const dropIndex =
     index >= activeDragIndex[level] ? [...parentDropIndex, index + 1] : [...parentDropIndex, index];
   const canDropHere = canDrop(activeDragId, parents, content);
+  const canDropWithin = canDrop(activeDragId, [...parents, contentItem], content);
 
   const expanded = !collapsedGroupMap.get(id);
   const toggleCollapsibleGroup = (id: string) =>
@@ -287,6 +288,7 @@ const OutlineItem = ({
     activeDragIndex,
     collapsedGroupMap,
     canDropHere,
+    canDropWithin,
     dropIndex,
     expanded,
     toggleCollapsibleGroup,
@@ -376,12 +378,13 @@ type ResourceGroupItemProps = {
   content: PageEditorContent;
   collapsedGroupMap: Immutable.Map<string, boolean>;
   canDropHere: boolean;
+  canDropWithin: boolean;
   dropIndex: number[];
   children: React.ReactNode;
   expanded: boolean;
   toggleCollapsibleGroup: (id: string) => void;
   onEditContent: (content: PageEditorContent) => void;
-  setActiveDragId: (id: string) => void;
+  setActiveDragId: React.Dispatch<React.SetStateAction<string | null>>;
   onFocus: (id: string) => void;
   setCollapsedGroupMap: (map: Immutable.Map<string, boolean>) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>, index: number[]) => void;
@@ -405,6 +408,7 @@ const ResourceGroupItem = ({
   activeDragIndex,
   collapsedGroupMap,
   canDropHere,
+  canDropWithin,
   dropIndex,
   children,
   expanded,
@@ -457,7 +461,7 @@ const ResourceGroupItem = ({
                   />
                 );
               })}
-            {isReorderMode && canDrop(activeDragId, [...parents, contentItem], content) && (
+            {isReorderMode && canDropWithin && (
               <DropTarget
                 key="last"
                 id="last"

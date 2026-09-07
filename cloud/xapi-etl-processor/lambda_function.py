@@ -25,6 +25,9 @@ CLICKHOUSE_TIMEOUT_SECONDS Request timeout for HTTP insert (default 30)
 MAX_S3_OBJECT_BYTES        Soft cap per S3 object (bytes); raises if exceeded
 TARGET_ROWS_PER_INSERT     Preferred row target before flushing (default 10000)
 MAX_ROWS_PER_INSERT        Hard row ceiling for a sub-batch (default 30000)
+MAX_EXPERIMENT_ATTRIBUTIONS_PER_STATEMENT
+                           Maximum attribution entries accepted on one xAPI
+                           statement (default 100)
 MAX_PARQUET_BYTES_PER_INSERT
                            Soft payload-size ceiling in bytes (default 16777216)
 MIN_REMAINING_TIME_TO_START_INSERT_MS
@@ -55,7 +58,7 @@ import time
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 from urllib.parse import unquote_plus, urlparse
 
 import boto3
@@ -80,6 +83,9 @@ except Exception as exc:  # pylint: disable=broad-except
     NUMPY_IMPORT_ERROR = exc
 
 logger = logging.getLogger(__name__)
+EXPERIMENT_DIRECT_ATTRIBUTION_TYPES = frozenset(
+    {"assignment", "exposure", "outcome", "reward", "policy_update"}
+)
 
 _LOG_LEVEL_NAME = os.getenv("LOG_LEVEL", "INFO").upper()
 logger.setLevel(getattr(logging, _LOG_LEVEL_NAME, logging.INFO))
@@ -137,6 +143,7 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "section_id",
     "project_id",
     "publication_id",
+    "enrollment_id",
     "timestamp",
     "event_type",
     "verb_id",
@@ -175,6 +182,19 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "source_line",
 ]
 
+EXPERIMENT_ATTRIBUTION_INSERT_COLUMNS: List[str] = [
+    "raw_event_hash", "attribution_hash", "source_file", "source_etag", "source_line",
+    "raw_event_type", "timestamp", "section_id", "project_id", "publication_id",
+    "enrollment_id", "experiment_role", "attribution_type", "experiment_id",
+    "experiment_uuid", "condition_id",
+    "condition_code", "assignment_id", "assignment_key", "assignment_scope", "algorithm", "policy_version",
+    "assigned_at",
+    "content_revision_id", "reward_value", "reward_source", "intervention_id",
+    "intervention_key", "assessment_binding_id", "assessment_page_resource_id",
+    "resource_attempt_id", "disposition", "reward_threshold", "normalized_score",
+    "page_revision_id",
+]
+
 _CLICKHOUSE_TYPE_MAP: Optional[Dict[str, "pa.DataType"]] = None
 
 
@@ -188,6 +208,7 @@ class S3ObjectRef:
 class PreparedMessage:
     message_id: str
     table: "pa.Table"
+    experiment_attributions: Optional["pa.Table"]
     object_count: int
 
 
@@ -195,6 +216,7 @@ class PreparedMessage:
 class BatchAccumulator:
     prepared_messages: List[PreparedMessage] = field(default_factory=list)
     total_rows: int = 0
+    total_attribution_rows: int = 0
     total_objects: int = 0
     estimated_bytes: int = 0
 
@@ -203,6 +225,11 @@ class BatchAccumulator:
         self.total_rows += prepared_message.table.num_rows
         self.total_objects += prepared_message.object_count
         self.estimated_bytes += estimate_table_size_bytes(prepared_message.table)
+        if prepared_message.experiment_attributions is not None:
+            self.total_attribution_rows += prepared_message.experiment_attributions.num_rows
+            self.estimated_bytes += estimate_table_size_bytes(
+                prepared_message.experiment_attributions
+            )
 
     def is_empty(self) -> bool:
         return not self.prepared_messages
@@ -213,9 +240,18 @@ class BatchAccumulator:
     def tables(self) -> List["pa.Table"]:
         return [prepared.table for prepared in self.prepared_messages]
 
+    def experiment_attribution_tables(self) -> List["pa.Table"]:
+        return [
+            prepared.experiment_attributions
+            for prepared in self.prepared_messages
+            if prepared.experiment_attributions is not None
+            and prepared.experiment_attributions.num_rows > 0
+        ]
+
     def reset(self) -> None:
         self.prepared_messages.clear()
         self.total_rows = 0
+        self.total_attribution_rows = 0
         self.total_objects = 0
         self.estimated_bytes = 0
 
@@ -298,7 +334,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             )
 
             fetch_started = time.perf_counter()
-            table = build_arrow_table_from_s3_objects(s3_refs)
+            table, experiment_attributions = build_arrow_tables_from_s3_objects(s3_refs)
             fetch_elapsed = time.perf_counter() - fetch_started
             logger.info(
                 "Completed fetch for message %s in %.2fs",
@@ -317,6 +353,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 PreparedMessage(
                     message_id=message_id,
                     table=table,
+                    experiment_attributions=experiment_attributions,
                     object_count=len(s3_refs),
                 )
             )
@@ -451,6 +488,10 @@ def flush_current_batch(
 
     concat_started = time.perf_counter()
     combined_table = concatenate_tables(current_batch.tables())
+    attribution_tables = current_batch.experiment_attribution_tables()
+    combined_attributions = (
+        concatenate_tables(attribution_tables) if attribution_tables else None
+    )
     concat_duration_ms = elapsed_ms(concat_started)
     log_stage(
         "sub_batch_concatenated",
@@ -463,6 +504,11 @@ def flush_current_batch(
 
     parquet_started = time.perf_counter()
     parquet_payload = table_to_parquet(combined_table)
+    attribution_payload = (
+        table_to_parquet(combined_attributions)
+        if combined_attributions is not None
+        else None
+    )
     parquet_duration_ms = elapsed_ms(parquet_started)
     payload_bytes = len(parquet_payload)
     log_stage(
@@ -517,7 +563,19 @@ def flush_current_batch(
             combined_table.num_rows,
             timeout_seconds=request_timeout_seconds,
             insert_token=insert_token,
+            table=os.getenv("CLICKHOUSE_TABLE") or "raw_events",
+            columns=resolve_clickhouse_insert_columns(),
         )
+        if combined_attributions is not None and attribution_payload is not None:
+            attribution_timeout_seconds = derive_clickhouse_timeout_seconds(context)
+            insert_into_clickhouse(
+                attribution_payload,
+                combined_attributions.num_rows,
+                timeout_seconds=attribution_timeout_seconds,
+                insert_token=f"{insert_token}-experiment-attributions",
+                table="experiment_attributions",
+                columns=EXPERIMENT_ATTRIBUTION_INSERT_COLUMNS,
+            )
     except Exception as exc:  # pylint: disable=broad-except
         logger.exception("ClickHouse insert failed for sub-batch %s: %s", insert_token, exc)
         log_stage(
@@ -612,14 +670,28 @@ def _extract_from_s3_event_record(s3_record: Dict[str, Any]) -> Iterable[S3Objec
 
 def build_arrow_table_from_s3_objects(objects: Iterable[S3ObjectRef]) -> Optional[pa.Table]:
     """Load JSONL objects from S3 and convert to a single Arrow table."""
+    table, _experiment_attributions = build_arrow_tables_from_s3_objects(objects)
+    return table
+
+
+def build_arrow_tables_from_s3_objects(
+    objects: Iterable[S3ObjectRef],
+) -> tuple[Optional[pa.Table], Optional[pa.Table]]:
+    """Load JSONL objects into raw-event and experiment-attribution tables."""
     tables: List[pa.Table] = []
+    attribution_tables: List[pa.Table] = []
     for ref in objects:
-        table = load_json_lines_as_table(ref)
+        table, attributions = load_json_lines_as_tables(ref)
         if table is not None:
             tables.append(table)
+        if attributions is not None:
+            attribution_tables.append(attributions)
     if not tables:
-        return None
-    return concatenate_tables(tables)
+        return None, None
+    return (
+        concatenate_tables(tables),
+        concatenate_tables(attribution_tables) if attribution_tables else None,
+    )
 
 
 def forward_failure_to_dlq(record: Optional[Dict[str, Any]], *, reason: str) -> None:
@@ -660,6 +732,14 @@ def find_record_by_id(records: Iterable[Dict[str, Any]], message_id: str) -> Opt
 
 def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
     """Read a JSON Lines object from S3 into an Arrow table."""
+    table, _experiment_attributions = load_json_lines_as_tables(ref)
+    return table
+
+
+def load_json_lines_as_tables(
+    ref: S3ObjectRef,
+) -> tuple[Optional[pa.Table], Optional[pa.Table]]:
+    """Read a JSON Lines object into raw-event and attribution Arrow tables."""
     ensure_pyarrow_available()
     max_bytes_env = os.getenv("MAX_S3_OBJECT_BYTES")
     max_bytes = int(max_bytes_env) if max_bytes_env else None
@@ -687,6 +767,7 @@ def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
             )
 
     rows: List[Dict[str, Any]] = []
+    attribution_rows: List[Dict[str, Any]] = []
     log_interval_seconds = float(os.getenv("ITER_LOG_INTERVAL_SECONDS", "5"))
     next_log_deadline = fetch_started + log_interval_seconds
 
@@ -707,6 +788,16 @@ def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
                 line_number=processed_rows,
             )
             rows.append(transformed)
+            attribution_rows.extend(
+                transform_experiment_attributions(
+                    statement,
+                    raw_bytes=raw_line,
+                    bucket=ref.bucket,
+                    key=ref.key,
+                    etag=response.get("ETag"),
+                    line_number=processed_rows,
+                )
+            )
         except json.JSONDecodeError as exc:
             raise ValueError(
                 f"Invalid JSON in s3://{ref.bucket}/{ref.key}: {raw_line[:200]!r}"
@@ -730,7 +821,7 @@ def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
 
     if not rows:
         logger.info("S3 object s3://%s/%s contained no JSON rows", ref.bucket, ref.key)
-        return None
+        return None, None
 
     try:
         table = pa.Table.from_pylist(rows)
@@ -749,7 +840,13 @@ def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
             ref.key,
             time.perf_counter() - fetch_started,
         )
-        return table
+        attribution_table = None
+        if attribution_rows:
+            attribution_table = pa.Table.from_pylist(attribution_rows)
+            attribution_table = normalize_experiment_attribution_table_schema(
+                attribution_table
+            )
+        return table, attribution_table
     except Exception as exc:  # pylint: disable=broad-except
         raise ValueError(f"Unable to convert rows from s3://{ref.bucket}/{ref.key} into Arrow table") from exc
 
@@ -789,6 +886,24 @@ def normalize_table_schema(table: pa.Table) -> pa.Table:
                     exc,
                 )
     return _project_table_to_clickhouse_columns(table)
+
+
+def normalize_experiment_attribution_table_schema(table: pa.Table) -> pa.Table:
+    """Apply the ClickHouse experiment_attributions projection and types."""
+    for column_name in ("timestamp", "assigned_at"):
+        timestamp_idx = table.schema.get_field_index(column_name)
+        if timestamp_idx != -1 and pa.types.is_string(table.column(timestamp_idx).type):
+            converted = _coerce_iso8601_timestamp_column(table.column(timestamp_idx))
+            table = table.set_column(
+                timestamp_idx,
+                table.schema.field(timestamp_idx).with_type(converted.type),
+                converted,
+            )
+    return _project_table(
+        table,
+        EXPERIMENT_ATTRIBUTION_INSERT_COLUMNS,
+        _get_experiment_attribution_type_map(),
+    )
 
 
 def _coerce_iso8601_timestamp_column(column: pa.ChunkedArray) -> pa.Array:
@@ -845,7 +960,13 @@ def _project_table_to_clickhouse_columns(table: pa.Table) -> pa.Table:
     if not columns:
         return table
 
-    type_map = _get_clickhouse_type_map()
+    return _project_table(table, columns, _get_clickhouse_type_map())
+
+
+def _project_table(
+    table: pa.Table, columns: List[str], type_map: Mapping[str, "pa.DataType"]
+) -> pa.Table:
+
     arrays = []
     names: List[str] = []
     row_count = table.num_rows
@@ -888,6 +1009,7 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "section_id": pa.uint64(),
             "project_id": pa.uint64(),
             "publication_id": pa.uint64(),
+            "enrollment_id": pa.uint64(),
             "timestamp": pa.timestamp("ms", tz="UTC"),
             "event_type": pa.string(),
             "verb_id": pa.string(),
@@ -928,6 +1050,34 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
     return _CLICKHOUSE_TYPE_MAP
 
 
+def _get_experiment_attribution_type_map() -> Dict[str, "pa.DataType"]:
+    string_columns = {
+        "raw_event_hash", "attribution_hash", "source_file", "source_etag",
+        "raw_event_type", "experiment_role", "attribution_type", "experiment_uuid",
+        "condition_code", "assignment_key", "assignment_scope", "algorithm",
+        "policy_version", "reward_source", "intervention_key", "disposition",
+    }
+    uint64_columns = {
+        "section_id", "project_id", "publication_id", "enrollment_id", "experiment_id",
+        "condition_id", "assignment_id", "content_revision_id",
+        "intervention_id", "assessment_binding_id", "assessment_page_resource_id",
+        "resource_attempt_id", "page_revision_id",
+    }
+    result = {column: pa.string() for column in string_columns}
+    result.update({column: pa.uint64() for column in uint64_columns})
+    result.update(
+        {
+            "source_line": pa.uint32(),
+            "timestamp": pa.timestamp("ms", tz="UTC"),
+            "assigned_at": pa.timestamp("ms", tz="UTC"),
+            "reward_value": pa.float64(),
+            "reward_threshold": pa.float64(),
+            "normalized_score": pa.float64(),
+        }
+    )
+    return result
+
+
 def transform_xapi_statement(
     statement: Dict[str, Any],
     *,
@@ -960,7 +1110,7 @@ def transform_xapi_statement(
     object_type = object_definition.get("type", "") or ""
     event_type = _determine_event_type(verb_id, object_type)
 
-    user_id = account.get("name") or actor.get("mbox")
+    user_id = account.get("name")
     if user_id is not None and not isinstance(user_id, str):
         user_id = str(user_id)
 
@@ -971,6 +1121,7 @@ def transform_xapi_statement(
     section_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/section_id"))
     project_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/project_id"))
     publication_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/publication_id"))
+    enrollment_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/enrollment_id"))
 
     content_element_id = (
         result_extensions.get("content_element_id")
@@ -1037,6 +1188,7 @@ def transform_xapi_statement(
         "section_id": section_id,
         "project_id": project_id,
         "publication_id": publication_id,
+        "enrollment_id": enrollment_id,
         "timestamp": timestamp_raw,
         "event_type": event_type,
         "verb_id": verb_id,
@@ -1097,6 +1249,9 @@ def transform_xapi_statement(
 
 
 def _determine_event_type(verb_id: str, object_type: str) -> str:
+    if verb_id == "http://oli.cmu.edu/extensions/verbs/experiment_condition_assigned":
+        return "experiment_condition_assigned"
+
     verb_id = verb_id or ""
     object_type = object_type or ""
 
@@ -1130,6 +1285,134 @@ def _determine_event_type(verb_id: str, object_type: str) -> str:
     ):
         return "part_attempt"
     return "unknown"
+
+
+def transform_experiment_attributions(
+    statement: Mapping[str, Any],
+    *,
+    raw_bytes: bytes,
+    bucket: str,
+    key: str,
+    etag: Optional[str],
+    line_number: int,
+) -> List[Dict[str, Any]]:
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    raw_event_type = _determine_event_type(
+        _safe_str(_get_nested(statement, ["verb", "id"])),
+        _safe_str(_get_nested(statement, ["object", "definition", "type"])),
+    )
+
+    rows: List[Dict[str, Any]] = []
+
+    for attribution in _experiment_attributions(statement):
+        _validate_attribution_type(attribution)
+        attribution_key = _safe_str(attribution.get("key")) or ""
+
+        rows.append(
+            {
+                "raw_event_hash": raw_hash,
+                "attribution_hash": hashlib.sha256(
+                    f"{raw_hash}:{attribution_key}".encode("utf-8")
+                ).hexdigest(),
+                "raw_event_type": raw_event_type,
+                "timestamp": statement.get("timestamp"),
+                "section_id": _safe_int(attribution.get("section_id")),
+                "project_id": _safe_int(attribution.get("project_id")),
+                "publication_id": _safe_int(attribution.get("publication_id")),
+                "enrollment_id": _safe_int(attribution.get("enrollment_id")),
+                "experiment_role": _safe_str(attribution.get("role")),
+                "attribution_type": _safe_str(attribution.get("attribution_type")),
+                "experiment_id": _safe_int(attribution.get("experiment_id")),
+                "experiment_uuid": _safe_str(attribution.get("experiment_uuid")),
+                "condition_id": _safe_int(attribution.get("condition_id")),
+                "condition_code": _safe_str(attribution.get("condition_code")),
+                "assignment_id": _safe_int(attribution.get("assignment_id")),
+                "assignment_key": _safe_str(attribution.get("assignment_key")),
+                "assignment_scope": _safe_str(
+                    attribution.get("assignment_scope") or "intervention"
+                ),
+                "algorithm": _safe_str(
+                    attribution.get("algorithm") or attribution.get("assigned_by_policy")
+                ),
+                "policy_version": _safe_str(attribution.get("policy_version")),
+                "assigned_at": _safe_str(attribution.get("assigned_at")),
+                "content_revision_id": _safe_int(attribution.get("content_revision_id")),
+                "intervention_id": _safe_int(attribution.get("intervention_id")),
+                "intervention_key": _safe_str(attribution.get("intervention_key")),
+                "assessment_binding_id": _safe_int(
+                    attribution.get("assessment_binding_id")
+                ),
+                "assessment_page_resource_id": _safe_int(
+                    attribution.get("assessment_page_resource_id")
+                ),
+                "resource_attempt_id": _safe_int(
+                    attribution.get("resource_attempt_id")
+                ),
+                "disposition": _safe_str(attribution.get("disposition")),
+                "reward_threshold": _safe_float(attribution.get("reward_threshold")),
+                "normalized_score": _safe_float(attribution.get("normalized_score")),
+                "page_revision_id": _safe_int(attribution.get("page_revision_id")),
+                "reward_value": _safe_float(attribution.get("reward_value")),
+                "reward_source": _safe_str(attribution.get("reward_source")),
+                "intervention_id": _safe_int(attribution.get("intervention_id")),
+                "intervention_key": _safe_str(attribution.get("intervention_key")),
+                "assessment_binding_id": _safe_int(
+                    attribution.get("assessment_binding_id")
+                ),
+                "assessment_page_resource_id": _safe_int(
+                    attribution.get("assessment_page_resource_id")
+                ),
+                "resource_attempt_id": _safe_int(
+                    attribution.get("resource_attempt_id")
+                ),
+                "disposition": _safe_str(attribution.get("disposition")),
+                "reward_threshold": _safe_float(attribution.get("reward_threshold")),
+                "normalized_score": _safe_float(attribution.get("normalized_score")),
+                "page_revision_id": _safe_int(attribution.get("page_revision_id")),
+                "source_file": f"s3://{bucket}/{key}",
+                "source_etag": etag.strip('"') if isinstance(etag, str) else etag,
+                "source_line": line_number,
+            }
+        )
+
+    return rows
+
+
+def _experiment_attributions(statement: Mapping[str, Any]) -> List[Mapping[str, Any]]:
+    extensions = _get_nested(statement, ["context", "extensions"]) or {}
+    attributions = extensions.get("http://oli.cmu.edu/extensions/experiment_attributions")
+
+    if not isinstance(attributions, list):
+        return []
+
+    max_attributions = max(
+        1, int(os.getenv("MAX_EXPERIMENT_ATTRIBUTIONS_PER_STATEMENT", "100"))
+    )
+    if len(attributions) > max_attributions:
+        raise ValueError(
+            "experiment attribution count "
+            f"{len(attributions)} exceeds configured maximum {max_attributions}"
+        )
+
+    return [attribution for attribution in attributions if isinstance(attribution, Mapping)]
+
+
+def _validate_attribution_type(attribution: Mapping[str, Any]) -> None:
+    role = attribution.get("role")
+    attribution_type = attribution.get("attribution_type")
+    valid = (
+        (role == attribution_type and role in EXPERIMENT_DIRECT_ATTRIBUTION_TYPES)
+        or (role == "rollup" and attribution_type in {"outcome", "reward"})
+        or (role == "media_interaction" and attribution_type == "assignment")
+    )
+    if not valid:
+        raise ValueError(
+            f"invalid experiment attribution role/type pair: {role!r}/{attribution_type!r}"
+        )
+
+    key = attribution.get("key")
+    if not isinstance(key, str) or not key:
+        raise ValueError("experiment attribution key must be a non-empty string")
 
 
 def _safe_int(value: Any) -> Optional[int]:
@@ -1174,6 +1457,15 @@ def _safe_float(value: Any) -> Optional[float]:
         return float(value)  # type: ignore[arg-type]
     except Exception:  # pylint: disable=broad-except
         return None
+
+
+def _safe_str(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped or None
+    return str(value)
 
 
 def _coerce_bool(value: Any) -> Optional[bool]:
@@ -1221,9 +1513,15 @@ def insert_into_clickhouse(
     *,
     timeout_seconds: Optional[float] = None,
     insert_token: Optional[str] = None,
+    table: Optional[str] = None,
+    columns: Optional[List[str]] = None,
 ) -> None:
     url = resolve_clickhouse_url()
-    query = build_insert_query()
+    query = (
+        build_insert_query(table=table, columns=columns, allow_override=False)
+        if table == "experiment_attributions"
+        else build_insert_query()
+    )
     params = {"query": query}
     params.update(parse_clickhouse_settings())
 
@@ -1289,18 +1587,23 @@ def resolve_clickhouse_url() -> str:
     return f"{protocol}://{host}:{port}{path}".rstrip("/")
 
 
-def build_insert_query() -> str:
-    override = os.getenv("CLICKHOUSE_INSERT_SQL")
+def build_insert_query(
+    *,
+    table: Optional[str] = None,
+    columns: Optional[List[str]] = None,
+    allow_override: bool = True,
+) -> str:
+    override = os.getenv("CLICKHOUSE_INSERT_SQL") if allow_override else None
     if override:
         return override
 
     database = os.getenv("CLICKHOUSE_DATABASE")
-    table = os.getenv("CLICKHOUSE_TABLE")
+    table = table or os.getenv("CLICKHOUSE_TABLE")
     if not database or not table:
         raise ValueError(
             "CLICKHOUSE_DATABASE and CLICKHOUSE_TABLE must be set when CLICKHOUSE_INSERT_SQL is not provided"
         )
-    columns = resolve_clickhouse_insert_columns()
+    columns = columns if columns is not None else resolve_clickhouse_insert_columns()
     column_clause = ""
     if columns:
         column_clause = " (" + ", ".join(quote_identifier(col) for col in columns) + ")"
@@ -1413,11 +1716,12 @@ def estimate_table_size_bytes(table: "pa.Table") -> int:
 def determine_flush_reason(current_batch: BatchAccumulator, *, force: bool) -> Optional[str]:
     if current_batch.is_empty():
         return None
-    if current_batch.total_rows >= resolve_max_rows_per_insert():
+    payload_rows = current_batch.total_rows + current_batch.total_attribution_rows
+    if payload_rows >= resolve_max_rows_per_insert():
         return "max_rows_reached"
     if current_batch.estimated_bytes >= resolve_max_parquet_bytes_per_insert():
         return "payload_ceiling_reached"
-    if current_batch.total_rows >= resolve_target_rows_per_insert():
+    if payload_rows >= resolve_target_rows_per_insert():
         return "target_rows_reached"
     if force:
         return "forced_flush"
@@ -1577,4 +1881,5 @@ __all__ = [
     "env_flag",
     "ensure_pyarrow_available",
     "transform_xapi_statement",
+    "transform_experiment_attributions",
 ]

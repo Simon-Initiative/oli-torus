@@ -1,5 +1,8 @@
 defmodule Oli.Interop.Ingest.Processor.Alternatives do
+  require Logger
+
   alias Oli.Interop.Ingest.State
+  alias Oli.Resources.Alternatives, as: AlternativesStrategy
   import Oli.Interop.Ingest.Processor.Common
 
   def process(%State{} = state) do
@@ -15,7 +18,11 @@ defmodule Oli.Interop.Ingest.Processor.Alternatives do
     legacy_id = Map.get(resource, "legacyId", nil)
     legacy_path = Map.get(resource, "legacyPath", nil)
     title = Map.get(resource, "title", "missing title")
-    content = Map.get(resource, "content", %{})
+
+    content =
+      resource
+      |> Map.get("content", %{})
+      |> canonical_content()
 
     %{
       slug: Oli.Utils.Slug.slug_with_prefix(slug_prefix, title),
@@ -30,5 +37,21 @@ defmodule Oli.Interop.Ingest.Processor.Alternatives do
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }
+  end
+
+  defp canonical_content(content) when is_map(content) do
+    strategy = Map.get(content, "strategy", "user_section_preference")
+
+    case AlternativesStrategy.normalize_strategy(strategy) do
+      {:ok, canonical} ->
+        Map.put(content, "strategy", canonical)
+
+      {:error, :unsupported_strategy} ->
+        Logger.warning(
+          "Unsupported Alternatives strategy encountered during ingest: #{inspect(strategy, limit: 5, printable_limit: 100)}"
+        )
+
+        Map.put(content, "strategy", strategy)
+    end
   end
 end

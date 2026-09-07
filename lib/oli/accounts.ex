@@ -1106,8 +1106,14 @@ defmodule Oli.Accounts do
   """
   def register_independent_user(attrs) do
     %User{independent_learner: true, guest: false}
-    |> User.registration_changeset(attrs)
+    |> User.registration_changeset(attrs,
+      email_verification_required: user_email_verification_required?()
+    )
     |> Repo.insert()
+  end
+
+  def user_email_verification_required? do
+    Application.get_env(:oli, :user_email_verification_required, true)
   end
 
   @doc """
@@ -1622,8 +1628,14 @@ defmodule Oli.Accounts do
   """
   def register_author(attrs) do
     %Author{}
-    |> Author.registration_changeset(attrs)
+    |> Author.registration_changeset(attrs,
+      email_verification_required: author_email_verification_required?()
+    )
     |> Repo.insert()
+  end
+
+  def author_email_verification_required? do
+    Application.get_env(:oli, :author_email_verification_required, true)
   end
 
   @doc """

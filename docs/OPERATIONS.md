@@ -29,4 +29,5 @@ Rollout is primarily controlled through normal deployment flow plus selective fe
 
 - deployment process: `guides/process/deployment.md`
 - feature rollout and scoped flags: `docs/design-docs/scoped_feature_flags.md`
+- experiment reward-handoff monitoring: `docs/runbooks/appsignal/experiment-reward-handoff.md`
 - runtime configuration: `config/runtime.exs`

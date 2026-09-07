@@ -20,6 +20,9 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAttempt do
     field(:errors, {:array, :string}, default: [])
     field(:was_late, :boolean, default: false)
     field(:auto_submit_job_id, :integer)
+    field(:alternative_groups_by_id, :map, virtual: true)
+    field(:experiment_decisions, :map, virtual: true)
+    field(:experiment_attributions, {:array, :map}, virtual: true)
 
     belongs_to(:resource_access, Oli.Delivery.Attempts.Core.ResourceAccess)
     belongs_to(:revision, Oli.Resources.Revision)

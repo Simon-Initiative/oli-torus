@@ -9,6 +9,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
   alias Oli.Resources
   alias Oli.Authoring.Locks
   alias Oli.ScopedFeatureFlags.Rollouts
+  alias Oli.Experiments.Schemas.{ExperimentDefinition, Intervention}
 
   describe "container editing" do
     setup do
@@ -177,6 +178,77 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
     setup do
       Seeder.base_project_with_resource2()
       |> Seeder.add_objective("objective 1", :obj1)
+    end
+
+    test "duplicate_page/4 preserves local element IDs but does not copy intervention bindings",
+         %{
+           author: author,
+           project: project
+         } do
+      alternatives_resource =
+        Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert!()
+
+      experiment =
+        %ExperimentDefinition{}
+        |> ExperimentDefinition.changeset(%{
+          project_id: project.id,
+          slug: "identity-boundaries",
+          name: "Identity boundaries",
+          algorithm: :weighted_random,
+          alternatives_resource_id: alternatives_resource.id
+        })
+        |> Repo.insert!()
+
+      placement_id = "stable-placement"
+      root_container = AuthoringResolver.root_container(project.slug)
+
+      {:ok, page_revision} =
+        ContainerEditor.add_new(
+          root_container,
+          %{
+            objectives: %{"attached" => []},
+            children: [],
+            content: %{
+              "model" => [
+                %{
+                  "type" => "alternatives",
+                  "id" => placement_id,
+                  "alternatives_id" => alternatives_resource.id,
+                  "children" => []
+                }
+              ]
+            },
+            title: "Experiment page",
+            graded: false,
+            resource_type_id: Oli.Resources.ResourceType.id_for_page()
+          },
+          author,
+          project
+        )
+
+      intervention =
+        %Intervention{}
+        |> Intervention.changeset(%{
+          experiment_id: experiment.id,
+          page_resource_id: page_revision.resource_id,
+          content_element_id: placement_id
+        })
+        |> Repo.insert!()
+
+      {:ok, duplicate} =
+        ContainerEditor.duplicate_page(root_container, page_revision.id, author, project)
+
+      assert hd(duplicate.content["model"])["id"] == placement_id
+      refute duplicate.resource_id == page_revision.resource_id
+
+      assert Repo.get!(Intervention, intervention.id).page_resource_id ==
+               page_revision.resource_id
+
+      refute Repo.get_by(Intervention,
+               experiment_id: experiment.id,
+               page_resource_id: duplicate.resource_id,
+               content_element_id: placement_id
+             )
     end
 
     test "duplicate_page/1 duplicates a page correctly", %{

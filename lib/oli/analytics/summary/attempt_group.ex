@@ -73,33 +73,59 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
   end
 
   defp build_context([{_, _, _, access, _} | _rest], project_id, host_name) do
+    {enrollment_id, publication_id} =
+      enrollment_publication_ids_for_section_user_project(
+        access.section_id,
+        access.user_id,
+        project_id
+      )
+
     %Context{
       host_name: host_name,
       user_id: access.user_id,
       section_id: access.section_id,
+      enrollment_id: enrollment_id,
       project_id: project_id,
-      publication_id: pub_id_for_section_project(access.section_id, project_id)
+      publication_id: publication_id
     }
   end
 
-  defp pub_id_for_section_project(section_id, nil) do
+  defp enrollment_publication_ids_for_section_user_project(section_id, user_id, nil) do
     query =
-      from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
-        where: spp.section_id == ^section_id,
-        select: spp.publication_id
+      from s in Oli.Delivery.Sections.Section,
+        where: s.id == ^section_id,
+        select: {
+          fragment(
+            "(SELECT id FROM enrollments WHERE section_id = ? AND user_id = ? LIMIT 1)",
+            ^section_id,
+            ^user_id
+          ),
+          fragment(
+            "(SELECT publication_id FROM sections_projects_publications WHERE section_id = ? ORDER BY publication_id DESC LIMIT 1)",
+            ^section_id
+          )
+        }
 
-    case Repo.all(query) do
-      [] -> nil
-      [{pub_id}] -> pub_id
-    end
+    Repo.one(query) || {nil, nil}
   end
 
-  defp pub_id_for_section_project(section_id, project_id) do
+  defp enrollment_publication_ids_for_section_user_project(section_id, user_id, project_id) do
     query =
-      from spp in Oli.Delivery.Sections.SectionsProjectsPublications,
-        where: spp.section_id == ^section_id and spp.project_id == ^project_id,
-        select: spp.publication_id
+      from s in Oli.Delivery.Sections.Section,
+        where: s.id == ^section_id,
+        select: {
+          fragment(
+            "(SELECT id FROM enrollments WHERE section_id = ? AND user_id = ? LIMIT 1)",
+            ^section_id,
+            ^user_id
+          ),
+          fragment(
+            "(SELECT publication_id FROM sections_projects_publications WHERE section_id = ? AND project_id = ? LIMIT 1)",
+            ^section_id,
+            ^project_id
+          )
+        }
 
-    Repo.one(query)
+    Repo.one(query) || {nil, nil}
   end
 end

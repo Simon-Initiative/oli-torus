@@ -732,6 +732,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 <Objectives>
                   <ObjectivesSelection
                     editMode={this.state.editMode}
+                    attachmentType="page"
+                    loWellFormed={this.props.loWellFormed}
                     projectSlug={this.props.projectSlug}
                     objectives={this.state.allObjectives.toArray()}
                     selected={this.state.objectives.toArray()}

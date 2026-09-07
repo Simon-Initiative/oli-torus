@@ -3,9 +3,11 @@ FROM amazonlinux:2
 ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
 ARG GLEAM_VERSION=1.16.0
+ARG NODE_VERSION=24.20.0
+ARG NODE_LINUX_X64_GLIBC_217_SHA256=6a0c8e38dc77fa537aac992ecd7560d309ec81a73b4822b410553217ad52c064
 
 RUN yum update -y
-RUN yum install -y tar wget git
+RUN yum install -y tar wget git xz
 
 RUN yum install ncurses-devel openssl11-devel -y
 RUN yum groupinstall "Development Tools" -y
@@ -33,11 +35,15 @@ RUN wget "https://github.com/gleam-lang/gleam/releases/download/v${GLEAM_VERSION
 RUN tar xfz gleam-v${GLEAM_VERSION}-x86_64-unknown-linux-musl.tar.gz
 RUN mv gleam /usr/local/bin/gleam
 
-# install node
-RUN yum install -y gcc-c++ make
-RUN yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
-RUN yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
-RUN npm install -g yarn
+# The official Node.js Linux binaries require glibc 2.28, while Amazon Linux 2
+# provides glibc 2.26. Use Node's glibc 2.17-compatible community build so this
+# builder continues to match the production server platform.
+WORKDIR /tmp
+RUN wget "https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64-glibc-217.tar.xz" \
+    && echo "${NODE_LINUX_X64_GLIBC_217_SHA256}  node-v${NODE_VERSION}-linux-x64-glibc-217.tar.xz" | sha256sum --check --strict \
+    && tar -xJf "node-v${NODE_VERSION}-linux-x64-glibc-217.tar.xz" -C /usr/local --strip-components=1 \
+    && rm "node-v${NODE_VERSION}-linux-x64-glibc-217.tar.xz"
+RUN npm install -g yarn@1.22.22
 
 WORKDIR /app
 

@@ -66,6 +66,7 @@ cloud/xapi-etl-processor/
 | `MIN_REMAINING_TIME_TO_START_INSERT_MS`   | Minimum remaining Lambda time required before concat/serialize/insert work may start (default `15000`).                                        |
 | `LAMBDA_TIMEOUT_SAFETY_MARGIN_MS`         | Milliseconds reserved after deriving the request timeout from remaining Lambda budget (default `5000`).                                        |
 | `MAX_MESSAGES_PER_INVOCATION_TO_PROCESS`  | Optional code-level cap on how many SQS messages one invocation should prepare before leaving the rest for retry.                              |
+| `MAX_EXPERIMENT_ATTRIBUTIONS_PER_STATEMENT` | Maximum experiment attribution entries accepted on one statement (default `100`).                                                           |
 | `DRY_RUN`                                 | `true` skips the ClickHouse insert but still reads/parses objects (useful for validation).                                                     |
 | `LOG_LEVEL`                               | Override logging verbosity (`DEBUG`, `INFO`, `WARN`, etc.).                                                                                    |
 | `S3_CONNECT_TIMEOUT_SECONDS`              | S3 client connect timeout (seconds, default `5`).                                                                                              |
@@ -96,19 +97,19 @@ ls dist/
 Publish the layer and note the returned ARN:
 
 ```bash
-LAYER_NAME=xapi-etl-processor-deps
+LAYER_NAME=oli-xapi-etl-processor-layers
 aws lambda publish-layer-version \
   --layer-name "$LAYER_NAME" \
-  --compatible-runtimes python3.11 \
+  --compatible-runtimes python3.12 \
   --zip-file fileb://dist/xapi-etl-processor-layer.zip
 
 # If the layer archive exceeds the direct upload limit (~70 MB), stage it in S3:
-S3_BUCKET=my-layer-artifacts
+S3_BUCKET=oli-xapi-etl-processor-layers
 S3_DEPS_LAYER_KEY=lambda/xapi-etl-processor-layer.zip
 aws s3 cp dist/xapi-etl-processor-layer.zip s3://$S3_BUCKET/$S3_DEPS_LAYER_KEY
 aws lambda publish-layer-version \
   --layer-name "$LAYER_NAME" \
-  --compatible-runtimes python3.11 \
+  --compatible-runtimes python3.12 \
   --content S3Bucket=$S3_BUCKET,S3Key=$S3_DEPS_LAYER_KEY
 
 # Optionally add permissions for other accounts
@@ -147,7 +148,7 @@ aws lambda update-function-code \
   --zip-file fileb://dist/xapi-etl-processor-handler.zip
 ```
 
-If you prefer staging in S3, replace the last command with the
+If you prefer uploading the artifact through S3, replace the last command with the
 `--s3-bucket/--s3-key` variant.
 
 ### Diagnostics & observability
@@ -189,7 +190,8 @@ point than the older tiny-Lambda configuration:
 - Lambda memory: `1024 MB`
 - Lambda timeout: `60s`
 - Event source mapping maximum concurrency: `2`
-- SQS visibility timeout: at least `300s`
+- SQS visibility timeout: at least `420s` for a 60s Lambda timeout and 60s
+  batching window
 
 At low traffic, expect smaller inserts. The implementation flushes smaller
 sub-batches when freshness or remaining Lambda budget makes waiting for a
@@ -200,6 +202,164 @@ sub-batches when freshness or remaining Lambda budget makes waiting for a
 The following steps assume you have permissions to manage S3, SQS, Lambda, and
 IAM within your AWS account. Replace names with values that suit your
 environment.
+
+### Environment deployment template
+
+Use the following configuration as the baseline for each environment:
+
+| Setting | Recommended value |
+| --- | --- |
+| Runtime/architecture | Python `3.12` / `x86_64` |
+| Handler | `lambda_function.lambda_handler` |
+| Memory/timeout/ephemeral storage | `1024 MB` / `60s` / `512 MB` |
+| S3 notification | `s3:ObjectCreated:*`, prefix `section/`, suffix `.jsonl` |
+| Event mapping | batch `50`, window `60s`, maximum concurrency `2`, partial batch responses enabled |
+| Main queue | 420s visibility, four-day retention, long polling, managed SSE |
+| DLQ | 14-day retention, managed SSE, redrive after five receives |
+
+Run these commands from the repository root after replacing every placeholder.
+Use a file for environment variables so the ClickHouse password does not appear
+in shell history or process arguments.
+
+```bash
+AWS_REGION="REPLACE_WITH_AWS_REGION"
+AWS_ACCOUNT_ID="REPLACE_WITH_AWS_ACCOUNT_ID"
+ENVIRONMENT="REPLACE_WITH_ENVIRONMENT_NAME"
+LAMBDA_NAME="xapi-etl-processor-$ENVIRONMENT"
+LAMBDA_ROLE_NAME="xapi-etl-processor-$ENVIRONMENT"
+MAIN_QUEUE_NAME="clickhouse-etl-events-$ENVIRONMENT"
+DLQ_NAME="clickhouse-etl-events-$ENVIRONMENT-dlq"
+SOURCE_BUCKET="REPLACE_WITH_XAPI_SOURCE_BUCKET"
+LAYER_ARN="REPLACE_WITH_DEPENDENCY_LAYER_ARN"
+SUBNET_IDS="REPLACE_WITH_COMMA_SEPARATED_SUBNET_IDS"
+SECURITY_GROUP_IDS="REPLACE_WITH_COMMA_SEPARATED_SECURITY_GROUP_IDS"
+CLICKHOUSE_HOST="REPLACE_WITH_CLICKHOUSE_HOST"
+CLICKHOUSE_PORT=8443
+CLICKHOUSE_PROTOCOL=https
+CLICKHOUSE_DATABASE="REPLACE_WITH_CLICKHOUSE_DATABASE"
+CLICKHOUSE_USER="REPLACE_WITH_CLICKHOUSE_USER"
+```
+
+Create encrypted queues and configure redrive:
+
+```bash
+aws sqs create-queue \
+  --region "$AWS_REGION" \
+  --queue-name "$DLQ_NAME" \
+  --attributes MessageRetentionPeriod=1209600,SqsManagedSseEnabled=true
+
+aws sqs create-queue \
+  --region "$AWS_REGION" \
+  --queue-name "$MAIN_QUEUE_NAME" \
+  --attributes VisibilityTimeout=420,MessageRetentionPeriod=345600,ReceiveMessageWaitTimeSeconds=20,SqsManagedSseEnabled=true
+
+DLQ_URL="https://sqs.$AWS_REGION.amazonaws.com/$AWS_ACCOUNT_ID/$DLQ_NAME"
+MAIN_QUEUE_URL="https://sqs.$AWS_REGION.amazonaws.com/$AWS_ACCOUNT_ID/$MAIN_QUEUE_NAME"
+DLQ_ARN="arn:aws:sqs:$AWS_REGION:$AWS_ACCOUNT_ID:$DLQ_NAME"
+MAIN_QUEUE_ARN="arn:aws:sqs:$AWS_REGION:$AWS_ACCOUNT_ID:$MAIN_QUEUE_NAME"
+
+aws sqs set-queue-attributes \
+  --region "$AWS_REGION" \
+  --queue-url "$MAIN_QUEUE_URL" \
+  --attributes "RedrivePolicy={\"deadLetterTargetArn\":\"$DLQ_ARN\",\"maxReceiveCount\":\"5\"}"
+```
+
+Apply a queue access policy that grants `sqs:SendMessage` only to the source
+bucket and account. The policy must scope `Resource` to `$MAIN_QUEUE_ARN`,
+`aws:SourceAccount` to `$AWS_ACCOUNT_ID`, and `aws:SourceArn` to
+`arn:aws:s3:::$SOURCE_BUCKET`.
+
+Build the layer and handler as described in [Packaging for Lambda](#packaging-for-lambda).
+Create a restricted temporary environment file, substitute the environment
+values, and insert the ClickHouse password locally. The trap removes the file
+when the shell exits. Never commit this file:
+
+```bash
+ENV_FILE="$(mktemp /tmp/xapi-etl-environment.XXXXXX)"
+chmod 600 "$ENV_FILE"
+trap 'rm -f "$ENV_FILE"' EXIT
+```
+
+```json
+{
+  "Variables": {
+    "DRY_RUN": "false",
+    "CLICKHOUSE_PROTOCOL": "<clickhouse-protocol>",
+    "CLICKHOUSE_USER": "<clickhouse-user>",
+    "CLICKHOUSE_TABLE": "raw_events",
+    "CLICKHOUSE_HOST": "<clickhouse-host>",
+    "CLICKHOUSE_PORT": "<clickhouse-port>",
+    "CLICKHOUSE_PASSWORD": "<clickhouse-password>",
+    "LOG_LEVEL": "INFO",
+    "CLICKHOUSE_DATABASE": "<clickhouse-database>"
+  }
+}
+```
+
+Before creating a VPC-attached function, verify that the execution role has the
+logging, source-object, queue-consumer, and network-interface permissions listed
+in [Create the Lambda execution role](#4-create-the-lambda-execution-role).
+Use an environment-scoped least-privilege role rather than copying broad legacy
+managed policies.
+
+```bash
+aws lambda create-function \
+  --region "$AWS_REGION" \
+  --function-name "$LAMBDA_NAME" \
+  --runtime python3.12 \
+  --architectures x86_64 \
+  --role "arn:aws:iam::$AWS_ACCOUNT_ID:role/$LAMBDA_ROLE_NAME" \
+  --handler lambda_function.lambda_handler \
+  --zip-file fileb://cloud/xapi-etl-processor/dist/xapi-etl-processor-handler.zip \
+  --layers "$LAYER_ARN" \
+  --memory-size 1024 \
+  --timeout 60 \
+  --ephemeral-storage Size=512 \
+  --vpc-config SubnetIds="$SUBNET_IDS",SecurityGroupIds="$SECURITY_GROUP_IDS" \
+  --environment file://"$ENV_FILE"
+```
+
+Use HTTPS for ClickHouse because the Lambda sends Basic Auth credentials and
+learner analytics in transit. Plain HTTP is acceptable only when a reviewed,
+isolated network path provides equivalent transport encryption. Prefer a
+deployment secret integration such as AWS Secrets Manager over a temporary
+credential file when the surrounding deployment system supports it.
+
+Create the event source mapping with partial batch responses enabled. This is
+required for the handler's `batchItemFailures` response to retry only failed or
+untouched messages:
+
+```bash
+aws lambda create-event-source-mapping \
+  --region "$AWS_REGION" \
+  --function-name "$LAMBDA_NAME" \
+  --event-source-arn "$MAIN_QUEUE_ARN" \
+  --batch-size 50 \
+  --maximum-batching-window-in-seconds 60 \
+  --function-response-types ReportBatchItemFailures \
+  --scaling-config MaximumConcurrency=2
+```
+
+Configure the bucket notification with a unique ID, the main queue ARN,
+`s3:ObjectCreated:*`, prefix `section/`, and suffix `.jsonl`. Because
+`put-bucket-notification-configuration` replaces the entire bucket
+configuration, read the current configuration and merge the queue entry without
+removing existing queue, topic, or Lambda notifications.
+
+Finally, verify the environment without printing secret values:
+
+```bash
+aws lambda get-function-configuration \
+  --function-name "$LAMBDA_NAME" \
+  --query '{Runtime:Runtime,Role:Role,Handler:Handler,Timeout:Timeout,MemorySize:MemorySize,VpcConfig:VpcConfig,Layers:Layers,Architectures:Architectures,EnvironmentKeys:keys(Environment.Variables)}'
+
+aws lambda list-event-source-mappings \
+  --function-name "$LAMBDA_NAME"
+
+aws sqs get-queue-attributes \
+  --queue-url "$MAIN_QUEUE_URL" \
+  --attribute-names VisibilityTimeout RedrivePolicy Policy SqsManagedSseEnabled
+```
 
 ### 1. Create / configure the S3 bucket
 
@@ -213,8 +373,9 @@ environment.
 2. Create a second queue, e.g. `xapi-etl-processor-dlq`, to serve as the DLQ.
 3. Configure the main queue with a redrive policy that points to the DLQ (choose
    a `maxReceiveCount` suitable for your retry tolerance, e.g. `5`).
-4. Set the main queue visibility timeout to at least **5×** the Lambda timeout.
-   Example: Lambda timeout 60s ⇒ Visibility timeout ≥ 300s.
+4. Set the main queue visibility timeout to at least **6×** the Lambda timeout
+   plus the maximum batching window. Example: Lambda timeout 60s and batching
+   window 60s ⇒ Visibility timeout ≥ 420s.
 5. Update the main queue **Access policy** to allow the S3 bucket to call
    `sqs:SendMessage`. Example statement:
 
@@ -248,12 +409,16 @@ environment.
    - Inline policy allowing `s3:GetObject` on the bucket/prefix you ingest.
    - Inline policy allowing `sqs:ReceiveMessage`, `sqs:DeleteMessage`,
      `sqs:GetQueueAttributes` on the main queue.
+   - For a VPC-attached Lambda, allow `ec2:CreateNetworkInterface`,
+     `ec2:DescribeNetworkInterfaces`, and `ec2:DeleteNetworkInterface`. AWS's
+     managed `AWSLambdaVPCAccessExecutionRole` policy provides the standard
+     Lambda VPC permissions, or define an equivalent controlled policy.
    - If using a DLQ with `sqs:SendMessage` from Lambda, add permission for it as
      well.
 
 ### 5. Deploy the Lambda function
 
-1. Create a Lambda function (Python 3.11 runtime recommended).
+1. Create a Lambda function using the Python 3.12 runtime.
 2. Upload the deployment package created above or point to the S3 artifact.
 3. Set the handler to `lambda_function.lambda_handler`.
 4. Start with memory `1024 MB` and timeout `60s`, then tune after observing
@@ -306,8 +471,26 @@ Run as a ClickHouse admin user:
 CREATE USER IF NOT EXISTS xapi_etl_processor
   IDENTIFIED WITH sha256_password BY '<strong-random-password>';
 
-GRANT INSERT ON oli_analytics.raw_events TO xapi_etl_processor;
+GRANT INSERT ON oli_analytics.* TO xapi_etl_processor;
 ```
+
+Grant `INSERT` at the database level rather than on `raw_events` alone. The
+Lambda writes both `raw_events` and `experiment_attributions`, and the wildcard
+also authorizes inserts into future ETL tables created in the same database.
+Keep the grant scoped to the database configured by `CLICKHOUSE_DATABASE`.
+
+For another environment, create a distinct service user and scope it to that
+environment's analytics database:
+
+```sql
+CREATE USER IF NOT EXISTS <environment_service_user>
+  IDENTIFIED WITH sha256_password BY '<strong-random-password>';
+
+GRANT INSERT ON <environment_database>.* TO <environment_service_user>;
+```
+
+If the same service user intentionally writes to multiple environments, grant each
+database explicitly; do not broaden the permission to `*.*`.
 
 Optional hardening (adjust to your cluster baseline):
 
@@ -333,6 +516,9 @@ Set these Lambda environment variables:
 - `CLICKHOUSE_DATABASE=oli_analytics`
 - `CLICKHOUSE_TABLE=raw_events`
 
+Use a distinct `CLICKHOUSE_USER` and `CLICKHOUSE_DATABASE` for each environment
+as shown in the environment deployment template above.
+
 If you manage env vars via CLI, note that `update-function-configuration`
 replaces the entire `Variables` object. Merge with existing values before
 updating.
@@ -347,7 +533,7 @@ updating.
 
 2. Update Lambda env vars to the new secret.
 3. Validate ingestion with a test JSONL upload and confirm inserts in
-   `raw_events`.
+   `raw_events` and, for attributed statements, `experiment_attributions`.
 4. If rotation used a temporary user, remove the old user after validation:
 
    ```sql
@@ -390,7 +576,7 @@ drop or disable the old user after validation.
 
 ## Local tests
 
-Install dev dependencies and run the unit tests (Python 3.11 recommended so
+Install dev dependencies and run the unit tests (Python 3.12 recommended so
 `pyarrow` wheels are available):
 
 ```bash

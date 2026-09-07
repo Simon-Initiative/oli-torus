@@ -575,20 +575,11 @@ defmodule OliWeb.PageDeliveryController do
         }
       end)
 
-    base_project_slug =
-      case section.has_experiments do
-        true ->
-          Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
-
-        _ ->
-          nil
-      end
-
-    enrollment =
-      case section.has_experiments do
-        true -> Oli.Delivery.Sections.get_enrollment(section_slug, user.id)
-        _ -> nil
-      end
+    {base_project_slug, enrollment} =
+      Oli.Delivery.Sections.get_alternatives_render_context(
+        section.id,
+        user && user.id
+      )
 
     render_context = %Context{
       # Allow admin authors to review student work
@@ -599,6 +590,8 @@ defmodule OliWeb.PageDeliveryController do
         else
           user
         end,
+      institution_id: section.institution_id,
+      project_id: section.base_project_id,
       section_id: section.id,
       section_slug: section_slug,
       project_slug: base_project_slug,
@@ -1449,7 +1442,14 @@ defmodule OliWeb.PageDeliveryController do
 
   def do_start_attempt(conn, section, user, revision, effective_settings) do
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+    activity_provider =
+      Oli.Delivery.Experiments.ActivityProvider.for_page(
+        &Oli.Delivery.ActivityProvider.provide/6,
+        section,
+        revision,
+        user
+      )
 
     # We must check gating conditions here to account for gates that activated after
     # the prologue page was rendered, and for malicious/deliberate attempts to start an attempt via
