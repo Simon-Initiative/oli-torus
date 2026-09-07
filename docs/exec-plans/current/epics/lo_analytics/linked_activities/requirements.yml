@@ -1,0 +1,183 @@
+version: 1
+feature: Linked Activities Details From Learning Objectives
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Complete the existing Linked Activities route with the selected objective
+    context
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: View Activities navigates to the existing linked-activities route, shows
+      the selected objective title, and preserves the Learning Objectives back parameters
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Derive the linked activity set from the selected objective and effective
+    sub-objectives
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: A parent objective includes activities linked directly to it or to its
+      descendants, while a child objective includes only activities linked directly
+      to that child
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: Duplicate activity resource IDs across objective relationship arrays render
+      once and activities outside the objective family do not render
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Render linked activities through the shared expandable instructor activity-detail
+    experience
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: Each linked activity row can expand and collapse, lazy-loads and caches
+      its summary, and renders Question, Answer Key, Hints, Explanation, applicable
+      Dynamic Variables, answer distribution, First Try Correct, and Eventually Correct
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-005
+    title: An activity without question-level analytics expands to the established
+      no-attempt or empty state and does not crash
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-006
+    title: Linked activity summaries retain containing page context and produce one
+      unique row with aggregate attempts and correctness when an activity occurs on
+      multiple in-scope pages
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-020
+    title: All linked activity rows start collapsed on initial page load, including
+      after navigation, filtering, sorting, and pagination; no row auto-expands
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Provide activity-level search, filtering, sorting, pagination, and reset
+    controls
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: Search matches the visible question stem or title and updates the linked
+      activity list
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-008
+    title: Attempts filters support None, Less than 5, and More than 5 using the selected-page
+      activity semantics
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-009
+    title: Score filtering supports the existing comparison selector and percentage
+      value
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-010
+    title: Clear All Filters restores the unfiltered linked activity set and sorting
+      supports question stem or title, attempts, and percent correct
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-021
+    title: Pagination limits the linked activity list to the configured page size
+      and preserves the active search, filters, and sort across page changes
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Preserve scoped read-only behavior and instructor-facing empty states
+  status: proposed
+  acceptance_criteria:
+  - id: AC-011
+    title: The page displays a distinct empty state when no linked activities exist
+      and another when search or filters remove all rows
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-012
+    title: Navigation, expansion, collapse, filtering, sorting, and pagination do
+      not mutate activity revisions, attempts, responses, or analytics summary records
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-013
+    title: All reads are authorized and scoped to the current instructor-accessible
+      institution and section
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-006
+  title: Keep linked activity discovery and summary loading within the existing performance
+    boundaries
+  status: proposed
+  acceptance_criteria:
+  - id: AC-014
+    title: Objective-family activity IDs are obtained from SectionResourceDepot with
+      batch resource lookup and de-duplication, without request-time scans of activity
+      revision objective attachments
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-015
+    title: Telemetry records bounded linked-activity load and summary-load latency,
+      counts, outcomes, and errors without raw responses, PII, or authored content
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-007
+  title: Meet the accessibility requirements for the linked activities table and its
+    expandable rows
+  status: proposed
+  acceptance_criteria:
+  - id: AC-016
+    title: Expand and collapse controls are operable by keyboard and expose their
+      expanded or collapsed state to assistive technologies
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-017
+    title: Expanded activity details preserve the existing heading hierarchy and semantic
+      structure used by the shared activity detail experience
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-018
+    title: Keyboard focus remains predictable after navigating to the Linked Activities
+      page and after expanding, collapsing, filtering, sorting, or paginating, and
+      does not jump unexpectedly
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-019
+    title: All interactive controls including search, Attempts, Score, Clear All Filters,
+      sortable headers, pagination, and row chevrons have visible focus indicators
+      and meaningful accessible names
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+- id: FR-008
+  title: Match the approved design for the linked activities filter toolbar
+  status: proposed
+  acceptance_criteria:
+  - id: AC-022
+    title: The filter toolbar renders search, Attempts, Score, and Clear All Filters
+      as one bordered row matching the approved design, reusing the shared SearchInput,
+      MultiSelect, PercentageSelector, and trash-icon button rather than raw select
+      and input markup, and introduces no new styles
+    status: proposed
+    verification_method: manual
+    proofs: []
+acceptance_criteria: []
