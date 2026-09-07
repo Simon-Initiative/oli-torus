@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Maybe } from 'tsmonad';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
-import { lockScroll, unlockScroll } from 'components/modal/utils';
 import { SearchIcon } from 'components/misc/icons/Icons';
+import { lockScroll, unlockScroll } from 'components/modal/utils';
 
 export interface Option {
   value: string | number;

@@ -413,9 +413,7 @@
 .learning-objectives-editor__proficiency::details-content {
   block-size: 0;
   overflow: hidden;
-  transition:
-    block-size 180ms ease,
-    content-visibility 180ms ease allow-discrete;
+  transition: block-size 180ms ease, content-visibility 180ms ease allow-discrete;
 }
 
 .learning-objectives-editor__proficiency[open]::details-content {
