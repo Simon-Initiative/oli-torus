@@ -8,8 +8,26 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
-  def new(activities) do
-    column_specs = [
+  @doc """
+  Builds the instructor dashboard activity table.
+
+  `:columns` selects the column set: `:default` for the selected-page view used by Scored
+  and Practice Activities, or `:linked_activities` for the objective-scoped view, which
+  drops the order and Learning Objectives columns. An unknown value raises rather than
+  silently rendering the wrong columns.
+  """
+  def new(activities, opts \\ []) do
+    SortableTableModel.new(
+      rows: activities,
+      column_specs: column_specs_for(Keyword.get(opts, :columns, :default)),
+      event_suffix: "",
+      id_field: [:resource_id],
+      data: %{expandable_rows: true, view_type: :activities_instructor_dashboard}
+    )
+  end
+
+  defp column_specs_for(:default) do
+    [
       %ColumnSpec{
         render_fn: &render_expanded/3,
         sortable: false,
@@ -43,14 +61,10 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         render_fn: &render_avg_score_column/3
       }
     ]
+  end
 
-    SortableTableModel.new(
-      rows: activities,
-      column_specs: column_specs,
-      event_suffix: "",
-      id_field: [:resource_id],
-      data: %{expandable_rows: true, view_type: :activities_instructor_dashboard}
-    )
+  defp column_specs_for(:linked_activities) do
+    Enum.reject(column_specs_for(:default), &(&1.name in [:order, :learning_objectives]))
   end
 
   def render_question_column(assigns, %{content: content} = activity, _) do
@@ -90,13 +104,21 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     assigns =
       Map.merge(assigns, %{
         id: "#{assessment.resource_id}",
-        target: assigns.model.data.target,
-        assessment: assessment
+        target: Map.get(assigns.model.data, :target),
+        assessment: assessment,
+        expanded:
+          MapSet.member?(
+            Map.get(assigns.model.data, :expanded_activity_ids, MapSet.new()),
+            assessment.resource_id
+          )
       })
 
     ~H"""
     <.button
       id={"button_#{@id}"}
+      aria-expanded={to_string(@expanded)}
+      aria-controls={"details-row_#{@id}"}
+      aria-label={if @expanded, do: "Collapse activity details", else: "Expand activity details"}
       class="flex !p-0"
       phx-hook="PreserveScrollAnchor"
       data-anchor-selector={~s(tr[data-row-id="row_#{@id}"])}

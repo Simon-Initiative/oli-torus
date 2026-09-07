@@ -5,6 +5,36 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
   alias OliWeb.Delivery.Pages.ActivitiesTableModel
 
+  test "linked mode retains expansion, question, attempts, and score columns only" do
+    {:ok, model} = ActivitiesTableModel.new([], columns: :linked_activities)
+
+    assert Enum.map(model.column_specs, & &1.label) == [
+             nil,
+             "Question Stem",
+             "Attempts",
+             "% Correct"
+           ]
+  end
+
+  test "an unknown column mode raises instead of silently rendering the default columns" do
+    assert_raise FunctionClauseError, fn ->
+      ActivitiesTableModel.new([], columns: :not_a_mode)
+    end
+  end
+
+  test "default mode retains order and learning objective columns" do
+    {:ok, model} = ActivitiesTableModel.new([])
+
+    assert Enum.map(model.column_specs, & &1.name) == [
+             nil,
+             :order,
+             :title,
+             :learning_objectives,
+             :total_attempts,
+             :avg_score
+           ]
+  end
+
   test "render_question_column omits the empty subtitle for adaptive screens" do
     activity = %{
       title: "Second Screen",
@@ -92,6 +122,54 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     assert html =~ "cached preview"
     assert html =~ "100%"
     assert html =~ "50%"
+  end
+
+  test "render_assessment_details preserves the expanded activity content and analytics" do
+    assessment = %{
+      title: "Question with analytics",
+      resource_id: 10,
+      content: %{"partsLayout" => []}
+    }
+
+    current_activity = %{
+      resource_id: 10,
+      id: 10,
+      revision: %{activity_type_id: 1},
+      first_attempt_pct: 0.5,
+      all_attempt_pct: 0.75,
+      preview_rendered: """
+      <div>Answer Key</div>
+      <div>Hints</div>
+      <div>Explanation</div>
+      <div>Dynamic Variables</div>
+      <div>Answer distribution: Correct 1 of 2</div>
+      """
+    }
+
+    model = %{
+      data: %{
+        activity_summary_cache: %{10 => current_activity},
+        expanded_activity_ids: MapSet.new([10]),
+        scripts: [],
+        target: nil
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns = Map.merge(assigns, %{model: model, activity_types_map: %{}})
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+
+    assert html =~ "Answer Key"
+    assert html =~ "Hints"
+    assert html =~ "Explanation"
+    assert html =~ "Dynamic Variables"
+    assert html =~ "Answer distribution: Correct 1 of 2"
+    assert html =~ "First Try Correct"
+    assert html =~ "Eventually Correct"
+    assert html =~ "50%"
+    assert html =~ "75%"
   end
 
   test "render_assessment_details defaults missing aggregate percentages to zero" do
