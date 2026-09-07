@@ -48,7 +48,7 @@ jobs:
 
         # build (or retrieve from cache) the amazon-linux-builder image, used by the next step to build the release for Amazon Linux 2
       - name: 🐳 Build amazon-linux-builder image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: ./.github/actions/amazon-linux-builder
           load: true
@@ -153,7 +153,7 @@ jobs:
 
       # builds the official oli-torus app image
       - name: 🐳 Docker Build and Push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
