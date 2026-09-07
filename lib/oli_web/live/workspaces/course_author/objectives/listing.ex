@@ -12,8 +12,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
   attr(:expanded_slugs, :any, default: MapSet.new())
   attr(:pending_delete_slugs, :any, default: MapSet.new())
   attr(:offset, :integer, default: 0)
+  attr(:query, :string, default: "")
 
   def render(assigns) do
+    assigns =
+      assign(assigns, :highlight_terms, highlight_terms(assigns.query))
+
+    assigns = assign(assigns, :highlight_regex, highlight_regex(assigns.highlight_terms))
+
     ~H"""
     <div id="accordion" class="flex flex-col gap-3 font-open-sans">
       <%= for {item, index} <- Enum.with_index(@rows, 1) do %>
@@ -49,7 +55,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                 <span>{"LO #{@offset + index}"}</span>
               </span>
               <span class="flex min-h-[22.5px] min-w-0 flex-1 items-center text-[15px] font-semibold leading-[22.5px] text-Text-text-high">
-                <span class="min-w-0">{item.title}</span>
+                <span class="min-w-0">
+                  <.highlighted_title
+                    title={item.title}
+                    regex={@highlight_regex}
+                    terms={@highlight_terms}
+                  />
+                </span>
               </span>
             </button>
 
@@ -175,7 +187,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                     </button>
                   </div>
                 </div>
-                <.coverage_details item={item} project_slug={@project_slug} />
+                <.coverage_details
+                  item={item}
+                  project_slug={@project_slug}
+                  regex={@highlight_regex}
+                  terms={@highlight_terms}
+                />
               </section>
 
               <section class="order-2 flex flex-col gap-3">
@@ -226,7 +243,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                           "min-w-0 flex-1 text-sm font-normal leading-[19.25px] text-Text-text-high",
                           MapSet.member?(@pending_delete_slugs, sub_objective.slug) && "line-through"
                         ]}>
-                          {sub_objective.title}
+                          <.highlighted_title
+                            title={sub_objective.title}
+                            regex={@highlight_regex}
+                            terms={@highlight_terms}
+                          />
                         </span>
                       </button>
                       <.loader
@@ -339,7 +360,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                             </button>
                           </div>
                         </div>
-                        <.coverage_details item={sub_objective} project_slug={@project_slug} />
+                        <.coverage_details
+                          item={sub_objective}
+                          project_slug={@project_slug}
+                          regex={@highlight_regex}
+                          terms={@highlight_terms}
+                        />
                       </div>
                     </li>
                   <% end %>
@@ -377,6 +403,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
   attr :item, :map, required: true
   attr :project_slug, :string, required: true
+  attr :regex, :any, required: true
+  attr :terms, :list, required: true
 
   defp coverage_details(assigns) do
     ~H"""
@@ -398,7 +426,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                   aria-label={"Open page editor for #{page.page.title || page.page.slug}"}
                 >
                   <Icons.book width="12" height="13" stroke_width="1.41573" variant="objective" />
-                  <span>{page.page.title || page.page.slug}</span>
+                  <span>
+                    <.highlighted_title
+                      title={page.page.title || page.page.slug}
+                      regex={@regex}
+                      terms={@terms}
+                    />
+                  </span>
                 </.link>
               </div>
               <%= if page.activities == [] do %>
@@ -424,7 +458,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
                             <Icons.practice is_active={false} />
                           <% end %>
                         </span>
-                        <span class="min-w-0 truncate">{activity.title || activity.slug}</span>
+                        <span class="min-w-0 truncate">
+                          <.highlighted_title
+                            title={activity.title || activity.slug}
+                            regex={@regex}
+                            terms={@terms}
+                          />
+                        </span>
                       </.link>
                     </li>
                   <% end %>
@@ -448,4 +488,43 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
 
   defp pluralized_count(1, singular, _plural), do: "1 #{singular}"
   defp pluralized_count(count, _singular, plural), do: "#{count} #{plural}"
+
+  attr :title, :string, required: true
+  attr :regex, :any, required: true
+  attr :terms, :list, required: true
+
+  defp highlighted_title(assigns) do
+    ~H"""
+    <%= for {part, highlighted?} <- highlight_parts(@title, @regex, @terms) do %>
+      <%= if highlighted? do %>
+        <mark>{part}</mark>
+      <% else %>
+        <span>{part}</span>
+      <% end %>
+    <% end %>
+    """
+  end
+
+  defp highlight_terms(query) do
+    query
+    |> String.slice(0, 100)
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.take(10)
+  end
+
+  defp highlight_regex(terms) do
+    case terms do
+      [] -> nil
+      terms -> Regex.compile!("(#{Enum.map_join(terms, "|", &Regex.escape/1)})", "iu")
+    end
+  end
+
+  defp highlight_parts(title, nil, _terms), do: [{title, false}]
+
+  defp highlight_parts(title, regex, terms) do
+    Regex.split(regex, title, include_captures: true)
+    |> Enum.map(fn part ->
+      {part, Enum.any?(terms, &(String.downcase(&1) == String.downcase(part)))}
+    end)
+  end
 end
