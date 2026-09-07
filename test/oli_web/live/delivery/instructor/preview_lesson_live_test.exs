@@ -2028,9 +2028,6 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     enroll_as_instructor(%{section: map.section, user: user})
     cache_lti_context(map.section, user)
 
-    {:ok,
-     conn: log_in_user(conn, user),
-     section: map.section,
-     page_revision: map.page.revision}
+    {:ok, conn: log_in_user(conn, user), section: map.section, page_revision: map.page.revision}
   end
 end
