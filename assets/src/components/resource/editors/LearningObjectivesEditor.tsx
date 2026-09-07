@@ -467,9 +467,6 @@ const ObjectiveCard = ({
           <div className="learning-objectives-editor__objective-title-row">
             <span className="learning-objectives-editor__objective-number">LO {ordinal}</span>
             <span className="learning-objectives-editor__objective-title">{objective.title}</span>
-            {!config.enabled && (
-              <span className="learning-objectives-editor__removed-status">Removed</span>
-            )}
           </div>
           {children.length > 0 && (
             <ul className="learning-objectives-editor__sub-objective-list">
@@ -481,6 +478,9 @@ const ObjectiveCard = ({
             </ul>
           )}
         </div>
+        {!config.enabled && (
+          <span className="learning-objectives-editor__removed-status">Removed</span>
+        )}
         <button
           type="button"
           className={classNames(
