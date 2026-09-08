@@ -401,12 +401,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click()
 
       assert has_element?(view, "#course-content-filter-menu")
-      assert has_element?(view, "#course-content-filter-tree details")
+      assert has_element?(view, "#course-content-filter-tree")
       assert has_element?(view, "#course-content-checkbox-#{page.resource_id}[type='checkbox']")
 
       assert has_element?(
                view,
                "#course-content-checkbox-#{page.resource_id}[aria-label='Select Page 1']"
+             )
+
+      assert has_element?(
+               view,
+               "#course-content-title-#{page.resource_id}[tabindex='0'][aria-describedby='course-content-tooltip-#{page.resource_id}']"
+             )
+
+      assert has_element?(
+               view,
+               "#course-content-tooltip-#{page.resource_id}[role='tooltip']",
+               "Page 1"
              )
 
       view

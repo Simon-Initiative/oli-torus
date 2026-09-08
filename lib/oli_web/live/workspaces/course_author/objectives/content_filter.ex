@@ -124,38 +124,69 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
         expandable?: expandable?,
         type: type,
         visited_ids: visited_ids,
-        dom_id: Enum.join(assigns.path, "-")
+        dom_id: Enum.join(assigns.path, "-"),
+        tooltip_id: "course-content-tooltip-#{Enum.join(assigns.path, "-")}"
       )
 
     ~H"""
-    <details
-      id={"course-content-node-#{@dom_id}"}
-      open={@level == 0}
-      class="group relative"
-    >
-      <summary class="flex min-w-0 list-none items-center gap-1 rounded py-1.5 pl-14 pr-1 text-sm text-Text-text-high marker:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary">
-        <span
-          class={[
-            "absolute left-1 top-1.5 flex size-5 shrink-0 items-center justify-center",
-            !@expandable? && "invisible"
-          ]}
-          aria-hidden="true"
-        >
-          <Icons.chevron_down
-            width="9.5"
-            height="5.5"
-            variant="stroke"
-            class="text-Icon-icon-default transition-transform group-open:rotate-180"
-          />
-        </span>
-        <span
-          class="min-w-0 flex-1 truncate"
-          title={@node.title}
-          aria-label={"#{@type}: #{@node.title}"}
-        >
-          {@node.title}
-        </span>
-      </summary>
+    <%= if @expandable? do %>
+      <div id={"course-content-node-#{@dom_id}"} class="grid grid-cols-[minmax(0,1fr)_1.5rem]">
+        <.render_node_selector
+          node={@node}
+          selected={@selected}
+          type={@type}
+          dom_id={@dom_id}
+          tooltip_id={@tooltip_id}
+        />
+        <details open={@level == 0} class="contents group">
+          <summary
+            class="col-start-2 row-start-1 flex size-6 list-none items-center justify-center rounded marker:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            aria-label={"Expand #{@node.title}"}
+          >
+            <Icons.chevron_down
+              width="9.5"
+              height="5.5"
+              variant="stroke"
+              class="text-Icon-icon-default transition-transform group-open:rotate-180"
+            />
+          </summary>
+          <div class="col-span-2 row-start-2 ml-5 border-l border-Border-border-default pl-2">
+            <%= for child <- @children do %>
+              <.render_node
+                node={child}
+                level={@level + 1}
+                nodes_by_id={@nodes_by_id}
+                selected_ids={@selected_ids}
+                visited_ids={@visited_ids}
+                path={@path ++ [child.resource_id]}
+              />
+            <% end %>
+          </div>
+        </details>
+      </div>
+    <% else %>
+      <div id={"course-content-node-#{@dom_id}"} class="grid grid-cols-[minmax(0,1fr)_1.5rem]">
+        <.render_node_selector
+          node={@node}
+          selected={@selected}
+          type={@type}
+          dom_id={@dom_id}
+          tooltip_id={@tooltip_id}
+        />
+      </div>
+    <% end %>
+    """
+  end
+
+  attr :node, :map, required: true
+  attr :selected, :boolean, required: true
+  attr :type, :any, required: true
+  attr :dom_id, :string, required: true
+  attr :tooltip_id, :string, required: true
+
+  def render_node_selector(assigns) do
+    ~H"""
+    <div class="col-start-1 row-start-1 flex min-w-0 items-center gap-2 py-1.5 pl-1">
       <input
         id={"course-content-checkbox-#{@dom_id}"}
         type="checkbox"
@@ -164,21 +195,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
         aria-label={"Select #{@node.title}"}
         phx-click="toggle_course_content_item"
         phx-value-resource_id={@node.resource_id}
-        class="absolute left-7 top-2.5 z-10 size-4 rounded border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
+        class="size-4 shrink-0 rounded border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
       />
-      <div :if={@expandable?} class="ml-5 border-l border-Border-border-default pl-2">
-        <%= for child <- @children do %>
-          <.render_node
-            node={child}
-            level={@level + 1}
-            nodes_by_id={@nodes_by_id}
-            selected_ids={@selected_ids}
-            visited_ids={@visited_ids}
-            path={@path ++ [child.resource_id]}
-          />
-        <% end %>
-      </div>
-    </details>
+      <label
+        for={"course-content-checkbox-#{@dom_id}"}
+        id={"course-content-title-#{@dom_id}"}
+        class="group/title relative min-h-6 min-w-0 flex-1 truncate rounded text-sm text-Text-text-high focus:outline-none focus-visible:ring-2 focus-visible:ring-Fill-Buttons-fill-primary"
+        tabindex="0"
+        aria-describedby={@tooltip_id}
+      >
+        <span class="block truncate" title={@node.title}>{@node.title}</span>
+        <span
+          id={@tooltip_id}
+          role="tooltip"
+          class="pointer-events-none absolute bottom-full left-0 z-20 mb-1 hidden max-w-72 rounded border border-Border-border-default bg-Background-bg-secondary px-2 py-1 text-xs font-normal leading-4 text-Text-text-high shadow-[0px_2px_4px_rgba(0,52,99,0.10)] group-hover/title:block group-focus/title:block"
+        >
+          {@node.title}
+        </span>
+      </label>
+    </div>
     """
   end
 end

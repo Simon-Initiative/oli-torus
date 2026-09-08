@@ -77,10 +77,11 @@ acceptance_criteria:
   title: Applying or clearing the filter preserves search, sort, and Coverage Issues
     state, and query parameters restore selections and results after direct navigation,
     refresh, copied URLs, and browser history navigation.
-  status: verified
+  status: partial
   verification_method: hybrid
   proofs:
   - test/oli_web/live/workspaces/course_author/objectives_live_test.exs: URL restoration and composed query/sort/filter state
+  notes: Selection and clear actions now create browser-history entries, but explicit browser back/forward automation coverage is still pending.
 - id: AC-005
   requirement_id: FR-005
   title: The active indication appears when selections exist, and the count equals

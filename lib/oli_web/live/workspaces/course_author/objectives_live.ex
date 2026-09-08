@@ -434,10 +434,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   defp filter_objective_rows(rows, nil), do: rows
 
   defp filter_objective_rows(rows, matching_ids) do
+    matching_ids = MapSet.new(matching_ids)
+
     Enum.filter(rows, fn objective ->
-      objective.resource_id in matching_ids or
+      MapSet.member?(matching_ids, objective.resource_id) or
         Enum.any?(objective.children, fn child ->
-          not is_nil(child) and child.resource_id in matching_ids
+          not is_nil(child) and MapSet.member?(matching_ids, child.resource_id)
         end)
     end)
   end
@@ -445,20 +447,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   defp filter_content_rows(rows, _model, %{selected_ids: []}), do: rows
 
   defp filter_content_rows(rows, model, selection) do
-    direct_ids = ObjectiveCoverage.objective_ids_for_pages(model, selection.page_ids)
-    visible_ids = ObjectiveCoverage.objective_scope_for_pages(model, selection.page_ids)
+    direct_ids =
+      model
+      |> ObjectiveCoverage.objective_ids_for_pages(selection.page_ids)
+      |> MapSet.new()
 
     rows
     |> Enum.filter(fn objective ->
-      objective.resource_id in visible_ids or
+      MapSet.member?(direct_ids, objective.resource_id) or
         Enum.any?(objective.children, fn child ->
-          not is_nil(child) and child.resource_id in direct_ids
+          not is_nil(child) and MapSet.member?(direct_ids, child.resource_id)
         end)
     end)
     |> Enum.map(fn objective ->
       Map.update!(objective, :children, fn children ->
         Enum.filter(children, fn child ->
-          not is_nil(child) and child.resource_id in direct_ids
+          not is_nil(child) and MapSet.member?(direct_ids, child.resource_id)
         end)
       end)
     end)
@@ -705,7 +709,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           params
         end
 
-      {:noreply, push_patch(socket, to: live_path(socket, params), replace: true)}
+      {:noreply, push_patch(socket, to: live_path(socket, params))}
     else
       _ -> {:noreply, socket}
     end
@@ -717,7 +721,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       |> Map.put("clear_course_content", true)
       |> Map.put("offset", 0)
 
-    {:noreply, push_patch(socket, to: live_path(socket, params), replace: true)}
+    {:noreply, push_patch(socket, to: live_path(socket, params))}
   end
 
   def handle_event("display_new_sub_modal", %{"slug" => slug}, socket),
