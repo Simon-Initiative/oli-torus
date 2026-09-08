@@ -292,6 +292,23 @@ defmodule Oli.LearningModel.ParameterCsvTest do
     assert export_rows(s) == original_rows
   end
 
+  test "invalid first batch stops reading before the rest of the upload is decoded", s do
+    remaining_lines =
+      Stream.map(1..1000, fn index ->
+        assert index < 1000,
+               "import eagerly consumed the entire upload before validating its first batch"
+
+        "Objective,invalid,[],1.0,\n"
+      end)
+
+    lines =
+      Stream.concat(["title,resource_id,children_ids,beta_lo,beta_difficulty\n"], remaining_lines)
+
+    assert {:error, message} = ParameterCsv.import(s.project, s.admin, lines)
+    assert message =~ "Row 2"
+    assert message =~ "invalid"
+  end
+
   test "duplicate IDs across batches roll back the entire import", s do
     rows = rows_for_count(s, 250)
     count = Repo.aggregate(Revision, :count)

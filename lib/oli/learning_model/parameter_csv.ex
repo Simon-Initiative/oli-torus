@@ -106,7 +106,7 @@ defmodule Oli.LearningModel.ParameterCsv do
           result =
             lines
             |> CSV.decode(headers: false)
-            |> Enum.with_index(1)
+            |> Stream.with_index(1)
             |> Stream.reject(fn
               {{:ok, @headers}, 1} -> true
               {_, 1} -> Repo.rollback("Row 1: expected #{Enum.join(@headers, ",")} headers.")

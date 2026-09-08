@@ -48,10 +48,22 @@ defmodule OliWeb.LearningModelParametersTest do
       ])
 
     render_upload(upload, "parameters.csv", 50)
+
+    assert has_element?(
+             view,
+             "progress[value='50'][max='100'][aria-label='Upload progress for parameters.csv']"
+           )
+
     assert has_element?(view, "#parameter-upload button[type=submit][disabled]")
     assert render_click(view, "upload") =~ "wait for the upload to finish"
 
     render_upload(upload, "parameters.csv", 50)
+
+    assert has_element?(
+             view,
+             "progress[value='100'][max='100'][aria-label='Upload progress for parameters.csv']"
+           )
+
     assert has_element?(view, "#parameter-upload button[type=submit]:not([disabled])")
 
     assert Oli.Publishing.AuthoringResolver.from_resource_id(
@@ -59,7 +71,11 @@ defmodule OliWeb.LearningModelParametersTest do
              s.objective.resource_id
            ).id == s.objective.id
 
-    assert view |> form("#parameter-upload") |> render_submit() =~ "Updated 1 resources"
+    assert view |> form("#parameter-upload") |> render_submit() =~ "Importing parameters"
+    assert render_async(view) =~ "Updated 1 resources"
+    refute has_element?(view, "[role=status]", "Importing parameters")
+    refute has_element?(view, "input[type=file][disabled]")
+    refute has_element?(view, "button", "Remove")
 
     revision =
       Oli.Publishing.AuthoringResolver.from_resource_id(s.project.slug, s.objective.resource_id)
@@ -89,7 +105,9 @@ defmodule OliWeb.LearningModelParametersTest do
       ])
 
     render_upload(upload, "bad.csv")
-    assert view |> form("#parameter-upload") |> render_submit() =~ "Row 1"
+    view |> form("#parameter-upload") |> render_submit()
+    assert render_async(view) =~ "Row 1"
+    refute has_element?(view, "input[type=file][disabled]")
 
     revision =
       Oli.Publishing.AuthoringResolver.from_resource_id(s.project.slug, s.objective.resource_id)
@@ -119,6 +137,108 @@ defmodule OliWeb.LearningModelParametersTest do
 
     assert {:error, _} = render_upload(upload, "bad.txt")
     assert render(view) =~ "Select a .csv file."
+  end
+
+  test "LiveView remains responsive and rejects duplicate imports while the task runs", s do
+    {:ok, view, _} = live(log_in_author(s.conn, s.admin), path(s.project))
+
+    csv =
+      "title,resource_id,children_ids,beta_lo,beta_difficulty\nObjective,#{s.objective.resource_id},[],1.5,\n"
+
+    upload =
+      file_input(view, "#parameter-upload", :csv, [
+        %{name: "parameters.csv", content: csv, type: "text/csv"}
+      ])
+
+    render_upload(upload, "parameters.csv")
+
+    parent = self()
+    handler = {__MODULE__, make_ref()}
+
+    :telemetry.attach(
+      handler,
+      [:oli, :repo, :query],
+      fn _, _, metadata, _ ->
+        case String.starts_with?(metadata.query, "SELECT") do
+          true ->
+            send(parent, {:import_waiting, self()})
+
+            receive do
+              :continue_import -> :ok
+            after
+              5_000 -> :ok
+            end
+
+          false ->
+            :ok
+        end
+      end,
+      nil
+    )
+
+    try do
+      assert view |> form("#parameter-upload") |> render_submit() =~ "Importing parameters"
+      assert_receive {:import_waiting, worker}, 5_000
+
+      try do
+        assert has_element?(view, "input[type=file][disabled]")
+        assert render_click(view, "upload") =~ "Importing parameters"
+        assert render_click(view, "cancel", %{"ref" => "ignored"}) =~ "Importing parameters"
+        assert render_change(view, "validate", %{}) =~ "Importing parameters"
+      after
+        :telemetry.detach(handler)
+        send(worker, :continue_import)
+      end
+
+      assert render_async(view) =~ "Updated 1 resources"
+    after
+      :telemetry.detach(handler)
+    end
+  end
+
+  test "an async import crash clears loading state and releases the upload", s do
+    Ecto.Adapters.SQL.query!(
+      Oli.Repo,
+      "UPDATE revisions SET learning_model_parameters = '{}'::jsonb WHERE id = $1",
+      [s.objective.id]
+    )
+
+    {:ok, view, _} = live(log_in_author(s.conn, s.admin), path(s.project))
+
+    csv =
+      "title,resource_id,children_ids,beta_lo,beta_difficulty\nObjective,#{s.objective.resource_id},[],1.5,\n"
+
+    upload =
+      file_input(view, "#parameter-upload", :csv, [
+        %{name: "parameters.csv", content: csv, type: "text/csv"}
+      ])
+
+    render_upload(upload, "parameters.csv")
+    view |> form("#parameter-upload") |> render_submit()
+    assert render_async(view) =~ "The import failed. Please try again."
+    refute has_element?(view, "input[type=file][disabled]")
+    refute has_element?(view, "[role=status]", "Importing parameters")
+    refute has_element?(view, "button", "Remove")
+  end
+
+  test "export failure after headers are sent ends the response and logs the failure", s do
+    # Simulate a bad persisted envelope that fails decoding during cursor iteration.
+    Ecto.Adapters.SQL.query!(
+      Oli.Repo,
+      "UPDATE revisions SET learning_model_parameters = '{}'::jsonb WHERE id = $1",
+      [s.objective.id]
+    )
+
+    conn = log_in_author(s.conn, s.admin)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        response = get(conn, "/learning_model_parameters/#{s.project.slug}/download")
+        assert response.status == 200
+        assert response.state == :chunked
+      end)
+
+    assert log =~ "Learning-model CSV export failed"
   end
 
   defp path(project), do: "/workspaces/course_author/#{project.slug}/learning_model_parameters"

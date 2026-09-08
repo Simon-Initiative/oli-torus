@@ -3,6 +3,8 @@ defmodule OliWeb.LearningModelParametersController do
 
   use OliWeb, :controller
 
+  require Logger
+
   alias Oli.Authoring.Course
   alias Oli.LearningModel.ParameterCsv
 
@@ -19,14 +21,28 @@ defmodule OliWeb.LearningModelParametersController do
         )
         |> send_chunked(200)
 
-      {:ok, conn} =
-        ParameterCsv.export(project, conn.assigns.current_author, &stream_download(conn, &1))
-
-      conn
+      try do
+        case ParameterCsv.export(project, conn.assigns.current_author, &stream_download(conn, &1)) do
+          {:ok, conn} -> conn
+          {:error, reason} -> export_failed(conn, reason)
+        end
+      rescue
+        exception -> export_failed(conn, exception)
+      end
     else
       nil -> send_resp(conn, 404, "Project not found")
       {:error, _} -> send_resp(conn, 403, "Forbidden")
     end
+  end
+
+  # Headers have already been sent. Return the chunked connection to end the
+  # response instead of trying to send a second status/body or raising MatchError.
+  defp export_failed(conn, reason) do
+    Logger.error(
+      "Learning-model CSV export failed: #{inspect(reason, limit: 10, printable_limit: 1000)}"
+    )
+
+    conn
   end
 
   defp stream_download(conn, lines) do
