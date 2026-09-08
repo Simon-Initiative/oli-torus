@@ -411,7 +411,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       assert has_element?(
                view,
-               "#course-content-title-#{page.resource_id}[tabindex='0'][aria-describedby='course-content-tooltip-#{page.resource_id}']"
+               "#course-content-checkbox-#{page.resource_id}[aria-describedby='course-content-tooltip-#{page.resource_id}']"
              )
 
       assert has_element?(

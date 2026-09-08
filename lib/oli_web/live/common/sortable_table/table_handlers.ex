@@ -154,6 +154,13 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
       defp sidebar_expanded("true"), do: true
 
       def handle_params(params, _, socket) do
+        socket =
+          if function_exported?(__MODULE__, :before_table_params, 2) do
+            apply(__MODULE__, :before_table_params, [params, socket])
+          else
+            socket
+          end
+
         offset = Params.get_int_param(params, "offset", 0)
 
         sidebar_expanded = sidebar_expanded(params["sidebar_expanded"])

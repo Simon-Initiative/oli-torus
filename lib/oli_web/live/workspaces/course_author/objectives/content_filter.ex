@@ -1,7 +1,6 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
   use OliWeb, :html
 
-  alias Oli.Resources.ResourceType
   alias OliWeb.Icons
 
   attr :nodes, :list, required: true
@@ -9,6 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
   attr :active_count, :integer, default: 0
   attr :open, :boolean, default: false
   attr :disabled, :boolean, default: false
+  attr :expanded_ids, :any, default: MapSet.new()
 
   def render(assigns) do
     assigns =
@@ -16,6 +16,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
       |> assign(:nodes_by_id, Map.new(assigns.nodes, &{&1.resource_id, &1}))
       |> assign(:root_nodes, Enum.filter(assigns.nodes, &(&1.parent_ids == [])))
       |> assign(:selected_ids, MapSet.new(assigns.selected_ids))
+      |> assign(:expanded_ids, MapSet.new(assigns.expanded_ids))
 
     ~H"""
     <div class="relative" id="course-content-filter">
@@ -74,10 +75,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
           </button>
         </div>
 
-        <div
+        <ul
           id="course-content-filter-tree"
           aria-label="Course content hierarchy"
-          class="max-h-80 overflow-y-auto pr-1"
+          class="max-h-80 list-none overflow-y-auto p-0 pr-1"
         >
           <%= for node <- @root_nodes do %>
             <.render_node
@@ -85,14 +86,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
               level={0}
               nodes_by_id={@nodes_by_id}
               selected_ids={@selected_ids}
+              expanded_ids={@expanded_ids}
               visited_ids={MapSet.new()}
               path={[node.resource_id]}
             />
           <% end %>
-          <p :if={@root_nodes == []} class="py-4 text-sm text-Text-text-medium">
+          <li :if={@root_nodes == []} class="py-4 text-sm text-Text-text-medium">
             No course content available.
-          </p>
-        </div>
+          </li>
+        </ul>
       </div>
     </div>
     """
@@ -104,6 +106,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
   attr :selected_ids, :any, required: true
   attr :visited_ids, :any, required: true
   attr :path, :list, required: true
+  attr :expanded_ids, :any, required: true
 
   def render_node(assigns) do
     children =
@@ -114,7 +117,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
 
     selected = MapSet.member?(assigns.selected_ids, assigns.node.resource_id)
     expandable? = children != []
-    type = ResourceType.get_type_by_id(assigns.node.resource_type_id)
     visited_ids = MapSet.put(assigns.visited_ids, assigns.node.resource_id)
 
     assigns =
@@ -122,7 +124,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
         children: children,
         selected: selected,
         expandable?: expandable?,
-        type: type,
         visited_ids: visited_ids,
         dom_id: Enum.join(assigns.path, "-"),
         tooltip_id: "course-content-tooltip-#{Enum.join(assigns.path, "-")}"
@@ -130,18 +131,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
 
     ~H"""
     <%= if @expandable? do %>
-      <div id={"course-content-node-#{@dom_id}"} class="grid grid-cols-[minmax(0,1fr)_1.5rem]">
+      <li id={"course-content-node-#{@dom_id}"} class="grid grid-cols-[minmax(0,1fr)_1.5rem]">
         <.render_node_selector
           node={@node}
           selected={@selected}
-          type={@type}
           dom_id={@dom_id}
           tooltip_id={@tooltip_id}
         />
-        <details open={@level == 0} class="contents group">
+        <details open={MapSet.member?(@expanded_ids, @node.resource_id)} class="contents group">
           <summary
             class="col-start-2 row-start-1 flex size-6 list-none items-center justify-center rounded marker:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
             aria-label={"Expand #{@node.title}"}
+            phx-click="toggle_course_content_node"
+            phx-value-resource_id={@node.resource_id}
           >
             <Icons.chevron_down
               width="9.5"
@@ -150,49 +152,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
               class="text-Icon-icon-default transition-transform group-open:rotate-180"
             />
           </summary>
-          <div class="col-span-2 row-start-2 ml-5 border-l border-Border-border-default pl-2">
+          <ul
+            :if={MapSet.member?(@expanded_ids, @node.resource_id)}
+            class="col-span-2 row-start-2 m-0 ml-5 list-none border-l border-Border-border-default p-0 pl-2"
+          >
             <%= for child <- @children do %>
               <.render_node
                 node={child}
                 level={@level + 1}
                 nodes_by_id={@nodes_by_id}
                 selected_ids={@selected_ids}
+                expanded_ids={@expanded_ids}
                 visited_ids={@visited_ids}
                 path={@path ++ [child.resource_id]}
               />
             <% end %>
-          </div>
+          </ul>
         </details>
-      </div>
+      </li>
     <% else %>
-      <div id={"course-content-node-#{@dom_id}"} class="grid grid-cols-[minmax(0,1fr)_1.5rem]">
+      <li id={"course-content-node-#{@dom_id}"} class="grid grid-cols-[minmax(0,1fr)_1.5rem]">
         <.render_node_selector
           node={@node}
           selected={@selected}
-          type={@type}
           dom_id={@dom_id}
           tooltip_id={@tooltip_id}
         />
-      </div>
+      </li>
     <% end %>
     """
   end
 
   attr :node, :map, required: true
   attr :selected, :boolean, required: true
-  attr :type, :any, required: true
   attr :dom_id, :string, required: true
   attr :tooltip_id, :string, required: true
 
   def render_node_selector(assigns) do
     ~H"""
-    <div class="col-start-1 row-start-1 flex min-w-0 items-center gap-2 py-1.5 pl-1">
+    <div class="group/row col-start-1 row-start-1 flex min-w-0 items-center gap-2 py-1.5 pl-1">
       <input
         id={"course-content-checkbox-#{@dom_id}"}
         type="checkbox"
         checked={if @selected, do: "checked", else: nil}
         aria-checked={to_string(@selected)}
         aria-label={"Select #{@node.title}"}
+        aria-describedby={@tooltip_id}
         phx-click="toggle_course_content_item"
         phx-value-resource_id={@node.resource_id}
         class="size-4 shrink-0 rounded border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
@@ -200,15 +205,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
       <label
         for={"course-content-checkbox-#{@dom_id}"}
         id={"course-content-title-#{@dom_id}"}
-        class="group/title relative min-h-6 min-w-0 flex-1 truncate rounded text-sm text-Text-text-high focus:outline-none focus-visible:ring-2 focus-visible:ring-Fill-Buttons-fill-primary"
-        tabindex="0"
-        aria-describedby={@tooltip_id}
+        class="group/title relative min-h-6 min-w-0 flex-1 truncate rounded text-sm text-Text-text-high"
       >
         <span class="block truncate" title={@node.title}>{@node.title}</span>
         <span
           id={@tooltip_id}
           role="tooltip"
-          class="pointer-events-none absolute bottom-full left-0 z-20 mb-1 hidden max-w-72 rounded border border-Border-border-default bg-Background-bg-secondary px-2 py-1 text-xs font-normal leading-4 text-Text-text-high shadow-[0px_2px_4px_rgba(0,52,99,0.10)] group-hover/title:block group-focus/title:block"
+          class="pointer-events-none absolute bottom-full left-0 z-20 mb-1 hidden max-w-72 rounded border border-Border-border-default bg-Background-bg-secondary px-2 py-1 text-xs font-normal leading-4 text-Text-text-high shadow-[0px_2px_4px_rgba(0,52,99,0.10)] group-hover/title:block group-focus-within/row:block"
         >
           {@node.title}
         </span>
