@@ -72,6 +72,9 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       # Section from product action
       {:ok, duplicate} = Blueprint.duplicate(blueprint, section_params)
 
+      assert duplicate.section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
+
       # Grab graded pages and its section_resources (only 1 at this moment)
       [{page_revision_duplicate, sr_page_duplicate}] =
         DeliveryResolver.graded_pages_revisions_and_section_resources(duplicate.slug)
@@ -199,6 +202,10 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert duplicate.skip_email_verification == true
       assert duplicate.registration_open == true
       assert duplicate.requires_enrollment == true
+
+      assert duplicate.section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
+
       refute duplicate.id == section.id
       refute duplicate.slug == section.slug
       refute duplicate.root_section_resource_id == section.root_section_resource_id
