@@ -3754,6 +3754,94 @@ defmodule Oli.Delivery.SectionsTest do
       assert updated_activity.attempts == 3
       assert_in_delta updated_activity.percent_correct, 66.67, 0.1
     end
+
+    test "reports section-wide summary counts once for an activity placed on several pages", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities
+    } do
+      activity = activities.page_1_mcq_1
+
+      # Deliver two extra pages that both reference the same activity, so it resolves through
+      # more than one page context.
+      host_pages =
+        for title <- ["First host page", "Second host page"] do
+          page =
+            insert(:revision,
+              resource_type_id: ResourceType.id_for_page(),
+              title: title,
+              activity_refs: [activity.resource_id],
+              graded: false
+            )
+
+          insert(:section_resource,
+            section: section,
+            project: section.base_project,
+            resource_id: page.resource_id,
+            revision_id: page.id,
+            resource_type_id: ResourceType.id_for_page(),
+            hidden: false
+          )
+
+          page
+        end
+
+      Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+        section.id
+      )
+
+      # A single section-wide summary row holds the totals for the activity. `ResourceSummary`
+      # is scoped to the section and not to the page, so it must be read once per activity:
+      # reading it once per containing page and summing would report twice these counts.
+      Oli.Repo.insert!(%Oli.Analytics.Summary.ResourceSummary{
+        project_id: -1,
+        section_id: section.id,
+        user_id: -1,
+        resource_id: activity.resource_id,
+        part_id: "1",
+        num_attempts: 10,
+        num_correct: 4
+      })
+
+      part_response =
+        Oli.Repo.insert!(%Oli.Analytics.Summary.ResourcePartResponse{
+          resource_id: activity.resource_id,
+          part_id: "1",
+          response: "choice_a",
+          label: "A"
+        })
+
+      # Response rows are what tie an activity to a page, so one per host page is required for
+      # the page-scoped summary lookup to resolve this activity at all.
+      for page <- host_pages do
+        Oli.Repo.insert!(%Oli.Analytics.Summary.ResponseSummary{
+          project_id: -1,
+          section_id: section.id,
+          page_id: page.resource_id,
+          activity_id: activity.resource_id,
+          part_id: "1",
+          resource_part_response_id: part_response.id,
+          count: 1
+        })
+      end
+
+      contexts =
+        LinkedActivities.resolve_context(section.id, objective_a.resource_id)
+        |> elem(1)
+        |> Map.fetch!(:activity_page_contexts)
+        |> Map.get(activity.resource_id, [])
+
+      assert length(contexts) > 1,
+             "expected more than one page context, got #{length(contexts)}"
+
+      row =
+        LinkedActivities.get_activities_for_objective(section, objective_a.resource_id)
+        |> Enum.find(&(&1.resource_id == activity.resource_id))
+
+      assert row.attempts == 10, "section-wide attempts were counted more than once"
+      assert row.percent_correct == 40.0
+    end
   end
 
   describe "get_objectives_and_subobjectives/2" do

@@ -103,19 +103,6 @@ defmodule Oli.Delivery.Sections.LinkedActivitiesTest do
     assert row.has_lti_activity
   end
 
-  test "groups activities by containing page for batched summary loads" do
-    contexts = %{
-      4 => [%{page_resource_id: 100}, %{page_resource_id: 200}],
-      5 => [%{page_resource_id: 100}],
-      6 => []
-    }
-
-    assert LinkedActivities.activity_page_groups([4, 5, 6], contexts) == %{
-             100 => [4, 5],
-             200 => [4]
-           }
-  end
-
   test "telemetry metadata is allow-listed" do
     metadata =
       LinkedActivities.telemetry_metadata(:load, %{

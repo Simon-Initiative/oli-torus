@@ -14,7 +14,6 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   import Ecto.Query
 
   alias Oli.Activities
-  alias Oli.Analytics.Summary
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections.SectionResourceDepot
@@ -191,10 +190,26 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   percent-correct aggregated across every eligible page the activity appears on.
   """
   def get_activities_for_objective(section, selected_objective_id) do
+    started_at = System.monotonic_time()
+
     with {:ok, context} <-
            resolve_context(section.id, selected_objective_id) do
       activity_ids = context.activity_ids
-      metrics_by_id = activity_metrics(section.id, activity_ids, context.activity_page_contexts)
+
+      :telemetry.execute(
+        [:oli, :delivery, :linked_activities, :load],
+        %{duration: System.monotonic_time() - started_at},
+        telemetry_metadata(:load, %{
+          section_id: section.id,
+          objective_id: selected_objective_id,
+          objective_count: length(context.objective_ids),
+          activity_count: length(activity_ids),
+          page_group_count: map_size(context.activity_page_contexts),
+          outcome: :ok
+        })
+      )
+
+      metrics_by_id = activity_metrics(section.id, activity_ids)
       lti_activity_type_ids = Activities.list_lti_activity_registrations() |> Enum.map(& &1.id)
 
       revisions_by_id =
@@ -309,44 +324,30 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
     )
   end
 
-  defp activity_metrics(_section_id, [], _contexts), do: %{}
+  defp activity_metrics(_section_id, []), do: %{}
 
-  defp activity_metrics(section_id, activity_ids, activity_page_contexts) do
+  defp activity_metrics(section_id, activity_ids) do
     started_at = System.monotonic_time()
 
-    page_groups = activity_page_groups(activity_ids, activity_page_contexts)
-
+    # `ResourceSummary` rows scoped with `user_id == -1` and `project_id == -1` are already
+    # aggregated across the whole section, so a single row covers every page an activity
+    # appears on. They must be read once per activity: reading them once per containing page
+    # and summing would count the same section-wide totals repeatedly. The accumulation that
+    # remains is across `part_id`, since a multi-part activity has one row per part.
     metrics_by_id =
-      page_groups
-      |> Enum.reduce(%{}, fn {page_id, page_activity_ids}, metrics_by_id ->
-        Summary.summarize_activities_for_page(section_id, page_id, page_activity_ids)
-        |> Enum.reduce(metrics_by_id, fn %ResourceSummary{} = summary, acc ->
-          add_counts(acc, summary.resource_id, summary.num_attempts, summary.num_correct)
-        end)
+      from(summary in ResourceSummary,
+        where:
+          summary.section_id == ^section_id and summary.project_id == -1 and
+            summary.user_id == -1 and summary.resource_id in ^activity_ids
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn summary, acc ->
+        add_counts(acc, summary.resource_id, summary.num_attempts, summary.num_correct)
       end)
 
-    missing_ids = activity_ids -- Map.keys(metrics_by_id)
+    fallback_ids = activity_ids -- Map.keys(metrics_by_id)
 
-    metrics_by_id =
-      if missing_ids == [] do
-        metrics_by_id
-      else
-        summary_metrics =
-          from(summary in ResourceSummary,
-            where:
-              summary.section_id == ^section_id and summary.project_id == -1 and
-                summary.user_id == -1 and summary.resource_id in ^missing_ids
-          )
-          |> Repo.all()
-          |> Enum.reduce(%{}, fn summary, acc ->
-            add_counts(acc, summary.resource_id, summary.num_attempts, summary.num_correct)
-          end)
-
-        fallback_ids = missing_ids -- Map.keys(summary_metrics)
-
-        Map.merge(summary_metrics, activity_attempt_fallback(section_id, fallback_ids))
-        |> Map.merge(metrics_by_id)
-      end
+    metrics_by_id = Map.merge(activity_attempt_fallback(section_id, fallback_ids), metrics_by_id)
 
     metrics_by_id =
       Map.merge(Map.new(activity_ids, &{&1, %{attempts: 0, correct: 0}}), metrics_by_id)
@@ -368,7 +369,6 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
       telemetry_metadata(:summary_load, %{
         section_id: section_id,
         activity_count: length(activity_ids),
-        page_group_count: map_size(page_groups),
         outcome: :ok
       })
     )
@@ -401,21 +401,6 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
     |> Map.new(fn {resource_id, attempts} ->
       correct = Enum.count(attempts, &(&1.score && &1.out_of && &1.score == &1.out_of))
       {resource_id, %{attempts: length(attempts), correct: correct}}
-    end)
-  end
-
-  def activity_page_groups(activity_ids, activity_page_contexts) do
-    Enum.reduce(activity_ids, %{}, fn activity_id, groups ->
-      Enum.reduce(Map.get(activity_page_contexts, activity_id, []), groups, fn context, groups ->
-        page_id = context.page_resource_id
-        Map.update(groups, page_id, [activity_id], &[activity_id | &1])
-      end)
-    end)
-    |> Map.new(fn {page_id, ids} ->
-      {page_id,
-       ids
-       |> Enum.uniq()
-       |> Enum.sort_by(&Enum.find_index(activity_ids, fn id -> id == &1 end))}
     end)
   end
 
