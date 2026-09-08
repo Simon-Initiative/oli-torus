@@ -208,6 +208,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       assert has_element?(view, "div.alert-info", "Project updated successfully.")
       assert Course.get_project_by_slug(project.slug).description == updated_description
+
+      shortened_description = String.duplicate("b", 300)
+
+      element(view, "form[phx-submit='update']")
+      |> render_submit(%{"project" => %{"description" => shortened_description}})
+
+      assert has_element?(
+               view,
+               ~s(textarea[name="project[description]"][maxlength="300"])
+             )
     end
 
     test "publisher dropdown displays publishers sorted alphabetically", %{

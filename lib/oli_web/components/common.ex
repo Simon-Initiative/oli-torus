@@ -10,10 +10,10 @@ defmodule OliWeb.Components.Common do
   @description_character_limit 300
 
   @doc """
-  Returns the authoring character limit for a saved description.
+  Returns the `maxlength` value for an authored description.
 
-  Legacy descriptions that already exceed the limit are grandfathered so they can
-  continue to be edited without blocking related project and section operations.
+  Returning `nil` for a saved description that already exceeds the limit omits the
+  HTML constraint and preserves that legacy content until it is shortened.
   """
   @spec description_maxlength(String.t() | nil) :: pos_integer() | nil
   def description_maxlength(description) when is_binary(description) do
@@ -23,7 +23,7 @@ defmodule OliWeb.Components.Common do
     end
   end
 
-  def description_maxlength(_description), do: @description_character_limit
+  def description_maxlength(nil), do: @description_character_limit
 
   def not_found(assigns) do
     ~H"""
