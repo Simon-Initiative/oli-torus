@@ -16,7 +16,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.ScopedFeatureFlags
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Modal, Overview}
-  alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
+  alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter, LearningProficiency}
   alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Common.StripedPagedTable
@@ -78,6 +78,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           Activities.selected_activities_for_project(project.id, is_admin?),
         is_admin: is_admin?,
         changeset: Project.changeset(project),
+        confirming_framework_upgrade: false,
+        framework_confirmation: "",
         latest_published_publication: latest_published_publication,
         publishers: Inventories.list_publishers(),
         resource_title: project.title,
@@ -458,6 +460,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         session: %{"project_slug" => @project.slug, "current_author_id" => @current_author.id}
       )}
 
+      <LearningProficiency.settings
+        project={@project}
+        confirming={@confirming_framework_upgrade}
+        confirmation={@framework_confirmation}
+      />
+
       <Overview.section
         title="AI Activation Points"
         description="Enable AI activation points for your project to include in your curriculum."
@@ -835,6 +843,61 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         socket
       ) do
     {:noreply, socket |> assign(custom_license: license_type === "custom")}
+  end
+
+  def handle_event("show_framework_upgrade", _, socket) do
+    case socket.assigns.project.learning_model_version do
+      :naive ->
+        {:noreply, assign(socket, confirming_framework_upgrade: true, framework_confirmation: "")}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_framework_upgrade", _, socket) do
+    {:noreply, assign(socket, confirming_framework_upgrade: false, framework_confirmation: "")}
+  end
+
+  def handle_event("validate_framework_upgrade", %{"confirmation" => confirmation}, socket) do
+    {:noreply, assign(socket, framework_confirmation: confirmation)}
+  end
+
+  def handle_event(
+        "upgrade_framework",
+        %{"confirmation" => "Update Framework"},
+        %{assigns: %{confirming_framework_upgrade: true}} = socket
+      ) do
+    case Course.upgrade_learning_model(socket.assigns.project, socket.assigns.current_author) do
+      {:ok, updated} ->
+        project = %{
+          socket.assigns.project
+          | learning_model_version: updated.learning_model_version,
+            updated_at: updated.updated_at
+        }
+
+        {:noreply,
+         socket
+         |> assign(
+           project: project,
+           changeset: Project.changeset(project),
+           confirming_framework_upgrade: false,
+           framework_confirmation: ""
+         )
+         |> put_flash(:info, "Learning proficiency framework updated successfully.")}
+
+      {:error, _} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "The learning proficiency framework could not be updated. Please reload the page and try again."
+         )}
+    end
+  end
+
+  def handle_event("upgrade_framework", _, socket) do
+    {:noreply, put_flash(socket, :error, "Please type Update Framework to confirm.")}
   end
 
   def handle_event("update", %{"project" => project_params}, socket) do

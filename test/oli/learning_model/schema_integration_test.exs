@@ -58,13 +58,13 @@ defmodule Oli.LearningModel.SchemaIntegrationTest do
       assert get_change(section_changeset, :analytics_version) == :v1
     end
 
-    test "Ecto and ordinary Project creation defaults remain naive" do
+    test "new projects use LKT-AOA while schema defaults preserve legacy compatibility" do
       assert %Project{}.learning_model_version == :naive
       assert %Section{}.learning_model_version == :naive
 
       author = insert(:author)
-      assert {:ok, %{project: project}} = Course.create_project("Naive project", author)
-      assert project.learning_model_version == :naive
+      assert {:ok, %{project: project}} = Course.create_project("New project", author)
+      assert project.learning_model_version == :lkt_aoa
     end
   end
 
