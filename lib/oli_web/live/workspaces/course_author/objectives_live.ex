@@ -150,8 +150,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             id="objectives-filter-controls"
             class="order-2 flex min-w-0 flex-wrap items-center gap-2 @[1024px]:order-1 @[1024px]:flex-1 @[1024px]:flex-nowrap"
           >
-            <div class="flex shrink-0 items-center gap-2">
-              <div class="w-56 shrink-0">
+            <div class="flex w-full min-w-0 flex-col gap-2 @[520px]:w-auto @[520px]:flex-row @[520px]:items-center">
+              <div class="w-full min-w-0 @[520px]:w-56 @[520px]:shrink-0">
                 <.form for={%{}} id="objectives-search-form" phx-change="apply_search">
                   <SearchInput.render
                     id="objectives-search"
@@ -166,13 +166,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
               <form
                 id="sort"
                 phx-change="sort"
-                class="flex h-[38px] shrink-0 items-center gap-2"
+                class="flex h-[38px] w-full min-w-0 items-center gap-2 @[520px]:w-auto @[520px]:shrink-0"
               >
                 <label for="select_sort" class="sr-only">Sort objectives</label>
                 <select
                   name="sort_by"
                   id="select_sort"
-                  class="h-[38px] min-w-[210px] rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                  class="h-[38px] min-w-0 flex-1 rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary @[520px]:min-w-[210px]"
                 >
                   <%= for column_spec <- @table_model.column_specs do %>
                     <%= if column_spec.name != :action do %>
@@ -239,7 +239,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                   type="button"
                   id="coverage-settings-trigger"
                   phx-click={
-                    CoverageSettingsPopover.toggle_js(
+                    CoverageSettingsPopover.open_js(
                       "coverage-settings-popover",
                       "coverage-settings-trigger"
                     )
@@ -254,6 +254,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                 </button>
                 <CoverageSettingsPopover.coverage_settings_popover
                   id="coverage-settings-popover"
+                  trigger_id="coverage-settings-trigger"
                   formative_threshold={
                     ProjectAttributes.coverage_thresholds(@project.attributes).formative
                   }

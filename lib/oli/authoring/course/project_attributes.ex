@@ -3,6 +3,12 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
   import Ecto.Changeset
   alias __MODULE__
 
+  @default_coverage_threshold 3
+  @coverage_threshold_fields [
+    :coverage_formative_threshold,
+    :coverage_summative_threshold
+  ]
+
   @derive Jason.Encoder
   @primary_key false
   embedded_schema do
@@ -10,8 +16,8 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
     field :learning_language, :string
     embeds_one :license, ProjectAttributes.License
     field :calculate_embeddings_on_publish, :boolean, default: false
-    field :coverage_formative_threshold, :integer, default: 3
-    field :coverage_summative_threshold, :integer, default: 3
+    field :coverage_formative_threshold, :integer, default: @default_coverage_threshold
+    field :coverage_summative_threshold, :integer, default: @default_coverage_threshold
   end
 
   @type module_struct_or_changeset_type :: %ProjectAttributes{} | %Ecto.Changeset{}
@@ -24,6 +30,7 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
       :coverage_formative_threshold,
       :coverage_summative_threshold
     ])
+    |> validate_required(@coverage_threshold_fields)
     |> validate_number(:coverage_formative_threshold, greater_than_or_equal_to: 0)
     |> validate_number(:coverage_summative_threshold, greater_than_or_equal_to: 0)
     |> cast_embed(:license, required: false)
@@ -37,12 +44,14 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
           formative: non_neg_integer(),
           summative: non_neg_integer()
         }
-  def coverage_thresholds(nil), do: %{formative: 3, summative: 3}
+  def coverage_thresholds(nil) do
+    %{formative: @default_coverage_threshold, summative: @default_coverage_threshold}
+  end
 
   def coverage_thresholds(%ProjectAttributes{} = attributes) do
     %{
-      formative: attributes.coverage_formative_threshold,
-      summative: attributes.coverage_summative_threshold
+      formative: attributes.coverage_formative_threshold || @default_coverage_threshold,
+      summative: attributes.coverage_summative_threshold || @default_coverage_threshold
     }
   end
 end

@@ -55,7 +55,7 @@ Guardrails:
 
 - Goal: create the authoritative, testable thresholds and issue data without coupling domain rules to LiveView rendering.
 - Tasks:
-  - [x] Add bounded formative and summative threshold fields, defaults, and validation to `Oli.Authoring.Course.ProjectAttributes`.
+  - [x] Add non-negative formative and summative threshold fields, defaults, and validation to `Oli.Authoring.Course.ProjectAttributes`.
   - [x] Extend the authorized project update path so both fields persist atomically in `projects.attributes` and projects without keys continue to read defaults.
   - [x] Implement a small pure classifier that accepts direct coverage counts and thresholds and returns formative, summative, and any-issue state.
   - [x] Build parent rollup data from the loaded `ObjectiveCoverage` graph so parent issue state includes direct and descendant evidence while child markers retain their direct reason.

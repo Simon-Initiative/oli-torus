@@ -12,7 +12,7 @@ requirements:
         status: "verified"
         verification_method: "automated"
         proofs:
-          - "test/oli/authoring/course/project_attributes_test.exs: default and bounded threshold coverage"
+          - "test/oli/authoring/course/project_attributes_test.exs: default and non-negative threshold coverage"
           - "test/oli/authoring/objective_coverage/issues_test.exs: direct formative, summative, both, and healthy classification"
       - id: "AC-002"
         title: "Parent results include issues found on descendant sub-objectives"

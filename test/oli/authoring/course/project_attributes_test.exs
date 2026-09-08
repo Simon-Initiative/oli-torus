@@ -36,6 +36,17 @@ defmodule Oli.Authoring.Course.ProjectAttributesTest do
              errors_on(changeset)
   end
 
+  test "requires both coverage thresholds" do
+    changeset =
+      ProjectAttributes.changeset(%ProjectAttributes{}, %{
+        coverage_formative_threshold: nil,
+        coverage_summative_threshold: nil
+      })
+
+    assert %{coverage_formative_threshold: ["can't be blank"]} = errors_on(changeset)
+    assert %{coverage_summative_threshold: ["can't be blank"]} = errors_on(changeset)
+  end
+
   describe "coverage_thresholds/1" do
     test "reads the persisted thresholds" do
       attributes = %ProjectAttributes{
@@ -48,6 +59,15 @@ defmodule Oli.Authoring.Course.ProjectAttributesTest do
 
     test "defaults to 3/3 for a project with no attributes embed" do
       assert ProjectAttributes.coverage_thresholds(nil) == %{formative: 3, summative: 3}
+    end
+
+    test "normalizes explicitly nil legacy thresholds without discarding valid values" do
+      attributes = %ProjectAttributes{
+        coverage_formative_threshold: nil,
+        coverage_summative_threshold: 5
+      }
+
+      assert ProjectAttributes.coverage_thresholds(attributes) == %{formative: 3, summative: 5}
     end
   end
 end

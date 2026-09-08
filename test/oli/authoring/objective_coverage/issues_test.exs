@@ -111,6 +111,35 @@ defmodule Oli.Authoring.ObjectiveCoverage.IssuesTest do
       assert %{formative_issue: true, direct_formative_issue: true} = issues[4]
     end
 
+    test "propagates each newly learned issue flag through shared ancestors" do
+      model = %{
+        objectives_by_id: %{1 => %{}, 2 => %{}, 3 => %{}, 4 => %{}},
+        parents_by_child: %{2 => [1], 3 => [2], 4 => [2]},
+        coverage_by_objective: %{
+          1 => %{formative_activity_count: 3, summative_activity_count: 3},
+          2 => %{formative_activity_count: 3, summative_activity_count: 3},
+          3 => %{formative_activity_count: 2, summative_activity_count: 3},
+          4 => %{formative_activity_count: 3, summative_activity_count: 2}
+        }
+      }
+
+      issues = Issues.classify_all(model)
+
+      assert %{
+               formative_issue: true,
+               summative_issue: true,
+               direct_formative_issue: false,
+               direct_summative_issue: false
+             } = issues[1]
+
+      assert %{
+               formative_issue: true,
+               summative_issue: true,
+               direct_formative_issue: false,
+               direct_summative_issue: false
+             } = issues[2]
+    end
+
     test "raises when an objective is missing from coverage_by_objective" do
       model = %{
         objectives_by_id: %{1 => %{}, 2 => %{}},

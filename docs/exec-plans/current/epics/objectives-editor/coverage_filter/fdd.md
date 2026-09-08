@@ -44,7 +44,7 @@ Project thresholds survive reloads and are shared by authorized authors. Transie
 
 ## 5. Interfaces
 
-- `ProjectAttributes.changeset/2` accepts bounded integer thresholds.
+- `ProjectAttributes.changeset/2` accepts non-negative integer thresholds.
 - a pure issue-classification interface accepts coverage counts and thresholds and returns formative/summative/any-issue flags.
 - LiveView events update settings or active filter and patch using the shared table handler contract.
 

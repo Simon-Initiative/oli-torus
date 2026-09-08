@@ -50,32 +50,51 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
       html = render_popover()
 
       assert html =~ "hidden"
+      assert html =~ "phx-window-keydown"
+      assert html =~ ~s(phx-key="Escape")
+      assert html =~ ~s(id="coverage-settings-popover-focus-wrap")
+      refute html =~ ~r/\sphx-keydown=/
       refute html =~ "phx-click-away"
     end
   end
 
-  describe "toggle_js/2 and close_js/2" do
-    test "both target the popover and its trigger" do
-      toggle = CoverageSettingsPopover.toggle_js("pop", "trig").ops |> Jason.encode!()
+  describe "open_js/2 and close_js/3" do
+    test "opening targets the popover and trigger, then moves focus inside" do
+      open = CoverageSettingsPopover.open_js("pop", "trig").ops |> Jason.encode!()
 
-      assert toggle =~ ~s("toggle")
-      assert toggle =~ ~s("#pop")
-      assert toggle =~ ~s("#trig")
-      assert toggle =~ ~s(["aria-expanded","true","false"])
+      assert open =~ ~s("show")
+      assert open =~ ~s("#pop")
+      assert open =~ ~s("#trig")
+      assert open =~ ~s(["aria-expanded","true"])
+      assert open =~ ~s("push_focus")
+      assert open =~ ~s("focus_first")
+    end
 
+    test "closing can restore focus to the trigger for keyboard dismissal" do
       close = CoverageSettingsPopover.close_js("pop", "trig").ops |> Jason.encode!()
 
       assert close =~ ~s("hide")
       assert close =~ ~s("#pop")
       assert close =~ ~s("set_attr")
       assert close =~ ~s(["aria-expanded","false"])
+      refute close =~ ~s("focus")
+
+      close_and_restore =
+        CoverageSettingsPopover.close_js("pop", "trig", true).ops |> Jason.encode!()
+
+      assert close_and_restore =~ ~s("pop_focus")
     end
   end
 
   defp render_popover(overrides \\ %{}) do
     assigns =
       Map.merge(
-        %{id: "coverage-settings-popover", formative_threshold: 3, summative_threshold: 3},
+        %{
+          id: "coverage-settings-popover",
+          trigger_id: "coverage-settings-trigger",
+          formative_threshold: 3,
+          summative_threshold: 3
+        },
         overrides
       )
 

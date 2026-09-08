@@ -78,11 +78,16 @@ defmodule Oli.Authoring.ObjectiveCoverage.Issues do
         {objective_id, classify(coverage, thresholds)}
       end)
 
-    model.objectives_by_id
-    |> Map.keys()
-    |> Enum.reduce(direct_issues, fn objective_id, issues ->
-      propagate_to_parents(objective_id, model.parents_by_child, issues, MapSet.new())
-    end)
+    queue =
+      model.objectives_by_id
+      |> Map.keys()
+      |> Enum.reduce(:queue.new(), fn objective_id, queue ->
+        issue = Map.fetch!(direct_issues, objective_id)
+
+        if issue.any_issue, do: :queue.in(objective_id, queue), else: queue
+      end)
+
+    propagate_to_parents(queue, model.parents_by_child, direct_issues)
   end
 
   @doc """
@@ -119,34 +124,47 @@ defmodule Oli.Authoring.ObjectiveCoverage.Issues do
   end
 
   @spec propagate_to_parents(
-          pos_integer(),
+          :queue.queue(pos_integer()),
           %{pos_integer() => [pos_integer()]},
-          %{pos_integer() => issue()},
-          MapSet.t(pos_integer())
+          %{pos_integer() => issue()}
         ) :: %{pos_integer() => issue()}
-  defp propagate_to_parents(objective_id, parents_by_child, issues, visited) do
-    if MapSet.member?(visited, objective_id) do
-      issues
-    else
-      issue = Map.fetch!(issues, objective_id)
-      visited = MapSet.put(visited, objective_id)
+  defp propagate_to_parents(queue, parents_by_child, issues) do
+    case :queue.out(queue) do
+      {:empty, _queue} ->
+        issues
 
-      Enum.reduce(Map.get(parents_by_child, objective_id, []), issues, fn parent_id, issues ->
-        updated_issues =
-          Map.update!(issues, parent_id, fn parent_issue ->
-            formative_issue = parent_issue.formative_issue or issue.formative_issue
-            summative_issue = parent_issue.summative_issue or issue.summative_issue
+      {{:value, objective_id}, queue} ->
+        issue = Map.fetch!(issues, objective_id)
 
-            %{
-              parent_issue
-              | formative_issue: formative_issue,
-                summative_issue: summative_issue,
-                any_issue: formative_issue or summative_issue
-            }
-          end)
+        {queue, issues} =
+          Enum.reduce(
+            Map.get(parents_by_child, objective_id, []),
+            {queue, issues},
+            fn parent_id, {queue, issues} ->
+              parent_issue = Map.fetch!(issues, parent_id)
+              updated_parent_issue = merge_descendant_issue(parent_issue, issue)
 
-        propagate_to_parents(parent_id, parents_by_child, updated_issues, visited)
-      end)
+              if updated_parent_issue == parent_issue do
+                {queue, issues}
+              else
+                {:queue.in(parent_id, queue), Map.put(issues, parent_id, updated_parent_issue)}
+              end
+            end
+          )
+
+        propagate_to_parents(queue, parents_by_child, issues)
     end
+  end
+
+  defp merge_descendant_issue(parent_issue, descendant_issue) do
+    formative_issue = parent_issue.formative_issue or descendant_issue.formative_issue
+    summative_issue = parent_issue.summative_issue or descendant_issue.summative_issue
+
+    %{
+      parent_issue
+      | formative_issue: formative_issue,
+        summative_issue: summative_issue,
+        any_issue: formative_issue or summative_issue
+    }
   end
 end

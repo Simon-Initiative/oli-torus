@@ -264,6 +264,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "#select_sort")
       assert has_element?(view, "button[phx-click='display_new_modal']", "New Objective")
 
+      toolbar = render(element(view, "#objectives-toolbar"))
+
+      assert toolbar =~ "@[520px]:flex-row"
+      assert toolbar =~ "@[520px]:min-w-[210px]"
+      assert toolbar =~ "w-full min-w-0 flex-col"
+
       assert has_element?(
                view,
                "p.text-Text-text-high",
@@ -1927,6 +1933,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
 
       refute render(element(view, "#coverage-settings-popover")) =~ "phx-click-away"
       assert has_element?(view, "[phx-click-away] > #coverage-settings-trigger")
+      assert has_element?(view, "#coverage-settings-popover[phx-key='Escape']")
+      assert has_element?(view, "#coverage-settings-popover-focus-wrap")
     end
 
     test "incrementing the formative threshold persists it and re-flags an objective at the boundary",
