@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Proficiency.Naive do
   alias Oli.Delivery.Proficiency.{Aggregate, Estimate, ScopeMembership, Telemetry}
   alias Oli.Delivery.Sections.ContainedPage
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Repo
   alias Oli.Resources.ResourceType
 
@@ -50,7 +51,15 @@ defmodule Oli.Delivery.Proficiency.Naive do
     {:ok, ids}
   end
 
+  @doc "Returns learners with evidence on the requested objectives or their effective children."
   def user_ids_for_objectives(%Section{id: section_id}, objective_ids) do
+    objective_ids =
+      section_id
+      |> objective_evidence_ids(objective_ids)
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.uniq()
+
     objective_type_id = ResourceType.id_for_objective()
 
     ids =
@@ -291,7 +300,13 @@ defmodule Oli.Delivery.Proficiency.Naive do
     end
   end
 
-  @doc "Bulk-reads canonical naive estimates for the requested learners and objectives."
+  @doc """
+  Bulk-reads naive estimates, combining each objective's own evidence with its effective children.
+
+  First-attempt counts weight the combined score, and the minimum evidence threshold is
+  applied after aggregation. An activity tagged to both parent and child contributes via
+  both summary rows, matching the dashboard's parent-objective aggregation rule.
+  """
   def estimates_for_objectives(%Section{id: section_id}, user_ids, objective_ids, _opts) do
     user_ids = normalize_ids(user_ids)
     objective_ids = normalize_ids(objective_ids)
@@ -301,14 +316,24 @@ defmodule Oli.Delivery.Proficiency.Naive do
       :direct_objective,
       %{requested_user_count: length(user_ids), requested_objective_count: length(objective_ids)},
       fn ->
-        rows = read_summaries(section_id, user_ids, objective_ids)
+        evidence_ids = objective_evidence_ids(section_id, objective_ids)
+        all_ids = evidence_ids |> Map.values() |> List.flatten() |> Enum.uniq()
+        rows = read_summaries(section_id, user_ids, all_ids)
 
         {entries, counts} =
           Enum.reduce(objective_ids, {%{}, Telemetry.empty_counts()}, fn objective_id,
                                                                          {entries, counts} ->
             {learner_entries, counts} =
               Enum.reduce(user_ids, {%{}, counts}, fn user_id, {learner_entries, counts} ->
-                values = Map.get(rows, {user_id, objective_id})
+                values =
+                  Enum.reduce(evidence_ids[objective_id], {0, 0}, fn resource_id,
+                                                                     {correct, attempts} ->
+                    {resource_correct, resource_attempts} =
+                      Map.get(rows, {user_id, resource_id}, {0, 0})
+
+                    {correct + resource_correct, attempts + resource_attempts}
+                  end)
+
                 estimate = estimate(section_id, user_id, objective_id, values)
                 learner_entries = Map.put(learner_entries, user_id, estimate)
                 {learner_entries, Telemetry.count_score(counts, estimate.score)}
@@ -320,6 +345,19 @@ defmodule Oli.Delivery.Proficiency.Naive do
         {:telemetry_result, {:ok, entries}, counts}
       end
     )
+  end
+
+  defp objective_evidence_ids(_section_id, []), do: %{}
+
+  defp objective_evidence_ids(section_id, objective_ids) do
+    children_by_id =
+      section_id
+      |> SectionResourceDepot.objectives_with_effective_children_for(objective_ids)
+      |> Map.new(&{&1.resource_id, &1.children})
+
+    Map.new(objective_ids, fn objective_id ->
+      {objective_id, [objective_id | Map.get(children_by_id, objective_id, [])]}
+    end)
   end
 
   defp read_summaries(_section_id, [], _objective_ids), do: %{}

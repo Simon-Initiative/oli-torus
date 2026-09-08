@@ -37,6 +37,115 @@ defmodule Oli.Delivery.Proficiency.NaiveTest do
     assert estimate.learning_model_version == :naive
   end
 
+  test "parent estimates combine first attempts before applying the evidence gate" do
+    section =
+      insert(:section,
+        learning_model_version: :naive,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
+    project = insert(:project)
+    user = insert(:user)
+
+    child =
+      insert(:section_resource,
+        section: section,
+        project: project,
+        resource_type_id: ResourceType.id_for_objective(),
+        children: []
+      )
+
+    parent =
+      insert(:section_resource,
+        section: section,
+        project: project,
+        resource_type_id: ResourceType.id_for_objective(),
+        children: [child.id]
+      )
+
+    for {resource_id, correct, attempts} <- [
+          {parent.resource_id, 1, 1},
+          {child.resource_id, 1, 2}
+        ] do
+      insert(:resource_summary,
+        section_id: section.id,
+        project_id: -1,
+        user_id: user.id,
+        resource_id: resource_id,
+        resource_type_id: ResourceType.id_for_objective(),
+        num_first_attempts_correct: correct,
+        num_first_attempts: attempts,
+        num_correct: correct,
+        num_attempts: attempts
+      )
+    end
+
+    assert {:ok, estimates} =
+             Naive.estimates_for_objectives(
+               section,
+               [user.id],
+               [parent.resource_id, child.resource_id],
+               []
+             )
+
+    assert_in_delta estimates[parent.resource_id][user.id].score, 2.2 / 3, 1.0e-12
+    assert estimates[parent.resource_id][user.id].label == :medium
+    assert estimates[parent.resource_id][user.id].attempt_count == 3
+    assert estimates[child.resource_id][user.id].score == nil
+
+    assert {:ok, aggregates} =
+             Naive.objective_aggregates(section, [parent.resource_id], user_ids: [user.id])
+
+    assert_in_delta aggregates[parent.resource_id].numeric_score, 2.2 / 3, 1.0e-12
+  end
+
+  test "parent learner discovery includes learners with only child evidence" do
+    section =
+      insert(:section,
+        learning_model_version: :naive,
+        section_resource_migration_version: SectionResourceMigration.current_version()
+      )
+
+    project = insert(:project)
+    user = insert(:user)
+
+    child =
+      insert(:section_resource,
+        section: section,
+        project: project,
+        resource_type_id: ResourceType.id_for_objective(),
+        children: []
+      )
+
+    parent =
+      insert(:section_resource,
+        section: section,
+        project: project,
+        resource_type_id: ResourceType.id_for_objective(),
+        children: [child.id]
+      )
+
+    insert(:resource_summary,
+      section_id: section.id,
+      project_id: -1,
+      user_id: user.id,
+      resource_id: child.resource_id,
+      resource_type_id: ResourceType.id_for_objective(),
+      num_first_attempts_correct: 3,
+      num_first_attempts: 3,
+      num_correct: 3,
+      num_attempts: 3
+    )
+
+    assert {:ok, [user_id]} = Naive.user_ids_for_objectives(section, [parent.resource_id])
+    assert user_id == user.id
+
+    assert {:ok, estimates} =
+             Naive.estimates_for_objectives(section, [user.id], [parent.resource_id], [])
+
+    assert estimates[parent.resource_id][user.id].score == 1.0
+  end
+
   test "keeps the raw ResourceSummary tuple as a naive-only compatibility result" do
     section = insert(:section)
     objective = insert(:resource)
