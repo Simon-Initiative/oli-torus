@@ -476,6 +476,57 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
       assert {:ok, :migrated} = SectionResourceMigration.ensure_current(section.id)
     end
 
+    test "ordinary projection locks the section before writing section resources" do
+      %{section: section} = pinned_projection_fixture()
+      handler_id = "projection-lock-order-#{System.unique_integer([:positive])}"
+      parent = self()
+
+      :ok =
+        :telemetry.attach(
+          handler_id,
+          [:oli, :repo, :query],
+          fn _, _, metadata, _ ->
+            case self() == parent do
+              true -> send(parent, {:projection_query, metadata.query})
+              false -> :ok
+            end
+          end,
+          nil
+        )
+
+      try do
+        assert {:ok, updated} = SectionResourceMigration.project_current(section)
+
+        assert updated.section_resource_migration_version ==
+                 SectionResourceMigration.current_version()
+      after
+        :telemetry.detach(handler_id)
+      end
+
+      queries =
+        Stream.repeatedly(fn ->
+          receive do
+            {:projection_query, query} -> query
+          after
+            0 -> nil
+          end
+        end)
+        |> Enum.take_while(&(&1 != nil))
+
+      lock_index =
+        Enum.find_index(
+          queries,
+          &(String.contains?(&1, ~s(FROM "sections")) and String.contains?(&1, "FOR UPDATE"))
+        )
+
+      write_index =
+        Enum.find_index(queries, &String.starts_with?(&1, ~s(UPDATE "section_resources")))
+
+      assert is_integer(lock_index), "projection must acquire the Section row lock"
+      assert is_integer(write_index), "fixture must exercise projection writes"
+      assert lock_index < write_index
+    end
+
     test "concurrent first access has one effective migration" do
       %{section: section} = pinned_projection_fixture()
 

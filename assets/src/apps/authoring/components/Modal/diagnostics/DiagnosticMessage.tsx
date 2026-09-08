@@ -97,6 +97,23 @@ export const InvalidOwnerMutateState: React.FC<Message> = ({ problem }: Message)
   </span>
 );
 
+export const AccessibilityMessage: React.FC<Message> = ({ problem }: Message) => {
+  const item = problem.item;
+  const popupContext = item.parentPopupId ? (
+    <span>
+      {' '}
+      inside Popup &quot;<strong>{item.parentPopupId}</strong>&quot;
+    </span>
+  ) : null;
+
+  return (
+    <span>
+      A {item.typeLabel} component with the ID &quot;<strong>{item.id}</strong>&quot;
+      {popupContext}: {item.message}
+    </span>
+  );
+};
+
 export const DiagnosticMessage: React.FC<Message> = (props) => {
   const { problem } = props;
   const { type = DiagnosticTypes.DEFAULT } = problem;
@@ -137,6 +154,9 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
       break;
     case DiagnosticTypes.INVALID_OWNER_MUTATE:
       action = <InvalidOwnerMutateState {...props} />;
+      break;
+    case DiagnosticTypes.ACCESSIBILITY:
+      action = <AccessibilityMessage {...props} />;
       break;
     default:
       action = <Fragment>No fix defined.</Fragment>;

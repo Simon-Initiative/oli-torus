@@ -18,6 +18,7 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Branding.CustomLabels
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.DisplayNumbering
+  alias Oli.Delivery.Sections.DisplayLabels
   alias Oli.Repo
 
   @container_resource_type_id Oli.Resources.ResourceType.get_id_by_type("container")
@@ -722,6 +723,7 @@ defmodule Oli.Delivery.Hierarchy do
           "type" => Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id),
           "index" => Integer.to_string(node.numbering.index),
           "level" => Integer.to_string(node.numbering.level),
+          "display_numbering" => display_numbering_entry(node),
           "slug" => node.revision.slug,
           "title" =>
             case node.section_resource do
@@ -754,6 +756,22 @@ defmodule Oli.Delivery.Hierarchy do
       end)
 
     map
+  end
+
+  # `"level"`/`"index"` above stay canonical/structural (used to decide navigation
+  # skip-logic for suppressed containers, independent of whether their number is
+  # displayed). `"display_numbering"` is additive: nil for a suppressed top-level unit
+  # or a descendant of one, otherwise a map shaped like `DisplayLabels.effective_numbering/1`'s
+  # own map-shaped clause already expects, so every existing consumer of a decorated
+  # JSON hierarchy picks it up with no further change.
+  defp display_numbering_entry(node) do
+    case DisplayLabels.effective_numbering(node) do
+      nil ->
+        nil
+
+      %Numbering{level: level, index: index} ->
+        %{"level" => Integer.to_string(level), "index" => Integer.to_string(index)}
+    end
   end
 
   @doc """

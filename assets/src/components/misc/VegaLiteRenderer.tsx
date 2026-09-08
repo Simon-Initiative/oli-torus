@@ -8,13 +8,19 @@ type Props = {
     light: string[];
     dark: string[];
   };
+  transparent_background?: boolean;
 };
 
-export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) => {
+export const VegaLiteRenderer: React.FC<Props> = ({
+  spec,
+  dark_mode_colors,
+  transparent_background = false,
+}) => {
   const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
 
   const viewRef = useRef<VegaView | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const chartBackground = transparent_background ? 'transparent' : darkMode ? '#262626' : 'white';
 
   const withDarkModeParam = React.useCallback(
     (baseSpec: VisualizationSpec): VisualizationSpec => {
@@ -73,13 +79,13 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
       try {
         const view = viewRef.current;
         if (!view) return;
-        view.background(darkMode ? '#262626' : 'white');
+        view.background(chartBackground);
         view.run();
       } catch (error) {
         console.warn('VegaLite theme update failed:', error);
       }
     }
-  }, [darkMode]);
+  }, [chartBackground, darkMode]);
 
   // Observe dark mode changes
   useEffect(() => {
@@ -151,7 +157,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
         onNewView={(view) => {
           viewRef.current = view;
           try {
-            view.background(darkMode ? '#262626' : 'white');
+            view.background(chartBackground);
             view.resize().run();
           } catch (error) {
             console.warn('VegaLite initialization failed:', error);

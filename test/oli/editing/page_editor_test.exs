@@ -3,12 +3,13 @@ defmodule Oli.EditingTest do
 
   alias Oli.Resources
   alias Oli.Resources.Revision
-  alias Oli.Authoring.Editing.{PageEditor, ActivityEditor}
+  alias Oli.Authoring.Editing.{PageEditor, ActivityEditor, ResourceEditor}
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
   alias Oli.Utils.Time
   alias Oli.Authoring.Locks
+  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
 
@@ -61,6 +62,176 @@ defmodule Oli.EditingTest do
         PageEditor.edit(project.slug, revision1.slug, author.email, %{"content" => content})
 
       assert revision1.id != updated_revision.id
+    end
+
+    test "create_context/3 includes project content feature settings", %{
+      author: author,
+      revision1: revision1,
+      project: project
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: true,
+          experiments_enabled: false
+        })
+
+      assert {:ok, context} = PageEditor.create_context(project.slug, revision1.slug, author)
+      assert context.alternativesEnabled
+      refute context.experimentsEnabled
+    end
+
+    for {strategy, project_settings, feature} <- [
+          {"user_section_preference", %{alternatives_enabled: false, experiments_enabled: true},
+           :alternatives},
+          {"upgrade_decision_point", %{alternatives_enabled: true, experiments_enabled: false},
+           :experiments}
+        ] do
+      test "edit/4 rejects newly inserted #{strategy} content when its project feature is disabled",
+           %{
+             author: author,
+             revision1: revision1,
+             project: project
+           } do
+        {:ok, project} = Course.update_project(project, unquote(Macro.escape(project_settings)))
+        group = create_alternatives_group(project, author, unquote(strategy))
+
+        content = %{
+          "version" => "0.1.0",
+          "model" => [
+            %{
+              "type" => "alternatives",
+              "id" => "new-alternatives",
+              "alternatives_id" => group.resource_id,
+              "children" => []
+            }
+          ]
+        }
+
+        assert {:acquired} =
+                 PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+        assert {:error, {:feature_disabled, unquote(feature)}} =
+                 PageEditor.edit(project.slug, revision1.slug, author.email, %{
+                   "content" => content
+                 })
+      end
+    end
+
+    test "edit/4 uses the referenced Alternatives resource strategy for feature validation", %{
+      author: author,
+      revision1: revision1,
+      project: project
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: false,
+          experiments_enabled: true
+        })
+
+      decision_point = create_alternatives_group(project, author, "experiment_controlled")
+
+      content = %{
+        "version" => "0.1.0",
+        "model" => [
+          %{
+            "type" => "alternatives",
+            "id" => "new-decision-point",
+            "alternatives_id" => decision_point.resource_id,
+            "children" => []
+          }
+        ]
+      }
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               PageEditor.edit(project.slug, revision1.slug, author.email, %{
+                 "content" => content
+               })
+
+      refute get_in(updated_revision.content, ["model", Access.at(0), "strategy"])
+    end
+
+    test "edit/4 rejects newly inserted alternatives nested in child-bearing content", %{
+      author: author,
+      revision1: revision1,
+      project: project
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: false,
+          experiments_enabled: true
+        })
+
+      group = create_alternatives_group(project, author, "user_section_preference")
+
+      content = %{
+        "version" => "0.1.0",
+        "model" => [
+          %{
+            "type" => "content",
+            "id" => "content-container",
+            "children" => [
+              %{
+                "type" => "alternatives",
+                "id" => "nested-alternatives",
+                "alternatives_id" => group.resource_id,
+                "children" => []
+              }
+            ]
+          }
+        ]
+      }
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      assert {:error, {:feature_disabled, :alternatives}} =
+               PageEditor.edit(project.slug, revision1.slug, author.email, %{
+                 "content" => content
+               })
+    end
+
+    test "edit/4 allows unchanged gated content after its project feature is disabled", %{
+      author: author,
+      revision1: revision1,
+      project: project
+    } do
+      {:ok, project} =
+        Course.update_project(project, %{
+          alternatives_enabled: true,
+          experiments_enabled: false
+        })
+
+      group = create_alternatives_group(project, author, "user_section_preference")
+
+      content = %{
+        "version" => "0.1.0",
+        "model" => [
+          %{
+            "type" => "alternatives",
+            "id" => "existing-alternatives",
+            "alternatives_id" => group.resource_id,
+            "children" => []
+          }
+        ]
+      }
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      assert {:ok, revision} =
+               PageEditor.edit(project.slug, revision1.slug, author.email, %{
+                 "content" => content
+               })
+
+      {:ok, _project} = Course.update_project(project, %{alternatives_enabled: false})
+
+      assert {:ok, _revision} =
+               PageEditor.edit(project.slug, revision.slug, author.email, %{
+                 "content" => content
+               })
     end
 
     test "editing page settings works when a second author edits a page that a first author is editing",
@@ -602,5 +773,20 @@ defmodule Oli.EditingTest do
       assert hd(result).parentIds == nil
       assert hd(result).title == objective1_title
     end
+  end
+
+  defp create_alternatives_group(project, author, strategy) do
+    {:ok, revision} =
+      ResourceEditor.create(
+        project.slug,
+        author,
+        Oli.Resources.ResourceType.id_for_alternatives(),
+        %{
+          title: "Alternatives Group",
+          content: %{"options" => [], "strategy" => strategy}
+        }
+      )
+
+    revision
   end
 end

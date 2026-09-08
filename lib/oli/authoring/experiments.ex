@@ -12,7 +12,10 @@ defmodule Oli.Authoring.Experiments do
   alias Oli.Resources.ResourceType
 
   @alternatives_type_id ResourceType.id_for_alternatives()
-  @experiment_id "upgrade_decision_point"
+
+  # `upgrade_decision_point` is the legacy UpGrade strategy. Native A/B testing continues
+  # to support it with the same behavior as the canonical `experiment_controlled` strategy.
+  @experiment_strategies ["experiment_controlled", "upgrade_decision_point"]
 
   @doc """
   Retrieve the revision associated with the experiment for a given project.
@@ -33,7 +36,7 @@ defmodule Oli.Authoring.Experiments do
       join: revision in Revision,
       on: revision.id == pr.revision_id,
       where: pr.publication_id in subquery(project_working_publication(project_slug)),
-      where: fragment("?->>'strategy' = ?", revision.content, @experiment_id),
+      where: fragment("?->>'strategy' = ANY(?)", revision.content, ^@experiment_strategies),
       where: revision.resource_type_id == @alternatives_type_id,
       select: revision
     )

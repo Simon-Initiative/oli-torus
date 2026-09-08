@@ -1,0 +1,66 @@
+- institution:
+    name: "Product Source Institution"
+    country_code: "US"
+    institution_email: "scenario@example.edu"
+    institution_url: "https://example.edu"
+
+- user:
+    name: "community_instructor"
+    type: instructor
+
+- project:
+    name: "source_project"
+    title: "Community Product Source"
+    root:
+      children:
+        - page: "Shared Product Page"
+
+- product:
+    name: "source_product"
+    title: "Source Template"
+    from: "source_project"
+
+- project:
+    name: "target_project"
+    title: "Target Course"
+    root:
+      children:
+        - page: "Target Page"
+
+- product:
+    name: "target_product"
+    title: "Target Template"
+    from: "target_project"
+
+- section:
+    name: "target_section"
+    title: "Target Section"
+    from: "target_product"
+    institution: "Product Source Institution"
+
+- community:
+    name: "Product-only Community"
+    institution: "Product Source Institution"
+    users: ["community_instructor"]
+    products: ["source_product", "target_product"]
+
+- assert_sources:
+    user: "community_instructor"
+    section: "target_section"
+    products: ["Source Template", "Target Template"]
+
+- remix:
+    from: "source_project"
+    from_product: "source_product"
+    user: "community_instructor"
+    resource: "Shared Product Page"
+    section: "target_section"
+    to: "root"
+
+- assert:
+    structure:
+      to: "target_section"
+      root:
+        children:
+          - page: "Target Page"
+          - page: "Shared Product Page"

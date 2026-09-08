@@ -72,6 +72,13 @@ defmodule Oli.Delivery.HierarchyTest do
       assert get.(node4)["next"] == nil
       assert get.(node4)["slug"] == node4.revision.slug
       assert get.(node4)["title"] == node4.revision.title
+
+      # With no suppressed units, "display_numbering" mirrors canonical numbering exactly
+      # (same shape as "level"/"index", string-keyed).
+      assert get.(unit_node)["display_numbering"] == %{
+               "level" => get.(unit_node)["level"],
+               "index" => get.(unit_node)["index"]
+             }
     end
 
     test "flatten_pages/1", %{hierarchy: hierarchy} do
@@ -262,6 +269,38 @@ defmodule Oli.Delivery.HierarchyTest do
              |> Map.get(:children)
              |> Enum.at(0)
              |> Map.get(:resource_id) == nested_page1.id
+    end
+  end
+
+  describe "build_navigation_link_map/1 with suppressed units" do
+    setup do
+      Seeder.base_project_with_larger_hierarchy()
+    end
+
+    test "omits display numbering for a suppressed unit and its descendants, leaving canonical level/index untouched",
+         %{section: section, unit1_resource: unit1_resource, unit2_resource: unit2_resource} do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit1_resource.id]})
+
+      hierarchy = Sections.SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
+
+      link_map = Hierarchy.build_navigation_link_map(hierarchy)
+
+      unit1_entry = Map.get(link_map, Integer.to_string(unit1_resource.id))
+      unit2_entry = Map.get(link_map, Integer.to_string(unit2_resource.id))
+
+      # Unit 1 is suppressed: no display numbering at all, but its canonical level/index
+      # are untouched -- these are structural (used for navigation skip-logic), not a
+      # displayed number.
+      assert unit1_entry["display_numbering"] == nil
+      assert unit1_entry["level"] == "1"
+      assert unit1_entry["index"] == "1"
+
+      # Unit 2 is renumbered to display index 1, since Unit 1 no longer consumes a
+      # numbering slot -- while its own canonical index (2) is untouched.
+      assert unit2_entry["display_numbering"] == %{"level" => "1", "index" => "1"}
+      assert unit2_entry["level"] == "1"
+      assert unit2_entry["index"] == "2"
     end
   end
 

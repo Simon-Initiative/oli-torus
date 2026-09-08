@@ -13,6 +13,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
   attr :selection, :list, default: []
   attr :preselected, :list, default: []
   attr :publications, :list, default: []
+  attr :selected_source, :any
   attr :selected_publication, :any
   attr :active_tab, :atom, default: :curriculum
   attr :pages_table_model, :any
@@ -60,6 +61,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
         selection={@selection}
         preselected={@preselected}
         publications={@publications}
+        selected_source={@selected_source}
         selected_publication={@selected_publication}
         active_tab={@active_tab}
         pages_table_model_total_count={@pages_table_model_total_count}

@@ -18,16 +18,30 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     end
   end
 
+  defmodule FakeAnalyticsProvider do
+    def health_summary, do: Oli.Analytics.ClickhouseAnalytics.health_summary()
+
+    def admin_capabilities,
+      do: Application.fetch_env!(:oli, :clickhouse_analytics_test_capabilities)
+  end
+
   setup :verify_on_exit!
   setup :set_mox_global
-  setup [:admin_conn, :enable_clickhouse_feature, :stub_clickhouse_config, :stub_phase_four_env]
+
+  setup [
+    :admin_conn,
+    :enable_clickhouse_feature,
+    :stub_clickhouse_config,
+    :stub_analytics_provider,
+    :stub_phase_four_env
+  ]
 
   test "shows setup card first, enabled when available, and hides dangerous operations",
        %{conn: conn} do
     stub_clickhouse_http(%{
       database_exists: false,
       raw_events_exists: false,
-      pending_migrations: 1
+      pending_migrations: 3
     })
 
     {:ok, view, _html} = live(conn, @route)
@@ -43,8 +57,8 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
     assert html =~ "✓ Reachable"
     assert html =~ "✗ Database exists"
-    assert html =~ "✗ Table exists"
-    assert html =~ "1 pending migration"
+    assert html =~ "Current DB: default"
+    assert html =~ "3 pending migrations"
     assert html =~ ">Setup Database<"
     assert html =~ ">Migrate Up<"
     assert html =~ ">Migrate Down<"
@@ -57,6 +71,13 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert setup_index < migrate_up_index
     [button_html] = Regex.run(~r/<button[^>]*phx-value-kind="setup"[^>]*>/, html)
     refute Regex.match?(~r/\sdisabled(?:=| |>)/, button_html)
+
+    for kind <- ["migrate_up", "migrate_down"] do
+      [migration_button_html] =
+        Regex.run(~r/<button[^>]*phx-value-kind="#{kind}"[^>]*>/, html)
+
+      assert Regex.match?(~r/\sdisabled(?:=| |>)/, migration_button_html)
+    end
   end
 
   test "shows setup card disabled when the database is already initialized", %{conn: conn} do
@@ -74,7 +95,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert html =~ "Required before torus analytics can use this ClickHouse database."
     assert html =~ "✓ Reachable"
     assert html =~ "✓ Database exists"
-    assert html =~ "✓ Table exists"
+    assert html =~ "Current DB: analytics"
     assert html =~ "No pending migrations"
     assert html =~ ">Setup Database<"
     assert html =~ ">Migrate Up<"
@@ -85,14 +106,41 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
     [migrate_button_html] = Regex.run(~r/<button[^>]*phx-value-kind="migrate_up"[^>]*>/, html)
     assert Regex.match?(~r/\sdisabled(?:=| |>)/, migrate_button_html)
+
+    [migrate_down_button_html] =
+      Regex.run(~r/<button[^>]*phx-value-kind="migrate_down"[^>]*>/, html)
+
+    refute Regex.match?(~r/\sdisabled(?:=| |>)/, migrate_down_button_html)
+  end
+
+  test "enables migrations when the database exists before raw_events is created", %{conn: conn} do
+    stub_clickhouse_http(%{
+      database_exists: true,
+      raw_events_exists: false,
+      pending_migrations: 2
+    })
+
+    {:ok, view, _html} = live(conn, @route)
+
+    html = render_async(view)
+
+    [setup_button_html] = Regex.run(~r/<button[^>]*phx-value-kind="setup"[^>]*>/, html)
+    assert Regex.match?(~r/\sdisabled(?:=| |>)/, setup_button_html)
+
+    for kind <- ["migrate_up", "migrate_down"] do
+      [migration_button_html] =
+        Regex.run(~r/<button[^>]*phx-value-kind="#{kind}"[^>]*>/, html)
+
+      refute Regex.match?(~r/\sdisabled(?:=| |>)/, migration_button_html)
+    end
   end
 
   test "shows current-operation progress and success messages for supported operations", %{
     conn: conn
   } do
     stub_clickhouse_http(%{
-      database_exists: false,
-      raw_events_exists: false,
+      database_exists: true,
+      raw_events_exists: true,
       pending_migrations: 1
     })
 
@@ -101,6 +149,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
     render_click(element(view, "button[phx-value-kind=\"migrate_up\"]"))
     assert render(view) =~ "Confirm Migrate Up"
+    assert has_element?(view, "#clickhouse-operation-confirmation .max-w-lg")
 
     render_click(element(view, "button[phx-click=\"confirm_clickhouse_operation\"]"))
 
@@ -116,9 +165,9 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
   test "canceling migration confirmation modal does not start the operation", %{conn: conn} do
     stub_clickhouse_http(%{
-      database_exists: false,
-      raw_events_exists: false,
-      pending_migrations: 1
+      database_exists: true,
+      raw_events_exists: true,
+      pending_migrations: 0
     })
 
     {:ok, view, _html} = live(conn, @route)
@@ -212,12 +261,63 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     :ok
   end
 
+  defp stub_analytics_provider(_) do
+    original_provider = Application.get_env(:oli, :clickhouse_analytics_provider)
+    original_capabilities = Application.get_env(:oli, :clickhouse_analytics_test_capabilities)
+
+    Application.put_env(:oli, :clickhouse_analytics_provider, FakeAnalyticsProvider)
+
+    Application.put_env(
+      :oli,
+      :clickhouse_analytics_test_capabilities,
+      {:error, "ClickHouse capabilities were not stubbed"}
+    )
+
+    on_exit(fn ->
+      restore_env(:clickhouse_analytics_provider, original_provider)
+      restore_env(:clickhouse_analytics_test_capabilities, original_capabilities)
+    end)
+
+    :ok
+  end
+
   defp stub_clickhouse_http(%{
          database_exists: database_exists,
          raw_events_exists: raw_events_exists,
          pending_migrations: pending_migrations
        }) do
-    stub(MockHTTP, :post, fn _url, body, _headers, _opts ->
+    initialized = database_exists
+
+    Application.put_env(
+      :oli,
+      :clickhouse_analytics_test_capabilities,
+      {:ok,
+       %{
+         reachable: true,
+         database_exists: database_exists,
+         table_exists: raw_events_exists,
+         initialized: initialized,
+         setup_enabled: not initialized,
+         pending_migration_count: pending_migrations,
+         migrate_up_enabled: initialized and pending_migrations > 0,
+         migrate_down_enabled: initialized,
+         allowed_operations:
+           if(initialized,
+             do: [:migrate_up, :migrate_down],
+             else: [:setup]
+           )
+       }}
+    )
+
+    stub(MockHTTP, :post, fn url, body, _headers, _opts ->
+      query_params = URI.parse(url).query |> URI.decode_query()
+
+      if database_exists and String.contains?(body, "version() AS version") do
+        assert query_params["database"] == "analytics"
+      else
+        refute Map.has_key?(query_params, "database")
+      end
+
       {:ok,
        %{
          status_code: 200,
@@ -233,7 +333,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     stub_clickhouse_http(%{
       database_exists: database_exists,
       raw_events_exists: raw_events_exists,
-      pending_migrations: if(raw_events_exists, do: 0, else: 1)
+      pending_migrations: if(raw_events_exists, do: 0, else: 2)
     })
   end
 
@@ -248,7 +348,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
               "timezone" => "UTC",
               "hostname" => "clickhouse.test",
               "server_time" => "2026-04-02 12:00:00",
-              "current_database" => "analytics",
+              "current_database" => if(database_exists, do: "analytics", else: "default"),
               "configured_database" => "analytics"
             }
           ]
@@ -290,9 +390,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
           String.contains?(body, "FROM system.tables") ->
         exists =
           cond do
-            String.contains?(body, "name = 'raw_events'") -> raw_events_exists
-            String.contains?(body, "name = 'goose_db_version'") -> pending_migrations == 0
-            true -> false
+            String.contains?(body, "name = 'raw_events'") ->
+              raw_events_exists
+
+            String.contains?(body, "name = 'goose_db_version'") ->
+              pending_migrations == 0
+
+            true ->
+              false
           end
 
         Jason.encode!(%{"data" => [%{"exists" => if(exists, do: 1, else: 0)}]})
@@ -301,7 +406,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
         Jason.encode!(%{
           "data" => [
             %{
-              "version_id" => if(pending_migrations == 0, do: "20260326213833", else: nil)
+              "version_id" => nil
             }
           ]
         })

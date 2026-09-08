@@ -8,11 +8,11 @@ defmodule OliWeb.Resources.AlternativesEditor do
   import OliWeb.Resources.AlternativesEditor.GroupOption
   import OliWeb.Common.Components
 
-  alias Oli.Resources.ResourceType
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias OliWeb.Common.{Breadcrumb}
-  alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Editing.{AlternativesOptionEditor, ResourceEditor}
+  alias Oli.Resources.ResourceType
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
   alias OliWeb.Resources.AlternativesEditor.PreventDeletionModal
 
@@ -100,6 +100,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
           icon="fa-solid fa-pencil"
           on_click="show_edit_group_modal"
           values={["phx-value-resource-id": @group.resource_id]}
+          aria_label={"Edit #{@group.title}"}
         />
         <button
           :if={@source == :alternatives}
@@ -112,11 +113,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
       </div>
       <div class="mt-3">
         <%= if Enum.count(@group.content["options"]) > 0 do %>
-          <ul class="list-group">
-            <%= for option <- @group.content["options"] do %>
-              <.group_option group={@group} option={option} show_actions={@editing_enabled} />
-            <% end %>
-          </ul>
+          <.option_list group={@group} show_actions={@editing_enabled} />
         <% else %>
           <div class="my-2">
             <div class="text-center"><em>There are no options in this group</em></div>
@@ -311,7 +308,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
     %{content: %{"options" => options} = content} =
       Enum.find(alternatives, fn g -> g.resource_id == resource_id end)
 
-    new_options = [%{"id" => option_id, "name" => name} | options]
+    new_options = options ++ [%{"id" => option_id, "name" => name}]
 
     case edit_group_options(
            project.slug,
@@ -327,6 +324,14 @@ defmodule OliWeb.Resources.AlternativesEditor do
       _ ->
         show_error(socket)
     end
+  end
+
+  def handle_event(
+        "reorder_option",
+        %{"resourceId" => resource_id, "optionId" => option_id, "dropIndex" => drop_index},
+        socket
+      ) do
+    reorder_option(socket, resource_id, option_id, drop_index)
   end
 
   def handle_event(
@@ -724,5 +729,22 @@ defmodule OliWeb.Resources.AlternativesEditor do
   defp show_error(socket) do
     {:noreply,
      put_flash(socket, :error, "Something went wrong. Please refresh the page and try again.")}
+  end
+
+  defp reorder_option(socket, resource_id, option_id, drop_index) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+
+    case AlternativesOptionEditor.move_to(
+           project.slug,
+           author,
+           alternatives,
+           resource_id,
+           option_id,
+           drop_index
+         ) do
+      {:ok, alternatives, _group} -> {:noreply, assign(socket, alternatives: alternatives)}
+      {:ok, :unchanged} -> {:noreply, socket}
+      {:error, _} -> show_error(socket)
+    end
   end
 end

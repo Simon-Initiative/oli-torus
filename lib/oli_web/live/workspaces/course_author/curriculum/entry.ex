@@ -7,12 +7,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
   import OliWeb.Curriculum.Utils
 
   alias OliWeb.Curriculum.{Actions, Details, LearningSummary}
+  alias OliWeb.Components.ReorderableList
   alias Oli.Resources.Numbering
   alias Oli.Resources.ResourceType
 
   attr(:ctx, :map, required: true)
   attr(:child, :map, required: true)
   attr(:index, :integer, required: true)
+  attr(:count, :integer, required: true)
   attr(:selected, :boolean, required: true)
   attr(:project, :map, required: true)
   attr(:numberings, :map, required: true)
@@ -28,17 +30,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
 
   def render(assigns) do
     ~H"""
-    <div
-      tabindex="0"
-      phx-keydown="keydown"
+    <ReorderableList.item
       id={"#{@child.resource_id}"}
-      draggable="true"
+      position={@index}
+      count={@count}
+      item_key={"curriculum:#{@child.slug}"}
+      label={@child.title}
+      status_id="curriculum-reorder-status"
+      keydown="keydown"
       phx-click="select"
       phx-value-slug={@child.slug}
       phx-value-index={@index}
-      data-drag-index={@index}
       data-drag-slug={@child.slug}
-      phx-hook="DragSource"
       class={"p-3 flex-grow-1 d-flex curriculum-entry #{if @selected do
           "active"
         else
@@ -87,7 +90,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
           current_author={@ctx.author}
         />
       </div>
-    </div>
+    </ReorderableList.item>
     """
   end
 

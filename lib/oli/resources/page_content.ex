@@ -118,6 +118,69 @@ defmodule Oli.Resources.PageContent do
   end
 
   @doc """
+  Returns whether page content contains an embedded activity reference or activity-bank selection.
+
+  The traversal stops at the first matching node, making this suitable for delivery fast paths that
+  only need to distinguish content-only pages from pages that can realize activities.
+  """
+  def contains_activity_opportunity?(%{"model" => model}) when is_list(model) do
+    Enum.any?(model, &contains_activity_opportunity_node?/1)
+  end
+
+  def contains_activity_opportunity?(_content), do: false
+
+  defp contains_activity_opportunity_node?(%{"type" => type})
+       when type in ["activity-reference", "selection"],
+       do: true
+
+  defp contains_activity_opportunity_node?(item) when is_map(item) do
+    ["children", "caption", "pronunciation", "translations", "content", "meanings"]
+    |> Enum.any?(fn property ->
+      case Map.get(item, property) do
+        children when is_list(children) ->
+          Enum.any?(children, &contains_activity_opportunity_node?/1)
+
+        child when is_map(child) ->
+          contains_activity_opportunity_node?(child)
+
+        _ ->
+          false
+      end
+    end)
+  end
+
+  defp contains_activity_opportunity_node?(_item), do: false
+
+  @doc """
+  Finds supported Alternatives placements in content order.
+
+  Placements may occur at any depth inside ordinary containers. Traversal stops at each
+  Alternatives boundary because an Alternatives placement nested beneath it is invalid
+  and must not participate in discovery, assignment, or exposure.
+  """
+  def alternatives_placements(%{"model" => model}) when is_list(model) do
+    model
+    |> find_alternatives([])
+    |> Enum.reverse()
+  end
+
+  def alternatives_placements(_content), do: []
+
+  defp find_alternatives(elements, acc) when is_list(elements) do
+    Enum.reduce(elements, acc, fn element, acc ->
+      find_alternatives(element, acc)
+    end)
+  end
+
+  defp find_alternatives(%{"type" => "alternatives"} = element, acc), do: [element | acc]
+
+  defp find_alternatives(%{"children" => children}, acc)
+       when is_list(children),
+       do: find_alternatives(children, acc)
+
+  defp find_alternatives(_element, acc), do: acc
+
+  @doc """
   Maps the content elements of page content, preserving the as-is structure. Implemented as a
   convenience function, over top of map_reduce.
   """

@@ -37,15 +37,9 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
           {:ok, :current | :migrated} | {:error, term()}
   def ensure_current(section_id) do
     Repo.transaction(fn ->
-      from(section in Section,
-        where: section.id == ^section_id,
-        lock: "FOR UPDATE"
-      )
-      |> Repo.one()
-      |> case do
-        nil -> Repo.rollback({:section_not_found, section_id})
-        section -> migrate_from_version(section)
-      end
+      section_id
+      |> lock_section!()
+      |> migrate_from_version()
     end)
     |> case do
       {:ok, result} -> result
@@ -56,6 +50,8 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
   @doc """
   Projects current related activities during ordinary Section lifecycle work.
 
+  The Section row is locked before any SectionResource writes, matching JIT migration.
+  Enclosing lifecycle transactions must take this lock before their own projection writes.
   Database state and the marker commit together. Outside an enclosing lifecycle
   transaction, updated depot entries are published only after that commit. Inside
   one, callers already clear the depot after their outer transaction succeeds.
@@ -65,6 +61,8 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
     already_in_transaction? = Repo.in_transaction?()
 
     Repo.transaction(fn ->
+      lock_section!(section.id)
+
       # Lifecycle creation paths intentionally insert lightweight placeholders.
       # Bring every pinned field current before declaring their projection ready.
       with {:ok, _count} <- migrate(section.id),
@@ -86,6 +84,23 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  @doc """
+  Locks the Section row before lifecycle writes to its SectionResource projection.
+
+  Must run inside the caller's transaction, before acquiring SectionResource row locks.
+  The lock is retained until the outermost transaction ends, including when projection
+  work uses a nested transaction. Rolls back if the Section no longer exists.
+  """
+  @spec lock_section!(integer()) :: Section.t()
+  def lock_section!(section_id) do
+    from(section in Section, where: section.id == ^section_id, lock: "FOR UPDATE")
+    |> Repo.one()
+    |> case do
+      nil -> Repo.rollback({:section_not_found, section_id})
+      section -> section
     end
   end
 

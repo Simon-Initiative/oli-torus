@@ -46,6 +46,8 @@ defmodule Oli.Delivery.Sections.Updates do
                                   ]}
 
   @doc """
+  Serializes projection writes with JIT migration by locking the Section first.
+
   Gracefully applies the specified publication update to a given section by leaving the existing
   curriculum and section modifications in-tact while applying the structural changes that
   occurred between the old and new publication.
@@ -68,10 +70,12 @@ defmodule Oli.Delivery.Sections.Updates do
 
     result =
       Oli.Repo.transaction(fn ->
+        SectionResourceMigration.lock_section!(section.id)
+
         case do_update(section, project.id, current_publication, new_publication) do
           {:ok, _} ->
             SectionResourceMigration.migrate(section.id)
-            do_post_processing_steps(section, project)
+            do_post_processing_steps(section)
 
           e ->
             Oli.Repo.rollback(e)
@@ -96,14 +100,7 @@ defmodule Oli.Delivery.Sections.Updates do
     result
   end
 
-  defp do_post_processing_steps(section, project) do
-    # For a section based on this project, update the has_experiments in the section to match that
-    # setting in the project.
-    if section.base_project_id == project.id and
-         project.has_experiments != section.has_experiments do
-      Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
-    end
-
+  defp do_post_processing_steps(section) do
     PostProcessing.apply(section, :all)
   end
 

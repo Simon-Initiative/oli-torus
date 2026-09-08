@@ -107,7 +107,7 @@ test.describe.serial('Habitable Worlds Brightness assessment adaptive lesson', (
     }
   });
 
-  test('student completes the Brightness assessment happy path', async ({ page }) => {
+  test('student completes the Brightness assessment happy path @nightly', async ({ page }) => {
     test.setTimeout(360_000);
 
     if (!seededCourse) {

@@ -1,6 +1,8 @@
 defmodule Oli.Delivery.Page.PageContextTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Delivery.Page.PageContext
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
@@ -96,6 +98,111 @@ defmodule Oli.Delivery.Page.PageContextTest do
       # verify objectives map
       assert context.objectives == ["objective one"]
       refute context.collab_space_config
+    end
+
+    test "inactive experiment placements realize only the first branch after one relevance read",
+         %{section: section, p1: p1, a1: a1, a2: a2, user1: user} = map do
+      alternatives_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_alternatives(),
+          content: %{
+            "strategy" => "experiment_controlled",
+            "options" => [%{"id" => "control"}, %{"id" => "variant"}]
+          }
+        )
+
+      insert(:project_resource,
+        project_id: map.project.id,
+        resource_id: alternatives_revision.resource_id
+      )
+
+      insert(:published_resource,
+        publication: map.publication,
+        resource: alternatives_revision.resource,
+        revision: alternatives_revision
+      )
+
+      insert(:section_resource,
+        section: section,
+        project: map.project,
+        resource_id: alternatives_revision.resource_id
+      )
+
+      content = %{
+        "model" => [
+          %{
+            "type" => "alternatives",
+            "id" => "placement",
+            "alternatives_id" => alternatives_revision.resource_id,
+            "children" => [
+              %{
+                "type" => "alternative",
+                "value" => "control",
+                "children" => [
+                  %{"type" => "activity-reference", "activity_id" => a1.resource.id}
+                ]
+              },
+              %{
+                "type" => "alternative",
+                "value" => "variant",
+                "children" => [
+                  %{"type" => "activity-reference", "activity_id" => a2.resource.id}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+
+      p1.revision
+      |> Oli.Resources.Revision.changeset(%{content: content})
+      |> Repo.update!()
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      queries =
+        capture_select_queries(fn ->
+          context = PageContext.create_for_visit(section, p1.revision.slug, user, UUID.uuid4())
+
+          assert Map.keys(context.activities) == [a1.resource.id]
+          assert context.experiment_decisions["placement"].status == :no_experiment
+        end)
+
+      assert Enum.count(queries, &String.contains?(&1, ~s("experiment_sections"))) == 1
+      refute Enum.any?(queries, &String.contains?(&1, ~s(FROM "experiment_assignments")))
+      refute Enum.any?(queries, &String.contains?(&1, ~s(FROM "experiment_policy_states")))
+    end
+  end
+
+  defp capture_select_queries(fun) do
+    parent = self()
+    handler_id = "page-context-selects-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach(
+      handler_id,
+      [:oli, :repo, :query],
+      fn _, _, metadata, _ ->
+        case metadata.query do
+          "SELECT" <> _ = query -> send(parent, {:select_query, query})
+          _ -> :ok
+        end
+      end,
+      %{}
+    )
+
+    try do
+      fun.()
+      collect_select_queries([])
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp collect_select_queries(queries) do
+    receive do
+      {:select_query, query} -> collect_select_queries([query | queries])
+    after
+      0 -> queries
     end
   end
 end

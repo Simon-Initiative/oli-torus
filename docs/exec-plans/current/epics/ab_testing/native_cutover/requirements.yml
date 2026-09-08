@@ -1,0 +1,42 @@
+work_item: native_cutover
+requirements:
+- id: FR-001
+  title: Route new experiments to native authoring
+  description: New experiment creation must use native A/B testing definitions rather
+    than UpGrade-backed export or import workflows.
+- id: FR-002
+  title: Remove UpGrade runtime dependency
+  description: Native A/B testing delivery must not call UpGrade assignment, mark,
+    or log endpoints after cut-over.
+- id: FR-003
+  title: Enforce non-migration rule
+  description: Existing and in-progress UpGrade-backed experiments, learner assignments,
+    and historical analytics must not be migrated into native records.
+- id: FR-004
+  title: Remove obsolete UpGrade authoring affordances
+  description: UpGrade-specific authoring copy, JSON download workflows, and new UpGrade
+    experiment creation paths must be removed or disabled.
+- id: FR-005
+  title: Clean active UpGrade configuration
+  description: Obsolete active UpGrade runtime configuration must be removed or made
+    inactive for native behavior.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: A user creating a new experiment is routed to native definitions only.
+- id: AC-002
+  requirement: FR-002
+  description: Tests or implementation proof show native assignment, mark, and reward
+    paths do not call UpGrade endpoints.
+- id: AC-003
+  requirement: FR-003
+  description: Documentation and product behavior state that old UpGrade experiments
+    and learner assignments are not imported.
+- id: AC-004
+  requirement: FR-004
+  description: UpGrade JSON export/import controls are absent or disabled for new
+    native experiment workflows.
+- id: AC-005
+  requirement: FR-005
+  description: Active runtime configuration no longer requires UpGrade credentials
+    for native A/B testing behavior.

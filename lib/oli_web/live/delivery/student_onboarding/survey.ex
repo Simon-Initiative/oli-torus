@@ -56,20 +56,8 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
           }
         end)
 
-      base_project_slug =
-        case section.has_experiments do
-          true ->
-            Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug
-
-          _ ->
-            nil
-        end
-
-      enrollment =
-        case section.has_experiments do
-          true -> Oli.Delivery.Sections.get_enrollment(section.slug, user.id)
-          _ -> nil
-        end
+      {base_project_slug, enrollment} =
+        Oli.Delivery.Sections.get_alternatives_render_context(section.id, user.id)
 
       render_context = %Oli.Rendering.Context{
         enrollment: enrollment,

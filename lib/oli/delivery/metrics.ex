@@ -738,8 +738,11 @@ defmodule Oli.Delivery.Metrics do
     objective_n_resource_id: "Medium"
   }
 
-  This implementation considers that an objective may have sub-objectives.
-  In that case, the proficiency for the given objectives will result from the aggregated raw proficiency of its contained sub-objectives.
+  Proficiency uses the section's selected learning model.
+  For naive sections, this implementation considers that an objective may have sub-objectives.
+  In that case, the proficiency for the given objectives will result from the aggregated raw
+  proficiency of its contained sub-objectives, combined with the objective's own directly-tagged
+  evidence when it has any (see `evidence_resource_ids/2`).
 
   Example:
     Given the following parent-child learning objectives relationship:
@@ -770,17 +773,55 @@ defmodule Oli.Delivery.Metrics do
         student_id,
         section
       ) do
-    objective_ids = Enum.map(learning_objectives, & &1.resource_id)
+    section
+    |> aggregated_proficiency_per_student_for_objectives(learning_objectives,
+      student_id: student_id
+    )
+    |> Map.new(fn {objective_id, by_user} ->
+      {objective_id, Map.get(by_user, student_id, "Not enough data")}
+    end)
+  end
 
-    case Proficiency.estimates_for_objectives(section, [student_id], objective_ids) do
-      {:ok, estimates} ->
-        Map.new(objective_ids, fn objective_id ->
-          {objective_id, estimates |> get_in([objective_id, student_id]) |> estimate_label()}
-        end)
+  @doc """
+  Returns student proficiency labels for objectives using the section's selected model.
 
-      {:error, _reason} ->
-        Map.new(objective_ids, &{&1, "Not enough data"})
-    end
+  Naive sections combine each objective's own first-attempt evidence with its children
+  before bucketing. Other models resolve parent estimates through their provider.
+  """
+  @spec aggregated_proficiency_per_student_for_objectives(Section.t(), [map()], keyword()) ::
+          %{integer() => %{integer() => String.t()}}
+  def aggregated_proficiency_per_student_for_objectives(section, objectives, opts \\ [])
+
+  def aggregated_proficiency_per_student_for_objectives(
+        %Section{learning_model_version: :naive} = section,
+        objectives,
+        opts
+      ) do
+    evidence_ids =
+      objectives
+      |> Enum.flat_map(&evidence_resource_ids(&1.resource_id, &1.children))
+      |> Enum.uniq()
+
+    raw = raw_proficiency_per_student_for_objective(section.id, evidence_ids, opts)
+
+    student_ids =
+      case opts[:student_id] do
+        nil -> raw |> Map.values() |> Enum.flat_map(&Map.keys/1) |> Enum.uniq()
+        student_id -> [student_id]
+      end
+
+    Map.new(objectives, fn objective ->
+      resource_ids = evidence_resource_ids(objective.resource_id, objective.children)
+
+      {objective.resource_id,
+       Map.new(student_ids, fn student_id ->
+         {student_id, proficiency_bucket_for_student(resource_ids, raw, student_id)}
+       end)}
+    end)
+  end
+
+  def aggregated_proficiency_per_student_for_objectives(%Section{} = section, objectives, opts) do
+    proficiency_per_student_for_objective(section, Enum.map(objectives, & &1.resource_id), opts)
   end
 
   defp estimate_label(nil), do: "Not enough data"
@@ -788,6 +829,172 @@ defmodule Oli.Delivery.Metrics do
   defp estimate_label(%{label: :medium}), do: "Medium"
   defp estimate_label(%{label: :high}), do: "High"
   defp estimate_label(_estimate), do: "Not enough data"
+
+  @doc """
+  Retrieves raw proficiency data for a specific section and set of learning objectives,
+  optionally filtering by a list of objective IDs or a specific student ID.
+
+  ## Options
+
+    * `:objective_ids` - (optional) a list of objective IDs to filter the data by specific objectives.
+    * `:student_id` - (optional) an ID of a student to filter data by a specific student.
+
+  ## Examples
+
+      iex> raw_proficiency_per_learning_objective(123, objective_ids: [1, 2, 3], student_id: 42)
+      # Query result with raw proficiency data for section 123, filtered by objectives [1, 2, 3] and student ID 42
+
+      iex> raw_proficiency_per_learning_objective(123)
+      # Query result with raw proficiency data for all objectives in section 123
+  """
+  @spec raw_proficiency_per_learning_objective(section_id :: integer, opts :: Keyword.t()) :: %{
+          integer => tuple
+        }
+  def raw_proficiency_per_learning_objective(section_id, opts \\ []) do
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    maybe_filter_by_objective_id =
+      if opts[:objective_ids],
+        do: dynamic([s], s.resource_id in ^opts[:objective_ids]),
+        else: true
+
+    maybe_filter_by_student_id =
+      if opts[:student_id],
+        do: dynamic([s], s.user_id == ^opts[:student_id]),
+        else: dynamic([s], s.user_id == -1)
+
+    from(summary in Oli.Analytics.Summary.ResourceSummary,
+      where:
+        summary.section_id == ^section_id and
+          summary.project_id == -1 and
+          summary.resource_type_id == ^objective_type_id,
+      where: ^maybe_filter_by_objective_id,
+      where: ^maybe_filter_by_student_id,
+      select: {
+        summary.resource_id,
+        {
+          summary.num_first_attempts_correct,
+          summary.num_first_attempts,
+          summary.num_correct,
+          summary.num_attempts
+        }
+      }
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  @doc """
+  Like `proficiency_per_student_for_objective/3`, but returns the raw
+  `{proficiency, num_first_attempts}` pair per objective/student instead of a
+  bucketed proficiency string (i.e. one already categorized into "Not enough
+  data" / "Low" / "Medium" / "High"), so a caller can combine an objective's
+  own evidence with its Sub-LOs' evidence (e.g. via
+  `aggregate_weighted_proficiency/1`) before bucketing.
+
+  Returns a map where each key is an objective_id, and the value is another map
+  where each key is a student_id and the value is a `{proficiency, num_first_attempts}`
+  tuple.
+  """
+  @spec raw_proficiency_per_student_for_objective(
+          section_id :: integer,
+          objective_ids :: list(integer),
+          opts :: Keyword.t()
+        ) :: %{integer => %{integer => {float() | nil, non_neg_integer()}}}
+  def raw_proficiency_per_student_for_objective(section_id, objective_ids, opts \\ []) do
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    maybe_filter_by_student_id =
+      if opts[:student_id],
+        do: dynamic([s], s.user_id == ^opts[:student_id]),
+        else: dynamic([s], s.user_id != -1)
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where:
+          summary.section_id == ^section_id and
+            summary.project_id == -1 and
+            summary.resource_type_id == ^objective_type_id and
+            summary.resource_id in ^objective_ids,
+        where: ^maybe_filter_by_student_id,
+        group_by: [summary.user_id, summary.resource_id],
+        select:
+          {summary.user_id, summary.resource_id,
+           fragment(
+             """
+             (
+               (1 * CAST(SUM(?) as float)) +
+               (0.2 * (CAST(SUM(?) as float) - CAST(SUM(?) as float)))
+             ) /
+             NULLIF(CAST(SUM(?) as float), 0.0)
+             """,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           ), sum(summary.num_first_attempts)}
+      )
+
+    Repo.all(query)
+    |> Enum.reduce(%{}, fn {student_id, resource_id, proficiency, num_first_attempts}, acc ->
+      res =
+        Map.get(acc, resource_id, %{})
+        |> Map.put(student_id, {proficiency, num_first_attempts})
+
+      Map.put(acc, resource_id, res)
+    end)
+  end
+
+  @doc """
+  The resource_ids whose evidence contributes to an objective's aggregated
+  proficiency, given its own `resource_id` and its Sub-LO `children` (both
+  resource_ids): always the objective's own resource_id plus every one of its
+  children (an empty list for a leaf objective, contributing nothing extra).
+
+  A parent LO's own directly-tagged evidence is always included alongside its
+  Sub-LOs' evidence, even when the parent has Sub-LOs. This is a deliberate
+  product decision ("Option B" — Darren Siegel, Slack, 2026-09-01: "the
+  simplest thing that we can (and should) do"), not an oversight: if an
+  activity happens to be tagged to both a parent and one of its Sub-LOs, that
+  activity's evidence is double-counted (it contributes once via the parent's
+  own `ResourceSummary` row and again via the Sub-LO's row) — this risk is
+  explicitly accepted rather than mitigated. See
+  `docs/exec-plans/current/epics/learning_model_v2/lo_aggregation/parent_evidence_aggregation_options.md`
+  for the alternatives considered and why this one was chosen.
+
+  Shared by every runtime call site that rolls up Sub-LO proficiency into a
+  parent LO, so they all apply this rule identically instead of each
+  re-deriving it.
+  """
+  @spec evidence_resource_ids(resource_id :: integer(), children :: [integer()]) :: [integer()]
+  def evidence_resource_ids(resource_id, children), do: [resource_id | children]
+
+  @doc """
+  Combines the raw `{proficiency, count}` evidence for a set of resource_ids
+  (as resolved by `evidence_resource_ids/2`) into a single weighted-average
+  proficiency via `aggregate_weighted_proficiency/1`, then categorizes it into
+  a bucket ("Not enough data" / "Low" / "Medium" / "High") via
+  `proficiency_range/2`, for one student.
+  """
+  @spec proficiency_bucket_for_student(
+          resource_ids :: [integer()],
+          raw_proficiency_by_resource_id :: %{
+            integer() => %{integer() => {float() | nil, non_neg_integer()}}
+          },
+          student_id :: integer()
+        ) :: String.t()
+  def proficiency_bucket_for_student(resource_ids, raw_proficiency_by_resource_id, student_id) do
+    pairs =
+      Enum.map(resource_ids, fn resource_id ->
+        raw_proficiency_by_resource_id
+        |> Map.get(resource_id, %{})
+        |> Map.get(student_id, {nil, 0})
+      end)
+
+    {score, total_count} = aggregate_weighted_proficiency(pairs)
+
+    proficiency_range(score, total_count)
+  end
 
   @doc """
   Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
@@ -981,6 +1188,56 @@ defmodule Oli.Delivery.Metrics do
   defp label_rank(_label), do: 3
 
   defdelegate proficiency_range(proficiency, num_first_attempts), to: Naive
+
+  @doc """
+  Aggregates a parent Learning Objective's proficiency from the proficiency
+  estimates of its Sub-LOs (and, optionally, its own directly-tagged evidence),
+  producing a single weighted average.
+
+  Each child is passed as `{proficiency, count}`, where `count` is a measure
+  of how much evidence backs that child's proficiency estimate. This function
+  is agnostic to which learner model produced `proficiency` — it is the
+  CALLER's responsibility to supply a `count` that is consistent with how
+  that proficiency value was calculated:
+
+    * Legacy (naive, first-attempt-only) algorithm: `count` MUST be the
+      number of FIRST attempts (`num_first_attempts`), since only first
+      attempts contribute to that model's proficiency estimate. Passing a
+      total attempt count here would over-weight children whose score was
+      computed from a smaller subset of evidence than their attempt count
+      implies.
+
+    * Learning Proficiency Framework v2 (LKT-AOA): `count` must reflect the
+      total evidence count used by that model (all attempts / "tagged
+      opportunities"), per the LKT-AOA technical definition
+      (`docs/exec-plans/current/epics/learning_model_v2/lkt_technical_notes.docx.md`,
+      section 6.2), since LKT-AOA's own Sub-LO score is a mean over every
+      attempt rather than only the first.
+
+  Mismatching `count` semantics across children (e.g. mixing first-attempt
+  counts with total-attempt counts within the same aggregation call) will
+  silently skew the weighted average — this function has no way to detect
+  that on its own.
+  """
+  @spec aggregate_weighted_proficiency([
+          {proficiency :: float() | nil, count :: non_neg_integer()}
+        ]) ::
+          {score :: float() | nil, total_count :: non_neg_integer()}
+  def aggregate_weighted_proficiency(children) do
+    {weighted_sum, total_count} =
+      Enum.reduce(children, {0.0, 0}, fn
+        {nil, _count}, acc ->
+          acc
+
+        {proficiency, count}, {sum, total} ->
+          {sum + proficiency * count, total + count}
+      end)
+
+    case total_count do
+      0 -> {nil, 0}
+      _ -> {weighted_sum / total_count, total_count}
+    end
+  end
 
   def progress_range(nil), do: "Not enough data"
   def progress_range(progress) when progress <= 0.5, do: "Low"

@@ -269,16 +269,30 @@ defmodule OliWeb.Dialogue.StudentFunctions do
 
     layout =
       containers
+      # Sort by raw (never-nil) numbering first, so a suppressed container's layout line
+      # stays at its true document position -- overlaying suppression-aware numbering
+      # first would sort every suppressed container to the end of its level (nil sorts
+      # after integers under Erlang's standard term ordering), scrambling the course
+      # structure described to the AI assistant.
       |> Enum.sort_by(&{&1.numbering_level, &1.numbering_index})
-      |> Enum.map(fn c ->
-        label =
-          Sections.get_container_label_and_numbering(
-            c.numbering_level,
-            c.numbering_index,
-            customizations
-          )
+      |> Sections.overlay_suppression_aware_numbering(section)
+      |> Enum.map(fn
+        # A container absent from the suppression-aware numbering map (an unnumbered
+        # top-level unit, or a descendant of one) has numbering_index: nil; describe it
+        # by its bare title instead of a numbering prefix, matching how Learn presents a
+        # suppressed unit.
+        %{numbering_index: nil} = c ->
+          c.title
 
-        "#{label}: #{c.title}"
+        c ->
+          label =
+            Sections.get_container_label_and_numbering(
+              c.numbering_level,
+              c.numbering_index,
+              customizations
+            )
+
+          "#{label}: #{c.title}"
       end)
 
     %{

@@ -38,6 +38,7 @@ interface VariablePickerProps {
   onTargetChange?: (value: any) => any;
   onTypeChange?: (value: any) => any;
   context: 'init' | 'mutate' | 'condition';
+  overlayContainer?: HTMLElement | null;
 }
 interface NestedStateDisplayProps {
   rootLevel: any;
@@ -59,6 +60,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   context,
   onTargetChange,
   onTypeChange,
+  overlayContainer,
 }) => {
   const currentLesson = useSelector(selectPageState);
   const sequence = useSelector(selectSequence);
@@ -442,7 +444,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       rootClose
       trigger="click"
       placement={placement}
-      container={vpContainerRef.current}
+      container={overlayContainer ?? vpContainerRef.current}
       onExit={() => setIsFilterMenuOpen(false)}
       overlay={
         <Popover id={`aa-variable-picker`}>

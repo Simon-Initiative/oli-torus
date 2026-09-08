@@ -135,7 +135,8 @@ export const ScheduleSlideout: React.FC = () => {
   return (
     <div>
       <div className="pl-1">
-        {selectedItem.title} {selectedItem.numbering_index}
+        {selectedItem.title}
+        {selectedItem.numbering_index !== null ? ` ${selectedItem.numbering_index}` : ''}
       </div>
 
       <ul className=" ">

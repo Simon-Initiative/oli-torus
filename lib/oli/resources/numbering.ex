@@ -53,6 +53,12 @@ defmodule Oli.Resources.Numbering do
             index: 0,
             labels: CustomLabels.default_map()
 
+  @type t :: %__MODULE__{
+          level: integer(),
+          index: integer(),
+          labels: map() | nil
+        }
+
   def container_type_label(numbering) do
     labels = numbering.labels || CustomLabels.default_map()
 
@@ -65,6 +71,19 @@ defmodule Oli.Resources.Numbering do
 
   def prefix(numbering) do
     container_type_label(numbering) <> " #{numbering.index}"
+  end
+
+  @doc """
+  Looks up a resource's suppression-aware numbering in a
+  `Oli.Delivery.Sections.decorated_numbering_map/1` result.
+
+  Returns `nil` when the resource is absent from the map -- meaning it is itself a
+  suppressed top-level unit, or a descendant of one. Callers should treat `nil` the same
+  as "no numbering to show" (title only, no prefix).
+  """
+  @spec lookup(%{integer() => t()}, integer()) :: t() | nil
+  def lookup(numbering_map, resource_id) when is_map(numbering_map) do
+    Map.get(numbering_map, resource_id)
   end
 
   @typep project_or_section_slug :: String.t()

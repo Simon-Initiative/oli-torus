@@ -801,12 +801,10 @@ defmodule OliWeb.Dialogue.WindowLive do
 
       [trigger | rest] ->
         prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)
+        message = Message.new(:system, prompt)
 
-        Server.engage(
-          socket.assigns.dialogue,
-          Message.new(:system, prompt),
-          socket.assigns.engagement_id
-        )
+        persist_message(message, socket)
+        Server.engage(socket.assigns.dialogue, message)
 
         {:noreply,
          socket
@@ -847,6 +845,8 @@ defmodule OliWeb.Dialogue.WindowLive do
       false ->
         prompt = Triggers.assemble_trigger_prompt(trigger)
         message = Message.new(:system, prompt)
+
+        persist_message(message, socket)
 
         engagement_id = make_ref()
         Server.engage(socket.assigns.dialogue, message, engagement_id)

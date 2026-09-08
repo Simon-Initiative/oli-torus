@@ -651,6 +651,66 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "download_learning_objectives with objectives that left the course content" do
+    setup [:instructor_conn, :create_project_with_objectives]
+
+    test "omits objectives that no active page or activity references", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      project: project,
+      publication: publication,
+      obj_revision_1: obj_revision_1
+    } do
+      %{authors: [author]} = project
+
+      # An objective that was deleted in authoring, and so is not attached to any page or
+      # activity of the section, but still has its own section resource.
+      orphan_resource = insert(:resource)
+
+      orphan_revision =
+        insert(:revision,
+          resource: orphan_resource,
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          slug: "orphan_objective",
+          title: "Orphan Objective",
+          deleted: true
+        )
+
+      insert(:project_resource, project_id: project.id, resource_id: orphan_resource.id)
+
+      insert(:published_resource,
+        publication: publication,
+        resource: orphan_resource,
+        revision: orphan_revision
+      )
+
+      {:ok, _publication} = Publishing.update_publication(publication, %{published: nil})
+      {:ok, publication} = Publishing.publish_project(project, "some changes", author.id)
+      Sections.update_section_project_publication(section, project.id, publication.id)
+      Sections.rebuild_section_resources(section: section, publication: publication)
+      {:ok, _} = Sections.rebuild_contained_objectives(section)
+      Sections.PostProcessing.apply(section, :all)
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      assert Enum.any?(
+               Oli.Delivery.Sections.SectionResourceDepot.objectives(section.id),
+               &(&1.resource_id == orphan_resource.id)
+             )
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_learning_objectives, section.slug))
+
+      csv = response(conn, 200)
+
+      assert csv =~ obj_revision_1.title
+      refute csv =~ orphan_revision.title
+    end
+  end
+
   describe "download_student_progress" do
     test "downloads student-specific progress csv", %{conn: conn} do
       %{instructor: instructor, section: section, student1: student} =
@@ -1188,7 +1248,8 @@ defmodule OliWeb.DeliveryControllerTest do
   defp setup_lti_session(%{conn: conn}) do
     author = author_fixture()
 
-    %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
+    %{project: project, institution: institution, publication: base_publication} =
+      Oli.Seeder.base_project_with_resource(author)
 
     tool_jwk = jwk_fixture()
 
@@ -1203,6 +1264,8 @@ defmodule OliWeb.DeliveryControllerTest do
         lti_1p3_deployment_id: deployment.id,
         base_project_id: project.id
       })
+
+    {:ok, section} = Sections.create_section_resources(section, base_publication)
 
     institution_no_rc = insert(:institution, research_consent: :no_form)
     deployment_no_rc = insert(:lti_deployment, institution: institution_no_rc)

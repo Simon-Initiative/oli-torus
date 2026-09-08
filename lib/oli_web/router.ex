@@ -638,9 +638,6 @@ defmodule OliWeb.Router do
 
     live("/:project_id/embeddings", Search.EmbeddingsLive)
 
-    # Alternatives Groups
-    live("/:project_id/alternatives", Resources.AlternativesEditor)
-
     # Activity Bank
     get("/:project_id/bank", ActivityBankController, :index)
 
@@ -654,7 +651,6 @@ defmodule OliWeb.Router do
 
     get("/:project_id/experiments/segment.json", ExperimentController, :segment_download)
     get("/:project_id/experiments/experiment.json", ExperimentController, :experiment_download)
-    live("/:project_id/experiments", Experiments.ExperimentsView)
 
     # Curriculum
     live(
@@ -726,6 +722,7 @@ defmodule OliWeb.Router do
       :learning_objectives
     )
 
+    get("/:project/link/hierarchy", Api.ResourceController, :hierarchy_pages)
     get("/:project/link", Api.ResourceController, :index)
 
     post("/:project/activity/:activity_type", Api.ActivityController, :create)
@@ -1128,6 +1125,7 @@ defmodule OliWeb.Router do
         live("/:project_id/activity_bank", ActivityBankLive)
         live("/:project_id/objectives", ObjectivesLive)
         live("/:project_id/experiments", ExperimentsLive)
+        live("/:project_id/experiments/:experiment_id", ExperimentDetailsLive)
         live("/:project_id/bibliography", BibliographyLive)
         live("/:project_id/curriculum", CurriculumLive)
         live("/:project_id/curriculum/:container_slug", CurriculumLive)

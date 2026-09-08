@@ -43,7 +43,7 @@ jobs:
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .node-version
           cache: yarn
           cache-dependency-path: assets/yarn.lock
 
@@ -63,9 +63,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: assets/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('assets/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('.node-version', 'assets/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-${{ hashFiles('.node-version') }}-
 
       - name: 🧪 Setup BEAM toolchain
         uses: erlef/setup-beam@v1
@@ -136,7 +136,7 @@ jobs:
       - name: 🔧 Configure
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .node-version
           cache: yarn
           cache-dependency-path: assets/yarn.lock
 
@@ -186,7 +186,7 @@ jobs:
       - name: 🔧 Configure
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .node-version
           cache: yarn
           cache-dependency-path: assets/yarn.lock
 

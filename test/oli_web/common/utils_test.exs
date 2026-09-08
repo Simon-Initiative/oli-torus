@@ -7,6 +7,26 @@ defmodule OliWeb.Common.UtilsTest do
 
   doctest Utils, import: true
 
+  describe "extract_text_from_content/1" do
+    test "extracts Alternatives content without HTML diagnostics" do
+      content = [
+        %{
+          "type" => "alternative",
+          "children" => [
+            %{"type" => "p", "children" => [%{"text" => "Option 1"}]},
+            %{"type" => "activity-reference", "activity_id" => 123}
+          ]
+        }
+      ]
+
+      extracted = Utils.extract_text_from_content(content)
+
+      assert extracted == "Option 1 [Activity]"
+      refute extracted =~ "<div"
+      refute extracted =~ "unsupported"
+    end
+  end
+
   describe "name_and_email/1" do
     test "returns name with email when user has email" do
       user = %User{

@@ -12,6 +12,7 @@ export enum DiagnosticTypes {
   INVALID_OWNER_INIT = 'invalid_owner_init',
   INVALID_OWNER_CONDITION = 'invalid_owner_condition',
   INVALID_OWNER_MUTATE = 'invalid_owner_mutate',
+  ACCESSIBILITY = 'accessibility',
   DEFAULT = '',
 }
 

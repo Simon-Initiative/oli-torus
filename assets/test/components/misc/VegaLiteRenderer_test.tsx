@@ -22,12 +22,14 @@ jest.mock('react-vega', () => {
   const mockReact = require('react');
   return {
     VegaLite: ({ spec, onNewView, tooltip }: any) => {
-      // Simulate onNewView callback
+      const [initializeView] = mockReact.useState(
+        () => () => onNewView?.((global as any).mockViewForTests),
+      );
+
+      // Simulate onNewView firing once when Vega initializes its view.
       mockReact.useEffect(() => {
-        if (onNewView) {
-          onNewView((global as any).mockViewForTests);
-        }
-      }, [onNewView]);
+        initializeView();
+      }, [initializeView]);
 
       return mockReact.createElement('div', {
         'data-testid': 'vega-lite-renderer',
@@ -104,6 +106,7 @@ describe('VegaLiteRenderer', () => {
   };
 
   beforeEach(() => {
+    (global as any).mockViewForTests = mockView;
     // Reset document class for dark mode tests
     document.documentElement.className = '';
     jest.clearAllMocks();
@@ -184,6 +187,39 @@ describe('VegaLiteRenderer', () => {
 
       expect(mockView.background).toHaveBeenCalledWith('white');
       expect(mockView.run).toHaveBeenCalled();
+    });
+
+    it('can preserve a transparent chart background across themes', () => {
+      render(<VegaLiteRenderer spec={mockSpec} transparent_background={true} />);
+
+      expect(mockView.background).toHaveBeenCalledWith('transparent');
+      expect(mockView.run).toHaveBeenCalled();
+
+      const mockInstance = MockMutationObserver.instances[0];
+      expect(mockInstance).toBeDefined();
+
+      if (mockInstance?.callback) {
+        jest.clearAllMocks();
+
+        act(() => {
+          document.documentElement.classList.add('dark');
+          mockInstance.callback([] as MutationRecord[], mockInstance as MutationObserver);
+          jest.advanceTimersByTime(60);
+        });
+
+        const specData = screen.getByTestId('vega-lite-renderer').getAttribute('data-spec');
+        expect(specData).toBeTruthy();
+
+        if (specData) {
+          const parsedSpec = JSON.parse(specData);
+          expect(parsedSpec.params).toEqual(
+            expect.arrayContaining([expect.objectContaining({ name: 'isDarkMode', value: true })]),
+          );
+        }
+
+        expect(mockView.background).toHaveBeenCalledWith('transparent');
+        expect(mockView.run).toHaveBeenCalled();
+      }
     });
   });
 
@@ -427,11 +463,9 @@ describe('VegaLiteRenderer', () => {
 
   describe('Edge Cases', () => {
     it('handles null view reference gracefully', () => {
-      // Mock viewRef to be null
+      // Have the mocked Vega component supply a null view.
+      (global as any).mockViewForTests = null;
       const { rerender } = render(<VegaLiteRenderer spec={mockSpec} />);
-
-      // Force viewRef to be null by not calling onNewView
-      jest.spyOn(React, 'useRef').mockReturnValueOnce({ current: null });
 
       rerender(<VegaLiteRenderer spec={mockSpec} />);
 

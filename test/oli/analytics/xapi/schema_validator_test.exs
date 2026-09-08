@@ -91,4 +91,147 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
     assert Enum.any?(file.errors, &(&1.classification == :invalid_json and &1.line == 2))
     assert Enum.any?(file.errors, &(&1.classification == :schema_mismatch and &1.line == 3))
   end
+
+  test "validates host statements with experiment attribution arrays", %{tmp_dir: tmp_dir} do
+    file_path = Path.join(tmp_dir, "experiment.jsonl")
+
+    statement = %{
+      "actor" => %{
+        "account" => %{"homePage" => "https://proton.oli.cmu.edu", "name" => "123"},
+        "objectType" => "Agent"
+      },
+      "verb" => %{
+        "id" => "http://adlnet.gov/expapi/verbs/completed",
+        "display" => %{"en-US" => "completed"}
+      },
+      "object" => %{
+        "id" => "https://proton.oli.cmu.edu/page_attempt/abc",
+        "definition" => %{
+          "type" => "http://oli.cmu.edu/extensions/page_attempt",
+          "name" => %{"en-US" => "Page Attempt"}
+        },
+        "objectType" => "Activity"
+      },
+      "context" => %{
+        "extensions" => %{
+          "http://oli.cmu.edu/extensions/project_id" => 1001,
+          "http://oli.cmu.edu/extensions/section_id" => 2001,
+          "http://oli.cmu.edu/extensions/publication_id" => 3001,
+          "http://oli.cmu.edu/extensions/page_id" => 7001,
+          "http://oli.cmu.edu/extensions/page_attempt_number" => 1,
+          "http://oli.cmu.edu/extensions/page_attempt_guid" => "abc",
+          "http://oli.cmu.edu/extensions/experiment_attributions" => [
+            %{
+              "role" => "rollup",
+              "attribution_type" => "outcome",
+              "experiment_id" => 101,
+              "decision_point_id" => 202,
+              "condition_id" => 303,
+              "condition_code" => "condition-a",
+              "assignment_id" => 404,
+              "assignment_key" => "101:202:505",
+              "assignment_scope" => "section_enrollment",
+              "intervention_id" => 606,
+              "intervention_key" => "7001:placement-a",
+              "assessment_binding_id" => 707,
+              "assessment_page_resource_id" => 7001,
+              "resource_attempt_id" => 808,
+              "disposition" => "accepted",
+              "reward_threshold" => 0.75,
+              "normalized_score" => 1.0,
+              "page_revision_id" => 909,
+              "previous_policy_context" => %{
+                "posterior_alpha" => 1.0,
+                "posterior_beta" => 1.0
+              },
+              "next_policy_context" => %{
+                "posterior_alpha" => 2.0,
+                "posterior_beta" => 1.0
+              },
+              "key" => "rollup-key"
+            }
+          ]
+        }
+      },
+      "result" => %{
+        "score" => %{"scaled" => 1.0, "raw" => 1.0, "min" => 0, "max" => 1.0},
+        "completion" => true,
+        "success" => true
+      },
+      "timestamp" => "2026-07-14T12:00:00Z"
+    }
+
+    File.write!(file_path, Jason.encode!(statement))
+
+    assert {:ok, summary} = SchemaValidator.validate_paths([file_path])
+    assert summary.valid_lines == 1
+    assert summary.error_count == 0
+
+    invalid_statement =
+      put_in(
+        statement,
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0),
+          "attribution_type"
+        ],
+        "assignment"
+      )
+
+    File.write!(file_path, Jason.encode!(invalid_statement))
+
+    assert {:ok, invalid_summary} = SchemaValidator.validate_paths([file_path])
+    assert invalid_summary.valid_lines == 0
+    assert invalid_summary.schema_mismatch_lines == 1
+
+    missing_type_statement =
+      update_in(
+        statement,
+        [
+          "context",
+          "extensions",
+          "http://oli.cmu.edu/extensions/experiment_attributions",
+          Access.at(0)
+        ],
+        &Map.delete(&1, "attribution_type")
+      )
+
+    File.write!(file_path, Jason.encode!(missing_type_statement))
+
+    assert {:ok, missing_type_summary} = SchemaValidator.validate_paths([file_path])
+    assert missing_type_summary.valid_lines == 0
+    assert missing_type_summary.schema_mismatch_lines == 1
+  end
+
+  test "rejects retired dedicated experiment event statements", %{tmp_dir: tmp_dir} do
+    file_path = Path.join(tmp_dir, "experiment_event.jsonl")
+
+    statement = %{
+      "actor" => %{
+        "account" => %{"homePage" => "https://proton.oli.cmu.edu", "name" => "123"},
+        "objectType" => "Agent"
+      },
+      "verb" => %{
+        "id" => "http://oli.cmu.edu/extensions/verbs/experiment_reward_recorded",
+        "display" => %{"en-US" => "recorded experiment reward"}
+      },
+      "object" => %{
+        "id" => "https://proton.oli.cmu.edu/experiments/101",
+        "definition" => %{
+          "type" => "http://oli.cmu.edu/extensions/types/experiment_event",
+          "name" => %{"en-US" => "experiment_reward_recorded"}
+        }
+      },
+      "context" => %{"extensions" => %{}},
+      "timestamp" => "2026-07-14T12:00:00Z"
+    }
+
+    File.write!(file_path, Jason.encode!(statement))
+
+    assert {:ok, summary} = SchemaValidator.validate_paths([file_path])
+    assert summary.valid_lines == 0
+    assert summary.schema_mismatch_lines == 1
+  end
 end
