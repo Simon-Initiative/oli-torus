@@ -103,13 +103,34 @@ defmodule OliWeb.LearningProficiencyTest do
     assert has_element?(view, "#confirm-framework-upgrade[disabled]")
   end
 
-  test "learn more opens authorized placeholder documentation", s do
+  test "learn more explains both frameworks and confidence with authorized access", s do
     conn = log_in_author(s.conn, s.author)
     {:ok, view, _} = live(conn, path(s.project))
     docs = "/workspaces/course_author/#{s.project.slug}/learning_proficiency"
     assert has_element?(view, "a[href='#{docs}']", "Learn more")
     {:ok, docs_view, _} = live(conn, docs)
-    assert has_element?(docs_view, "article", "Full documentation is being prepared.")
+    assert has_element?(docs_view, "article", "percentage correct on first attempts")
+    assert has_element?(docs_view, "article", "At least three first attempts are required")
+
+    assert has_element?(
+             docs_view,
+             "article",
+             "logistic regression trained on historical learner responses"
+           )
+
+    assert has_element?(
+             docs_view,
+             "article",
+             "Proficiency is the average of these predictions across all attempts"
+           )
+
+    assert has_element?(
+             docs_view,
+             "article",
+             "Repeating the same part contributes to proficiency but does not increase confidence."
+           )
+
+    refute render(docs_view) =~ "Full documentation is being prepared"
     assert has_element?(docs_view, "a[href='#{path(s.project)}']", "Project Overview")
     assert {:error, {:redirect, _}} = live(log_in_author(s.conn, author_fixture()), docs)
     assert get(s.conn, docs).status == 302
