@@ -170,11 +170,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
         <form id="sort" phx-change="sort" class="flex h-9 shrink-0 items-center gap-2">
           <label for="select_sort" class="sr-only">Sort objectives</label>
-          <div class="relative h-9 w-[86px] shrink-0">
+          <div class="relative h-9 w-[210px] max-w-full shrink-0">
             <select
               name="sort_by"
               id="select_sort"
-              class="h-9 w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] pr-7 text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              class="h-9 w-full appearance-none rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] pr-9 text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              style="appearance: none; -webkit-appearance: none; background-image: none;"
             >
               <%= for column_spec <- @table_model.column_specs do %>
                 <%= if column_spec.name != :action do %>
