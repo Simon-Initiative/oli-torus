@@ -61,7 +61,7 @@ Option C is to build a separate React analytics surface. It would add a new clie
 3. Build an index from each unique activity resource id to its containing eligible page revision/resource context. Restrict the index to visible, delivered pages available to the instructor and to the page classes supported by the existing summary path.
 4. Resolve the published activity revision and row metadata for the unique IDs. Use aggregate row metrics from the same summary data path used for expanded details; do not preserve the old direct-only `Sections.get_activities_for_objective/2` behavior.
 5. Decode URL params, apply text/attempt/score filters, sort, and paginate the rows. Reset `expanded_activity_ids` when the linked activity context changes; do not preload or auto-expand any row.
-6. On `paged_table_selection_change`, toggle the selected resource id and request its summary only if it is not cached. The summary service groups the activity by containing page, calls `ActivityHelpers.summarize_activity_performance/6` per page group, and merges the result by activity resource id.
+6. On `paged_table_selection_change`, toggle the selected resource id and request its summary only if it is not cached. The route resolves that activity's canonical page context, loads the complete page revision, and calls `ActivityHelpers.summarize_activity_performance/6` for that single activity.
 7. Render the shared detail row. A missing/zero-result summary uses the existing no-attempt question empty state; a transient request displays the existing loading state. Collapse removes visibility but retains cached data for re-expansion.
 
 ### 4.4 Page-context and aggregation contract
@@ -79,7 +79,9 @@ The resolver should return a structure equivalent to:
 
 Score fields travel in two different scales on purpose, and the boundary converts between them explicitly rather than relying on key fallbacks. `percent_correct` is a 0-100 percentage at the resolver boundary; linked rows expose `avg_score` as the 0-1 ratio consumed by `ActivitiesTableModel.render_avg_score_column/3`, which styles values below 0.40. `LinkedActivities.merge_summary_metrics/1` emits `avg_score` as a ratio, so callers must preserve that scale when normalizing rows.
 
-The summary boundary receives unique activity IDs and page contexts. For each page context it calls the existing page-scoped helper with only the activity IDs present on that page, then merges resource summaries, response summaries, attempt totals, first-attempt correctness, eventual correctness, and answer distributions by activity ID. Counts are additive; correctness ratios are recomputed from merged numerators and denominators, not averaged as percentages.
+Table metrics are read once per activity, not once per containing page. `ResourceSummary` rows scoped with `user_id == -1` and `project_id == -1` are already aggregated across the whole section, so a single row covers every page an activity appears on; reading them per page and summing would report the same section-wide totals repeatedly. Accumulation therefore happens across `part_id`, since a multi-part activity has one row per part. Counts are additive; correctness ratios are recomputed from merged numerators and denominators, not averaged as percentages.
+
+Page context is still required for the expanded detail path, which is page-scoped: `ActivityHelpers.summarize_activity_performance/6` takes a page revision, so an expanded row loads lazily against its canonical page.
 
 The canonical page context is selected deterministically as the first eligible page in depot/display order. This is a decision, not an open item, so row identity and preview selection are stable across loads. The published activity revision is resolved once by resource id. If an activity has no eligible page context, keep the row with zero/empty metrics and render the established empty state rather than calling a page-scoped helper with an invalid page.
 
@@ -126,7 +128,12 @@ The row contract must support both current selected-page rows (`title`, `content
 
 ### 5.4 URL and filter contract
 
-Preserve existing params and use the current helpers: `text_search`, `selected_attempts_ids`, `avg_score_percentage`, `avg_score_selector`, `sort_by`, `sort_order`, `offset`, `limit`, and encoded `back_params`. Accepted sort atoms are `:question_stem`, `:attempts`, and `:percent_correct`; internal mapping may use `:title`, `:total_attempts`, and `:avg_score` after normalization. Filter changes push patches with offset reset to zero. Clear All Filters removes activity filters and restores the default sort/page state while retaining back-navigation state.
+Preserve existing params and use the current helpers: `text_search`, `selected_attempts_ids`, `avg_score_percentage`, `avg_score_selector`, `sort_by`, `sort_order`, `offset`, `limit`, and encoded `back_params`. Accepted sort atoms are `:question_stem`, `:attempts`, and `:percent_correct`; internal mapping may use `:title`, `:total_attempts`, and `:avg_score` after normalization. Filter changes push patches with offset reset to zero.
+
+Two invariants in this contract are easy to break and each is covered by a regression test:
+
+- Clear All Filters builds its path from scratch rather than merging defaults over the current params. `update_params/2` toggles the sort order and discards every other key whenever the incoming map carries the sort column already in use, so merging would silently keep the active filters. Only `back_params` survives, so the objectives table keeps its own filters.
+- `selected_attempts_ids` travels as an encoded JSON string and is decoded only where the list is needed. `Params.get_list_param/3` reads a binary, so storing the decoded list in the params would re-emit array-style query params on the next patch and drop the filter.
 
 ## 6. Data Model & Storage
 No new tables, columns, migrations, or persisted records are required.
@@ -156,7 +163,8 @@ Summary calls are lazy. Initial navigation loads row metadata and aggregate row 
 ## 9. Performance & Scalability Posture
 - Objective relationships: one depot batch lookup for the selected objective plus effective descendants, followed by in-memory union/de-duplication.
 - Page context: use depot page lists and existing resource helpers; avoid one query per activity. If page revision resolution cannot be fully depot-backed, batch-resolve the necessary published revisions.
-- Detail summaries: group IDs by page and invoke the existing helper once per page group. Do not call `summarize_activity_performance/6` once per row.
+- Table metrics: one section-scoped summary query for the whole activity set, never one per containing page.
+- Detail summaries: loaded lazily when a row is expanded, against that activity's canonical page revision, and cached per LiveView so re-expanding issues no further query.
 - Filtering/sorting/pagination: operate on the bounded linked row set in memory, matching current LiveView behavior. Keep pagination after filtering and sorting so total counts and offsets remain correct.
 - Analytics: retain aggregate-only summary queries and avoid loading raw response records into the LiveView beyond the existing detail payload contract.
 - Instrument linked-load and summary-load duration, row/group counts, cache outcomes, and failures to detect regressions in AppSignal/telemetry.
@@ -175,7 +183,7 @@ Summary calls are lazy. Initial navigation loads row metadata and aggregate row 
 Emit or reuse telemetry around two operations:
 
 - `linked_activities.load`: section/objective scope outcome, objective count, unique activity count, page-context count, duration, and error class.
-- `linked_activities.summary_load`: activity/page-group count, cache hit/miss, summary count, duration, outcome, and error class.
+- `linked_activities.summary_load`: activity count, cache hit/miss, summary count, duration, outcome, and error class. Page-context counts belong to `load`, which is where the index is built.
 
 Telemetry metadata must exclude student email, raw response content, activity authored content, and unrestricted query parameters. Logger messages should use section/objective/resource identifiers only where existing operational policy permits and should remain bounded. AppSignal should surface elevated errors or latency without requiring a new provider.
 
@@ -223,7 +231,7 @@ Existing activity, section-resource, publication, attempt, response, and analyti
 - Cross-page summary semantics may disagree with page-specific ordinal/preview behavior: use the deterministic canonical page context defined in 4.4 and merge aggregate metrics by numerators/denominators; add multi-page tests.
 - If an activity's rendered preview differs by containing page, the canonical page choice decides what the instructor sees while the metrics stay aggregated across occurrences. Surface this during implementation review if any activity type is found to render page-dependent content.
 - Shared table refactor may regress existing dashboard columns or events: preserve default options and run existing Pages tests alongside linked-activities tests.
-- Activity details may issue N+1 summary calls: enforce page grouping and instrument group/query counts.
+- Activity details may issue one summary call per expanded row: rely on the per-LiveView summary cache and instrument summary-load counts.
 - Related arrays may be stale: treat them as the established section source of truth and surface empty/error-safe states; do not repair synchronously.
 - Expanded details may expose more data than the shallow page: reuse `ActivityHelpers` and existing instructor authorization/privacy behavior rather than adding new payload fields.
 - Product may later choose occurrence-level rows: isolate aggregation in the summary boundary so row semantics can change without rewriting route/filter/table code.
@@ -243,6 +251,8 @@ Existing activity, section-resource, publication, attempt, response, and analyti
 - `lib/oli_web/components/delivery/pages/pages.ex`
 - `lib/oli_web/components/delivery/activity_helpers.ex`
 - `lib/oli/delivery/sections/section_resource_depot.ex`
+- `docs/design-docs/publication-model.md`
+- `docs/design-docs/high-level.md`
 
 ## Decision Log
 
@@ -251,5 +261,15 @@ Existing activity, section-resource, publication, attempt, response, and analyti
 - Reason: Phases 1-6 completed the implementation with a retired shallow model and a shared state projection rather than the originally tentative `ActivityInsightsTable` component.
 - Evidence: `lib/oli/delivery/sections/linked_activities.ex`, `lib/oli_web/components/delivery/activity_insights_state.ex`, `lib/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live.ex`, and phase execution records.
 - Impact: Interface ownership and file references now match the repository; manual browser QA remains an explicit follow-up.
-- `docs/design-docs/publication-model.md`
-- `docs/design-docs/high-level.md`
+
+### 2026-09-08 - Read Activity Summaries Once Per Activity
+- Change: Table metrics now come from a single section-scoped `ResourceSummary` query for the whole activity set. The per-page grouping helper was removed, and page context is kept only for the expanded detail path.
+- Reason: `ResourceSummary` scoped with `user_id == -1` and `project_id == -1` carries no page and is already aggregated across the section. `Summary.summarize_activities_for_page/3` filters which activities a page exposes but still selects that section-wide row, so calling it per containing page and summing double-counted attempts and correct answers for any activity placed on more than one page.
+- Evidence: `lib/oli/delivery/sections/linked_activities.ex`, and the regression test in `test/oli/delivery/sections_test.exs` that places one activity on two pages and fails against the previous implementation.
+- Impact: AC-006 aggregation is satisfied by the data scope rather than by summing, so no cross-page accumulation remains. The scenario suite did not catch this because it never populates summary rows and therefore exercised the attempt fallback path.
+
+### 2026-09-08 - Correct Filter Reset And Attempts Persistence
+- Change: Clear All Filters builds its target path from scratch, and `selected_attempts_ids` is kept in the params as an encoded JSON string.
+- Reason: `update_params/2` matches any map carrying `sort_by` and, when that column is already in use, recurses with only the toggled sort order, discarding every other key. With the default sort this left search and the score filter applied. Independently, storing the decoded list in the params re-emitted `selected_attempts_ids[]=3`, which `Params.get_list_param/3` cannot read, so the attempts filter was lost on any patch.
+- Evidence: `lib/oli_web/live/delivery/instructor_dashboard/learning_objectives/related_activities_live.ex` and two regression tests asserting the patched URL rather than markup.
+- Impact: AC-010 now holds for every sort column, and the attempts filter survives search, sort and pagination.

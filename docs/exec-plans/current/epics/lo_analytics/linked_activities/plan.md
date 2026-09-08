@@ -92,7 +92,7 @@ Phases 1 through 6 are implemented and recorded in their execution records. The 
 ## Phase 3: Implement Cross-Page Summary Loading
 - Goal: connect unique linked rows to page-scoped `ActivityHelpers` calls and produce consistent aggregate row/detail metrics.
 - Tasks:
-  - [x] Group linked activity IDs by containing page context and call `summarize_activity_performance/6` once per page group, never once per row.
+  - [x] Group linked activity IDs by containing page context and call `summarize_activity_performance/6` once per page group, never once per row. Superseded after implementation review: table metrics are read once per activity from the section-scoped `ResourceSummary`, and page grouping remains only for the expanded detail path. See the decision log in `fdd.md`.
   - [x] Merge resource/response summaries and correctness metrics by activity resource ID, preserving activity-specific staged detail payloads and canonical preview context.
   - [x] Convert explicitly between score scales when wiring `merge_summary_metrics/1` into `normalize_activity_row/3`. `merge_summary_metrics/1` returns `avg_score` as a 0-1 ratio, while `normalize_activity_row/3` treats its incoming score as a 0-100 percentage and then divides by 100. Feeding one into the other through the current `:percent_correct -> :avg_score` fallback yields values that are wrong by a factor of one hundred. Remove that silent fallback and pass the scale explicitly.
   - [x] Narrow the page-revision load in `LinkedActivities.resolve_context/2`. It currently loads every non-hidden lesson revision in the section, including full `content`, on each call, and Phase 1 discards the result. Build the activity-to-page index from a narrow select (`id`, `resource_id`, `activity_refs`, `graded`) and load the complete revision only for the canonical page of a row being expanded. The full revision is still required at that point because `ActivityHelpers.build_ordinal_mapping/1` walks `revision.content` and `AdaptiveIFrame.screen_preview/3` needs the whole revision, so do not narrow the revision handed to `summarize_activity_performance/6`.
@@ -105,7 +105,7 @@ Phases 1 through 6 are implemented and recorded in their execution records. The 
   - [x] Verify summary loading and expansion do not insert/update/delete revisions, attempts, responses, or summary rows.
   - Command(s): `mix test test/oli/analytics test/oli_web/components/delivery/activity_helpers_test.exs test/oli_web/components/delivery/pages`
 - Definition of Done:
-  - Detail summaries match the established activity dashboard payload and aggregate correctly across page groups.
+  - Detail summaries match the established activity dashboard payload, and table metrics report section-scoped totals once per activity.
   - Contract tests cover AC-004 through AC-006, AC-012, AC-013, and AC-015.
 - Gate:
   - Summary merge tests pass and a query/log review confirms grouped calls, section scoping, and no source-data mutation.
@@ -159,7 +159,7 @@ Phases 1 through 6 are implemented and recorded in their execution records. The 
   - [x] Pass `disabled={@selected_attempts_ids == %{}}` to `MultiSelect.render` on the linked route. `pages.ex` passes it for Scored and Practice Activities and the linked toolbar omits it, so the control's disabled state diverges from the shared behavior.
   - [ ] Perform manual instructor-flow verification with parent, child, duplicate, unrelated, zero-attempt, multi-page, and filtered datasets.
   - [x] Decide whether `LinkedActivities.activity_attempt_fallback/2` is a production requirement or a test-fixture workaround. It was introduced in Phase 3 so activities with evaluated attempts but no summary rows stay visible, and it adds a third query path plus a `ResourceSummary` query using the magic constants `project_id == -1 and user_id == -1`. If it stays, route it through the existing accessor in `Oli.Analytics.Summary` instead of duplicating that query here.
-  - [x] Stop recomputing `activity_page_groups/2` inside the summary-load telemetry metadata; reuse the grouping already computed in `activity_metrics/3`. Document that `normalize_activity_row/3` calls `Activities.list_lti_activity_registrations()` internally and must not be used per row; production code should use the arity-4 form with precomputed IDs.
+  - [x] Stop recomputing the page grouping inside the summary-load telemetry metadata. `activity_page_groups/2` was later removed altogether and the page-context count moved to the `load` event. Document that `normalize_activity_row/3` calls `Activities.list_lti_activity_registrations()` internally and must not be used per row; production code should use the arity-4 form with precomputed IDs.
   - [x] Complete security, performance, Elixir/Phoenix, UI/accessibility, and requirements reviews.
   - [ ] Update Jira execution status/artifacts according to repository issue-tracking policy.
   - [x] Confirm no migration, feature flag, or rollout configuration is required and document any product decision that changes AC-006.

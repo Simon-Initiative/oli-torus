@@ -83,7 +83,7 @@ The change is additive to an existing instructor route. Existing activity and an
 - Regression signal: no material increase in request-time database queries, LiveView errors, or latency compared with the existing linked-activities page.
 
 ## 13. Risks & Mitigations
-- Risk: activity summary APIs require page context while objective links span pages. Mitigation: build an activity-to-page context map, group summary work by page, and define unique-row aggregation explicitly.
+- Risk: activity summary APIs require page context while objective links span pages. Mitigation: build an activity-to-page context map for the expanded detail path, and take table metrics from the section-scoped summary, which already aggregates across every page an activity appears on.
 - Risk: parent and child arrays contain duplicate activity IDs. Mitigation: union and de-duplicate IDs before row construction and test duplicate placement.
 - Risk: copying `Pages` state creates divergent behavior. Mitigation: extract the generic expansion, cache, lazy loading, and adaptive-summary repair boundary and reuse the existing table model.
 - Risk: broad depot traversal or per-row queries regress dashboard performance. Mitigation: use depot batch APIs, bounded page-context discovery, and telemetry for query/latency regressions.
