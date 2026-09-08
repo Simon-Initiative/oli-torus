@@ -1187,6 +1187,23 @@ defmodule Oli.Authoring.Course do
   end
 
   @doc """
+  Updates a project's embedded attributes while preserving fields omitted from
+  the update.
+
+  Use this for focused attribute changes: `Project.changeset/2` treats an
+  `attributes` parameter as a replacement embed and resets omitted fields to
+  their schema defaults.
+  """
+  def update_project_attributes(%Project{} = project, attrs) do
+    attributes = project.attributes || %ProjectAttributes{}
+
+    project
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_embed(:attributes, ProjectAttributes.changeset(attributes, attrs))
+    |> Repo.update()
+  end
+
+  @doc """
   Updates the latest_analytics_snapshot_url and latest_analytics_snapshot_timestamp for the given project.
   """
   def update_project_latest_analytics_snapshot_url(project_slug, url, timestamp) do

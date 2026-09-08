@@ -5,43 +5,56 @@ generated_from: "prd.md and Jira MER-5799"
 requirements:
   - id: "FR-001"
     title: "Classify coverage issues using shared project thresholds"
-    status: "proposed"
+    status: "verified"
     acceptance_criteria:
       - id: "AC-001"
         title: "Defaults classify fewer than three formative or summative activities as an issue"
-        status: "proposed"
+        status: "verified"
         verification_method: "automated"
-        proofs: []
+        proofs:
+          - "test/oli/authoring/course/project_attributes_test.exs: default and bounded threshold coverage"
+          - "test/oli/authoring/objective_coverage/issues_test.exs: direct formative, summative, both, and healthy classification"
       - id: "AC-002"
         title: "Parent results include issues found on descendant sub-objectives"
-        status: "proposed"
+        status: "verified"
         verification_method: "automated"
-        proofs: []
+        proofs:
+          - "test/oli/authoring/objective_coverage/issues_test.exs: descendant-to-parent issue propagation"
+          - "test/oli_web/live/workspaces/course_author/objectives_live_test.exs: flagged-child parent inclusion"
   - id: "FR-002"
     title: "Render and apply the Coverage Issues filter"
-    status: "proposed"
+    status: "verified"
     acceptance_criteria:
       - id: "AC-003"
         title: "Toolbar filter shows warning icon and affected-objective count and narrows rows without changing search or sort"
-        status: "proposed"
+        status: "verified"
         verification_method: "automated"
-        proofs: []
+        proofs:
+          - "test/oli_web/live/workspaces/course_author/objectives/coverage_issues_control_test.exs: inactive, active, zero, and multi-digit count states"
+          - "test/oli_web/live/workspaces/course_author/objectives_live_test.exs: active/inactive filtering, search composition, direct URL state, and CSV parameters"
       - id: "AC-004"
         title: "Affected objectives and sub-objectives show warning markers, outlines, and contextual expanded messages"
-        status: "proposed"
+        status: "verified"
         verification_method: "hybrid"
-        proofs: []
+        proofs:
+          - "test/oli_web/live/workspaces/course_author/objectives_live_test.exs: objective and sub-objective borders, markers, bucket messages, and healthy-state absence"
+          - "Manual Figma comparison completed by the user for collapsed, expanded, formative, summative, page, activity, responsive, light, and dark states"
   - id: "FR-003"
     title: "Configure project-level coverage thresholds"
-    status: "proposed"
+    status: "verified"
     acceptance_criteria:
       - id: "AC-005"
         title: "Authors can change, persist, and restore formative and summative thresholds with recommended defaults of three"
-        status: "proposed"
+        status: "verified"
         verification_method: "automated"
-        proofs: []
+        proofs:
+          - "test/oli/course_test.exs: partial embedded-attribute persistence preserves both thresholds"
+          - "test/oli_web/live/workspaces/course_author/objectives_live_test.exs: increment, decrement floor, persistence, reclassification, and restore defaults"
       - id: "AC-006"
-        title: "Settings popover exposes accessible controls, explanatory copy, and the product-provided Learn more link"
-        status: "proposed"
+        title: "Settings popover exposes accessible controls and explanatory copy while keeping Learn more hidden until MER-5919"
+        status: "verified"
         verification_method: "hybrid"
-        proofs: []
+        proofs:
+          - "test/oli_web/live/workspaces/course_author/objectives/coverage_settings_popover_test.exs: labels, controls, floor state, copy, restore action, hidden Learn more placeholder, and dismissal wiring"
+          - "lib/oli_web/live/workspaces/course_author/objectives/coverage_settings_popover.ex: styled hidden MER-5919 extension point"
+          - "Manual Figma comparison completed by the user for the light and dark settings designs"

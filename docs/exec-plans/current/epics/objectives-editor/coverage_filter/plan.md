@@ -19,7 +19,7 @@ Guardrails:
 - Do not add coverage queries, migrations, caches, or mutate objective/activity associations.
 - Keep classification and persistence out of HEEx rendering.
 - Do not fork MER-5797's state or patch machinery. The canonical URL state is `query`, `filter`, `sort_by`, `sort_order`, `offset`, and `expanded`.
-- Treat the product-provided Learn more URL as a release input; do not invent a destination.
+- Do not invent a Learn more destination. Keep the prepared affordance hidden in MER-5799; MER-5919 owns the URL and activation.
 
 ## Clarifications & Default Assumptions
 
@@ -27,20 +27,20 @@ Guardrails:
 - A direct objective issue and an issue found on any descendant both make the visible parent an affected result. A filtered parent need not be auto-expanded solely because it has an issue.
 - `Coverage Issues` is a value within the existing `filter` map, rather than a separate query parameter. Its exact key and serialised value must match MER-5797's merged conventions.
 - The feature may begin pure-domain/persistence work on the current #6800 base. Before any LiveView/toolbar implementation is finalized, rebase onto the merged #6800 and reconcile with the current merged tip of MER-5797's PR (see the PR-number note above). This is a hard integration gate, not end-of-PR cleanup.
-- The pending Figma confirmation covers the published Learn more URL and any responsive behavior not explicit in nodes `365:14554` and `365:17228`.
+- Final Figma reconciliation covers responsive behavior not explicit in nodes `365:14554` and `365:17228`; MER-5919 resolves the published Learn more URL separately.
 
 ## Phase 1: Lock the Integration Contract and UI Brief
 
 - Goal: turn MER-5797's live state contract and the supplied Figma nodes into an implementation baseline before touching the overlapping UI surface.
 - Tasks:
-  - [ ] Record the exact merged revision of MER-5794 and MER-5797 used by the branch; rebase MER-5799 at the required checkpoints.
-  - [ ] Reconcile `ObjectivesLive`, `Listing`, `FilterBox`, `Filter`, `TableHandlers`, and their LiveView tests against MER-5797 rather than copying an earlier implementation.
-  - [ ] Preserve `TableHandlers` ownership of `apply_search`, `reset_search`, `apply_filter`, sorting, paging, and patch construction. Use `ObjectivesLive.live_path/2` so its `expanded` serialization remains additive.
-  - [ ] Confirm that applying or clearing Coverage Issues updates only the existing `filter` map, resets `offset` to zero, and retains query, sort direction, `expanded`, sidebar state, and CSV-compatible URL state.
-  - [ ] Produce the governed Figma implementation brief for nodes `365:14554` and `365:17228`, including toolbar placement, filter count, popover controls, warning states, keyboard/focus behavior, tokens, icons, and the exact component/file targets.
-  - [ ] Track the unpublished Learn more destination as an external product dependency; add it only when Jess provides the published URL.
+  - [x] Record the exact merged revision of MER-5794 and MER-5797 used by the branch; rebase MER-5799 at the required checkpoints.
+  - [x] Reconcile `ObjectivesLive`, `Listing`, `FilterBox`, `Filter`, `TableHandlers`, and their LiveView tests against MER-5797 rather than copying an earlier implementation.
+  - [x] Preserve `TableHandlers` ownership of `apply_search`, `reset_search`, `apply_filter`, sorting, paging, and patch construction. Use `ObjectivesLive.live_path/2` so its `expanded` serialization remains additive.
+  - [x] Confirm that applying or clearing Coverage Issues updates only the existing `filter` map, resets `offset` to zero, and retains query, sort direction, `expanded`, sidebar state, and CSV-compatible URL state.
+  - [x] Produce the governed Figma implementation brief for nodes `365:14554` and `365:17228`, including toolbar placement, filter count, popover controls, warning states, keyboard/focus behavior, tokens, icons, and the exact component/file targets.
+  - [x] Track the unpublished Learn more destination as an external product dependency; MER-5919 owns its URL and activation.
 - Testing Tasks:
-  - [ ] Add or update a focused regression test that exercises the canonical patch parameter round-trip with a non-empty search query, sort, expanded parent/child set, and active coverage-filter value.
+  - [x] Add or update a focused regression test that exercises the canonical patch parameter round-trip with a non-empty search query, sort, expanded parent/child set, and active coverage-filter value.
   - Command(s): `mix test test/oli_web/live/workspaces/course_author/objectives_live_test.exs`
 - Definition of Done:
   - The branch is based on the documented post-merge integration baseline, the Figma brief is available, and no proposed MER-5799 event or URL parameter bypasses `TableHandlers`.
@@ -55,13 +55,13 @@ Guardrails:
 
 - Goal: create the authoritative, testable thresholds and issue data without coupling domain rules to LiveView rendering.
 - Tasks:
-  - [ ] Add bounded formative and summative threshold fields, defaults, and validation to `Oli.Authoring.Course.ProjectAttributes`.
-  - [ ] Extend the authorized project update path so both fields persist atomically in `projects.attributes` and projects without keys continue to read defaults.
-  - [ ] Implement a small pure classifier that accepts direct coverage counts and thresholds and returns formative, summative, and any-issue state.
-  - [ ] Build parent rollup data from the loaded `ObjectiveCoverage` graph so parent issue state includes direct and descendant evidence while child markers retain their direct reason.
-  - [ ] Recompute derived issue state from the successful persisted settings and from each successful asynchronous coverage load; do not treat a load failure as zero coverage.
+  - [x] Add bounded formative and summative threshold fields, defaults, and validation to `Oli.Authoring.Course.ProjectAttributes`.
+  - [x] Extend the authorized project update path so both fields persist atomically in `projects.attributes` and projects without keys continue to read defaults.
+  - [x] Implement a small pure classifier that accepts direct coverage counts and thresholds and returns formative, summative, and any-issue state.
+  - [x] Build parent rollup data from the loaded `ObjectiveCoverage` graph so parent issue state includes direct and descendant evidence while child markers retain their direct reason.
+  - [x] Recompute derived issue state from the successful persisted settings and from each successful asynchronous coverage load; do not treat a load failure as zero coverage.
 - Testing Tasks:
-  - [ ] Cover defaults, valid/invalid threshold updates, atomic persistence, backward compatibility for projects with absent keys, direct formative/summative/both classifications, and descendant-to-parent rollup.
+  - [x] Cover defaults, valid/invalid threshold updates, atomic persistence, backward compatibility for projects with absent keys, direct formative/summative/both classifications, and descendant-to-parent rollup.
   - Command(s): `mix test test/oli/authoring/course/project_attributes_test.exs` and the focused classifier/context test module(s).
 - Definition of Done:
   - Project settings are authorized, persisted, backward compatible, and classification is independently tested without a LiveView.
@@ -76,14 +76,14 @@ Guardrails:
 
 - Goal: integrate derived issues into Raphael's table lifecycle without losing independent search expansion or shareable URLs.
 - Tasks:
-  - [ ] Add the Coverage Issues control and affected-objective count to the toolbar at the Figma-defined location, using the shared filter surface where its API is sufficient.
-  - [ ] Represent activation through the existing `filter` map and `apply_filter` flow; preserve `query`, `sort_by`, `sort_order`, `expanded`, sidebar state, and CSV export parameters.
-  - [ ] Extend `filter_rows/3` to compose search and coverage filtering over the already loaded normalized model before `SortableTableModel` sorts and slices rows.
-  - [ ] Keep the mechanism MER-5797 merged for automatic search expansion exclusively responsible for that expansion: a local `attach_hook(:objective_search_expansion, :handle_event, ...)` in `objectives_live.ex`'s `mount/3`, plus `search_expanded_objective_slugs`/`search_expansion_ids` and the private `expand_search_results/3`. There is no `prepare_search/2` in this codebase. Coverage filter changes must not discard manual expansions or search-created expansion bookkeeping.
-  - [ ] Rebuild the table model after threshold changes or coverage reloads, then route state back through the established refresh/patch path.
+  - [x] Add the Coverage Issues control and affected-objective count to the toolbar at the Figma-defined location, using the shared filter surface where its API is sufficient.
+  - [x] Represent activation through the existing `filter` map and `apply_filter` flow; preserve `query`, `sort_by`, `sort_order`, `expanded`, sidebar state, and CSV export parameters.
+  - [x] Extend `filter_rows/3` to compose search and coverage filtering over the already loaded normalized model before `SortableTableModel` sorts and slices rows.
+  - [x] Keep the mechanism MER-5797 merged for automatic search expansion exclusively responsible for that expansion: a local `attach_hook(:objective_search_expansion, :handle_event, ...)` in `objectives_live.ex`'s `mount/3`, plus `search_expanded_objective_slugs`/`search_expansion_ids` and the private `expand_search_results/3`. There is no `prepare_search/2` in this codebase. Coverage filter changes must not discard manual expansions or search-created expansion bookkeeping.
+  - [x] Rebuild the table model after threshold changes or coverage reloads, then route state back through the established refresh/patch path.
 - Testing Tasks:
-  - [ ] Add LiveView state-transition coverage for active/inactive filter, count, parent inclusion for child issues, filter plus nested page/activity search, sorting, pagination reset, direct URL loading, clear/reset behavior, and preservation of `expanded=child,parent`.
-  - [ ] Assert no additional coverage/database loading is triggered by filter toggles.
+  - [x] Add LiveView state-transition coverage for active/inactive filter, count, parent inclusion for child issues, filter plus nested page/activity search, sorting, pagination reset, direct URL loading, clear/reset behavior, and preservation of `expanded=child,parent`.
+  - [x] Assert no additional coverage/database loading is triggered by filter toggles.
   - Command(s): `mix test test/oli_web/live/workspaces/course_author/objectives_live_test.exs`
 - Definition of Done:
   - All table state combinations are deterministic, shareable through URL patches, and render the same filtered rows after reload.
@@ -98,18 +98,18 @@ Guardrails:
 
 - Goal: deliver the author-facing settings and warning feedback with Figma parity and accessible semantics.
 - Tasks:
-  - [ ] Implement the settings popover with labelled threshold controls, increment/decrement behavior, explanatory copy, restore-defaults action, validation feedback, and the product-provided Learn more link when available.
-  - [ ] Render warning icons on deficient formative/summative badges, red outlines and non-color issue indicators on affected objectives and sub-objectives, and formative/summative/both inline messages beneath associated pages and activities.
-  - [ ] Keep child warning reasons direct and parent warning state rolled up; preserve existing expansion, coverage-bucket, and edit/delete interaction behavior from MER-5794/MER-5797.
-  - [ ] Verify light and dark-mode token mapping, responsive toolbar/popover layout, visible focus, keyboard operation, ARIA labels, pressed state, result announcements, and error states against the governed Figma brief.
+  - [x] Implement the settings popover with labelled threshold controls, increment/decrement behavior, explanatory copy, restore-defaults action, validation feedback, and a styled hidden Learn more extension point for MER-5919.
+  - [x] Render warning icons on deficient formative/summative badges, red outlines and non-color issue indicators on affected objectives and sub-objectives, and formative/summative/both inline messages beneath associated pages and activities.
+  - [x] Keep child warning reasons direct and parent warning state rolled up; preserve existing expansion, coverage-bucket, and edit/delete interaction behavior from MER-5794/MER-5797.
+  - [x] Verify light and dark-mode token mapping, responsive toolbar/popover layout, visible focus, keyboard operation, ARIA labels, pressed state, result announcements, and error states against the governed Figma brief.
 - Testing Tasks:
-  - [ ] Add LiveView tests for rendered markers/messages by issue type, settings update/default restore/validation failures, authorized persistence, accessible names/state, and absence of markers for healthy objectives.
-  - [ ] Perform manual visual QA for both Figma nodes, including keyboard traversal and dark mode.
+  - [x] Add LiveView and component tests for rendered markers/messages by issue type, settings update/default restore/validation boundaries, authorized persistence, accessible names/state, and absence of markers for healthy objectives.
+  - [x] Perform manual visual QA for the supplied light/dark Figma states; verify keyboard semantics through native controls and rendered ARIA/focus assertions.
   - Command(s): `mix test test/oli_web/live/workspaces/course_author/objectives_live_test.exs`
 - Definition of Done:
-  - The UI meets all coverage-warning and settings acceptance criteria without relying on color alone, and the documented Learn more destination is present or the outstanding product dependency is explicitly resolved before release.
+  - The UI meets all coverage-warning and settings acceptance criteria without relying on color alone, and the Learn more dependency is assigned to MER-5919 with the current affordance hidden.
 - Gate:
-  - Accessibility and Figma parity QA pass; product supplies the Learn more URL before feature completion.
+  - Accessibility and Figma parity QA pass; MER-5919 owns the Learn more URL and visible activation.
 - Dependencies:
   - Phases 2 and 3, plus the Phase 1 Figma brief.
 - Parallelizable Work:
@@ -119,13 +119,13 @@ Guardrails:
 
 - Goal: prove the feature is stable on the real merge order and ready for review.
 - Tasks:
-  - [ ] Rebase or merge the final merged revisions of MER-5794 and MER-5797, resolving only the identified state, toolbar, listing, and test seams.
-  - [ ] Inspect the final diff for duplicate URL/filter ownership, per-row queries, lost authorization, or accidental changes to objective/activity associations.
-  - [ ] Update requirements proofs with the implemented test and manual-QA evidence.
-  - [ ] Confirm existing coverage-load telemetry/error behavior remains intact and no content body or sensitive data is emitted by settings failures.
-  - [ ] Run the repository-required code review, including Elixir, UI, security, and performance lenses.
+  - [x] Rebase or merge the final merged revisions of MER-5794 and MER-5797, resolving only the identified state, toolbar, listing, and test seams.
+  - [x] Inspect the final diff for duplicate URL/filter ownership, per-row queries, lost authorization, or accidental changes to objective/activity associations.
+  - [x] Update requirements proofs with the implemented test and manual-QA evidence.
+  - [x] Confirm existing coverage-load telemetry/error behavior remains intact and no content body or sensitive data is emitted by settings failures.
+  - [x] Run the repository-required code review, including Elixir, UI, security, and performance lenses.
 - Testing Tasks:
-  - [ ] Run formatting, targeted tests, the complete affected LiveView suite, and the full test suite as risk/time permits after the final rebase.
+  - [x] Run formatting, targeted tests, the complete affected LiveView suite, and the full test suite as risk/time permits after the final rebase.
   - Command(s): `mix format --check-formatted`, `mix test test/oli_web/live/workspaces/course_author/objectives_live_test.exs`, `mix test`
 - Definition of Done:
   - The branch is reconciled with both predecessor PRs, validations are green, requirements have evidence, and no known integration or product dependency is hidden.
@@ -147,5 +147,14 @@ Guardrails:
 - Gate A: MER-5797 URL/filter/expansion contract and governed Figma brief are captured before overlapping UI work.
 - Gate B: Shared project settings and pure issue classification pass focused tests.
 - Gate C: Coverage filter composes with search, sort, paging, URL, and expansions on the post-MER-5797 baseline.
-- Gate D: Figma/accessibility QA and the Learn more destination are complete.
+- Gate D: Figma/accessibility QA passes and Learn more is safely deferred to MER-5919 behind the styled hidden extension point.
 - Gate E: Final rebase, automated verification, requirements evidence, and review are complete.
+
+## Decision Log
+
+### 2026-09-08 - Close MER-5799 with Learn more hidden for MER-5919
+
+- Change: The plan no longer treats the missing Learn more URL as a release blocker for MER-5799; its styled node remains hidden until MER-5919.
+- Reason: Product split the knowledge-base destination and activation into the follow-up ticket.
+- Evidence: `phase-1-figma-brief.md`, `fdd.md`, and `lib/oli_web/live/workspaces/course_author/objectives/coverage_settings_popover.ex`.
+- Impact: Gate D verifies the hidden state and explicit follow-up ownership instead of requiring a URL in this ticket.

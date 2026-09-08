@@ -13,7 +13,7 @@ MER-5799 adds project-scoped coverage thresholds and a LiveView filter that deri
 ## 3. Repository Context Summary
 
 - What we know: `ObjectiveCoverage.load/1` provides compact coverage data; `ObjectivesLive` owns async load, table rows, patches, and interaction state; `Project.attributes` embeds `ProjectAttributes` in the existing `projects.attributes` map.
-- Unknowns to confirm: final pedagogy URL and exact Figma-only responsive states.
+- Resolved follow-up: MER-5919 owns the final pedagogy URL and activation of the prepared hidden Learn more affordance. Responsive behavior was reconciled during the final Figma review.
 
 ## 4. Proposed Design
 
@@ -69,7 +69,7 @@ Issue classification and filter composition are linear over loaded objective row
 
 - Coverage-load failure keeps the existing explicit loading/error/retry behavior and does not fabricate zero coverage.
 - Settings validation/persistence failure leaves the active persisted thresholds unchanged and reports an accessible error.
-- Missing Learn more destination disables or omits that link until product supplies it.
+- The Learn more text is rendered with its final styling but remains hidden and non-interactive until MER-5919 supplies the destination and enables it.
 
 ## 11. Observability
 
@@ -96,13 +96,20 @@ Existing projects lacking map keys behave as 3/3. Existing search and manual exp
 
 ## 16. Open Questions & Follow-ups
 
-- Resolved 2026-09-02 (Jess Fortunato, Slack): no Learn more URL will ship
-  with this ticket. Jess is filing a separate follow-up ticket for the
-  knowledge-base article and link, since accurate screenshots require the
-  real UI to be live first. Implementation must omit/hide the Learn more
-  affordance rather than ship a placeholder; see
-  `phase-1-figma-brief.md` §8.
+- Resolved: no Learn more URL ships with this ticket. MER-5919 owns the
+  knowledge-base article, destination, and visible activation. MER-5799
+  retains a styled but hidden, non-interactive placeholder so the follow-up
+  does not need to restructure the footer; see `phase-1-figma-brief.md` §5.
 - Produce the governed full Figma brief before coding; no new shared primitive is assumed until that mapping is complete. **Done** — see `phase-1-figma-brief.md`.
+
+## Decision Log
+
+### 2026-09-08 - Preserve a hidden Learn more extension point
+
+- Change: The component contract renders the final Learn more styling behind `hidden` rather than omitting the node entirely.
+- Reason: MER-5919 will supply the URL and make the affordance visible.
+- Evidence: `lib/oli_web/live/workspaces/course_author/objectives/coverage_settings_popover.ex` and `test/oli_web/live/workspaces/course_author/objectives/coverage_settings_popover_test.exs`.
+- Impact: The current ticket exposes no incomplete navigation while minimizing follow-up layout churn.
 
 ## 17. References
 

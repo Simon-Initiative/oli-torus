@@ -182,22 +182,11 @@ settings popover (§4c, node `365:19787` light / `365:19829` dark) **does**
 contain a "Learn more" link, in the popover footer next to "Restore
 default".
 
-**Resolution (Jess Fortunato, Slack, 2026-09-02)**: no Learn more URL will
-ship with this ticket. Jess is filing a separate follow-up ticket for the
-knowledge-base article and link, since accurate screenshots require the
-real UI to be live first. Jess confirmed: **omit/hide the "Learn more"
-link in the settings popover footer** for this ticket; the follow-up
-ticket adds it later. This matches `fdd.md`'s existing hedge ("Missing
-Learn more destination disables or omits that link until product
-supplies it.").
-
-Implementation guidance for Phase 4: render the footer with only "Restore
-default" for now (or hide the "Learn more" slot entirely), leaving a clear
-extension point — e.g. a `nil`-checked conditional — so the follow-up
-ticket can add the link without restructuring the popover footer layout
-(footer is `justify-between`, so removing one child re-centers "Restore
-default"; decide in Phase 4 whether to keep the two-child layout with a
-hidden placeholder or collapse to a single left-aligned button).
+**Resolution**: no Learn more URL ships with this ticket. MER-5919 owns the
+knowledge-base article, destination, and visible activation. MER-5799 keeps
+the already-styled Learn more node in the `justify-between` footer but marks
+it `hidden` and leaves it non-interactive. This preserves the final Figma
+styling and a stable extension point without exposing an incomplete link.
 
 ## 6. Warning banner (sub-objective detail, node `365:14951`, light root)
 
@@ -376,8 +365,16 @@ detail (toolbar button, badge, warning banner, settings trigger).
 2. Phase 4 should reuse `Icons.warning_triangle/1` and `Icons.settings/1`,
    the token names in §8, and the exact copy in §4b/§6, rather than
    re-deriving them.
-3. Phase 4 should resolve the two open interaction questions before
-   coding: the steppers' save/persist model (§10) and the "Learn more"
-   omission approach (§5).
+3. Phase 4 resolved both interaction questions: stepper changes persist
+   immediately, and Learn more remains styled but hidden until MER-5919.
 4. Phase 4 should locate the existing clipboard/flag icon functions (§9)
    before assuming new icons are needed for the settings popover rows.
+
+## Decision Log
+
+### 2026-09-08 - Keep Learn more styled and hidden
+
+- Change: The brief now records the selected hidden-placeholder approach and names MER-5919 as the activation ticket.
+- Reason: The URL is intentionally outside MER-5799, while the final footer styling is already available from Figma.
+- Evidence: `lib/oli_web/live/workspaces/course_author/objectives/coverage_settings_popover.ex` and the user's final Figma review.
+- Impact: Phase 4 has no unresolved Learn more implementation choice.

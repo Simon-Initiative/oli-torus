@@ -29,6 +29,7 @@ Authors need to find objectives and sub-objectives with too few formative or sum
 
 - Follow the linked Learning Objectives Updates Figma designs, including dark mode and accessible keyboard/focus/status behavior.
 - Compose with Rafael's search, sort, pagination, expansion, and URL-patch conventions from MER-5797.
+- Keep the Figma-styled Learn more affordance hidden until MER-5919 supplies and enables the published destination.
 
 ## 6. Functional Requirements
 Requirements are found in requirements.yml
@@ -64,13 +65,13 @@ No feature flags present in this work item
 
 - MER-5797 integration changes URL/filter state: align with its table-handler and patch conventions before final integration.
 - Shared-settings interpretation conflicts with older ticket wording: follow Darren Siegel's project-level direction.
-- Figma pedagogy link is unpublished: do not invent a destination; obtain it from product before release.
+- Figma pedagogy link is unpublished: keep its prepared affordance hidden in this ticket; MER-5919 owns the destination and activation.
 
 ## 14. Open Questions & Assumptions
 
-### Open Questions
+### Resolved Questions
 
-- What published URL should the Learn more control use?
+- The Learn more destination and activation are deferred to MER-5919. MER-5799 keeps the already-styled affordance hidden and does not invent a URL.
 
 ### Assumptions
 
@@ -86,6 +87,15 @@ No feature flags present in this work item
 
 ## 16. Definition of Done
 
-- [ ] PRD sections complete
-- [ ] requirements.yml captured and valid
-- [ ] validation passes
+- [x] PRD sections complete
+- [x] requirements.yml captured and valid
+- [x] validation passes
+
+## Decision Log
+
+### 2026-09-08 - Defer Learn more activation to MER-5919
+
+- Change: The prepared Learn more affordance remains hidden in MER-5799.
+- Reason: The destination and visible activation belong to follow-up ticket MER-5919.
+- Evidence: `lib/oli_web/live/workspaces/course_author/objectives/coverage_settings_popover.ex` and its component test.
+- Impact: MER-5799 can ship without an invented URL while preserving the Figma styling for the follow-up.
