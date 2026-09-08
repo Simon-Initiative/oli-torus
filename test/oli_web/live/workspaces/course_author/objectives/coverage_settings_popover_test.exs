@@ -1,6 +1,5 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest do
   use OliWeb.ConnCase, async: true
-  use Phoenix.Component
 
   import Phoenix.LiveViewTest
 
@@ -8,17 +7,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
 
   describe "coverage_settings_popover/1" do
     test "renders both threshold rows with their current values" do
-      html =
-        render_component(fn assigns ->
-          ~H"""
-          <CoverageSettingsPopover.coverage_settings_popover
-            id="coverage-settings-popover"
-            trigger_id="coverage-settings-trigger"
-            formative_threshold={3}
-            summative_threshold={5}
-          />
-          """
-        end)
+      html = render_popover(%{summative_threshold: 5})
 
       assert html =~ "Minimum formative"
       assert html =~ "Minimum summative"
@@ -31,34 +20,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
     end
 
     test "disables the decrement button at zero but not the increment button" do
-      html =
-        render_component(fn assigns ->
-          ~H"""
-          <CoverageSettingsPopover.coverage_settings_popover
-            id="coverage-settings-popover"
-            trigger_id="coverage-settings-trigger"
-            formative_threshold={0}
-            summative_threshold={3}
-          />
-          """
-        end)
+      html = render_popover(%{formative_threshold: 0})
 
       assert html =~ ~s(phx-click="decrement_coverage_formative_threshold" disabled)
       refute html =~ ~s(phx-click="increment_coverage_formative_threshold" disabled)
     end
 
-    test "shows the explanatory copy and keeps Learn more hidden for MER-5919" do
-      html =
-        render_component(fn assigns ->
-          ~H"""
-          <CoverageSettingsPopover.coverage_settings_popover
-            id="coverage-settings-popover"
-            trigger_id="coverage-settings-trigger"
-            formative_threshold={3}
-            summative_threshold={3}
-          />
-          """
-        end)
+    test "shows the explanatory copy and keeps Learn more hidden and non-interactive" do
+      html = render_popover()
 
       assert html =~ "objectives are flagged as coverage issues"
       assert html =~ ~s(phx-click="restore_default_coverage_thresholds")
@@ -66,22 +35,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
       assert html =~ ~s(id="coverage-settings-learn-more")
       assert html =~ ~r/id="coverage-settings-learn-more"\s+class="[^"]*\bhidden\b/
       assert html =~ "Learn more"
-      # MER-5919 supplies the knowledge-base URL and makes this visible.
       refute html =~ ~r/<a[^>]*>\s*Learn more/
     end
 
     test "renders centered below its trigger at the Figma width" do
-      html =
-        render_component(fn assigns ->
-          ~H"""
-          <CoverageSettingsPopover.coverage_settings_popover
-            id="coverage-settings-popover"
-            trigger_id="coverage-settings-trigger"
-            formative_threshold={3}
-            summative_threshold={3}
-          />
-          """
-        end)
+      html = render_popover()
 
       assert html =~ "left-1/2"
       assert html =~ "-translate-x-1/2"
@@ -89,17 +47,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
     end
 
     test "starts hidden, leaving dismissal to the caller's wrapper" do
-      html =
-        render_component(fn assigns ->
-          ~H"""
-          <CoverageSettingsPopover.coverage_settings_popover
-            id="coverage-settings-popover"
-            trigger_id="coverage-settings-trigger"
-            formative_threshold={3}
-            summative_threshold={3}
-          />
-          """
-        end)
+      html = render_popover()
 
       assert html =~ "hidden"
       refute html =~ "phx-click-away"
@@ -122,5 +70,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopoverTest 
       assert close =~ ~s("set_attr")
       assert close =~ ~s(["aria-expanded","false"])
     end
+  end
+
+  defp render_popover(overrides \\ %{}) do
+    assigns =
+      Map.merge(
+        %{id: "coverage-settings-popover", formative_threshold: 3, summative_threshold: 3},
+        overrides
+      )
+
+    render_component(&CoverageSettingsPopover.coverage_settings_popover/1, assigns)
   end
 end

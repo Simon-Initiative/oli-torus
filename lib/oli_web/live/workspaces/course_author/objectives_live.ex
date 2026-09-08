@@ -65,7 +65,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_status: :loading,
         coverage_load_ref: make_ref(),
         coverage_issue_ids: MapSet.new(),
-        coverage_issues: %{},
         assessment_buckets: %{},
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
@@ -234,7 +233,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             </button>
             <CoverageSettingsPopover.coverage_settings_popover
               id="coverage-settings-popover"
-              trigger_id="coverage-settings-trigger"
               formative_threshold={
                 ProjectAttributes.coverage_thresholds(@project.attributes).formative
               }
@@ -383,8 +381,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
                   has_coverage: false,
                   coverage_details: [],
                   any_issue: false,
-                  formative_issue: false,
-                  summative_issue: false,
                   direct_formative_issue: false,
                   direct_summative_issue: false
                 }
@@ -412,8 +408,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       has_coverage: false,
       coverage_details: [],
       any_issue: false,
-      formative_issue: false,
-      summative_issue: false,
       direct_formative_issue: false,
       direct_summative_issue: false
     }
@@ -574,7 +568,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         coverage_model: nil,
         coverage_status: :loading,
         coverage_issue_ids: MapSet.new(),
-        coverage_issues: %{},
         assessment_buckets: socket.assigns.assessment_buckets,
         search_matching_ids: nil,
         search_expansion_ids: nil,
@@ -643,7 +636,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        coverage_model: nil,
        coverage_status: :loading,
        coverage_issue_ids: MapSet.new(),
-       coverage_issues: %{},
        search_matching_ids: nil,
        search_expansion_ids: nil
      )
@@ -707,14 +699,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
           socket.assigns.objectives,
           model,
           assessment_buckets,
-          socket.assigns.coverage_issues,
           objective_id
         )
 
-      {:ok, table_model} = TableModel.new(objectives)
-
-      socket = assign(socket, objectives: objectives, table_model: table_model)
-      refresh_table_state(socket)
+      socket
+      |> assign(objectives: objectives)
+      |> refresh_table_state()
     else
       _ -> {:noreply, socket}
     end
@@ -1120,7 +1110,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     issues = Issues.classify_all(model, thresholds)
 
     objectives = apply_coverage(socket.assigns.objectives, model, assessment_buckets, issues)
-    {:ok, table_model} = TableModel.new(objectives)
 
     {matching_ids, expansion_ids} =
       if String.trim(socket.assigns.query) == "" do
@@ -1132,12 +1121,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     socket =
       assign(socket,
         objectives: objectives,
-        table_model: table_model,
         total_count: length(objectives),
         coverage_model: model,
         coverage_status: :ready,
-        coverage_issue_ids: top_level_issue_ids(model, issues),
-        coverage_issues: issues,
+        coverage_issue_ids: Issues.flagged_top_level_ids_from_issues(model, issues),
         assessment_buckets: assessment_buckets,
         search_matching_ids: matching_ids,
         search_expansion_ids: expansion_ids
@@ -1146,31 +1133,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     refresh_table_state(socket)
   end
 
-  # Clears coverage_issue_ids rather than leaving the previous, now-stale
-  # flagged set in place: a coverage-filter toggle should show no rows while
-  # coverage is unknown, not incorrectly imply every objective is healthy.
-  # coverage_status/coverage_model separately communicate the real
-  # loading/error state to the user. Routes back through refresh_table_state,
-  # like the success branch, so table_model/rows stay in sync with the
-  # cleared coverage_issue_ids rather than keeping whatever was last filtered.
+  # Clear stale flags so an active filter cannot show results from a failed load.
   defp apply_coverage_result({:error, reason}, socket) do
     socket =
       assign(socket,
         coverage_model: nil,
         coverage_status: {:error, reason},
-        coverage_issue_ids: MapSet.new(),
-        coverage_issues: %{}
+        coverage_issue_ids: MapSet.new()
       )
 
     refresh_table_state(socket)
   end
 
-  # coverage_issue_ids reads as "zero issues" both while coverage is still
-  # loading and right after a failed load (see the reset sites above), so an
-  # empty result set alone can't tell those apart from "genuinely no
-  # issues." Route the message through coverage_status too, so an active
-  # coverage-issues filter never claims a clean "no issues" result while
-  # coverage is actually unknown or broken.
+  # Distinguish unknown coverage from a successful result with no issues.
   defp coverage_empty_state_text(query, filter, coverage_status) do
     coverage_filter_active? = Map.get(filter, "coverage_issues") == "true"
 
@@ -1195,12 +1170,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     end
   end
 
-  # Reads the field directly off the project's attributes struct (defaulting
-  # to a fresh %ProjectAttributes{} for legacy projects with no attributes
-  # embed at all, whose schema-level defaults already give 3), rather than
-  # going through ProjectAttributes.coverage_thresholds/1's formative/
-  # summative-keyed map — this needs the raw schema field to increment and
-  # persist, not the semantic thresholds shape callers elsewhere consume.
+  # Read the schema field directly because this operation persists that field.
   defp adjust_coverage_threshold(socket, field, delta) do
     attributes = socket.assigns.project.attributes || %ProjectAttributes{}
     current = Map.fetch!(attributes, field)
@@ -1231,37 +1201,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     objectives =
       apply_coverage(socket.assigns.objectives, model, socket.assigns.assessment_buckets, issues)
 
-    {:ok, table_model} = TableModel.new(objectives)
-
     assign(socket,
       objectives: objectives,
-      table_model: table_model,
-      coverage_issue_ids: top_level_issue_ids(model, issues),
-      coverage_issues: issues
+      coverage_issue_ids: Issues.flagged_top_level_ids_from_issues(model, issues)
     )
   end
 
-  # Filters an already-computed `Issues.classify_all/2` result down to the
-  # flagged top-level ids, mirroring `Issues.flagged_top_level_ids/2` without
-  # re-running `classify_all/2` a second time against the same model and
-  # thresholds every caller here has already classified.
-  defp top_level_issue_ids(model, issues) do
-    model.top_level_objective_ids
-    |> Enum.filter(fn objective_id -> Map.fetch!(issues, objective_id).any_issue end)
-    |> MapSet.new()
-  end
-
-  defp update_objective_coverage(objectives, model, assessment_buckets, issues, objective_id) do
+  defp update_objective_coverage(objectives, model, assessment_buckets, objective_id) do
     Enum.map(objectives, fn objective ->
       cond do
         objective.resource_id == objective_id ->
-          Map.merge(objective, coverage_fields(objective, model, assessment_buckets, issues))
+          Map.merge(objective, coverage_fields(objective, model, assessment_buckets))
 
         true ->
           Map.update!(objective, :children, fn children ->
             Enum.map(children, fn
               %{resource_id: ^objective_id} = child ->
-                Map.merge(child, coverage_fields(child, model, assessment_buckets, issues))
+                Map.merge(child, coverage_fields(child, model, assessment_buckets))
 
               child ->
                 child
@@ -1288,24 +1244,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   defp apply_coverage(objectives, model, assessment_buckets, issues) do
     Enum.map(objectives, fn objective ->
       objective
-      |> Map.merge(coverage_fields(objective, model, assessment_buckets, issues))
+      |> Map.merge(coverage_fields(objective, model, assessment_buckets))
+      |> Map.merge(coverage_issue_fields(issues, objective.resource_id))
       |> Map.update!(:children, fn children ->
         Enum.map(children, fn
-          nil -> nil
-          child -> Map.merge(child, coverage_fields(child, model, assessment_buckets, issues))
+          nil ->
+            nil
+
+          child ->
+            child
+            |> Map.merge(coverage_fields(child, model, assessment_buckets))
+            |> Map.merge(coverage_issue_fields(issues, child.resource_id))
         end)
       end)
     end)
   end
 
-  defp coverage_fields(objective, model, assessment_buckets, issues) do
+  defp coverage_fields(objective, model, assessment_buckets) do
     coverage = ObjectiveCoverage.coverage(model, objective.resource_id) || %{}
     formative = Map.get(coverage, :formative_activity_count, 0)
     summative = Map.get(coverage, :summative_activity_count, 0)
     bucket = Map.get(assessment_buckets, objective.resource_id, :formative)
-    # issues is always Issues.classify_all/2 run against this same model, so
-    # every objective id reachable here is guaranteed a key in it.
-    issue = Map.fetch!(issues, objective.resource_id)
 
     %{
       page_attachments_count: Map.get(coverage, :page_count, 0),
@@ -1316,13 +1275,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       sub_objectives_count: Map.get(coverage, :sub_objective_count, 0),
       assessment_bucket: bucket,
       has_coverage: tagged_content?(coverage),
-      coverage_details: ObjectiveCoverage.details(model, objective.resource_id, bucket),
-      any_issue: issue.any_issue,
-      formative_issue: issue.formative_issue,
-      summative_issue: issue.summative_issue,
-      direct_formative_issue: issue.direct_formative_issue,
-      direct_summative_issue: issue.direct_summative_issue
+      coverage_details: ObjectiveCoverage.details(model, objective.resource_id, bucket)
     }
+  end
+
+  defp coverage_issue_fields(issues, objective_id) do
+    issues
+    |> Map.fetch!(objective_id)
+    |> Map.take([:any_issue, :direct_formative_issue, :direct_summative_issue])
   end
 
   defp selected_assessment_buckets(existing, model, objectives) do

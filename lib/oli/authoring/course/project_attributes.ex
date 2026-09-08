@@ -30,16 +30,10 @@ defmodule Oli.Authoring.Course.ProjectAttributes do
   end
 
   @doc """
-  Returns a project's coverage thresholds as `%{formative: _, summative: _}`,
-  read from its persisted `attributes`. Projects predating this field (or any
-  project whose `attributes` embed is absent) read as `3`/`3` — the same
-  recommended default persisted on new projects by this schema, kept as an
-  independent literal here rather than depending on
-  `Oli.Authoring.ObjectiveCoverage.Issues.default_thresholds/0` so this
-  low-level schema module has no dependency on that domain-classification
-  module.
+  Returns a project's persisted coverage thresholds, using the recommended
+  `3`/`3` defaults when the attributes embed is absent.
   """
-  @spec coverage_thresholds(module_struct_or_changeset_type() | nil) :: %{
+  @spec coverage_thresholds(%ProjectAttributes{} | nil) :: %{
           formative: non_neg_integer(),
           summative: non_neg_integer()
         }

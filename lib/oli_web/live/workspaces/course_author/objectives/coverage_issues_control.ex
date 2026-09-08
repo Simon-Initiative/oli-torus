@@ -1,37 +1,8 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageIssuesControl do
   @moduledoc """
-  Toolbar toggle for the Coverage Issues filter: an icon + label button with
-  an affected-objective count badge, styled per the governed Figma brief
-  (`docs/exec-plans/current/epics/objectives-editor/coverage_filter/phase-1-figma-brief.md`
-  §2/§2b).
-
-  Presentation only — this component does not know about the `filter`/URL
-  state contract. The caller passes `count` (from
-  `Oli.Authoring.ObjectiveCoverage.Issues.flagged_top_level_ids/2`) and
-  `active`, and wires `click` to a `JS.push("apply_filter", ...)` that
-  toggles the `"coverage_issues"` key in the existing `filter` map.
-
-  Deliberately hand-rolled rather than composing
-  `OliWeb.Components.DesignTokens.Primitives.Button`: its `:pill` variant
-  reports `aria-expanded` (disclosure/dropdown semantics), not the
-  `aria-pressed` toggle semantics a persistent filter needs, and its
-  `:danger` variant is a transparent-background/bordered treatment that
-  does not match this control's filled background states.
-
-  The active-state badge matches the Figma-verified light-mode look exactly
-  (`Icon-icon-danger` red fill, white text) but overrides dark mode
-  explicitly to `Fill-fill-danger`'s dark value (`#33181A`) with
-  `Text-text-high`'s dark value (`#EEEBF5`): using `Icon-icon-danger`'s own
-  dark value (a light coral, `#FF8787`) with white text is only ~2.3:1
-  contrast, because the active badge state was never verified against a
-  dark-mode Figma node — no such node was supplied. The dark-mode override
-  is therefore an assumption, not a verified Figma value; it reuses a pairing
-  already proven safe in both themes elsewhere in this design system (the
-  warning banner) and passes WCAG AA (13.9:1). Same explicit-hex-per-theme
-  pattern already used by `Icons.settings/1` (`stroke-[#757682]
-  dark:stroke-[#BAB8BF]`).
-
-  Rendered from `ObjectivesLive.render/1`'s toolbar.
+  Presentation component for the Coverage Issues filter toggle. The caller
+  supplies the affected-objective count, active state, and click action; the
+  component exposes the toggle state through `aria-pressed`.
   """
   use Phoenix.Component
 

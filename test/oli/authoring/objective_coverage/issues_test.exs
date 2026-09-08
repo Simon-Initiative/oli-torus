@@ -124,7 +124,7 @@ defmodule Oli.Authoring.ObjectiveCoverage.IssuesTest do
     end
   end
 
-  describe "flagged_top_level_ids/2" do
+  describe "top-level issue ids" do
     test "includes a top-level objective flagged directly and one flagged only through a descendant" do
       model = %{
         objectives_by_id: %{1 => %{}, 2 => %{}, 3 => %{}},
@@ -138,6 +138,10 @@ defmodule Oli.Authoring.ObjectiveCoverage.IssuesTest do
       }
 
       assert Issues.flagged_top_level_ids(model) == MapSet.new([1, 2])
+
+      issues = Issues.classify_all(model)
+
+      assert Issues.flagged_top_level_ids_from_issues(model, issues) == MapSet.new([1, 2])
     end
 
     test "excludes healthy top-level objectives even when other objectives in the snapshot are flagged" do

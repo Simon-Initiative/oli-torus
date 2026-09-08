@@ -1,26 +1,14 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
   @moduledoc """
-  The Coverage Issues threshold settings popover: labelled formative/summative
-  steppers, explanatory copy, and a "Restore default" action. Styled per the
-  governed Figma brief §4 (settings popover, verified light + dark via
-  `get_variable_defs` against nodes `365:19751`/`365:19793`).
+  Presentation component for Coverage Issues threshold settings. It renders
+  labelled formative and summative steppers, explanatory copy, and a restore
+  action.
 
-  Presentation only — persistence and the actual increment/decrement math
-  live in `ObjectivesLive`, which owns the `"increment_coverage_*_threshold"`,
-  `"decrement_coverage_*_threshold"`, and `"restore_default_coverage_thresholds"`
-  events this popover's buttons fire.
+  `ObjectivesLive` owns threshold persistence and handles each action
+  immediately. The Learn more affordance remains hidden and non-interactive.
 
-  "Learn more" is implemented as a hidden, non-interactive affordance for
-  MER-5799. Its visible activation and knowledge-base URL are scoped to MER-5919 (see
-  `docs/exec-plans/current/epics/objectives-editor/coverage_filter/phase-1-figma-brief.md`
-  §5/§8).
-
-  No explicit save/cancel exists in Figma for the steppers — each
-  increment/decrement/restore click persists immediately.
-
-  Dismissal is owned by the caller: `phx-click-away` must sit on the wrapper
-  that holds *both* the trigger and this popover (see `close_js/2`), otherwise
-  a click on the trigger counts as "away" and fights its own `toggle_js/2`.
+  The caller owns dismissal by placing `phx-click-away` on the wrapper that
+  contains both the trigger and the popover.
   """
   use Phoenix.Component
 
@@ -28,7 +16,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
   alias Phoenix.LiveView.JS
 
   attr :id, :string, required: true
-  attr :trigger_id, :string, required: true
   attr :formative_threshold, :integer, required: true
   attr :summative_threshold, :integer, required: true
 
@@ -164,9 +151,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.CoverageSettingsPopover do
   @doc """
   Builds the `phx-click` JS command for the settings trigger button.
 
-  Also flips the trigger's `aria-expanded`, which doubles as the styling hook
-  for Figma's open state (`aria-expanded:` classes on the trigger) — no extra
-  data attribute or class toggling needed.
+  Also flips the trigger's `aria-expanded` state.
   """
   @spec toggle_js(String.t(), String.t()) :: JS.t()
   def toggle_js(popover_id, trigger_id) do

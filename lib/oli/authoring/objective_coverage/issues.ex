@@ -9,6 +9,8 @@ defmodule Oli.Authoring.ObjectiveCoverage.Issues do
   @default_formative_threshold 3
   @default_summative_threshold 3
 
+  alias Oli.Authoring.ObjectiveCoverage
+
   @type thresholds :: %{
           required(:formative) => non_neg_integer(),
           required(:summative) => non_neg_integer()
@@ -69,7 +71,7 @@ defmodule Oli.Authoring.ObjectiveCoverage.Issues do
   `coverage_by_objective` raises `KeyError` rather than being treated as
   having zero coverage.
   """
-  @spec classify_all(map(), thresholds()) :: %{pos_integer() => issue()}
+  @spec classify_all(ObjectiveCoverage.t(), thresholds()) :: %{pos_integer() => issue()}
   def classify_all(model, thresholds \\ default_thresholds()) do
     direct_issues =
       Map.new(model.coverage_by_objective, fn {objective_id, coverage} ->
@@ -97,10 +99,20 @@ defmodule Oli.Authoring.ObjectiveCoverage.Issues do
   `model.coverage_by_objective`/`model.objectives_by_id`, or this raises
   `KeyError`.
   """
-  @spec flagged_top_level_ids(map(), thresholds()) :: MapSet.t(pos_integer())
+  @spec flagged_top_level_ids(ObjectiveCoverage.t(), thresholds()) ::
+          MapSet.t(pos_integer())
   def flagged_top_level_ids(model, thresholds \\ default_thresholds()) do
-    issues = classify_all(model, thresholds)
+    model
+    |> classify_all(thresholds)
+    |> then(&flagged_top_level_ids_from_issues(model, &1))
+  end
 
+  @doc "Returns flagged top-level IDs from an existing classification result."
+  @spec flagged_top_level_ids_from_issues(
+          ObjectiveCoverage.t(),
+          %{pos_integer() => issue()}
+        ) :: MapSet.t(pos_integer())
+  def flagged_top_level_ids_from_issues(model, issues) do
     model.top_level_objective_ids
     |> Enum.filter(fn objective_id -> Map.fetch!(issues, objective_id).any_issue end)
     |> MapSet.new()

@@ -1194,6 +1194,8 @@ defmodule Oli.Authoring.Course do
   `attributes` parameter as a replacement embed and resets omitted fields to
   their schema defaults.
   """
+  @spec update_project_attributes(%Project{}, map()) ::
+          {:ok, %Project{}} | {:error, Ecto.Changeset.t()}
   def update_project_attributes(%Project{} = project, attrs) do
     attributes = project.attributes || %ProjectAttributes{}
 
