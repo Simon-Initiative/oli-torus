@@ -239,7 +239,7 @@ defmodule Oli.LearningModel.ParameterCsvTest do
   end
 
   test "streaming export crosses cursor batches without losing resources", s do
-    for index <- 1..101 do
+    for index <- 1..251 do
       {:ok, _} =
         ResourceEditor.create(s.project.slug, s.admin, ResourceType.id_for_objective(), %{
           title: "LO #{index}"
@@ -247,8 +247,150 @@ defmodule Oli.LearningModel.ParameterCsvTest do
     end
 
     rows = export_rows(s)
-    assert length(rows) == 103
-    assert length(Enum.uniq_by(rows, & &1["resource_id"])) == 103
+    assert length(rows) == 253
+    assert length(Enum.uniq_by(rows, & &1["resource_id"])) == 253
+  end
+
+  for size <- [1, 249, 250, 251, 505, 2000] do
+    @tag timeout: 120_000
+    test "imports #{size} resources with queries proportional to batches", s do
+      size = unquote(size)
+      rows = rows_for_count(s, size)
+      batches = div(size + 249, 250)
+
+      {result, queries} = capture_queries(fn -> upload(s, rows) end)
+      assert result == {:ok, %{changed: size, unchanged: 0}}
+      assert length(queries) <= 5 * batches + 5
+      assert Enum.count(queries, &String.starts_with?(&1, "INSERT INTO revisions")) == batches
+
+      assert Enum.count(queries, &String.starts_with?(&1, "UPDATE published_resources")) ==
+               batches
+
+      # All mappings, including the final partial batch, must point at their new values.
+      current = Map.new(export_rows(s), &{&1["resource_id"], &1})
+      for row <- rows, do: assert(current[row["resource_id"]] == row)
+
+      {result, queries} = capture_queries(fn -> upload(s, rows) end)
+      assert result == {:ok, %{changed: 0, unchanged: size}}
+      assert length(queries) <= 3 * batches + 5
+      refute Enum.any?(queries, &String.starts_with?(&1, "INSERT INTO revisions"))
+      refute Enum.any?(queries, &String.starts_with?(&1, "UPDATE published_resources"))
+    end
+  end
+
+  test "a failure in the second batch rolls back revisions and mappings from the first", s do
+    rows = rows_for_count(s, 251)
+    original_rows = export_rows(s)
+    count = Repo.aggregate(Revision, :count)
+    invalid_rows = List.update_at(rows, 250, &Map.put(&1, "beta_difficulty", "invalid"))
+
+    {result, queries} = capture_queries(fn -> upload(s, invalid_rows) end)
+    assert {:error, message} = result
+    assert message =~ "Row 252"
+    assert Enum.count(queries, &String.starts_with?(&1, "INSERT INTO revisions")) == 1
+    assert Repo.aggregate(Revision, :count) == count
+    assert export_rows(s) == original_rows
+  end
+
+  test "duplicate IDs across batches roll back the entire import", s do
+    rows = rows_for_count(s, 250)
+    count = Repo.aggregate(Revision, :count)
+    assert {:error, message} = upload(s, rows ++ [hd(rows)])
+    assert message =~ "Row 252"
+    assert message =~ "duplicate"
+    assert Repo.aggregate(Revision, :count) == count
+    assert latest(s, s.objective).id == s.objective.id
+  end
+
+  test "bulk copy preserves every other persisted field, including content and embeds", s do
+    {:ok, previous} =
+      ResourceEditor.edit(s.project.slug, s.activity.resource_id, s.admin, %{
+        content:
+          Map.put(s.activity.content, "large_content", String.duplicate("content", 10_000)),
+        objectives: %{"p1" => [s.objective.resource_id]},
+        tags: [s.objective.resource_id],
+        intro_content: %{"text" => "Introduction"},
+        graded: true,
+        ai_enabled: true,
+        scope: :banked,
+        max_attempts: 7,
+        time_limit: 50,
+        duration_minutes: 9,
+        legacy: %{path: "legacy/path", id: "original"},
+        explanation_strategy: %{type: :after_set_num_attempts, set_num_attempts: 3},
+        collab_space_config: %{
+          status: :enabled,
+          participation_min_replies: 2,
+          participation_min_posts: 1
+        }
+      })
+
+    assert {:ok, %{changed: 2}} = upload(s, trained_rows(s))
+    successor = latest(s, previous)
+
+    copied_fields =
+      Revision.__schema__(:fields) --
+        [
+          :id,
+          :previous_revision_id,
+          :author_id,
+          :learning_model_parameters,
+          :inserted_at,
+          :updated_at
+        ]
+
+    assert Map.take(successor, copied_fields) == Map.take(previous, copied_fields)
+    assert successor.previous_revision_id == previous.id
+    assert successor.author_id == s.admin.id
+    assert successor.inserted_at != nil
+    assert successor.updated_at == successor.inserted_at
+    assert successor.learning_model_parameters.payload.parts["p1"].beta_difficulty == 2.5
+  end
+
+  defp rows_for_count(s, size) do
+    for index <- Enum.take(Stream.iterate(1, &(&1 + 1)), max(size - 2, 0)) do
+      {:ok, _} =
+        ResourceEditor.create(s.project.slug, s.admin, ResourceType.id_for_activity(), %{
+          title: "Batch activity #{index}",
+          activity_type_id: s.activity.activity_type_id,
+          content: s.activity.content
+        })
+    end
+
+    Enum.take(trained_rows(s), size)
+  end
+
+  defp capture_queries(fun) do
+    handler = {__MODULE__, make_ref()}
+    parent = self()
+
+    :ok =
+      :telemetry.attach(
+        handler,
+        [:oli, :repo, :query],
+        fn _, _, metadata, _ ->
+          case self() == parent do
+            true -> send(parent, {handler, metadata.query})
+            false -> :ok
+          end
+        end,
+        nil
+      )
+
+    try do
+      result = fun.()
+      {result, collect_queries(handler, [])}
+    after
+      :telemetry.detach(handler)
+    end
+  end
+
+  defp collect_queries(handler, acc) do
+    receive do
+      {^handler, query} -> collect_queries(handler, [query | acc])
+    after
+      0 -> Enum.reverse(acc)
+    end
   end
 
   defp export_rows(s) do

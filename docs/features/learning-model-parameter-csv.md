@@ -36,11 +36,20 @@ Published mappings remain unchanged.
 - `lib/oli/learning_model/parameter_csv.ex` owns authorization, streaming, validation,
   effective defaults, mapping locks, and atomic revision creation. CSV parsing produces
   the existing typed parameter structs; export and no-op detection share the same
-  effective-default calculation. Each imported row validates its values, locks its
-  current mapping, and creates a successor revision only when those values differ.
-- Export selects compact fields and part metadata in cursor batches of 100. Import
-  consumes CSV rows incrementally and loads full revision content only one changed
-  resource at a time to copy it faithfully into its successor.
+  effective-default calculation. Import validates and applies batches of resources,
+  creating successor revisions only when parameter values differ.
+- `@batch_size 250` near the top of `ParameterCsv` controls import batches and export
+  cursor batches. Both handle fewer than 250 rows and a partial final batch.
+- Import executes five queries per changed batch: lock mappings in resource order,
+  verify the publication is still unpublished, read compact parameter projections,
+  `INSERT … SELECT … RETURNING` successor revisions, and bulk-update mappings.
+  Unchanged batches skip both writes. All batches share one transaction.
+- Revision copying stays inside PostgreSQL. The copied column list derives from
+  persisted Ecto schema fields, including embeds. Identity, previous revision ID,
+  importing author, parameters, and timestamps are replaced; other fields, including
+  content and slug, are copied. Only new IDs return to Elixir for mapping updates.
+- Tests cover batch boundaries, rollback across batches, full field preservation,
+  and query counts for 2,000 resources (at most 45 queries, including overhead).
 - `lib/oli_web/live/workspaces/course_author/learning_model_parameters_live.ex` provides
   the upload UI; a controller streams the download over HTTP.
 - `test/oli/learning_model/parameter_csv_test.exs` and

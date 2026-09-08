@@ -1,7 +1,7 @@
 defmodule Oli.LearningModel.ParameterCsv do
   @moduledoc """
   Project-scoped LKT-AOA CSV transfer. Reads compact projections through a cursor;
-  imports are atomic and load a full revision only when copying an actual edit.
+  imports are atomic and copy changed revisions directly inside PostgreSQL.
   Titles and children are informational. Missing parameters export as effective zeros.
   """
 
@@ -16,13 +16,30 @@ defmodule Oli.LearningModel.ParameterCsv do
   alias Oli.Publishing
   alias Oli.Publishing.{PublishedResource, Publications.Publication}
   alias Oli.Repo
-  alias Oli.Resources
   alias Oli.Resources.{ResourceType, Revision}
+
+  @batch_size 250
 
   @headers ["title", "resource_id", "children_ids", "beta_lo", "beta_difficulty"]
   @objective ResourceType.id_for_objective()
   @activity ResourceType.id_for_activity()
   @transfer_timeout :timer.minutes(2)
+
+  # Copy every persisted field, including embeds, without loading revision content.
+  # Only identity, ancestry, attribution, parameters, and timestamps change.
+  @copied_revision_columns Revision.__schema__(:fields)
+                           |> Enum.reject(
+                             &(&1 in [
+                                 :id,
+                                 :previous_revision_id,
+                                 :author_id,
+                                 :learning_model_parameters,
+                                 :inserted_at,
+                                 :updated_at
+                               ])
+                           )
+                           |> Enum.map(&Revision.__schema__(:field_source, &1))
+                           |> Enum.map_join(", ", &~s("#{&1}"))
 
   @type import_counts :: %{changed: non_neg_integer(), unchanged: non_neg_integer()}
 
@@ -52,7 +69,7 @@ defmodule Oli.LearningModel.ParameterCsv do
         fn ->
           rows =
             working_resources_query(project.id)
-            |> Repo.stream(max_rows: 100)
+            |> Repo.stream(max_rows: @batch_size)
             |> Stream.map(&export_row/1)
 
           Stream.concat([@headers], rows) |> CSV.encode() |> consume.()
@@ -68,6 +85,10 @@ defmodule Oli.LearningModel.ParameterCsv do
   Titles and children are informational; only parameter values are applied. Missing
   stored parameters compare as zero, so downloading and re-uploading defaults is a
   no-op. An invalid row or an authoring lock rolls back the entire import.
+
+  Batches use `@batch_size` rows. Each batch locks and reads resources together,
+  inserts changed revisions with INSERT … SELECT, and updates mappings in bulk.
+  The final batch may be smaller; batches never commit independently.
   """
   @spec import(%Project{}, %Author{}, Enumerable.t()) ::
           {:ok, import_counts()} | {:error, String.t()}
@@ -75,22 +96,25 @@ defmodule Oli.LearningModel.ParameterCsv do
     with :ok <- authorize(project, author) do
       Repo.transaction(
         fn ->
+          publication = Publishing.project_working_publication(project.slug)
+
+          case publication do
+            nil -> Repo.rollback("The project has no working publication.")
+            _ -> :ok
+          end
+
           result =
             lines
             |> CSV.decode(headers: false)
             |> Enum.with_index(1)
-            |> Enum.reduce(%{changed: 0, unchanged: 0, seen: MapSet.new()}, fn
-              {{:ok, @headers}, 1}, acc ->
-                acc
-
-              {_, 1}, _acc ->
-                Repo.rollback("Row 1: expected #{Enum.join(@headers, ",")} headers.")
-
-              {{:error, _}, row}, _acc ->
-                Repo.rollback("Row #{row}: malformed CSV.")
-
-              {{:ok, values}, row}, acc ->
-                import_row(project, author, values, row, acc)
+            |> Stream.reject(fn
+              {{:ok, @headers}, 1} -> true
+              {_, 1} -> Repo.rollback("Row 1: expected #{Enum.join(@headers, ",")} headers.")
+              _ -> false
+            end)
+            |> Stream.chunk_every(@batch_size)
+            |> Enum.reduce(%{changed: 0, unchanged: 0, seen: MapSet.new()}, fn batch, acc ->
+              import_batch(project, publication, author, batch, acc)
             end)
 
           case MapSet.size(result.seen) do
@@ -209,69 +233,144 @@ defmodule Oli.LearningModel.ParameterCsv do
     end
   end
 
-  defp import_row(project, author, [_title, id, _children, beta, difficulties], row, acc) do
-    with {id, ""} when id > 0 <- Integer.parse(id),
-         false <- MapSet.member?(acc.seen, id),
-         %{} = record <-
-           Repo.one(from r in working_resources_query(project.id), where: r.resource_id == ^id),
-         {:ok, parameters} <- parse_parameters(record, beta, difficulties),
-         {:ok, mapping} <- lock_working_resource(record),
-         {:ok, outcome} <- apply_parameters(record, mapping, parameters, author) do
-      acc
-      |> Map.update!(outcome, &(&1 + 1))
-      |> Map.update!(:seen, &MapSet.put(&1, id))
-    else
-      {:error, message} ->
-        Repo.rollback("Row #{row}: #{message}")
+  defp import_batch(project, publication, author, batch, acc) do
+    {rows, seen} = Enum.map_reduce(batch, acc.seen, &parse_row/2)
+    resource_ids = Enum.map(rows, & &1.resource_id)
 
-      _ ->
-        Repo.rollback("Row #{row}: invalid, duplicate, deleted, or out-of-project resource ID.")
-    end
-  end
-
-  defp import_row(_project, _author, _values, row, _acc),
-    do: Repo.rollback("Row #{row}: expected five columns.")
-
-  defp lock_working_resource(record) do
-    # Lock the exact mapping we will update. Re-check both revision and publication
-    # after waiting for the lock, since either may have changed during validation.
-    mapping =
-      Repo.one!(
+    # Acquire mapping locks in resource order before reading parameter projections.
+    # The locks remain held until the entire CSV transaction commits or rolls back.
+    mappings =
+      Repo.all(
         from pr in PublishedResource,
-          where:
-            pr.publication_id == ^record.publication_id and pr.resource_id == ^record.resource_id,
+          where: pr.publication_id == ^publication.id and pr.resource_id in ^resource_ids,
+          order_by: pr.resource_id,
           lock: "FOR UPDATE"
       )
+      |> Map.new(&{&1.resource_id, &1})
 
-    publication = Repo.get!(Publication, record.publication_id)
-
-    case is_nil(publication.published) and mapping.revision_id == record.id and
-           Locks.expired_or_empty?(mapping) do
-      true -> {:ok, mapping}
-      false -> {:error, "resource is being edited; retry after editing finishes."}
+    # Publishing also acquires mapping locks. Recheck after waiting so an import
+    # cannot modify a publication that finished publishing while we were blocked.
+    case Repo.exists?(
+           from p in Publication, where: p.id == ^publication.id and is_nil(p.published)
+         ) do
+      true -> :ok
+      false -> Repo.rollback("The working publication changed; download a fresh CSV and retry.")
     end
+
+    records =
+      Repo.all(
+        from r in working_resources_query(project.id), where: r.resource_id in ^resource_ids
+      )
+      |> Map.new(&{&1.resource_id, &1})
+
+    changes =
+      Enum.flat_map(rows, fn row ->
+        with %{} = mapping <- Map.get(mappings, row.resource_id),
+             %{} = record <- Map.get(records, row.resource_id),
+             true <- mapping.revision_id == record.id,
+             {:ok, parameters} <- parse_parameters(record, row.beta, row.difficulties) do
+          case Locks.expired_or_empty?(mapping) do
+            false ->
+              Repo.rollback(
+                "Row #{row.number}: resource is being edited; retry after editing finishes."
+              )
+
+            true ->
+              :ok
+          end
+
+          case effective_payload(record) == parameters.payload do
+            true ->
+              []
+
+            false ->
+              {:ok, encoded} = Parameters.encode(parameters)
+              [%{previous_revision_id: record.id, parameters: encoded}]
+          end
+        else
+          {:error, message} ->
+            Repo.rollback("Row #{row.number}: #{message}")
+
+          _ ->
+            Repo.rollback("Row #{row.number}: invalid, deleted, or out-of-project resource ID.")
+        end
+      end)
+
+    changed = create_parameter_revisions(changes, publication.id, author.id)
+
+    %{
+      changed: acc.changed + changed,
+      unchanged: acc.unchanged + length(rows) - changed,
+      seen: seen
+    }
   end
 
-  defp apply_parameters(record, mapping, parameters, author) do
-    case effective_payload(record) == parameters.payload do
-      true -> {:ok, :unchanged}
-      false -> create_parameter_revision(record, mapping, parameters, author)
-    end
-  end
-
-  defp create_parameter_revision(record, mapping, parameters, author) do
-    # Only an actual edit needs the full revision, to preserve its content and history.
-    previous = Repo.get!(Revision, record.id)
-
-    with {:ok, revision} <-
-           Resources.create_revision_from_previous(previous, %{
-             author_id: author.id,
-             learning_model_parameters: parameters
-           }),
-         {:ok, _} <- Publishing.update_published_resource(mapping, %{revision_id: revision.id}) do
-      {:ok, :changed}
+  defp parse_row({{:ok, [_title, id, _children, beta, difficulties]}, number}, seen) do
+    with {id, ""} when id > 0 <- Integer.parse(id),
+         false <- MapSet.member?(seen, id) do
+      {%{resource_id: id, beta: beta, difficulties: difficulties, number: number},
+       MapSet.put(seen, id)}
     else
-      _ -> {:error, "could not save parameters."}
+      _ -> Repo.rollback("Row #{number}: invalid or duplicate resource ID.")
+    end
+  end
+
+  defp parse_row({{:ok, _}, number}, _seen),
+    do: Repo.rollback("Row #{number}: expected five columns.")
+
+  defp parse_row({{:error, _}, number}, _seen),
+    do: Repo.rollback("Row #{number}: malformed CSV.")
+
+  defp create_parameter_revisions([], _publication_id, _author_id), do: 0
+
+  defp create_parameter_revisions(changes, publication_id, author_id) do
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+    # Values are bound parameters; the column list comes only from the Ecto schema.
+    # Parameters and part membership were validated against the locked revisions.
+    # Titles are unchanged, so successors retain their existing slugs.
+    %{rows: revisions, num_rows: inserted} =
+      Ecto.Adapters.SQL.query!(
+        Repo,
+        """
+        INSERT INTO revisions (
+          #{@copied_revision_columns}, previous_revision_id, author_id,
+          learning_model_parameters, inserted_at, updated_at
+        )
+        SELECT old.#{String.replace(@copied_revision_columns, ", ", ", old.")},
+          old.id, $2::bigint, updates.parameters, $3::timestamp, $3::timestamp
+        FROM revisions AS old
+        JOIN jsonb_to_recordset($1::jsonb)
+          AS updates(previous_revision_id bigint, parameters jsonb)
+          ON old.id = updates.previous_revision_id
+        RETURNING id, resource_id, previous_revision_id
+        """,
+        [changes, author_id, now]
+      )
+
+    replacements =
+      Enum.map(revisions, fn [id, resource_id, previous_revision_id] ->
+        %{revision_id: id, resource_id: resource_id, previous_revision_id: previous_revision_id}
+      end)
+
+    %{num_rows: updated} =
+      Ecto.Adapters.SQL.query!(
+        Repo,
+        """
+        UPDATE published_resources AS mapping
+        SET revision_id = updates.revision_id, updated_at = $3::timestamp
+        FROM jsonb_to_recordset($1::jsonb)
+          AS updates(revision_id bigint, resource_id bigint, previous_revision_id bigint)
+        WHERE mapping.publication_id = $2::bigint
+          AND mapping.resource_id = updates.resource_id
+          AND mapping.revision_id = updates.previous_revision_id
+        """,
+        [replacements, publication_id, now]
+      )
+
+    case inserted == length(changes) and updated == inserted do
+      true -> inserted
+      false -> Repo.rollback("The working revisions changed; download a fresh CSV and retry.")
     end
   end
 
