@@ -1,4 +1,4 @@
-defmodule Oli.Scenarios.AuthoringObjectivesTest do
+defmodule Oli.Scenarios.Objectives.ObjectivesTest do
   use Oli.DataCase
 
   alias Oli.Scenarios
