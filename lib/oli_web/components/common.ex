@@ -7,6 +7,24 @@ defmodule OliWeb.Components.Common do
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
+  @description_character_limit 300
+
+  @doc """
+  Returns the authoring character limit for a saved description.
+
+  Legacy descriptions that already exceed the limit are grandfathered so they can
+  continue to be edited without blocking related project and section operations.
+  """
+  @spec description_maxlength(String.t() | nil) :: pos_integer() | nil
+  def description_maxlength(description) when is_binary(description) do
+    case String.length(description) <= @description_character_limit do
+      true -> @description_character_limit
+      false -> nil
+    end
+  end
+
+  def description_maxlength(_description), do: @description_character_limit
+
   def not_found(assigns) do
     ~H"""
     <main role="main" class="container mx-auto">
