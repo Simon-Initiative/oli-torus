@@ -777,6 +777,77 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       assert has_element?(view, "td", activity_3.title)
     end
 
+    test "clear resets search, attempts and score while sorted by the default column", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a,
+      activity_1: activity_1,
+      activity_3: activity_3
+    } do
+      conn = log_in_user(conn, instructor)
+
+      # Sorted by the default column on purpose: an earlier implementation toggled the sort
+      # order and dropped every other parameter whenever the requested sort column was the
+      # one already in use, so Clear All Filters silently kept the active filters.
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_related_activities_route(section.slug, objective_a.resource_id, %{
+            "text_search" => activity_3.title,
+            "sort_by" => "title",
+            "selected_attempts_ids" => Jason.encode!([2]),
+            "avg_score_selector" => "is_less_than_or_equal",
+            "avg_score_percentage" => "10"
+          })
+        )
+
+      refute has_element?(view, "td", activity_1.title)
+
+      view |> element("button", "Clear All Filters") |> render_click()
+
+      assert has_element?(view, "td", activity_1.title)
+      assert has_element?(view, "td", activity_3.title)
+
+      # Assert on the patched URL rather than on markup: it proves every parameter was
+      # dropped, including the attempts selection, whose rows would survive a row-level check.
+      assert_patched(
+        view,
+        live_view_related_activities_route(section.slug, objective_a.resource_id)
+      )
+    end
+
+    test "keeps the attempts filter through a search", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      objective_a: objective_a
+    } do
+      conn = log_in_user(conn, instructor)
+
+      # The selected ids travel through the URL as an encoded JSON string. Storing the decoded
+      # list in the params instead would re-emit array-style query params on the next patch,
+      # which the params reader cannot parse, silently dropping the filter.
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_related_activities_route(section.slug, objective_a.resource_id, %{
+            "selected_attempts_ids" => Jason.encode!([3])
+          })
+        )
+
+      view
+      |> form("form[phx-change='search_activity']", %{"activity_name" => "Activity"})
+      |> render_change()
+
+      # Assert on the patched URL: the encoded list must survive the patch. Storing the
+      # decoded list in the params would emit `selected_attempts_ids[]=3` instead.
+      path = assert_patch(view)
+
+      assert path =~ "selected_attempts_ids=#{URI.encode_www_form(Jason.encode!([3]))}",
+             "the attempts filter was lost after searching, patched to: #{path}"
+    end
+
     test "displays activities for sub-objectives", %{
       conn: conn,
       instructor: instructor,

@@ -21,7 +21,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     limit: 20,
     sort_order: :asc,
     sort_by: :title,
-    text_search: nil
+    text_search: nil,
+    selected_attempts_ids: Jason.encode!([])
   }
 
   @impl Phoenix.LiveView
@@ -40,9 +41,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         activity_types = Activities.list_activity_registrations()
         activity_types_map = Map.new(activity_types, &{&1.id, &1})
 
-        students =
-          Sections.enrolled_students(section.slug)
-          |> Enum.reject(&(&1.user_role_id != 4))
+        students = Sections.enrolled_students(section.slug, [:context_learner])
 
         scripts =
           activity_types
@@ -77,6 +76,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
     # Decode and apply filters
     decoded_params = decode_params(params)
+    selected_attempts_ids = decode_attempts_ids(decoded_params.selected_attempts_ids)
     {total_count, filtered_activities} = apply_filters(activities, decoded_params)
 
     # Create table model
@@ -99,9 +99,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
        table_model: put_detail_state(table_model, socket),
        total_count: total_count,
        params: decoded_params,
-       attempts_options: update_attempts_options(decoded_params.selected_attempts_ids),
-       selected_attempts_options: selected_attempts_options(decoded_params.selected_attempts_ids),
-       selected_attempts_ids: decoded_params.selected_attempts_ids
+       attempts_options: update_attempts_options(selected_attempts_ids),
+       selected_attempts_options: selected_attempts_options(selected_attempts_ids),
+       selected_attempts_ids: selected_attempts_ids
      )}
   end
 
@@ -229,19 +229,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   end
 
   def handle_event("clear_all_filters", _params, socket) do
+    %{section_slug: section_slug, objective: objective, params: params} = socket.assigns
+
+    query =
+      case Map.get(params, :back_params, %{}) do
+        back_params when back_params == %{} -> []
+        back_params -> [back_params: Jason.encode!(back_params)]
+      end
+
     {:noreply,
      push_patch(socket,
        to:
-         route_for(socket, %{
-           text_search: nil,
-           selected_attempts_ids: Jason.encode!([]),
-           avg_score_selector: nil,
-           avg_score_percentage: nil,
-           sort_by: :title,
-           sort_order: :asc,
-           offset: 0,
-           limit: @default_params.limit
-         })
+         ~p"/sections/#{section_slug}/instructor_dashboard/insights/learning_objectives/related_activities/#{objective.resource_id}?#{query}"
      )}
   end
 
@@ -380,7 +379,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         )
         |> normalize_sort_by(),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
-      selected_attempts_ids: Params.get_list_param(params, "selected_attempts_ids", []),
+      selected_attempts_ids:
+        Params.get_param(params, "selected_attempts_ids", @default_params.selected_attempts_ids),
       avg_score_percentage: Params.get_int_param(params, "avg_score_percentage", nil),
       avg_score_selector:
         Params.get_atom_param(
@@ -397,7 +397,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     filtered_activities =
       activities
       |> maybe_filter_by_text(params.text_search)
-      |> maybe_filter_by_attempts(params.selected_attempts_ids)
+      |> maybe_filter_by_attempts(decode_attempts_ids(params.selected_attempts_ids))
       |> maybe_filter_by_score(params.avg_score_selector, params.avg_score_percentage)
       |> sort_by(params.sort_by, params.sort_order)
 
@@ -423,6 +423,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       String.contains?(stem, search) or String.contains?(title, search)
     end)
   end
+
+  defp decode_attempts_ids(encoded) when is_binary(encoded) do
+    case Jason.decode(encoded) do
+      {:ok, ids} when is_list(ids) -> ids
+      _ -> []
+    end
+  end
+
+  defp decode_attempts_ids(_), do: []
 
   defp maybe_filter_by_attempts(activities, []), do: activities
 
@@ -489,13 +498,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   defp route_for(socket, new_params) do
     params = update_params(socket.assigns.params, new_params)
 
-    Routes.live_path(
-      socket,
-      __MODULE__,
-      socket.assigns.section_slug,
-      socket.assigns.objective.resource_id,
-      params
-    )
+    ~p"/sections/#{socket.assigns.section_slug}/instructor_dashboard/insights/learning_objectives/related_activities/#{socket.assigns.objective.resource_id}?#{params}"
   end
 
   defp update_params(%{sort_by: current_sort_by, sort_order: current_sort_order} = params, %{
@@ -642,14 +645,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         _ -> %{}
       end
 
-    base_path =
-      Routes.live_path(
-        OliWeb.Endpoint,
-        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-        section_slug,
-        :insights,
-        :learning_objectives
-      )
+    base_path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/learning_objectives"
 
     if map_size(back_params) > 0 do
       query_string = URI.encode_query(back_params)
