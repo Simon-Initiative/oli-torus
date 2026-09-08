@@ -74,7 +74,6 @@ get_env_as_integer = fn key, default ->
 end
 
 config :oli,
-  inventory_recovery_on_boot: true,
   author_email_verification_required: true,
   user_email_verification_required: true,
   logger_truncation_enabled: get_env_as_boolean.("LOGGER_TRUNCATION_ENABLED", "true"),

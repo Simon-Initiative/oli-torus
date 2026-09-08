@@ -162,7 +162,7 @@ defmodule Oli.Application do
   end
 
   defp maybe_start_inventory_recovery do
-    case Application.fetch_env!(:oli, :inventory_recovery_on_boot) do
+    case Application.get_env(:oli, :inventory_recovery_on_boot, true) do
       true ->
         Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
           Process.sleep(1_000)
