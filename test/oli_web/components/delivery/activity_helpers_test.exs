@@ -759,7 +759,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert [
                %{label: "Option 1", count: 1, ratio: 0.5},
                %{label: "Option 2", count: 1, ratio: 0.5},
-               %{label: "Option 3", count: 0, ratio: 0.0}
+               %{label: "Option 3", count: 0, ratio: +0.0}
              ] = summary.visualization.choices
 
       assert [
@@ -1373,9 +1373,9 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                  scale_kind: :text_slider,
                  scale_hint: %{min_label: "Low", max_label: "High"},
                  entries: [
-                   %{label: "Low", count: 0, ratio: 0.0, step_label: "0"},
+                   %{label: "Low", count: 0, ratio: +0.0, step_label: "0"},
                    %{label: "Medium", count: 1, ratio: 1.0, step_label: "1"},
-                   %{label: "High", count: 0, ratio: 0.0, step_label: "2"}
+                   %{label: "High", count: 0, ratio: +0.0, step_label: "2"}
                  ],
                  stats: [
                    %{label: "Lowest Selected", value: "Medium", supporting_text: "Position 1"},

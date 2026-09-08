@@ -25,6 +25,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
   @default_selected_view :gallery
 
+  defp assert_patch_query(view, path, expected_query) do
+    patched_uri = view |> assert_patch() |> URI.parse()
+
+    assert patched_uri.path == path
+    assert URI.decode_query(patched_uri.query || "") == expected_query
+  end
+
   defp pay_early_message_classes(html) do
     html
     |> Floki.parse_document!()
@@ -3779,9 +3786,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_click()
 
       # Verify navigation back to outline view
-      assert_patch(
+      assert_patch_query(
         view,
-        ~p"/sections/#{section.slug}/learn?selected_view=outline&target_resource_id=#{unit_1.resource_id}"
+        ~p"/sections/#{section.slug}/learn",
+        %{
+          "selected_view" => "outline",
+          "target_resource_id" => to_string(unit_1.resource_id)
+        }
       )
     end
 
@@ -3844,9 +3855,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_click()
 
       # Verify we're back to outline view
-      assert_patch(
+      assert_patch_query(
         view,
-        ~p"/sections/#{section.slug}/learn?selected_view=outline&target_resource_id=#{unit_1.resource_id}"
+        ~p"/sections/#{section.slug}/learn",
+        %{
+          "selected_view" => "outline",
+          "target_resource_id" => to_string(unit_1.resource_id)
+        }
       )
     end
 
@@ -3910,15 +3925,22 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element("div#mobile_outline_unit form[phx-submit='search']")
       |> render_change(%{"search_term" => search_term})
 
+      assert_patch(view)
+
       # Click back button
       view
       |> element("button[aria-label='Back to outline']")
       |> render_click()
 
       # Verify search term is preserved in the URL when navigating back
-      assert_patch(
+      assert_patch_query(
         view,
-        ~p"/sections/#{section.slug}/learn?selected_view=outline&target_resource_id=#{unit_1.resource_id}&search_term=#{search_term}"
+        ~p"/sections/#{section.slug}/learn",
+        %{
+          "search_term" => search_term,
+          "selected_view" => "outline",
+          "target_resource_id" => to_string(unit_1.resource_id)
+        }
       )
     end
 

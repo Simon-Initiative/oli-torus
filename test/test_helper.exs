@@ -1,5 +1,5 @@
 Application.ensure_all_started(:ex_machina)
-ExUnit.start(exclude: [:skip, :nightly])
+ExUnit.start(exclude: [:skip, :nightly], capture_log: true)
 
 unless Oli.PythonRunner.available?() do
   ExUnit.configure(exclude: [:skip_if_no_python])

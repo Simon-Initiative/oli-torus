@@ -1249,7 +1249,7 @@ defmodule OliWeb.DeliveryControllerTest do
     author = author_fixture()
 
     %{project: project, institution: institution, publication: base_publication} =
-      Oli.Seeder.base_project_with_resource(author)
+      apply(Oli.Seeder, :base_project_with_resource, [author])
 
     tool_jwk = jwk_fixture()
 

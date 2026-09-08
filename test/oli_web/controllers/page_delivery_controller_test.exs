@@ -3503,7 +3503,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
   defp setup_independent_learner_section(_) do
     author = author_fixture()
 
-    %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
+    %{project: project, institution: institution} =
+      apply(Oli.Seeder, :base_project_with_resource, [author])
 
     {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
 
