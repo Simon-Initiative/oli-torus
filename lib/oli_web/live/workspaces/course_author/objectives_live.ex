@@ -68,7 +68,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         course_content_open: false,
         course_content_selection: nil,
         course_content_scope_ids: nil,
-        course_content_nodes: [],
+        course_content_nodes_by_id: %{},
+        course_content_root_ids: [],
         course_content_expanded_ids: MapSet.new(),
         pending_sub_objective_delete_slugs: MapSet.new(),
         query: "",
@@ -199,7 +200,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
 
         <div class="hidden h-6 w-px shrink-0 bg-Border-border-default xl:block" aria-hidden="true" />
         <ContentFilter.render
-          nodes={@course_content_nodes}
+          nodes_by_id={@course_content_nodes_by_id}
+          root_ids={@course_content_root_ids}
           selected_ids={MapSet.new(get_in(@course_content_selection || %{}, [:selected_ids]) || [])}
           active_count={get_in(@course_content_selection || %{}, [:active_count]) || 0}
           expanded_ids={@course_content_expanded_ids}
@@ -605,7 +607,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         assessment_buckets: socket.assigns.assessment_buckets,
         course_content_selection: nil,
         course_content_scope_ids: nil,
-        course_content_nodes: [],
+        course_content_nodes_by_id: %{},
+        course_content_root_ids: [],
         course_content_expanded_ids: MapSet.new(),
         search_matching_ids: nil,
         search_expansion_ids: nil,
@@ -1201,6 +1204,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         search_result_ids(model, socket.assigns.query)
       end
 
+    course_content_data = ObjectiveCoverage.curriculum_filter_data(model)
+
     socket =
       assign(socket,
         objectives: objectives,
@@ -1208,7 +1213,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         total_count: length(objectives),
         coverage_model: model,
         coverage_status: :ready,
-        course_content_nodes: ObjectiveCoverage.curriculum_nodes(model),
+        course_content_nodes_by_id: course_content_data.nodes_by_id,
+        course_content_root_ids: course_content_data.root_ids,
         course_content_expanded_ids: curriculum_root_ids(model),
         course_content_selection:
           ObjectiveCoverage.normalize_curriculum_selection(
@@ -1229,7 +1235,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        coverage_model: nil,
        coverage_status: {:error, reason},
        course_content_selection: nil,
-       course_content_nodes: [],
+       course_content_nodes_by_id: %{},
+       course_content_root_ids: [],
        course_content_expanded_ids: MapSet.new()
      )}
   end

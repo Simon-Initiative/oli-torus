@@ -365,6 +365,36 @@ defmodule Oli.Authoring.ObjectiveCoverage do
     |> Enum.sort_by(&{&1.path, &1.resource_id})
   end
 
+  @doc "Returns the minimal, precomputed curriculum projection used by the content filter."
+  @spec curriculum_filter_data(t()) :: %{
+          nodes_by_id: %{pos_integer() => map()},
+          root_ids: [pos_integer()]
+        }
+  def curriculum_filter_data(model) do
+    nodes_by_id =
+      Map.new(model.curriculum_by_id, fn {resource_id, node} ->
+        {resource_id,
+         %{
+           resource_id: resource_id,
+           title: node.title,
+           children: Map.get(model.curriculum_children_by_parent, resource_id, [])
+         }}
+      end)
+
+    %{
+      nodes_by_id: nodes_by_id,
+      root_ids:
+        model.curriculum_by_id
+        |> Enum.filter(fn {resource_id, _node} ->
+          Map.get(model.curriculum_parents_by_child, resource_id, []) == []
+        end)
+        |> Enum.map(&elem(&1, 0))
+        |> Enum.sort_by(fn resource_id ->
+          {model.curriculum_paths_by_id[resource_id] |> List.first([resource_id]), resource_id}
+        end)
+    }
+  end
+
   @doc "Returns objective ids matched by direct page or embedded-activity attachments."
   @spec objective_ids_for_pages(t(), list()) :: MapSet.t()
   def objective_ids_for_pages(model, page_ids) do

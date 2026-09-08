@@ -3,7 +3,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
 
   alias OliWeb.Icons
 
-  attr :nodes, :list, required: true
+  attr :nodes_by_id, :map, required: true
+  attr :root_ids, :list, required: true
   attr :selected_ids, :any, default: MapSet.new()
   attr :active_count, :integer, default: 0
   attr :open, :boolean, default: false
@@ -13,8 +14,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
   def render(assigns) do
     assigns =
       assigns
-      |> assign(:nodes_by_id, Map.new(assigns.nodes, &{&1.resource_id, &1}))
-      |> assign(:root_nodes, Enum.filter(assigns.nodes, &(&1.parent_ids == [])))
       |> assign(:selected_ids, MapSet.new(assigns.selected_ids))
       |> assign(:expanded_ids, MapSet.new(assigns.expanded_ids))
 
@@ -80,18 +79,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
           aria-label="Course content hierarchy"
           class="max-h-80 list-none overflow-y-auto p-0 pr-1"
         >
-          <%= for node <- @root_nodes do %>
+          <%= for resource_id <- @root_ids do %>
             <.render_node
-              node={node}
+              node={Map.fetch!(@nodes_by_id, resource_id)}
               level={0}
               nodes_by_id={@nodes_by_id}
               selected_ids={@selected_ids}
               expanded_ids={@expanded_ids}
               visited_ids={MapSet.new()}
-              path={[node.resource_id]}
+              path={[resource_id]}
             />
           <% end %>
-          <li :if={@root_nodes == []} class="py-4 text-sm text-Text-text-medium">
+          <li :if={@root_ids == []} class="py-4 text-sm text-Text-text-medium">
             No course content available.
           </li>
         </ul>
