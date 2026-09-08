@@ -144,130 +144,160 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       card_body_text_class="mt-1 mb-4 text-Text-text-high"
       filter_opts_class="w-full"
     >
-      <div class="flex w-full flex-wrap items-center gap-2 pt-6">
-        <div class="w-56 shrink-0">
-          <.form for={%{}} id="objectives-search-form" phx-change="apply_search">
-            <SearchInput.render
-              id="objectives-search"
-              name="query"
-              text={@query}
-              placeholder="Search..."
-              aria_label="Search learning objectives, sub-objectives, pages, and activities"
-            />
-          </.form>
-        </div>
-
-        <form id="sort" phx-change="sort" class="flex h-[38px] shrink-0 items-center gap-2">
-          <label for="select_sort" class="sr-only">Sort objectives</label>
-          <select
-            name="sort_by"
-            id="select_sort"
-            class="h-[38px] min-w-[210px] rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      <div id="objectives-toolbar" class="@container w-full pt-6">
+        <div class="flex w-full flex-col gap-2 @[1024px]:flex-row @[1024px]:items-center">
+          <div
+            id="objectives-filter-controls"
+            class="order-2 flex min-w-0 flex-wrap items-center gap-2 @[1024px]:order-1 @[1024px]:flex-1 @[1024px]:flex-nowrap"
           >
-            <%= for column_spec <- @table_model.column_specs do %>
-              <%= if column_spec.name != :action do %>
-                <option value={column_spec.name} selected={@table_model.sort_by_spec == column_spec}>
-                  {column_spec.label}
-                </option>
-              <% end %>
-            <% end %>
-          </select>
-          <label class="inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-md border border-Border-border-default text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
-            <span class="sr-only">Toggle sort direction</span>
-            <.input
-              type="checkbox"
-              name="sort_order"
-              class="sr-only"
-              value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
-            />
-            <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
-          </label>
-        </form>
+            <div class="flex shrink-0 items-center gap-2">
+              <div class="w-56 shrink-0">
+                <.form for={%{}} id="objectives-search-form" phx-change="apply_search">
+                  <SearchInput.render
+                    id="objectives-search"
+                    name="query"
+                    text={@query}
+                    placeholder="Search..."
+                    aria_label="Search learning objectives, sub-objectives, pages, and activities"
+                  />
+                </.form>
+              </div>
 
-        <div class="w-px h-6 relative bg-Border-border-default"></div>
+              <form
+                id="sort"
+                phx-change="sort"
+                class="flex h-[38px] shrink-0 items-center gap-2"
+              >
+                <label for="select_sort" class="sr-only">Sort objectives</label>
+                <select
+                  name="sort_by"
+                  id="select_sort"
+                  class="h-[38px] min-w-[210px] rounded-md border border-Border-border-default bg-Background-bg-primary px-[11px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                >
+                  <%= for column_spec <- @table_model.column_specs do %>
+                    <%= if column_spec.name != :action do %>
+                      <option
+                        value={column_spec.name}
+                        selected={@table_model.sort_by_spec == column_spec}
+                      >
+                        {column_spec.label}
+                      </option>
+                    <% end %>
+                  <% end %>
+                </select>
+                <label class="inline-flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-md border border-Border-border-default text-Text-text-high hover:bg-Surface-surface-secondary-hover focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-Fill-Buttons-fill-primary">
+                  <span class="sr-only">Toggle sort direction</span>
+                  <.input
+                    type="checkbox"
+                    name="sort_order"
+                    class="sr-only"
+                    value={if @table_model.sort_order == :desc, do: "asc", else: "desc"}
+                  />
+                  <i class={"fa fa-sort-amount-#{if @table_model.sort_order == :desc, do: "up", else: "down"}"} />
+                </label>
+              </form>
+            </div>
 
-        <div class="flex flex-nowrap items-center gap-2">
-          <CoverageIssuesControl.coverage_issues_control
-            id="coverage-issues-filter"
-            count={MapSet.size(@coverage_issue_ids)}
-            active={Map.get(@filter, "coverage_issues") == "true"}
-            click={
-              JS.push("apply_filter",
-                value: %{
-                  filter:
-                    Map.put(
-                      @filter,
-                      "coverage_issues",
-                      if(Map.get(@filter, "coverage_issues") == "true", do: "false", else: "true")
-                    )
+            <div
+              aria-hidden="true"
+              class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1024px]:block"
+            >
+            </div>
+
+            <div class="flex shrink-0 flex-nowrap items-center gap-2">
+              <CoverageIssuesControl.coverage_issues_control
+                id="coverage-issues-filter"
+                count={MapSet.size(@coverage_issue_ids)}
+                active={Map.get(@filter, "coverage_issues") == "true"}
+                click={
+                  JS.push("apply_filter",
+                    value: %{
+                      filter:
+                        Map.put(
+                          @filter,
+                          "coverage_issues",
+                          if(Map.get(@filter, "coverage_issues") == "true",
+                            do: "false",
+                            else: "true"
+                          )
+                        )
+                    }
+                  )
                 }
-              )
-            }
-          />
+              />
+
+              <div
+                class="relative shrink-0"
+                phx-click-away={
+                  CoverageSettingsPopover.close_js(
+                    "coverage-settings-popover",
+                    "coverage-settings-trigger"
+                  )
+                }
+              >
+                <button
+                  type="button"
+                  id="coverage-settings-trigger"
+                  phx-click={
+                    CoverageSettingsPopover.toggle_js(
+                      "coverage-settings-popover",
+                      "coverage-settings-trigger"
+                    )
+                  }
+                  aria-expanded="false"
+                  aria-haspopup="dialog"
+                  aria-controls="coverage-settings-popover"
+                  aria-label="Coverage issue threshold settings"
+                  class="flex h-[30px] w-[30px] items-center justify-center rounded-md border border-Border-border-default bg-Background-bg-primary transition hover:bg-Surface-surface-secondary-hover aria-expanded:border-Border-border-active aria-expanded:bg-Fill-Accent-fill-accent-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                >
+                  <Icons.settings width="15" height="15" stroke_width="1.5" />
+                </button>
+                <CoverageSettingsPopover.coverage_settings_popover
+                  id="coverage-settings-popover"
+                  formative_threshold={
+                    ProjectAttributes.coverage_thresholds(@project.attributes).formative
+                  }
+                  summative_threshold={
+                    ProjectAttributes.coverage_thresholds(@project.attributes).summative
+                  }
+                />
+              </div>
+            </div>
+          </div>
 
           <div
-            class="relative shrink-0"
-            phx-click-away={
-              CoverageSettingsPopover.close_js(
-                "coverage-settings-popover",
-                "coverage-settings-trigger"
-              )
-            }
+            id="objectives-toolbar-actions"
+            class="order-1 ml-auto flex shrink-0 items-center mb-5 gap-2 @[1024px]:order-2 @[1024px]:mb-0"
           >
+            <div
+              aria-hidden="true"
+              class="relative hidden h-6 w-px shrink-0 bg-Border-border-default @[1024px]:block"
+            >
+            </div>
+
+            <.link
+              id="download-objectives-csv"
+              href={
+                ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
+              }
+              download={"#{@project.slug}_learning_objectives.csv"}
+              class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md border border-Border-border-default bg-Background-bg-primary px-[13px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            >
+              <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
+                <Icons.download stroke_class="stroke-current" />
+              </span>
+              Download CSV
+            </.link>
+
             <button
               type="button"
-              id="coverage-settings-trigger"
-              phx-click={
-                CoverageSettingsPopover.toggle_js(
-                  "coverage-settings-popover",
-                  "coverage-settings-trigger"
-                )
-              }
-              aria-expanded="false"
-              aria-haspopup="dialog"
-              aria-controls="coverage-settings-popover"
-              aria-label="Coverage issue threshold settings"
-              class="flex h-[30px] w-[30px] items-center justify-center rounded-md border border-Border-border-default bg-Background-bg-primary transition hover:bg-Surface-surface-secondary-hover aria-expanded:border-Border-border-active aria-expanded:bg-Fill-Accent-fill-accent-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 text-[13px] font-semibold leading-[19.5px] text-Text-text-white shadow-[0px_2px_2px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              phx-click="display_new_modal"
             >
-              <Icons.settings width="15" height="15" stroke_width="1.5" />
+              <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
+              New Objective
             </button>
-            <CoverageSettingsPopover.coverage_settings_popover
-              id="coverage-settings-popover"
-              formative_threshold={
-                ProjectAttributes.coverage_thresholds(@project.attributes).formative
-              }
-              summative_threshold={
-                ProjectAttributes.coverage_thresholds(@project.attributes).summative
-              }
-            />
           </div>
-        </div>
-
-        <div class="w-px h-6 relative bg-Border-border-default"></div>
-
-        <div class="ml-auto flex shrink-0 items-center gap-2">
-          <.link
-            id="download-objectives-csv"
-            href={
-              ~p"/workspaces/course_author/#{@project.slug}/objectives.csv?#{csv_export_params(@params)}"
-            }
-            download={"#{@project.slug}_learning_objectives.csv"}
-            class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md border border-Border-border-default bg-Background-bg-primary px-[13px] text-[13px] font-semibold leading-[19.5px] text-Text-text-high transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-          >
-            <span class="inline-flex size-4 items-center justify-center text-current [&_svg]:size-4">
-              <Icons.download stroke_class="stroke-current" />
-            </span>
-            Download CSV
-          </.link>
-
-          <button
-            type="button"
-            class="inline-flex h-[30px] items-center justify-center gap-2 rounded-md bg-Fill-Buttons-fill-primary px-4 text-[13px] font-semibold leading-[19.5px] text-Text-text-white shadow-[0px_2px_2px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-            phx-click="display_new_modal"
-          >
-            <Icons.plus class="h-4 w-4 text-Icon-icon-white" path_class="stroke-current stroke-[3]" />
-            New Objective
-          </button>
         </div>
       </div>
     </FilterBox.render>
