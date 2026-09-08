@@ -64,6 +64,19 @@ export function pages(project: ProjectSlug, current?: string) {
   return makeRequest<PagesReceived>(params);
 }
 
+// Requests page details for pages present in the current authoring hierarchy.
+// Used when a feature should only link to curriculum-visible pages.
+export function hierarchyPages(project: ProjectSlug) {
+  const encodedProject = encodeURIComponent(project);
+
+  const params = {
+    method: 'GET',
+    url: `/project/${encodedProject}/link/hierarchy`,
+  };
+
+  return makeRequest<PagesReceived>(params);
+}
+
 export type LearningObjectivesReceived = {
   type: 'success';
   learningObjectives: ResolvedLearningObjective[];

@@ -210,8 +210,27 @@ describe('Learning Objectives insert menu', () => {
 });
 
 describe('LearningObjectivesEditor', () => {
+  beforeAll(() => {
+    const jq: any = () => ({ modal: () => undefined, on: () => undefined });
+    (window as any).$ = jq;
+    (global as any).$ = jq;
+  });
+
+  afterAll(() => {
+    delete (window as any).$;
+    delete (global as any).$;
+  });
+
   beforeEach(() => {
     jest.spyOn(Persistence, 'pages').mockResolvedValue({
+      type: 'success',
+      pages: [
+        { id: 10, slug: 'intro', title: 'Intro Page' },
+        { id: 20, slug: 'practice', title: 'Practice Page' },
+        { id: 30, slug: 'orphan', title: 'Orphan Page' },
+      ],
+    });
+    jest.spyOn(Persistence, 'hierarchyPages').mockResolvedValue({
       type: 'success',
       pages: [
         { id: 10, slug: 'intro', title: 'Intro Page' },
@@ -497,7 +516,7 @@ describe('LearningObjectivesEditor', () => {
       { value: 10, title: 'Intro Page' },
       { value: 20, title: 'Practice Page' },
     ]);
-    expect(Persistence.pages).toHaveBeenCalledWith('project-1');
+    expect(Persistence.hierarchyPages).toHaveBeenCalledWith('project-1');
 
     displayAction.component.props.onDone(20);
 
@@ -553,7 +572,7 @@ describe('LearningObjectivesEditor', () => {
   });
 
   it('throws typed errors when recommendation page options cannot be fetched', async () => {
-    jest.spyOn(Persistence, 'pages').mockResolvedValue({
+    jest.spyOn(Persistence, 'hierarchyPages').mockResolvedValue({
       type: 'error',
       message: 'failed to resolve pages',
     } as any);
@@ -578,8 +597,120 @@ describe('LearningObjectivesEditor', () => {
     );
   });
 
+  it('limits Summary recommendation options to hierarchy pages while preserving selected page labels', async () => {
+    const contentItem = element({
+      mode: 'summary',
+      learning_objectives: [
+        { resource_id: 1, enabled: true, revisit_pages: [30], practice_pages: [] },
+        { resource_id: 2, enabled: true, revisit_pages: [], practice_pages: [] },
+      ],
+    });
+    const props = defaultEditorProps(contentItem);
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    await waitFor(() => expect(screen.getByText('Orphan Page')).toBeInTheDocument());
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Add practice pages for Linear equations' }),
+    );
+
+    const displayAction = ((window as any).oliDispatch as jest.Mock).mock.calls[0][0];
+
+    await expect(displayAction.component.props.onFetchOptions()).resolves.toEqual([
+      { value: 10, title: 'Intro Page' },
+      { value: 20, title: 'Practice Page' },
+    ]);
+  });
+
+  it('filters Summary recommendation modal options by hierarchy page title and stores resource ids', async () => {
+    jest.spyOn(Persistence, 'pages').mockResolvedValue({
+      type: 'success',
+      pages: [
+        { id: 10, slug: 'intro', title: 'Intro Page', numbering_index: 1 },
+        { id: 20, slug: 'practice', title: 'Practice Page', numbering_index: 2 },
+        { id: 30, slug: 'orphan', title: 'Orphan Practice Page', numbering_index: 3 },
+      ],
+    });
+    jest.spyOn(Persistence, 'hierarchyPages').mockResolvedValue({
+      type: 'success',
+      pages: [
+        { id: 10, slug: 'intro', title: 'Intro Page', numbering_index: 1 },
+        { id: 20, slug: 'practice', title: 'Practice Page', numbering_index: 2 },
+      ],
+    });
+    const contentItem = element({
+      mode: 'summary',
+      learning_objectives: [
+        { resource_id: 1, enabled: true, revisit_pages: [], practice_pages: [] },
+        { resource_id: 2, enabled: true, revisit_pages: [], practice_pages: [] },
+      ],
+    });
+    const props = defaultEditorProps(contentItem);
+
+    render(<LearningObjectivesEditor {...props} />);
+
+    await waitFor(() => expect(Persistence.hierarchyPages).toHaveBeenCalledWith('project-1'));
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Add practice pages for Linear equations' }),
+    );
+
+    const displayAction = ((window as any).oliDispatch as jest.Mock).mock.calls[0][0];
+
+    expect(displayAction.component.props.searchable).toBe(true);
+    expect(displayAction.component.props.searchAriaLabel).toBe('Search pages');
+
+    render(displayAction.component);
+
+    const search = await screen.findByRole('combobox', { name: 'Search pages' });
+
+    expect(search).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '1. Intro Page' })).not.toBeInTheDocument();
+
+    fireEvent.focus(search);
+
+    expect(search).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('option', { name: '1. Intro Page' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '2. Practice Page' })).toHaveAttribute(
+      'title',
+      '2. Practice Page',
+    );
+    expect(screen.getByRole('option', { name: '2. Practice Page' })).toHaveClass('text-truncate');
+    expect(
+      screen.queryByRole('option', { name: '3. Orphan Practice Page' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: 'orphan' } });
+
+    expect(screen.getByRole('status')).toHaveTextContent('No pages match your search.');
+    expect(
+      screen.queryByRole('option', { name: '3. Orphan Practice Page' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: 'practice' } });
+    fireEvent.click(screen.getByRole('option', { name: '2. Practice Page' }));
+
+    expect(screen.getByRole('button', { name: 'Clear selected page' })).toHaveStyle({
+      cursor: 'pointer',
+    });
+    expect(search).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }));
+
+    expect(props.onEdit).toHaveBeenLastCalledWith({
+      ...contentItem,
+      learning_objectives: [
+        { resource_id: 1, enabled: true, revisit_pages: [], practice_pages: [20] },
+        { resource_id: 2, enabled: true, revisit_pages: [], practice_pages: [] },
+      ],
+    });
+  });
+
   it('shows one alert and disables recommendation selectors when course pages fail to load', async () => {
-    jest.spyOn(Persistence, 'pages').mockRejectedValue(new Error('failed'));
+    jest.spyOn(Persistence, 'hierarchyPages').mockRejectedValue(new Error('failed'));
     const props = defaultEditorProps(element({ mode: 'summary' }));
 
     render(<LearningObjectivesEditor {...props} />);

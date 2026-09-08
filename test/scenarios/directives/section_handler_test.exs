@@ -7,6 +7,27 @@ defmodule Oli.Scenarios.Directives.SectionHandlerTest do
   alias Oli.GenAI.Dev.LocalCodex
   alias Oli.GenAI.FeatureConfig
 
+  test "inherits the selected project learning model" do
+    yaml = """
+    - project:
+        name: "lkt_project"
+        title: "LKT Project"
+        learning_model_version: "lkt_aoa"
+        root:
+          children:
+            - page: "Welcome"
+
+    - section:
+        name: "lkt_section"
+        from: "lkt_project"
+    """
+
+    result = Scenarios.execute_yaml(yaml, RuntimeOpts.build())
+
+    assert result.errors == []
+    assert Scenarios.get_section(result, "lkt_section").learning_model_version == :lkt_aoa
+  end
+
   test "creates a section with the Dot assistant enabled" do
     yaml = """
     - project:

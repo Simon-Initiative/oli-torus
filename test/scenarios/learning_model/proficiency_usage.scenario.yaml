@@ -1,0 +1,211 @@
+# Canonical proficiency reads across both persisted Section learning models.
+- use:
+    file: "../proficiency_base.scenario.yaml"
+
+- user:
+    name: "naive_student"
+    type: "student"
+    email: "naive-student@example.edu"
+
+- enroll:
+    user: "naive_student"
+    section: "proficiency_section"
+    role: "student"
+
+- view_practice_page:
+    student: "naive_student"
+    section: "proficiency_section"
+    page: "Lesson 1.1: Introduction"
+
+- answer_question:
+    student: "naive_student"
+    section: "proficiency_section"
+    page: "Lesson 1.1: Introduction"
+    activity_virtual_id: "unit1_lesson1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "naive_student"
+    section: "proficiency_section"
+    page: "Lesson 1.2: Basic Concepts"
+
+- answer_question:
+    student: "naive_student"
+    section: "proficiency_section"
+    page: "Lesson 1.2: Basic Concepts"
+    activity_virtual_id: "unit1_lesson2_mcq"
+    response: "c"
+
+- view_practice_page:
+    student: "naive_student"
+    section: "proficiency_section"
+    page: "Lesson 1.3: Practice Fundamentals"
+
+- answer_question:
+    student: "naive_student"
+    section: "proficiency_section"
+    page: "Lesson 1.3: Practice Fundamentals"
+    activity_virtual_id: "unit1_lesson3_mcq"
+    response: "b"
+
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "naive_student"
+      objective: "Master fundamental concepts"
+      bucket: "High"
+      value: 1.0
+
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      objective: "Master fundamental concepts"
+      bucket: "High"
+      value: 1.0
+
+- project:
+    name: "lkt_project"
+    title: "LKT-AOA Proficiency Project"
+    learning_model_version: "lkt_aoa"
+    objectives:
+      - "Master fundamental concepts"
+    root:
+      children:
+        - container: "Unit 1: Fundamentals"
+          children:
+            - page: "Lesson 1.1: Introduction"
+            - page: "Lesson 1.2: Basic Concepts"
+            - page: "Lesson 1.3: Practice Fundamentals"
+
+- edit_page:
+    project: "lkt_project"
+    page: "Lesson 1.1: Introduction"
+    content: |
+      title: "Lesson 1.1: Introduction"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "lkt_lesson1_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "LKT Practice One"
+            objectives: ["Master fundamental concepts"]
+            stem_md: "Choose the correct response."
+            choices:
+              - id: "a"
+                body_md: "Incorrect"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "lkt_project"
+    page: "Lesson 1.2: Basic Concepts"
+    content: |
+      title: "Lesson 1.2: Basic Concepts"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "lkt_lesson2_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "LKT Practice Two"
+            objectives: ["Master fundamental concepts"]
+            stem_md: "Choose the correct response."
+            choices:
+              - id: "a"
+                body_md: "Incorrect"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- edit_page:
+    project: "lkt_project"
+    page: "Lesson 1.3: Practice Fundamentals"
+    content: |
+      title: "Lesson 1.3: Practice Fundamentals"
+      graded: false
+      blocks:
+        - type: activity
+          virtual_id: "lkt_lesson3_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "LKT Practice Three"
+            objectives: ["Master fundamental concepts"]
+            stem_md: "Choose the correct response."
+            choices:
+              - id: "a"
+                body_md: "Incorrect"
+              - id: "b"
+                body_md: "Correct"
+                score: 1
+
+- publish:
+    to: "lkt_project"
+    description: "Publish LKT-AOA proficiency content"
+
+- section:
+    name: "lkt_section"
+    title: "LKT-AOA Proficiency Section"
+    from: "lkt_project"
+
+- user:
+    name: "lkt_student"
+    type: "student"
+    email: "lkt-student@example.edu"
+
+- enroll:
+    user: "lkt_student"
+    section: "lkt_section"
+    role: "student"
+
+- view_practice_page:
+    student: "lkt_student"
+    section: "lkt_section"
+    page: "Lesson 1.1: Introduction"
+
+- answer_question:
+    student: "lkt_student"
+    section: "lkt_section"
+    page: "Lesson 1.1: Introduction"
+    activity_virtual_id: "lkt_lesson1_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "lkt_student"
+    section: "lkt_section"
+    page: "Lesson 1.2: Basic Concepts"
+
+- answer_question:
+    student: "lkt_student"
+    section: "lkt_section"
+    page: "Lesson 1.2: Basic Concepts"
+    activity_virtual_id: "lkt_lesson2_mcq"
+    response: "b"
+
+- view_practice_page:
+    student: "lkt_student"
+    section: "lkt_section"
+    page: "Lesson 1.3: Practice Fundamentals"
+
+- answer_question:
+    student: "lkt_student"
+    section: "lkt_section"
+    page: "Lesson 1.3: Practice Fundamentals"
+    activity_virtual_id: "lkt_lesson3_mcq"
+    response: "b"
+
+- assert:
+    proficiency:
+      section: "lkt_section"
+      student: "lkt_student"
+      objective: "Master fundamental concepts"
+      bucket: "Medium"
+      value: 0.65
+
+- assert:
+    proficiency:
+      section: "lkt_section"
+      objective: "Master fundamental concepts"
+      bucket: "Medium"
+      value: 0.65

@@ -6,7 +6,16 @@ defmodule Oli.Scenarios.DirectiveTypes do
   # Directive types
   defmodule ProjectDirective do
     @moduledoc "Creates a new project with specified structure"
-    defstruct [:name, :title, :root, :objectives, :tags, :slug, :visibility]
+    defstruct [
+      :name,
+      :title,
+      :root,
+      :objectives,
+      :tags,
+      :slug,
+      :visibility,
+      :learning_model_version
+    ]
   end
 
   defmodule SectionDirective do

@@ -12,6 +12,10 @@
 - **Self-documenting**: YAML scenarios serve as both tests and documentation
 - **Real infrastructure testing**: Uses actual OLI modules like `ContainerEditor`, not mocks or fixtures
 
+Proficiency assertions target a named objective across a section. They reject `page` and
+`container` filters; see [Proficiency Assertions](test/support/scenarios/docs/student_simulation.md#proficiency-assertions)
+for supported parameters.
+
 ## Quick Start
 
 Scenario files can be either a bare list of directives or an object with optional
