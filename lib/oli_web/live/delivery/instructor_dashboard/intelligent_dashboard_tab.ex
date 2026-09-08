@@ -46,6 +46,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   import Phoenix.Component, only: [assign: 2, assign: 3, assign_new: 3, update: 3]
+  import Phoenix.LiveView, only: [start_async: 4]
 
   alias Oli.Dashboard.Cache.InProcessStore
   alias Oli.Dashboard.RevisitCache
@@ -2543,8 +2544,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          context,
          dependency_profile
        ) do
-    {started_oracles, _task} =
+    {started_oracles, socket} =
       start_dashboard_runtime_loads(
+        socket,
         request_token,
         misses ++ Map.get(dependency_profile, :optional, []),
         context
@@ -3004,8 +3006,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     inflight_oracles = socket.assigns.dashboard_inflight_oracles
 
     if Enum.all?(required, &MapSet.member?(loaded_oracles, &1)) do
-      {started_oracles, _task} =
+      {started_oracles, socket} =
         start_dashboard_runtime_loads(
+          socket,
           request_token,
           optional,
           context,
@@ -3018,7 +3021,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  defp start_dashboard_runtime_loads(request_token, oracle_keys, context, already_loaded \\ []) do
+  defp start_dashboard_runtime_loads(
+         socket,
+         request_token,
+         oracle_keys,
+         context,
+         already_loaded \\ []
+       ) do
     live_view_pid = self()
     already_loaded = MapSet.new(already_loaded)
 
@@ -3047,9 +3056,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       end)
     end
 
-    task = Task.Supervisor.start_child(Oli.TaskSupervisor, runner)
+    task_key = {:dashboard_runtime, oracle_keys, make_ref()}
 
-    {oracle_keys, task}
+    socket =
+      start_async(socket, task_key, runner, supervisor: Oli.TaskSupervisor)
+
+    {oracle_keys, socket}
+  end
+
+  @doc false
+  @spec handle_dashboard_runtime_async(socket(), [atom()], term()) :: {:noreply, socket()}
+  def handle_dashboard_runtime_async(socket, _oracle_keys, {:ok, _result}),
+    do: {:noreply, socket}
+
+  def handle_dashboard_runtime_async(socket, oracle_keys, {:exit, _reason}) do
+    {:noreply,
+     update(socket, :dashboard_inflight_oracles, &MapSet.difference(&1, MapSet.new(oracle_keys)))}
   end
 
   defp dashboard_runtime_max_concurrency, do: 4
