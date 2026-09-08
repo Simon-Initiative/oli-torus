@@ -939,23 +939,39 @@ defmodule Oli.Authoring.ObjectiveCoverage do
   defp selected_curriculum_ids(_), do: []
 
   defp objective_ancestors(objective_ids, parents_by_child) do
-    objective_ancestors(MapSet.to_list(objective_ids), parents_by_child, objective_ids)
+    objective_ancestors(
+      :queue.from_list(MapSet.to_list(objective_ids)),
+      parents_by_child,
+      objective_ids
+    )
   end
 
-  defp objective_ancestors([], _parents_by_child, objective_ids), do: objective_ids
+  defp objective_ancestors(queue, parents_by_child, objective_ids) do
+    case :queue.out(queue) do
+      {:empty, _queue} ->
+        objective_ids
 
-  defp objective_ancestors([objective_id | remaining], parents_by_child, objective_ids) do
-    {new_parents, objective_ids} =
-      Enum.reduce(Map.get(parents_by_child, objective_id, []), {[], objective_ids}, fn parent_id,
-                                                                                       {new, ids} ->
-        if MapSet.member?(ids, parent_id) do
-          {new, ids}
-        else
-          {[parent_id | new], MapSet.put(ids, parent_id)}
-        end
-      end)
+      {{:value, objective_id}, queue} ->
+        {new_parents, objective_ids} =
+          Enum.reduce(
+            Map.get(parents_by_child, objective_id, []),
+            {[], objective_ids},
+            fn parent_id, {new, ids} ->
+              if MapSet.member?(ids, parent_id) do
+                {new, ids}
+              else
+                {[parent_id | new], MapSet.put(ids, parent_id)}
+              end
+            end
+          )
 
-    objective_ancestors(remaining ++ new_parents, parents_by_child, objective_ids)
+        queue =
+          Enum.reduce(new_parents, queue, fn parent_id, queue ->
+            :queue.in(parent_id, queue)
+          end)
+
+        objective_ancestors(queue, parents_by_child, objective_ids)
+    end
   end
 
   defp assessment_bucket(true), do: :summative

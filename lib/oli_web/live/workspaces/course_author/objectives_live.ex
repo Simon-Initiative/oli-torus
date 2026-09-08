@@ -157,14 +157,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
               placeholder="Search..."
               aria_label="Search learning objectives, sub-objectives, pages, and activities"
             />
-            <input
-              type="text"
-              class="sr-only"
-              aria-hidden="true"
-              phx-blur="change_search"
-              value={@query}
-            />
-            <button type="button" class="sr-only" phx-click="apply_search">Search</button>
           </.form>
         </div>
 

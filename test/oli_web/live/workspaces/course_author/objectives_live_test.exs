@@ -367,12 +367,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       refute has_element?(view, "##{other_objective.slug}")
 
       view
-      |> element("input[phx-blur=\"change_search\"]")
-      |> render_blur(%{value: "matching"})
-
-      view
-      |> element("button[phx-click=\"apply_search\"]")
-      |> render_click()
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "matching"})
 
       assert has_element?(view, "##{matching_objective.slug}")
       refute has_element?(view, "##{other_objective.slug}")
@@ -405,7 +401,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click()
 
       assert has_element?(view, "#course-content-filter-menu")
-      assert has_element?(view, "#course-content-filter-tree[role='tree']")
+      assert has_element?(view, "#course-content-filter-tree details")
       assert has_element?(view, "#course-content-checkbox-#{page.resource_id}[type='checkbox']")
 
       assert has_element?(

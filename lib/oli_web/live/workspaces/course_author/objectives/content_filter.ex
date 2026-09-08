@@ -54,11 +54,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
       <div
         :if={@open and not @disabled}
         id="course-content-filter-menu"
-        role="dialog"
         aria-label="Course content filter options"
-        phx-click-away={
-          JS.push("close_course_content_filter") |> JS.focus(to: "#course-content-filter-trigger")
-        }
+        phx-click-away={JS.push("close_course_content_filter")}
         phx-window-keydown={
           JS.push("close_course_content_filter") |> JS.focus(to: "#course-content-filter-trigger")
         }
@@ -79,7 +76,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
 
         <div
           id="course-content-filter-tree"
-          role="tree"
           aria-label="Course content hierarchy"
           class="max-h-80 overflow-y-auto pr-1"
         >
@@ -134,15 +130,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
     ~H"""
     <details
       id={"course-content-node-#{@dom_id}"}
-      role="treeitem"
       open={@level == 0}
-      aria-level={@level + 1}
-      aria-expanded={if @expandable?, do: to_string(@level == 0), else: nil}
-      class="group"
+      class="group relative"
     >
-      <summary class="flex min-w-0 list-none items-center gap-1 rounded px-1 py-1.5 text-sm text-Text-text-high marker:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary">
+      <summary class="flex min-w-0 list-none items-center gap-1 rounded py-1.5 pl-14 pr-1 text-sm text-Text-text-high marker:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary">
         <span
-          class={["flex size-5 shrink-0 items-center justify-center", !@expandable? && "invisible"]}
+          class={[
+            "absolute left-1 top-1.5 flex size-5 shrink-0 items-center justify-center",
+            !@expandable? && "invisible"
+          ]}
           aria-hidden="true"
         >
           <Icons.chevron_down
@@ -152,16 +148,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
             class="text-Icon-icon-default transition-transform group-open:rotate-180"
           />
         </span>
-        <input
-          id={"course-content-checkbox-#{@dom_id}"}
-          type="checkbox"
-          checked={if @selected, do: "checked", else: nil}
-          aria-checked={to_string(@selected)}
-          aria-label={"Select #{@node.title}"}
-          phx-click="toggle_course_content_item"
-          phx-value-resource_id={@node.resource_id}
-          class="size-4 shrink-0 rounded border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
-        />
         <span
           class="min-w-0 flex-1 truncate"
           title={@node.title}
@@ -170,7 +156,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.ContentFilter do
           {@node.title}
         </span>
       </summary>
-      <div :if={@expandable?} role="group" class="ml-5 border-l border-Border-border-default pl-2">
+      <input
+        id={"course-content-checkbox-#{@dom_id}"}
+        type="checkbox"
+        checked={if @selected, do: "checked", else: nil}
+        aria-checked={to_string(@selected)}
+        aria-label={"Select #{@node.title}"}
+        phx-click="toggle_course_content_item"
+        phx-value-resource_id={@node.resource_id}
+        class="absolute left-7 top-2.5 z-10 size-4 rounded border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
+      />
+      <div :if={@expandable?} class="ml-5 border-l border-Border-border-default pl-2">
         <%= for child <- @children do %>
           <.render_node
             node={child}
