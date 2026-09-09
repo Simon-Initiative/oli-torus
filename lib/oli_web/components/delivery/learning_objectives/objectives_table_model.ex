@@ -329,10 +329,10 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
     spec = %{
       height: 12,
-      mark: "bar",
+      mark: %{type: "bar", binSpacing: 2},
       data: %{values: data_with_positions},
       encoding: %{
-        x: %{field: "start", type: "quantitative", scale: %{nice: false}},
+        x: %{field: "start", type: "quantitative", bin: "binned", scale: %{nice: false}},
         x2: %{field: "end"},
         color: %{
           field: "proficiency",
