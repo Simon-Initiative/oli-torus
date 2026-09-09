@@ -1,4 +1,4 @@
-name: Build and Deploy Preview
+name: Build Preview Image
 
 on:
   pull_request:
