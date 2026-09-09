@@ -110,7 +110,8 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   def build_page_contexts(page_resources, page_revisions) do
     revisions_by_id = Map.new(page_revisions, &{&1.id, &1})
 
-    Enum.reduce(page_resources, %{}, fn page_resource, contexts ->
+    page_resources
+    |> Enum.reduce(%{}, fn page_resource, contexts ->
       case Map.get(revisions_by_id, page_resource.revision_id) do
         nil ->
           contexts
@@ -123,10 +124,12 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
 
           Enum.reduce(List.wrap(Map.get(page_revision, :activity_refs, [])), contexts, fn
             activity_id, contexts ->
-              Map.update(contexts, activity_id, [context], &(&1 ++ [context]))
+              Map.update(contexts, activity_id, [context], &[context | &1])
           end)
       end
     end)
+    # Reversed because `canonical_page_contexts/1` takes the first entry, so order matters.
+    |> Map.new(fn {activity_id, contexts} -> {activity_id, Enum.reverse(contexts)} end)
   end
 
   @doc "Selects the first stable page context for every activity."
@@ -313,36 +316,23 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
   defp ratio(_numerator, 0), do: 0.0
   defp ratio(numerator, denominator), do: numerator / denominator
 
-  # Single accumulator for attempt/correct counts, so every source of summary rows
-  # aggregates the same way.
-  defp add_counts(metrics_by_id, resource_id, attempts, correct) do
-    Map.update(
-      metrics_by_id,
-      resource_id,
-      %{attempts: attempts, correct: correct},
-      &%{attempts: &1.attempts + attempts, correct: &1.correct + correct}
-    )
-  end
-
   defp activity_metrics(_section_id, []), do: %{}
 
   defp activity_metrics(section_id, activity_ids) do
     started_at = System.monotonic_time()
 
-    # `ResourceSummary` rows scoped with `user_id == -1` and `project_id == -1` are already
-    # aggregated across the whole section, so a single row covers every page an activity
-    # appears on. They must be read once per activity: reading them once per containing page
-    # and summing would count the same section-wide totals repeatedly. The accumulation that
-    # remains is across `part_id`, since a multi-part activity has one row per part.
+    # These rows are section-wide and partitioned by part, so one is taken per activity
+    # rather than summed. Mirrors how `Pages` reads the same column.
     metrics_by_id =
       from(summary in ResourceSummary,
         where:
           summary.section_id == ^section_id and summary.project_id == -1 and
-            summary.user_id == -1 and summary.resource_id in ^activity_ids
+            summary.user_id == -1 and summary.resource_id in ^activity_ids,
+        select: {summary.resource_id, summary.num_attempts, summary.num_correct}
       )
       |> Repo.all()
-      |> Enum.reduce(%{}, fn summary, acc ->
-        add_counts(acc, summary.resource_id, summary.num_attempts, summary.num_correct)
+      |> Map.new(fn {resource_id, attempts, correct} ->
+        {resource_id, %{attempts: attempts, correct: correct}}
       end)
 
     fallback_ids = activity_ids -- Map.keys(metrics_by_id)
@@ -390,17 +380,19 @@ defmodule Oli.Delivery.Sections.LinkedActivities do
         resource_access.section_id == ^section_id and
           activity_attempt.resource_id in ^activity_ids and
           activity_attempt.lifecycle_state == :evaluated,
-      select: %{
-        resource_id: activity_attempt.resource_id,
-        score: activity_attempt.score,
-        out_of: activity_attempt.out_of
+      group_by: activity_attempt.resource_id,
+      select: {
+        activity_attempt.resource_id,
+        count(activity_attempt.id),
+        filter(
+          count(activity_attempt.id),
+          activity_attempt.score == activity_attempt.out_of
+        )
       }
     )
     |> Repo.all()
-    |> Enum.group_by(& &1.resource_id)
-    |> Map.new(fn {resource_id, attempts} ->
-      correct = Enum.count(attempts, &(&1.score && &1.out_of && &1.score == &1.out_of))
-      {resource_id, %{attempts: length(attempts), correct: correct}}
+    |> Map.new(fn {resource_id, attempts, correct} ->
+      {resource_id, %{attempts: attempts, correct: correct}}
     end)
   end
 

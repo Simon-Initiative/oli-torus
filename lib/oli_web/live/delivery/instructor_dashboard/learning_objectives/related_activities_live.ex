@@ -437,9 +437,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
   defp maybe_filter_by_attempts(activities, selected_ids) do
     Enum.filter(activities, fn activity ->
-      # Predicates intentionally mirror the Scored/Practice Activities filter in
-      # OliWeb.Components.Delivery.Pages so the same option means the same thing on
-      # every Insights View table. Note that "Less than 5" includes zero-attempt rows.
+      # Mirrors the `Pages` predicates, where "Less than 5" also includes zero attempts.
       Enum.any?(selected_ids, fn
         1 -> activity.total_attempts in [nil, 0]
         2 -> not is_nil(activity.total_attempts) and activity.total_attempts <= 5
@@ -464,8 +462,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
     end)
   end
 
-  # Sorting always runs on the column names the shared table model emits. Legacy names
-  # coming from older bookmarked URLs are mapped by normalize_sort_by/1 in decode_params.
+  # Legacy sort names from older URLs are mapped by `normalize_sort_by/1` in `decode_params`.
   defp sort_by(activities, :title, sort_order) do
     Enum.sort_by(activities, &String.downcase(&1.question_stem || &1.title || ""), sort_order)
   end
@@ -585,8 +582,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       )
 
       case Enum.find(socket.assigns.activities, &(&1.resource_id == activity_id)) do
-        nil -> socket
-        activity -> cache_summary(socket, activity_id, empty_summary(activity))
+        nil ->
+          socket
+
+        activity ->
+          # Flagged so the detail pane omits the bars instead of showing a 0% that reads as real.
+          summary = Map.put(empty_summary(activity), :metrics_unavailable, true)
+          cache_summary(socket, activity_id, summary)
       end
   end
 

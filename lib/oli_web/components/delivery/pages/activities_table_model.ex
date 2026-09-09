@@ -163,6 +163,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         all_attempt_pct: Map.get(current_activity || %{}, :all_attempt_pct, 0.0),
         adaptive_summary_repair_status:
           Map.get(current_activity || %{}, :adaptive_summary_repair_status),
+        metrics_unavailable: Map.get(current_activity || %{}, :metrics_unavailable, false),
         detail_label:
           if(adaptive_screen?(assessment), do: "Screen details", else: "Question details")
       })
@@ -224,7 +225,10 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
             <p class="pt-9 pb-5">No attempt registered for this question</p>
           <% end %>
         </div>
-        <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+        <div
+          :if={not @metrics_unavailable}
+          class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4"
+        >
           <ActivityHelpers.percentage_bar
             id={Integer.to_string(@current_activity.id) <> "_first_try_correct"}
             value={@first_attempt_pct}

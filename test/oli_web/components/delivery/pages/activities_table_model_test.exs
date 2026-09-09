@@ -204,6 +204,40 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     assert html =~ "0%"
   end
 
+  test "render_assessment_details omits the percentage bars when metrics are unavailable" do
+    assessment = %{
+      title: "Manual Screen",
+      resource_id: 54,
+      content: %{"partsLayout" => []}
+    }
+
+    current_activity = %{
+      resource_id: 54,
+      id: 54,
+      preview_rendered: nil,
+      metrics_unavailable: true
+    }
+
+    model = %{
+      data: %{
+        activity_summary_cache: %{54 => current_activity},
+        expanded_activity_ids: MapSet.new([54]),
+        target: nil
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns = Map.merge(assigns, %{model: model, activity_types_map: %{}})
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+
+    # A failed summary load must not render 0%, which reads as genuinely zero performance.
+    refute html =~ "First Try Correct"
+    refute html =~ "Eventually Correct"
+    refute html =~ "0%"
+  end
+
   test "render_assessment_details shows a repair notice while adaptive analytics refresh is in progress" do
     assessment = %{
       title: "Legacy Adaptive Screen",
