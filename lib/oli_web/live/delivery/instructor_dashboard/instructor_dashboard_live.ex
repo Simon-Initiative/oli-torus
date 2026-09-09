@@ -1394,6 +1394,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info({:dashboard_runtime_stream_complete, task_pid, completion_ref}, socket) do
+    IntelligentDashboardTab.acknowledge_dashboard_runtime_stream(
+      socket,
+      task_pid,
+      completion_ref
+    )
+  end
+
+  @impl Phoenix.LiveView
   def handle_info(
         {:dashboard_summary_recommendation_trigger, request_token, scope_selector, oracle_context,
          snapshot},

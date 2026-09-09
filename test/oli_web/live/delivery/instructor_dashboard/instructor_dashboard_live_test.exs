@@ -32,8 +32,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
   defp await_dashboard(view) do
     render_async(view, 5_000)
-    render_async(view, 5_000)
-    render_async(view, 5_000)
   end
 
   describe "user" do

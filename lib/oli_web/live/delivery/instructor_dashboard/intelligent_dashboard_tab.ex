@@ -3037,23 +3037,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> Enum.reject(&MapSet.member?(already_loaded, &1))
 
     runner = fn ->
-      oracle_keys
-      |> Task.async_stream(
-        fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
-        max_concurrency: dashboard_runtime_max_concurrency(),
-        ordered: false,
-        timeout: :infinity
+      stream_dashboard_runtime_results(
+        oracle_keys,
+        request_token,
+        context,
+        live_view_pid,
+        &dashboard_runtime_result/2
       )
-      |> Enum.each(fn
-        {:ok, {oracle_key, oracle_result}} ->
-          send(
-            live_view_pid,
-            {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
-          )
-
-        {:exit, _reason} ->
-          :ok
-      end)
     end
 
     task_key = {:dashboard_runtime, oracle_keys, make_ref()}
@@ -3065,6 +3055,51 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   @doc false
+  @spec stream_dashboard_runtime_results(
+          [atom()],
+          non_neg_integer(),
+          map(),
+          pid(),
+          (atom(), map() -> map())
+        ) :: :ok
+  def stream_dashboard_runtime_results(
+        oracle_keys,
+        request_token,
+        context,
+        live_view_pid,
+        load_result
+      ) do
+    oracle_keys
+    |> Task.async_stream(
+      fn oracle_key -> {oracle_key, load_result.(oracle_key, context)} end,
+      max_concurrency: dashboard_runtime_max_concurrency(),
+      ordered: false,
+      timeout: :infinity
+    )
+    |> Enum.each(fn
+      {:ok, {oracle_key, oracle_result}} ->
+        send(
+          live_view_pid,
+          {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
+        )
+
+      {:exit, _reason} ->
+        :ok
+    end)
+
+    completion_ref = make_ref()
+
+    send(
+      live_view_pid,
+      {:dashboard_runtime_stream_complete, self(), completion_ref}
+    )
+
+    receive do
+      {:dashboard_runtime_stream_ack, ^completion_ref} -> :ok
+    end
+  end
+
+  @doc false
   @spec handle_dashboard_runtime_async(socket(), [atom()], term()) :: {:noreply, socket()}
   def handle_dashboard_runtime_async(socket, _oracle_keys, {:ok, _result}),
     do: {:noreply, socket}
@@ -3072,6 +3107,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   def handle_dashboard_runtime_async(socket, oracle_keys, {:exit, _reason}) do
     {:noreply,
      update(socket, :dashboard_inflight_oracles, &MapSet.difference(&1, MapSet.new(oracle_keys)))}
+  end
+
+  @doc false
+  @spec acknowledge_dashboard_runtime_stream(socket(), pid(), reference()) ::
+          {:noreply, socket()}
+  def acknowledge_dashboard_runtime_stream(socket, task_pid, completion_ref) do
+    send(task_pid, {:dashboard_runtime_stream_ack, completion_ref})
+    {:noreply, socket}
   end
 
   defp dashboard_runtime_max_concurrency, do: 4
