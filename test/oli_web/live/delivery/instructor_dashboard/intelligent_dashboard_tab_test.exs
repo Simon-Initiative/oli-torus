@@ -131,6 +131,41 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert Task.await(stream) == :ok
     end
 
+    test "publishes a keyed error without preventing sibling oracle results" do
+      test_pid = self()
+      context = %{section_id: 123}
+
+      load_result = fn
+        :progress, _context -> raise "oracle failed"
+        :support, received_context -> %{oracle_key: :support, context: received_context}
+      end
+
+      stream =
+        Task.async(fn ->
+          IntelligentDashboardTab.stream_dashboard_runtime_results(
+            [:progress, :support],
+            7,
+            context,
+            test_pid,
+            load_result
+          )
+        end)
+
+      assert_receive {:dashboard_runtime_oracle_result, 7, ^context, :progress,
+                      %{
+                        oracle_key: :progress,
+                        status: :error,
+                        reason: {:runtime_load_failed, :error}
+                      }}
+
+      assert_receive {:dashboard_runtime_oracle_result, 7, ^context, :support,
+                      %{oracle_key: :support}}
+
+      assert_receive {:dashboard_runtime_stream_complete, stream_pid, completion_ref}
+      send(stream_pid, {:dashboard_runtime_stream_ack, completion_ref})
+      assert Task.await(stream) == :ok
+    end
+
     test "a failed runtime load releases every oracle assigned to that task" do
       socket = %Phoenix.LiveView.Socket{
         assigns: %{

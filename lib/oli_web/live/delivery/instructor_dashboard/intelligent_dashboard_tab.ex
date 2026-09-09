@@ -3071,7 +3071,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       ) do
     oracle_keys
     |> Task.async_stream(
-      fn oracle_key -> {oracle_key, load_result.(oracle_key, context)} end,
+      fn oracle_key ->
+        {oracle_key, safely_load_dashboard_runtime_result(oracle_key, context, load_result)}
+      end,
       max_concurrency: dashboard_runtime_max_concurrency(),
       ordered: false,
       timeout: :infinity
@@ -3083,8 +3085,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
           {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
         )
 
-      {:exit, _reason} ->
-        :ok
+      {:exit, reason} ->
+        exit(reason)
     end)
 
     completion_ref = make_ref()
@@ -3097,6 +3099,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     receive do
       {:dashboard_runtime_stream_ack, ^completion_ref} -> :ok
     end
+  end
+
+  defp safely_load_dashboard_runtime_result(oracle_key, context, load_result) do
+    try do
+      load_result.(oracle_key, context)
+    rescue
+      _exception -> runtime_load_failure(oracle_key, :error)
+    catch
+      kind, _reason -> runtime_load_failure(oracle_key, kind)
+    end
+  end
+
+  defp runtime_load_failure(oracle_key, kind) do
+    Result.error(oracle_key, {:runtime_load_failed, kind},
+      metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
+    )
   end
 
   @doc false
