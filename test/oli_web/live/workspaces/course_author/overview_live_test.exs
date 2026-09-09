@@ -171,20 +171,53 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> hd() =~ "Welcome Title"
     end
 
-    test "project description cannot exceed 300 characters", %{conn: conn, author: author} do
+    test "limits project descriptions that do not exceed 300 characters", %{
+      conn: conn,
+      author: author
+    } do
       project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(
+               view,
+               ~s(textarea[name="project[description]"][maxlength="300"])
+             )
+    end
+
+    test "grandfathers project descriptions that already exceed 300 characters", %{
+      conn: conn,
+      author: author
+    } do
       description = String.duplicate("a", 301)
 
-      {:ok, view, html} = live(conn, live_view_route(project.slug))
+      project =
+        author
+        |> create_project_with_author()
+        |> Ecto.Changeset.change(description: description)
+        |> Repo.update!()
 
-      assert html =~ ~s(maxlength="300")
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      refute has_element?(view, ~s(textarea[name="project[description]"][maxlength]))
+
+      updated_description = description <> "b"
 
       element(view, "form[phx-submit='update']")
-      |> render_submit(%{"project" => %{"description" => description}})
+      |> render_submit(%{"project" => %{"description" => updated_description}})
 
-      assert has_element?(view, "div.alert-danger", "Project could not be updated.")
-      assert render(view) =~ "must be 300 characters or fewer"
-      assert Course.get_project_by_slug(project.slug).description == project.description
+      assert has_element?(view, "div.alert-info", "Project updated successfully.")
+      assert Course.get_project_by_slug(project.slug).description == updated_description
+
+      shortened_description = String.duplicate("b", 300)
+
+      element(view, "form[phx-submit='update']")
+      |> render_submit(%{"project" => %{"description" => shortened_description}})
+
+      assert has_element?(
+               view,
+               ~s(textarea[name="project[description]"][maxlength="300"])
+             )
     end
 
     test "publisher dropdown displays publishers sorted alphabetically", %{

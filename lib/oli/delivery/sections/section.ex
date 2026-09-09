@@ -19,8 +19,6 @@ defmodule Oli.Delivery.Sections.Section do
     Section
   }
 
-  @description_character_limit 300
-
   @required_fields [
     :type,
     :title,
@@ -260,10 +258,6 @@ defmodule Oli.Delivery.Sections.Section do
     |> check_constraint(:learning_model_version, name: :sections_learning_model_version_check)
     |> Slug.update_never("sections")
     |> validate_length(:title, max: 255)
-    |> validate_length(:description,
-      max: @description_character_limit,
-      message: "must be %{count} characters or fewer"
-    )
     |> cast_assoc(:certificate)
   end
 
