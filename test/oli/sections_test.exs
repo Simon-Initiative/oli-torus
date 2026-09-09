@@ -1117,6 +1117,9 @@ defmodule Oli.SectionsTest do
       # apply the new publication update to the section
       Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
+      assert Repo.reload(section).section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
+
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
@@ -1309,6 +1312,9 @@ defmodule Oli.SectionsTest do
         Publishing.publish_project(project, "add unrelated page", author.id)
 
       Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+
+      assert Repo.reload(section).section_resource_migration_version ==
+               Oli.Delivery.Sections.SectionResourceMigration.current_version()
 
       updated_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 

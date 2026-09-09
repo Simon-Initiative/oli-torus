@@ -411,6 +411,92 @@ Open dependency:
 
 - Confirm exact existing DOT integration point before coding this slice.
 
+### Slice D5a - Recommendation Page Candidate Scope
+
+Purpose:
+
+- Ensure LO Summary `Revisit` and `Practice` recommendations are selected from pages that are part of the current authoring hierarchy, not from every page resource in the project's working publication.
+
+Reasoning:
+
+- Authoring stores recommendation targets as stable `resource_id` values, which is correct for Torus' resource/revision model.
+- However, `AuthoringResolver.all_pages/1` includes pages from the working publication that may not be present in the authoring hierarchy and may later be culled from a delivery section as unreachable.
+- When authors select those non-hierarchy pages, the LO Summary content is valid at the project/publication level but delivery cannot resolve those ids through `section_resources`, so the expected recommendation links disappear for students.
+- The first correction should be conservative: limit selectable recommendation pages to hierarchy pages. Adding LO Summary recommendations to the delivery reachability graph remains deferred unless a product requirement explicitly says recommendations may point to non-outline pages.
+
+Likely work:
+
+- Add or reuse a backend resolver/helper that returns page candidates from `AuthoringResolver.full_hierarchy/1` rather than `AuthoringResolver.all_pages/1`.
+- Update the page-link API path used by LO Summary recommendation selectors, or add a scoped endpoint/parameter if the existing `/project/:project/link` endpoint must keep its broader behavior for other features.
+- Preserve `resource_id` as the persisted target id.
+- Include enough page context in modal options, such as numbering/path when available, so duplicate page titles are less ambiguous.
+- Keep existing save-time validation that recommendation ids belong to current-project pages, and consider tightening it to current hierarchy pages if safe for existing content.
+- Do not add recommendation ids to `determine_unreachable_pages/3` or the publication reachability graph in this slice unless hierarchy filtering alone proves insufficient.
+
+Likely files:
+
+- `lib/oli_web/controllers/api/resource_controller.ex`
+- `lib/oli/publishing/authoring_resolver.ex` or a focused helper near the API/controller layer
+- `assets/src/data/persistence/resource.ts`
+- `assets/src/components/resource/editors/LearningObjectivesEditor.tsx`
+- `test/oli_web/controllers/api/resource_controller_test.exs` or the nearest existing controller test
+- `assets/test/components/resource/editors/learning_objectives_editor_test.tsx` if the modal fetch behavior has stable coverage
+
+Validation:
+
+- Backend/controller test proves the LO Summary recommendation candidate list includes hierarchy pages and excludes non-hierarchy pages from the working publication.
+- Test or manual check verifies duplicate visible titles can be disambiguated enough for authors.
+- Manual authoring check in Real Chem verifies candidates include `4916 Gravimetric Analysis` / `4970 Dispersion Forces` style hierarchy pages and exclude non-hierarchy duplicates like `4542` / `4579`.
+- Publish/update smoke check verifies selected hierarchy page recommendations appear in student delivery after section update.
+
+### Slice D5b - Recommendation Page Selector Search
+
+Purpose:
+
+- Improve the LO Summary authoring page selector modal so authors can search/filter candidate pages by title while adding `Revisit` or `Practice` recommendations.
+
+Likely work:
+
+- Add a search input to the recommendation page selection flow, or enable an existing searchable modal variant if `SelectModal` already supports it.
+- Filter dropdown/list options client-side against the current candidate list.
+- Preserve keyboard navigation and accessible labels.
+- Keep this separate from the hierarchy-scope fix so the critical data-correctness behavior can be reviewed independently.
+
+Likely files:
+
+- `assets/src/components/modal/SelectModal`
+- `assets/src/components/resource/editors/LearningObjectivesEditor.tsx`
+- relevant modal/component tests
+
+Validation:
+
+- Jest/component test for filtering by page title.
+- Manual check with duplicate/similar Real Chem page titles.
+
+### Slice D5c - Smooth Next Steps Disclosure Motion
+
+Purpose:
+
+- Improve the `Show next steps` / `Hide next steps` interaction so expanding and collapsing recommendation content feels smooth instead of abrupt.
+
+Likely work:
+
+- Add a small CSS-only transition for the expanded recommendation content when feasible.
+- Preserve the native disclosure semantics already used for accessibility.
+- Respect `prefers-reduced-motion` and avoid motion for users who request reduced animation.
+- Keep this scoped to the Summary `Recommended Review` next-steps panel.
+- Do not change copy, link behavior, recommendation filtering, DOT content, or panel layout.
+
+Likely files:
+
+- `assets/css/app.css`
+- `lib/oli/rendering/content/learning_objectives.ex` only if a wrapper/attribute is required to support the transition safely.
+
+Validation:
+
+- Manual expand/collapse smoke check for desktop and mobile widths.
+- Manual or browser check that reduced-motion users do not get unnecessary animation.
+
 ### Slice D6 - Student Links 500 And Preview Support
 
 Purpose:
@@ -490,6 +576,36 @@ Validation:
 - Manual mobile viewport check.
 - Render tests for wrapping-friendly classes where not brittle.
 
+### Slice D9 - AC Clarifications And Authoring Modal Dark Mode
+
+Purpose:
+
+- Apply three AC clarifications confirmed with designer (Jess) after D8:
+  1. **"Not Enough Information" LOs** must not appear in the Summary at all — omit them from both *Recommended Review* and *Learning Objectives You're Applying* because no accurate learning signal exists yet.
+  2. **No configured pages + DOT enabled** — still render the `Show next steps` toggle and expand panel, showing only the DOT explain card. Keeps the interaction consistent; designer will update if data shows this is the common case.
+  3. **Explain component + AI Activation Points** — treat the Explain action as an activation point. Disable/hide it when the section-level `Enable AI Activation Points` boolean is off. If there are no pages, no activities, *and* activation points are disabled, next steps are not shown at all.
+- Fix dark mode for the authoring page-picker modal (search + dropdown added in D5b). Light mode is correct; dark mode still has hardcoded white backgrounds on some elements.
+
+Likely work:
+
+- Filter "Not Enough Information" objectives out of Summary grouping logic in `lib/oli/rendering/content/learning_objectives.ex` (or the LiveView that builds the assigns).
+- Gate `maybe_dot_explain_card/2` on `context.assistant_available?` already; confirm it also checks the activation-points config, or add the check.
+- Re-examine the `Show next steps` rendering condition so it shows when DOT is available even if recommendation pages are empty.
+- Audit the authoring page-picker modal for hardcoded `bg-white`, `text-gray-*`, or similar non-tokenized classes and replace with dark-mode-aware equivalents.
+
+Likely files:
+
+- `lib/oli/rendering/content/learning_objectives.ex`
+- `lib/oli_web/live/delivery/student/utils.ex` (or wherever Summary grouping is computed)
+- Authoring modal component (search + hierarchy picker added in D5b)
+- `assets/css/app.css` if any modal dark mode overrides are needed
+
+Validation:
+
+- Render tests for Not Enough Information exclusion.
+- Manual dark mode check on authoring page-picker modal.
+- Manual smoke check: DOT-only next steps, activation-points-off state.
+
 ## Validation Matrix
 
 | Requirement / Bug | Slice | Automated validation | Manual validation |
@@ -503,9 +619,12 @@ Validation:
 | MER-5808 `Recommended Review` section | D1 | Render tests | Figma node `287-50756` |
 | MER-5808 `Learning Objectives You're Applying` section | D1 | Render tests | Figma node `287-50809` |
 | MER-5808 `Show next steps` / `Hide next steps` | D2 | Render tests | Figma nodes `287-51458`, `434-8927` |
+| MER-5808 smooth next steps expand/collapse | D5c | CSS/class review if useful | Manual expand/collapse smoke check |
 | MER-5808 no next steps without recommendations | D2 | Render tests | Student smoke check |
 | MER-5808 Strong hides recommendations | D3 | Render tests | Student smoke check |
 | MER-5808 DOT Explain card | D5 | Render/integration tests | Figma expanded panel check |
+| MER-5808 recommendation candidates resolve in delivery | D5a | Controller/resolver test for hierarchy-scoped candidates | Real Chem authoring + student delivery smoke check |
+| MER-5804 recommendation selector search | D5b | Modal/component filter test | Authoring modal search check |
 | MER-5867 student links 500 | D6 | Route/link tests | Student click-through smoke check |
 | MER-5867 author cannot preview | D6 | Preview context/render test | Author preview smoke check |
 | MER-5867 progression icons differ | D4 | Render/icon tests | Figma icon check |
@@ -545,4 +664,3 @@ Before code:
    - run targeted tests;
    - run manual Figma checks when relevant;
    - commit atomically.
-

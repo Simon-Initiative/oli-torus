@@ -137,18 +137,35 @@ defmodule Oli.Delivery.Snapshots.WorkerTest do
       assert Repo.aggregate(StudentResponse, :count) == 2
     end
 
-    test "controlled LKT failure prevents summary writes and remains retryable" do
+    test "missing LKT objective mappings do not prevent legacy summary writes" do
       %{section: section, group: group} =
         LktAoaFixtures.lkt_fixture(%{publish_objectives?: false})
 
-      assert {:error, {:missing_published_objective_revisions, [_objective_id]}} =
-               Worker.perform_now(attempt_guids(group), section.slug)
+      assert Worker.perform_now(attempt_guids(group), section.slug) == :ok
 
-      assert Repo.aggregate(AttemptApplication, :count) == 0
+      assert Repo.aggregate(AttemptApplication, :count) == 1
       assert Repo.aggregate(PriorActivityPartEvidence, :count) == 0
       assert Repo.aggregate(LearningState, :count) == 0
-      assert Repo.aggregate(ResourceSummary, :count) == 0
-      assert Repo.aggregate(ResponseSummary, :count) == 0
+      assert_summary_rows_created()
+    end
+
+    test "LKT validation failures do not return learner answer data to Oban" do
+      %{section: section, group: group} =
+        LktAoaFixtures.lkt_fixture(%{
+          part_attempts: [
+            %{response: %{"input" => "sensitive learner answer"}}
+          ]
+        })
+
+      group.part_attempts
+      |> hd()
+      |> Ecto.Changeset.change(score: nil)
+      |> Repo.update!()
+
+      result = Worker.perform_now(attempt_guids(group), section.slug)
+
+      assert result == {:error, :invalid_part_attempt}
+      refute inspect(result) =~ "sensitive learner answer"
     end
 
     test "retry after downstream summary failure does not apply LKT state twice" do

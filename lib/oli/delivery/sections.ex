@@ -20,10 +20,12 @@ defmodule Oli.Delivery.Sections do
     DisplayLabels,
     SectionResource,
     SectionResourceDepot,
+    SectionResourceMigration,
     ContainedObjective,
     SectionsProjectsPublications,
     Enrollment,
     EnrollmentBrowseOptions,
+    ObjectiveChildrenProjection,
     EnrollmentContextRole,
     Scheduling,
     MinimalHierarchy
@@ -4008,6 +4010,8 @@ defmodule Oli.Delivery.Sections do
   If a finalized hierarchy node is given, then the section will be rebuilt from it. Otherwise, it
   will be rebuilt from a list of section resources.
 
+  The transaction locks the Section before writing SectionResources to serialize with JIT migration.
+
   project_publications is a map of the project id to the pinned publication for the section.
   %{1 => %Publication{project_id: 1, ...}, ...}
   """
@@ -4018,6 +4022,9 @@ defmodule Oli.Delivery.Sections do
       ) do
     if Hierarchy.finalized?(hierarchy) do
       Multi.new()
+      |> Multi.run(:lock_section, fn _repo, _ ->
+        {:ok, SectionResourceMigration.lock_section!(section_id)}
+      end)
       |> Multi.run(:keep_original_required_assessments_for_certificate, fn _repo, _ ->
         # guarantee no added assessments are required for gaining a certificate
         Certificates.switch_certificate_to_custom_assessments(section)
@@ -4045,7 +4052,7 @@ defmodule Oli.Delivery.Sections do
       # reset any section cached data
       SectionCache.clear(section.slug)
 
-      Oli.Delivery.DepotCoordinator.clear(
+      Oli.Delivery.DepotCoordinator.clear_synchronously(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
         section_id
       )
@@ -4080,6 +4087,11 @@ defmodule Oli.Delivery.Sections do
     create_section_resources(section, publication)
   end
 
+  @doc """
+  Rebuilds section resources and publication mappings from a finalized hierarchy.
+
+  Locks the Section before projection writes, retaining the lock through any enclosing transaction.
+  """
   def rebuild_section_resources(
         %Section{id: section_id} = section,
         section_resources,
@@ -4088,6 +4100,8 @@ defmodule Oli.Delivery.Sections do
       )
       when is_list(section_resources) do
     Repo.transaction(fn ->
+      SectionResourceMigration.lock_section!(section_id)
+
       previous_section_resource_ids =
         get_section_resources(section_id)
         |> Enum.map(fn sr -> sr.id end)
@@ -4600,6 +4614,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Serializes projection writes with JIT migration by locking the Section first.
+
   Gracefully applies the specified publication update to a given section by leaving the existing
   curriculum and section modifications in-tact while applying the structural changes that
   occurred between the old and new publication.
@@ -4675,6 +4691,8 @@ defmodule Oli.Delivery.Sections do
 
     result =
       Repo.transaction(fn ->
+        SectionResourceMigration.lock_section!(section.id)
+
         # Update the section project publication to the new publication
         update_section_project_publication(section, project_id, new_publication.id)
 
@@ -4697,6 +4715,8 @@ defmodule Oli.Delivery.Sections do
 
     result =
       Repo.transaction(fn ->
+        SectionResourceMigration.lock_section!(section.id)
+
         container = ResourceType.id_for_container()
 
         prev_published_resources_map =
@@ -5162,6 +5182,11 @@ defmodule Oli.Delivery.Sections do
         hierarchy_definition,
         skip_set
       )
+    end
+
+    case ObjectiveChildrenProjection.persist(section_id) do
+      {:ok, _count} -> :ok
+      {:error, reason} -> Repo.rollback(reason)
     end
   end
 
@@ -6128,10 +6153,10 @@ defmodule Oli.Delivery.Sections do
 
   For objectives that are subobjectives, the objective is shown as the `subobjective` like the
   above example, with the aggregated proficiency for its parent shown. For objectives that are
-  top level objectives, their proficiency is the weighted average of their own directly-attached
+  top level objectives in naive sections, their proficiency is the weighted average of their own directly-attached
   evidence (when present) combined with all their Sub-LOs' evidence (see
   `Metrics.evidence_resource_ids/2`) — a leaf objective with no Sub-LOs reduces to just its own
-  directly-attached evidence.
+  directly-attached evidence. LKT-AOA sections use their model provider's parent estimates.
 
   Only objectives contained by the currently delivered course content are returned, so that the
   instructor dashboard, the student dashboard and the CSV export report on the same objective set.
@@ -6258,31 +6283,19 @@ defmodule Oli.Delivery.Sections do
         objectives
       end
 
-    id_list = Enum.map(objectives, & &1.resource_id)
-
-    # Raw (not yet bucketed, i.e. not yet categorized into "Not enough data" /
-    # "Low" / "Medium" / "High") proficiency per objective/student, so a
-    # parent objective's own evidence and its Sub-LOs' evidence can be
-    # combined via Metrics.aggregate_weighted_proficiency/1 before bucketing.
-    # See Metrics.evidence_resource_ids/2.
-    raw_proficiency_for_objectives =
-      Metrics.raw_proficiency_per_student_for_objective(section.id, id_list,
+    proficiencies_for_objectives =
+      Metrics.aggregated_proficiency_per_student_for_objectives(section, objectives,
         student_id: student_id
       )
 
     student_proficiency_for_objectives =
       if student_id do
         Enum.reduce(objectives, %{}, fn objective, acc ->
-          resource_ids = Metrics.evidence_resource_ids(objective.resource_id, objective.children)
-
           Map.put(
             acc,
             objective.resource_id,
-            Metrics.proficiency_bucket_for_student(
-              resource_ids,
-              raw_proficiency_for_objectives,
-              student_id
-            )
+            get_in(proficiencies_for_objectives, [objective.resource_id, student_id]) ||
+              "Not enough data"
           )
         end)
       else
@@ -6296,17 +6309,11 @@ defmodule Oli.Delivery.Sections do
         proficiency_dist_for_objectives =
           objectives
           |> Enum.reduce(%{}, fn objective, acc ->
-            resource_ids =
-              Metrics.evidence_resource_ids(objective.resource_id, objective.children)
-
             student_proficiency =
               Enum.into(student_ids, %{}, fn enrolled_student_id ->
                 {enrolled_student_id,
-                 Metrics.proficiency_bucket_for_student(
-                   resource_ids,
-                   raw_proficiency_for_objectives,
-                   enrolled_student_id
-                 )}
+                 get_in(proficiencies_for_objectives, [objective.resource_id, enrolled_student_id]) ||
+                   "Not enough data"}
               end)
 
             proficiency_dist =
