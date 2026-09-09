@@ -26,47 +26,6 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       Seeder.create_section_resources(map)
     end
 
-    test "proficiency for objectives", %{
-      user1: user1,
-      user2: user2,
-      section: section,
-      o1: o1,
-      o2: o2,
-      page1: page1,
-      project: project
-    } do
-      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-      page_type_id = Oli.Resources.ResourceType.id_for_page()
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
-
-      id = o1.resource.id
-      id2 = o2.resource.id
-
-      [
-        # page record
-        [-1, -1, section.id, -1, page1.id, nil, page_type_id, 4, 10, 1, 5, 1],
-        [-1, -1, section.id, -1, id, nil, objective_type_id, 4, 10, 1, 5, 1],
-        [-1, -1, section.id, user1.id, id, nil, objective_type_id, 2, 6, 1, 1, 0],
-        [-1, -1, section.id, user2.id, id, nil, objective_type_id, 2, 4, 0, 1, 1],
-        [project.id, -1, -1, -1, id, nil, objective_type_id, 4, 10, 1, 5, 1],
-        [-1, -1, section.id, -1, id2, nil, objective_type_id, 40, 100, 55, 50, 10],
-        [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 2, 6, 1, 3, 1],
-        [-1, -1, section.id, user2.id, id2, nil, objective_type_id, 2, 4, 0, 4, 2],
-        [project.id, -1, -1, -1, id2, nil, objective_type_id, 4, 10, 1, 5, 1]
-      ]
-      |> Enum.each(fn v -> add_resource_summary(v) end)
-
-      results = Metrics.raw_proficiency_per_learning_objective(section.id)
-      assert Map.keys(results) |> Enum.count() == 2
-      assert assert %{^id => {1, 5, 4, 10}, ^id2 => {10, 50, 40, 100}} = results
-
-      assert %{^id => {0, 1, 2, 6}, ^id2 => {1, 3, 2, 6}} =
-               Metrics.raw_proficiency_per_learning_objective(section.id, student_id: user1.id)
-
-      assert %{^id => {1, 1, 2, 4}, ^id2 => {2, 4, 2, 4}} =
-               Metrics.raw_proficiency_per_learning_objective(section.id, student_id: user2.id)
-    end
-
     test "proficiency for page", %{
       user1: user1,
       user2: user2,

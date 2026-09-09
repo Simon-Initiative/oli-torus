@@ -101,8 +101,9 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
             ^user_id
           ),
           fragment(
-            "(SELECT publication_id FROM sections_projects_publications WHERE section_id = ? ORDER BY publication_id DESC LIMIT 1)",
-            ^section_id
+            "(SELECT publication_id FROM sections_projects_publications WHERE section_id = ? AND project_id = ? LIMIT 1)",
+            ^section_id,
+            s.base_project_id
           )
         }
 

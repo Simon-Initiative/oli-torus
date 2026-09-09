@@ -173,7 +173,7 @@ defmodule Oli.LearningModel.LktAoa.Application do
   defp validate_part_attempt(%{date_evaluated: nil, attempt_guid: attempt_guid}),
     do: {:error, {:missing_date_evaluated, attempt_guid}}
 
-  defp validate_part_attempt(part_attempt), do: {:error, {:invalid_part_attempt, part_attempt}}
+  defp validate_part_attempt(_part_attempt), do: {:error, :invalid_part_attempt}
 
   # The transaction applies one evaluated-attempt batch as a single atomic model
   # update. First it claims each PartAttempt in the narrow application table; only
@@ -211,7 +211,14 @@ defmodule Oli.LearningModel.LktAoa.Application do
     |> Multi.run(:objective_revisions, fn repo, %{claimed_contributions: contributions} ->
       resolve_objective_revisions(repo, normalized.group, contributions)
     end)
-    |> Multi.run(:state_keys, fn _repo, %{claimed_contributions: contributions} ->
+    |> Multi.run(:resolved_contributions, fn _repo,
+                                             %{
+                                               claimed_contributions: contributions,
+                                               objective_revisions: objective_revisions
+                                             } ->
+      {:ok, filter_resolved_contributions(contributions, objective_revisions)}
+    end)
+    |> Multi.run(:state_keys, fn _repo, %{resolved_contributions: contributions} ->
       {:ok, claimed_state_keys(contributions)}
     end)
     |> Multi.run(:neutral_states, fn repo, %{state_keys: state_keys} ->
@@ -220,20 +227,20 @@ defmodule Oli.LearningModel.LktAoa.Application do
     |> Multi.run(:locked_states, fn repo, %{state_keys: state_keys} ->
       lock_states(repo, state_keys)
     end)
-    |> Multi.run(:new_evidence_keys, fn repo, %{claimed_contributions: contributions} ->
+    |> Multi.run(:new_evidence_keys, fn repo, %{resolved_contributions: contributions} ->
       insert_evidence(repo, contributions)
     end)
     |> Multi.run(:final_states, fn
       _repo,
       %{
-        claimed_contributions: [],
+        resolved_contributions: [],
         locked_states: locked_states
       } ->
         {:ok, locked_states}
 
       _repo,
       %{
-        claimed_contributions: contributions,
+        resolved_contributions: contributions,
         objective_revisions: objective_revisions,
         locked_states: locked_states,
         new_evidence_keys: new_evidence_keys
@@ -291,6 +298,19 @@ defmodule Oli.LearningModel.LktAoa.Application do
     |> Enum.uniq_by(& &1.part_attempt_id)
   end
 
+  defp filter_resolved_contributions(contributions, objective_revisions) do
+    resolved_ids = objective_revisions |> Map.keys() |> MapSet.new()
+
+    contributions
+    |> Enum.map(fn contribution ->
+      objective_ids =
+        Enum.filter(contribution.learning_objective_ids, &MapSet.member?(resolved_ids, &1))
+
+      %{contribution | learning_objective_ids: objective_ids}
+    end)
+    |> Enum.reject(&(&1.learning_objective_ids == []))
+  end
+
   defp resolve_objective_revisions(_repo, _group, []), do: {:ok, %{}}
 
   defp resolve_objective_revisions(repo, group, contributions) do
@@ -311,7 +331,9 @@ defmodule Oli.LearningModel.LktAoa.Application do
           from(pr in PublishedResource,
             join: revision in Revision,
             on: revision.id == pr.revision_id,
-            where: pr.publication_id == ^publication_id and pr.resource_id in ^objective_ids,
+            where:
+              pr.publication_id == ^publication_id and pr.resource_id in ^objective_ids and
+                not revision.deleted,
             # LKT-AOA only needs the published LO's resource identity, resource type,
             # and typed beta parameter. Avoid loading full Revision content for every
             # objective in a bulk assessment.
@@ -320,13 +342,9 @@ defmodule Oli.LearningModel.LktAoa.Application do
           )
           |> repo.all()
 
-        revision_by_resource_id = Map.new(revisions, &{&1.resource_id, &1})
-        missing_ids = Enum.reject(objective_ids, &Map.has_key?(revision_by_resource_id, &1))
-
-        case missing_ids do
-          [] -> objective_betas(revision_by_resource_id)
-          missing_ids -> {:error, {:missing_published_objective_revisions, missing_ids}}
-        end
+        revisions
+        |> Map.new(&{&1.resource_id, &1})
+        |> objective_betas()
     end
   end
 
@@ -577,6 +595,7 @@ defmodule Oli.LearningModel.LktAoa.Application do
 
   defp build_result(input_attempt_count, changes) do
     claimed = Map.get(changes, :claimed_contributions, [])
+    resolved = Map.get(changes, :resolved_contributions, [])
     affected_states = Map.get(changes, :state_keys, [])
     new_evidence_keys = Map.get(changes, :new_evidence_keys, [])
 
@@ -592,7 +611,7 @@ defmodule Oli.LearningModel.LktAoa.Application do
         input_attempt_count: input_attempt_count,
         claimed_attempt_count: length(Map.get(changes, :claimed_ids, [])),
         contribution_count:
-          claimed
+          resolved
           |> Enum.flat_map(& &1.learning_objective_ids)
           |> length(),
         affected_state_count: length(affected_states),
@@ -603,21 +622,21 @@ defmodule Oli.LearningModel.LktAoa.Application do
 
   @telemetry_prefix [:oli, :learning_model, :lkt_aoa, :batch]
 
-  # Telemetry metadata for this hot path is intentionally aggregate-only. Do not
+  # Telemetry metadata for this hot path is intentionally categorical-only. Do not
   # include Section/user/resource IDs, PartAttempt IDs/GUIDs, part IDs, scores,
   # responses, SQL binds, exception structs, or parameter payloads here.
   defp emit_start(input_attempt_count) do
     :telemetry.execute(
       @telemetry_prefix ++ [:start],
-      %{system_time: System.system_time()},
-      %{model: :lkt_aoa, input_attempt_count: input_attempt_count}
+      %{system_time: System.system_time(), input_attempt_count: input_attempt_count},
+      %{model: :lkt_aoa}
     )
   end
 
   defp emit_stop(start_time, %BatchResult{} = result, failure_category, result_override \\ nil) do
     :telemetry.execute(
       @telemetry_prefix ++ [:stop],
-      %{duration: System.monotonic_time() - start_time},
+      telemetry_measurements(result, System.monotonic_time() - start_time),
       telemetry_metadata(result, failure_category, result_override)
     )
   end
@@ -625,26 +644,31 @@ defmodule Oli.LearningModel.LktAoa.Application do
   defp emit_exception(start_time, input_attempt_count) do
     :telemetry.execute(
       @telemetry_prefix ++ [:exception],
-      %{duration: System.monotonic_time() - start_time},
+      %{duration: System.monotonic_time() - start_time, input_attempt_count: input_attempt_count},
       %{
         model: :lkt_aoa,
         result: :exception,
-        failure_category: :exception,
-        input_attempt_count: input_attempt_count
+        failure_category: :exception
       }
     )
+  end
+
+  defp telemetry_measurements(%BatchResult{} = result, duration) do
+    %{
+      duration: duration,
+      input_attempt_count: result.input_attempt_count,
+      claimed_attempt_count: result.claimed_attempt_count,
+      contribution_count: result.contribution_count,
+      affected_state_count: result.affected_state_count,
+      new_evidence_count: result.new_evidence_count
+    }
   end
 
   defp telemetry_metadata(%BatchResult{} = result, failure_category, result_override) do
     %{
       model: :lkt_aoa,
       result: result_override || result.status,
-      failure_category: failure_category,
-      input_attempt_count: result.input_attempt_count,
-      claimed_attempt_count: result.claimed_attempt_count,
-      contribution_count: result.contribution_count,
-      affected_state_count: result.affected_state_count,
-      new_evidence_count: result.new_evidence_count
+      failure_category: failure_category
     }
   end
 
@@ -654,7 +678,7 @@ defmodule Oli.LearningModel.LktAoa.Application do
 
   defp failure_category({:part_attempt_not_evaluated, _}), do: :invalid_input
   defp failure_category({:missing_date_evaluated, _}), do: :invalid_input
-  defp failure_category({:invalid_part_attempt, _}), do: :invalid_input
+  defp failure_category(:invalid_part_attempt), do: :invalid_input
   defp failure_category({:invalid_part_id, _}), do: :invalid_input
   defp failure_category({:invalid_objective_id, _}), do: :invalid_input
   defp failure_category({:invalid_objective_mapping, _}), do: :invalid_input
@@ -662,7 +686,6 @@ defmodule Oli.LearningModel.LktAoa.Application do
   defp failure_category({:mixed_section_attempt_group, _, _}), do: :invalid_input
   defp failure_category({:invalid_attempt_group_context, _}), do: :invalid_input
   defp failure_category(:missing_section_publication), do: :publication
-  defp failure_category({:missing_published_objective_revisions, _}), do: :publication
   defp failure_category({:invalid_activity_part_parameters, _, _}), do: :parameter
   defp failure_category({:invalid_activity_parameters, _}), do: :parameter
   defp failure_category({:invalid_learning_objective_parameters, _}), do: :parameter

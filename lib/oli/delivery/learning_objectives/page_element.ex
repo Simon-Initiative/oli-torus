@@ -167,6 +167,22 @@ defmodule Oli.Delivery.LearningObjectives.PageElement do
     do: %{}
 
   defp maybe_proficiency(
+         %Section{learning_model_version: model} = section,
+         objective_ids,
+         _objectives_with_children,
+         %User{id: user_id},
+         true,
+         opts
+       )
+       when model != :naive do
+    proficiency_fun =
+      Keyword.get(opts, :proficiency_fun, &Metrics.proficiency_per_student_for_objective/3)
+
+    proficiency_fun.(section, objective_ids, student_id: user_id)
+    |> Map.new(fn {objective_id, by_user} -> {objective_id, Map.get(by_user, user_id)} end)
+  end
+
+  defp maybe_proficiency(
          %Section{id: section_id},
          objective_ids,
          objectives_with_children,

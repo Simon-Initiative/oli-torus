@@ -139,6 +139,7 @@ defmodule OliWeb.Sections.EditView do
         >
           <MainDetails.render
             form={@form}
+            description={@section.description}
             disabled={false}
             is_admin={@is_admin}
             brands={@brands}

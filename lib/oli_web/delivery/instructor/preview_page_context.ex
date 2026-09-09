@@ -13,6 +13,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.InstructorCustomizations.PageExclusions
+  alias Oli.Delivery.LearningObjectives.PageElement, as: LearningObjectivesPageElement
   alias Oli.Delivery.{PreviousNextIndex, Sections, Settings}
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -468,6 +469,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         activity_bank_selection_previews,
         alternative_groups_by_id
       )
+
+    render_context = %Context{
+      render_context
+      | learning_objectives:
+          LearningObjectivesPageElement.prepare_render_payload(
+            section,
+            revision.resource_id,
+            content,
+            nil
+          )
+    }
 
     html = Page.render(render_context, content, Page.Html)
 

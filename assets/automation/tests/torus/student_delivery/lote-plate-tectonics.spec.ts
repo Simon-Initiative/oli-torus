@@ -44,7 +44,7 @@ import { runGatedLote } from '@tasks/AdaptiveStrictGatedRun';
  *     /admin/api_keys), exported as PLAYWRIGHT_AUTOMATION_API_KEY — never
  *     reuse a value that appears in this repo.
  *   - The private assets seeded once in your playwright assets bucket:
- *     mer-5674/living-on-the-edge-course.zip and mer-5674/answers-strict.json
+ *     living_on_the_edge-plate_tectonics/course.zip and living_on_the_edge-plate_tectonics/answers.json
  *     ({ lesson, expected_total_score, screens, scenario } — the v2 manifest
  *     with a lesson block and the authored total score).
  *   - PLAYWRIGHT_BASE_URL=http://127.0.0.1 — NOT localhost: the plain-fetch
@@ -54,8 +54,8 @@ import { runGatedLote } from '@tasks/AdaptiveStrictGatedRun';
  * Then: npx playwright test lote-plate-tectonics
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const archiveKey = 'mer-5674/living-on-the-edge-course.zip';
-const answersKey = 'mer-5674/answers-strict.json';
+const archiveKey = 'living_on_the_edge-plate_tectonics/course.zip';
+const answersKey = 'living_on_the_edge-plate_tectonics/answers.json';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 const EXPECTED_LESSON = /Plate Tectonics/i;
 const EXPECTED_SCREENS = 22;
@@ -160,7 +160,7 @@ test.describe.serial('Living on the Edge plate tectonics adaptive lesson', () =>
     }
   });
 
-  test('student completes the plate tectonics happy path with zero audit violations', async ({
+  test('student completes the plate tectonics happy path with zero audit violations @nightly', async ({
     page,
   }) => {
     test.setTimeout(900_000); // 22 screens with server-side rule evaluation per check

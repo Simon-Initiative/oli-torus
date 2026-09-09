@@ -98,7 +98,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       assert html =~ "Objective D"
     end
 
-    test "renders Learning Objectives Summary recommendation links in LiveView delivery" do
+    test "renders Learning Objectives Summary base section in LiveView delivery" do
       %{section: section, resources: resources, revisions: revisions, project: project} =
         create_full_project_with_objectives()
 
@@ -108,12 +108,22 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       {:ok, _enrollment} =
         Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
+      {:ok, section} = Sections.update_section(section, %{assistant_enabled: true})
+
       {:ok, _} =
         Resources.update_revision(revisions.page_revision_2, %{
           author_id: author.id,
           content: learning_objectives_summary_content(resources),
           activity_refs: [resources.act_resource_y.id, resources.act_resource_z.id]
         })
+
+      section_resource =
+        Sections.get_section_resource(section.id, revisions.page_revision_2.resource_id)
+
+      {:ok, section_resource} =
+        Sections.update_section_resource(section_resource, %{ai_enabled: true})
+
+      SectionResourceDepot.update_section_resource(section_resource)
 
       PostProcessing.apply(section, :related_activities)
       SectionResourceDepot.process_table_creation(section.id)
@@ -134,13 +144,11 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
         )
         |> IO.iodata_to_binary()
 
-      assert html =~ "Learning Objective Summary"
-      assert html =~ "Review"
-      assert html =~ "Practice"
-      assert html =~ "Page 1"
-      assert html =~ "Page 3"
-      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_1?|
-      assert html =~ ~s|href="/sections/#{section.slug}/lesson/page_3?|
+      assert html =~ "learning-objectives-element learning-objectives-summary"
+      assert html =~ "What is proficiency and how is it estimated?"
+      refute html =~ "Recommended Review"
+      refute html =~ "Objective C"
+      refute html =~ "Show next steps"
     end
   end
 
