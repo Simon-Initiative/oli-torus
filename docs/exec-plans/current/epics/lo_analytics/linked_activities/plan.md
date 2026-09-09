@@ -162,6 +162,7 @@ Phases 1 through 6 are implemented and recorded in their execution records. The 
   - [x] Stop recomputing the page grouping inside the summary-load telemetry metadata. `activity_page_groups/2` was later removed altogether and the page-context count moved to the `load` event. Document that `normalize_activity_row/3` calls `Activities.list_lti_activity_registrations()` internally and must not be used per row; production code should use the arity-4 form with precomputed IDs.
   - [x] Complete security, performance, Elixir/Phoenix, UI/accessibility, and requirements reviews.
   - [ ] Update Jira execution status/artifacts according to repository issue-tracking policy.
+  - [x] Populate the `proofs` entries in `requirements.yml`, matching the convention used by the `lo_element` work item. Note that `requirements_trace.py --action verify_implementation` reads the top-level `acceptance_criteria` list, which is empty here because every criterion is nested under its functional requirement, so that gate passes without checking anything for this work item.
   - [x] Confirm no migration, feature flag, or rollout configuration is required and document any product decision that changes AC-006.
 - Testing Tasks:
   - [x] Run the complete targeted LiveView/component/domain suites and broader `mix test` as risk/time permits.
