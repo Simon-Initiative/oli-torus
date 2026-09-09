@@ -1273,6 +1273,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                status: :started_explicit
              }
+
+      [{task_ref, _metadata}] =
+        Map.to_list(updated_socket.assigns.dashboard_summary_recommendation_task_refs)
+
+      assert_receive {:DOWN, ^task_ref, :process, _pid, _reason}
     end
 
     test "regenerate marks the tile in flight and preserves the current recommendation on failure" do

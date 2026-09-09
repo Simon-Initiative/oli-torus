@@ -1165,6 +1165,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
         ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container:#{container.id}"
       )
 
+      await_dashboard(view)
+
       assert render(view) =~ ~s(data-dashboard-section-split="58")
       assert Repo.all(InstructorDashboardState) == []
     end
