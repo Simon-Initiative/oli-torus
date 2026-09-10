@@ -1,0 +1,9 @@
+- ownership:
+    author: default_admin
+    institution: default_institution
+- project:
+    name: preview_smoke
+    title: Preview Smoke Project
+    root:
+      container: Preview Smoke Project
+      children: []

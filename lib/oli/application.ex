@@ -10,7 +10,7 @@ defmodule Oli.Application do
     # Install the logger truncator
     Oli.LoggerTruncator.init()
     maybe_add_appsignal_logger_backend()
-    Oli.DevQATools.Config.log_startup_status()
+    Oli.PreviewQATools.Config.log_startup_status()
 
     # List all child processes to be supervised
     children =

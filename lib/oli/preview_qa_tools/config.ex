@@ -1,4 +1,4 @@
-defmodule Oli.DevQATools.Config do
+defmodule Oli.PreviewQATools.Config do
   @moduledoc """
   Defines the compile-time and runtime activation boundary for preview QA tools.
 
@@ -8,9 +8,9 @@ defmodule Oli.DevQATools.Config do
 
   require Logger
 
-  @preview_build Application.compile_env(:oli, [:dev_qa_tools, :preview_build?], false)
+  @preview_build Application.compile_env(:oli, [:preview_qa_tools, :preview_build?], false)
   @enabled_value "true"
-  @runtime_flag "DEV_QA_TOOLS_ENABLED"
+  @runtime_flag "PREVIEW_QA_TOOLS_ENABLED"
 
   @doc "Returns whether this artifact was compiled as a preview build."
   def preview_build?, do: @preview_build
@@ -45,7 +45,7 @@ defmodule Oli.DevQATools.Config do
       Logger.warning("Preview QA tools are enabled")
     else
       Logger.warning(
-        "Preview QA tools are disabled; set DEV_QA_TOOLS_ENABLED=true to enable them"
+        "Preview QA tools are disabled; set PREVIEW_QA_TOOLS_ENABLED=true to enable them"
       )
     end
 

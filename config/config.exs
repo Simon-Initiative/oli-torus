@@ -76,7 +76,7 @@ end
 config :oli,
   author_email_verification_required: true,
   user_email_verification_required: true,
-  dev_qa_tools: [preview_build?: false],
+  preview_qa_tools: [preview_build?: false],
   enable_playwright_scenarios: false,
   enable_e2e_mailbox: false,
   playwright_scenario_token: nil,
