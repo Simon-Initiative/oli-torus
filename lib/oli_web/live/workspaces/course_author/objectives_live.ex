@@ -215,7 +215,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
             <div class="flex shrink-0 flex-nowrap items-center gap-2">
               <CoverageIssuesControl.coverage_issues_control
                 id="coverage-issues-filter"
-                count={MapSet.size(@coverage_issue_ids)}
+                count={
+                  scoped_coverage_issue_count(
+                    @objectives,
+                    @query,
+                    @search_matching_ids,
+                    @course_content_selection,
+                    @coverage_issue_ids
+                  )
+                }
                 active={Map.get(@filter, "coverage_issues") == "true"}
                 click={
                   JS.push("apply_filter",
@@ -558,6 +566,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   end
 
   defp filter_content_rows(rows, %{selected_ids: []}), do: rows
+  defp filter_content_rows(rows, nil), do: rows
 
   defp filter_content_rows(rows, selection) do
     direct_ids = selection.objective_ids
@@ -576,6 +585,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
         end)
       end)
     end)
+  end
+
+  # Count issues within the current Search ∩ Course Content universe; sorting,
+  # pagination, and the Coverage Issues toggle do not narrow the badge count.
+  defp scoped_coverage_issue_count(
+         objectives,
+         query,
+         search_matching_ids,
+         content_selection,
+         coverage_issue_ids
+       ) do
+    matching_ids =
+      if normalize_search_query(query) == "" do
+        nil
+      else
+        search_matching_ids || MapSet.new()
+      end
+
+    objectives
+    |> filter_objective_rows(matching_ids)
+    |> filter_content_rows(content_selection)
+    |> Enum.count(&MapSet.member?(coverage_issue_ids, &1.resource_id))
   end
 
   defp matching_objective_ids(model, query) do

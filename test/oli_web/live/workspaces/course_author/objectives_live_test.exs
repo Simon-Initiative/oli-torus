@@ -1968,6 +1968,60 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, "##{flagged.slug}")
     end
 
+    test "scopes the coverage issues count to the active search and course content filters", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      {:ok, matching_content_issue} =
+        create_objective(project, publication, "scoped_content_issue", "Scoped Content Issue")
+
+      {:ok, matching_other_issue} =
+        create_objective(project, publication, "scoped_other_issue", "Scoped Other Issue")
+
+      {:ok, other_issue} =
+        create_objective(project, publication, "other_issue", "Other Issue")
+
+      {:ok, page} =
+        create_page_with_objective(
+          project,
+          publication,
+          [matching_content_issue.resource_id],
+          "scoped_content_page"
+        )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+      wait_for_coverage(view)
+
+      assert has_element?(view, "#coverage-issues-filter", "3")
+
+      view
+      |> element("form#objectives-search-form")
+      |> render_change(%{query: "Scoped"})
+
+      assert has_element?(view, "#coverage-issues-filter", "2")
+
+      view
+      |> element("#course-content-filter-trigger")
+      |> render_click()
+
+      view
+      |> element("#course-content-checkbox-#{page.resource_id}")
+      |> render_click()
+
+      assert_patch(view)
+      assert has_element?(view, "#coverage-issues-filter", "1")
+
+      view
+      |> element("#coverage-issues-filter")
+      |> render_click()
+
+      assert has_element?(view, "#coverage-issues-filter", "1")
+      assert has_element?(view, "##{matching_content_issue.slug}")
+      refute has_element?(view, "##{matching_other_issue.slug}")
+      refute has_element?(view, "##{other_issue.slug}")
+    end
+
     test "composes with an active search: only rows matching both show", %{
       conn: conn,
       project: project,
