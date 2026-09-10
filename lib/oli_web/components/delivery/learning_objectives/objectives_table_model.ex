@@ -19,6 +19,26 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  defp student_proficiency_tooltip_content(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <p>Aggregate class proficiency for the learning objective.</p>
+      <p>
+        <b>Not enough data:</b>
+        Students have not completed enough linked activities to estimate proficiency for this objective.
+      </p>
+      <p>
+        <b>Low Proficiency:</b>
+        Students are unlikely to apply this objective without support, open the student list to investigate.
+      </p>
+      <p><b>Medium Proficiency:</b> Students may need more practice before assessment.</p>
+      <p>
+        <b>High Proficiency:</b> Students are likely to apply this objective across linked activities.
+      </p>
+    </div>
+    """
+  end
+
   def new(objectives, :instructor_dashboard) do
     column_specs = [
       %ColumnSpec{
@@ -38,7 +58,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         label:
           HTMLComponents.render_label(%{
             title: "Student Proficiency",
-            info_tooltip: @student_proficiency_tooltip_text
+            info_tooltip: student_proficiency_tooltip_content(%{})
           }),
         render_fn: &custom_render/3
       },
