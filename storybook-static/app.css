@@ -15916,6 +15916,10 @@ table.table-striped tbody tr:nth-child(even) {
   right: -15px;
 }
 
+.right-\[10px\] {
+  right: 10px;
+}
+
 .right-\[1px\] {
   right: 1px;
 }
@@ -16222,6 +16226,22 @@ table.table-striped tbody tr:nth-child(even) {
 
 .col-span-9 {
   grid-column: span 9 / span 9;
+}
+
+.col-start-1 {
+  grid-column-start: 1;
+}
+
+.col-start-2 {
+  grid-column-start: 2;
+}
+
+.row-start-1 {
+  grid-row-start: 1;
+}
+
+.row-start-2 {
+  grid-row-start: 2;
 }
 
 .float-right {
@@ -16557,6 +16577,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .ml-0 {
   margin-left: 0px;
+}
+
+.ml-0\.5 {
+  margin-left: 0.125rem;
 }
 
 .ml-1 {
@@ -19042,6 +19066,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .grid-cols-\[79px_minmax\(0\2c 1fr\)\] {
   grid-template-columns: 79px minmax(0,1fr);
+}
+
+.grid-cols-\[minmax\(0\2c 1fr\)_1\.5rem\] {
+  grid-template-columns: minmax(0,1fr) 1.5rem;
 }
 
 .grid-cols-\[minmax\(0\2c 1fr\)_auto_auto\] {
@@ -22949,6 +22977,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 2.25rem;
 }
 
+.leading-\[11px\] {
+  line-height: 11px;
+}
+
 .leading-\[12px\] {
   line-height: 12px;
 }
@@ -24174,6 +24206,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_2px_6px_0px_rgba\(0\2c 52\2c 99\2c 0\.15\)\] {
   --tw-shadow: 0px 2px 6px 0px rgba(0,52,99,0.15);
   --tw-shadow-colored: 0px 2px 6px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_4px_12px_rgba\(0\2c 50\2c 99\2c 0\.16\)\] {
+  --tw-shadow: 0px 4px 12px rgba(0,50,99,0.16);
+  --tw-shadow-colored: 0px 4px 12px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -32641,6 +32679,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.group\/row:focus-within .group-focus-within\/row\:block {
+  display: block;
+}
+
 .group:focus-within .group-focus-within\:block {
   display: block;
 }
@@ -32660,6 +32702,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .group:hover .group-hover\:mx-0 {
   margin-left: 0px;
   margin-right: 0px;
+}
+
+.group\/title:hover .group-hover\/title\:block {
+  display: block;
 }
 
 .group:hover .group-hover\:block {
@@ -35410,6 +35456,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .sm\:w-3\/4 {
     width: 75%;
+  }
+
+  .sm\:w-56 {
+    width: 14rem;
   }
 
   .sm\:w-6 {
