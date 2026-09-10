@@ -25,6 +25,12 @@ defmodule OliWeb.Delivery.LearningObjectives.Proficiency do
   @doc "Returns resolved design-token values for the requested Vega chart theme."
   def colors(theme), do: Enum.map(@palette, &Map.fetch!(&1, theme))
 
+  @doc "Returns the background-color Tailwind class for the color dot matching a proficiency label."
+  def dot_class("Low"), do: "bg-Icon-icon-danger"
+  def dot_class("Medium"), do: "bg-Icon-icon-accent-orange"
+  def dot_class("High"), do: "bg-Text-text-accent-green"
+  def dot_class(_not_enough_data), do: "bg-Fill-Chip-Gray"
+
   attr :label, :string, required: true
 
   def chip(assigns) do
