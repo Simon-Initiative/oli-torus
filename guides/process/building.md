@@ -1,3 +1,23 @@
+# Build Environments
+
+Torus uses three Mix environments for distinct purposes:
+
+- `test` runs automated tests and includes test-support modules. Pull-request test workflows build in this environment.
+- `prod` builds deployable production releases. It remains the default for the Dockerfile and the production package workflow.
+- `preview` builds production-shaped QA releases for preview instances. `.github/workflows/build-preview-image.yml` explicitly selects it.
+
+`config/preview.exs` is standalone and deliberately owns the small production-shaped configuration needed by a release plus the preview safety boundary. In particular, every preview build uses `Swoosh.Adapters.Local`, so email is retained locally and cannot be delivered externally regardless of whether QA tools are active.
+
+Mix environment files are compile-time configuration. `config/runtime.exs` supplies deployment-specific values when a release starts. Building with `MIX_ENV=preview` compiles preview capabilities into the artifact but does not activate them. Set the runtime variable below to the exact value `true`, ignoring letter case, to activate those capabilities:
+
+```bash
+DEV_QA_TOOLS_ENABLED=true
+```
+
+Missing, blank, whitespace-padded, false, or malformed values leave QA tools disabled. Setting the variable on a `prod` build cannot add or activate preview-only capabilities. A disabled preview logs one startup warning with the activation instruction.
+
+Preview instances must use fresh databases or explicitly sanitized non-production copies and non-production credentials. Local email containment does not suppress LTI grade passback, payment providers, webhooks, analytics destinations, background jobs, or other integrations; unsanitized production clones are unsupported.
+
 # Production Deployments
 
 ## Using a Prebuilt Release (Recommended)
