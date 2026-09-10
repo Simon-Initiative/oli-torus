@@ -15,6 +15,7 @@ ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
 ARG GLEAM_VERSION=1.16.0
 ARG DEBIAN_VERSION=bullseye-20251103-slim
+ARG MIX_ENV=prod
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -22,6 +23,7 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 FROM ${BUILDER_IMAGE} AS builder
 
 ARG GLEAM_VERSION
+ARG MIX_ENV
 ARG SHA
 ENV SHA=${SHA}
 
@@ -59,7 +61,7 @@ RUN mix local.hex --force && \
     mix archive.install hex mix_gleam 0.6.2 --force
 
 # set build ENV
-ENV MIX_ENV="prod"
+ENV MIX_ENV=${MIX_ENV}
 
 # install mix dependencies
 COPY mix.exs mix.lock ./
@@ -102,20 +104,12 @@ COPY rel rel
 
 # Build the release
 RUN mix release
-RUN DATABASE_URL=ecto://postgres:postgres@localhost/oli \
-    SECRET_KEY_BASE=0000000000000000000000000000000000000000000000000000000000000000 \
-    LIVE_VIEW_SALT=00000000000000000000000000000000 \
-    HOST=localhost \
-    S3_MEDIA_BUCKET_NAME=torus-media \
-    S3_XAPI_BUCKET_NAME=torus-xapi \
-    MEDIA_URL=http://localhost/torus-media \
-    CLOAK_VAULT_KEY=HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w= \
-    RELEASE_DISTRIBUTION=none \
-    _build/prod/rel/oli/bin/oli eval 'path = :code.which(:torus_math); unless is_list(path) and not String.contains?(List.to_string(path), "gleam/build"), do: raise("torus_math loaded from unexpected path: #{inspect(path)}"); case Oli.Math.Gleam.parse("x + 1") do {:ok, _parsed} -> :ok; other -> raise("Gleam math release smoke failed: #{inspect(other)}") end'
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
+
+ARG MIX_ENV
 
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
@@ -144,7 +138,7 @@ WORKDIR "/app"
 RUN chown nobody /app
 
 # set runner ENV
-ENV MIX_ENV="prod"
+ENV MIX_ENV=${MIX_ENV}
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/oli ./

@@ -74,6 +74,10 @@ get_env_as_integer = fn key, default ->
 end
 
 config :oli,
+  dev_qa_tools: [preview_build?: false],
+  enable_playwright_scenarios: false,
+  enable_e2e_mailbox: false,
+  playwright_scenario_token: nil,
   logger_truncation_enabled: get_env_as_boolean.("LOGGER_TRUNCATION_ENABLED", "true"),
   logger_truncation_length: get_env_as_integer.("LOGGER_TRUNCATION_LENGTH", "5000"),
   instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),

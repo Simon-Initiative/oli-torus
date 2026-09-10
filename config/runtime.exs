@@ -23,22 +23,9 @@ get_env_as_integer = fn key, default ->
   |> String.to_integer()
 end
 
-runtime_env =
-  case System.get_env("MIX_ENV") do
-    nil ->
-      config_env()
-
-    env ->
-      env
-      |> String.trim()
-      |> String.downcase()
-      |> case do
-        "prod" -> :prod
-        "dev" -> :dev
-        "test" -> :test
-        _ -> config_env()
-      end
-  end
+# The release shape is fixed when the artifact is compiled. Do not allow a
+# mutable runtime environment variable to select a different configuration.
+runtime_env = config_env()
 
 {lkt_aoa_config, lkt_aoa_sources} = Oli.LearningModel.Config.load_from_env!()
 Oli.LearningModel.Config.log_effective(lkt_aoa_config, lkt_aoa_sources)
@@ -321,16 +308,16 @@ if runtime_env != :test do
     host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
 end
 
-force_ssl_default = if runtime_env == :prod, do: "true", else: "false"
+force_ssl_default = if runtime_env in [:prod, :preview], do: "true", else: "false"
 config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
 
 config :oli, :vendor_property,
   billing_descriptor: System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
 
-####################### Production-only configurations ########################
-## Note: These configurations are only applied in production
+######################## Release-only configurations #########################
+## Note: These configurations are applied in production and preview releases.
 ###############################################################################
-if runtime_env == :prod do
+if runtime_env in [:prod, :preview] do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """

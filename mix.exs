@@ -21,7 +21,7 @@ defmodule Oli.MixProject do
       ],
       erlc_include_path: "#{@gleam_erlang_build_root}/#{@gleam_app}/include",
       prune_code_paths: false,
-      start_permanent: Mix.env() == :prod,
+      start_permanent: Mix.env() in [:prod, :preview],
       aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
