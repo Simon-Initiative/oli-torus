@@ -1,15 +1,12 @@
 import type { Hook } from 'phoenix_live_view/assets/js/types/view_hook';
 
-type LabelElement = SVGGElement & {
-  dataset: DOMStringMap & {
-    coveredByPoints?: string;
-  };
-};
+type LabelElement = SVGGElement;
 
 type StudentDistributionMatrixLabelsState = {
   __studentDistributionMatrixMouseMove?: (event: MouseEvent) => void;
   __studentDistributionMatrixMouseLeave?: () => void;
   __studentDistributionMatrixDotSignature?: string;
+  __studentDistributionMatrixCoveredLabels?: boolean[];
 };
 
 const FADED_LABEL_CLASS = 'opacity-25';
@@ -47,48 +44,47 @@ function dotSignature(svg: Element): string {
     .join(';');
 }
 
-function refreshCoveredLabels(svg: Element) {
+// Covered-by-points state is tracked here (in the hook's JS memory) rather than as a DOM
+// dataset attribute on the label. Every LiveView patch re-diffs this `<g>`'s attributes
+// against the server-rendered markup, which doesn't know about a JS-only dataset field, so a
+// dataset attribute gets silently stripped on the very next patch (e.g. selecting a region)
+// even when the patch doesn't touch dot layout. Plain JS state has no such lifecycle tied to
+// the DOM and survives patches untouched.
+function computeCoveredLabels(svg: Element): boolean[] {
   const dots = studentDots(svg);
-  const labelElements = labels(svg);
 
-  labelElements.forEach((label) => {
+  return labels(svg).map((label) => {
     const labelRect = label.getBoundingClientRect();
-    const coveredByPoints = dots.some((dot) => intersects(labelRect, dot.getBoundingClientRect()));
-
-    label.dataset.coveredByPoints = coveredByPoints ? 'true' : 'false';
-
-    if (!coveredByPoints) {
-      label.classList.remove(FADED_LABEL_CLASS);
-    }
+    return dots.some((dot) => intersects(labelRect, dot.getBoundingClientRect()));
   });
 }
 
-function updateFadedLabel(svg: Element, event: MouseEvent) {
+function updateFadedLabel(svg: Element, event: MouseEvent, coveredLabels: boolean[]) {
   const labelElements = labels(svg);
-  let activeLabel: LabelElement | null = null;
+  let activeIndex = -1;
 
-  for (const label of labelElements) {
+  for (let i = 0; i < labelElements.length; i++) {
     if (
-      label.dataset.coveredByPoints === 'true' &&
-      containsPoint(label.getBoundingClientRect(), event.clientX, event.clientY)
+      coveredLabels[i] &&
+      containsPoint(labelElements[i].getBoundingClientRect(), event.clientX, event.clientY)
     ) {
-      activeLabel = label;
+      activeIndex = i;
       break;
     }
   }
 
-  labelElements.forEach((label) => {
-    label.classList.toggle(FADED_LABEL_CLASS, label === activeLabel);
+  labelElements.forEach((label, i) => {
+    label.classList.toggle(FADED_LABEL_CLASS, i === activeIndex);
   });
 }
 
 export const StudentDistributionMatrixLabels: Hook<StudentDistributionMatrixLabelsState> = {
   mounted() {
-    refreshCoveredLabels(this.el);
+    this.__studentDistributionMatrixCoveredLabels = computeCoveredLabels(this.el);
     this.__studentDistributionMatrixDotSignature = dotSignature(this.el);
 
     this.__studentDistributionMatrixMouseMove = (event: MouseEvent) => {
-      updateFadedLabel(this.el, event);
+      updateFadedLabel(this.el, event, this.__studentDistributionMatrixCoveredLabels ?? []);
     };
 
     this.__studentDistributionMatrixMouseLeave = () => {
@@ -104,7 +100,7 @@ export const StudentDistributionMatrixLabels: Hook<StudentDistributionMatrixLabe
 
     if (signature !== this.__studentDistributionMatrixDotSignature) {
       this.__studentDistributionMatrixDotSignature = signature;
-      refreshCoveredLabels(this.el);
+      this.__studentDistributionMatrixCoveredLabels = computeCoveredLabels(this.el);
     }
   },
 
