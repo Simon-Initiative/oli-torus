@@ -3,13 +3,17 @@ name: Build Preview Image
 on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
+  # Manual dispatch is primarily for reviewed fork PRs. The automatic job below
+  # intentionally rejects forks because it runs with package/deployment permissions.
   workflow_dispatch:
     inputs:
       pr_number:
+        # Identifies the fork PR and supplies the number used by the preview image tag.
         description: Pull request number to build for preview
         required: true
         type: number
       expected_head_sha:
+        # Pins the operator-reviewed revision and rejects a PR whose head changed.
         description: Reviewed PR head SHA, 7 to 40 hex characters
         required: true
         type: string
@@ -122,6 +126,8 @@ jobs:
 
   build-preview-image-manual:
     runs-on: ubuntu-latest
+    # Fork previews require approval through this protected environment before
+    # untrusted contributor code is built and published for Argo CD to deploy.
     environment: plasma.oli.cmu.edu
 
     if: github.event_name == 'workflow_dispatch'
