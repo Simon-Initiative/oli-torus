@@ -19,6 +19,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     EnrollDirective,
     InstitutionDirective,
     InstitutionDiscountDirective,
+    CommunityDirective,
+    AssertSourcesDirective,
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
@@ -72,6 +74,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     "enroll",
     "institution",
     "institution_discount",
+    "community",
+    "assert_sources",
     "update",
     "customize",
     "create_activity",
@@ -176,7 +180,16 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Parse individual directive based on its type
   defp parse_directive(%{"project" => project_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "root", "objectives", "tags", "slug", "visibility"]
+    allowed_attrs = [
+      "name",
+      "title",
+      "root",
+      "objectives",
+      "tags",
+      "slug",
+      "visibility",
+      "learning_model_version"
+    ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, project_data, "project") do
       :ok ->
@@ -187,7 +200,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           objectives: parse_objectives(project_data["objectives"]),
           tags: parse_tags(project_data["tags"]),
           slug: project_data["slug"],
-          visibility: parse_visibility(project_data["visibility"])
+          visibility: parse_visibility(project_data["visibility"]),
+          learning_model_version:
+            parse_learning_model_version(project_data["learning_model_version"])
         }
 
       {:error, msg} ->
@@ -339,14 +354,49 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"community" => data}) do
+    allowed_attrs = ["name", "institution", "users", "products"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, data, "community") do
+      :ok ->
+        %CommunityDirective{
+          name: data["name"],
+          institution: data["institution"],
+          users: data["users"] || [],
+          products: data["products"] || []
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"assert_sources" => data}) do
+    allowed_attrs = ["user", "section", "products"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, data, "assert_sources") do
+      :ok ->
+        %AssertSourcesDirective{
+          user: data["user"],
+          section: data["section"],
+          products: data["products"] || []
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"remix" => remix_data}) do
     # Validate attributes
-    allowed_attrs = ["from", "resource", "section", "to"]
+    allowed_attrs = ["from", "from_product", "user", "resource", "section", "to"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, remix_data, "remix") do
       :ok ->
         %RemixDirective{
           from: remix_data["from"],
+          from_product: remix_data["from_product"],
+          user: remix_data["user"],
           resource: remix_data["resource"],
           section: remix_data["section"],
           to: remix_data["to"]
@@ -1452,9 +1502,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           objective: data["objective"],
           bucket: data["bucket"],
           value: if(data["value"], do: parse_float(data["value"]), else: nil),
-          student: data["student"],
-          page: data["page"],
-          container: data["container"]
+          student: data["student"]
         }
 
       {:error, msg} ->
@@ -2077,6 +2125,13 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_section_type("enrollable"), do: :enrollable
   defp parse_section_type("open_and_free"), do: :open_and_free
   defp parse_section_type(type) when is_atom(type), do: type
+
+  defp parse_learning_model_version(nil), do: :naive
+  defp parse_learning_model_version("naive"), do: :naive
+  defp parse_learning_model_version("lkt_aoa"), do: :lkt_aoa
+
+  defp parse_learning_model_version(value),
+    do: raise("Invalid learning_model_version: #{inspect(value)}")
 
   defp parse_optional_payment_options(nil), do: nil
 

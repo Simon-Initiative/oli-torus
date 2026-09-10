@@ -40,16 +40,16 @@ import { completeAdaptiveHappyPath, LessonAnswers } from '@tasks/AdaptiveHappyPa
  *   - the private assets seeded ONCE in your own playwright assets bucket
  *     (MinIO in dev, console at :9001; name it whatever you like, e.g.
  *     torus-playwright-assets-dev — there's no default, export that name as
- *     PLAYWRIGHT_ASSETS_BUCKET server-side): mer-5673/real-chem-ii-course.zip
- *     and mer-5673/answers.json. The test fetches them through
+ *     PLAYWRIGHT_ASSETS_BUCKET server-side): real_chem_ii-dazzling_d_orbitals/course.zip
+ *     and real_chem_ii-dazzling_d_orbitals/answers.json. The test fetches them through
  *     GET /test/assets/* on the server. The server must also be started with
  *     PLAYWRIGHT_SCENARIO_TOKEN.
  *
  * Then: npx playwright test real-chem-dazzling-d-orbitals
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const archiveKey = 'mer-5673/real-chem-ii-course.zip';
-const answersKey = 'mer-5673/answers.json';
+const archiveKey = 'real_chem_ii-dazzling_d_orbitals/course.zip';
+const answersKey = 'real_chem_ii-dazzling_d_orbitals/answers.json';
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
 const EXPECTED_LESSON = /Dazzling d-Orbitals/i;
 
@@ -131,7 +131,7 @@ test.describe.serial('Real Chem II dazzling d-orbitals adaptive lesson', () => {
     }
   });
 
-  test('student completes the dazzling d-orbitals happy path', async ({ page }) => {
+  test('student completes the dazzling d-orbitals happy path @nightly', async ({ page }) => {
     test.setTimeout(900_000); // 30 screens with server-side rule evaluation per check
 
     if (!seededCourse || !answers) {

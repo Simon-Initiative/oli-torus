@@ -91,6 +91,37 @@ defmodule OliWeb.UserRegistrationLiveTest do
 
       assert result =~ "has already been taken"
     end
+
+    test "confirms and redirects the user when email verification is disabled", %{conn: conn} do
+      stub_recaptcha()
+      previous = Application.get_env(:oli, :user_email_verification_required)
+      Application.put_env(:oli, :user_email_verification_required, false)
+
+      on_exit(fn ->
+        Application.put_env(:oli, :user_email_verification_required, previous)
+      end)
+
+      {:ok, lv, _html} = live(conn, ~p"/users/register")
+      email = unique_user_email()
+
+      form =
+        form(lv, "#registration_form",
+          user: %{
+            "email" => email,
+            "given_name" => "Grace",
+            "family_name" => "Hopper",
+            "password" => "valid_password",
+            "password_confirmation" => "valid_password"
+          }
+        )
+
+      render_submit(form)
+      conn = follow_trigger_action(form, conn)
+
+      assert redirected_to(conn) == ~p"/workspaces/student"
+      assert Oli.Accounts.get_independent_user_by_email(email).email_confirmed_at
+      Swoosh.TestAssertions.assert_no_email_sent()
+    end
   end
 
   describe "registration navigation" do

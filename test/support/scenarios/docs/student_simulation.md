@@ -944,8 +944,10 @@ When used with the `proficiency` attribute, it can check learning proficiency fo
 - `bucket`: Expected proficiency bucket - "High", "Medium", "Low", or "Not enough data" (required)
 - `value`: Expected raw proficiency value 0.0-1.0 (optional)
 - `student`: Name of student user (optional - if omitted, calculates average across all students)
-- `page`: Title of the page (optional - scopes proficiency to specific page)
-- `container`: Title of the container (optional - scopes proficiency to specific container)
+
+Proficiency assertions evaluate the named objective across the section using the section's
+selected learning model. `page` and `container` filters are unsupported and rejected during
+validation and parsing; omit them when authoring objective proficiency assertions.
 
 ### Proficiency Buckets
 The proficiency system converts raw proficiency scores into categorical buckets:

@@ -21,6 +21,7 @@ Creates a new project with hierarchical content structure.
 - `root`: Hierarchical structure definition
 - `objectives`: Learning objectives hierarchy (optional)
 - `tags`: List of tag titles (optional)
+- `learning_model_version`: Persisted proficiency model (`naive` by default, or `lkt_aoa`); Sections created from the project inherit it
 
 ### Structure Definition
 Projects use a nested structure with containers and pages:

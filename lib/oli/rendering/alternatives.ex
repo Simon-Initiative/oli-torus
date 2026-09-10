@@ -6,6 +6,7 @@ defmodule Oli.Rendering.Alternatives do
 
   alias Oli.Rendering.Context
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
+  alias Oli.Resources.Alternatives, as: ResourceAlternatives
   alias Oli.Resources.Alternatives.Selection
 
   @callback alternative(%Context{}, %Selection{}) :: [any()]
@@ -23,17 +24,25 @@ defmodule Oli.Rendering.Alternatives do
         %Context{
           enrollment: enrollment,
           user: user,
+          institution_id: institution_id,
+          project_id: project_id,
+          publication_id: publication_id,
+          section_id: section_id,
           section_slug: section_slug,
           project_slug: project_slug,
+          page_id: page_resource_id,
+          activity_map: activity_map,
           mode: mode,
           alternatives_selector_fn: alternatives_selector_fn,
-          alternatives_groups_fn: groups_fn
+          alternatives_groups_fn: groups_fn,
+          alternative_groups_by_id: alternative_groups_by_id,
+          experiment_decisions: experiment_decisions
         } = context,
         %{"type" => "alternatives"} = element,
         writer
       ) do
-    {:ok, groups} = groups_fn.()
-    by_id = Enum.reduce(groups, %{}, fn r, m -> Map.put(m, r.id, r) end)
+    by_id = alternative_groups_by_id || load_alternative_groups_by_id(groups_fn)
+    context = %Context{context | alternative_groups_by_id: by_id}
 
     enrollment_id =
       case enrollment do
@@ -45,14 +54,21 @@ defmodule Oli.Rendering.Alternatives do
       %AlternativesStrategyContext{
         enrollment_id: enrollment_id,
         user: user,
+        institution_id: institution_id,
+        project_id: project_id,
+        publication_id: publication_id,
+        section_id: section_id,
         section_slug: section_slug,
         mode: mode,
         project_slug: project_slug,
-        alternative_groups_by_id: by_id
+        page_resource_id: page_resource_id,
+        activity_resource_ids: activity_resource_ids(activity_map),
+        alternative_groups_by_id: by_id,
+        experiment_decisions: experiment_decisions
       },
       element
     )
-    |> render_selected_alternatives(context, writer)
+    |> render_selected_alternatives(context, element, writer, by_id)
     |> maybe_render_preference_selector(context, element, writer, by_id)
   end
 
@@ -68,12 +84,41 @@ defmodule Oli.Rendering.Alternatives do
     end
   end
 
-  defp render_selected_alternatives(selected_alternatives, %Context{} = context, writer) do
+  defp render_selected_alternatives(
+         selected_alternatives,
+         %Context{mode: mode} = context,
+         element,
+         Oli.Rendering.Alternatives.Html = writer,
+         by_id
+       )
+       when mode in [:author_preview, :instructor_preview] do
+    strategy = Map.get(by_id, element["alternatives_id"]).strategy
+
+    case ResourceAlternatives.normalize_strategy(strategy) do
+      {:ok, "user_section_preference"} ->
+        render_alternatives(selected_alternatives, context, element, writer)
+
+      _ ->
+        writer.preview_alternatives(context, element, selected_alternatives)
+    end
+  end
+
+  defp render_selected_alternatives(
+         selected_alternatives,
+         %Context{} = context,
+         element,
+         writer,
+         _by_id
+       ) do
+    render_alternatives(selected_alternatives, context, element, writer)
+  end
+
+  defp render_alternatives(selected_alternatives, %Context{} = context, element, writer) do
     selected_alternatives
-    |> Enum.flat_map(fn alternative ->
+    |> Enum.flat_map(fn %Selection{} = alternative ->
       writer.alternative(
         %Context{context | pagination_mode: "normal"},
-        alternative
+        %Selection{alternative | alternatives_id: element["alternatives_id"]}
       )
     end)
   end
@@ -87,12 +132,23 @@ defmodule Oli.Rendering.Alternatives do
        ) do
     # IGNORE the strategy that is on the element in the page and
     # instead look up the strategy using the id from the alternatives resources
-    case Map.get(by_id, element["alternatives_id"]).strategy do
-      "user_section_preference" ->
+    strategy = Map.get(by_id, element["alternatives_id"]).strategy
+
+    case ResourceAlternatives.normalize_strategy(strategy) do
+      {:ok, "user_section_preference"} ->
         [writer.preference_selector(context, element) | rendered]
 
       _ ->
         rendered
     end
+  end
+
+  defp activity_resource_ids(activity_map) when is_map(activity_map), do: Map.keys(activity_map)
+  defp activity_resource_ids(_activity_map), do: []
+
+  defp load_alternative_groups_by_id(groups_fn) do
+    {:ok, groups} = groups_fn.()
+
+    Map.new(groups, fn group -> {group.id, group} end)
   end
 end

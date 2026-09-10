@@ -6,6 +6,7 @@ defmodule Oli.Analytics.XAPI.Events.Video.Paused do
           user_id: user_id,
           host_name: host_name,
           section_id: section_id,
+          enrollment_id: enrollment_id,
           project_id: project_id,
           publication_id: publication_id
         },
@@ -62,6 +63,7 @@ defmodule Oli.Analytics.XAPI.Events.Video.Paused do
           "http://oli.cmu.edu/extensions/page_attempt_number" => page_attempt_number,
           "http://oli.cmu.edu/extensions/page_attempt_guid" => page_attempt_guid,
           "http://oli.cmu.edu/extensions/section_id" => section_id,
+          "http://oli.cmu.edu/extensions/enrollment_id" => enrollment_id,
           "http://oli.cmu.edu/extensions/project_id" => project_id,
           "http://oli.cmu.edu/extensions/publication_id" => publication_id,
           "http://oli.cmu.edu/extensions/resource_id" => page_id,

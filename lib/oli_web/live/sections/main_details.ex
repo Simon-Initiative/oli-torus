@@ -10,6 +10,7 @@ defmodule OliWeb.Sections.MainDetails do
   attr(:institutions, :list, required: true)
   attr(:project_slug, :string, required: true)
   attr(:ctx, :map, required: true)
+  attr(:description, :string, default: nil)
 
   def render(assigns) do
     ~H"""
@@ -22,7 +23,7 @@ defmodule OliWeb.Sections.MainDetails do
           field={@form[:description]}
           label="Description"
           class="form-control"
-          maxlength="300"
+          maxlength={Common.description_maxlength(@description)}
           disabled={@disabled}
         />
       </div>

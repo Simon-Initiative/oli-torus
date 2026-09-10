@@ -26,47 +26,6 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       Seeder.create_section_resources(map)
     end
 
-    test "proficiency for objectives", %{
-      user1: user1,
-      user2: user2,
-      section: section,
-      o1: o1,
-      o2: o2,
-      page1: page1,
-      project: project
-    } do
-      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-      page_type_id = Oli.Resources.ResourceType.id_for_page()
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
-
-      id = o1.resource.id
-      id2 = o2.resource.id
-
-      [
-        # page record
-        [-1, -1, section.id, -1, page1.id, nil, page_type_id, 4, 10, 1, 5, 1],
-        [-1, -1, section.id, -1, id, nil, objective_type_id, 4, 10, 1, 5, 1],
-        [-1, -1, section.id, user1.id, id, nil, objective_type_id, 2, 6, 1, 1, 0],
-        [-1, -1, section.id, user2.id, id, nil, objective_type_id, 2, 4, 0, 1, 1],
-        [project.id, -1, -1, -1, id, nil, objective_type_id, 4, 10, 1, 5, 1],
-        [-1, -1, section.id, -1, id2, nil, objective_type_id, 40, 100, 55, 50, 10],
-        [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 2, 6, 1, 3, 1],
-        [-1, -1, section.id, user2.id, id2, nil, objective_type_id, 2, 4, 0, 4, 2],
-        [project.id, -1, -1, -1, id2, nil, objective_type_id, 4, 10, 1, 5, 1]
-      ]
-      |> Enum.each(fn v -> add_resource_summary(v) end)
-
-      results = Metrics.raw_proficiency_per_learning_objective(section.id)
-      assert Map.keys(results) |> Enum.count() == 2
-      assert assert %{^id => {1, 5, 4, 10}, ^id2 => {10, 50, 40, 100}} = results
-
-      assert %{^id => {0, 1, 2, 6}, ^id2 => {1, 3, 2, 6}} =
-               Metrics.raw_proficiency_per_learning_objective(section.id, student_id: user1.id)
-
-      assert %{^id => {1, 1, 2, 4}, ^id2 => {2, 4, 2, 4}} =
-               Metrics.raw_proficiency_per_learning_objective(section.id, student_id: user2.id)
-    end
-
     test "proficiency for page", %{
       user1: user1,
       user2: user2,
@@ -209,6 +168,54 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert Map.get(results, id) == "Low"
       assert Map.get(results, id2) == "Medium"
       assert Map.get(results, id3) == "High"
+    end
+
+    test "proficiency_for_student_per_learning_objective/3 combines a parent's own directly-tagged evidence with its Sub-LO's evidence",
+         %{
+           user1: user1,
+           section: section,
+           o1: o1,
+           o2: o2
+         } do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+
+      # o1 is the parent, with o2 as its only Sub-LO.
+      {:ok, o1_revision} =
+        Oli.Resources.Revision.changeset(o1.revision, %{children: [o2.resource.id]})
+        |> Oli.Repo.update()
+
+      id = o1.resource.id
+      id2 = o2.resource.id
+
+      [
+        # o2 (the Sub-LO): 1 correct out of 5 first attempts => 0.36
+        [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 1, 5, 0, 5, 1],
+        # o1's own direct row: 5 correct out of 5 first attempts => 1.0
+        [-1, -1, section.id, user1.id, id, nil, objective_type_id, 5, 5, 0, 5, 5]
+      ]
+      |> Enum.each(fn v -> add_resource_summary(v) end)
+
+      # Only the parent is passed in, matching how real callers invoke this
+      # function (e.g. prologue_live.ex passes only the page-attached LOs, never
+      # their Sub-LOs alongside them); the Sub-LO's evidence is reached via
+      # o1_revision.children, not by also including it in this list.
+      results =
+        Metrics.proficiency_for_student_per_learning_objective(
+          [o1_revision],
+          user1.id,
+          section
+        )
+
+      # o1's own evidence (0.36, count=5) and o2's evidence (1.0, count=5) are
+      # always combined: (0.36*5 + 1.0*5) / (5+5) = 6.8/10 = 0.68 => "Medium".
+      # This is a deliberate product decision (Darren Siegel, Slack,
+      # 2026-09-01, "Option B" in
+      # docs/exec-plans/current/epics/learning_model_v2/lo_aggregation/parent_evidence_aggregation_options.md):
+      # a parent's own evidence is never excluded just because it has a
+      # Sub-LO, even though this means an activity tagged to both the parent
+      # and the Sub-LO would be double-counted.
+      assert Map.get(results, id) == "Medium"
     end
 
     test "proficiency_per_student_for_objective/2", %{

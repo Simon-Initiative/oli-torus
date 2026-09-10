@@ -42,6 +42,98 @@ defmodule Oli.Utils.SchemaResolverTest do
         |> ExJsonSchema.Schema.resolve()
     end
 
+    test "Alternatives are valid in ordinary containers but invalid within Alternatives", _ do
+      schema = Oli.Utils.SchemaResolver.resolve("page-content.schema.json")
+
+      alternatives = %{
+        "type" => "alternatives",
+        "id" => "placement",
+        "alternatives_id" => 42,
+        "children" => []
+      }
+
+      assert :ok ==
+               ExJsonSchema.Validator.validate(schema, %{
+                 "version" => "0.1.0",
+                 "model" => [alternatives]
+               })
+
+      for strategy <- [
+            "user_section_preference",
+            "experiment_controlled",
+            "upgrade_decision_point",
+            "unknown-legacy"
+          ] do
+        assert :ok ==
+                 ExJsonSchema.Validator.validate(schema, %{
+                   "version" => "0.1.0",
+                   "model" => [Map.put(alternatives, "strategy", strategy)]
+                 })
+      end
+
+      assert {:error, _errors} =
+               ExJsonSchema.Validator.validate(schema, %{
+                 "version" => "0.1.0",
+                 "model" => [Map.delete(alternatives, "alternatives_id")]
+               })
+
+      assert {:error, _errors} =
+               ExJsonSchema.Validator.validate(schema, %{
+                 "version" => "0.1.0",
+                 "model" => [Map.put(alternatives, "alternatives_id", "42")]
+               })
+
+      assert {:error, _errors} =
+               ExJsonSchema.Validator.validate(schema, %{
+                 "version" => "0.1.0",
+                 "model" => [Map.put(alternatives, "alternatives_id", 0)]
+               })
+
+      assert :ok ==
+               ExJsonSchema.Validator.validate(schema, %{
+                 "version" => "0.1.0",
+                 "model" => [
+                   %{
+                     "type" => "group",
+                     "id" => "group",
+                     "layout" => "vertical",
+                     "purpose" => "none",
+                     "children" => [alternatives]
+                   }
+                 ]
+               })
+
+      nested_alternatives =
+        alternatives
+        |> Map.put("id", "inner")
+
+      outer = %{
+        alternatives
+        | "children" => [
+            %{
+              "type" => "alternative",
+              "id" => "outer-option",
+              "value" => "outer",
+              "children" => [
+                %{
+                  "type" => "group",
+                  "id" => "nested-group",
+                  "layout" => "vertical",
+                  "purpose" => "none",
+                  "children" => [nested_alternatives]
+                }
+              ]
+            }
+          ]
+      }
+
+      assert {:error, _errors} =
+               ExJsonSchema.Validator.validate(schema, %{
+                 "version" => "0.1.0",
+                 "model" => [outer]
+               })
+    end
+
     test "selection schema", _ do
       %ExJsonSchema.Schema.Root{} =
         "#{:code.priv_dir(:oli)}/schemas/v0-1-0/selection.schema.json"

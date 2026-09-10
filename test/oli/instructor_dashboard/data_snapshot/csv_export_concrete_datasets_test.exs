@@ -49,7 +49,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
       assert metadata_csv =~ "total_students,2"
 
       summary_csv = to_string(Map.fetch!(entries, ~c"course_summary_metrics.csv"))
-      assert summary_csv =~ "average_class_proficiency,40,percent"
+      assert summary_csv =~ "average_class_proficiency,60,percent"
       assert summary_csv =~ "average_assessment_score,82.4,percent"
       assert summary_csv =~ "average_student_progress,75,percent"
 
@@ -221,11 +221,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
               %{
                 objective_id: 201,
                 title: "Explain photosynthesis",
+                numeric_proficiency: 0.42,
                 proficiency_distribution: %{"Low" => 2, "Medium" => 1}
               },
               %{
                 objective_id: 203,
                 title: "Analyze root systems",
+                numeric_proficiency: 0.78,
                 proficiency_distribution: %{"Low" => 2, "High" => 1}
               }
             ]
@@ -241,7 +243,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
           },
           total_students: 2,
           metrics: %{
-            average_class_proficiency: 40.0,
             average_assessment_score: 82.4,
             average_student_progress: 75.0
           }

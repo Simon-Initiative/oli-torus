@@ -848,6 +848,32 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4.exceptions_count =~ "1"
     end
 
+    test "bulk-apply assessment selector shows suppression-aware container labels when a top-level unit is unnumbered",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1
+         } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      select_html = view |> element(~s{select#assessment_select}) |> render()
+
+      # Page 1 is nested under the suppressed Unit 1 (via Module 1), so it shows no
+      # container-number prefix at all, matching how Learn presents a suppressed unit.
+      assert select_html =~ "Page 1"
+      refute select_html =~ "Unit 1: Page 1"
+      refute select_html =~ "Module 1: Page 1"
+
+      # Page 3 is nested under Unit 2 / Module 2. Unit 1 being suppressed means Module 1
+      # (nested inside it) never consumes a numbering slot, so Module 2 becomes "Module 1"
+      # instead of the raw "Module 2" -- this is the exact bug reported in the ticket.
+      refute select_html =~ "Module 2: Page 3"
+      assert select_html =~ "Module 1: Page 3"
+    end
+
     test "password is not shown until the user clicks the input", %{
       conn: conn,
       section: section,
@@ -2617,6 +2643,31 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert [] = table_as_list_of_maps(view, :student_exceptions)
       assert render(view) =~ "None exist"
+    end
+
+    test "assessment selector shows suppression-aware container labels when a top-level unit is unnumbered",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1
+         } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      {:ok, view, _html} =
+        live(conn, live_view_overview_route(section.slug, "student_exceptions", "all"))
+
+      select_html = view |> element(~s{form[id=assessment_select] select}) |> render()
+
+      # Page 1 (nested under the suppressed Unit 1) shows no container-number prefix.
+      assert select_html =~ "Page 1"
+      refute select_html =~ "Unit 1: Page 1"
+      refute select_html =~ "Module 1: Page 1"
+
+      # Page 3 (nested under Unit 2 / Module 2) is renumbered: Module 1 already skipped
+      # its numbering slot inside the suppressed Unit 1, so Module 2 becomes "Module 1".
+      assert select_html =~ "Module 1: Page 3"
+      refute select_html =~ "Module 2: Page 3"
     end
 
     test "the remove button is disbled if no student exception is selected", %{

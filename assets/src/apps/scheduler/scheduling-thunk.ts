@@ -71,7 +71,7 @@ export const scheduleAppFlushChanges = createAsyncThunk(
       'Saving: ',
       dirty
         .map((id) => getScheduleItem(id, schedule))
-        .map((i) => `${i?.title} ${i?.numbering_index}`)
+        .map((i) => `${i?.title} ${i?.numbering_index ?? ''}`)
         .join(', '),
     );
     try {

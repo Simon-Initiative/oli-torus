@@ -1,5 +1,6 @@
 defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
   use Phoenix.Component
+  alias Oli.Delivery.Remix.Source
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
   def new(pages) do
@@ -45,11 +46,11 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     )
   end
 
-  def render_child(%{selection: selection, selected_publication: pub} = assigns, child) do
+  def render_child(%{selection: selection, selected_source: source} = assigns, child) do
     assigns =
       Map.merge(assigns, %{
         child: child,
-        maybe_checked: maybe_checked(selection, pub.id, child.revision.resource_id)
+        maybe_checked: maybe_checked(selection, source, child)
       })
 
     ~H"""
@@ -58,17 +59,20 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
       phx-click="HierarchyPicker.select"
       phx-value-uuid={@child.uuid}
       type="checkbox"
+      aria-label={@child.revision.title}
       class="w-5 h-5 rounded-[3px] border-2 border-Border-border-default bg-Surface-surface-background cursor-pointer"
       {@maybe_checked}
     />
     """
   end
 
-  defp maybe_checked(selection, pub_id, resource_id) do
-    if {pub_id, resource_id} in selection do
-      [checked: true]
-    else
-      []
+  defp maybe_checked(selection, source, child) do
+    case Source.selection_identity(source, child) do
+      {:ok, selection_identity} ->
+        if(selection_identity in selection, do: [checked: true], else: [])
+
+      _ ->
+        []
     end
   end
 

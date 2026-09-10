@@ -210,6 +210,18 @@ defmodule Oli.Interop.IngestTest do
 
       assert Enum.count(product_root.children) == 2
     end
+
+    test "ingests a legacy project description over the authoring character limit", %{
+      author: author
+    } do
+      description = String.duplicate("Legacy description", 20)
+
+      assert {:ok, project} =
+               minimal_digest(%{"title" => "Legacy project", "description" => description})
+               |> Ingest.process(author)
+
+      assert project.description == description
+    end
   end
 
   describe "learning-model archive compatibility" do
@@ -441,6 +453,39 @@ defmodule Oli.Interop.IngestTest do
         assert error =~ "learningModelParameters"
         assert Repo.aggregate(Project, :count) == before_count
       end)
+    end
+  end
+
+  describe "learning-objective compatibility archive handling" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "preserves explicit boolean values", %{author: author} do
+      Enum.each([true, false], fn lo_well_formed ->
+        {:ok, project} =
+          minimal_digest(%{
+            "title" => "Explicit LO compatibility #{lo_well_formed}",
+            "loWellFormed" => lo_well_formed
+          })
+          |> Ingest.process(author)
+
+        assert project.lo_well_formed == lo_well_formed
+      end)
+    end
+
+    test "maps a null or missing archive value to nil", %{author: author} do
+      Enum.each(
+        [
+          %{"title" => "Null LO compatibility", "loWellFormed" => nil},
+          %{"title" => "Missing LO compatibility"}
+        ],
+        fn project_details ->
+          {:ok, project} = minimal_digest(project_details) |> Ingest.process(author)
+
+          assert is_nil(project.lo_well_formed)
+        end
+      )
     end
   end
 

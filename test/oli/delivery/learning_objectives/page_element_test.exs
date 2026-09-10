@@ -5,6 +5,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
 
   alias Oli.Delivery.LearningObjectives.IncludedObjective
   alias Oli.Delivery.LearningObjectives.PageElement
+  alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.SectionResourceDepot
@@ -25,7 +26,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
                schedule_fun: fn _ -> flunk("schedule should not be loaded") end,
                objectives_fun: fn _ -> flunk("objectives should not be loaded") end,
                activity_refs_fun: fn _ -> flunk("activity refs should not be loaded") end,
-               proficiency_fun: fn _, _, _ -> flunk("proficiency should not be loaded") end
+               raw_proficiency_fun: fn _, _, _ -> flunk("proficiency should not be loaded") end
              ) == nil
     end
 
@@ -135,7 +136,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
         resources.page_resource_2.id,
         learning_objectives_content("introduction"),
         user,
-        proficiency_fun: fn _, _, _ ->
+        raw_proficiency_fun: fn _, _, _ ->
           send(parent, :unexpected_proficiency)
           %{}
         end
@@ -149,20 +150,67 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
           resources.page_resource_2.id,
           learning_objectives_content("summary"),
           user,
-          proficiency_fun: fn section_id, objective_ids, student_id: student_id ->
-            send(parent, {:proficiency, section_id, objective_ids, student_id})
-            Map.new(objective_ids, &{&1, %{student_id => "High"}})
+          raw_proficiency_fun: fn section_id, resource_ids, student_id: student_id ->
+            send(parent, {:proficiency, section_id, resource_ids, student_id})
+            Map.new(resource_ids, &{&1, %{student_id => {1.0, 5}}})
           end
         )
 
-      assert_received {:proficiency, section_id, objective_ids, student_id}
+      assert_received {:proficiency, section_id, resource_ids, student_id}
       assert section_id == section.id
       assert student_id == user.id
-      assert Enum.sort(objective_ids) == Enum.sort(Enum.map(payload.objectives, & &1.resource_id))
+
+      # obj_resource_c has obj_resource_c1 as its only Sub-LO, so its evidence
+      # is fetched for both obj_resource_c's own resource_id and
+      # obj_resource_c1's; obj_resource_c1 and obj_resource_d are leaves, so
+      # each fetches only its own evidence. A parent's own resource_id is
+      # always requested alongside its Sub-LOs' (Option B — see
+      # Metrics.evidence_resource_ids/2).
+      assert Enum.sort(resource_ids) ==
+               Enum.sort([
+                 resources.obj_resource_c.id,
+                 resources.obj_resource_c1.id,
+                 resources.obj_resource_d.id
+               ])
 
       assert Enum.all?(payload.performance_by_objective_id, fn {_objective_id, value} ->
                value == "High"
              end)
+    end
+
+    test "Summary uses the LKT-AOA provider for model-selected sections", %{
+      seeds: %{section: section, resources: resources}
+    } do
+      section = %{section | learning_model_version: :lkt_aoa}
+      user = insert(:user)
+      objective_id = resources.obj_resource_d.id
+
+      Oli.Repo.insert!(%Oli.LearningModel.LearningState{
+        section_id: section.id,
+        user_id: user.id,
+        learning_objective_id: objective_id,
+        aoa: 0.9,
+        attempt_count: 5,
+        unique_activity_part_count: 5,
+        confidence: 0.9
+      })
+
+      payload =
+        PageElement.prepare_render_payload(
+          section,
+          resources.page_resource_2.id,
+          learning_objectives_content("summary"),
+          user,
+          raw_proficiency_fun: fn _, _, _ -> flunk("LKT-AOA must use its provider") end
+        )
+
+      assert payload.performance_by_objective_id[objective_id] == "High"
+
+      assert Metrics.aggregated_proficiency_per_student_for_objectives(
+               section,
+               [%{resource_id: objective_id, children: []}],
+               student_id: user.id
+             )[objective_id][user.id] == "High"
     end
 
     test "does not query proficiency without a delivery user", %{
@@ -177,7 +225,7 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
             resources.page_resource_2.id,
             learning_objectives_content("summary"),
             non_delivery_user,
-            proficiency_fun: fn _, _, _ ->
+            raw_proficiency_fun: fn _, _, _ ->
               send(parent, :unexpected_proficiency)
               %{}
             end
@@ -186,6 +234,83 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
         assert payload.performance_by_objective_id == %{}
         refute_received :unexpected_proficiency
       end)
+    end
+
+    test "combines a parent's own evidence with a Sub-LO's evidence, including a Sub-LO outside this page element's own scope, consistent with the Instructor Dashboard",
+         %{
+           seeds: %{section: section, resources: resources}
+         } do
+      user = insert(:user)
+      objective_type_id = Resources.ResourceType.id_for_objective()
+
+      # Give obj_resource_d a Sub-LO (obj_resource_e) that has no activity on
+      # page_resource_2: page_resource_2's own render scope will not include
+      # E, but E's evidence must still be combined into D's aggregated
+      # proficiency, consistent with the Instructor Dashboard (Phase 3).
+      #
+      # The versioned depot stores authoritative children as SectionResource IDs.
+      force_children(section, resources.obj_resource_d.id, [resources.obj_resource_e.id])
+
+      # D's own directly-tagged evidence (from Activity Z) is always combined
+      # with its Sub-LO's evidence, per a deliberate product decision (Darren
+      # Siegel, Slack, 2026-09-01, "Option B" in
+      # docs/exec-plans/current/epics/learning_model_v2/lo_aggregation/parent_evidence_aggregation_options.md).
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: user.id,
+        resource_id: resources.obj_resource_d.id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 5,
+        num_attempts: 5,
+        num_hints: 0,
+        num_first_attempts: 5,
+        num_first_attempts_correct: 5
+      })
+
+      # obj_resource_e's evidence combines with D's own evidence above.
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: user.id,
+        resource_id: resources.obj_resource_e.id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 0,
+        num_attempts: 4,
+        num_hints: 0,
+        num_first_attempts: 4,
+        num_first_attempts_correct: 0
+      })
+
+      payload =
+        PageElement.prepare_render_payload(
+          section,
+          resources.page_resource_2.id,
+          learning_objectives_content("summary"),
+          user
+        )
+
+      # obj_resource_e is not directly matched on page_resource_2 and is not
+      # an ancestor of anything that is, so it is not rendered here — only D
+      # is.
+      refute Enum.any?(payload.objectives, &(&1.resource_id == resources.obj_resource_e.id))
+      assert Enum.any?(payload.objectives, &(&1.resource_id == resources.obj_resource_d.id))
+
+      page_element_proficiency =
+        Map.fetch!(payload.performance_by_objective_id, resources.obj_resource_d.id)
+
+      # (1.0*5 + 0.2*4) / (5+4) = 5.8/9 = 0.644 => "Medium". If E's
+      # out-of-scope evidence were dropped, this would be "High" (D's own
+      # evidence alone) instead.
+      assert page_element_proficiency == "Medium"
+
+      dashboard_result =
+        Sections.get_objectives_and_subobjectives(section, student_id: user.id)
+        |> Enum.find(&(&1.objective_resource_id == resources.obj_resource_d.id))
+
+      assert dashboard_result.student_proficiency_obj == page_element_proficiency
     end
   end
 
@@ -396,9 +521,14 @@ defmodule Oli.Delivery.LearningObjectives.PageElementTest do
   end
 
   defp force_children(section, objective_resource_id, child_resource_ids) do
+    child_section_resource_ids =
+      Enum.map(child_resource_ids, fn child_resource_id ->
+        SectionResourceDepot.get_section_resource(section.id, child_resource_id).id
+      end)
+
     section.id
     |> SectionResourceDepot.get_section_resource(objective_resource_id)
-    |> Sections.update_section_resource(%{children: child_resource_ids})
+    |> Sections.update_section_resource(%{children: child_section_resource_ids})
     |> case do
       {:ok, section_resource} ->
         SectionResourceDepot.update_section_resource(section_resource)

@@ -48,6 +48,28 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
     {:ok, Map.merge(section_map, %{conn: conn, user: user})}
   end
 
+  describe "call/2 for unresolved pages" do
+    test "does not raise when the revision slug cannot be resolved", %{
+      conn: conn,
+      section: section
+    } do
+      conn =
+        conn
+        |> assign(:section, section)
+        |> Map.put(:params, %{
+          "section_slug" => section.slug,
+          "revision_slug" => "missing-page"
+        })
+        |> Map.put(:request_path, "/sections/#{section.slug}/lesson/missing-page")
+        |> Map.put(:query_string, "")
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      refute result_conn.status in [301, 302]
+      refute result_conn.halted
+    end
+  end
+
   describe "call/2 for graded pages" do
     # Test: {:graded, :adaptive_chromeless, _, true} -> ensure_path(conn, :review, :adaptive)
     test "redirects graded adaptive chromeless to adaptive review when review path", %{

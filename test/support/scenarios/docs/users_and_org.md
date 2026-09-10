@@ -6,9 +6,25 @@ This document covers directives for creating and managing users, institutions, a
 - [user](#user) - Create users
 - [institution](#institution) - Create institutions
 - [enroll](#enroll) - Enroll users in sections
+- [community](#community) - Create product-visible communities
 - [Complete Examples](#complete-examples)
 
 ---
+
+## community
+
+Creates a community, associates existing users and an institution, and grants visibility to existing products.
+
+```yaml
+- community:
+    name: "Instructor Sources"
+    institution: "State University"
+    users: ["prof_jones"]
+    products: ["template_one", "template_two"]
+```
+
+Use `assert_sources` to verify the product sources visible to a user for a section.
+
 
 ## user
 

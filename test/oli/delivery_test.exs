@@ -316,10 +316,12 @@ defmodule Oli.DeliveryTest do
         ]
       }
 
+      description = String.duplicate("Project description", 20)
+
       project =
         context.project
         |> Project.changeset(%{
-          description: "Project description",
+          description: description,
           welcome_title: welcome_title,
           encouraging_subtitle: "Project subtitle"
         })
@@ -336,7 +338,7 @@ defmodule Oli.DeliveryTest do
                )
 
       section = Sections.get_section!(section_id)
-      assert section.description == "Project description"
+      assert section.description == description
       assert section.welcome_title == welcome_title
       assert section.encouraging_subtitle == "Project subtitle"
     end

@@ -34,6 +34,7 @@ defmodule OliWeb.AuthorAuth do
         signed_in_path(conn)
 
     conn
+    |> delete_session(:author_return_to)
     |> put_token_in_session(token)
     |> put_author_id_in_session(author.id)
     |> maybe_write_remember_me_cookie(token, params)

@@ -1,4 +1,11 @@
 defmodule Oli.Analytics.Summary.BrowseInsights do
+  @moduledoc """
+  Descriptive authoring analytics over ResourceSummary data.
+
+  These relative-difficulty metrics intentionally remain independent of the
+  Section-selected proficiency model; they describe authored content rather
+  than learner-facing proficiency and are excluded from provider migration.
+  """
   alias Oli.Activities
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource

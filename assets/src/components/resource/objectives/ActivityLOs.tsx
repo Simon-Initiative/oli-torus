@@ -13,6 +13,7 @@ type Props = {
   projectSlug: string;
   onEdit: (objectives: ObjectiveMap) => void;
   onRegisterNewObjective: (objective: Objective) => void;
+  loWellFormed?: boolean;
 };
 
 // Allows attaching and removal of objectives to activity parts
@@ -43,6 +44,7 @@ const MultiPartSelection = (props: Props & { id: string; index: number }) => {
       <PartLabel />
       <ObjectivesSelection
         {...props}
+        attachmentType="activity"
         selected={props.objectives[props.id] || []}
         objectives={props.allObjectives}
         onEdit={(objectives) => {
@@ -66,6 +68,7 @@ const SinglePartSelection = (props: Props) => {
   return (
     <ObjectivesSelection
       {...props}
+      attachmentType="activity"
       selected={props.objectives[partId] || []}
       objectives={props.allObjectives}
       onEdit={(objectives) => props.onEdit({ ...props.objectives, ...{ [partId]: objectives } })}

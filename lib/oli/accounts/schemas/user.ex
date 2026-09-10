@@ -144,6 +144,15 @@ defmodule Oli.Accounts.User do
     |> put_change(:independent_learner, true)
     |> maybe_name_from_given_and_family()
     |> maybe_generate_unique_sub()
+    |> maybe_confirm_email(opts)
+  end
+
+  defp maybe_confirm_email(changeset, opts) do
+    if Keyword.get(opts, :email_verification_required, true) do
+      changeset
+    else
+      put_change(changeset, :email_confirmed_at, DateTime.truncate(DateTime.utc_now(), :second))
+    end
   end
 
   defp validate_email(changeset, opts) do

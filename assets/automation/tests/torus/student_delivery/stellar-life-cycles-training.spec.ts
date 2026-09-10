@@ -30,13 +30,13 @@ import { fetchTestArchiveToTempFile, fetchTestAsset } from '@tasks/AutomationAss
  * simulator or through the authored alternate path; see the "tutorial" rule.
  *
  * Private assets expected in the Playwright assets bucket:
- *   - habitable-worlds_stellar-life-cycles-training/course.zip
- *   - habitable-worlds_stellar-life-cycles-training/answers.json
+ *   - habitable_worlds-stellar_life_cycles_training/course.zip
+ *   - habitable_worlds-stellar_life_cycles_training/answers.json
  *
  * Then: npx playwright test stellar-life-cycles-training
  */
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost';
-const assetPrefix = 'habitable-worlds_stellar-life-cycles-training';
+const assetPrefix = 'habitable_worlds-stellar_life_cycles_training';
 const archiveKey = `${assetPrefix}/course.zip`;
 const answersKey = `${assetPrefix}/answers.json`;
 const automationApiKey = process.env.PLAYWRIGHT_AUTOMATION_API_KEY;
@@ -96,7 +96,7 @@ test.describe.serial('HW Stellar Life Cycles adaptive lesson', () => {
     }
   });
 
-  test('student completes the stellar life cycles happy path', async ({ page }) => {
+  test('student completes the stellar life cycles happy path @nightly', async ({ page }) => {
     // 32 screens, each with a server-side rule evaluation, plus the per-screen
     // grace period interactive parts get to mount
     test.setTimeout(1_200_000);

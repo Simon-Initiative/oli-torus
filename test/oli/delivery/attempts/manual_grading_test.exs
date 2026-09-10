@@ -1,11 +1,14 @@
 defmodule Oli.Delivery.Attempts.ManualGradingTest do
   use Oli.DataCase
+  use Oban.Testing, repo: Oli.Repo
 
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Activities.Model.{Part}
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Experiments.Schemas.{AcceptedReward, PolicyState}
+  alias Oli.Test.ExperimentRewardSetup
 
   def add_submitted_activity(map, resource_attempt_tag, activity_tag, activity_attempt_tag) do
     map
@@ -377,30 +380,37 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       map = Seeder.base_project_with_resource2()
       Oli.Resources.update_revision(map.revision2, %{graded: true})
 
-      map
-      |> Seeder.create_section()
-      |> Seeder.add_user(%{}, :user1)
-      |> Seeder.add_activity(
-        %{title: "activity manual"},
-        :publication,
-        :project,
-        :author,
-        :activity_a
-      )
-      |> Seeder.create_section_resources()
-      |> Seeder.create_resource_attempt(
-        %{attempt_number: 1, lifecycle_state: :submitted},
-        :user1,
-        :page2,
-        :revision2,
-        :attempt1
-      )
-      |> add_submitted_activity(:attempt1, :activity_a, :attempt_1a)
+      context =
+        map
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{}, :user1)
+        |> Seeder.add_activity(
+          %{title: "activity manual"},
+          :publication,
+          :project,
+          :author,
+          :activity_a
+        )
+        |> Seeder.create_section_resources()
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1, lifecycle_state: :submitted},
+          :user1,
+          :page2,
+          :revision2,
+          :attempt1
+        )
+        |> add_submitted_activity(:attempt1, :activity_a, :attempt_1a)
+
+      reward_context =
+        ExperimentRewardSetup.create(context.project, context.section, context.attempt1)
+
+      Map.put(context, :reward_context, reward_context)
     end
 
     test "applies manual scoring and updates states", %{
       section: section,
-      attempt_1a: attempt_1a
+      attempt_1a: attempt_1a,
+      reward_context: reward_context
     } do
       results =
         ManualGrading.browse_submitted_attempts(
@@ -445,6 +455,52 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       # The resource attempt must be evaluated
       ra = Oli.Delivery.Attempts.Core.get_resource_attempt_by(id: aa.resource_attempt_id)
       assert ra.lifecycle_state == :evaluated
+
+      assert Oli.Repo.aggregate(AcceptedReward, :count) == 1
+
+      policy_state = Oli.Repo.get!(PolicyState, reward_context.policy_state.id)
+      assert policy_state.state["condition-a"]["posterior_alpha"] == 2.0
+      assert policy_state.state["condition-a"]["posterior_beta"] == 1.0
+    end
+
+    @tag capture_log: true
+    test "rolls back manual scoring when synchronous reward processing fails", %{
+      section: section,
+      attempt_1a: attempt_1a,
+      reward_context: reward_context
+    } do
+      attempt =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+        |> Enum.find(fn attempt -> attempt.id == attempt_1a.id end)
+
+      invalid_state =
+        put_in(reward_context.policy_state.state, ["condition-a", "successes"], -1)
+
+      reward_context.policy_state
+      |> PolicyState.changeset(%{state: invalid_state})
+      |> Repo.update!()
+
+      assert_raise MatchError, fn ->
+        ManualGrading.apply_manual_scoring(
+          section,
+          attempt,
+          create_score_feedbacks(attempt)
+        )
+      end
+
+      assert Core.get_activity_attempt_by(id: attempt_1a.id).lifecycle_state == :submitted
+      assert Repo.aggregate(AcceptedReward, :count) == 0
     end
 
     test "preserves file upload responses during manual scoring", %{
