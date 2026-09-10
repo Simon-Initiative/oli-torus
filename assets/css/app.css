@@ -851,6 +851,14 @@ https://tailwindcss.com/docs/utility-first
   .learning-objectives-editor__proficiency-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .learning-objectives-editor__proficiency-card--strong {
+    order: 3;
+  }
+
+  .learning-objectives-editor__proficiency-card--growing {
+    order: 4;
+  }
 }
 
 .truncate-form-control p {
