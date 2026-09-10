@@ -1,0 +1,185 @@
+work_item: preview-environment-tooling
+requirements:
+- id: FR-001
+  title: Compile release seeding and user masquerade only into MIX_ENV=preview releases
+    and gate their runtime use behind deny-by-default DEV_QA_TOOLS_ENABLED
+- id: FR-002
+  title: Provide a bin/seed release CLI that lists bundled scenarios and synchronously
+    executes a bundled or custom YAML scenario
+- id: FR-003
+  title: Let the release CLI download and ingest a Torus project archive from an operator-provided
+    reachable URL
+- id: FR-004
+  title: Extend Oli.Scenarios with deterministic bulk-user enrollment and learner-progress
+    simulation and retire the separate Stagehand API
+- id: FR-005
+  title: Run the optional review_demo deployment seed through the same release CLI
+    in a post-migration Kubernetes Job
+- id: FR-006
+  title: Preserve existing Playwright-owned per-spec scenario setup independently
+    of deployment seeding
+- id: FR-007
+  title: Let system administrators start and stop an expiring non-chainable masquerade
+    as an existing user
+- id: FR-008
+  title: Preserve original administrator accountability and target-user authorization
+    during masquerade
+- id: FR-009
+  title: Display a persistent accessible masquerade warning and stop control across
+    authenticated application surfaces
+- id: FR-010
+  title: Give MIX_ENV=preview releases non-delivering email and an administrator-authenticated
+    mailbox for inspecting captured messages
+acceptance_criteria:
+- id: AC-001
+  requirement_id: FR-001
+  title: Release seeding, masquerade, and the mailbox route are compiled only when
+    MIX_ENV=preview, and DEV_QA_TOOLS_ENABLED must equal true case-insensitively at
+    runtime to activate them
+  verification_method: automated
+- id: AC-002
+  requirement_id: FR-001
+  title: Hostname, unrelated flags, configured profiles, and existing data cannot
+    enable the capability, and a MIX_ENV=prod release cannot expose it even when DEV_QA_TOOLS_ENABLED
+    is set at runtime
+  verification_method: automated
+- id: AC-003
+  requirement_id: FR-001
+  title: A MIX_ENV=preview release without runtime activation emits one bounded warning
+    directing operators to set DEV_QA_TOOLS_ENABLED=true, while other Mix environments
+    emit no such warning
+  verification_method: automated
+- id: AC-004
+  requirement_id: FR-001
+  title: The Docker build accepts MIX_ENV with a prod default, the preview-image jobs
+    build with MIX_ENV=preview using a standalone config/preview.exs, and production
+    image workflows retain MIX_ENV=prod; repository build documentation explains each
+    configuration's purpose, build path, and runtime relationship
+  verification_method: hybrid
+- id: AC-005
+  requirement_id: FR-002
+  title: bin/seed scenarios list lists bundled scenario identifiers and descriptions
+    without executing them
+  verification_method: automated
+- id: AC-006
+  requirement_id: FR-002
+  title: bin/seed scenarios run accepts exactly one of --name or --file, executes
+    it synchronously through Oli.Scenarios, prints a bounded summary, and exits nonzero
+    on usage, parse, or execution failure
+  verification_method: automated
+- id: AC-007
+  requirement_id: FR-002
+  title: CLI scenario execution supports the complete Oli.Scenarios DSL, including
+    custom YAML, use composition, assertions, and hooks, without an additional deployed-safe
+    allowlist
+  verification_method: automated
+- id: AC-008
+  requirement_id: FR-002
+  title: Every CLI-executed YAML scenario explicitly establishes its author and institution
+    through creation and scenario references, restricted lookup, or explicit configured-default
+    selectors; deployed execution never uses implicit first-record or generated-default
+    ownership
+  verification_method: automated
+- id: AC-009
+  requirement_id: FR-002
+  title: CLI execution performs no application-level authorization check beyond effective
+    feature enablement because shell access is the trusted operational boundary
+  verification_method: automated
+- id: AC-010
+  requirement_id: FR-003
+  title: bin/seed projects ingest accepts an HTTP or HTTPS project-archive URL and
+    explicit author ownership, downloads it with bounded timeout, redirect, and size
+    handling, ingests it through Oli.Interop.Ingest, reports the created project,
+    and exits nonzero on download or ingest failure
+  verification_method: automated
+- id: AC-011
+  requirement_id: FR-003
+  title: Temporary archive data is removed after success or failure and archive contents
+    or credentials are not written to routine logs
+  verification_method: automated
+- id: AC-012
+  requirement_id: FR-004
+  title: bulk_users creates deterministic scenario references and collision-safe synthetic
+    instructors and learners enrolled in the selected section
+  verification_method: automated
+- id: AC-013
+  requirement_id: FR-004
+  title: simulate_progress creates deterministic bounded learner progress when given
+    a random seed and reports structured warnings for unsupported content
+  verification_method: automated
+- id: AC-014
+  requirement_id: FR-004
+  title: Stagehand repository call sites migrate to scenario-owned behavior and no
+    separate deployed Stagehand execution path remains
+  verification_method: automated
+- id: AC-015
+  requirement_id: FR-005
+  title: After migrations succeed, a configured Kubernetes Job invokes bin/seed scenarios
+    run with the selected profile passed as a discrete argument, uses restartPolicy
+    Never, backoffLimit 1, explicit resource requests and limits, and does not affect
+    web readiness
+  verification_method: hybrid
+- id: AC-016
+  requirement_id: FR-005
+  title: review_demo creates representative synthetic authoring, delivery, enrollment,
+    progress, gradebook, discussion, gating, and analytics data with stable references
+    and no embedded credentials
+  verification_method: automated
+- id: AC-017
+  requirement_id: FR-005
+  title: Kubernetes owns Job status, one retry, labeled release/profile identity,
+    logs, and retention; Torus adds no Oban seed job, seed-run table, startup-status
+    endpoint, or persistent execution history
+  verification_method: automated
+- id: AC-018
+  requirement_id: FR-006
+  title: Existing Playwright scenario fixtures remain self-seeding and do not depend
+    on review_demo or a startup-status endpoint
+  verification_method: automated
+- id: AC-019
+  requirement_id: FR-007
+  title: Only a current system administrator on an effectively enabled deployment
+    can start masquerading as an active delivery user, and chained masquerade is rejected
+  verification_method: automated
+- id: AC-020
+  requirement_id: FR-007
+  title: Masquerade ends through an explicit stop action, expiry, logout, target invalidation,
+    runtime flag disablement, or entry into a new LTI login or launch identity flow
+    and returns through a safe allowlisted destination
+  verification_method: automated
+- id: AC-021
+  requirement_id: FR-008
+  title: Normal authorization evaluates only the target user while the original administrator
+    remains separately available solely for auditing, stopping masquerade, and route-local
+    authorization of the preview mailbox
+  verification_method: automated
+- id: AC-022
+  requirement_id: FR-008
+  title: Masquerade lifecycle audit events identify actor and target, and target-authorized
+    mutations persist without inheriting actor privileges
+  verification_method: automated
+- id: AC-023
+  requirement_id: FR-009
+  title: The default, workspace, delivery, delivery_student_dashboard, delivery_dashboard,
+    authenticated LiveView, and authenticated chromeless surfaces render a persistent
+    high-contrast warning identifying the target with an immediate stop control; the
+    Cashnet-only delivery_from_payment and identity-establishing LTI layouts are excluded
+  verification_method: automated
+- id: AC-024
+  requirement_id: FR-009
+  title: The masquerade warning and stop control are keyboard operable, screen-reader
+    labeled, and do not rely on color alone
+  verification_method: automated
+- id: AC-025
+  requirement_id: FR-010
+  title: MIX_ENV=preview configures outbound delivery with Swoosh.Adapters.Local so
+    sent email is retained in the non-delivering local mailbox regardless of runtime
+    QA-tool activation
+  verification_method: automated
+- id: AC-026
+  requirement_id: FR-010
+  title: MIX_ENV=preview releases expose Plug.Swoosh.MailboxPreview at /dev/mailbox
+    only while DEV_QA_TOOLS_ENABLED is active and only to a current system administrator
+    or the original system-administrator actor of a valid active masquerade, without
+    granting actor privileges to any other route
+  verification_method: automated
