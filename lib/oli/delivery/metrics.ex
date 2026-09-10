@@ -1455,6 +1455,66 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
+  Returns per-student confidence values (0.0-1.0) for the given objectives.
+
+  Confidence is only meaningful for models that compute it (see
+  `Oli.Delivery.Proficiency.confidence_supported?/1`); sections on the `:naive` model always
+  return an empty map, since their estimates never carry a confidence value.
+  """
+  @spec confidence_per_student_for_objective(Section.t(), [integer()], keyword()) ::
+          %{integer() => %{integer() => float()}}
+  def confidence_per_student_for_objective(section, objective_ids, opts \\ [])
+
+  def confidence_per_student_for_objective(
+        %Section{learning_model_version: :naive},
+        _objective_ids,
+        _opts
+      ),
+      do: %{}
+
+  def confidence_per_student_for_objective(%Section{} = section, objective_ids, opts) do
+    student_ids =
+      case opts[:student_id] do
+        nil ->
+          {:ok, user_ids} = Proficiency.user_ids_for_objectives(section, objective_ids)
+          user_ids
+
+        student_id ->
+          [student_id]
+      end
+
+    case Proficiency.estimates_for_objectives(section, student_ids, objective_ids) do
+      {:ok, estimates} ->
+        Map.new(estimates, fn {objective_id, by_user} ->
+          confidences =
+            Enum.reduce(by_user, %{}, fn
+              {user_id, %{confidence: confidence}}, acc when is_number(confidence) ->
+                Map.put(acc, user_id, confidence)
+
+              _pair, acc ->
+                acc
+            end)
+
+          {objective_id, confidences}
+        end)
+
+      {:error, _reason} ->
+        %{}
+    end
+  end
+
+  @doc """
+  Buckets an average per-student confidence score (0.0-1.0) into a display label.
+
+  These thresholds are provisional, mirroring the Proficiency cutoffs, pending design
+  confirmation of Confidence-specific ranges (MER-5812).
+  """
+  @spec confidence_label(float()) :: String.t()
+  def confidence_label(avg_confidence) when avg_confidence <= 0.4, do: "Low"
+  def confidence_label(avg_confidence) when avg_confidence <= 0.8, do: "Medium"
+  def confidence_label(_avg_confidence), do: "High"
+
+  @doc """
   Get proficiency data for a list of learning objectives (including sub-objectives) within a section.
 
   This function takes a list of SectionResource records and returns proficiency distribution
