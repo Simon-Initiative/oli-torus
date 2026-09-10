@@ -1858,6 +1858,43 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :level, :string, required: true
+  attr :class, :string, default: "w-4 h-4"
+
+  @doc "Three-bar signal icon for a confidence level, bars filled cumulatively by level."
+  def confidence_bars(assigns) do
+    {bar_1_class, bar_2_class, bar_3_class} = confidence_bar_classes(assigns.level)
+
+    assigns =
+      Map.merge(assigns, %{
+        bar_1_class: bar_1_class,
+        bar_2_class: bar_2_class,
+        bar_3_class: bar_3_class
+      })
+
+    ~H"""
+    <svg class={@class} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="9" width="3" height="5" rx="1" class={@bar_1_class} />
+      <rect x="6.5" y="6" width="3" height="8" rx="1" class={@bar_2_class} />
+      <rect x="12" y="2" width="3" height="12" rx="1" class={@bar_3_class} />
+    </svg>
+    """
+  end
+
+  defp confidence_bar_classes("High"),
+    do:
+      {"fill-Text-text-accent-green", "fill-Text-text-accent-green",
+       "fill-Text-text-accent-green"}
+
+  defp confidence_bar_classes("Medium"),
+    do: {"fill-Icon-icon-accent-orange", "fill-Icon-icon-accent-orange", "fill-Icon-icon-default"}
+
+  defp confidence_bar_classes("Low"),
+    do: {"fill-Icon-icon-danger", "fill-Icon-icon-default", "fill-Icon-icon-default"}
+
+  defp confidence_bar_classes(_not_enough_data),
+    do: {"fill-Icon-icon-default", "fill-Icon-icon-default", "fill-Icon-icon-default"}
+
   attr :is_active, :boolean, default: false
   attr :stroke_class, :string, default: "stroke-[#757682] dark:stroke-[#BAB8BF]"
   attr :class, :string, default: "w-[24px] h-[24px]"

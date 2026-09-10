@@ -45,6 +45,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       ) do
     params = decode_params(params)
     patch_url_type = assigns[:patch_url_type]
+    confidence_supported? = Map.get(assigns, :confidence_supported?, false)
 
     params =
       maybe_adjust_params_for_navigation(
@@ -66,7 +67,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       end)
 
     {:ok, objectives_table_model} =
-      ObjectivesTableModel.new(indexed_rows, patch_url_type)
+      ObjectivesTableModel.new(indexed_rows, patch_url_type, confidence_supported?)
 
     # A new search term resets the expansion state to whatever that term dictates. While the
     # term holds, rows the user collapsed by hand stay collapsed across sorting and paging.
@@ -791,6 +792,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           sort_order
         )
     end
+  end
+
+  @confidence_rank ["High", "Medium", "Low", nil]
+                   |> Enum.with_index()
+                   |> Enum.into(%{})
+
+  defp sort_by(objectives, :confidence, sort_order) do
+    Enum.sort_by(
+      objectives,
+      fn objective ->
+        confidence = Map.get(objective, :confidence_subobj) || Map.get(objective, :confidence_obj)
+        {@confidence_rank[confidence], normalized_title(objective)}
+      end,
+      sort_order
+    )
   end
 
   defp sort_by(objectives, :related_activities_count, sort_order) do
