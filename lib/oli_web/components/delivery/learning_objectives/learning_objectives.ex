@@ -30,7 +30,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   @proficiency_options [
     %{id: 1, name: "Low", selected: false},
     %{id: 2, name: "Medium", selected: false},
-    %{id: 3, name: "High", selected: false}
+    %{id: 3, name: "High", selected: false},
+    %{id: 4, name: "Not Enough Data", selected: false}
   ]
 
   def update(
@@ -848,6 +849,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           1 -> ["Low" | acc]
           2 -> ["Medium" | acc]
           3 -> ["High" | acc]
+          4 -> ["Not enough data" | acc]
           _ -> acc
         end
       end)
