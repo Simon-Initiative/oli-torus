@@ -179,5 +179,48 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.FiltersTest do
       assert Enum.any?(filtered, &(&1.objective == "LO.02"))
       refute Enum.any?(filtered, &(&1.objective == "LO.99"))
     end
+
+    test "filters by the Confidence option (id 3, High)" do
+      objectives = [
+        %{
+          resource_id: 1,
+          title: "LO.02",
+          objective: "LO.02",
+          subobjective: nil,
+          student_proficiency_obj: "High",
+          student_proficiency_subobj: nil,
+          confidence_obj: "High",
+          confidence_subobj: nil,
+          container_ids: [10]
+        },
+        %{
+          resource_id: 2,
+          title: "LO.99",
+          objective: "LO.99",
+          subobjective: nil,
+          student_proficiency_obj: "High",
+          student_proficiency_subobj: nil,
+          confidence_obj: "Low",
+          confidence_subobj: nil,
+          container_ids: [10]
+        }
+      ]
+
+      params = %{
+        text_search: nil,
+        filter_by: 10,
+        selected_proficiency_ids: [],
+        selected_confidence_ids: [3],
+        selected_card_value: nil,
+        sort_by: :objective_instructor_dashboard,
+        sort_order: :asc
+      }
+
+      scoped = Enum.filter(objectives, &Enum.member?(&1.container_ids, 10))
+      filtered = LearningObjectives.filtered_objectives(scoped, params)
+
+      assert Enum.any?(filtered, &(&1.objective == "LO.02"))
+      refute Enum.any?(filtered, &(&1.objective == "LO.99"))
+    end
   end
 end
