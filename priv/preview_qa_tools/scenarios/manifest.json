@@ -1,0 +1,8 @@
+[
+  {
+    "id": "preview_smoke",
+    "description": "Creates a minimal preview-owned project using configured defaults",
+    "version": "1",
+    "digest": "sha256:cb4033a8afdd35a4ad39492098f66cce8d230302f5fe6ac062bcf703f1851667"
+  }
+]

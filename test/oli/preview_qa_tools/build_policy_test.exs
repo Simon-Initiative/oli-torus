@@ -1,4 +1,4 @@
-defmodule Oli.DevQATools.BuildPolicyTest do
+defmodule Oli.PreviewQATools.BuildPolicyTest do
   use ExUnit.Case, async: true
 
   test "Docker builds prod by default and uses the selected environment throughout the release" do
@@ -48,5 +48,24 @@ defmodule Oli.DevQATools.BuildPolicyTest do
     assert mix_project =~ ~s(@gleam_erlang_build_root "gleam/build/dev/erlang")
     assert mix_project =~ "compilers: [:phoenix_live_view, :gleam, :gleam_runtime]"
     assert mix_project =~ "elixirc_options: elixirc_options(Mix.env())"
+  end
+
+  test "release seeding uses the preview source path only in preview builds" do
+    mix_project = File.read!("mix.exs")
+    router = File.read!("lib/oli_web/router.ex")
+    application = File.read!("lib/oli/application.ex")
+
+    assert mix_project =~
+             "defp elixirc_paths(:preview), do: [\"lib\", \"preview/lib\"]"
+
+    refute mix_project =~
+             "defp elixirc_paths(:prod), do: [\"lib\", \"preview/lib\"]"
+
+    assert File.regular?("preview/lib/oli/release/preview_qa_tools.ex")
+    refute File.dir?("lib/preview_qa_tools/release")
+
+    refute router =~ "PreviewQATools"
+    refute application =~ "PreviewQATools.Seed"
+    refute application =~ "seed_queue"
   end
 end

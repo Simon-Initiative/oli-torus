@@ -14,7 +14,7 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 
 ## Clarifications & Default Assumptions
 
-- `MIX_ENV=preview` is the sole compile-time capability boundary. `DEV_QA_TOOLS_ENABLED` activates compiled seeding, masquerade, and mailbox access only when its value equals `true` case-insensitively; whitespace-padded and all other values remain disabled.
+- `MIX_ENV=preview` is the sole compile-time capability boundary. `PREVIEW_QA_TOOLS_ENABLED` activates compiled seeding, masquerade, and mailbox access only when its value equals `true` case-insensitively; whitespace-padded and all other values remain disabled.
 - While masquerade is active, normal application authorization has exactly the target user's capabilities. No general system-administrator route, LiveView, API, navigation, data access, or mutation may authorize from the actor identity. The only actor-authorized exceptions are stopping masquerade and accessing the preview mailbox at `/dev/mailbox`.
 - `config/preview.exs` is standalone and intentionally duplicates only applicable production-shaped settings. It imports neither `prod.exs` nor `dev.exs`.
 - Preview email always uses `Swoosh.Adapters.Local`, independently of runtime activation. Other outbound integrations remain unchanged and require fresh or explicitly sanitized data plus non-production credentials.
@@ -31,7 +31,7 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Tasks:
   - [x] Audit every `Mix.env()` branch and dependency `only:` selector that affects release construction or behavior, including `mix.exs`, `config/config.exs`, `lib/oli_web/endpoint.ex`, Gleam compiler paths, permanent startup, static compression, and release-only dependencies; record which branches must treat `:preview` as production-like.
   - [x] Add standalone `config/preview.exs` with the applicable production-shaped endpoint, logging, Playwright, and release settings, an immutable preview build marker, and `Oli.Mailer` configured with `Swoosh.Adapters.Local`.
-  - [x] Add `Oli.DevQATools.Config` as the single effective-enablement boundary, combining the compile-time preview marker with strict runtime parsing of `DEV_QA_TOOLS_ENABLED`.
+  - [x] Add `Oli.PreviewQATools.Config` as the single effective-enablement boundary, combining the compile-time preview marker with strict runtime parsing of `PREVIEW_QA_TOOLS_ENABLED`.
   - [x] Wire application startup to emit one bounded instructional warning for a preview build whose runtime activation is disabled and one bounded enabled signal when active; emit neither message for other Mix environments.
   - [x] Parameterize the Docker build and all release-stage paths with `ARG MIX_ENV=prod`; propagate the selected environment consistently through dependency resolution, asset/release compilation, and final-stage copies.
   - [x] Update both jobs in `.github/workflows/build-preview-image.yml` to pass `MIX_ENV=preview`, while leaving production image callers on the safe default.
@@ -42,7 +42,7 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
   - [x] Add configuration assertions that preview uses `Swoosh.Adapters.Local` whether the runtime flag is enabled or disabled.
   - [x] Add static workflow/Docker assertions for the `prod` default, both preview build arguments, and consistent environment-specific release paths.
   - [x] Compile or build the preview release through the existing preview-image path and retain existing production packaging as the production-environment gate.
-  - Command(s): `mix test <targeted DevQATools configuration and build-policy tests>`; `MIX_ENV=preview mix compile`; `mix format`; preview-image workflow build.
+  - Command(s): `mix test <targeted PreviewQATools configuration and build-policy tests>`; `MIX_ENV=preview mix compile`; `mix format`; preview-image workflow build.
 - Definition of Done:
   - Preview compiles with production-shaped settings and local-only mail, production remains the Docker default, runtime activation is deny-by-default, startup signals are bounded, and the environment contract is documented.
 - Gate:
@@ -57,19 +57,19 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Goal: Provide a bounded, release-compatible CLI for listing and synchronously running bundled or operator-provided scenarios with explicit execution ownership.
 - Requirements: FR-002; AC-005, AC-006, AC-007, AC-008, AC-009.
 - Tasks:
-  - [ ] Add a release-only `Oli.Release.DevQATools` dispatcher and `rel/overlays/bin/seed` wrapper following the existing `rel/overlays/bin/migrate` pattern; fail before mutation unless effective preview enablement is active.
-  - [ ] Implement strict argument parsing for `scenarios list` and `scenarios run --name <id>|--file <path>`, rejecting missing values, unknown options, extra arguments, and non-exclusive sources with bounded usage output and deterministic nonzero status.
-  - [ ] Define an application-owned bundled-scenario registry and immutable release asset location with stable identifier, description, and version or digest metadata; listing must read metadata without parsing or executing scenario bodies.
-  - [ ] Add an `Oli.Scenarios` execution adapter that preserves `use`, assertions, hooks, and the complete DSL while enabling explicit-ownership validation only for release execution.
-  - [ ] Support ownership through created scenario references, restricted unique lookup, and explicit configured defaults such as `default_admin`; reject missing, late, ambiguous, inactive, or wrong-type author/institution selection before the first dependent mutation.
-  - [ ] Emit bounded structured operation, source, identifier/digest, duration, aggregate-count, result-code, and partial-mutation fields without YAML bodies, credentials, responses, or secrets.
-  - [ ] Keep the dispatcher callable from IEx and avoid any web route, application role check, Oban worker, queue, run record, YAML snapshot, retry manager, or deployed-safe directive allowlist.
+  - [x] Add a release-only `Oli.Release.PreviewQATools` dispatcher and `rel/overlays/bin/seed` wrapper following the existing `rel/overlays/bin/migrate` pattern; fail before mutation unless effective preview enablement is active.
+  - [x] Implement strict argument parsing for `scenarios list` and `scenarios run --name <id>|--file <path>`, rejecting missing values, unknown options, extra arguments, and non-exclusive sources with bounded usage output and deterministic nonzero status.
+  - [x] Define an application-owned bundled-scenario registry and immutable release asset location with stable identifier, description, and version or digest metadata; listing must read metadata without parsing or executing scenario bodies.
+  - [x] Add an `Oli.Scenarios` execution adapter that preserves `use`, assertions, hooks, and the complete DSL while enabling explicit-ownership validation only for release execution.
+  - [x] Support ownership through created scenario references, restricted unique lookup, and explicit configured defaults such as `default_admin`; reject missing, late, ambiguous, inactive, or wrong-type author/institution selection before the first dependent mutation.
+  - [x] Emit bounded structured operation, source, identifier/digest, duration, aggregate-count, result-code, and partial-mutation fields without YAML bodies, credentials, responses, or secrets.
+  - [x] Keep the dispatcher callable from IEx and avoid any web route, application role check, Oban worker, queue, run record, YAML snapshot, retry manager, or deployed-safe directive allowlist.
 - Testing Tasks:
-  - [ ] Test scenario listing metadata and prove list does not parse or execute bundled YAML.
-  - [ ] Test the argument matrix, deterministic exits, bounded output, disabled-state failure before mutation, and partial-mutation reporting after execution begins.
-  - [ ] Run bundled and temporary local YAML through the dispatcher, including `use` composition, assertions, and hooks.
-  - [ ] Test each accepted ownership mechanism and all ordering, ambiguity, activity-state, and type failures; prove legacy scenario defaults remain unchanged outside release mode.
-  - [ ] Add negative structural checks for seed HTTP routes, application authorization, Oban seed modules/queues, persistence schemas, and extra DSL allowlists.
+  - [x] Test scenario listing metadata and prove list does not parse or execute bundled YAML.
+  - [x] Test the argument matrix, deterministic exits, bounded output, disabled-state failure before mutation, and partial-mutation reporting after execution begins.
+  - [x] Run bundled and temporary local YAML through the dispatcher, including `use` composition, assertions, and hooks.
+  - [x] Test each accepted ownership mechanism and all ordering, ambiguity, activity-state, and type failures; prove legacy scenario defaults remain unchanged outside release mode.
+  - [x] Add negative structural checks for seed HTTP routes, application authorization, Oban seed modules/queues, persistence schemas, and extra DSL allowlists.
   - Command(s): `mix test <release dispatcher, bundled registry, and scenario ownership tests>`; `mix format`.
 - Definition of Done:
   - `bin/seed scenarios list` and both run forms execute synchronously in an enabled preview release, expose the full scenario engine, enforce YAML-defined ownership, redact sensitive input, and return reliable status without new application-managed state.
@@ -86,7 +86,7 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Requirements: FR-003; AC-010, AC-011.
 - Tasks:
   - [ ] Add `projects ingest --url <http(s)-url> --author default_admin|email:<email>` parsing and explicit unique active-author resolution.
-  - [ ] Implement `Oli.Release.DevQATools.ProjectIngest` with HTTP/HTTPS-only scheme validation, finite connection/receive timeouts, bounded redirects, configured maximum bytes, and streaming into a uniquely created temporary directory.
+  - [ ] Implement `Oli.Release.PreviewQATools.ProjectIngest` with HTTP/HTTPS-only scheme validation, finite connection/receive timeouts, bounded redirects, configured maximum bytes, and streaming into a uniquely created temporary directory.
   - [ ] Invoke `Oli.Interop.Ingest.ingest/2` without reimplementing archive import, and report only the bounded identity of the created project.
   - [ ] Guarantee temporary-file and directory cleanup in success, download failure, size/redirect/timeout failure, invalid archive, author failure, and ingest failure paths.
   - [ ] Sanitize errors and telemetry so URL credentials, query secrets, response bodies, archive contents, and author-sensitive values do not reach routine logs.
@@ -136,7 +136,7 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Tasks:
   - [ ] Author the immutable bundled `review_demo` scenario with explicit author/institution establishment and stable synthetic references covering authoring, publication, product, section, enrollment, learner progress, gradebook, discussion, gating, and analytics states without embedded credentials.
   - [ ] Make profile operations reconciliation-aware so a Kubernetes retry converges on the intended state rather than silently duplicating projects, users, sections, enrollments, or learner results.
-  - [ ] Add deployment configuration that omits the seed Job when `DEV_QA_SEED_PROFILE` is absent and creates it only after successful migrations when present.
+  - [ ] Add deployment configuration that omits the seed Job when `PREVIEW_QA_SEED_PROFILE` is absent and creates it only after successful migrations when present.
   - [ ] Pass the resolved profile as a discrete final argument to `bin/seed scenarios run --name <profile>` without shell interpolation; use `seed-<profile>-<release-id>`, application/environment/release/profile/component labels, `restartPolicy: Never`, `backoffLimit: 1`, and explicit CPU/memory requests and limits initially matching the migration Job.
   - [ ] Preserve Kubernetes ownership of stdout/stderr, exit observation, one retry, Job status, resource visibility, and the existing retention convention; add no Torus startup coordinator, Job API client, readiness dependency, or Job identity/history storage.
   - [ ] Audit Playwright's test-only controller, fixtures, token, and per-spec identifiers and leave their self-seeding lifecycle independent of `review_demo` and any startup-status endpoint.
@@ -161,7 +161,7 @@ The implementation must preserve the compile-time preview boundary and deny-by-d
 - Goal: Let an enabled current system administrator act as an active delivery user while preserving actor accountability, target-only authorization, and fail-closed lifecycle behavior.
 - Requirements: FR-007, FR-008; AC-019, AC-020, AC-021, AC-022.
 - Tasks:
-  - [ ] Add preview-compiled `Oli.DevQATools.Masquerade` start, restore, stop, expiry, and invalidation services with effective-enablement checks and system-administrator authorization at every actor-sensitive boundary.
+  - [ ] Add preview-compiled `Oli.PreviewQATools.Masquerade` start, restore, stop, expiry, and invalidation services with effective-enablement checks and system-administrator authorization at every actor-sensitive boundary.
   - [ ] Store only bounded actor ID, target ID, issued/expiry timestamps, and random session reference in the existing tamper-protected signed session; renew the session on start and make no application-wide encryption or active-session-table change.
   - [ ] Restrict targets to active delivery users, reject self/chained masquerade, revalidate actor, target, flag, expiry, and signed state on every restoration, and clear invalid state safely.
   - [ ] Install only the target as `current_user` across plugs, LiveView mounts, sockets, controllers, APIs, policies, context calls, and rendered navigation; never retain or expose an actor-derived admin role, permission set, current-author identity, or privileged assign while masquerade is active.

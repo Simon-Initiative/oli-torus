@@ -1,9 +1,9 @@
-defmodule Oli.DevQATools.ConfigTest do
+defmodule Oli.PreviewQATools.ConfigTest do
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureLog
 
-  alias Oli.DevQATools.Config
+  alias Oli.PreviewQATools.Config
   alias Swoosh.Adapters.Local.Storage.Memory
 
   describe "enabled?/2" do
@@ -23,7 +23,7 @@ defmodule Oli.DevQATools.ConfigTest do
     test "cannot be enabled by unrelated runtime state" do
       original_values =
         Map.new(
-          ["HOST", "DEV_QA_SEED_PROFILE", "ENABLE_PLAYWRIGHT_SCENARIOS"],
+          ["HOST", "PREVIEW_QA_SEED_PROFILE", "ENABLE_PLAYWRIGHT_SCENARIOS"],
           &{&1, System.get_env(&1)}
         )
 
@@ -32,16 +32,16 @@ defmodule Oli.DevQATools.ConfigTest do
       end)
 
       System.put_env("HOST", "preview-123.example.test")
-      System.put_env("DEV_QA_SEED_PROFILE", "review_demo")
+      System.put_env("PREVIEW_QA_SEED_PROFILE", "review_demo")
       System.put_env("ENABLE_PLAYWRIGHT_SCENARIOS", "true")
 
       refute Config.enabled?(true, nil)
     end
 
     test "the test artifact cannot be activated at runtime" do
-      original = System.get_env("DEV_QA_TOOLS_ENABLED")
-      on_exit(fn -> restore_env("DEV_QA_TOOLS_ENABLED", original) end)
-      System.put_env("DEV_QA_TOOLS_ENABLED", "true")
+      original = System.get_env("PREVIEW_QA_TOOLS_ENABLED")
+      on_exit(fn -> restore_env("PREVIEW_QA_TOOLS_ENABLED", original) end)
+      System.put_env("PREVIEW_QA_TOOLS_ENABLED", "true")
 
       refute Config.preview_build?()
       refute Config.enabled?()
@@ -53,7 +53,7 @@ defmodule Oli.DevQATools.ConfigTest do
       log = capture_log(fn -> assert :ok = Config.log_startup_status(true, nil) end)
 
       assert log =~ "Preview QA tools are disabled"
-      assert log =~ "DEV_QA_TOOLS_ENABLED=true"
+      assert log =~ "PREVIEW_QA_TOOLS_ENABLED=true"
       assert length(Regex.scan(~r/Preview QA tools are disabled/, log)) == 1
       assert byte_size(log) < 512
     end
@@ -77,7 +77,7 @@ defmodule Oli.DevQATools.ConfigTest do
     mailer_config = get_in(preview_config, [:oli, Oli.Mailer])
 
     assert mailer_config[:adapter] == Swoosh.Adapters.Local
-    assert get_in(preview_config, [:oli, :dev_qa_tools, :preview_build?])
+    assert get_in(preview_config, [:oli, :preview_qa_tools, :preview_build?])
 
     for runtime_value <- [nil, "true"] do
       Memory.delete_all()
