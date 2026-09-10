@@ -21,9 +21,9 @@ Environment audit:
 - `mix.exs` permanent startup and `lib/oli_web/endpoint.ex` static compression must treat `:preview` as production-like.
 - `config/runtime.exs` must recognize `preview` and apply release-only database, endpoint, vault, queue, and SSL configuration.
 - Runtime release shape must come from immutable `config_env()` and cannot be overridden by a runtime `MIX_ENV` value.
-- Docker dependency selection, environment config copy, compilation, smoke execution, final-stage release copy, and runner environment must use the selected `MIX_ENV`.
+- Docker dependency selection, environment config copy, compilation, final-stage release copy, and runner environment use the selected `MIX_ENV`.
 - No dependency has a production-only `only:` selector requiring expansion. Test/dev-only dependencies remain excluded from preview.
-- Gleam compiler and frontend aliases intentionally use Gleam's `build/dev` profile independently of `MIX_ENV`; the release smoke check verifies generated BEAM code is packaged from the release rather than loaded from the source build tree.
+- Gleam compiler and frontend aliases intentionally use Gleam's `build/dev` profile independently of `MIX_ENV`.
 
 ## Test Blocks
 
@@ -43,7 +43,7 @@ Verification results:
 
 ## Work-Item Sync
 
-- [x] PRD, FDD, and plan updated when implementation diverged (no divergence found)
+- [x] PRD, FDD, and plan updated when implementation diverged (the removed Gleam release smoke command was removed from Phase 1's Docker propagation wording)
 - [x] Open questions added to docs when needed (none)
 
 ## Review Loop
